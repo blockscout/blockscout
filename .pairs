@@ -1,0 +1,11 @@
+pairs:
+  cj: CJ Bryan; cj
+  dr: Doc Ritezel; doc
+  mo: Matt Olenick; matto
+
+email:
+  prefix: pair
+  domain: ministryofvelocity.com
+  no_solo_prefix: true
+
+global: true
