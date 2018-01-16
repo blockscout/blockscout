@@ -3,9 +3,9 @@ defmodule ExplorerWeb.UserListTest do
 
   import Wallaby.Query, only: [css: 2]
 
-  test "users have names", %{session: session} do
+  test "browses the home page", %{session: session} do
     session
     |> visit("/")
-    |> assert_has(css("h2", text: "Welcome to Phoenix!"))
+    |> assert_has(css(".header__title", text: "POA Network Explorer"))
   end
 end
