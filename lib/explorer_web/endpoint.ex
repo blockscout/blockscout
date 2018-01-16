@@ -1,6 +1,10 @@
 defmodule ExplorerWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :explorer
 
+  if Application.get_env(:explorer, :sql_sandbox) do
+    plug Phoenix.Ecto.SQL.Sandbox
+  end
+
   socket "/socket", ExplorerWeb.UserSocket
 
   # Serve at "/" the static files from "priv/static" directory.
