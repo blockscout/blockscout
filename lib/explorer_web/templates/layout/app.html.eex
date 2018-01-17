@@ -14,7 +14,11 @@
   <body>
     <div class="container">
       <header class="header">
-        <img class="header__logo" src="<%= static_path(@conn, "/images/logo.png") %>">
+        <%=
+          static_path(@conn, "/images/logo.png")
+          |> img_tag(class: "header__logo")
+          |> link(to: ExplorerWeb.Endpoint.url())
+        %>
         <div class="header__title"><%= gettext "POA Network Explorer" %></div>
       </header>
 
