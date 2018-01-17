@@ -1,9 +1,19 @@
 {
-  "repository": {},
-  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/poanetwork/poa-explorer.git"
+  },
+  "private": true,
+  "author": "POA Network",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": "8.x",
+    "npm": "5.x"
+  },
   "scripts": {
     "deploy": "brunch build --production",
-    "watch": "brunch watch --stdin"
+    "watch": "brunch watch --stdin",
+    "eslint": "eslint js/**"
   },
   "dependencies": {
     "bootstrap-sass": "^3.3.7",
@@ -14,6 +24,14 @@
     "babel-brunch": "6.1.1",
     "brunch": "2.10.9",
     "clean-css-brunch": "2.10.0",
+    "eslint": "^4.15.0",
+    "eslint-config-standard": "^11.0.0-beta.0",
+    "eslint-config-standard-jsx": "^4.0.2",
+    "eslint-plugin-import": "^2.8.0",
+    "eslint-plugin-node": "^5.2.1",
+    "eslint-plugin-promise": "^3.6.0",
+    "eslint-plugin-react": "^7.5.1",
+    "eslint-plugin-standard": "^3.0.1",
     "sass-brunch": "github:brunch/sass-brunch#7ffb2e6ebb7380f920a2f594476a3db0654b11b9",
     "uglify-js-brunch": "2.10.0"
   }

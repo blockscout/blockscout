@@ -8,6 +8,7 @@ machine:
     - postgresql
   pre:
     - mkdir -p $CIRCLE_TEST_REPORTS/exunit
+    - mkdir -p $CIRCLE_TEST_REPORTS/eslint
 
 dependencies:
   cache_directories:
@@ -28,7 +29,9 @@ dependencies:
 
 
 test:
-  pre: mix credo --strict
+  pre:
+    - mix credo --strict
+    - cd assets && npm run eslint -- --format=junit --output-file="$CIRCLE_TEST_REPORTS/eslint/junit.xml" && cd ..
   override:
     - mix test
   post:
