@@ -42,6 +42,7 @@ defmodule Explorer.Mixfile do
       {:gettext, "~> 0.11"},
       {:cowboy, "~> 1.0"},
       {:wallaby, "~> 0.19.2", [runtime: false, only: :test]},
+      {:junit_formatter, ">= 0.0.0"}
     ]
   end
 

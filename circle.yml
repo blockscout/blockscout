@@ -1,0 +1,43 @@
+machine:
+  environment:
+    PATH: "$HOME/.asdf/bin:$HOME/.asdf/shims:$PATH"
+    MIX_ENV: "test"
+  node:
+    version: 8.9.1
+  services:
+    - postgresql
+  pre:
+    - mkdir -p $CIRCLE_TEST_REPORTS/exunit
+
+dependencies:
+  cache_directories:
+    - ~/.asdf
+    - _build
+    - deps
+    - assets/node_modules
+  pre:
+    - if ! asdf | grep version; then git clone https://github.com/HashNuke/asdf.git ~/.asdf; fi
+    - if ! asdf plugin-list | grep erlang; then asdf plugin-add erlang https://github.com/HashNuke/asdf-erlang.git; fi
+    - if ! asdf plugin-list | grep elixir; then asdf plugin-add elixir https://github.com/HashNuke/asdf-elixir.git; fi
+    - awk '/erlang/ { print $2 }' .tool-versions | xargs asdf install erlang:
+        timeout: 3600
+    - awk '/elixir/ { print $2 }' .tool-versions | xargs asdf install elixir:
+        timeout: 3600
+    - yes | mix do deps.get, local.rebar, deps.compile, compile
+    - cd assets && npm install && cd ..
+
+test:
+  override:
+    - mix test
+  post:
+    - cp _build/test/lib/explorer/test-junit-report.xml $CIRCLE_TEST_REPORTS/exunit
+
+deployment:
+  staging:
+    branch: master
+    commands:
+      - bin/deploy poa-explorer-staging
+  production:
+    branch: production
+    commands:
+      - bin/deploy poa-explorer-production
