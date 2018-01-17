@@ -20,13 +20,17 @@ defmodule Explorer.Mixfile do
   def application do
     [
       mod: {Explorer.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: extra_applications(Mix.env)
     ]
   end
 
   # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_),     do: ["lib"]
+
+  # Specifies extra applications to start per environment
+  defp extra_applications(:prod), do: [:logger, :runtime_tools, :phoenix_pubsub_redis]
+  defp extra_applications(_), do: [:logger, :runtime_tools]
 
   # Specifies your project dependencies.
   #
@@ -35,6 +39,7 @@ defmodule Explorer.Mixfile do
     [
       {:phoenix, "~> 1.3.0"},
       {:phoenix_pubsub, "~> 1.0"},
+      {:phoenix_pubsub_redis, "~> 2.1.0"},
       {:phoenix_ecto, "~> 3.2"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 2.10"},

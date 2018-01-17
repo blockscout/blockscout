@@ -14,8 +14,7 @@ config :explorer, ExplorerWeb.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5",
   render_errors: [view: ExplorerWeb.ErrorView, accepts: ~w(html json)],
-  pubsub: [name: Explorer.PubSub,
-           adapter: Phoenix.PubSub.PG2]
+  pubsub: [name: Explorer.PubSub, adapter: Phoenix.PubSub.PG2]
 
 # Configures Elixir's Logger
 config :logger, :console,
