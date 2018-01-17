@@ -43,7 +43,7 @@ To ensure your Elixir code is properly formatted: `$ mix credo --strict`
 
 ## Contributing
 
-1. Fork it ( https://github.com/poanetwork/explorer/fork )
+1. Fork it ( https://github.com/poanetwork/poa-explorer/fork )
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Write tests that cover your work
 4. Commit your changes (`git commit -am 'Add some feature'`)
