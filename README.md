@@ -43,6 +43,12 @@ To ensure your Elixir code is properly formatted: `$ mix credo --strict`
 To ensure your ES code is properly formatted: `$ cd assets && npm run eslint`
 
 
+## Internationalization
+
+The app is currently internationalized. It is only localized to U.S. English.
+
+To translate new strings, run `$ mix gettext.extract --merge` and edit the new strings in `priv/gettext/en/LC_MESSAGES/default.po`.
+
 ## Contributing
 
 1. Fork it ( https://github.com/poanetwork/poa-explorer/fork )
