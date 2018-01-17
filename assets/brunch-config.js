@@ -20,7 +20,9 @@ exports.config = {
       // }
     },
     stylesheets: {
-      joinTo: "css/app.css"
+      joinTo: {
+        "css/app.css": "css/app.scss",
+      }
     },
     templates: {
       joinTo: "js/app.js"
@@ -37,7 +39,7 @@ exports.config = {
   // Phoenix paths configuration
   paths: {
     // Dependencies and current project directories to watch
-    watched: ["static", "css", "js", "vendor"],
+    watched: ["static", "css", "css/**", "js", "vendor"],
     // Where to compile files to
     public: "../priv/static"
   },
@@ -47,6 +49,15 @@ exports.config = {
     babel: {
       // Do not use ES6 compiler in vendor code
       ignore: [/vendor/]
+    },
+
+    sass: {
+      mode: 'native',
+      precision: 8,
+      allowCache: true,
+      options: {
+        includePaths: ["node_modules/bootstrap-sass/assets/stylesheets"]
+      }
     }
   },
 

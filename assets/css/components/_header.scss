@@ -1,0 +1,10 @@
+.header {
+  &__logo {
+    @extend .img-responsive;
+    width: 5em;
+  }
+
+  &__title {
+    @extend h1;
+  }
+}

@@ -1,0 +1,9 @@
+.blocks {
+  @extend .table;
+
+  text-align: left;
+
+  td {
+    padding-right: 4em;
+  }
+}

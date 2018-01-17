@@ -1,0 +1,5 @@
+@import "bootstrap";
+@import "components/all";
+
+/* Phoenix flash messages */
+.alert:empty { display: none; }
