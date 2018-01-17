@@ -4,13 +4,9 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="">
-    <meta name="author" content="">
-
     <title><%= gettext "explorer-title" %></title>
     <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
   </head>
-
   <body>
     <div class="container">
       <header class="header">
@@ -28,8 +24,7 @@
       <main role="main">
         <%= render @view_module, @view_template, assigns %>
       </main>
-
-    </div> <!-- /container -->
+    </div>
     <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
   </body>
 </html>
