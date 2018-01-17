@@ -22,6 +22,7 @@ defmodule Explorer.DataCase do
       import Ecto.Changeset
       import Ecto.Query
       import Explorer.DataCase
+      import Explorer.Factory
     end
   end
 
