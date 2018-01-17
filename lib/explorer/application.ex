@@ -1,4 +1,8 @@
 defmodule Explorer.Application do
+  @moduledoc """
+  This is the Application module for Explorer.
+  """
+
   use Application
 
   # See https://hexdocs.pm/elixir/Application.html
@@ -12,8 +16,8 @@ defmodule Explorer.Application do
       supervisor(Explorer.Repo, []),
       # Start the endpoint when the application starts
       supervisor(ExplorerWeb.Endpoint, []),
-      # Start your own worker by calling: Explorer.Worker.start_link(arg1, arg2, arg3)
-      # worker(Explorer.Worker, [arg1, arg2, arg3]),
+      # Start your own worker by calling: Explorer.Worker.start_link(a, b, c)
+      # worker(Explorer.Worker, [a, b, c]),
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
@@ -25,7 +29,8 @@ defmodule Explorer.Application do
   # Tell Phoenix to update the endpoint configuration
   # whenever the application is updated.
   def config_change(changed, _new, removed) do
-    ExplorerWeb.Endpoint.config_change(changed, removed)
+    alias ExplorerWeb.Endpoint
+    Endpoint.config_change(changed, removed)
     :ok
   end
 end

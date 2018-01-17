@@ -26,7 +26,9 @@ dependencies:
     - yes | mix do deps.get, local.rebar, deps.compile, compile
     - cd assets && npm install && cd ..
 
+
 test:
+  pre: mix credo --strict
   override:
     - mix test
   post:

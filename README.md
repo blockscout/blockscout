@@ -39,6 +39,7 @@ Configure your local CCMenu with the following url: [`https://circleci.com/gh/po
 
 To run the test suite: `$ mix test`
 
+To ensure your Elixir code is properly formatted: `$ mix credo --strict`
 
 ## Contributing
 
