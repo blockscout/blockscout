@@ -7,7 +7,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Hello Explorer!</title>
+    <title><%= gettext "explorer-title" %></title>
     <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
   </head>
 
@@ -19,7 +19,7 @@
           |> img_tag(class: "header__logo")
           |> link(to: ExplorerWeb.Endpoint.url())
         %>
-        <div class="header__title"><%= gettext "POA Network Explorer" %></div>
+        <div class="header__title"><%= gettext "explorer-title" %></div>
       </header>
 
       <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>

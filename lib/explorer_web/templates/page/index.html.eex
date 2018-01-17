@@ -1,1 +1,1 @@
-<div>Welcome to our blockchain explorer.</div>
+<div><%= gettext "explorer-welcome" %></div>

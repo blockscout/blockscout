@@ -1,0 +1,20 @@
+## This file is a PO Template file.
+##
+## `msgid`s here are often extracted from source code.
+## Add new translations manually only if they're dynamic
+## translations that can't be statically extracted.
+##
+## Run `mix gettext.extract` to bring this file up to
+## date. Leave `msgstr`s empty as changing them here as no
+## effect: edit them in PO (`.po`) files instead.
+msgid ""
+msgstr ""
+
+#: lib/explorer_web/templates/layout/app.html.eex:7
+#: lib/explorer_web/templates/layout/app.html.eex:18
+msgid "explorer-title"
+msgstr ""
+
+#: lib/explorer_web/templates/page/index.html.eex:1
+msgid "explorer-welcome"
+msgstr ""
