@@ -1,3 +1,7 @@
+general:
+  artifacts:
+    - screenshots
+
 machine:
   environment:
     PATH: "$HOME/.asdf/bin:$HOME/.asdf/shims:$PATH"
@@ -11,12 +15,15 @@ machine:
     - mkdir -p $CIRCLE_TEST_REPORTS/eslint
 
 dependencies:
-  cache_directories:
-    - ~/.asdf
-    - _build
-    - deps
-    - assets/node_modules
   pre:
+    - wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+    - sudo dpkg -i google-chrome-stable_current_amd64.deb
+    - sudo sed -i 's|HERE/chrome\"|HERE/chrome\" --disable-setuid-sandbox|g' /opt/google/chrome/google-chrome
+    - rm google-chrome-stable_current_amd64.deb
+    - "LATEST_RELEASE=`curl -s https://chromedriver.storage.googleapis.com/LATEST_RELEASE` && wget https://chromedriver.storage.googleapis.com/${LATEST_RELEASE}/chromedriver_linux64.zip"
+    - unzip chromedriver_linux64.zip
+    - sudo cp chromedriver /usr/local/bin/chromedriver
+    - sudo chmod +x /usr/local/bin/chromedriver
     - if ! asdf | grep version; then git clone https://github.com/HashNuke/asdf.git ~/.asdf; fi
     - if ! asdf plugin-list | grep erlang; then asdf plugin-add erlang https://github.com/HashNuke/asdf-erlang.git; fi
     - if ! asdf plugin-list | grep elixir; then asdf plugin-add elixir https://github.com/HashNuke/asdf-elixir.git; fi
@@ -24,9 +31,14 @@ dependencies:
         timeout: 3600
     - awk '/elixir/ { print $2 }' .tool-versions | xargs asdf install elixir:
         timeout: 3600
+  override:
     - yes | mix do deps.get, local.rebar, deps.compile, compile
     - cd assets && npm install && cd ..
-
+  cache_directories:
+    - ~/.asdf
+    - _build
+    - deps
+    - assets/node_modules
 
 test:
   pre:

@@ -17,3 +17,7 @@ config :explorer, Explorer.Repo,
   database: "explorer_test",
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
+
+config :wallaby,
+  screenshot_on_failure: true,
+  chrome: [headless: false]
