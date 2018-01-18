@@ -6,11 +6,12 @@ defmodule ExplorerWeb.FeatureCase do
       use Wallaby.DSL
 
       alias Explorer.Repo
+
       import Ecto
       import Ecto.Changeset
       import Ecto.Query
-
       import ExplorerWeb.Router.Helpers
+      import Explorer.Factory
     end
   end
 

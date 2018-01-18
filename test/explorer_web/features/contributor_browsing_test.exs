@@ -12,4 +12,12 @@ defmodule ExplorerWeb.UserListTest do
     |> click(@logo)
     |> assert_has(css("main", text: "Welcome to our blockchain explorer."))
   end
+
+  test "views blocks on the home page", %{session: session} do
+    insert_list(5, :block, %{number: 4})
+    session
+    |> visit("/")
+    |> assert_has(css(".blocks__title", text: "Blocks"))
+    |> assert_has(css(".blocks__row", count: 5, text: "4"))
+  end
 end

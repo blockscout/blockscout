@@ -18,3 +18,7 @@ msgstr ""
 #: lib/explorer_web/templates/page/index.html.eex:1
 msgid "explorer-welcome"
 msgstr ""
+
+#: lib/explorer_web/templates/page/index.html.eex:2
+msgid "blocks-title"
+msgstr ""

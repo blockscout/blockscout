@@ -1,1 +1,8 @@
 <div><%= gettext "explorer-welcome" %></div>
+
+<div class="blocks">
+  <div class="blocks__title"><%= gettext "blocks-title" %></div>
+  <%= for block <- @blocks do %>
+    <div class="blocks__row"><%= block.number %></div>
+  <% end %>
+</div>
