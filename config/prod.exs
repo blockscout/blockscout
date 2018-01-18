@@ -30,3 +30,10 @@ config :explorer, Explorer.Repo,
   url: System.get_env("DATABASE_URL"),
   pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
   ssl: true
+
+config :explorer, ExplorerWeb.Endpoint,
+  instrumenters: [NewRelixir.Instrumenters.Phoenix],
+
+config :new_relixir,
+  application_name: System.get_env("NEW_RELIC_APP_NAME"),
+  license_key: System.get_env("NEW_RELIC_LICENSE_KEY")

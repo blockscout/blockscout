@@ -29,7 +29,7 @@ defmodule Explorer.Mixfile do
   defp elixirc_paths(_),     do: ["lib"]
 
   # Specifies extra applications to start per environment
-  defp extra_applications(:prod), do: [:logger, :runtime_tools, :phoenix_pubsub_redis]
+  defp extra_applications(:prod), do: [:logger, :runtime_tools, :phoenix_pubsub_redis, :new_relixir]
   defp extra_applications(_), do: [:logger, :runtime_tools]
 
   # Specifies your project dependencies.
@@ -42,6 +42,7 @@ defmodule Explorer.Mixfile do
       {:ex_machina, "~> 2.1", only: [:test]},
       {:gettext, "~> 0.11"},
       {:junit_formatter, ">= 0.0.0"},
+      {:new_relixir, "~> 0.4.0", only: [:prod]},
       {:phoenix, "~> 1.3.0"},
       {:phoenix_ecto, "~> 3.2"},
       {:phoenix_html, "~> 2.10"},
