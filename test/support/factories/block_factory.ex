@@ -3,16 +3,16 @@ defmodule Explorer.BlockFactory do
     quote do
       def block_factory do
         %Explorer.Block{
-          number: 1,
-          hash: "0x0",
-          parent_hash: "0x0",
-          nonce: "1",
-          miner: "0x0",
-          difficulty: 1,
-          total_difficulty: 1,
-          size: 0,
-          gas_limit: 0,
-          gas_used: 0,
+          number: sequence(""),
+          hash: sequence("0x"),
+          parent_hash: sequence("0x"),
+          nonce: sequence(""),
+          miner: sequence("0x"),
+          difficulty: Enum.random(1..100_000),
+          total_difficulty: Enum.random(1..100_000),
+          size: Enum.random(1..100_000),
+          gas_limit: Enum.random(1..100_000),
+          gas_used: Enum.random(1..100_000),
           timestamp: DateTime.utc_now,
         }
       end

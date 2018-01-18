@@ -23,6 +23,8 @@ defmodule ExplorerWeb.ConnCase do
 
       # The default endpoint for testing
       @endpoint ExplorerWeb.Endpoint
+
+      import Explorer.Factory
     end
   end
 
