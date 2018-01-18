@@ -7,6 +7,7 @@ defmodule ExplorerWeb.Router do
     plug :fetch_flash
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug SetLocale, gettext: ExplorerWeb.Gettext, default_locale: "en"
   end
 
   pipeline :api do
@@ -14,13 +15,12 @@ defmodule ExplorerWeb.Router do
   end
 
   scope "/", ExplorerWeb do
-    pipe_through :browser # Use the default browser stack
-
-    get "/", PageController, :index
+    pipe_through :browser
+    get "/", PageController, :dummy
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", ExplorerWeb do
-  #   pipe_through :api
-  # end
+  scope "/:locale", ExplorerWeb do
+    pipe_through :browser # Use the default browser stack
+    get "/", PageController, :index
+  end
 end

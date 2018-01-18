@@ -6,8 +6,10 @@ defmodule ExplorerWeb.UserListTest do
   @logo css("img.header__logo")
 
   test "browses the home page", %{session: session} do
+    session |> visit("/")
+    assert current_path(session) == "/en"
+
     session
-    |> visit("/")
     |> assert_has(css(".header__title", text: "POA Network Explorer"))
     |> click(@logo)
     |> assert_has(css("main", text: "Welcome to our blockchain explorer."))

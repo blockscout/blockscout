@@ -9,6 +9,9 @@ use Mix.Config
 config :explorer,
   ecto_repos: [Explorer.Repo]
 
+# Configures gettext
+config :explorer, ExplorerWeb.Gettext, locales: ~w(en), default_locale: "en"
+
 # Configures the endpoint
 config :explorer, ExplorerWeb.Endpoint,
   url: [host: "localhost"],
