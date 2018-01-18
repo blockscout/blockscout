@@ -3,6 +3,10 @@
 <div class="blocks">
   <div class="blocks__title"><%= gettext "blocks-title" %></div>
   <%= for block <- @blocks do %>
-    <div class="blocks__row"><%= block.number %></div>
+    <div class="blocks__row">
+      <div class="blocks__column--number"><%= block.number %></div>
+      <div class="blocks__column--gas-used"><%= block.gas_used %></div>
+      <div class="blocks__column--validated-at"><%= block.timestamp |> Timex.from_now %></div>
+    </div>
   <% end %>
 </div>

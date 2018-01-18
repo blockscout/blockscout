@@ -7,6 +7,8 @@ defmodule Explorer.Block do
 
   @required_attrs ~w(number hash parent_hash nonce miner difficulty
                      total_difficulty size gas_limit gas_used timestamp)a
+  @timestamps_opts [type: Timex.Ecto.DateTime,
+                    autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}]
 
   schema "blocks" do
     field :number, :integer
@@ -19,7 +21,7 @@ defmodule Explorer.Block do
     field :size, :integer
     field :gas_limit, :integer
     field :gas_used, :integer
-    field :timestamp, :utc_datetime
+    field :timestamp, Timex.Ecto.DateTime
     timestamps()
 
     has_many :transactions, Explorer.Transaction

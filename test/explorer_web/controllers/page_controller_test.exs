@@ -15,9 +15,9 @@ defmodule ExplorerWeb.PageControllerTest do
     end
 
     test "returns a block", %{conn: conn} do
-      block = insert(:block, %{number: 23})
+      insert(:block, %{number: 23})
       conn = get conn, "/en"
-      assert(List.first(conn.assigns.blocks) == block)
+      assert(List.first(conn.assigns.blocks).number == 23)
     end
 
     test "excludes all but the most recent five blocks", %{conn: conn} do

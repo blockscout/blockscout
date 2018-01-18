@@ -6,7 +6,7 @@ defmodule ExplorerWeb.PageController do
 
   def index(conn, _params) do
     blocks = Block
-      |> order_by(desc: :inserted_at)
+      |> order_by(desc: :number)
       |> limit(5)
       |> Repo.all
 

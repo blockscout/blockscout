@@ -29,8 +29,8 @@ defmodule Explorer.Mixfile do
   defp elixirc_paths(_),     do: ["lib"]
 
   # Specifies extra applications to start per environment
-  defp extra_applications(:prod), do: [:set_locale, :logger, :runtime_tools, :phoenix_pubsub_redis, :new_relixir]
-  defp extra_applications(_), do: [:set_locale, :logger, :runtime_tools]
+  defp extra_applications(:prod), do: [:timex, :timex_ecto, :set_locale, :logger, :runtime_tools, :phoenix_pubsub_redis, :new_relixir]
+  defp extra_applications(_), do: [:timex, :timex_ecto, :set_locale, :logger, :runtime_tools]
 
   # Specifies your project dependencies.
   #
@@ -51,6 +51,8 @@ defmodule Explorer.Mixfile do
       {:phoenix_pubsub_redis, "~> 2.1.0", only: [:prod]},
       {:postgrex, ">= 0.0.0"},
       {:set_locale, github: "minifast/set_locale", branch: "master"}, # Waiting on https://github.com/smeevil/set_locale/pull/9
+      {:timex, "~> 3.1.24"},
+      {:timex_ecto, "~> 3.2.1"},
       {:wallaby, "~> 0.19.2", only: [:test], runtime: false},
     ]
   end

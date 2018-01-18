@@ -16,10 +16,13 @@ defmodule ExplorerWeb.UserListTest do
   end
 
   test "views blocks on the home page", %{session: session} do
-    insert_list(5, :block, %{number: 4})
+    insert_list(5, :block, %{number: 4, gas_used: 10, timestamp: Timex.now |> Timex.shift(hours: -1)})
+
     session
-    |> visit("/")
+    |> visit("/en")
     |> assert_has(css(".blocks__title", text: "Blocks"))
-    |> assert_has(css(".blocks__row", count: 5, text: "4"))
+    |> assert_has(css(".blocks__column--number", count: 5, text: "4"))
+    |> assert_has(css(".blocks__column--validated-at", count: 5, text: "1 hour ago"))
+    |> assert_has(css(".blocks__column--gas-used", count: 5, text: "10"))
   end
 end

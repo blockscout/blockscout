@@ -5,6 +5,9 @@ defmodule Explorer.Transaction do
   import Ecto.Changeset
   alias Explorer.Transaction
 
+  @timestamps_opts [type: Timex.Ecto.DateTime,
+                    autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}]
+
   schema "transactions" do
     field :hash, :string
     timestamps()
