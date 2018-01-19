@@ -18,6 +18,8 @@ defmodule Explorer.DataCase do
     quote do
       alias Explorer.Repo
 
+      use ExVCR.Mock, adapter: ExVCR.Adapter.Hackney
+
       import Ecto
       import Ecto.Changeset
       import Ecto.Query
@@ -27,6 +29,8 @@ defmodule Explorer.DataCase do
   end
 
   setup tags do
+    ExVCR.Config.cassette_library_dir("test/support/fixture/vcr_cassettes")
+
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo)
 
     unless tags[:async] do

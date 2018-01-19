@@ -22,7 +22,7 @@ This is a tool for inspecting and analyzing the POA Network blockchain.
 
 To get POA Explorer up and running locally:
 
-  * Set up some default configuration with: `$ cp config/dev.secrets.esx.example config/dev.secrets.esx`
+  * Set up some default configuration with: `$ cp config/dev.secret.esx.example config/dev.secret.esx`
   * Install dependencies with `$ mix do deps.get, local.rebar, deps.compile, compile`
   * Create and migrate your database with `$ mix ecto.create && mix ecto.migrate`
   * Install Node.js dependencies with `$ cd assets && npm install && cd ..`
@@ -38,10 +38,9 @@ Configure your local CCMenu with the following url: [`https://circleci.com/gh/po
 
 ### Testing
 
-To run the test suite: `$ mix test`
-
-To ensure your Elixir code is properly formatted: `$ mix credo --strict`
-To ensure your ES code is properly formatted: `$ cd assets && npm run eslint`
+  * Run the test suite: `$ mix test`
+  * Ensure your Elixir code is properly formatted: `$ mix credo --strict`
+  * Ensure your ES code is properly formatted: `$ cd assets && npm run eslint`
 
 
 ## Internationalization

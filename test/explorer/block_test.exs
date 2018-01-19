@@ -4,6 +4,11 @@ defmodule Explorer.BlockTest do
   alias Explorer.Block
 
   describe "changeset/2" do
+    test "with valid attributes" do
+      changeset = build(:block) |> Block.changeset(%{})
+      assert(changeset.valid?)
+    end
+
     test "with invalid attributes" do
       changeset = %Block{} |> Block.changeset(%{racecar: "yellow ham"})
       refute(changeset.valid?)

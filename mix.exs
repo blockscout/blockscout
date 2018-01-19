@@ -43,6 +43,7 @@ defmodule Explorer.Mixfile do
       {:credo, "~> 0.8", only: [:dev, :test], runtime: false},
       {:ethereumex, github: "exthereum/ethereumex", commit: "262f1d81ae163ffb46e127283658249dac1c8318"}, # Waiting for this version to be pushed to Hex.
       {:ex_machina, "~> 2.1", only: [:test]},
+      {:exvcr, "~> 0.8", only: :test},
       {:gettext, "~> 0.11"},
       {:junit_formatter, ">= 0.0.0"},
       {:new_relixir, "~> 0.4.0", only: [:prod]},
