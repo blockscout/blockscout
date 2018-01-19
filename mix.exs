@@ -29,8 +29,8 @@ defmodule Explorer.Mixfile do
   defp elixirc_paths(_),     do: ["lib"]
 
   # Specifies extra applications to start per environment
-  defp extra_applications(:prod), do: [:timex, :timex_ecto, :set_locale, :logger, :runtime_tools, :phoenix_pubsub_redis, :new_relixir]
-  defp extra_applications(_), do: [:timex, :timex_ecto, :set_locale, :logger, :runtime_tools]
+  defp extra_applications(:prod), do: [:ethereumex, :timex, :timex_ecto, :set_locale, :logger, :runtime_tools, :phoenix_pubsub_redis, :new_relixir]
+  defp extra_applications(_), do: [:ethereumex, :timex, :timex_ecto, :set_locale, :logger, :runtime_tools]
 
   # Specifies your project dependencies.
   #
@@ -39,6 +39,7 @@ defmodule Explorer.Mixfile do
     [
       {:cowboy, "~> 1.0"},
       {:credo, "~> 0.8", only: [:dev, :test], runtime: false},
+      {:ethereumex, github: "exthereum/ethereumex", commit: "262f1d81ae163ffb46e127283658249dac1c8318"}, # Waiting for this version to be pushed to Hex.
       {:ex_machina, "~> 2.1", only: [:test]},
       {:gettext, "~> 0.11"},
       {:junit_formatter, ">= 0.0.0"},
