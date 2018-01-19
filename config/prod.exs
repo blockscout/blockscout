@@ -35,3 +35,8 @@ config :explorer, Explorer.Repo,
 config :new_relixir,
   application_name: System.get_env("NEW_RELIC_APP_NAME"),
   license_key: System.get_env("NEW_RELIC_LICENSE_KEY")
+
+config :ethereumex,
+  scheme: System.get_env("ETHEREUM_SCHEME"),
+  host: System.get_env("ETHEREUM_HOST"),
+  port: System.get_env("ETHEREUM_PORT")

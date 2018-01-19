@@ -22,6 +22,7 @@ This is a tool for inspecting and analyzing the POA Network blockchain.
 
 To get POA Explorer up and running locally:
 
+  * Set up some default configuration with: `$ cp config/dev.secrets.esx.example config/dev.secrets.esx`
   * Install dependencies with `$ mix do deps.get, local.rebar, deps.compile, compile`
   * Create and migrate your database with `$ mix ecto.create && mix ecto.migrate`
   * Install Node.js dependencies with `$ cd assets && npm install && cd ..`

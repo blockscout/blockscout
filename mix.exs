@@ -25,12 +25,14 @@ defmodule Explorer.Mixfile do
   end
 
   # Specifies which paths to compile per environment.
-  defp elixirc_paths(:test), do: ["lib", "test/support"]
-  defp elixirc_paths(_),     do: ["lib"]
+  defp elixirc_paths(:test), do: ["test/support" | elixirc_paths()]
+  defp elixirc_paths(_),     do: elixirc_paths()
+  defp elixirc_paths,        do: ["lib"]
 
   # Specifies extra applications to start per environment
-  defp extra_applications(:prod), do: [:ethereumex, :timex, :timex_ecto, :set_locale, :logger, :runtime_tools, :phoenix_pubsub_redis, :new_relixir]
-  defp extra_applications(_), do: [:ethereumex, :timex, :timex_ecto, :set_locale, :logger, :runtime_tools]
+  defp extra_applications(:prod), do: [:phoenix_pubsub_redis, :new_relixir | extra_applications()]
+  defp extra_applications(_), do: extra_applications()
+  defp extra_applications, do: [:ethereumex, :timex, :timex_ecto, :set_locale, :logger, :runtime_tools]
 
   # Specifies your project dependencies.
   #

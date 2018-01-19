@@ -4,6 +4,7 @@ use Mix.Config
 # you can enable the server option below.
 config :explorer, ExplorerWeb.Endpoint,
   http: [port: 4001],
+  secret_key_base: "27Swe6KtEtmN37WyEYRjKWyxYULNtrxlkCEKur4qoV+Lwtk8lafsR16ifz1XBBYj",
   server: true
 
 config :explorer, :sql_sandbox, true
@@ -18,6 +19,13 @@ config :explorer, Explorer.Repo,
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
 
+# Configure wallaby
 config :wallaby,
   screenshot_on_failure: true,
   chrome: [headless: false]
+
+# Configure ethereumex
+config :ethereumex,
+  scheme: "https",
+  host: "sokol.poa.network",
+  port: 443
