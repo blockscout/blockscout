@@ -31,10 +31,10 @@ defmodule Mix.Tasks.Scrape do
       parent_hash: "0x0",
       nonce: "0",
       miner: "0x0",
-      difficulty: "0",
-      total_difficulty: "0",
-      size: "0",
-      gas_limit: "0",
+      difficulty: 0,
+      total_difficulty: 0,
+      size: 0,
+      gas_limit: 0,
     }
   end
 

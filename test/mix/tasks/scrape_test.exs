@@ -12,6 +12,6 @@ defmodule Scrape.Test do
       |> Repo.all
       |> List.first
 
-    assert(last_block.height)
+    assert(last_block.number)
   end
 end

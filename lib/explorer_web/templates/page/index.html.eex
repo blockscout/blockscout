@@ -2,11 +2,22 @@
 
 <div class="blocks">
   <div class="blocks__title"><%= gettext "blocks-title" %></div>
-  <%= for block <- @blocks do %>
-    <div class="blocks__row">
-      <div class="blocks__column--number"><%= block.number %></div>
-      <div class="blocks__column--gas-used"><%= block.gas_used %></div>
-      <div class="blocks__column--validated-at"><%= block.timestamp |> Timex.from_now %></div>
-    </div>
-  <% end %>
+  <table class="blocks__table">
+    <thead class="blocks__header">
+      <tr>
+        <th><%= gettext "Height" %></th>
+        <th><%= gettext "Age" %></th>
+        <th><%= gettext "Gas Used" %></th>
+      </tr>
+    </thead>
+    <tbody>
+      <%= for block <- @blocks do %>
+        <tr class="blocks__row">
+          <td class="blocks__column--height"><%= block.number %></td>
+          <td class="blocks__column--age"><%= block.timestamp |> Timex.from_now %></td>
+          <td class="blocks__column--gas-used"><%= block.gas_used %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
 </div>

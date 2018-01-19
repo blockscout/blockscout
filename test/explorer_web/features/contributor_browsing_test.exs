@@ -21,8 +21,8 @@ defmodule ExplorerWeb.UserListTest do
     session
     |> visit("/en")
     |> assert_has(css(".blocks__title", text: "Blocks"))
-    |> assert_has(css(".blocks__column--number", count: 5, text: "4"))
-    |> assert_has(css(".blocks__column--validated-at", count: 5, text: "1 hour ago"))
+    |> assert_has(css(".blocks__column--height", count: 5, text: "4"))
+    |> assert_has(css(".blocks__column--age", count: 5, text: "1 hour ago"))
     |> assert_has(css(".blocks__column--gas-used", count: 5, text: "10"))
   end
 end

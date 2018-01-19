@@ -19,6 +19,18 @@ msgstr ""
 msgid "explorer-welcome"
 msgstr ""
 
-#: lib/explorer_web/templates/page/index.html.eex:2
+#: lib/explorer_web/templates/page/index.html.eex:4
 msgid "blocks-title"
+msgstr ""
+
+#: lib/explorer_web/templates/page/index.html.eex:9
+msgid "Gas Used"
+msgstr ""
+
+#: lib/explorer_web/templates/page/index.html.eex:8
+msgid "Height"
+msgstr ""
+
+#: lib/explorer_web/templates/page/index.html.eex:10
+msgid "Validated"
 msgstr ""

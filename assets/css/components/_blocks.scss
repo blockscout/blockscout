@@ -1,9 +1,9 @@
 .blocks {
-  @extend .table;
+  &__title {
+    @extend h2;
+  }
 
-  text-align: left;
-
-  td {
-    padding-right: 4em;
+  &__table {
+    @extend .table;
   }
 }

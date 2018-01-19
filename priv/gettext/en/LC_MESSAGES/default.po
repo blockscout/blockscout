@@ -19,6 +19,18 @@ msgstr "POA Network Explorer"
 msgid "explorer-welcome"
 msgstr "Welcome to our blockchain explorer."
 
-#: lib/explorer_web/templates/page/index.html.eex:2
+#: lib/explorer_web/templates/page/index.html.eex:4
 msgid "blocks-title"
 msgstr "Blocks"
+
+#: lib/explorer_web/templates/page/index.html.eex:9
+msgid "Gas Used"
+msgstr "Gas Used"
+
+#: lib/explorer_web/templates/page/index.html.eex:8
+msgid "Height"
+msgstr "Height"
+
+#: lib/explorer_web/templates/page/index.html.eex:10
+msgid "Age"
+msgstr "Age"
