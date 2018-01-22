@@ -32,11 +32,19 @@ config :explorer, Explorer.Repo,
   pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
   ssl: true
 
+# Configure New Relic
 config :new_relixir,
   application_name: System.get_env("NEW_RELIC_APP_NAME"),
   license_key: System.get_env("NEW_RELIC_LICENSE_KEY")
 
+# Configure Web3
 config :ethereumex,
   scheme: System.get_env("ETHEREUM_SCHEME"),
   host: System.get_env("ETHEREUM_HOST"),
   port: System.get_env("ETHEREUM_PORT")
+
+# Configure Quantum
+config :explorer, Explorer.Scheduler,
+  jobs: [
+    {"@secondly", {Mix.Tasks.Scrape, :run, [[]]}}
+  ]

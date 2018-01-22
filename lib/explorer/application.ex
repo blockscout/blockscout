@@ -17,7 +17,7 @@ defmodule Explorer.Application do
       # Start the endpoint when the application starts
       supervisor(ExplorerWeb.Endpoint, []),
       # Start your own worker by calling: Explorer.Worker.start_link(a, b, c)
-      # worker(Explorer.Worker, [a, b, c]),
+      worker(Explorer.Scheduler, []),
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

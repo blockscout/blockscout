@@ -54,6 +54,7 @@ defmodule Explorer.Mixfile do
       {:phoenix_pubsub, "~> 1.0"},
       {:phoenix_pubsub_redis, "~> 2.1.0", only: [:prod]},
       {:postgrex, ">= 0.0.0"},
+      {:quantum, "~> 2.2.1"},
       {:set_locale, github: "minifast/set_locale", branch: "master"}, # Waiting on https://github.com/smeevil/set_locale/pull/9
       {:sobelow, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:timex, "~> 3.1.24"},

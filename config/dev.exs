@@ -55,4 +55,10 @@ config :explorer, Explorer.Repo,
   hostname: "localhost",
   pool_size: 10
 
+# Configure Quantum
+config :explorer, Explorer.Scheduler,
+  jobs: [
+    {"* * * * *", {Mix.Tasks.Scrape, :run, [:ok]}},
+  ]
+
 import_config "dev.secret.exs"
