@@ -6,7 +6,13 @@ defmodule ExplorerWeb.Router do
     plug :fetch_session
     plug :fetch_flash
     plug :protect_from_forgery
-    plug :put_secure_browser_headers
+    plug :put_secure_browser_headers, %{
+      "content-security-policy" => "\
+        default-src 'self';\
+        script-src 'self' 'unsafe-inline' 'unsafe-eval';\
+        style-src 'self' 'unsafe-inline' 'unsafe-eval'\
+      "
+    }
     plug SetLocale, gettext: ExplorerWeb.Gettext, default_locale: "en"
   end
 

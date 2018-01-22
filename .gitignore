@@ -28,3 +28,6 @@ npm-debug.log
 
 # Wallaby screenshots
 screenshots/
+
+# Sobelow
+.sobelow

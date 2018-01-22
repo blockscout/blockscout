@@ -42,7 +42,8 @@ dependencies:
 
 test:
   pre:
-    - mix credo --strict
+    - mix credo
+    - mix sobelow --private --compact --exit Low
     - cd assets && npm run eslint -- --format=junit --output-file="$CIRCLE_TEST_REPORTS/eslint/junit.xml" && cd ..
   override:
     - mix test

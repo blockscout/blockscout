@@ -1,0 +1,10 @@
+[
+  verbose: false,
+  private: true,
+  skip: false,
+  router: "",
+  exit: "low",
+  format: "compact",
+  ignore: [""],
+  ignore_files: [""]
+]
