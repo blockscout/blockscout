@@ -5,8 +5,8 @@ defmodule Explorer.Fetcher  do
 
   @moduledoc false
 
-  def fetch(block) do
-    block
+  def fetch(block_number) do
+    block_number
     |> download_block
     |> extract_block
     |> validate_block
@@ -19,7 +19,7 @@ defmodule Explorer.Fetcher  do
   end
 
   def extract_block(block) do
-    %Block{
+    %{
       hash: block["hash"],
       number: block["number"] |> decode_integer_field,
       gas_used: block["gasUsed"] |> decode_integer_field,
@@ -34,8 +34,8 @@ defmodule Explorer.Fetcher  do
     }
   end
 
-  def validate_block(struct) do
-    Block.changeset(struct, %{})
+  def validate_block(attrs) do
+    Block.changeset(%Block{}, attrs)
   end
 
   def decode_integer_field(hex) do

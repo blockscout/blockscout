@@ -30,23 +30,22 @@ defmodule Explorer.FetcherTest do
   end
 
   describe "extract_block/1" do
-    def raw_block(nonce \\ %{}) do
-      Map.merge(%{
-        "difficulty" => "0xfffffffffffffffffffffffffffffffe",
-        "gasLimit" => "0x02",
-        "gasUsed" => "0x19522",
-        "hash" => "bananas",
-        "miner" => "0xdb1207770e0a4258d7a4ce49ab037f92564fea85",
-        "number" => "0x7f2fb",
-        "parentHash" => "0x70029f66ea5a3b2b1ede95079d95a2ab74b649b5b17cdcf6f29b6317e7c7efa6",
-        "size" => "0x10",
-        "timestamp" => "0x12",
-        "totalDifficulty" => "0xff",
-      }, nonce)
-    end
+    @raw_block %{
+      "difficulty" => "0xfffffffffffffffffffffffffffffffe",
+      "gasLimit" => "0x02",
+      "gasUsed" => "0x19522",
+      "hash" => "bananas",
+      "miner" => "0xdb1207770e0a4258d7a4ce49ab037f92564fea85",
+      "number" => "0x7f2fb",
+      "parentHash" => "0x70029f66ea5a3b2b1ede95079d95a2ab74b649b5b17cdcf6f29b6317e7c7efa6",
+      "size" => "0x10",
+      "timestamp" => "0x12",
+      "totalDifficulty" => "0xff",
+      "nonce" => nil
+    }
 
     test "returns the struct of a block" do
-      processed_block = %Block{
+      processed_block = %{
         difficulty: 340282366920938463463374607431768211454,
         gas_limit: 2,
         gas_used: 103714,
@@ -59,11 +58,11 @@ defmodule Explorer.FetcherTest do
         timestamp: Timex.parse!("1970-01-01T00:00:18-00:00", "{ISO:Extended}"),
         total_difficulty: 255,
       }
-      assert Fetcher.extract_block(raw_block(%{"nonce" => "0xfb6e1a62d119228b"})) == processed_block
+      assert Fetcher.extract_block(%{@raw_block | "nonce" => "0xfb6e1a62d119228b"}) == processed_block
     end
 
     test "when there is no nonce" do
-      assert Fetcher.extract_block(raw_block()).nonce == "0"
+      assert Fetcher.extract_block(@raw_block).nonce == "0"
     end
   end
 
