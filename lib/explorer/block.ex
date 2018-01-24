@@ -5,8 +5,6 @@ defmodule Explorer.Block do
   import Ecto.Changeset
   alias Explorer.Block
 
-  @required_attrs ~w(number hash parent_hash nonce miner difficulty
-                     total_difficulty size gas_limit gas_used timestamp)a
   @timestamps_opts [type: Timex.Ecto.DateTime,
                     autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}]
 
@@ -27,10 +25,14 @@ defmodule Explorer.Block do
     has_many :transactions, Explorer.Transaction
   end
 
+  @required_attrs ~w(number hash parent_hash nonce miner difficulty
+                     total_difficulty size gas_limit gas_used timestamp)a
+  @optional_attrs ~w()a
+
   @doc false
   def changeset(%Block{} = block, attrs) do
     block
-    |> cast(attrs, @required_attrs)
+    |> cast(attrs, @required_attrs, @optional_attrs)
     |> validate_required(@required_attrs)
     |> update_change(:hash, &String.downcase/1)
     |> unique_constraint(:hash)
