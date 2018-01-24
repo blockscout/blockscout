@@ -15,11 +15,14 @@ defmodule Explorer.Transaction do
     belongs_to :block, Explorer.Block
   end
 
+  @required_attrs ~w(hash)a
+  @optional_attrs ~w()a
+
   @doc false
-  def changeset(%Transaction{} = block, attrs) do
-    block
-    |> cast(attrs, [:block_id, :hash])
-    |> validate_required([:block_id, :hash])
+  def changeset(%Transaction{} = transaction, attrs \\ :empty) do
+    transaction
+    |> cast(attrs, [:block_id | @required_attrs], @optional_attrs)
+    |> validate_required(@required_attrs)
     |> foreign_key_constraint(:block_id)
     |> update_change(:hash, &String.downcase/1)
     |> unique_constraint(:hash)
