@@ -4,12 +4,14 @@ defmodule ExplorerWeb.PageController do
   alias Explorer.Block
   alias Explorer.Transaction
   alias Explorer.Repo
+  alias Explorer.BlockForm
 
   def index(conn, _params) do
     blocks = Block
       |> order_by(desc: :number)
       |> limit(5)
       |> Repo.all
+      |> Enum.map(&BlockForm.build/1)
 
     transactions = Transaction
       |> join(:left, [t, b], b in assoc(t, :block))

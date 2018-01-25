@@ -28,25 +28,25 @@ defmodule ExplorerWeb.PageControllerTest do
     end
 
     test "returns a transaction", %{conn: conn} do
-      block = insert(:block)
+      block = insert(:block, number: 33)
       insert(:transaction, hash: "0xDECAFBAD", block: block)
       conn = get conn, "/en"
 
       assert(List.first(conn.assigns.transactions).hash == "0xDECAFBAD")
-      assert(List.first(conn.assigns.transactions).block == block)
+      assert(List.first(conn.assigns.transactions).block.number == 33)
     end
 
     test "returns only the five most recent transactions", %{conn: conn} do
-      block_mined_today = insert(:block, timestamp: Timex.now |> Timex.shift(hours: -2))
-      recently_mined_transaction = insert(:transaction, inserted_at: Timex.now |> Timex.shift(hours: -1), block: block_mined_today)
+      block_mined_today = insert(:block, timestamp: Timex.now |> Timex.shift(hours: -1))
+      insert(:transaction, hash: "0xStuff", inserted_at: Timex.now |> Timex.shift(hours: -1), block: block_mined_today)
 
       block_mined_last_week = insert(:block, timestamp: Timex.now |> Timex.shift(weeks: -1))
-      insert_list(5, :transaction, inserted_at: Timex.now, block: block_mined_last_week)
+      insert_list(5, :transaction, block: block_mined_last_week)
 
       conn = get conn, "/en"
 
-      assert(Enum.count(conn.assigns.transactions) == 5)
-      assert(Enum.member?(conn.assigns.transactions, recently_mined_transaction))
+      assert Enum.count(conn.assigns.transactions) == 5
+      assert List.first(conn.assigns.transactions).hash == "0xStuff"
     end
   end
 end

@@ -16,12 +16,16 @@ defmodule ExplorerWeb.UserListTest do
   end
 
   test "views blocks on the home page", %{session: session} do
-    insert_list(5, :block, %{number: 4, gas_used: 10, timestamp: Timex.now |> Timex.shift(hours: -1)})
+    insert_list(4, :block, %{number: 1, timestamp: Timex.now |> Timex.shift(hours: -1), gas_used: 10})
+    fifth_block = insert(:block, %{number: 1, timestamp: Timex.now |> Timex.shift(hours: -1), gas_used: 10})
+    insert_list(3, :transaction, block: fifth_block)
 
     session
     |> visit("/en")
     |> assert_has(css(".blocks__title", text: "Blocks"))
-    |> assert_has(css(".blocks__column--height", count: 5, text: "4"))
+    |> assert_has(css(".blocks__column--height", count: 5, text: "1"))
+    |> assert_has(css(".blocks__column--transactions_count", count: 5))
+    |> assert_has(css(".blocks__column--transactions_count", count: 1, text: "3"))
     |> assert_has(css(".blocks__column--age", count: 5, text: "1 hour ago"))
     |> assert_has(css(".blocks__column--gas-used", count: 5, text: "10"))
   end
