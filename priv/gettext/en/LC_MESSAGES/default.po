@@ -23,7 +23,7 @@ msgstr "Welcome to our blockchain explorer."
 msgid "blocks-title"
 msgstr "Blocks"
 
-#: lib/explorer_web/templates/page/index.html.eex:9
+#: lib/explorer_web/templates/page/index.html.eex:10
 msgid "Gas Used"
 msgstr "Gas Used"
 
@@ -32,5 +32,17 @@ msgid "Height"
 msgstr "Height"
 
 #: lib/explorer_web/templates/page/index.html.eex:10
+msgid "Validated"
+msgstr "Validated"
+
+#: lib/explorer_web/templates/page/index.html.eex:9
 msgid "Age"
 msgstr "Age"
+
+#: lib/explorer_web/templates/page/index.html.eex:30
+msgid "Hash"
+msgstr "Hash"
+
+#: lib/explorer_web/templates/page/index.html.eex:26
+msgid "Transactions"
+msgstr "Transactions"

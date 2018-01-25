@@ -23,7 +23,7 @@ msgstr ""
 msgid "blocks-title"
 msgstr ""
 
-#: lib/explorer_web/templates/page/index.html.eex:9
+#: lib/explorer_web/templates/page/index.html.eex:10
 msgid "Gas Used"
 msgstr ""
 
@@ -33,4 +33,16 @@ msgstr ""
 
 #: lib/explorer_web/templates/page/index.html.eex:10
 msgid "Validated"
+msgstr ""
+
+#: lib/explorer_web/templates/page/index.html.eex:9
+msgid "Age"
+msgstr ""
+
+#: lib/explorer_web/templates/page/index.html.eex:30
+msgid "Hash"
+msgstr ""
+
+#: lib/explorer_web/templates/page/index.html.eex:26
+msgid "Transactions"
 msgstr ""

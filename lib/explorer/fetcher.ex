@@ -31,11 +31,23 @@ defmodule Explorer.Fetcher  do
       size: block["size"] |> decode_integer_field,
       gas_limit: block["gasLimit"] |> decode_integer_field,
       nonce: block["nonce"] || "0",
+      transactions: block["transactions"] |> extract_transactions,
     }
   end
 
-  def validate_block(attrs) do
-    Block.changeset(%Block{}, attrs)
+  def extract_transactions(transactions) do
+    transactions |> Enum.map(&extract_transaction/1)
+  end
+
+  def extract_transaction(transaction) do
+    %{
+      hash: transaction["hash"],
+      value: transaction["value"] |> decode_integer_field,
+    }
+  end
+
+  def validate_block(block) do
+    Block.changeset(%Block{}, block)
   end
 
   def decode_integer_field(hex) do

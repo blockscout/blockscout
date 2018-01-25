@@ -21,3 +21,27 @@
     </tbody>
   </table>
 </div>
+
+<div class="transactions">
+  <div class="transactions__title"><%= gettext "Transactions" %></div>
+  <table class="transactions__table">
+    <thead class="transactions__header">
+      <tr>
+        <th><%= gettext "Hash" %></th>
+        <th><%= gettext "Block" %></th>
+        <th><%= gettext "Age" %></th>
+        <th><%= gettext "Value" %></th>
+      </tr>
+    </thead>
+    <tbody>
+      <%= for transaction <- @transactions do %>
+        <tr class="transactions__row">
+          <td class="transactions__column--hash"><%= transaction.hash %></td>
+          <td class="transactions__column--block"><%= transaction.block.number %></td>
+          <td class="transactions__column--age"><%= transaction.block.timestamp |> Timex.from_now %></td>
+          <td class="transactions__column--value"><%= transaction.value %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

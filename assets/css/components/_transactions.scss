@@ -1,0 +1,9 @@
+.transactions {
+  &__title {
+    @extend h2;
+  }
+
+  &__table {
+    @extend .table;
+  }
+}

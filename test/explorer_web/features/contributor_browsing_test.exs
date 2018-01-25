@@ -25,4 +25,16 @@ defmodule ExplorerWeb.UserListTest do
     |> assert_has(css(".blocks__column--age", count: 5, text: "1 hour ago"))
     |> assert_has(css(".blocks__column--gas-used", count: 5, text: "10"))
   end
+
+  test "views transactions on the home page", %{session: session} do
+    transaction_block = insert(:block, timestamp: Timex.now |> Timex.shift(hours: -2))
+    insert_list(5, :transaction, block: transaction_block)
+
+    session
+    |> visit("/en")
+    |> assert_has(css(".transactions__title", text: "Transactions"))
+    |> assert_has(css(".transactions__column--hash", count: 5))
+    |> assert_has(css(".transactions__column--value", count: 5))
+    |> assert_has(css(".transactions__column--age", count: 5, text: "2 hours ago"))
+  end
 end

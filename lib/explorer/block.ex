@@ -33,6 +33,7 @@ defmodule Explorer.Block do
   def changeset(%Block{} = block, attrs) do
     block
     |> cast(attrs, @required_attrs, @optional_attrs)
+    |> cast_assoc(:transactions)
     |> validate_required(@required_attrs)
     |> update_change(:hash, &String.downcase/1)
     |> unique_constraint(:hash)

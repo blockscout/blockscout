@@ -10,12 +10,13 @@ defmodule Explorer.Transaction do
 
   schema "transactions" do
     field :hash, :string
+    field :value, :decimal
     timestamps()
 
     belongs_to :block, Explorer.Block
   end
 
-  @required_attrs ~w(hash)a
+  @required_attrs ~w(hash value)a
   @optional_attrs ~w()a
 
   @doc false
