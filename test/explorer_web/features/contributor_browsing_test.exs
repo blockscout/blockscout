@@ -24,8 +24,8 @@ defmodule ExplorerWeb.UserListTest do
     |> visit("/en")
     |> assert_has(css(".blocks__title", text: "Blocks"))
     |> assert_has(css(".blocks__column--height", count: 5, text: "1"))
-    |> assert_has(css(".blocks__column--transactions_count", count: 5))
-    |> assert_has(css(".blocks__column--transactions_count", count: 1, text: "3"))
+    |> assert_has(css(".blocks__column--transactions-count", count: 5))
+    |> assert_has(css(".blocks__column--transactions-count", count: 1, text: "3"))
     |> assert_has(css(".blocks__column--age", count: 5, text: "1 hour ago"))
     |> assert_has(css(".blocks__column--gas-used", count: 5, text: "10"))
   end

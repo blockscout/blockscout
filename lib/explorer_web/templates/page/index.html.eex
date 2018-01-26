@@ -1,5 +1,5 @@
-<section class="container__section">
-  <div class="blocks">
+<section class="container__section container__section--partitioned">
+  <div class="blocks container__subsection">
     <div class="blocks__container blocks__container--title">
       <h2 class="blocks__title"><%= gettext "Blocks" %></h2>
     </div>
@@ -18,7 +18,7 @@
             <tr class="blocks__row">
               <td class="blocks__column blocks__column--height"><%= block.number %></td>
               <td class="blocks__column blocks__column--age"><%= block.age %></td>
-              <td class="blocks__column blocks__column--transactions_count"><%= block.transactions_count %></td>
+              <td class="blocks__column blocks__column--transactions-count"><%= block.transactions_count %></td>
               <td class="blocks__column blocks__column--gas-used"><%= block.gas_used %></td>
             </tr>
           <% end %>
@@ -26,8 +26,7 @@
       </table>
     </div>
   </div>
-
-  <div class="transactions">
+  <div class="transactions container__subsection">
     <div class="transactions__container transactions__container--title">
       <h2 class="transactions__title"><%= gettext "Transactions" %></h2>
     </div>
@@ -44,7 +43,9 @@
         <tbody>
           <%= for transaction <- @transactions do %>
             <tr class="transactions__row">
-              <td class="transactions__column transactions__column--hash"><%= transaction.hash %></td>
+              <td class="transactions__column transactions__column--hash">
+                <div class="transactions__hash" title="<%= transaction.hash %>"><%= transaction.hash %></div>
+              </td>
               <td class="transactions__column transactions__column--block"><%= transaction.block.number %></td>
               <td class="transactions__column transactions__column--age"><%= transaction.block.timestamp |> Timex.from_now %></td>
               <td class="transactions__column transactions__column--value"><%= transaction.value %></td>

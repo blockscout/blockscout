@@ -18,4 +18,23 @@
     @include explorer-typography("body1");
     color: explorer-color("slate", "100");
   }
+
+  &__hash {
+    width: explorer-size(2);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+}
+
+@media (min-width: $explorer-breakpoint-lg) {
+  .transactions {
+    &__hash { width: explorer-size(3); }
+  }
+}
+
+@media (min-width: $explorer-breakpoint-xl) {
+  .transactions {
+    &__hash { width: explorer-size(4); }
+  }
 }
