@@ -4,27 +4,17 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><%= gettext "explorer-title" %></title>
+    <title><%= gettext "POA Network Explorer" %></title>
     <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
   </head>
   <body>
-    <div class="container">
-      <header class="header">
-        <%=
-          static_path(@conn, "/images/logo.png")
-          |> img_tag(class: "header__logo")
-          |> link(to: ExplorerWeb.Endpoint.url())
-        %>
-        <div class="header__title"><%= gettext "explorer-title" %></div>
-      </header>
-
-      <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
-      <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
-
-      <main role="main">
-        <%= render @view_module, @view_template, assigns %>
-      </main>
-    </div>
+    <%= render ExplorerWeb.LayoutView, "_header.html", assigns %>
+    <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
+    <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
+    <main role="main" class="container">
+      <%= render @view_module, @view_template, assigns %>
+    </main>
+    <%= render ExplorerWeb.LayoutView, "_footer.html", assigns %>
     <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
   </body>
 </html>

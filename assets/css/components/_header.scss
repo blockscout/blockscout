@@ -1,10 +1,24 @@
 .header {
-  &__logo {
-    @extend .img-responsive;
-    width: 5em;
+  @extend %explorer-header-min-height;
+  background: explorer-color("gray", 900);
+
+  &__container {
+    width: 100%;
   }
 
-  &__title {
-    @extend h1;
+  &__row { vertical-align: middle; }
+  &__cell {
+    @extend %explorer-header-height;
+    &--logo { @extend %explorer-header-square-width; }
+  }
+  &__logo-link {
+    @extend %explorer-header-height;
+    @extend %explorer-header-square-width;
+    display: block;
+  }
+  &__logo {
+    @extend %explorer-header-height;
+    @extend %explorer-header-square-width;
+    display: block;
   }
 }

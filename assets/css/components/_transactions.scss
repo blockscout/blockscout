@@ -1,9 +1,21 @@
 .transactions {
+  @extend %paper;
+
+  &__container {
+    padding: explorer-size(-1) explorer-size(0);
+    & + & { padding-top: 0; }
+    &--title { padding-top: explorer-size(0); }
+  }
+
   &__title {
-    @extend h2;
+    @include explorer-typography("title");
+    color: explorer-color("slate", "100");
+    margin: 0;
   }
 
   &__table {
-    @extend .table;
+    @extend %table;
+    @include explorer-typography("body1");
+    color: explorer-color("slate", "100");
   }
 }

@@ -1,0 +1,23 @@
+$explorer-typography-styles: (
+  headline: (
+    "font-weight": 400,
+    "font-size": 24px,
+    "line-height": 32px
+  ),
+  title: (
+    "font-weight": 400,
+    "font-size": 18px,
+    "line-height": 28px
+  ),
+  body1: (
+    "font-weight": 400,
+    "font-size": 13px,
+    "line-height": 36px
+  )
+);
+
+@mixin explorer-typography($style) {
+  font-weight: map-get(map-get($explorer-typography-styles, $style), "font-weight");
+  font-size: map-get(map-get($explorer-typography-styles, $style), "font-size");
+  line-height: map-get(map-get($explorer-typography-styles, $style), "line-height");
+}

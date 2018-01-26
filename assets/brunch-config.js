@@ -56,7 +56,7 @@ exports.config = {
       precision: 8,
       allowCache: true,
       options: {
-        includePaths: ["node_modules/bootstrap-sass/assets/stylesheets"]
+        includePaths: ["node_modules/normalize-scss/sass"]
       }
     }
   },

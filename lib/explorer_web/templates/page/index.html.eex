@@ -1,49 +1,57 @@
-<div><%= gettext "explorer-welcome" %></div>
+<section class="container__section">
+  <div class="blocks">
+    <div class="blocks__container blocks__container--title">
+      <h2 class="blocks__title"><%= gettext "Blocks" %></h2>
+    </div>
+    <div class="blocks__container">
+      <table class="blocks__table">
+        <thead class="blocks__header">
+          <tr>
+            <th class="blocks__column-header"><%= gettext "Height" %></th>
+            <th class="blocks__column-header"><%= gettext "Age" %></th>
+            <th class="blocks__column-header"><%= gettext "Transactions" %></th>
+            <th class="blocks__column-header"><%= gettext "Gas Used" %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <%= for block <- @blocks do %>
+            <tr class="blocks__row">
+              <td class="blocks__column blocks__column--height"><%= block.number %></td>
+              <td class="blocks__column blocks__column--age"><%= block.age %></td>
+              <td class="blocks__column blocks__column--transactions_count"><%= block.transactions_count %></td>
+              <td class="blocks__column blocks__column--gas-used"><%= block.gas_used %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-<div class="blocks">
-  <div class="blocks__title"><%= gettext "blocks-title" %></div>
-  <table class="blocks__table">
-    <thead class="blocks__header">
-      <tr>
-        <th><%= gettext "Height" %></th>
-        <th><%= gettext "Age" %></th>
-        <th><%= gettext "Transactions" %></th>
-        <th><%= gettext "Gas Used" %></th>
-      </tr>
-    </thead>
-    <tbody>
-      <%= for block <- @blocks do %>
-        <tr class="blocks__row">
-          <td class="blocks__column--height"><%= block.number %></td>
-          <td class="blocks__column--age"><%= block.age %></td>
-          <td class="blocks__column--transactions_count"><%= block.transactions_count %></td>
-          <td class="blocks__column--gas-used"><%= block.gas_used %></td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-</div>
-
-<div class="transactions">
-  <div class="transactions__title"><%= gettext "Transactions" %></div>
-  <table class="transactions__table">
-    <thead class="transactions__header">
-      <tr>
-        <th><%= gettext "Hash" %></th>
-        <th><%= gettext "Block" %></th>
-        <th><%= gettext "Age" %></th>
-        <th><%= gettext "Value" %></th>
-      </tr>
-    </thead>
-    <tbody>
-      <%= for transaction <- @transactions do %>
-        <tr class="transactions__row">
-          <td class="transactions__column--hash"><%= transaction.hash %></td>
-          <td class="transactions__column--block"><%= transaction.block.number %></td>
-          <td class="transactions__column--age"><%= transaction.block.timestamp |> Timex.from_now %></td>
-          <td class="transactions__column--value"><%= transaction.value %></td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-</div>
+  <div class="transactions">
+    <div class="transactions__container transactions__container--title">
+      <h2 class="transactions__title"><%= gettext "Transactions" %></h2>
+    </div>
+    <div class="transactions__container">
+      <table class="transactions__table">
+        <thead class="transactions__header">
+          <tr>
+            <th class="transactions__column-header"><%= gettext "Hash" %></th>
+            <th class="transactions__column-header"><%= gettext "Block" %></th>
+            <th class="transactions__column-header"><%= gettext "Age" %></th>
+            <th class="transactions__column-header"><%= gettext "Value" %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <%= for transaction <- @transactions do %>
+            <tr class="transactions__row">
+              <td class="transactions__column transactions__column--hash"><%= transaction.hash %></td>
+              <td class="transactions__column transactions__column--block"><%= transaction.block.number %></td>
+              <td class="transactions__column transactions__column--age"><%= transaction.block.timestamp |> Timex.from_now %></td>
+              <td class="transactions__column transactions__column--value"><%= transaction.value %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>

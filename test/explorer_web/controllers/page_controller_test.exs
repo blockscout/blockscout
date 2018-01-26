@@ -11,7 +11,7 @@ defmodule ExplorerWeb.PageControllerTest do
   describe "GET index/2 with a locale" do
     test "returns a welcome message", %{conn: conn} do
       conn = get conn, "/en"
-      assert html_response(conn, 200) =~ "Welcome"
+      assert html_response(conn, 200) =~ "POA"
     end
 
     test "returns a block", %{conn: conn} do

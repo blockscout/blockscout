@@ -1,0 +1,19 @@
+$explorer-header-small: 48px;
+$explorer-header-medium: 56px;
+$explorer-header-large: 64px;
+
+%explorer-header-height { height: $explorer-header-small; }
+%explorer-header-square-width { width: $explorer-header-small; }
+%explorer-header-min-height { min-height: $explorer-header-small; }
+
+@media (orientation: landscape) and (max-height: $explorer-breakpoint-landscape) {
+  %explorer-header-height { height: $explorer-header-medium; }
+  %explorer-header-square-width { width: $explorer-header-medium; }
+  %explorer-header-min-height { min-height: $explorer-header-medium; }
+}
+
+@media (min-width: $explorer-breakpoint-landscape) {
+  %explorer-header-height { height: $explorer-header-large; }
+  %explorer-header-square-width { width: $explorer-header-large; }
+  %explorer-header-min-height { min-height: $explorer-header-large; }
+}

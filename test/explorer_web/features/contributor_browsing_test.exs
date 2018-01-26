@@ -10,9 +10,9 @@ defmodule ExplorerWeb.UserListTest do
     assert current_path(session) == "/en"
 
     session
-    |> assert_has(css(".header__title", text: "POA Network Explorer"))
+    |> assert_has(css(".header__logo"))
     |> click(@logo)
-    |> assert_has(css("main", text: "Welcome to our blockchain explorer."))
+    |> assert_has(css("main", text: "Blocks"))
   end
 
   test "views blocks on the home page", %{session: session} do

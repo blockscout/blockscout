@@ -10,7 +10,8 @@ defmodule ExplorerWeb.Router do
       "content-security-policy" => "\
         default-src 'self';\
         script-src 'self' 'unsafe-inline' 'unsafe-eval';\
-        style-src 'self' 'unsafe-inline' 'unsafe-eval'\
+        style-src 'self' 'unsafe-inline' 'unsafe-eval';\
+        font-src 'self' 'unsafe-inline' 'unsafe-eval' data:;\
       "
     }
     plug SetLocale, gettext: ExplorerWeb.Gettext, default_locale: "en"

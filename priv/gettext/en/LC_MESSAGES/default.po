@@ -10,49 +10,55 @@ msgid ""
 msgstr ""
 "Language: en\n"
 
-#: lib/explorer_web/templates/layout/app.html.eex:7
-#: lib/explorer_web/templates/layout/app.html.eex:18
-msgid "explorer-title"
-msgstr "POA Network Explorer"
-
-#: lib/explorer_web/templates/page/index.html.eex:1
-msgid "explorer-welcome"
-msgstr "Welcome to our blockchain explorer."
-
-#: lib/explorer_web/templates/page/index.html.eex:4
-msgid "blocks-title"
-msgstr "Blocks"
-
+#, elixir-format
 #: lib/explorer_web/templates/page/index.html.eex:11
-msgid "Gas Used"
-msgstr "Gas Used"
-
-#: lib/explorer_web/templates/page/index.html.eex:8
-msgid "Height"
-msgstr "Height"
-
-#: lib/explorer_web/templates/page/index.html.eex:10
-msgid "Validated"
-msgstr "Validated"
-
-#: lib/explorer_web/templates/page/index.html.eex:9
-#: lib/explorer_web/templates/page/index.html.eex:34
+#: lib/explorer_web/templates/page/index.html.eex:40
 msgid "Age"
 msgstr "Age"
 
-#: lib/explorer_web/templates/page/index.html.eex:32
-msgid "Hash"
-msgstr "Hash"
-
-#: lib/explorer_web/templates/page/index.html.eex:10
-#: lib/explorer_web/templates/page/index.html.eex:28
-msgid "Transactions"
-msgstr "Transactions"
-
-#: lib/explorer_web/templates/page/index.html.eex:33
+#, elixir-format
+#: lib/explorer_web/templates/page/index.html.eex:39
 msgid "Block"
 msgstr "Block"
 
-#: lib/explorer_web/templates/page/index.html.eex:35
+#, elixir-format
+#: lib/explorer_web/templates/page/index.html.eex:4
+msgid "Blocks"
+msgstr "Blocks"
+
+#, elixir-format
+#: lib/explorer_web/templates/layout/_footer.html.eex:2
+msgid "Copyright %{year} POA"
+msgstr "%{year} POA Network Ltd. All rights reserved"
+
+#, elixir-format
+#: lib/explorer_web/templates/page/index.html.eex:13
+msgid "Gas Used"
+msgstr "Gas Used"
+
+#, elixir-format
+#: lib/explorer_web/templates/page/index.html.eex:38
+msgid "Hash"
+msgstr "Hash"
+
+#, elixir-format
+#: lib/explorer_web/templates/page/index.html.eex:10
+msgid "Height"
+msgstr "Height"
+
+#, elixir-format
+#: lib/explorer_web/templates/layout/_header.html.eex:4
+#: lib/explorer_web/templates/layout/app.html.eex:7
+msgid "POA Network Explorer"
+msgstr "POA Network Explorer"
+
+#, elixir-format
+#: lib/explorer_web/templates/page/index.html.eex:12
+#: lib/explorer_web/templates/page/index.html.eex:32
+msgid "Transactions"
+msgstr "Transactions"
+
+#, elixir-format
+#: lib/explorer_web/templates/page/index.html.eex:41
 msgid "Value"
 msgstr "Value"
