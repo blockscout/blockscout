@@ -7,10 +7,15 @@ defmodule Explorer.Mixfile do
       version: "0.0.1",
       elixir: "~> 1.4",
       elixirc_paths: elixirc_paths(Mix.env),
-      compilers: [:phoenix, :gettext] ++ Mix.compilers,
+      compilers: [:phoenix, :gettext | Mix.compilers],
       start_permanent: Mix.env == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+      dialyzer: [
+        plt_add_deps: :transitive,
+        plt_add_apps: [:mix],
+        ignore_warnings: ".dialyzer-ignore"
+      ]
     ]
   end
 
@@ -41,6 +46,7 @@ defmodule Explorer.Mixfile do
     [
       {:cowboy, "~> 1.0"},
       {:credo, "~> 0.8", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       {:ethereumex, github: "exthereum/ethereumex", commit: "262f1d81ae163ffb46e127283658249dac1c8318"}, # Waiting for this version to be pushed to Hex.
       {:ex_machina, "~> 2.1", only: [:test]},
       {:exvcr, "~> 0.8", only: :test},

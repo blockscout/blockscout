@@ -1,4 +1,4 @@
 defmodule Explorer.Scheduler do
-  use Quantum.Scheduler, otp_app: :explorer
   @moduledoc false
+  use Quantum.Scheduler, otp_app: :explorer
 end

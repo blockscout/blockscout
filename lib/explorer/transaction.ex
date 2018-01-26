@@ -20,7 +20,7 @@ defmodule Explorer.Transaction do
   @optional_attrs ~w()a
 
   @doc false
-  def changeset(%Transaction{} = transaction, attrs \\ :empty) do
+  def changeset(%Transaction{} = transaction, attrs \\ %{}) do
     transaction
     |> cast(attrs, [:block_id | @required_attrs], @optional_attrs)
     |> validate_required(@required_attrs)

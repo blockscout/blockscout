@@ -33,6 +33,7 @@ dependencies:
         timeout: 3600
   override:
     - yes | mix do deps.get, local.rebar, deps.compile, compile
+    - mix dialyzer --plt
     - cd assets && npm install && cd ..
   cache_directories:
     - ~/.asdf
@@ -44,6 +45,7 @@ test:
   pre:
     - mix credo
     - mix sobelow --private --compact --exit Low
+    - mix dialyzer --halt-exit-status
     - cd assets && npm run eslint -- --format=junit --output-file="$CIRCLE_TEST_REPORTS/eslint/junit.xml" && cd ..
   override:
     - mix test

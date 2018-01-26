@@ -5,14 +5,16 @@ defmodule Explorer.Fetcher  do
 
   @moduledoc false
 
+  @dialyzer {:nowarn_function, fetch: 1}
   def fetch(block_number) do
     block_number
     |> download_block
     |> extract_block
     |> validate_block
-    |> Repo.insert
+    |> Repo.insert!
   end
 
+  @dialyzer {:nowarn_function, download_block: 1}
   def download_block(block_number) do
     {:ok, block} = eth_get_block_by_number(block_number, true)
     block

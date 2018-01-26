@@ -4,6 +4,7 @@ defmodule Explorer.LatestBlock do
 
   @moduledoc false
 
+  @dialyzer {:nowarn_function, fetch: 0}
   def fetch do
     get_latest_block() |> Fetcher.fetch
   end

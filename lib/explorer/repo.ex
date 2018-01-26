@@ -1,5 +1,6 @@
 defmodule Explorer.Repo do
   use Ecto.Repo, otp_app: :explorer
+  @dialyzer {:nowarn_function, rollback: 1}
 
   @doc """
   Dynamically loads the repository url from the

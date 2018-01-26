@@ -21,4 +21,10 @@ defmodule ExplorerWeb.Gettext do
   See the [Gettext Docs](https://hexdocs.pm/gettext) for detailed usage.
   """
   use Gettext, otp_app: :explorer
+
+  @dialyzer [{:nowarn_function, 'MACRO-dgettext': 3},
+             {:nowarn_function, 'MACRO-dgettext': 4},
+             {:nowarn_function, 'MACRO-dngettext': 5},
+             {:nowarn_function, 'MACRO-dngettext': 6},
+            ]
 end
