@@ -1,7 +1,11 @@
 <header class="header">
   <table class="header__container" cellspacing="0" cellpadding="0" border="0">
     <tr class="header__row">
-      <td class="header__cell header__cell--logo"><%= logo_image(@conn, alt: gettext "POA Network Explorer") %></td>
+      <td class="header__cell header__cell--logo">
+        <a href="<%= ExplorerWeb.Endpoint.url() %>" class="header__logo-link">
+          <%= logo_image(@conn, alt: gettext("POA Network Explorer"), class: "header__logo") %>
+        </a>
+      </td>
       <td class="header__cell" align="right"></td>
     </tr>
   </table>
