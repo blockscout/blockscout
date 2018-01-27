@@ -1,0 +1,69 @@
+<section class="container__section">
+  <div class="block-detail__container">
+    <h2 class="block-detail__title">
+      <%= gettext "Block #%{number} Details", number: @block.number %>
+    </h2>
+    <div class="block-detail__attributes">
+      <div class="block-detail__column">
+        <dl>
+          <div class="block-detail__item">
+            <dt><%= gettext "Number" %></dt>
+            <dd><%= @block.number %></dd>
+          </div>
+          <div class="block-detail__item">
+            <dt><%= gettext "Age" %></dt>
+            <dd><%= @block.age %></dd>
+          </div>
+          <div class="block-detail__item">
+            <dt><%= gettext "Timestamp" %></dt>
+            <dd><%= @block.formatted_timestamp %></dd>
+          </div>
+          <div class="block-detail__item">
+            <dt><%= gettext "Transactions" %></dt>
+            <dd><%= @block.transactions_count %></dd>
+          </div>
+          <div class="block-detail__item">
+            <dt><%= gettext "Hash" %></dt>
+            <dd><%= @block.hash %></dd>
+          </div>
+          <div class="block-detail__item">
+            <dt><%= gettext "Parent Hash" %></dt>
+            <dd><%= @block.parent_hash %></dd>
+          </div>
+          <div class="block-detail__item">
+            <dt><%= gettext "Miner" %></dt>
+            <dd><%= @block.miner %></dd>
+          </div>
+          <div class="block-detail__item">
+            <dt><%= gettext "Difficulty" %></dt>
+            <dd><%= @block.difficulty %></dd>
+          </div>
+        </dl>
+      </div>
+      <div class="block-detail__column">
+        <dl>
+          <div class="block-detail__item">
+            <dt><%= gettext "Total Difficulty" %></dt>
+            <dd><%= @block.total_difficulty %></dd>
+          </div>
+          <div class="block-detail__item">
+            <dt><%= gettext "Size" %></dt>
+            <dd><%= @block.size %></dd>
+          </div>
+          <div class="block-detail__item">
+            <dt><%= gettext "Gas Used" %></dt>
+            <dd><%= @block.gas_used %></dd>
+          </div>
+          <div class="block-detail__item">
+            <dt><%= gettext "Gas Limit" %></dt>
+            <dd><%= @block.gas_limit %></dd>
+          </div>
+          <div class="block-detail__item">
+            <dt><%= gettext "Nonce" %></dt>
+            <dd><%= @block.nonce %></dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>

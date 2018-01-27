@@ -1,7 +1,7 @@
 defmodule ExplorerWeb.UserListTest do
   use ExplorerWeb.FeatureCase, async: true
 
-  import Wallaby.Query, only: [css: 1, css: 2]
+  import Wallaby.Query, only: [css: 1, css: 2, link: 1]
 
   @logo css("img.header__logo")
 
@@ -17,7 +17,7 @@ defmodule ExplorerWeb.UserListTest do
 
   test "views blocks on the home page", %{session: session} do
     insert_list(4, :block, %{number: 1, timestamp: Timex.now |> Timex.shift(hours: -1), gas_used: 10})
-    fifth_block = insert(:block, %{number: 1, timestamp: Timex.now |> Timex.shift(hours: -1), gas_used: 10})
+    fifth_block = insert(:block, %{number: 311, hash: "0xMrCoolBlock", timestamp: Timex.now |> Timex.shift(hours: -1), miner: "Heathcliff", size: 9999999, nonce: "once upon a nonce", gas_used: 1010101, gas_limit: 5030101})
     insert_list(3, :transaction, block: fifth_block)
 
     session
@@ -28,6 +28,16 @@ defmodule ExplorerWeb.UserListTest do
     |> assert_has(css(".blocks__column--transactions-count", count: 1, text: "3"))
     |> assert_has(css(".blocks__column--age", count: 5, text: "1 hour ago"))
     |> assert_has(css(".blocks__column--gas-used", count: 5, text: "10"))
+
+    session
+    |> click(link("311"))
+    |> assert_has(css(".block-detail__item", text: "0xMrCoolBlock"))
+    |> assert_has(css(".block-detail__item", text: "Heathcliff"))
+    |> assert_has(css(".block-detail__item", text: "9999999"))
+    |> assert_has(css(".block-detail__item", text: "1 hour ago"))
+    |> assert_has(css(".block-detail__item", text: "5030101"))
+    |> assert_has(css(".block-detail__item", text: "once upon a nonce"))
+    |> assert_has(css(".block-detail__item", text: "1010101"))
   end
 
   test "views transactions on the home page", %{session: session} do

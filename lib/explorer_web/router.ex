@@ -29,5 +29,6 @@ defmodule ExplorerWeb.Router do
   scope "/:locale", ExplorerWeb do
     pipe_through :browser # Use the default browser stack
     get "/", PageController, :index
+    resources "/blocks", BlockController, only: [:show]
   end
 end

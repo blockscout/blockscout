@@ -24,5 +24,11 @@ defmodule Explorer.BlockFormTest do
       block = insert(:block, timestamp: Timex.now |> Timex.shift(hours: -1))
       assert BlockForm.build(block).age == "1 hour ago"
     end
+
+    test "formats a timestamp" do
+      date = "Jan-23-2018 10:48:56 AM Etc/UTC"
+      block = insert(:block, timestamp: Timex.parse!(date, "%b-%d-%Y %H:%M:%S %p %Z", :strftime))
+      assert BlockForm.build(block).formatted_timestamp == date
+    end
   end
 end

@@ -9,6 +9,7 @@ defmodule Explorer.BlockForm do
     block |> Map.merge(%{
       transactions_count: block |> get_transactions_count,
       age: block |> calculate_age,
+      formatted_timestamp: block |> format_timestamp,
     })
   end
 
@@ -21,5 +22,9 @@ defmodule Explorer.BlockForm do
 
   def calculate_age(block) do
     block.timestamp |> Timex.from_now
+  end
+
+  def format_timestamp(block) do
+    block.timestamp |> Timex.format!("%b-%d-%Y %H:%M:%S %p %Z", :strftime)
   end
 end
