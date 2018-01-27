@@ -51,6 +51,7 @@
     &__subsection {
       flex: 1;
       margin-right: explorer-size(-2);
+
       & + & { margin-left: explorer-size(-2); }
     }
   }

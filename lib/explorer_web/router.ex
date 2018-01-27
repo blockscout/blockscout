@@ -14,6 +14,7 @@ defmodule ExplorerWeb.Router do
         font-src 'self' 'unsafe-inline' 'unsafe-eval' data:;\
       "
     }
+    if Mix.env != :prod, do: plug Jasmine, js_files: ["js/test.js"]
     plug SetLocale, gettext: ExplorerWeb.Gettext, default_locale: "en"
   end
 

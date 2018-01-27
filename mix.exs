@@ -37,7 +37,7 @@ defmodule Explorer.Mixfile do
   # Specifies extra applications to start per environment
   defp extra_applications(:prod), do: [:phoenix_pubsub_redis, :new_relixir | extra_applications()]
   defp extra_applications(_), do: extra_applications()
-  defp extra_applications, do: [:ethereumex, :timex, :timex_ecto, :set_locale, :logger, :runtime_tools]
+  defp extra_applications, do: [:ex_jasmine, :ethereumex, :timex, :timex_ecto, :set_locale, :logger, :runtime_tools]
 
   # Specifies your project dependencies.
   #
@@ -51,6 +51,7 @@ defmodule Explorer.Mixfile do
       {:ex_machina, "~> 2.1", only: [:test]},
       {:exvcr, "~> 0.8", only: :test},
       {:gettext, "~> 0.11"},
+      {:ex_jasmine, github: "minifast/ex_jasmine", branch: "master"},
       {:junit_formatter, ">= 0.0.0"},
       {:new_relixir, "~> 0.4.0", only: [:prod]},
       {:phoenix, "~> 1.3.0"},

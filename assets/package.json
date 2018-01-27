@@ -13,6 +13,7 @@
   "scripts": {
     "deploy": "brunch build --production",
     "watch": "brunch watch --stdin",
+    "build": "brunch build",
     "eslint": "eslint js/**"
   },
   "dependencies": {
@@ -29,6 +30,7 @@
     "eslint-config-standard": "^11.0.0-beta.0",
     "eslint-config-standard-jsx": "^4.0.2",
     "eslint-plugin-import": "^2.8.0",
+    "eslint-plugin-jasmine": "^2.9.1",
     "eslint-plugin-node": "^5.2.1",
     "eslint-plugin-promise": "^3.6.0",
     "eslint-plugin-react": "^7.5.1",

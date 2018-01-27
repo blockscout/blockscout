@@ -34,7 +34,7 @@ dependencies:
   override:
     - yes | mix do deps.get, local.rebar, deps.compile, compile
     - mix dialyzer --plt
-    - cd assets && npm install && cd ..
+    - cd assets && npm install && npm run build && cd ..
   cache_directories:
     - ~/.asdf
     - _build
