@@ -3,11 +3,6 @@ defmodule Explorer.BlockFormTest do
   alias Explorer.BlockForm
 
   describe "build/1" do
-    test "that it works" do
-      block = insert(:block)
-      assert BlockForm.build(block)
-    end
-
     test "that it has a number" do
       block = insert(:block, number: 311)
       insert_list(2, :transaction, block: block)

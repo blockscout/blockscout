@@ -30,5 +30,6 @@ defmodule ExplorerWeb.Router do
     pipe_through :browser # Use the default browser stack
     get "/", PageController, :index
     resources "/blocks", BlockController, only: [:show]
+    resources "/transactions", TransactionController, only: [:show]
   end
 end

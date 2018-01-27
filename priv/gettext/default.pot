@@ -1,6 +1,7 @@
 #: lib/explorer_web/templates/block/show.html.eex:14
 #: lib/explorer_web/templates/page/index.html.eex:11
 #: lib/explorer_web/templates/page/index.html.eex:39
+#: lib/explorer_web/templates/transaction/show.html.eex:17
 msgid "Age"
 msgstr ""
 
@@ -42,6 +43,7 @@ msgid "Transactions"
 msgstr ""
 
 #: lib/explorer_web/templates/page/index.html.eex:40
+#: lib/explorer_web/templates/transaction/show.html.eex:33
 msgid "Value"
 msgstr ""
 
@@ -78,9 +80,18 @@ msgid "Size"
 msgstr ""
 
 #: lib/explorer_web/templates/block/show.html.eex:18
+#: lib/explorer_web/templates/transaction/show.html.eex:21
 msgid "Timestamp"
 msgstr ""
 
 #: lib/explorer_web/templates/block/show.html.eex:46
 msgid "Total Difficulty"
+msgstr ""
+
+#: lib/explorer_web/templates/transaction/show.html.eex:29
+msgid "Block Number"
+msgstr ""
+
+#: lib/explorer_web/templates/transaction/show.html.eex:5
+msgid "Transaction Details"
 msgstr ""

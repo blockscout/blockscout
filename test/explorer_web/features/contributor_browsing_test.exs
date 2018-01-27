@@ -42,13 +42,19 @@ defmodule ExplorerWeb.UserListTest do
 
   test "views transactions on the home page", %{session: session} do
     transaction_block = insert(:block, timestamp: Timex.now |> Timex.shift(hours: -2))
-    insert_list(5, :transaction, block: transaction_block)
+    insert_list(4, :transaction, block: transaction_block)
+    insert(:transaction, hash: "0xSk8", value: 5656)
 
     session
     |> visit("/en")
     |> assert_has(css(".transactions__title", text: "Transactions"))
     |> assert_has(css(".transactions__column--hash", count: 5))
     |> assert_has(css(".transactions__column--value", count: 5))
-    |> assert_has(css(".transactions__column--age", count: 5, text: "2 hours ago"))
+    |> assert_has(css(".transactions__column--age", count: 5))
+
+    session
+    |> click(link("0xSk8"))
+    |> assert_has(css(".transaction-detail__hash", text: "0xSk8"))
+    |> assert_has(css(".transaction-detail__item", text: "5656"))
   end
 end

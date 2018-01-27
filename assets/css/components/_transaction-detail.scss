@@ -1,0 +1,58 @@
+.transaction-detail {
+  &__container {
+    @extend %paper;
+    padding: explorer-size(-1) explorer-size(0);
+  }
+
+  &__title {
+    @include explorer-typography("title");
+    color: explorer-color("slate", "100");
+    margin: 0;
+  }
+
+  &__subheader {
+    @include explorer-typography("body1");
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  &__column {
+    @include explorer-typography("body1");
+  }
+
+  &__item {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+
+    dt {
+      color: explorer-color("slate", "100");
+      min-width: explorer-size(3);
+    }
+
+    dd {
+      color: explorer-color("slate", "100");
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+  }
+}
+
+@media (min-width: $explorer-breakpoint-lg) {
+  .transaction-detail {
+    &__attributes {
+      display: flex;
+      align-items: top;
+      justify-content: top;
+    }
+
+    &__column {
+      width: explorer-size(1);
+      flex: 1;
+      margin-right: explorer-size(1);
+      & + & { margin-left: explorer-size(1); }
+    }
+  }
+}

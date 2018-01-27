@@ -5,6 +5,7 @@ defmodule ExplorerWeb.PageController do
   alias Explorer.Transaction
   alias Explorer.Repo
   alias Explorer.BlockForm
+  alias Explorer.TransactionForm
 
   def index(conn, _params) do
     blocks = Block
@@ -19,6 +20,7 @@ defmodule ExplorerWeb.PageController do
       |> limit(5)
       |> Repo.all
       |> Repo.preload(:block)
+      |> Enum.map(&TransactionForm.build/1)
 
     render(conn, "index.html", blocks: blocks, transactions: transactions)
   end

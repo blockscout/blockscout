@@ -1,0 +1,40 @@
+<section class="container__section">
+  <div class="transaction-detail__container">
+    <div class="transaction-detail__header">
+      <h2 class="transaction-detail__title">
+        <%= gettext "Transaction Details" %>
+      </h2>
+      <div class="transaction-detail__subheader">
+        <div class="transaction-detail__hash">
+          <%= @transaction.hash %>
+        </div>
+      </div>
+    </div>
+    <div class="transaction-detail__attributes">
+      <div class="transaction-detail__column">
+        <dl>
+          <div class="transaction-detail__item">
+            <dt><%= gettext "Age" %></dt>
+            <dd><%= @transaction.age %></dd>
+          </div>
+          <div class="transaction-detail__item">
+            <dt><%= gettext "Timestamp" %></dt>
+            <dd><%= @transaction.formatted_timestamp %></dd>
+          </div>
+        </dl>
+      </div>
+      <div class="transaction-detail__column">
+        <dl>
+          <div class="transaction-detail__item">
+            <dt><%= gettext "Block Number" %></dt>
+            <dd><%= @transaction.block_number %></dd>
+          </div>
+          <div class="transaction-detail__item">
+            <dt><%= gettext "Value" %></dt>
+            <dd><%= @transaction.value %></dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>

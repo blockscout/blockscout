@@ -44,10 +44,12 @@
           <%= for transaction <- @transactions do %>
             <tr class="transactions__row">
               <td class="transactions__column transactions__column--hash">
-                <div class="transactions__hash" title="<%= transaction.hash %>"><%= transaction.hash %></div>
+                <div class="transactions__hash" title="<%= transaction.hash %>">
+                  <%= link(transaction.hash, to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.id)) %>
+                </div>
               </td>
-              <td class="transactions__column transactions__column--block"><%= transaction.block.number %></td>
-              <td class="transactions__column transactions__column--age"><%= transaction.block.timestamp |> Timex.from_now %></td>
+              <td class="transactions__column transactions__column--block"><%= transaction.block_number %></td>
+              <td class="transactions__column transactions__column--age"><%= transaction.age  %></td>
               <td class="transactions__column transactions__column--value"><%= transaction.value %></td>
             </tr>
           <% end %>
