@@ -24,6 +24,8 @@ defmodule Explorer.Transaction do
     timestamps()
 
     belongs_to :block, Explorer.Block
+
+    many_to_many :to_address, Explorer.Address, join_through: "to_addresses", unique: true
   end
 
   @required_attrs ~w(hash value gas gas_price input nonce public_key r s

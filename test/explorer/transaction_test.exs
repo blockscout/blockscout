@@ -20,5 +20,13 @@ defmodule Explorer.TransactionTest do
       changeset = Transaction.changeset(%Transaction{}, %{racecar: "yellow ham"})
       refute changeset.valid?
     end
+
+    test "it creates a new to address" do
+      params = params_for(:transaction)
+      to_address_params = %{hash: "sk8orDi3"}
+      changeset_params = Map.merge(params, %{to_address: to_address_params})
+      changeset = Transaction.changeset(%Transaction{}, changeset_params)
+      assert changeset.valid?
+    end
   end
 end

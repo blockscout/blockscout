@@ -20,7 +20,14 @@
           </div>
           <div class="transaction__item">
             <dt class="transaction__item-key"><%= gettext "Block Number" %></dt>
-            <dd class="transaction__item-value"><%= link(@transaction.block_number, to: block_path(@conn, :show, @conn.assigns.locale, @transaction.block_number), class: "transaction__link") %></dd>
+            <dd class="transaction__item-value">
+              <span class="transaction__item--primary">
+                <%= link(@transaction.block_number, to: block_path(@conn, :show, @conn.assigns.locale, @transaction.block_number), class: "transaction__link") %>
+              </span>
+              <span class="transaction__item--secondary">
+                (<%= gettext "%{confirmations} block confirmations", confirmations: @transaction.confirmations %>)
+              </span>
+            </dd>
           </div>
           <div class="transaction__item">
             <dt class="transaction__item-key"><%= gettext "Age" %></dt>
@@ -29,6 +36,18 @@
           <div class="transaction__item">
             <dt class="transaction__item-key"><%= gettext "Value" %></dt>
             <dd class="transaction__item-value"><%= Decimal.div(Decimal.new(@transaction.value), Decimal.new(1_000_000_000_000_000_000)) |> Decimal.to_string(:normal) %> POA</dd>
+          </div>
+          <div class="transaction__item">
+            <dt class="transaction__item-key"><%= gettext "From" %></dt>
+            <dd class="transaction__item-value"><%= @transaction.from_address %></dd>
+          </div>
+          <div class="transaction__item">
+            <dt class="transaction__item-key"><%= gettext "To" %></dt>
+            <dd class="transaction__item-value"><%= @transaction.to_address %></dd>
+          </div>
+          <div class="transaction__item">
+            <dt class="transaction__item-key"><%= gettext "Value" %></dt>
+            <dd class="transaction__item-value"><%= @transaction.value %></dd>
           </div>
         </dl>
       </div>

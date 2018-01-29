@@ -18,6 +18,14 @@ defmodule Explorer.TransactionFactory do
           v: sequence("0x"),
         }
       end
+
+      def with_addresses(transaction, %{to: to, from: from} \\ %{to: nil, from: nil}) do
+        to_address = if to, do: insert(:address, hash: to), else: insert(:address)
+        from_address = if from, do: insert(:address, hash: from), else: insert(:address)
+        insert(:to_address, %{transaction_id: transaction.id, address_id: to_address.id})
+        insert(:from_address, %{transaction_id: transaction.id, address_id: from_address.id})
+        transaction
+      end
     end
   end
 end
