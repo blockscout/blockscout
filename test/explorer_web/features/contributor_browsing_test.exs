@@ -15,7 +15,7 @@ defmodule ExplorerWeb.UserListTest do
     |> assert_has(css("main", text: "Blocks"))
   end
 
-  test "views blocks on the home page", %{session: session} do
+  test "views blocks", %{session: session} do
     insert_list(4, :block, %{number: 1, timestamp: Timex.now |> Timex.shift(hours: -1), gas_used: 10})
     fifth_block = insert(:block, %{number: 311, hash: "0xMrCoolBlock", timestamp: Timex.now |> Timex.shift(hours: -1), miner: "Heathcliff", size: 9999999, nonce: "once upon a nonce", gas_used: 1010101, gas_limit: 5030101})
     insert_list(3, :transaction, block: fifth_block)
@@ -40,10 +40,21 @@ defmodule ExplorerWeb.UserListTest do
     |> assert_has(css(".block-detail__item", text: "1010101"))
   end
 
-  test "views transactions on the home page", %{session: session} do
-    transaction_block = insert(:block, timestamp: Timex.now |> Timex.shift(hours: -2))
+  test "views transactions", %{session: session} do
+    transaction_block = insert(:block, %{
+      timestamp: Timex.now |> Timex.shift(hours: -2),
+      gas_used: 123987,
+    })
     insert_list(4, :transaction, block: transaction_block)
-    insert(:transaction, hash: "0xSk8", value: 5656)
+    insert(:transaction, %{
+      hash: "0xSk8",
+      value: 5656,
+      gas: 789000000000058745,
+      gas_price: 7890000000898912300045,
+      input: "0x00012",
+      nonce: 99045,
+      block: transaction_block,
+    })
 
     session
     |> visit("/en")
@@ -56,5 +67,10 @@ defmodule ExplorerWeb.UserListTest do
     |> click(link("0xSk8"))
     |> assert_has(css(".transaction-detail__hash", text: "0xSk8"))
     |> assert_has(css(".transaction-detail__item", text: "5656"))
+    |> assert_has(css(".transaction-detail__item", text: "789000000000058745"))
+    |> assert_has(css(".transaction-detail__item", text: "7890000000898912300045"))
+    |> assert_has(css(".transaction-detail__item", text: "0x00012"))
+    |> assert_has(css(".transaction-detail__item", text: "99045"))
+    |> assert_has(css(".transaction-detail__item", text: "123987"))
   end
 end

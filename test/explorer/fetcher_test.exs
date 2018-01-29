@@ -40,11 +40,31 @@ defmodule Explorer.FetcherTest do
     "block_id" => "1",
     "hash" => "pepino",
     "value" => "0xde0b6b3a7640000",
+    "gas" => "0x21000",
+    "gasPrice" => "0x10000",
+    "input" => "0x5c8eff12",
+    "nonce" => "0x31337",
+    "publicKey" => "0xb39af9c",
+    "r" => "0x9",
+    "s" => "0x10",
+    "standardV" => "0x11",
+    "transactionIndex" => "0x12",
+    "v" => "0x13",
   }
 
   @processed_transaction %{
     hash: "pepino",
     value: 1000000000000000000,
+    gas: 135168,
+    gas_price: 65536,
+    input: "0x5c8eff12",
+    nonce: 201527,
+    public_key: "0xb39af9c",
+    r: "0x9",
+    s: "0x10",
+    standard_v: "0x11",
+    transaction_index: "0x12",
+    v: "0x13",
   }
 
   describe "fetch/1" do

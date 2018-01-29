@@ -21,5 +21,11 @@ defmodule Explorer.TransactionFormTest do
       transaction = insert(:transaction, block: block)
       assert TransactionForm.build(transaction).formatted_timestamp == date
     end
+
+    test "that it returns the cumulative gas used for validating the block" do
+      block = insert(:block, number: 622, gas_used: 99523)
+      transaction = insert(:transaction, block: block)
+      assert TransactionForm.build(transaction).cumulative_gas_used == 99523
+    end
   end
 end

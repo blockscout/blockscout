@@ -14,6 +14,10 @@
       <div class="transaction-detail__column">
         <dl>
           <div class="transaction-detail__item">
+            <dt><%= gettext "Block Number" %></dt>
+            <dd><%= @transaction.block_number %></dd>
+          </div>
+          <div class="transaction-detail__item">
             <dt><%= gettext "Age" %></dt>
             <dd><%= @transaction.age %></dd>
           </div>
@@ -21,17 +25,33 @@
             <dt><%= gettext "Timestamp" %></dt>
             <dd><%= @transaction.formatted_timestamp %></dd>
           </div>
+          <div class="transaction-detail__item">
+            <dt><%= gettext "Value" %></dt>
+            <dd><%= @transaction.value %></dd>
+          </div>
         </dl>
       </div>
       <div class="transaction-detail__column">
         <dl>
           <div class="transaction-detail__item">
-            <dt><%= gettext "Block Number" %></dt>
-            <dd><%= @transaction.block_number %></dd>
+            <dt><%= gettext "Gas" %></dt>
+            <dd><%= @transaction.gas %></dd>
           </div>
           <div class="transaction-detail__item">
-            <dt><%= gettext "Value" %></dt>
-            <dd><%= @transaction.value %></dd>
+            <dt><%= gettext "Gas Price" %></dt>
+            <dd><%= @transaction.gas_price %></dd>
+          </div>
+          <div class="transaction-detail__item">
+            <dt><%= gettext "Nonce" %></dt>
+            <dd><%= @transaction.nonce %></dd>
+          </div>
+          <div class="transaction-detail__item">
+            <dt><%= gettext "Input" %></dt>
+            <dd><%= @transaction.input %></dd>
+          </div>
+          <div class="transaction-detail__item">
+            <dt><%= gettext "Cumulative Gas Used" %></dt>
+            <dd><%= @transaction.cumulative_gas_used %></dd>
           </div>
         </dl>
       </div>

@@ -45,6 +45,16 @@ defmodule Explorer.Fetcher  do
     %{
       hash: transaction["hash"],
       value: transaction["value"] |> decode_integer_field,
+      gas: transaction["gas"] |> decode_integer_field,
+      gas_price: transaction["gasPrice"] |> decode_integer_field,
+      input: transaction["input"],
+      nonce: transaction["nonce"] |> decode_integer_field,
+      public_key: transaction["publicKey"],
+      r: transaction["r"],
+      s: transaction["s"],
+      standard_v: transaction["standardV"],
+      transaction_index: transaction["transactionIndex"],
+      v: transaction["v"],
     }
   end
 

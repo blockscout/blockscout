@@ -11,12 +11,23 @@ defmodule Explorer.Transaction do
   schema "transactions" do
     field :hash, :string
     field :value, :decimal
+    field :gas, :decimal
+    field :gas_price, :decimal
+    field :input, :string
+    field :nonce, :integer
+    field :public_key, :string
+    field :r, :string
+    field :s, :string
+    field :standard_v, :string
+    field :transaction_index, :string
+    field :v, :string
     timestamps()
 
     belongs_to :block, Explorer.Block
   end
 
-  @required_attrs ~w(hash value)a
+  @required_attrs ~w(hash value gas gas_price input nonce public_key r s
+    standard_v transaction_index v)a
   @optional_attrs ~w()a
 
   @doc false
