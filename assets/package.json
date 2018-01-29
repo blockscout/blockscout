@@ -4,8 +4,8 @@
     "url": "git+https://github.com/poanetwork/poa-explorer.git"
   },
   "private": true,
+  "name": "poa-explorer",
   "author": "POA Network",
-  "license": "UNLICENSED",
   "engines": {
     "node": "8.x",
     "npm": "5.x"
@@ -17,7 +17,6 @@
     "eslint": "eslint js/**"
   },
   "dependencies": {
-    "bootstrap-sass": "^3.3.7",
     "normalize-scss": "^7.0.0",
     "phoenix": "file:../deps/phoenix",
     "phoenix_html": "file:../deps/phoenix_html"

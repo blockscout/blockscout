@@ -1,0 +1,249 @@
+---
+- - :whitelist
+  - MIT
+  - :who: Doc Ritezel
+    :why: Pre-approved
+    :versions: []
+    :when: 2018-01-29 00:00:00.000000000 Z
+- - :whitelist
+  - ISC
+  - :who: Doc Ritezel
+    :why: Pre-approved
+    :versions: []
+    :when: 2018-01-29 00:00:00.000000000 Z
+- - :whitelist
+  - New BSD
+  - :who: Doc Ritezel
+    :why: Pre-approved
+    :versions: []
+    :when: 2018-01-29 00:00:00.000000000 Z
+- - :whitelist
+  - Apache 2.0
+  - :who: Doc Ritezel
+    :why: Pre-approved
+    :versions: []
+    :when: 2018-01-29 00:00:00.000000000 Z
+- - :whitelist
+  - DWTFYWTPL
+  - :who: Doc Ritezel
+    :why: Pre-approved
+    :versions: []
+    :when: 2018-01-29 00:00:00.000000000 Z
+- - :whitelist
+  - Simplified BSD
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 01:07:28.529920000 Z
+- - :whitelist
+  - BSD
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 01:07:33.639610000 Z
+- - :whitelist
+  - CC0-1.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 01:03:40.487695000 Z
+- - :whitelist
+  - Public Domain
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 01:03:40.487695000 Z
+- - :whitelist
+  - Unlicense
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 01:03:40.487695000 Z
+- - :whitelist
+  - ruby
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 01:03:40.487695000 Z
+- - :license
+  - ecto
+  - Apache 2.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 00:00:00.000000000 Z
+- - :license
+  - set_locale
+  - DWTFYWTPL
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 00:50:47.514520000 Z
+- - :license
+  - postgrex
+  - Apache 2.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 00:51:23.470100000 Z
+- - :license
+  - poison
+  - CC0-1.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 00:51:52.519286000 Z
+- - :license
+  - plug
+  - Apache 2.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 00:52:14.254242000 Z
+- - :license
+  - ethereumex
+  - MIT
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 00:52:47.031205000 Z
+- - :license
+  - hackney
+  - Apache 2.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 00:53:32.763607000 Z
+- - :license
+  - gettext
+  - Apache 2.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 00:53:50.601029000 Z
+- - :license
+  - gen_stage
+  - Apache 2.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 00:54:18.188006000 Z
+- - :license
+  - db_connection
+  - Apache 2.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 00:54:36.494213000 Z
+- - :license
+  - phoenix_live_reload
+  - MIT
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 01:00:27.447229000 Z
+- - :license
+  - dialyxir
+  - Apache 2.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 01:00:51.180725000 Z
+- - :license
+  - decimal
+  - Apache 2.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 01:01:08.182752000 Z
+- - :license
+  - file_system
+  - DWTFYWTPL
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 01:01:35.443848000 Z
+- - :license
+  - mime
+  - Apache 2.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 01:01:59.697732000 Z
+- - :license
+  - wordwrap
+  - MIT
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 01:05:43.989619000 Z
+- - :license
+  - path-is-inside
+  - MIT
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 01:06:19.430415000 Z
+- - :license
+  - true-case-path
+  - Apache 2.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 01:06:35.683192000 Z
+- - :license
+  - spdx-expression-parse
+  - MIT
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 01:06:48.440333000 Z
+- - :license
+  - rc
+  - MIT
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 01:06:56.719276000 Z
+- - :license
+  - amdefine
+  - MIT
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 01:07:04.040453000 Z
+- - :license
+  - normalize-scss
+  - MIT
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 01:07:04.040453000 Z
+- - :license
+  - optimist
+  - MIT
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 01:07:04.040453000 Z
+- - :license
+  - ua-parser-js
+  - MIT
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 01:07:04.040453000 Z
+- - :license
+  - indexof
+  - MIT
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 01:10:35.556773000 Z
+- - :license
+  - bundler
+  - MIT
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-01-29 02:58:26.066580000 Z
