@@ -87,5 +87,9 @@ defmodule ExplorerWeb.UserListTest do
     |> assert_has(css(".transaction__item", text: "0xabelincoln"))
     |> assert_has(css(".transaction__item", text: "0xhowardtaft"))
     |> assert_has(css(".transaction__item", text: "block confirmations"))
+
+    session
+    |> click(link("0xabelincoln"))
+    |> assert_has(css(".address__subheading", text: "0xabelincoln"))
   end
 end

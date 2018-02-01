@@ -32,5 +32,6 @@ defmodule ExplorerWeb.Router do
     get "/", PageController, :index
     resources "/blocks", BlockController, only: [:show]
     resources "/transactions", TransactionController, only: [:show]
+    resources "/addresses", AddressController, only: [:show]
   end
 end

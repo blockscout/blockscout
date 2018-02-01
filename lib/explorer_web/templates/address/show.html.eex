@@ -1,0 +1,7 @@
+<section class="container__section address">
+  <div class="address__header">
+    <h1 class="address__heading"><%= gettext "Address" %></h1>
+    <h3 class="address__subheading"><%= @address.hash %></h3>
+  </div>
+</section>
+

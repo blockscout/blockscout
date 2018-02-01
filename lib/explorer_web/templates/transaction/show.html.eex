@@ -39,11 +39,11 @@
           </div>
           <div class="transaction__item">
             <dt class="transaction__item-key"><%= gettext "From" %></dt>
-            <dd class="transaction__item-value"><%= @transaction.from_address %></dd>
+            <dd class="transaction__item-value"><%= link(@transaction.from_address, to: address_path(@conn, :show, @conn.assigns.locale, @transaction.from_address)) %></dd>
           </div>
           <div class="transaction__item">
             <dt class="transaction__item-key"><%= gettext "To" %></dt>
-            <dd class="transaction__item-value"><%= @transaction.to_address %></dd>
+            <dd class="transaction__item-value"><%= link(@transaction.to_address, to: address_path(@conn, :show, @conn.assigns.locale, @transaction.to_address)) %></dd>
           </div>
           <div class="transaction__item">
             <dt class="transaction__item-key"><%= gettext "Value" %></dt>
