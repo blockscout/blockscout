@@ -67,10 +67,10 @@ defmodule ExplorerWeb.UserListTest do
     |> click(link("0xSk8"))
     |> assert_has(css(".transaction__subheading", text: "0xSk8"))
     |> assert_has(css(".transaction__item", text: "5656 POA"))
-    |> assert_has(css(".transaction__item", text: "12,345 wei"))
-    |> assert_has(css(".transaction__item", text: "54321 POA"))
+    |> assert_has(css(".transaction__item", text: "12,345"))
+    |> assert_has(css(".transaction__item", text: "54321"))
     |> assert_has(css(".transaction__item", text: "0x00012"))
     |> assert_has(css(".transaction__item", text: "99045"))
-    |> assert_has(css(".transaction__item", text: "123,987 wei"))
+    |> assert_has(css(".transaction__item", text: "123,987"))
   end
 end

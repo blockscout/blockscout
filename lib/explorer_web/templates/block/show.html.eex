@@ -51,11 +51,11 @@
           </div>
           <div class="block__item">
             <dt class="block__item-key"><%= gettext "Gas Used" %></dt>
-            <dd class="block__item-value"><%= Enum.sort_by(["#{Decimal.div(Decimal.new(@block.gas_used), Decimal.new(1_000_000_000_000_000_000)) |> Decimal.to_string(:normal)} POA", "#{@block.gas_used |> Cldr.Number.to_string!} wei"], &String.length/1) |> List.first %> (<%= @block.gas_used / @block.gas_limit |> Cldr.Number.to_string!(format: "#.#%") %>)</dd>
+            <dd class="block__item-value"><%= @block.gas_used |> Cldr.Number.to_string! %> (<%= @block.gas_used / @block.gas_limit |> Cldr.Number.to_string!(format: "#.#%") %>)</dd>
           </div>
           <div class="block__item">
             <dt class="block__item-key"><%= gettext "Gas Limit" %></dt>
-            <dd class="block__item-value"><%= Enum.sort_by(["#{Decimal.div(Decimal.new(@block.gas_limit), Decimal.new(1_000_000_000_000_000_000)) |> Decimal.to_string(:normal)} POA", "#{@block.gas_limit |> Cldr.Number.to_string!} wei"], &String.length/1) |> List.first %></dd>
+            <dd class="block__item-value"><%= @block.gas_limit |> Cldr.Number.to_string! %></dd>
           </div>
           <div class="block__item">
             <dt class="block__item-key"><%= gettext "Nonce" %></dt>

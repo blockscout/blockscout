@@ -36,15 +36,15 @@
         <dl>
           <div class="transaction__item">
             <dt class="transaction__item-key"><%= gettext "Gas Limit" %></dt>
-            <dd class="transaction__item-value"><%= @transaction.gas |> Cldr.Number.to_string! %> wei</dd>
+            <dd class="transaction__item-value"><%= @transaction.gas |> Cldr.Number.to_string! %></dd>
           </div>
           <div class="transaction__item">
             <dt class="transaction__item-key"><%= gettext "Gas Price" %></dt>
-            <dd class="transaction__item-value"><%= Decimal.div(Decimal.new(@transaction.gas_price), Decimal.new(1_000_000_000_000_000_000)) |> Decimal.to_string(:normal) %> POA (<%= Decimal.div(Decimal.new(@transaction.gas_price), Decimal.new(1_000_000_000)) |> Decimal.to_string(:normal) %> Gwei)</dd>
+            <dd class="transaction__item-value"><%= @transaction.gas_price |> Cldr.Number.to_string! %> (<%= Decimal.div(Decimal.new(@transaction.gas_price), Decimal.new(1_000_000_000)) |> Decimal.to_string(:normal) %> Gwei)</dd>
           </div>
           <div class="transaction__item">
             <dt class="transaction__item-key"><%= gettext "Cumulative Gas Used" %></dt>
-            <dd class="transaction__item-value"><%= @transaction.cumulative_gas_used |> Cldr.Number.to_string! %> wei</dd>
+            <dd class="transaction__item-value"><%= @transaction.cumulative_gas_used |> Cldr.Number.to_string! %></dd>
           </div>
           <div class="transaction__item">
             <dt class="transaction__item-key"><%= gettext "Nonce" %></dt>
