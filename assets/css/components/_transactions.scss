@@ -25,6 +25,9 @@
     white-space: nowrap;
     overflow: hidden;
   }
+
+  &__column-header { @include explorer-typography("body1"); }
+  &__link { color: explorer-color("blue", "500"); }
 }
 
 @media (min-width: $explorer-breakpoint-lg) {

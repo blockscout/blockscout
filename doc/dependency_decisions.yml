@@ -247,3 +247,31 @@
     :why: 
     :versions: []
     :when: 2018-01-29 02:58:26.066580000 Z
+- - :license
+  - abnf2
+  - MIT
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-02-01 07:42:55.657686000 Z
+- - :license
+  - ex_cldr
+  - Apache 2.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-02-01 07:43:30.533305000 Z
+- - :license
+  - ex_cldr_numbers
+  - Apache 2.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-02-01 07:43:48.924488000 Z
+- - :license
+  - ex_cldr_units
+  - Apache 2.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-02-01 07:44:03.250381000 Z

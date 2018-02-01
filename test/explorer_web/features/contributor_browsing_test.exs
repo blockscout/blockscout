@@ -31,13 +31,13 @@ defmodule ExplorerWeb.UserListTest do
 
     session
     |> click(link("311"))
-    |> assert_has(css(".block-detail__item", text: "0xMrCoolBlock"))
-    |> assert_has(css(".block-detail__item", text: "Heathcliff"))
-    |> assert_has(css(".block-detail__item", text: "9999999"))
-    |> assert_has(css(".block-detail__item", text: "1 hour ago"))
-    |> assert_has(css(".block-detail__item", text: "5030101"))
-    |> assert_has(css(".block-detail__item", text: "once upon a nonce"))
-    |> assert_has(css(".block-detail__item", text: "1010101"))
+    |> assert_has(css(".block__item", text: "0xMrCoolBlock"))
+    |> assert_has(css(".block__item", text: "Heathcliff"))
+    |> assert_has(css(".block__item", text: "9,999,999"))
+    |> assert_has(css(".block__item", text: "1 hour ago"))
+    |> assert_has(css(".block__item", text: "5,030,101"))
+    |> assert_has(css(".block__item", text: "once upon a nonce"))
+    |> assert_has(css(".block__item", text: "1,010,101"))
   end
 
   test "views transactions", %{session: session} do
@@ -49,8 +49,8 @@ defmodule ExplorerWeb.UserListTest do
     insert(:transaction, %{
       hash: "0xSk8",
       value: 5656,
-      gas: 789000000000058745,
-      gas_price: 7890000000898912300045,
+      gas: 12345,
+      gas_price: 54321,
       input: "0x00012",
       nonce: 99045,
       block: transaction_block,
@@ -65,12 +65,12 @@ defmodule ExplorerWeb.UserListTest do
 
     session
     |> click(link("0xSk8"))
-    |> assert_has(css(".transaction-detail__hash", text: "0xSk8"))
-    |> assert_has(css(".transaction-detail__item", text: "5656"))
-    |> assert_has(css(".transaction-detail__item", text: "789000000000058745"))
-    |> assert_has(css(".transaction-detail__item", text: "7890000000898912300045"))
-    |> assert_has(css(".transaction-detail__item", text: "0x00012"))
-    |> assert_has(css(".transaction-detail__item", text: "99045"))
-    |> assert_has(css(".transaction-detail__item", text: "123987"))
+    |> assert_has(css(".transaction__subheading", text: "0xSk8"))
+    |> assert_has(css(".transaction__item", text: "5656 POA"))
+    |> assert_has(css(".transaction__item", text: "12,345 wei"))
+    |> assert_has(css(".transaction__item", text: "54321 POA"))
+    |> assert_has(css(".transaction__item", text: "0x00012"))
+    |> assert_has(css(".transaction__item", text: "99045"))
+    |> assert_has(css(".transaction__item", text: "123,987 wei"))
   end
 end

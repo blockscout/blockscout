@@ -37,7 +37,7 @@ defmodule Explorer.Mixfile do
   # Specifies extra applications to start per environment
   defp extra_applications(:prod), do: [:phoenix_pubsub_redis, :new_relixir | extra_applications()]
   defp extra_applications(_), do: extra_applications()
-  defp extra_applications, do: [:ex_jasmine, :ethereumex, :timex, :timex_ecto, :set_locale, :logger, :runtime_tools]
+  defp extra_applications, do: [:ex_cldr, :ex_jasmine, :ethereumex, :timex, :timex_ecto, :set_locale, :logger, :runtime_tools]
 
   # Specifies your project dependencies.
   #
@@ -48,6 +48,8 @@ defmodule Explorer.Mixfile do
       {:credo, "~> 0.8", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       {:ethereumex, github: "exthereum/ethereumex", commit: "262f1d81ae163ffb46e127283658249dac1c8318"}, # Waiting for this version to be pushed to Hex.
+      {:ex_cldr_numbers, "~> 1.0"},
+      {:ex_cldr_units, "~> 1.0"},
       {:ex_machina, "~> 2.1", only: [:test]},
       {:exvcr, "~> 0.8", only: :test},
       {:gettext, "~> 0.11"},

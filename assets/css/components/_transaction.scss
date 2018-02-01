@@ -1,0 +1,36 @@
+.transaction {
+  &__container { @extend %paper; }
+  &__header { @extend %section-header; }
+  &__heading { @extend %section-header__heading; }
+  &__subheading { @extend %section-header__subheading; }
+  &__tabs { @extend %section-tabs; }
+
+  &__tab {
+    @extend %section-tabs__tab;
+    &--active { @extend %section-tabs__tab--active; }
+  }
+
+  &__attributes { padding: explorer-size(-1) explorer-size(1); }
+  &__column { @include explorer-typography("body1"); }
+  &__item { @extend %section-list__item; }
+  &__item-key { @extend %section-list__item-key; }
+  &__item-value { @extend %section-list__item-value; }
+  &__link { color: explorer-color("blue", "500"); }
+}
+
+@media (min-width: $explorer-breakpoint-lg) {
+  .transaction {
+    &__attributes {
+      display: flex;
+      align-items: top;
+      justify-content: top;
+    }
+
+    &__column {
+      width: explorer-size(1);
+      flex: 1;
+      margin-right: explorer-size(1);
+      & + & { margin-left: explorer-size(1); }
+    }
+  }
+}
