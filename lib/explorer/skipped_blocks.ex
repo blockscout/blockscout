@@ -9,7 +9,7 @@ defmodule Explorer.SkippedBlocks do
 
   @query """
   SELECT missing_numbers.number AS missing_number
-  FROM generate_series(1, $1) missing_numbers(number)
+  FROM generate_series($1, 1, -1) missing_numbers(number)
   LEFT OUTER JOIN blocks ON (blocks.number = missing_numbers.number)
   WHERE blocks.id IS NULL;
   """
