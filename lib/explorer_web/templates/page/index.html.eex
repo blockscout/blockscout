@@ -16,7 +16,7 @@
         <tbody>
           <%= for block <- @blocks do %>
             <tr class="blocks__row">
-              <td class="blocks__column blocks__column--height"><%= link(block.number, to: block_path(@conn, :show, @conn.assigns.locale, block.id)) %></td>
+              <td class="blocks__column blocks__column--height"><%= link(block.number, to: block_path(@conn, :show, @conn.assigns.locale, block.number)) %></td>
               <td class="blocks__column blocks__column--age"><%= block.age %></td>
               <td class="blocks__column blocks__column--transactions-count"><%= block.transactions_count %></td>
               <td class="blocks__column blocks__column--gas-used"><%= block.gas_used %></td>
@@ -45,7 +45,7 @@
             <tr class="transactions__row">
               <td class="transactions__column transactions__column--hash">
                 <div class="transactions__hash" title="<%= transaction.hash %>">
-                  <%= link(transaction.hash, to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.id)) %>
+                  <%= link(transaction.hash, to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.hash)) %>
                 </div>
               </td>
               <td class="transactions__column transactions__column--block"><%= transaction.block_number %></td>

@@ -7,7 +7,7 @@ defmodule ExplorerWeb.TransactionController do
 
   def show(conn, params) do
     transaction = Transaction
-      |> where(id: ^params["id"])
+      |> where(hash: ^params["id"])
       |> first
       |> Repo.one
       |> Repo.preload(:block)

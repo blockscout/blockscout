@@ -3,9 +3,9 @@ defmodule ExplorerWeb.BlockControllerTest do
 
   describe "GET show/3" do
     test "returns a block", %{conn: conn} do
-      insert(:block, id: 3)
+      block = insert(:block, number: 3)
       conn = get(conn, "/en/blocks/3")
-      assert conn.assigns.block.id == 3
+      assert conn.assigns.block.id == block.id
     end
   end
 end

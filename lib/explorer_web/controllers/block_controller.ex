@@ -7,7 +7,7 @@ defmodule ExplorerWeb.BlockController do
 
   def show(conn, params) do
     block = Block
-      |> where(id: ^params["id"])
+      |> where(number: ^params["id"])
       |> first |> Repo.one
       |> BlockForm.build
     render(conn, "show.html", block: block)
