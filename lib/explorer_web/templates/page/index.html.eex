@@ -50,7 +50,7 @@
               </td>
               <td class="transactions__column transactions__column--block"><%= transaction.block_number %></td>
               <td class="transactions__column transactions__column--age"><%= transaction.age  %></td>
-              <td class="transactions__column transactions__column--value"><%= Decimal.div(Decimal.new(transaction.value), Decimal.new(1_000_000_000_000_000_000)) |> Decimal.to_string(:normal) %> POA</td>
+              <td class="transactions__column transactions__column--value"><%= Decimal.div(Decimal.new(transaction.value), Decimal.new(1_000_000_000_000_000_000)) |> Decimal.to_string(:normal) %> <%= gettext "POA" %></td>
             </tr>
           <% end %>
         </tbody>

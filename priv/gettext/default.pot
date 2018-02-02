@@ -149,3 +149,13 @@ msgstr ""
 #: lib/explorer_web/templates/transaction/show.html.eex:18
 msgid "Transaction Status"
 msgstr ""
+
+#: lib/explorer_web/templates/address/show.html.eex:10
+msgid "Balance"
+msgstr ""
+
+#: lib/explorer_web/templates/address/show.html.eex:11
+#: lib/explorer_web/templates/page/index.html.eex:53
+#: lib/explorer_web/templates/transaction/show.html.eex:38
+msgid "POA"
+msgstr ""

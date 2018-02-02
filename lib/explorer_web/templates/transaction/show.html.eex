@@ -35,7 +35,7 @@
           </div>
           <div class="transaction__item">
             <dt class="transaction__item-key"><%= gettext "Value" %></dt>
-            <dd class="transaction__item-value"><%= Decimal.div(Decimal.new(@transaction.value), Decimal.new(1_000_000_000_000_000_000)) |> Decimal.to_string(:normal) %> POA</dd>
+            <dd class="transaction__item-value"><%= Decimal.div(Decimal.new(@transaction.value), Decimal.new(1_000_000_000_000_000_000)) |> Decimal.to_string(:normal) %> <%= gettext "POA" %></dd>
           </div>
           <div class="transaction__item">
             <dt class="transaction__item-key"><%= gettext "From" %></dt>
