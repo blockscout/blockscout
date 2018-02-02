@@ -31,7 +31,7 @@ defmodule ExplorerWeb.Router do
     pipe_through :browser # Use the default browser stack
     resources "/", ChainController, only: [:show], singleton: true, as: :chain
     resources "/blocks", BlockController, only: [:index, :show]
-    resources "/transactions", TransactionController, only: [:show]
+    resources "/transactions", TransactionController, only: [:index, :show]
     resources "/addresses", AddressController, only: [:show]
   end
 end

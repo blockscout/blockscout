@@ -75,8 +75,8 @@ defmodule ExplorerWeb.UserListTest do
     |> assert_has(css(".transactions__column--hash", count: 5))
     |> assert_has(css(".transactions__column--value", count: 5))
     |> assert_has(css(".transactions__column--age", count: 5))
-
-    session
+    |> click(link("Transactions"))
+    |> assert_has(css(".transactions__column--hash", text: "0xSk8"))
     |> click(link("0xSk8"))
     |> assert_has(css(".transaction__subheading", text: "0xSk8"))
     |> assert_has(css(".transaction__item", text: "123,987"))

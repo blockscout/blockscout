@@ -49,13 +49,14 @@
       border-top-color: explorer-color("blue", "500");
       color: explorer-color("blue", "500");
     }
+
+    & + & { margin-right: explorer-size(-2); }
   }
 
   &__link-name {
     @include explorer-typography("body1");
     margin-left: explorer-size(-3);
   }
-
 
   &__link-image, &__link-name {
     display: inline-block;

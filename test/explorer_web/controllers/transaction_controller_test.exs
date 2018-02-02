@@ -8,4 +8,12 @@ defmodule ExplorerWeb.TransactionControllerTest do
       assert conn.assigns.transaction.id == transaction.id
     end
   end
+
+  describe "GET index/2" do
+    test "returns all blocks", %{conn: conn} do
+      transaction_ids = insert_list(4, :transaction) |> Enum.map(fn (transaction) -> transaction.id end)
+      conn = get(conn, "/en/transactions")
+      assert conn.assigns.transactions |> Enum.map(fn (transaction) -> transaction.id end) == transaction_ids
+    end
+  end
 end

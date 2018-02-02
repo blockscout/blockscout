@@ -5,6 +5,14 @@ defmodule ExplorerWeb.TransactionController do
   alias Explorer.Repo
   alias Explorer.TransactionForm
 
+  def index(conn, params) do
+    transactions = Transaction
+      |> order_by(desc: :inserted_at)
+      |> preload(:block)
+      |> Repo.paginate(params)
+    render(conn, "index.html", transactions: transactions)
+  end
+
   def show(conn, params) do
     transaction = Transaction
       |> where(hash: ^params["id"])

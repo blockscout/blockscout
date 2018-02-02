@@ -28,6 +28,42 @@
 
   &__column-header { @include explorer-typography("body1"); }
   &__link { color: explorer-color("blue", "500"); }
+
+  &__pagination {
+    margin: explorer-size(-1) 0 explorer-size(-2) 0;
+    .pagination { text-align: right; }
+  }
+
+  &__hash {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+}
+
+@media (min-width: $explorer-breakpoint-sm) {
+  .transactions {
+    &__column-header {
+      &--optional { display: table-cell; }
+    }
+    &__column {
+      &--optional { display: table-cell; }
+    }
+  }
+}
+
+@media (min-width: $explorer-breakpoint-md) {
+  .transactions {
+    &__headline {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    &__headline-title { flex: 1; }
+    &__pagination {
+      margin: explorer-size(-1) 0 explorer-size(-2) 0;
+    }
+  }
 }
 
 @media (min-width: $explorer-breakpoint-lg) {
