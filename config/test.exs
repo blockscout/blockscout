@@ -17,7 +17,8 @@ config :explorer, Explorer.Repo,
   adapter: Ecto.Adapters.Postgres,
   database: "explorer_test",
   hostname: "localhost",
-  pool: Ecto.Adapters.SQL.Sandbox
+  pool: Ecto.Adapters.SQL.Sandbox,
+  ownership_timeout: 30_000
 
 # Configure wallaby
 config :wallaby,
