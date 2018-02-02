@@ -24,13 +24,13 @@ defmodule ExplorerWeb.Router do
 
   scope "/", ExplorerWeb do
     pipe_through :browser
-    get "/", PageController, :dummy
+    resources "/", ChainController, only: [:show], singleton: true, as: :chain
   end
 
   scope "/:locale", ExplorerWeb do
     pipe_through :browser # Use the default browser stack
-    get "/", PageController, :index
-    resources "/blocks", BlockController, only: [:show]
+    resources "/", ChainController, only: [:show], singleton: true, as: :chain
+    resources "/blocks", BlockController, only: [:index, :show]
     resources "/transactions", TransactionController, only: [:show]
     resources "/addresses", AddressController, only: [:show]
   end

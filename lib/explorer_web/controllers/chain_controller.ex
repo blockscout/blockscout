@@ -1,4 +1,4 @@
-defmodule ExplorerWeb.PageController do
+defmodule ExplorerWeb.ChainController do
   use ExplorerWeb, :controller
   import Ecto.Query
   alias Explorer.Block
@@ -7,7 +7,7 @@ defmodule ExplorerWeb.PageController do
   alias Explorer.BlockForm
   alias Explorer.TransactionForm
 
-  def index(conn, _params) do
+  def show(conn, _params) do
     blocks = Block
       |> order_by(desc: :number)
       |> limit(5)
@@ -22,6 +22,6 @@ defmodule ExplorerWeb.PageController do
       |> Repo.preload(:block)
       |> Enum.map(&TransactionForm.build/1)
 
-    render(conn, "index.html", blocks: blocks, transactions: transactions)
+    render(conn, "show.html", blocks: blocks, transactions: transactions)
   end
 end

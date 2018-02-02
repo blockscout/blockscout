@@ -1,4 +1,4 @@
-defmodule ExplorerWeb.PageControllerTest do
+defmodule ExplorerWeb.ChainControllerTest do
   use ExplorerWeb.ConnCase
 
   def build_transaction(block \\ nil) do
@@ -19,13 +19,14 @@ defmodule ExplorerWeb.PageControllerTest do
 
   describe "GET index/2 with a locale" do
     test "returns a welcome message", %{conn: conn} do
-      conn = get conn, "/en"
+      conn = get conn, ExplorerWeb.Router.Helpers.chain_path(ExplorerWeb.Endpoint, :show, %{locale: :en})
       assert html_response(conn, 200) =~ "POA"
     end
 
     test "returns a block", %{conn: conn} do
       insert(:block, %{number: 23})
       conn = get conn, "/en"
+
       assert(List.first(conn.assigns.blocks).number == 23)
     end
 

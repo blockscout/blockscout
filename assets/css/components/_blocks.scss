@@ -7,11 +7,14 @@
     &--title { padding-top: explorer-size(0); }
   }
 
+  &__headline-title,
   &__title {
     @include explorer-typography("title");
     color: explorer-color("slate", "100");
     margin: 0;
   }
+
+  &__headline-title { line-height: 18px; }
 
   &__table {
     @extend %table;
@@ -19,7 +22,44 @@
     color: explorer-color("slate", "100");
   }
 
-  &__column-header { @include explorer-typography("body1"); }
+  &__column-header {
+    @include explorer-typography("body1");
+    &--optional { display: none; }
+  }
+
+  &__column {
+    &--optional { display: none; }
+  }
 
   &__link { color: explorer-color("blue", "500"); }
+
+  &__pagination {
+    margin: explorer-size(-1) 0 explorer-size(-2) 0;
+    .pagination { text-align: right; }
+  }
+}
+
+@media (min-width: $explorer-breakpoint-sm) {
+  .blocks {
+    &__column-header {
+      &--optional { display: table-cell; }
+    }
+    &__column {
+      &--optional { display: table-cell; }
+    }
+  }
+}
+
+@media (min-width: $explorer-breakpoint-md) {
+  .blocks {
+    &__headline {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    &__headline-title { flex: 1; }
+    &__pagination {
+      margin: explorer-size(-1) 0 explorer-size(-2) 0;
+    }
+  }
 }

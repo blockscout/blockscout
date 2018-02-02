@@ -275,3 +275,24 @@
     :why: 
     :versions: []
     :when: 2018-02-01 07:44:03.250381000 Z
+- - :license
+  - math
+  - Apache 2.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-02-02 09:32:25.722843000 Z
+- - :license
+  - scrivener
+  - MIT
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-02-02 09:32:41.813374000 Z
+- - :license
+  - scrivener_ecto
+  - MIT
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2018-02-02 09:32:51.070166000 Z

@@ -13,6 +13,11 @@
   &__cell {
     @extend %explorer-header-height;
     &--logo { @extend %explorer-header-square-width; }
+    &--links {
+      display: flex;
+      flex-direction: row-reverse;
+      padding-right: explorer-size(0);
+    }
   }
 
   &__logo-link {
@@ -28,5 +33,32 @@
     width: 32px;
     height: 36px;
     display: block;
+  }
+
+  &__link {
+    @extend %explorer-header-height;
+    display: block;
+    text-decoration: none;
+    border-top: explorer-size(-4) solid transparent;
+    border-left: explorer-size(-4) solid transparent;
+    border-right: explorer-size(-4) solid transparent;
+    padding: explorer-size(-3);
+    color: explorer-color("slate", "100");
+
+    &:hover {
+      border-top-color: explorer-color("blue", "500");
+      color: explorer-color("blue", "500");
+    }
+  }
+
+  &__link-name {
+    @include explorer-typography("body1");
+    margin-left: explorer-size(-3);
+  }
+
+
+  &__link-image, &__link-name {
+    display: inline-block;
+    vertical-align: middle;
   }
 }

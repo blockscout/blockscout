@@ -37,7 +37,10 @@ defmodule Explorer.Mixfile do
   # Specifies extra applications to start per environment
   defp extra_applications(:prod), do: [:phoenix_pubsub_redis, :new_relixir | extra_applications()]
   defp extra_applications(_), do: extra_applications()
-  defp extra_applications, do: [:ex_cldr, :ex_jasmine, :ethereumex, :timex, :timex_ecto, :set_locale, :logger, :runtime_tools]
+  defp extra_applications, do: [
+    :scrivener_ecto, :scrivener_html, :ex_cldr, :ex_jasmine, :ethereumex,
+    :timex, :timex_ecto, :set_locale, :logger, :runtime_tools
+  ]
 
   # Specifies your project dependencies.
   #
@@ -55,6 +58,7 @@ defmodule Explorer.Mixfile do
       {:gettext, "~> 0.11"},
       {:ex_jasmine, github: "minifast/ex_jasmine", branch: "master"},
       {:junit_formatter, ">= 0.0.0"},
+      {:math, "~> 0.3.0"},
       {:new_relixir, "~> 0.4.0", only: [:prod]},
       {:phoenix, "~> 1.3.0"},
       {:phoenix_ecto, "~> 3.2"},
@@ -64,6 +68,8 @@ defmodule Explorer.Mixfile do
       {:phoenix_pubsub_redis, "~> 2.1.0", only: [:prod]},
       {:postgrex, ">= 0.0.0"},
       {:quantum, "~> 2.2.1"},
+      {:scrivener_ecto, "~> 1.0"},
+      {:scrivener_html, "~> 1.7"},
       {:set_locale, github: "minifast/set_locale", branch: "master"}, # Waiting on https://github.com/smeevil/set_locale/pull/9
       {:sobelow, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:timex, "~> 3.1.24"},

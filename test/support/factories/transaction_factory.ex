@@ -7,7 +7,7 @@ defmodule Explorer.TransactionFactory do
           hash: sequence("0x"),
           value: Enum.random(1..100_000),
           gas: Enum.random(21_000..100_000),
-          gas_price: Enum.random(1..100_000),
+          gas_price: Enum.random(10..99) * 1_000_000_00,
           input: sequence("0x"),
           nonce: Enum.random(1..1_000),
           public_key: sequence("0x"),

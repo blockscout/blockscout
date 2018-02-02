@@ -39,6 +39,8 @@ defmodule ExplorerWeb.UserListTest do
     |> assert_has(css(".blocks__column--gas-used", count: 5, text: "10"))
 
     session
+    |> click(link("Blocks"))
+    |> assert_has(css(".blocks__column--height", text: "311"))
     |> click(link("311"))
     |> assert_has(css(".block__item", text: "0xMrCoolBlock"))
     |> assert_has(css(".block__item", text: "Heathcliff"))

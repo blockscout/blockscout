@@ -2,11 +2,16 @@
   <table class="header__container" cellspacing="0" cellpadding="0" border="0">
     <tr class="header__row">
       <td class="header__cell header__cell--logo">
-        <a href="<%= ExplorerWeb.Endpoint.url() %>" class="header__logo-link">
+        <a href="<%= chain_path(@conn, :show) %>" class="header__logo-link">
           <%= logo_image(@conn, alt: gettext("POA Network Explorer"), class: "header__logo") %>
         </a>
       </td>
-      <td class="header__cell" align="right"></td>
+      <td class="header__cell header__cell--links" align="right">
+        <a href="<%= block_path(@conn, :index, Gettext.get_locale) %>" class="header__link">
+          <img class="header__link-image" src="<%= static_path(@conn, "/images/block.svg") %>" />
+          <div class="header__link-name"><%= gettext("Blocks") %></div>
+        </a>
+      </td>
     </tr>
   </table>
 </header>
