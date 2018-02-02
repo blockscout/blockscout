@@ -1,6 +1,6 @@
 defmodule Explorer.Repo do
   use Ecto.Repo, otp_app: :explorer
-  use Scrivener, page_size: 10
+  use Scrivener, page_size: 100
   @dialyzer {:nowarn_function, rollback: 1}
 
   @doc """
