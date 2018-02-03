@@ -1,14 +1,18 @@
-#: lib/explorer_web/templates/page/index.html.eex:11
-#: lib/explorer_web/templates/page/index.html.eex:39
+#: lib/explorer_web/templates/block/index.html.eex:12
+#: lib/explorer_web/templates/chain/show.html.eex:11
+#: lib/explorer_web/templates/chain/show.html.eex:39
+#: lib/explorer_web/templates/transaction/index.html.eex:13
 #: lib/explorer_web/templates/transaction/show.html.eex:33
 msgid "Age"
 msgstr ""
 
-#: lib/explorer_web/templates/page/index.html.eex:38
+#: lib/explorer_web/templates/chain/show.html.eex:38
+#: lib/explorer_web/templates/transaction/index.html.eex:12
 msgid "Block"
 msgstr ""
 
-#: lib/explorer_web/templates/page/index.html.eex:4
+#: lib/explorer_web/templates/chain/show.html.eex:4
+#: lib/explorer_web/templates/layout/_header.html.eex:16
 msgid "Blocks"
 msgstr ""
 
@@ -16,17 +20,20 @@ msgstr ""
 msgid "Copyright %{year} POA"
 msgstr ""
 
+#: lib/explorer_web/templates/block/index.html.eex:14
 #: lib/explorer_web/templates/block/show.html.eex:53
-#: lib/explorer_web/templates/page/index.html.eex:13
+#: lib/explorer_web/templates/chain/show.html.eex:13
 msgid "Gas Used"
 msgstr ""
 
 #: lib/explorer_web/templates/block/show.html.eex:25
-#: lib/explorer_web/templates/page/index.html.eex:37
+#: lib/explorer_web/templates/chain/show.html.eex:37
+#: lib/explorer_web/templates/transaction/index.html.eex:11
 msgid "Hash"
 msgstr ""
 
-#: lib/explorer_web/templates/page/index.html.eex:10
+#: lib/explorer_web/templates/block/index.html.eex:11
+#: lib/explorer_web/templates/chain/show.html.eex:10
 msgid "Height"
 msgstr ""
 
@@ -35,13 +42,16 @@ msgstr ""
 msgid "POA Network Explorer"
 msgstr ""
 
+#: lib/explorer_web/templates/block/index.html.eex:13
 #: lib/explorer_web/templates/block/show.html.eex:21
-#: lib/explorer_web/templates/page/index.html.eex:12
-#: lib/explorer_web/templates/page/index.html.eex:31
+#: lib/explorer_web/templates/chain/show.html.eex:12
+#: lib/explorer_web/templates/chain/show.html.eex:31
+#: lib/explorer_web/templates/layout/_header.html.eex:12
 msgid "Transactions"
 msgstr ""
 
-#: lib/explorer_web/templates/page/index.html.eex:40
+#: lib/explorer_web/templates/chain/show.html.eex:40
+#: lib/explorer_web/templates/transaction/index.html.eex:14
 #: lib/explorer_web/templates/transaction/show.html.eex:37
 #: lib/explorer_web/templates/transaction/show.html.eex:49
 msgid "Value"
@@ -55,6 +65,7 @@ msgstr ""
 msgid "Difficulty"
 msgstr ""
 
+#: lib/explorer_web/templates/block/index.html.eex:15
 #: lib/explorer_web/templates/block/show.html.eex:57
 #: lib/explorer_web/templates/transaction/show.html.eex:57
 msgid "Gas Limit"
@@ -105,6 +116,7 @@ msgstr ""
 msgid "Gas"
 msgstr ""
 
+#: lib/explorer_web/templates/block/index.html.eex:16
 #: lib/explorer_web/templates/transaction/show.html.eex:61
 msgid "Gas Price"
 msgstr ""
@@ -155,7 +167,20 @@ msgid "Balance"
 msgstr ""
 
 #: lib/explorer_web/templates/address/show.html.eex:11
-#: lib/explorer_web/templates/page/index.html.eex:53
+#: lib/explorer_web/templates/chain/show.html.eex:53
+#: lib/explorer_web/templates/transaction/index.html.eex:25
 #: lib/explorer_web/templates/transaction/show.html.eex:38
 msgid "POA"
+msgstr ""
+
+#: lib/explorer_web/templates/block/index.html.eex:24
+msgid "%{count} transactions"
+msgstr ""
+
+#: lib/explorer_web/templates/block/index.html.eex:3
+msgid "Showing #%{start_block} to #%{end_block}"
+msgstr ""
+
+#: lib/explorer_web/templates/transaction/index.html.eex:3
+msgid "Showing %{count} Transactions"
 msgstr ""

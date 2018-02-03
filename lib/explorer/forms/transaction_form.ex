@@ -1,40 +1,56 @@
 defmodule Explorer.TransactionForm do
-  @moduledoc false
+  alias Cldr.Number
   alias Explorer.Address
   alias Explorer.Block
+  alias Explorer.BlockTransaction
   alias Explorer.FromAddress
   alias Explorer.Repo
   alias Explorer.ToAddress
   alias Explorer.Transaction
   import Ecto.Query
 
+  @moduledoc "Format a Block and a Transaction for display."
+
   def build(transaction) do
+    block = with_block(transaction)
+
     transaction
     |> Map.merge(%{
-      block_number: transaction |> block_number,
-      age: transaction |> block_age,
-      formatted_timestamp: transaction |> format_timestamp,
-      cumulative_gas_used: transaction |> cumulative_gas_used,
+      block_number: block |> block_number,
+      age: block |> block_age,
+      formatted_timestamp: block |> format_timestamp,
+      cumulative_gas_used: block |> cumulative_gas_used,
       to_address: transaction |> to_address,
       from_address: transaction |> from_address,
-      confirmations: transaction |> confirmations,
+      confirmations: block |> confirmations,
     })
   end
 
-  def block_number(transaction) do
-    transaction.block.number
+  def with_block(transaction) do
+    Repo.one(
+      from block in Block,
+        join: block_transaction in BlockTransaction,
+          where: block_transaction.block_id == block.id,
+        join: transaction in Transaction,
+          where: transaction.id == block_transaction.transaction_id,
+        where: transaction.id == ^transaction.id
+    )
   end
 
-  def block_age(transaction) do
-    transaction.block.timestamp |> Timex.from_now
+  def block_number(block) do
+    block && block.number || ""
   end
 
-  def format_timestamp(transaction) do
-    transaction.block.timestamp |> Timex.format!("%b-%d-%Y %H:%M:%S %p %Z", :strftime)
+  def block_age(block) do
+    block && block.timestamp |> Timex.from_now || ""
   end
 
-  def cumulative_gas_used(transaction) do
-    transaction.block.gas_used
+  def format_timestamp(block) do
+    block && block.timestamp |> Timex.format!("%b-%d-%Y %H:%M:%S %p %Z", :strftime) || ""
+  end
+
+  def cumulative_gas_used(block) do
+    block && block.gas_used |> Number.to_string! || ""
   end
 
   def to_address(transaction) do
@@ -59,8 +75,8 @@ defmodule Explorer.TransactionForm do
     Repo.one(query).hash
   end
 
-  def confirmations(transaction) do
+  def confirmations(block) do
     query = from block in Block, select: max(block.number)
-    Repo.one(query) - transaction.block.number
+    block && Repo.one(query) - block.number || 0
   end
 end

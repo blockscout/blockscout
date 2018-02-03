@@ -3,6 +3,7 @@ defmodule Explorer.Factory do
   use ExMachina.Ecto, repo: Explorer.Repo
   use Explorer.BlockFactory
   use Explorer.TransactionFactory
+  use Explorer.BlockTransactionFactory
   use Explorer.AddressFactory
   use Explorer.ToAddressFactory
   use Explorer.FromAddressFactory

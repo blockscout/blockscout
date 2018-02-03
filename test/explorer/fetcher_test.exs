@@ -8,6 +8,7 @@ defmodule Explorer.FetcherTest do
   alias Explorer.Address
   alias Explorer.ToAddress
   alias Explorer.FromAddress
+  alias Explorer.BlockTransaction
 
   @raw_block %{
     "difficulty" => "0xfffffffffffffffffffffffffffffffe",
@@ -69,7 +70,6 @@ defmodule Explorer.FetcherTest do
     standard_v: "0x11",
     transaction_index: "0x12",
     v: "0x13",
-    block_id: 100,
   }
 
   describe "fetch/1" do
@@ -143,9 +143,12 @@ defmodule Explorer.FetcherTest do
 
   describe "extract_transactions/2" do
     test "that it creates a list of transactions" do
-      block = insert(:block, %{id: 100})
-      transactions = Fetcher.extract_transactions(block, [@raw_transaction])
-      assert List.first(transactions).block_id == 100
+      raw_transactions = [%{@raw_transaction | "hash" => "0xlimon"}, %{@raw_transaction | "hash" => "0xpepino"}]
+      block = insert(:block)
+      Fetcher.extract_transactions(block, raw_transactions)
+      transaction_hashes = Repo.all(from transaction in Transaction, select: transaction.hash)
+
+      assert(transaction_hashes == ["0xlimon", "0xpepino"])
     end
   end
 
@@ -156,6 +159,41 @@ defmodule Explorer.FetcherTest do
       Fetcher.create_transaction(block, transaction_attrs)
       last_transaction = Transaction |> order_by(desc: :inserted_at) |> Repo.one
       assert last_transaction.hash == "0xab1"
+    end
+
+    test "that it creates a block transaction when there is a block" do
+      block = insert(:block)
+      transaction_attrs = %{@raw_transaction | "hash" => "0xab1"}
+      Fetcher.create_transaction(block, transaction_attrs)
+
+      transaction = Transaction |> Repo.get_by(hash: "0xab1")
+      block_transaction = BlockTransaction |> Repo.get_by(block_id: block.id, transaction_id: transaction.id)
+      assert block_transaction
+    end
+
+    test "that it updates the block transaction when it is called multiple times" do
+      first_block = insert(:block)
+      second_block = insert(:block)
+      transaction_attrs = %{@raw_transaction | "hash" => "0xsabzi"}
+      Fetcher.create_transaction(first_block, transaction_attrs)
+
+      transaction = Transaction |> Repo.get_by(hash: "0xsabzi")
+      block_transaction = BlockTransaction |> Repo.get_by(transaction_id: transaction.id)
+      assert block_transaction.block_id == first_block.id
+
+      Fetcher.create_transaction(second_block, transaction_attrs)
+      block_transaction = BlockTransaction |> Repo.get_by(transaction_id: transaction.id)
+      assert block_transaction.block_id == second_block.id
+      refute block_transaction.block_id == first_block.id
+    end
+
+    test "that it does not create a block transaction when there is no block" do
+      transaction_attrs = %{@raw_transaction | "hash" => "0xab1"}
+      Fetcher.create_transaction(nil, transaction_attrs)
+
+      transaction = Transaction |> Repo.get_by(hash: "0xab1")
+      block_transaction = BlockTransaction |> Repo.get_by(transaction_id: transaction.id)
+      refute block_transaction
     end
 
     test "that it creates a 'to address'" do
@@ -238,14 +276,14 @@ defmodule Explorer.FetcherTest do
     end
   end
 
-  describe "extract_transaction/2" do
+  describe "extract_transaction/1" do
     test "that it extracts the transaction" do
-      assert Fetcher.extract_transaction(%{id: 100}, @raw_transaction) == @processed_transaction
+      assert Fetcher.extract_transaction(@raw_transaction) == @processed_transaction
     end
 
     test "when the transaction value is zero it returns a decimal" do
       transaction = %{@raw_transaction | "value" => "0x0"}
-      assert Fetcher.extract_transaction(%{id: 100}, transaction).value == 0
+      assert Fetcher.extract_transaction(transaction).value == 0
     end
   end
 

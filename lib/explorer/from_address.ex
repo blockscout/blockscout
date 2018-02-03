@@ -1,9 +1,8 @@
 defmodule Explorer.FromAddress do
-  use Ecto.Schema
-  import Ecto.Changeset
-  alias Explorer.FromAddress
-
   @moduledoc false
+  alias Explorer.FromAddress
+  import Ecto.Changeset
+  use Ecto.Schema
 
   @timestamps_opts [type: Timex.Ecto.DateTime,
                     autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}]

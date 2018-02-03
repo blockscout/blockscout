@@ -2,6 +2,7 @@ defmodule Explorer.Fetcher  do
   @moduledoc false
   alias Explorer.Address
   alias Explorer.Block
+  alias Explorer.BlockTransaction
   alias Explorer.FromAddress
   alias Explorer.Repo.NewRelic, as: Repo
   alias Explorer.ToAddress
@@ -52,13 +53,30 @@ defmodule Explorer.Fetcher  do
   def create_transaction(block, changes) do
     transaction = Repo.get_by(Transaction, hash: changes["hash"]) || %Transaction{}
     transaction
-    |> Transaction.changeset(extract_transaction(block, changes))
+    |> Transaction.changeset(extract_transaction(changes))
     |> Repo.insert_or_update!
     |> create_from_address(changes["from"])
     |> create_to_address(changes["to"] || changes["creates"])
+    |> create_block_transaction(block)
   end
 
-  def extract_transaction(block, transaction) do
+  def create_block_transaction(transaction, block) do
+    if block do
+      block_transaction =
+        Repo.get_by(BlockTransaction, transaction_id: transaction.id) ||
+          %BlockTransaction{}
+
+      changes = %{block_id: block.id, transaction_id: transaction.id}
+
+      block_transaction
+      |> BlockTransaction.changeset(changes)
+      |> Repo.insert_or_update!
+    end
+
+    transaction
+  end
+
+  def extract_transaction(transaction) do
     %{
       hash: transaction["hash"],
       value: transaction["value"] |> decode_integer_field,
@@ -72,7 +90,6 @@ defmodule Explorer.Fetcher  do
       standard_v: transaction["standardV"],
       transaction_index: transaction["transactionIndex"],
       v: transaction["v"],
-      block_id: block.id,
     }
   end
 

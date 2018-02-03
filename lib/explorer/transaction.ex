@@ -1,14 +1,16 @@
 defmodule Explorer.Transaction do
   @moduledoc false
-
-  use Ecto.Schema
-  import Ecto.Changeset
+  alias Explorer.BlockTransaction
   alias Explorer.Transaction
+  import Ecto.Changeset
+  use Ecto.Schema
 
   @timestamps_opts [type: Timex.Ecto.DateTime,
                     autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}]
 
   schema "transactions" do
+    has_one :block_transaction, BlockTransaction
+    has_one :block, through: [:block_transaction, :block]
     field :hash, :string
     field :value, :decimal
     field :gas, :decimal
@@ -22,10 +24,6 @@ defmodule Explorer.Transaction do
     field :transaction_index, :string
     field :v, :string
     timestamps()
-
-    belongs_to :block, Explorer.Block
-
-    many_to_many :to_address, Explorer.Address, join_through: "to_addresses", unique: true
   end
 
   @required_attrs ~w(hash value gas gas_price input nonce public_key r s
@@ -35,7 +33,7 @@ defmodule Explorer.Transaction do
   @doc false
   def changeset(%Transaction{} = transaction, attrs \\ %{}) do
     transaction
-    |> cast(attrs, [:block_id | @required_attrs], @optional_attrs)
+    |> cast(attrs, @required_attrs, @optional_attrs)
     |> validate_required(@required_attrs)
     |> foreign_key_constraint(:block_id)
     |> update_change(:hash, &String.downcase/1)

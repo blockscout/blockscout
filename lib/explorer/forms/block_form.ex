@@ -1,9 +1,9 @@
 defmodule Explorer.BlockForm do
-  import Ecto.Query
-  alias Explorer.Transaction
-  alias Explorer.Repo
-
   @moduledoc false
+  alias Explorer.Block
+  alias Explorer.BlockTransaction
+  alias Explorer.Repo
+  import Ecto.Query
 
   def build(block) do
     block |> Map.merge(%{
@@ -14,10 +14,12 @@ defmodule Explorer.BlockForm do
   end
 
   def get_transactions_count(block) do
-    Transaction
-      |> where([t], t.block_id == ^block.id)
-      |> Repo.all
-      |> Enum.count
+    query = from block_transaction in BlockTransaction,
+      join: block in Block,
+        where: block.id == block_transaction.block_id,
+      where: block.id == ^block.id,
+      select: count(block_transaction.block_id)
+    Repo.one(query)
   end
 
   def calculate_age(block) do

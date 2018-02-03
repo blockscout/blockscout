@@ -63,7 +63,7 @@
           </div>
           <div class="transaction__item">
             <dt class="transaction__item-key"><%= gettext "Cumulative Gas Used" %></dt>
-            <dd class="transaction__item-value"><%= @transaction.cumulative_gas_used |> Cldr.Number.to_string! %></dd>
+            <dd class="transaction__item-value"><%= @transaction.cumulative_gas_used %></dd>
           </div>
           <div class="transaction__item">
             <dt class="transaction__item-key"><%= gettext "Nonce" %></dt>

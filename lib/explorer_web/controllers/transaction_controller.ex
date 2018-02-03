@@ -3,18 +3,20 @@ defmodule ExplorerWeb.TransactionController do
 
   import Ecto.Query
 
-  alias Explorer.Block
   alias Explorer.Repo.NewRelic, as: Repo
   alias Explorer.Transaction
   alias Explorer.TransactionForm
 
   def index(conn, params) do
-    transactions = from t in Transaction,
-      join: b in Block, on: b.id == t.block_id,
-      order_by: [desc: b.number],
-      preload: :block
+    query = from transaction in Transaction,
+      left_join: block_transaction in assoc(transaction, :block_transaction),
+      left_join: block in assoc(block_transaction, :block),
+      preload: [block_transaction: block_transaction, block: block],
+      order_by: [asc: block.inserted_at]
 
-    render(conn, "index.html", transactions: Repo.paginate(transactions, params))
+    transactions = Repo.paginate(query, params)
+
+    render(conn, "index.html", transactions: transactions)
   end
 
   def show(conn, params) do
@@ -22,8 +24,8 @@ defmodule ExplorerWeb.TransactionController do
       |> where(hash: ^params["id"])
       |> first
       |> Repo.one
-      |> Repo.preload(:block)
       |> TransactionForm.build
+
     render(conn, "show.html", transaction: transaction)
   end
 end

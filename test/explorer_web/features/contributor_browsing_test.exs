@@ -27,7 +27,7 @@ defmodule ExplorerWeb.UserListTest do
       gas_used: 1010101,
       gas_limit: 5030101
     })
-    for _ <- 0..2, do: insert(:transaction, %{block: fifth_block}) |> with_addresses
+    for _ <- 0..2, do: insert(:transaction) |> with_block(fifth_block) |> with_addresses
 
     session
     |> visit("/en")
@@ -56,7 +56,7 @@ defmodule ExplorerWeb.UserListTest do
       timestamp: Timex.now |> Timex.shift(hours: -2),
       gas_used: 123987,
     })
-    for _ <- 0..3, do: insert(:transaction, %{block: block}) |> with_addresses
+    for _ <- 0..3, do: insert(:transaction) |> with_block(block) |> with_addresses
 
     insert(:transaction, %{
       hash: "0xSk8",
@@ -65,8 +65,8 @@ defmodule ExplorerWeb.UserListTest do
       gas_price: 7890000000898912300045,
       input: "0x00012",
       nonce: 99045,
-      block: block,
     })
+    |> with_block(block)
     |> with_addresses(%{to: "0xabelincoln", from: "0xhowardtaft"})
 
     session

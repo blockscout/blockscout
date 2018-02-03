@@ -5,13 +5,13 @@ defmodule Explorer.BlockFormTest do
   describe "build/1" do
     test "that it has a number" do
       block = insert(:block, number: 311)
-      insert_list(2, :transaction, block: block)
+      insert_list(2, :transaction) |> list_with_block(block)
       assert BlockForm.build(block).number == 311
     end
 
     test "that it returns a count of transactions" do
       block = insert(:block, number: 311)
-      insert_list(2, :transaction, block: block)
+      insert_list(2, :transaction) |> list_with_block(block)
       assert BlockForm.build(block).transactions_count == 2
     end
 
