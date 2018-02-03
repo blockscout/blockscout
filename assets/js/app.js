@@ -11,7 +11,9 @@
 //
 // If you no longer want to use a dependency, remember
 // to also remove its path from "config.paths.watched".
+import '@babel/polyfill'
 import 'phoenix_html'
+import './lib/react_phoenix'
 
 // Import local files
 //

@@ -22,8 +22,7 @@ config :explorer, Explorer.Repo,
 
 # Configure wallaby
 config :wallaby,
-  screenshot_on_failure: true,
-  chrome: [headless: false]
+  screenshot_on_failure: true
 
 # Configure ethereumex
 config :ethereumex,

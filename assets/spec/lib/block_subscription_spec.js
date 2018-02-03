@@ -1,4 +1,4 @@
-import BlockSubscription from 'js/block_subscription'
+import BlockSubscription from 'js/lib/block_subscription'
 
 describe('BlockSubscription', function () {
   it('exists', function () {

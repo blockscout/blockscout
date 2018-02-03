@@ -40,6 +40,8 @@ defmodule ExplorerWeb do
       import ExplorerWeb.Router.Helpers
       import ExplorerWeb.ErrorHelpers
       import ExplorerWeb.Gettext
+      import Scrivener.HTML
+      import ReactPhoenix.ClientSide
     end
   end
 

@@ -7,7 +7,7 @@ machine:
     PATH: "$HOME/.asdf/bin:$HOME/.asdf/shims:$PATH"
     MIX_ENV: "test"
   node:
-    version: 8.9.1
+    version: 9.4.0
   services:
     - postgresql
   pre:
@@ -39,7 +39,7 @@ dependencies:
     - yes | mix do deps.get, local.rebar, deps.compile, compile
     - bundle check --path=vendor/bundle || bundle install --path=vendor/bundle --jobs=4 --retry=3
     - mix dialyzer --plt
-    - cd assets && npm install && npm run build && cd ..
+    - cd assets && yarn install && yarn build && cd ..
   cache_directories:
     - ~/.asdf
     - _build
@@ -53,8 +53,8 @@ test:
     - mix sobelow --config
     - mix dialyzer --halt-exit-status
     - bundle exec license_finder --project-path=. --decisions-file=doc/dependency_decisions.yml
-    - bundle exec license_finder --project-path=assets --decisions-file=doc/dependency_decisions.yml
-    - cd assets && npm run eslint -- --format=junit --output-file="$CIRCLE_TEST_REPORTS/eslint/junit.xml" && cd ..
+    - cd assets && bundle exec license_finder --decisions-file=../doc/dependency_decisions.yml && cd ..
+    - cd assets && yarn eslint --format=junit --output-file="$CIRCLE_TEST_REPORTS/eslint/junit.xml" && cd ..
   override:
     - mix test
   post:

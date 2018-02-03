@@ -3,8 +3,11 @@ exports.config = {
   files: {
     javascripts: {
       entryPoints: {
-        'js/app.js': 'js/app.js',
-        'js/test.js': 'js/test.js'
+        'js/app.js': 'js/app.js'
+      },
+
+      joinTo: {
+        'js/test.js': [/^spec/, /^js/, /^node_modules/]
       }
 
       // To use a separate vendor.js bundle, specify two files path
@@ -24,7 +27,8 @@ exports.config = {
     },
     stylesheets: {
       joinTo: {
-        'css/app.css': 'css/app.scss'
+        'css/app.css': 'css/app.scss',
+        'css/test.css': 'spec/support/jasmine.scss',
       }
     },
     templates: {
@@ -42,7 +46,7 @@ exports.config = {
   // Phoenix paths configuration
   paths: {
     // Dependencies and current project directories to watch
-    watched: ['static', 'css', 'css/**', 'js', 'vendor'],
+    watched: ['static', 'css', 'css/**', 'js', 'vendor', 'spec'],
     // Where to compile files to
     public: '../priv/static'
   },
@@ -50,6 +54,8 @@ exports.config = {
   // Configure your plugins
   plugins: {
     babel: {
+      presets: ['env', 'react'],
+
       // Do not use ES6 compiler in vendor code
       ignore: [/vendor/]
     },
@@ -59,7 +65,7 @@ exports.config = {
       precision: 8,
       allowCache: true,
       options: {
-        includePaths: ['node_modules/normalize-scss/sass']
+        includePaths: ['node_modules/normalize-scss/sass', 'node_modules/jasmine-core/lib']
       }
     }
   },
@@ -67,7 +73,23 @@ exports.config = {
   modules: {
     autoRequire: {
       'js/app.js': ['js/app'],
-      'js/test.js': ['js/test']
+      'js/test.js': ['spec/spec_helper']
+    }
+  },
+
+  overrides: {
+    production: {
+      optimize: true,
+      sourceMaps: false,
+      plugins: {
+        autoReload: {enabled: false},
+      },
+      modules: {autoRequire: {'js/app.js': ['js/app']}},
+      paths: {watched: ['static', 'css', 'css/**', 'js', 'vendor']},
+      files: {
+        javascripts: {joinTo: 'js/app.js'},
+        stylesheets: {joinTo: 'css/app.css'},
+      }
     }
   },
 

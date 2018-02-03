@@ -68,6 +68,7 @@ defmodule Explorer.Mixfile do
       {:phoenix_pubsub_redis, "~> 2.1.0", only: [:prod]},
       {:postgrex, ">= 0.0.0"},
       {:quantum, "~> 2.2.1"},
+      {:react_phoenix, "~> 0.5"},
       {:scrivener_ecto, "~> 1.0"},
       {:scrivener_html, "~> 1.7"},
       {:set_locale, github: "minifast/set_locale", branch: "master"}, # Waiting on https://github.com/smeevil/set_locale/pull/9

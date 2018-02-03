@@ -11,10 +11,11 @@ defmodule ExplorerWeb.Router do
         default-src 'self';\
         script-src 'self' 'unsafe-inline' 'unsafe-eval';\
         style-src 'self' 'unsafe-inline' 'unsafe-eval';\
+        img-src 'self' 'unsafe-inline' 'unsafe-eval' data:;\
         font-src 'self' 'unsafe-inline' 'unsafe-eval' data:;\
       "
     }
-    if Mix.env != :prod, do: plug Jasmine, js_files: ["js/test.js"]
+    if Mix.env != :prod, do: plug Jasmine, js_files: ["js/test.js"], css_files: ["css/test.css"]
     plug SetLocale, gettext: ExplorerWeb.Gettext, default_locale: "en"
   end
 
