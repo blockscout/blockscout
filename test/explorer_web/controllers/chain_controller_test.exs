@@ -48,10 +48,10 @@ defmodule ExplorerWeb.ChainControllerTest do
     end
 
     test "returns only the five most recent transactions", %{conn: conn} do
-      block_mined_today = insert(:block, timestamp: Timex.now |> Timex.shift(hours: -1))
-      insert(:transaction, hash: "0xStuff", inserted_at: Timex.now |> Timex.shift(hours: -1), block: block_mined_today) |> with_addresses
+      block_mined_today = insert(:block, number: 2)
+      insert(:transaction, hash: "0xStuff", block: block_mined_today) |> with_addresses
 
-      block_mined_last_week = insert(:block, timestamp: Timex.now |> Timex.shift(weeks: -1))
+      block_mined_last_week = insert(:block, number: 1)
       for _ <- 0..4, do: insert(:transaction, %{block: block_mined_last_week}) |> with_addresses
 
       conn = get conn, "/en"

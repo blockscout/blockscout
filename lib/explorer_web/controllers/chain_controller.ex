@@ -16,7 +16,7 @@ defmodule ExplorerWeb.ChainController do
 
     transactions = Transaction
       |> join(:left, [t, b], b in assoc(t, :block))
-      |> order_by([t, b], desc: b.timestamp)
+      |> order_by([t, b], desc: b.number)
       |> limit(5)
       |> Repo.all
       |> Repo.preload(:block)
