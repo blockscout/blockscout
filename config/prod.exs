@@ -18,8 +18,8 @@ config :explorer, ExplorerWeb.Endpoint,
   force_ssl: [rewrite_on: [:x_forwarded_proto]],
   instrumenters: [NewRelixir.Instrumenters.Phoenix],
   load_from_system_env: true,
-  pubsub: [adapter: Phoenix.PubSub.Redis, url: Map.fetch!(System.get_env(), "REDIS_URL"), node_name: System.get_env("DYNO")],
-  secret_key_base: Map.fetch!(System.get_env(), "SECRET_KEY_BASE"),
+  pubsub: [adapter: Phoenix.PubSub.Redis, url: System.get_env("REDIS_URL"), node_name: System.get_env("DYNO")],
+  secret_key_base: System.get_env("SECRET_KEY_BASE"),
   url: [scheme: "https", host: Map.fetch!(System.get_env(), "HEROKU_APP_NAME") <> ".herokuapp.com", port: 443]
 
 # Do not print debug messages in production
@@ -30,7 +30,10 @@ config :explorer, Explorer.Repo,
   adapter: Ecto.Adapters.Postgres,
   url: System.get_env("DATABASE_URL"),
   pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
-  ssl: true
+  ssl: false,
+  prepare: :unnamed,
+  timeout: 60_000,
+  pool_timeout: 60_000
 
 # Configure New Relic
 config :new_relixir,
@@ -52,5 +55,6 @@ config :explorer, Explorer.Scheduler,
 
 # Configure Exq
 config :exq,
-  url: {:system, "REDIS_URL"},
-  concurrency: 10
+  concurrency: String.to_integer(System.get_env("EXQ_CONCURRENCY") || "3"),
+  node_identifier: Explorer.ExqNodeIdentifier,
+  url: System.get_env("REDIS_URL")
