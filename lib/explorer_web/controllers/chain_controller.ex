@@ -1,27 +1,31 @@
 defmodule ExplorerWeb.ChainController do
-  use ExplorerWeb, :controller
-  import Ecto.Query
   alias Explorer.Block
   alias Explorer.Transaction
   alias Explorer.Repo
   alias Explorer.BlockForm
   alias Explorer.TransactionForm
 
+  import Ecto.Query
+
+  use ExplorerWeb, :controller
+
   def show(conn, _params) do
-    blocks = Block
-      |> order_by(desc: :number)
-      |> limit(5)
-      |> Repo.all
-      |> Enum.map(&BlockForm.build/1)
+    blocks = from b in Block,
+      order_by: [desc: b.number],
+      preload: :transactions,
+      limit: 5
 
-    transactions = Transaction
-      |> join(:left, [t, b], b in assoc(t, :block))
-      |> order_by([t, b], desc: b.number)
-      |> limit(5)
-      |> Repo.all
-      |> Repo.preload(:block)
-      |> Enum.map(&TransactionForm.build/1)
+    transactions = from t in Transaction,
+      join: b in Block, on: b.id == t.block_id,
+      order_by: [desc: b.number],
+      preload: :block,
+      limit: 5
 
-    render(conn, "show.html", blocks: blocks, transactions: transactions)
+    render(
+      conn,
+      "show.html",
+      blocks: Repo.all(blocks),
+      transactions: Repo.all(transactions)
+    )
   end
 end

@@ -30,7 +30,7 @@ config :explorer, Explorer.Repo,
   adapter: Ecto.Adapters.Postgres,
   url: System.get_env("DATABASE_URL"),
   pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
-  ssl: false,
+  ssl: String.equivalent?(System.get_env("ECTO_USE_SSL") || "true", "true"),
   prepare: :unnamed,
   timeout: 60_000,
   pool_timeout: 60_000
@@ -50,11 +50,11 @@ config :ethereumex,
 config :explorer, Explorer.Scheduler,
   jobs: [
     [schedule: {:extended, "* * * * * *"}, task: {Explorer.Workers.ImportBlock, :perform_later, ["latest"]}],
-    [schedule: {:extended, "*/15 * * * * *"}, task: {Explorer.Workers.ImportSkippedBlocks, :perform_later, [5]}],
+    [schedule: {:extended, "*/15 * * * * *"}, task: {Explorer.Workers.ImportSkippedBlocks, :perform_later, [String.to_integer(System.get_env("EXPLORER_BACKFILL_CONCURRENCY") || "1")]}],
   ]
 
 # Configure Exq
 config :exq,
-  concurrency: String.to_integer(System.get_env("EXQ_CONCURRENCY") || "3"),
+  concurrency: String.to_integer(System.get_env("EXQ_CONCURRENCY") || "1"),
   node_identifier: Explorer.ExqNodeIdentifier,
   url: System.get_env("REDIS_URL")

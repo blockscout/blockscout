@@ -7,11 +7,14 @@
     &--title { padding-top: explorer-size(0); }
   }
 
+  &__headline-title,
   &__title {
     @include explorer-typography("title");
     color: explorer-color("slate", "100");
     margin: 0;
   }
+
+  &__headline-title { line-height: 18px; }
 
   &__table {
     @extend %table;
