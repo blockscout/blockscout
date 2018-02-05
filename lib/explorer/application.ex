@@ -8,22 +8,10 @@ defmodule Explorer.Application do
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
   def start(_type, _args) do
-    import Supervisor.Spec
-
-    # Define workers and child supervisors to be supervised
-    children = [
-      # Start the Ecto repository
-      supervisor(Explorer.Repo, []),
-      # Start the endpoint when the application starts
-      supervisor(ExplorerWeb.Endpoint, []),
-      # Start your own worker by calling: Explorer.Worker.start_link(a, b, c)
-      worker(Explorer.Scheduler, []),
-    ]
-
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Explorer.Supervisor]
-    Supervisor.start_link(children, opts)
+    Supervisor.start_link(children(Mix.env), opts)
   end
 
   # Tell Phoenix to update the endpoint configuration
@@ -32,5 +20,20 @@ defmodule Explorer.Application do
     alias ExplorerWeb.Endpoint
     Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  defp children(:test), do: children()
+  defp children(_) do
+    import Supervisor.Spec
+    exq_options = [] |> Keyword.put(:mode, :enqueuer)
+    [supervisor(Exq, [exq_options]) | children()]
+  end
+
+  defp children do
+    import Supervisor.Spec
+    [
+      supervisor(Explorer.Repo, []),
+      supervisor(ExplorerWeb.Endpoint, []),
+    ]
   end
 end

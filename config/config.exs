@@ -18,6 +18,9 @@ config :explorer, ExplorerWeb.Endpoint,
   render_errors: [view: ExplorerWeb.ErrorView, accepts: ~w(html json)],
   pubsub: [name: Explorer.PubSub, adapter: Phoenix.PubSub.PG2]
 
+config :explorer, Explorer.Integrations.EctoLogger,
+  query_time_ms_threshold: 2_000
+
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
@@ -32,6 +35,18 @@ config :ethereumex,
    default_locale: "en",
    locales: ["en"],
    gettext: ExplorerWeb.Gettext
+
+config :exq,
+  host: "localhost",
+  port: 6379,
+  namespace: "exq",
+  start_on_application: false,
+  scheduler_enable: true,
+  shutdown_timeout: 5000,
+  max_retries: 10
+
+config :exq_ui,
+  server: false
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

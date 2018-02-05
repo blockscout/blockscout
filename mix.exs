@@ -35,11 +35,12 @@ defmodule Explorer.Mixfile do
   defp elixirc_paths,        do: ["lib"]
 
   # Specifies extra applications to start per environment
-  defp extra_applications(:prod), do: [:phoenix_pubsub_redis, :new_relixir | extra_applications()]
+  defp extra_applications(:prod), do: [:phoenix_pubsub_redis, :new_relixir, :exq, :exq_ui | extra_applications()]
+  defp extra_applications(:dev), do: [:exq, :exq_ui | extra_applications()]
   defp extra_applications(_), do: extra_applications()
   defp extra_applications, do: [
     :scrivener_ecto, :scrivener_html, :ex_cldr, :ex_jasmine, :ethereumex,
-    :timex, :timex_ecto, :set_locale, :logger, :runtime_tools
+    :timex, :timex_ecto, :crontab, :set_locale, :logger, :runtime_tools
   ]
 
   # Specifies your project dependencies.
@@ -49,16 +50,20 @@ defmodule Explorer.Mixfile do
     [
       {:cowboy, "~> 1.0"},
       {:credo, "~> 0.8", only: [:dev, :test], runtime: false},
+      {:crontab, "~> 1.1"},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       {:ethereumex, github: "exthereum/ethereumex", commit: "262f1d81ae163ffb46e127283658249dac1c8318"}, # Waiting for this version to be pushed to Hex.
       {:ex_cldr_numbers, "~> 1.0"},
       {:ex_cldr_units, "~> 1.0"},
+      {:ex_jasmine, github: "minifast/ex_jasmine", branch: "master"},
       {:ex_machina, "~> 2.1", only: [:test]},
+      {:exq, "~> 0.9.1"},
+      {:exq_ui, "~> 0.9.0"},
       {:exvcr, "~> 0.8", only: :test},
       {:gettext, "~> 0.11"},
-      {:ex_jasmine, github: "minifast/ex_jasmine", branch: "master"},
-      {:junit_formatter, ">= 0.0.0"},
+      {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       {:math, "~> 0.3.0"},
+      {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:new_relixir, "~> 0.4.0", only: [:prod]},
       {:phoenix, "~> 1.3.0"},
       {:phoenix_ecto, "~> 3.2"},

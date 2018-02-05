@@ -10,6 +10,7 @@ machine:
     version: 9.4.0
   services:
     - postgresql
+    - redis
   pre:
     - mkdir -p $CIRCLE_TEST_REPORTS/exunit
     - mkdir -p $CIRCLE_TEST_REPORTS/eslint

@@ -12,25 +12,31 @@ then
   git fetch heroku
 fi
 
+WORKER_COUNT=$(heroku ps | grep 'worker\.' | wc -l)
+
 if ! git diff HEAD heroku/master --exit-code -- priv/repo
 then
   if heroku features --app $HEROKU_APPLICATION | grep '\[+\] preboot'
   then
     heroku features:disable preboot --app $HEROKU_APPLICATION
     heroku maintenance:on --app $HEROKU_APPLICATION
+    heroku scale worker=0 --app $HEROKU_APPLICATION
     heroku pg:killall --app $HEROKU_APPLICATION
     git push heroku $CIRCLE_SHA1:refs/heads/master
     heroku pg:backups capture --app $HEROKU_APPLICATION
     heroku run "POOL_SIZE=2 mix ecto.migrate" --app $HEROKU_APPLICATION
+    heroku scale worker=$WORKER_COUNT --app $HEROKU_APPLICATION
     heroku restart --app $HEROKU_APPLICATION
     heroku maintenance:off --app $HEROKU_APPLICATION
     heroku features:enable preboot --app $HEROKU_APPLICATION
   else
     heroku maintenance:on --app $HEROKU_APPLICATION
+    heroku scale worker=0 --app $HEROKU_APPLICATION
     heroku pg:killall --app $HEROKU_APPLICATION
     git push heroku $CIRCLE_SHA1:refs/heads/master
     heroku pg:backups capture --app $HEROKU_APPLICATION
     heroku run "POOL_SIZE=2 mix ecto.migrate" --app $HEROKU_APPLICATION
+    heroku scale worker=$WORKER_COUNT --app $HEROKU_APPLICATION
     heroku restart --app $HEROKU_APPLICATION
     heroku maintenance:off --app $HEROKU_APPLICATION
   fi
@@ -38,3 +44,7 @@ else
   git push heroku $CIRCLE_SHA1:refs/heads/master
   heroku pg:backups capture --app $HEROKU_APPLICATION
 fi
+
+set +x
+
+heroku config:set ADMIN_PASSWORD=$(mix phx.gen.secret) --app $HEROKU_APPLICATION

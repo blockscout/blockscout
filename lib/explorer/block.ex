@@ -1,9 +1,10 @@
 defmodule Explorer.Block do
-  @moduledoc false
-
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
   alias Explorer.Block
+
+  @moduledoc false
 
   @timestamps_opts [type: Timex.Ecto.DateTime,
                     autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}]
@@ -37,5 +38,13 @@ defmodule Explorer.Block do
     |> validate_required(@required_attrs)
     |> update_change(:hash, &String.downcase/1)
     |> unique_constraint(:hash)
+  end
+
+  def null do
+    %Block{number: -1}
+  end
+
+  def latest(query) do
+    query |> order_by(desc: :number)
   end
 end

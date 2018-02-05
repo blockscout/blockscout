@@ -6,17 +6,17 @@ defmodule Explorer.Fetcher  do
   alias Explorer.Repo
   alias Explorer.ToAddress
   alias Explorer.Transaction
+
   import Ethereumex.HttpClient, only: [eth_get_block_by_number: 2]
 
   @dialyzer {:nowarn_function, fetch: 1}
   def fetch(block_number) do
     raw_block = block_number |> download_block
-
     Repo.transaction fn ->
       raw_block
       |> extract_block
       |> prepare_block
-      |> Repo.insert!
+      |> Repo.insert_or_update!
       |> extract_transactions(raw_block["transactions"])
     end
   end
@@ -49,12 +49,13 @@ defmodule Explorer.Fetcher  do
     end)
   end
 
-  def create_transaction(block, transaction) do
-    %Transaction{}
-    |> Transaction.changeset(extract_transaction(block, transaction))
-    |> Repo.insert!
-    |> create_from_address(transaction["from"])
-    |> create_to_address(transaction["to"] || transaction["creates"])
+  def create_transaction(block, changes) do
+    transaction = Repo.get_by(Transaction, hash: changes["hash"]) || %Transaction{}
+    transaction
+    |> Transaction.changeset(extract_transaction(block, changes))
+    |> Repo.insert_or_update!
+    |> create_from_address(changes["from"])
+    |> create_to_address(changes["to"] || changes["creates"])
   end
 
   def extract_transaction(block, transaction) do
@@ -77,28 +78,31 @@ defmodule Explorer.Fetcher  do
 
   def create_to_address(transaction, hash) do
     address = Address.find_or_create_by_hash(hash)
-    attrs = %{transaction_id: transaction.id, address_id: address.id}
+    changes = %{transaction_id: transaction.id, address_id: address.id}
 
-    %ToAddress{}
-    |> ToAddress.changeset(attrs)
-    |> Repo.insert
+    to_address = Repo.get_by(ToAddress, changes) || %ToAddress{}
+    to_address
+    |> ToAddress.changeset(changes)
+    |> Repo.insert_or_update!
 
     transaction
   end
 
   def create_from_address(transaction, hash) do
     address = Address.find_or_create_by_hash(hash)
-    attrs = %{transaction_id: transaction.id, address_id: address.id}
+    changes = %{transaction_id: transaction.id, address_id: address.id}
 
-    %FromAddress{}
-    |> FromAddress.changeset(attrs)
-    |> Repo.insert
+    from_address = Repo.get_by(FromAddress, changes) || %FromAddress{}
+    from_address
+    |> FromAddress.changeset(changes)
+    |> Repo.insert_or_update!
 
     transaction
   end
 
-  def prepare_block(block) do
-    Block.changeset(%Block{}, block)
+  def prepare_block(changes) do
+    block = Repo.get_by(Block, hash: changes.hash) || %Block{}
+    Block.changeset(block, changes)
   end
 
   def decode_integer_field(hex) do

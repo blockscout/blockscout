@@ -46,5 +46,11 @@ config :ethereumex,
 # Configure Quantum
 config :explorer, Explorer.Scheduler,
   jobs: [
-    {"@secondly", {Mix.Tasks.Scrape, :run, [[]]}}
+    [schedule: {:extended, "* * * * * *"}, task: {Explorer.Workers.ImportBlock, :perform_later, ["latest"]}],
+    [schedule: {:extended, "*/15 * * * * *"}, task: {Explorer.Workers.ImportSkippedBlocks, :perform_later, [5]}],
   ]
+
+# Configure Exq
+config :exq,
+  url: {:system, "REDIS_URL"},
+  concurrency: 10

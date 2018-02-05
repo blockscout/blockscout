@@ -15,21 +15,51 @@ defmodule ExplorerWeb.Router do
         font-src 'self' 'unsafe-inline' 'unsafe-eval' data:;\
       "
     }
-    if Mix.env != :prod, do: plug Jasmine, js_files: ["js/test.js"], css_files: ["css/test.css"]
+  end
+
+  pipeline :set_locale do
     plug SetLocale, gettext: ExplorerWeb.Gettext, default_locale: "en"
+  end
+
+  pipeline :exq do
+    plug :accepts, ["html"]
+    plug :fetch_session
+    plug :fetch_flash
+    plug :put_secure_browser_headers, %{
+      "content-security-policy" => "\
+        default-src 'self';\
+        script-src 'self' 'unsafe-inline';\
+        font-src 'self' fonts.gstatic.com;\
+        style-src 'self' 'unsafe-inline' fonts.googleapis.com;\
+      "
+    }
+    plug ExqUi.RouterPlug, namespace: "exq"
+  end
+
+  pipeline :jasmine do
+    if Mix.env != :prod, do: plug Jasmine, js_files: ["js/test.js"], css_files: ["css/test.css"]
   end
 
   pipeline :api do
     plug :accepts, ["json"]
   end
 
+  scope "/exq", ExqUi do
+    pipe_through :exq
+    forward "/", RouterPlug.Router, :index
+  end
+
   scope "/", ExplorerWeb do
     pipe_through :browser
+    pipe_through :jasmine
+    pipe_through :set_locale
     resources "/", ChainController, only: [:show], singleton: true, as: :chain
   end
 
   scope "/:locale", ExplorerWeb do
-    pipe_through :browser # Use the default browser stack
+    pipe_through :browser
+    pipe_through :jasmine
+    pipe_through :set_locale
     resources "/", ChainController, only: [:show], singleton: true, as: :chain
     resources "/blocks", BlockController, only: [:index, :show]
     resources "/transactions", TransactionController, only: [:index, :show]
