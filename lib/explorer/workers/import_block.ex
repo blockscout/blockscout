@@ -11,6 +11,10 @@ defmodule Explorer.Workers.ImportBlock do
   @dialyzer {:nowarn_function, perform: 0}
   def perform, do: perform("latest")
 
+  def perform_later("latest") do
+    Exq.enqueue(Exq.Enqueuer, "default", __MODULE__, ["latest"], max_retries: 0)
+  end
+
   def perform_later(number) do
     Exq.enqueue(Exq.Enqueuer, "default", __MODULE__, [number])
   end
