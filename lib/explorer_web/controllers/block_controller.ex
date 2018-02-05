@@ -1,16 +1,18 @@
 defmodule ExplorerWeb.BlockController do
-  use ExplorerWeb, :controller
-  import Ecto.Query
   alias Explorer.Block
-  alias Explorer.Repo
   alias Explorer.BlockForm
+  alias Explorer.Repo
+
+  import Ecto.Query
+
+  use ExplorerWeb, :controller
 
   def index(conn, params) do
-    blocks = Block
-      |> order_by(desc: :number)
-      |> preload(:transactions)
-      |> Repo.paginate(params)
-    render(conn, "index.html", blocks: blocks)
+    blocks = from b in Block,
+      order_by: [desc: b.number],
+      preload: :transactions
+
+    render(conn, "index.html", blocks: Repo.paginate(blocks, params))
   end
 
   def show(conn, params) do

@@ -1,16 +1,20 @@
 defmodule ExplorerWeb.TransactionController do
-  use ExplorerWeb, :controller
-  import Ecto.Query
-  alias Explorer.Transaction
+  alias Explorer.Block
   alias Explorer.Repo
+  alias Explorer.Transaction
   alias Explorer.TransactionForm
 
+  import Ecto.Query
+
+  use ExplorerWeb, :controller
+
   def index(conn, params) do
-    transactions = Transaction
-      |> order_by(desc: :inserted_at)
-      |> preload(:block)
-      |> Repo.paginate(params)
-    render(conn, "index.html", transactions: transactions)
+    transactions = from t in Transaction,
+      join: b in Block, on: b.id == t.block_id,
+      order_by: [desc: b.number],
+      preload: :block
+
+    render(conn, "index.html", transactions: Repo.paginate(transactions, params))
   end
 
   def show(conn, params) do

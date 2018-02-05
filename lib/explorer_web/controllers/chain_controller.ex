@@ -2,8 +2,6 @@ defmodule ExplorerWeb.ChainController do
   alias Explorer.Block
   alias Explorer.Transaction
   alias Explorer.Repo
-  alias Explorer.BlockForm
-  alias Explorer.TransactionForm
 
   import Ecto.Query
 
