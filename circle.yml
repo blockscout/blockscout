@@ -50,7 +50,7 @@ dependencies:
 test:
   pre:
     - mix credo
-    - mix sobelow --private --compact --exit Low
+    - mix sobelow --config
     - mix dialyzer --halt-exit-status
     - bundle exec license_finder --project-path=. --decisions-file=doc/dependency_decisions.yml
     - bundle exec license_finder --project-path=assets --decisions-file=doc/dependency_decisions.yml

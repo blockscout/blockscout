@@ -5,6 +5,6 @@
   router: "",
   exit: "low",
   format: "compact",
-  ignore: [""],
+  ignore: ["Config.CSRF", "Vuln.Coherence"],
   ignore_files: [""]
 ]

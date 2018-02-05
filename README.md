@@ -38,9 +38,11 @@ Configure your local CCMenu with the following url: [`https://circleci.com/gh/po
 
 ### Testing
 
+  * Build the assets: `$ cd assets && yarn build`
   * Run the test suite: `$ mix test`
   * Ensure your Elixir code is properly formatted: `$ mix credo --strict`
-  * Ensure your ES code is properly formatted: `$ cd assets && npm run eslint`
+  * Ensure your Elixir code has no vulnerabilities: `$ mix sobelow --config`
+  * Ensure your ES code is properly formatted: `$ cd assets && yarn eslint`
 
 
 ## Internationalization
