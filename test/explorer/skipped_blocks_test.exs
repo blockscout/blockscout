@@ -54,10 +54,11 @@ defmodule Explorer.SkippedBlocksTest do
       assert SkippedBlocks.first(100) == ["0"]
     end
 
-    test "returns all the skipped block numbers in descending order" do
+    test "returns all the skipped block numbers in random order" do
       insert(:block, %{number: 1})
       insert(:block, %{number: 3})
-      assert SkippedBlocks.first(100) == ["2", "0"]
+      block_ids = SkippedBlocks.first(100)
+      assert("2" in block_ids and "0" in block_ids)
     end
   end
 

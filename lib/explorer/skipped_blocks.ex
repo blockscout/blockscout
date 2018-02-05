@@ -20,6 +20,7 @@ defmodule Explorer.SkippedBlocks do
     SQL.query!(Repo, @query, [latest_block_number(), count]).rows
     |> Enum.map(&List.first/1)
     |> Enum.map(&Integer.to_string/1)
+    |> Enum.shuffle
   end
 
   def latest_block_number do
