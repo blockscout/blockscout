@@ -1,11 +1,11 @@
 defmodule Explorer.Workers.ImportBlock do
-  alias Explorer.Fetcher
+  alias Explorer.BlockImporter
 
   @moduledoc "Imports blocks by web3 conventions."
 
   @dialyzer {:nowarn_function, perform: 1}
   def perform(number) do
-    Fetcher.fetch("#{number}")
+    BlockImporter.import("#{number}")
   end
 
   @dialyzer {:nowarn_function, perform: 0}
