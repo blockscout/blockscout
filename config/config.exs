@@ -31,6 +31,9 @@ config :ethereumex,
   host: "localhost",
   port: 8545
 
+config :new_relixir,
+  active: false
+
  config :ex_cldr,
    default_locale: "en",
    locales: ["en"],

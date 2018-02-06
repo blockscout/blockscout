@@ -4,7 +4,7 @@ defmodule Explorer.Address do
   use Ecto.Schema
   import Ecto.Changeset
   alias Explorer.Address
-  alias Explorer.Repo
+  alias Explorer.Repo.NewRelic, as: Repo
 
   @timestamps_opts [type: Timex.Ecto.DateTime,
                     autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}]

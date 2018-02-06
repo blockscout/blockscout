@@ -38,7 +38,8 @@ config :explorer, Explorer.Repo,
 # Configure New Relic
 config :new_relixir,
   application_name: System.get_env("NEW_RELIC_APP_NAME"),
-  license_key: System.get_env("NEW_RELIC_LICENSE_KEY")
+  license_key: System.get_env("NEW_RELIC_LICENSE_KEY"),
+  active: true
 
 # Configure Web3
 config :ethereumex,

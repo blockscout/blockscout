@@ -3,7 +3,7 @@ defmodule Explorer.Fetcher  do
   alias Explorer.Address
   alias Explorer.Block
   alias Explorer.FromAddress
-  alias Explorer.Repo
+  alias Explorer.Repo.NewRelic, as: Repo
   alias Explorer.ToAddress
   alias Explorer.Transaction
 

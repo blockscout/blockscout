@@ -1,12 +1,12 @@
 defmodule ExplorerWeb.TransactionController do
-  alias Explorer.Block
-  alias Explorer.Repo
-  alias Explorer.Transaction
-  alias Explorer.TransactionForm
+  use ExplorerWeb, :controller
 
   import Ecto.Query
 
-  use ExplorerWeb, :controller
+  alias Explorer.Block
+  alias Explorer.Repo.NewRelic, as: Repo
+  alias Explorer.Transaction
+  alias Explorer.TransactionForm
 
   def index(conn, params) do
     transactions = from t in Transaction,

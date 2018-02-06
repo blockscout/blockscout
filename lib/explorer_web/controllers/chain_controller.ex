@@ -1,11 +1,11 @@
 defmodule ExplorerWeb.ChainController do
-  alias Explorer.Block
-  alias Explorer.Transaction
-  alias Explorer.Repo
+  use ExplorerWeb, :controller
 
   import Ecto.Query
 
-  use ExplorerWeb, :controller
+  alias Explorer.Block
+  alias Explorer.Repo.NewRelic, as: Repo
+  alias Explorer.Transaction
 
   def show(conn, _params) do
     blocks = from b in Block,

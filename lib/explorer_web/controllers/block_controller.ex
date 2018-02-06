@@ -1,11 +1,11 @@
 defmodule ExplorerWeb.BlockController do
-  alias Explorer.Block
-  alias Explorer.BlockForm
-  alias Explorer.Repo
+  use ExplorerWeb, :controller
 
   import Ecto.Query
 
-  use ExplorerWeb, :controller
+  alias Explorer.Block
+  alias Explorer.BlockForm
+  alias Explorer.Repo.NewRelic, as: Repo
 
   def index(conn, params) do
     blocks = from b in Block,

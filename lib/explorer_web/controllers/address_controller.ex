@@ -1,9 +1,11 @@
 defmodule ExplorerWeb.AddressController do
   use ExplorerWeb, :controller
+
   import Ecto.Query
+
   alias Explorer.Address
-  alias Explorer.Repo
   alias Explorer.AddressForm
+  alias Explorer.Repo.NewRelic, as: Repo
 
   def show(conn, params) do
     address = Address

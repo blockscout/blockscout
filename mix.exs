@@ -35,12 +35,13 @@ defmodule Explorer.Mixfile do
   defp elixirc_paths,        do: ["lib"]
 
   # Specifies extra applications to start per environment
-  defp extra_applications(:prod), do: [:phoenix_pubsub_redis, :new_relixir, :exq, :exq_ui | extra_applications()]
+  defp extra_applications(:prod), do: [:phoenix_pubsub_redis, :exq, :exq_ui | extra_applications()]
   defp extra_applications(:dev), do: [:exq, :exq_ui | extra_applications()]
   defp extra_applications(_), do: extra_applications()
   defp extra_applications, do: [
     :scrivener_ecto, :scrivener_html, :ex_cldr, :ex_jasmine, :ethereumex,
-    :timex, :timex_ecto, :crontab, :set_locale, :logger, :runtime_tools
+    :timex, :timex_ecto, :crontab, :set_locale, :logger, :runtime_tools,
+    :new_relixir
   ]
 
   # Specifies your project dependencies.
@@ -64,7 +65,7 @@ defmodule Explorer.Mixfile do
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       {:math, "~> 0.3.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
-      {:new_relixir, "~> 0.4.0", only: [:prod]},
+      {:new_relixir, "~> 0.4"},
       {:phoenix, "~> 1.3.0"},
       {:phoenix_ecto, "~> 3.2"},
       {:phoenix_html, "~> 2.10"},
