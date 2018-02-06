@@ -6,17 +6,17 @@ defmodule Explorer.SkippedBlocks do
   alias Explorer.Block
   alias Explorer.Repo.NewRelic, as: Repo
 
-  @missing "SELECT generate_series(?, 0, -1) AS missing_number"
+  @missing_number_query "SELECT generate_series(?, 0, -1) AS missing_number"
 
   def first, do: first(1)
   def first(count) do
     blocks = from b in Block,
-      right_join: missing_number in fragment(@missing, ^latest_block_number()),
+      right_join: fragment(@missing_number_query, ^latest_block_number()),
       on: b.number == fragment("missing_number"),
-      limit: ^count,
+      select: fragment("missing_number::text"),
       where: is_nil(b.id),
-      select: fragment("missing_number")
-    Repo.all(blocks) |> Enum.map(&Integer.to_string/1)
+      limit: ^count
+    Repo.all(blocks)
   end
 
   def latest_block_number do

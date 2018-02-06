@@ -26,6 +26,4 @@ config :wallaby,
 
 # Configure ethereumex
 config :ethereumex,
-  scheme: "https",
-  host: "sokol.poa.network",
-  port: 443
+  url: "https://sokol.poa.network"

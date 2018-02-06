@@ -27,9 +27,7 @@ config :logger, :console,
   metadata: [:request_id]
 
 config :ethereumex,
-  scheme: "http",
-  host: "localhost",
-  port: 8545
+  url: "http://localhost:8545"
 
 config :new_relixir,
   active: false

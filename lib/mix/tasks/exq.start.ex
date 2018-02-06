@@ -1,10 +1,8 @@
 defmodule Mix.Tasks.Exq.Start do
+  @moduledoc "Starts the Exq worker"
+  use Mix.Task
   alias Explorer.Repo
   alias Explorer.Scheduler
-
-  use Mix.Task
-
-  @moduledoc "Starts the Exq worker"
 
   def run(_args) do
     [:postgrex, :ecto, :ethereumex, :tzdata]

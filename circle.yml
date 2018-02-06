@@ -36,10 +36,15 @@ dependencies:
     - awk '/ruby/ { print $2 }' .tool-versions | xargs asdf install ruby:
         timeout: 3600
     - gem install bundler
+    - mix local.hex --force:
+        timeout: 3600
+    - mix local.rebar --force:
+        timeout: 3600
   override:
-    - yes | mix do deps.get, local.rebar, deps.compile, compile
+    - mix do deps.get, deps.compile, compile
     - bundle check --path=vendor/bundle || bundle install --path=vendor/bundle --jobs=4 --retry=3
-    - mix dialyzer --plt
+    - mix dialyzer --plt:
+        timeout: 3600
     - cd assets && yarn install && yarn build && cd ..
   cache_directories:
     - ~/.asdf

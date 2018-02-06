@@ -43,9 +43,7 @@ config :new_relixir,
 
 # Configure Web3
 config :ethereumex,
-  scheme: System.get_env("ETHEREUM_SCHEME"),
-  host: System.get_env("ETHEREUM_HOST"),
-  port: System.get_env("ETHEREUM_PORT")
+  url: System.get_env("ETHEREUM_URL")
 
 # Configure Quantum
 config :explorer, Explorer.Scheduler,
