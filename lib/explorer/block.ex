@@ -8,7 +8,9 @@ defmodule Explorer.Block do
   import Ecto.Changeset
   import Ecto.Query
 
-  alias Explorer.{Block, BlockTransaction, Transaction}
+  alias Explorer.Block
+  alias Explorer.BlockTransaction
+  alias Explorer.Transaction
 
   @timestamps_opts [type: Timex.Ecto.DateTime,
                     autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}]
