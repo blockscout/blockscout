@@ -54,6 +54,10 @@ config :explorer, Explorer.Scheduler,
 
 # Configure Exq
 config :exq,
-  concurrency: String.to_integer(System.get_env("EXQ_CONCURRENCY") || "1"),
   node_identifier: Explorer.ExqNodeIdentifier,
-  url: System.get_env("REDIS_URL")
+  url: System.get_env("REDIS_URL"),
+  queues: [
+    {"default", String.to_integer(System.get_env("EXQ_CONCURRENCY") || "1")},
+    {"blocks", String.to_integer(System.get_env("EXQ_BLOCKS_CONCURRENCY") || "1")},
+    {"transactions", String.to_integer(System.get_env("EXQ_TRANSACTIONS_CONCURRENCY") || "1")}
+  ]

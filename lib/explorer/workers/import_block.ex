@@ -12,10 +12,10 @@ defmodule Explorer.Workers.ImportBlock do
   def perform, do: perform("latest")
 
   def perform_later("latest") do
-    Exq.enqueue(Exq.Enqueuer, "default", __MODULE__, ["latest"], max_retries: 0)
+    Exq.enqueue(Exq.Enqueuer, "blocks", __MODULE__, ["latest"], max_retries: 0)
   end
 
   def perform_later(number) do
-    Exq.enqueue(Exq.Enqueuer, "default", __MODULE__, [number])
+    Exq.enqueue(Exq.Enqueuer, "blocks", __MODULE__, [number])
   end
 end

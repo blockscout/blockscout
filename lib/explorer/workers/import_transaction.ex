@@ -9,6 +9,6 @@ defmodule Explorer.Workers.ImportTransaction do
   end
 
   def perform_later(hash) do
-    Exq.enqueue(Exq.Enqueuer, "default", __MODULE__, [hash])
+    Exq.enqueue(Exq.Enqueuer, "transactions", __MODULE__, [hash])
   end
 end

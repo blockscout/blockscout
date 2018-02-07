@@ -7,6 +7,7 @@ defmodule Explorer.BlockImporter do
   alias Explorer.Repo.NewRelic, as: Repo
   alias Explorer.Workers.ImportTransaction
 
+  @dialyzer {:nowarn_function, import: 1}
   def import(block_number) do
     raw_block = download_block(block_number)
     changes = extract_block(raw_block)
@@ -19,6 +20,7 @@ defmodule Explorer.BlockImporter do
     import_transactions(raw_block["transactions"])
   end
 
+  @dialyzer {:nowarn_function, download_block: 1}
   def download_block(block_number) do
     {:ok, block} = eth_get_block_by_number(block_number, false)
     block

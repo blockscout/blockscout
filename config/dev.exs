@@ -62,7 +62,4 @@ config :explorer, Explorer.Scheduler,
     [schedule: {:extended, "*/15 * * * * *"}, task: {Explorer.Workers.ImportSkippedBlocks, :perform_later, [1]}],
   ]
 
-config :exq,
-  concurrency: 4
-
 import_config "dev.secret.exs"
