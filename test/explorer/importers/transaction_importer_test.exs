@@ -109,13 +109,20 @@ defmodule Explorer.TransactionImporterTest do
     test "it creates a to address using creates when to is nil" do
       use_cassette "transaction_importer_creates_a_to_address_from_creates" do
         TransactionImporter.import("0xdc533d4227734a7cacd75a069e8dc57ac571b865ed97bae5ea4cb74b54145f4c")
-
         transaction = Transaction |> Repo.get_by(hash: "0xdc533d4227734a7cacd75a069e8dc57ac571b865ed97bae5ea4cb74b54145f4c")
         address = Address |> Repo.get_by(hash: "0x24e5b8528fe83257d5fe3497ef616026713347f8")
         to_address = ToAddress |> Repo.get_by(transaction_id: transaction.id, address_id: address.id)
 
         assert(to_address)
       end
+    end
+
+    test "it's able to takes a map of transaction attributes" do
+      insert(:block, hash: "0xtakis")
+      TransactionImporter.import(Map.merge(@raw_transaction, %{"hash" => "0xmunchos", "blockHash" => "0xtakis"}))
+      last_transaction = Transaction |> order_by(desc: :inserted_at) |> limit(1) |> Repo.one()
+
+      assert last_transaction.hash == "0xmunchos"
     end
   end
 

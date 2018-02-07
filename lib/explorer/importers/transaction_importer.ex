@@ -11,8 +11,15 @@ defmodule Explorer.TransactionImporter do
   alias Explorer.ToAddress
   alias Explorer.Transaction
 
-  def import(hash) do
-    raw_transaction = download_transaction(hash)
+  def import(hash) when is_binary(hash) do
+    hash |> download_transaction() |> persist_transaction()
+  end
+
+  def import(raw_transaction) when is_map(raw_transaction) do
+    persist_transaction(raw_transaction)
+  end
+
+  def persist_transaction(raw_transaction) do
     changes = extract_attrs(raw_transaction)
 
     transaction = Repo.get_by(Transaction, hash: changes.hash) || %Transaction{}

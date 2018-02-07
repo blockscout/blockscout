@@ -22,7 +22,7 @@ defmodule Explorer.BlockImporter do
 
   @dialyzer {:nowarn_function, download_block: 1}
   def download_block(block_number) do
-    {:ok, block} = eth_get_block_by_number(block_number, false)
+    {:ok, block} = eth_get_block_by_number(block_number, true)
     block
   end
 

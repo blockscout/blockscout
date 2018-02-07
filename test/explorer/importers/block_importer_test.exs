@@ -11,9 +11,9 @@ defmodule Explorer.BlockImporterTest do
   describe "import/1" do
     test "imports and saves a block to the database" do
       use_cassette "block_importer_import_1_saves_the_block" do
-        with_mock ImportTransaction, [perform_later: fn (hash) -> insert(:transaction, hash: hash) end] do
+        with_mock ImportTransaction, [perform_later: fn(block) -> block end] do
           BlockImporter.import("0xc4f0d")
-          block = Block |> order_by(desc: :inserted_at) |> Repo.one
+          block = Block |> order_by(desc: :inserted_at) |> Repo.one()
 
           assert block.hash == "0x16cb43ccfb7875c14eb3f03bdc098e4af053160544270594fa429d256cbca64e"
         end
@@ -22,24 +22,13 @@ defmodule Explorer.BlockImporterTest do
 
     test "when a block with the same hash is imported it updates the block" do
       use_cassette "block_importer_import_1_duplicate_block" do
-        with_mock ImportTransaction, [perform_later: fn (hash) -> insert(:transaction, hash: hash) end] do
+        with_mock ImportTransaction, [perform_later: fn(hash) -> insert(:transaction, hash: hash) end] do
           insert(:block, hash: "0x16cb43ccfb7875c14eb3f03bdc098e4af053160544270594fa429d256cbca64e", gas_limit: 5)
           BlockImporter.import("0xc4f0d")
           block = Repo.get_by(Block, hash: "0x16cb43ccfb7875c14eb3f03bdc098e4af053160544270594fa429d256cbca64e")
 
           assert block.gas_limit == 8000000
           assert Block |> Repo.all |> Enum.count == 1
-        end
-      end
-    end
-
-    test "it enqueues workers that download each transaction" do
-      use_cassette "block_importer_import_1_download_transaction" do
-        with_mock ImportTransaction, [perform_later: fn (hash) -> insert(:transaction, hash: hash) end] do
-          BlockImporter.import("0xc533d")
-          last_transaction = Transaction |> order_by(desc: :inserted_at) |> limit(1) |> Repo.one
-
-          assert last_transaction.hash == "0xd32e645cbd9c03ef393a316766b19e3fd3b8937e5f2ec7bfc5fea4864e3c02e1"
         end
       end
     end
@@ -89,7 +78,7 @@ defmodule Explorer.BlockImporterTest do
 
   describe "import_transactions/1" do
     test "it enqueues workers that download each transaction" do
-      with_mock ImportTransaction, [perform_later: fn (hash) -> insert(:transaction, hash: hash) end] do
+      with_mock ImportTransaction, [perform_later: fn(hash) -> insert(:transaction, hash: hash) end] do
         queue = BlockImporter.import_transactions([
           "0x004bda8224214d277fc41be030fc55109afc662c5a87236de8990c8589f1c7b6",
           "0x31d59a001b870543c2b34618aecfa8846f7c3e50e9e267119670b311c086db99",
