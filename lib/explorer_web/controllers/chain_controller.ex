@@ -15,7 +15,7 @@ defmodule ExplorerWeb.ChainController do
       limit: 5
 
     transactions = from transaction in Transaction,
-      left_join: block_transaction in assoc(transaction, :block_transaction),
+      inner_join: block_transaction in assoc(transaction, :block_transaction),
       left_join: block in assoc(block_transaction, :block),
       preload: [block_transaction: block_transaction, block: block],
       limit: 5,
@@ -25,8 +25,8 @@ defmodule ExplorerWeb.ChainController do
     render(
       conn,
       "show.html",
-      blocks: blocks |> Repo.all |> Enum.map(&BlockForm.build/1),
-      transactions: transactions |> Repo.all
+      blocks: blocks |> Repo.all() |> Enum.map(&BlockForm.build/1),
+      transactions: transactions |> Repo.all()
     )
   end
 end
