@@ -31,7 +31,7 @@
           </div>
           <div class="transaction__item">
             <dt class="transaction__item-key"><%= gettext "Age" %></dt>
-            <dd class="transaction__item-value" title="<%= @transaction.formatted_timestamp %>"><%= @transaction.age %> (<%= @transaction.formatted_timestamp %>)</dd>
+            <dd class="transaction__item-value" title="<%= @transaction.formatted_timestamp %>"><%= @transaction.formatted_age %></dd>
           </div>
           <div class="transaction__item">
             <dt class="transaction__item-key"><%= gettext "Value" %></dt>
@@ -44,10 +44,6 @@
           <div class="transaction__item">
             <dt class="transaction__item-key"><%= gettext "To" %></dt>
             <dd class="transaction__item-value"><%= link(@transaction.to_address, to: address_path(@conn, :show, @conn.assigns.locale, @transaction.to_address)) %></dd>
-          </div>
-          <div class="transaction__item">
-            <dt class="transaction__item-key"><%= gettext "Value" %></dt>
-            <dd class="transaction__item-value"><%= @transaction.value %></dd>
           </div>
         </dl>
       </div>

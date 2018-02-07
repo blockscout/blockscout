@@ -18,11 +18,13 @@ defmodule Explorer.TransactionFormTest do
         |> with_addresses(%{to: "0xsleepypuppy", from: "0xilovefrogs"})
         |> Repo.preload(:block)
       form = TransactionForm.build(transaction)
+      formatted_timestamp = block.timestamp |> Timex.format!("%b-%d-%Y %H:%M:%S %p %Z", :strftime)
 
       assert(form == Map.merge(transaction, %{
         block_number: 1,
         age: "2 hours ago",
-        formatted_timestamp: block.timestamp |> Timex.format!("%b-%d-%Y %H:%M:%S %p %Z", :strftime),
+        formatted_age: "2 hours ago (#{formatted_timestamp})",
+        formatted_timestamp: formatted_timestamp,
         cumulative_gas_used: "99,523",
         to_address: "0xsleepypuppy",
         from_address: "0xilovefrogs",
@@ -37,9 +39,10 @@ defmodule Explorer.TransactionFormTest do
 
       assert(form == Map.merge(transaction, %{
         block_number: "",
-        age: "",
-        formatted_timestamp: "",
-        cumulative_gas_used: "",
+        age: "Pending",
+        formatted_age: "Pending",
+        formatted_timestamp: "Pending",
+        cumulative_gas_used: "Pending",
         to_address: "0xchadmuska",
         from_address: "0xtonyhawk",
         confirmations: 0,

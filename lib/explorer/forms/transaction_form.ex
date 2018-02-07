@@ -17,6 +17,7 @@ defmodule Explorer.TransactionForm do
     Map.merge(transaction, %{
       block_number: block |> block_number,
       age: block |> block_age,
+      formatted_age: block |> format_age,
       formatted_timestamp: block |> format_timestamp,
       cumulative_gas_used: block |> cumulative_gas_used,
       to_address: transaction |> to_address,
@@ -31,15 +32,23 @@ defmodule Explorer.TransactionForm do
   end
 
   def block_age(block) do
-    block && block.timestamp |> Timex.from_now || ""
+    block && block.timestamp |> Timex.from_now || "Pending"
+  end
+
+  def format_age(block) do
+    if block do
+      "#{block_age(block)} (#{format_timestamp(block)})"
+    else
+      gettext("Pending")
+    end
   end
 
   def format_timestamp(block) do
-    block && block.timestamp |> Timex.format!("%b-%d-%Y %H:%M:%S %p %Z", :strftime) || ""
+    block && block.timestamp |> Timex.format!("%b-%d-%Y %H:%M:%S %p %Z", :strftime) || gettext("Pending")
   end
 
   def cumulative_gas_used(block) do
-    block && block.gas_used |> Number.to_string! || ""
+    block && block.gas_used |> Number.to_string! || gettext("Pending")
   end
 
   def to_address(transaction) do
