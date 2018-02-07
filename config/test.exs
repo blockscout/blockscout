@@ -18,7 +18,7 @@ config :explorer, Explorer.Repo,
   database: "explorer_test",
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox,
-  ownership_timeout: 30_000
+  ownership_timeout: 60_000
 
 # Configure wallaby
 config :wallaby,
