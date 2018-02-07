@@ -20,8 +20,20 @@
               <td class="transactions__column transactions__column--hash">
                 <div class="transactions__hash"><%= link(transaction.hash, to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.hash)) %></div>
               </td>
-              <td class="transactions__column transactions__column--block"><%= link(transaction.block.number, to: block_path(@conn, :show, @conn.assigns.locale, transaction.block.number)) %></td>
-              <td class="transactions__column transactions__column--age"><%= transaction.block.timestamp |> Timex.from_now %></td>
+              <td class="transactions__column transactions__column--block">
+                <%= if is_nil(transaction.block_transaction) do %>
+                  <%= gettext "Pending" %>
+                <% else %>
+                  <%= link(transaction.block.number, to: block_path(@conn, :show, @conn.assigns.locale, transaction.block.number)) %>
+                <% end %>
+              </td>
+              <td class="transactions__column transactions__column--age">
+                <%= if is_nil(transaction.block_transaction) do %>
+                  <%= gettext "Pending" %>
+                <% else %>
+                  <%= transaction.block.timestamp |> Timex.from_now %>
+                <% end %>
+              </td>
               <td class="transactions__column transactions__column--optional transactions__column--value"><%= Decimal.div(Decimal.new(transaction.value), Decimal.new(1_000_000_000_000_000_000)) |> Decimal.to_string(:normal) %> <%= gettext "POA" %></td>
             </tr>
           <% end %>

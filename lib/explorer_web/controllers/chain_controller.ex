@@ -19,7 +19,8 @@ defmodule ExplorerWeb.ChainController do
       left_join: block in assoc(block_transaction, :block),
       preload: [block_transaction: block_transaction, block: block],
       limit: 5,
-      order_by: [desc: block.number]
+      order_by: [desc: block.number],
+      where: not is_nil(block.id)
 
     render(
       conn,
