@@ -20,5 +20,7 @@ defmodule Explorer.BlockTransaction do
     block_transaction
     |> cast(attrs, @required_attrs)
     |> validate_required(@required_attrs)
+    |> cast_assoc(:block)
+    |> cast_assoc(:transaction)
   end
 end
