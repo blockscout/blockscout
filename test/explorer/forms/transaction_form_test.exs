@@ -1,8 +1,9 @@
 defmodule Explorer.TransactionFormTest do
   use Explorer.DataCase
+
   alias Explorer.TransactionForm
 
-  describe "build/1 when the transaction has a block" do
+  describe "build/1" do
     test "that it returns the values we expect" do
       insert(:block, number: 24)
       time = Timex.now |> Timex.shift(hours: -2)
@@ -15,6 +16,7 @@ defmodule Explorer.TransactionFormTest do
         insert(:transaction)
         |> with_block(block)
         |> with_addresses(%{to: "0xsleepypuppy", from: "0xilovefrogs"})
+        |> Repo.preload(:block)
       form = TransactionForm.build(transaction)
 
       assert(form == Map.merge(transaction, %{
@@ -25,11 +27,12 @@ defmodule Explorer.TransactionFormTest do
         to_address: "0xsleepypuppy",
         from_address: "0xilovefrogs",
         confirmations: 23,
+        status: "Success",
       }))
     end
 
     test "works when there is no block" do
-      transaction = insert(:transaction) |> with_addresses(%{to: "0xchadmuska", from: "0xtonyhawk"})
+      transaction = insert(:transaction) |> with_addresses(%{to: "0xchadmuska", from: "0xtonyhawk"}) |> Repo.preload(:block)
       form = TransactionForm.build(transaction)
 
       assert(form == Map.merge(transaction, %{
@@ -40,6 +43,7 @@ defmodule Explorer.TransactionFormTest do
         to_address: "0xchadmuska",
         from_address: "0xtonyhawk",
         confirmations: 0,
+        status: "Pending",
       }))
     end
   end

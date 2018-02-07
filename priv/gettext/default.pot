@@ -146,7 +146,7 @@ msgstr ""
 msgid "Overview"
 msgstr ""
 
-#: lib/explorer_web/templates/transaction/show.html.eex:19
+#: lib/explorer/forms/transaction_form.ex:75
 msgid "Success"
 msgstr ""
 
@@ -183,4 +183,8 @@ msgstr ""
 
 #: lib/explorer_web/templates/transaction/index.html.eex:3
 msgid "Showing %{count} Transactions"
+msgstr ""
+
+#: lib/explorer/forms/transaction_form.ex:77
+msgid "Pending"
 msgstr ""

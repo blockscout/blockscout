@@ -16,7 +16,7 @@
           </div>
           <div class="transaction__item">
             <dt class="transaction__item-key"><%= gettext "Transaction Status" %></dt>
-            <dd class="transaction__item-value transaction__item-value--success"><%= gettext "Success" %></dd>
+            <dd class="transaction__item-value transaction__item-value--status"><%= @transaction.status %></dd>
           </div>
           <div class="transaction__item">
             <dt class="transaction__item-key"><%= gettext "Block Number" %></dt>

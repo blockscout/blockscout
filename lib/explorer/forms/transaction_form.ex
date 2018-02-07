@@ -1,21 +1,20 @@
 defmodule Explorer.TransactionForm do
+  @moduledoc "Format a Block and a Transaction for display."
+
+  import Ecto.Query
+  import ExplorerWeb.Gettext
+
   alias Cldr.Number
   alias Explorer.Address
   alias Explorer.Block
-  alias Explorer.BlockTransaction
   alias Explorer.FromAddress
   alias Explorer.Repo
   alias Explorer.ToAddress
   alias Explorer.Transaction
-  import Ecto.Query
-
-  @moduledoc "Format a Block and a Transaction for display."
 
   def build(transaction) do
-    block = with_block(transaction)
-
-    transaction
-    |> Map.merge(%{
+    block = transaction.block
+    Map.merge(transaction, %{
       block_number: block |> block_number,
       age: block |> block_age,
       formatted_timestamp: block |> format_timestamp,
@@ -23,18 +22,8 @@ defmodule Explorer.TransactionForm do
       to_address: transaction |> to_address,
       from_address: transaction |> from_address,
       confirmations: block |> confirmations,
+      status: transaction |> status,
     })
-  end
-
-  def with_block(transaction) do
-    Repo.one(
-      from block in Block,
-        join: block_transaction in BlockTransaction,
-          where: block_transaction.block_id == block.id,
-        join: transaction in Transaction,
-          where: transaction.id == block_transaction.transaction_id,
-        where: transaction.id == ^transaction.id
-    )
   end
 
   def block_number(block) do
@@ -78,5 +67,13 @@ defmodule Explorer.TransactionForm do
   def confirmations(block) do
     query = from block in Block, select: max(block.number)
     block && Repo.one(query) - block.number || 0
+  end
+
+  def status(transaction) do
+    if transaction.block do
+      gettext("Success")
+    else
+      gettext("Pending")
+    end
   end
 end

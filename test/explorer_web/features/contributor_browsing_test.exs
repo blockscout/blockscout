@@ -81,6 +81,7 @@ defmodule ExplorerWeb.UserListTest do
     |> assert_has(css(".transaction__subheading", text: "0xSk8"))
     |> assert_has(css(".transaction__item", text: "123,987"))
     |> assert_has(css(".transaction__item", text: "5656 POA"))
+    |> assert_has(css(".transaction__item", text: "Success"))
     |> assert_has(css(".transaction__item", text: "7,890,000,000,898,912,300,045"))
     |> assert_has(css(".transaction__item", text: "1,230,000,000,000,123,123"))
     |> assert_has(css(".transaction__item", text: "0x00012"))
