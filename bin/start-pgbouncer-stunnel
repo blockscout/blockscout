@@ -1,4 +1,12 @@
 #!/usr/bin/env bash
 # Placeholder for pgbouncer buildpack
 
-$@
+function clean_up() {
+  KILL $CHILD_PID
+  exit
+}
+trap clean_up SIGHUP SIGINT SIGTERM
+
+$@ &
+CHILD_PID=$!
+wait $CHILD_PID
