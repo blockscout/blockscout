@@ -35,7 +35,7 @@ defmodule ExplorerWeb.ChainControllerTest do
       conn = get conn, "/en"
 
       assert(List.first(conn.assigns.transactions).hash == "0xDECAFBAD")
-      assert(List.first(conn.assigns.transactions).block_number == 33)
+      assert(List.first(conn.assigns.transactions).block.number == 33)
     end
   end
 end

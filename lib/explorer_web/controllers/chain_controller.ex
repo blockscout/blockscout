@@ -7,7 +7,6 @@ defmodule ExplorerWeb.ChainController do
   alias Explorer.BlockForm
   alias Explorer.Repo.NewRelic, as: Repo
   alias Explorer.Transaction
-  alias Explorer.TransactionForm
 
   def show(conn, _params) do
     blocks = from b in Block,
@@ -26,9 +25,7 @@ defmodule ExplorerWeb.ChainController do
       conn,
       "show.html",
       blocks: blocks |> Repo.all |> Enum.map(&BlockForm.build/1),
-      transactions: transactions
-        |> Repo.all
-        |> Enum.map(&TransactionForm.build/1)
+      transactions: transactions |> Repo.all
     )
   end
 end
