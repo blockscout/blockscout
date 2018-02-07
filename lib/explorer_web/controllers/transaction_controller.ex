@@ -12,7 +12,7 @@ defmodule ExplorerWeb.TransactionController do
       left_join: block_transaction in assoc(transaction, :block_transaction),
       left_join: block in assoc(block_transaction, :block),
       preload: [block_transaction: block_transaction, block: block],
-      order_by: [asc: fragment("? NULLS FIRST", block.inserted_at)]
+      order_by: [desc: block.timestamp, desc: transaction.inserted_at]
 
     transactions = Repo.paginate(query, params)
 

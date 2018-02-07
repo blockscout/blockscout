@@ -5,7 +5,7 @@ defmodule ExplorerWeb.TransactionControllerTest do
     test "returns all transactions", %{conn: conn} do
       transaction_ids = insert_list(4, :transaction) |> list_with_block |> Enum.map(fn (transaction) -> transaction.id end)
       conn = get(conn, "/en/transactions")
-      assert conn.assigns.transactions |> Enum.map(fn (transaction) -> transaction.id end) == transaction_ids
+      assert conn.assigns.transactions |> Enum.map(fn (transaction) -> transaction.id end) |> Enum.reverse == transaction_ids
     end
   end
 
