@@ -48,9 +48,9 @@ config :ethereumex,
 # Configure Quantum
 config :explorer, Explorer.Scheduler,
   jobs: [
-    [schedule: {:extended, "*/5 * * * * *"}, task: {Explorer.Workers.ImportBlock, :perform_later, ["latest"]}],
-    [schedule: {:extended, "* * * * * *"}, task: {Explorer.Workers.ImportBlock, :perform_later, ["pending"]}],
-    [schedule: {:extended, "*/15 * * * * *"}, task: {Explorer.Workers.ImportSkippedBlocks, :perform_later, [String.to_integer(System.get_env("EXPLORER_BACKFILL_CONCURRENCY") || "1")]}],
+    [schedule: {:extended, System.get_env("EXQ_LATEST_BLOCK_SCHEDULE") || "* * * * * *"}, task: {Explorer.Workers.ImportBlock, :perform_later, ["latest"]}],
+    [schedule: {:extended, System.get_env("EXQ_PENDING_BLOCK_SCHEDULE") || "* * * * * *"}, task: {Explorer.Workers.ImportBlock, :perform_later, ["pending"]}],
+    [schedule: {:extended, System.get_env("EXQ_BACKFILL_SCHEDULE") || "* * * * * *"}, task: {Explorer.Workers.ImportSkippedBlocks, :perform_later, [String.to_integer(System.get_env("EXQ_BACKFILL_BATCH_SIZE") || "1")]}],
   ]
 
 # Configure Exq
