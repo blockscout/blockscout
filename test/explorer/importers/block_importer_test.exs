@@ -34,6 +34,17 @@ defmodule Explorer.BlockImporterTest do
     end
   end
 
+  describe "find/1" do
+    test "returns an empty block when there is no block with the given hash" do
+      assert BlockImporter.find("0xC001") == %Block{}
+    end
+
+    test "returns the block with the requested hash" do
+      block = insert(:block, hash: "0xBEA75")
+      assert BlockImporter.find("0xBEA75").id == block.id
+    end
+  end
+
   describe "download_block/1" do
     test "downloads the block" do
       use_cassette "block_importer_download_block_1_downloads_the_block" do

@@ -1,6 +1,7 @@
 defmodule Explorer.BlockImporter do
   @moduledoc "Imports a block."
 
+  import Ecto.Query
   import Ethereumex.HttpClient, only: [eth_get_block_by_number: 2]
 
   alias Explorer.Block
@@ -12,12 +13,16 @@ defmodule Explorer.BlockImporter do
     raw_block = download_block(block_number)
     changes = extract_block(raw_block)
 
-    block = Repo.get_by(Block, hash: changes.hash) || %Block{}
-    block
-    |> Block.changeset(changes)
-    |> Repo.insert_or_update!
+    changes.hash |> find() |> Block.changeset(changes) |> Repo.insert_or_update!
 
     import_transactions(raw_block["transactions"])
+  end
+
+  def find(hash) do
+    query = from b in Block,
+      where: fragment("lower(?)", b.hash) == ^String.downcase(hash),
+      limit: 1
+    (query |> Repo.one()) || %Block{}
   end
 
   @dialyzer {:nowarn_function, download_block: 1}

@@ -126,6 +126,17 @@ defmodule Explorer.TransactionImporterTest do
     end
   end
 
+  describe "find/1" do
+    test "returns an empty transaction when there is no transaction with the given hash" do
+      assert TransactionImporter.find("0xC001") == %Transaction{}
+    end
+
+    test "returns the transaction with the requested hash" do
+      transaction = insert(:transaction, hash: "0xBEA75")
+      assert TransactionImporter.find("0xBEA75").id == transaction.id
+    end
+  end
+
   describe "download_transaction/1" do
     test "downloads a transaction" do
       use_cassette "transaction_importer_download_transaction" do

@@ -1,6 +1,7 @@
 defmodule Explorer.TransactionImporter do
   @moduledoc "Imports a transaction given a unique hash."
 
+  import Ecto.Query
   import Ethereumex.HttpClient, only: [eth_get_transaction_by_hash: 1]
 
   alias Explorer.Address
@@ -22,13 +23,20 @@ defmodule Explorer.TransactionImporter do
   def persist_transaction(raw_transaction) do
     changes = extract_attrs(raw_transaction)
 
-    transaction = Repo.get_by(Transaction, hash: changes.hash) || %Transaction{}
-    transaction
+    changes.hash
+    |> find()
     |> Transaction.changeset(changes)
     |> Repo.insert_or_update!
     |> create_from_address(raw_transaction["from"])
     |> create_to_address(raw_transaction["to"] || raw_transaction["creates"])
     |> create_block_transaction(raw_transaction["blockHash"])
+  end
+
+  def find(hash) do
+    query = from t in Transaction,
+      where: fragment("lower(?)", t.hash) == ^String.downcase(hash),
+      limit: 1
+    (query |> Repo.one()) || %Transaction{}
   end
 
   def download_transaction(hash) do
