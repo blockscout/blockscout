@@ -17,5 +17,7 @@ defmodule Explorer.ToAddress do
   def changeset(%ToAddress{} = to_address, attrs \\ %{}) do
     to_address
     |> cast(attrs, [:transaction_id, :address_id])
+    |> unique_constraint(:transaction_id,
+      name: :to_addresses_transaction_id_index)
   end
 end

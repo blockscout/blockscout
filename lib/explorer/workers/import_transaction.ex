@@ -4,9 +4,7 @@ defmodule Explorer.Workers.ImportTransaction do
   alias Explorer.TransactionImporter
 
   @dialyzer {:nowarn_function, perform: 1}
-  def perform(hash) do
-    TransactionImporter.import(hash)
-  end
+  def perform(hash), do: TransactionImporter.import(hash)
 
   def perform_later(hash) do
     Exq.enqueue(Exq.Enqueuer, "transactions", __MODULE__, [hash])

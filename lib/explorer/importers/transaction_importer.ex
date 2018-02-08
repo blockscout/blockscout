@@ -22,13 +22,18 @@ defmodule Explorer.TransactionImporter do
 
   def persist_transaction(raw_transaction) do
     changes = extract_attrs(raw_transaction)
+    found_transaction = changes.hash |> find()
 
-    changes.hash
-    |> find()
-    |> Transaction.changeset(changes)
-    |> Repo.insert_or_update!
+    transaction = case is_nil(found_transaction.id) do
+      true ->
+        found_transaction |> Transaction.changeset(changes) |> Repo.insert!
+      false -> found_transaction
+    end
+
+    to_address = raw_transaction["to"] || raw_transaction["creates"]
+    transaction
     |> create_from_address(raw_transaction["from"])
-    |> create_to_address(raw_transaction["to"] || raw_transaction["creates"])
+    |> create_to_address(to_address)
     |> create_block_transaction(raw_transaction["blockHash"])
   end
 
@@ -61,19 +66,24 @@ defmodule Explorer.TransactionImporter do
     }
   end
 
-  def create_block_transaction(transaction, block_hash) do
-    block = Repo.get_by(Block, hash: block_hash)
+  def create_block_transaction(transaction, hash) do
+    query = from t in Block,
+      where: fragment("lower(?)", t.hash) == ^String.downcase(hash),
+      limit: 1
+    block = query |> Repo.one()
 
     if block do
-      block_transaction =
-        Repo.get_by(BlockTransaction, transaction_id: transaction.id) ||
-        %BlockTransaction{}
-
       changes = %{block_id: block.id, transaction_id: transaction.id}
-
-      block_transaction
-      |>BlockTransaction.changeset(changes)
-      |> Repo.insert_or_update!
+      case Repo.get_by(BlockTransaction, transaction_id: transaction.id) do
+        nil ->
+          %BlockTransaction{}
+          |> BlockTransaction.changeset(changes)
+          |> Repo.insert
+        block_transaction ->
+          block_transaction
+          |> BlockTransaction.changeset(%{block_id: block.id})
+          |> Repo.update
+      end
     end
 
     transaction
@@ -81,24 +91,36 @@ defmodule Explorer.TransactionImporter do
 
   def create_from_address(transaction, hash) do
     address = Address.find_or_create_by_hash(hash)
-    changes = %{transaction_id: transaction.id, address_id: address.id}
+    changes = %{address_id: address.id, transaction_id: transaction.id}
 
-    from_address = Repo.get_by(FromAddress, changes) || %FromAddress{}
-    from_address
-    |> FromAddress.changeset(changes)
-    |> Repo.insert_or_update!
+    case Repo.get_by(FromAddress, transaction_id: transaction.id) do
+      nil ->
+        %FromAddress{}
+        |> FromAddress.changeset(changes)
+        |> Repo.insert
+      from_address ->
+        from_address
+        |> FromAddress.changeset(%{address_id: address.id})
+        |> Repo.update
+    end
 
     transaction
   end
 
   def create_to_address(transaction, hash) do
     address = Address.find_or_create_by_hash(hash)
-    changes = %{transaction_id: transaction.id, address_id: address.id}
+    changes = %{address_id: address.id, transaction_id: transaction.id}
 
-    to_address = Repo.get_by(ToAddress, changes) || %ToAddress{}
-    to_address
-    |> ToAddress.changeset(changes)
-    |> Repo.insert_or_update!
+    case Repo.get_by(ToAddress, transaction_id: transaction.id) do
+      nil ->
+        %ToAddress{}
+        |> ToAddress.changeset(changes)
+        |> Repo.insert
+      to_address ->
+        to_address
+        |> ToAddress.changeset(%{address_id: address.id})
+        |> Repo.update
+    end
 
     transaction
   end

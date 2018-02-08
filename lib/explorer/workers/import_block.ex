@@ -4,9 +4,7 @@ defmodule Explorer.Workers.ImportBlock do
   @moduledoc "Imports blocks by web3 conventions."
 
   @dialyzer {:nowarn_function, perform: 1}
-  def perform(number) do
-    BlockImporter.import("#{number}")
-  end
+  def perform(number), do: BlockImporter.import("#{number}")
 
   @dialyzer {:nowarn_function, perform: 0}
   def perform, do: perform("latest")

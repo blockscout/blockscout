@@ -9,13 +9,20 @@ defmodule Explorer.BlockImporter do
   alias Explorer.Workers.ImportTransaction
 
   @dialyzer {:nowarn_function, import: 1}
+  def import("pending") do
+    raw_block = download_block("pending")
+    Enum.map(raw_block["transactions"], &ImportTransaction.perform_later/1)
+  end
+
+  @dialyzer {:nowarn_function, import: 1}
   def import(block_number) do
     raw_block = download_block(block_number)
     changes = extract_block(raw_block)
+    block = changes.hash |> find()
 
-    changes.hash |> find() |> Block.changeset(changes) |> Repo.insert_or_update!
+    if is_nil(block.id), do: block |> Block.changeset(changes) |> Repo.insert
 
-    import_transactions(raw_block["transactions"])
+    Enum.map(raw_block["transactions"], &ImportTransaction.perform/1)
   end
 
   def find(hash) do
@@ -45,12 +52,6 @@ defmodule Explorer.BlockImporter do
       gas_limit: raw_block["gasLimit"] |> decode_integer_field,
       nonce: raw_block["nonce"] || "0",
     }
-  end
-
-  def import_transactions(transactions) do
-    Enum.map(transactions, fn (transaction) ->
-      ImportTransaction.perform_later(transaction)
-    end)
   end
 
   def decode_integer_field(hex) do

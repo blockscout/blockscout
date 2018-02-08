@@ -51,17 +51,17 @@ defmodule Explorer.TransactionImporterTest do
       end
     end
 
-    test "when it has previously been saved it updates the transaction" do
+    test "when the transaction has previously been saved does not update it" do
       use_cassette "transaction_importer_updates_the_association" do
         insert(:transaction, hash: "0x170baac4eca26076953370dd603c68eab340c0135b19b585010d3158a5dbbf23", gas: 5)
         TransactionImporter.import("0x170baac4eca26076953370dd603c68eab340c0135b19b585010d3158a5dbbf23")
         transaction = Transaction |> order_by(desc: :inserted_at) |> Repo.one
 
-        assert transaction.gas == Decimal.new(231855)
+        assert transaction.gas == Decimal.new(5)
       end
     end
 
-    test "when it has a block hash that's saved in the database it saves the association" do
+    test "binds an association to an existing block" do
       use_cassette "transaction_importer_saves_the_association" do
         block = insert(:block, hash: "0xfce13392435a8e7dab44c07d482212efb9dc39a9bea1915a9ead308b55a617f9")
         TransactionImporter.import("0x64d851139325479c3bb7ccc6e6ab4cde5bc927dce6810190fe5d770a4c1ac333")
@@ -82,7 +82,7 @@ defmodule Explorer.TransactionImporterTest do
       end
     end
 
-    test "it creates a from address" do
+    test "creates a from address" do
       use_cassette "transaction_importer_creates_a_from_address" do
         TransactionImporter.import("0xc445f5410912458c480d992dd93355ae3dad64d9f65db25a3cf43a9c609a2e0d")
 
@@ -94,7 +94,20 @@ defmodule Explorer.TransactionImporterTest do
       end
     end
 
-    test "it creates a to address" do
+    test "binds an existing from address" do
+      insert(:address, hash: "0xa5b4b372112ab8dbbb48c8d0edd89227e24ec785")
+      use_cassette "transaction_importer_creates_a_from_address" do
+        TransactionImporter.import("0xc445f5410912458c480d992dd93355ae3dad64d9f65db25a3cf43a9c609a2e0d")
+
+        transaction = Transaction |> Repo.get_by(hash: "0xc445f5410912458c480d992dd93355ae3dad64d9f65db25a3cf43a9c609a2e0d")
+        address = Address |> Repo.get_by(hash: "0xa5b4b372112ab8dbbb48c8d0edd89227e24ec785")
+        from_address = FromAddress |> Repo.get_by(transaction_id: transaction.id, address_id: address.id)
+
+        assert from_address
+      end
+    end
+
+    test "creates a to address" do
       use_cassette "transaction_importer_creates_a_to_address" do
         TransactionImporter.import("0xdc533d4227734a7cacd75a069e8dc57ac571b865ed97bae5ea4cb74b54145f4c")
 
@@ -106,7 +119,20 @@ defmodule Explorer.TransactionImporterTest do
       end
     end
 
-    test "it creates a to address using creates when to is nil" do
+    test "binds an existing to address" do
+      insert(:address, hash: "0x24e5b8528fe83257d5fe3497ef616026713347f8")
+      use_cassette "transaction_importer_creates_a_to_address" do
+        TransactionImporter.import("0xdc533d4227734a7cacd75a069e8dc57ac571b865ed97bae5ea4cb74b54145f4c")
+
+        transaction = Transaction |> Repo.get_by(hash: "0xdc533d4227734a7cacd75a069e8dc57ac571b865ed97bae5ea4cb74b54145f4c")
+        address = Address |> Repo.get_by(hash: "0x24e5b8528fe83257d5fe3497ef616026713347f8")
+        to_address = ToAddress |> Repo.get_by(transaction_id: transaction.id, address_id: address.id)
+
+        assert(to_address)
+      end
+    end
+
+    test "creates a to address using creates when to is nil" do
       use_cassette "transaction_importer_creates_a_to_address_from_creates" do
         TransactionImporter.import("0xdc533d4227734a7cacd75a069e8dc57ac571b865ed97bae5ea4cb74b54145f4c")
         transaction = Transaction |> Repo.get_by(hash: "0xdc533d4227734a7cacd75a069e8dc57ac571b865ed97bae5ea4cb74b54145f4c")
@@ -117,7 +143,7 @@ defmodule Explorer.TransactionImporterTest do
       end
     end
 
-    test "it's able to takes a map of transaction attributes" do
+    test "processes a map of transaction attributes" do
       insert(:block, hash: "0xtakis")
       TransactionImporter.import(Map.merge(@raw_transaction, %{"hash" => "0xmunchos", "blockHash" => "0xtakis"}))
       last_transaction = Transaction |> order_by(desc: :inserted_at) |> limit(1) |> Repo.one()

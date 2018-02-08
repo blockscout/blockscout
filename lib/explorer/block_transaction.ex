@@ -22,5 +22,7 @@ defmodule Explorer.BlockTransaction do
     |> validate_required(@required_attrs)
     |> cast_assoc(:block)
     |> cast_assoc(:transaction)
+    |> unique_constraint(:transaction_id,
+      name: :block_transactions_transaction_id_index)
   end
 end
