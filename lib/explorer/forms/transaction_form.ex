@@ -61,7 +61,12 @@ defmodule Explorer.TransactionForm do
         where: transaction.id == to_address.transaction_id,
       where: transaction.id == ^transaction.id
 
-    Repo.one(query).hash
+    case Repo.one(query) do
+      nil ->
+        gettext("Pending")
+      to_address ->
+        to_address.hash
+    end
   end
 
   def from_address(transaction) do
@@ -72,7 +77,12 @@ defmodule Explorer.TransactionForm do
         where: transaction.id == from_address.transaction_id,
       where: transaction.id == ^transaction.id
 
-    Repo.one(query).hash
+    case Repo.one(query) do
+      nil ->
+        gettext("Pending")
+      from_address ->
+        from_address.hash
+    end
   end
 
   def confirmations(block) do

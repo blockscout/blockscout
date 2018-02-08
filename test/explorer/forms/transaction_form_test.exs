@@ -59,5 +59,28 @@ defmodule Explorer.TransactionFormTest do
         last_seen: "38 years ago",
       }))
     end
+
+    test "works when there are no addresses" do
+      transaction = insert(
+        :transaction,
+        inserted_at: Timex.parse!("1970-01-01T00:00:18-00:00", "{ISO:Extended}"),
+        updated_at: Timex.parse!("1980-01-01T00:00:18-00:00", "{ISO:Extended}"))
+      |> Repo.preload(:block)
+      form = TransactionForm.build(transaction)
+
+      assert(form == Map.merge(transaction, %{
+        block_number: "",
+        age: "Pending",
+        formatted_age: "Pending",
+        formatted_timestamp: "Pending",
+        cumulative_gas_used: "Pending",
+        to_address: "Pending",
+        from_address: "Pending",
+        confirmations: 0,
+        status: "Pending",
+        first_seen: "48 years ago",
+        last_seen: "38 years ago",
+      }))
+    end
   end
 end
