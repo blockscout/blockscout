@@ -63,7 +63,7 @@ defmodule Explorer.TransactionForm do
 
     case Repo.one(query) do
       nil ->
-        gettext("Pending")
+        nil
       to_address ->
         to_address.hash
     end
@@ -79,7 +79,7 @@ defmodule Explorer.TransactionForm do
 
     case Repo.one(query) do
       nil ->
-        gettext("Pending")
+        nil
       from_address ->
         from_address.hash
     end
