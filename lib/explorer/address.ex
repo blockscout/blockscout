@@ -3,6 +3,7 @@ defmodule Explorer.Address do
 
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
   alias Explorer.Address
   alias Explorer.Repo.NewRelic, as: Repo
 
@@ -18,9 +19,13 @@ defmodule Explorer.Address do
   @optional_attrs ~w()a
 
   def find_or_create_by_hash(hash) do
-    address_attrs = %{hash: hash}
-    address_changeset = Address.changeset(%Address{}, %{hash: hash})
-    Repo.get_by(Address, address_attrs) || Repo.insert!(address_changeset)
+    query = from a in Address,
+      where: fragment("lower(?)", a.hash) == ^String.downcase(hash),
+      limit: 1
+    case query |> Repo.one() do
+      nil -> Repo.insert!(Address.changeset(%Address{}, %{hash: hash}))
+      address -> address
+    end
   end
 
   def changeset(%Address{} = address, attrs) do
