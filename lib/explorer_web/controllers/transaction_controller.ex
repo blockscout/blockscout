@@ -20,11 +20,12 @@ defmodule ExplorerWeb.TransactionController do
   end
 
   def show(conn, params) do
+    hash = String.downcase(params["id"])
     query = from transaction in Transaction,
       left_join: block_transaction in assoc(transaction, :block_transaction),
       left_join: block in assoc(block_transaction, :block),
       preload: [block_transaction: block_transaction, block: block],
-      where: transaction.hash == ^params["id"],
+      where: fragment("lower(?)", transaction.hash) == ^hash,
       limit: 1
 
     transaction = query |> Repo.one |> TransactionForm.build
