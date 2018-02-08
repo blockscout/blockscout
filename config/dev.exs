@@ -59,6 +59,7 @@ config :explorer, Explorer.Repo,
 config :explorer, Explorer.Scheduler,
   jobs: [
     [schedule: {:extended, "*/5 * * * * *"}, task: {Explorer.Workers.ImportBlock, :perform_later, ["latest"]}],
+    [schedule: {:extended, "*/5 * * * * *"}, task: {Explorer.Workers.ImportBlock, :perform_later, ["pending"]}],
     [schedule: {:extended, "*/15 * * * * *"}, task: {Explorer.Workers.ImportSkippedBlocks, :perform_later, [1]}],
   ]
 
