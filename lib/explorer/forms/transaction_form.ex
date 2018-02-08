@@ -24,6 +24,8 @@ defmodule Explorer.TransactionForm do
       from_address: transaction |> from_address,
       confirmations: block |> confirmations,
       status: transaction |> status,
+      first_seen: transaction |> first_seen,
+      last_seen: transaction |> last_seen,
     })
   end
 
@@ -84,5 +86,13 @@ defmodule Explorer.TransactionForm do
     else
       gettext("Pending")
     end
+  end
+
+  def first_seen(transaction) do
+    transaction.inserted_at |> Timex.from_now
+  end
+
+  def last_seen(transaction) do
+    transaction.updated_at |> Timex.from_now
   end
 end

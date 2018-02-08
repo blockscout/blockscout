@@ -65,6 +65,8 @@ defmodule ExplorerWeb.UserListTest do
       gas_price: 7890000000898912300045,
       input: "0x00012",
       nonce: 99045,
+      inserted_at: Timex.parse!("1970-01-01T00:00:18-00:00", "{ISO:Extended}"),
+      updated_at: Timex.parse!("1980-01-01T00:00:18-00:00", "{ISO:Extended}"),
     })
     |> with_block(block)
     |> with_addresses(%{to: "0xabelincoln", from: "0xhowardtaft"})
@@ -94,6 +96,8 @@ defmodule ExplorerWeb.UserListTest do
     |> assert_has(css(".transaction__item", text: "0xabelincoln"))
     |> assert_has(css(".transaction__item", text: "0xhowardtaft"))
     |> assert_has(css(".transaction__item", text: "block confirmations"))
+    |> assert_has(css(".transaction__item", text: "48 years ago"))
+    |> assert_has(css(".transaction__item", text: "38 years ago"))
 
     session
     |> click(link("0xabelincoln"))

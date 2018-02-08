@@ -13,7 +13,9 @@ defmodule Explorer.TransactionFormTest do
         timestamp: time,
       })
       transaction =
-        insert(:transaction)
+        insert(:transaction,
+          inserted_at: Timex.parse!("1970-01-01T00:00:18-00:00", "{ISO:Extended}"),
+          updated_at: Timex.parse!("1980-01-01T00:00:18-00:00", "{ISO:Extended}"))
         |> with_block(block)
         |> with_addresses(%{to: "0xsleepypuppy", from: "0xilovefrogs"})
         |> Repo.preload(:block)
@@ -30,11 +32,17 @@ defmodule Explorer.TransactionFormTest do
         from_address: "0xilovefrogs",
         confirmations: 23,
         status: "Success",
+        first_seen: "48 years ago",
+        last_seen: "38 years ago",
       }))
     end
 
     test "works when there is no block" do
-      transaction = insert(:transaction) |> with_addresses(%{to: "0xchadmuska", from: "0xtonyhawk"}) |> Repo.preload(:block)
+      transaction = insert(
+        :transaction,
+        inserted_at: Timex.parse!("1970-01-01T00:00:18-00:00", "{ISO:Extended}"),
+        updated_at: Timex.parse!("1980-01-01T00:00:18-00:00", "{ISO:Extended}"))
+      |> with_addresses(%{to: "0xchadmuska", from: "0xtonyhawk"}) |> Repo.preload(:block)
       form = TransactionForm.build(transaction)
 
       assert(form == Map.merge(transaction, %{
@@ -47,6 +55,8 @@ defmodule Explorer.TransactionFormTest do
         from_address: "0xtonyhawk",
         confirmations: 0,
         status: "Pending",
+        first_seen: "48 years ago",
+        last_seen: "38 years ago",
       }))
     end
   end

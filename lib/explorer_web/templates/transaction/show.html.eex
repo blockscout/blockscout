@@ -69,6 +69,14 @@
             <dt class="transaction__item-key"><%= gettext "Input" %></dt>
             <dd class="transaction__item-value" title="<%= @transaction.input %>"><%= @transaction.input %></dd>
           </div>
+          <div class="transaction__item">
+            <dt class="transaction__item-key"><%= gettext "First Seen" %></dt>
+            <dd class="transaction__item-value" title="<%= @transaction.first_seen %>"><%= @transaction.first_seen %></dd>
+          </div>
+          <div class="transaction__item">
+            <dt class="transaction__item-key"><%= gettext "Last Seen" %></dt>
+            <dd class="transaction__item-value" title="<%= @transaction.last_seen %>"><%= @transaction.last_seen %></dd>
+          </div>
         </dl>
       </div>
     </div>
