@@ -48,7 +48,7 @@ config :ethereumex,
 # Configure Quantum
 config :explorer, Explorer.Scheduler,
   jobs: [
-    [schedule: {:extended, "* * * * * *"}, task: {Explorer.Workers.ImportBlock, :perform_later, ["latest"]}],
+    [schedule: {:extended, "*/5 * * * * *"}, task: {Explorer.Workers.ImportBlock, :perform_later, ["latest"]}],
     [schedule: {:extended, "* * * * * *"}, task: {Explorer.Workers.ImportBlock, :perform_later, ["pending"]}],
     [schedule: {:extended, "*/15 * * * * *"}, task: {Explorer.Workers.ImportSkippedBlocks, :perform_later, [String.to_integer(System.get_env("EXPLORER_BACKFILL_CONCURRENCY") || "1")]}],
   ]
