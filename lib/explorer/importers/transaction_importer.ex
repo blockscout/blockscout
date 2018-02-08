@@ -93,16 +93,9 @@ defmodule Explorer.TransactionImporter do
     address = Address.find_or_create_by_hash(hash)
     changes = %{address_id: address.id, transaction_id: transaction.id}
 
-    case Repo.get_by(FromAddress, transaction_id: transaction.id) do
-      nil ->
-        %FromAddress{}
-        |> FromAddress.changeset(changes)
-        |> Repo.insert
-      from_address ->
-        from_address
-        |> FromAddress.changeset(%{address_id: address.id})
-        |> Repo.update
-    end
+    %FromAddress{}
+    |> FromAddress.changeset(changes)
+    |> Repo.insert(on_conflict: :replace_all, conflict_target: :transaction_id)
 
     transaction
   end
@@ -111,16 +104,9 @@ defmodule Explorer.TransactionImporter do
     address = Address.find_or_create_by_hash(hash)
     changes = %{address_id: address.id, transaction_id: transaction.id}
 
-    case Repo.get_by(ToAddress, transaction_id: transaction.id) do
-      nil ->
-        %ToAddress{}
-        |> ToAddress.changeset(changes)
-        |> Repo.insert
-      to_address ->
-        to_address
-        |> ToAddress.changeset(%{address_id: address.id})
-        |> Repo.update
-    end
+    %ToAddress{}
+    |> ToAddress.changeset(changes)
+    |> Repo.insert(on_conflict: :replace_all, conflict_target: :transaction_id)
 
     transaction
   end
