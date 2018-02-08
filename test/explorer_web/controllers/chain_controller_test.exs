@@ -1,6 +1,8 @@
 defmodule ExplorerWeb.ChainControllerTest do
   use ExplorerWeb.ConnCase
 
+  import ExplorerWeb.Router.Helpers, only: [chain_path: 3]
+
   describe "GET index/2 without a locale" do
     test "redirects to the en locale", %{conn: conn} do
       conn = get conn, "/"
@@ -11,7 +13,7 @@ defmodule ExplorerWeb.ChainControllerTest do
 
   describe "GET index/2 with a locale" do
     test "returns a welcome message", %{conn: conn} do
-      conn = get conn, ExplorerWeb.Router.Helpers.chain_path(ExplorerWeb.Endpoint, :show, %{locale: :en})
+      conn = get conn, chain_path(ExplorerWeb.Endpoint, :show, %{locale: :en})
 
       assert(html_response(conn, 200) =~ "POA")
     end

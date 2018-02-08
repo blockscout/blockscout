@@ -71,7 +71,7 @@ defmodule ExplorerWeb.UserListTest do
     |> with_block(block)
     |> with_addresses(%{to: "0xabelincoln", from: "0xhowardtaft"})
 
-    insert(:transaction)
+    insert(:transaction, hash: "0xC001")
 
     session
     |> visit("/en")
@@ -79,10 +79,12 @@ defmodule ExplorerWeb.UserListTest do
     |> assert_has(css(".transactions__column--hash", count: 5))
     |> assert_has(css(".transactions__column--value", count: 5))
     |> assert_has(css(".transactions__column--age", count: 5))
-    |> click(link("Transactions"))
-    |> assert_has(css(".transactions__column--hash", text: "0xSk8"))
+    |> click(css(".header__link-name--pending-transactions", text: "Pending Transactions"))
+    |> assert_has(css(".transactions__column--hash", text: "0xC001"))
     |> assert_has(css(".transactions__column--block", text: "Pending"))
     |> assert_has(css(".transactions__column--age", text: "Pending"))
+    |> click(css(".header__link-name--transactions", text: "Transactions"))
+    |> refute_has(css(".transactions__column--block", text: "Pending"))
     |> click(link("0xSk8"))
     |> assert_has(css(".transaction__subheading", text: "0xSk8"))
     |> assert_has(css(".transaction__item", text: "123,987"))

@@ -62,6 +62,7 @@ defmodule ExplorerWeb.Router do
     pipe_through :set_locale
     resources "/", ChainController, only: [:show], singleton: true, as: :chain
     resources "/blocks", BlockController, only: [:index, :show]
+    resources "/pending_transactions", PendingTransactionController, only: [:index]
     resources "/transactions", TransactionController, only: [:index, :show]
     resources "/addresses", AddressController, only: [:show]
   end

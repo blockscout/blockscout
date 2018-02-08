@@ -7,6 +7,12 @@ defmodule ExplorerWeb.TransactionControllerTest do
       conn = get(conn, "/en/transactions")
       assert conn.assigns.transactions |> Enum.map(fn (transaction) -> transaction.id end) |> Enum.reverse == transaction_ids
     end
+
+    test "returns no pending transactions", %{conn: conn} do
+      insert(:transaction)
+      conn = get(conn, "/en/transactions")
+      assert conn.assigns.transactions |> Enum.count === 0
+    end
   end
 
   describe "GET show/3" do
