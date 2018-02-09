@@ -9,11 +9,10 @@ defmodule ExplorerWeb.TransactionController do
 
   def index(conn, params) do
     query = from transaction in Transaction,
-      left_join: block_transaction in assoc(transaction, :block_transaction),
-      left_join: block in assoc(block_transaction, :block),
-      preload: [block_transaction: block_transaction, block: block],
-      order_by: [desc: block.timestamp, desc: transaction.inserted_at],
-      where: not is_nil(block.id)
+      join: block_transaction in assoc(transaction, :block_transaction),
+      join: block in assoc(block_transaction, :block),
+      preload: [block: block],
+      order_by: [desc: block.timestamp]
 
     transactions = Repo.paginate(query, params)
 
