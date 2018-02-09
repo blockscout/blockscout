@@ -8,6 +8,15 @@ defmodule Explorer.BlockImporter do
   alias Explorer.Repo.NewRelic, as: Repo
   alias Explorer.Workers.ImportTransaction
 
+  def import(raw_block) when is_map(raw_block) do
+    changes = extract_block(raw_block)
+    block = changes.hash |> find()
+
+    if is_nil(block.id), do: block |> Block.changeset(changes) |> Repo.insert
+
+    Enum.map(raw_block["transactions"], &ImportTransaction.perform/1)
+  end
+
   @dialyzer {:nowarn_function, import: 1}
   def import("pending") do
     raw_block = download_block("pending")
@@ -16,13 +25,8 @@ defmodule Explorer.BlockImporter do
 
   @dialyzer {:nowarn_function, import: 1}
   def import(block_number) do
-    raw_block = download_block(block_number)
-    changes = extract_block(raw_block)
-    block = changes.hash |> find()
-
-    if is_nil(block.id), do: block |> Block.changeset(changes) |> Repo.insert
-
-    Enum.map(raw_block["transactions"], &ImportTransaction.perform/1)
+    alias Explorer.BlockImporter
+    block_number |> download_block() |> BlockImporter.import()
   end
 
   def find(hash) do

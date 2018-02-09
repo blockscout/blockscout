@@ -61,6 +61,7 @@ defmodule Explorer.Mixfile do
       {:exq, "~> 0.9.1"},
       {:exq_ui, "~> 0.9.0"},
       {:exvcr, "~> 0.10", only: :test},
+      {:flow, "~> 0.12"},
       {:gettext, "~> 0.11"},
       {:httpoison, "~> 1.0", override: true},
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
