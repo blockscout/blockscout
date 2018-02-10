@@ -9,8 +9,11 @@
         <thead class="transactions__header">
           <tr>
             <th class="transactions__column-header"><%= gettext "Hash" %></th>
-            <th class="transactions__column-header"><%= gettext "Block" %></th>
-            <th class="transactions__column-header"><%= gettext "Age" %></th>
+            <th class="transactions__column-header"><%= gettext "Last Seen" %></th>
+            <th class="transactions__column-header"><%= gettext "Gas Price" %></th>
+            <th class="transactions__column-header"><%= gettext "Gas Limit" %></th>
+            <th class="transactions__column-header transactions__column-header--optional"><%= gettext "From" %></th>
+            <th class="transactions__column-header transactions__column-header--optional"><%= gettext "To" %></th>
             <th class="transactions__column-header transactions__column-header--optional"><%= gettext "Value" %></th>
           </tr>
         </thead>
@@ -20,8 +23,25 @@
               <td class="transactions__column transactions__column--hash">
                 <div class="transactions__hash"><%= link(transaction.hash, to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.hash)) %></div>
               </td>
-              <td class="transactions__column transactions__column--block"><%= gettext "Pending" %></td>
-              <td class="transactions__column transactions__column--age"><%= gettext "Pending" %></td>
+              <td class="transactions__column transactions__column--last-seen"><%= transaction.last_seen %></td>
+              <td class="transactions__column transactions__column--gas-price"><%= transaction.gas_price %></td>
+              <td class="transactions__column transactions__column--gas-limit"><%= transaction.gas_limit %></td>
+              <td class="transactions__column transactions__column--optional transactions__column--from-address">
+                <div class="transactions__from-address">
+                  <%= if transaction.to_address_hash do %>
+                    <%= link(transaction.to_address_hash, to: address_path(@conn, :show, @conn.assigns.locale, transaction.to_address_hash)) %>
+                  <% else %>
+                    <%= gettext "Pending" %>
+                  <% end %>
+                </div>
+              <td class="transactions__column transactions__column--optional transactions__column--to-address">
+                <div class="transactions__to-address">
+                  <%= if transaction.from_address_hash do %>
+                    <%= link(transaction.from_address_hash, to: address_path(@conn, :show, @conn.assigns.locale, transaction.from_address_hash)) %>
+                  <% else %>
+                    <%= gettext "Pending" %>
+                  <% end %>
+                </div>
               <td class="transactions__column transactions__column--optional transactions__column--value"><%= Decimal.div(Decimal.new(transaction.value), Decimal.new(1_000_000_000_000_000_000)) |> Decimal.to_string(:normal) %> <%= gettext "POA" %></td>
             </tr>
           <% end %>

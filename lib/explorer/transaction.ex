@@ -1,9 +1,14 @@
 defmodule Explorer.Transaction do
-  @moduledoc false
-  alias Explorer.BlockTransaction
-  alias Explorer.Transaction
-  import Ecto.Changeset
+  @moduledoc "Models a Web3 transaction."
+
   use Ecto.Schema
+
+  import Ecto.Changeset
+
+  alias Explorer.BlockTransaction
+  alias Explorer.FromAddress
+  alias Explorer.ToAddress
+  alias Explorer.Transaction
 
   @timestamps_opts [type: Timex.Ecto.DateTime,
                     autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}]
@@ -11,6 +16,10 @@ defmodule Explorer.Transaction do
   schema "transactions" do
     has_one :block_transaction, BlockTransaction
     has_one :block, through: [:block_transaction, :block]
+    has_one :to_address_join, ToAddress
+    has_one :to_address, through: [:to_address_join, :address]
+    has_one :from_address_join, FromAddress
+    has_one :from_address, through: [:from_address_join, :address]
     field :hash, :string
     field :value, :decimal
     field :gas, :decimal

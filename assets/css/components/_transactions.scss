@@ -22,13 +22,6 @@
     color: explorer-color("slate", "100");
   }
 
-  &__hash {
-    width: explorer-size(2);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
-  }
-
   &__column-header { @include explorer-typography("body1"); }
   &__link { color: explorer-color("blue", "500"); }
 
@@ -37,26 +30,35 @@
     .pagination { text-align: right; }
   }
 
-  &__hash {
+  &__hash,
+  &__from-address,
+  &__to-address {
+    width: explorer-size(2);
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
+  }
+  &__column-header {
+    &--optional { display: none; }
+  }
+  &__column {
+    &--optional { display: none; }
   }
 }
 
 @media (min-width: $explorer-breakpoint-sm) {
   .transactions {
-    &__column-header {
-      &--optional { display: table-cell; }
-    }
-    &__column {
-      &--optional { display: table-cell; }
+    &__hash {
+      width: explorer-size(4);
     }
   }
 }
 
 @media (min-width: $explorer-breakpoint-md) {
   .transactions {
+    &__hash {
+      width: explorer-size(6);
+    }
     &__headline {
       display: flex;
       align-items: center;
@@ -71,12 +73,18 @@
 
 @media (min-width: $explorer-breakpoint-lg) {
   .transactions {
-    &__hash { width: explorer-size(3); }
+    &__hash { width: explorer-size(6); }
   }
 }
 
 @media (min-width: $explorer-breakpoint-xl) {
   .transactions {
-    &__hash { width: explorer-size(4); }
+    &__hash { width: explorer-size(3); }
+    &__column-header {
+      &--optional { display: table-cell; }
+    }
+    &__column {
+      &--optional { display: table-cell; }
+    }
   }
 }

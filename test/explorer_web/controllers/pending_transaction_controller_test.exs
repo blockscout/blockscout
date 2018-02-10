@@ -17,5 +17,13 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
       conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
       assert List.first(conn.assigns.transactions.entries).id == transaction.id
     end
+
+    test "returns pending transactions with a to address", %{conn: conn} do
+      insert(:transaction) |> with_addresses(%{to: "0xfritos", from: "0xmunchos"})
+      conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
+      first_transaction = List.first(conn.assigns.transactions.entries)
+      assert first_transaction.to_address.hash == "0xfritos"
+      assert first_transaction.from_address.hash == "0xmunchos"
+    end
   end
 end

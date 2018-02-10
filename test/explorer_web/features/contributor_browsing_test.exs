@@ -53,6 +53,7 @@ defmodule ExplorerWeb.UserListTest do
 
   test "views transactions", %{session: session} do
     block = insert(:block, %{
+      number: 555,
       timestamp: Timex.now |> Timex.shift(hours: -2),
       gas_used: 123987,
     })
@@ -81,8 +82,7 @@ defmodule ExplorerWeb.UserListTest do
     |> assert_has(css(".transactions__column--age", count: 5))
     |> click(css(".header__link-name--pending-transactions", text: "Pending Transactions"))
     |> assert_has(css(".transactions__column--hash", text: "0xC001"))
-    |> assert_has(css(".transactions__column--block", text: "Pending"))
-    |> assert_has(css(".transactions__column--age", text: "Pending"))
+    |> assert_has(css(".transactions__column--last-seen"))
     |> click(css(".header__link-name--transactions", text: "Transactions"))
     |> refute_has(css(".transactions__column--block", text: "Pending"))
     |> click(link("0xSk8"))

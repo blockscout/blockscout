@@ -1,4 +1,4 @@
-<section class="container__section transaction">
+nil<section class="container__section transaction">
   <div class="transaction__header">
     <h1 class="transaction__heading"><%= gettext "Transaction Details" %></h1>
     <h3 class="transaction__subheading"><%= @transaction.hash %></h3>
@@ -41,7 +41,7 @@
             <dt class="transaction__item-key"><%= gettext "From" %></dt>
             <dd class="transaction__item-value">
               <%= if @transaction.from_address do %>
-                <%= link(@transaction.from_address, to: address_path(@conn, :show, @conn.assigns.locale, @transaction.from_address)) %>
+                <%= link(@transaction.from_address.hash, to: address_path(@conn, :show, @conn.assigns.locale, @transaction.from_address.hash)) %>
               <% else %>
                 <%= gettext "Pending" %>
               <% end %>
@@ -51,7 +51,7 @@
             <dt class="transaction__item-key"><%= gettext "To" %></dt>
             <dd class="transaction__item-value">
               <%= if @transaction.to_address do %>
-                <%= link(@transaction.to_address, to: address_path(@conn, :show, @conn.assigns.locale, @transaction.to_address)) %>
+                <%= link(@transaction.to_address.hash, to: address_path(@conn, :show, @conn.assigns.locale, @transaction.to_address.hash)) %>
               <% else %>
                 <%= gettext "Pending" %>
               <% end %>

@@ -5,12 +5,8 @@ defmodule Explorer.TransactionForm do
   import ExplorerWeb.Gettext
 
   alias Cldr.Number
-  alias Explorer.Address
   alias Explorer.Block
-  alias Explorer.FromAddress
   alias Explorer.Repo
-  alias Explorer.ToAddress
-  alias Explorer.Transaction
 
   def build(transaction) do
     block = transaction.block
@@ -20,12 +16,13 @@ defmodule Explorer.TransactionForm do
       formatted_age: block |> format_age,
       formatted_timestamp: block |> format_timestamp,
       cumulative_gas_used: block |> cumulative_gas_used,
-      to_address: transaction |> to_address,
-      from_address: transaction |> from_address,
+      to_address_hash: transaction |> to_address_hash,
+      from_address_hash: transaction |> from_address_hash,
       confirmations: block |> confirmations,
       status: transaction |> status,
       first_seen: transaction |> first_seen,
       last_seen: transaction |> last_seen,
+      gas_limit: block |> gas_limit,
     })
   end
 
@@ -53,36 +50,12 @@ defmodule Explorer.TransactionForm do
     block && block.gas_used |> Number.to_string! || gettext("Pending")
   end
 
-  def to_address(transaction) do
-    query = from address in Address,
-      join: to_address in ToAddress,
-        where: to_address.address_id == address.id,
-      join: transaction in Transaction,
-        where: transaction.id == to_address.transaction_id,
-      where: transaction.id == ^transaction.id
-
-    case Repo.one(query) do
-      nil ->
-        nil
-      to_address ->
-        to_address.hash
-    end
+  def to_address_hash(transaction) do
+    transaction.to_address && transaction.to_address.hash || nil
   end
 
-  def from_address(transaction) do
-    query = from address in Address,
-      join: from_address in FromAddress,
-        where: from_address.address_id == address.id,
-      join: transaction in Transaction,
-        where: transaction.id == from_address.transaction_id,
-      where: transaction.id == ^transaction.id
-
-    case Repo.one(query) do
-      nil ->
-        nil
-      from_address ->
-        from_address.hash
-    end
+  def from_address_hash(transaction) do
+    transaction.to_address && transaction.from_address.hash || nil
   end
 
   def confirmations(block) do
@@ -104,5 +77,9 @@ defmodule Explorer.TransactionForm do
 
   def last_seen(transaction) do
     transaction.updated_at |> Timex.from_now
+  end
+
+  def gas_limit(block) do
+    block && block.gas_limit |> Number.to_string! || gettext("Pending")
   end
 end
