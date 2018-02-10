@@ -23,12 +23,15 @@ defmodule ExplorerWeb.PendingTransactionController do
       order_by: [desc: transaction.inserted_at],
       where: is_nil(block_transaction.transaction_id)
 
-    transactions =
-      query
-      |> Repo.paginate(params)
-      |> Map.put(:entries, transactions.entries
-      |> Enum.map(&TransactionForm.build/1))
+    transactions = query |> Repo.paginate(params)
 
-    render(conn, "index.html", transactions: transactions)
+    render(
+      conn, 
+      "index.html", 
+      transactions: 
+        transactions
+        |> Map.put(:entries, transactions.entries
+        |> Enum.map(&TransactionForm.build/1))
+     )
   end
 end
