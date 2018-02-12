@@ -33,8 +33,6 @@ defmodule Explorer.TransactionFactory do
       def with_block(transaction, block \\ nil) do
         block = block || insert(:block)
         insert(:block_transaction, %{block_id: block.id, transaction_id: transaction.id})
-        # block_transaction_changeset = BlockTransaction.changeset(%BlockTransaction{}, %{block_id: block.id, transaction_id: transaction.id})
-        # Repo.insert(block_transaction_changeset)
         transaction
       end
 

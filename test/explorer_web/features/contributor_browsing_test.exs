@@ -72,7 +72,7 @@ defmodule ExplorerWeb.UserListTest do
     |> with_block(block)
     |> with_addresses(%{to: "0xabelincoln", from: "0xhowardtaft"})
 
-    insert(:transaction, hash: "0xC001")
+    insert(:transaction, hash: "0xC001", gas: 5891) |> with_addresses
 
     session
     |> visit("/en")
@@ -82,6 +82,7 @@ defmodule ExplorerWeb.UserListTest do
     |> assert_has(css(".transactions__column--age", count: 5))
     |> click(css(".header__link-name--pending-transactions", text: "Pending Transactions"))
     |> assert_has(css(".transactions__column--hash", text: "0xC001"))
+    |> assert_has(css(".transactions__column--gas-limit", text: "5,891"))
     |> assert_has(css(".transactions__column--last-seen"))
     |> click(css(".header__link-name--transactions", text: "Transactions"))
     |> refute_has(css(".transactions__column--block", text: "Pending"))

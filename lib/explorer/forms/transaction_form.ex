@@ -9,7 +9,8 @@ defmodule Explorer.TransactionForm do
   alias Explorer.Repo
 
   def build(transaction) do
-    block = transaction.block
+    block = Ecto.assoc_loaded?(transaction.block) && transaction.block || nil
+
     Map.merge(transaction, %{
       block_number: block |> block_number,
       age: block |> block_age,
@@ -19,10 +20,9 @@ defmodule Explorer.TransactionForm do
       to_address_hash: transaction |> to_address_hash,
       from_address_hash: transaction |> from_address_hash,
       confirmations: block |> confirmations,
-      status: transaction |> status,
+      status: block |> status,
       first_seen: transaction |> first_seen,
       last_seen: transaction |> last_seen,
-      gas_limit: block |> gas_limit,
     })
   end
 
@@ -35,11 +35,7 @@ defmodule Explorer.TransactionForm do
   end
 
   def format_age(block) do
-    if block do
-      "#{block_age(block)} (#{format_timestamp(block)})"
-    else
-      gettext("Pending")
-    end
+    block && "#{block_age(block)} (#{format_timestamp(block)})" || gettext("Pending")
   end
 
   def format_timestamp(block) do
@@ -63,12 +59,8 @@ defmodule Explorer.TransactionForm do
     block && Repo.one(query) - block.number || 0
   end
 
-  def status(transaction) do
-    if transaction.block do
-      gettext("Success")
-    else
-      gettext("Pending")
-    end
+  def status(block) do
+    block && gettext("Success") || gettext("Pending")
   end
 
   def first_seen(transaction) do
@@ -77,9 +69,5 @@ defmodule Explorer.TransactionForm do
 
   def last_seen(transaction) do
     transaction.updated_at |> Timex.from_now
-  end
-
-  def gas_limit(block) do
-    block && block.gas_limit |> Number.to_string! || gettext("Pending")
   end
 end

@@ -22,11 +22,10 @@ defmodule ExplorerWeb.PendingTransactionController do
       where: is_nil(block_transaction.transaction_id)
 
     transactions = query |> Repo.paginate(params)
-
     render(
-      conn, 
-      "index.html", 
-      transactions: 
+      conn,
+      "index.html",
+      transactions:
         transactions
         |> Map.put(:entries, transactions.entries
         |> Enum.map(&TransactionForm.build/1))

@@ -10,7 +10,6 @@ defmodule Explorer.TransactionFormTest do
       block = insert(:block, %{
         number: 1,
         gas_used: 99523,
-        gas_limit: 555,
         timestamp: time,
       })
       transaction =
@@ -35,7 +34,6 @@ defmodule Explorer.TransactionFormTest do
         status: "Success",
         first_seen: "48 years ago",
         last_seen: "38 years ago",
-        gas_limit: "555",
       }))
     end
 
@@ -44,7 +42,8 @@ defmodule Explorer.TransactionFormTest do
         :transaction,
         inserted_at: Timex.parse!("1970-01-01T00:00:18-00:00", "{ISO:Extended}"),
         updated_at: Timex.parse!("1980-01-01T00:00:18-00:00", "{ISO:Extended}"))
-      |> with_addresses(%{to: "0xchadmuska", from: "0xtonyhawk"}) |> Repo.preload([:block, :to_address, :from_address])
+      |> with_addresses(%{to: "0xchadmuska", from: "0xtonyhawk"})
+      |> Repo.preload([:to_address, :from_address])
       form = TransactionForm.build(transaction)
 
       assert(form == Map.merge(transaction, %{
@@ -59,7 +58,6 @@ defmodule Explorer.TransactionFormTest do
         status: "Pending",
         first_seen: "48 years ago",
         last_seen: "38 years ago",
-        gas_limit: "Pending",
       }))
     end
 
@@ -77,7 +75,6 @@ defmodule Explorer.TransactionFormTest do
         formatted_age: "Pending",
         formatted_timestamp: "Pending",
         cumulative_gas_used: "Pending",
-        gas_limit: "Pending",
         to_address_hash: nil,
         from_address_hash: nil,
         confirmations: 0,
