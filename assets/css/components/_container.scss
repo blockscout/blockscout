@@ -43,8 +43,8 @@
 
       &--partitioned {
         display: flex;
-        align-items: top;
-        justify-content: top;
+        justify-content: space-between;
+        align-items: stretch;
       }
     }
 

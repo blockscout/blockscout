@@ -51,6 +51,7 @@
     }
 
     & + & { margin-right: explorer-size(-2); }
+    &--optional { display: none; }
   }
 
   &__link-name {
@@ -61,5 +62,13 @@
   &__link-image, &__link-name {
     display: inline-block;
     vertical-align: middle;
+  }
+}
+
+@media (min-width: $explorer-breakpoint-sm) {
+  .header {
+    &__link {
+      &--optional { display: block; }
+    }
   }
 }

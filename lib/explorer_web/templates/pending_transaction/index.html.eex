@@ -1,40 +1,52 @@
 <section class="container__section">
-  <div class="transactions__headline">
-    <h1 class="transactions__headline-title"><%= gettext("Showing %{count} Pending Transactions", count: @transactions.total_entries) %></h1>
-    <div class="transactions__pagination"><%= pagination_links @conn, @transactions, ["en"], view_style: :bulma, first: true, distance: 1, previous: Phoenix.HTML.raw("&lsaquo;"), next: Phoenix.HTML.raw("&rsaquo;"), path: &pending_transaction_path/4 %></div>
-  </div>
-  <div class="transactions">
-    <div class="transactions__container">
-      <table class="transactions__table">
-        <thead class="transactions__header">
-          <tr>
-            <th class="transactions__column-header"><%= gettext "Hash" %></th>
-            <th class="transactions__column-header"><%= gettext "Last Seen" %></th>
-            <th class="transactions__column-header"><%= gettext "Gas Price" %></th>
-            <th class="transactions__column-header"><%= gettext "Gas Limit" %></th>
-            <th class="transactions__column-header transactions__column-header--optional"><%= gettext "From" %></th>
-            <th class="transactions__column-header transactions__column-header--optional"><%= gettext "To" %></th>
-            <th class="transactions__column-header transactions__column-header--optional"><%= gettext "Value" %></th>
-          </tr>
-        </thead>
-        <tbody>
-          <%= for transaction <- @transactions do %>
-            <tr class="transactions__row">
-              <td class="transactions__column transactions__column--hash">
-                <div class="transactions__hash"><%= link(transaction.hash, to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.hash), class: "transactions__link") %></div>
-              </td>
-              <td class="transactions__column transactions__column--last-seen"><%= transaction.last_seen %></td>
-              <td class="transactions__column transactions__column--gas-price"><%= transaction.gas_price %></td>
-              <td class="transactions__column transactions__column--gas-limit"><%= transaction.gas |> Cldr.Number.to_string! %></td>
-              <td class="transactions__column transactions__column--optional transactions__column--from-address"><%= link(transaction.from_address_hash, to: address_path(@conn, :show, @conn.assigns.locale, transaction.from_address_hash), class: "transactions__link") %>
-              </td>
-              <td class="transactions__column transactions__column--optional transactions__column--to-address"><%= link(transaction.to_address_hash, to: address_path(@conn, :show, @conn.assigns.locale, transaction.to_address_hash), class: "transactions__link") %>
-              </td>
-              <td class="transactions__column transactions__column--optional transactions__column--value"><%= Decimal.div(Decimal.new(transaction.value), Decimal.new(1_000_000_000_000_000_000)) |> Decimal.to_string(:normal) %> <%= gettext "POA" %></td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
+  <section class="container__subsection">
+    <div class="transactions__headline">
+      <h1 class="transactions__headline-title"><%= gettext("Showing %{count} Pending Transactions", count: @transactions.total_entries) %></h1>
+      <div class="transactions__pagination"><%= pagination_links @conn, @transactions, ["en"], view_style: :bulma, first: true, distance: 1, previous: Phoenix.HTML.raw("&lsaquo;"), next: Phoenix.HTML.raw("&rsaquo;"), path: &pending_transaction_path/4 %></div>
     </div>
-  </div>
+    <div class="transactions">
+      <div class="transactions__tabs">
+        <h2 class="transactions__tab"><%= link(gettext("Transactions"), to: transaction_path(@conn, :index, @conn.assigns.locale), class: "transactions__tab-link") %></h2>
+        <h2 class="transactions__tab transactions__tab--active"><%= link(gettext("Pending"), to: pending_transaction_path(@conn, :index, @conn.assigns.locale), class: "transactions__tab-link transactions__tab-link--active") %></h2>
+      </div>
+      <div class="transactions__container">
+        <table class="transactions__table">
+          <thead class="transactions__header">
+            <tr>
+              <th class="transactions__column-header"><%= gettext "Hash" %></th>
+              <th class="transactions__column-header"><%= gettext "Last Seen" %></th>
+              <th class="transactions__column-header transactions__column-header--optional"><%= gettext "From" %></th>
+              <th class="transactions__column-header transactions__column-header--optional"><%= gettext "To" %></th>
+              <th class="transactions__column-header"><%= gettext "Value" %></th>
+            </tr>
+          </thead>
+          <tbody>
+            <%= for transaction <- @transactions do %>
+              <tr class="transactions__row">
+                <td class="transactions__column transactions__column--hash">
+                  <%= link(transaction.hash, to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.hash), class: "transactions__link transactions__link--truncated transactions__link--long-hash") %>
+                </td>
+                <td class="transactions__column transactions__column--last-seen"><%= transaction.last_seen %></td>
+                <td class="transactions__column transactions__column--optional transactions__column--from-address">
+                  <%= if transaction.to_address_hash do %>
+                    <%= link(transaction.to_address_hash, to: address_path(@conn, :show, @conn.assigns.locale, transaction.to_address_hash), class: "transactions__link transactions__link--truncated transactions__link--hash") %>
+                  <% else %>
+                    <%= gettext "Pending" %>
+                  <% end %>
+                </td>
+                <td class="transactions__column transactions__column--optional transactions__column--to-address">
+                  <%= if transaction.from_address_hash do %>
+                    <%= link(transaction.from_address_hash, to: address_path(@conn, :show, @conn.assigns.locale, transaction.from_address_hash), class: "transactions__link transactions__link--truncated transactions__link--hash") %>
+                  <% else %>
+                    <%= gettext "Pending" %>
+                  <% end %>
+                </td>
+                <td class="transactions__column transactions__column--value"><%= Decimal.div(Decimal.new(transaction.value), Decimal.new(1_000_000_000_000_000_000)) |> Decimal.to_string(:normal) %> <%= gettext "POA" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
 </section>

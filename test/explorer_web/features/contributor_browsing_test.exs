@@ -83,12 +83,10 @@ defmodule ExplorerWeb.UserListTest do
     |> assert_has(css(".transactions__title", text: "Transactions"))
     |> assert_has(css(".transactions__column--hash", count: 5))
     |> assert_has(css(".transactions__column--value", count: 5))
-    |> assert_has(css(".transactions__column--age", count: 5))
+    |> assert_has(css(".transactions__column--age", count: 5, visible: false))
 
-    |> click(css(".header__link-name--pending-transactions", text: "Pending Transactions"))
-    |> assert_has(css(".transactions__column--hash", text: "0xC001"))
-    |> assert_has(css(".transactions__column--gas-limit", text: "5,891"))
-
+    |> click(css(".header__link-name--transactions", text: "Transactions"))
+    |> click(css(".transactions__tab-link", text: "Pending"))
     |> click(css(".transactions__link", text: "0xC001"))
     |> assert_has(css(".transaction__item-value--status", text: "Pending"))
 

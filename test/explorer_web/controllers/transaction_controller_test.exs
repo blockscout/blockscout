@@ -5,8 +5,11 @@ defmodule ExplorerWeb.TransactionControllerTest do
     test "returns a transaction with a receipt", %{conn: conn} do
       transaction = insert(:transaction)
       block = insert(:block)
+      address = insert(:address)
       insert(:transaction_receipt, transaction: transaction)
       insert(:block_transaction, transaction: transaction, block: block)
+      insert(:to_address, transaction: transaction, address: address)
+      insert(:from_address, transaction: transaction, address: address)
       conn = get(conn, "/en/transactions")
       assert List.first(conn.assigns.transactions.entries).id == transaction.id
     end
