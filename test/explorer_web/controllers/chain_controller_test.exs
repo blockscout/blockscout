@@ -22,7 +22,7 @@ defmodule ExplorerWeb.ChainControllerTest do
       insert(:block, %{number: 23})
       conn = get conn, "/en"
 
-      assert(List.first(conn.assigns.blocks).number == 23)
+      assert(List.first(conn.assigns.chain.blocks).number == 23)
     end
 
     test "excludes all but the most recent five blocks", %{conn: conn} do
@@ -30,7 +30,7 @@ defmodule ExplorerWeb.ChainControllerTest do
       insert_list(5, :block)
       conn = get conn, "/en"
 
-      refute(Enum.member?(conn.assigns.blocks, old_block))
+      refute(Enum.member?(conn.assigns.chain.blocks, old_block))
     end
 
     test "only returns transactions with an associated block", %{conn: conn} do
@@ -38,7 +38,8 @@ defmodule ExplorerWeb.ChainControllerTest do
       insert(:transaction, id: 10, hash: "0xDECAFBAD") |> with_block(block) |> with_addresses(%{to: "0xsleepypuppy", from: "0xilovefrogs"})
       insert(:transaction, id: 30)
       conn = get conn, "/en"
-      transaction_ids = conn.assigns.transactions |> Enum.map(fn (transaction) -> transaction.id end)
+      transaction_ids = conn.assigns.chain.transactions
+      |> Enum.map(fn (transaction) -> transaction.id end)
 
       assert(Enum.member?(transaction_ids, 10))
       refute(Enum.member?(transaction_ids, 30))
@@ -49,7 +50,7 @@ defmodule ExplorerWeb.ChainControllerTest do
       insert(:transaction, hash: "0xDECAFBAD") |> with_block(block) |> with_addresses(%{to: "0xsleepypuppy", from: "0xilovefrogs"})
       conn = get conn, "/en"
 
-      assert(List.first(conn.assigns.transactions).hash == "0xDECAFBAD")
+      assert(List.first(conn.assigns.chain.transactions).hash == "0xDECAFBAD")
     end
   end
 end

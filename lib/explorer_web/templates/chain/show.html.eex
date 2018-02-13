@@ -64,7 +64,7 @@
             </tr>
           </thead>
           <tbody>
-            <%= for block <- @blocks do %>
+            <%= for block <- @chain.blocks do %>
               <tr class="blocks__row">
                 <td class="blocks__column blocks__column--height"><%= link(block.number, to: block_path(@conn, :show, @conn.assigns.locale, block.number), class: "blocks__link") %></td>
                 <td class="blocks__column blocks__column--age"><%= block.timestamp |> Timex.from_now %></td>
@@ -91,7 +91,7 @@
             </tr>
           </thead>
           <tbody>
-            <%= for transaction <- @transactions do %>
+            <%= for transaction <- @chain.transactions do %>
               <tr class="transactions__row">
                 <td class="transactions__column transactions__column--hash">
                   <div class="transactions__hash-container" title="<%= transaction.hash %>">

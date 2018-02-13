@@ -10,17 +10,16 @@ defmodule Explorer.Servers.ChainStatistics do
   def fetch do
     case GenServer.whereis(__MODULE__) do
       nil -> Chain.fetch()
-      pid -> GenServer.call(pid, :fetch)
+      _ -> GenServer.call(__MODULE__, :fetch)
     end
   end
-  def start_link, do: start_link(%Chain{})
-  def start_link(%Chain{} = chain) do
-    GenServer.start_link(__MODULE__, chain, name: __MODULE__)
-  end
 
-  def init(chain) do
+  def start_link, do: start_link(nil)
+  def start_link(_), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
+
+  def init(_) do
     refresh()
-    {:ok, chain}
+    {:ok, %Chain{}}
   end
 
   def refresh, do: refresh(@interval)

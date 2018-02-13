@@ -80,5 +80,21 @@ defmodule Explorer.ChainTest do
       chain = Chain.fetch()
       assert chain.transaction_velocity == 1
     end
+
+    test "returns the last five blocks" do
+      insert_list(6, :block)
+      chain = Chain.fetch()
+      assert chain.blocks |> Enum.count() == 5
+    end
+
+    test "returns the last five transactions with blocks" do
+      block = insert(:block)
+      insert_list(6, :transaction)
+      |> Enum.map(fn (transaction) ->
+        insert(:block_transaction, block: block, transaction: transaction)
+      end)
+      chain = Chain.fetch()
+      assert chain.transactions |> Enum.count() == 5
+    end
   end
 end

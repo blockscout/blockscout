@@ -7,7 +7,8 @@ defmodule Explorer.Chain do
 
   alias Ecto.Adapters.SQL
   alias Explorer.Block
-  alias Explorer.Repo
+  alias Explorer.Transaction
+  alias Explorer.Repo, as: Repo
   alias Timex.Duration
 
   defstruct [
@@ -18,7 +19,9 @@ defmodule Explorer.Chain do
     transaction_count: 0,
     skipped_blocks: 0,
     block_velocity: 0,
-    transaction_velocity: 0
+    transaction_velocity: 0,
+    blocks: [],
+    transactions: []
   ]
 
   @average_time_query """
@@ -68,6 +71,17 @@ defmodule Explorer.Chain do
   """
 
   def fetch do
+    blocks = from block in Block,
+      order_by: [desc: block.number],
+      preload: :transactions,
+      limit: 5
+
+    transactions = from transaction in Transaction,
+      join: block in assoc(transaction, :block),
+      order_by: [desc: block.number],
+      preload: [block: block],
+      limit: 5
+
     last_block = Block |> Block.latest() |> limit(1) |> Repo.one()
     latest_block = last_block || Block.null
     %Explorer.Chain{
@@ -78,7 +92,9 @@ defmodule Explorer.Chain do
       skipped_blocks: query_value(@skipped_blocks_query, [latest_block.number]),
       lag: query_duration(@lag_query),
       block_velocity: query_value(@block_velocity_query),
-      transaction_velocity: query_value(@transaction_velocity_query)
+      transaction_velocity: query_value(@transaction_velocity_query),
+      blocks: Repo.all(blocks),
+      transactions: Repo.all(transactions)
     }
   end
 
