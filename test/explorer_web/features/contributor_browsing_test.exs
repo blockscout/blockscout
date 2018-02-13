@@ -58,8 +58,11 @@ defmodule ExplorerWeb.UserListTest do
       gas_used: 123987,
     })
     for _ <- 0..3, do: insert(:transaction) |> with_block(block) |> with_addresses
+    insert(:transaction, hash: "0xC001", gas: 5891) |> with_block |> with_addresses
 
-    insert(:transaction, %{
+    to_address = insert(:address, hash: "0xlincoln")
+    from_address = insert(:address, hash: "0xhowardtaft")
+    transaction = insert(:transaction,
       hash: "0xSk8",
       value: 5656,
       gas: 1230000000000123123,
@@ -67,12 +70,13 @@ defmodule ExplorerWeb.UserListTest do
       input: "0x00012",
       nonce: 99045,
       inserted_at: Timex.parse!("1970-01-01T00:00:18-00:00", "{ISO:Extended}"),
-      updated_at: Timex.parse!("1980-01-01T00:00:18-00:00", "{ISO:Extended}"),
-    })
-    |> with_block(block)
-    |> with_addresses(%{to: "0xabelincoln", from: "0xhowardtaft"})
-
-    insert(:transaction, hash: "0xC001", gas: 5891) |> with_addresses
+      updated_at: Timex.parse!("1980-01-01T00:00:18-00:00", "{ISO:Extended}")
+    )
+    insert(:block_transaction, block: block, transaction: transaction)
+    insert(:from_address, address: from_address, transaction: transaction)
+    insert(:to_address, address: to_address, transaction: transaction)
+    transaction_receipt = insert(:transaction_receipt, transaction: transaction, status: 0)
+    insert(:log, address: to_address, transaction_receipt: transaction_receipt)
 
     session
     |> visit("/en")
@@ -80,12 +84,17 @@ defmodule ExplorerWeb.UserListTest do
     |> assert_has(css(".transactions__column--hash", count: 5))
     |> assert_has(css(".transactions__column--value", count: 5))
     |> assert_has(css(".transactions__column--age", count: 5))
+
     |> click(css(".header__link-name--pending-transactions", text: "Pending Transactions"))
     |> assert_has(css(".transactions__column--hash", text: "0xC001"))
     |> assert_has(css(".transactions__column--gas-limit", text: "5,891"))
-    |> assert_has(css(".transactions__column--last-seen"))
+
+    |> click(css(".transactions__link", text: "0xC001"))
+    |> assert_has(css(".transaction__item-value--status", text: "Pending"))
+
     |> click(css(".header__link-name--transactions", text: "Transactions"))
     |> refute_has(css(".transactions__column--block", text: "Pending"))
+
     |> click(link("0xSk8"))
     |> assert_has(css(".transaction__subheading", text: "0xSk8"))
     |> assert_has(css(".transaction__item", text: "123,987"))
@@ -96,14 +105,16 @@ defmodule ExplorerWeb.UserListTest do
     |> assert_has(css(".transaction__item", text: "0x00012"))
     |> assert_has(css(".transaction__item", text: "99045"))
     |> assert_has(css(".transaction__item", text: "123,987"))
-    |> assert_has(css(".transaction__item", text: "0xabelincoln"))
+    |> assert_has(css(".transaction__item", text: "0xlincoln"))
     |> assert_has(css(".transaction__item", text: "0xhowardtaft"))
     |> assert_has(css(".transaction__item", text: "block confirmations"))
     |> assert_has(css(".transaction__item", text: "48 years ago"))
     |> assert_has(css(".transaction__item", text: "38 years ago"))
 
-    session
-    |> click(link("0xabelincoln"))
-    |> assert_has(css(".address__subheading", text: "0xabelincoln"))
+    |> click(link("Logs"))
+    |> assert_has(css(".transaction-log__link", text: "0xlincoln"))
+
+    |> click(link("0xlincoln"))
+    |> assert_has(css(".address__subheading", text: "0xlincoln"))
   end
 end

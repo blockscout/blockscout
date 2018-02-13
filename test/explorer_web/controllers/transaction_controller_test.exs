@@ -2,10 +2,13 @@ defmodule ExplorerWeb.TransactionControllerTest do
   use ExplorerWeb.ConnCase
 
   describe "GET index/2" do
-    test "returns all transactions", %{conn: conn} do
-      transaction_ids = insert_list(4, :transaction) |> list_with_block |> Enum.map(fn (transaction) -> transaction.id end)
+    test "returns a transaction with a receipt", %{conn: conn} do
+      transaction = insert(:transaction)
+      block = insert(:block)
+      insert(:transaction_receipt, transaction: transaction)
+      insert(:block_transaction, transaction: transaction, block: block)
       conn = get(conn, "/en/transactions")
-      assert conn.assigns.transactions |> Enum.map(fn (transaction) -> transaction.id end) |> Enum.reverse == transaction_ids
+      assert List.first(conn.assigns.transactions.entries).id == transaction.id
     end
 
     test "returns no pending transactions", %{conn: conn} do

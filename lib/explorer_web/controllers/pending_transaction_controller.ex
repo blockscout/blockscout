@@ -9,7 +9,7 @@ defmodule ExplorerWeb.PendingTransactionController do
 
   def index(conn, params) do
     query = from transaction in Transaction,
-      left_join: block_transaction in assoc(transaction, :block_transaction),
+      left_join: transaction_receipt in assoc(transaction, :receipt),
       join: to_address_join in assoc(transaction, :to_address_join),
       join: to_address in assoc(to_address_join, :address),
       join: from_address_join in assoc(transaction, :from_address_join),
@@ -19,7 +19,7 @@ defmodule ExplorerWeb.PendingTransactionController do
         from_address: from_address
       ],
       order_by: [desc: transaction.inserted_at],
-      where: is_nil(block_transaction.transaction_id)
+      where: is_nil(transaction_receipt.transaction_id)
 
     transactions = query |> Repo.paginate(params)
     render(

@@ -9,11 +9,13 @@ defmodule Explorer.Transaction do
   alias Explorer.FromAddress
   alias Explorer.ToAddress
   alias Explorer.Transaction
+  alias Explorer.TransactionReceipt
 
   @timestamps_opts [type: Timex.Ecto.DateTime,
                     autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}]
 
   schema "transactions" do
+    has_one :receipt, TransactionReceipt
     has_one :block_transaction, BlockTransaction
     has_one :block, through: [:block_transaction, :block]
     has_one :to_address_join, ToAddress
@@ -48,4 +50,6 @@ defmodule Explorer.Transaction do
     |> update_change(:hash, &String.downcase/1)
     |> unique_constraint(:hash)
   end
+
+  def null, do: %Transaction{}
 end

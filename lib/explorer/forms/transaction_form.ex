@@ -7,9 +7,11 @@ defmodule Explorer.TransactionForm do
   alias Cldr.Number
   alias Explorer.Block
   alias Explorer.Repo
+  alias Explorer.TransactionReceipt
 
   def build(transaction) do
     block = Ecto.assoc_loaded?(transaction.block) && transaction.block || nil
+    receipt = Ecto.assoc_loaded?(transaction.receipt) && transaction.receipt
 
     Map.merge(transaction, %{
       block_number: block |> block_number,
@@ -20,7 +22,7 @@ defmodule Explorer.TransactionForm do
       to_address_hash: transaction |> to_address_hash,
       from_address_hash: transaction |> from_address_hash,
       confirmations: block |> confirmations,
-      status: block |> status,
+      status: status(block, receipt || TransactionReceipt.null),
       first_seen: transaction |> first_seen,
       last_seen: transaction |> last_seen,
     })
@@ -59,8 +61,13 @@ defmodule Explorer.TransactionForm do
     block && Repo.one(query) - block.number || 0
   end
 
-  def status(block) do
-    block && gettext("Success") || gettext("Pending")
+  def status(block, receipt) do
+    statuses = %{0 => gettext("Success"), 1 => gettext("Failure")}
+    if is_nil(block) || is_nil(receipt.status) do
+      gettext("Pending")
+    else
+      statuses[receipt.status]
+    end
   end
 
   def first_seen(transaction) do

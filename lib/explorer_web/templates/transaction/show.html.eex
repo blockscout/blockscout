@@ -5,7 +5,8 @@
   </div>
   <div class="transaction__container">
     <div class="transaction__tabs">
-      <h2 class="transaction__tab transaction__tab--active"><%= gettext "Overview" %></h2>
+      <h2 class="transaction__tab transaction__tab--active"><%= link(gettext("Overview"), to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction.hash), class: "transaction__link transaction__link--active") %></h2>
+      <h2 class="transaction__tab"><%= link(gettext("Logs"), to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction.hash), class: "transaction__link") %></h2>
     </div>
     <div class="transaction__attributes">
       <div class="transaction__column">
@@ -41,7 +42,7 @@
             <dt class="transaction__item-key"><%= gettext "From" %></dt>
             <dd class="transaction__item-value">
               <%= if @transaction.from_address do %>
-                <%= link(@transaction.from_address.hash, to: address_path(@conn, :show, @conn.assigns.locale, @transaction.from_address.hash)) %>
+                <%= link(@transaction.from_address.hash, to: address_path(@conn, :show, @conn.assigns.locale, @transaction.from_address.hash), class: "transaction__link") %>
               <% else %>
                 <%= gettext "Pending" %>
               <% end %>
@@ -51,7 +52,7 @@
             <dt class="transaction__item-key"><%= gettext "To" %></dt>
             <dd class="transaction__item-value">
               <%= if @transaction.to_address do %>
-                <%= link(@transaction.to_address.hash, to: address_path(@conn, :show, @conn.assigns.locale, @transaction.to_address.hash)) %>
+                <%= link(@transaction.to_address.hash, to: address_path(@conn, :show, @conn.assigns.locale, @transaction.to_address.hash), class: "transaction__link") %>
               <% else %>
                 <%= gettext "Pending" %>
               <% end %>

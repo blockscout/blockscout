@@ -63,7 +63,9 @@ defmodule ExplorerWeb.Router do
     resources "/", ChainController, only: [:show], singleton: true, as: :chain
     resources "/blocks", BlockController, only: [:index, :show]
     resources "/pending_transactions", PendingTransactionController, only: [:index]
-    resources "/transactions", TransactionController, only: [:index, :show]
+    resources "/transactions", TransactionController, only: [:index, :show] do
+      resources "/logs", TransactionLogController, only: [:index], as: :log
+    end
     resources "/addresses", AddressController, only: [:show]
   end
 end

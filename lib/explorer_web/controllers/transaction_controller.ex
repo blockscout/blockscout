@@ -9,11 +9,9 @@ defmodule ExplorerWeb.TransactionController do
 
   def index(conn, params) do
     query = from transaction in Transaction,
-      join: block_transaction in assoc(transaction, :block_transaction),
-      join: block in assoc(block_transaction, :block),
-      preload: [
-        block: block,
-      ],
+      join: receipt in assoc(transaction, :receipt),
+      join: block in assoc(transaction, :block),
+      preload: [block: block, receipt: receipt],
       order_by: [desc: block.timestamp]
 
     transactions = Repo.paginate(query, params)
@@ -25,6 +23,7 @@ defmodule ExplorerWeb.TransactionController do
     hash = String.downcase(params["id"])
     query = from transaction in Transaction,
       left_join: block_transaction in assoc(transaction, :block_transaction),
+      left_join: receipt in assoc(transaction, :receipt),
       left_join: block in assoc(block_transaction, :block),
       left_join: to_address_join in assoc(transaction, :to_address_join),
       left_join: to_address in assoc(to_address_join, :address),
@@ -32,6 +31,7 @@ defmodule ExplorerWeb.TransactionController do
       left_join: from_address in assoc(from_address_join, :address),
       preload: [
         block: block,
+        receipt: receipt,
         to_address: to_address,
         from_address: from_address
       ],

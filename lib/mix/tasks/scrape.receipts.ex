@@ -1,9 +1,10 @@
-defmodule Mix.Tasks.Scrape do
+defmodule Mix.Tasks.Scrape.Receipts do
   @moduledoc "Scrapes blocks from web3"
   use Mix.Task
+
   alias Explorer.Repo
-  alias Explorer.SkippedBlocks
-  alias Explorer.BlockImporter
+  alias Explorer.SkippedReceipts
+  alias Explorer.TransactionReceiptImporter
 
   def run([]), do: run(1)
   def run(count) do
@@ -13,11 +14,10 @@ defmodule Mix.Tasks.Scrape do
 
     "#{count}"
     |> String.to_integer()
-    |> SkippedBlocks.first()
+    |> SkippedReceipts.first()
     |> Enum.shuffle()
     |> Flow.from_enumerable()
-    |> Flow.map(&BlockImporter.download_block/1)
-    |> Flow.map(&BlockImporter.import/1)
+    |> Flow.map(&TransactionReceiptImporter.import/1)
     |> Enum.to_list()
   end
 end

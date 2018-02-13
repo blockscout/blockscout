@@ -21,14 +21,14 @@
           <%= for transaction <- @transactions do %>
             <tr class="transactions__row">
               <td class="transactions__column transactions__column--hash">
-                <div class="transactions__hash"><%= link(transaction.hash, to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.hash)) %></div>
+                <div class="transactions__hash"><%= link(transaction.hash, to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.hash), class: "transactions__link") %></div>
               </td>
               <td class="transactions__column transactions__column--last-seen"><%= transaction.last_seen %></td>
               <td class="transactions__column transactions__column--gas-price"><%= transaction.gas_price %></td>
               <td class="transactions__column transactions__column--gas-limit"><%= transaction.gas |> Cldr.Number.to_string! %></td>
-              <td class="transactions__column transactions__column--optional transactions__column--from-address"><%= link(transaction.from_address_hash, to: address_path(@conn, :show, @conn.assigns.locale, transaction.from_address_hash)) %>
+              <td class="transactions__column transactions__column--optional transactions__column--from-address"><%= link(transaction.from_address_hash, to: address_path(@conn, :show, @conn.assigns.locale, transaction.from_address_hash), class: "transactions__link") %>
               </td>
-              <td class="transactions__column transactions__column--optional transactions__column--to-address"><%= link(transaction.to_address_hash, to: address_path(@conn, :show, @conn.assigns.locale, transaction.to_address_hash)) %>
+              <td class="transactions__column transactions__column--optional transactions__column--to-address"><%= link(transaction.to_address_hash, to: address_path(@conn, :show, @conn.assigns.locale, transaction.to_address_hash), class: "transactions__link") %>
               </td>
               <td class="transactions__column transactions__column--optional transactions__column--value"><%= Decimal.div(Decimal.new(transaction.value), Decimal.new(1_000_000_000_000_000_000)) |> Decimal.to_string(:normal) %> <%= gettext "POA" %></td>
             </tr>
