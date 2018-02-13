@@ -7,7 +7,12 @@ defmodule Explorer.Servers.ChainStatistics do
 
   @interval 1_000
 
-  def fetch, do: GenServer.call(__MODULE__, :fetch)
+  def fetch do
+    case GenServer.whereis(__MODULE__) do
+      nil -> Chain.fetch()
+      pid -> GenServer.call(pid, :fetch)
+    end
+  end
   def start_link, do: start_link(%Chain{})
   def start_link(%Chain{} = chain) do
     GenServer.start_link(__MODULE__, chain, name: __MODULE__)

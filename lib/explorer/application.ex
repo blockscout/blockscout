@@ -26,7 +26,11 @@ defmodule Explorer.Application do
   defp children(_) do
     import Supervisor.Spec
     exq_options = [] |> Keyword.put(:mode, :enqueuer)
-    [supervisor(Exq, [exq_options]) | children()]
+    [
+      supervisor(Exq, [exq_options]),
+      worker(Explorer.Servers.ChainStatistics, [])
+      | children()
+    ]
   end
 
   defp children do
@@ -34,7 +38,6 @@ defmodule Explorer.Application do
     [
       supervisor(Explorer.Repo, []),
       supervisor(ExplorerWeb.Endpoint, []),
-      worker(Explorer.Servers.ChainStatistics, [])
     ]
   end
 end
