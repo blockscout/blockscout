@@ -27,8 +27,8 @@ defmodule Explorer.Servers.ChainStatistics do
   def refresh(interval), do: Process.send_after(self(), :refresh, interval)
 
   def handle_info(:refresh, _) do
-    refresh()
     chain = Chain.fetch()
+    refresh()
     {:noreply, chain}
   end
   def handle_info(_, tasks), do: {:noreply, tasks}
