@@ -25,7 +25,7 @@ defmodule Explorer.TransactionReceiptImporter do
     hash = String.downcase(receipt["transactionHash"])
     query = from transaction in Transaction,
       left_join: receipt in assoc(transaction, :receipt),
-      where: transaction.hash == ^hash,
+      where: fragment("lower(?)", transaction.hash) == ^hash,
       where: is_nil(receipt.id),
       limit: 1
     transaction = Repo.one(query) || Transaction.null
