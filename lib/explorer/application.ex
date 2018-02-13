@@ -34,6 +34,7 @@ defmodule Explorer.Application do
     [
       supervisor(Explorer.Repo, []),
       supervisor(ExplorerWeb.Endpoint, []),
+      worker(Explorer.Servers.ChainStatistics, [])
     ]
   end
 end

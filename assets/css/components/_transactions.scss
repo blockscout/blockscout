@@ -62,6 +62,8 @@
     text-decoration: none;
     &--active { color: explorer-color("slate", "100"); }
   }
+
+  &__hash-container { height: 1rem; }
 }
 
 @media (min-width: $explorer-breakpoint-sm) {

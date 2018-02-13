@@ -5,7 +5,7 @@ defmodule ExplorerWeb.ChainController do
 
   alias Explorer.Block
   alias Explorer.BlockForm
-  alias Explorer.Chain
+  alias Explorer.Servers.ChainStatistics
   alias Explorer.Repo.NewRelic, as: Repo
   alias Explorer.Transaction
 
@@ -26,7 +26,7 @@ defmodule ExplorerWeb.ChainController do
       "show.html",
       blocks: blocks |> Repo.all() |> Enum.map(&BlockForm.build/1),
       transactions: transactions |> Repo.all(),
-      chain: Chain.fetch()
+      chain: ChainStatistics.fetch()
     )
   end
 end

@@ -94,7 +94,7 @@
             <%= for transaction <- @transactions do %>
               <tr class="transactions__row">
                 <td class="transactions__column transactions__column--hash">
-                  <div class="transactions__hash" title="<%= transaction.hash %>">
+                  <div class="transactions__hash-container" title="<%= transaction.hash %>">
                     <%= link(transaction.hash, to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.hash), class: "transactions__link transactions__link--truncated transactions__link--hash") %>
                   </div>
                 </td>

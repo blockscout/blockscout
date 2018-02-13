@@ -5,13 +5,19 @@ defmodule Explorer.Chain do
 
   import Ecto.Query
 
+  alias Ecto.Adapters.SQL
   alias Explorer.Block
   alias Explorer.Repo
-  alias Ecto.Adapters.SQL
+  alias Timex.Duration
 
   defstruct [
-    number: 0, timestamp: nil, average_time: nil, transaction_count: 0,
-    skipped_blocks: 0, lag: nil, block_velocity: 0,
+    number: -1,
+    timestamp: :calendar.universal_time(),
+    average_time: %Duration{seconds: 0, megaseconds: 0, microseconds: 0},
+    lag: %Duration{seconds: 0, megaseconds: 0, microseconds: 0},
+    transaction_count: 0,
+    skipped_blocks: 0,
+    block_velocity: 0,
     transaction_velocity: 0
   ]
 

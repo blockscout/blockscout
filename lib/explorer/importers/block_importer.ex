@@ -63,6 +63,7 @@ defmodule Explorer.BlockImporter do
   defp encode_number("latest"), do: "latest"
   defp encode_number("earliest"), do: "earliest"
   defp encode_number("pending"), do: "pending"
+  defp encode_number("0x" <> number) when is_binary(number), do: number
   defp encode_number(number) when is_binary(number) do
     number
     |> String.to_integer()
