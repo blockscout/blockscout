@@ -75,7 +75,7 @@ defmodule ExplorerWeb.UserListTest do
     insert(:block_transaction, block: block, transaction: transaction)
     insert(:from_address, address: from_address, transaction: transaction)
     insert(:to_address, address: to_address, transaction: transaction)
-    transaction_receipt = insert(:transaction_receipt, transaction: transaction, status: 0)
+    transaction_receipt = insert(:transaction_receipt, transaction: transaction, status: 1)
     insert(:log, address: to_address, transaction_receipt: transaction_receipt)
 
     session

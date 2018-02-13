@@ -62,7 +62,7 @@ defmodule Explorer.TransactionForm do
   end
 
   def status(block, receipt) do
-    statuses = %{0 => gettext("Success"), 1 => gettext("Failure")}
+    statuses = %{0 => gettext("Failure"), 1 => gettext("Success")}
     if is_nil(block) || is_nil(receipt.status) do
       gettext("Pending")
     else
