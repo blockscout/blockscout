@@ -12,6 +12,7 @@ defmodule Explorer.Repo.Migrations.CreateTransactionReceipts do
     end
 
     create index(:transaction_receipts, :index)
-    create unique_index(:transaction_receipts, [:transaction_id, :index])
+    create index(:transaction_receipts, :status)
+    create unique_index(:transaction_receipts, :transaction_id)
   end
 end

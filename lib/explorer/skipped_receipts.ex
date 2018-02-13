@@ -13,7 +13,6 @@ defmodule Explorer.SkippedReceipts do
       left_join: receipt in assoc(transaction, :receipt),
       select: fragment("hash"),
       where: is_nil(receipt.id),
-      order_by: [desc: fragment("lower(hash)")],
       limit: ^count
     Repo.all(transactions)
   end

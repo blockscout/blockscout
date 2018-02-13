@@ -44,12 +44,6 @@ defmodule Explorer.SkippedReceiptsTest do
       assert SkippedReceipts.first(1) == ["0xBEE75"]
     end
 
-    test "returns up to the requested number of skipped transaction hashes in insert order" do
-      insert(:transaction, %{hash: "0xBEE75"})
-      insert(:transaction, %{hash: "0xBE475"})
-      assert SkippedReceipts.first(1) == ["0xBEE75"]
-    end
-
     test "returns all the skipped transaction hashes in random order" do
       insert(:transaction, %{hash: "0xBEE75"})
       insert(:transaction, %{hash: "0xBE475"})
