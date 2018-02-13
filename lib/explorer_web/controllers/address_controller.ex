@@ -8,11 +8,12 @@ defmodule ExplorerWeb.AddressController do
   alias Explorer.Repo.NewRelic, as: Repo
 
   def show(conn, params) do
-    address = Address
-      |> where(hash: ^params["id"])
-      |> first
-      |> Repo.one
-      |> AddressForm.build
-    render(conn, "show.html", address: address)
+    hash = String.downcase(params["id"])
+    query = from address in Address,
+      where: fragment("lower(?)", address.hash) == ^hash,
+      limit: 1
+
+    address = Repo.one(query)
+    render(conn, "show.html", address: AddressForm.build(address))
   end
 end

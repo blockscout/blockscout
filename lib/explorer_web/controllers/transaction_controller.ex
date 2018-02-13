@@ -9,10 +9,10 @@ defmodule ExplorerWeb.TransactionController do
 
   def index(conn, params) do
     query = from transaction in Transaction,
-      join: receipt in assoc(transaction, :receipt),
-      join: block in assoc(transaction, :block),
-      join: to_address in assoc(transaction, :to_address),
-      join: from_address in assoc(transaction, :from_address),
+      inner_join: receipt in assoc(transaction, :receipt),
+      inner_join: block in assoc(transaction, :block),
+      inner_join: to_address in assoc(transaction, :to_address),
+      inner_join: from_address in assoc(transaction, :from_address),
       preload: [
         block: block, receipt: receipt,
         to_address: to_address, from_address: from_address],
@@ -28,8 +28,8 @@ defmodule ExplorerWeb.TransactionController do
     query = from transaction in Transaction,
       left_join: receipt in assoc(transaction, :receipt),
       left_join: block in assoc(transaction, :block),
-      join: to_address in assoc(transaction, :to_address),
-      join: from_address in assoc(transaction, :from_address),
+      inner_join: to_address in assoc(transaction, :to_address),
+      inner_join: from_address in assoc(transaction, :from_address),
       preload: [
         block: block, receipt: receipt,
         to_address: to_address, from_address: from_address],
