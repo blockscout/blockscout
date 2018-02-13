@@ -2,7 +2,6 @@
   <section class="container__subsection">
     <div class="transactions__headline">
       <h1 class="transactions__headline-title"><%= gettext("Showing %{count} Transactions", count: @transactions.total_entries) %></h1>
-      <div class="transactions__pagination"><%= pagination_links @conn, @transactions, ["en"], view_style: :bulma, first: true, distance: 1, previous: Phoenix.HTML.raw("&lsaquo;"), next: Phoenix.HTML.raw("&rsaquo;"), path: &transaction_path/4 %></div>
     </div>
     <div class="transactions">
       <div class="transactions__tabs">

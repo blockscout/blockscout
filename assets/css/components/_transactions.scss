@@ -11,10 +11,9 @@
   &__title {
     @include explorer-typography("title");
     color: explorer-color("slate", "100");
-    margin: 0;
   }
 
-  &__headline-title { line-height: 18px; }
+  &__title { margin: 0; }
 
   &__table {
     @extend %table;

@@ -17,8 +17,16 @@ defmodule ExplorerWeb.TransactionController do
         block: block, receipt: receipt,
         to_address: to_address, from_address: from_address],
       order_by: [desc: block.timestamp]
-
-    transactions = Repo.paginate(query, params)
+    total_query = from transaction in Transaction,
+      select: fragment("count(?)", transaction.id),
+      inner_join: receipt in assoc(transaction, :receipt),
+      inner_join: block in assoc(transaction, :block)
+    transactions = Repo.paginate(
+      query,
+      params
+      |> Map.put(:total_entries, Repo.one(total_query))
+      |> Map.put(:page_size, 25)
+    )
 
     render(conn, "index.html", transactions: transactions)
   end
