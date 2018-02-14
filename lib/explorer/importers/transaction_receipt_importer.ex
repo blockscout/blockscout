@@ -21,7 +21,7 @@ defmodule Explorer.TransactionReceiptImporter do
     receipt
   end
 
-  defp ingest_receipt(%{} = receipt) do
+  defp ingest_receipt(receipt) do
     hash = String.downcase(receipt["transactionHash"])
     query = from transaction in Transaction,
       left_join: receipt in assoc(transaction, :receipt),
