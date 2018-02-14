@@ -7,7 +7,7 @@ defmodule Explorer.Servers.ChainStatisticsTest do
   describe "init/1" do
     test "returns a new chain when not told to refresh" do
       {:ok, statistics} = ChainStatistics.init(false)
-      assert statistics == Chain.fetch()
+      assert statistics.number == Chain.fetch().number
     end
 
     test "returns a new chain when told to refresh" do

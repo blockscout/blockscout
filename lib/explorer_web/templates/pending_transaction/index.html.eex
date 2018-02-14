@@ -20,7 +20,7 @@
             </tr>
           </thead>
           <tbody>
-            <%= for transaction <- @transactions do %>
+            <%= for transaction <- @transactions.entries do %>
               <tr class="transactions__row">
                 <td class="transactions__column transactions__column--hash">
                   <%= link(transaction.hash, to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.hash), class: "transactions__link transactions__link--truncated transactions__link--long-hash") %>
@@ -45,6 +45,7 @@
             <% end %>
           </tbody>
         </table>
+        <%= link(gettext("Next Page"), to: pending_transaction_path(@conn, :index, @conn.assigns.locale, %{"last_seen" => @transactions.last_seen}), class: "transactions__link transactions__link--next-page") %>
       </div>
     </div>
   </section>
