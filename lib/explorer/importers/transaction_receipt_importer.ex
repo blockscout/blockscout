@@ -18,11 +18,11 @@ defmodule Explorer.TransactionReceiptImporter do
   @dialyzer {:nowarn_function, download_receipt: 1}
   defp download_receipt(hash) do
     {:ok, receipt} = eth_get_transaction_receipt(hash)
-    receipt
+    receipt || %{}
   end
 
   defp ingest_receipt(receipt) do
-    hash = String.downcase(receipt["transactionHash"])
+    hash = String.downcase("#{receipt["transactionHash"]}")
     query = from transaction in Transaction,
       left_join: receipt in assoc(transaction, :receipt),
       where: fragment("lower(?)", transaction.hash) == ^hash,
@@ -51,8 +51,8 @@ defmodule Explorer.TransactionReceiptImporter do
     }
   end
 
-  defp decode_integer_field(hex) do
-    {"0x", base_16} = String.split_at(hex, 2)
-    String.to_integer(base_16, 16)
+  defp decode_integer_field("0x" <> hex) when is_binary(hex) do
+    String.to_integer(hex, 16)
   end
+  defp decode_integer_field(field), do: field
 end

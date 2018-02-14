@@ -29,5 +29,13 @@ defmodule Explorer.TransactionReceiptImporterTest do
         assert Repo.all(TransactionReceipt) |> Enum.count() == 0
       end
     end
+
+    test "does not process a forever-pending receipt" do
+      insert(:transaction, hash: "0xde791cfcde3900d4771e5fcf8c11dc305714118df7aa7e42f84576e64dbf6246")
+      use_cassette "transaction_importer_import_1_pending" do
+        TransactionReceiptImporter.import("0xde791cfcde3900d4771e5fcf8c11dc305714118df7aa7e42f84576e64dbf6246")
+        assert Repo.all(TransactionReceipt) |> Enum.count() == 0
+      end
+    end
   end
 end

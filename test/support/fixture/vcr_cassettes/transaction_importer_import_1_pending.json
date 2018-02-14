@@ -1,0 +1,30 @@
+[
+  {
+    "request": {
+      "body": "{\"params\":[\"0xde791cfcde3900d4771e5fcf8c11dc305714118df7aa7e42f84576e64dbf6246\"],\"method\":\"eth_getTransactionReceipt\",\"jsonrpc\":\"2.0\",\"id\":0}",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "method": "post",
+      "options": [],
+      "request_body": "",
+      "url": "https://sokol.poa.network"
+    },
+    "response": {
+      "binary": false,
+      "body": "{\"jsonrpc\":\"2.0\",\"result\":null,\"id\":0}\n",
+      "headers": {
+        "Date": "Wed, 14 Feb 2018 22:44:27 GMT",
+        "Content-Type": "application/json",
+        "Transfer-Encoding": "chunked",
+        "Connection": "keep-alive",
+        "Set-Cookie": "__cfduid=d7190cf3b5f318c3eeb548439c39114181518648267; expires=Thu, 14-Feb-19 22:44:27 GMT; path=/; domain=.poa.network; HttpOnly; Secure",
+        "Expect-CT": "max-age=604800, report-uri=\"https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct\"",
+        "Server": "cloudflare",
+        "CF-RAY": "3ed38d582f866cbe-SJC"
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  }
+]
