@@ -1,0 +1,74 @@
+.chain {
+  @extend %paper;
+
+  display: flex;
+  justify-conntent: space-around;
+  align-items: flex-start;
+  padding: explorer-size(0) 0;
+
+  &__container {
+    flex: 1;
+    text-align: center;
+    &--secondary { display: none; }
+    &--tertiary { display: none; }
+  }
+
+  &__image {
+    display: inline-block;
+    height: explorer-size(0);
+    margin-bottom: explorer-size(-2);
+  }
+
+  &__title {
+    @include explorer-typography("caption");
+    &--data { color: explorer-color("blue", "500"); }
+  }
+}
+
+@media (min-width: $explorer-breakpoint-sm) {
+  .chain {
+    &__image {
+      height: explorer-size(1);
+    }
+
+    &__container {
+      &--secondary { display: block; }
+    }
+  }
+}
+
+@media (min-width: $explorer-breakpoint-md) {
+  .chain {
+    &__image {
+      height: explorer-size(1);
+    }
+
+    &__container {
+      &--secondary { display: none; }
+    }
+  }
+}
+
+@media (min-width: $explorer-breakpoint-lg) {
+  .chain {
+    &__image {
+      height: explorer-size(1);
+    }
+
+    &__container {
+      &--secondary { display: block; }
+    }
+  }
+}
+
+@media (min-width: $explorer-breakpoint-xl) {
+  .chain {
+    &__image {
+      height: explorer-size(1);
+    }
+
+    &__container {
+      &--tertiary { display: block; }
+    }
+  }
+}

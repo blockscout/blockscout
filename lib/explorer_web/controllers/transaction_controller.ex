@@ -7,28 +7,55 @@ defmodule ExplorerWeb.TransactionController do
   alias Explorer.Transaction
   alias Explorer.TransactionForm
 
-  def index(conn, params) do
+  def index(conn, %{"last_seen" => last_seen} = _) do
     query = from transaction in Transaction,
-      join: block_transaction in assoc(transaction, :block_transaction),
-      join: block in assoc(block_transaction, :block),
-      preload: [block: block],
-      order_by: [desc: block.timestamp]
+      where: transaction.id < ^last_seen,
+      inner_join: receipt in assoc(transaction, :receipt),
+      inner_join: block in assoc(transaction, :block),
+      inner_join: to_address in assoc(transaction, :to_address),
+      inner_join: from_address in assoc(transaction, :from_address),
+      preload: [
+        block: block, receipt: receipt,
+        to_address: to_address, from_address: from_address],
+      order_by: [desc: transaction.id],
+      limit: 100
+    total_query = from transaction in Transaction,
+      select: fragment("count(?)", transaction.id),
+      inner_join: receipt in assoc(transaction, :receipt),
+      inner_join: block in assoc(transaction, :block)
+    entries = Repo.all(query)
+    last = List.last(entries) || Transaction.null
+    render(conn, "index.html", transactions: %{
+      entries: entries,
+      total_entries: Repo.one(total_query),
+      last_seen: last.id
+    })
+  end
 
-    transactions = Repo.paginate(query, params)
-
-    render(conn, "index.html", transactions: transactions)
+  def index(conn, params) do
+    query = from t in Transaction,
+      select: t.id,
+      order_by: [desc: t.id],
+      limit: 1
+    first_id = Repo.one(query) || 0
+    last_seen = Integer.to_string(first_id + 1)
+    index(conn, Map.put(params, "last_seen", last_seen))
   end
 
   def show(conn, params) do
     hash = String.downcase(params["id"])
     query = from transaction in Transaction,
-      left_join: block_transaction in assoc(transaction, :block_transaction),
-      left_join: block in assoc(block_transaction, :block),
-      preload: [block_transaction: block_transaction, block: block],
+      left_join: receipt in assoc(transaction, :receipt),
+      left_join: block in assoc(transaction, :block),
+      inner_join: to_address in assoc(transaction, :to_address),
+      inner_join: from_address in assoc(transaction, :from_address),
+      preload: [
+        block: block, receipt: receipt,
+        to_address: to_address, from_address: from_address],
       where: fragment("lower(?)", transaction.hash) == ^hash,
       limit: 1
 
-    transaction = query |> Repo.one |> TransactionForm.build
+    transaction = query |> Repo.one() |> TransactionForm.build()
 
     render(conn, "show.html", transaction: transaction)
   end

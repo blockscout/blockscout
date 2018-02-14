@@ -5,25 +5,24 @@ defmodule Explorer.TransactionForm do
   import ExplorerWeb.Gettext
 
   alias Cldr.Number
-  alias Explorer.Address
   alias Explorer.Block
-  alias Explorer.FromAddress
   alias Explorer.Repo
-  alias Explorer.ToAddress
-  alias Explorer.Transaction
+  alias Explorer.TransactionReceipt
 
   def build(transaction) do
-    block = transaction.block
+    block = Ecto.assoc_loaded?(transaction.block) && transaction.block || nil
+    receipt = Ecto.assoc_loaded?(transaction.receipt) && transaction.receipt
+
     Map.merge(transaction, %{
       block_number: block |> block_number,
       age: block |> block_age,
       formatted_age: block |> format_age,
       formatted_timestamp: block |> format_timestamp,
       cumulative_gas_used: block |> cumulative_gas_used,
-      to_address: transaction |> to_address,
-      from_address: transaction |> from_address,
+      to_address_hash: transaction |> to_address_hash,
+      from_address_hash: transaction |> from_address_hash,
       confirmations: block |> confirmations,
-      status: transaction |> status,
+      status: status(block, receipt || TransactionReceipt.null),
       first_seen: transaction |> first_seen,
       last_seen: transaction |> last_seen,
     })
@@ -38,11 +37,7 @@ defmodule Explorer.TransactionForm do
   end
 
   def format_age(block) do
-    if block do
-      "#{block_age(block)} (#{format_timestamp(block)})"
-    else
-      gettext("Pending")
-    end
+    block && "#{block_age(block)} (#{format_timestamp(block)})" || gettext("Pending")
   end
 
   def format_timestamp(block) do
@@ -53,36 +48,12 @@ defmodule Explorer.TransactionForm do
     block && block.gas_used |> Number.to_string! || gettext("Pending")
   end
 
-  def to_address(transaction) do
-    query = from address in Address,
-      join: to_address in ToAddress,
-        where: to_address.address_id == address.id,
-      join: transaction in Transaction,
-        where: transaction.id == to_address.transaction_id,
-      where: transaction.id == ^transaction.id
-
-    case Repo.one(query) do
-      nil ->
-        nil
-      to_address ->
-        to_address.hash
-    end
+  def to_address_hash(transaction) do
+    transaction.to_address && transaction.to_address.hash || nil
   end
 
-  def from_address(transaction) do
-    query = from address in Address,
-      join: from_address in FromAddress,
-        where: from_address.address_id == address.id,
-      join: transaction in Transaction,
-        where: transaction.id == from_address.transaction_id,
-      where: transaction.id == ^transaction.id
-
-    case Repo.one(query) do
-      nil ->
-        nil
-      from_address ->
-        from_address.hash
-    end
+  def from_address_hash(transaction) do
+    transaction.to_address && transaction.from_address.hash || nil
   end
 
   def confirmations(block) do
@@ -90,11 +61,12 @@ defmodule Explorer.TransactionForm do
     block && Repo.one(query) - block.number || 0
   end
 
-  def status(transaction) do
-    if transaction.block do
-      gettext("Success")
-    else
+  def status(block, receipt) do
+    statuses = %{0 => gettext("Failure"), 1 => gettext("Success")}
+    if is_nil(block) || is_nil(receipt.status) do
       gettext("Pending")
+    else
+      statuses[receipt.status]
     end
   end
 

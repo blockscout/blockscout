@@ -8,7 +8,7 @@
       <dl>
         <div class="address__item">
           <dt class="address__item-key"><%= gettext "Balance" %></dt>
-          <dd class="address__item-value" title="<%= @address.hash %>"><%= @address.balance %> <%= gettext "POA" %></dd>
+          <dd class="address__item-value" title="<%= @address.hash %>"><%= Decimal.div(Decimal.new(@address.balance), Decimal.new(1_000_000_000_000_000_000)) |> Decimal.to_string(:normal) %> <%= gettext "POA" %></dd>
         </div>
       </dl>
     </div>

@@ -38,7 +38,9 @@ defmodule Explorer.BlockImporter do
 
   @dialyzer {:nowarn_function, download_block: 1}
   def download_block(block_number) do
-    {:ok, block} = eth_get_block_by_number(block_number, true)
+    {:ok, block} = block_number
+      |> encode_number()
+      |> eth_get_block_by_number(true)
     block
   end
 
@@ -57,6 +59,18 @@ defmodule Explorer.BlockImporter do
       nonce: raw_block["nonce"] || "0",
     }
   end
+
+  defp encode_number("latest"), do: "latest"
+  defp encode_number("earliest"), do: "earliest"
+  defp encode_number("pending"), do: "pending"
+  defp encode_number("0x" <> number) when is_binary(number), do: number
+  defp encode_number(number) when is_binary(number) do
+    number
+    |> String.to_integer()
+    |> encode_number()
+  end
+
+  defp encode_number(number), do: "0x" <> Integer.to_string(number, 16)
 
   def decode_integer_field(hex) do
     {"0x", base_16} = String.split_at(hex, 2)

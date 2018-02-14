@@ -1,11 +1,9 @@
 defmodule Explorer.AddressForm do
   @moduledoc false
-  alias Explorer.Address
-  alias Explorer.FromAddress
-  alias Explorer.Repo
-  alias Explorer.ToAddress
-  alias Explorer.Transaction
   import Ecto.Query
+
+  alias Explorer.Repo
+  alias Explorer.Transaction
 
   def build(address) do
     address
@@ -20,23 +18,17 @@ defmodule Explorer.AddressForm do
 
   def credits(address) do
     query = from transaction in Transaction,
-      join: to_address in ToAddress,
-        where: to_address.transaction_id == transaction.id,
-      join: address in Address,
-        where: to_address.address_id == address.id,
+      join: to_address in assoc(transaction, :to_address),
       select: sum(transaction.value),
-      where: address.id == ^address.id
+      where: to_address.id == ^address.id
     Repo.one(query) || Decimal.new(0)
   end
 
   def debits(address) do
     query = from transaction in Transaction,
-      join: from_address in FromAddress,
-        where: from_address.transaction_id == transaction.id,
-      join: address in Address,
-        where: from_address.address_id == address.id,
+      join: from_address in assoc(transaction, :from_address),
       select: sum(transaction.value),
-      where: address.id == ^address.id
+      where: from_address.id == ^address.id
     Repo.one(query) || Decimal.new(0)
   end
 end

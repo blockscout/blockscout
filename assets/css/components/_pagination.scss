@@ -12,7 +12,6 @@
     display: inline-block;
     margin: 0;
     margin-right: explorer-size(-3);
-    &:first-of-type, &:last-of-type { display: none; }
     &:last-of-type { margin-right: 0; }
   }
 
@@ -31,15 +30,6 @@
       border-color: explorer-color("blue", "500");
       background: explorer-color("blue", "500");
       color: explorer-color("white");
-    }
-  }
-}
-
-@media (min-width: $explorer-breakpoint-sm) {
-  .pagination {
-    li {
-      &:first-of-type { display: inline-block; }
-      &:last-of-type { display: inline-block; }
     }
   }
 }

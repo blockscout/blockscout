@@ -9,11 +9,8 @@ defmodule ExplorerWeb.BlockController do
 
   def index(conn, params) do
     blocks = from block in Block,
-      left_join: block_transaction in assoc(block, :block_transactions),
-      left_join: transactions in assoc(block_transaction, :transaction),
-      preload: [:transactions],
       order_by: [desc: block.number],
-      group_by: block.id
+      preload: :transactions
 
     render(conn, "index.html", blocks: Repo.paginate(blocks, params))
   end

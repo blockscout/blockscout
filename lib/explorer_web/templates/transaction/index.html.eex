@@ -1,44 +1,50 @@
 <section class="container__section">
-  <div class="transactions__headline">
-    <h1 class="transactions__headline-title"><%= gettext("Showing %{count} Transactions", count: @transactions.total_entries) %></h1>
-    <div class="transactions__pagination"><%= pagination_links @conn, @transactions, ["en"], view_style: :bulma, first: true, distance: 1, previous: Phoenix.HTML.raw("&lsaquo;"), next: Phoenix.HTML.raw("&rsaquo;"), path: &transaction_path/4 %></div>
-  </div>
-  <div class="transactions">
-    <div class="transactions__container">
-      <table class="transactions__table">
-        <thead class="transactions__header">
-          <tr>
-            <th class="transactions__column-header"><%= gettext "Hash" %></th>
-            <th class="transactions__column-header"><%= gettext "Block" %></th>
-            <th class="transactions__column-header"><%= gettext "Age" %></th>
-            <th class="transactions__column-header transactions__column-header--optional"><%= gettext "Value" %></th>
-          </tr>
-        </thead>
-        <tbody>
-          <%= for transaction <- @transactions do %>
-            <tr class="transactions__row">
-              <td class="transactions__column transactions__column--hash">
-                <div class="transactions__hash"><%= link(transaction.hash, to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.hash)) %></div>
-              </td>
-              <td class="transactions__column transactions__column--block">
-                <%= if is_nil(transaction.block_transaction) do %>
-                  <%= gettext "Pending" %>
-                <% else %>
-                  <%= link(transaction.block.number, to: block_path(@conn, :show, @conn.assigns.locale, transaction.block.number)) %>
-                <% end %>
-              </td>
-              <td class="transactions__column transactions__column--age">
-                <%= if is_nil(transaction.block_transaction) do %>
-                  <%= gettext "Pending" %>
-                <% else %>
-                  <%= transaction.block.timestamp |> Timex.from_now %>
-                <% end %>
-              </td>
-              <td class="transactions__column transactions__column--optional transactions__column--value"><%= Decimal.div(Decimal.new(transaction.value), Decimal.new(1_000_000_000_000_000_000)) |> Decimal.to_string(:normal) %> <%= gettext "POA" %></td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
+  <section class="container__subsection">
+    <div class="transactions__headline">
+      <h1 class="transactions__headline-title"><%= gettext("Showing %{count} Transactions", count: @transactions.total_entries) %></h1>
     </div>
-  </div>
+    <div class="transactions">
+      <div class="transactions__tabs">
+        <h2 class="transactions__tab transactions__tab--active"><%= link(gettext("Transactions"), to: transaction_path(@conn, :index, @conn.assigns.locale), class: "transactions__tab-link transactions__tab-link--active") %></h2>
+        <h2 class="transactions__tab"><%= link(gettext("Pending"), to: pending_transaction_path(@conn, :index, @conn.assigns.locale), class: "transactions__tab-link") %></h2>
+      </div>
+      <div class="transactions__container">
+        <table class="transactions__table">
+          <thead class="transactions__header">
+            <tr>
+              <th class="transactions__column-header"><%= gettext "Hash" %></th>
+              <th class="transactions__column-header transactions__column-header--optional"><%= gettext "Block" %></th>
+              <th class="transactions__column-header"><%= gettext "Age" %></th>
+              <th class="transactions__column-header transactions__column-header--optional"><%= gettext "From" %></th>
+              <th class="transactions__column-header transactions__column-header--optional"><%= gettext "To" %></th>
+              <th class="transactions__column-header"><%= gettext "Value" %></th>
+            </tr>
+          </thead>
+          <tbody>
+            <%= for transaction <- @transactions.entries do %>
+              <tr class="transactions__row">
+                <td class="transactions__column transactions__column--hash">
+                  <div class="transactions__hash"><%= link(transaction.hash, to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.hash), class: "transactions__link transactions__link--truncated transactions__link--long-hash") %></div>
+                </td>
+                <td class="transactions__column transactions__column--block transactions__column--optional">
+                  <%= link(transaction.block.number, to: block_path(@conn, :show, @conn.assigns.locale, transaction.block.number), class: "transactions__link") %>
+                </td>
+                <td class="transactions__column transactions__column--age">
+                  <%= transaction.block.timestamp |> Timex.from_now %>
+                </td>
+                <td class="transactions__column transactions__column--from transactions__column--optional">
+                  <div class="transactions__hash"><%= link(transaction.from_address.hash, to: address_path(@conn, :show, @conn.assigns.locale, transaction.from_address.hash), class: "transactions__link transactions__link--truncated transactions__link--hash") %></div>
+                </td>
+                <td class="transactions__column transactions__column--to transactions__column--optional">
+                  <div class="transactions__hash"><%= link(transaction.to_address.hash, to: address_path(@conn, :show, @conn.assigns.locale, transaction.to_address.hash), class: "transactions__link transactions__link--truncated transactions__link--hash") %></div>
+                </td>
+                <td class="transactions__column transactions__column--value"><%= Decimal.div(Decimal.new(transaction.value), Decimal.new(1_000_000_000_000_000_000)) |> Decimal.to_string(:normal) %> <%= gettext "POA" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+        <%= link(gettext("Next Page"), to: transaction_path(@conn, :index, @conn.assigns.locale, %{"last_seen" => @transactions.last_seen}), class: "transactions__link transactions__link--next-page") %>
+      </div>
+    </div>
+  </section>
 </section>

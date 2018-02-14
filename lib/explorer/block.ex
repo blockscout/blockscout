@@ -46,9 +46,7 @@ defmodule Explorer.Block do
     |> cast_assoc(:transactions)
   end
 
-  def null do
-    %Block{number: -1}
-  end
+  def null, do: %Block{number: -1, timestamp: :calendar.universal_time()}
 
   def latest(query) do
     query |> order_by(desc: :number)

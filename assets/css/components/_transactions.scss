@@ -11,10 +11,9 @@
   &__title {
     @include explorer-typography("title");
     color: explorer-color("slate", "100");
-    margin: 0;
   }
 
-  &__headline-title { line-height: 18px; }
+  &__title { margin: 0; }
 
   &__table {
     @extend %table;
@@ -22,35 +21,63 @@
     color: explorer-color("slate", "100");
   }
 
-  &__hash {
-    width: explorer-size(2);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
-  }
-
   &__column-header { @include explorer-typography("body1"); }
-  &__link { color: explorer-color("blue", "500"); }
+  &__link {
+    color: explorer-color("blue", "500");
+
+    &--truncated {
+      display: inline-block;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    &--next-page {
+      @include explorer-typography("body1");
+      display: block;
+      text-align: center;
+      padding: explorer-size(-1) 0;
+      border-top: 1px solid explorer-color("slate", "500");
+    }
+
+    &--long-hash { max-width: explorer-size(2); }
+    &--hash { max-width: explorer-size(2); }
+  }
 
   &__pagination {
     margin: explorer-size(-1) 0 explorer-size(-2) 0;
     .pagination { text-align: right; }
   }
 
-  &__hash {
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
+  &__column-header {
+    &--optional { display: none; }
   }
+
+  &__column {
+    &--optional { display: none; }
+  }
+
+  &__tabs { @extend %section-tabs; }
+
+  &__tab {
+    @extend %section-tabs__tab;
+    &--active { @extend %section-tabs__tab--active; }
+  }
+
+  &__tab-link {
+    color: explorer-color("blue", "500");
+    text-decoration: none;
+    &--active { color: explorer-color("slate", "100"); }
+  }
+
+  &__hash-container { height: 1rem; }
 }
 
 @media (min-width: $explorer-breakpoint-sm) {
   .transactions {
-    &__column-header {
-      &--optional { display: table-cell; }
-    }
-    &__column {
-      &--optional { display: table-cell; }
+    &__link {
+      &--long-hash { max-width: explorer-size(3); }
+      &--hash { max-width: explorer-size(1); }
     }
   }
 }
@@ -66,17 +93,33 @@
     &__pagination {
       margin: explorer-size(-1) 0 explorer-size(-2) 0;
     }
+    &__link {
+      &--long-hash { max-width: explorer-size(4); }
+      &--hash { max-width: explorer-size(3); }
+    }
   }
 }
 
 @media (min-width: $explorer-breakpoint-lg) {
   .transactions {
-    &__hash { width: explorer-size(3); }
+    &__link {
+      &--long-hash { max-width: explorer-size(5); }
+      &--hash { max-width: explorer-size(4); }
+    }
   }
 }
 
 @media (min-width: $explorer-breakpoint-xl) {
   .transactions {
-    &__hash { width: explorer-size(4); }
+    &__column-header {
+      &--optional { display: table-cell; }
+    }
+    &__column {
+      &--optional { display: table-cell; }
+    }
+    &__link {
+      &--long-hash { max-width: explorer-size(5); }
+      &--hash { max-width: explorer-size(4); }
+    }
   }
 }
