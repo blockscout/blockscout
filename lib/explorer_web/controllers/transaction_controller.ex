@@ -55,7 +55,7 @@ defmodule ExplorerWeb.TransactionController do
       where: fragment("lower(?)", transaction.hash) == ^hash,
       limit: 1
 
-    transaction = query |> Repo.one() |> TransactionForm.build()
+    transaction = query |> Repo.one() |> TransactionForm.build_and_merge()
 
     render(conn, "show.html", transaction: transaction)
   end

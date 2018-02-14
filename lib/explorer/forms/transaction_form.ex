@@ -12,8 +12,9 @@ defmodule Explorer.TransactionForm do
   def build(transaction) do
     block = Ecto.assoc_loaded?(transaction.block) && transaction.block || nil
     receipt = Ecto.assoc_loaded?(transaction.receipt) && transaction.receipt
+    status = status(transaction, receipt || TransactionReceipt.null)
 
-    Map.merge(transaction, %{
+    %{
       block_number: block |> block_number,
       age: block |> block_age,
       formatted_age: block |> format_age,
@@ -22,10 +23,15 @@ defmodule Explorer.TransactionForm do
       to_address_hash: transaction |> to_address_hash,
       from_address_hash: transaction |> from_address_hash,
       confirmations: block |> confirmations,
-      status: status(block, receipt || TransactionReceipt.null),
+      status: status,
+      formatted_status: status |> format_status,
       first_seen: transaction |> first_seen,
       last_seen: transaction |> last_seen,
-    })
+    }
+  end
+
+  def build_and_merge(transaction) do
+    Map.merge(transaction, build(transaction))
   end
 
   def block_number(block) do
@@ -33,7 +39,7 @@ defmodule Explorer.TransactionForm do
   end
 
   def block_age(block) do
-    block && block.timestamp |> Timex.from_now || "Pending"
+    block && block.timestamp |> Timex.from_now || gettext("Pending")
   end
 
   def format_age(block) do
@@ -61,12 +67,25 @@ defmodule Explorer.TransactionForm do
     block && Repo.one(query) - block.number || 0
   end
 
-  def status(block, receipt) do
-    statuses = %{0 => gettext("Failure"), 1 => gettext("Success")}
-    if is_nil(block) || is_nil(receipt.status) do
-      gettext("Pending")
-    else
-      statuses[receipt.status]
+  def status(transaction, receipt) do
+    cond do
+      receipt.gas_used == transaction.gas && receipt.status == 0 ->
+        :out_of_gas
+      receipt.status == 0 ->
+        :failure
+      receipt.status == 1 ->
+        :success
+      true ->
+        :pending
+    end
+  end
+
+  def format_status(status) do
+    cond do
+      status == :out_of_gas -> gettext("Out of Gas")
+      status == :failure -> gettext("Failure")
+      status == :success -> gettext("Success")
+      status == :pending -> gettext("Pending")
     end
   end
 

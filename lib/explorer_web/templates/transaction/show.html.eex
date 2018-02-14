@@ -17,7 +17,12 @@
           </div>
           <div class="transaction__item">
             <dt class="transaction__item-key"><%= gettext "Transaction Status" %></dt>
-            <dd class="transaction__item-value transaction__item-value--status"><%= @transaction.status %></dd>
+            <dd class="transaction__item-value transaction__item-value--status">
+              <div class="transaction__status">
+                <div><%= @transaction.formatted_status %></div>
+                <div class="transaction__icon transaction__icon--<%= @transaction.status %>"></div>
+              </div>
+            </dd>
           </div>
           <div class="transaction__item">
             <dt class="transaction__item-key"><%= gettext "Block Number" %></dt>
