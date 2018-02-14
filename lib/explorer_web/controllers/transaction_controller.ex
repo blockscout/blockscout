@@ -23,7 +23,10 @@ defmodule ExplorerWeb.TransactionController do
       select: fragment("count(?)", transaction.id),
       inner_join: receipt in assoc(transaction, :receipt),
       inner_join: block in assoc(transaction, :block)
-    entries = Repo.all(query)
+    entries =
+      query
+      |> Repo.all()
+      |> Enum.map(&TransactionForm.build_and_merge/1)
     last = List.last(entries) || Transaction.null
     render(conn, "index.html", transactions: %{
       entries: entries,

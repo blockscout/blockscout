@@ -215,7 +215,6 @@ defmodule Explorer.TransactionFormTest do
       insert(:transaction_receipt, status: 0, gas_used: 555, transaction: transaction)
 
       form = transaction |> Repo.preload([:block, :to_address, :from_address, :receipt]) |> TransactionForm.build_and_merge()
-      formatted_timestamp = block.timestamp |> Timex.format!("%b-%d-%Y %H:%M:%S %p %Z", :strftime)
 
       assert form.hash == "0xkittenpower"
       assert form.block_number == 1

@@ -24,14 +24,13 @@
   &__icon {
     height: explorer-size(0)/2;
     width: explorer-size(0)/2;
-    background-color: explorer-color("slate", "900");
     border-radius: explorer-size(0)/2;
-    display: inline-block;
     margin-left: explorer-size(-2);
 
-    &--pending { background-color: explorer-color("yellow", "500"); }
+    &--pending { background-color: explorer-color("slate", "500"); }
     &--success { background-color: explorer-color("green", "500"); }
-    &--failure, &--out_of_gas { background-color: explorer-color("red", "500"); }
+    &--failure { background-color: explorer-color("red", "500"); }
+    &--out_of_gas { background-color: explorer-color("yellow", "500"); }
   }
 }
 
