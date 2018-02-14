@@ -14,23 +14,30 @@ defmodule Explorer.Servers.ChainStatistics do
     end
   end
 
-  def start_link, do: start_link(nil)
-  def start_link(_), do: GenServer.start_link(__MODULE__, nil, name: __MODULE__)
-
-  def init(_) do
-    refresh()
-    {:ok, %Chain{}}
+  def start_link, do: start_link(true)
+  def start_link(refresh) do
+    GenServer.start_link(__MODULE__, refresh, name: __MODULE__)
   end
 
-  def refresh, do: refresh(@interval)
-  def refresh(interval), do: Process.send_after(self(), :refresh, interval)
+  def init(true) do
+    {:noreply, chain} = handle_cast({:update, %Chain{}}, %Chain{})
+    {:ok, chain}
+  end
 
-  def handle_info(:refresh, _) do
-    chain = Chain.fetch()
-    refresh()
+  def init(false), do: {:ok, %Chain{}}
+
+  def handle_info(:refresh, %Chain{} = chain) do
+    Task.start_link(fn ->
+      GenServer.cast(__MODULE__, {:update, Chain.fetch()})
+    end)
     {:noreply, chain}
   end
-  def handle_info(_, tasks), do: {:noreply, tasks}
-  def handle_call(:fetch, _, chain), do: {:reply, chain, chain}
-  def handle_call(_, _, chain), do: {:noreply, chain}
+  def handle_info(_, %Chain{} = chain), do: {:noreply, chain}
+  def handle_call(:fetch, _, %Chain{} = chain), do: {:reply, chain, chain}
+  def handle_call(_, _, %Chain{} = chain), do: {:noreply, chain}
+  def handle_cast({:update, %Chain{} = chain}, %Chain{} = _) do
+    Process.send_after(self(), :refresh, @interval)
+    {:noreply, chain}
+  end
+  def handle_cast(_, %Chain{} = chain), do: {:noreply, chain}
 end
