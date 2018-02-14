@@ -33,12 +33,13 @@ defmodule ExplorerWeb.TransactionController do
   end
 
   def index(conn, params) do
-    first_id = Repo.one(from t in Transaction,
+    query = from t in Transaction,
       select: t.id,
       order_by: [desc: t.id],
       limit: 1
-    )
-    index(conn, Map.put(params, "last_seen", first_id + 1))
+    first_id = Repo.one(query) || 0
+    last_seen = Integer.to_string(first_id + 1)
+    index(conn, Map.put(params, "last_seen", last_seen))
   end
 
   def show(conn, params) do
