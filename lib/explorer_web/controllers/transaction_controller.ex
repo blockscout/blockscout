@@ -7,8 +7,9 @@ defmodule ExplorerWeb.TransactionController do
   alias Explorer.Transaction
   alias Explorer.TransactionForm
 
-  def index(conn, params) do
+  def index(conn, %{"last_seen" => last_seen} = _) do
     query = from transaction in Transaction,
+      where: transaction.id < ^last_seen,
       inner_join: receipt in assoc(transaction, :receipt),
       inner_join: block in assoc(transaction, :block),
       inner_join: to_address in assoc(transaction, :to_address),
@@ -16,19 +17,28 @@ defmodule ExplorerWeb.TransactionController do
       preload: [
         block: block, receipt: receipt,
         to_address: to_address, from_address: from_address],
-      order_by: [desc: block.timestamp]
+      order_by: [desc: transaction.id],
+      limit: 100
     total_query = from transaction in Transaction,
       select: fragment("count(?)", transaction.id),
       inner_join: receipt in assoc(transaction, :receipt),
       inner_join: block in assoc(transaction, :block)
-    transactions = Repo.paginate(
-      query,
-      params
-      |> Map.put(:total_entries, Repo.one(total_query))
-      |> Map.put(:page_size, 25)
-    )
+    entries = Repo.all(query)
+    last = List.last(entries) || Transaction.null
+    render(conn, "index.html", transactions: %{
+      entries: entries,
+      total_entries: Repo.one(total_query),
+      last_seen: last.id
+    })
+  end
 
-    render(conn, "index.html", transactions: transactions)
+  def index(conn, params) do
+    first_id = Repo.one(from t in Transaction,
+      select: t.id,
+      order_by: [desc: t.id],
+      limit: 1
+    )
+    index(conn, Map.put(params, "last_seen", first_id + 1))
   end
 
   def show(conn, params) do

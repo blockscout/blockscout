@@ -7,12 +7,12 @@ defmodule Explorer.Servers.ChainStatisticsTest do
   describe "init/1" do
     test "returns a new chain when not told to refresh" do
       {:ok, statistics} = ChainStatistics.init(false)
-      assert statistics == %Chain{}
+      assert statistics == Chain.fetch()
     end
 
     test "returns a new chain when told to refresh" do
       {:ok, statistics} = ChainStatistics.init(true)
-      assert statistics == %Chain{}
+      assert statistics == Chain.fetch()
     end
 
     test "refreshes when told to refresh" do
@@ -41,7 +41,7 @@ defmodule Explorer.Servers.ChainStatisticsTest do
       {:ok, pid} = Explorer.Servers.ChainStatistics.start_link()
       chain = ChainStatistics.fetch()
       :ok = GenServer.stop(pid)
-      refute original == chain
+      assert original.number == chain.number
     end
 
     test "does not reply when sent any other message" do

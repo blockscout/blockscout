@@ -14,10 +14,40 @@ defmodule ExplorerWeb.TransactionControllerTest do
       assert List.first(conn.assigns.transactions.entries).id == transaction.id
     end
 
+    test "returns a count of transactions", %{conn: conn} do
+      transaction = insert(:transaction)
+      block = insert(:block)
+      address = insert(:address)
+      insert(:transaction_receipt, transaction: transaction)
+      insert(:block_transaction, transaction: transaction, block: block)
+      insert(:to_address, transaction: transaction, address: address)
+      insert(:from_address, transaction: transaction, address: address)
+      conn = get(conn, "/en/transactions")
+      assert conn.assigns.transactions.total_entries === 1
+    end
+
     test "returns no pending transactions", %{conn: conn} do
       insert(:transaction)
       conn = get(conn, "/en/transactions")
-      assert conn.assigns.transactions |> Enum.count === 0
+      assert conn.assigns.transactions.entries == []
+    end
+
+    test "returns a zero count when there are only pending transactions", %{conn: conn} do
+      insert(:transaction)
+      conn = get(conn, "/en/transactions")
+      assert conn.assigns.transactions.total_entries === 0
+    end
+
+    test "paginates transactions using the last seen transaction", %{conn: conn} do
+      transaction = insert(:transaction)
+      block = insert(:block)
+      address = insert(:address)
+      insert(:transaction_receipt, transaction: transaction)
+      insert(:block_transaction, transaction: transaction, block: block)
+      insert(:to_address, transaction: transaction, address: address)
+      insert(:from_address, transaction: transaction, address: address)
+      conn = get(conn, "/en/transactions", last_seen: transaction.id)
+      assert conn.assigns.transactions.entries  == []
     end
   end
 

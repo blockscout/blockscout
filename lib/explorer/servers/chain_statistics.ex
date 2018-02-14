@@ -20,11 +20,11 @@ defmodule Explorer.Servers.ChainStatistics do
   end
 
   def init(true) do
-    {:noreply, chain} = handle_cast({:update, %Chain{}}, %Chain{})
+    {:noreply, chain} = handle_cast({:update, Chain.fetch()}, %Chain{})
     {:ok, chain}
   end
 
-  def init(false), do: {:ok, %Chain{}}
+  def init(false), do: {:ok, Chain.fetch()}
 
   def handle_info(:refresh, %Chain{} = chain) do
     Task.start_link(fn ->

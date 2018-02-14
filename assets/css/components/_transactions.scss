@@ -32,6 +32,14 @@
       overflow: hidden;
     }
 
+    &--next-page {
+      @include explorer-typography("body1");
+      display: block;
+      text-align: center;
+      padding: explorer-size(-1) 0;
+      border-top: 1px solid explorer-color("slate", "500");
+    }
+
     &--long-hash { max-width: explorer-size(2); }
     &--hash { max-width: explorer-size(2); }
   }
