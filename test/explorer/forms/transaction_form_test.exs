@@ -68,8 +68,8 @@ defmodule Explorer.TransactionFormTest do
         to_address_hash: "0xsleepypuppy",
         from_address_hash: "0xilovefrogs",
         confirmations: 23,
-        status: :failure,
-        formatted_status: "Failure",
+        status: :failed,
+        formatted_status: "Failed",
         first_seen: "48 years ago",
         last_seen: "38 years ago",
       })

@@ -69,7 +69,7 @@ defmodule Explorer.TransactionForm do
 
   def status(transaction, receipt) do
     %{
-      0 => %{true => :out_of_gas, false => :failure},
+      0 => %{true => :out_of_gas, false => :failed},
       1 => %{true => :success, false => :success}
     }
     |> Map.get(receipt.status, %{true: :pending, false: :pending})
@@ -79,7 +79,7 @@ defmodule Explorer.TransactionForm do
   def format_status(status) do
     %{
       out_of_gas: gettext("Out of Gas"),
-      failure: gettext("Failure"),
+      failed: gettext("Failed"),
       success: gettext("Success"),
       pending: gettext("Pending"),
     } |> Map.fetch!(status)
