@@ -9,6 +9,7 @@ defmodule Explorer.Mixfile do
       elixirc_paths: elixirc_paths(Mix.env),
       compilers: [:phoenix, :gettext | Mix.compilers],
       start_permanent: Mix.env == :prod,
+      package: package(),
       aliases: aliases(),
       deps: deps(),
       dialyzer: [
@@ -98,6 +99,14 @@ defmodule Explorer.Mixfile do
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       "test": ["ecto.create --quiet", "ecto.migrate", "test"]
+    ]
+  end
+
+  defp package do
+    [
+      maintainers: ["POA Networks Ltd."],
+      licenses: ["GPL 3.0"],
+      links: %{"GitHub" => "https://github.com/poanetwork/poa-explorer"}
     ]
   end
 end

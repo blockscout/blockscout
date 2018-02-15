@@ -6,6 +6,7 @@
   "private": true,
   "name": "poa-explorer",
   "author": "POA Network",
+  "license": "GPL-3.0",
   "engines": {
     "node": "9.x",
     "npm": "5.x"
