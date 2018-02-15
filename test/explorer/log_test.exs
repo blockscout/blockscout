@@ -15,5 +15,17 @@ defmodule Explorer.LogTest do
       changeset = Log.changeset(%Log{}, params)
       refute changeset.valid?
     end
+
+    test "accepts optional attributes" do
+      params = Map.put(params_for(:log), :first_topic, "ham")
+      changeset = Log.changeset(%Log{}, params)
+      assert changeset.valid?
+    end
+
+    test "assigns optional attributes" do
+      params = Map.put(params_for(:log), :first_topic, "ham")
+      changeset = Log.changeset(%Log{}, params)
+      assert changeset.changes.first_topic === "ham"
+    end
   end
 end

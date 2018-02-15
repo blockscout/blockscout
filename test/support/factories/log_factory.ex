@@ -5,10 +5,11 @@ defmodule Explorer.LogFactory do
         %Explorer.Log{
           index: sequence(""),
           data: sequence("0x"),
-          removed: Enum.random([true, false]),
-          first_topic: sequence("0x"),
-          second_topic: sequence("0x"),
-          third_topic: sequence("0x"),
+          type: sequence("0x"),
+          first_topic: nil,
+          second_topic: nil,
+          third_topic: nil,
+          fourth_topic: nil,
         }
       end
     end

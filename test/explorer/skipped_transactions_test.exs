@@ -12,7 +12,7 @@ defmodule Explorer.SkippedReceiptsTest do
   describe "first/0 when there are no skipped transactions" do
     test "returns no transactions" do
       transaction = insert(:transaction)
-      insert(:transaction_receipt, transaction: transaction)
+      insert(:receipt, transaction: transaction)
       assert SkippedReceipts.first() == []
     end
   end
@@ -33,7 +33,7 @@ defmodule Explorer.SkippedReceiptsTest do
   describe "first/1 when there are no skipped transactions" do
     test "returns no transactions" do
       transaction = insert(:transaction)
-      insert(:transaction_receipt, transaction: transaction)
+      insert(:receipt, transaction: transaction)
       assert SkippedReceipts.first(1) == []
     end
   end

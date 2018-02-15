@@ -8,5 +8,5 @@ defmodule Explorer.Factory do
   use Explorer.LogFactory
   use Explorer.ToAddressFactory
   use Explorer.TransactionFactory
-  use Explorer.TransactionReceiptFactory
+  use Explorer.ReceiptFactory
 end

@@ -18,7 +18,7 @@ defmodule Explorer.TransactionFormTest do
           updated_at: Timex.parse!("1980-01-01T00:00:18-00:00", "{ISO:Extended}"))
         |> with_block(block)
         |> with_addresses(%{to: "0xsleepypuppy", from: "0xilovefrogs"})
-      insert(:transaction_receipt, status: 1, transaction: transaction)
+      insert(:receipt, status: 1, transaction: transaction)
 
       form = transaction |> Repo.preload([:block, :to_address, :from_address, :receipt]) |> TransactionForm.build()
       formatted_timestamp = block.timestamp |> Timex.format!("%b-%d-%Y %H:%M:%S %p %Z", :strftime)
@@ -54,7 +54,7 @@ defmodule Explorer.TransactionFormTest do
           updated_at: Timex.parse!("1980-01-01T00:00:18-00:00", "{ISO:Extended}"))
         |> with_block(block)
         |> with_addresses(%{to: "0xsleepypuppy", from: "0xilovefrogs"})
-      insert(:transaction_receipt, status: 0, gas_used: 100, transaction: transaction)
+      insert(:receipt, status: 0, gas_used: 100, transaction: transaction)
 
       form = transaction |> Repo.preload([:block, :to_address, :from_address, :receipt]) |> TransactionForm.build()
       formatted_timestamp = block.timestamp |> Timex.format!("%b-%d-%Y %H:%M:%S %p %Z", :strftime)
@@ -90,7 +90,7 @@ defmodule Explorer.TransactionFormTest do
           updated_at: Timex.parse!("1980-01-01T00:00:18-00:00", "{ISO:Extended}"))
         |> with_block(block)
         |> with_addresses(%{to: "0xsleepypuppy", from: "0xilovefrogs"})
-      insert(:transaction_receipt, status: 0, gas_used: 555, transaction: transaction)
+      insert(:receipt, status: 0, gas_used: 555, transaction: transaction)
 
       form = transaction |> Repo.preload([:block, :to_address, :from_address, :receipt]) |> TransactionForm.build()
       formatted_timestamp = block.timestamp |> Timex.format!("%b-%d-%Y %H:%M:%S %p %Z", :strftime)
@@ -212,7 +212,7 @@ defmodule Explorer.TransactionFormTest do
           gas: 555)
         |> with_block(block)
         |> with_addresses(%{to: "0xsleepypuppy", from: "0xilovefrogs"})
-      insert(:transaction_receipt, status: 0, gas_used: 555, transaction: transaction)
+      insert(:receipt, status: 0, gas_used: 555, transaction: transaction)
 
       form = transaction |> Repo.preload([:block, :to_address, :from_address, :receipt]) |> TransactionForm.build_and_merge()
 

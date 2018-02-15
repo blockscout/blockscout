@@ -7,15 +7,15 @@ defmodule Explorer.Transaction do
 
   alias Explorer.BlockTransaction
   alias Explorer.FromAddress
+  alias Explorer.Receipt
   alias Explorer.ToAddress
   alias Explorer.Transaction
-  alias Explorer.TransactionReceipt
 
   @timestamps_opts [type: Timex.Ecto.DateTime,
                     autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}]
 
   schema "transactions" do
-    has_one :receipt, TransactionReceipt
+    has_one :receipt, Receipt
     has_one :block_transaction, BlockTransaction
     has_one :block, through: [:block_transaction, :block]
     has_one :to_address_join, ToAddress

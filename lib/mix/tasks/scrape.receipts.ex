@@ -4,7 +4,7 @@ defmodule Mix.Tasks.Scrape.Receipts do
 
   alias Explorer.Repo
   alias Explorer.SkippedReceipts
-  alias Explorer.TransactionReceiptImporter
+  alias Explorer.ReceiptImporter
 
   def run([]), do: run(1)
   def run(count) do
@@ -17,7 +17,7 @@ defmodule Mix.Tasks.Scrape.Receipts do
     |> SkippedReceipts.first()
     |> Enum.shuffle()
     |> Flow.from_enumerable()
-    |> Flow.map(&TransactionReceiptImporter.import/1)
+    |> Flow.map(&ReceiptImporter.import/1)
     |> Enum.to_list()
   end
 end

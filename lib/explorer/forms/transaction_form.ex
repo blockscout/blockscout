@@ -6,13 +6,13 @@ defmodule Explorer.TransactionForm do
 
   alias Cldr.Number
   alias Explorer.Block
+  alias Explorer.Receipt
   alias Explorer.Repo
-  alias Explorer.TransactionReceipt
 
   def build(transaction) do
     block = Ecto.assoc_loaded?(transaction.block) && transaction.block || nil
     receipt = Ecto.assoc_loaded?(transaction.receipt) && transaction.receipt
-    status = status(transaction, receipt || TransactionReceipt.null)
+    status = status(transaction, receipt || Receipt.null)
 
     %{
       block_number: block |> block_number,
@@ -68,25 +68,21 @@ defmodule Explorer.TransactionForm do
   end
 
   def status(transaction, receipt) do
-    cond do
-      receipt.gas_used == transaction.gas && receipt.status == 0 ->
-        :out_of_gas
-      receipt.status == 0 ->
-        :failure
-      receipt.status == 1 ->
-        :success
-      true ->
-        :pending
-    end
+    %{
+      0 => %{true => :out_of_gas, false => :failure},
+      1 => %{true => :success, false => :success}
+    }
+    |> Map.get(receipt.status, %{true: :pending, false: :pending})
+    |> Map.get(receipt.gas_used == transaction.gas)
   end
 
   def format_status(status) do
-    cond do
-      status == :out_of_gas -> gettext("Out of Gas")
-      status == :failure -> gettext("Failure")
-      status == :success -> gettext("Success")
-      status == :pending -> gettext("Pending")
-    end
+    %{
+      out_of_gas: gettext("Out of Gas"),
+      failure: gettext("Failure"),
+      success: gettext("Success"),
+      pending: gettext("Pending"),
+    } |> Map.fetch!(status)
   end
 
   def first_seen(transaction) do
