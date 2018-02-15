@@ -1,0 +1,30 @@
+[
+  {
+    "request": {
+      "body": "{\"params\":[\"0x702e518267b0a57e4cb44b9db100afe4d7115f2d2650466a8c376f3dbb77eb35\"],\"method\":\"eth_getTransactionReceipt\",\"jsonrpc\":\"2.0\",\"id\":32}",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "method": "post",
+      "options": [],
+      "request_body": "",
+      "url": "https://sokol.poa.network"
+    },
+    "response": {
+      "binary": false,
+      "body": "{\"jsonrpc\":\"2.0\",\"result\":{\"blockHash\":\"0x4f6d8a09f075d3b530587084952fd52f6279af58917f07868b030c3401bdd6e2\",\"blockNumber\":\"0x918cf\",\"contractAddress\":null,\"cumulativeGasUsed\":\"0x7a1200\",\"gasUsed\":\"0x7a1200\",\"logs\":[],\"logsBloom\":\"0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\",\"root\":null,\"status\":\"0x0\",\"transactionHash\":\"0x702e518267b0a57e4cb44b9db100afe4d7115f2d2650466a8c376f3dbb77eb35\",\"transactionIndex\":\"0x0\"},\"id\":32}\n",
+      "headers": {
+        "Date": "Thu, 15 Feb 2018 20:13:47 GMT",
+        "Content-Type": "application/json",
+        "Transfer-Encoding": "chunked",
+        "Connection": "keep-alive",
+        "Set-Cookie": "__cfduid=df0963c3642307e7dc57bb0f7150d58601518725627; expires=Fri, 15-Feb-19 20:13:47 GMT; path=/; domain=.poa.network; HttpOnly; Secure",
+        "Expect-CT": "max-age=604800, report-uri=\"https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct\"",
+        "Server": "cloudflare",
+        "CF-RAY": "3edaee036abd960d-SJC"
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  }
+]

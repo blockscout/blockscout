@@ -45,7 +45,7 @@ config :exq,
   scheduler_enable: true,
   shutdown_timeout: 5000,
   max_retries: 10,
-  queues: [{"default", 1}, {"blocks", 1}, {"transactions", 1}]
+  queues: [{"default", 1}, {"blocks", 1}, {"transactions", 1}, {"receipts", 1}]
 
 config :exq_ui,
   server: false

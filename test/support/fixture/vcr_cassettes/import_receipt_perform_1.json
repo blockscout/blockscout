@@ -1,0 +1,30 @@
+[
+  {
+    "request": {
+      "body": "{\"params\":[\"0xf9a0959d5ccde33ec5221ddba1c6d7eaf9580a8d3512c7a1a60301362a98f926\"],\"method\":\"eth_getTransactionReceipt\",\"jsonrpc\":\"2.0\",\"id\":15}",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "method": "post",
+      "options": [],
+      "request_body": "",
+      "url": "https://sokol.poa.network"
+    },
+    "response": {
+      "binary": false,
+      "body": "{\"jsonrpc\":\"2.0\",\"result\":{\"blockHash\":\"0x456ffeb893cac75274175b57bb3f12d3b6a3b7882ac9d60145d20861c4b03b7b\",\"blockNumber\":\"0xc4567\",\"contractAddress\":\"0x2265f9193ec79d072f3a617a22b27866968b88a6\",\"cumulativeGasUsed\":\"0x184f0\",\"gasUsed\":\"0x184f0\",\"logs\":[{\"address\":\"0x2265f9193ec79d072f3a617a22b27866968b88a6\",\"blockHash\":\"0x456ffeb893cac75274175b57bb3f12d3b6a3b7882ac9d60145d20861c4b03b7b\",\"blockNumber\":\"0xc4567\",\"data\":\"0x000000000000000000000000000000000000000000000000000000005a79fff3\",\"logIndex\":\"0x0\",\"topics\":[\"0xb94ae47ec9f4248692e2ecf9740b67ab493f3dcc8452bedc7d9cd911c28d1ca5\"],\"transactionHash\":\"0xf9a0959d5ccde33ec5221ddba1c6d7eaf9580a8d3512c7a1a60301362a98f926\",\"transactionIndex\":\"0x0\",\"transactionLogIndex\":\"0x0\",\"type\":\"mined\"}],\"logsBloom\":\"0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000800000000000000000000002000000000000000000000000000000000000000000000000000000000000000000000080000000008000000000000000000000000000000000\",\"root\":null,\"status\":\"0x1\",\"transactionHash\":\"0xf9a0959d5ccde33ec5221ddba1c6d7eaf9580a8d3512c7a1a60301362a98f926\",\"transactionIndex\":\"0x0\"},\"id\":15}\n",
+      "headers": {
+        "Date": "Thu, 15 Feb 2018 20:13:37 GMT",
+        "Content-Type": "application/json",
+        "Transfer-Encoding": "chunked",
+        "Connection": "keep-alive",
+        "Set-Cookie": "__cfduid=db80ce3158d70a8caaa4518c5135593ea1518725617; expires=Fri, 15-Feb-19 20:13:37 GMT; path=/; domain=.poa.network; HttpOnly; Secure",
+        "Expect-CT": "max-age=604800, report-uri=\"https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct\"",
+        "Server": "cloudflare",
+        "CF-RAY": "3edaedc4fb5a960d-SJC"
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  }
+]
