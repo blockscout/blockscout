@@ -50,4 +50,4 @@ fi
 
 set +x
 
-heroku config:set ADMIN_PASSWORD=$(mix phx.gen.secret) --app $HEROKU_APPLICATION
+heroku config:set ADMIN_PASSWORD=$(mix phx.gen.secret) --app $HEROKU_APPLICATION &> /dev/null
