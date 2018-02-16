@@ -48,6 +48,7 @@ config :ethereumex,
 # Configure Quantum
 config :explorer, Explorer.Scheduler,
   jobs: [
+    [schedule: {:extended, System.get_env("EXQ_BALANCE_SCHEDULE") || "0 * * * * *"}, task: {Explorer.Workers.RefreshBalance, :perform_later, []}],
     [schedule: {:extended, System.get_env("EXQ_LATEST_BLOCK_SCHEDULE") || "* * * * * *"}, task: {Explorer.Workers.ImportBlock, :perform_later, ["latest"]}],
     [schedule: {:extended, System.get_env("EXQ_PENDING_BLOCK_SCHEDULE") || "* * * * * *"}, task: {Explorer.Workers.ImportBlock, :perform_later, ["pending"]}],
     [schedule: {:extended, System.get_env("EXQ_BACKFILL_SCHEDULE") || "* * * * * *"}, task: {Explorer.Workers.ImportSkippedBlocks, :perform_later, [String.to_integer(System.get_env("EXQ_BACKFILL_BATCH_SIZE") || "1")]}],

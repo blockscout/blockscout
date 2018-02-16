@@ -3,6 +3,9 @@ defmodule ExplorerWeb.UserListTest do
 
   import Wallaby.Query, only: [css: 1, css: 2, link: 1]
 
+  alias Explorer.Credit
+  alias Explorer.Debit
+
   @logo css("img.header__logo")
 
   test "browses the home page", %{session: session} do
@@ -31,6 +34,9 @@ defmodule ExplorerWeb.UserListTest do
     insert(:transaction, hash: "0xpaczki") |> with_block(fifth_block) |> with_addresses
     insert(:transaction) |> with_block(fifth_block) |> with_addresses
     insert(:receipt, transaction: transaction)
+
+    Credit.refresh
+    Debit.refresh
 
     session
     |> visit("/en")
@@ -84,6 +90,9 @@ defmodule ExplorerWeb.UserListTest do
     insert(:to_address, address: to_address, transaction: transaction)
     receipt = insert(:receipt, transaction: transaction, status: 1)
     insert(:log, address: to_address, receipt: receipt)
+
+    Credit.refresh
+    Debit.refresh
 
     session
     |> visit("/en")

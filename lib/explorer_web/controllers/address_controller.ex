@@ -7,10 +7,11 @@ defmodule ExplorerWeb.AddressController do
   alias Explorer.AddressForm
   alias Explorer.Repo.NewRelic, as: Repo
 
-  def show(conn, params) do
-    hash = String.downcase(params["id"])
+  def show(conn, %{"id" => id}) do
+    hash = String.downcase(id)
     query = from address in Address,
       where: fragment("lower(?)", address.hash) == ^hash,
+      preload: [:credit, :debit],
       limit: 1
 
     address = Repo.one(query)

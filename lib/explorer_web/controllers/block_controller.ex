@@ -15,9 +15,9 @@ defmodule ExplorerWeb.BlockController do
     render(conn, "index.html", blocks: Repo.paginate(blocks, params))
   end
 
-  def show(conn, params) do
+  def show(conn, %{"id" => number}) do
     block = Block
-      |> where(number: ^params["id"])
+      |> where(number: ^number)
       |> first |> Repo.one
       |> BlockForm.build
     render(conn, "show.html", block: block)
