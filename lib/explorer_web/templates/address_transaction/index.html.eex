@@ -1,6 +1,6 @@
 <section class="container__section block">
   <div class="address__headline">
-    <h1 class="address__headline-title"><%= gettext("Address #%{number}", number: @conn.params["address_id"]) %></h1>
+    <h1 class="address__headline-title"><%= gettext("Address %{number}", number: @conn.params["address_id"]) %></h1>
     <div class="address__pagination"><%= pagination_links @conn, @transactions, ["en", @conn.params["address_id"]], view_style: :bulma, first: true, distance: 1, previous: Phoenix.HTML.raw("&lsaquo;"), next: Phoenix.HTML.raw("&rsaquo;"), path: &address_transaction_path/5 %></div>
   </div>
   <div class="address__container">
