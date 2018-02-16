@@ -40,6 +40,22 @@ defmodule Explorer.Workers.ImportTransactionTest do
         end
       end
     end
+
+    test "imports the receipt in another queue when a map is supplied" do
+      transaction = insert(:transaction, hash: "0xf9a0959d5ccde33ec5221ddba1c6d7eaf9580a8d3512c7a1a60301362a98f926")
+      use_cassette "import_transaction_perform_1" do
+        with_mock Exq, [enqueue: fn (_, _, _, _) -> insert(:receipt, transaction: transaction) end] do
+          ImportTransaction.perform(%{
+            "hash" => "0xf9a0959d5ccde33ec5221ddba1c6d7eaf9580a8d3512c7a1a60301362a98f926",
+            "to" => "0xc001",
+            "from" => "0xbead5",
+            "blockHash" => "0xcafe",
+          })
+          receipt = Repo.one(Receipt)
+          refute is_nil(receipt)
+        end
+      end
+    end
   end
 
   describe "perform_later/1" do

@@ -21,13 +21,13 @@ defmodule Explorer.TransactionImporter do
   end
 
   def persist_transaction(raw_transaction) do
-    changes = extract_attrs(raw_transaction)
-    found_transaction = changes.hash |> find()
+    found_transaction = raw_transaction["hash"] |> find()
 
     transaction = case is_nil(found_transaction.id) do
-      true ->
-        found_transaction |> Transaction.changeset(changes) |> Repo.insert!
       false -> found_transaction
+      true ->
+        changes = extract_attrs(raw_transaction)
+        found_transaction |> Transaction.changeset(changes) |> Repo.insert!
     end
 
     to_address = raw_transaction["to"] || raw_transaction["creates"]
