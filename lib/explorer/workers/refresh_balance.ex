@@ -12,8 +12,8 @@ defmodule Explorer.Workers.RefreshBalance do
   def perform("debit"), do: unless refreshing("debits"), do: Debit.refresh()
 
   def perform do
-    perform_later("credit")
-    perform_later("debit")
+    perform_later(["credit"])
+    perform_later(["debit"])
   end
 
   def perform_later(args \\ []) do
