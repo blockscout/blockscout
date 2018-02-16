@@ -73,8 +73,8 @@ defmodule ExplorerWeb.UserListTest do
     for _ <- 0..3, do: insert(:transaction) |> with_block(block) |> with_addresses
     insert(:transaction, hash: "0xC001", gas: 5891) |> with_block |> with_addresses
 
-    to_address = insert(:address, hash: "0xlincoln")
-    from_address = insert(:address, hash: "0xhowardtaft")
+    lincoln = insert(:address, hash: "0xlincoln")
+    taft = insert(:address, hash: "0xhowardtaft")
     transaction = insert(:transaction,
       hash: "0xSk8",
       value: 5656,
@@ -86,10 +86,17 @@ defmodule ExplorerWeb.UserListTest do
       updated_at: Timex.parse!("1980-01-01T00:00:18-00:00", "{ISO:Extended}")
     )
     insert(:block_transaction, block: block, transaction: transaction)
-    insert(:from_address, address: from_address, transaction: transaction)
-    insert(:to_address, address: to_address, transaction: transaction)
+    insert(:from_address, address: taft, transaction: transaction)
+    insert(:to_address, address: lincoln, transaction: transaction)
     receipt = insert(:receipt, transaction: transaction, status: 1)
-    insert(:log, address: to_address, receipt: receipt)
+    insert(:log, address: lincoln, receipt: receipt)
+
+    # From Lincoln to Taft.
+    txn_from_lincoln = insert(:transaction, hash: "0xrazerscooter")
+    insert(:block_transaction, block: block, transaction: txn_from_lincoln)
+    insert(:from_address, address: lincoln, transaction: txn_from_lincoln)
+    insert(:to_address, address: taft, transaction: txn_from_lincoln)
+    insert(:receipt, transaction: txn_from_lincoln)
 
     Credit.refresh
     Debit.refresh
@@ -131,7 +138,10 @@ defmodule ExplorerWeb.UserListTest do
     |> click(link("0xlincoln"))
     |> assert_has(css(".address__subheading", text: "0xlincoln"))
 
-    |> click(css(".address__link", text: "Transactions"))
+    |> click(css(".address__link", text: "Transactions To"))
     |> assert_has(css(".transactions__link--long-hash", text: "0xSk8"))
+
+    |> click(css(".address__link", text: "Transactions From"))
+    |> assert_has(css(".transactions__link--long-hash", text: "0xrazerscooter"))
   end
 end

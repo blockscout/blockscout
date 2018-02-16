@@ -1,26 +1,33 @@
-defmodule ExplorerWeb.AddressTransactionControllerTest do
+defmodule ExplorerWeb.AddressTransactionFromControllerTest do
   use ExplorerWeb.ConnCase
 
-  import ExplorerWeb.Router.Helpers, only: [address_transaction_path: 4]
+  import ExplorerWeb.Router.Helpers, only: [address_transaction_from_path: 4]
 
   describe "GET index/2" do
-    test "returns transactions for the address", %{conn: conn} do
+    test "returns transactions from this address", %{conn: conn} do
       transaction = insert(:transaction, hash: "0xsnacks")
       insert(:receipt, transaction: transaction)
       block = insert(:block)
       insert(:block_transaction, transaction: transaction, block: block)
       address = insert(:address)
-      insert(:to_address, transaction: transaction, address: address)
+      other_address = insert(:address)
+      insert(:to_address, transaction: transaction, address: other_address)
       insert(:from_address, transaction: transaction, address: address)
-      conn = get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
+      conn = get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
       assert conn.assigns.transactions.total_entries == 1
       assert List.first(conn.assigns.transactions.entries).hash == "0xsnacks"
     end
 
-    test "does not return unrelated transactions", %{conn: conn} do
-      insert(:transaction)
+    test "does not return transactions to this address", %{conn: conn} do
+      transaction = insert(:transaction, hash: "0xsnacks")
+      insert(:receipt, transaction: transaction)
+      block = insert(:block)
+      insert(:block_transaction, transaction: transaction, block: block)
       address = insert(:address)
-      conn = get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
+      other_address = insert(:address)
+      insert(:to_address, transaction: transaction, address: address)
+      insert(:from_address, transaction: transaction, address: other_address)
+      conn = get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
       assert conn.assigns.transactions.total_entries == 0
     end
 
@@ -31,7 +38,7 @@ defmodule ExplorerWeb.AddressTransactionControllerTest do
       address = insert(:address)
       insert(:to_address, transaction: transaction, address: address)
       insert(:from_address, transaction: transaction, address: address)
-      conn = get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
+      conn = get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
       assert conn.assigns.transactions.total_entries == 0
     end
 
@@ -42,7 +49,7 @@ defmodule ExplorerWeb.AddressTransactionControllerTest do
       insert(:block_transaction, transaction: transaction, block: block)
       address = insert(:address)
       insert(:to_address, transaction: transaction, address: address)
-      conn = get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
+      conn = get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
       assert conn.assigns.transactions.total_entries == 0
     end
 
@@ -53,7 +60,7 @@ defmodule ExplorerWeb.AddressTransactionControllerTest do
       insert(:block_transaction, transaction: transaction, block: block)
       address = insert(:address)
       insert(:from_address, transaction: transaction, address: address)
-      conn = get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
+      conn = get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
       assert conn.assigns.transactions.total_entries == 0
     end
   end

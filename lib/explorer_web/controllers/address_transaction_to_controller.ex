@@ -1,4 +1,8 @@
-defmodule ExplorerWeb.AddressTransactionController do
+defmodule ExplorerWeb.AddressTransactionToController do
+  @moduledoc """
+    Display all the Transactions that terminate at this Address.
+  """
+
   use ExplorerWeb, :controller
 
   import Ecto.Query
@@ -21,7 +25,7 @@ defmodule ExplorerWeb.AddressTransactionController do
       join: to_address in assoc(transaction, :to_address),
       preload: [:block, :receipt, :to_address, :from_address],
       order_by: [desc: transaction.inserted_at],
-      where: to_address.id == ^address_id or from_address.id == ^address_id
+      where: to_address.id == ^address_id
     page = Repo.paginate(query, params)
     entries = Enum.map(page.entries, &TransactionForm.build_and_merge/1)
     render(conn, "index.html", transactions: Map.put(page, :entries, entries))
