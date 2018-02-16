@@ -16,7 +16,7 @@ defmodule ExplorerWeb.PendingTransactionController do
       where: is_nil(receipt.transaction_id),
       where: transaction.id < ^last_seen,
       order_by: [desc: transaction.id],
-      limit: 100
+      limit: 10
     total_query = from transaction in Transaction,
       select: fragment("count(?)", transaction.id),
       left_join: receipt in assoc(transaction, :receipt),
