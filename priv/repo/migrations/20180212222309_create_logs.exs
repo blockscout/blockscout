@@ -6,8 +6,8 @@ defmodule Explorer.Repo.Migrations.CreateLogs do
       add :receipt_id, references(:receipts), null: false
       add :address_id, references(:addresses), null: false
       add :index, :integer, null: false
-      add :data, :string, null: false
-      add :type, :string, null: true
+      add :data, :text, null: false
+      add :type, :string, null: false
       add :first_topic, :string, null: true
       add :second_topic, :string, null: true
       add :third_topic, :string, null: true
