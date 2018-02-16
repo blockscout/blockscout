@@ -108,12 +108,12 @@ defmodule ExplorerWeb.UserListTest do
     |> assert_has(css(".transactions__column--value", count: 5))
     |> assert_has(css(".transactions__column--age", count: 5, visible: false))
 
-    |> click(css(".header__link-name--transactions", text: "Transactions"))
+    |> visit("/transactions")
     |> click(css(".transactions__tab-link", text: "Pending"))
     |> click(css(".transactions__link", text: "0xC001"))
     |> assert_has(css(".transaction__item-value--status", text: "Pending"))
 
-    |> click(css(".header__link-name--transactions", text: "Transactions"))
+    |> visit("/transactions")
     |> refute_has(css(".transactions__column--block", text: "Pending"))
 
     |> click(link("0xSk8"))
