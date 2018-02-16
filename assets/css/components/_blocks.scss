@@ -10,7 +10,7 @@
   &__headline-title,
   &__title {
     @include explorer-typography("title");
-    color: explorer-color("slate", "100");
+    color: explorer-color("slate", "900");
     margin: 0;
   }
 
@@ -19,7 +19,7 @@
   &__table {
     @extend %table;
     @include explorer-typography("body1");
-    color: explorer-color("slate", "100");
+    color: explorer-color("slate", "900");
   }
 
   &__column-header {

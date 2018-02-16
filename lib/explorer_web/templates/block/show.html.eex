@@ -4,7 +4,8 @@
   </div>
   <div class="block__container">
     <div class="block__tabs">
-      <h2 class="block__tab block__tab--active"><%= gettext "Overview" %></h2>
+      <h2 class="block__tab block__tab--active"><%= link(gettext("Overview"), to: block_path(@conn, :show, @conn.assigns.locale, @block.number), class: "block__link block__link--active") %></h2>
+      <h2 class="block__tab"><%= link(gettext("Transactions"), to: block_transaction_path(@conn, :index, @conn.assigns.locale, @block.number), class: "block__link") %></h2>
     </div>
     <div class="block__attributes">
       <div class="block__column">

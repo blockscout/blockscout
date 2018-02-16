@@ -1,0 +1,12 @@
+%dot {
+  display: inline-block;
+  height: map-get(map-get($explorer-typography-styles, "body1"), "line-height") / 4;
+  width: map-get(map-get($explorer-typography-styles, "body1"), "line-height") / 4;
+  line-height: map-get(map-get($explorer-typography-styles, "body1"), "line-height");
+  border-radius: 50%;
+}
+
+%dot--pending { background-color: explorer-color("gray", "500"); }
+%dot--succeeded { background-color: explorer-color("green", "500"); }
+%dot--failed { background-color: explorer-color("red", "500"); }
+%dot--warned { background-color: explorer-color("yellow", "500"); }

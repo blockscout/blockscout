@@ -5,13 +5,13 @@
 
 %section-header__heading {
   @include explorer-typography("title");
-  color: explorer-color("gray", "500");
+  color: explorer-color("gray", "900");
   margin: 0;
 }
 
 %section-header__subheading {
   @include explorer-typography("body1");
-  color: explorer-color("slate", "100");
+  color: explorer-color("slate", "900");
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
@@ -19,7 +19,7 @@
 }
 
 %section-tabs {
-  border-bottom: 1px solid explorer-color("slate", "500");
+  border-bottom: 1px solid explorer-color("slate", "50");
   padding: 0 explorer-size(0);
 }
 
@@ -49,7 +49,7 @@
 }
 
 %section-list__item-value {
-  color: explorer-color("slate", "100");
+  color: explorer-color("slate", "900");
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;

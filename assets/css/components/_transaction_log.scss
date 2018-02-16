@@ -23,7 +23,7 @@
   &__table {
     @extend %table;
     @include explorer-typography("body1");
-    color: explorer-color("slate", "100");
+    color: explorer-color("slate", "900");
   }
 
   &__column-header { @include explorer-typography("body1"); }

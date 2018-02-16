@@ -19,7 +19,7 @@
 
 .container {
   @extend %explorer-container-height;
-  background: explorer-color("slate", "500");
+  background: explorer-color("slate", "50");
   padding-top: explorer-size(-1);
   padding-bottom: explorer-size(-1);
 

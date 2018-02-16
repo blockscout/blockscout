@@ -61,7 +61,9 @@ defmodule ExplorerWeb.Router do
     pipe_through :jasmine
     pipe_through :set_locale
     resources "/", ChainController, only: [:show], singleton: true, as: :chain
-    resources "/blocks", BlockController, only: [:index, :show]
+    resources "/blocks", BlockController, only: [:index, :show] do
+      resources "/transactions", BlockTransactionController, only: [:index], as: :transaction
+    end
     resources "/pending_transactions", PendingTransactionController, only: [:index]
     resources "/transactions", TransactionController, only: [:index, :show] do
       resources "/logs", TransactionLogController, only: [:index], as: :log

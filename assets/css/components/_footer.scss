@@ -1,7 +1,7 @@
 .footer {
   @include explorer-typography("body1");
   display: block;
-  background: explorer-color("slate", "100");
+  background: explorer-color("slate", "900");
   color: explorer-color("white");
   text-align: center;
   padding: explorer-size(-1) 0;

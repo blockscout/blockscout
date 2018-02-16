@@ -19,10 +19,10 @@
     @include explorer-typography("body1");
     display: block;
     line-height: 1;
-    color: lighten(explorer-color("gray", "300"), 10);
+    color: lighten(explorer-color("gray", "700"), 10);
     text-decoration: none;
     padding: explorer-size(-3) explorer-size(-3) + explorer-size(-5);
-    border: 1px solid lighten(explorer-color("gray", "300"), 10);
+    border: 1px solid lighten(explorer-color("gray", "500"), 10);
     border-radius: explorer-size(-5);
 
     &:hover,

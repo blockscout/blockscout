@@ -1,12 +1,16 @@
 defmodule Explorer.PendingTransactionForm do
   @moduledoc "Format a pending Transaction for display."
 
+  import ExplorerWeb.Gettext
+
   def build(transaction) do
     Map.merge(transaction, %{
       to_address_hash: transaction |> to_address_hash,
       from_address_hash: transaction |> from_address_hash,
       first_seen: transaction |> first_seen,
       last_seen: transaction |> last_seen,
+      status: :pending,
+      formatted_status: gettext("Pending")
     })
   end
 

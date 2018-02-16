@@ -27,7 +27,10 @@ defmodule ExplorerWeb.UserListTest do
       gas_used: 1010101,
       gas_limit: 5030101
     })
-    for _ <- 0..2, do: insert(:transaction) |> with_block(fifth_block) |> with_addresses
+    transaction = insert(:transaction, hash: "0xfaschtnacht") |> with_block(fifth_block) |> with_addresses
+    insert(:transaction, hash: "0xpaczki") |> with_block(fifth_block) |> with_addresses
+    insert(:transaction) |> with_block(fifth_block) |> with_addresses
+    insert(:receipt, transaction: transaction)
 
     session
     |> visit("/en")
@@ -41,6 +44,7 @@ defmodule ExplorerWeb.UserListTest do
     session
     |> click(link("Blocks"))
     |> assert_has(css(".blocks__column--height", text: "311"))
+
     |> click(link("311"))
     |> assert_has(css(".block__item", text: "0xMrCoolBlock"))
     |> assert_has(css(".block__item", text: "Heathcliff"))
@@ -49,6 +53,9 @@ defmodule ExplorerWeb.UserListTest do
     |> assert_has(css(".block__item", text: "5,030,101"))
     |> assert_has(css(".block__item", text: "once upon a nonce"))
     |> assert_has(css(".block__item", text: "1,010,101"))
+
+    |> click(css(".block__link", text: "Transactions"))
+    |> assert_has(css(".transactions__link--long-hash", text: "0xfaschtnacht"))
   end
 
   test "views transactions", %{session: session} do

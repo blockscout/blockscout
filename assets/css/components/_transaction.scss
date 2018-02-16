@@ -16,26 +16,20 @@
   &__item-key { @extend %section-list__item-key; }
   &__item-value { @extend %section-list__item-value; }
   &__link { color: explorer-color("blue", "500"); }
-  &__status {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  &__icon {
-    height: explorer-size(0)/2;
-    width: explorer-size(0)/2;
-    border-radius: explorer-size(0)/2;
-    margin-left: explorer-size(-2);
 
-    &--pending { background-color: explorer-color("slate", "500"); }
-    &--success { background-color: explorer-color("green", "500"); }
-    &--failure { background-color: explorer-color("red", "500"); }
-    &--out_of_gas { background-color: explorer-color("yellow", "500"); }
+  &__dot {
+    @extend %dot;
+    margin-left: explorer-size(-2);
+    vertical-align: baseline;
+
+    &--pending { @extend %dot--pending; }
+    &--success { @extend %dot--succeeded; }
+    &--failed { @extend %dot--failed; }
+    &--out_of_gas { @extend %dot--warned; }
   }
 }
 
 @media (min-width: $explorer-breakpoint-lg) {
-  &__icon { margin-left: explorer-size(-1); }
   .transaction {
     &__attributes {
       display: flex;
@@ -49,5 +43,7 @@
       margin-right: explorer-size(1);
       & + & { margin-left: explorer-size(1); }
     }
+
+    &__dot { margin-left: explorer-size(-1); }
   }
 }

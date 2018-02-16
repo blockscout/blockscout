@@ -12,7 +12,7 @@
         <table class="transactions__table">
           <thead class="transactions__header">
             <tr>
-              <th class="transactions__column-header"><%= gettext "Status" %></th>
+              <th class="transactions__column-header transactions__column-header--status"><span class="transactions__column-title transactions__column-title--status"><%= gettext "Status" %></span></th>
               <th class="transactions__column-header"><%= gettext "Hash" %></th>
               <th class="transactions__column-header transactions__column-header--optional"><%= gettext "Block" %></th>
               <th class="transactions__column-header"><%= gettext "Age" %></th>
@@ -24,11 +24,7 @@
           <tbody>
             <%= for transaction <- @transactions.entries do %>
               <tr class="transactions__row">
-                <td class="transactions__column">
-                  <div class="transactions__status">
-                    <div class="transactions__icon transactions__icon--<%= transaction.status %>"></div>
-                  </div>
-                </td>
+                <td class="transactions__column transactions__column--status"><div class="transactions__dot transactions__dot--<%= transaction.status %>"></div></td>
                 <td class="transactions__column transactions__column--hash">
                   <div class="transactions__hash"><%= link(transaction.hash, to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.hash), class: "transactions__link transactions__link--truncated transactions__link--long-hash") %></div>
                 </td>

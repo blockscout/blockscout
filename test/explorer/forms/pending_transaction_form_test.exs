@@ -17,6 +17,8 @@ defmodule Explorer.PendingTransactionFormTest do
         from_address_hash: "0xbee5",
         first_seen: time |> Timex.from_now(),
         last_seen: time |> Timex.from_now(),
+        status: :pending,
+        formatted_status: "Pending"
       }))
     end
   end

@@ -10,7 +10,7 @@
   &__headline-title,
   &__title {
     @include explorer-typography("title");
-    color: explorer-color("slate", "100");
+    color: explorer-color("slate", "900");
   }
 
   &__title { margin: 0; }
@@ -18,10 +18,17 @@
   &__table {
     @extend %table;
     @include explorer-typography("body1");
-    color: explorer-color("slate", "100");
+    color: explorer-color("slate", "900");
+
+    & > thead > tr > th.transactions__column-header--status {
+      border-bottom: 0 none;
+    }
   }
 
   &__column-header { @include explorer-typography("body1"); }
+  &__column-title {
+    &--status { display: none; }
+  }
   &__link {
     color: explorer-color("blue", "500");
 
@@ -37,7 +44,7 @@
       display: block;
       text-align: center;
       padding: explorer-size(-1) 0;
-      border-top: 1px solid explorer-color("slate", "500");
+      border-top: 1px solid explorer-color("slate", "50");
     }
 
     &--long-hash { max-width: explorer-size(2); }
@@ -54,6 +61,10 @@
   }
 
   &__column {
+    &--status {
+      width: explorer-size(-1);
+      text-align: center;
+    }
     &--optional { display: none; }
   }
 
@@ -67,26 +78,18 @@
   &__tab-link {
     color: explorer-color("blue", "500");
     text-decoration: none;
-    &--active { color: explorer-color("slate", "100"); }
+    &--active { color: explorer-color("slate", "900"); }
   }
 
   &__hash-container { height: 1rem; }
 
-  &__status {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  &__icon {
-    height: explorer-size(0)/2;
-    width: explorer-size(0)/2;
-    border-radius: explorer-size(0)/2;
-
-    &--pending { background-color: explorer-color("slate", "500"); }
-    &--success { background-color: explorer-color("green", "500"); }
-    &--failure { background-color: explorer-color("red", "500"); }
-    &--out_of_gas { background-color: explorer-color("yellow", "500"); }
+  &__dot {
+    @extend %dot;
+    vertical-align: baseline;
+    &--pending { @extend %dot--pending; }
+    &--success { @extend %dot--succeeded; }
+    &--failed { @extend %dot--failed; }
+    &--out_of_gas { @extend %dot--warned; }
   }
 }
 

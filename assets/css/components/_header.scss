@@ -1,8 +1,8 @@
 .header {
   @extend %explorer-header-min-height;
-  background: explorer-color("gray", "900");
-  box-shadow: 0 2px 2px 0 rgba(explorer-color("slate", "100"), 0.16),
-              0 0px 2px 0 rgba(explorer-color("slate", "100"), 0.12);
+  background: explorer-color("gray", "50");
+  box-shadow: 0 2px 2px 0 rgba(explorer-color("slate", "900"), 0.16),
+              0 0px 2px 0 rgba(explorer-color("slate", "900"), 0.12);
   position: fixed;
   top: 0;
   left: 0;
@@ -43,7 +43,7 @@
     border-left: explorer-size(-4) solid transparent;
     border-right: explorer-size(-4) solid transparent;
     padding: explorer-size(-3);
-    color: explorer-color("slate", "100");
+    color: explorer-color("slate", "900");
 
     &:hover {
       border-top-color: explorer-color("blue", "500");
