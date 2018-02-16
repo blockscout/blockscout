@@ -10,6 +10,7 @@ defmodule Mix.Tasks.Scrape.Blocks do
     [:postgrex, :ecto, :ethereumex, :tzdata]
     |> Enum.each(&Application.ensure_all_started/1)
     Repo.start_link()
+    Exq.start_link(mode: :enqueuer)
 
     "#{count}"
     |> String.to_integer()
