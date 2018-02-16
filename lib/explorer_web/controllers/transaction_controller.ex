@@ -18,7 +18,7 @@ defmodule ExplorerWeb.TransactionController do
         block: block, receipt: receipt,
         to_address: to_address, from_address: from_address],
       order_by: [desc: transaction.id],
-      limit: 100
+      limit: 10
     total_query = from transaction in Transaction,
       select: fragment("count(?)", transaction.id),
       inner_join: receipt in assoc(transaction, :receipt),
