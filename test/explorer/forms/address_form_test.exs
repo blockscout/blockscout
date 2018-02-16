@@ -6,7 +6,7 @@ defmodule Explorer.AddressFormTest do
   alias Explorer.Debit
 
   describe "build/1" do
-    test "that it has a balance" do
+    test "returns a balance" do
       address = insert(:address, %{hash: "bert"})
       insert(:transaction, value: 5) |> with_addresses(%{to: "bert", from: "ernie"})
       insert(:transaction, value: 5) |> with_addresses(%{to: "bert", from: "kermit"})
@@ -14,6 +14,14 @@ defmodule Explorer.AddressFormTest do
       Credit.refresh
       Debit.refresh
       assert AddressForm.build(Repo.preload(address, [:debit, :credit])).balance == Decimal.new(10)
+    end
+
+    test "returns a zero balance when the address does not have balances" do
+      address = insert(:address, %{hash: "bert"})
+      insert(:transaction, value: 5) |> with_addresses(%{to: "bert", from: "ernie"})
+      insert(:transaction, value: 5) |> with_addresses(%{to: "bert", from: "kermit"})
+
+      assert AddressForm.build(Repo.preload(address, [:debit, :credit])).balance == Decimal.new(0)
     end
   end
 end
