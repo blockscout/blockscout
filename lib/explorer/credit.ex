@@ -21,6 +21,6 @@ defmodule Explorer.Credit do
   end
 
   def refresh do
-    SQL.query!(Repo, "REFRESH MATERIALIZED VIEW CONCURRENTLY credits;", [])
+    SQL.query!(Repo, "REFRESH MATERIALIZED VIEW CONCURRENTLY credits;", [], timeout: 120_000)
   end
 end

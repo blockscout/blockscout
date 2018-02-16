@@ -21,6 +21,6 @@ defmodule Explorer.Debit do
   end
 
   def refresh do
-    SQL.query!(Repo, "REFRESH MATERIALIZED VIEW CONCURRENTLY debits;", [])
+    SQL.query!(Repo, "REFRESH MATERIALIZED VIEW CONCURRENTLY debits;", [], timeout: 120_000)
   end
 end
