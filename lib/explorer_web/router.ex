@@ -68,6 +68,9 @@ defmodule ExplorerWeb.Router do
     resources "/transactions", TransactionController, only: [:index, :show] do
       resources "/logs", TransactionLogController, only: [:index], as: :log
     end
-    resources "/addresses", AddressController, only: [:show]
+    resources "/addresses", AddressController, only: [:show] do
+      resources "/transactions", AddressTransactionController,
+        only: [:index], as: :transaction
+    end
   end
 end

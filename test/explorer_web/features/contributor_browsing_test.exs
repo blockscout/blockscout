@@ -121,5 +121,8 @@ defmodule ExplorerWeb.UserListTest do
 
     |> click(link("0xlincoln"))
     |> assert_has(css(".address__subheading", text: "0xlincoln"))
+
+    |> click(css(".address__link", text: "Transactions"))
+    |> assert_has(css(".transactions__link--long-hash", text: "0xSk8"))
   end
 end

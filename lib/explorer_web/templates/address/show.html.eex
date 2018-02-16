@@ -4,6 +4,10 @@
     <h3 class="address__subheading"><%= @address.hash %></h3>
   </div>
   <div class="address__container">
+    <div class="address__tabs">
+      <h2 class="address__tab address__tab--active"><%= link(gettext("Overview"), to: address_path(@conn, :show, @conn.assigns.locale, @address.hash), class: "address__link address__link--active") %></h2>
+      <h2 class="address__tab"><%= link(gettext("Transactions"), to: address_transaction_path(@conn, :index, @conn.assigns.locale, @address.hash), class: "address__link") %></h2>
+    </div>
     <div class="address__attributes">
       <dl>
         <div class="address__item">

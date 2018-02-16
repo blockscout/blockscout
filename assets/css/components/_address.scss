@@ -1,21 +1,47 @@
 .address {
+  &__container { @extend %paper; }
   &__header { @extend %section-header; }
   &__heading { @extend %section-header__heading; }
   &__subheading { @extend %section-header__subheading; }
   &__attributes {
-    @extend %paper;
     @include explorer-typography("body1");
     padding: explorer-size(-1) explorer-size(1);
   }
   &__item { @extend %section-list__item; }
   &__item-key { @extend %section-list__item-key; }
   &__item-value { @extend %section-list__item-value; }
+
+  &__tabs { @extend %section-tabs; }
+  &__tab {
+    @extend %section-tabs__tab;
+    &--active { @extend %section-tabs__tab--active; }
+  }
+
+  &__headline-title {
+    @include explorer-typography("title");
+    color: explorer-color("slate", "900");
+    margin: 0;
+    line-height: 18px;
+  }
+
+  &__link { color: explorer-color("blue", "500"); }
+
+  &__pagination {
+    margin: explorer-size(-1) 0 explorer-size(-2) 0;
+    .pagination { text-align: right; }
+  }
 }
 
-@media (min-width: $explorer-breakpoint-lg) {
+@media (min-width: $explorer-breakpoint-md) {
   .address {
-    &__container {
-      max-width: explorer-size(6);
+    &__headline {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    &__headline-title { flex: 1; }
+    &__pagination {
+      margin: explorer-size(-1) 0 explorer-size(-2) 0;
     }
   }
 }
