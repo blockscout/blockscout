@@ -1,6 +1,6 @@
 <section class="container__section">
   <div class="blocks__headline">
-    <h1 class="blocks__headline-title"><%= gettext("Showing #%{start_block} to #%{end_block}", start_block: List.last(@blocks.entries).number, end_block: List.first(@blocks.entries).number) %></h1>
+    <h1 class="blocks__headline-title"><%= gettext("Showing #%{start_block} to #%{end_block}", start_block: List.first(@blocks.entries).number, end_block: List.last(@blocks.entries).number) %></h1>
     <div class="blocks__pagination"><%= pagination_links @conn, @blocks, ["en"], view_style: :bulma, first: true, distance: 1, previous: Phoenix.HTML.raw("&lsaquo;"), next: Phoenix.HTML.raw("&rsaquo;"), path: &block_path/4 %></div>
   </div>
   <div class="blocks">
