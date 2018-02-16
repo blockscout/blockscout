@@ -6,12 +6,12 @@ defmodule ExplorerWeb.TransactionLogController do
   alias Explorer.Log
   alias Explorer.Repo.NewRelic, as: Repo
 
-  def index(conn, params) do
-    hash = params["transaction_id"]
+  def index(conn, %{"transaction_id" => transaction_id}) do
+    hash = String.downcase(transaction_id)
     logs = from log in Log,
       join: transaction in assoc(log, :transaction),
       preload: [:address],
-      where: transaction.hash == ^hash
+      where: fragment("lower(?)", transaction.hash) == ^hash
     render(conn, "index.html", logs: Repo.paginate(logs), transaction_id: hash)
   end
 end

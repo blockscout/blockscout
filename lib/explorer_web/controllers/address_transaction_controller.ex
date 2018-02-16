@@ -7,7 +7,8 @@ defmodule ExplorerWeb.AddressTransactionController do
   alias Explorer.Transaction
   alias Explorer.TransactionForm
 
-  def index(conn, %{"address_id" => hash} = params) do
+  def index(conn, %{"address_id" => address_id} = params) do
+    hash = String.downcase(address_id)
     query = from transaction in Transaction,
       join: block in assoc(transaction, :block),
       join: receipt in assoc(transaction, :receipt),
