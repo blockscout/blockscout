@@ -10,9 +10,9 @@ defmodule Explorer.Repo.Migrations.CreateBalancesViews do
         COALESCE(MIN(transactions.inserted_at), NOW()) AS inserted_at,
         COALESCE(MAX(transactions.inserted_at), NOW()) AS updated_at
       FROM addresses
-      LEFT OUTER JOIN to_addresses ON to_addresses.address_id = addresses.id
-      LEFT OUTER JOIN transactions ON transactions.id = to_addresses.transaction_id
-      LEFT OUTER JOIN receipts ON receipts.transaction_id = transactions.id AND receipts.status = 1
+      INNER JOIN to_addresses ON to_addresses.address_id = addresses.id
+      INNER JOIN transactions ON transactions.id = to_addresses.transaction_id
+      INNER JOIN receipts ON receipts.transaction_id = transactions.id AND receipts.status = 1
       GROUP BY addresses.id
     ;
     """
@@ -25,9 +25,9 @@ defmodule Explorer.Repo.Migrations.CreateBalancesViews do
         COALESCE(MIN(transactions.inserted_at), NOW()) AS inserted_at,
         COALESCE(MAX(transactions.inserted_at), NOW()) AS updated_at
       FROM addresses
-      LEFT OUTER JOIN from_addresses ON from_addresses.address_id = addresses.id
-      LEFT OUTER JOIN transactions ON transactions.id = from_addresses.transaction_id
-      LEFT OUTER JOIN receipts ON receipts.transaction_id = transactions.id AND receipts.status = 1
+      INNER JOIN from_addresses ON from_addresses.address_id = addresses.id
+      INNER JOIN transactions ON transactions.id = from_addresses.transaction_id
+      INNER JOIN receipts ON receipts.transaction_id = transactions.id AND receipts.status = 1
       GROUP BY addresses.id
     ;
     """

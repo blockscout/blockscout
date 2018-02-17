@@ -8,17 +8,10 @@ defmodule Explorer.DebitTest do
       assert Repo.all(Debit) == []
     end
 
-    test "returns a debit when there is an address" do
-      address = insert(:address)
-      Debit.refresh
-      debit = Debit |> preload([:address]) |> Repo.one
-      assert debit.address == address
-    end
-
-    test "returns zero debits when an address has no transactions" do
+    test "returns nothing when an address has no transactions" do
       insert(:address)
       Debit.refresh
-      assert Repo.one(Debit).value == Decimal.new(0)
+      assert Repo.one(Debit) == nil
     end
 
     test "returns a debit when there is an address with a receipt" do
@@ -30,7 +23,7 @@ defmodule Explorer.DebitTest do
       insert(:to_address, transaction: transaction, address: receipient)
       Debit.refresh
       debits = Debit |> Repo.all
-      assert debits |> Enum.count == 2
+      assert debits |> Enum.count == 1
     end
 
     test "returns a debit against the sender" do
@@ -46,7 +39,7 @@ defmodule Explorer.DebitTest do
       assert debit.value == Decimal.new(21)
     end
 
-    test "returns no debit against the receipient" do
+    test "returns no debits against the receipient" do
       receipient = insert(:address)
       sender = insert(:address)
       transaction = insert(:transaction, value: 21)
@@ -56,7 +49,7 @@ defmodule Explorer.DebitTest do
       address_id = receipient.id
       Debit.refresh
       debit = Debit |> where(address_id: ^address_id) |> Repo.one
-      assert debit.value == Decimal.new(0)
+      assert debit == nil
     end
   end
 end

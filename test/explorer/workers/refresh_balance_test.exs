@@ -13,6 +13,7 @@ defmodule Explorer.Workers.RefreshBalanceTest do
         address = insert(:address)
         transaction = insert(:transaction, value: 20)
         insert(:to_address, address: address, transaction: transaction)
+        insert(:receipt, transaction: transaction, status: 1)
         RefreshBalance.perform
         assert Repo.one(Credit).value == Decimal.new(20)
       end
@@ -23,6 +24,7 @@ defmodule Explorer.Workers.RefreshBalanceTest do
         address = insert(:address)
         transaction = insert(:transaction, value: 20)
         insert(:from_address, address: address, transaction: transaction)
+        insert(:receipt, transaction: transaction, status: 1)
         RefreshBalance.perform
         assert Repo.one(Debit).value == Decimal.new(20)
       end
@@ -34,6 +36,7 @@ defmodule Explorer.Workers.RefreshBalanceTest do
       address = insert(:address)
       transaction = insert(:transaction, value: 20)
       insert(:to_address, address: address, transaction: transaction)
+      insert(:receipt, transaction: transaction, status: 1)
       RefreshBalance.perform("credit")
       assert Repo.one(Credit).value == Decimal.new(20)
     end
@@ -42,6 +45,7 @@ defmodule Explorer.Workers.RefreshBalanceTest do
       address = insert(:address)
       transaction = insert(:transaction, value: 20)
       insert(:from_address, address: address, transaction: transaction)
+      insert(:receipt, transaction: transaction, status: 1)
       RefreshBalance.perform("debit")
       assert Repo.one(Debit).value == Decimal.new(20)
     end
