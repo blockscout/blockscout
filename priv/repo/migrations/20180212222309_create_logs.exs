@@ -22,6 +22,6 @@ defmodule Explorer.Repo.Migrations.CreateLogs do
     create index(:logs, :third_topic)
     create index(:logs, :fourth_topic)
     create index(:logs, :address_id)
-    create unique_index(:logs, :receipt_id)
+    create unique_index(:logs, [:receipt_id, :index])
   end
 end
