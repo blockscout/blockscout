@@ -75,5 +75,10 @@ defmodule ExplorerWeb.ChainControllerTest do
 
       assert redirected_to(conn) == address_path(conn, :show, "en", address.hash)
     end
+
+    test "redirects to 404 when it finds nothing", %{conn: conn} do
+      conn = get conn, "en/search?q=zaphod"
+      assert conn.status == 404
+    end
   end
 end

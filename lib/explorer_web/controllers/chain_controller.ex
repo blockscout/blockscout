@@ -12,7 +12,9 @@ defmodule ExplorerWeb.ChainController do
     case Resource.lookup(query) do
       nil ->
         conn
-        |> render(ExplorerWeb.ErrorView, "404.html")
+        |> put_status(:not_found)
+        |> put_view(ExplorerWeb.ErrorView)
+        |> render("404.html")
       item ->
         redirect_search_results(conn, item)
     end
