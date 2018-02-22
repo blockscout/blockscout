@@ -75,5 +75,6 @@ defmodule ExplorerWeb.Router do
       resources "/transactions_from", AddressTransactionFromController,
         only: [:index], as: :transaction_from
     end
+    get "/search", ChainController, :search
   end
 end

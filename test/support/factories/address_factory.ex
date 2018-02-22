@@ -3,7 +3,7 @@ defmodule Explorer.AddressFactory do
     quote do
       def address_factory do
         %Explorer.Address{
-          hash: sequence("0x"),
+          hash: String.pad_trailing(sequence("0x"), 42, "address")
         }
       end
     end

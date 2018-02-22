@@ -18,6 +18,36 @@ defmodule ExplorerWeb.UserListTest do
     |> assert_has(css("main", text: "Blocks"))
   end
 
+  test "search for blocks", %{session: session} do
+    insert(:block, number: 42, miner: "mittens")
+
+    session
+    |> visit("/")
+    |> fill_in(css(".search-box__input"), with: "42")
+    |> send_keys([:enter])
+    |> assert_has(css(".block__item", text: "mittens"))
+  end
+
+  test "search for transactions", %{session: session} do
+    insert(:transaction, hash: "0xdeadbeef000000000000000000000000000000000", input: "socks") |> with_addresses()
+
+    session
+    |> visit("/")
+    |> fill_in(css(".search-box__input"), with: "0xdeadbeef000000000000000000000000000000000")
+    |> send_keys([:enter])
+    |> assert_has(css(".transaction__item", text: "socks"))
+  end
+
+  test "search for address", %{session: session} do
+    insert(:address, hash: "0xBAADF00D00000000000000000000000000000000")
+
+    session
+    |> visit("/")
+    |> fill_in(css(".search-box__input"), with: "0xBAADF00D00000000000000000000000000000000")
+    |> send_keys([:enter])
+    |> assert_has(css(".address__subheading", text: "0xBAADF00D00000000000000000000000000000000"))
+  end
+
   test "views blocks", %{session: session} do
     insert_list(4, :block, %{number: 1, timestamp: Timex.now |> Timex.shift(hours: -1), gas_used: 10})
     fifth_block = insert(:block, %{

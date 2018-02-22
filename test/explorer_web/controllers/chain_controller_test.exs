@@ -1,7 +1,7 @@
 defmodule ExplorerWeb.ChainControllerTest do
   use ExplorerWeb.ConnCase
 
-  import ExplorerWeb.Router.Helpers, only: [chain_path: 3]
+  import ExplorerWeb.Router.Helpers, only: [chain_path: 3, block_path: 4, transaction_path: 4, address_path: 4]
 
   describe "GET index/2 without a locale" do
     test "redirects to the en locale", %{conn: conn} do
@@ -51,6 +51,29 @@ defmodule ExplorerWeb.ChainControllerTest do
       conn = get conn, "/en"
 
       assert(List.first(conn.assigns.chain.transactions).hash == "0xDECAFBAD")
+    end
+  end
+
+  describe "GET q/2" do
+    test "finds a block by block number", %{conn: conn} do
+      insert(:block, number: 37)
+      conn = get conn, "/en/search?q=37"
+
+      assert redirected_to(conn) == block_path(conn, :show, "en", "37")
+    end
+
+    test "finds a transaction by hash", %{conn: conn} do
+      transaction = insert(:transaction) |> with_block() |> with_addresses
+      conn = get conn, "/en/search?q=#{transaction.hash}"
+
+      assert redirected_to(conn) == transaction_path(conn, :show, "en", transaction.hash)
+    end
+
+    test "finds an address by hash", %{conn: conn} do
+      address = insert(:address)
+      conn = get conn, "en/search?q=#{address.hash}"
+
+      assert redirected_to(conn) == address_path(conn, :show, "en", address.hash)
     end
   end
 end

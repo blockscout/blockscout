@@ -7,7 +7,7 @@ defmodule Explorer.TransactionFactory do
 
       def transaction_factory do
         %Explorer.Transaction{
-          hash: sequence("0x"),
+          hash: String.pad_trailing(sequence("0x"), 43, "action"),
           value: Enum.random(1..100_000),
           gas: Enum.random(21_000..100_000),
           gas_price: Enum.random(10..99) * 1_000_000_00,
