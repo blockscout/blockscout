@@ -18,6 +18,36 @@
       flex-direction: row-reverse;
       padding-right: explorer-size(0);
     }
+    &--search {
+      @include explorer-typography("body1");
+      padding-left: explorer-size(0);
+    }
+
+    &--search-form {
+      position: relative;
+    }
+
+    &--search-glass {
+      height: 16px;
+      width: 16px;
+      position: absolute;
+      top: 14px;
+      left: 16px;
+      opacity: 0.5;
+    }
+
+    &--search-input {
+      width: 100%;
+      border: none;
+      background-color: transparent;
+      height: explorer-size(1);
+      padding-left: explorer-size(1);
+      padding-right: explorer-size(-1);
+    }
+
+    &--search-input[placeholder] {
+      text-overflow: ellipsis;
+    }
   }
 
   &__logo-link {

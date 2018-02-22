@@ -23,7 +23,7 @@ defmodule ExplorerWeb.UserListTest do
 
     session
     |> visit("/")
-    |> fill_in(css(".search-box__input"), with: "42")
+    |> fill_in(css(".header__cell--search-input"), with: "42")
     |> send_keys([:enter])
     |> assert_has(css(".block__item", text: "mittens"))
   end
@@ -33,7 +33,7 @@ defmodule ExplorerWeb.UserListTest do
 
     session
     |> visit("/")
-    |> fill_in(css(".search-box__input"), with: "0xdeadbeef000000000000000000000000000000000")
+    |> fill_in(css(".header__cell--search-input"), with: "0xdeadbeef000000000000000000000000000000000")
     |> send_keys([:enter])
     |> assert_has(css(".transaction__item", text: "socks"))
   end
@@ -43,7 +43,7 @@ defmodule ExplorerWeb.UserListTest do
 
     session
     |> visit("/")
-    |> fill_in(css(".search-box__input"), with: "0xBAADF00D00000000000000000000000000000000")
+    |> fill_in(css(".header__cell--search-input"), with: "0xBAADF00D00000000000000000000000000000000")
     |> send_keys([:enter])
     |> assert_has(css(".address__subheading", text: "0xBAADF00D00000000000000000000000000000000"))
   end

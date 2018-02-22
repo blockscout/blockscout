@@ -7,8 +7,9 @@
         </a>
       </td>
       <td class="header__cell header__cell--search">
-        <%= form_for @conn, chain_path(@conn, :search, Gettext.get_locale), [class: "search-box", method: :get, enforce_utf8: false], fn f -> %>
-          <%= search_input f, :q, class: 'search-box__input' %>
+        <%= form_for @conn, chain_path(@conn, :search, Gettext.get_locale), [class: "header__cell--search-form", method: :get, enforce_utf8: false], fn f -> %>
+          <%= img_tag :svg, src: static_path(@conn, "/images/mgi.svg"), class: "header__cell--search-glass" %>
+          <%= search_input f, :q, class: 'header__cell--search-input', placeholder: gettext "Search by address, transaction hash, or block number" %>
         <% end %>
       </td>
       <td class="header__cell header__cell--links" align="right">
