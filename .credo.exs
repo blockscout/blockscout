@@ -33,7 +33,7 @@
       # If you want to enforce a style guide and need a more traditional linting
       # experience, you can change `strict` to `true` below:
       #
-      strict: true,
+      strict: false,
       #
       # If you want to use uncolored output by default, you can change `color`
       # to `false` below:
@@ -77,7 +77,7 @@
 
         {Credo.Check.Readability.FunctionNames},
         {Credo.Check.Readability.LargeNumbers},
-        {Credo.Check.Readability.MaxLineLength, priority: :low, max_length: 80},
+        {Credo.Check.Readability.MaxLineLength, priority: :low, max_length: 100},
         {Credo.Check.Readability.ModuleAttributeNames},
         {Credo.Check.Readability.ModuleDoc},
         {Credo.Check.Readability.ModuleNames},
