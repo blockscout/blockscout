@@ -8,8 +8,10 @@ defmodule ExplorerWeb.InternalTransactionController do
 
     internal_transactions = Transaction.internal_transactions(hash)
 
-    render(conn,
-           internal_transactions: internal_transactions,
-           transaction_hash: hash)
+    render(
+      conn,
+      internal_transactions: internal_transactions,
+      transaction_hash: hash
+    )
   end
 end

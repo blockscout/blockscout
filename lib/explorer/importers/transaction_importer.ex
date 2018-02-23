@@ -23,14 +23,18 @@ defmodule Explorer.TransactionImporter do
   def persist_transaction(raw_transaction) do
     found_transaction = raw_transaction["hash"] |> find()
 
-    transaction = case is_nil(found_transaction.id) do
-      false -> found_transaction
-      true ->
-        changes = extract_attrs(raw_transaction)
-        found_transaction |> Transaction.changeset(changes) |> Repo.insert!
-    end
+    transaction =
+      case is_nil(found_transaction.id) do
+        false ->
+          found_transaction
+
+        true ->
+          changes = extract_attrs(raw_transaction)
+          found_transaction |> Transaction.changeset(changes) |> Repo.insert!()
+      end
 
     to_address = raw_transaction["to"] || raw_transaction["creates"]
+
     transaction
     |> create_from_address(raw_transaction["from"])
     |> create_to_address(to_address)
@@ -38,10 +42,14 @@ defmodule Explorer.TransactionImporter do
   end
 
   def find(hash) do
-    query = from t in Transaction,
-      where: fragment("lower(?)", t.hash) == ^String.downcase(hash),
-      limit: 1
-    (query |> Repo.one()) || %Transaction{}
+    query =
+      from(
+        t in Transaction,
+        where: fragment("lower(?)", t.hash) == ^String.downcase(hash),
+        limit: 1
+      )
+
+    query |> Repo.one() || %Transaction{}
   end
 
   def download_transaction(hash) do
@@ -62,27 +70,33 @@ defmodule Explorer.TransactionImporter do
       s: raw_transaction["s"],
       standard_v: raw_transaction["standardV"],
       transaction_index: raw_transaction["transactionIndex"],
-      v: raw_transaction["v"],
+      v: raw_transaction["v"]
     }
   end
 
   def create_block_transaction(transaction, hash) do
-    query = from t in Block,
-      where: fragment("lower(?)", t.hash) == ^String.downcase(hash),
-      limit: 1
+    query =
+      from(
+        t in Block,
+        where: fragment("lower(?)", t.hash) == ^String.downcase(hash),
+        limit: 1
+      )
+
     block = query |> Repo.one()
 
     if block do
       changes = %{block_id: block.id, transaction_id: transaction.id}
+
       case Repo.get_by(BlockTransaction, transaction_id: transaction.id) do
         nil ->
           %BlockTransaction{}
           |> BlockTransaction.changeset(changes)
-          |> Repo.insert
+          |> Repo.insert()
+
         block_transaction ->
           block_transaction
           |> BlockTransaction.changeset(%{block_id: block.id})
-          |> Repo.update
+          |> Repo.update()
       end
     end
 

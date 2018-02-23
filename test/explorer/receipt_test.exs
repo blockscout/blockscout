@@ -33,7 +33,7 @@ defmodule Explorer.ReceiptTest do
       log_params = params_for(:log, address: address)
       params = params_for(:receipt, transaction: transaction, logs: [log_params])
       changeset = Receipt.changeset(%Receipt{}, params)
-      receipt = Repo.insert!(changeset) |> Repo.preload([logs: :address])
+      receipt = Repo.insert!(changeset) |> Repo.preload(logs: :address)
       assert List.first(receipt.logs).address == address
     end
   end

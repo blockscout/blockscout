@@ -11,18 +11,16 @@ defmodule Explorer.Chain do
   alias Explorer.Repo, as: Repo
   alias Timex.Duration
 
-  defstruct [
-    number: -1,
-    timestamp: :calendar.universal_time(),
-    average_time: %Duration{seconds: 0, megaseconds: 0, microseconds: 0},
-    lag: %Duration{seconds: 0, megaseconds: 0, microseconds: 0},
-    transaction_count: 0,
-    skipped_blocks: 0,
-    block_velocity: 0,
-    transaction_velocity: 0,
-    blocks: [],
-    transactions: []
-  ]
+  defstruct number: -1,
+            timestamp: :calendar.universal_time(),
+            average_time: %Duration{seconds: 0, megaseconds: 0, microseconds: 0},
+            lag: %Duration{seconds: 0, megaseconds: 0, microseconds: 0},
+            transaction_count: 0,
+            skipped_blocks: 0,
+            block_velocity: 0,
+            transaction_velocity: 0,
+            blocks: [],
+            transactions: []
 
   @average_time_query """
     SELECT coalesce(avg(difference), interval '0 seconds')
@@ -71,19 +69,26 @@ defmodule Explorer.Chain do
   """
 
   def fetch do
-    blocks = from block in Block,
-      order_by: [desc: block.number],
-      preload: :transactions,
-      limit: 5
+    blocks =
+      from(
+        block in Block,
+        order_by: [desc: block.number],
+        preload: :transactions,
+        limit: 5
+      )
 
-    transactions = from transaction in Transaction,
-      join: block in assoc(transaction, :block),
-      order_by: [desc: block.number],
-      preload: [block: block],
-      limit: 5
+    transactions =
+      from(
+        transaction in Transaction,
+        join: block in assoc(transaction, :block),
+        order_by: [desc: block.number],
+        preload: [block: block],
+        limit: 5
+      )
 
     last_block = Block |> Block.latest() |> limit(1) |> Repo.one()
-    latest_block = last_block || Block.null
+    latest_block = last_block || Block.null()
+
     %Explorer.Chain{
       number: latest_block.number,
       timestamp: latest_block.timestamp,
@@ -105,10 +110,13 @@ defmodule Explorer.Chain do
 
   defp query_duration(query) do
     results = SQL.query!(Repo, query, [])
-    {:ok, value} = results.rows
+
+    {:ok, value} =
+      results.rows
       |> List.first()
       |> List.first()
       |> Timex.Ecto.Time.load()
+
     value
   end
 end

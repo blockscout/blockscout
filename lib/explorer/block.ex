@@ -12,24 +12,26 @@ defmodule Explorer.Block do
   alias Explorer.BlockTransaction
   alias Explorer.Transaction
 
-  @timestamps_opts [type: Timex.Ecto.DateTime,
-                    autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}]
+  @timestamps_opts [
+    type: Timex.Ecto.DateTime,
+    autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}
+  ]
 
   schema "blocks" do
-    has_many :block_transactions, BlockTransaction
-    many_to_many :transactions, Transaction, join_through: "block_transactions"
+    has_many(:block_transactions, BlockTransaction)
+    many_to_many(:transactions, Transaction, join_through: "block_transactions")
 
-    field :number, :integer
-    field :hash, :string
-    field :parent_hash, :string
-    field :nonce, :string
-    field :miner, :string
-    field :difficulty, :decimal
-    field :total_difficulty, :decimal
-    field :size, :integer
-    field :gas_limit, :integer
-    field :gas_used, :integer
-    field :timestamp, Timex.Ecto.DateTime
+    field(:number, :integer)
+    field(:hash, :string)
+    field(:parent_hash, :string)
+    field(:nonce, :string)
+    field(:miner, :string)
+    field(:difficulty, :decimal)
+    field(:total_difficulty, :decimal)
+    field(:size, :integer)
+    field(:gas_limit, :integer)
+    field(:gas_used, :integer)
+    field(:timestamp, Timex.Ecto.DateTime)
     timestamps()
   end
 

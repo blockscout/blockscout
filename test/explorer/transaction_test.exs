@@ -5,7 +5,22 @@ defmodule Explorer.TransactionTest do
 
   describe "changeset/2" do
     test "with valid attributes" do
-      changeset = Transaction.changeset(%Transaction{}, %{hash: "0x0", value: 1, gas: 21000, gas_price: 10000, input: "0x5c8eff12", nonce: "31337", public_key: "0xb39af9c", r: "0x9", s: "0x10", standard_v: "0x11", transaction_index: "0x12", v: "0x13"})
+      changeset =
+        Transaction.changeset(%Transaction{}, %{
+          hash: "0x0",
+          value: 1,
+          gas: 21000,
+          gas_price: 10000,
+          input: "0x5c8eff12",
+          nonce: "31337",
+          public_key: "0xb39af9c",
+          r: "0x9",
+          s: "0x10",
+          standard_v: "0x11",
+          transaction_index: "0x12",
+          v: "0x13"
+        })
+
       assert changeset.valid?
     end
 

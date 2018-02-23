@@ -30,11 +30,12 @@ defmodule Explorer.ChainTest do
       insert(:block, timestamp: time)
       insert(:block, timestamp: next_time)
       chain = Chain.fetch()
+
       assert chain.average_time == %Duration{
-        seconds: 5,
-        megaseconds: 0,
-        microseconds: 0
-      }
+               seconds: 5,
+               megaseconds: 0,
+               microseconds: 0
+             }
     end
 
     test "returns the count of transactions from blocks in the last day" do
@@ -89,10 +90,12 @@ defmodule Explorer.ChainTest do
 
     test "returns the last five transactions with blocks" do
       block = insert(:block)
+
       insert_list(6, :transaction)
-      |> Enum.map(fn (transaction) ->
+      |> Enum.map(fn transaction ->
         insert(:block_transaction, block: block, transaction: transaction)
       end)
+
       chain = Chain.fetch()
       assert chain.transactions |> Enum.count() == 5
     end

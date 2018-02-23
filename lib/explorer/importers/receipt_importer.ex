@@ -11,6 +11,7 @@ defmodule Explorer.ReceiptImporter do
 
   def import(hash) do
     transaction = hash |> find_transaction()
+
     hash
     |> download_receipt()
     |> extract_receipt()
@@ -25,12 +26,16 @@ defmodule Explorer.ReceiptImporter do
   end
 
   defp find_transaction(hash) do
-    query = from transaction in Transaction,
-      left_join: receipt in assoc(transaction, :receipt),
-      where: fragment("lower(?)", transaction.hash) == ^hash,
-      where: is_nil(receipt.id),
-      limit: 1
-    Repo.one(query) || Transaction.null
+    query =
+      from(
+        transaction in Transaction,
+        left_join: receipt in assoc(transaction, :receipt),
+        where: fragment("lower(?)", transaction.hash) == ^hash,
+        where: is_nil(receipt.id),
+        limit: 1
+      )
+
+    Repo.one(query) || Transaction.null()
   end
 
   defp save_receipt(receipt) do
@@ -43,6 +48,7 @@ defmodule Explorer.ReceiptImporter do
 
   defp extract_receipt(receipt) do
     logs = receipt["logs"] || []
+
     %{
       index: receipt["transactionIndex"] |> decode_integer_field(),
       cumulative_gas_used: receipt["cumulativeGasUsed"] |> decode_integer_field(),
@@ -54,6 +60,7 @@ defmodule Explorer.ReceiptImporter do
 
   defp extract_log(log) do
     address = Address.find_or_create_by_hash(log["address"])
+
     %{
       address_id: address.id,
       index: log["logIndex"] |> decode_integer_field(),
@@ -62,12 +69,13 @@ defmodule Explorer.ReceiptImporter do
       first_topic: log["topics"] |> Enum.at(0),
       second_topic: log["topics"] |> Enum.at(1),
       third_topic: log["topics"] |> Enum.at(2),
-      fourth_topic: log["topics"] |> Enum.at(3),
+      fourth_topic: log["topics"] |> Enum.at(3)
     }
   end
 
   defp decode_integer_field("0x" <> hex) when is_binary(hex) do
     String.to_integer(hex, 16)
   end
+
   defp decode_integer_field(field), do: field
 end

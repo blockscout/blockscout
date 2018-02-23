@@ -9,21 +9,23 @@ defmodule Explorer.InternalTransaction do
   alias Explorer.Transaction
   alias Explorer.Address
 
-  @timestamps_opts [type: Timex.Ecto.DateTime,
-                    autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}]
+  @timestamps_opts [
+    type: Timex.Ecto.DateTime,
+    autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}
+  ]
 
   schema "internal_transactions" do
-    belongs_to :transaction, Transaction
-    belongs_to :from_address, Address
-    belongs_to :to_address, Address
-    field :index, :integer
-    field :call_type, :string
-    field :trace_address, {:array, :integer}
-    field :value, :decimal
-    field :gas, :decimal
-    field :gas_used, :decimal
-    field :input, :string
-    field :output, :string
+    belongs_to(:transaction, Transaction)
+    belongs_to(:from_address, Address)
+    belongs_to(:to_address, Address)
+    field(:index, :integer)
+    field(:call_type, :string)
+    field(:trace_address, {:array, :integer})
+    field(:value, :decimal)
+    field(:gas, :decimal)
+    field(:gas_used, :decimal)
+    field(:input, :string)
+    field(:output, :string)
     timestamps()
   end
 

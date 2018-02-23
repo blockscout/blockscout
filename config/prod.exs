@@ -18,9 +18,17 @@ config :explorer, ExplorerWeb.Endpoint,
   force_ssl: [rewrite_on: [:x_forwarded_proto]],
   instrumenters: [NewRelixir.Instrumenters.Phoenix],
   load_from_system_env: true,
-  pubsub: [adapter: Phoenix.PubSub.Redis, url: System.get_env("REDIS_URL"), node_name: System.get_env("DYNO")],
+  pubsub: [
+    adapter: Phoenix.PubSub.Redis,
+    url: System.get_env("REDIS_URL"),
+    node_name: System.get_env("DYNO")
+  ],
   secret_key_base: System.get_env("SECRET_KEY_BASE"),
-  url: [scheme: "https", host: Map.fetch!(System.get_env(), "HEROKU_APP_NAME") <> ".herokuapp.com", port: 443]
+  url: [
+    scheme: "https",
+    host: Map.fetch!(System.get_env(), "HEROKU_APP_NAME") <> ".herokuapp.com",
+    port: 443
+  ]
 
 # Do not print debug messages in production
 config :logger, level: :info
@@ -42,16 +50,29 @@ config :new_relixir,
   active: true
 
 # Configure Web3
-config :ethereumex,
-  url: System.get_env("ETHEREUM_URL")
+config :ethereumex, url: System.get_env("ETHEREUM_URL")
 
 # Configure Quantum
 config :explorer, Explorer.Scheduler,
   jobs: [
-    [schedule: {:extended, System.get_env("EXQ_BALANCE_SCHEDULE") || "0 * * * * *"}, task: {Explorer.Workers.RefreshBalance, :perform_later, []}],
-    [schedule: {:extended, System.get_env("EXQ_LATEST_BLOCK_SCHEDULE") || "* * * * * *"}, task: {Explorer.Workers.ImportBlock, :perform_later, ["latest"]}],
-    [schedule: {:extended, System.get_env("EXQ_PENDING_BLOCK_SCHEDULE") || "* * * * * *"}, task: {Explorer.Workers.ImportBlock, :perform_later, ["pending"]}],
-    [schedule: {:extended, System.get_env("EXQ_BACKFILL_SCHEDULE") || "* * * * * *"}, task: {Explorer.Workers.ImportSkippedBlocks, :perform_later, [String.to_integer(System.get_env("EXQ_BACKFILL_BATCH_SIZE") || "1")]}],
+    [
+      schedule: {:extended, System.get_env("EXQ_BALANCE_SCHEDULE") || "0 * * * * *"},
+      task: {Explorer.Workers.RefreshBalance, :perform_later, []}
+    ],
+    [
+      schedule: {:extended, System.get_env("EXQ_LATEST_BLOCK_SCHEDULE") || "* * * * * *"},
+      task: {Explorer.Workers.ImportBlock, :perform_later, ["latest"]}
+    ],
+    [
+      schedule: {:extended, System.get_env("EXQ_PENDING_BLOCK_SCHEDULE") || "* * * * * *"},
+      task: {Explorer.Workers.ImportBlock, :perform_later, ["pending"]}
+    ],
+    [
+      schedule: {:extended, System.get_env("EXQ_BACKFILL_SCHEDULE") || "* * * * * *"},
+      task:
+        {Explorer.Workers.ImportSkippedBlocks, :perform_later,
+         [String.to_integer(System.get_env("EXQ_BACKFILL_BATCH_SIZE") || "1")]}
+    ]
   ]
 
 # Configure Exq

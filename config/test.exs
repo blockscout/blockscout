@@ -21,9 +21,7 @@ config :explorer, Explorer.Repo,
   ownership_timeout: 60_000
 
 # Configure wallaby
-config :wallaby,
-  screenshot_on_failure: true
+config :wallaby, screenshot_on_failure: true
 
 # Configure ethereumex
-config :ethereumex,
-  url: "https://sokol-trace.poa.network"
+config :ethereumex, url: "https://sokol-trace.poa.network"

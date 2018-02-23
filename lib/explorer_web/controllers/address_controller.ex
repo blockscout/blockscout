@@ -9,10 +9,14 @@ defmodule ExplorerWeb.AddressController do
 
   def show(conn, %{"id" => id}) do
     hash = String.downcase(id)
-    query = from address in Address,
-      where: fragment("lower(?)", address.hash) == ^hash,
-      preload: [:credit, :debit],
-      limit: 1
+
+    query =
+      from(
+        address in Address,
+        where: fragment("lower(?)", address.hash) == ^hash,
+        preload: [:credit, :debit],
+        limit: 1
+      )
 
     address = Repo.one(query)
     render(conn, "show.html", address: AddressForm.build(address))

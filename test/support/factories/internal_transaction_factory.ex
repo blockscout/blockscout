@@ -9,11 +9,11 @@ defmodule Explorer.InternalTransactionFactory do
           from_address_id: insert(:address).id,
           to_address_id: insert(:address).id,
           transaction_id: insert(:transaction).id,
-          value: Enum.random(1..100_000), 
-          gas: Enum.random(1..100_000), 
+          value: Enum.random(1..100_000),
+          gas: Enum.random(1..100_000),
           gas_used: Enum.random(1..100_000),
           input: sequence("0x"),
-          output: sequence("0x"),
+          output: sequence("0x")
         }
       end
     end

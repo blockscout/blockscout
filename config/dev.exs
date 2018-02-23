@@ -11,8 +11,14 @@ config :explorer, ExplorerWeb.Endpoint,
   debug_errors: true,
   code_reloader: true,
   check_origin: false,
-  watchers: [node: ["node_modules/brunch/bin/brunch", "watch", "--stdin",
-                    cd: Path.expand("../assets", __DIR__)]]
+  watchers: [
+    node: [
+      "node_modules/brunch/bin/brunch",
+      "watch",
+      "--stdin",
+      cd: Path.expand("../assets", __DIR__)
+    ]
+  ]
 
 # ## SSL Support
 #
@@ -58,10 +64,22 @@ config :explorer, Explorer.Repo,
 # Configure Quantum
 config :explorer, Explorer.Scheduler,
   jobs: [
-    [schedule: {:extended, "*/15 * * * * *"}, task: {Explorer.Workers.RefreshBalance, :perform_later, []}],
-    [schedule: {:extended, "*/5 * * * * *"}, task: {Explorer.Workers.ImportBlock, :perform_later, ["latest"]}],
-    [schedule: {:extended, "*/5 * * * * *"}, task: {Explorer.Workers.ImportBlock, :perform_later, ["pending"]}],
-    [schedule: {:extended, "*/15 * * * * *"}, task: {Explorer.Workers.ImportSkippedBlocks, :perform_later, [1]}],
+    [
+      schedule: {:extended, "*/15 * * * * *"},
+      task: {Explorer.Workers.RefreshBalance, :perform_later, []}
+    ],
+    [
+      schedule: {:extended, "*/5 * * * * *"},
+      task: {Explorer.Workers.ImportBlock, :perform_later, ["latest"]}
+    ],
+    [
+      schedule: {:extended, "*/5 * * * * *"},
+      task: {Explorer.Workers.ImportBlock, :perform_later, ["pending"]}
+    ],
+    [
+      schedule: {:extended, "*/15 * * * * *"},
+      task: {Explorer.Workers.ImportSkippedBlocks, :perform_later, [1]}
+    ]
   ]
 
 import_config "dev.secret.exs"

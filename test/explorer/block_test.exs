@@ -17,14 +17,20 @@ defmodule Explorer.BlockTest do
 
     test "with duplicate information" do
       insert(:block, hash: "0x0")
-      {:error, changeset} = %Block{} |> Block.changeset(params_for(:block, hash: "0x0")) |> Repo.insert
+
+      {:error, changeset} =
+        %Block{} |> Block.changeset(params_for(:block, hash: "0x0")) |> Repo.insert()
+
       refute changeset.valid?
       assert changeset.errors == [hash: {"has already been taken", []}]
     end
 
     test "rejects duplicate blocks with mixed case" do
       insert(:block, hash: "0xa")
-      {:error, changeset} = %Block{} |> Block.changeset(params_for(:block, hash: "0xA")) |> Repo.insert
+
+      {:error, changeset} =
+        %Block{} |> Block.changeset(params_for(:block, hash: "0xA")) |> Repo.insert()
+
       refute changeset.valid?
       assert changeset.errors == [hash: {"has already been taken", []}]
     end
@@ -32,7 +38,7 @@ defmodule Explorer.BlockTest do
 
   describe "null/0" do
     test "returns a block with a number of 0" do
-      assert Block.null.number === -1
+      assert Block.null().number === -1
     end
   end
 
@@ -40,7 +46,9 @@ defmodule Explorer.BlockTest do
     test "returns the blocks sorted by number" do
       insert(:block, number: 1)
       insert(:block, number: 5)
-      assert Block |> Block.latest |> Repo.all == Block |> order_by(desc: :number) |> Repo.all
+
+      assert Block |> Block.latest() |> Repo.all() ==
+               Block |> order_by(desc: :number) |> Repo.all()
     end
   end
 end

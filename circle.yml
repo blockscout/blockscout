@@ -55,6 +55,7 @@ dependencies:
 
 test:
   pre:
+    - mix format --check-formatted
     - mix credo
     - mix sobelow --config
     - mix dialyzer --halt-exit-status

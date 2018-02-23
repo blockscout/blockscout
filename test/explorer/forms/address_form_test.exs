@@ -16,10 +16,11 @@ defmodule Explorer.AddressFormTest do
       insert(:from_address, address: sender, transaction: transaction)
       insert(:to_address, address: recipient, transaction: transaction)
 
-      Credit.refresh
-      Debit.refresh
+      Credit.refresh()
+      Debit.refresh()
 
-      assert AddressForm.build(Repo.preload(recipient, [:debit, :credit])).balance == Decimal.new(10)
+      assert AddressForm.build(Repo.preload(recipient, [:debit, :credit])).balance ==
+               Decimal.new(10)
     end
 
     test "returns a zero balance when the address does not have balances" do

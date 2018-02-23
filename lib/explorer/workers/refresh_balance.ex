@@ -8,8 +8,8 @@ defmodule Explorer.Workers.RefreshBalance do
   alias Explorer.Debit
   alias Explorer.Repo
 
-  def perform("credit"), do: unless refreshing("credits"), do: Credit.refresh()
-  def perform("debit"), do: unless refreshing("debits"), do: Debit.refresh()
+  def perform("credit"), do: unless(refreshing("credits"), do: Credit.refresh())
+  def perform("debit"), do: unless(refreshing("debits"), do: Debit.refresh())
 
   def perform do
     perform_later(["credit"])
@@ -22,11 +22,10 @@ defmodule Explorer.Workers.RefreshBalance do
 
   def refreshing(table) do
     query = "REFRESH MATERIALIZED VIEW CONCURRENTLY #{table}%"
-    result = SQL.query!(
-      Repo,
-      "SELECT TRUE FROM pg_stat_activity WHERE query ILIKE '$#{query}'",
-      []
-    )
+
+    result =
+      SQL.query!(Repo, "SELECT TRUE FROM pg_stat_activity WHERE query ILIKE '$#{query}'", [])
+
     Enum.count(result.rows) > 0
   end
 end

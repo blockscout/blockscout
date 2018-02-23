@@ -8,18 +8,24 @@ defmodule ExplorerWeb.BlockController do
   alias Explorer.Repo.NewRelic, as: Repo
 
   def index(conn, params) do
-    blocks = from block in Block,
-      order_by: [desc: block.number],
-      preload: :transactions
+    blocks =
+      from(
+        block in Block,
+        order_by: [desc: block.number],
+        preload: :transactions
+      )
 
     render(conn, "index.html", blocks: Repo.paginate(blocks, params))
   end
 
   def show(conn, %{"id" => number}) do
-    block = Block
+    block =
+      Block
       |> where(number: ^number)
-      |> first |> Repo.one
-      |> BlockForm.build
+      |> first
+      |> Repo.one()
+      |> BlockForm.build()
+
     render(conn, "show.html", block: block)
   end
 end

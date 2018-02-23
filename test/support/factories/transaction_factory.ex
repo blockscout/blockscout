@@ -18,13 +18,21 @@ defmodule Explorer.TransactionFactory do
           s: sequence("0x"),
           standard_v: sequence("0x"),
           transaction_index: sequence("0x"),
-          v: sequence("0x"),
+          v: sequence("0x")
         }
       end
 
       def with_addresses(transaction, %{to: to, from: from} \\ %{to: nil, from: nil}) do
-        to_address = if to, do: Repo.get_by(Address, %{hash: to}) || insert(:address, hash: to), else: insert(:address)
-        from_address = if from, do: Repo.get_by(Address, %{hash: from}) ||insert(:address, hash: from), else: insert(:address)
+        to_address =
+          if to,
+            do: Repo.get_by(Address, %{hash: to}) || insert(:address, hash: to),
+            else: insert(:address)
+
+        from_address =
+          if from,
+            do: Repo.get_by(Address, %{hash: from}) || insert(:address, hash: from),
+            else: insert(:address)
+
         insert(:to_address, %{transaction_id: transaction.id, address_id: to_address.id})
         insert(:from_address, %{transaction_id: transaction.id, address_id: from_address.id})
         transaction
@@ -37,7 +45,7 @@ defmodule Explorer.TransactionFactory do
       end
 
       def list_with_block(transactions, block \\ nil) do
-        Enum.map(transactions, fn(transaction) -> with_block(transaction, block) end)
+        Enum.map(transactions, fn transaction -> with_block(transaction, block) end)
       end
     end
   end

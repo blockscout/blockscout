@@ -9,19 +9,22 @@ defmodule Explorer.Credit do
   alias Explorer.Address
   alias Explorer.Repo
 
-  @timestamps_opts [type: Timex.Ecto.DateTime,
-                    autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}]
+  @timestamps_opts [
+    type: Timex.Ecto.DateTime,
+    autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}
+  ]
 
   @primary_key false
   schema "credits" do
-    belongs_to :address, Address, primary_key: true
-    field :value, :decimal
-    field :count, :integer
+    belongs_to(:address, Address, primary_key: true)
+    field(:value, :decimal)
+    field(:count, :integer)
     timestamps()
   end
 
   def refresh do
     SQL.query!(Repo, "REFRESH MATERIALIZED VIEW CONCURRENTLY credits;", [], timeout: 120_000)
   end
+
   def null, do: %__MODULE__{value: Decimal.new(0), count: 0}
 end

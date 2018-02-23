@@ -9,8 +9,10 @@ defmodule Explorer.Log do
   alias Explorer.Log
   alias Explorer.Receipt
 
-  @timestamps_opts [type: Timex.Ecto.DateTime,
-                    autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}]
+  @timestamps_opts [
+    type: Timex.Ecto.DateTime,
+    autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}
+  ]
 
   @required_attrs ~w(index data type)a
   @optional_attrs ~w(
@@ -18,16 +20,16 @@ defmodule Explorer.Log do
   )a
 
   schema "logs" do
-    belongs_to :receipt, Receipt
-    belongs_to :address, Address
-    has_one :transaction, through: [:receipt, :transaction]
-    field :index, :integer
-    field :data, :string
-    field :type, :string
-    field :first_topic, :string
-    field :second_topic, :string
-    field :third_topic, :string
-    field :fourth_topic, :string
+    belongs_to(:receipt, Receipt)
+    belongs_to(:address, Address)
+    has_one(:transaction, through: [:receipt, :transaction])
+    field(:index, :integer)
+    field(:data, :string)
+    field(:type, :string)
+    field(:first_topic, :string)
+    field(:second_topic, :string)
+    field(:third_topic, :string)
+    field(:fourth_topic, :string)
     timestamps()
   end
 

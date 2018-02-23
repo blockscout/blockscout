@@ -12,30 +12,32 @@ defmodule Explorer.Transaction do
   alias Explorer.ToAddress
   alias Explorer.Transaction
 
-  @timestamps_opts [type: Timex.Ecto.DateTime,
-                    autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}]
+  @timestamps_opts [
+    type: Timex.Ecto.DateTime,
+    autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}
+  ]
 
   schema "transactions" do
-    has_one :receipt, Receipt
-    has_one :block_transaction, BlockTransaction
-    has_one :block, through: [:block_transaction, :block]
-    has_one :to_address_join, ToAddress
-    has_one :to_address, through: [:to_address_join, :address]
-    has_one :from_address_join, FromAddress
-    has_one :from_address, through: [:from_address_join, :address]
-    has_many :internal_transactions, InternalTransaction
-    field :hash, :string
-    field :value, :decimal
-    field :gas, :decimal
-    field :gas_price, :decimal
-    field :input, :string
-    field :nonce, :integer
-    field :public_key, :string
-    field :r, :string
-    field :s, :string
-    field :standard_v, :string
-    field :transaction_index, :string
-    field :v, :string
+    has_one(:receipt, Receipt)
+    has_one(:block_transaction, BlockTransaction)
+    has_one(:block, through: [:block_transaction, :block])
+    has_one(:to_address_join, ToAddress)
+    has_one(:to_address, through: [:to_address_join, :address])
+    has_one(:from_address_join, FromAddress)
+    has_one(:from_address, through: [:from_address_join, :address])
+    has_many(:internal_transactions, InternalTransaction)
+    field(:hash, :string)
+    field(:value, :decimal)
+    field(:gas, :decimal)
+    field(:gas_price, :decimal)
+    field(:input, :string)
+    field(:nonce, :integer)
+    field(:public_key, :string)
+    field(:r, :string)
+    field(:s, :string)
+    field(:standard_v, :string)
+    field(:transaction_index, :string)
+    field(:v, :string)
     timestamps()
   end
 

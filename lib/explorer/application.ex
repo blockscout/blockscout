@@ -11,7 +11,7 @@ defmodule Explorer.Application do
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Explorer.Supervisor]
-    Supervisor.start_link(children(Mix.env), opts)
+    Supervisor.start_link(children(Mix.env()), opts)
   end
 
   # Tell Phoenix to update the endpoint configuration
@@ -23,20 +23,24 @@ defmodule Explorer.Application do
   end
 
   defp children(:test), do: children()
+
   defp children(_) do
     import Supervisor.Spec
     exq_options = [] |> Keyword.put(:mode, :enqueuer)
-    children() ++ [
-      supervisor(Exq, [exq_options]),
-      worker(Explorer.Servers.ChainStatistics, [])
-    ]
+
+    children() ++
+      [
+        supervisor(Exq, [exq_options]),
+        worker(Explorer.Servers.ChainStatistics, [])
+      ]
   end
 
   defp children do
     import Supervisor.Spec
+
     [
       supervisor(Explorer.Repo, []),
-      supervisor(ExplorerWeb.Endpoint, []),
+      supervisor(ExplorerWeb.Endpoint, [])
     ]
   end
 end

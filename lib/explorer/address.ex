@@ -13,13 +13,15 @@ defmodule Explorer.Address do
   alias Explorer.Debit
   alias Explorer.Repo.NewRelic, as: Repo
 
-  @timestamps_opts [type: Timex.Ecto.DateTime,
-                    autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}]
+  @timestamps_opts [
+    type: Timex.Ecto.DateTime,
+    autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}
+  ]
 
   schema "addresses" do
-    has_one :credit, Credit
-    has_one :debit, Debit
-    field :hash, :string
+    has_one(:credit, Credit)
+    has_one(:debit, Debit)
+    field(:hash, :string)
     timestamps()
   end
 
@@ -27,9 +29,13 @@ defmodule Explorer.Address do
   @optional_attrs ~w()a
 
   def find_or_create_by_hash(hash) do
-    query = from a in Address,
-      where: fragment("lower(?)", a.hash) == ^String.downcase(hash),
-      limit: 1
+    query =
+      from(
+        a in Address,
+        where: fragment("lower(?)", a.hash) == ^String.downcase(hash),
+        limit: 1
+      )
+
     case query |> Repo.one() do
       nil -> Repo.insert!(Address.changeset(%Address{}, %{hash: hash}))
       address -> address

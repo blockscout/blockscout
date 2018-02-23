@@ -6,6 +6,6 @@ defmodule ExplorerWeb.TransactionView do
 
   def format_gas_limit(gas) do
     gas
-    |> Number.to_string!
+    |> Number.to_string!()
   end
 end

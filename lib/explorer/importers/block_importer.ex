@@ -12,7 +12,7 @@ defmodule Explorer.BlockImporter do
     changes = extract_block(raw_block)
     block = changes.hash |> find()
 
-    if is_nil(block.id), do: block |> Block.changeset(changes) |> Repo.insert
+    if is_nil(block.id), do: block |> Block.changeset(changes) |> Repo.insert()
 
     Enum.map(raw_block["transactions"], &ImportTransaction.perform/1)
   end
@@ -30,17 +30,23 @@ defmodule Explorer.BlockImporter do
   end
 
   def find(hash) do
-    query = from b in Block,
-      where: fragment("lower(?)", b.hash) == ^String.downcase(hash),
-      limit: 1
-    (query |> Repo.one()) || %Block{}
+    query =
+      from(
+        b in Block,
+        where: fragment("lower(?)", b.hash) == ^String.downcase(hash),
+        limit: 1
+      )
+
+    query |> Repo.one() || %Block{}
   end
 
   @dialyzer {:nowarn_function, download_block: 1}
   def download_block(block_number) do
-    {:ok, block} = block_number
+    {:ok, block} =
+      block_number
       |> encode_number()
       |> eth_get_block_by_number(true)
+
     block
   end
 
@@ -56,7 +62,7 @@ defmodule Explorer.BlockImporter do
       total_difficulty: raw_block["totalDifficulty"] |> decode_integer_field,
       size: raw_block["size"] |> decode_integer_field,
       gas_limit: raw_block["gasLimit"] |> decode_integer_field,
-      nonce: raw_block["nonce"] || "0",
+      nonce: raw_block["nonce"] || "0"
     }
   end
 
@@ -64,6 +70,7 @@ defmodule Explorer.BlockImporter do
   defp encode_number("earliest"), do: "earliest"
   defp encode_number("pending"), do: "pending"
   defp encode_number("0x" <> number) when is_binary(number), do: number
+
   defp encode_number(number) when is_binary(number) do
     number
     |> String.to_integer()
@@ -78,6 +85,6 @@ defmodule Explorer.BlockImporter do
   end
 
   def decode_time_field(field) do
-    field |> decode_integer_field |> Timex.from_unix
+    field |> decode_integer_field |> Timex.from_unix()
   end
 end

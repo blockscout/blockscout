@@ -16,7 +16,7 @@ defmodule Explorer.BlockFormTest do
     end
 
     test "that it returns a block's age" do
-      block = insert(:block, timestamp: Timex.now |> Timex.shift(hours: -1))
+      block = insert(:block, timestamp: Timex.now() |> Timex.shift(hours: -1))
       assert BlockForm.build(block).age == "1 hour ago"
     end
 

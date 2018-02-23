@@ -22,9 +22,10 @@ defmodule ExplorerWeb.Gettext do
   """
   use Gettext, otp_app: :explorer
 
-  @dialyzer [{:nowarn_function, 'MACRO-dgettext': 3},
-             {:nowarn_function, 'MACRO-dgettext': 4},
-             {:nowarn_function, 'MACRO-dngettext': 5},
-             {:nowarn_function, 'MACRO-dngettext': 6},
-            ]
+  @dialyzer [
+    {:nowarn_function, "MACRO-dgettext": 3},
+    {:nowarn_function, "MACRO-dgettext": 4},
+    {:nowarn_function, "MACRO-dngettext": 5},
+    {:nowarn_function, "MACRO-dngettext": 6}
+  ]
 end

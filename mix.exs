@@ -6,9 +6,9 @@ defmodule Explorer.Mixfile do
       app: :explorer,
       version: "0.0.1",
       elixir: "~> 1.4",
-      elixirc_paths: elixirc_paths(Mix.env),
-      compilers: [:phoenix, :gettext | Mix.compilers],
-      start_permanent: Mix.env == :prod,
+      elixirc_paths: elixirc_paths(Mix.env()),
+      compilers: [:phoenix, :gettext | Mix.compilers()],
+      start_permanent: Mix.env() == :prod,
       package: package(),
       aliases: aliases(),
       deps: deps(),
@@ -26,24 +26,37 @@ defmodule Explorer.Mixfile do
   def application do
     [
       mod: {Explorer.Application, []},
-      extra_applications: extra_applications(Mix.env)
+      extra_applications: extra_applications(Mix.env())
     ]
   end
 
   # Specifies which paths to compile per environment.
   defp elixirc_paths(:test), do: ["test/support" | elixirc_paths()]
-  defp elixirc_paths(_),     do: elixirc_paths()
-  defp elixirc_paths,        do: ["lib"]
+  defp elixirc_paths(_), do: elixirc_paths()
+  defp elixirc_paths, do: ["lib"]
 
   # Specifies extra applications to start per environment
-  defp extra_applications(:prod), do: [:phoenix_pubsub_redis, :exq, :exq_ui | extra_applications()]
+  defp extra_applications(:prod),
+    do: [:phoenix_pubsub_redis, :exq, :exq_ui | extra_applications()]
+
   defp extra_applications(:dev), do: [:exq, :exq_ui | extra_applications()]
   defp extra_applications(_), do: extra_applications()
-  defp extra_applications, do: [
-    :scrivener_ecto, :scrivener_html, :ex_cldr, :ex_jasmine, :ethereumex,
-    :timex, :timex_ecto, :crontab, :set_locale, :logger, :runtime_tools,
-    :new_relixir
-  ]
+
+  defp extra_applications,
+    do: [
+      :scrivener_ecto,
+      :scrivener_html,
+      :ex_cldr,
+      :ex_jasmine,
+      :ethereumex,
+      :timex,
+      :timex_ecto,
+      :crontab,
+      :set_locale,
+      :logger,
+      :runtime_tools,
+      :new_relixir
+    ]
 
   # Specifies your project dependencies.
   #
@@ -80,11 +93,12 @@ defmodule Explorer.Mixfile do
       {:react_phoenix, "~> 0.5"},
       {:scrivener_ecto, "~> 1.0"},
       {:scrivener_html, "~> 1.7"},
-      {:set_locale, github: "minifast/set_locale", branch: "master"}, # Waiting on https://github.com/smeevil/set_locale/pull/9
+      # Waiting on https://github.com/smeevil/set_locale/pull/9
+      {:set_locale, github: "minifast/set_locale", branch: "master"},
       {:sobelow, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:timex, "~> 3.1.24"},
       {:timex_ecto, "~> 3.2.1"},
-      {:wallaby, "~> 0.19.2", only: [:test], runtime: false},
+      {:wallaby, "~> 0.19.2", only: [:test], runtime: false}
     ]
   end
 
@@ -98,7 +112,7 @@ defmodule Explorer.Mixfile do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      "test": ["ecto.create --quiet", "ecto.migrate", "test"]
+      test: ["ecto.create --quiet", "ecto.migrate", "test"]
     ]
   end
 

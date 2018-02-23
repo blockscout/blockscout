@@ -9,19 +9,21 @@ defmodule Explorer.Receipt do
   alias Explorer.Log
   alias Explorer.Receipt
 
-  @timestamps_opts [type: Timex.Ecto.DateTime,
-                    autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}]
+  @timestamps_opts [
+    type: Timex.Ecto.DateTime,
+    autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}
+  ]
 
   @required_attrs ~w(cumulative_gas_used gas_used status index)a
   @optional_attrs ~w(transaction_id)a
 
   schema "receipts" do
-    belongs_to :transaction, Transaction
-    has_many :logs, Log
-    field :cumulative_gas_used, :decimal
-    field :gas_used, :decimal
-    field :status, :integer
-    field :index, :integer
+    belongs_to(:transaction, Transaction)
+    has_many(:logs, Log)
+    field(:cumulative_gas_used, :decimal)
+    field(:gas_used, :decimal)
+    field(:status, :integer)
+    field(:index, :integer)
     timestamps()
   end
 

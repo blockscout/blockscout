@@ -9,7 +9,7 @@ defmodule Explorer.LogFactory do
           first_topic: nil,
           second_topic: nil,
           third_topic: nil,
-          fourth_topic: nil,
+          fourth_topic: nil
         }
       end
     end

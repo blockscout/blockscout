@@ -11,9 +11,11 @@ defmodule ExplorerWeb.BlockControllerTest do
 
   describe "GET index/2" do
     test "returns all blocks", %{conn: conn} do
-      block_ids = insert_list(4, :block) |> Enum.map(fn (block) -> block.number end) |> Enum.reverse
+      block_ids =
+        insert_list(4, :block) |> Enum.map(fn block -> block.number end) |> Enum.reverse()
+
       conn = get(conn, "/en/blocks")
-      assert conn.assigns.blocks |> Enum.map(fn (block) -> block.number end) == block_ids
+      assert conn.assigns.blocks |> Enum.map(fn block -> block.number end) == block_ids
     end
 
     test "returns a block with two transactions", %{conn: conn} do
@@ -23,7 +25,7 @@ defmodule ExplorerWeb.BlockControllerTest do
       other_transaction = insert(:transaction)
       insert(:block_transaction, block: block, transaction: other_transaction)
       conn = get(conn, "/en/blocks")
-      assert conn.assigns.blocks.entries |> Enum.count == 1
+      assert conn.assigns.blocks.entries |> Enum.count() == 1
     end
   end
 end

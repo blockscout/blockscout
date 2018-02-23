@@ -8,10 +8,15 @@ defmodule ExplorerWeb.TransactionLogController do
 
   def index(conn, %{"transaction_id" => transaction_id}) do
     hash = String.downcase(transaction_id)
-    logs = from log in Log,
-      join: transaction in assoc(log, :transaction),
-      preload: [:address],
-      where: fragment("lower(?)", transaction.hash) == ^hash
+
+    logs =
+      from(
+        log in Log,
+        join: transaction in assoc(log, :transaction),
+        preload: [:address],
+        where: fragment("lower(?)", transaction.hash) == ^hash
+      )
+
     render(conn, "index.html", logs: Repo.paginate(logs), transaction_hash: hash)
   end
 end

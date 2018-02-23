@@ -47,12 +47,14 @@ defmodule ExplorerWeb.TransactionControllerTest do
       insert(:to_address, transaction: transaction, address: address)
       insert(:from_address, transaction: transaction, address: address)
       conn = get(conn, "/en/transactions", last_seen: transaction.id)
-      assert conn.assigns.transactions.entries  == []
+      assert conn.assigns.transactions.entries == []
     end
   end
 
   describe "GET show/3" do
-    test "when there is an associated block, it returns a transaction with block data", %{conn: conn} do
+    test "when there is an associated block, it returns a transaction with block data", %{
+      conn: conn
+    } do
       block = insert(:block, %{number: 777})
       transaction = insert(:transaction, hash: "0x8") |> with_block(block) |> with_addresses
       conn = get(conn, "/en/transactions/0x8")

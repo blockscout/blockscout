@@ -4,13 +4,15 @@ defmodule Explorer.BlockTransaction do
   import Ecto.Changeset
   use Ecto.Schema
 
-  @timestamps_opts [type: Timex.Ecto.DateTime,
-                    autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}]
+  @timestamps_opts [
+    type: Timex.Ecto.DateTime,
+    autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}
+  ]
 
   @primary_key false
   schema "block_transactions" do
-    belongs_to :block, Explorer.Block
-    belongs_to :transaction, Explorer.Transaction, primary_key: true
+    belongs_to(:block, Explorer.Block)
+    belongs_to(:transaction, Explorer.Transaction, primary_key: true)
     timestamps()
   end
 
@@ -22,7 +24,6 @@ defmodule Explorer.BlockTransaction do
     |> validate_required(@required_attrs)
     |> cast_assoc(:block)
     |> cast_assoc(:transaction)
-    |> unique_constraint(:transaction_id,
-      name: :block_transactions_transaction_id_index)
+    |> unique_constraint(:transaction_id, name: :block_transactions_transaction_id_index)
   end
 end

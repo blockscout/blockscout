@@ -15,6 +15,7 @@ defmodule Explorer.Servers.ChainStatistics do
   end
 
   def start_link, do: start_link(true)
+
   def start_link(refresh) do
     GenServer.start_link(__MODULE__, refresh, name: __MODULE__)
   end
@@ -30,14 +31,18 @@ defmodule Explorer.Servers.ChainStatistics do
     Task.start_link(fn ->
       GenServer.cast(__MODULE__, {:update, Chain.fetch()})
     end)
+
     {:noreply, chain}
   end
+
   def handle_info(_, %Chain{} = chain), do: {:noreply, chain}
   def handle_call(:fetch, _, %Chain{} = chain), do: {:reply, chain, chain}
   def handle_call(_, _, %Chain{} = chain), do: {:noreply, chain}
+
   def handle_cast({:update, %Chain{} = chain}, %Chain{} = _) do
     Process.send_after(self(), :refresh, @interval)
     {:noreply, chain}
   end
+
   def handle_cast(_, %Chain{} = chain), do: {:noreply, chain}
 end

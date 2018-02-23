@@ -51,8 +51,15 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
       transaction = insert(:transaction)
       insert(:to_address, transaction: transaction, address: address)
       insert(:from_address, transaction: transaction, address: address)
-      conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en), last_seen: transaction.id)
-      assert conn.assigns.transactions.entries  == []
+
+      conn =
+        get(
+          conn,
+          pending_transaction_path(ExplorerWeb.Endpoint, :index, :en),
+          last_seen: transaction.id
+        )
+
+      assert conn.assigns.transactions.entries == []
     end
   end
 end
