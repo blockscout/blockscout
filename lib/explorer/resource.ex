@@ -5,8 +5,6 @@ defmodule Explorer.Resource do
   import Ecto.Query, only: [from: 2]
 
   alias Explorer.Block
-  alias Explorer.BlockForm
-
   alias Explorer.Address
   alias Explorer.Repo.NewRelic, as: Repo
   alias Explorer.Transaction
