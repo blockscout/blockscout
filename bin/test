@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -ex
+
+mix credo --strict
+mix sobelow --config
+mix format --check-formatted
+mix test
