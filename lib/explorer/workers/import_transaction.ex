@@ -5,16 +5,19 @@ defmodule Explorer.Workers.ImportTransaction do
 
   alias Explorer.TransactionImporter
   alias Explorer.Workers.ImportReceipt
+  alias Explorer.Workers.ImportInternalTransaction
 
   @dialyzer {:nowarn_function, perform: 1}
   def perform(hash) when is_binary(hash) do
     TransactionImporter.import(hash)
+    ImportInternalTransaction.perform_later(hash)
     ImportReceipt.perform_later(hash)
   end
 
   @dialyzer {:nowarn_function, perform: 1}
   def perform(raw_transaction) when is_map(raw_transaction) do
     TransactionImporter.import(raw_transaction)
+    ImportInternalTransaction.perform_later(raw_transaction["hash"])
     ImportReceipt.perform_later(raw_transaction["hash"])
   end
 

@@ -8,7 +8,6 @@ defmodule Explorer.InternalTransactionFactory do
           trace_address: [Enum.random(0..4), Enum.random(0..4)],
           from_address_id: insert(:address).id,
           to_address_id: insert(:address).id,
-          transaction_id: insert(:transaction).id,
           value: Enum.random(1..100_000),
           gas: Enum.random(1..100_000),
           gas_used: Enum.random(1..100_000),
