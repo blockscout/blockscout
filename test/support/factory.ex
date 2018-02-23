@@ -5,6 +5,7 @@ defmodule Explorer.Factory do
   use Explorer.BlockFactory
   use Explorer.BlockTransactionFactory
   use Explorer.FromAddressFactory
+  use Explorer.InternalTransactionFactory
   use Explorer.LogFactory
   use Explorer.ToAddressFactory
   use Explorer.TransactionFactory

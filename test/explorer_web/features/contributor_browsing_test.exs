@@ -98,6 +98,8 @@ defmodule ExplorerWeb.UserListTest do
     insert(:to_address, address: taft, transaction: txn_from_lincoln)
     insert(:receipt, transaction: txn_from_lincoln)
 
+    internal = insert(:internal_transaction, transaction_id: transaction.id)
+
     Credit.refresh
     Debit.refresh
 
@@ -132,6 +134,10 @@ defmodule ExplorerWeb.UserListTest do
     |> assert_has(css(".transaction__item", text: "48 years ago"))
     |> assert_has(css(".transaction__item", text: "38 years ago"))
 
+    |> click(link("Internal Transactions"))
+    |> assert_has(css(".internal-transaction__table", text: internal.call_type))
+
+    |> visit("/en/transactions/0xSk8")
     |> click(link("Logs"))
     |> assert_has(css(".transaction-log__link", text: "0xlincoln"))
 

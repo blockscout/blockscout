@@ -67,6 +67,7 @@ defmodule ExplorerWeb.Router do
     resources "/pending_transactions", PendingTransactionController, only: [:index]
     resources "/transactions", TransactionController, only: [:index, :show] do
       resources "/logs", TransactionLogController, only: [:index], as: :log
+      resources "/internal", InternalTransactionController, only: [:index]
     end
     resources "/addresses", AddressController, only: [:show] do
       resources "/transactions", AddressTransactionToController,

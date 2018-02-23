@@ -12,6 +12,6 @@ defmodule ExplorerWeb.TransactionLogController do
       join: transaction in assoc(log, :transaction),
       preload: [:address],
       where: fragment("lower(?)", transaction.hash) == ^hash
-    render(conn, "index.html", logs: Repo.paginate(logs), transaction_id: hash)
+    render(conn, "index.html", logs: Repo.paginate(logs), transaction_hash: hash)
   end
 end

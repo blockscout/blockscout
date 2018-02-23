@@ -1,0 +1,30 @@
+[
+  {
+    "request": {
+      "body": "{\"params\":[\"0x27d64b8e8564d2852c88767e967b88405c99341509cd3a3504fd67a65277116d\",[\"trace\"]],\"method\":\"trace_replayTransaction\",\"jsonrpc\":\"2.0\",\"id\":0}",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "method": "post",
+      "options": [],
+      "request_body": "",
+      "url": "https://sokol-trace.poa.network"
+    },
+    "response": {
+      "binary": false,
+      "body": "{\"jsonrpc\":\"2.0\",\"result\":{\"output\":\"0x606060405260043610603f576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063557ed1ba146044575b600080fd5b3415604e57600080fd5b6054606a565b6040518082815260200191505060405180910390f35b6000429050905600a165627a7a7230582053883c0c39da080adc15a91094921659c200b3bb60aed9e49b79b0274da3f4010029\",\"stateDiff\":null,\"trace\":[{\"action\":{\"from\":\"0x4349bb5579700d2a515cfef9cbdb7bc7f881cdd0\",\"gas\":\"0x273a9\",\"init\":\"0x6060604052341561000f57600080fd5b7fb94ae47ec9f4248692e2ecf9740b67ab493f3dcc8452bedc7d9cd911c28d1ca5426040518082815260200191505060405180910390a1609e806100546000396000f300606060405260043610603f576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063557ed1ba146044575b600080fd5b3415604e57600080fd5b6054606a565b6040518082815260200191505060405180910390f35b6000429050905600a165627a7a7230582053883c0c39da080adc15a91094921659c200b3bb60aed9e49b79b0274da3f4010029\",\"value\":\"0x0\"},\"result\":{\"address\":\"0xa8bf4dc1f90efdfd9479d7c633612dfe48589535\",\"code\":\"0x606060405260043610603f576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063557ed1ba146044575b600080fd5b3415604e57600080fd5b6054606a565b6040518082815260200191505060405180910390f35b6000429050905600a165627a7a7230582053883c0c39da080adc15a91094921659c200b3bb60aed9e49b79b0274da3f4010029\",\"gasUsed\":\"0x7fe0\"},\"subtraces\":0,\"traceAddress\":[],\"type\":\"create\"}],\"vmTrace\":null},\"id\":0}\n",
+      "headers": {
+        "Date": "Thu, 22 Feb 2018 23:21:11 GMT",
+        "Content-Type": "application/json",
+        "Transfer-Encoding": "chunked",
+        "Connection": "keep-alive",
+        "Set-Cookie": "__cfduid=d0ba210a5363b8aa64b7a5482d937d6ac1519341670; expires=Fri, 22-Feb-19 23:21:10 GMT; path=/; domain=.poa.network; HttpOnly; Secure",
+        "Expect-CT": "max-age=604800, report-uri=\"https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct\"",
+        "Server": "cloudflare",
+        "CF-RAY": "3f15ae22cfb36bfe-SJC"
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  }
+]

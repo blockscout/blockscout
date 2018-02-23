@@ -7,6 +7,7 @@ defmodule Explorer.Transaction do
 
   alias Explorer.BlockTransaction
   alias Explorer.FromAddress
+  alias Explorer.InternalTransaction
   alias Explorer.Receipt
   alias Explorer.ToAddress
   alias Explorer.Transaction
@@ -22,6 +23,7 @@ defmodule Explorer.Transaction do
     has_one :to_address, through: [:to_address_join, :address]
     has_one :from_address_join, FromAddress
     has_one :from_address, through: [:from_address_join, :address]
+    has_many :internal_transactions, InternalTransaction
     field :hash, :string
     field :value, :decimal
     field :gas, :decimal
@@ -39,12 +41,11 @@ defmodule Explorer.Transaction do
 
   @required_attrs ~w(hash value gas gas_price input nonce public_key r s
     standard_v transaction_index v)a
-  @optional_attrs ~w()a
 
   @doc false
   def changeset(%Transaction{} = transaction, attrs \\ %{}) do
     transaction
-    |> cast(attrs, @required_attrs, @optional_attrs)
+    |> cast(attrs, @required_attrs)
     |> validate_required(@required_attrs)
     |> foreign_key_constraint(:block_id)
     |> update_change(:hash, &String.downcase/1)

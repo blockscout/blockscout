@@ -26,4 +26,4 @@ config :wallaby,
 
 # Configure ethereumex
 config :ethereumex,
-  url: "https://sokol.poa.network"
+  url: "https://sokol-trace.poa.network"

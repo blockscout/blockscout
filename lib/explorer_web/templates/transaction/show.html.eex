@@ -6,6 +6,7 @@
   <div class="transaction__container">
     <div class="transaction__tabs">
       <h2 class="transaction__tab transaction__tab--active"><%= link(gettext("Overview"), to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction.hash), class: "transaction__link transaction__link--active") %></h2>
+      <h2 class="transaction__tab"><%= link(gettext("Internal Transactions"), to: transaction_internal_transaction_path(@conn, :index, @conn.assigns.locale, @transaction.hash), class: "transaction__link") %></h2>
       <h2 class="transaction__tab"><%= link(gettext("Logs"), to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction.hash), class: "transaction__link") %></h2>
     </div>
     <div class="transaction__attributes">
@@ -77,7 +78,7 @@
           </div>
           <div class="transaction__item">
             <dt class="transaction__item-key"><%= gettext "Gas Limit" %></dt>
-            <dd class="transaction__item-value"><%= @transaction.gas |> Cldr.Number.to_string! %></dd>
+            <dd class="transaction__item-value"><%= format_gas_limit(@transaction.gas) %></dd>
           </div>
           <div class="transaction__item">
             <dt class="transaction__item-key"><%= gettext "Gas Price" %></dt>

@@ -1,13 +1,15 @@
 <section class="container__section">
   <div class="transaction-log__header">
     <h1 class="transaction-log__heading"><%= gettext "Transaction Logs" %></h1>
-    <h3 class="transaction-log__subheading"><%= @transaction_id %></h3>
+    <h3 class="transaction-log__subheading"><%= @transaction_hash %></h3>
   </div>
   <div class="transaction-log">
     <div class="transaction-log__tabs">
-      <h2 class="transaction-log__tab"><%= link(gettext("Overview"), to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction_id), class: "transaction-log__link") %></h2>
-      <h2 class="transaction-log__tab transaction-log__tab--active"><%= link(gettext("Logs"), to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction_id), class: "transaction-log__link transaction-log__link--active") %></h2>
+      <h2 class="transaction-log__tab"><%= link(gettext("Overview"), to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction_hash), class: "transaction-log__link") %></h2>
+      <h2 class="transaction__tab"><%= link(gettext("Internal Transactions"), to: transaction_internal_transaction_path(@conn, :index, @conn.assigns.locale, @transaction_hash), class: "transaction__link") %></h2>
+      <h2 class="transaction-log__tab transaction-log__tab--active"><%= link(gettext("Logs"), to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction_hash), class: "transaction-log__link transaction-log__link--active") %></h2>
     </div>
+
     <div class="transaction-log__container">
       <table class="transaction-log__table">
         <thead>
