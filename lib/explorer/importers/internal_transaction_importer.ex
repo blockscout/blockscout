@@ -9,6 +9,7 @@ defmodule Explorer.InternalTransactionImporter do
   alias Explorer.Repo
   alias Explorer.Transaction
 
+  @dialyzer {:nowarn_function, import: 1}
   def import(hash) do
     transaction = find_transaction(hash)
     hash
@@ -17,6 +18,7 @@ defmodule Explorer.InternalTransactionImporter do
     |> persist_internal_transactions(transaction)
   end
 
+  @dialyzer {:nowarn_function, download_trace: 1}
   defp download_trace(hash) do
     EthereumexExtensions.trace_transaction(hash)
   end
@@ -28,6 +30,7 @@ defmodule Explorer.InternalTransactionImporter do
     Repo.one!(query)
   end
 
+  @dialyzer {:nowarn_function, extract_attrs: 1}
   defp extract_attrs(attrs) do
     trace = attrs["trace"]
     trace |> Enum.with_index() |> Enum.map(&extract_trace/1)
@@ -55,6 +58,7 @@ defmodule Explorer.InternalTransactionImporter do
 
   defp from_address(%{"action" => %{"from" => address}}), do: address
 
+  @dialyzer {:nowarn_function, persist_internal_transactions: 2}
   defp persist_internal_transactions(traces, transaction) do
     Enum.map(traces, fn(trace) ->
       trace = Map.merge(trace, %{transaction_id: transaction.id})

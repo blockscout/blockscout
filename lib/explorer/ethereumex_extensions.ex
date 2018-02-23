@@ -5,6 +5,7 @@ defmodule Explorer.EthereumexExtensions do
 
   alias Ethereumex.HttpClient
 
+  @dialyzer {:nowarn_function, trace_transaction: 1}
   def trace_transaction(hash) do
     params = [hash, ["trace"]]
     {:ok, trace} = HttpClient.request("trace_replayTransaction", params, [])
