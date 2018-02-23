@@ -3,6 +3,7 @@ defmodule Explorer.InternalTransactionImporter do
 
   import Ecto.Query
 
+  alias Explorer.Address
   alias Explorer.EthereumexExtensions
   alias Explorer.InternalTransaction
   alias Explorer.Repo
@@ -36,8 +37,8 @@ defmodule Explorer.InternalTransactionImporter do
     %{
       index: index,
       call_type: trace["action"]["callType"] || trace["type"],
-      to_address_id: address_id(trace["action"]["to"] || trace["result"]["address"]),
-      from_address_id: address_id(trace["action"]["from"]),
+      to_address_id: trace |> to_address() |> address_id(),
+      from_address_id: trace |> from_address() |> address_id(),
       trace_address: trace["traceAddress"],
       value: trace["action"]["value"] |> decode_integer_field,
       gas: trace["action"]["gas"] |> decode_integer_field,
@@ -46,6 +47,13 @@ defmodule Explorer.InternalTransactionImporter do
       output: trace["result"]["output"],
     }
   end
+
+  defp to_address(%{"action" => %{"to" => address}})
+  when not is_nil(address), do: address
+
+  defp to_address(%{"result" => %{"address" => address}}), do: address
+
+  defp from_address(%{"action" => %{"from" => address}}), do: address
 
   defp persist_internal_transactions(traces, transaction) do
     Enum.map(traces, fn(trace) ->
@@ -62,6 +70,6 @@ defmodule Explorer.InternalTransactionImporter do
   end
 
   defp address_id(hash) do
-    Explorer.Address.find_or_create_by_hash(hash).id
+    Address.find_or_create_by_hash(hash).id
   end
 end
