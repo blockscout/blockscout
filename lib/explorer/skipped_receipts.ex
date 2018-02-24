@@ -15,7 +15,8 @@ defmodule Explorer.SkippedReceipts do
         transaction in Transaction,
         left_join: receipt in assoc(transaction, :receipt),
         select: fragment("hash"),
-        where: is_nil(receipt.id),
+        group_by: transaction.id,
+        having: count(receipt.id) == 0,
         limit: ^count
       )
 
