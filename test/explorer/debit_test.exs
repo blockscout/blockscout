@@ -15,38 +15,38 @@ defmodule Explorer.DebitTest do
     end
 
     test "returns a debit when there is an address with a receipt" do
-      receipient = insert(:address)
+      recipient = insert(:address)
       sender = insert(:address)
-      transaction = insert(:transaction)
+      transaction = insert(:transaction, to_address_id: recipient.id, from_address_id: sender.id)
       insert(:receipt, transaction: transaction, status: 1)
-      insert(:from_address, transaction: transaction, address: sender)
-      insert(:to_address, transaction: transaction, address: receipient)
       Debit.refresh()
       debits = Debit |> Repo.all()
       assert debits |> Enum.count() == 1
     end
 
     test "returns a debit against the sender" do
-      receipient = insert(:address)
+      recipient = insert(:address)
       sender = insert(:address)
-      transaction = insert(:transaction, value: 21)
+
+      transaction =
+        insert(:transaction, value: 21, to_address_id: recipient.id, from_address_id: sender.id)
+
       insert(:receipt, transaction: transaction, status: 1)
-      insert(:from_address, transaction: transaction, address: sender)
-      insert(:to_address, transaction: transaction, address: receipient)
       address_id = sender.id
       Debit.refresh()
       debit = Debit |> where(address_id: ^address_id) |> Repo.one()
       assert debit.value == Decimal.new(21)
     end
 
-    test "returns no debits against the receipient" do
-      receipient = insert(:address)
+    test "returns no debits against the recipient" do
+      recipient = insert(:address)
       sender = insert(:address)
-      transaction = insert(:transaction, value: 21)
+
+      transaction =
+        insert(:transaction, value: 21, to_address_id: recipient.id, from_address_id: sender.id)
+
       insert(:receipt, transaction: transaction, status: 1)
-      insert(:from_address, transaction: transaction, address: sender)
-      insert(:to_address, transaction: transaction, address: receipient)
-      address_id = receipient.id
+      address_id = recipient.id
       Debit.refresh()
       debit = Debit |> where(address_id: ^address_id) |> Repo.one()
       assert debit == nil

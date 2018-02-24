@@ -6,25 +6,15 @@ defmodule ExplorerWeb.TransactionController do
   alias Explorer.Repo.NewRelic, as: Repo
   alias Explorer.Transaction
   alias Explorer.TransactionForm
+  alias Explorer.Transaction.Service.Query
 
-  def index(conn, %{"last_seen" => last_seen} = _) do
+  def index(conn, %{"last_seen" => last_seen}) do
     query =
-      from(
-        transaction in Transaction,
-        where: transaction.id < ^last_seen,
-        inner_join: receipt in assoc(transaction, :receipt),
-        inner_join: block in assoc(transaction, :block),
-        inner_join: to_address in assoc(transaction, :to_address),
-        inner_join: from_address in assoc(transaction, :from_address),
-        preload: [
-          block: block,
-          receipt: receipt,
-          to_address: to_address,
-          from_address: from_address
-        ],
-        order_by: [desc: transaction.id],
-        limit: 10
-      )
+      Transaction
+      |> Query.recently_seen(last_seen)
+      |> Query.include_addresses()
+      |> Query.require_receipt()
+      |> Query.require_block()
 
     total_query =
       from(
@@ -67,26 +57,14 @@ defmodule ExplorerWeb.TransactionController do
   end
 
   def show(conn, params) do
-    hash = String.downcase(params["id"])
-
-    query =
-      from(
-        transaction in Transaction,
-        left_join: receipt in assoc(transaction, :receipt),
-        left_join: block in assoc(transaction, :block),
-        inner_join: to_address in assoc(transaction, :to_address),
-        inner_join: from_address in assoc(transaction, :from_address),
-        preload: [
-          block: block,
-          receipt: receipt,
-          to_address: to_address,
-          from_address: from_address
-        ],
-        where: fragment("lower(?)", transaction.hash) == ^hash,
-        limit: 1
-      )
-
-    transaction = query |> Repo.one() |> TransactionForm.build_and_merge()
+    transaction =
+      Transaction
+      |> Query.by_hash(params["id"])
+      |> Query.include_addresses()
+      |> Query.include_receipt()
+      |> Query.include_block()
+      |> Repo.one()
+      |> TransactionForm.build_and_merge()
 
     render(conn, "show.html", transaction: transaction)
   end

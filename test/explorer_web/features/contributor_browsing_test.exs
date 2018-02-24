@@ -30,7 +30,6 @@ defmodule ExplorerWeb.UserListTest do
 
   test "search for transactions", %{session: session} do
     insert(:transaction, hash: "0xdeadbeef000000000000000000000000000000000", input: "socks")
-    |> with_addresses()
 
     session
     |> visit("/")
@@ -74,11 +73,10 @@ defmodule ExplorerWeb.UserListTest do
         gas_limit: 5_030_101
       })
 
-    transaction =
-      insert(:transaction, hash: "0xfaschtnacht") |> with_block(fifth_block) |> with_addresses
+    transaction = insert(:transaction, hash: "0xfaschtnacht") |> with_block(fifth_block)
 
-    insert(:transaction, hash: "0xpaczki") |> with_block(fifth_block) |> with_addresses
-    insert(:transaction) |> with_block(fifth_block) |> with_addresses
+    insert(:transaction, hash: "0xpaczki") |> with_block(fifth_block)
+    insert(:transaction) |> with_block(fifth_block)
     insert(:receipt, transaction: transaction)
 
     Credit.refresh()
@@ -116,8 +114,8 @@ defmodule ExplorerWeb.UserListTest do
         gas_used: 123_987
       })
 
-    for _ <- 0..3, do: insert(:transaction) |> with_block(block) |> with_addresses
-    insert(:transaction, hash: "0xC001", gas: 5891) |> with_block |> with_addresses
+    for _ <- 0..3, do: insert(:transaction) |> with_block(block)
+    insert(:transaction, hash: "0xC001", gas: 5891) |> with_block
 
     lincoln = insert(:address, hash: "0xlincoln")
     taft = insert(:address, hash: "0xhowardtaft")
@@ -132,20 +130,27 @@ defmodule ExplorerWeb.UserListTest do
         input: "0x00012",
         nonce: 99045,
         inserted_at: Timex.parse!("1970-01-01T00:00:18-00:00", "{ISO:Extended}"),
-        updated_at: Timex.parse!("1980-01-01T00:00:18-00:00", "{ISO:Extended}")
+        updated_at: Timex.parse!("1980-01-01T00:00:18-00:00", "{ISO:Extended}"),
+        from_address_id: taft.id,
+        to_address_id: lincoln.id
       )
 
     insert(:block_transaction, block: block, transaction: transaction)
-    insert(:from_address, address: taft, transaction: transaction)
-    insert(:to_address, address: lincoln, transaction: transaction)
+
     receipt = insert(:receipt, transaction: transaction, status: 1)
     insert(:log, address: lincoln, receipt: receipt)
 
     # From Lincoln to Taft.
-    txn_from_lincoln = insert(:transaction, hash: "0xrazerscooter")
+    txn_from_lincoln =
+      insert(
+        :transaction,
+        hash: "0xrazerscooter",
+        from_address_id: lincoln.id,
+        to_address_id: taft.id
+      )
+
     insert(:block_transaction, block: block, transaction: txn_from_lincoln)
-    insert(:from_address, address: lincoln, transaction: txn_from_lincoln)
-    insert(:to_address, address: taft, transaction: txn_from_lincoln)
+
     insert(:receipt, transaction: txn_from_lincoln)
 
     internal = insert(:internal_transaction, transaction_id: transaction.id)

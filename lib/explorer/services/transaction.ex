@@ -7,7 +7,7 @@ defmodule Explorer.Transaction.Service do
 
   def internal_transactions(hash) do
     InternalTransaction
-    |> Query.for_transaction(hash)
+    |> Query.for_parent_transaction(hash)
     |> Query.join_from_and_to_addresses()
     |> Repo.all()
   end
@@ -17,7 +17,76 @@ defmodule Explorer.Transaction.Service do
 
     import Ecto.Query, only: [from: 2]
 
-    def for_transaction(query, hash) do
+    def recently_seen(query, last_seen) do
+      from(
+        q in query,
+        where: q.id < ^last_seen,
+        order_by: [desc: q.id],
+        limit: 10
+      )
+    end
+
+    def by_hash(query, hash) do
+      from(
+        q in query,
+        where: fragment("lower(?)", q.hash) == ^String.downcase(hash),
+        limit: 1
+      )
+    end
+
+    def include_addresses(query) do
+      from(
+        q in query,
+        inner_join: to_address in assoc(q, :to_address),
+        inner_join: from_address in assoc(q, :from_address),
+        preload: [
+          to_address: to_address,
+          from_address: from_address
+        ]
+      )
+    end
+
+    def include_receipt(query) do
+      from(
+        q in query,
+        left_join: receipt in assoc(q, :receipt),
+        preload: [
+          receipt: receipt
+        ]
+      )
+    end
+
+    def include_block(query) do
+      from(
+        q in query,
+        left_join: block in assoc(q, :block),
+        preload: [
+          block: block
+        ]
+      )
+    end
+
+    def require_receipt(query) do
+      from(
+        q in query,
+        inner_join: receipt in assoc(q, :receipt),
+        preload: [
+          receipt: receipt
+        ]
+      )
+    end
+
+    def require_block(query) do
+      from(
+        q in query,
+        inner_join: block in assoc(q, :block),
+        preload: [
+          block: block
+        ]
+      )
+    end
+
+    def for_parent_transaction(query, hash) do
       from(
         child in query,
         inner_join: transaction in assoc(child, :transaction),

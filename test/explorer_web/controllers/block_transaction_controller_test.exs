@@ -28,31 +28,24 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
       transaction = insert(:transaction)
       block = insert(:block)
       insert(:block_transaction, transaction: transaction, block: block)
-      address = insert(:address)
-      insert(:to_address, transaction: transaction, address: address)
-      insert(:from_address, transaction: transaction, address: address)
       conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block.number))
       assert conn.assigns.transactions.total_entries == 0
     end
 
     test "does not return related transactions without a from address", %{conn: conn} do
-      transaction = insert(:transaction)
+      transaction = insert(:transaction, from_address_id: nil)
       insert(:receipt, transaction: transaction)
       block = insert(:block)
       insert(:block_transaction, transaction: transaction, block: block)
-      address = insert(:address)
-      insert(:to_address, transaction: transaction, address: address)
       conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block.number))
       assert conn.assigns.transactions.total_entries == 0
     end
 
     test "does not return related transactions without a to address", %{conn: conn} do
-      transaction = insert(:transaction)
+      transaction = insert(:transaction, to_address_id: nil)
       insert(:receipt, transaction: transaction)
       block = insert(:block)
       insert(:block_transaction, transaction: transaction, block: block)
-      address = insert(:address)
-      insert(:from_address, transaction: transaction, address: address)
       conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block.number))
       assert conn.assigns.transactions.total_entries == 0
     end

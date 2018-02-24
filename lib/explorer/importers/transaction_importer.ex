@@ -8,8 +8,6 @@ defmodule Explorer.TransactionImporter do
   alias Explorer.Block
   alias Explorer.BlockTransaction
   alias Explorer.Repo
-  alias Explorer.FromAddress
-  alias Explorer.ToAddress
   alias Explorer.Transaction
 
   def import(hash) when is_binary(hash) do
@@ -29,15 +27,16 @@ defmodule Explorer.TransactionImporter do
           found_transaction
 
         true ->
-          changes = extract_attrs(raw_transaction)
+          changes =
+            raw_transaction
+            |> extract_attrs()
+            |> Map.put(:to_address_id, create_to_address(raw_transaction).id)
+            |> Map.put(:from_address_id, create_from_address(raw_transaction).id)
+
           found_transaction |> Transaction.changeset(changes) |> Repo.insert!()
       end
 
-    to_address = raw_transaction["to"] || raw_transaction["creates"]
-
     transaction
-    |> create_from_address(raw_transaction["from"])
-    |> create_to_address(to_address)
     |> create_block_transaction(raw_transaction["blockHash"])
   end
 
@@ -103,26 +102,18 @@ defmodule Explorer.TransactionImporter do
     transaction
   end
 
-  def create_from_address(transaction, hash) do
-    address = Address.find_or_create_by_hash(hash)
-    changes = %{address_id: address.id, transaction_id: transaction.id}
+  def create_to_address(%{"to" => to}) when not is_nil(to), do: fetch_address(to)
 
-    %FromAddress{}
-    |> FromAddress.changeset(changes)
-    |> Repo.insert(on_conflict: :replace_all, conflict_target: :transaction_id)
+  def create_to_address(%{"creates" => creates}) when not is_nil(creates),
+    do: fetch_address(creates)
 
-    transaction
-  end
+  def create_to_address(hash) when is_bitstring(hash), do: fetch_address(hash)
 
-  def create_to_address(transaction, hash) do
-    address = Address.find_or_create_by_hash(hash)
-    changes = %{address_id: address.id, transaction_id: transaction.id}
+  def create_from_address(%{"from" => from}), do: fetch_address(from)
+  def create_from_address(hash) when is_bitstring(hash), do: fetch_address(hash)
 
-    %ToAddress{}
-    |> ToAddress.changeset(changes)
-    |> Repo.insert(on_conflict: :replace_all, conflict_target: :transaction_id)
-
-    transaction
+  def fetch_address(hash) when is_bitstring(hash) do
+    Address.find_or_create_by_hash(hash)
   end
 
   def decode_integer_field(hex) do

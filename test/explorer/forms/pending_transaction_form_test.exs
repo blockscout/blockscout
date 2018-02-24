@@ -8,9 +8,15 @@ defmodule Explorer.PendingTransactionFormTest do
       time = DateTime.utc_now()
       to_address = insert(:address, hash: "0xcafe")
       from_address = insert(:address, hash: "0xbee5")
-      transaction = insert(:transaction, inserted_at: time, updated_at: time)
-      insert(:to_address, address: to_address, transaction: transaction)
-      insert(:from_address, address: from_address, transaction: transaction)
+
+      transaction =
+        insert(
+          :transaction,
+          inserted_at: time,
+          updated_at: time,
+          to_address_id: to_address.id,
+          from_address_id: from_address.id
+        )
 
       form =
         PendingTransactionForm.build(transaction |> Repo.preload([:to_address, :from_address]))

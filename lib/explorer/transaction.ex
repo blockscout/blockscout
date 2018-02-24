@@ -5,11 +5,10 @@ defmodule Explorer.Transaction do
 
   import Ecto.Changeset
 
+  alias Explorer.Address
   alias Explorer.BlockTransaction
-  alias Explorer.FromAddress
   alias Explorer.InternalTransaction
   alias Explorer.Receipt
-  alias Explorer.ToAddress
   alias Explorer.Transaction
 
   @timestamps_opts [
@@ -21,10 +20,8 @@ defmodule Explorer.Transaction do
     has_one(:receipt, Receipt)
     has_one(:block_transaction, BlockTransaction)
     has_one(:block, through: [:block_transaction, :block])
-    has_one(:to_address_join, ToAddress)
-    has_one(:to_address, through: [:to_address_join, :address])
-    has_one(:from_address_join, FromAddress)
-    has_one(:from_address, through: [:from_address_join, :address])
+    belongs_to(:from_address, Address)
+    belongs_to(:to_address, Address)
     has_many(:internal_transactions, InternalTransaction)
     field(:hash, :string)
     field(:value, :decimal)
@@ -44,10 +41,12 @@ defmodule Explorer.Transaction do
   @required_attrs ~w(hash value gas gas_price input nonce public_key r s
     standard_v transaction_index v)a
 
+  @optional_attrs ~w(to_address_id from_address_id)a
+
   @doc false
   def changeset(%Transaction{} = transaction, attrs \\ %{}) do
     transaction
-    |> cast(attrs, @required_attrs)
+    |> cast(attrs, @required_attrs ++ @optional_attrs)
     |> validate_required(@required_attrs)
     |> foreign_key_constraint(:block_id)
     |> update_change(:hash, &String.downcase/1)

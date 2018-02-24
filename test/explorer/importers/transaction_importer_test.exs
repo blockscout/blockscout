@@ -3,8 +3,6 @@ defmodule Explorer.TransactionImporterTest do
 
   alias Explorer.Address
   alias Explorer.BlockTransaction
-  alias Explorer.FromAddress
-  alias Explorer.ToAddress
   alias Explorer.Transaction
   alias Explorer.TransactionImporter
 
@@ -129,10 +127,7 @@ defmodule Explorer.TransactionImporterTest do
 
         address = Address |> Repo.get_by(hash: "0xa5b4b372112ab8dbbb48c8d0edd89227e24ec785")
 
-        from_address =
-          FromAddress |> Repo.get_by(transaction_id: transaction.id, address_id: address.id)
-
-        assert from_address
+        assert transaction.from_address_id == address.id
       end
     end
 
@@ -152,10 +147,7 @@ defmodule Explorer.TransactionImporterTest do
 
         address = Address |> Repo.get_by(hash: "0xa5b4b372112ab8dbbb48c8d0edd89227e24ec785")
 
-        from_address =
-          FromAddress |> Repo.get_by(transaction_id: transaction.id, address_id: address.id)
-
-        assert from_address
+        assert transaction.from_address_id == address.id
       end
     end
 
@@ -173,10 +165,7 @@ defmodule Explorer.TransactionImporterTest do
 
         address = Address |> Repo.get_by(hash: "0x24e5b8528fe83257d5fe3497ef616026713347f8")
 
-        to_address =
-          ToAddress |> Repo.get_by(transaction_id: transaction.id, address_id: address.id)
-
-        assert(to_address)
+        assert transaction.to_address_id == address.id
       end
     end
 
@@ -196,10 +185,7 @@ defmodule Explorer.TransactionImporterTest do
 
         address = Address |> Repo.get_by(hash: "0x24e5b8528fe83257d5fe3497ef616026713347f8")
 
-        to_address =
-          ToAddress |> Repo.get_by(transaction_id: transaction.id, address_id: address.id)
-
-        assert(to_address)
+        assert(transaction.to_address_id == address.id)
       end
     end
 
@@ -217,10 +203,7 @@ defmodule Explorer.TransactionImporterTest do
 
         address = Address |> Repo.get_by(hash: "0x24e5b8528fe83257d5fe3497ef616026713347f8")
 
-        to_address =
-          ToAddress |> Repo.get_by(transaction_id: transaction.id, address_id: address.id)
-
-        assert(to_address)
+        assert(transaction.to_address_id == address.id)
       end
     end
 
@@ -314,57 +297,33 @@ defmodule Explorer.TransactionImporterTest do
     end
   end
 
-  describe "create_from_address/2" do
+  describe "create_from_address/1" do
     test "that it creates a new address when one does not exist" do
-      transaction = insert(:transaction)
-      TransactionImporter.create_from_address(transaction, "0xbb8")
+      TransactionImporter.create_from_address("0xbb8")
       last_address = Address |> order_by(desc: :inserted_at) |> Repo.one()
 
       assert last_address.hash == "0xbb8"
     end
 
-    test "that it joins transaction and from address" do
-      transaction = insert(:transaction)
-      TransactionImporter.create_from_address(transaction, "0xFreshPrince")
-      address = Address |> order_by(desc: :inserted_at) |> Repo.one()
-      from_address = FromAddress |> order_by(desc: :inserted_at) |> Repo.one()
-
-      assert from_address.transaction_id == transaction.id
-      assert from_address.address_id == address.id
-    end
-
     test "when the address already exists it does not insert a new address" do
-      transaction = insert(:transaction)
       insert(:address, hash: "0xbb8")
-      TransactionImporter.create_from_address(transaction, "0xbb8")
+      TransactionImporter.create_from_address("0xbb8")
 
       assert Address |> Repo.all() |> length == 1
     end
   end
 
-  describe "create_to_address/2" do
+  describe "create_to_address/1" do
     test "that it creates a new address when one does not exist" do
-      transaction = insert(:transaction)
-      TransactionImporter.create_to_address(transaction, "0xFreshPrince")
+      TransactionImporter.create_to_address("0xFreshPrince")
       last_address = Address |> order_by(desc: :inserted_at) |> Repo.one()
 
       assert last_address.hash == "0xfreshprince"
     end
 
-    test "that it joins transaction and address" do
-      transaction = insert(:transaction)
-      TransactionImporter.create_to_address(transaction, "0xFreshPrince")
-      address = Address |> order_by(desc: :inserted_at) |> Repo.one()
-      to_address = ToAddress |> order_by(desc: :inserted_at) |> Repo.one()
-
-      assert to_address.transaction_id == transaction.id
-      assert to_address.address_id == address.id
-    end
-
     test "when the address already exists it does not insert a new address" do
-      transaction = insert(:transaction)
       insert(:address, hash: "bigmouthbillybass")
-      TransactionImporter.create_to_address(transaction, "bigmouthbillybass")
+      TransactionImporter.create_to_address("bigmouthbillybass")
 
       assert Address |> Repo.all() |> length == 1
     end
