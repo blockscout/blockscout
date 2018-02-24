@@ -85,6 +85,13 @@ defmodule ExplorerWeb.ChainControllerTest do
       assert redirected_to(conn) == address_path(conn, :show, "en", address.hash)
     end
 
+    test "finds an address by hash when there are extra spaces", %{conn: conn} do
+      address = insert(:address)
+      conn = get(conn, "en/search?q=#{address.hash}    ")
+
+      assert redirected_to(conn) == address_path(conn, :show, "en", address.hash)
+    end
+
     test "redirects to 404 when it finds nothing", %{conn: conn} do
       conn = get(conn, "en/search?q=zaphod")
       assert conn.status == 404

@@ -9,7 +9,10 @@ defmodule ExplorerWeb.ChainController do
   end
 
   def search(conn, %{"q" => query}) do
-    case Resource.lookup(query) do
+    query
+    |> String.trim()
+    |> Resource.lookup()
+    |> case do
       nil ->
         conn
         |> put_status(:not_found)
