@@ -17,7 +17,7 @@ defmodule ExplorerWeb.TransactionControllerTest do
       insert(:receipt, transaction: transaction)
       insert(:block_transaction, transaction: transaction, block: block)
       conn = get(conn, "/en/transactions")
-      assert conn.assigns.transactions.total_entries === 1
+      assert length(conn.assigns.transactions.entries) === 1
     end
 
     test "returns no pending transactions", %{conn: conn} do
@@ -26,10 +26,10 @@ defmodule ExplorerWeb.TransactionControllerTest do
       assert conn.assigns.transactions.entries == []
     end
 
-    test "returns a zero count when there are only pending transactions", %{conn: conn} do
+    test "only returns transactions that have a receipt", %{conn: conn} do
       insert(:transaction)
       conn = get(conn, "/en/transactions")
-      assert conn.assigns.transactions.total_entries === 0
+      assert length(conn.assigns.transactions.entries) === 0
     end
 
     test "paginates transactions using the last seen transaction", %{conn: conn} do
@@ -38,6 +38,18 @@ defmodule ExplorerWeb.TransactionControllerTest do
       insert(:receipt, transaction: transaction)
       insert(:block_transaction, transaction: transaction, block: block)
       conn = get(conn, "/en/transactions", last_seen: transaction.id)
+      assert conn.assigns.transactions.entries == []
+    end
+
+    test "sends back an estimate of the number of transactions", %{conn: conn} do
+      insert(:transaction)
+      conn = get(conn, "/en/transactions")
+      refute conn.assigns.transactions.total_entries == nil
+    end
+
+    test "works when there are no transactions", %{conn: conn} do
+      conn = get(conn, "/en/transactions")
+      assert conn.assigns.transactions.total_entries == 0
       assert conn.assigns.transactions.entries == []
     end
   end

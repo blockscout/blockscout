@@ -19,10 +19,15 @@ defmodule ExplorerWeb.TransactionController do
     total_query =
       from(
         transaction in Transaction,
-        select: fragment("count(?)", transaction.id),
-        inner_join: receipt in assoc(transaction, :receipt),
-        inner_join: block in assoc(transaction, :block)
+        order_by: [desc: transaction.id],
+        limit: 1
       )
+
+    total =
+      case Repo.one(total_query) do
+        nil -> 0
+        total -> total.id
+      end
 
     entries =
       query
@@ -36,7 +41,7 @@ defmodule ExplorerWeb.TransactionController do
       "index.html",
       transactions: %{
         entries: entries,
-        total_entries: Repo.one(total_query),
+        total_entries: total,
         last_seen: last.id
       }
     )

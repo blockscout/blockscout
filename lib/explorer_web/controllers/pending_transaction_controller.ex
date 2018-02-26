@@ -24,10 +24,17 @@ defmodule ExplorerWeb.PendingTransactionController do
     total_query =
       from(
         transaction in Transaction,
-        select: fragment("count(?)", transaction.id),
         left_join: receipt in assoc(transaction, :receipt),
-        where: is_nil(receipt.transaction_id)
+        where: is_nil(receipt.transaction_id),
+        order_by: [desc: transaction.id],
+        limit: 1
       )
+
+    total =
+      case Repo.one(total_query) do
+        nil -> 0
+        total -> total.id
+      end
 
     entries = Repo.all(query)
     last = List.last(entries) || Transaction.null()
@@ -37,7 +44,7 @@ defmodule ExplorerWeb.PendingTransactionController do
       "index.html",
       transactions: %{
         entries: entries |> Enum.map(&PendingTransactionForm.build/1),
-        total_entries: Repo.one(total_query),
+        total_entries: total,
         last_seen: last.id
       }
     )
