@@ -39,9 +39,10 @@ Configure your local CCMenu with the following url: [`https://circleci.com/gh/po
 ### Testing
 
   * Build the assets: `$ cd assets && yarn build`
-  * Run the test suite: `$ mix test`
   * Format the Elixir code: `$ mix format`
+  * Run the test suite: `$ mix test`
   * Lint the Elixir code: `$ mix credo --strict`
+  * Run the dialyzer: `mix dialyzer --halt-exit-status`
   * Check the Elixir code for vulnerabilities: `$ mix sobelow --config`
   * Lint the JavaScript code: `$ cd assets && yarn eslint`
 
