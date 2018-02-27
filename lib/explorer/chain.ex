@@ -43,7 +43,8 @@ defmodule Explorer.Chain do
   @skipped_blocks_query """
     SELECT COUNT(missing_number)
       FROM generate_series(0, $1, 1) AS missing_number
-      WHERE missing_number NOT IN (SELECT blocks.number FROM blocks)
+      LEFT JOIN blocks ON missing_number = blocks.number
+      WHERE blocks.id IS NULL
   """
 
   @lag_query """
