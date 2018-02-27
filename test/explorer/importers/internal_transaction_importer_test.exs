@@ -53,6 +53,22 @@ defmodule Explorer.InternalTransactionImporterTest do
       end
     end
 
+    test "subsequent imports do not create duplicate internal transactions" do
+      use_cassette "internal_transaction_importer_import_1" do
+        transaction =
+          insert(
+            :transaction,
+            hash: "0x051e031f05b3b3a5ff73e1189c36e3e2a41fd1c2d9772b2c75349e22ed4d3f68"
+          )
+
+        InternalTransactionImporter.import(transaction.hash)
+        InternalTransactionImporter.import(transaction.hash)
+
+        internal_transactions = InternalTransaction |> Repo.all()
+        assert length(internal_transactions) == 2
+      end
+    end
+
     test "import fails if a transaction with the hash doesn't exist" do
       hash = "0x051e031f05b3b3a5ff73e1189c36e3e2a41fd1c2d9772b2c75349e22ed4d3f68"
       assert_raise Ecto.NoResultsError, fn -> InternalTransactionImporter.import(hash) end
