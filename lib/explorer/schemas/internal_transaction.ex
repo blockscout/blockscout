@@ -1,18 +1,11 @@
 defmodule Explorer.InternalTransaction do
   @moduledoc "Models internal transactions."
 
-  use Ecto.Schema
-
-  import Ecto.Changeset
+  use Explorer.Schema
 
   alias Explorer.InternalTransaction
   alias Explorer.Transaction
   alias Explorer.Address
-
-  @timestamps_opts [
-    type: Timex.Ecto.DateTime,
-    autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}
-  ]
 
   schema "internal_transactions" do
     belongs_to(:transaction, Transaction)

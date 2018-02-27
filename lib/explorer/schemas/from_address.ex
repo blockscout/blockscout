@@ -1,13 +1,9 @@
 defmodule Explorer.FromAddress do
   @moduledoc false
-  alias Explorer.FromAddress
-  import Ecto.Changeset
-  use Ecto.Schema
 
-  @timestamps_opts [
-    type: Timex.Ecto.DateTime,
-    autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}
-  ]
+  use Explorer.Schema
+
+  alias Explorer.FromAddress
 
   @primary_key false
   schema "from_addresses" do

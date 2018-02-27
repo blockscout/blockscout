@@ -1,18 +1,11 @@
 defmodule Explorer.Receipt do
   @moduledoc "Captures a Web3 Transaction Receipt."
 
-  use Ecto.Schema
-
-  import Ecto.Changeset
+  use Explorer.Schema
 
   alias Explorer.Transaction
   alias Explorer.Log
   alias Explorer.Receipt
-
-  @timestamps_opts [
-    type: Timex.Ecto.DateTime,
-    autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}
-  ]
 
   @required_attrs ~w(cumulative_gas_used gas_used status index)a
   @optional_attrs ~w(transaction_id)a

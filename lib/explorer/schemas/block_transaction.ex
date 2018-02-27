@@ -1,13 +1,9 @@
 defmodule Explorer.BlockTransaction do
-  @moduledoc false
-  alias Explorer.BlockTransaction
-  import Ecto.Changeset
-  use Ecto.Schema
+  @moduledoc "Connects a Block to a Transaction"
 
-  @timestamps_opts [
-    type: Timex.Ecto.DateTime,
-    autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}
-  ]
+  alias Explorer.BlockTransaction
+
+  use Explorer.Schema
 
   @primary_key false
   schema "block_transactions" do

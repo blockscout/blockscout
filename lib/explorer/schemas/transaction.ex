@@ -1,20 +1,13 @@
 defmodule Explorer.Transaction do
   @moduledoc "Models a Web3 transaction."
 
-  use Ecto.Schema
-
-  import Ecto.Changeset
+  use Explorer.Schema
 
   alias Explorer.Address
   alias Explorer.BlockTransaction
   alias Explorer.InternalTransaction
   alias Explorer.Receipt
   alias Explorer.Transaction
-
-  @timestamps_opts [
-    type: Timex.Ecto.DateTime,
-    autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}
-  ]
 
   schema "transactions" do
     has_one(:receipt, Receipt)

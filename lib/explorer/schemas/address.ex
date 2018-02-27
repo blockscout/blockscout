@@ -3,20 +3,12 @@ defmodule Explorer.Address do
     A stored representation of a web3 address.
   """
 
-  use Ecto.Schema
-
-  import Ecto.Changeset
-  import Ecto.Query
+  use Explorer.Schema
 
   alias Explorer.Address
   alias Explorer.Credit
   alias Explorer.Debit
   alias Explorer.Repo.NewRelic, as: Repo
-
-  @timestamps_opts [
-    type: Timex.Ecto.DateTime,
-    autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}
-  ]
 
   schema "addresses" do
     has_one(:credit, Credit)

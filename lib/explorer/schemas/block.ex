@@ -3,19 +3,11 @@ defmodule Explorer.Block do
     Stores a web3 block.
   """
 
-  use Ecto.Schema
-
-  import Ecto.Changeset
-  import Ecto.Query
+  use Explorer.Schema
 
   alias Explorer.Block
   alias Explorer.BlockTransaction
   alias Explorer.Transaction
-
-  @timestamps_opts [
-    type: Timex.Ecto.DateTime,
-    autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}
-  ]
 
   schema "blocks" do
     has_many(:block_transactions, BlockTransaction)
