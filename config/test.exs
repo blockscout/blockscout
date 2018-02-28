@@ -25,3 +25,5 @@ config :wallaby, screenshot_on_failure: true
 
 # Configure ethereumex
 config :ethereumex, url: "https://sokol-trace.poa.network"
+
+config :explorer, :ethereum, backend: Explorer.Ethereum.Test

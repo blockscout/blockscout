@@ -43,11 +43,14 @@ config :exq,
   max_retries: 10,
   queues: [
     {"default", 1},
+    {"balances", 1},
     {"blocks", 1},
     {"internal_transactions", 1},
     {"transactions", 1},
     {"receipts", 1}
   ]
+
+config :explorer, :ethereum, backend: Explorer.Ethereum.Live
 
 config :exq_ui, server: false
 

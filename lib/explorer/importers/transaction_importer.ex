@@ -4,11 +4,13 @@ defmodule Explorer.TransactionImporter do
   import Ecto.Query
   import Ethereumex.HttpClient, only: [eth_get_transaction_by_hash: 1]
 
-  alias Explorer.Address
+  alias Explorer.Address.Service, as: Address
   alias Explorer.Block
   alias Explorer.BlockTransaction
+  alias Explorer.Ethereum
   alias Explorer.Repo
   alias Explorer.Transaction
+  alias Explorer.BalanceImporter
 
   def import(hash) when is_binary(hash) do
     hash |> download_transaction() |> persist_transaction()
@@ -27,17 +29,31 @@ defmodule Explorer.TransactionImporter do
           found_transaction
 
         true ->
+          to_address =
+            raw_transaction
+            |> to_address()
+            |> fetch_address()
+
+          from_address =
+            raw_transaction
+            |> from_address()
+            |> fetch_address()
+
           changes =
             raw_transaction
             |> extract_attrs()
-            |> Map.put(:to_address_id, create_to_address(raw_transaction).id)
-            |> Map.put(:from_address_id, create_from_address(raw_transaction).id)
+            |> Map.put(:to_address_id, to_address.id)
+            |> Map.put(:from_address_id, from_address.id)
 
           found_transaction |> Transaction.changeset(changes) |> Repo.insert!()
       end
 
     transaction
     |> create_block_transaction(raw_transaction["blockHash"])
+
+    refresh_account_balances(raw_transaction)
+
+    transaction
   end
 
   def find(hash) do
@@ -59,11 +75,11 @@ defmodule Explorer.TransactionImporter do
   def extract_attrs(raw_transaction) do
     %{
       hash: raw_transaction["hash"],
-      value: raw_transaction["value"] |> decode_integer_field,
-      gas: raw_transaction["gas"] |> decode_integer_field,
-      gas_price: raw_transaction["gasPrice"] |> decode_integer_field,
+      value: raw_transaction["value"] |> Ethereum.decode_integer_field(),
+      gas: raw_transaction["gas"] |> Ethereum.decode_integer_field(),
+      gas_price: raw_transaction["gasPrice"] |> Ethereum.decode_integer_field(),
       input: raw_transaction["input"],
-      nonce: raw_transaction["nonce"] |> decode_integer_field,
+      nonce: raw_transaction["nonce"] |> Ethereum.decode_integer_field(),
       public_key: raw_transaction["publicKey"],
       r: raw_transaction["r"],
       s: raw_transaction["s"],
@@ -102,22 +118,28 @@ defmodule Explorer.TransactionImporter do
     transaction
   end
 
-  def create_to_address(%{"to" => to}) when not is_nil(to), do: fetch_address(to)
+  def to_address(%{"to" => to}) when not is_nil(to), do: to
+  def to_address(%{"creates" => creates}) when not is_nil(creates), do: creates
+  def to_address(hash) when is_bitstring(hash), do: hash
 
-  def create_to_address(%{"creates" => creates}) when not is_nil(creates),
-    do: fetch_address(creates)
-
-  def create_to_address(hash) when is_bitstring(hash), do: fetch_address(hash)
-
-  def create_from_address(%{"from" => from}), do: fetch_address(from)
-  def create_from_address(hash) when is_bitstring(hash), do: fetch_address(hash)
+  def from_address(%{"from" => from}), do: from
+  def from_address(hash) when is_bitstring(hash), do: hash
 
   def fetch_address(hash) when is_bitstring(hash) do
     Address.find_or_create_by_hash(hash)
   end
 
-  def decode_integer_field(hex) do
-    {"0x", base_16} = String.split_at(hex, 2)
-    String.to_integer(base_16, 16)
+  defp refresh_account_balances(raw_transaction) do
+    raw_transaction
+    |> to_address()
+    |> update_balance()
+
+    raw_transaction
+    |> from_address()
+    |> update_balance()
+  end
+
+  defp update_balance(address_hash) do
+    BalanceImporter.import(address_hash)
   end
 end

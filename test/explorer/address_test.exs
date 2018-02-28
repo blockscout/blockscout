@@ -13,26 +13,23 @@ defmodule Explorer.AddressTest do
       changeset = Address.changeset(%Address{}, %{dog: "woodstock"})
       refute changeset.valid?
     end
+
+    test "it downcases hashes on the way in" do
+      params = params_for(:address, hash: "0xALLCAPS")
+      changeset = Address.changeset(%Address{}, params)
+      assert Ecto.Changeset.get_change(changeset, :hash) == "0xallcaps"
+    end
   end
 
-  describe "find_or_create_by_hash/1" do
-    test "that it creates a new address when one does not exist" do
-      Address.find_or_create_by_hash("0xFreshPrince")
-      last_address = Address |> order_by(desc: :inserted_at) |> Repo.one()
-      assert last_address.hash == "0xfreshprince"
+  describe "balance_changeset/2" do
+    test "with a new balance" do
+      changeset = Address.balance_changeset(%Address{}, %{balance: 99})
+      assert changeset.valid?
     end
 
-    test "when the address already exists it doesn't insert a new address" do
-      insert(:address, %{hash: "bigmouthbillybass"})
-      Address.find_or_create_by_hash("bigmouthbillybass")
-      number_of_addresses = Address |> Repo.all() |> length
-      assert number_of_addresses == 1
-    end
-
-    test "when there is no hash it blows up" do
-      assert_raise Ecto.InvalidChangesetError, fn ->
-        Address.find_or_create_by_hash("")
-      end
+    test "with other attributes" do
+      changeset = Address.balance_changeset(%Address{}, %{hash: "0xraisinets"})
+      refute changeset.valid?
     end
   end
 end

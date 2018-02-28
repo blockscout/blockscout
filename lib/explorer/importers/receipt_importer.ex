@@ -4,7 +4,7 @@ defmodule Explorer.ReceiptImporter do
   import Ecto.Query
   import Ethereumex.HttpClient, only: [eth_get_transaction_receipt: 1]
 
-  alias Explorer.Address
+  alias Explorer.Address.Service, as: Address
   alias Explorer.Repo
   alias Explorer.Transaction
   alias Explorer.Receipt

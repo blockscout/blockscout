@@ -8,31 +8,18 @@ defmodule Explorer.Address do
   alias Explorer.Address
   alias Explorer.Credit
   alias Explorer.Debit
-  alias Explorer.Repo.NewRelic, as: Repo
 
   schema "addresses" do
     has_one(:credit, Credit)
     has_one(:debit, Debit)
     field(:hash, :string)
+    field(:balance, :decimal)
+    field(:balance_updated_at, Timex.Ecto.DateTime)
     timestamps()
   end
 
   @required_attrs ~w(hash)a
   @optional_attrs ~w()a
-
-  def find_or_create_by_hash(hash) do
-    query =
-      from(
-        a in Address,
-        where: fragment("lower(?)", a.hash) == ^String.downcase(hash),
-        limit: 1
-      )
-
-    case query |> Repo.one() do
-      nil -> Repo.insert!(Address.changeset(%Address{}, %{hash: hash}))
-      address -> address
-    end
-  end
 
   def changeset(%Address{} = address, attrs) do
     address
@@ -40,5 +27,17 @@ defmodule Explorer.Address do
     |> validate_required(@required_attrs)
     |> update_change(:hash, &String.downcase/1)
     |> unique_constraint(:hash)
+  end
+
+  def balance_changeset(%Address{} = address, attrs) do
+    address
+    |> cast(attrs, [:balance])
+    |> validate_required([:balance])
+    |> put_balance_updated_at()
+  end
+
+  defp put_balance_updated_at(changeset) do
+    changeset
+    |> put_change(:balance_updated_at, Timex.now())
   end
 end

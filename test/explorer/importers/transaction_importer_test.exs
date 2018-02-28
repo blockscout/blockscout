@@ -218,6 +218,18 @@ defmodule Explorer.TransactionImporterTest do
 
       assert last_transaction.hash == "0xmunchos"
     end
+
+    test "gets balances for addresses" do
+      TransactionImporter.import(
+        "0xdc533d4227734a7cacd75a069e8dc57ac571b865ed97bae5ea4cb74b54145f4c"
+      )
+
+      from_address = Address |> Repo.get_by(hash: "0xb2867180771b196518651c174c9240d5e8bd0ecd")
+      to_address = Address |> Repo.get_by(hash: "0x24e5b8528fe83257d5fe3497ef616026713347f8")
+
+      assert(from_address.balance == Decimal.new(1_572_374_181_095_000_000))
+      assert(to_address.balance == Decimal.new(1_572_374_181_095_000_000))
+    end
   end
 
   describe "find/1" do
@@ -294,44 +306,6 @@ defmodule Explorer.TransactionImporterTest do
 
       refute block_transaction.block_id == updated_block_transaction.block_id
       refute block_transaction.updated_at == updated_block_transaction.updated_at
-    end
-  end
-
-  describe "create_from_address/1" do
-    test "that it creates a new address when one does not exist" do
-      TransactionImporter.create_from_address("0xbb8")
-      last_address = Address |> order_by(desc: :inserted_at) |> Repo.one()
-
-      assert last_address.hash == "0xbb8"
-    end
-
-    test "when the address already exists it does not insert a new address" do
-      insert(:address, hash: "0xbb8")
-      TransactionImporter.create_from_address("0xbb8")
-
-      assert Address |> Repo.all() |> length == 1
-    end
-  end
-
-  describe "create_to_address/1" do
-    test "that it creates a new address when one does not exist" do
-      TransactionImporter.create_to_address("0xFreshPrince")
-      last_address = Address |> order_by(desc: :inserted_at) |> Repo.one()
-
-      assert last_address.hash == "0xfreshprince"
-    end
-
-    test "when the address already exists it does not insert a new address" do
-      insert(:address, hash: "bigmouthbillybass")
-      TransactionImporter.create_to_address("bigmouthbillybass")
-
-      assert Address |> Repo.all() |> length == 1
-    end
-  end
-
-  describe "decode_integer_field/1" do
-    test "returns the integer value of a hex value" do
-      assert(TransactionImporter.decode_integer_field("0x7f2fb") == 520_955)
     end
   end
 end

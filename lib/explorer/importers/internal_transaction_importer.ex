@@ -3,7 +3,8 @@ defmodule Explorer.InternalTransactionImporter do
 
   import Ecto.Query
 
-  alias Explorer.Address
+  alias Explorer.Address.Service, as: Address
+  alias Explorer.Ethereum
   alias Explorer.EthereumexExtensions
   alias Explorer.InternalTransaction
   alias Explorer.Repo
@@ -48,9 +49,9 @@ defmodule Explorer.InternalTransactionImporter do
       to_address_id: trace |> to_address() |> address_id(),
       from_address_id: trace |> from_address() |> address_id(),
       trace_address: trace["traceAddress"],
-      value: trace["action"]["value"] |> decode_integer_field,
-      gas: trace["action"]["gas"] |> decode_integer_field,
-      gas_used: trace["result"]["gasUsed"] |> decode_integer_field,
+      value: trace["action"]["value"] |> Ethereum.decode_integer_field(),
+      gas: trace["action"]["gas"] |> Ethereum.decode_integer_field(),
+      gas_used: trace["result"]["gasUsed"] |> Ethereum.decode_integer_field(),
       input: trace["action"]["input"],
       output: trace["result"]["output"]
     }
@@ -73,11 +74,6 @@ defmodule Explorer.InternalTransactionImporter do
       |> InternalTransaction.changeset(trace)
       |> Repo.insert()
     end)
-  end
-
-  defp decode_integer_field(hex) do
-    {"0x", base_16} = String.split_at(hex, 2)
-    String.to_integer(base_16, 16)
   end
 
   defp address_id(hash) do

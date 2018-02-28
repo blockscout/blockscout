@@ -2,8 +2,8 @@ defmodule Explorer.Repo.Migrations.UpdateCreditDebitMaterializedView do
   use Ecto.Migration
 
   def up do
-    execute "DROP MATERIALIZED VIEW credits;"
-    execute "DROP MATERIALIZED VIEW debits;"
+    execute "DROP MATERIALIZED VIEW IF EXISTS credits;"
+    execute "DROP MATERIALIZED VIEW IF EXISTS debits;"
 
     execute """
     CREATE MATERIALIZED VIEW credits AS
@@ -43,8 +43,8 @@ defmodule Explorer.Repo.Migrations.UpdateCreditDebitMaterializedView do
   end
 
   def down do
-    execute "DROP MATERIALIZED VIEW credits;"
-    execute "DROP MATERIALIZED VIEW debits;"
+    execute "DROP MATERIALIZED VIEW IF EXISTS credits;"
+    execute "DROP MATERIALIZED VIEW IF EXISTS debits;"
 
     execute """
     CREATE MATERIALIZED VIEW credits AS

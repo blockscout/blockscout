@@ -197,4 +197,12 @@ defmodule ExplorerWeb.UserListTest do
     |> click(css(".address__link", text: "Transactions From"))
     |> assert_has(css(".transactions__link--long-hash", text: "0xrazerscooter"))
   end
+
+  test "views addresses", %{session: session} do
+    insert(:address, hash: "0xthinmints", balance: 500)
+
+    session
+    |> visit("/en/addresses/0xthinmints")
+    |> assert_has(css(".address__balance", text: "0.0000000000000005"))
+  end
 end

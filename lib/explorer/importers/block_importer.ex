@@ -5,6 +5,7 @@ defmodule Explorer.BlockImporter do
   import Ethereumex.HttpClient, only: [eth_get_block_by_number: 2]
 
   alias Explorer.Block
+  alias Explorer.Ethereum
   alias Explorer.Repo.NewRelic, as: Repo
   alias Explorer.Workers.ImportTransaction
 
@@ -53,15 +54,15 @@ defmodule Explorer.BlockImporter do
   def extract_block(raw_block) do
     %{
       hash: raw_block["hash"],
-      number: raw_block["number"] |> decode_integer_field,
-      gas_used: raw_block["gasUsed"] |> decode_integer_field,
-      timestamp: raw_block["timestamp"] |> decode_time_field,
+      number: raw_block["number"] |> Ethereum.decode_integer_field(),
+      gas_used: raw_block["gasUsed"] |> Ethereum.decode_integer_field(),
+      timestamp: raw_block["timestamp"] |> Ethereum.decode_time_field(),
       parent_hash: raw_block["parentHash"],
       miner: raw_block["miner"],
-      difficulty: raw_block["difficulty"] |> decode_integer_field,
-      total_difficulty: raw_block["totalDifficulty"] |> decode_integer_field,
-      size: raw_block["size"] |> decode_integer_field,
-      gas_limit: raw_block["gasLimit"] |> decode_integer_field,
+      difficulty: raw_block["difficulty"] |> Ethereum.decode_integer_field(),
+      total_difficulty: raw_block["totalDifficulty"] |> Ethereum.decode_integer_field(),
+      size: raw_block["size"] |> Ethereum.decode_integer_field(),
+      gas_limit: raw_block["gasLimit"] |> Ethereum.decode_integer_field(),
       nonce: raw_block["nonce"] || "0"
     }
   end
@@ -78,13 +79,4 @@ defmodule Explorer.BlockImporter do
   end
 
   defp encode_number(number), do: "0x" <> Integer.to_string(number, 16)
-
-  def decode_integer_field(hex) do
-    {"0x", base_16} = String.split_at(hex, 2)
-    String.to_integer(base_16, 16)
-  end
-
-  def decode_time_field(field) do
-    field |> decode_integer_field |> Timex.from_unix()
-  end
 end

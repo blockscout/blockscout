@@ -17,6 +17,14 @@ defmodule Explorer.Transaction.Service do
 
     import Ecto.Query, only: [from: 2]
 
+    def to_address(query, to_address_id) do
+      from(q in query, where: q.to_address_id == ^to_address_id)
+    end
+
+    def from_address(query, from_address_id) do
+      from(q in query, where: q.from_address_id == ^from_address_id)
+    end
+
     def recently_seen(query, last_seen) do
       from(
         q in query,
@@ -101,6 +109,10 @@ defmodule Explorer.Transaction.Service do
         inner_join: from_address in assoc(q, :from_address),
         preload: [:to_address, :from_address]
       )
+    end
+
+    def chron(query) do
+      from(q in query, order_by: [desc: q.inserted_at])
     end
   end
 end
