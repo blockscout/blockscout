@@ -1,4 +1,6 @@
 defmodule Explorer.Schema do
+  @moduledoc "Common configuration for Explorer schemas."
+
   defmacro __using__(_opts) do
     quote do
       use Ecto.Schema
