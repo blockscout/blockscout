@@ -1,4 +1,5 @@
 defmodule BackfillTransactionReceiptIds do
+  @moduledoc "Backfills transactions with receipt_id values"
   alias Explorer.Repo
 
   def run do
