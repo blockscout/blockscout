@@ -27,6 +27,13 @@ To get POA Explorer up and running locally:
   * Create and migrate your database with `$ mix ecto.create && mix ecto.migrate`
   * Install Node.js dependencies with `$ cd assets && npm install && cd ..`
   * Start Phoenix with `$ mix phx.server`
+  * Start the Account Balances worker with `$ bin/start-pgbouncer-stunnel mix scrape.balances 1000000`
+  * Start the Blocks worker with `$ bin/start-pgbouncer-stunnel mix scrape.blocks 1000000`
+  * Start the Internal Transactions worker with `$ bin/start-pgbouncer-stunnel mix scrape.internal_transactions 10000`
+  * Start the Transaction Receipts worker with `$ bin/start-pgbouncer-stunnel mix scrape.receipts 10000`
+  * Start the Scheduler worker with `$ bin/start-pgbouncer-stunnel mix exq.start scheduler`
+  * Start the Current Blocks worker with `$ bin/start-pgbouncer-stunnel mix exq.start`
+
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
