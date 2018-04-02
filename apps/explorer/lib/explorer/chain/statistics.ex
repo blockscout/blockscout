@@ -25,8 +25,7 @@ defmodule Explorer.Chain.Statistics do
   @transaction_count_query """
     SELECT count(transactions.id)
       FROM transactions
-      JOIN block_transactions ON block_transactions.transaction_id = transactions.id
-      JOIN blocks ON blocks.id = block_transactions.block_id
+      JOIN blocks ON blocks.id = transactions.block_id
       WHERE blocks.timestamp > NOW() - interval '1 day'
   """
 

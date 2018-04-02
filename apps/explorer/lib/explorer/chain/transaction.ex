@@ -3,7 +3,8 @@ defmodule Explorer.Chain.Transaction do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, Block, BlockTransaction, Hash, InternalTransaction, Receipt, Wei}
+  alias Ecto.Changeset
+  alias Explorer.Chain.{Address, Block, Hash, InternalTransaction, Receipt, Wei}
 
   # Constants
 
@@ -76,8 +77,8 @@ defmodule Explorer.Chain.Transaction do
   @type wei_per_gas :: non_neg_integer()
 
   @typedoc """
-  * `block_transaction` - joins this transaction to its `block`
   * `block` - the block in which this transaction was mined/validated
+  * `block_id` - `block` foreign key
   * `from_address` - the source of `value`
   * `from_address_id` - foreign key of `from_address`
   * `gas` - Gas provided by the sender
@@ -100,7 +101,7 @@ defmodule Explorer.Chain.Transaction do
   """
   @type t :: %__MODULE__{
           block: %Ecto.Association.NotLoaded{} | Block.t(),
-          block_transaction: %Ecto.Association.NotLoaded{} | BlockTransaction.t(),
+          block_id: non_neg_integer,
           from_address: %Ecto.Association.NotLoaded{} | Address.t(),
           from_address_id: non_neg_integer(),
           gas: Gas.t(),
@@ -139,8 +140,7 @@ defmodule Explorer.Chain.Transaction do
 
     timestamps()
 
-    has_one(:block_transaction, BlockTransaction)
-    has_one(:block, through: [:block_transaction, :block])
+    belongs_to(:block, Block)
     belongs_to(:from_address, Address)
     has_many(:internal_transactions, InternalTransaction)
     has_one(:receipt, Receipt)
@@ -155,6 +155,34 @@ defmodule Explorer.Chain.Transaction do
     |> foreign_key_constraint(:block_id)
     |> update_change(:hash, &String.downcase/1)
     |> unique_constraint(:hash)
+  end
+
+  def decode(raw_transaction, block_number, %{} = timestamps) do
+    attrs = %{
+      hash: raw_transaction["hash"],
+      value: raw_transaction["value"],
+      gas: raw_transaction["gas"],
+      gas_price: raw_transaction["gasPrice"],
+      input: raw_transaction["input"],
+      nonce: raw_transaction["nonce"],
+      public_key: raw_transaction["publicKey"],
+      r: raw_transaction["r"],
+      s: raw_transaction["s"],
+      standard_v: raw_transaction["standardV"],
+      transaction_index: raw_transaction["transactionIndex"],
+      v: raw_transaction["v"]
+    }
+
+    case changeset(%__MODULE__{}, attrs) do
+      %Changeset{valid?: true, changes: changes} ->
+        {:ok,
+         changes
+         |> Map.put(:block_number, block_number)
+         |> Map.merge(timestamps)}
+
+      %Changeset{valid?: false, errors: errors} ->
+        {:error, errors}
+    end
   end
 
   def null, do: %__MODULE__{}

@@ -18,13 +18,9 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
 
     test "returns transactions for the block", %{conn: conn} do
       hash = "0xsnacks"
-      transaction = insert(:transaction, hash: hash)
-      insert(:receipt, transaction: transaction)
       block = insert(:block)
-      insert(:block_transaction, transaction: transaction, block: block)
-      address = insert(:address)
-      insert(:to_address, transaction: transaction, address: address)
-      insert(:from_address, transaction: transaction, address: address)
+      transaction = insert(:transaction, block_id: block.id, hash: hash)
+      insert(:receipt, transaction: transaction)
 
       conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block.number))
 
@@ -49,9 +45,8 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
     end
 
     test "does not return related transactions without a receipt", %{conn: conn} do
-      transaction = insert(:transaction)
       block = insert(:block)
-      insert(:block_transaction, transaction: transaction, block: block)
+      insert(:transaction, block_id: block.id)
 
       conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block.number))
 
@@ -59,10 +54,9 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
     end
 
     test "does not return related transactions without a from address", %{conn: conn} do
-      transaction = insert(:transaction, from_address_id: nil)
-      insert(:receipt, transaction: transaction)
       block = insert(:block)
-      insert(:block_transaction, transaction: transaction, block: block)
+      transaction = insert(:transaction, block_id: block.id, from_address_id: nil)
+      insert(:receipt, transaction: transaction)
 
       conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block.number))
 
@@ -70,10 +64,9 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
     end
 
     test "does not return related transactions without a to address", %{conn: conn} do
-      transaction = insert(:transaction, to_address_id: nil)
-      insert(:receipt, transaction: transaction)
       block = insert(:block)
-      insert(:block_transaction, transaction: transaction, block: block)
+      transaction = insert(:transaction, block_id: block.id, to_address_id: nil)
+      insert(:receipt, transaction: transaction)
 
       conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block.number))
 

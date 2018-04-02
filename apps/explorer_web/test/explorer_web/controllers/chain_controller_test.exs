@@ -36,9 +36,9 @@ defmodule ExplorerWeb.ChainControllerTest do
     test "only returns transactions with an associated block", %{conn: conn} do
       block = insert(:block, number: 33)
 
-      insert(:transaction, id: 10, hash: "0xDECAFBAD") |> with_block(block)
-
+      insert(:transaction, block_id: block.id, id: 10, hash: "0xDECAFBAD")
       insert(:transaction, id: 30)
+
       conn = get(conn, "/en")
 
       transaction_ids =
@@ -52,7 +52,7 @@ defmodule ExplorerWeb.ChainControllerTest do
     test "returns a transaction", %{conn: conn} do
       block = insert(:block, number: 33)
 
-      insert(:transaction, hash: "0xDECAFBAD") |> with_block(block)
+      insert(:transaction, block_id: block.id, hash: "0xDECAFBAD")
 
       conn = get(conn, "/en")
 
@@ -69,7 +69,7 @@ defmodule ExplorerWeb.ChainControllerTest do
     end
 
     test "finds a transaction by hash", %{conn: conn} do
-      transaction = insert(:transaction) |> with_block()
+      transaction = insert(:transaction, block_id: insert(:block).id)
       conn = get(conn, "/en/search?q=#{transaction.hash}")
 
       assert redirected_to(conn) == transaction_path(conn, :show, "en", transaction.hash)

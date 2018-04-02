@@ -13,10 +13,9 @@ defmodule ExplorerWeb.AddressTransactionFromControllerTest do
     test "returns transactions from this address", %{conn: conn} do
       address = insert(:address)
       hash = "0xsnacks"
-      transaction = insert(:transaction, hash: hash, from_address_id: address.id)
-      insert(:receipt, transaction: transaction)
       block = insert(:block)
-      insert(:block_transaction, transaction: transaction, block: block)
+      transaction = insert(:transaction, block_id: block.id, from_address_id: address.id, hash: hash)
+      insert(:receipt, transaction: transaction)
 
       conn = get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
 
@@ -32,14 +31,10 @@ defmodule ExplorerWeb.AddressTransactionFromControllerTest do
     end
 
     test "does not return transactions to this address", %{conn: conn} do
-      transaction = insert(:transaction, hash: "0xsnacks")
-      insert(:receipt, transaction: transaction)
       block = insert(:block)
-      insert(:block_transaction, transaction: transaction, block: block)
+      transaction = insert(:transaction, block_id: block.id, hash: "0xsnacks")
+      insert(:receipt, transaction: transaction)
       address = insert(:address)
-      other_address = insert(:address)
-      insert(:to_address, transaction: transaction, address: address)
-      insert(:from_address, transaction: transaction, address: other_address)
 
       conn = get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
 
@@ -48,12 +43,9 @@ defmodule ExplorerWeb.AddressTransactionFromControllerTest do
     end
 
     test "does not return related transactions without a receipt", %{conn: conn} do
-      transaction = insert(:transaction)
       block = insert(:block)
-      insert(:block_transaction, transaction: transaction, block: block)
+      insert(:transaction, block_id: block.id)
       address = insert(:address)
-      insert(:to_address, transaction: transaction, address: address)
-      insert(:from_address, transaction: transaction, address: address)
 
       conn = get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
 
@@ -62,12 +54,10 @@ defmodule ExplorerWeb.AddressTransactionFromControllerTest do
     end
 
     test "does not return related transactions without a from address", %{conn: conn} do
-      transaction = insert(:transaction)
-      insert(:receipt, transaction: transaction)
       block = insert(:block)
-      insert(:block_transaction, transaction: transaction, block: block)
+      transaction = insert(:transaction, block_id: block.id)
+      insert(:receipt, transaction: transaction)
       address = insert(:address)
-      insert(:to_address, transaction: transaction, address: address)
 
       conn = get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
 
@@ -76,12 +66,10 @@ defmodule ExplorerWeb.AddressTransactionFromControllerTest do
     end
 
     test "does not return related transactions without a to address", %{conn: conn} do
-      transaction = insert(:transaction)
-      insert(:receipt, transaction: transaction)
       block = insert(:block)
-      insert(:block_transaction, transaction: transaction, block: block)
+      transaction = insert(:transaction, block_id: block.id)
+      insert(:receipt, transaction: transaction)
       address = insert(:address)
-      insert(:from_address, transaction: transaction, address: address)
 
       conn = get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
 

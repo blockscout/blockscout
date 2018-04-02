@@ -22,16 +22,6 @@ defmodule Explorer.Chain.TransactionFactory do
           from_address_id: insert(:address).id
         }
       end
-
-      def with_block(transaction, block \\ nil) do
-        block = block || insert(:block)
-        insert(:block_transaction, %{block_id: block.id, transaction_id: transaction.id})
-        transaction
-      end
-
-      def list_with_block(transactions, block \\ nil) do
-        Enum.map(transactions, fn transaction -> with_block(transaction, block) end)
-      end
     end
   end
 end

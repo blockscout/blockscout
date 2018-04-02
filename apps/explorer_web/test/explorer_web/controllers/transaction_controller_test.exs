@@ -5,19 +5,19 @@ defmodule ExplorerWeb.TransactionControllerTest do
 
   describe "GET index/2" do
     test "returns a transaction with a receipt", %{conn: conn} do
-      transaction = insert(:transaction)
       block = insert(:block)
+      transaction = insert(:transaction, block_id: block.id)
       insert(:receipt, transaction: transaction)
-      insert(:block_transaction, transaction: transaction, block: block)
+
       conn = get(conn, "/en/transactions")
+
       assert List.first(conn.assigns.transactions.entries).id == transaction.id
     end
 
     test "returns a count of transactions", %{conn: conn} do
-      transaction = insert(:transaction)
       block = insert(:block)
+      transaction = insert(:transaction, block_id: block.id)
       insert(:receipt, transaction: transaction)
-      insert(:block_transaction, transaction: transaction, block: block)
 
       conn = get(conn, "/en/transactions")
 
@@ -25,8 +25,10 @@ defmodule ExplorerWeb.TransactionControllerTest do
     end
 
     test "returns no pending transactions", %{conn: conn} do
-      insert(:transaction) |> with_block()
+      insert(:transaction, block_id: insert(:block).id)
+
       conn = get(conn, "/en/transactions")
+
       assert conn.assigns.transactions.entries == []
     end
 
@@ -37,11 +39,12 @@ defmodule ExplorerWeb.TransactionControllerTest do
     end
 
     test "paginates transactions using the last seen transaction", %{conn: conn} do
-      transaction = insert(:transaction)
       block = insert(:block)
+      transaction = insert(:transaction, block_id: block.id)
       insert(:receipt, transaction: transaction)
-      insert(:block_transaction, transaction: transaction, block: block)
+
       conn = get(conn, "/en/transactions", last_seen: transaction.id)
+
       assert conn.assigns.transactions.entries == []
     end
 
@@ -69,7 +72,7 @@ defmodule ExplorerWeb.TransactionControllerTest do
       conn: conn
     } do
       block = insert(:block, %{number: 777})
-      transaction = insert(:transaction, hash: "0x8") |> with_block(block)
+      transaction = insert(:transaction, block_id: block.id, hash: "0x8")
 
       conn = get(conn, "/en/transactions/0x8")
 

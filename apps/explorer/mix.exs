@@ -46,9 +46,8 @@ defmodule Explorer.Mixfile do
   defp elixirc_paths, do: ["lib"]
 
   # Specifies extra applications to start per environment
-  defp extra_applications(:prod), do: [:phoenix_pubsub_redis, :exq, :exq_ui | extra_applications()]
+  defp extra_applications(:prod), do: [:phoenix_pubsub_redis | extra_applications()]
 
-  defp extra_applications(:dev), do: [:exq, :exq_ui | extra_applications()]
   defp extra_applications(_), do: extra_applications()
 
   defp extra_applications,
@@ -57,7 +56,6 @@ defmodule Explorer.Mixfile do
       :ethereumex,
       :logger,
       :mix,
-      :new_relixir,
       :runtime_tools,
       :scrivener_ecto,
       :timex,
@@ -77,19 +75,15 @@ defmodule Explorer.Mixfile do
       {:ex_machina, "~> 2.1", only: [:test]},
       # Code coverage
       {:excoveralls, "~> 0.8.1", only: [:test]},
-      {:exq, "~> 0.9.1"},
-      {:exq_ui, "~> 0.9.0"},
       {:exvcr, "~> 0.10", only: :test},
-      {:flow, "~> 0.12"},
       {:httpoison, "~> 1.0", override: true},
+      {:jason, "~> 1.0"},
       {:jiffy, "~> 0.15.1"},
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       {:math, "~> 0.3.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:mox, "~> 0.3.2", only: [:test]},
-      {:new_relixir, "~> 0.4"},
       {:postgrex, ">= 0.0.0"},
-      {:quantum, "~> 2.2.1"},
       {:scrivener_ecto, "~> 1.0"},
       {:scrivener_html, "~> 1.7"},
       {:sobelow, ">= 0.0.0", only: [:dev, :test], runtime: false},

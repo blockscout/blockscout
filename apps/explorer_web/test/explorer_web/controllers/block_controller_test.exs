@@ -25,11 +25,10 @@ defmodule ExplorerWeb.BlockControllerTest do
 
     test "returns a block with two transactions", %{conn: conn} do
       block = insert(:block)
-      transaction = insert(:transaction)
-      insert(:block_transaction, block: block, transaction: transaction)
-      other_transaction = insert(:transaction)
-      insert(:block_transaction, block: block, transaction: other_transaction)
+      insert_list(2, :transaction, block_id: block.id)
+
       conn = get(conn, "/en/blocks")
+
       assert conn.assigns.blocks.entries |> Enum.count() == 1
     end
   end

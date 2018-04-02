@@ -5,7 +5,16 @@
 # is restricted to this project.
 use Mix.Config
 
-config :ethereumex, url: "http://localhost:8545"
+url = "https://sokol.poa.network"
+
+config :explorer, :eth_client,
+  http: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :eth]],
+  trace_url: "https://sokol-trace.poa.network",
+  url: url
+
+config :ethereumex,
+  url: url,
+  http_options: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :eth]]
 
 # General application configuration
 config :explorer, ecto_repos: [Explorer.Repo]
@@ -13,25 +22,6 @@ config :explorer, ecto_repos: [Explorer.Repo]
 config :explorer, :ethereum, backend: Explorer.Ethereum.Live
 
 config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: 2_000
-
-config :exq,
-  host: "localhost",
-  port: 6379,
-  namespace: "exq",
-  start_on_application: false,
-  scheduler_enable: true,
-  shutdown_timeout: 5000,
-  max_retries: 10,
-  queues: [
-    {"default", 1},
-    {"balances", 1},
-    {"blocks", 1},
-    {"internal_transactions", 1},
-    {"transactions", 1},
-    {"receipts", 1}
-  ]
-
-config :exq_ui, server: false
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

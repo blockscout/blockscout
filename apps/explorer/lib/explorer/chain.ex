@@ -5,18 +5,9 @@ defmodule Explorer.Chain do
 
   import Ecto.Query, only: [from: 2, order_by: 2, preload: 2, where: 2, where: 3]
 
-  alias Explorer.Chain.{
-    Address,
-    Block,
-    BlockTransaction,
-    InternalTransaction,
-    Log,
-    Receipt,
-    Transaction,
-    Wei
-  }
-
-  alias Explorer.Repo.NewRelic, as: Repo
+  alias Ecto.Multi
+  alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Receipt, Transaction, Wei}
+  alias Explorer.Repo
 
   # Types
 
@@ -46,6 +37,10 @@ defmodule Explorer.Chain do
   @typep pagination_option :: {:pagination, pagination}
 
   # Functions
+
+  def block_count do
+    Repo.one(from(b in Block, select: count(b.id)))
+  end
 
   @doc """
   Finds all `t:Explorer.Chain.Transaction.t/0` in the `t:Explorer.Chain.Block.t/0`.
@@ -85,12 +80,11 @@ defmodule Explorer.Chain do
   def block_to_transaction_count(%Block{id: block_id}) do
     query =
       from(
-        block_transaction in BlockTransaction,
-        join: block in assoc(block_transaction, :block),
-        where: block_transaction.block_id == ^block_id
+        transaction in Transaction,
+        where: transaction.block_id == ^block_id
       )
 
-    Repo.aggregate(query, :count, :block_id)
+    Repo.aggregate(query, :count, :id)
   end
 
   @doc """
@@ -171,6 +165,13 @@ defmodule Explorer.Chain do
   def from_address_to_transactions(address = %Address{}, options \\ [])
       when is_list(options) do
     address_to_transactions(address, Keyword.put(options, :direction, :from))
+  end
+
+  @doc """
+  TODO
+  """
+  def get_latest_block do
+    Repo.one(from(b in Block, limit: 1, order_by: [desc: b.number]))
   end
 
   @doc """
@@ -271,6 +272,25 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  TODO
+  """
+  def import_blocks(raw_blocks, internal_transactions, receipts) do
+    {blocks, transactions} = extract_blocks(raw_blocks)
+
+    Multi.new()
+    |> Multi.run(:blocks, &insert_blocks(&1, blocks))
+    |> Multi.run(:transactions, &insert_transactions(&1, transactions))
+    |> Multi.run(:internal, &insert_internal(&1, internal_transactions))
+    |> Multi.run(:receipts, &insert_receipts(&1, receipts))
+    |> Multi.run(:logs, &insert_logs(&1))
+    |> Repo.transaction()
+  end
+
+  def internal_transaction_count do
+    Repo.one(from(t in InternalTransaction, select: count(t.id)))
+  end
+
+  @doc """
   The last `t:Explorer.Chain.Transaction.t/0` `id`.
   """
   @spec last_transaction_id([{:pending, boolean()}]) :: non_neg_integer()
@@ -313,12 +333,38 @@ defmodule Explorer.Chain do
     |> Repo.paginate(pagination)
   end
 
+  def log_count do
+    Repo.one(from(l in Log, select: count(l.id)))
+  end
+
   @doc """
   The maximum `t:Explorer.Chain.Block.t/0` `number`
   """
   @spec max_block_number() :: Block.block_number()
   def max_block_number do
     Repo.aggregate(Block, :max, :number)
+  end
+
+  @doc """
+  TODO
+  """
+  def missing_block_numbers do
+    {:ok, {_, missing_count, missing_ranges}} =
+      Repo.transaction(fn ->
+        query = from(b in Block, select: b.number, order_by: [asc: b.number])
+
+        query
+        |> Repo.stream(max_rows: 1000)
+        |> Enum.reduce({-1, 0, []}, fn
+          num, {prev, missing_count, acc} when prev + 1 == num ->
+            {num, missing_count, acc}
+
+          num, {prev, missing_count, acc} ->
+            {num, missing_count + (num - prev - 1), [{prev + 1, num - 1} | acc]}
+        end)
+      end)
+
+    {missing_count, missing_ranges}
   end
 
   @doc """
@@ -333,6 +379,10 @@ defmodule Explorer.Chain do
       nil -> {:error, :not_found}
       block -> {:ok, block}
     end
+  end
+
+  def receipt_count do
+    Repo.one(from(r in Receipt, select: count(r.id)))
   end
 
   @doc """
@@ -523,12 +573,115 @@ defmodule Explorer.Chain do
     from(q in query, order_by: [desc: q.inserted_at, desc: q.id])
   end
 
+  defp extract_blocks(raw_blocks) do
+    timestamps = timestamps()
+
+    {blocks, transactions} =
+      Enum.reduce(raw_blocks, {[], []}, fn raw_block, {blocks_acc, trans_acc} ->
+        {:ok, block, transactions} = Block.extract(raw_block, timestamps)
+        {[block | blocks_acc], trans_acc ++ transactions}
+      end)
+
+    {Enum.reverse(blocks), transactions}
+  end
+
   defp for_parent_transaction(query, hash) when is_binary(hash) do
     from(
       child in query,
       inner_join: transaction in assoc(child, :transaction),
       where: fragment("lower(?)", transaction.hash) == ^String.downcase(hash)
     )
+  end
+
+  defp insert_blocks(%{}, blocks) do
+    {_, inserted_blocks} =
+      Repo.safe_insert_all(
+        Block,
+        blocks,
+        returning: [:id, :number],
+        on_conflict: :replace_all,
+        conflict_target: :number
+      )
+
+    {:ok, inserted_blocks}
+  end
+
+  defp insert_internal(%{transactions: transactions}, internal_transactions) do
+    timestamps = timestamps()
+
+    internals =
+      Enum.flat_map(transactions, fn %{hash: hash, id: id} ->
+        case Map.fetch(internal_transactions, hash) do
+          {:ok, traces} ->
+            Enum.map(traces, &InternalTransaction.extract(&1, id, timestamps))
+
+          :error ->
+            []
+        end
+      end)
+
+    {_, inserted} = Repo.safe_insert_all(InternalTransaction, internals, on_conflict: :nothing)
+
+    {:ok, inserted}
+  end
+
+  defp insert_logs(%{receipts: %{inserted: receipts, logs: logs_map}}) do
+    logs_to_insert =
+      Enum.reduce(receipts, [], fn receipt, acc ->
+        case Map.fetch(logs_map, receipt.transaction_id) do
+          {:ok, []} ->
+            acc
+
+          {:ok, [_ | _] = logs} ->
+            logs = Enum.map(logs, &Map.put(&1, :receipt_id, receipt.id))
+            logs ++ acc
+        end
+      end)
+
+    {_, inserted_logs} = Repo.safe_insert_all(Log, logs_to_insert, returning: [:id])
+    {:ok, inserted_logs}
+  end
+
+  defp insert_receipts(%{transactions: transactions}, raw_receipts) do
+    timestamps = timestamps()
+
+    {receipts_to_insert, logs_map} =
+      Enum.reduce(transactions, {[], %{}}, fn trans, {receipts_acc, logs_acc} ->
+        case Map.fetch(raw_receipts, trans.hash) do
+          {:ok, raw_receipt} ->
+            {receipt, logs} = Receipt.extract(raw_receipt, trans.id, timestamps)
+            {[receipt | receipts_acc], Map.put(logs_acc, trans.id, logs)}
+
+          :error ->
+            {receipts_acc, logs_acc}
+        end
+      end)
+
+    {_, inserted_receipts} =
+      Repo.safe_insert_all(
+        Receipt,
+        receipts_to_insert,
+        returning: [:id, :transaction_id]
+      )
+
+    {:ok, %{inserted: inserted_receipts, logs: logs_map}}
+  end
+
+  defp insert_transactions(%{blocks: blocks}, transactions) do
+    blocks_map = for block <- blocks, into: %{}, do: {block.number, block}
+
+    transactions =
+      for transaction <- transactions do
+        %{id: id} = Map.fetch!(blocks_map, transaction.block_number)
+
+        transaction
+        |> Map.put(:block_id, id)
+        |> Map.delete(:block_number)
+      end
+
+    {_, inserted} = Repo.safe_insert_all(Transaction, transactions, returning: [:id, :hash])
+
+    {:ok, inserted}
   end
 
   defp join_association(query, association, necessity) when is_atom(association) do
@@ -554,6 +707,11 @@ defmodule Explorer.Chain do
       order_by: [desc: q.id],
       limit: 10
     )
+  end
+
+  defp timestamps do
+    now = Ecto.DateTime.utc()
+    %{inserted_at: now, updated_at: now}
   end
 
   defp transaction_hash_to_logs(transaction_hash, options)

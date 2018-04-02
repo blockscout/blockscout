@@ -7,6 +7,10 @@ defmodule Explorer.Chain.Statistics.Server do
 
   @interval 1_000
 
+  def child_spec(_) do
+    Supervisor.Spec.worker(__MODULE__, [true])
+  end
+
   @spec fetch() :: Statistics.t()
   def fetch do
     case GenServer.whereis(__MODULE__) do

@@ -5,13 +5,9 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
 
   describe "GET index/2" do
     test "returns no transactions that have a receipt", %{conn: conn} do
-      transaction = insert(:transaction)
       block = insert(:block)
-      address = insert(:address)
+      transaction = insert(:transaction, block_id: block.id)
       insert(:receipt, transaction: transaction)
-      insert(:block_transaction, transaction: transaction, block: block)
-      insert(:to_address, transaction: transaction, address: address)
-      insert(:from_address, transaction: transaction, address: address)
 
       conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
 
@@ -22,13 +18,9 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
     end
 
     test "does not count transactions that have a receipt", %{conn: conn} do
-      transaction = insert(:transaction)
       block = insert(:block)
-      address = insert(:address)
+      transaction = insert(:transaction, block_id: block.id)
       insert(:receipt, transaction: transaction)
-      insert(:block_transaction, transaction: transaction, block: block)
-      insert(:to_address, transaction: transaction, address: address)
-      insert(:from_address, transaction: transaction, address: address)
 
       conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
 
@@ -39,10 +31,7 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
     end
 
     test "returns pending transactions", %{conn: conn} do
-      address = insert(:address)
       transaction = insert(:transaction)
-      insert(:to_address, transaction: transaction, address: address)
-      insert(:from_address, transaction: transaction, address: address)
 
       conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
 
@@ -50,10 +39,7 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
     end
 
     test "returns a count of pending transactions", %{conn: conn} do
-      address = insert(:address)
-      transaction = insert(:transaction)
-      insert(:to_address, transaction: transaction, address: address)
-      insert(:from_address, transaction: transaction, address: address)
+      insert(:transaction)
 
       conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
 
@@ -61,10 +47,7 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
     end
 
     test "paginates transactions using the last seen transaction", %{conn: conn} do
-      address = insert(:address)
       transaction = insert(:transaction)
-      insert(:to_address, transaction: transaction, address: address)
-      insert(:from_address, transaction: transaction, address: address)
 
       conn =
         get(

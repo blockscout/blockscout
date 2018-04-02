@@ -26,9 +26,8 @@ defmodule Explorer.ChainTest do
     end
 
     test "with transactions" do
-      block = %Block{id: block_id} = insert(:block)
-      %Transaction{id: transaction_id} = insert(:transaction)
-      insert(:block_transaction, block_id: block_id, transaction_id: transaction_id)
+      block = insert(:block)
+      %Transaction{id: transaction_id} = insert(:transaction, block_id: block.id)
 
       assert %Scrivener.Page{
                entries: [%Transaction{id: ^transaction_id}],
@@ -40,17 +39,10 @@ defmodule Explorer.ChainTest do
     test "with transaction with receipt required without receipt does not return transaction" do
       block = %Block{id: block_id} = insert(:block)
 
-      %Transaction{id: transaction_id_with_receipt} = insert(:transaction)
+      %Transaction{id: transaction_id_with_receipt} = insert(:transaction, block_id: block_id)
       insert(:receipt, transaction_id: transaction_id_with_receipt)
-      insert(:block_transaction, block_id: block_id, transaction_id: transaction_id_with_receipt)
 
-      %Transaction{id: transaction_id_without_receipt} = insert(:transaction)
-
-      insert(
-        :block_transaction,
-        block_id: block_id,
-        transaction_id: transaction_id_without_receipt
-      )
+      %Transaction{id: transaction_id_without_receipt} = insert(:transaction, block_id: block_id)
 
       assert %Scrivener.Page{
                entries: [%Transaction{id: ^transaction_id_with_receipt, receipt: %Receipt{}}],
@@ -84,18 +76,14 @@ defmodule Explorer.ChainTest do
     end
 
     test "with transactions can be paginated" do
-      block = %Block{id: block_id} = insert(:block)
+      block = insert(:block)
 
-      transactions = insert_list(2, :transaction)
-
-      Enum.each(transactions, fn %Transaction{id: transaction_id} ->
-        insert(:block_transaction, block_id: block_id, transaction_id: transaction_id)
-      end)
+      transactions = insert_list(2, :transaction, block_id: block.id)
 
       [%Transaction{id: first_transaction_id}, %Transaction{id: second_transaction_id}] = transactions
 
       assert %Scrivener.Page{
-               entries: [%Transaction{id: ^first_transaction_id}],
+               entries: [%Transaction{id: ^second_transaction_id}],
                page_number: 1,
                page_size: 1,
                total_entries: 2,
@@ -103,7 +91,7 @@ defmodule Explorer.ChainTest do
              } = Chain.block_to_transactions(block, pagination: %{page_size: 1})
 
       assert %Scrivener.Page{
-               entries: [%Transaction{id: ^second_transaction_id}],
+               entries: [%Transaction{id: ^first_transaction_id}],
                page_number: 2,
                page_size: 1,
                total_entries: 2,
@@ -121,8 +109,7 @@ defmodule Explorer.ChainTest do
 
     test "with transactions" do
       block = insert(:block)
-      %Transaction{id: transaction_id} = insert(:transaction)
-      insert(:block_transaction, block_id: block.id, transaction_id: transaction_id)
+      insert(:transaction, block_id: block.id)
 
       assert Chain.block_to_transaction_count(block) == 1
     end

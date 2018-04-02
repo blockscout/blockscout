@@ -7,7 +7,8 @@ defmodule Explorer.Chain.Block do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{BlockTransaction, Gas, Hash, Transaction}
+  alias Ecto.Changeset
+  alias Explorer.Chain.{Gas, Hash, Transaction}
 
   # Types
 
@@ -24,7 +25,6 @@ defmodule Explorer.Chain.Block do
   @type block_number :: non_neg_integer()
 
   @typedoc """
-  * `block_transactions` - The `t:Explorer.Chain.BlockTransaction.t/0`s joins this block to its `transactions`
   * `difficulty` - how hard the block was to mine.
   * `gas_limit` - If the total number of gas used by the computation spawned by the transaction, including the original
       message and any sub-messages that may be triggered, is less than or equal to the gas limit, then the transaction
@@ -43,7 +43,6 @@ defmodule Explorer.Chain.Block do
   * `transactions` - the `t:Explorer.Chain.Transaction.t/0` in this block.
   """
   @type t :: %__MODULE__{
-          block_transactions: %Ecto.Association.NotLoaded{} | [BlockTransaction.t()],
           difficulty: difficulty(),
           gas_limit: Gas.t(),
           gas_used: Gas.t(),
@@ -73,12 +72,10 @@ defmodule Explorer.Chain.Block do
 
     timestamps()
 
-    has_many(:block_transactions, BlockTransaction)
-    many_to_many(:transactions, Transaction, join_through: "block_transactions")
+    has_many(:transactions, Transaction)
   end
 
-  @required_attrs ~w(number hash parent_hash nonce miner difficulty
-                     total_difficulty size gas_limit gas_used timestamp)a
+  @required_attrs ~w(difficulty gas_limit gas_used hash miner nonce number parent_hash size timestamp total_difficulty)a
 
   @doc false
   def changeset(%__MODULE__{} = block, attrs) do
@@ -87,12 +84,57 @@ defmodule Explorer.Chain.Block do
     |> validate_required(@required_attrs)
     |> update_change(:hash, &String.downcase/1)
     |> unique_constraint(:hash)
-    |> cast_assoc(:transactions)
+  end
+
+  @doc false
+  def extract(raw_block, %{} = timestamps) do
+    raw_block
+    |> extract_block(timestamps)
+    |> extract_transactions(raw_block["transactions"], timestamps)
   end
 
   def null, do: %__MODULE__{number: -1, timestamp: :calendar.universal_time()}
 
   def latest(query) do
     query |> order_by(desc: :number)
+  end
+
+  ## Private Functions
+
+  defp extract_block(raw_block, %{} = timestamps) do
+    attrs = %{
+      hash: raw_block["hash"],
+      number: raw_block["number"],
+      gas_used: raw_block["gasUsed"],
+      timestamp: raw_block["timestamp"],
+      parent_hash: raw_block["parentHash"],
+      miner: raw_block["miner"],
+      difficulty: raw_block["difficulty"],
+      total_difficulty: raw_block["totalDifficulty"],
+      size: raw_block["size"],
+      gas_limit: raw_block["gasLimit"],
+      nonce: raw_block["nonce"] || "0"
+    }
+
+    case changeset(%__MODULE__{}, attrs) do
+      %Changeset{valid?: true, changes: changes} -> {:ok, Map.merge(changes, timestamps)}
+      %Changeset{valid?: false, errors: errors} -> {:error, {:block, errors}}
+    end
+  end
+
+  defp extract_transactions({:ok, block_changes}, raw_transactions, %{} = timestamps) do
+    raw_transactions
+    |> Enum.map(&Transaction.decode(&1, block_changes.number, timestamps))
+    |> Enum.reduce_while({:ok, block_changes, []}, fn
+      {:ok, trans_changes}, {:ok, block, acc} ->
+        {:cont, {:ok, block, [trans_changes | acc]}}
+
+      {:error, reason}, _ ->
+        {:halt, {:error, {:transaction, reason}}}
+    end)
+  end
+
+  defp extract_transactions({:error, reason}, _transactions, _timestamps) do
+    {:error, reason}
   end
 end

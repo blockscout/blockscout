@@ -55,7 +55,6 @@ defmodule ExplorerWeb.UserListTest do
 
   test "views blocks", %{session: session} do
     insert_list(4, :block, %{
-      number: 1,
       timestamp: Timex.now() |> Timex.shift(hours: -1),
       gas_used: 10
     })
@@ -72,10 +71,10 @@ defmodule ExplorerWeb.UserListTest do
         gas_limit: 5_030_101
       })
 
-    transaction = insert(:transaction, hash: "0xfaschtnacht") |> with_block(fifth_block)
+    transaction = insert(:transaction, block_id: fifth_block.id, hash: "0xfaschtnacht")
 
-    insert(:transaction, hash: "0xpaczki") |> with_block(fifth_block)
-    insert(:transaction) |> with_block(fifth_block)
+    insert(:transaction, block_id: fifth_block.id, hash: "0xpaczki")
+    insert(:transaction, block_id: fifth_block.id)
     insert(:receipt, transaction: transaction)
 
     Credit.refresh()
@@ -84,7 +83,6 @@ defmodule ExplorerWeb.UserListTest do
     session
     |> visit("/en")
     |> assert_has(css(".blocks__title", text: "Blocks"))
-    |> assert_has(css(".blocks__column--height", count: 5, text: "1"))
     |> assert_has(css(".blocks__column--transactions-count", count: 5))
     |> assert_has(css(".blocks__column--transactions-count", count: 1, text: "3"))
     |> assert_has(css(".blocks__column--age", count: 5, text: "1 hour ago"))
@@ -113,8 +111,8 @@ defmodule ExplorerWeb.UserListTest do
         gas_used: 123_987
       })
 
-    for _ <- 0..3, do: insert(:transaction) |> with_block(block)
-    insert(:transaction, hash: "0xC001", gas: 5891) |> with_block
+    insert_list(4, :transaction, block_id: block.id)
+    insert(:transaction, block_id: insert(:block).id, hash: "0xC001", gas: 5891)
 
     lincoln = insert(:address, hash: "0xlincoln")
     taft = insert(:address, hash: "0xhowardtaft")
@@ -122,6 +120,7 @@ defmodule ExplorerWeb.UserListTest do
     transaction =
       insert(
         :transaction,
+        block_id: block.id,
         hash: "0xSk8",
         value: Explorer.Chain.Wei.from(Decimal.new(5656), :ether),
         gas: Decimal.new(1_230_000_000_000_123_123),
@@ -134,8 +133,6 @@ defmodule ExplorerWeb.UserListTest do
         to_address_id: lincoln.id
       )
 
-    insert(:block_transaction, block: block, transaction: transaction)
-
     receipt = insert(:receipt, transaction: transaction, status: 1)
     insert(:log, address_id: lincoln.id, receipt: receipt)
 
@@ -143,12 +140,11 @@ defmodule ExplorerWeb.UserListTest do
     txn_from_lincoln =
       insert(
         :transaction,
+        block_id: block.id,
         hash: "0xrazerscooter",
         from_address_id: lincoln.id,
         to_address_id: taft.id
       )
-
-    insert(:block_transaction, block: block, transaction: txn_from_lincoln)
 
     insert(:receipt, transaction: txn_from_lincoln)
 
@@ -187,7 +183,7 @@ defmodule ExplorerWeb.UserListTest do
     |> assert_has(css(".transaction__item", text: "0xlincoln"))
     |> assert_has(css(".transaction__item", text: "0xhowardtaft"))
     |> assert_has(css(".transaction__item", text: "block confirmations"))
-    |> assert_has(css(".transaction__item", text: "48 years ago"))
+    |> assert_has(css(".transaction__item", text: "49 years ago"))
     |> assert_has(css(".transaction__item", text: "38 years ago"))
     |> click(link("Internal Transactions"))
     |> assert_has(css(".internal-transaction__table", text: internal.call_type))

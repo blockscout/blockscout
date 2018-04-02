@@ -46,9 +46,8 @@ defmodule ExplorerWeb.Mixfile do
   defp elixirc_paths, do: ["lib"]
 
   # Specifies extra applications to start per environment
-  defp extra_applications(:prod), do: [:phoenix_pubsub_redis, :exq, :exq_ui | extra_applications()]
+  defp extra_applications(:prod), do: [:phoenix_pubsub_redis | extra_applications()]
 
-  defp extra_applications(:dev), do: [:exq, :exq_ui | extra_applications()]
   defp extra_applications(_), do: extra_applications()
 
   defp extra_applications,
@@ -61,8 +60,7 @@ defmodule ExplorerWeb.Mixfile do
       :crontab,
       :set_locale,
       :logger,
-      :runtime_tools,
-      :new_relixir
+      :runtime_tools
     ]
 
   # Specifies your project dependencies.
@@ -90,7 +88,6 @@ defmodule ExplorerWeb.Mixfile do
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       {:math, "~> 0.3.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
-      {:new_relixir, "~> 0.4"},
       {:phoenix, "~> 1.3.0"},
       {:phoenix_ecto, "~> 3.2"},
       {:phoenix_html, "~> 2.10"},

@@ -8,7 +8,4 @@ config :explorer, Explorer.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
   ownership_timeout: 60_000
 
-# Configure ethereumex
-config :ethereumex, url: "https://sokol-trace.poa.network"
-
 config :explorer, :ethereum, backend: Explorer.Ethereum.Test
