@@ -5,33 +5,14 @@
 # is restricted to this project.
 use Mix.Config
 
+config :ethereumex, url: "http://localhost:8545"
+
 # General application configuration
 config :explorer, ecto_repos: [Explorer.Repo]
 
-# Configures gettext
-config :explorer, ExplorerWeb.Gettext, locales: ~w(en), default_locale: "en"
-
-# Configures the endpoint
-config :explorer, ExplorerWeb.Endpoint,
-  url: [host: "localhost"],
-  render_errors: [view: ExplorerWeb.ErrorView, accepts: ~w(html json)],
-  pubsub: [name: Explorer.PubSub, adapter: Phoenix.PubSub.PG2]
+config :explorer, :ethereum, backend: Explorer.Ethereum.Live
 
 config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: 2_000
-
-# Configures Elixir's Logger
-config :logger, :console,
-  format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id]
-
-config :ethereumex, url: "http://localhost:8545"
-
-config :new_relixir, active: false
-
-config :ex_cldr,
-  default_locale: "en",
-  locales: ["en"],
-  gettext: ExplorerWeb.Gettext
 
 config :exq,
   host: "localhost",
@@ -49,8 +30,6 @@ config :exq,
     {"transactions", 1},
     {"receipts", 1}
   ]
-
-config :explorer, :ethereum, backend: Explorer.Ethereum.Live
 
 config :exq_ui, server: false
 

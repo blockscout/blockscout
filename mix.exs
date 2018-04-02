@@ -1,4 +1,4 @@
-defmodule Explorer.Umbrella.Mixfile do
+defmodule ExplorerUmbrella.Mixfile do
   use Mix.Project
 
   def project do

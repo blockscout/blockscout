@@ -45,12 +45,12 @@ dependencies:
     - bundle check --path=vendor/bundle || bundle install --path=vendor/bundle --jobs=4 --retry=3
     - mix dialyzer --plt:
         timeout: 3600
-    - cd assets && yarn install && yarn build && cd ..
+    - cd apps/explorer_web/assets && yarn install && yarn build && cd -
   cache_directories:
     - ~/.asdf
     - _build
     - deps
-    - assets/node_modules
+    - apps/explorer_web/assets/node_modules
     - vendor/bundle
 
 test:
@@ -60,8 +60,8 @@ test:
     - mix sobelow --config
     - mix dialyzer --halt-exit-status
     - bundle exec license_finder --project-path=. --decisions-file=doc/dependency_decisions.yml
-    - cd assets && bundle exec license_finder --decisions-file=../doc/dependency_decisions.yml && cd ..
-    - cd assets && yarn eslint --format=junit --output-file="$CIRCLE_TEST_REPORTS/eslint/junit.xml" && cd ..
+    - cd apps/explorer_web/assets && bundle exec license_finder --decisions-file=../../..//doc/dependency_decisions.yml && cd -
+    - cd apps/explorer_web/assets && yarn eslint --format=junit --output-file="$CIRCLE_TEST_REPORTS/eslint/junit.xml" && cd -
   override:
     - mix test
   post:
