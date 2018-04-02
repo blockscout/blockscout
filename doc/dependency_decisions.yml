@@ -351,3 +351,16 @@
     :why: 
     :versions: []
     :when: 2018-02-09 05:08:02.294651000 Z
+- - :license
+  - explorer
+  - GPLv3
+  - :who: Luke Imhoff <luke.imhoff@dockyard.com>
+    :why: Inherits license from umbrella project
+    :versions: []
+    :when: 2018-04-02 19:27:00.704774000 Z
+- - :approve
+  - explorer
+  - :who: Luke Imhoff <luke.imhoff@dockyard.com>
+    :why: In-umbrella project dependency
+    :versions: []
+    :when: 2018-04-02 19:30:09.643200000 Z
