@@ -1,18 +1,24 @@
-GEM
-  remote: https://rubygems.org/
+GIT
+  remote: https://github.com/KronicDeth/LicenseFinder.git
+  revision: a61f2ffedcbaa0008d38a5536ea27a4b05877c4a
+  tag: v5.1.1-rc.0
   specs:
-    httparty (0.15.6)
-      multi_xml (>= 0.5.2)
-    license_finder (5.0.0)
+    license_finder (5.1.0)
       bundler
       httparty
       rubyzip
       thor
       toml (= 0.2.0)
-      with_env (> 1.0)
+      with_env (= 1.1.0)
       xml-simple
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    httparty (0.16.2)
+      multi_xml (>= 0.5.2)
     multi_xml (0.6.0)
-    parslet (1.8.1)
+    parslet (1.8.2)
     pivotal_git_scripts (1.4.0)
     rubyzip (1.2.1)
     thor (0.20.0)
@@ -25,8 +31,8 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  license_finder
+  license_finder!
   pivotal_git_scripts
 
 BUNDLED WITH
-   1.13.6
+   1.16.1

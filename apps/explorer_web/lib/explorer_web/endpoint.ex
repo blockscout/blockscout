@@ -1,8 +1,8 @@
 defmodule ExplorerWeb.Endpoint do
-  use Phoenix.Endpoint, otp_app: :explorer
+  use Phoenix.Endpoint, otp_app: :explorer_web
 
-  if Application.get_env(:explorer, :sql_sandbox) do
-    plug(Phoenix.Ecto.SQL.Sandbox)
+  if Application.get_env(:explorer_web, :sql_sandbox) do
+    plug(Phoenix.Ecto.SQL.Sandbox, repo: Explorer.Repo)
   end
 
   socket("/socket", ExplorerWeb.UserSocket)
@@ -14,7 +14,7 @@ defmodule ExplorerWeb.Endpoint do
   plug(
     Plug.Static,
     at: "/",
-    from: :explorer,
+    from: :explorer_web,
     gzip: false,
     only: ~w(css fonts images js favicon.ico robots.txt)
   )

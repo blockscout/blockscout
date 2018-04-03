@@ -14,14 +14,6 @@ defmodule Explorer.Application do
     Supervisor.start_link(children(Mix.env()), opts)
   end
 
-  # Tell Phoenix to update the endpoint configuration
-  # whenever the application is updated.
-  def config_change(changed, _new, removed) do
-    alias ExplorerWeb.Endpoint
-    Endpoint.config_change(changed, removed)
-    :ok
-  end
-
   defp children(:test), do: children()
 
   defp children(_) do
@@ -40,7 +32,6 @@ defmodule Explorer.Application do
 
     [
       supervisor(Explorer.Repo, []),
-      supervisor(ExplorerWeb.Endpoint, [])
     ]
   end
 end
