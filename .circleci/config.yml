@@ -1,0 +1,384 @@
+version: 2
+jobs:
+  build:
+    docker:
+      # Ensure .tool-versions matches
+      - image: circleci/elixir:1.6.4-node-browsers
+        environment:
+          MIX_ENV: test
+          # match POSTGRES_PASSWORD for postgres image below
+          PGPASSWORD: postgres
+          # match POSTGRES_USER for postgres image below
+          PGUSER: postgres
+
+    working_directory: ~/app
+
+    steps:
+      - checkout
+
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+
+      - restore_cache:
+          keys:
+            - v2-mix-deps-get-{{ checksum "mix.lock" }}
+            - v2-mix-deps-get-{{ checksum "mix.exs" }}
+            - v2-mix-deps-get
+
+      - run: mix deps.get
+
+      - save_cache:
+          key: v2-mix-deps-get-{{ checksum "mix.lock" }}
+          paths: "deps"
+      - save_cache:
+          key: mix-deps-get-{{ checksum "mix.exs" }}
+          paths: "deps"
+      - save_cache:
+          key: mix-deps-get
+          paths: "deps"
+
+      - restore_cache:
+          keys:
+            - v2-npm-install-{{ .Branch }}-{{ checksum "apps/explorer_web/assets/package-lock.json" }}
+            - v2-npm-install-{{ .Branch }}
+            - v2-npm-install
+
+      - run:
+          command: npm install
+          working_directory: "apps/explorer_web/assets"
+
+      - save_cache:
+          key: v2-npm-install-{{ .Branch }}-{{ checksum "apps/explorer_web/assets/package-lock.json" }}
+          paths: "apps/explorer_web/assets/node_modules"
+      - save_cache:
+          key: v2-npm-install-{{ .Branch }}
+          paths: "apps/explorer_web/assets/node_modules"
+      - save_cache:
+          key: v2-npm-install
+          paths: "apps/explorer_web/assets/node_modules"
+
+      - run:
+          name: "ELIXIR_VERSION.lock"
+          command: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
+      - run:
+          name: "OTP_VERSION.lock"
+          command: echo "${OTP_VERSION}" > OTP_VERSION.lock
+
+      - restore_cache:
+          keys:
+             - v2-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+             - v2-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+             - v2-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+
+      - run: mix compile
+
+      - save_cache:
+          key: v2-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+          paths:
+            - _build
+      - save_cache:
+          key: v2-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+          paths:
+            - _build
+      - save_cache:
+          key: v2-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+          paths:
+            - _build
+
+      - run:
+          name: Build assets
+          command: node node_modules/brunch/bin/brunch build
+          working_directory: "apps/explorer_web/assets"
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - _build
+            - apps
+            - config
+            - deps
+            - doc
+            - .credo.exs
+            - .dialyzer-ignore
+            - ELIXIR_VERSION.lock
+            - .formatter.exs
+            - .sobelow-conf
+            - Gemfile
+            - Gemfile.lock
+            - mix.exs
+            - mix.lock
+            - OTP_VERSION.lock
+  check_formatted:
+    docker:
+      # Ensure .tool-versions matches
+      - image: circleci/elixir:1.6.4
+        environment:
+          MIX_ENV: test
+
+    working_directory: ~/app
+
+    steps:
+      - attach_workspace:
+          at: .
+
+      - run: mix format --check-formatted
+  credo:
+    docker:
+      # Ensure .tool-versions matches
+      - image: circleci/elixir:1.6.4
+        environment:
+          MIX_ENV: test
+
+    working_directory: ~/app
+
+    steps:
+      - attach_workspace:
+          at: .
+
+      - run: mix local.hex --force
+
+      - run: mix credo
+  deploy_production:
+    docker:
+      # Ensure .tool-versions matches
+      - image: circleci/elixir:1.6.4
+        environment:
+          MIX_ENV: test
+
+    working_directory: ~/app
+
+    steps:
+      - attach_workspace:
+          at: .
+
+      - add_ssh_keys:
+          fingerprints:
+            - "c4:fd:a8:f8:48:a8:09:e5:3e:be:30:62:4d:6f:6f:36"
+
+      - run:
+          name: Setup Heroku
+          command: bash .circleci/setup-heroku.sh
+
+      - run:
+          name: Deploy Production to Heroku
+          command: bin/deploy poa-explorer-production
+  deploy_staging:
+    docker:
+      # Ensure .tool-versions matches
+      - image: circleci/elixir:1.6.4
+        environment:
+          MIX_ENV: test
+
+    working_directory: ~/app
+
+    steps:
+      - attach_workspace:
+          at: .
+
+      - add_ssh_keys:
+          fingerprints:
+            - "c4:fd:a8:f8:48:a8:09:e5:3e:be:30:62:4d:6f:6f:36"
+
+      - run:
+          name: Setup Heroku
+          command: bash .circleci/setup-heroku.sh
+
+      - run:
+          name: Deploy Staging to Heroku
+          command: bin/deploy poa-explorer-staging
+  dialyzer:
+    docker:
+      # Ensure .tool-versions matches
+      - image: circleci/elixir:1.6.4
+        environment:
+          MIX_ENV: test
+
+    working_directory: ~/app
+
+    steps:
+      - attach_workspace:
+          at: .
+
+      - run: mix local.hex --force
+
+      - restore_cache:
+          keys:
+            - v2-mix-dailyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+            - v2-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+            - v2-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+
+      - run:
+          name: Unpack PLT cache
+          command: |
+            mkdir -p _build/test
+            cp plts/dialyxir*.plt _build/test/ || true
+            mkdir -p ~/.mix
+            cp plts/dialyxir*.plt ~/.mix/ || true
+
+      - run: mix dialyzer --plt
+
+      - run:
+          name: Pack PLT cache
+          command: |
+            mkdir -p plts
+            cp _build/test/dialyxir*.plt plts/
+            cp ~/.mix/dialyxir*.plt plts/
+
+      - save_cache:
+          key: v2-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+          paths:
+            - plts
+      - save_cache:
+          key: v1-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+          paths:
+            - plts
+      - save_cache:
+          key: v1-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+          paths:
+            - plts
+
+      - run: mix dialyzer
+  eslint:
+    docker:
+      # Ensure .tool-versions matches
+      - image: circleci/node:9.10.1
+
+    working_directory: ~/app
+
+    steps:
+      - attach_workspace:
+          at: .
+
+      - run:
+          name: ESLint
+          command: ./node_modules/.bin/eslint --format=junit --output-file="test/eslint/junit.xml" js/**/*.js
+          working_directory: apps/explorer_web/assets
+
+      - store_test_results:
+          path: apps/explorer_web/assets/test
+  license_finder:
+    docker:
+      # Ensure .tool-versions matches
+      - image: poanetwork/elixir:1.6.4-node-ruby
+        environment:
+          MIX_ENV: test
+
+    working_directory: ~/app
+
+    steps:
+      - attach_workspace:
+          at: .
+
+      - run: mix local.hex --force
+
+      - run:
+          name: Bundle Install
+          command: bundle check --path=vendor/bundle || bundle install --path=vendor/bundle --jobs=4 --retry=3
+      - run:
+          name: License Finder Action Items
+          command: bundle exec license_finder --project-path=. --decisions-file=doc/dependency_decisions.yml
+  sobelow:
+    docker:
+      # Ensure .tool-versions matches
+      - image: circleci/elixir:1.6.4
+        environment:
+          MIX_ENV: test
+
+    working_directory: ~/app
+
+    steps:
+      - attach_workspace:
+          at: .
+
+      - run: mix local.hex --force
+
+      - run: mix sobelow --config
+  test:
+    docker:
+      # Ensure .tool-versions matches
+      - image: circleci/elixir:1.6.4-node-browsers
+        environment:
+          MIX_ENV: test
+          # match POSTGRES_PASSWORD for postgres image below
+          PGPASSWORD: postgres
+          # match POSTGRES_USER for postgres image below
+          PGUSER: postgres
+      - image: circleci/postgres:10.3-alpine
+        environment:
+          # Match apps/explorer/config/test.exs config :explorerer, Explorer.Repo, database
+          POSTGRES_DB: explorer_test
+          # match PGPASSWORD for elixir image above
+          POSTGRES_PASSWORD: postgres
+          # match PGUSER for elixir image above
+          POSTGRES_USER: postgres
+      - image: circleci/redis:4.0.9-alpine
+
+    working_directory: ~/app
+
+    steps:
+      - attach_workspace:
+          at: .
+
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+
+      - run:
+          name: Wait for DB
+          command: dockerize -wait tcp://localhost:5432 -timeout 1m
+
+      - run:
+          name: Wait for Redis
+          command: dockerize -wait tcp://localhost:6379 -timeout 1m
+
+      - run: mix test
+
+      - store_test_results:
+          path: _build/test/junit
+workflows:
+  version: 2
+  primary:
+    jobs:
+      - build
+      - check_formatted:
+          requires:
+            - build
+      - credo:
+          requires:
+            - build
+      - deploy_production:
+          filters:
+            branches:
+              only: production
+          requires:
+            - check_formatted
+            - credo
+            - eslint
+            - license_finder
+            - sobelow
+            - test
+      - deploy_staging:
+          filters:
+            branches:
+              only: master
+          requires:
+            - check_formatted
+            - credo
+            - eslint
+            - license_finder
+            - sobelow
+            - test
+      - dialyzer:
+          requires:
+            - build
+      - eslint:
+          requires:
+            - build
+      - license_finder:
+          requires:
+            - build
+      - sobelow:
+          requires:
+            - build
+      - test:
+          requires:
+            - build
