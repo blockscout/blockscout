@@ -22,11 +22,12 @@ This is a tool for inspecting and analyzing the POA Network blockchain.
 
 To get POA Explorer up and running locally:
 
-  * Set up some default configuration with: `$ cp config/dev.secret.exs.example config/dev.secret.esx`
+  * Set up some default configuration with: `$ cp apps/explorer/config/dev.secret.exs.example apps/explorer/config/dev.secret.exs`
+  * Set up some default configuration with: `$ cp apps/explorer_web/config/dev.secret.exs.example apps/explorer_web/config/dev.secret.exs`
   * Install dependencies with `$ mix do deps.get, local.rebar, deps.compile, compile`
   * Create and migrate your database with `$ mix ecto.create && mix ecto.migrate`
   * Install Node.js dependencies with `$ cd apps/explorer_web/assets && npm install && cd -`
-  * Start Phoenix with `$ mix phx.server`
+  * Start Phoenix with `$ iex -S mix phx.server`
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 

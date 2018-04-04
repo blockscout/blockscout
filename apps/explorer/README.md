@@ -22,7 +22,7 @@ This is a tool for inspecting and analyzing the POA Network blockchain.
 
 To get POA Explorer up and running locally:
 
-  * Set up some default configuration with: `$ cp config/dev.secret.exs.example config/dev.secret.esx`
+  * Set up some default configuration with: `$ cp config/dev.secret.exs.example config/dev.secret.exs`
   * Install dependencies with `$ mix do deps.get, local.rebar, deps.compile, compile`
   * Create and migrate your database with `$ mix ecto.create && mix ecto.migrate`
   * Run IEx (Interactive Elixir) to access the index and explore: `$ iex -S mix`
