@@ -334,7 +334,7 @@ jobs:
           name: Wait for Redis
           command: dockerize -wait tcp://localhost:6379 -timeout 1m
 
-      - run: mix test
+      - run: mix coveralls.circle --umbrella
 
       - store_test_results:
           path: _build/test/junit

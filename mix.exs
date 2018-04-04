@@ -11,7 +11,14 @@ defmodule ExplorerUmbrella.Mixfile do
         ignore_warnings: ".dialyzer-ignore"
       ],
       elixir: "~> 1.6",
-      start_permanent: Mix.env() == :prod
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ],
+      start_permanent: Mix.env() == :prod,
+      test_coverage: [tool: ExCoveralls]
     ]
   end
 
@@ -28,6 +35,9 @@ defmodule ExplorerUmbrella.Mixfile do
   # Dependencies listed here are available only for this project
   # and cannot be accessed from applications inside the apps folder
   defp deps do
-    []
+    [
+      # Code coverage
+      {:excoveralls, "~> 0.8.1", only: [:test]}
+    ]
   end
 end

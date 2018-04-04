@@ -18,7 +18,14 @@ defmodule ExplorerWeb.Mixfile do
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       package: package(),
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ],
       start_permanent: Mix.env() == :prod,
+      test_coverage: [tool: ExCoveralls],
       version: "0.0.1"
     ]
   end
@@ -72,6 +79,8 @@ defmodule ExplorerWeb.Mixfile do
       {:ex_cldr_units, "~> 1.0"},
       {:ex_jasmine, github: "minifast/ex_jasmine", branch: "master"},
       {:ex_machina, "~> 2.1", only: [:test]},
+      # Code coverage
+      {:excoveralls, "~> 0.8.1", only: [:test]},
       {:explorer, in_umbrella: true},
       {:exvcr, "~> 0.10", only: :test},
       {:flow, "~> 0.12"},
