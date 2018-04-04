@@ -31,7 +31,8 @@ defmodule Explorer.TransactionFormTest do
       insert(:receipt, status: 1, transaction: transaction)
 
       form =
-        transaction |> Repo.preload([:block, :to_address, :from_address, :receipt])
+        transaction
+        |> Repo.preload([:block, :to_address, :from_address, :receipt])
         |> TransactionForm.build()
 
       formatted_timestamp = block.timestamp |> Timex.format!("%b-%d-%Y %H:%M:%S %p %Z", :strftime)
@@ -82,7 +83,8 @@ defmodule Explorer.TransactionFormTest do
       insert(:receipt, status: 0, gas_used: 100, transaction: transaction)
 
       form =
-        transaction |> Repo.preload([:block, :to_address, :from_address, :receipt])
+        transaction
+        |> Repo.preload([:block, :to_address, :from_address, :receipt])
         |> TransactionForm.build()
 
       formatted_timestamp = block.timestamp |> Timex.format!("%b-%d-%Y %H:%M:%S %p %Z", :strftime)
@@ -133,7 +135,8 @@ defmodule Explorer.TransactionFormTest do
       insert(:receipt, status: 0, gas_used: 555, transaction: transaction)
 
       form =
-        transaction |> Repo.preload([:block, :to_address, :from_address, :receipt])
+        transaction
+        |> Repo.preload([:block, :to_address, :from_address, :receipt])
         |> TransactionForm.build()
 
       formatted_timestamp = block.timestamp |> Timex.format!("%b-%d-%Y %H:%M:%S %p %Z", :strftime)
@@ -293,7 +296,8 @@ defmodule Explorer.TransactionFormTest do
       insert(:receipt, status: 0, gas_used: 555, transaction: transaction)
 
       form =
-        transaction |> Repo.preload([:block, :to_address, :from_address, :receipt])
+        transaction
+        |> Repo.preload([:block, :to_address, :from_address, :receipt])
         |> TransactionForm.build_and_merge()
 
       assert form.hash == "0xkittenpower"
