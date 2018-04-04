@@ -27,7 +27,7 @@ To get POA Explorer up and running locally:
   * Install dependencies with `$ mix do deps.get, local.rebar, deps.compile, compile`
   * Create and migrate your database with `$ mix ecto.create && mix ecto.migrate`
   * Install Node.js dependencies with `$ cd apps/explorer_web/assets && npm install && cd -`
-  * Start Phoenix with `$ iex -S mix phx.server`
+  * Start Phoenix with `$ mix phx.server`
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
