@@ -47,7 +47,3 @@ else
   git push heroku $CIRCLE_SHA1:refs/heads/master
   heroku pg:backups capture --app $HEROKU_APPLICATION
 fi
-
-set +x
-
-heroku config:set ADMIN_PASSWORD=$(mix phx.gen.secret) --app $HEROKU_APPLICATION &> /dev/null
