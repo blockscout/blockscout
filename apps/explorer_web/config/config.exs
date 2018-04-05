@@ -7,8 +7,8 @@ use Mix.Config
 
 # General application configuration
 config :explorer_web,
-       namespace: ExplorerWeb,
-       ecto_repos: [Explorer.Repo]
+  namespace: ExplorerWeb,
+  ecto_repos: [Explorer.Repo]
 
 # Configures gettext
 config :explorer_web, ExplorerWeb.Gettext, locales: ~w(en), default_locale: "en"

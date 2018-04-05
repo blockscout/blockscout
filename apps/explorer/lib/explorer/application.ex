@@ -31,7 +31,7 @@ defmodule Explorer.Application do
     import Supervisor.Spec
 
     [
-      supervisor(Explorer.Repo, []),
+      supervisor(Explorer.Repo, [])
     ]
   end
 end
