@@ -10,6 +10,7 @@ defmodule ExplorerUmbrella.Mixfile do
         plt_add_apps: [:mix],
         ignore_warnings: ".dialyzer-ignore"
       ],
+      elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod
     ]
   end
