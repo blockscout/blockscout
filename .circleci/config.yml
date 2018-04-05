@@ -93,23 +93,25 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
+            - .circleci
+            - .credo.exs
+            - .dialyzer-ignore
+            - .formatter.exs
+            - .git
+            - .gitignore
+            - .sobelow-conf
+            - ELIXIR_VERSION.lock
+            - Gemfile
+            - Gemfile.lock
+            - OTP_VERSION.lock
             - _build
             - apps
             - bin
             - config
             - deps
             - doc
-            - .circleci
-            - .credo.exs
-            - .dialyzer-ignore
-            - ELIXIR_VERSION.lock
-            - .formatter.exs
-            - .sobelow-conf
-            - Gemfile
-            - Gemfile.lock
             - mix.exs
             - mix.lock
-            - OTP_VERSION.lock
   check_formatted:
     docker:
       # Ensure .tool-versions matches
