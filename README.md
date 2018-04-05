@@ -1,4 +1,4 @@
-# POA Explorer [![CircleCI](https://circleci.com/gh/poanetwork/poa-explorer.svg?style=svg&circle-token=f8823a3d0090407c11f87028c73015a331dbf604)](https://circleci.com/gh/poanetwork/poa-explorer)
+# POA Explorer [![CircleCI](https://circleci.com/gh/poanetwork/poa-explorer.svg?style=svg&circle-token=f8823a3d0090407c11f87028c73015a331dbf604)](https://circleci.com/gh/poanetwork/poa-explorer) [![Coverage Status](https://coveralls.io/repos/github/poanetwork/poa-explorer/badge.svg?branch=master)](https://coveralls.io/github/poanetwork/poa-explorer?branch=master)
 
 This is a tool for inspecting and analyzing the POA Network blockchain.
 
@@ -41,7 +41,7 @@ Configure your local CCMenu with the following url: [`https://circleci.com/gh/po
 
   * Build the assets: `$ cd apps/explorer_web/assets && yarn build && cd -`
   * Format the Elixir code: `$ mix format`
-  * Run the test suite: `$ mix test`
+  * Run the test suite with coverage for whole umbrella project: `$ mix coveralls.html --umbrella`
   * Lint the Elixir code: `$ mix credo --strict`
   * Run the dialyzer: `mix dialyzer --halt-exit-status`
   * Check the Elixir code for vulnerabilities: `$ mix sobelow --config`

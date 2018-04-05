@@ -18,7 +18,14 @@ defmodule Explorer.Mixfile do
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       package: package(),
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ],
       start_permanent: Mix.env() == :prod,
+      test_coverage: [tool: ExCoveralls],
       version: "0.0.1"
     ]
   end
@@ -68,6 +75,8 @@ defmodule Explorer.Mixfile do
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       {:ethereumex, "~> 0.3"},
       {:ex_machina, "~> 2.1", only: [:test]},
+      # Code coverage
+      {:excoveralls, "~> 0.8.1", only: [:test]},
       {:exq, "~> 0.9.1"},
       {:exq_ui, "~> 0.9.0"},
       {:exvcr, "~> 0.10", only: :test},
