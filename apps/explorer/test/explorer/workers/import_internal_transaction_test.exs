@@ -2,7 +2,7 @@ defmodule Explorer.Workers.ImportInternalTransactionTest do
   use Explorer.DataCase
 
   alias Explorer.Repo
-  alias Explorer.InternalTransaction
+  alias Explorer.Chain.InternalTransaction
   alias Explorer.Workers.ImportInternalTransaction
 
   describe "perform/1" do

@@ -5,25 +5,29 @@ defmodule ExplorerWeb.AddressTransactionToController do
 
   use ExplorerWeb, :controller
 
-  alias Explorer.Address.Service, as: Address
-  alias Explorer.Repo.NewRelic, as: Repo
-  alias Explorer.Transaction
-  alias Explorer.Transaction.Service.Query
+  alias Explorer.Chain
   alias ExplorerWeb.TransactionForm
 
-  def index(conn, %{"address_id" => address_id} = params) do
-    address = Address.by_hash(address_id)
+  def index(conn, %{"address_id" => to_address_hash} = params) do
+    case Chain.hash_to_address(to_address_hash) do
+      {:ok, to_address} ->
+        page =
+          Chain.to_address_to_transactions(
+            to_address,
+            necessity_by_association: %{
+              block: :required,
+              from_address: :optional,
+              to_address: :optional,
+              receipt: :required
+            },
+            pagination: params
+          )
 
-    query =
-      Transaction
-      |> Query.to_address(address.id)
-      |> Query.include_addresses()
-      |> Query.require_receipt()
-      |> Query.require_block()
-      |> Query.chron()
+        entries = Enum.map(page.entries, &TransactionForm.build_and_merge/1)
+        render(conn, "index.html", transactions: Map.put(page, :entries, entries))
 
-    page = Repo.paginate(query, params)
-    entries = Enum.map(page.entries, &TransactionForm.build_and_merge/1)
-    render(conn, "index.html", transactions: Map.put(page, :entries, entries))
+      {:error, :not_found} ->
+        not_found(conn)
+    end
   end
 end

@@ -3,8 +3,7 @@ defmodule ExplorerWeb.UserListTest do
 
   import Wallaby.Query, only: [css: 1, css: 2, link: 1]
 
-  alias Explorer.Credit
-  alias Explorer.Debit
+  alias Explorer.Chain.{Credit, Debit}
 
   @logo css("img.header__logo")
 
@@ -138,7 +137,7 @@ defmodule ExplorerWeb.UserListTest do
     insert(:block_transaction, block: block, transaction: transaction)
 
     receipt = insert(:receipt, transaction: transaction, status: 1)
-    insert(:log, address: lincoln, receipt: receipt)
+    insert(:log, address_id: lincoln.id, receipt: receipt)
 
     # From Lincoln to Taft.
     txn_from_lincoln =

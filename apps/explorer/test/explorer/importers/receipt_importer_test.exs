@@ -1,8 +1,7 @@
 defmodule Explorer.ReceiptImporterTest do
   use Explorer.DataCase
 
-  alias Explorer.Receipt
-  alias Explorer.Log
+  alias Explorer.Chain.{Log, Receipt}
   alias Explorer.ReceiptImporter
 
   describe "import/1" do

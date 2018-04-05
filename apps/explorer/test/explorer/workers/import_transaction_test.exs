@@ -3,10 +3,8 @@ defmodule Explorer.Workers.ImportTransactionTest do
 
   import Mock
 
-  alias Explorer.InternalTransaction
-  alias Explorer.Receipt
+  alias Explorer.Chain.{InternalTransaction, Receipt, Transaction}
   alias Explorer.Repo
-  alias Explorer.Transaction
   alias Explorer.Workers.ImportInternalTransaction
   alias Explorer.Workers.ImportTransaction
 

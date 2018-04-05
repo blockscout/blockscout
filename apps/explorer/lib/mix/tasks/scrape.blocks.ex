@@ -1,9 +1,9 @@
 defmodule Mix.Tasks.Scrape.Blocks do
   @moduledoc "Scrapes blocks from web3"
+
   use Mix.Task
-  alias Explorer.Repo
-  alias Explorer.SkippedBlocks
-  alias Explorer.BlockImporter
+
+  alias Explorer.{BlockImporter, Repo, SkippedBlocks}
 
   def run([]), do: run(1)
 

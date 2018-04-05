@@ -4,8 +4,7 @@ defmodule Explorer.Workers.RefreshBalance do
   """
 
   alias Ecto.Adapters.SQL
-  alias Explorer.Credit
-  alias Explorer.Debit
+  alias Explorer.Chain.{Credit, Debit}
   alias Explorer.Repo
 
   def perform("credit"), do: unless(refreshing("credits"), do: Credit.refresh())

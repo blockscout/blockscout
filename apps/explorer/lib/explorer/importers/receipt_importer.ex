@@ -4,10 +4,8 @@ defmodule Explorer.ReceiptImporter do
   import Ecto.Query
   import Ethereumex.HttpClient, only: [eth_get_transaction_receipt: 1]
 
-  alias Explorer.Address.Service, as: Address
-  alias Explorer.Repo
-  alias Explorer.Transaction
-  alias Explorer.Receipt
+  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.{Receipt, Transaction}
 
   def import(hash) do
     transaction = hash |> find_transaction()
@@ -59,7 +57,7 @@ defmodule Explorer.ReceiptImporter do
   end
 
   defp extract_log(log) do
-    address = Address.find_or_create_by_hash(log["address"])
+    {:ok, address} = Chain.ensure_hash_address(log["address"])
 
     %{
       address_id: address.id,

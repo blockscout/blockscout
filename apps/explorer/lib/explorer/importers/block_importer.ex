@@ -4,8 +4,8 @@ defmodule Explorer.BlockImporter do
   import Ecto.Query
   import Ethereumex.HttpClient, only: [eth_get_block_by_number: 2]
 
-  alias Explorer.Block
-  alias Explorer.Ethereum
+  alias Explorer.{BlockImporter, Ethereum}
+  alias Explorer.Chain.Block
   alias Explorer.Repo.NewRelic, as: Repo
   alias Explorer.Workers.ImportTransaction
 
@@ -26,7 +26,6 @@ defmodule Explorer.BlockImporter do
 
   @dialyzer {:nowarn_function, import: 1}
   def import(block_number) do
-    alias Explorer.BlockImporter
     block_number |> download_block() |> BlockImporter.import()
   end
 

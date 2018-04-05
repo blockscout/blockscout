@@ -1,13 +1,13 @@
 defmodule Explorer.Factory do
   @dialyzer {:nowarn_function, fields_for: 1}
   use ExMachina.Ecto, repo: Explorer.Repo
-  use Explorer.AddressFactory
-  use Explorer.BlockFactory
-  use Explorer.BlockTransactionFactory
-  use Explorer.FromAddressFactory
-  use Explorer.InternalTransactionFactory
-  use Explorer.LogFactory
-  use Explorer.ToAddressFactory
-  use Explorer.TransactionFactory
-  use Explorer.ReceiptFactory
+  use Explorer.Chain.AddressFactory
+  use Explorer.Chain.BlockFactory
+  use Explorer.Chain.BlockTransactionFactory
+  use Explorer.Chain.FromAddressFactory
+  use Explorer.Chain.InternalTransactionFactory
+  use Explorer.Chain.LogFactory
+  use Explorer.Chain.ReceiptFactory
+  use Explorer.Chain.ToAddressFactory
+  use Explorer.Chain.TransactionFactory
 end

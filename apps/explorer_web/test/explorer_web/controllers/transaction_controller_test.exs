@@ -57,6 +57,12 @@ defmodule ExplorerWeb.TransactionControllerTest do
   end
 
   describe "GET show/3" do
+    test "without transaction", %{conn: conn} do
+      conn = get(conn, "/en/transactions/0x1")
+
+      assert html_response(conn, 404)
+    end
+
     test "when there is an associated block, it returns a transaction with block data", %{
       conn: conn
     } do

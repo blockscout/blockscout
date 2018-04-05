@@ -1,38 +1,23 @@
 defmodule ExplorerWeb.TransactionController do
   use ExplorerWeb, :controller
 
-  import Ecto.Query
-
-  alias Explorer.Repo.NewRelic, as: Repo
-  alias Explorer.Transaction
-  alias Explorer.Transaction.Service
-  alias Explorer.Transaction.Service.Query
+  alias Explorer.Chain
+  alias Explorer.Chain.Transaction
   alias ExplorerWeb.TransactionForm
 
-  def index(conn, %{"last_seen" => last_seen}) do
-    query =
-      Transaction
-      |> Query.recently_seen(last_seen)
-      |> Query.include_addresses()
-      |> Query.require_receipt()
-      |> Query.require_block()
-
-    total_query =
-      from(
-        transaction in Transaction,
-        order_by: [desc: transaction.id],
-        limit: 1
-      )
-
-    total =
-      case Repo.one(total_query) do
-        nil -> 0
-        total -> total.id
-      end
+  def index(conn, %{"last_seen" => last_seen_id}) do
+    total = Chain.transaction_count()
 
     entries =
-      query
-      |> Repo.all()
+      last_seen_id
+      |> Chain.transactions_recently_before_id(
+        necessity_by_association: %{
+          block: :required,
+          from_address: :optional,
+          to_address: :optional,
+          receipt: :required
+        }
+      )
       |> Enum.map(&TransactionForm.build_and_merge/1)
 
     last = List.last(entries) || Transaction.null()
@@ -49,38 +34,42 @@ defmodule ExplorerWeb.TransactionController do
   end
 
   def index(conn, params) do
-    query =
-      from(
-        t in Transaction,
-        select: t.id,
-        order_by: [desc: t.id],
-        limit: 1
-      )
+    last_seen =
+      Chain.last_transaction_id()
+      |> Kernel.+(1)
+      |> Integer.to_string()
 
-    first_id = Repo.one(query) || 0
-    last_seen = Integer.to_string(first_id + 1)
     index(conn, Map.put(params, "last_seen", last_seen))
   end
 
   def show(conn, params) do
-    transaction = get_transaction(String.downcase(params["id"]))
+    case Chain.hash_to_transaction(
+           params["id"],
+           necessity_by_association: %{
+             block: :optional,
+             from_address: :optional,
+             to_address: :optional,
+             receipt: :optional
+           }
+         ) do
+      {:ok, transaction} ->
+        internal_transactions =
+          Chain.transaction_hash_to_internal_transactions(
+            transaction.hash,
+            necessity_by_association: %{from_address: :required, to_address: :required}
+          )
 
-    internal_transactions = Service.internal_transactions(transaction.hash)
+        transaction_form = TransactionForm.build_and_merge(transaction)
 
-    render(
-      conn,
-      internal_transactions: internal_transactions,
-      transaction: transaction
-    )
-  end
+        render(
+          conn,
+          "show.html",
+          internal_transactions: internal_transactions,
+          transaction: transaction_form
+        )
 
-  defp get_transaction(hash) do
-    Transaction
-    |> Query.by_hash(hash)
-    |> Query.include_addresses()
-    |> Query.include_receipt()
-    |> Query.include_block()
-    |> Repo.one()
-    |> TransactionForm.build_and_merge()
+      {:error, :not_found} ->
+        not_found(conn)
+    end
   end
 end

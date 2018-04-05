@@ -1,18 +1,17 @@
 defmodule Explorer.BalanceImporter do
   @moduledoc "Imports a balance for a given address."
 
-  alias Explorer.Address.Service, as: Address
-  alias Explorer.Ethereum
+  alias Explorer.{Chain, Ethereum}
 
   def import(hash) do
-    hash
-    |> Ethereum.download_balance()
-    |> persist_balance(hash)
+    encoded_balance = Ethereum.download_balance(hash)
+
+    persist_balance(hash, encoded_balance)
   end
 
-  defp persist_balance(balance, hash) do
-    balance
-    |> Ethereum.decode_integer_field()
-    |> Address.update_balance(hash)
+  defp persist_balance(hash, encoded_balance) when is_binary(hash) do
+    decoded_balance = Ethereum.decode_integer_field(encoded_balance)
+
+    Chain.update_balance(hash, decoded_balance)
   end
 end

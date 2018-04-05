@@ -4,13 +4,8 @@ defmodule Explorer.TransactionImporter do
   import Ecto.Query
   import Ethereumex.HttpClient, only: [eth_get_transaction_by_hash: 1]
 
-  alias Explorer.Address.Service, as: Address
-  alias Explorer.Block
-  alias Explorer.BlockTransaction
-  alias Explorer.Ethereum
-  alias Explorer.Repo
-  alias Explorer.Transaction
-  alias Explorer.BalanceImporter
+  alias Explorer.{Chain, Ethereum, Repo, BalanceImporter}
+  alias Explorer.Chain.{Block, BlockTransaction, Transaction}
 
   def import(hash) when is_binary(hash) do
     hash |> download_transaction() |> persist_transaction()
@@ -126,7 +121,9 @@ defmodule Explorer.TransactionImporter do
   def from_address(hash) when is_bitstring(hash), do: hash
 
   def fetch_address(hash) when is_bitstring(hash) do
-    Address.find_or_create_by_hash(hash)
+    {:ok, address} = Chain.ensure_hash_address(hash)
+
+    address
   end
 
   defp refresh_account_balances(raw_transaction) do

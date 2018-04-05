@@ -1,9 +1,7 @@
 defmodule Explorer.TransactionImporterTest do
   use Explorer.DataCase
 
-  alias Explorer.Address
-  alias Explorer.BlockTransaction
-  alias Explorer.Transaction
+  alias Explorer.Chain.{Address, BlockTransaction, Transaction}
   alias Explorer.TransactionImporter
 
   @raw_transaction %{

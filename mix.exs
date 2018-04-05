@@ -1,8 +1,11 @@
 defmodule ExplorerUmbrella.Mixfile do
   use Mix.Project
 
+  # Functions
+
   def project do
     [
+      aliases: aliases(),
       apps_path: "apps",
       deps: deps(),
       dialyzer: [
@@ -22,6 +25,14 @@ defmodule ExplorerUmbrella.Mixfile do
     ]
   end
 
+  ## Private Functions
+
+  defp aliases do
+    [
+      compile: "compile --warnings-as-errors"
+    ]
+  end
+
   # Dependencies can be Hex packages:
   #
   #   {:mydep, "~> 0.3.0"}
@@ -36,6 +47,8 @@ defmodule ExplorerUmbrella.Mixfile do
   # and cannot be accessed from applications inside the apps folder
   defp deps do
     [
+      # Documentation
+      {:ex_doc, "~> 0.18.3", only: [:dev]},
       # Code coverage
       {:excoveralls, "~> 0.8.1", only: [:test]}
     ]

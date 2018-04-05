@@ -4,6 +4,18 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
   import ExplorerWeb.Router.Helpers, only: [block_transaction_path: 4]
 
   describe "GET index/2" do
+    test "with invalid block number", %{conn: conn} do
+      conn = get(conn, block_transaction_path(conn, :index, :en, "unknown"))
+
+      assert html_response(conn, 404)
+    end
+
+    test "with valid block number without block", %{conn: conn} do
+      conn = get(conn, block_transaction_path(conn, :index, :en, "1"))
+
+      assert html_response(conn, 404)
+    end
+
     test "returns transactions for the block", %{conn: conn} do
       transaction = insert(:transaction, hash: "0xsnacks")
       insert(:receipt, transaction: transaction)

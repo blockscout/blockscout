@@ -20,9 +20,11 @@ defmodule ExplorerWeb do
   def controller do
     quote do
       use Phoenix.Controller, namespace: ExplorerWeb
-      import Plug.Conn
+
+      import ExplorerWeb.Controller
       import ExplorerWeb.Router.Helpers
       import ExplorerWeb.Gettext
+      import Plug.Conn
     end
   end
 
@@ -38,17 +40,16 @@ defmodule ExplorerWeb do
       # Use all HTML functionality (forms, tags, etc)
       use Phoenix.HTML
 
-      import ExplorerWeb.Router.Helpers
-      import ExplorerWeb.ErrorHelpers
-      import ExplorerWeb.Gettext
-      import Scrivener.HTML
+      import ExplorerWeb.{ErrorHelpers, Gettext, Router.Helpers}
       import ReactPhoenix.ClientSide
+      import Scrivener.HTML
     end
   end
 
   def router do
     quote do
       use Phoenix.Router
+
       import Plug.Conn
       import Phoenix.Controller
     end
@@ -57,6 +58,7 @@ defmodule ExplorerWeb do
   def channel do
     quote do
       use Phoenix.Channel
+
       import ExplorerWeb.Gettext
     end
   end

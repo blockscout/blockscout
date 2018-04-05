@@ -3,9 +3,8 @@ defmodule Explorer.BlockImporterTest do
 
   import Mock
 
-  alias Explorer.Block
-  alias Explorer.Transaction
   alias Explorer.BlockImporter
+  alias Explorer.Chain.{Block, Transaction}
   alias Explorer.Workers.ImportTransaction
 
   describe "import/1" do

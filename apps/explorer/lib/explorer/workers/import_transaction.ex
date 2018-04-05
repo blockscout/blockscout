@@ -4,8 +4,7 @@ defmodule Explorer.Workers.ImportTransaction do
   """
 
   alias Explorer.TransactionImporter
-  alias Explorer.Workers.ImportReceipt
-  alias Explorer.Workers.ImportInternalTransaction
+  alias Explorer.Workers.{ImportInternalTransaction, ImportReceipt}
 
   @dialyzer {:nowarn_function, perform: 1}
   def perform(hash) when is_binary(hash) do

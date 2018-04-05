@@ -1,27 +1,34 @@
 defmodule ExplorerWeb.BlockTransactionController do
   use ExplorerWeb, :controller
 
-  import Ecto.Query
+  import ExplorerWeb.Chain, only: [param_to_block_number: 1]
 
-  alias Explorer.Repo.NewRelic, as: Repo
-  alias Explorer.Transaction
+  alias Explorer.Chain
   alias ExplorerWeb.TransactionForm
 
-  def index(conn, %{"block_id" => block_number} = params) do
-    query =
-      from(
-        transaction in Transaction,
-        join: block in assoc(transaction, :block),
-        join: receipt in assoc(transaction, :receipt),
-        join: from_address in assoc(transaction, :from_address),
-        join: to_address in assoc(transaction, :to_address),
-        preload: [:block, :receipt, :to_address, :from_address],
-        order_by: [desc: transaction.inserted_at],
-        where: block.number == ^block_number
-      )
+  def index(conn, %{"block_id" => formatted_block_number} = params) do
+    with {:ok, block_number} <- param_to_block_number(formatted_block_number),
+         {:ok, block} <- Chain.number_to_block(block_number) do
+      page =
+        Chain.block_to_transactions(
+          block,
+          necessity_by_association: %{
+            block: :required,
+            from_address: :required,
+            to_address: :required,
+            receipt: :required
+          },
+          pagination: params
+        )
 
-    page = Repo.paginate(query, params)
-    entries = Enum.map(page.entries, &TransactionForm.build_and_merge/1)
-    render(conn, "index.html", transactions: Map.put(page, :entries, entries))
+      entries = Enum.map(page.entries, &TransactionForm.build_and_merge/1)
+      render(conn, "index.html", transactions: Map.put(page, :entries, entries))
+    else
+      {:error, :invalid} ->
+        not_found(conn)
+
+      {:error, :not_found} ->
+        not_found(conn)
+    end
   end
 end
