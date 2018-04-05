@@ -1,39 +1,40 @@
 <section class="container__section">
-  <div class="transaction-log__header">
-    <h1 class="transaction-log__heading"><%= gettext "Transaction Logs" %></h1>
-    <h3 class="transaction-log__subheading"><%= @transaction_hash %></h3>
-  </div>
+  <%= render ExplorerWeb.TransactionView, "overview.html", assigns %>
+
   <div class="transaction-log">
     <div class="transaction-log__tabs">
-      <h2 class="transaction-log__tab"><%= link(gettext("Overview"), to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction_hash), class: "transaction-log__link") %></h2>
-      <h2 class="transaction__tab"><%= link(gettext("Internal Transactions"), to: transaction_internal_transaction_path(@conn, :index, @conn.assigns.locale, @transaction_hash), class: "transaction__link") %></h2>
-      <h2 class="transaction-log__tab transaction-log__tab--active"><%= link(gettext("Logs"), to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction_hash), class: "transaction-log__link transaction-log__link--active") %></h2>
+      <h2 class="transaction__tab"><%= link(gettext("Internal Transactions"), to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction.hash), class: "transaction__link") %></h2>
+      <h2 class="transaction__tab transaction__tab--active"><%= link(gettext("Logs"), to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction.hash), class: "transaction__link transaction__link--active") %></h2>
     </div>
 
     <div class="transaction-log__container">
-      <table class="transaction-log__table">
-        <thead>
-          <th class="transaction-log__column-header"><%= gettext "Address" %></th>
-          <th class="transaction-log__column-header"><%= gettext "Topic" %></th>
-        </thead>
-        <%= for log <- @logs.entries do %>
-          <tgroup>
-            <tr>
-              <td><%= link(log.address.hash, to: address_path(@conn, :show, @conn.assigns.locale, log.address.hash), class: "transaction-log__link") %></td>
-              <td><%= log.first_topic %></td>
-            </tr>
-            <% unless is_nil(log.second_topic) do %>
-              <tr><td>topic[1]</td><td><%= log.second_topic %></td></tr>
-            <% end %>
-            <% unless is_nil(log.third_topic) do %>
-              <tr><td>topic[2]</td><td><%= log.third_topic %></td></tr>
-            <% end %>
-            <% unless is_nil(log.data) do %>
-              <tr><td>↠</td><td><%= log.data %></td></tr>
-            <% end %>
-          </tgroup>
-        <% end %>
-      </table>
+      <%= if length(@logs.entries) > 0 do %>
+        <table class="transaction-log__table">
+          <thead>
+            <th class="transaction-log__column-header"><%= gettext "Address" %></th>
+            <th class="transaction-log__column-header"><%= gettext "Topic" %></th>
+          </thead>
+          <%= for log <- @logs.entries do %>
+            <tgroup>
+              <tr>
+                <td><%= link(log.address.hash, to: address_path(@conn, :show, @conn.assigns.locale, log.address.hash), class: "transaction-log__link") %></td>
+                <td><%= log.first_topic %></td>
+              </tr>
+              <% unless is_nil(log.second_topic) do %>
+                <tr><td>topic[1]</td><td><%= log.second_topic %></td></tr>
+              <% end %>
+              <% unless is_nil(log.third_topic) do %>
+                <tr><td>topic[2]</td><td><%= log.third_topic %></td></tr>
+              <% end %>
+              <% unless is_nil(log.data) do %>
+                <tr><td>↠</td><td><%= log.data %></td></tr>
+              <% end %>
+            </tgroup>
+          <% end %>
+        </table>
+      <% else %>
+      <p>There are no logs currently.</p>
+      <% end %>
     </div>
   </div>
 </section>

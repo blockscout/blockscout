@@ -1,103 +1,44 @@
 <section class="container__section transaction">
-  <div class="transaction__header">
-    <h1 class="transaction__heading"><%= gettext "Transaction Details" %></h1>
-    <h3 class="transaction__subheading"><%= @transaction.hash %></h3>
-  </div>
+  <%= render "overview.html", assigns %>
+
   <div class="transaction__container">
     <div class="transaction__tabs">
-      <h2 class="transaction__tab transaction__tab--active"><%= link(gettext("Overview"), to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction.hash), class: "transaction__link transaction__link--active") %></h2>
-      <h2 class="transaction__tab"><%= link(gettext("Internal Transactions"), to: transaction_internal_transaction_path(@conn, :index, @conn.assigns.locale, @transaction.hash), class: "transaction__link") %></h2>
+      <h2 class="transaction__tab transaction__tab--active"><%= link(gettext("Internal Transactions"), to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction.hash), class: "transaction__link transaction__link--active") %></h2>
       <h2 class="transaction__tab"><%= link(gettext("Logs"), to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction.hash), class: "transaction__link") %></h2>
     </div>
-    <div class="transaction__attributes">
-      <div class="transaction__column">
-        <dl>
-          <div class="transaction__item">
-            <dt class="transaction__item-key"><%= gettext "Transaction Hash" %></dt>
-            <dd class="transaction__item-value" title="<%= @transaction.hash %>"><%= @transaction.hash %></dd>
-          </div>
-          <div class="transaction__item">
-            <dt class="transaction__item-key"><%= gettext "Transaction Status" %></dt>
-            <dd class="transaction__item-value transaction__item-value--status">
-              <div class="transaction__status">
-                <%= @transaction.formatted_status %>
-                <div class="transaction__dot transaction__dot--<%= @transaction.status %>"></div>
-              </div>
-            </dd>
-          </div>
-          <div class="transaction__item">
-            <dt class="transaction__item-key"><%= gettext "Block Number" %></dt>
-            <dd class="transaction__item-value">
-              <span class="transaction__item--primary">
-                <%= link(@transaction.block_number, to: block_path(@conn, :show, @conn.assigns.locale, @transaction.block_number), class: "transaction__link") %>
-              </span>
-              <span class="transaction__item--secondary">
-                (<%= gettext "%{confirmations} block confirmations", confirmations: @transaction.confirmations %>)
-              </span>
-            </dd>
-          </div>
-          <div class="transaction__item">
-            <dt class="transaction__item-key"><%= gettext "Age" %></dt>
-            <dd class="transaction__item-value" title="<%= @transaction.formatted_timestamp %>"><%= @transaction.formatted_age %></dd>
-          </div>
-          <div class="transaction__item">
-            <dt class="transaction__item-key"><%= gettext "Value" %></dt>
-            <dd class="transaction__item-value"><%= Decimal.div(Decimal.new(@transaction.value), Decimal.new(1_000_000_000_000_000_000)) |> Decimal.to_string(:normal) %> <%= gettext "POA" %></dd>
-          </div>
-          <div class="transaction__item">
-            <dt class="transaction__item-key"><%= gettext "From" %></dt>
-            <dd class="transaction__item-value">
-              <%= if @transaction.from_address do %>
-                <%= link(@transaction.from_address.hash, to: address_path(@conn, :show, @conn.assigns.locale, @transaction.from_address.hash), class: "transaction__link") %>
-              <% else %>
-                <%= gettext "Pending" %>
-              <% end %>
-            </dd>
-          </div>
-          <div class="transaction__item">
-            <dt class="transaction__item-key"><%= gettext "To" %></dt>
-            <dd class="transaction__item-value">
-              <%= if @transaction.to_address do %>
-                <%= link(@transaction.to_address.hash, to: address_path(@conn, :show, @conn.assigns.locale, @transaction.to_address.hash), class: "transaction__link") %>
-              <% else %>
-                <%= gettext "Pending" %>
-              <% end %>
-            </dd>
-          </div>
-        </dl>
-      </div>
-      <div class="transaction__column">
-        <dl>
-          <div class="transaction__item">
-            <dt class="transaction__item-key"><%= gettext "First Seen" %></dt>
-            <dd class="transaction__item-value" title="<%= @transaction.first_seen %>"><%= @transaction.first_seen %></dd>
-          </div>
-          <div class="transaction__item">
-            <dt class="transaction__item-key"><%= gettext "Last Seen" %></dt>
-            <dd class="transaction__item-value" title="<%= @transaction.last_seen %>"><%= @transaction.last_seen %></dd>
-          </div>
-          <div class="transaction__item">
-            <dt class="transaction__item-key"><%= gettext "Gas Limit" %></dt>
-            <dd class="transaction__item-value"><%= format_gas_limit(@transaction.gas) %></dd>
-          </div>
-          <div class="transaction__item">
-            <dt class="transaction__item-key"><%= gettext "Gas Price" %></dt>
-            <dd class="transaction__item-value"><%= @transaction.gas_price |> Cldr.Number.to_string! %> (<%= Decimal.div(Decimal.new(@transaction.gas_price), Decimal.new(1_000_000_000)) |> Decimal.to_string(:normal) %> Gwei)</dd>
-          </div>
-          <div class="transaction__item">
-            <dt class="transaction__item-key"><%= gettext "Cumulative Gas Used" %></dt>
-            <dd class="transaction__item-value"><%= @transaction.cumulative_gas_used %></dd>
-          </div>
-          <div class="transaction__item">
-            <dt class="transaction__item-key"><%= gettext "Nonce" %></dt>
-            <dd class="transaction__item-value"><%= @transaction.nonce %></dd>
-          </div>
-          <div class="transaction__item">
-            <dt class="transaction__item-key"><%= gettext "Input" %></dt>
-            <dd class="transaction__item-value" title="<%= @transaction.input %>"><%= @transaction.input %></dd>
-          </div>
-        </dl>
-      </div>
+    <div class="internal-transaction__container">
+      <%= if length(@internal_transactions) > 0 do %>
+        <table class="internal-transaction__table">
+          <thead>
+            <th class="internal-transaction__column-header"><%= gettext "Type" %></th>
+            <th class="internal-transaction__column-header"><%= gettext "From" %></th>
+            <th class="internal-transaction__column-header"><%= gettext "To" %></th>
+            <th class="internal-transaction__column-header"><%= gettext "Value" %></th>
+            <th class="internal-transaction__column-header"><%= gettext "Gas Limit" %></th>
+          </thead>
+          <%= for transaction <- @internal_transactions do %>
+            <tgroup>
+              <tr>
+                <td><%= transaction.call_type %></td>
+                <td class="internal-transaction__to-address">
+                  <%= link(transaction.to_address.hash,
+                  to: address_path(@conn, :show, @conn.assigns.locale, transaction.to_address.hash),
+                  class: "transaction-log__link") %>
+                </td>
+                <td class="internal-transaction__from-address">
+                  <%= link(transaction.from_address.hash,
+                  to: address_path(@conn, :show, @conn.assigns.locale, transaction.from_address.hash),
+                  class: "transaction-log__link") %>
+                </td>
+                <td><%= transaction.value %></td>
+                <td><%= ExplorerWeb.TransactionView.format_gas_limit(transaction.gas) %></td>
+              </tr>
+            </tgroup>
+          <% end %>
+        </table>
+      <% else %>
+        <p>There are no Internal Transactions</p>
+      <% end %>
     </div>
   </div>
 </section>

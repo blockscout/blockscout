@@ -190,7 +190,7 @@ defmodule ExplorerWeb.UserListTest do
     |> visit("/en/transactions/0xSk8")
     |> click(link("Logs"))
     |> assert_has(css(".transaction-log__link", text: "0xlincoln"))
-    |> click(link("0xlincoln"))
+    |> click(css(".transaction-log__link", text: "0xlincoln"))
     |> assert_has(css(".address__subheading", text: "0xlincoln"))
     |> click(css(".address__link", text: "Transactions To"))
     |> assert_has(css(".transactions__link--long-hash", text: "0xSk8"))
