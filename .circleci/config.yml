@@ -95,6 +95,7 @@ jobs:
           paths:
             - _build
             - apps
+            - bin
             - config
             - deps
             - doc
