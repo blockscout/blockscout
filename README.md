@@ -51,7 +51,7 @@ Configure your local CCMenu with the following url: [`https://circleci.com/gh/po
   * Run the test suite with coverage for whole umbrella project: `$ mix coveralls.html --umbrella`
   * Lint the Elixir code: `$ mix credo --strict`
   * Run the dialyzer: `mix dialyzer --halt-exit-status`
-  * Check the Elixir code for vulnerabilities: `$ mix sobelow --config`
+  * Check the Elixir code for vulnerabilities: `$ mix sobelow --root apps/explorer_web --config`
   * Lint the JavaScript code: `$ cd apps/explorer_web/assets && npm run eslint && cd -`
 
 
