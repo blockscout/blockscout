@@ -6,14 +6,15 @@ This is a tool for inspecting and analyzing the POA Network blockchain.
 ## Machine Requirements
 
 * Erlang/OTP 20.2+
-* Elixir 1.5+
+* Elixir 1.6+
 * Postgres 10.0
+* Node.js 9.10+
 
 
 ## Required Accounts
 
 * Heroku for deployment
-* Github for code storage
+* GitHub for code storage
 
 
 ## Setup Instructions
@@ -39,13 +40,19 @@ Configure your local CCMenu with the following url: [`https://circleci.com/gh/po
 
 ### Testing
 
-  * Build the assets: `$ cd apps/explorer_web/assets && yarn build && cd -`
+#### Prerequisites
+
+  * PhantomJS (for wallaby)
+
+#### Running the tests
+
+  * Build the assets: `$ cd apps/explorer_web/assets && npm run build && cd -`
   * Format the Elixir code: `$ mix format`
   * Run the test suite with coverage for whole umbrella project: `$ mix coveralls.html --umbrella`
   * Lint the Elixir code: `$ mix credo --strict`
   * Run the dialyzer: `mix dialyzer --halt-exit-status`
   * Check the Elixir code for vulnerabilities: `$ mix sobelow --config`
-  * Lint the JavaScript code: `$ cd apps/explorer_web/assets && yarn eslint && cd -`
+  * Lint the JavaScript code: `$ cd apps/explorer_web/assets && npm run eslint && cd -`
 
 
 ## Internationalization
