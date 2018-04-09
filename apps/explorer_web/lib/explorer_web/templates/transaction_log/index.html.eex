@@ -21,13 +21,22 @@
                 <td><%= log.first_topic %></td>
               </tr>
               <% unless is_nil(log.second_topic) do %>
-                <tr><td>topic[1]</td><td><%= log.second_topic %></td></tr>
+                <tr>
+                  <td>topic[1]</td>
+                  <td><%= log.second_topic %></td>
+                </tr>
               <% end %>
               <% unless is_nil(log.third_topic) do %>
-                <tr><td>topic[2]</td><td><%= log.third_topic %></td></tr>
+                <tr>
+                  <td>topic[2]</td>
+                  <td><%= log.third_topic %></td>
+                </tr>
               <% end %>
               <% unless is_nil(log.data) do %>
-                <tr><td>↠</td><td><%= log.data %></td></tr>
+                <tr>
+                  <td>↠</td>
+                  <td><%= log.data %></td>
+                </tr>
               <% end %>
             </tgroup>
           <% end %>
