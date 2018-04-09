@@ -1,0 +1,96 @@
+<div class="transaction__header">
+  <h1 class="transaction__heading"><%= gettext "Transaction Details" %></h1>
+  <h3 class="transaction__subheading"><%= @transaction.hash %></h3>
+</div>
+<div class="transaction__container">
+  <div class="transaction__attributes">
+    <div class="transaction__column">
+      <dl>
+        <div class="transaction__item">
+          <dt class="transaction__item-key"><%= gettext "Transaction Hash" %></dt>
+          <dd class="transaction__item-value" title="<%= @transaction.hash %>"><%= @transaction.hash %></dd>
+        </div>
+        <div class="transaction__item">
+          <dt class="transaction__item-key"><%= gettext "Transaction Status" %></dt>
+          <dd class="transaction__item-value transaction__item-value--status">
+            <div class="transaction__status">
+              <%= @transaction.formatted_status %>
+              <div class="transaction__dot transaction__dot--<%= @transaction.status %>"></div>
+            </div>
+          </dd>
+        </div>
+        <div class="transaction__item">
+          <dt class="transaction__item-key"><%= gettext "Block Number" %></dt>
+          <dd class="transaction__item-value">
+            <span class="transaction__item--primary">
+              <%= link(@transaction.block_number, to: block_path(@conn, :show, @conn.assigns.locale, @transaction.block_number), class: "transaction__link") %>
+            </span>
+            <span class="transaction__item--secondary">
+              (<%= gettext "%{confirmations} block confirmations", confirmations: @transaction.confirmations %>)
+            </span>
+          </dd>
+        </div>
+        <div class="transaction__item">
+          <dt class="transaction__item-key"><%= gettext "Age" %></dt>
+          <dd class="transaction__item-value" title="<%= @transaction.formatted_timestamp %>"><%= @transaction.formatted_age %></dd>
+        </div>
+        <div class="transaction__item">
+          <dt class="transaction__item-key"><%= gettext "Value" %></dt>
+          <dd class="transaction__item-value"><%= @transaction.value |> ExplorerWeb.WeiConverter.to_ether() |> Decimal.to_string(:normal) %> <%= gettext "POA" %></dd>
+        </div>
+        <div class="transaction__item">
+          <dt class="transaction__item-key"><%= gettext "From" %></dt>
+          <dd class="transaction__item-value">
+            <%= if @transaction.from_address do %>
+              <%= link(@transaction.from_address.hash, to: address_path(@conn, :show, @conn.assigns.locale, @transaction.from_address.hash), class: "transaction__link") %>
+            <% else %>
+              <%= gettext "Pending" %>
+            <% end %>
+          </dd>
+        </div>
+        <div class="transaction__item">
+          <dt class="transaction__item-key"><%= gettext "To" %></dt>
+          <dd class="transaction__item-value">
+            <%= if @transaction.to_address do %>
+              <%= link(@transaction.to_address.hash, to: address_path(@conn, :show, @conn.assigns.locale, @transaction.to_address.hash), class: "transaction__link") %>
+            <% else %>
+              <%= gettext "Pending" %>
+            <% end %>
+          </dd>
+        </div>
+      </dl>
+    </div>
+    <div class="transaction__column">
+      <dl>
+        <div class="transaction__item">
+          <dt class="transaction__item-key"><%= gettext "First Seen" %></dt>
+          <dd class="transaction__item-value" title="<%= @transaction.first_seen %>"><%= @transaction.first_seen %></dd>
+        </div>
+        <div class="transaction__item">
+          <dt class="transaction__item-key"><%= gettext "Last Seen" %></dt>
+          <dd class="transaction__item-value" title="<%= @transaction.last_seen %>"><%= @transaction.last_seen %></dd>
+        </div>
+        <div class="transaction__item">
+          <dt class="transaction__item-key"><%= gettext "Gas Limit" %></dt>
+          <dd class="transaction__item-value"><%= format_gas_limit(@transaction.gas) %></dd>
+        </div>
+        <div class="transaction__item">
+          <dt class="transaction__item-key"><%= gettext "Gas Price" %></dt>
+          <dd class="transaction__item-value"><%= @transaction.gas_price |> Cldr.Number.to_string! %> (<%= @transaction.gas_price |> ExplorerWeb.WeiConverter.to_gwei() |> Decimal.to_string(:normal) %> <%= gettext "Gwei" %>)</dd>
+        </div>
+        <div class="transaction__item">
+          <dt class="transaction__item-key"><%= gettext "Cumulative Gas Used" %></dt>
+          <dd class="transaction__item-value"><%= @transaction.cumulative_gas_used %></dd>
+        </div>
+        <div class="transaction__item">
+          <dt class="transaction__item-key"><%= gettext "Nonce" %></dt>
+          <dd class="transaction__item-value"><%= @transaction.nonce %></dd>
+        </div>
+        <div class="transaction__item">
+          <dt class="transaction__item-key"><%= gettext "Input" %></dt>
+          <dd class="transaction__item-value" title="<%= @transaction.input %>"><%= @transaction.input %></dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+</div>

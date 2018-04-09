@@ -1,6 +1,8 @@
 defmodule ExplorerWeb.TransactionControllerTest do
   use ExplorerWeb.ConnCase
 
+  import ExplorerWeb.Router.Helpers, only: [transaction_path: 4]
+
   describe "GET index/2" do
     test "returns a transaction with a receipt", %{conn: conn} do
       transaction = insert(:transaction)
@@ -70,6 +72,20 @@ defmodule ExplorerWeb.TransactionControllerTest do
       conn = get(conn, "/en/transactions/0x8")
       assert conn.assigns.transaction.id == transaction.id
       assert conn.assigns.transaction.block_number == ""
+    end
+
+    test "returns internal transactions for the transaction", %{conn: conn} do
+      transaction = insert(:transaction)
+      internal_transaction = insert(:internal_transaction, transaction_id: transaction.id)
+
+      path = transaction_path(ExplorerWeb.Endpoint, :show, :en, transaction.hash)
+
+      conn = get(conn, path)
+
+      first_internal_transaction = List.first(conn.assigns.internal_transactions)
+
+      assert conn.assigns.transaction.hash == transaction.hash
+      assert first_internal_transaction.id == internal_transaction.id
     end
   end
 end

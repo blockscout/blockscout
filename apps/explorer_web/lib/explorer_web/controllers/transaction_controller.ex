@@ -3,9 +3,11 @@ defmodule ExplorerWeb.TransactionController do
 
   import Ecto.Query
 
+  alias Explorer.Log
   alias Explorer.Repo.NewRelic, as: Repo
   alias Explorer.Transaction
   alias Explorer.TransactionForm
+  alias Explorer.Transaction.Service
   alias Explorer.Transaction.Service.Query
 
   def index(conn, %{"last_seen" => last_seen}) do
@@ -62,15 +64,24 @@ defmodule ExplorerWeb.TransactionController do
   end
 
   def show(conn, params) do
-    transaction =
-      Transaction
-      |> Query.by_hash(params["id"])
-      |> Query.include_addresses()
-      |> Query.include_receipt()
-      |> Query.include_block()
-      |> Repo.one()
-      |> TransactionForm.build_and_merge()
+    transaction = get_transaction(String.downcase(params["id"]))
 
-    render(conn, "show.html", transaction: transaction)
+    internal_transactions = Service.internal_transactions(transaction.hash)
+
+    render(
+      conn,
+      internal_transactions: internal_transactions,
+      transaction: transaction
+    )
+  end
+
+  defp get_transaction(hash) do
+    Transaction
+    |> Query.by_hash(hash)
+    |> Query.include_addresses()
+    |> Query.include_receipt()
+    |> Query.include_block()
+    |> Repo.one()
+    |> TransactionForm.build_and_merge()
   end
 end
