@@ -12,15 +12,7 @@ defmodule ExplorerWeb.TransactionLogController do
 
   def index(conn, %{"transaction_id" => transaction_id}) do
     transaction_hash = String.downcase(transaction_id)
-
-    transaction =
-      Transaction
-      |> Query.by_hash(transaction_hash)
-      |> Query.include_addresses()
-      |> Query.include_receipt()
-      |> Query.include_block()
-      |> Repo.one()
-      |> TransactionForm.build_and_merge()
+    transaction = get_transaction(transaction_hash)
 
     logs =
       from(
@@ -36,5 +28,15 @@ defmodule ExplorerWeb.TransactionLogController do
       logs: Repo.paginate(logs),
       transaction: transaction
     )
+  end
+
+  defp get_transaction(hash) do
+    Transaction
+      |> Query.by_hash(hash)
+      |> Query.include_addresses()
+      |> Query.include_receipt()
+      |> Query.include_block()
+      |> Repo.one()
+      |> TransactionForm.build_and_merge()
   end
 end

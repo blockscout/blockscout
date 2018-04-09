@@ -64,14 +64,7 @@ defmodule ExplorerWeb.TransactionController do
   end
 
   def show(conn, params) do
-    transaction =
-      Transaction
-      |> Query.by_hash(String.downcase(params["id"]))
-      |> Query.include_addresses()
-      |> Query.include_receipt()
-      |> Query.include_block()
-      |> Repo.one()
-      |> TransactionForm.build_and_merge()
+    transaction = get_transaction(String.downcase(params["id"]))
 
     internal_transactions = Service.internal_transactions(transaction.hash)
 
@@ -80,5 +73,15 @@ defmodule ExplorerWeb.TransactionController do
       internal_transactions: internal_transactions,
       transaction: transaction
     )
+  end
+
+  defp get_transaction(hash) do
+    Transaction
+      |> Query.by_hash(hash)
+      |> Query.include_addresses()
+      |> Query.include_receipt()
+      |> Query.include_block()
+      |> Repo.one()
+      |> TransactionForm.build_and_merge()
   end
 end
