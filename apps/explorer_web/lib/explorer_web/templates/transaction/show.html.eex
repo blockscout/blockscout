@@ -37,7 +37,7 @@
           <% end %>
         </table>
       <% else %>
-        <p>There are no Internal Transactions</p>
+        <p><%= gettext "There are no Internal Transactions" %></p>
       <% end %>
     </div>
   </div>

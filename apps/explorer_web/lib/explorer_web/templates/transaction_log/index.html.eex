@@ -33,7 +33,7 @@
           <% end %>
         </table>
       <% else %>
-      <p>There are no logs currently.</p>
+      <p><%= gettext "There are no logs currently." %></p>
       <% end %>
     </div>
   </div>
