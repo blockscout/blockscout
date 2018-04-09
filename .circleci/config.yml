@@ -99,7 +99,6 @@ jobs:
             - .formatter.exs
             - .git
             - .gitignore
-            - .sobelow-conf
             - ELIXIR_VERSION.lock
             - Gemfile
             - Gemfile.lock
@@ -296,7 +295,7 @@ jobs:
 
       - run: mix local.hex --force
 
-      - run: mix sobelow --config
+      - run: mix sobelow --root apps/explorer_web --config
   test:
     docker:
       # Ensure .tool-versions matches
