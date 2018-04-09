@@ -77,11 +77,11 @@ defmodule ExplorerWeb.TransactionController do
 
   defp get_transaction(hash) do
     Transaction
-      |> Query.by_hash(hash)
-      |> Query.include_addresses()
-      |> Query.include_receipt()
-      |> Query.include_block()
-      |> Repo.one()
-      |> TransactionForm.build_and_merge()
+    |> Query.by_hash(hash)
+    |> Query.include_addresses()
+    |> Query.include_receipt()
+    |> Query.include_block()
+    |> Repo.one()
+    |> TransactionForm.build_and_merge()
   end
 end

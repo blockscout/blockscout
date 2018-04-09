@@ -36,7 +36,7 @@
         </div>
         <div class="transaction__item">
           <dt class="transaction__item-key"><%= gettext "Value" %></dt>
-          <dd class="transaction__item-value"><%= Decimal.div(Decimal.new(@transaction.value), Decimal.new(1_000_000_000_000_000_000)) |> Decimal.to_string(:normal) %> <%= gettext "POA" %></dd>
+          <dd class="transaction__item-value"><%= @transaction.value |> ExplorerWeb.WeiConverter.to_ether() |> Decimal.to_string(:normal) %> <%= gettext "POA" %></dd>
         </div>
         <div class="transaction__item">
           <dt class="transaction__item-key"><%= gettext "From" %></dt>
@@ -76,7 +76,7 @@
         </div>
         <div class="transaction__item">
           <dt class="transaction__item-key"><%= gettext "Gas Price" %></dt>
-          <dd class="transaction__item-value"><%= @transaction.gas_price |> Cldr.Number.to_string! %> (<%= Decimal.div(Decimal.new(@transaction.gas_price), Decimal.new(1_000_000_000)) |> Decimal.to_string(:normal) %> Gwei)</dd>
+          <dd class="transaction__item-value"><%= @transaction.gas_price |> Cldr.Number.to_string! %> (<%= @transaction.gas_price |> ExplorerWeb.WeiConverter.to_gwei() |> Decimal.to_string(:normal) %> <%= gettext "Gwei" %>)</dd>
         </div>
         <div class="transaction__item">
           <dt class="transaction__item-key"><%= gettext "Cumulative Gas Used" %></dt>
