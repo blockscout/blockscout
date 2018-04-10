@@ -1,4 +1,4 @@
-defmodule ExplorerWeb.AddressTransactionToController do
+defmodule ExplorerWeb.AddressTransactionController do
   @moduledoc """
     Display all the Transactions that terminate at this Address.
   """
@@ -9,10 +9,11 @@ defmodule ExplorerWeb.AddressTransactionToController do
 
   def index(conn, %{"address_id" => to_address_hash} = params) do
     case Chain.hash_to_address(to_address_hash) do
-      {:ok, to_address} ->
+      {:ok, address} ->
         page =
-          Chain.to_address_to_transactions(
-            to_address,
+          Chain.address_to_transactions(
+            address,
+            direction: :to,
             necessity_by_association: %{
               block: :required,
               from_address: :optional,

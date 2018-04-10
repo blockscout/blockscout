@@ -1,4 +1,4 @@
-defmodule ExplorerWeb.AddressTransactionFromView do
+defmodule ExplorerWeb.AddressTransactionView do
   use ExplorerWeb, :view
 
   alias ExplorerWeb.TransactionView

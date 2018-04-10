@@ -12,6 +12,147 @@ defmodule Explorer.ChainTest do
 
   # Tests
 
+  describe "address_to_transactions/2" do
+    test "without transactions" do
+      address = insert(:address)
+
+      assert Repo.aggregate(Transaction, :count, :id) == 0
+
+      assert %Scrivener.Page{
+               entries: [],
+               page_number: 1,
+               total_entries: 0
+             } = Chain.address_to_transactions(address)
+    end
+
+    test "with from transactions" do
+      %Transaction{from_address_id: from_address_id, id: transaction_id} = insert(:transaction)
+      address = Repo.get!(Address, from_address_id)
+
+      assert %Scrivener.Page{
+               entries: [%Transaction{id: ^transaction_id}],
+               page_number: 1,
+               total_entries: 1
+             } = Chain.address_to_transactions(address, direction: :from)
+    end
+
+    test "with to transactions" do
+      %Transaction{to_address_id: to_address_id, id: transaction_id} = insert(:transaction)
+      address = Repo.get!(Address, to_address_id)
+
+      assert %Scrivener.Page{
+               entries: [%Transaction{id: ^transaction_id}],
+               page_number: 1,
+               total_entries: 1
+             } = Chain.address_to_transactions(address, direction: :to)
+    end
+
+    test "with to and from transactions and direction: :from" do
+      %Transaction{from_address_id: address_id, id: from_transaction_id} = insert(:transaction)
+      %Transaction{} = insert(:transaction, to_address_id: address_id)
+      address = Repo.get!(Address, address_id)
+
+      # only contains "from" transaction
+      assert %Scrivener.Page{
+               entries: [%Transaction{id: ^from_transaction_id}],
+               page_number: 1,
+               total_entries: 1
+             } = Chain.address_to_transactions(address, direction: :from)
+    end
+
+    test "with to and from transactions and direction: :to" do
+      %Transaction{from_address_id: address_id} = insert(:transaction)
+      %Transaction{id: to_transaction_id} = insert(:transaction, to_address_id: address_id)
+      address = Repo.get!(Address, address_id)
+
+      # only contains "to" transaction
+      assert %Scrivener.Page{
+               entries: [%Transaction{id: ^to_transaction_id}],
+               page_number: 1,
+               total_entries: 1
+             } = Chain.address_to_transactions(address, direction: :to)
+    end
+
+    test "with to and from transactions and no :direction option" do
+      %Transaction{from_address_id: address_id, id: from_transaction_id} = insert(:transaction)
+      %Transaction{id: to_transaction_id} = insert(:transaction, to_address_id: address_id)
+      address = Repo.get!(Address, address_id)
+
+      # only contains "to" transaction
+      assert %Scrivener.Page{
+               entries: [
+                 %Transaction{id: ^to_transaction_id},
+                 %Transaction{id: ^from_transaction_id}
+               ],
+               page_number: 1,
+               total_entries: 2
+             } = Chain.address_to_transactions(address)
+    end
+
+    test "with transactions with receipt required without receipt does not return transaction" do
+      address = %Address{id: to_address_id} = insert(:address)
+
+      %Transaction{id: transaction_id_with_receipt} = insert(:transaction, to_address_id: to_address_id)
+
+      insert(:receipt, transaction_id: transaction_id_with_receipt)
+
+      %Transaction{id: transaction_id_without_receipt} = insert(:transaction, to_address_id: to_address_id)
+
+      assert %Scrivener.Page{
+               entries: [%Transaction{id: ^transaction_id_with_receipt, receipt: %Receipt{}}],
+               page_number: 1,
+               total_entries: 1
+             } =
+               Chain.address_to_transactions(
+                 address,
+                 necessity_by_association: %{receipt: :required}
+               )
+
+      assert %Scrivener.Page{
+               entries: transactions,
+               page_number: 1,
+               total_entries: 2
+             } =
+               Chain.address_to_transactions(
+                 address,
+                 necessity_by_association: %{receipt: :optional}
+               )
+
+      assert length(transactions) == 2
+
+      transaction_by_id =
+        Enum.into(transactions, %{}, fn transaction = %Transaction{id: id} ->
+          {id, transaction}
+        end)
+
+      assert %Transaction{receipt: %Receipt{}} = transaction_by_id[transaction_id_with_receipt]
+      assert %Transaction{receipt: nil} = transaction_by_id[transaction_id_without_receipt]
+    end
+
+    test "with transactions can be paginated" do
+      adddress = %Address{id: to_address_id} = insert(:address)
+      transactions = insert_list(2, :transaction, to_address_id: to_address_id)
+
+      [%Transaction{id: oldest_transaction_id}, %Transaction{id: newest_transaction_id}] = transactions
+
+      assert %Scrivener.Page{
+               entries: [%Transaction{id: ^newest_transaction_id}],
+               page_number: 1,
+               page_size: 1,
+               total_entries: 2,
+               total_pages: 2
+             } = Chain.address_to_transactions(adddress, pagination: %{page_size: 1})
+
+      assert %Scrivener.Page{
+               entries: [%Transaction{id: ^oldest_transaction_id}],
+               page_number: 2,
+               page_size: 1,
+               total_entries: 2,
+               total_pages: 2
+             } = Chain.address_to_transactions(adddress, pagination: %{page: 2, page_size: 1})
+    end
+  end
+
   describe "block_to_transactions/1" do
     test "without transactions" do
       block = insert(:block)
@@ -198,94 +339,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "from_address_to_transactions/2" do
-    test "without transactions" do
-      address = insert(:address)
-
-      assert Repo.aggregate(Transaction, :count, :id) == 0
-
-      assert %Scrivener.Page{
-               entries: [],
-               page_number: 1,
-               total_entries: 0
-             } = Chain.from_address_to_transactions(address)
-    end
-
-    test "with transactions" do
-      %Transaction{from_address_id: from_address_id, id: transaction_id} = insert(:transaction)
-      address = Repo.get!(Address, from_address_id)
-
-      assert %Scrivener.Page{
-               entries: [%Transaction{id: ^transaction_id}],
-               page_number: 1,
-               total_entries: 1
-             } = Chain.from_address_to_transactions(address)
-    end
-
-    test "with transactions with receipt required without receipt does not return transaction" do
-      address = %Address{id: from_address_id} = insert(:address)
-
-      %Transaction{id: transaction_id_with_receipt} = insert(:transaction, from_address_id: from_address_id)
-
-      insert(:receipt, transaction_id: transaction_id_with_receipt)
-
-      %Transaction{id: transaction_id_without_receipt} = insert(:transaction, from_address_id: from_address_id)
-
-      assert %Scrivener.Page{
-               entries: [%Transaction{id: ^transaction_id_with_receipt, receipt: %Receipt{}}],
-               page_number: 1,
-               total_entries: 1
-             } =
-               Chain.from_address_to_transactions(
-                 address,
-                 necessity_by_association: %{receipt: :required}
-               )
-
-      assert %Scrivener.Page{
-               entries: transactions,
-               page_number: 1,
-               total_entries: 2
-             } =
-               Chain.from_address_to_transactions(
-                 address,
-                 necessity_by_association: %{receipt: :optional}
-               )
-
-      assert length(transactions) == 2
-
-      transaction_by_id =
-        Enum.into(transactions, %{}, fn transaction = %Transaction{id: id} ->
-          {id, transaction}
-        end)
-
-      assert %Transaction{receipt: %Receipt{}} = transaction_by_id[transaction_id_with_receipt]
-      assert %Transaction{receipt: nil} = transaction_by_id[transaction_id_without_receipt]
-    end
-
-    test "with transactions can be paginated" do
-      adddress = %Address{id: from_address_id} = insert(:address)
-      transactions = insert_list(2, :transaction, from_address_id: from_address_id)
-
-      [%Transaction{id: oldest_transaction_id}, %Transaction{id: newest_transaction_id}] = transactions
-
-      assert %Scrivener.Page{
-               entries: [%Transaction{id: ^newest_transaction_id}],
-               page_number: 1,
-               page_size: 1,
-               total_entries: 2,
-               total_pages: 2
-             } = Chain.from_address_to_transactions(adddress, pagination: %{page_size: 1})
-
-      assert %Scrivener.Page{
-               entries: [%Transaction{id: ^oldest_transaction_id}],
-               page_number: 2,
-               page_size: 1,
-               total_entries: 2,
-               total_pages: 2
-             } = Chain.from_address_to_transactions(adddress, pagination: %{page: 2, page_size: 1})
-    end
-  end
-
   describe "hash_to_address/1" do
     test "without address returns {:error, :not_found}" do
       assert {:error, :not_found} = Chain.hash_to_address("unknown")
@@ -439,94 +492,6 @@ defmodule Explorer.ChainTest do
       %Block{number: number} = insert(:block)
 
       assert {:ok, %Block{number: ^number}} = Chain.number_to_block(number)
-    end
-  end
-
-  describe "to_address_to_transactions/2" do
-    test "without transactions" do
-      address = insert(:address)
-
-      assert Repo.aggregate(Transaction, :count, :id) == 0
-
-      assert %Scrivener.Page{
-               entries: [],
-               page_number: 1,
-               total_entries: 0
-             } = Chain.to_address_to_transactions(address)
-    end
-
-    test "with transactions" do
-      %Transaction{to_address_id: to_address_id, id: transaction_id} = insert(:transaction)
-      address = Repo.get!(Address, to_address_id)
-
-      assert %Scrivener.Page{
-               entries: [%Transaction{id: ^transaction_id}],
-               page_number: 1,
-               total_entries: 1
-             } = Chain.to_address_to_transactions(address)
-    end
-
-    test "with transactions with receipt required without receipt does not return transaction" do
-      address = %Address{id: to_address_id} = insert(:address)
-
-      %Transaction{id: transaction_id_with_receipt} = insert(:transaction, to_address_id: to_address_id)
-
-      insert(:receipt, transaction_id: transaction_id_with_receipt)
-
-      %Transaction{id: transaction_id_without_receipt} = insert(:transaction, to_address_id: to_address_id)
-
-      assert %Scrivener.Page{
-               entries: [%Transaction{id: ^transaction_id_with_receipt, receipt: %Receipt{}}],
-               page_number: 1,
-               total_entries: 1
-             } =
-               Chain.to_address_to_transactions(
-                 address,
-                 necessity_by_association: %{receipt: :required}
-               )
-
-      assert %Scrivener.Page{
-               entries: transactions,
-               page_number: 1,
-               total_entries: 2
-             } =
-               Chain.to_address_to_transactions(
-                 address,
-                 necessity_by_association: %{receipt: :optional}
-               )
-
-      assert length(transactions) == 2
-
-      transaction_by_id =
-        Enum.into(transactions, %{}, fn transaction = %Transaction{id: id} ->
-          {id, transaction}
-        end)
-
-      assert %Transaction{receipt: %Receipt{}} = transaction_by_id[transaction_id_with_receipt]
-      assert %Transaction{receipt: nil} = transaction_by_id[transaction_id_without_receipt]
-    end
-
-    test "with transactions can be paginated" do
-      adddress = %Address{id: to_address_id} = insert(:address)
-      transactions = insert_list(2, :transaction, to_address_id: to_address_id)
-
-      [%Transaction{id: oldest_transaction_id}, %Transaction{id: newest_transaction_id}] = transactions
-
-      assert %Scrivener.Page{
-               entries: [%Transaction{id: ^newest_transaction_id}],
-               page_number: 1,
-               page_size: 1,
-               total_entries: 2,
-               total_pages: 2
-             } = Chain.to_address_to_transactions(adddress, pagination: %{page_size: 1})
-
-      assert %Scrivener.Page{
-               entries: [%Transaction{id: ^oldest_transaction_id}],
-               page_number: 2,
-               page_size: 1,
-               total_entries: 2,
-               total_pages: 2
-             } = Chain.to_address_to_transactions(adddress, pagination: %{page: 2, page_size: 1})
     end
   end
 
