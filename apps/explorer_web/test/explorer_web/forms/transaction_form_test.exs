@@ -1,7 +1,7 @@
-defmodule Explorer.TransactionFormTest do
+defmodule ExplorerWeb.TransactionFormTest do
   use Explorer.DataCase
 
-  alias Explorer.TransactionForm
+  alias ExplorerWeb.TransactionForm
 
   describe "build/1" do
     test "returns a successful transaction when there is a successful receipt" do

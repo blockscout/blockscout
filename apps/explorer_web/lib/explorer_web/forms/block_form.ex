@@ -1,4 +1,4 @@
-defmodule Explorer.BlockForm do
+defmodule ExplorerWeb.BlockForm do
   @moduledoc false
   alias Explorer.Block
   alias Explorer.BlockTransaction

@@ -1,4 +1,4 @@
-defmodule Explorer.PendingTransactionForm do
+defmodule ExplorerWeb.PendingTransactionForm do
   @moduledoc "Format a pending Transaction for display."
 
   import ExplorerWeb.Gettext

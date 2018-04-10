@@ -3,12 +3,11 @@ defmodule ExplorerWeb.TransactionController do
 
   import Ecto.Query
 
-  alias Explorer.Log
   alias Explorer.Repo.NewRelic, as: Repo
   alias Explorer.Transaction
-  alias Explorer.TransactionForm
   alias Explorer.Transaction.Service
   alias Explorer.Transaction.Service.Query
+  alias ExplorerWeb.TransactionForm
 
   def index(conn, %{"last_seen" => last_seen}) do
     query =

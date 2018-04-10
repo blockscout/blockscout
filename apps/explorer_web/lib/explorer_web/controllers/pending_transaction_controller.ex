@@ -5,7 +5,7 @@ defmodule ExplorerWeb.PendingTransactionController do
 
   alias Explorer.Repo.NewRelic, as: Repo
   alias Explorer.Transaction
-  alias Explorer.PendingTransactionForm
+  alias ExplorerWeb.PendingTransactionForm
 
   def index(conn, %{"last_seen" => last_seen} = _) do
     query =

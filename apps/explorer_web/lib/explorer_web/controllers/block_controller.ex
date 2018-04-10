@@ -4,8 +4,8 @@ defmodule ExplorerWeb.BlockController do
   import Ecto.Query
 
   alias Explorer.Block
-  alias Explorer.BlockForm
   alias Explorer.Repo.NewRelic, as: Repo
+  alias ExplorerWeb.BlockForm
 
   def index(conn, params) do
     blocks =

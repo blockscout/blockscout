@@ -1,4 +1,4 @@
-defmodule Explorer.TransactionForm do
+defmodule ExplorerWeb.TransactionForm do
   @moduledoc "Format a Block and a Transaction for display."
 
   import Ecto.Query

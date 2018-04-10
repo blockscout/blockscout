@@ -5,7 +5,7 @@ defmodule ExplorerWeb.BlockTransactionController do
 
   alias Explorer.Repo.NewRelic, as: Repo
   alias Explorer.Transaction
-  alias Explorer.TransactionForm
+  alias ExplorerWeb.TransactionForm
 
   def index(conn, %{"block_id" => block_number} = params) do
     query =

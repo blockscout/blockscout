@@ -6,9 +6,8 @@ defmodule ExplorerWeb.TransactionLogController do
   alias Explorer.Log
   alias Explorer.Repo.NewRelic, as: Repo
   alias Explorer.Transaction
-  alias Explorer.TransactionForm
-  alias Explorer.Transaction.Service
   alias Explorer.Transaction.Service.Query
+  alias ExplorerWeb.TransactionForm
 
   def index(conn, %{"transaction_id" => transaction_id}) do
     transaction_hash = String.downcase(transaction_id)

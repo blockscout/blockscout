@@ -9,7 +9,7 @@ defmodule ExplorerWeb.AddressTransactionFromController do
   alias Explorer.Repo.NewRelic, as: Repo
   alias Explorer.Transaction
   alias Explorer.Transaction.Service.Query
-  alias Explorer.TransactionForm
+  alias ExplorerWeb.TransactionForm
 
   def index(conn, %{"address_id" => address_id} = params) do
     address = Address.by_hash(address_id)

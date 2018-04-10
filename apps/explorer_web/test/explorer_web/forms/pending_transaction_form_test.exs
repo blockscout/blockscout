@@ -1,7 +1,7 @@
-defmodule Explorer.PendingTransactionFormTest do
+defmodule ExplorerWeb.PendingTransactionFormTest do
   use Explorer.DataCase
 
-  alias Explorer.PendingTransactionForm
+  alias ExplorerWeb.PendingTransactionForm
 
   describe "build/1" do
     test "returns a successful transaction when there is a successful receipt" do
