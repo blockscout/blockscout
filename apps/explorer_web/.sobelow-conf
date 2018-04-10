@@ -2,9 +2,8 @@
   verbose: false,
   private: true,
   skip: false,
-  router: "",
+  router: "lib/explorer_web/router.ex",
   exit: "low",
   format: "compact",
-  ignore: ["Config.CSRF", "Vuln.Coherence"],
-  ignore_files: ["lib/giant_address_migrator.ex", "lib/backfill_transaction_receipt_ids.ex"]
+  ignore: ["Config.CSRF"]
 ]

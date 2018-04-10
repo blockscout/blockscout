@@ -295,7 +295,15 @@ jobs:
 
       - run: mix local.hex --force
 
-      - run: mix sobelow --root apps/explorer_web --config
+      - run:
+          name: Scan explorer for vulnerabilities
+          command: mix sobelow --config
+          working_directory: "apps/explorer"
+
+      - run:
+          name: Scan explorer_web for vulnerabilities
+          command: mix sobelow --config
+          working_directory: "apps/explorer_web"
   test:
     docker:
       # Ensure .tool-versions matches

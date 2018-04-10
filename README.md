@@ -27,7 +27,7 @@ To get POA Explorer up and running locally:
   * Set up some default configuration with: `cp apps/explorer_web/config/dev.secret.exs.example apps/explorer_web/config/dev.secret.exs`
   * Install dependencies with `mix do deps.get, local.rebar, deps.compile, compile`
   * Create and migrate your database with `mix ecto.create && mix ecto.migrate`
-  * Install Node.js dependencies with `cd apps/explorer_web/assets && npm install && cd -`
+  * Install Node.js dependencies with `cd apps/explorer_web/assets && npm install; cd -`
   * Start Phoenix with `mix phx.server`
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
@@ -46,13 +46,15 @@ Configure your local CCMenu with the following url: [`https://circleci.com/gh/po
 
 #### Running the tests
 
-  * Build the assets: `cd apps/explorer_web/assets && npm run build && cd -`
+  * Build the assets: `cd apps/explorer_web/assets && npm run build; cd -`
   * Format the Elixir code: `mix format`
   * Run the test suite with coverage for whole umbrella project: `mix coveralls.html --umbrella`
   * Lint the Elixir code: `mix credo --strict`
   * Run the dialyzer: `mix dialyzer --halt-exit-status`
-  * Check the Elixir code for vulnerabilities: `mix sobelow --root apps/explorer_web --config`
-  * Lint the JavaScript code: `cd apps/explorer_web/assets && npm run eslint && cd -`
+  * Check the Elixir code for vulnerabilities:
+    * `cd apps/explorer && mix sobelow --config; cd -`
+    * `cd apps/explorer_web && mix sobelow --config; cd -`
+  * Lint the JavaScript code: `cd apps/explorer_web/assets && npm run eslint; cd -`
 
 
 ## Internationalization
