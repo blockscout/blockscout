@@ -198,7 +198,11 @@ defmodule ExplorerWeb.UserListTest do
     |> assert_has(css(".address__subheading", text: "0xlincoln"))
     |> click(css(".address__link", text: "Transactions"))
     |> assert_has(css(".transactions__link--long-hash", text: "0xSk8"))
-    |> assert_has(css(".transactions__link--long-hash", text: "0xrazerscooter"))
+    |> click(css(".address__link", text: "To"))
+    |> assert_has(css(".transactions__link--long-hash", text: "0xSk8"))
+    |> refute_has(css(".transactions__link--long-hash", text: "0xrazerscooter"))
+    |> click(css(".address__link", text: "From"))
+    |> assert_has(css(".transactions__link--long-hash", text: "0xSk8"))
   end
 
   test "views addresses", %{session: session} do
@@ -206,6 +210,6 @@ defmodule ExplorerWeb.UserListTest do
 
     session
     |> visit("/en/addresses/0xthinmints")
-    |> assert_has(css(".address__balance", text: "0.0000000000000005"))
+    |> assert_has(css(".address__balance", text: "0.000,000,000,000,000,500 POA"))
   end
 end
