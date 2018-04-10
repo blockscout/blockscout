@@ -5,6 +5,6 @@
   router: "",
   exit: "low",
   format: "compact",
-  ignore: ["Config.CSRF", "Vuln.Coherence"],
+  ignore: ["Config.HTTPS"],
   ignore_files: ["lib/giant_address_migrator.ex", "lib/backfill_transaction_receipt_ids.ex"]
 ]
