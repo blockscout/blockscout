@@ -153,6 +153,25 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "balance/2" do
+    test "with Address.t with :wei" do
+      assert Chain.balance(%Address{balance: Decimal.new(1)}, :wei) == Decimal.new(1)
+      assert Chain.balance(%Address{balance: nil}, :wei) == nil
+    end
+
+    test "with Address.t with :gwei" do
+      assert Chain.balance(%Address{balance: Decimal.new(1)}, :gwei) == Decimal.new("1e-9")
+      assert Chain.balance(%Address{balance: Decimal.new("1e9")}, :gwei) == Decimal.new(1)
+      assert Chain.balance(%Address{balance: nil}, :gwei) == nil
+    end
+
+    test "with Address.t with :ether" do
+      assert Chain.balance(%Address{balance: Decimal.new(1)}, :ether) == Decimal.new("1e-18")
+      assert Chain.balance(%Address{balance: Decimal.new("1e18")}, :ether) == Decimal.new(1)
+      assert Chain.balance(%Address{balance: nil}, :ether) == nil
+    end
+  end
+
   describe "block_to_transactions/1" do
     test "without transactions" do
       block = insert(:block)

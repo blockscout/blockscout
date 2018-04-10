@@ -7,8 +7,8 @@ defmodule ExplorerWeb.AddressTransactionController do
 
   alias Explorer.Chain
 
-  def index(conn, %{"address_id" => to_address_hash} = params) do
-    case Chain.hash_to_address(to_address_hash) do
+  def index(conn, %{"address_id" => address_hash} = params) do
+    case Chain.hash_to_address(address_hash) do
       {:ok, address} ->
         page =
           Chain.address_to_transactions(
@@ -23,7 +23,7 @@ defmodule ExplorerWeb.AddressTransactionController do
             pagination: params
           )
 
-        render(conn, "index.html", page: page)
+        render(conn, "index.html", address: address, page: page)
 
       {:error, :not_found} ->
         not_found(conn)

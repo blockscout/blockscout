@@ -72,6 +72,19 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  The `t:Explorer.Chain.Address.t/0` `balance` in `unit`.
+  """
+  @spec balance(Address.t(), :wei) :: Wei.t() | nil
+  @spec balance(Address.t(), :gwei) :: Wei.gwei() | nil
+  @spec balance(Address.t(), :ether) :: Wei.ether() | nil
+  def balance(%Address{balance: balance}, unit) do
+    case balance do
+      nil -> nil
+      _ -> Wei.to(balance, unit)
+    end
+  end
+
+  @doc """
   Finds all `t:Explorer.Chain.Transaction.t/0` in the `t:Explorer.Chain.Block.t/0`.
 
   ## Options
