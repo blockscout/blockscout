@@ -35,6 +35,4 @@ defmodule Explorer.Chain.InternalTransaction do
     |> foreign_key_constraint(:from_address_id)
     |> unique_constraint(:transaction_id, name: :internal_transactions_transaction_id_index_index)
   end
-
-  def null, do: %__MODULE__{}
 end

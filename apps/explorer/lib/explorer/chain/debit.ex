@@ -22,6 +22,4 @@ defmodule Explorer.Chain.Debit do
   def refresh do
     SQL.query!(Repo, "REFRESH MATERIALIZED VIEW CONCURRENTLY debits;", [], timeout: 120_000)
   end
-
-  def null, do: %__MODULE__{value: Decimal.new(0), count: 0}
 end
