@@ -54,6 +54,10 @@
             <% end %>
           </dd>
         </div>
+        <div class="transaction__item">
+          <dt class="transaction__item-key"><%= gettext "Nonce" %></dt>
+          <dd class="transaction__item-value"><%= @transaction.nonce %></dd>
+        </div>
       </dl>
     </div>
     <div class="transaction__column">
@@ -77,10 +81,6 @@
         <div class="transaction__item">
           <dt class="transaction__item-key"><%= gettext "Cumulative Gas Used" %></dt>
           <dd class="transaction__item-value"><%= @transaction.cumulative_gas_used %></dd>
-        </div>
-        <div class="transaction__item">
-          <dt class="transaction__item-key"><%= gettext "Nonce" %></dt>
-          <dd class="transaction__item-value"><%= @transaction.nonce %></dd>
         </div>
         <div class="transaction__item">
           <dt class="transaction__item-key"><%= gettext "Input" %></dt>
