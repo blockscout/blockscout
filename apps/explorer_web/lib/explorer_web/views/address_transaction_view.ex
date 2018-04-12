@@ -4,6 +4,7 @@ defmodule ExplorerWeb.AddressTransactionView do
   alias ExplorerWeb.{AddressView, TransactionView}
 
   defdelegate balance(address), to: AddressView
+  defdelegate fee(transaction), to: TransactionView
   defdelegate status(transacton), to: TransactionView
   defdelegate value(transaction), to: TransactionView
 end

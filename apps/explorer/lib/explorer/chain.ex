@@ -192,6 +192,51 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  The fee a `transaction` paid for the `t:Explorer.Transaction.t/0` `gas`
+
+  If the transaction is pending, then the fee will be a range of `unit`
+
+      iex> Explorer.Chain.fee(
+      ...>   %Explorer.Chain.Transaction{gas: Decimal.new(3), gas_price: Decimal.new(2), receipt: nil},
+      ...>   :wei
+      ...> )
+      {:maximum, Decimal.new(6)}
+
+  If the transaction has been confirmed in block, then the fee will be the actual fee paid in `unit` for the `gas_used`
+  in the `receipt`.
+
+      iex> Explorer.Chain.fee(
+      ...>   %Explorer.Chain.Transaction{
+      ...>     gas: Decimal.new(3),
+      ...>     gas_price: Decimal.new(2),
+      ...>     receipt: Explorer.Chain.Receipt{gas_used: Decimal.new(2)}
+      ...>   },
+      ...>   :wei
+      ...> )
+      {:actual, Decimal.new(4)}
+
+  """
+  @spec fee(%Transaction{receipt: nil}, :ether | :gwei | :wei) :: {:maximum, Decimal.t()}
+  def fee(%Transaction{gas: gas, gas_price: gas_price, receipt: nil}, unit) do
+    fee =
+      gas
+      |> Decimal.mult(gas_price)
+      |> Wei.to(unit)
+
+    {:maximum, fee}
+  end
+
+  @spec fee(%Transaction{receipt: Receipt.t()}, :ether | :gwei | :wei) :: {:actual, Decimal.t()}
+  def fee(%Transaction{gas_price: gas_price, receipt: %Receipt{gas_used: gas_used}}, unit) do
+    fee =
+      gas_used
+      |> Decimal.mult(gas_price)
+      |> Wei.to(unit)
+
+    {:actual, fee}
+  end
+
+  @doc """
   The `t:Explorer.Chain.Transaction.t/0` `gas_price` of the `transaction` in `unit`.
   """
   @spec gas_price(Transaction.t(), :wei) :: Wei.t()

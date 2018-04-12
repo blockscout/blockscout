@@ -62,6 +62,7 @@
             <th class="transactions__column-header transactions__column-header--optional"><%= gettext "From" %></th>
             <th class="transactions__column-header transactions__column-header--optional"><%= gettext "To" %></th>
             <th class="transactions__column-header"><%= gettext "Value" %></th>
+            <th class="transactions__column-header"><%= gettext "Fee" %></th>
           </tr>
         </thead>
         <tbody>
@@ -109,6 +110,9 @@
               </td>
               <td class="transactions__column transactions__column--value">
                 <%= value(transaction) %> <%= gettext "Ether" %>
+              </td>
+              <td class="transactions__column transactions__column--value">
+                <%= fee(transaction) %> <%= gettext "Ether" %>
               </td>
             </tr>
           <% end %>

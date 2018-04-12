@@ -340,6 +340,56 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "fee/2" do
+    test "without receipt with :wei unit" do
+      assert Chain.fee(%Transaction{gas: Decimal.new(3), gas_price: Decimal.new(2), receipt: nil}, :wei) ==
+               {:maximum, Decimal.new(6)}
+    end
+
+    test "without receipt with :gwei unit" do
+      assert Chain.fee(%Transaction{gas: Decimal.new(3), gas_price: Decimal.new(2), receipt: nil}, :gwei) ==
+               {:maximum, Decimal.new("6e-9")}
+    end
+
+    test "without receipt with :ether unit" do
+      assert Chain.fee(%Transaction{gas: Decimal.new(3), gas_price: Decimal.new(2), receipt: nil}, :ether) ==
+               {:maximum, Decimal.new("6e-18")}
+    end
+
+    test "with receipt with :wei unit" do
+      assert Chain.fee(
+               %Transaction{
+                 gas: Decimal.new(3),
+                 gas_price: Decimal.new(2),
+                 receipt: %Receipt{gas_used: Decimal.new(2)}
+               },
+               :wei
+             ) == {:actual, Decimal.new(4)}
+    end
+
+    test "with receipt with :gwei unit" do
+      assert Chain.fee(
+               %Transaction{
+                 gas: Decimal.new(3),
+                 gas_price: Decimal.new(2),
+                 receipt: %Receipt{gas_used: Decimal.new(2)}
+               },
+               :gwei
+             ) == {:actual, Decimal.new("4e-9")}
+    end
+
+    test "with receipt with :ether unit" do
+      assert Chain.fee(
+               %Transaction{
+                 gas: Decimal.new(3),
+                 gas_price: Decimal.new(2),
+                 receipt: %Receipt{gas_used: Decimal.new(2)}
+               },
+               :ether
+             ) == {:actual, Decimal.new("4e-18")}
+    end
+  end
+
   describe "gas_price/2" do
     test ":wei unit" do
       assert Chain.gas_price(%Transaction{gas_price: Decimal.new(1)}, :wei) == Decimal.new(1)
