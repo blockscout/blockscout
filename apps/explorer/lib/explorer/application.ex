@@ -23,7 +23,8 @@ defmodule Explorer.Application do
     children() ++
       [
         supervisor(Exq, [exq_options]),
-        worker(Explorer.Servers.ChainStatistics, [])
+        worker(Explorer.Servers.ChainStatistics, []),
+        Explorer.ExchangeRates
       ]
   end
 
@@ -31,7 +32,8 @@ defmodule Explorer.Application do
     import Supervisor.Spec
 
     [
-      supervisor(Explorer.Repo, [])
+      supervisor(Explorer.Repo, []),
+      {Task.Supervisor, name: Explorer.ExchangeRateTaskSupervisor}
     ]
   end
 end

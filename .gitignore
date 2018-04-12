@@ -29,6 +29,7 @@ yarn-error.log
 # secrets files as long as you replace their contents by environment
 # variables.
 /apps/*/config/*.secret.exs
+/apps/*/cover/
 
 # Wallaby screenshots
 screenshots/
