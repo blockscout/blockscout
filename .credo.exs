@@ -20,9 +20,9 @@
         #
         # You can give explicit globs or simply directories.
         # In the latter case `**/*.{ex,exs}` will be used.
-      #
-        included: ["lib/", "src/", "web/", "apps/"],
-        excluded: [~r"/_build/", ~r"/deps/"]
+        #
+        included: ["lib/", "src/", "web/", "apps/*/lib/**/*.{ex,exs}"],
+        excluded: [~r"/_build/", ~r"/deps/", ~r"/node_modules/"]
       },
       #
       # If you create your own checks, you must specify the source files for
@@ -74,10 +74,9 @@
         #
         {Credo.Check.Design.TagTODO, exit_status: 2},
         {Credo.Check.Design.TagFIXME},
-
         {Credo.Check.Readability.FunctionNames},
         {Credo.Check.Readability.LargeNumbers},
-        {Credo.Check.Readability.MaxLineLength, priority: :low, max_length: 80},
+        {Credo.Check.Readability.MaxLineLength, priority: :low, max_length: 100},
         {Credo.Check.Readability.ModuleAttributeNames},
         {Credo.Check.Readability.ModuleDoc},
         {Credo.Check.Readability.ModuleNames},
@@ -92,7 +91,6 @@
         {Credo.Check.Readability.VariableNames},
         {Credo.Check.Readability.Semicolons},
         {Credo.Check.Readability.SpaceAfterCommas},
-
         {Credo.Check.Refactor.DoubleBooleanNegation},
         {Credo.Check.Refactor.CondStatements},
         {Credo.Check.Refactor.CyclomaticComplexity},
@@ -104,7 +102,6 @@
         {Credo.Check.Refactor.Nesting},
         {Credo.Check.Refactor.PipeChainStart},
         {Credo.Check.Refactor.UnlessWithElse},
-
         {Credo.Check.Warning.BoolOperationOnSameValues},
         {Credo.Check.Warning.ExpensiveEmptyEnumCheck},
         {Credo.Check.Warning.IExPry},
@@ -128,7 +125,7 @@
         {Credo.Check.Refactor.AppendSingleItem},
         {Credo.Check.Refactor.VariableRebinding},
         {Credo.Check.Warning.MapGetUnsafePass},
-        {Credo.Check.Consistency.MultiAliasImportRequireUse},
+        {Credo.Check.Consistency.MultiAliasImportRequireUse}
 
         # Custom checks can be created using `mix credo.gen.check`.
         #

@@ -1,0 +1,23 @@
+%table {
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 1rem;
+
+  > thead,
+  > tbody,
+  > tfoot {
+    > tr {
+      > th { text-align: left; }
+
+      > th,
+      > td {
+        padding: explorer-size(-2) 0;
+        line-height: 1rem;
+      }
+    }
+  }
+
+  > thead > tr > th {
+    border-bottom: 2px solid explorer-color("slate", "50");
+  }
+}

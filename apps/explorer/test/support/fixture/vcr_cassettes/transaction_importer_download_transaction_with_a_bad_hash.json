@@ -1,0 +1,30 @@
+[
+  {
+    "request": {
+      "body": "{\"params\":[\"0xdecafisbadzzzz\"],\"method\":\"eth_getTransactionByHash\",\"jsonrpc\":\"2.0\",\"id\":7}",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "method": "post",
+      "options": [],
+      "request_body": "",
+      "url": "https://sokol-trace.poa.network"
+    },
+    "response": {
+      "binary": false,
+      "body": "{\"jsonrpc\":\"2.0\",\"error\":{\"code\":-32602,\"message\":\"Invalid params: invalid length 14, expected a 0x-prefixed, padded, hex-encoded hash with length 64.\"},\"id\":7}\n",
+      "headers": {
+        "Date": "Thu, 15 Feb 2018 20:13:34 GMT",
+        "Content-Type": "application/json",
+        "Transfer-Encoding": "chunked",
+        "Connection": "keep-alive",
+        "Set-Cookie": "__cfduid=de72ee5903bca5e0132bf608975af57ec1518725614; expires=Fri, 15-Feb-19 20:13:34 GMT; path=/; domain=.poa.network; HttpOnly; Secure",
+        "Expect-CT": "max-age=604800, report-uri=\"https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct\"",
+        "Server": "cloudflare",
+        "CF-RAY": "3edaedb12e50960d-SJC"
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  }
+]

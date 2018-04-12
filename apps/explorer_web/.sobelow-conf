@@ -1,0 +1,9 @@
+[
+  verbose: false,
+  private: true,
+  skip: false,
+  router: "lib/explorer_web/router.ex",
+  exit: "low",
+  format: "compact",
+  ignore: ["Config.CSRF"]
+]

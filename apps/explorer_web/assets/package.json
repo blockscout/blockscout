@@ -1,0 +1,47 @@
+{
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/poanetwork/poa-explorer.git"
+  },
+  "private": true,
+  "name": "poa-explorer",
+  "author": "POA Network",
+  "license": "GPL-3.0",
+  "engines": {
+    "node": "9.x",
+    "npm": "5.x"
+  },
+  "scripts": {
+    "deploy": "brunch build --production",
+    "watch": "brunch watch --stdin",
+    "build": "brunch build",
+    "eslint": "eslint js/**"
+  },
+  "dependencies": {
+    "@babel/polyfill": "^7.0.0-beta.39",
+    "babel-brunch": "6.1.1",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-react": "^6.24.1",
+    "brunch": "2.10.9",
+    "clean-css-brunch": "2.10.0",
+    "normalize-scss": "^7.0.0",
+    "phoenix": "file:../../../deps/phoenix",
+    "phoenix_html": "file:../../../deps/phoenix_html",
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0",
+    "sass-brunch": "github:brunch/sass-brunch#7ffb2e6ebb7380f920a2f594476a3db0654b11b9",
+    "uglify-js-brunch": "2.10.0"
+  },
+  "devDependencies": {
+    "eslint": "^4.15.0",
+    "eslint-config-standard": "^11.0.0-beta.0",
+    "eslint-config-standard-jsx": "^4.0.2",
+    "eslint-plugin-import": "^2.8.0",
+    "eslint-plugin-jasmine": "^2.9.1",
+    "eslint-plugin-node": "^5.2.1",
+    "eslint-plugin-promise": "^3.6.0",
+    "eslint-plugin-react": "^7.5.1",
+    "eslint-plugin-standard": "^3.0.1",
+    "jasmine-core": "^2.9.1"
+  }
+}

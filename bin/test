@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -ex
+
+mix format --check-formatted
+mix credo --strict
+mix sobelow --config
+mix dialyzer --halt-exit-status
+mix test

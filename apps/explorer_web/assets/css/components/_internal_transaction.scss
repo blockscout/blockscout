@@ -1,0 +1,42 @@
+.internal-transaction {
+  @extend %paper;
+
+  &__container {
+    padding: explorer-size(-1) explorer-size(0);
+    & + & { padding-top: 0; }
+    &--title { padding-top: explorer-size(0); }
+  }
+
+  &__header { @extend %section-header; }
+  &__heading { @extend %section-header__heading; }
+  &__subheading { @extend %section-header__subheading; }
+  &__tabs { @extend %section-tabs; }
+
+  &__tab {
+    @extend %section-tabs__tab;
+    &--active { @extend %section-tabs__tab--active; }
+  }
+
+  &__attributes { padding: explorer-size(-1) explorer-size(1); }
+  &__link { color: explorer-color("blue", "500"); }
+
+  &__table {
+    @extend %table;
+    @include explorer-typography("body1");
+    color: explorer-color("slate", "900");
+  }
+
+  &__to-address, &__from-address {
+    max-width: explorer-size(1);
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+
+  &__column-header { @include explorer-typography("body1"); }
+}
+
+@media (min-width: $explorer-breakpoint-lg) {
+  &__to-address, &__from-address {
+    max-width: explorer-size(6);
+  }
+}

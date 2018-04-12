@@ -1,0 +1,44 @@
+<section class="container__section transaction">
+  <%= render "overview.html", assigns %>
+
+  <div class="transaction__container">
+    <div class="transaction__tabs">
+      <h2 class="transaction__tab transaction__tab--active"><%= link(gettext("Internal Transactions"), to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction.hash), class: "transaction__link transaction__link--active") %></h2>
+      <h2 class="transaction__tab"><%= link(gettext("Logs"), to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction.hash), class: "transaction__link") %></h2>
+    </div>
+    <div class="internal-transaction__container">
+      <%= if length(@internal_transactions) > 0 do %>
+        <table class="internal-transaction__table">
+          <thead>
+            <th class="internal-transaction__column-header"><%= gettext "Type" %></th>
+            <th class="internal-transaction__column-header"><%= gettext "From" %></th>
+            <th class="internal-transaction__column-header"><%= gettext "To" %></th>
+            <th class="internal-transaction__column-header"><%= gettext "Value" %></th>
+            <th class="internal-transaction__column-header"><%= gettext "Gas Limit" %></th>
+          </thead>
+          <%= for transaction <- @internal_transactions do %>
+            <tgroup>
+              <tr>
+                <td><%= transaction.call_type %></td>
+                <td class="internal-transaction__to-address">
+                  <%= link(transaction.to_address.hash,
+                  to: address_path(@conn, :show, @conn.assigns.locale, transaction.to_address.hash),
+                  class: "transaction-log__link") %>
+                </td>
+                <td class="internal-transaction__from-address">
+                  <%= link(transaction.from_address.hash,
+                  to: address_path(@conn, :show, @conn.assigns.locale, transaction.from_address.hash),
+                  class: "transaction-log__link") %>
+                </td>
+                <td><%= transaction.value %></td>
+                <td><%= ExplorerWeb.TransactionView.format_gas_limit(transaction.gas) %></td>
+              </tr>
+            </tgroup>
+          <% end %>
+        </table>
+      <% else %>
+        <p><%= gettext "There are no Internal Transactions" %></p>
+      <% end %>
+    </div>
+  </div>
+</section>

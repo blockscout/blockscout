@@ -1,0 +1,30 @@
+[
+  {
+    "request": {
+      "body": "{\"params\":[],\"method\":\"eth_blockNumber\",\"jsonrpc\":\"2.0\",\"id\":4}",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "method": "post",
+      "options": [],
+      "request_body": "",
+      "url": "https://sokol-trace.poa.network"
+    },
+    "response": {
+      "binary": false,
+      "body": "{\"jsonrpc\":\"2.0\",\"result\":\"0xead0d\",\"id\":4}\n",
+      "headers": {
+        "Date": "Fri, 16 Feb 2018 06:27:57 GMT",
+        "Content-Type": "application/json",
+        "Transfer-Encoding": "chunked",
+        "Connection": "keep-alive",
+        "Set-Cookie": "__cfduid=de29d41d050c846681bac8973c50f5aa51518762476; expires=Sat, 16-Feb-19 06:27:56 GMT; path=/; domain=.poa.network; HttpOnly; Secure",
+        "Expect-CT": "max-age=604800, report-uri=\"https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct\"",
+        "Server": "cloudflare",
+        "CF-RAY": "3ede71a76b58962b-SJC"
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  }
+]
