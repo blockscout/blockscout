@@ -259,27 +259,6 @@ jobs:
 
       - store_test_results:
           path: apps/explorer_web/assets/test
-  license_finder:
-    docker:
-      # Ensure .tool-versions matches
-      - image: poanetwork/elixir:1.6.4-node-ruby
-        environment:
-          MIX_ENV: test
-
-    working_directory: ~/app
-
-    steps:
-      - attach_workspace:
-          at: .
-
-      - run: mix local.hex --force
-
-      - run:
-          name: Bundle Install
-          command: bundle check --path=vendor/bundle || bundle install --path=vendor/bundle --jobs=4 --retry=3
-      - run:
-          name: License Finder Action Items
-          command: bundle exec license_finder --project-path=. --decisions-file=doc/dependency_decisions.yml
   sobelow:
     docker:
       # Ensure .tool-versions matches
@@ -364,7 +343,6 @@ workflows:
             - check_formatted
             - credo
             - eslint
-            - license_finder
             - sobelow
             - test
       - deploy_staging:
@@ -375,16 +353,12 @@ workflows:
             - check_formatted
             - credo
             - eslint
-            - license_finder
             - sobelow
             - test
       - dialyzer:
           requires:
             - build
       - eslint:
-          requires:
-            - build
-      - license_finder:
           requires:
             - build
       - sobelow:
