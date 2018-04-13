@@ -23,7 +23,7 @@ defmodule ExplorerWeb.AddressTransactionController do
             pagination: params
           )
 
-        render(conn, "index.html", address: address, page: page)
+        render(conn, "index.html", address: address, filter: params["filter"], page: page)
 
       {:error, :not_found} ->
         not_found(conn)

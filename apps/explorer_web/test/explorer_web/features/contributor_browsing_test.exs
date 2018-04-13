@@ -243,6 +243,7 @@ defmodule ExplorerWeb.UserListTest do
     test "can filter to only see transactions to an address", %{session: session} do
       session
       |> visit("/en/addresses/0xlincoln")
+      |> click(css("[data-test='filterDropdown']", text: "Filter: All"))
       |> click(css(".address__link", text: "To"))
       |> assert_has(css(".transactions__link--long-hash", text: "0xSk8"))
       |> refute_has(css(".transactions__link--long-hash", text: "0xrazerscooter"))
@@ -251,6 +252,7 @@ defmodule ExplorerWeb.UserListTest do
     test "can filter to only see transactions from an address", %{session: session} do
       session
       |> visit("/en/addresses/0xlincoln")
+      |> click(css("[data-test='filterDropdown']", text: "Filter: All"))
       |> click(css(".address__link", text: "From"))
       |> assert_has(css(".transactions__link--long-hash", text: "0xrazerscooter"))
       |> refute_has(css(".transactions__link--long-hash", text: "0xSk8"))

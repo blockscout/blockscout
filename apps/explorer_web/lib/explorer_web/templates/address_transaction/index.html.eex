@@ -26,28 +26,40 @@
             ) %>
       </h2>
     </div>
-    <div>
-      <%= link(
-            gettext("All"),
-            class: "address__link address__link--active",
-            to: address_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
-          ) %>
-      <%= link(
-            gettext("To"),
-            to: address_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"], filter: "to"),
-            class: "address__link address__link--active"
-          ) %>
-      <%= link(
-            gettext("From"),
-            to: address_transaction_path(
-              @conn,
-              :index,
-              @conn.assigns.locale,
-              @conn.params["address_id"],
-              filter: "from"
-            ),
-            class: "address__link address__link--active"
-          ) %>
+    <div class="dropdown u-float-right u-push-sm-right u-push-sm-bottom">
+      <button data-test="filterDropdown" class="button button--secondary dropdown-toggle" type="button"
+              id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        Filter: <%= format_current_filter(@filter) %>
+      </button>
+      <div class="dropdown-menu dropdown-menu-right filter" aria-labelledby="dropdownMenu2">
+        <%= link(
+              gettext("All"),
+              class: "address__link address__link--active dropdown-item",
+              to: address_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
+            ) %>
+        <%= link(
+              gettext("To"),
+              class: "address__link address__link--active dropdown-item",
+              to: address_transaction_path(
+                @conn,
+                :index,
+                @conn.assigns.locale,
+                @conn.params["address_id"],
+                filter: "to"
+              )
+            ) %>
+        <%= link(
+              gettext("From"),
+              class: "address__link address__link--active dropdown-item",
+              to: address_transaction_path(
+                @conn,
+                :index,
+                @conn.assigns.locale,
+                @conn.params["address_id"],
+                filter: "from"
+              )
+            ) %>
+      </div>
     </div>
     <div class="transactions__container">
       <table class="transactions__table">

@@ -8,10 +8,6 @@ body {
 h1 {
   font-size: 28px;
   font-family: $ma-sans-serif;
-
-  @media screen and (max-width: 768px) {
-    font-size: 22px;
-   }
 }
 
 h2 {
@@ -45,23 +41,13 @@ p {
    }
 }
 
-.special {
-  font-size: 11px;
-  font-style: italic;
-}
-
-
 a {
   text-decoration: none;
-  color: $ma-teal;
+  color: explorer-color("gray", "900");
   font-size: 12px;
 
   &:hover,
   &:focus {
     text-decoration: none;
   }
-}
-
-.support {
-  font-size: 15px !important;
 }

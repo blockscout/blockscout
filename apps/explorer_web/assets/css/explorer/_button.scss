@@ -29,18 +29,19 @@
   }
 
   &--secondary {
-    background-color: explorer-color("gray", "400");
-    color: $ma-white;
+    background-color: explorer-color("gray", "300");
+    color: explorer-color("gray", "900");
     font-size: 13px;
     -webkit-transition: background-color .25s;
     transition: background-color .25s;
-    font-weight: 300;
+    font-weight: 400;
 
     &:hover,
     &:focus {
-      background-color: explorer-color("slate", "900");
-      color: $ma-white;
+      background-color: explorer-color("gray", "400");
+      color: explorer-color("gray", "900");;
       text-decoration: none;
+      outline: none !important;
     }
   }
 
