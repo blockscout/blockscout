@@ -1,10 +1,9 @@
 defmodule Explorer.ExchangeRates.Source.CoinMarketCapTest do
   use ExUnit.Case
 
-  import Mock
-
   alias Explorer.ExchangeRates.Rate
   alias Explorer.ExchangeRates.Source.CoinMarketCap
+  alias Plug.Conn
 
   @json """
   [
@@ -29,32 +28,38 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCapTest do
   """
 
   describe "fetch_exchange_rate" do
-    test "with successful request" do
-      with_mock HTTPoison,
-        get: fn "https://api.coinmarketcap.com/v1/ticker/poa-network/", _ ->
-          {:ok, %HTTPoison.Response{body: @json, status_code: 200}}
-        end do
-        expected_date = ~N[2018-04-11 19:00:00] |> DateTime.from_naive!("Etc/UTC")
-
-        expected = %Rate{
-          last_updated: expected_date,
-          ticker_name: "POA Network",
-          ticker_symbol: "POA",
-          ticker: "poa-network",
-          usd_value: "0.485053"
-        }
-
-        assert {:ok, ^expected} = CoinMarketCap.fetch_exchange_rate("poa-network")
-      end
+    setup do
+      bypass = Bypass.open()
+      Application.put_env(:explorer, CoinMarketCap, base_url: "http://localhost:#{bypass.port}")
+      {:ok, bypass: bypass}
     end
 
-    test "with errored request" do
-      with_mock HTTPoison,
-        get: fn "https://api.coinmarketcap.com/v1/ticker/poa-network/", _ ->
-          {:error, %HTTPoison.Error{reason: "not found"}}
-        end do
-        assert {:error, "not found"} == CoinMarketCap.fetch_exchange_rate("poa-network")
-      end
+    test "with successful request", %{bypass: bypass} do
+      Bypass.expect(bypass, fn conn -> Conn.resp(conn, 200, @json) end)
+
+      expected_date = ~N[2018-04-11 19:00:00] |> DateTime.from_naive!("Etc/UTC")
+
+      expected = %Rate{
+        id: "poa-network",
+        last_updated: expected_date,
+        name: "POA Network",
+        symbol: "POA",
+        usd_value: "0.485053"
+      }
+
+      assert {:ok, ^expected} = CoinMarketCap.fetch_exchange_rate("poa-network")
+    end
+
+    test "with invalid ticker", %{bypass: bypass} do
+      error_text = ~S({"error": "id not found"})
+      Bypass.expect(bypass, fn conn -> Conn.resp(conn, 404, error_text) end)
+      assert {:error, :not_found} == CoinMarketCap.fetch_exchange_rate("poa-network")
+    end
+
+    test "with bad request response", %{bypass: bypass} do
+      error_text = ~S({"error": "bad request"})
+      Bypass.expect(bypass, fn conn -> Conn.resp(conn, 400, error_text) end)
+      assert {:error, "bad request"} == CoinMarketCap.fetch_exchange_rate("poa-network")
     end
   end
 
@@ -62,10 +67,10 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCapTest do
     expected_date = ~N[2018-04-11 19:00:00] |> DateTime.from_naive!("Etc/UTC")
 
     expected = %Rate{
+      id: "poa-network",
       last_updated: expected_date,
-      ticker_name: "POA Network",
-      ticker_symbol: "POA",
-      ticker: "poa-network",
+      name: "POA Network",
+      symbol: "POA",
       usd_value: "0.485053"
     }
 

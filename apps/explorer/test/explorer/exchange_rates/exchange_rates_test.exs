@@ -52,20 +52,20 @@ defmodule Explorer.ExchangeRatesTest do
 
     test "with successful fetch" do
       expected_rate = %Rate{
+        id: "test",
         last_updated: DateTime.utc_now(),
-        ticker_name: "test",
-        ticker_symbol: "test",
-        ticker: "test",
+        name: "test",
+        symbol: "test",
         usd_value: "9000.000001"
       }
 
-      ticker = expected_rate.ticker
+      id = expected_rate.id
       state = %{}
 
       assert {:noreply, ^state} =
-               ExchangeRates.handle_info({nil, {ticker, {:ok, expected_rate}}}, state)
+               ExchangeRates.handle_info({nil, {id, {:ok, expected_rate}}}, state)
 
-      assert [{^ticker, ^expected_rate}] = :ets.lookup(ExchangeRates.table_name(), ticker)
+      assert [{^id, ^expected_rate}] = :ets.lookup(ExchangeRates.table_name(), id)
     end
 
     test "with failed fetch" do
@@ -86,12 +86,12 @@ defmodule Explorer.ExchangeRatesTest do
     ExchangeRates.init([])
 
     rates = [
-      %Rate{ticker: "z", ticker_symbol: "z"},
-      %Rate{ticker: "a", ticker_symbol: "a"}
+      %Rate{id: "z", symbol: "z"},
+      %Rate{id: "a", symbol: "a"}
     ]
 
     expected_rates = Enum.reverse(rates)
-    for rate <- rates, do: :ets.insert(ExchangeRates.table_name(), {rate.ticker, rate})
+    for rate <- rates, do: :ets.insert(ExchangeRates.table_name(), {rate.id, rate})
 
     assert expected_rates == ExchangeRates.all_tickers()
   end
