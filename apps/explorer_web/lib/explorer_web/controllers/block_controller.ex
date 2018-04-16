@@ -2,7 +2,6 @@ defmodule ExplorerWeb.BlockController do
   use ExplorerWeb, :controller
 
   alias Explorer.Chain
-  alias ExplorerWeb.BlockForm
 
   def index(conn, params) do
     blocks =
@@ -14,9 +13,8 @@ defmodule ExplorerWeb.BlockController do
   def show(conn, %{"id" => number}) do
     case Chain.number_to_block(number) do
       {:ok, block} ->
-        block_form = BlockForm.build(block)
-
-        render(conn, "show.html", block: block_form)
+        block_transaction_count = Chain.block_to_transaction_count(block)
+        render(conn, "show.html", block: block, block_transaction_count: block_transaction_count)
 
       {:error, :not_found} ->
         not_found(conn)

@@ -16,11 +16,11 @@
           </div>
           <div class="block__item">
             <dt class="block__item-key"><%= gettext "Timestamp" %></dt>
-            <dd class="block__item-value"><%= @block.age %> (<%= @block.formatted_timestamp %>)</dd>
+            <dd class="block__item-value"><%= age(@block) %> (<%= formatted_timestamp(@block) %>)</dd>
           </div>
           <div class="block__item">
             <dt class="block__item-key"><%= gettext "Transactions" %></dt>
-            <dd class="block__item-value"><%= gettext "%{count} transactions in this block", count: @block.transactions_count %></dd>
+            <dd class="block__item-value"><%= gettext "%{count} transactions in this block", count: @block_transaction_count %></dd>
           </div>
           <div class="block__item">
             <dt class="block__item-key"><%= gettext "Hash" %></dt>
