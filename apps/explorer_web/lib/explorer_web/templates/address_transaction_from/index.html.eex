@@ -1,7 +1,7 @@
 <section class="container__section block">
   <div class="address__headline">
     <h1 class="address__headline-title"><%= gettext("Address %{number}", number: @conn.params["address_id"]) %></h1>
-    <div class="address__pagination"><%= pagination_links @conn, @transactions, ["en", @conn.params["address_id"]], view_style: :bulma, first: true, distance: 1, previous: Phoenix.HTML.raw("&lsaquo;"), next: Phoenix.HTML.raw("&rsaquo;"), path: &address_transaction_to_path/5 %></div>
+    <div class="address__pagination"><%= pagination_links @conn, @page, ["en", @conn.params["address_id"]], view_style: :bulma, first: true, distance: 1, previous: Phoenix.HTML.raw("&lsaquo;"), next: Phoenix.HTML.raw("&rsaquo;"), path: &address_transaction_to_path/5 %></div>
   </div>
   <div class="address__container">
     <div class="address__tabs">
@@ -23,9 +23,9 @@
           </tr>
         </thead>
         <tbody>
-          <%= for transaction <- @transactions do %>
+          <%= for transaction <- @page.entries do %>
             <tr class="transactions__row">
-              <td class="transactions__column transactions__column--status"><div class="transactions__dot transactions__dot--<%= transaction.status %>"></div></td>
+              <td class="transactions__column transactions__column--status"><div class="transactions__dot transactions__dot--<%= status(transaction) %>"></div></td>
               <td class="transactions__column transactions__column--hash">
                 <div class="transactions__hash"><%= link(transaction.hash, to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.hash), class: "transactions__link transactions__link--truncated transactions__link--long-hash") %></div>
               </td>

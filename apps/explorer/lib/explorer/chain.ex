@@ -5,7 +5,16 @@ defmodule Explorer.Chain do
 
   import Ecto.Query, only: [from: 2, order_by: 2, preload: 2, where: 2, where: 3]
 
-  alias Explorer.Chain.{Address, Block, BlockTransaction, InternalTransaction, Log, Transaction}
+  alias Explorer.Chain.{
+    Address,
+    Block,
+    BlockTransaction,
+    InternalTransaction,
+    Log,
+    Receipt,
+    Transaction
+  }
+
   alias Explorer.Repo.NewRelic, as: Repo
 
   # Types
@@ -416,6 +425,31 @@ defmodule Explorer.Chain do
   def transaction_to_logs(%Transaction{hash: hash}, options \\ []) when is_list(options) do
     transaction_hash_to_logs(hash, options)
   end
+
+  @doc """
+  Converts `transaction` with its `receipt` loaded to the status of the `t:Explorer.Chain.Transaction.t/0`.
+
+  ## Returns
+
+  * `:failed` - the transaction failed without running out of gas
+  * `:pending` - the transaction has not be confirmed in a block yet
+  * `:out_of_gas` - the transaction failed because it ran out of gas
+  * `:success` - the transaction has been confirmed in a block
+
+  """
+  @spec transaction_to_status(Transaction.t()) :: :failed | :pending | :out_of_gas | :success
+  def transaction_to_status(%Transaction{receipt: nil}), do: :pending
+  def transaction_to_status(%Transaction{receipt: %Receipt{status: 1}}), do: :success
+
+  def transaction_to_status(%Transaction{
+        gas: gas,
+        receipt: %Receipt{gas_used: gas_used, status: 0}
+      })
+      when gas_used >= gas do
+    :out_of_gas
+  end
+
+  def transaction_to_status(%Transaction{receipt: %Receipt{status: 0}}), do: :failed
 
   @doc """
   Updates `balance` of `t:Explorer.Address.t/0` with `hash`.

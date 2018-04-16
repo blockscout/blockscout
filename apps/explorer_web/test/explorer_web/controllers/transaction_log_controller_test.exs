@@ -15,9 +15,8 @@ defmodule ExplorerWeb.TransactionLogControllerTest do
       receipt = insert(:receipt, transaction: transaction)
       address = insert(:address)
       insert(:log, receipt: receipt, address_id: address.id)
-      path = transaction_log_path(ExplorerWeb.Endpoint, :index, :en, transaction.hash)
 
-      conn = get(conn, path)
+      conn = get(conn, transaction_log_path(ExplorerWeb.Endpoint, :index, :en, transaction.hash))
 
       first_log = List.first(conn.assigns.logs.entries)
       assert first_log.receipt_id == receipt.id

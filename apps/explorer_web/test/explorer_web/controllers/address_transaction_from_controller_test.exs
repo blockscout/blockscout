@@ -12,7 +12,8 @@ defmodule ExplorerWeb.AddressTransactionFromControllerTest do
 
     test "returns transactions from this address", %{conn: conn} do
       address = insert(:address)
-      transaction = insert(:transaction, hash: "0xsnacks", from_address_id: address.id)
+      hash = "0xsnacks"
+      transaction = insert(:transaction, hash: hash, from_address_id: address.id)
       insert(:receipt, transaction: transaction)
       block = insert(:block)
       insert(:block_transaction, transaction: transaction, block: block)
@@ -20,8 +21,16 @@ defmodule ExplorerWeb.AddressTransactionFromControllerTest do
       conn =
         get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
 
-      assert conn.assigns.transactions.total_entries == 1
-      assert List.first(conn.assigns.transactions.entries).hash == "0xsnacks"
+      assert html = html_response(conn, 200)
+
+      transaction_hash_divs =
+        Floki.find(html, "td.transactions__column--hash div.transactions__hash a")
+
+      assert length(transaction_hash_divs) == 1
+
+      assert List.first(transaction_hash_divs) |> Floki.attribute("href") == [
+               "/en/transactions/#{hash}"
+             ]
     end
 
     test "does not return transactions to this address", %{conn: conn} do
@@ -37,7 +46,8 @@ defmodule ExplorerWeb.AddressTransactionFromControllerTest do
       conn =
         get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
 
-      assert conn.assigns.transactions.total_entries == 0
+      assert html = html_response(conn, 200)
+      assert html |> Floki.find("tbody tr") |> length == 0
     end
 
     test "does not return related transactions without a receipt", %{conn: conn} do
@@ -51,7 +61,8 @@ defmodule ExplorerWeb.AddressTransactionFromControllerTest do
       conn =
         get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
 
-      assert conn.assigns.transactions.total_entries == 0
+      assert html = html_response(conn, 200)
+      assert html |> Floki.find("tbody tr") |> length == 0
     end
 
     test "does not return related transactions without a from address", %{conn: conn} do
@@ -65,7 +76,8 @@ defmodule ExplorerWeb.AddressTransactionFromControllerTest do
       conn =
         get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
 
-      assert conn.assigns.transactions.total_entries == 0
+      assert html = html_response(conn, 200)
+      assert html |> Floki.find("tbody tr") |> length == 0
     end
 
     test "does not return related transactions without a to address", %{conn: conn} do
@@ -79,7 +91,8 @@ defmodule ExplorerWeb.AddressTransactionFromControllerTest do
       conn =
         get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
 
-      assert conn.assigns.transactions.total_entries == 0
+      assert html = html_response(conn, 200)
+      assert html |> Floki.find("tbody tr") |> length == 0
     end
   end
 end

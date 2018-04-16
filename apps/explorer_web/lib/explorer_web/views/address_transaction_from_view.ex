@@ -1,4 +1,9 @@
 defmodule ExplorerWeb.AddressTransactionFromView do
   use ExplorerWeb, :view
-  @dialyzer :no_match
+
+  alias ExplorerWeb.TransactionView
+
+  def status(transacton) do
+    TransactionView.status(transacton)
+  end
 end

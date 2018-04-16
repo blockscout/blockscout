@@ -2,6 +2,7 @@ defmodule ExplorerWeb.PendingTransactionView do
   use ExplorerWeb, :view
 
   alias Explorer.Chain.{Address, Transaction}
+  alias ExplorerWeb.TransactionView
 
   @dialyzer :no_match
 
@@ -14,8 +15,8 @@ defmodule ExplorerWeb.PendingTransactionView do
     end
   end
 
-  def last_seen(%Transaction{updated_at: updated_at}) do
-    Timex.from_now(updated_at)
+  def last_seen(transaction) do
+    TransactionView.last_seen(transaction)
   end
 
   def to_address_hash(%Transaction{to_address: to_address}) do

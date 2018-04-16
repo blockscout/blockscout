@@ -6,7 +6,6 @@ defmodule ExplorerWeb.AddressTransactionFromController do
   use ExplorerWeb, :controller
 
   alias Explorer.Chain
-  alias ExplorerWeb.TransactionForm
 
   def index(conn, %{"address_id" => from_address_hash} = params) do
     case Chain.hash_to_address(from_address_hash) do
@@ -23,8 +22,7 @@ defmodule ExplorerWeb.AddressTransactionFromController do
             pagination: params
           )
 
-        entries = Enum.map(page.entries, &TransactionForm.build_and_merge/1)
-        render(conn, "index.html", transactions: Map.put(page, :entries, entries))
+        render(conn, "index.html", page: page)
 
       {:error, :not_found} ->
         not_found(conn)
