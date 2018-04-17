@@ -19,8 +19,7 @@ defmodule Explorer.Chain.BlockTest do
     test "with duplicate information" do
       insert(:block, hash: "0x0")
 
-      {:error, changeset} =
-        %Block{} |> Block.changeset(params_for(:block, hash: "0x0")) |> Repo.insert()
+      {:error, changeset} = %Block{} |> Block.changeset(params_for(:block, hash: "0x0")) |> Repo.insert()
 
       refute changeset.valid?
       assert changeset.errors == [hash: {"has already been taken", []}]
@@ -29,8 +28,7 @@ defmodule Explorer.Chain.BlockTest do
     test "rejects duplicate blocks with mixed case" do
       insert(:block, hash: "0xa")
 
-      {:error, changeset} =
-        %Block{} |> Block.changeset(params_for(:block, hash: "0xA")) |> Repo.insert()
+      {:error, changeset} = %Block{} |> Block.changeset(params_for(:block, hash: "0xA")) |> Repo.insert()
 
       refute changeset.valid?
       assert changeset.errors == [hash: {"has already been taken", []}]
@@ -48,8 +46,7 @@ defmodule Explorer.Chain.BlockTest do
       insert(:block, number: 1)
       insert(:block, number: 5)
 
-      assert Block |> Block.latest() |> Repo.all() ==
-               Block |> order_by(desc: :number) |> Repo.all()
+      assert Block |> Block.latest() |> Repo.all() == Block |> order_by(desc: :number) |> Repo.all()
     end
   end
 end

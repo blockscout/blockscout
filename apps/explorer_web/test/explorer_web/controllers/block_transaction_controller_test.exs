@@ -30,8 +30,7 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
 
       assert html = html_response(conn, 200)
 
-      transaction_hash_divs =
-        Floki.find(html, "td.transactions__column--hash div.transactions__hash a")
+      transaction_hash_divs = Floki.find(html, "td.transactions__column--hash div.transactions__hash a")
 
       assert length(transaction_hash_divs) == 1
 

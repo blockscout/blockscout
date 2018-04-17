@@ -69,8 +69,7 @@ defmodule Explorer.Chain.StatisticsTest do
       inserted_at = validation_time |> Timex.shift(seconds: 5)
       insert(:block, timestamp: validation_time, inserted_at: inserted_at)
 
-      assert %Statistics{lag: %Duration{seconds: 5, megaseconds: 0, microseconds: 0}} =
-               Statistics.fetch()
+      assert %Statistics{lag: %Duration{seconds: 5, megaseconds: 0, microseconds: 0}} = Statistics.fetch()
     end
 
     test "returns the number of blocks inserted in the last minute" do

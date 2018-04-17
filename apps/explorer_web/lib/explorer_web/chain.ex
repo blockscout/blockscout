@@ -5,8 +5,7 @@ defmodule ExplorerWeb.Chain do
 
   import Explorer.Chain, only: [hash_to_address: 1, hash_to_transaction: 1, number_to_block: 1]
 
-  @spec from_param(String.t()) ::
-          {:ok, Address.t() | Transaction.t() | Block.t()} | {:error, :not_found}
+  @spec from_param(String.t()) :: {:ok, Address.t() | Transaction.t() | Block.t()} | {:error, :not_found}
   def from_param(param)
 
   def from_param(hash) when byte_size(hash) > 42 do

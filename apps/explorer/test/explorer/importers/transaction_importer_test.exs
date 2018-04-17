@@ -40,14 +40,11 @@ defmodule Explorer.TransactionImporterTest do
   describe "import/1" do
     test "imports and saves a transaction to the database" do
       use_cassette "transaction_importer_import_saves_the_transaction" do
-        TransactionImporter.import(
-          "0xdc3a0dfd0bbffd5eabbe40fb13afbe35ac5f5c030bff148f3e50afe32974b291"
-        )
+        TransactionImporter.import("0xdc3a0dfd0bbffd5eabbe40fb13afbe35ac5f5c030bff148f3e50afe32974b291")
 
         transaction = Transaction |> order_by(desc: :inserted_at) |> Repo.one()
 
-        assert transaction.hash ==
-                 "0xdc3a0dfd0bbffd5eabbe40fb13afbe35ac5f5c030bff148f3e50afe32974b291"
+        assert transaction.hash == "0xdc3a0dfd0bbffd5eabbe40fb13afbe35ac5f5c030bff148f3e50afe32974b291"
       end
     end
 
@@ -59,9 +56,7 @@ defmodule Explorer.TransactionImporterTest do
           gas: 5
         )
 
-        TransactionImporter.import(
-          "0x170baac4eca26076953370dd603c68eab340c0135b19b585010d3158a5dbbf23"
-        )
+        TransactionImporter.import("0x170baac4eca26076953370dd603c68eab340c0135b19b585010d3158a5dbbf23")
 
         transaction = Transaction |> order_by(desc: :inserted_at) |> Repo.one()
 
@@ -77,15 +72,11 @@ defmodule Explorer.TransactionImporterTest do
             hash: "0xfce13392435a8e7dab44c07d482212efb9dc39a9bea1915a9ead308b55a617f9"
           )
 
-        TransactionImporter.import(
-          "0x64d851139325479c3bb7ccc6e6ab4cde5bc927dce6810190fe5d770a4c1ac333"
-        )
+        TransactionImporter.import("0x64d851139325479c3bb7ccc6e6ab4cde5bc927dce6810190fe5d770a4c1ac333")
 
         transaction =
           Transaction
-          |> Repo.get_by(
-            hash: "0x64d851139325479c3bb7ccc6e6ab4cde5bc927dce6810190fe5d770a4c1ac333"
-          )
+          |> Repo.get_by(hash: "0x64d851139325479c3bb7ccc6e6ab4cde5bc927dce6810190fe5d770a4c1ac333")
 
         block_transaction = BlockTransaction |> Repo.get_by(transaction_id: transaction.id)
 
@@ -95,15 +86,11 @@ defmodule Explorer.TransactionImporterTest do
 
     test "when there is no block it does not save a block transaction" do
       use_cassette "transaction_importer_txn_without_block" do
-        TransactionImporter.import(
-          "0xc6aa189827c14880f012a65292f7add7b5310094f8773a3d85b66303039b9dcf"
-        )
+        TransactionImporter.import("0xc6aa189827c14880f012a65292f7add7b5310094f8773a3d85b66303039b9dcf")
 
         transaction =
           Transaction
-          |> Repo.get_by(
-            hash: "0xc6aa189827c14880f012a65292f7add7b5310094f8773a3d85b66303039b9dcf"
-          )
+          |> Repo.get_by(hash: "0xc6aa189827c14880f012a65292f7add7b5310094f8773a3d85b66303039b9dcf")
 
         block_transaction = BlockTransaction |> Repo.get_by(transaction_id: transaction.id)
 
@@ -113,15 +100,11 @@ defmodule Explorer.TransactionImporterTest do
 
     test "creates a from address" do
       use_cassette "transaction_importer_creates_a_from_address" do
-        TransactionImporter.import(
-          "0xc445f5410912458c480d992dd93355ae3dad64d9f65db25a3cf43a9c609a2e0d"
-        )
+        TransactionImporter.import("0xc445f5410912458c480d992dd93355ae3dad64d9f65db25a3cf43a9c609a2e0d")
 
         transaction =
           Transaction
-          |> Repo.get_by(
-            hash: "0xc445f5410912458c480d992dd93355ae3dad64d9f65db25a3cf43a9c609a2e0d"
-          )
+          |> Repo.get_by(hash: "0xc445f5410912458c480d992dd93355ae3dad64d9f65db25a3cf43a9c609a2e0d")
 
         address = Address |> Repo.get_by(hash: "0xa5b4b372112ab8dbbb48c8d0edd89227e24ec785")
 
@@ -133,15 +116,11 @@ defmodule Explorer.TransactionImporterTest do
       insert(:address, hash: "0xa5b4b372112ab8dbbb48c8d0edd89227e24ec785")
 
       use_cassette "transaction_importer_creates_a_from_address" do
-        TransactionImporter.import(
-          "0xc445f5410912458c480d992dd93355ae3dad64d9f65db25a3cf43a9c609a2e0d"
-        )
+        TransactionImporter.import("0xc445f5410912458c480d992dd93355ae3dad64d9f65db25a3cf43a9c609a2e0d")
 
         transaction =
           Transaction
-          |> Repo.get_by(
-            hash: "0xc445f5410912458c480d992dd93355ae3dad64d9f65db25a3cf43a9c609a2e0d"
-          )
+          |> Repo.get_by(hash: "0xc445f5410912458c480d992dd93355ae3dad64d9f65db25a3cf43a9c609a2e0d")
 
         address = Address |> Repo.get_by(hash: "0xa5b4b372112ab8dbbb48c8d0edd89227e24ec785")
 
@@ -151,15 +130,11 @@ defmodule Explorer.TransactionImporterTest do
 
     test "creates a to address" do
       use_cassette "transaction_importer_creates_a_to_address" do
-        TransactionImporter.import(
-          "0xdc533d4227734a7cacd75a069e8dc57ac571b865ed97bae5ea4cb74b54145f4c"
-        )
+        TransactionImporter.import("0xdc533d4227734a7cacd75a069e8dc57ac571b865ed97bae5ea4cb74b54145f4c")
 
         transaction =
           Transaction
-          |> Repo.get_by(
-            hash: "0xdc533d4227734a7cacd75a069e8dc57ac571b865ed97bae5ea4cb74b54145f4c"
-          )
+          |> Repo.get_by(hash: "0xdc533d4227734a7cacd75a069e8dc57ac571b865ed97bae5ea4cb74b54145f4c")
 
         address = Address |> Repo.get_by(hash: "0x24e5b8528fe83257d5fe3497ef616026713347f8")
 
@@ -171,15 +146,11 @@ defmodule Explorer.TransactionImporterTest do
       insert(:address, hash: "0x24e5b8528fe83257d5fe3497ef616026713347f8")
 
       use_cassette "transaction_importer_creates_a_to_address" do
-        TransactionImporter.import(
-          "0xdc533d4227734a7cacd75a069e8dc57ac571b865ed97bae5ea4cb74b54145f4c"
-        )
+        TransactionImporter.import("0xdc533d4227734a7cacd75a069e8dc57ac571b865ed97bae5ea4cb74b54145f4c")
 
         transaction =
           Transaction
-          |> Repo.get_by(
-            hash: "0xdc533d4227734a7cacd75a069e8dc57ac571b865ed97bae5ea4cb74b54145f4c"
-          )
+          |> Repo.get_by(hash: "0xdc533d4227734a7cacd75a069e8dc57ac571b865ed97bae5ea4cb74b54145f4c")
 
         address = Address |> Repo.get_by(hash: "0x24e5b8528fe83257d5fe3497ef616026713347f8")
 
@@ -189,15 +160,11 @@ defmodule Explorer.TransactionImporterTest do
 
     test "creates a to address using creates when to is nil" do
       use_cassette "transaction_importer_creates_a_to_address_from_creates" do
-        TransactionImporter.import(
-          "0xdc533d4227734a7cacd75a069e8dc57ac571b865ed97bae5ea4cb74b54145f4c"
-        )
+        TransactionImporter.import("0xdc533d4227734a7cacd75a069e8dc57ac571b865ed97bae5ea4cb74b54145f4c")
 
         transaction =
           Transaction
-          |> Repo.get_by(
-            hash: "0xdc533d4227734a7cacd75a069e8dc57ac571b865ed97bae5ea4cb74b54145f4c"
-          )
+          |> Repo.get_by(hash: "0xdc533d4227734a7cacd75a069e8dc57ac571b865ed97bae5ea4cb74b54145f4c")
 
         address = Address |> Repo.get_by(hash: "0x24e5b8528fe83257d5fe3497ef616026713347f8")
 
@@ -208,9 +175,7 @@ defmodule Explorer.TransactionImporterTest do
     test "processes a map of transaction attributes" do
       insert(:block, hash: "0xtakis")
 
-      TransactionImporter.import(
-        Map.merge(@raw_transaction, %{"hash" => "0xmunchos", "blockHash" => "0xtakis"})
-      )
+      TransactionImporter.import(Map.merge(@raw_transaction, %{"hash" => "0xmunchos", "blockHash" => "0xtakis"}))
 
       last_transaction = Transaction |> order_by(desc: :inserted_at) |> limit(1) |> Repo.one()
 
@@ -218,9 +183,7 @@ defmodule Explorer.TransactionImporterTest do
     end
 
     test "gets balances for addresses" do
-      TransactionImporter.import(
-        "0xdc533d4227734a7cacd75a069e8dc57ac571b865ed97bae5ea4cb74b54145f4c"
-      )
+      TransactionImporter.import("0xdc533d4227734a7cacd75a069e8dc57ac571b865ed97bae5ea4cb74b54145f4c")
 
       from_address = Address |> Repo.get_by(hash: "0xb2867180771b196518651c174c9240d5e8bd0ecd")
       to_address = Address |> Repo.get_by(hash: "0x24e5b8528fe83257d5fe3497ef616026713347f8")
@@ -245,9 +208,7 @@ defmodule Explorer.TransactionImporterTest do
     test "downloads a transaction" do
       use_cassette "transaction_importer_download_transaction" do
         raw_transaction =
-          TransactionImporter.download_transaction(
-            "0x170baac4eca26076953370dd603c68eab340c0135b19b585010d3158a5dbbf23"
-          )
+          TransactionImporter.download_transaction("0x170baac4eca26076953370dd603c68eab340c0135b19b585010d3158a5dbbf23")
 
         assert(raw_transaction["from"] == "0xbe96ef1d056c97323e210fd0dd818aa027e57143")
       end

@@ -17,8 +17,7 @@ defmodule ExplorerWeb.BlockControllerTest do
 
   describe "GET index/2" do
     test "returns all blocks", %{conn: conn} do
-      block_ids =
-        insert_list(4, :block) |> Enum.map(fn block -> block.number end) |> Enum.reverse()
+      block_ids = insert_list(4, :block) |> Enum.map(fn block -> block.number end) |> Enum.reverse()
 
       conn = get(conn, "/en/blocks")
       assert conn.assigns.blocks |> Enum.map(fn block -> block.number end) == block_ids

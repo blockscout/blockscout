@@ -1,8 +1,7 @@
 defmodule ExplorerWeb.ChainControllerTest do
   use ExplorerWeb.ConnCase
 
-  import ExplorerWeb.Router.Helpers,
-    only: [chain_path: 3, block_path: 4, transaction_path: 4, address_path: 4]
+  import ExplorerWeb.Router.Helpers, only: [chain_path: 3, block_path: 4, transaction_path: 4, address_path: 4]
 
   describe "GET index/2 without a locale" do
     test "redirects to the en locale", %{conn: conn} do

@@ -28,8 +28,7 @@ defmodule Explorer.Chain.DebitTest do
       recipient = insert(:address)
       sender = insert(:address)
 
-      transaction =
-        insert(:transaction, value: 21, to_address_id: recipient.id, from_address_id: sender.id)
+      transaction = insert(:transaction, value: 21, to_address_id: recipient.id, from_address_id: sender.id)
 
       insert(:receipt, transaction: transaction, status: 1)
       address_id = sender.id
@@ -42,8 +41,7 @@ defmodule Explorer.Chain.DebitTest do
       recipient = insert(:address)
       sender = insert(:address)
 
-      transaction =
-        insert(:transaction, value: 21, to_address_id: recipient.id, from_address_id: sender.id)
+      transaction = insert(:transaction, value: 21, to_address_id: recipient.id, from_address_id: sender.id)
 
       insert(:receipt, transaction: transaction, status: 1)
       address_id = recipient.id

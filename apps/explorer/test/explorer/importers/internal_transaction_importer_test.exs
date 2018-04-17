@@ -29,8 +29,7 @@ defmodule Explorer.InternalTransactionImporterTest do
 
         InternalTransactionImporter.import(transaction.hash)
 
-        last_internal_transaction =
-          InternalTransaction |> order_by(desc: :index) |> limit(1) |> Repo.one()
+        last_internal_transaction = InternalTransaction |> order_by(desc: :index) |> limit(1) |> Repo.one()
 
         assert last_internal_transaction.index == 1
       end
@@ -46,8 +45,7 @@ defmodule Explorer.InternalTransactionImporterTest do
 
         InternalTransactionImporter.import(transaction.hash)
 
-        last_internal_transaction =
-          InternalTransaction |> order_by(desc: :index) |> limit(1) |> Repo.one()
+        last_internal_transaction = InternalTransaction |> order_by(desc: :index) |> limit(1) |> Repo.one()
 
         assert last_internal_transaction.call_type == "create"
       end

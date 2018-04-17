@@ -12,15 +12,12 @@ defmodule Explorer.Workers.ImportTransactionTest do
     test "imports the requested transaction hash" do
       use_cassette "import_transaction_perform_1" do
         with_mock Exq, enqueue: fn _, _, _, _ -> :ok end do
-          ImportTransaction.perform(
-            "0xf9a0959d5ccde33ec5221ddba1c6d7eaf9580a8d3512c7a1a60301362a98f926"
-          )
+          ImportTransaction.perform("0xf9a0959d5ccde33ec5221ddba1c6d7eaf9580a8d3512c7a1a60301362a98f926")
         end
 
         transaction = Transaction |> Repo.one()
 
-        assert transaction.hash ==
-                 "0xf9a0959d5ccde33ec5221ddba1c6d7eaf9580a8d3512c7a1a60301362a98f926"
+        assert transaction.hash == "0xf9a0959d5ccde33ec5221ddba1c6d7eaf9580a8d3512c7a1a60301362a98f926"
       end
     end
 
@@ -32,9 +29,7 @@ defmodule Explorer.Workers.ImportTransactionTest do
 
       use_cassette "import_transaction_perform_1" do
         with_mock Exq, enqueue: fn _, _, _, _ -> :ok end do
-          ImportTransaction.perform(
-            "0xf9a0959d5ccde33ec5221ddba1c6d7eaf9580a8d3512c7a1a60301362a98f926"
-          )
+          ImportTransaction.perform("0xf9a0959d5ccde33ec5221ddba1c6d7eaf9580a8d3512c7a1a60301362a98f926")
         end
 
         transaction_count = Transaction |> Repo.all() |> Enum.count()
@@ -52,9 +47,7 @@ defmodule Explorer.Workers.ImportTransactionTest do
       use_cassette "import_transaction_perform_1" do
         with_mock Exq, enqueue: fn _, _, _, _ -> insert(:receipt, transaction: transaction) end do
           with_mock ImportInternalTransaction, perform_later: fn _ -> :ok end do
-            ImportTransaction.perform(
-              "0xf9a0959d5ccde33ec5221ddba1c6d7eaf9580a8d3512c7a1a60301362a98f926"
-            )
+            ImportTransaction.perform("0xf9a0959d5ccde33ec5221ddba1c6d7eaf9580a8d3512c7a1a60301362a98f926")
 
             receipt = Repo.one(Receipt)
             refute is_nil(receipt)
@@ -98,9 +91,7 @@ defmodule Explorer.Workers.ImportTransactionTest do
         with_mock Exq, enqueue: fn _, _, _, _ -> :ok end do
           with_mock ImportInternalTransaction,
             perform_later: fn _ -> insert(:internal_transaction, transaction: transaction) end do
-            ImportTransaction.perform(
-              "0xf9a0959d5ccde33ec5221ddba1c6d7eaf9580a8d3512c7a1a60301362a98f926"
-            )
+            ImportTransaction.perform("0xf9a0959d5ccde33ec5221ddba1c6d7eaf9580a8d3512c7a1a60301362a98f926")
 
             internal_transaction = Repo.one(InternalTransaction)
             refute is_nil(internal_transaction)
@@ -145,14 +136,11 @@ defmodule Explorer.Workers.ImportTransactionTest do
               hash: "0xf9a0959d5ccde33ec5221ddba1c6d7eaf9580a8d3512c7a1a60301362a98f926"
             )
           end do
-          ImportTransaction.perform_later(
-            "0xf9a0959d5ccde33ec5221ddba1c6d7eaf9580a8d3512c7a1a60301362a98f926"
-          )
+          ImportTransaction.perform_later("0xf9a0959d5ccde33ec5221ddba1c6d7eaf9580a8d3512c7a1a60301362a98f926")
 
           transaction = Repo.one(Transaction)
 
-          assert transaction.hash ==
-                   "0xf9a0959d5ccde33ec5221ddba1c6d7eaf9580a8d3512c7a1a60301362a98f926"
+          assert transaction.hash == "0xf9a0959d5ccde33ec5221ddba1c6d7eaf9580a8d3512c7a1a60301362a98f926"
         end
       end
     end

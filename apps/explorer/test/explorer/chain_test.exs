@@ -92,8 +92,7 @@ defmodule Explorer.ChainTest do
         insert(:block_transaction, block_id: block_id, transaction_id: transaction_id)
       end)
 
-      [%Transaction{id: first_transaction_id}, %Transaction{id: second_transaction_id}] =
-        transactions
+      [%Transaction{id: first_transaction_id}, %Transaction{id: second_transaction_id}] = transactions
 
       assert %Scrivener.Page{
                entries: [%Transaction{id: ^first_transaction_id}],
@@ -144,8 +143,7 @@ defmodule Explorer.ChainTest do
 
       assert block.number < max_block_number
 
-      assert Chain.confirmations(block, max_block_number: max_block_number) ==
-               max_block_number - block.number
+      assert Chain.confirmations(block, max_block_number: max_block_number) == max_block_number - block.number
     end
   end
 
@@ -188,18 +186,15 @@ defmodule Explorer.ChainTest do
     end
 
     test ":gwei unit" do
-      assert Chain.gas_price(%Transaction{gas_price: Decimal.new(1)}, :gwei) ==
-               Decimal.new("1e-9")
+      assert Chain.gas_price(%Transaction{gas_price: Decimal.new(1)}, :gwei) == Decimal.new("1e-9")
 
       assert Chain.gas_price(%Transaction{gas_price: Decimal.new("1e9")}, :gwei) == Decimal.new(1)
     end
 
     test ":ether unit" do
-      assert Chain.gas_price(%Transaction{gas_price: Decimal.new(1)}, :ether) ==
-               Decimal.new("1e-18")
+      assert Chain.gas_price(%Transaction{gas_price: Decimal.new(1)}, :ether) == Decimal.new("1e-18")
 
-      assert Chain.gas_price(%Transaction{gas_price: Decimal.new("1e18")}, :ether) ==
-               Decimal.new(1)
+      assert Chain.gas_price(%Transaction{gas_price: Decimal.new("1e18")}, :ether) == Decimal.new(1)
     end
   end
 
@@ -230,13 +225,11 @@ defmodule Explorer.ChainTest do
     test "with transactions with receipt required without receipt does not return transaction" do
       address = %Address{id: from_address_id} = insert(:address)
 
-      %Transaction{id: transaction_id_with_receipt} =
-        insert(:transaction, from_address_id: from_address_id)
+      %Transaction{id: transaction_id_with_receipt} = insert(:transaction, from_address_id: from_address_id)
 
       insert(:receipt, transaction_id: transaction_id_with_receipt)
 
-      %Transaction{id: transaction_id_without_receipt} =
-        insert(:transaction, from_address_id: from_address_id)
+      %Transaction{id: transaction_id_without_receipt} = insert(:transaction, from_address_id: from_address_id)
 
       assert %Scrivener.Page{
                entries: [%Transaction{id: ^transaction_id_with_receipt, receipt: %Receipt{}}],
@@ -273,8 +266,7 @@ defmodule Explorer.ChainTest do
       adddress = %Address{id: from_address_id} = insert(:address)
       transactions = insert_list(2, :transaction, from_address_id: from_address_id)
 
-      [%Transaction{id: oldest_transaction_id}, %Transaction{id: newest_transaction_id}] =
-        transactions
+      [%Transaction{id: oldest_transaction_id}, %Transaction{id: newest_transaction_id}] = transactions
 
       assert %Scrivener.Page{
                entries: [%Transaction{id: ^newest_transaction_id}],
@@ -290,8 +282,7 @@ defmodule Explorer.ChainTest do
                page_size: 1,
                total_entries: 2,
                total_pages: 2
-             } =
-               Chain.from_address_to_transactions(adddress, pagination: %{page: 2, page_size: 1})
+             } = Chain.from_address_to_transactions(adddress, pagination: %{page: 2, page_size: 1})
     end
   end
 
@@ -321,8 +312,7 @@ defmodule Explorer.ChainTest do
     end
 
     test "with transaction with receipt required without receipt returns {:error, :not_found}" do
-      %Transaction{hash: hash_with_receipt, id: transaction_id_with_receipt} =
-        insert(:transaction)
+      %Transaction{hash: hash_with_receipt, id: transaction_id_with_receipt} = insert(:transaction)
 
       insert(:receipt, transaction_id: transaction_id_with_receipt)
 
@@ -479,13 +469,11 @@ defmodule Explorer.ChainTest do
     test "with transactions with receipt required without receipt does not return transaction" do
       address = %Address{id: to_address_id} = insert(:address)
 
-      %Transaction{id: transaction_id_with_receipt} =
-        insert(:transaction, to_address_id: to_address_id)
+      %Transaction{id: transaction_id_with_receipt} = insert(:transaction, to_address_id: to_address_id)
 
       insert(:receipt, transaction_id: transaction_id_with_receipt)
 
-      %Transaction{id: transaction_id_without_receipt} =
-        insert(:transaction, to_address_id: to_address_id)
+      %Transaction{id: transaction_id_without_receipt} = insert(:transaction, to_address_id: to_address_id)
 
       assert %Scrivener.Page{
                entries: [%Transaction{id: ^transaction_id_with_receipt, receipt: %Receipt{}}],
@@ -522,8 +510,7 @@ defmodule Explorer.ChainTest do
       adddress = %Address{id: to_address_id} = insert(:address)
       transactions = insert_list(2, :transaction, to_address_id: to_address_id)
 
-      [%Transaction{id: oldest_transaction_id}, %Transaction{id: newest_transaction_id}] =
-        transactions
+      [%Transaction{id: oldest_transaction_id}, %Transaction{id: newest_transaction_id}] = transactions
 
       assert %Scrivener.Page{
                entries: [%Transaction{id: ^newest_transaction_id}],
@@ -643,11 +630,9 @@ defmodule Explorer.ChainTest do
         insert(:receipt, transaction_id: id)
       end)
 
-      assert length(Chain.transactions_recently_before_id(last_transaction_id, pending: true)) ==
-               8
+      assert length(Chain.transactions_recently_before_id(last_transaction_id, pending: true)) == 8
 
-      assert length(Chain.transactions_recently_before_id(last_transaction_id, pending: false)) ==
-               10
+      assert length(Chain.transactions_recently_before_id(last_transaction_id, pending: false)) == 10
 
       assert length(Chain.transactions_recently_before_id(last_transaction_id)) == 10
     end
@@ -761,8 +746,7 @@ defmodule Explorer.ChainTest do
 
       Chain.update_balance(hash, 88)
 
-      assert {:ok, %Address{balance_updated_at: balance_updated_at}} =
-               Chain.hash_to_address("0xtwizzlers")
+      assert {:ok, %Address{balance_updated_at: balance_updated_at}} = Chain.hash_to_address("0xtwizzlers")
 
       refute is_nil(balance_updated_at)
     end
@@ -782,18 +766,15 @@ defmodule Explorer.ChainTest do
     end
 
     test "with InternalTransaction.t with :gwei" do
-      assert Chain.value(%InternalTransaction{value: Decimal.new(1)}, :gwei) ==
-               Decimal.new("1e-9")
+      assert Chain.value(%InternalTransaction{value: Decimal.new(1)}, :gwei) == Decimal.new("1e-9")
 
       assert Chain.value(%InternalTransaction{value: Decimal.new("1e9")}, :gwei) == Decimal.new(1)
     end
 
     test "with InternalTransaction.t with :ether" do
-      assert Chain.value(%InternalTransaction{value: Decimal.new(1)}, :ether) ==
-               Decimal.new("1e-18")
+      assert Chain.value(%InternalTransaction{value: Decimal.new(1)}, :ether) == Decimal.new("1e-18")
 
-      assert Chain.value(%InternalTransaction{value: Decimal.new("1e18")}, :ether) ==
-               Decimal.new(1)
+      assert Chain.value(%InternalTransaction{value: Decimal.new("1e18")}, :ether) == Decimal.new(1)
     end
 
     test "with Transaction.t with :wei" do

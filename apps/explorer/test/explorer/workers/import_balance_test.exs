@@ -32,8 +32,7 @@ defmodule Explorer.Workers.ImportBalanceTest do
 
         expected_balance = Decimal.new(66)
 
-        assert {:ok, %Address{balance: ^expected_balance}} =
-                 Chain.hash_to_address("0xskateboards")
+        assert {:ok, %Address{balance: ^expected_balance}} = Chain.hash_to_address("0xskateboards")
       end
     end
   end

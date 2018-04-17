@@ -18,13 +18,11 @@ defmodule ExplorerWeb.AddressTransactionFromControllerTest do
       block = insert(:block)
       insert(:block_transaction, transaction: transaction, block: block)
 
-      conn =
-        get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
+      conn = get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
 
       assert html = html_response(conn, 200)
 
-      transaction_hash_divs =
-        Floki.find(html, "td.transactions__column--hash div.transactions__hash a")
+      transaction_hash_divs = Floki.find(html, "td.transactions__column--hash div.transactions__hash a")
 
       assert length(transaction_hash_divs) == 1
 
@@ -43,8 +41,7 @@ defmodule ExplorerWeb.AddressTransactionFromControllerTest do
       insert(:to_address, transaction: transaction, address: address)
       insert(:from_address, transaction: transaction, address: other_address)
 
-      conn =
-        get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
+      conn = get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
 
       assert html = html_response(conn, 200)
       assert html |> Floki.find("tbody tr") |> length == 0
@@ -58,8 +55,7 @@ defmodule ExplorerWeb.AddressTransactionFromControllerTest do
       insert(:to_address, transaction: transaction, address: address)
       insert(:from_address, transaction: transaction, address: address)
 
-      conn =
-        get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
+      conn = get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
 
       assert html = html_response(conn, 200)
       assert html |> Floki.find("tbody tr") |> length == 0
@@ -73,8 +69,7 @@ defmodule ExplorerWeb.AddressTransactionFromControllerTest do
       address = insert(:address)
       insert(:to_address, transaction: transaction, address: address)
 
-      conn =
-        get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
+      conn = get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
 
       assert html = html_response(conn, 200)
       assert html |> Floki.find("tbody tr") |> length == 0
@@ -88,8 +83,7 @@ defmodule ExplorerWeb.AddressTransactionFromControllerTest do
       address = insert(:address)
       insert(:from_address, transaction: transaction, address: address)
 
-      conn =
-        get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
+      conn = get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
 
       assert html = html_response(conn, 200)
       assert html |> Floki.find("tbody tr") |> length == 0
