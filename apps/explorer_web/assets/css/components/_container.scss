@@ -19,7 +19,7 @@
 
 .container {
   @extend %explorer-container-height;
-  background: explorer-color("slate", "50");
+  background: #f5f7fa;
   padding-top: explorer-size(-1);
   padding-bottom: explorer-size(-1);
 
@@ -30,16 +30,12 @@
   }
 }
 
-@media (min-width: $explorer-breakpoint-sm) {
-  .container {
-    &__section { width: $explorer-breakpoint-sm; }
-  }
-}
+
 
 @media (min-width: $explorer-breakpoint-md) {
   .container {
     &__section {
-      width: $explorer-breakpoint-md;
+
 
       &--partitioned {
         display: flex;
@@ -54,17 +50,5 @@
 
       & + & { margin-left: explorer-size(-2); }
     }
-  }
-}
-
-@media (min-width: $explorer-breakpoint-lg) {
-  .container {
-    &__section { width: $explorer-breakpoint-lg; }
-  }
-}
-
-@media (min-width: $explorer-breakpoint-xl) {
-  .container {
-    &__section { width: $explorer-breakpoint-xl; }
   }
 }

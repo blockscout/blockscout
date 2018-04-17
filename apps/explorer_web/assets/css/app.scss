@@ -1,6 +1,15 @@
 @import "explorer/all";
-@import "normalize/import-now";
 @import "components/all";
 
 /* Phoenix flash messages */
 .alert:empty { display: none; }
+
+/* This file is for your main application css. */
+$icon-font-path: "/fonts/"; /* use fonts from priv/static/fonts/ */
+@import "bootstrap";
+@import "explorer/sb-admin-2";
+@import "variables";
+@import "fonts";
+@import "typography";
+@import "utilities";
+@import "explorer/button";

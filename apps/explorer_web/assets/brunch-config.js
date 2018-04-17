@@ -65,8 +65,15 @@ exports.config = {
       precision: 8,
       allowCache: true,
       options: {
-        includePaths: ['node_modules/normalize-scss/sass', 'node_modules/jasmine-core/lib']
+        includePaths: ['node_modules/bootstrap/scss', 'node_modules/jasmine-core/lib']
       }
+    },
+
+    postcss: {
+      processors: [
+        require('autoprefixer')(['last 4 versions']),
+        require('csswring')()
+      ]
     }
   },
 
@@ -94,6 +101,12 @@ exports.config = {
   },
 
   npm: {
-    enabled: true
+    enabled: true,
+    globals: {
+      $: 'jquery',
+      jQuery: 'jquery',
+      Popper: 'popper.js',
+      bootstrap: 'bootstrap'
+    }
   }
 }
