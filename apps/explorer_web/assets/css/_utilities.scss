@@ -1,0 +1,629 @@
+$shove-size: 100px;
+$push-size: 50px;
+$push-size-lg: 75px;
+$push-size-md: 35px;
+$u-push-this: 25px;
+$push-size-sm: 15px;
+$nudge-more-size: 10px;
+$nudge-size: 5px;
+
+
+$padding-lg: 50px;
+$padding-md: 30px;
+$padding-sm: 15px;
+$padding-xs-plus: 10px;
+$padding-xs: 5px;
+
+
+
+// Width ---------------------------------------------------
+
+.u-width {
+  &--half {
+    width: 50%;
+  }
+}
+
+// Margin --------------------------------------------------
+
+.u-shove {
+  margin: $shove-size;
+  @media screen and (max-width: 768px) {margin: $shove-size * 0.5;}
+
+  &-vertical {
+    margin-top: $shove-size;
+    margin-bottom: $shove-size;
+    @media screen and (max-width: 768px) {margin-top: $shove-size * 0.5; margin-bottom: $shove-size * 0.5;}
+  }
+
+  &-top {
+    margin-top: $shove-size !important;
+    @media screen and (max-width: 768px) {margin-top: $shove-size * 0.5;}
+  }
+
+  &-bottom {
+    margin-bottom: $shove-size;
+    @media screen and (max-width: 768px) {margin-bottom: $shove-size * 0.5;}
+  }
+
+  &-left {
+    margin-left: $shove-size;
+    @media screen and (max-width: 768px) {margin-left: $shove-size * 0.5;}
+  }
+
+  &-right {
+    margin-right: $shove-size;
+    @media screen and (max-width: 768px) {margin-right: $shove-size * 0.5;}
+  }
+}
+
+
+.u-push {
+  margin: $push-size;
+  @media screen and (max-width: 768px) {margin: $push-size * 0.5;}
+
+  &-vertical {
+    margin-top: $push-size;
+    margin-bottom: $push-size;
+    @media screen and (max-width: 768px) {margin-top: $push-size * 0.5; margin-bottom: $push-size * 0.5;}
+  }
+  &-top {
+    margin-top: $push-size !important;
+    @media screen and (max-width: 768px) {margin-top: $push-size * 0.5;}
+  }
+
+  &-bottom {
+    margin-bottom: $push-size;
+    @media screen and (max-width: 768px) {margin-bottom: $push-size * 0.5;}
+  }
+
+  &-left {
+    margin-left: $push-size !important;
+    @media screen and (max-width: 768px) {margin-left: $push-size * 0.5;}
+  }
+
+  &-right {
+    margin-right: $push-size;
+    @media screen and (max-width: 768px) {margin-right: $push-size * 0.5;}
+  }
+}
+
+.u-push-md {
+  margin: $push-size-md;
+
+  &-vertical {
+    margin-top: $push-size-md;
+    margin-bottom: $push-size-md;
+  }
+  &-top {
+    margin-top: $push-size-md;
+  }
+
+  &-bottom {
+    margin-bottom: $push-size-md;
+  }
+
+  &-left {
+    margin-left: $push-size-md;
+  }
+
+  &-right {
+    margin-right: $push-size-md;
+  }
+
+}
+
+.u-push-lg {
+  margin: $push-size-lg;
+
+  &-vertical {
+    margin-top: $push-size-lg;
+    margin-bottom: $push-size-lg;
+  }
+  &-top {
+    margin-top: $push-size-lg;
+  }
+
+  &-bottom {
+    margin-bottom: $push-size-lg;
+    @media screen and (max-width: 768px) {margin-bottom: $push-size-lg * 0.5;}
+  }
+
+  &-left {
+    margin-left: $push-size-lg;
+  }
+
+  &-right {
+    margin-right: $push-size-lg;
+  }
+
+}
+
+.u-push-sm {
+  margin: $push-size-sm;
+
+  &-vertical {
+    margin-top: $push-size-sm;
+    margin-bottom: $push-size-sm;
+  }
+  &-top {
+    margin-top: $push-size-sm !important;
+  }
+
+  &-bottom {
+    margin-bottom: $push-size-sm !important;
+  }
+
+  &-left {
+    margin-left: $push-size-sm;
+  }
+
+  &-right {
+    margin-right: $push-size-sm;
+  }
+
+}
+
+.u-nudge {
+  margin: $nudge-size;
+
+  &-vertical {
+    margin-top: $nudge-size;
+    margin-bottom: $nudge-size;
+  }
+  &-top {
+    margin-top: $nudge-size;
+  }
+
+  &-bottom {
+    margin-bottom: $nudge-size;
+  }
+
+  &-left {
+    margin-left: $nudge-size;
+  }
+
+  &-right {
+    margin-right: $nudge-size;
+  }
+}
+
+.u-nudge-more {
+  margin: $nudge-more-size;
+
+  &-vertical {
+    margin-top: $nudge-more-size;
+    margin-bottom: $nudge-more-size;
+  }
+  &-top {
+    margin-top: $nudge-more-size;
+  }
+
+  &-bottom {
+    margin-bottom: $nudge-more-size;
+  }
+
+  &-left {
+    margin-left: $nudge-more-size;
+  }
+
+  &-right {
+    margin-right: $nudge-more-size;
+  }
+}
+
+.u-push-this {
+  margin: $u-push-this;
+
+  &-vertical {
+    margin-top: $u-push-this;
+    margin-bottom: $u-push-this;
+  }
+  &-top {
+    margin-top: $u-push-this;
+  }
+
+  &-bottom {
+    margin-bottom: $u-push-this;
+  }
+
+  &-left {
+    margin-left: $u-push-this;
+  }
+
+  &-right {
+    margin-right: $u-push-this;
+  }
+}
+
+
+.u-flush {
+  margin: 0 !important;
+
+  &-sm {
+      margin: 4px 0 4px 0;
+  }
+
+  &-btm {
+    margin-bottom: 0 !important;
+  }
+
+  &-top {
+    margin-top: 0 !important;
+  }
+}
+
+// Padding --------------------------------------------------
+
+.u-padding {
+
+  &-none {
+    padding: 0px !important;
+  }
+
+  &-no-left {
+    padding-left: 0px !important;
+  }
+
+  &-no-right {
+    padding-right: 0px !important;
+  }
+
+  &-no-bottom {
+    padding-bottom: 0px !important;
+  }
+
+  &-xsmall {
+    padding: $padding-xs;
+
+    &-vertical {
+      padding-top: $padding-xs;
+      padding-bottom: $padding-xs;
+    }
+
+    &-top {
+      padding-top: $padding-xs;
+    }
+
+    &-bottom {
+      padding-bottom: $padding-xs;
+    }
+
+    &-left {
+      padding-left: $padding-xs;
+    }
+
+    &-right {
+      padding-right: $padding-xs;
+    }
+  }
+
+  &-xs-plus {
+    padding: $padding-xs-plus;
+
+    &-vertical {
+      padding-top: $padding-xs-plus;
+      padding-bottom: $padding-xs-plus;
+    }
+
+    &-top {
+      padding-top: $padding-xs-plus;
+    }
+
+    &-bottom {
+      padding-bottom: $padding-xs-plus;
+    }
+
+    &-left {
+      padding-left: $padding-xs-plus;
+    }
+
+    &-right {
+      padding-right: $padding-xs-plus;
+    }
+  }
+
+  &-sm {
+    padding: $padding-sm;
+
+    &-vertical {
+      padding-top: $padding-sm;
+      padding-bottom: $padding-sm;
+    }
+
+    &-top {
+      padding-top: $padding-sm;
+    }
+
+    &-bottom {
+      padding-bottom: $padding-sm;
+    }
+
+    &-left {
+      padding-left: $padding-sm !important;
+    }
+
+    &-right {
+      padding-right: $padding-sm;
+    }
+  }
+
+  &-md {
+    padding: $padding-md;
+
+    &-vertical {
+      padding-top: $padding-md;
+      padding-bottom: $padding-md;
+    }
+
+    &-top {
+      padding-top: $padding-md;
+    }
+
+    &-bottom {
+      padding-bottom: $padding-md;
+    }
+
+    &-left {
+      padding-left: $padding-md;
+    }
+
+    &-right {
+      padding-right: $padding-md;
+    }
+  }
+
+  &-lg {
+    padding: $padding-lg;
+
+    &-vertical {
+      padding-top: $padding-lg;
+      padding-bottom: $padding-lg;
+    }
+
+    &-top {
+      padding-top: $padding-lg;
+    }
+
+    &-bottom {
+      padding-bottom: $padding-lg;
+    }
+
+    &-left {
+      padding-left: $padding-lg;
+    }
+
+    &-right {
+      padding-right: $padding-lg;
+    }
+  }
+}
+
+
+
+// Element Alignment --------------------------------------------
+
+.u-clear {
+  clear: both;
+}
+
+%u-align {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: center;
+}
+
+.u-align {
+  @extend %u-align;
+
+  &--top {
+    align-self: flex-start;
+  }
+
+  &--center {
+    align-self: center;
+  }
+
+  &--bottom {
+    align-self: flex-end;
+  }
+
+  &--stretch {
+    align-self: stretch;
+  }
+
+  &--flex{
+    display: flex;
+  }
+
+  &__vertical {
+    display: flex;
+    flex-flow: column nowrap;
+  }
+
+  &__order-1 {
+    order: 1;
+  }
+
+  &__order-2 {
+    order: 2;
+  }
+
+  &__order-3 {
+    order: 3;
+  }
+
+  &__flex-grow {
+    flex-grow: 1;
+  }
+}
+
+// Border --------------------------------------------------
+
+.u-border {
+  border: 1px solid $ma-darkblue;
+
+  &-left {
+    border-left: 1px solid lighten($gray-light, 42%);
+  }
+
+  &-right {
+    border-right: 1px solid lighten($gray-light, 42%);
+  }
+
+  &-top {
+    border-top: 1px solid lighten($gray-light, 42%);
+  }
+
+  &-bottom {
+    border-bottom: 1px solid lighten($gray-light, 42%);
+
+    &-bold {
+      border-bottom: 2px solid lighten($gray-light, 32%);
+    }
+  }
+
+  &-no-right {
+    border-right: none;
+  }
+
+  &-no-left {
+    border-left: none;
+  }
+
+  &-no-top {
+    border-top: none;
+  }
+
+  &-no-bottom {
+    border-bottom: none !important;
+  }
+
+  &-none {
+    border: none !important;
+  }
+}
+
+// Typography --------------------------------------------------
+
+.u-text {
+  &-center {
+    text-align: center;
+  }
+
+  &-right {
+    text-align: right;
+  }
+
+  &-left {
+    text-align: left;
+
+  }
+}
+
+.u-hide {
+  display: none;
+}
+
+.u-italic {
+  font-style: italic;
+}
+
+.u-underline {
+  text-decoration: underline;
+
+  &-active {
+    text-decoration-color:$ma-teal;
+  }
+}
+
+.u-list-style {
+  &--none {
+    list-style-type: none;
+    padding-left: 0;
+
+    &> li {
+      margin-bottom: 1em;
+    }
+  }
+}
+
+.u-white-space-normal {
+  white-space: normal;
+}
+
+// Display -----------------------------------------------
+
+.u-inline {
+  display: inline-block;
+}
+
+.u-block {
+  display: block;
+}
+
+.u-truncate {
+  height: 9em; /*line-height multiplied by the number of lines to show (6)*/
+  line-height: 1.5em;
+  overflow: hidden;
+  position: relative;
+
+  &:after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    height: 50%;
+    width: 100%;
+    background: linear-gradient(to bottom, rgba($ma-white, 0), rgba($ma-white, 1) 100%);
+  }
+
+}
+
+// Float -----------------------------------------------
+
+.u-float-left {
+  float: left !important;
+}
+
+.u-float-right {
+  float: right !important;
+}
+
+.u-float-none {
+  float: none;
+}
+
+.u-margin-auto {
+  margin: 0px auto;
+}
+
+
+// Bootstrap Column Extension --------------------------
+// Where Lauren adds some nonsense to slap some utilities
+// together to add bottom margins for mobile columns.
+
+.col-xs-1,
+.col-xs-2,
+.col-xs-3,
+.col-xs-4,
+.col-xs-5,
+.col-xs-6,
+.col-xs-7,
+.col-xs-8,
+.col-xs-9,
+.col-xs-10,
+.col-xs-11,
+.col-xs-12 {
+  @media (max-width: 768px) {
+    &--mb1 {
+      margin-bottom: 5px;
+    }
+    &--mb2 {
+      margin-bottom: 15px;
+    }
+    &--mb3 {
+      margin-bottom: 30px;
+    }
+  }
+}
