@@ -3,7 +3,8 @@ defmodule Explorer.SkippedBlocks do
     Fill in older blocks that were skipped during processing.
   """
   import Ecto.Query, only: [from: 2, limit: 2]
-  alias Explorer.Block
+
+  alias Explorer.Chain.Block
   alias Explorer.Repo.NewRelic, as: Repo
 
   @missing_number_query "SELECT generate_series(?, 0, -1) AS missing_number"

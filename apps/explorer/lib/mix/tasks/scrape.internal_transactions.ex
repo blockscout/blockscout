@@ -1,10 +1,9 @@
 defmodule Mix.Tasks.Scrape.InternalTransactions do
   @moduledoc "Backfill Internal Transactions via Parity Trace."
+
   use Mix.Task
 
-  alias Explorer.Repo
-  alias Explorer.SkippedInternalTransactions
-  alias Explorer.InternalTransactionImporter
+  alias Explorer.{InternalTransactionImporter, Repo, SkippedInternalTransactions}
 
   def run([]), do: run(1)
 

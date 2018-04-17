@@ -3,12 +3,8 @@ defmodule Explorer.InternalTransactionImporter do
 
   import Ecto.Query
 
-  alias Explorer.Address.Service, as: Address
-  alias Explorer.Ethereum
-  alias Explorer.EthereumexExtensions
-  alias Explorer.InternalTransaction
-  alias Explorer.Repo
-  alias Explorer.Transaction
+  alias Explorer.{Chain, Ethereum, EthereumexExtensions, Repo}
+  alias Explorer.Chain.{InternalTransaction, Transaction}
 
   @dialyzer {:nowarn_function, import: 1}
   def import(hash) do
@@ -77,6 +73,8 @@ defmodule Explorer.InternalTransactionImporter do
   end
 
   defp address_id(hash) do
-    Address.find_or_create_by_hash(hash).id
+    {:ok, address} = Chain.ensure_hash_address(hash)
+
+    address.id
   end
 end

@@ -1,31 +1,25 @@
 defmodule ExplorerWeb.BlockController do
   use ExplorerWeb, :controller
 
-  import Ecto.Query
-
-  alias Explorer.Block
-  alias Explorer.BlockForm
-  alias Explorer.Repo.NewRelic, as: Repo
+  alias Explorer.Chain
+  alias ExplorerWeb.BlockForm
 
   def index(conn, params) do
     blocks =
-      from(
-        block in Block,
-        order_by: [desc: block.number],
-        preload: :transactions
-      )
+      Chain.list_blocks(necessity_by_association: %{transactions: :optional}, pagination: params)
 
-    render(conn, "index.html", blocks: Repo.paginate(blocks, params))
+    render(conn, "index.html", blocks: blocks)
   end
 
   def show(conn, %{"id" => number}) do
-    block =
-      Block
-      |> where(number: ^number)
-      |> first
-      |> Repo.one()
-      |> BlockForm.build()
+    case Chain.number_to_block(number) do
+      {:ok, block} ->
+        block_form = BlockForm.build(block)
 
-    render(conn, "show.html", block: block)
+        render(conn, "show.html", block: block_form)
+
+      {:error, :not_found} ->
+        not_found(conn)
+    end
   end
 end

@@ -4,6 +4,12 @@ defmodule ExplorerWeb.AddressTransactionToControllerTest do
   import ExplorerWeb.Router.Helpers, only: [address_transaction_to_path: 4]
 
   describe "GET index/2" do
+    test "without address", %{conn: conn} do
+      conn = get(conn, address_transaction_to_path(conn, :index, :en, "unknown"))
+
+      assert html_response(conn, 404)
+    end
+
     test "returns transactions to this address", %{conn: conn} do
       address = insert(:address)
       transaction = insert(:transaction, hash: "0xsnacks", to_address_id: address.id)

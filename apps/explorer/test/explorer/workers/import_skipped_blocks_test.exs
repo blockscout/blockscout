@@ -1,12 +1,11 @@
 defmodule Explorer.Workers.ImportSkippedBlocksTest do
-  alias Explorer.Block
-  alias Explorer.Repo
-  alias Explorer.Workers.ImportBlock
-  alias Explorer.Workers.ImportSkippedBlocks
+  use Explorer.DataCase
 
   import Mock
 
-  use Explorer.DataCase
+  alias Explorer.Chain.Block
+  alias Explorer.Repo
+  alias Explorer.Workers.{ImportBlock, ImportSkippedBlocks}
 
   describe "perform/1" do
     test "imports the requested number of skipped blocks" do

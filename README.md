@@ -38,6 +38,11 @@ You can also run IEx (Interactive Elixir): `iex -S mix phx.server`
 
 Configure your local CCMenu with the following url: [`https://circleci.com/gh/poanetwork/poa-explorer.cc.xml?circle-token=f8823a3d0090407c11f87028c73015a331dbf604`](https://circleci.com/gh/poanetwork/poa-explorer.cc.xml?circle-token=f8823a3d0090407c11f87028c73015a331dbf604)
 
+### Documentation
+
+* `mix docs`
+* `open doc/index.html`
+
 ### Testing
 
 #### Prerequisites

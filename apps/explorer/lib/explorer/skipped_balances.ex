@@ -1,8 +1,8 @@
 defmodule Explorer.SkippedBalances do
   @moduledoc "Gets a list of Addresses that do not have balances."
 
-  alias Explorer.Address
-  alias Explorer.Repo
+  alias Explorer.Chain.Address
+  alias Explorer.Repo.NewRelic, as: Repo
 
   import Ecto.Query, only: [from: 2]
 

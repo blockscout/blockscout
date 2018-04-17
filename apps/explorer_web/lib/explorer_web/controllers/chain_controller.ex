@@ -1,34 +1,35 @@
 defmodule ExplorerWeb.ChainController do
   use ExplorerWeb, :controller
 
-  alias Explorer.Servers.ChainStatistics
-  alias Explorer.Resource
+  alias Explorer.Chain.{Address, Block, Statistics, Transaction}
+  alias ExplorerWeb.Chain
 
   def show(conn, _params) do
-    render(conn, "show.html", chain: ChainStatistics.fetch())
+    render(conn, "show.html", chain: Statistics.fetch())
   end
 
   def search(conn, %{"q" => query}) do
     query
     |> String.trim()
-    |> Resource.lookup()
+    |> Chain.from_param()
     |> case do
-      nil ->
-        conn
-        |> put_status(:not_found)
-        |> put_view(ExplorerWeb.ErrorView)
-        |> render("404.html")
-
-      item ->
+      {:ok, item} ->
         redirect_search_results(conn, item)
+
+      {:error, :not_found} ->
+        not_found(conn)
     end
   end
 
-  defp redirect_search_results(conn, %Explorer.Block{} = item) do
+  defp redirect_search_results(conn, %Address{} = item) do
+    redirect(conn, to: address_path(conn, :show, Gettext.get_locale(), item.hash))
+  end
+
+  defp redirect_search_results(conn, %Block{} = item) do
     redirect(conn, to: block_path(conn, :show, Gettext.get_locale(), item.number))
   end
 
-  defp redirect_search_results(conn, %Explorer.Transaction{} = item) do
+  defp redirect_search_results(conn, %Transaction{} = item) do
     redirect(
       conn,
       to:
@@ -39,9 +40,5 @@ defmodule ExplorerWeb.ChainController do
           item.hash
         )
     )
-  end
-
-  defp redirect_search_results(conn, %Explorer.Address{} = item) do
-    redirect(conn, to: address_path(conn, :show, Gettext.get_locale(), item.hash))
   end
 end

@@ -3,9 +3,7 @@ defmodule Mix.Tasks.Scrape.Balances do
 
   use Mix.Task
 
-  alias Explorer.Repo
-  alias Explorer.SkippedBalances
-  alias Explorer.BalanceImporter
+  alias Explorer.{BalanceImporter, Repo, SkippedBalances}
 
   def run([]), do: run(1)
 

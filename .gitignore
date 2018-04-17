@@ -1,8 +1,10 @@
 # App artifacts
 /_build
+/apps/*/cover
 /cover
 /db
 /deps
+/doc
 /*.ez
 
 # Generated on crash by the VM

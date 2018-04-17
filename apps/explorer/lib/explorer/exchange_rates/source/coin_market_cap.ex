@@ -3,10 +3,8 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
   Adapter for fetching exchange rates from https://coinmarketcap.com.
   """
 
-  alias Explorer.ExchangeRates.Rate
-  alias Explorer.ExchangeRates.Source
-  alias HTTPoison.Error
-  alias HTTPoison.Response
+  alias Explorer.ExchangeRates.{Rate, Source}
+  alias HTTPoison.{Error, Response}
 
   @behaviour Source
 

@@ -1,6 +1,7 @@
-defmodule Explorer.BlockFormTest do
+defmodule ExplorerWeb.BlockFormTest do
   use Explorer.DataCase
-  alias Explorer.BlockForm
+
+  alias ExplorerWeb.BlockForm
 
   describe "build/1" do
     test "that it has a number" do

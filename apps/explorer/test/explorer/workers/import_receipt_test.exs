@@ -2,7 +2,7 @@ defmodule Explorer.Workers.ImportReceiptTest do
   use Explorer.DataCase
 
   alias Explorer.Repo
-  alias Explorer.Receipt
+  alias Explorer.Chain.Receipt
   alias Explorer.Workers.ImportReceipt
 
   describe "perform/1" do

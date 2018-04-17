@@ -5,6 +5,8 @@ defmodule Explorer.Application do
 
   use Application
 
+  import Supervisor.Spec
+
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
   def start(_type, _args) do
@@ -17,20 +19,17 @@ defmodule Explorer.Application do
   defp children(:test), do: children()
 
   defp children(_) do
-    import Supervisor.Spec
     exq_options = [] |> Keyword.put(:mode, :enqueuer)
 
     children() ++
       [
         supervisor(Exq, [exq_options]),
-        worker(Explorer.Servers.ChainStatistics, []),
+        worker(Explorer.Chain.Statistics.Server, []),
         Explorer.ExchangeRates
       ]
   end
 
   defp children do
-    import Supervisor.Spec
-
     [
       supervisor(Explorer.Repo, []),
       {Task.Supervisor, name: Explorer.ExchangeRateTaskSupervisor}

@@ -72,7 +72,7 @@ defmodule ExplorerWeb.Mixfile do
   defp deps do
     [
       {:cowboy, "~> 1.0"},
-      {:credo, "~> 0.8", only: [:dev, :test], runtime: false},
+      {:credo, "0.9.1", only: [:dev, :test], runtime: false},
       {:crontab, "~> 1.1"},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       {:ex_cldr_numbers, "~> 1.0"},
@@ -116,6 +116,7 @@ defmodule ExplorerWeb.Mixfile do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
+      compile: "compile --warnings-as-errors",
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate", "test"]

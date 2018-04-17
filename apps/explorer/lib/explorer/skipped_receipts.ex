@@ -4,7 +4,7 @@ defmodule Explorer.SkippedReceipts do
   """
   import Ecto.Query, only: [from: 2]
 
-  alias Explorer.Transaction
+  alias Explorer.Chain.Transaction
   alias Explorer.Repo.NewRelic, as: Repo
 
   def first, do: first(1)

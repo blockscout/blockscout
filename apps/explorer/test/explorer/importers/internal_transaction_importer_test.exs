@@ -1,7 +1,7 @@
 defmodule Explorer.InternalTransactionImporterTest do
   use Explorer.DataCase
 
-  alias Explorer.InternalTransaction
+  alias Explorer.Chain.InternalTransaction
   alias Explorer.InternalTransactionImporter
 
   describe "import/1" do

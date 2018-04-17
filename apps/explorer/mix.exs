@@ -71,7 +71,7 @@ defmodule Explorer.Mixfile do
   defp deps do
     [
       {:bypass, "~> 0.8", only: :test},
-      {:credo, "~> 0.8", only: [:dev, :test], runtime: false},
+      {:credo, "0.9.1", only: [:dev, :test], runtime: false},
       {:crontab, "~> 1.1"},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       {:ethereumex, "~> 0.3"},
@@ -107,6 +107,7 @@ defmodule Explorer.Mixfile do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
+      compile: "compile --warnings-as-errors",
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate", "test"]

@@ -3,8 +3,7 @@ defmodule Explorer.Workers.RefreshBalanceTest do
 
   import Mock
 
-  alias Explorer.Credit
-  alias Explorer.Debit
+  alias Explorer.Chain.{Credit, Debit}
   alias Explorer.Workers.RefreshBalance
 
   describe "perform/0" do

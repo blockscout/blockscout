@@ -1,11 +1,11 @@
 defmodule Explorer.Workers.ImportBlockTest do
-  alias Explorer.Block
-  alias Explorer.Repo
-  alias Explorer.Workers.ImportBlock
+  use Explorer.DataCase
 
   import Mock
 
-  use Explorer.DataCase
+  alias Explorer.Chain.Block
+  alias Explorer.Repo
+  alias Explorer.Workers.ImportBlock
 
   describe "perform/1" do
     test "imports the requested block number as an integer" do
