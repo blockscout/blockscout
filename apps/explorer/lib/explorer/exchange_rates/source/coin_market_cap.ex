@@ -35,8 +35,10 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
     last_updated = DateTime.from_unix!(last_updated_as_unix)
 
     %Rate{
+      btc_value: json["price_btc"],
       id: json["id"],
       last_updated: last_updated,
+      market_cap_usd: json["market_cap_usd"],
       name: json["name"],
       symbol: json["symbol"],
       usd_value: json["price_usd"]

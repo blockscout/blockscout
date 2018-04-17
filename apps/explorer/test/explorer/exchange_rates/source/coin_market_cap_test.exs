@@ -40,8 +40,10 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCapTest do
       expected_date = ~N[2018-04-11 19:00:00] |> DateTime.from_naive!("Etc/UTC")
 
       expected = %Rate{
+        btc_value: "0.00007032",
         id: "poa-network",
         last_updated: expected_date,
+        market_cap_usd: "98941986.0",
         name: "POA Network",
         symbol: "POA",
         usd_value: "0.485053"
@@ -67,8 +69,10 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCapTest do
     expected_date = ~N[2018-04-11 19:00:00] |> DateTime.from_naive!("Etc/UTC")
 
     expected = %Rate{
+      btc_value: "0.00007032",
       id: "poa-network",
       last_updated: expected_date,
+      market_cap_usd: "98941986.0",
       name: "POA Network",
       symbol: "POA",
       usd_value: "0.485053"

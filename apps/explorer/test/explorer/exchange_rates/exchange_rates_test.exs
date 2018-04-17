@@ -52,8 +52,10 @@ defmodule Explorer.ExchangeRatesTest do
 
     test "with successful fetch" do
       expected_rate = %Rate{
+        btc_value: "1.000",
         id: "test",
         last_updated: DateTime.utc_now(),
+        market_cap_usd: "123456789.0000000",
         name: "test",
         symbol: "test",
         usd_value: "9000.000001"
