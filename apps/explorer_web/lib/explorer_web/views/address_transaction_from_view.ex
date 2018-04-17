@@ -3,7 +3,6 @@ defmodule ExplorerWeb.AddressTransactionFromView do
 
   alias ExplorerWeb.TransactionView
 
-  def status(transacton) do
-    TransactionView.status(transacton)
-  end
+  defdelegate status(transacton), to: TransactionView
+  defdelegate value(transaction), to: TransactionView
 end

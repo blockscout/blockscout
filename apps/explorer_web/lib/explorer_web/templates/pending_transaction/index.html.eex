@@ -44,7 +44,7 @@
                     <%= gettext "Pending" %>
                   <% end %>
                 </td>
-                <td class="transactions__column transactions__column--value"><%= Decimal.div(Decimal.new(transaction.value), Decimal.new(1_000_000_000_000_000_000)) |> Decimal.to_string(:normal) %> <%= gettext "POA" %></td>
+                <td class="transactions__column transactions__column--value"><%= value(transaction) %> <%= gettext "Ether" %></td>
               </tr>
             <% end %>
           </tbody>

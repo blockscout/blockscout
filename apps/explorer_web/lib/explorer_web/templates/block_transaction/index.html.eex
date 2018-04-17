@@ -40,7 +40,7 @@
               <td class="transactions__column transactions__column--to transactions__column--optional">
                 <div class="transactions__hash"><%= link(transaction.to_address.hash, to: address_path(@conn, :show, @conn.assigns.locale, transaction.to_address.hash), class: "transactions__link transactions__link--truncated transactions__link--hash") %></div>
               </td>
-              <td class="transactions__column transactions__column--value"><%= Decimal.div(Decimal.new(transaction.value), Decimal.new(1_000_000_000_000_000_000)) |> Decimal.to_string(:normal) %> <%= gettext "POA" %></td>
+              <td class="transactions__column transactions__column--value"><%= value(transaction) %> <%= gettext "Ether" %></td>
             </tr>
           <% end %>
         </tbody>

@@ -12,7 +12,8 @@ defmodule Explorer.Chain do
     InternalTransaction,
     Log,
     Receipt,
-    Transaction
+    Transaction,
+    Wei
   }
 
   alias Explorer.Repo.NewRelic, as: Repo
@@ -169,6 +170,16 @@ defmodule Explorer.Chain do
   def from_address_to_transactions(address = %Address{}, options \\ [])
       when is_list(options) do
     address_to_transactions(address, Keyword.put(options, :direction, :from))
+  end
+
+  @doc """
+  The `t:Explorer.Chain.Transaction.t/0` `gas_price` of the `transaction` in `unit`.
+  """
+  @spec gas_price(Transaction.t(), :wei) :: Wei.t()
+  @spec gas_price(Transaction.t(), :gwei) :: Wei.gwei()
+  @spec gas_price(Transaction.t(), :ether) :: Wei.ether()
+  def gas_price(%Transaction{gas_price: gas_price}, unit) do
+    Wei.to(gas_price, unit)
   end
 
   @doc """
@@ -468,6 +479,20 @@ defmodule Explorer.Chain do
       |> Address.balance_changeset(changes)
       |> Repo.update()
     end
+  end
+
+  @doc """
+  The `t:Explorer.Chain.Transaction.t/0` or `t:Explorer.Chain.InternalTransaction.t/0` `value` of the `transaction` in
+  `unit`.
+  """
+  @spec value(InternalTransaction.t(), :wei) :: Wei.t()
+  @spec value(InternalTransaction.t(), :gwei) :: Wei.gwei()
+  @spec value(InternalTransaction.t(), :ether) :: Wei.ether()
+  @spec value(Transaction.t(), :wei) :: Wei.t()
+  @spec value(Transaction.t(), :gwei) :: Wei.gwei()
+  @spec value(Transaction.t(), :ether) :: Wei.ether()
+  def value(%type{value: value}, unit) when type in [InternalTransaction, Transaction] do
+    Wei.to(value, unit)
   end
 
   ## Private Functions

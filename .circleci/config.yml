@@ -259,6 +259,30 @@ jobs:
 
       - store_test_results:
           path: apps/explorer_web/assets/test
+  gettext:
+    docker:
+      # Ensure .tool-versions matches
+      - image: circleci/elixir:1.6.4
+        environment:
+          MIX_ENV: test
+
+    working_directory: ~/app
+
+    steps:
+      - attach_workspace:
+          at: .
+
+      - run: mix local.hex --force
+
+      - run:
+          name: Check for missed translations
+          command: |
+            mix gettext.extract --merge | tee stdout.txt
+            ! grep "Wrote " stdout.txt
+          working_directory: "apps/explorer_web"
+
+      - store_artifacts:
+          path: apps/explorer_web/priv/gettext
   sobelow:
     docker:
       # Ensure .tool-versions matches
@@ -359,6 +383,9 @@ workflows:
           requires:
             - build
       - eslint:
+          requires:
+            - build
+      - gettext:
           requires:
             - build
       - sobelow:

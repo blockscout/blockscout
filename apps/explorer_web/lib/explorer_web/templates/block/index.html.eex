@@ -11,8 +11,8 @@
             <th class="blocks__column-header"><%= gettext "Height" %></th>
             <th class="blocks__column-header"><%= gettext "Age" %></th>
             <th class="blocks__column-header"><%= gettext "Transactions" %></th>
-            <th class="blocks__column-header blocks__column-header--optional"><%= gettext "Gas Used" %></th>
-            <th class="blocks__column-header blocks__column-header--optional"><%= gettext "Gas Limit" %></th>
+            <th class="blocks__column-header blocks__column-header--optional"><%= gettext "Gas Used" %> (<%= gettext("Gas") %>)</th>
+            <th class="blocks__column-header blocks__column-header--optional"><%= gettext "Gas Limit" %> (<%= gettext("Gas") %>)</th>
             <th class="blocks__column-header blocks__column-header--optional"><%= gettext "Gas Price" %></th>
           </tr>
         </thead>

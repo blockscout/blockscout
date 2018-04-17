@@ -76,7 +76,9 @@ defmodule ExplorerWeb.TransactionControllerTest do
       assert html = html_response(conn, 200)
 
       assert html |> Floki.find("div.transaction__header h3") |> Floki.text() == transaction.hash
-      assert html |> Floki.find("span.transaction__item--primary a") |> Floki.text() == to_string(block.number)
+
+      assert html |> Floki.find("span.transaction__item--primary a") |> Floki.text() ==
+               to_string(block.number)
     end
 
     test "returns a transaction without associated block data", %{conn: conn} do

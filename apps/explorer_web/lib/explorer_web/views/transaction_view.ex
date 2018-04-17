@@ -3,7 +3,7 @@ defmodule ExplorerWeb.TransactionView do
 
   alias Cldr.Number
   alias Explorer.Chain
-  alias Explorer.Chain.{Block, Transaction}
+  alias Explorer.Chain.{Block, InternalTransaction, Transaction}
   alias ExplorerWeb.BlockView
 
   # Functions
@@ -44,6 +44,16 @@ defmodule ExplorerWeb.TransactionView do
     end
   end
 
+  def gas(%type{gas: gas}) when type in [InternalTransaction, Transaction] do
+    Cldr.Number.to_string!(gas)
+  end
+
+  def gas_price(transaction, unit) do
+    transaction
+    |> Chain.gas_price(unit)
+    |> Cldr.Number.to_string!()
+  end
+
   def last_seen(%Transaction{updated_at: updated_at}) do
     Timex.from_now(updated_at)
   end
@@ -61,5 +71,11 @@ defmodule ExplorerWeb.TransactionView do
       :pending -> gettext("Pending")
       :success -> gettext("Success")
     end
+  end
+
+  def value(transaction) do
+    transaction
+    |> Chain.value(:ether)
+    |> Cldr.Number.to_string!()
   end
 end

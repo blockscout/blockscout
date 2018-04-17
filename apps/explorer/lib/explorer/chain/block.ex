@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Block do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{BlockTransaction, Hash, Transaction}
+  alias Explorer.Chain.{BlockTransaction, Gas, Hash, Transaction}
 
   # Types
 
@@ -17,13 +17,6 @@ defmodule Explorer.Chain.Block do
   in a round-robin fashion, and so the value is always `Decimal.new(0)`.
   """
   @type difficulty :: Decimal.t()
-
-  @typedoc """
-  A measurement roughly equivalent to computational steps.  Every operation has a gas expenditure; for most operations
-  it is ~3-10, although some expensive operations have expenditures up to 700 and a transaction itself has an
-  expenditure of 21000.
-  """
-  @type gas :: non_neg_integer()
 
   @typedoc """
   Number of the block in the chain.
@@ -52,8 +45,8 @@ defmodule Explorer.Chain.Block do
   @type t :: %__MODULE__{
           block_transactions: %Ecto.Association.NotLoaded{} | [BlockTransaction.t()],
           difficulty: difficulty(),
-          gas_limit: gas(),
-          gas_used: gas(),
+          gas_limit: Gas.t(),
+          gas_used: Gas.t(),
           hash: Hash.t(),
           miner: Address.hash(),
           nonce: Hash.t(),

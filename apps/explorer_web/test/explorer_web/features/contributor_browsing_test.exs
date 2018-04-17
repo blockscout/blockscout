@@ -123,9 +123,9 @@ defmodule ExplorerWeb.UserListTest do
       insert(
         :transaction,
         hash: "0xSk8",
-        value: 5656,
-        gas: 1_230_000_000_000_123_123,
-        gas_price: 7_890_000_000_898_912_300_045,
+        value: Explorer.Chain.Wei.from(Decimal.new(5656), :ether),
+        gas: Decimal.new(1_230_000_000_000_123_123),
+        gas_price: Decimal.new(7_890_000_000_898_912_300_045),
         input: "0x00012",
         nonce: 99045,
         inserted_at: Timex.parse!("1970-01-01T00:00:18-00:00", "{ISO:Extended}"),
@@ -172,10 +172,15 @@ defmodule ExplorerWeb.UserListTest do
     |> click(link("0xSk8"))
     |> assert_has(css(".transaction__subheading", text: "0xSk8"))
     |> assert_has(css(".transaction__item", text: "123,987"))
-    |> assert_has(css(".transaction__item", text: "5656 POA"))
+    |> assert_has(css(".transaction__item", text: "5,656 POA"))
     |> assert_has(css(".transaction__item", text: "Success"))
-    |> assert_has(css(".transaction__item", text: "7,890,000,000,898,912,300,045"))
-    |> assert_has(css(".transaction__item", text: "1,230,000,000,000,123,123"))
+    |> assert_has(
+      css(
+        ".transaction__item",
+        text: "7,890,000,000,898,912,300,045 Wei (7,890,000,000,898.912 Gwei)"
+      )
+    )
+    |> assert_has(css(".transaction__item", text: "1,230,000,000,000,123,123 Gas"))
     |> assert_has(css(".transaction__item", text: "0x00012"))
     |> assert_has(css(".transaction__item", text: "99045"))
     |> assert_has(css(".transaction__item", text: "123,987"))

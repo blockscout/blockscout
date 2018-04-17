@@ -20,9 +20,16 @@ defmodule ExplorerWeb.TransactionLogController do
             necessity_by_association: %{address: :optional},
             pagination: params
           )
+
         max_block_number = Chain.max_block_number()
 
-        render(conn, "index.html", logs: logs, max_block_number: max_block_number, transaction: transaction)
+        render(
+          conn,
+          "index.html",
+          logs: logs,
+          max_block_number: max_block_number,
+          transaction: transaction
+        )
 
       {:error, :not_found} ->
         not_found(conn)

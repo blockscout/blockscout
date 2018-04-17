@@ -15,9 +15,7 @@ defmodule ExplorerWeb.PendingTransactionView do
     end
   end
 
-  def last_seen(transaction) do
-    TransactionView.last_seen(transaction)
-  end
+  defdelegate last_seen(transaction), to: TransactionView
 
   def to_address_hash(%Transaction{to_address: to_address}) do
     case to_address do
@@ -25,4 +23,6 @@ defmodule ExplorerWeb.PendingTransactionView do
       _ -> nil
     end
   end
+
+  defdelegate value(transaction), to: TransactionView
 end
