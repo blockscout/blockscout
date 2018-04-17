@@ -70,6 +70,7 @@ defmodule Explorer.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:bypass, "~> 0.8", only: :test},
       {:credo, "~> 0.8", only: [:dev, :test], runtime: false},
       {:crontab, "~> 1.1"},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
@@ -82,9 +83,11 @@ defmodule Explorer.Mixfile do
       {:exvcr, "~> 0.10", only: :test},
       {:flow, "~> 0.12"},
       {:httpoison, "~> 1.0", override: true},
+      {:jiffy, "~> 0.15.1"},
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       {:math, "~> 0.3.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
+      {:mox, "~> 0.3.2", only: [:test]},
       {:new_relixir, "~> 0.4"},
       {:postgrex, ">= 0.0.0"},
       {:quantum, "~> 2.2.1"},
