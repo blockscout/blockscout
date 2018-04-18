@@ -46,8 +46,7 @@ defmodule Explorer.Mixfile do
   defp elixirc_paths, do: ["lib"]
 
   # Specifies extra applications to start per environment
-  defp extra_applications(:prod),
-    do: [:phoenix_pubsub_redis, :exq, :exq_ui | extra_applications()]
+  defp extra_applications(:prod), do: [:phoenix_pubsub_redis, :exq, :exq_ui | extra_applications()]
 
   defp extra_applications(:dev), do: [:exq, :exq_ui | extra_applications()]
   defp extra_applications(_), do: extra_applications()

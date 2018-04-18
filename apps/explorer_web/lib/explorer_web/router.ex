@@ -40,8 +40,7 @@ defmodule ExplorerWeb.Router do
   end
 
   pipeline :jasmine do
-    if Mix.env() != :prod,
-      do: plug(Jasmine, js_files: ["js/test.js"], css_files: ["css/test.css"])
+    if Mix.env() != :prod, do: plug(Jasmine, js_files: ["js/test.js"], css_files: ["css/test.css"])
   end
 
   pipeline :api do

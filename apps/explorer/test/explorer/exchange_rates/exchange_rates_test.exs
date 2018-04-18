@@ -62,8 +62,7 @@ defmodule Explorer.ExchangeRatesTest do
       id = expected_rate.id
       state = %{}
 
-      assert {:noreply, ^state} =
-               ExchangeRates.handle_info({nil, {id, {:ok, expected_rate}}}, state)
+      assert {:noreply, ^state} = ExchangeRates.handle_info({nil, {id, {:ok, expected_rate}}}, state)
 
       assert [{^id, ^expected_rate}] = :ets.lookup(ExchangeRates.table_name(), id)
     end
@@ -75,8 +74,7 @@ defmodule Explorer.ExchangeRatesTest do
       expect(TestSource, :fetch_exchange_rate, fn "failed-ticker" -> {:ok, %Rate{}} end)
       set_mox_global()
 
-      assert {:noreply, ^state} =
-               ExchangeRates.handle_info({nil, {ticker, {:error, "some error"}}}, state)
+      assert {:noreply, ^state} = ExchangeRates.handle_info({nil, {ticker, {:error, "some error"}}}, state)
 
       assert_receive {_, {^ticker, {:ok, _}}}
     end

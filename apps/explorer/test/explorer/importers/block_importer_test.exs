@@ -14,8 +14,7 @@ defmodule Explorer.BlockImporterTest do
           BlockImporter.import("0xc4f0d")
           block = Block |> order_by(desc: :inserted_at) |> Repo.one()
 
-          assert block.hash ==
-                   "0x16cb43ccfb7875c14eb3f03bdc098e4af053160544270594fa429d256cbca64e"
+          assert block.hash == "0x16cb43ccfb7875c14eb3f03bdc098e4af053160544270594fa429d256cbca64e"
         end
       end
     end

@@ -21,7 +21,11 @@
             <span class="transaction__item--primary">
               <% block = @transaction.block %>
               <%= if block do %>
-                <%= link(block.number, to: block_path(@conn, :show, @conn.assigns.locale, block.number), class: "transaction__link") %>
+                <%= link(
+                      block.number,
+                      class: "transaction__link",
+                      to: block_path(@conn, :show, @conn.assigns.locale, block.number)
+                    ) %>
               <% end %>
             </span>
             <span class="transaction__item--secondary">
@@ -31,7 +35,9 @@
         </div>
         <div class="transaction__item">
           <dt class="transaction__item-key"><%= gettext "Age" %></dt>
-          <dd class="transaction__item-value" title="<%= formatted_timestamp(@transaction) %>"><%= formatted_age(@transaction) %></dd>
+          <dd class="transaction__item-value" title="<%= formatted_timestamp(@transaction) %>">
+            <%= formatted_age(@transaction) %>
+          </dd>
         </div>
         <div class="transaction__item">
           <dt class="transaction__item-key"><%= gettext "Value" %></dt>
@@ -41,7 +47,11 @@
           <dt class="transaction__item-key"><%= gettext "From" %></dt>
           <dd class="transaction__item-value">
             <%= if @transaction.from_address do %>
-              <%= link(@transaction.from_address.hash, to: address_path(@conn, :show, @conn.assigns.locale, @transaction.from_address.hash), class: "transaction__link") %>
+              <%= link(
+                    @transaction.from_address.hash,
+                    class: "transaction__link",
+                    to: address_path(@conn, :show, @conn.assigns.locale, @transaction.from_address.hash)
+                  ) %>
             <% else %>
               <%= gettext "Pending" %>
             <% end %>
@@ -51,7 +61,11 @@
           <dt class="transaction__item-key"><%= gettext "To" %></dt>
           <dd class="transaction__item-value">
             <%= if @transaction.to_address do %>
-              <%= link(@transaction.to_address.hash, to: address_path(@conn, :show, @conn.assigns.locale, @transaction.to_address.hash), class: "transaction__link") %>
+              <%= link(
+                    @transaction.to_address.hash,
+                    class: "transaction__link",
+                    to: address_path(@conn, :show, @conn.assigns.locale, @transaction.to_address.hash)
+                  ) %>
             <% else %>
               <%= gettext "Pending" %>
             <% end %>
@@ -81,7 +95,10 @@
         </div>
         <div class="transaction__item">
           <dt class="transaction__item-key"><%= gettext "Gas Price" %></dt>
-          <dd class="transaction__item-value"><%= gas_price(@transaction, :wei) %> <%= gettext("Wei") %> (<%= gas_price(@transaction, :gwei) %> <%= gettext "Gwei" %>)</dd>
+          <dd class="transaction__item-value">
+            <%= gas_price(@transaction, :wei) %> <%= gettext("Wei") %>
+              (<%= gas_price(@transaction, :gwei) %> <%= gettext "Gwei" %>)
+          </dd>
         </div>
         <div class="transaction__item">
           <dt class="transaction__item-key"><%= gettext "Cumulative Gas Used" %></dt>

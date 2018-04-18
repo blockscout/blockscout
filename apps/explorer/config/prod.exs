@@ -43,8 +43,7 @@ config :exq,
   queues: [
     {"blocks", String.to_integer(System.get_env("EXQ_BLOCKS_CONCURRENCY") || "1")},
     {"default", String.to_integer(System.get_env("EXQ_CONCURRENCY") || "1")},
-    {"internal_transactions",
-     String.to_integer(System.get_env("EXQ_INTERNAL_TRANSACTIONS_CONCURRENCY") || "1")},
+    {"internal_transactions", String.to_integer(System.get_env("EXQ_INTERNAL_TRANSACTIONS_CONCURRENCY") || "1")},
     {"receipts", String.to_integer(System.get_env("EXQ_RECEIPTS_CONCURRENCY") || "1")},
     {"transactions", String.to_integer(System.get_env("EXQ_TRANSACTIONS_CONCURRENCY") || "1")}
   ]

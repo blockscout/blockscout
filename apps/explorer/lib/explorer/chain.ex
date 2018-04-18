@@ -58,8 +58,9 @@ defmodule Explorer.Chain do
   * `:pagination` - pagination params to pass to scrivener.
   """
   @spec block_to_transactions(Block.t()) :: %Scrivener.Page{entries: [Transaction.t()]}
-  @spec block_to_transactions(Block.t(), [necessity_by_association_option | pagination_option]) ::
-          %Scrivener.Page{entries: [Transaction.t()]}
+  @spec block_to_transactions(Block.t(), [necessity_by_association_option | pagination_option]) :: %Scrivener.Page{
+          entries: [Transaction.t()]
+        }
   def block_to_transactions(%Block{id: block_id}, options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     pagination = Keyword.get(options, :pagination, %{})
@@ -405,10 +406,9 @@ defmodule Explorer.Chain do
       then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
 
   """
-  @spec transactions_recently_before_id(id :: non_neg_integer, [necessity_by_association_option]) ::
-          [
-            Transaction.t()
-          ]
+  @spec transactions_recently_before_id(id :: non_neg_integer, [necessity_by_association_option]) :: [
+          Transaction.t()
+        ]
   def transactions_recently_before_id(id, options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 

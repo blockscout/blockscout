@@ -22,8 +22,7 @@ defmodule Explorer.Workers.RefreshBalance do
   def refreshing(table) do
     query = "REFRESH MATERIALIZED VIEW CONCURRENTLY #{table}%"
 
-    result =
-      SQL.query!(Repo, "SELECT TRUE FROM pg_stat_activity WHERE query ILIKE '$#{query}'", [])
+    result = SQL.query!(Repo, "SELECT TRUE FROM pg_stat_activity WHERE query ILIKE '$#{query}'", [])
 
     Enum.count(result.rows) > 0
   end

@@ -6,5 +6,6 @@
     "apps/*/{config,lib,test}/**/*.{ex,exs}",
     "mix.exs",
     "{config}/**/*.{ex,exs}"
-  ]
+  ],
+  line_length: 120
 ]
