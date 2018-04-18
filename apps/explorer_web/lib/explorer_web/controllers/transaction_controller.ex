@@ -3,14 +3,13 @@ defmodule ExplorerWeb.TransactionController do
 
   alias Explorer.Chain
   alias Explorer.Chain.Transaction
-  alias ExplorerWeb.TransactionForm
 
   def index(conn, %{"last_seen" => last_seen_id}) do
     total = Chain.transaction_count()
 
     entries =
-      last_seen_id
-      |> Chain.transactions_recently_before_id(
+      Chain.transactions_recently_before_id(
+        last_seen_id,
         necessity_by_association: %{
           block: :required,
           from_address: :optional,
@@ -18,7 +17,6 @@ defmodule ExplorerWeb.TransactionController do
           receipt: :required
         }
       )
-      |> Enum.map(&TransactionForm.build_and_merge/1)
 
     last = List.last(entries) || Transaction.null()
 
@@ -59,13 +57,14 @@ defmodule ExplorerWeb.TransactionController do
             necessity_by_association: %{from_address: :required, to_address: :required}
           )
 
-        transaction_form = TransactionForm.build_and_merge(transaction)
+        max_block_number = Chain.max_block_number()
 
         render(
           conn,
           "show.html",
           internal_transactions: internal_transactions,
-          transaction: transaction_form
+          max_block_number: max_block_number,
+          transaction: transaction
         )
 
       {:error, :not_found} ->

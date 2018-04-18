@@ -12,8 +12,13 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
       insert(:block_transaction, transaction: transaction, block: block)
       insert(:to_address, transaction: transaction, address: address)
       insert(:from_address, transaction: transaction, address: address)
+
       conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
-      assert conn.assigns.transactions.entries == []
+
+      assert html = html_response(conn, 200)
+
+      assert html =~ ~r/Showing 0 Pending Transactions/
+      refute html =~ ~r/transactions__row/
     end
 
     test "does not count transactions that have a receipt", %{conn: conn} do
@@ -24,8 +29,13 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
       insert(:block_transaction, transaction: transaction, block: block)
       insert(:to_address, transaction: transaction, address: address)
       insert(:from_address, transaction: transaction, address: address)
+
       conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
-      assert conn.assigns.transactions.total_entries === 0
+
+      assert html = html_response(conn, 200)
+
+      assert html =~ ~r/Showing 0 Pending Transactions/
+      refute html =~ ~r/transactions__row/
     end
 
     test "returns pending transactions", %{conn: conn} do
@@ -33,8 +43,10 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
       transaction = insert(:transaction)
       insert(:to_address, transaction: transaction, address: address)
       insert(:from_address, transaction: transaction, address: address)
+
       conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
-      assert List.first(conn.assigns.transactions.entries).id == transaction.id
+
+      assert html_response(conn, 200) =~ transaction.hash
     end
 
     test "returns a count of pending transactions", %{conn: conn} do
@@ -42,8 +54,10 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
       transaction = insert(:transaction)
       insert(:to_address, transaction: transaction, address: address)
       insert(:from_address, transaction: transaction, address: address)
+
       conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
-      assert length(conn.assigns.transactions.entries) === 1
+
+      assert html_response(conn, 200) =~ ~r/Showing 1 Pending Transactions/
     end
 
     test "paginates transactions using the last seen transaction", %{conn: conn} do
@@ -59,19 +73,23 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
           last_seen: transaction.id
         )
 
-      assert conn.assigns.transactions.entries == []
+      refute html_response(conn, 200) =~ ~r/transactions__row/
     end
 
     test "sends back an estimate of the number of transactions", %{conn: conn} do
       insert(:transaction)
       conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
-      refute conn.assigns.transactions.total_entries == nil
+
+      assert html_response(conn, 200) =~ ~r/Showing 1 Pending Transactions/
     end
 
     test "works when there are no transactions", %{conn: conn} do
       conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
-      assert conn.assigns.transactions.total_entries == 0
-      assert conn.assigns.transactions.entries == []
+
+      assert html = html_response(conn, 200)
+
+      assert html =~ ~r/Showing 0 Pending Transactions/
+      refute html =~ ~r/transactions__row/
     end
   end
 end

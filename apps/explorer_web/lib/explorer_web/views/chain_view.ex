@@ -1,4 +1,7 @@
 defmodule ExplorerWeb.ChainView do
   use ExplorerWeb, :view
-  @dialyzer :no_match
+
+  alias ExplorerWeb.TransactionView
+
+  defdelegate value(transaction), to: TransactionView
 end

@@ -1,7 +1,7 @@
 <section class="container__section block">
   <div class="blocks__headline">
     <h1 class="blocks__headline-title"><%= gettext("Showing #%{number}", number: @conn.params["block_id"]) %></h1>
-    <div class="blocks__pagination"><%= pagination_links @conn, @transactions, ["en", @conn.params["block_id"]], view_style: :bulma, first: true, distance: 1, previous: Phoenix.HTML.raw("&lsaquo;"), next: Phoenix.HTML.raw("&rsaquo;"), path: &block_transaction_path/5 %></div>
+    <div class="blocks__pagination"><%= pagination_links @conn, @page, ["en", @conn.params["block_id"]], view_style: :bulma, first: true, distance: 1, previous: Phoenix.HTML.raw("&lsaquo;"), next: Phoenix.HTML.raw("&rsaquo;"), path: &block_transaction_path/5 %></div>
   </div>
   <div class="block__container">
     <div class="block__tabs">
@@ -22,9 +22,9 @@
           </tr>
         </thead>
         <tbody>
-          <%= for transaction <- @transactions do %>
+          <%= for transaction <- @page.entries do %>
             <tr class="transactions__row">
-              <td class="transactions__column transactions__column--status"><div class="transactions__dot transactions__dot--<%= transaction.status %>"></div></td>
+              <td class="transactions__column transactions__column--status"><div class="transactions__dot transactions__dot--<%= status(transaction) %>"></div></td>
               <td class="transactions__column transactions__column--hash">
                 <div class="transactions__hash"><%= link(transaction.hash, to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.hash), class: "transactions__link transactions__link--truncated transactions__link--long-hash") %></div>
               </td>
@@ -40,7 +40,7 @@
               <td class="transactions__column transactions__column--to transactions__column--optional">
                 <div class="transactions__hash"><%= link(transaction.to_address.hash, to: address_path(@conn, :show, @conn.assigns.locale, transaction.to_address.hash), class: "transactions__link transactions__link--truncated transactions__link--hash") %></div>
               </td>
-              <td class="transactions__column transactions__column--value"><%= Decimal.div(Decimal.new(transaction.value), Decimal.new(1_000_000_000_000_000_000)) |> Decimal.to_string(:normal) %> <%= gettext "POA" %></td>
+              <td class="transactions__column transactions__column--value"><%= value(transaction) %> <%= gettext "Ether" %></td>
             </tr>
           <% end %>
         </tbody>

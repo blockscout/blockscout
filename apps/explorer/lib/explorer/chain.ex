@@ -5,7 +5,17 @@ defmodule Explorer.Chain do
 
   import Ecto.Query, only: [from: 2, order_by: 2, preload: 2, where: 2, where: 3]
 
-  alias Explorer.Chain.{Address, Block, BlockTransaction, InternalTransaction, Log, Transaction}
+  alias Explorer.Chain.{
+    Address,
+    Block,
+    BlockTransaction,
+    InternalTransaction,
+    Log,
+    Receipt,
+    Transaction,
+    Wei
+  }
+
   alias Explorer.Repo.NewRelic, as: Repo
 
   # Types
@@ -160,6 +170,16 @@ defmodule Explorer.Chain do
   def from_address_to_transactions(address = %Address{}, options \\ [])
       when is_list(options) do
     address_to_transactions(address, Keyword.put(options, :direction, :from))
+  end
+
+  @doc """
+  The `t:Explorer.Chain.Transaction.t/0` `gas_price` of the `transaction` in `unit`.
+  """
+  @spec gas_price(Transaction.t(), :wei) :: Wei.t()
+  @spec gas_price(Transaction.t(), :gwei) :: Wei.gwei()
+  @spec gas_price(Transaction.t(), :ether) :: Wei.ether()
+  def gas_price(%Transaction{gas_price: gas_price}, unit) do
+    Wei.to(gas_price, unit)
   end
 
   @doc """
@@ -418,6 +438,31 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Converts `transaction` with its `receipt` loaded to the status of the `t:Explorer.Chain.Transaction.t/0`.
+
+  ## Returns
+
+  * `:failed` - the transaction failed without running out of gas
+  * `:pending` - the transaction has not be confirmed in a block yet
+  * `:out_of_gas` - the transaction failed because it ran out of gas
+  * `:success` - the transaction has been confirmed in a block
+
+  """
+  @spec transaction_to_status(Transaction.t()) :: :failed | :pending | :out_of_gas | :success
+  def transaction_to_status(%Transaction{receipt: nil}), do: :pending
+  def transaction_to_status(%Transaction{receipt: %Receipt{status: 1}}), do: :success
+
+  def transaction_to_status(%Transaction{
+        gas: gas,
+        receipt: %Receipt{gas_used: gas_used, status: 0}
+      })
+      when gas_used >= gas do
+    :out_of_gas
+  end
+
+  def transaction_to_status(%Transaction{receipt: %Receipt{status: 0}}), do: :failed
+
+  @doc """
   Updates `balance` of `t:Explorer.Address.t/0` with `hash`.
 
   If `t:Explorer.Address.t/0` with `hash` does not already exist, it is created first.
@@ -434,6 +479,20 @@ defmodule Explorer.Chain do
       |> Address.balance_changeset(changes)
       |> Repo.update()
     end
+  end
+
+  @doc """
+  The `t:Explorer.Chain.Transaction.t/0` or `t:Explorer.Chain.InternalTransaction.t/0` `value` of the `transaction` in
+  `unit`.
+  """
+  @spec value(InternalTransaction.t(), :wei) :: Wei.t()
+  @spec value(InternalTransaction.t(), :gwei) :: Wei.gwei()
+  @spec value(InternalTransaction.t(), :ether) :: Wei.ether()
+  @spec value(Transaction.t(), :wei) :: Wei.t()
+  @spec value(Transaction.t(), :gwei) :: Wei.gwei()
+  @spec value(Transaction.t(), :ether) :: Wei.ether()
+  def value(%type{value: value}, unit) when type in [InternalTransaction, Transaction] do
+    Wei.to(value, unit)
   end
 
   ## Private Functions

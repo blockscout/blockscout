@@ -18,7 +18,9 @@ defmodule ExplorerWeb.TransactionControllerTest do
       block = insert(:block)
       insert(:receipt, transaction: transaction)
       insert(:block_transaction, transaction: transaction, block: block)
+
       conn = get(conn, "/en/transactions")
+
       assert length(conn.assigns.transactions.entries) === 1
     end
 
@@ -68,16 +70,26 @@ defmodule ExplorerWeb.TransactionControllerTest do
     } do
       block = insert(:block, %{number: 777})
       transaction = insert(:transaction, hash: "0x8") |> with_block(block)
+
       conn = get(conn, "/en/transactions/0x8")
-      assert conn.assigns.transaction.id == transaction.id
-      assert conn.assigns.transaction.block_number == block.number
+
+      assert html = html_response(conn, 200)
+
+      assert html |> Floki.find("div.transaction__header h3") |> Floki.text() == transaction.hash
+
+      assert html |> Floki.find("span.transaction__item--primary a") |> Floki.text() ==
+               to_string(block.number)
     end
 
     test "returns a transaction without associated block data", %{conn: conn} do
       transaction = insert(:transaction, hash: "0x8")
+
       conn = get(conn, "/en/transactions/0x8")
-      assert conn.assigns.transaction.id == transaction.id
-      assert conn.assigns.transaction.block_number == ""
+
+      assert html = html_response(conn, 200)
+
+      assert html |> Floki.find("div.transaction__header h3") |> Floki.text() == transaction.hash
+      assert html |> Floki.find("span.transaction__item--primary a") |> Floki.text() == ""
     end
 
     test "returns internal transactions for the transaction", %{conn: conn} do

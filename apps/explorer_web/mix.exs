@@ -83,6 +83,8 @@ defmodule ExplorerWeb.Mixfile do
       {:excoveralls, "~> 0.8.1", only: [:test]},
       {:explorer, in_umbrella: true},
       {:exvcr, "~> 0.10", only: :test},
+      # HTML CSS selectors for Phoenix controller tests
+      {:floki, "~> 0.20.1", only: :test},
       {:flow, "~> 0.12"},
       {:gettext, "~> 0.11"},
       {:httpoison, "~> 1.0", override: true},

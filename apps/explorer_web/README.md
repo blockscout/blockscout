@@ -32,13 +32,14 @@ You can also run IEx (Interactive Elixir): `$ iex -S mix phx.server` (This can b
 
 ### Testing
 
-  * Build the assets: `$ cd assets && npm run build`
-  * Format the Elixir code: `$ mix format`
-  * Run the test suite with coverage: `$ mix coveralls.html`
-  * Lint the Elixir code: `$ mix credo --strict`
+  * Build the assets: `cd assets && npm run build`
+  * Format the Elixir code: `mix format`
+  * Run the test suite with coverage: `mix coveralls.html`
+  * Lint the Elixir code: `mix credo --strict`
   * Run the dialyzer: `mix dialyzer --halt-exit-status`
-  * Check the Elixir code for vulnerabilities: `$ mix sobelow --config`
-  * Lint the JavaScript code: `$ cd assets && npm run eslint`
+  * Check the Elixir code for vulnerabilities: `mix sobelow --config`
+  * Update translations templates and translations and check there are no uncommitted changes: `mix gettext.extract --merge`
+  * Lint the JavaScript code: `cd assets && npm run eslint`
 
 
 ## Internationalization

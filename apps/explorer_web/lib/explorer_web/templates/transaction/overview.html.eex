@@ -10,8 +10,8 @@
           <dt class="transaction__item-key"><%= gettext "Transaction Status" %></dt>
           <dd class="transaction__item-value transaction__item-value--status">
             <div class="transaction__status">
-              <%= @transaction.formatted_status %>
-              <div class="transaction__dot transaction__dot--<%= @transaction.status %>"></div>
+              <%= formatted_status(@transaction) %>
+              <div class="transaction__dot transaction__dot--<%= status(@transaction) %>"></div>
             </div>
           </dd>
         </div>
@@ -19,20 +19,23 @@
           <dt class="transaction__item-key"><%= gettext "Block Number" %></dt>
           <dd class="transaction__item-value">
             <span class="transaction__item--primary">
-              <%= link(@transaction.block_number, to: block_path(@conn, :show, @conn.assigns.locale, @transaction.block_number), class: "transaction__link") %>
+              <% block = @transaction.block %>
+              <%= if block do %>
+                <%= link(block.number, to: block_path(@conn, :show, @conn.assigns.locale, block.number), class: "transaction__link") %>
+              <% end %>
             </span>
             <span class="transaction__item--secondary">
-              (<%= gettext "%{confirmations} block confirmations", confirmations: @transaction.confirmations %>)
+              (<%= gettext "%{confirmations} block confirmations", confirmations: confirmations(@transaction, max_block_number: @max_block_number) %>)
             </span>
           </dd>
         </div>
         <div class="transaction__item">
           <dt class="transaction__item-key"><%= gettext "Age" %></dt>
-          <dd class="transaction__item-value" title="<%= @transaction.formatted_timestamp %>"><%= @transaction.formatted_age %></dd>
+          <dd class="transaction__item-value" title="<%= formatted_timestamp(@transaction) %>"><%= formatted_age(@transaction) %></dd>
         </div>
         <div class="transaction__item">
           <dt class="transaction__item-key"><%= gettext "Value" %></dt>
-          <dd class="transaction__item-value"><%= @transaction.value |> ExplorerWeb.WeiConverter.to_ether() |> Decimal.to_string(:normal) %> <%= gettext "POA" %></dd>
+          <dd class="transaction__item-value"><%= value(@transaction) %> <%= gettext "Ether" %></dd>
         </div>
         <div class="transaction__item">
           <dt class="transaction__item-key"><%= gettext "From" %></dt>
@@ -64,23 +67,25 @@
       <dl>
         <div class="transaction__item">
           <dt class="transaction__item-key"><%= gettext "First Seen" %></dt>
-          <dd class="transaction__item-value" title="<%= @transaction.first_seen %>"><%= @transaction.first_seen %></dd>
+          <% first_seen = first_seen(@transaction) %>
+          <dd class="transaction__item-value" title="<%= first_seen %>"><%= first_seen %></dd>
         </div>
         <div class="transaction__item">
           <dt class="transaction__item-key"><%= gettext "Last Seen" %></dt>
-          <dd class="transaction__item-value" title="<%= @transaction.last_seen %>"><%= @transaction.last_seen %></dd>
+          <% last_seen = last_seen(@transaction) %>
+          <dd class="transaction__item-value" title="<%= last_seen %>"><%= last_seen %></dd>
         </div>
         <div class="transaction__item">
           <dt class="transaction__item-key"><%= gettext "Gas Limit" %></dt>
-          <dd class="transaction__item-value"><%= format_gas_limit(@transaction.gas) %></dd>
+          <dd class="transaction__item-value"><%= format_gas_limit(@transaction.gas) %> <%= gettext("Gas") %></dd>
         </div>
         <div class="transaction__item">
           <dt class="transaction__item-key"><%= gettext "Gas Price" %></dt>
-          <dd class="transaction__item-value"><%= @transaction.gas_price |> Cldr.Number.to_string! %> (<%= @transaction.gas_price |> ExplorerWeb.WeiConverter.to_gwei() |> Decimal.to_string(:normal) %> <%= gettext "Gwei" %>)</dd>
+          <dd class="transaction__item-value"><%= gas_price(@transaction, :wei) %> <%= gettext("Wei") %> (<%= gas_price(@transaction, :gwei) %> <%= gettext "Gwei" %>)</dd>
         </div>
         <div class="transaction__item">
           <dt class="transaction__item-key"><%= gettext "Cumulative Gas Used" %></dt>
-          <dd class="transaction__item-value"><%= @transaction.cumulative_gas_used %></dd>
+          <dd class="transaction__item-value"><%= cumulative_gas_used(@transaction) %> <%= gettext("Wei") %></dd>
         </div>
         <div class="transaction__item">
           <dt class="transaction__item-key"><%= gettext "Input" %></dt>

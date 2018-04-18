@@ -13,8 +13,8 @@
             <th class="internal-transaction__column-header"><%= gettext "Type" %></th>
             <th class="internal-transaction__column-header"><%= gettext "From" %></th>
             <th class="internal-transaction__column-header"><%= gettext "To" %></th>
-            <th class="internal-transaction__column-header"><%= gettext "Value" %></th>
-            <th class="internal-transaction__column-header"><%= gettext "Gas Limit" %></th>
+            <th class="internal-transaction__column-header"><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
+            <th class="internal-transaction__column-header"><%= gettext "Gas Limit" %> (<%= gettext "Gas" %>)</th>
           </thead>
           <%= for transaction <- @internal_transactions do %>
             <tgroup>
@@ -30,8 +30,8 @@
                   to: address_path(@conn, :show, @conn.assigns.locale, transaction.from_address.hash),
                   class: "transaction-log__link") %>
                 </td>
-                <td><%= transaction.value %></td>
-                <td><%= ExplorerWeb.TransactionView.format_gas_limit(transaction.gas) %></td>
+                <td><%= value(transaction) %></td>
+                <td><%= gas(transaction) %></td>
               </tr>
             </tgroup>
           <% end %>

@@ -3,7 +3,49 @@ defmodule Explorer.Chain.InternalTransaction do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, Transaction}
+  alias Explorer.Chain.{Address, Gas, Transaction, Wei}
+
+  @typedoc """
+  * `"call"`
+  * `"callcode"`
+  * `"delegatecall"`
+  * `"none"`
+  * `"staticcall"
+  """
+  @type call_type :: String.t()
+
+  @typedoc """
+  * `call_type` - the type of call
+  * `from_address` - the source of the `value`
+  * `from_address_id` - foreign key for `from_address`
+  * `gas` - the amount of gas allowed
+  * `gas_used` - the amount of gas used
+  * `index` - the index of this internal transaction inside the `transaction`
+  * `input` - input bytes to the call
+  * `output` - output bytes from the call
+  * `to_address` - the sink of the `value`
+  * `to_address_id` - foreign key for `to_address`
+  * `trace_address` - list of traces
+  * `transaction` - transaction in which this transaction occured
+  * `transaction_id` - foreign key for `transaction`
+  * `value` - value of transfered from `from_address` to `to_address`
+  """
+  @type t :: %__MODULE__{
+          call_type: call_type,
+          from_address: %Ecto.Association.NotLoaded{} | Address.t(),
+          from_address_id: non_neg_integer(),
+          gas: Gas.t(),
+          gas_used: Gas.t(),
+          index: non_neg_integer(),
+          input: String.t(),
+          output: String.t(),
+          to_address: %Ecto.Association.NotLoaded{} | Address.t(),
+          to_address_id: non_neg_integer(),
+          trace_address: [non_neg_integer()],
+          transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
+          transaction_id: non_neg_integer(),
+          value: Wei.t()
+        }
 
   schema "internal_transactions" do
     field(:call_type, :string)

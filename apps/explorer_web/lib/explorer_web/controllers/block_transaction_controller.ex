@@ -4,7 +4,6 @@ defmodule ExplorerWeb.BlockTransactionController do
   import ExplorerWeb.Chain, only: [param_to_block_number: 1]
 
   alias Explorer.Chain
-  alias ExplorerWeb.TransactionForm
 
   def index(conn, %{"block_id" => formatted_block_number} = params) do
     with {:ok, block_number} <- param_to_block_number(formatted_block_number),
@@ -21,8 +20,7 @@ defmodule ExplorerWeb.BlockTransactionController do
           pagination: params
         )
 
-      entries = Enum.map(page.entries, &TransactionForm.build_and_merge/1)
-      render(conn, "index.html", transactions: Map.put(page, :entries, entries))
+      render(conn, "index.html", page: page)
     else
       {:error, :invalid} ->
         not_found(conn)

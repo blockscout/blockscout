@@ -5,7 +5,7 @@ defmodule Explorer.Chain.ReceiptFactory do
         %Explorer.Chain.Receipt{
           cumulative_gas_used: Enum.random(21_000..100_000),
           gas_used: Enum.random(21_000..100_000),
-          status: Enum.random(1..2),
+          status: Enum.random(0..1),
           index: sequence("")
         }
       end
