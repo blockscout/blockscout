@@ -15,13 +15,13 @@ defmodule Explorer.ExchangeRates.Rate do
   * `:usd_value` - The USD value of the currency
   """
   @type t :: %__MODULE__{
-          btc_value: String.t(),
+          btc_value: Decimal.t(),
           id: String.t(),
           last_updated: DateTime.t(),
-          market_cap_usd: String.t(),
+          market_cap_usd: Decimal.t(),
           name: String.t(),
           symbol: String.t(),
-          usd_value: String.t()
+          usd_value: Decimal.t()
         }
 
   defstruct ~w(btc_value id last_updated market_cap_usd name symbol usd_value)a

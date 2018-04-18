@@ -40,13 +40,13 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCapTest do
       expected_date = ~N[2018-04-11 19:00:00] |> DateTime.from_naive!("Etc/UTC")
 
       expected = %Rate{
-        btc_value: "0.00007032",
+        btc_value: Decimal.new("0.00007032"),
         id: "poa-network",
         last_updated: expected_date,
-        market_cap_usd: "98941986.0",
+        market_cap_usd: Decimal.new("98941986.0"),
         name: "POA Network",
         symbol: "POA",
-        usd_value: "0.485053"
+        usd_value: Decimal.new("0.485053")
       }
 
       assert {:ok, ^expected} = CoinMarketCap.fetch_exchange_rate("poa-network")
@@ -69,13 +69,13 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCapTest do
     expected_date = ~N[2018-04-11 19:00:00] |> DateTime.from_naive!("Etc/UTC")
 
     expected = %Rate{
-      btc_value: "0.00007032",
+      btc_value: Decimal.new("0.00007032"),
       id: "poa-network",
       last_updated: expected_date,
-      market_cap_usd: "98941986.0",
+      market_cap_usd: Decimal.new("98941986.0"),
       name: "POA Network",
       symbol: "POA",
-      usd_value: "0.485053"
+      usd_value: Decimal.new("0.485053")
     }
 
     assert expected == CoinMarketCap.format_data(@json)
