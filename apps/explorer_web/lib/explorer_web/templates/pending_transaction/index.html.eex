@@ -1,18 +1,36 @@
 <section class="container__section">
   <section class="container__subsection">
     <div class="transactions__headline">
-      <h1 class="transactions__headline-title"><%= gettext("Showing %{count} Pending Transactions", count: @transaction_count) %></h1>
+      <h1 class="transactions__headline-title">
+        <%= gettext("Showing %{count} Pending Transactions", count: @transaction_count) %>
+      </h1>
     </div>
     <div class="transactions">
       <div class="transactions__tabs">
-        <h2 class="transactions__tab"><%= link(gettext("Transactions"), to: transaction_path(@conn, :index, @conn.assigns.locale), class: "transactions__tab-link") %></h2>
-        <h2 class="transactions__tab transactions__tab--active"><%= link(gettext("Pending"), to: pending_transaction_path(@conn, :index, @conn.assigns.locale), class: "transactions__tab-link transactions__tab-link--active") %></h2>
+        <h2 class="transactions__tab">
+          <%= link(
+                gettext("Transactions"),
+                class: "transactions__tab-link",
+                to: transaction_path(@conn, :index, @conn.assigns.locale)
+              ) %>
+        </h2>
+        <h2 class="transactions__tab transactions__tab--active">
+          <%= link(
+                gettext("Pending"),
+                class: "transactions__tab-link transactions__tab-link--active",
+                to: pending_transaction_path(@conn, :index, @conn.assigns.locale)
+              ) %>
+        </h2>
       </div>
       <div class="transactions__container">
         <table class="transactions__table">
           <thead class="transactions__header">
             <tr>
-              <th class="transactions__column-header transactions__column-header--status"><span class="transactions__column-title transactions__column-title--status"><%= gettext "Status" %></span></th>
+              <th class="transactions__column-header transactions__column-header--status">
+                <span class="transactions__column-title transactions__column-title--status">
+                  <%= gettext "Status" %>
+                </span>
+              </th>
               <th class="transactions__column-header"><%= gettext "Hash" %></th>
               <th class="transactions__column-header"><%= gettext "Last Seen" %></th>
               <th class="transactions__column-header transactions__column-header--optional"><%= gettext "From" %></th>
@@ -23,15 +41,25 @@
           <tbody>
             <%= for transaction <- @transactions do %>
               <tr class="transactions__row">
-                <td class="transactions__column transactions__column--status"><div class="transactions__dot transactions__dot--pending"></div></td>
+                <td class="transactions__column transactions__column--status">
+                  <div class="transactions__dot transactions__dot--pending"></div>
+                </td>
                 <td class="transactions__column transactions__column--hash">
-                  <%= link(transaction.hash, to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.hash), class: "transactions__link transactions__link--truncated transactions__link--long-hash") %>
+                  <%= link(
+                        transaction.hash,
+                        class: "transactions__link transactions__link--truncated transactions__link--long-hash",
+                        to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.hash)
+                      ) %>
                 </td>
                 <td class="transactions__column transactions__column--last-seen"><%= last_seen(transaction) %></td>
                 <td class="transactions__column transactions__column--optional transactions__column--from-address">
                   <% to_address_hash = to_address_hash(transaction) %>
                   <%= if to_address_hash do %>
-                    <%= link(to_address_hash, to: address_path(@conn, :show, @conn.assigns.locale, to_address_hash), class: "transactions__link transactions__link--truncated transactions__link--hash") %>
+                    <%= link(
+                          to_address_hash,
+                          class: "transactions__link transactions__link--truncated transactions__link--hash",
+                          to: address_path(@conn, :show, @conn.assigns.locale, to_address_hash)
+                        ) %>
                   <% else %>
                     <%= gettext "Pending" %>
                   <% end %>
@@ -39,17 +67,32 @@
                 <td class="transactions__column transactions__column--optional transactions__column--to-address">
                   <% from_address_hash = from_address_hash(transaction) %>
                   <%= if from_address_hash do %>
-                    <%= link(from_address_hash, to: address_path(@conn, :show, @conn.assigns.locale, from_address_hash), class: "transactions__link transactions__link--truncated transactions__link--hash") %>
+                    <%= link(
+                          from_address_hash,
+                          class: "transactions__link transactions__link--truncated transactions__link--hash",
+                          to: address_path(@conn, :show, @conn.assigns.locale, from_address_hash)
+                        ) %>
                   <% else %>
                     <%= gettext "Pending" %>
                   <% end %>
                 </td>
-                <td class="transactions__column transactions__column--value"><%= value(transaction) %> <%= gettext "Ether" %></td>
+                <td class="transactions__column transactions__column--value">
+                  <%= value(transaction) %> <%= gettext "Ether" %>
+                </td>
               </tr>
             <% end %>
           </tbody>
         </table>
-        <%= link(gettext("Next Page"), to: pending_transaction_path(@conn, :index, @conn.assigns.locale, %{"last_seen" => @last_seen_transaction_id}), class: "transactions__link transactions__link--next-page") %>
+        <%= link(
+              gettext("Next Page"),
+              class: "transactions__link transactions__link--next-page",
+              to: pending_transaction_path(
+                @conn,
+                :index,
+                @conn.assigns.locale,
+                %{"last_seen" => @last_seen_transaction_id}
+              )
+            ) %>
       </div>
     </div>
   </section>

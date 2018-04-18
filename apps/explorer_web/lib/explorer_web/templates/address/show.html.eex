@@ -5,15 +5,31 @@
   </div>
   <div class="address__container">
     <div class="address__tabs">
-      <h2 class="address__tab address__tab--active"><%= link(gettext("Overview"), to: address_path(@conn, :show, @conn.assigns.locale, @address.hash), class: "address__link address__link--active") %></h2>
-      <h2 class="address__tab"><%= link(gettext("Transactions To"), to: address_transaction_to_path(@conn, :index, @conn.assigns.locale, @address.hash), class: "address__link") %></h2>
-      <h2 class="address__tab"><%= link(gettext("Transactions From"), to: address_transaction_from_path(@conn, :index, @conn.assigns.locale, @address.hash), class: "address__link") %></h2>
+      <h2 class="address__tab address__tab--active">
+        <%= link(
+              gettext("Overview"),
+              to: address_path(@conn, :show, @conn.assigns.locale, @address.hash),
+              class: "address__link address__link--active"
+            ) %>
+      </h2>
+      <h2 class="address__tab">
+        <%= link(gettext("Transactions To"), to: address_transaction_to_path(@conn, :index, @conn.assigns.locale, @address.hash), class: "address__link") %>
+      </h2>
+      <h2 class="address__tab">
+        <%= link(
+              gettext("Transactions From"),
+              to: address_transaction_from_path(@conn, :index, @conn.assigns.locale, @address.hash),
+              class: "address__link"
+            ) %>
+      </h2>
     </div>
     <div class="address__attributes">
       <dl>
         <div class="address__item">
           <dt class="address__item-key"><%= gettext "Balance" %></dt>
-          <dd class="address__item-value address__balance" title="<%= @address.hash %>"><%= format_balance(@address.balance) %> <%= gettext "Ether" %></dd>
+          <dd class="address__item-value address__balance" title="<%= @address.hash %>">
+            <%= format_balance(@address.balance) %> <%= gettext "Ether" %>
+          </dd>
         </div>
       </dl>
     </div>

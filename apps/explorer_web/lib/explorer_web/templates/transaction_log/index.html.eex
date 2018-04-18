@@ -3,8 +3,20 @@
 
   <div class="transaction-log">
     <div class="transaction-log__tabs">
-      <h2 class="transaction__tab"><%= link(gettext("Internal Transactions"), to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction.hash), class: "transaction__link") %></h2>
-      <h2 class="transaction__tab transaction__tab--active"><%= link(gettext("Logs"), to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction.hash), class: "transaction__link transaction__link--active") %></h2>
+      <h2 class="transaction__tab">
+        <%= link(
+              gettext("Internal Transactions"),
+              class: "transaction__link",
+              to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction.hash)
+            ) %>
+      </h2>
+      <h2 class="transaction__tab transaction__tab--active">
+        <%= link(
+              gettext("Logs"),
+              class: "transaction__link transaction__link--active",
+              to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction.hash)
+            ) %>
+      </h2>
     </div>
 
     <div class="transaction-log__container">
@@ -17,7 +29,13 @@
           <%= for log <- @logs.entries do %>
             <tgroup>
               <tr>
-                <td><%= link(log.address.hash, to: address_path(@conn, :show, @conn.assigns.locale, log.address.hash), class: "transaction-log__link") %></td>
+                <td>
+                  <%= link(
+                        log.address.hash,
+                        class: "transaction-log__link",
+                        to: address_path(@conn, :show, @conn.assigns.locale, log.address.hash)
+                      ) %>
+                </td>
                 <td><%= log.first_topic %></td>
               </tr>
               <% unless is_nil(log.second_topic) do %>

@@ -1,7 +1,25 @@
 <section class="container__section">
   <div class="blocks__headline">
-    <h1 class="blocks__headline-title"><%= gettext("Showing #%{start_block} to #%{end_block}", start_block: List.first(@blocks.entries).number, end_block: List.last(@blocks.entries).number) %></h1>
-    <div class="blocks__pagination"><%= pagination_links @conn, @blocks, ["en"], view_style: :bulma, first: true, distance: 1, previous: Phoenix.HTML.raw("&lsaquo;"), next: Phoenix.HTML.raw("&rsaquo;"), path: &block_path/4 %></div>
+    <h1 class="blocks__headline-title">
+      <%= gettext(
+            "Showing #%{start_block} to #%{end_block}",
+            start_block: List.first(@blocks.entries).number,
+            end_block: List.last(@blocks.entries).number
+          ) %>
+    </h1>
+    <div class="blocks__pagination">
+      <%= pagination_links(
+            @conn,
+            @blocks,
+            ["en"],
+            distance: 1,
+            first: true,
+            next: Phoenix.HTML.raw("&rsaquo;"),
+            path: &block_path/4,
+            previous: Phoenix.HTML.raw("&lsaquo;"),
+            view_style: :bulma
+          ) %>
+    </div>
   </div>
   <div class="blocks">
     <div class="blocks__container">
@@ -19,12 +37,34 @@
         <tbody>
           <%= for block <- @blocks do %>
             <tr class="blocks__row">
-              <td class="blocks__column blocks__column--height"><%= link(block.number, to: block_path(@conn, :show, @conn.assigns.locale, block.number), class: "blocks__link") %></td>
+              <td class="blocks__column blocks__column--height">
+                <%= link(
+                      block.number,
+                      class: "blocks__link",
+                      to: block_path(@conn, :show, @conn.assigns.locale, block.number)
+                    ) %>
+              </td>
               <td class="transactions__column transactions__column--age"><%= block.timestamp |> Timex.from_now  %></td>
-              <td class="blocks__column blocks__column--transactions-count"><%= gettext("%{count} transactions", count: block.transactions |> Enum.count) %></td>
-              <td class="blocks__column blocks__column--optional blocks__column--gas-used"><%= block.gas_used |> Cldr.Number.to_string! %> (<%= block.gas_used / block.gas_limit |> Cldr.Number.to_string!(format: "#.#%") %>)</td>
-              <td class="blocks__column blocks__column--optional blocks__column--gas-limit"><%= block.gas_limit |> Cldr.Number.to_string! %></td>
-              <td class="blocks__column blocks__column--optional blocks__column--gas-price"><%= block.transactions |> Enum.map(fn(transaction) -> Decimal.to_float(Decimal.div(Decimal.new(transaction.gas_price), Decimal.new(1_000_000_000))) end) |> Math.Enum.mean || 0 |> Cldr.Number.to_string! %> Gwei</td>
+              <td class="blocks__column blocks__column--transactions-count">
+                <%= gettext("%{count} transactions", count: block.transactions |> Enum.count) %>
+              </td>
+              <td class="blocks__column blocks__column--optional blocks__column--gas-used">
+                <%= block.gas_used |> Cldr.Number.to_string! %> (<%=
+                block.gas_used / block.gas_limit |> Cldr.Number.to_string!(format: "#.#%")
+                %>)
+              </td>
+              <td class="blocks__column blocks__column--optional blocks__column--gas-limit">
+                <%= block.gas_limit |> Cldr.Number.to_string! %>
+              </td>
+              <td class="blocks__column blocks__column--optional blocks__column--gas-price">
+                <%= block.transactions
+                    |> Enum.map(fn(transaction) ->
+                         Decimal.to_float(Decimal.div(Decimal.new(transaction.gas_price), Decimal.new(1_000_000_000)))
+                       end)
+                    |> Math.Enum.mean()
+                    |> Kernel.||(0)
+                    |> Cldr.Number.to_string! %> Gwei
+              </td>
             </tr>
           <% end %>
         </tbody>

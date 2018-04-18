@@ -3,8 +3,20 @@
 
   <div class="transaction__container">
     <div class="transaction__tabs">
-      <h2 class="transaction__tab transaction__tab--active"><%= link(gettext("Internal Transactions"), to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction.hash), class: "transaction__link transaction__link--active") %></h2>
-      <h2 class="transaction__tab"><%= link(gettext("Logs"), to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction.hash), class: "transaction__link") %></h2>
+      <h2 class="transaction__tab transaction__tab--active">
+        <%= link(
+              gettext("Internal Transactions"),
+              class: "transaction__link transaction__link--active",
+              to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction.hash)
+            ) %>
+      </h2>
+      <h2 class="transaction__tab">
+        <%= link(
+              gettext("Logs"),
+              class: "transaction__link",
+              to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction.hash)
+            ) %>
+      </h2>
     </div>
     <div class="internal-transaction__container">
       <%= if length(@internal_transactions) > 0 do %>
