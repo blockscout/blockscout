@@ -42,9 +42,9 @@ defmodule Explorer.Chain do
   """
   @type pagination :: map()
 
+  @typep direction_option :: :to | :from
   @typep necessity_by_association_option :: {:necessity_by_association, necessity_by_association}
   @typep pagination_option :: {:pagination, pagination}
-  @typep direction_option :: :to | :from
 
   # Functions
 
