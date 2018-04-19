@@ -1,43 +1,65 @@
 <section class="container__section block">
-  <div class="address__headline">
-    <h1 class="address__headline-title"><%= gettext("Address %{number}", number: @conn.params["address_id"]) %></h1>
-    <div class="address__pagination">
-      <%= pagination_links(
-            @conn,
-            @page,
-            ["en", @conn.params["address_id"]],
-            distance: 1,
-            first: true,
-            next: Phoenix.HTML.raw("&rsaquo;"),
-            path: &address_transaction_to_path/5,
-            previous: Phoenix.HTML.raw("&lsaquo;"),
-            view_style: :bulma
-          ) %>
-    </div>
+  <div class="address__header">
+    <h1 class="address__heading"><%= gettext "Address" %></h1>
+    <h3 class="address__subheading"><%= @address.hash %></h3>
   </div>
   <div class="address__container">
+    <div class="address__attributes">
+      <dl>
+        <div class="address__item">
+          <dt class="address__item-key"><%= gettext "Balance" %></dt>
+          <dd class="address__item-value address__balance" title="<%= @address.hash %>">
+            <%= balance(@address) %> <%= gettext "Ether" %>
+          </dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+
+  <div class="address__container">
     <div class="address__tabs">
-      <h2 class="address__tab">
-        <%= link(
-              gettext("Overview"),
-              class: "address__link",
-              to: address_path(@conn, :show, @conn.assigns.locale, @conn.params["address_id"])
-            ) %>
-      </h2>
       <h2 class="address__tab address__tab--active">
         <%= link(
-              gettext("Transactions To"),
+              gettext("Transactions"),
               class: "address__link address__link--active",
-              to: address_transaction_to_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
+              to: address_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
             ) %>
       </h2>
-      <h2 class="address__tab">
+    </div>
+    <div class="dropdown u-float-right u-push-sm-right u-push-sm-bottom">
+      <button data-test="filterDropdown" class="button button--secondary dropdown-toggle" type="button"
+              id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        Filter: <%= format_current_filter(@filter) %>
+      </button>
+      <div class="dropdown-menu dropdown-menu-right filter" aria-labelledby="dropdownMenu2">
         <%= link(
-              gettext("Transactions From"),
-              class: "address__link",
-              to: address_transaction_from_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
+              gettext("All"),
+              class: "address__link address__link--active dropdown-item",
+              to: address_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
             ) %>
-      </h2>
+        <%= link(
+              gettext("To"),
+              class: "address__link address__link--active dropdown-item",
+              to: address_transaction_path(
+                @conn,
+                :index,
+                @conn.assigns.locale,
+                @conn.params["address_id"],
+                filter: "to"
+              )
+            ) %>
+        <%= link(
+              gettext("From"),
+              class: "address__link address__link--active dropdown-item",
+              to: address_transaction_path(
+                @conn,
+                :index,
+                @conn.assigns.locale,
+                @conn.params["address_id"],
+                filter: "from"
+              )
+            ) %>
+      </div>
     </div>
     <div class="transactions__container">
       <table class="transactions__table">
@@ -52,6 +74,7 @@
             <th class="transactions__column-header transactions__column-header--optional"><%= gettext "From" %></th>
             <th class="transactions__column-header transactions__column-header--optional"><%= gettext "To" %></th>
             <th class="transactions__column-header"><%= gettext "Value" %></th>
+            <th class="transactions__column-header"><%= gettext "Fee" %></th>
           </tr>
         </thead>
         <tbody>
@@ -100,10 +123,27 @@
               <td class="transactions__column transactions__column--value">
                 <%= value(transaction) %> <%= gettext "Ether" %>
               </td>
+              <td class="transactions__column transactions__column--value">
+                <%= fee(transaction) %> <%= gettext "Ether" %>
+              </td>
             </tr>
           <% end %>
         </tbody>
       </table>
     </div>
+  </div>
+  <div class="address__pagination">
+    <%= pagination_links(
+          @conn,
+          @page,
+          ["en", @conn.params["address_id"]],
+          distance: 1,
+          filter: @conn.params["filter"],
+          first: true,
+          next: Phoenix.HTML.raw("&rsaquo;"),
+          path: &address_transaction_path/5,
+          previous: Phoenix.HTML.raw("&lsaquo;"),
+          view_style: :bulma
+        ) %>
   </div>
 </section>

@@ -105,101 +105,158 @@ defmodule ExplorerWeb.UserListTest do
     |> assert_has(css(".transactions__link--long-hash", text: "0xfaschtnacht"))
   end
 
-  test "views transactions", %{session: session} do
-    block =
-      insert(:block, %{
-        number: 555,
-        timestamp: Timex.now() |> Timex.shift(hours: -2),
-        gas_used: 123_987
-      })
+  describe "transactions and address pages" do
+    setup do
+      block =
+        insert(:block, %{
+          number: 555,
+          timestamp: Timex.now() |> Timex.shift(hours: -2),
+          gas_used: 123_987
+        })
 
-    for _ <- 0..3, do: insert(:transaction) |> with_block(block)
-    insert(:transaction, hash: "0xC001", gas: 5891) |> with_block
+      for _ <- 0..3, do: insert(:transaction) |> with_block(block)
+      insert(:transaction, hash: "0xC001", gas: 5891) |> with_block
 
-    lincoln = insert(:address, hash: "0xlincoln")
-    taft = insert(:address, hash: "0xhowardtaft")
+      lincoln = insert(:address, hash: "0xlincoln")
+      taft = insert(:address, hash: "0xhowardtaft")
 
-    transaction =
-      insert(
-        :transaction,
-        hash: "0xSk8",
-        value: Explorer.Chain.Wei.from(Decimal.new(5656), :ether),
-        gas: Decimal.new(1_230_000_000_000_123_123),
-        gas_price: Decimal.new(7_890_000_000_898_912_300_045),
-        input: "0x00012",
-        nonce: 99045,
-        inserted_at: Timex.parse!("1970-01-01T00:00:18-00:00", "{ISO:Extended}"),
-        updated_at: Timex.parse!("1980-01-01T00:00:18-00:00", "{ISO:Extended}"),
-        from_address_id: taft.id,
-        to_address_id: lincoln.id
+      transaction =
+        insert(
+          :transaction,
+          hash: "0xSk8",
+          value: Explorer.Chain.Wei.from(Decimal.new(5656), :ether),
+          gas: Decimal.new(1_230_000_000_000_123_123),
+          gas_price: Decimal.new(7_890_000_000_898_912_300_045),
+          input: "0x00012",
+          nonce: 99045,
+          inserted_at: Timex.parse!("1970-01-01T00:00:18-00:00", "{ISO:Extended}"),
+          updated_at: Timex.parse!("1980-01-01T00:00:18-00:00", "{ISO:Extended}"),
+          from_address_id: taft.id,
+          to_address_id: lincoln.id
+        )
+
+      insert(:block_transaction, block: block, transaction: transaction)
+
+      receipt = insert(:receipt, transaction: transaction, status: 1)
+      insert(:log, address_id: lincoln.id, receipt: receipt)
+
+      # From Lincoln to Taft.
+      txn_from_lincoln =
+        insert(
+          :transaction,
+          hash: "0xrazerscooter",
+          from_address_id: lincoln.id,
+          to_address_id: taft.id
+        )
+
+      insert(:block_transaction, block: block, transaction: txn_from_lincoln)
+
+      insert(:receipt, transaction: txn_from_lincoln)
+
+      internal = insert(:internal_transaction, transaction_id: transaction.id)
+
+      Credit.refresh()
+      Debit.refresh()
+
+      {:ok, %{internal: internal}}
+    end
+
+    test "views transactions", %{session: session} do
+      session
+      |> visit("/en")
+      |> assert_has(css(".transactions__title", text: "Transactions"))
+      |> assert_has(css(".transactions__column--hash", count: 5))
+      |> assert_has(css(".transactions__column--value", count: 5))
+      |> assert_has(css(".transactions__column--age", count: 5, visible: false))
+    end
+
+    test "can see pending transactions", %{session: session} do
+      session
+      |> visit("/transactions")
+      |> click(css(".transactions__tab-link", text: "Pending"))
+      |> click(css(".transactions__link", text: "0xC001"))
+      |> assert_has(css(".transaction__item-value--status", text: "Pending"))
+    end
+
+    test "don't see pending transactions by default", %{session: session} do
+      session
+      |> visit("/transactions")
+      |> refute_has(css(".transactions__column--block", text: "Pending"))
+    end
+
+    test "can see a transaction's details", %{session: session} do
+      session
+      |> visit("/transactions")
+      |> click(link("0xSk8"))
+      |> assert_has(css(".transaction__subheading", text: "0xSk8"))
+      |> assert_has(css(".transaction__item", text: "123,987"))
+      |> assert_has(css(".transaction__item", text: "5,656 POA"))
+      |> assert_has(css(".transaction__item", text: "Success"))
+      |> assert_has(
+        css(
+          ".transaction__item",
+          text: "7,890,000,000,898,912,300,045 Wei (7,890,000,000,898.912 Gwei)"
+        )
       )
+      |> assert_has(css(".transaction__item", text: "1,230,000,000,000,123,123 Gas"))
+      |> assert_has(css(".transaction__item", text: "0x00012"))
+      |> assert_has(css(".transaction__item", text: "99045"))
+      |> assert_has(css(".transaction__item", text: "123,987"))
+      |> assert_has(css(".transaction__item", text: "0xlincoln"))
+      |> assert_has(css(".transaction__item", text: "0xhowardtaft"))
+      |> assert_has(css(".transaction__item", text: "block confirmations"))
+      |> assert_has(css(".transaction__item", text: "49 years ago"))
+      |> assert_has(css(".transaction__item", text: "38 years ago"))
+    end
 
-    insert(:block_transaction, block: block, transaction: transaction)
+    test "can see internal transactions for a transaction", %{
+      session: session,
+      internal: internal
+    } do
+      session
+      |> visit("/en/transactions/0xSk8")
+      |> click(link("Internal Transactions"))
+      |> assert_has(css(".internal-transaction__table", text: internal.call_type))
+    end
 
-    receipt = insert(:receipt, transaction: transaction, status: 1)
-    insert(:log, address_id: lincoln.id, receipt: receipt)
+    test "can view a transaction's logs", %{session: session} do
+      session
+      |> visit("/en/transactions/0xSk8")
+      |> click(link("Logs"))
+      |> assert_has(css(".transaction-log__link", text: "0xlincoln"))
+    end
 
-    # From Lincoln to Taft.
-    txn_from_lincoln =
-      insert(
-        :transaction,
-        hash: "0xrazerscooter",
-        from_address_id: lincoln.id,
-        to_address_id: taft.id
-      )
+    test "can visit an address from the transaction logs page", %{session: session} do
+      session
+      |> visit("/en/transactions/0xSk8/logs")
+      |> click(css(".transaction-log__link", text: "0xlincoln"))
+      |> assert_has(css(".address__subheading", text: "0xlincoln"))
+    end
 
-    insert(:block_transaction, block: block, transaction: txn_from_lincoln)
+    test "see's all addresses transactions by default", %{session: session} do
+      session
+      |> visit("/en/addresses/0xlincoln")
+      |> assert_has(css(".transactions__link--long-hash", text: "0xSk8"))
+      |> assert_has(css(".transactions__link--long-hash", text: "0xrazerscooter"))
+    end
 
-    insert(:receipt, transaction: txn_from_lincoln)
+    test "can filter to only see transactions to an address", %{session: session} do
+      session
+      |> visit("/en/addresses/0xlincoln")
+      |> click(css("[data-test='filterDropdown']", text: "Filter: All"))
+      |> click(css(".address__link", text: "To"))
+      |> assert_has(css(".transactions__link--long-hash", text: "0xSk8"))
+      |> refute_has(css(".transactions__link--long-hash", text: "0xrazerscooter"))
+    end
 
-    internal = insert(:internal_transaction, transaction_id: transaction.id)
-
-    Credit.refresh()
-    Debit.refresh()
-
-    session
-    |> visit("/en")
-    |> assert_has(css(".transactions__title", text: "Transactions"))
-    |> assert_has(css(".transactions__column--hash", count: 5))
-    |> assert_has(css(".transactions__column--value", count: 5))
-    |> assert_has(css(".transactions__column--age", count: 5, visible: false))
-    |> visit("/transactions")
-    |> click(css(".transactions__tab-link", text: "Pending"))
-    |> click(css(".transactions__link", text: "0xC001"))
-    |> assert_has(css(".transaction__item-value--status", text: "Pending"))
-    |> visit("/transactions")
-    |> refute_has(css(".transactions__column--block", text: "Pending"))
-    |> click(link("0xSk8"))
-    |> assert_has(css(".transaction__subheading", text: "0xSk8"))
-    |> assert_has(css(".transaction__item", text: "123,987"))
-    |> assert_has(css(".transaction__item", text: "5,656 POA"))
-    |> assert_has(css(".transaction__item", text: "Success"))
-    |> assert_has(
-      css(
-        ".transaction__item",
-        text: "7,890,000,000,898,912,300,045 Wei (7,890,000,000,898.912 Gwei)"
-      )
-    )
-    |> assert_has(css(".transaction__item", text: "1,230,000,000,000,123,123 Gas"))
-    |> assert_has(css(".transaction__item", text: "0x00012"))
-    |> assert_has(css(".transaction__item", text: "99045"))
-    |> assert_has(css(".transaction__item", text: "123,987"))
-    |> assert_has(css(".transaction__item", text: "0xlincoln"))
-    |> assert_has(css(".transaction__item", text: "0xhowardtaft"))
-    |> assert_has(css(".transaction__item", text: "block confirmations"))
-    |> assert_has(css(".transaction__item", text: "48 years ago"))
-    |> assert_has(css(".transaction__item", text: "38 years ago"))
-    |> click(link("Internal Transactions"))
-    |> assert_has(css(".internal-transaction__table", text: internal.call_type))
-    |> visit("/en/transactions/0xSk8")
-    |> click(link("Logs"))
-    |> assert_has(css(".transaction-log__link", text: "0xlincoln"))
-    |> click(css(".transaction-log__link", text: "0xlincoln"))
-    |> assert_has(css(".address__subheading", text: "0xlincoln"))
-    |> click(css(".address__link", text: "Transactions To"))
-    |> assert_has(css(".transactions__link--long-hash", text: "0xSk8"))
-    |> click(css(".address__link", text: "Transactions From"))
-    |> assert_has(css(".transactions__link--long-hash", text: "0xrazerscooter"))
+    test "can filter to only see transactions from an address", %{session: session} do
+      session
+      |> visit("/en/addresses/0xlincoln")
+      |> click(css("[data-test='filterDropdown']", text: "Filter: All"))
+      |> click(css(".address__link", text: "From"))
+      |> assert_has(css(".transactions__link--long-hash", text: "0xrazerscooter"))
+      |> refute_has(css(".transactions__link--long-hash", text: "0xSk8"))
+    end
   end
 
   test "views addresses", %{session: session} do
@@ -207,6 +264,6 @@ defmodule ExplorerWeb.UserListTest do
 
     session
     |> visit("/en/addresses/0xthinmints")
-    |> assert_has(css(".address__balance", text: "0.0000000000000005"))
+    |> assert_has(css(".address__balance", text: "0.000,000,000,000,000,500 POA"))
   end
 end
