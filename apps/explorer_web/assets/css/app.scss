@@ -3,7 +3,6 @@
 
 /* Phoenix flash messages */
 .alert:empty { display: none; }
-
 /* This file is for your main application css. */
 
 //Bootstrap Core CSS
@@ -19,8 +18,10 @@
 
 
 //Custom SCSS
+@import "explorer/wrapper";
 @import "theme/fonts";
 @import "utilities";
 @import "typography";
+@import "components/menu";
 @import "explorer/button";
 @import "explorer/filter";
