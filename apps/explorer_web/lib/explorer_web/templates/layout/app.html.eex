@@ -19,7 +19,7 @@
       <!-- Sidebar Holder -->
       <nav id="sidebar" class="sticky fixed-top">
         <div class="sidebar-header">
-          <a href="<%= chain_path(@conn, :show) %>">
+          <a href="<%= chain_path(@conn, :show) %>" data-test="header_logo" >
             <img class="" src="<%= static_path(@conn, "/images/logo.svg") %>" />
           </a>
         </div>
@@ -50,7 +50,7 @@
       <div id="content" class="size-content">
         <div class="content-header sticky fixed-top">
           <nav>
-            <button type="button" id="sidebarCollapse" class="navbar-btn">
+            <button type="button" id="sidebarCollapse" class="navbar-btn" data-test="hamburger_menu_button">
                 <span></span>
                 <span></span>
                 <span></span>
@@ -70,9 +70,11 @@
           </header>
         </div>
         <div class="content-container">
-          <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
-          <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
-          <%= render @view_module, @view_template, assigns %>
+          <main>
+            <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
+            <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
+            <%= render @view_module, @view_template, assigns %>
+          </main>
         </div>
         <!-- <%= render ExplorerWeb.LayoutView, "_footer.html", assigns %> -->
       </div>

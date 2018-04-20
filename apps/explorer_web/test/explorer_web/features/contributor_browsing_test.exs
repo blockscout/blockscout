@@ -5,14 +5,14 @@ defmodule ExplorerWeb.UserListTest do
 
   alias Explorer.Chain.{Credit, Debit}
 
-  @logo css("img.header__logo")
+  @logo css("[data-test='header_logo']")
 
   test "browses the home page", %{session: session} do
     session |> visit("/")
     assert current_path(session) == "/en"
 
     session
-    |> assert_has(css(".header__logo"))
+    |> click(css("[data-test='hamburger_menu_button']"))
     |> click(@logo)
     |> assert_has(css("main", text: "Blocks"))
   end
@@ -91,6 +91,7 @@ defmodule ExplorerWeb.UserListTest do
     |> assert_has(css(".blocks__column--gas-used", count: 5, text: "10"))
 
     session
+    |> click(css("[data-test='hamburger_menu_button']"))
     |> click(link("Blocks"))
     |> assert_has(css(".blocks__column--height", text: "311"))
     |> click(link("311"))
@@ -243,7 +244,7 @@ defmodule ExplorerWeb.UserListTest do
     test "can filter to only see transactions to an address", %{session: session} do
       session
       |> visit("/en/addresses/0xlincoln")
-      |> click(css("[data-test='filterDropdown']", text: "Filter: All"))
+      |> click(css("[data-test='filter_dropdown']", text: "Filter: All"))
       |> click(css(".address__link", text: "To"))
       |> assert_has(css(".transactions__link--long-hash", text: "0xSk8"))
       |> refute_has(css(".transactions__link--long-hash", text: "0xrazerscooter"))
@@ -252,7 +253,7 @@ defmodule ExplorerWeb.UserListTest do
     test "can filter to only see transactions from an address", %{session: session} do
       session
       |> visit("/en/addresses/0xlincoln")
-      |> click(css("[data-test='filterDropdown']", text: "Filter: All"))
+      |> click(css("[data-test='filter_dropdown']", text: "Filter: All"))
       |> click(css(".address__link", text: "From"))
       |> assert_has(css(".transactions__link--long-hash", text: "0xrazerscooter"))
       |> refute_has(css(".transactions__link--long-hash", text: "0xSk8"))
