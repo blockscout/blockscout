@@ -17,11 +17,11 @@ msgid "Block"
 msgstr ""
 
 #: lib/explorer_web/templates/chain/show.html.eex:58
-#: lib/explorer_web/templates/layout/_header.html.eex:27
+#: lib/explorer_web/templates/layout/app.html.eex:30
 msgid "Blocks"
 msgstr ""
 
-#: lib/explorer_web/templates/layout/_footer.html.eex:2
+#: lib/explorer_web/templates/layout/app.html.eex:46
 msgid "Copyright %{year} POA"
 msgstr ""
 
@@ -45,7 +45,6 @@ msgstr ""
 msgid "Height"
 msgstr ""
 
-#: lib/explorer_web/templates/layout/_header.html.eex:6
 #: lib/explorer_web/templates/layout/app.html.eex:7
 msgid "POA Network Explorer"
 msgstr ""
@@ -58,6 +57,7 @@ msgstr ""
 #: lib/explorer_web/templates/chain/show.html.eex:45
 #: lib/explorer_web/templates/chain/show.html.eex:66
 #: lib/explorer_web/templates/chain/show.html.eex:93
+#: lib/explorer_web/templates/layout/app.html.eex:36
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:12
 #: lib/explorer_web/templates/transaction/index.html.eex:12
 msgid "Transactions"
@@ -340,7 +340,7 @@ msgstr ""
 msgid "Internal Transactions"
 msgstr ""
 
-#: lib/explorer_web/templates/layout/_header.html.eex:20
+#: lib/explorer_web/templates/layout/app.html.eex:65
 msgid "Search by address, transaction hash, or block number"
 msgstr ""
 
