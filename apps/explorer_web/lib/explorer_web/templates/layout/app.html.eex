@@ -6,15 +6,90 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><%= gettext "POA Network Explorer" %></title>
     <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
+    <!-- Bootstrap core CSS-->
+    <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom fonts for this template-->
+    <link href="vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+    <!-- Custom styles for this template-->
+    <link href="css/sb-admin.css" rel="stylesheet">
   </head>
+
   <body>
-    <%= render ExplorerWeb.LayoutView, "_header.html", assigns %>
-    <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
-    <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
-    <main role="main" class="container">
-      <%= render @view_module, @view_template, assigns %>
-    </main>
-    <%= render ExplorerWeb.LayoutView, "_footer.html", assigns %>
-    <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+    <div class="wrapper wrapper-overflow">
+      <!-- Sidebar Holder -->
+      <nav id="sidebar" class="sticky fixed-top">
+        <div class="sidebar-header">
+          <a href="<%= chain_path(@conn, :show) %>">
+            <img class="" src="<%= static_path(@conn, "/images/logo.svg") %>" />
+          </a>
+        </div>
+        <div class="menu-items">
+          <a href="<%= block_path(@conn, :index, Gettext.get_locale) %>" class="header__link">
+            <div tabindex="0" class="icon-locate">
+                <img class="" src="<%= static_path(@conn, "/images/block.svg") %>" />
+                <%= gettext("Blocks") %>
+            </div>
+          </a>
+          <div tabindex="0" class="icon-locate">
+            <a href="#pageSubmenu" data-toggle="collapse" aria-expanded="false">
+              <img class="" src="<%= static_path(@conn, "/images/transaction.svg") %>" />
+              <%= gettext("Transactions") %>
+              <img class="caret-down" src="<%= static_path(@conn, "/images/caret-down.svg") %>" / >
+            </a>
+            <ul class="collapse list-unstyled" id="pageSubmenu">
+              <li><a href="<%= transaction_path(@conn, :index, Gettext.get_locale) %>">Validated</a></li>
+              <li><a href="<%= pending_transaction_path(@conn, :index, Gettext.get_locale) %>">Pending</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="sidebar-footer">
+          <%= gettext "Copyright %{year} POA", year: 2018 %>
+        </div>
+      </nav>
+      <!-- Page Content Holder -->
+      <div id="content" class="size-content">
+        <div class="content-header sticky fixed-top">
+          <nav>
+            <button type="button" id="sidebarCollapse" class="navbar-btn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+          </nav>
+          <header class="header">
+            <table class="header__container" cellspacing="0" cellpadding="0" border="0">
+              <tr class="header__row">
+                <td class="header__cell header__cell--search">
+                  <%= form_for @conn, chain_path(@conn, :search, Gettext.get_locale), [class: "header__cell--search-form", method: :get, enforce_utf8: false], fn f -> %>
+                    <%= img_tag :svg, src: static_path(@conn, "/images/mgi.svg"), class: "header__cell--search-glass" %>
+                    <%= search_input f, :q, class: 'header__cell--search-input', placeholder: gettext "Search by address, transaction hash, or block number" %>
+                  <% end %>
+                </td>
+              </tr>
+            </table>
+          </header>
+        </div>
+        <div class="content-container">
+          <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
+          <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
+          <%= render @view_module, @view_template, assigns %>
+        </div>
+        <!-- <%= render ExplorerWeb.LayoutView, "_footer.html", assigns %> -->
+      </div>
+      <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+      <script type="text/javascript">
+         $(document).ready(function () {
+             $('#sidebarCollapse').on('click', function () {
+                 $('#sidebar').toggleClass('active');
+                 $(this).toggleClass('active');
+             });
+         });
+      </script>
+      <script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js'></script>
+      <script type='text/javascript'>
+        $(function() {
+          FastClick.attach(document.body);
+        });
+      </script>
   </body>
 </html>
