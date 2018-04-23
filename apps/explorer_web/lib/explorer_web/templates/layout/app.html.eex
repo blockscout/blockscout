@@ -6,8 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><%= gettext "POA Network Explorer" %></title>
     <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
-    <!-- Custom fonts for this template-->
-    <link href="vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
   </head>
 
   <body>
@@ -30,7 +28,7 @@
             <a href="#pageSubmenu" data-toggle="collapse" aria-expanded="false">
               <img class="" src="<%= static_path(@conn, "/images/transaction.svg") %>" />
               <%= gettext("Transactions") %>
-              <img class="caret-down" src="<%= static_path(@conn, "/images/caret-down.svg") %>" / >
+              <i class="fa fa-caret-down"></i>
             </a>
             <ul class="collapse list-unstyled" id="pageSubmenu">
               <li><a href="<%= transaction_path(@conn, :index, Gettext.get_locale) %>">Validated</a></li>
@@ -83,6 +81,6 @@
              });
          });
       </script>
- 
+
   </body>
 </html>

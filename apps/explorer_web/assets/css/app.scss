@@ -3,9 +3,13 @@
 
 /* Phoenix flash messages */
 .alert:empty { display: none; }
+
 /* This file is for your main application css. */
 
-//Bootstrap Core CSS
+// Font Awesome
+@import "font-awesome";
+
+// Bootstrap Core CSS
 @import "node_modules/bootstrap/scss/functions";
 @import "theme/variables";
 @import "node_modules/bootstrap/scss/mixins";
@@ -16,8 +20,7 @@
 @import "node_modules/bootstrap/scss/dropdown";
 @import "node_modules/bootstrap/scss/transitions";
 
-
-//Custom SCSS
+// Custom SCSS
 @import "explorer/wrapper";
 @import "theme/fonts";
 @import "utilities";

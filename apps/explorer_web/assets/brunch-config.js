@@ -60,12 +60,20 @@ exports.config = {
       ignore: [/vendor/]
     },
 
+    copycat: {
+      'fonts': ['node_modules/font-awesome/fonts']
+    },
+
     sass: {
       mode: 'native',
       precision: 8,
       allowCache: true,
       options: {
-        includePaths: ['node_modules/bootstrap/scss', 'node_modules/jasmine-core/lib']
+        includePaths: [
+          'node_modules/bootstrap/scss',
+          'node_modules/font-awesome/scss',
+          'node_modules/jasmine-core/lib'
+        ]
       }
     },
 
