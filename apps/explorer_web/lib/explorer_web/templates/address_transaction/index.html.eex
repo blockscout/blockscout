@@ -27,7 +27,7 @@
       </h2>
     </div>
     <div class="dropdown u-float-right u-push-sm-right u-push-sm-bottom">
-      <button data-test="filterDropdown" class="button button--secondary dropdown-toggle" type="button"
+      <button data-test="filter_dropdown" class="button button--secondary dropdown-toggle" type="button"
               id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         Filter: <%= format_current_filter(@filter) %>
       </button>

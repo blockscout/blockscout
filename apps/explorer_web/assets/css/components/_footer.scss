@@ -1,8 +1,10 @@
 .footer {
-  @include explorer-typography("body1");
+  width: 100%;
   display: block;
-  background: explorer-color("slate", "900");
-  color: explorer-color("white");
+  bottom: 0;
+  background: explorer-color("gray", "50");
+  color:explorer-color("gray", "700");
   text-align: center;
-  padding: explorer-size(-1) 0;
+  padding: 10px;
+  height: 30px;
 }
