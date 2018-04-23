@@ -17,9 +17,8 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
     end
 
     test "returns transactions for the block", %{conn: conn} do
-      hash = "0xsnacks"
       block = insert(:block)
-      transaction = insert(:transaction, block_id: block.id, hash: hash)
+      transaction = insert(:transaction, block_hash: block.hash)
       insert(:receipt, transaction: transaction)
 
       conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block.number))
@@ -31,7 +30,7 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
       assert length(transaction_hash_divs) == 1
 
       assert List.first(transaction_hash_divs) |> Floki.attribute("href") == [
-               "/en/transactions/#{hash}"
+               "/en/transactions/#{Phoenix.Param.to_param(transaction)}"
              ]
     end
 
@@ -39,36 +38,26 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
       insert(:transaction)
       block = insert(:block)
 
-      conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block.number))
+      conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block))
 
       refute html_response(conn, 200) =~ ~r/transactions__row/
     end
 
     test "does not return related transactions without a receipt", %{conn: conn} do
       block = insert(:block)
-      insert(:transaction, block_id: block.id)
+      insert(:transaction, block_hash: block.hash, index: 0)
 
-      conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block.number))
-
-      refute html_response(conn, 200) =~ ~r/transactions__row/
-    end
-
-    test "does not return related transactions without a from address", %{conn: conn} do
-      block = insert(:block)
-      transaction = insert(:transaction, block_id: block.id, from_address_id: nil)
-      insert(:receipt, transaction: transaction)
-
-      conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block.number))
+      conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block))
 
       refute html_response(conn, 200) =~ ~r/transactions__row/
     end
 
     test "does not return related transactions without a to address", %{conn: conn} do
       block = insert(:block)
-      transaction = insert(:transaction, block_id: block.id, to_address_id: nil)
+      transaction = insert(:transaction, block_hash: block.hash, index: 0, to_address_hash: nil)
       insert(:receipt, transaction: transaction)
 
-      conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block.number))
+      conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block))
 
       refute html_response(conn, 200) =~ ~r/transactions__row/
     end

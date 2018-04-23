@@ -22,11 +22,11 @@ defmodule ExplorerWeb.ChainController do
   end
 
   defp redirect_search_results(conn, %Address{} = item) do
-    redirect(conn, to: address_path(conn, :show, Gettext.get_locale(), item.hash))
+    redirect(conn, to: address_path(conn, :show, Gettext.get_locale(), item))
   end
 
   defp redirect_search_results(conn, %Block{} = item) do
-    redirect(conn, to: block_path(conn, :show, Gettext.get_locale(), item.number))
+    redirect(conn, to: block_path(conn, :show, Gettext.get_locale(), item))
   end
 
   defp redirect_search_results(conn, %Transaction{} = item) do
@@ -37,7 +37,7 @@ defmodule ExplorerWeb.ChainController do
           conn,
           :show,
           Gettext.get_locale(),
-          item.hash
+          item
         )
     )
   end

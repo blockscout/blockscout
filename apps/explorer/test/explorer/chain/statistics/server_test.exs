@@ -24,14 +24,6 @@ defmodule Explorer.Chain.Statistics.ServerTest do
     end
   end
 
-  describe "fetch/0" do
-    test "fetches the chain when not started" do
-      original = Statistics.fetch()
-
-      assert Server.fetch() == original
-    end
-  end
-
   describe "handle_info/2" do
     test "returns the original chain when sent a :refresh message" do
       original = Statistics.fetch()

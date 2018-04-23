@@ -3,12 +3,19 @@ defmodule Explorer.Indexer.Supervisor do
   Supervising the fetchers for the `Explorer.Indexer`
   """
 
+  use Supervisor
+
   alias Explorer.Indexer.BlockFetcher
+
+  # Functions
 
   def start_link(opts) do
     Supervisor.start_link(__MODULE__, opts)
   end
 
+  ## Supervisor callbacks
+
+  @impl Supervisor
   def init(_opts) do
     children = [
       {BlockFetcher, []}

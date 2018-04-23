@@ -38,20 +38,23 @@
           </div>
           <div class="block__item">
             <dt class="block__item-key"><%= gettext "Hash" %></dt>
-            <dd class="block__item-value" title="<%= @block.hash %>"><%= @block.hash %></dd>
+            <% hash = hash(@block) %>
+            <dd class="block__item-value" title="<%= hash %>"><%= hash %></dd>
           </div>
           <div class="block__item">
             <dt class="block__item-key"><%= gettext "Parent Hash" %></dt>
-            <dd class="block__item-value" title="<%= @block.parent_hash %>">
+            <% parent_hash = parent_hash(@block) %>
+            <dd class="block__item-value" title="<%= parent_hash %>">
               <%= link(
-                    @block.parent_hash,
+                    parent_hash,
                     class: "block__link",
                     to: block_path(@conn, :show, @conn.assigns.locale, @block.number - 1)
                   ) %>
           </div>
           <div class="block__item">
             <dt class="block__item-key"><%= gettext "Miner" %></dt>
-            <dd class="block__item-value" title="<%= @block.miner %>"><%= @block.miner %></dd>
+            <% miner_hash = miner_hash(@block) %>
+            <dd class="block__item-value" title="<%= miner_hash %>"><%= miner_hash %></dd>
           </div>
           <div class="block__item">
             <dt class="block__item-key"><%= gettext "Difficulty" %></dt>

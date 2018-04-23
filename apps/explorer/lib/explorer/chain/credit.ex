@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Credit do
   use Explorer.Schema
 
   alias Ecto.Adapters.SQL
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, Hash}
   alias Explorer.Repo
 
   @primary_key false
@@ -16,7 +16,7 @@ defmodule Explorer.Chain.Credit do
 
     timestamps()
 
-    belongs_to(:address, Address, primary_key: true)
+    belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Truncated)
   end
 
   def refresh do

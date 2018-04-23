@@ -8,10 +8,8 @@ defmodule Explorer.Chain.Transaction do
 
   # Constants
 
-  @required_attrs ~w(hash value gas gas_price input nonce public_key r s
-    standard_v transaction_index v)a
-
-  @optional_attrs ~w(to_address_id from_address_id)a
+  @optional_attrs ~w(block_hash from_address_hash index to_address_hash)a
+  @required_attrs ~w(gas gas_price hash input nonce public_key r s standard_v v value)a
 
   # Types
 
@@ -77,13 +75,14 @@ defmodule Explorer.Chain.Transaction do
   @type wei_per_gas :: non_neg_integer()
 
   @typedoc """
-  * `block` - the block in which this transaction was mined/validated
-  * `block_id` - `block` foreign key
+  * `block` - the block in which this transaction was mined/validated.  `nil` when transaction is pending.
+  * `block_hash` - `block` foreign key. `nil` when transaction is pending.
   * `from_address` - the source of `value`
-  * `from_address_id` - foreign key of `from_address`
+  * `from_address_hash` - foreign key of `from_address`
   * `gas` - Gas provided by the sender
   * `gas_price` - How much the sender is willing to pay for `gas`
   * `hash` - hash of contents of this transaction
+  * `index` - index of this transaction in `block`.  `nil` when transaction is pending.
   * `input`- data sent along with the transaction
   * `internal_transactions` - transactions (value transfers) created while executing contract used for this transaction
   * `nonce` - the number of transaction made by the sender prior to this one
@@ -94,19 +93,19 @@ defmodule Explorer.Chain.Transaction do
       the X coordinate of a point R, modulo the curve order n.
   * `standard_v` - The standardized V field of the signature
   * `to_address` - sink of `value`
-  * `to_address_id` - `to_address` foreign key
-  * `transaction_index` - index of this transaction in `block`
+  * `to_address_hash` - `to_address` foreign key
   * `v` - The V field of the signature.
   * `value` - wei transferred from `from_address` to `to_address`
   """
   @type t :: %__MODULE__{
-          block: %Ecto.Association.NotLoaded{} | Block.t(),
-          block_id: non_neg_integer,
+          block: %Ecto.Association.NotLoaded{} | Block.t() | nil,
+          block_hash: Hash.t() | nil,
           from_address: %Ecto.Association.NotLoaded{} | Address.t(),
-          from_address_id: non_neg_integer(),
+          from_address_hash: Hash.Truncated.t(),
           gas: Gas.t(),
           gas_price: wei_per_gas,
           hash: Hash.t(),
+          index: non_neg_integer() | nil,
           input: String.t(),
           internal_transactions: %Ecto.Association.NotLoaded{} | [InternalTransaction.t()],
           nonce: non_neg_integer(),
@@ -116,50 +115,67 @@ defmodule Explorer.Chain.Transaction do
           s: s(),
           standard_v: standard_v(),
           to_address: %Ecto.Association.NotLoaded{} | Address.t(),
-          to_address_id: non_neg_integer(),
-          transaction_index: non_neg_integer(),
+          to_address_hash: Hash.Truncated.t(),
           v: v(),
           value: Wei.t()
         }
 
   # Schema
 
+  @primary_key {:hash, Hash.Full, autogenerate: false}
   schema "transactions" do
     field(:gas, :decimal)
     field(:gas_price, :decimal)
-    field(:hash, :string)
+    field(:index, :integer)
     field(:input, :string)
     field(:nonce, :integer)
     field(:public_key, :string)
     field(:r, :string)
     field(:s, :string)
     field(:standard_v, :string)
-    field(:transaction_index, :string)
     field(:v, :string)
     field(:value, :decimal)
 
     timestamps()
 
-    belongs_to(:block, Block)
-    belongs_to(:from_address, Address)
-    has_many(:internal_transactions, InternalTransaction)
-    has_one(:receipt, Receipt)
-    belongs_to(:to_address, Address)
+    belongs_to(:block, Block, foreign_key: :block_hash, references: :hash, type: Hash.Full)
+
+    belongs_to(
+      :from_address,
+      Address,
+      foreign_key: :from_address_hash,
+      references: :hash,
+      type: Hash.Truncated
+    )
+
+    has_many(:internal_transactions, InternalTransaction, foreign_key: :transaction_hash)
+    has_one(:receipt, Receipt, foreign_key: :transaction_hash)
+
+    belongs_to(
+      :to_address,
+      Address,
+      foreign_key: :to_address_hash,
+      references: :hash,
+      type: Hash.Truncated
+    )
   end
+
+  # Functions
 
   @doc false
   def changeset(%__MODULE__{} = transaction, attrs \\ %{}) do
     transaction
     |> cast(attrs, @required_attrs ++ @optional_attrs)
     |> validate_required(@required_attrs)
-    |> foreign_key_constraint(:block_id)
-    |> update_change(:hash, &String.downcase/1)
+    |> validate_collated()
+    |> foreign_key_constraint(:block_hash)
     |> unique_constraint(:hash)
   end
 
   def decode(raw_transaction, block_number, %{} = timestamps) do
     attrs = %{
       hash: raw_transaction["hash"],
+      index: raw_transaction["transactionIndex"],
       value: raw_transaction["value"],
       gas: raw_transaction["gas"],
       gas_price: raw_transaction["gasPrice"],
@@ -169,7 +185,6 @@ defmodule Explorer.Chain.Transaction do
       r: raw_transaction["r"],
       s: raw_transaction["s"],
       standard_v: raw_transaction["standardV"],
-      transaction_index: raw_transaction["transactionIndex"],
       v: raw_transaction["v"]
     }
 
@@ -186,4 +201,22 @@ defmodule Explorer.Chain.Transaction do
   end
 
   def null, do: %__MODULE__{}
+
+  ## Private Functions
+
+  defp validate_collated(%Changeset{} = changeset) do
+    case {Changeset.get_field(changeset, :block_hash), Changeset.get_field(changeset, :index)} do
+      {nil, nil} ->
+        changeset
+
+      {_block_hash, nil} ->
+        Changeset.add_error(changeset, :index, "can't be blank when transaction is collated into a block")
+
+      {nil, _index} ->
+        Changeset.add_error(changeset, :index, "can't be set when the transaction is pending")
+
+      _ ->
+        changeset
+    end
+  end
 end

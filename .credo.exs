@@ -26,6 +26,8 @@
           ~r"/_build/",
           ~r"/deps/",
           ~r"/node_modules/",
+          # `There are spaces around operators most of the time, but not here` disagrees with `mix format`
+          ~r"/apps/explorer/lib/explorer/chain/hash.ex",
           ~r"/apps/explorer_web/lib/explorer_web.ex"
         ]
       },
@@ -63,7 +65,8 @@
         # You can customize the priority of any check
         # Priority values are: `low, normal, high, higher`
         #
-        {Credo.Check.Design.AliasUsage, excluded_lastnames: ~w(DateTime Number Repo Time), priority: :low},
+        {Credo.Check.Design.AliasUsage,
+         excluded_lastnames: ~w(DateTime Full Number Repo Time Truncated), priority: :low},
 
         # For some checks, you can also set other parameters
         #

@@ -1,10 +1,12 @@
 defmodule Explorer.Indexer do
   @moduledoc """
-  TODO
+  Indexers an Ethereum-based chain using JSONRPC.
   """
 
   alias Explorer.Chain
   alias Explorer.Chain.Block
+
+  # Functions
 
   def child_spec(opts) do
     %{
@@ -16,9 +18,6 @@ defmodule Explorer.Indexer do
     }
   end
 
-  @doc """
-  TODO
-  """
   def last_indexed_block_number do
     case Chain.get_latest_block() do
       %Block{number: num} -> num
@@ -26,9 +25,6 @@ defmodule Explorer.Indexer do
     end
   end
 
-  @doc """
-  TODO
-  """
   def next_block_number do
     case last_indexed_block_number() do
       0 -> 0

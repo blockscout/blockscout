@@ -17,12 +17,12 @@ defmodule ExplorerWeb.TransactionViewTest do
 
     test "with receipt with status 0 with gas_used < gas" do
       gas = 2
-      %Transaction{id: id} = insert(:transaction, gas: gas)
-      insert(:receipt, gas_used: gas - 1, status: 0, transaction_id: id)
+      %Transaction{hash: hash} = insert(:transaction, gas: gas)
+      insert(:receipt, gas_used: gas - 1, status: 0, transaction_hash: hash)
 
       transaction =
         Transaction
-        |> Repo.get!(id)
+        |> Repo.get!(hash)
         |> Repo.preload(:receipt)
 
       assert TransactionView.formatted_status(transaction) == "Failed"
@@ -30,12 +30,12 @@ defmodule ExplorerWeb.TransactionViewTest do
 
     test "with receipt with status 0 with gas <= gas_used" do
       gas = 2
-      %Transaction{id: id} = insert(:transaction, gas: gas)
-      insert(:receipt, gas_used: gas, status: 0, transaction_id: id)
+      %Transaction{hash: hash} = insert(:transaction, gas: gas)
+      insert(:receipt, gas_used: gas, status: 0, transaction_hash: hash)
 
       transaction =
         Transaction
-        |> Repo.get!(id)
+        |> Repo.get!(hash)
         |> Repo.preload(:receipt)
 
       assert TransactionView.formatted_status(transaction) == "Out of Gas"
@@ -43,12 +43,12 @@ defmodule ExplorerWeb.TransactionViewTest do
 
     test "with receipt with status 1" do
       gas = 2
-      %Transaction{id: id} = insert(:transaction, gas: gas)
-      insert(:receipt, gas_used: gas - 1, status: 1, transaction_id: id)
+      %Transaction{hash: hash} = insert(:transaction, gas: gas)
+      insert(:receipt, gas_used: gas - 1, status: 1, transaction_hash: hash)
 
       transaction =
         Transaction
-        |> Repo.get!(id)
+        |> Repo.get!(hash)
         |> Repo.preload(:receipt)
 
       assert TransactionView.formatted_status(transaction) == "Success"

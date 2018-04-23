@@ -6,8 +6,8 @@ defmodule Explorer.Chain.Statistics do
   import Ecto.Query
 
   alias Ecto.Adapters.SQL
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, Transaction}
-  alias Explorer.Repo
   alias Timex.Duration
 
   # Constants
@@ -23,9 +23,9 @@ defmodule Explorer.Chain.Statistics do
   """
 
   @transaction_count_query """
-    SELECT count(transactions.id)
+    SELECT count(transactions.hash)
       FROM transactions
-      JOIN blocks ON blocks.id = transactions.block_id
+      JOIN blocks ON blocks.hash = transactions.block_hash
       WHERE blocks.timestamp > NOW() - interval '1 day'
   """
 
@@ -33,7 +33,7 @@ defmodule Explorer.Chain.Statistics do
     SELECT COUNT(missing_number)
       FROM generate_series(0, $1, 1) AS missing_number
       LEFT JOIN blocks ON missing_number = blocks.number
-      WHERE blocks.id IS NULL
+      WHERE blocks.hash IS NULL
   """
 
   @lag_query """
@@ -47,13 +47,13 @@ defmodule Explorer.Chain.Statistics do
   """
 
   @block_velocity_query """
-    SELECT count(blocks.id)
+    SELECT count(blocks.hash)
       FROM blocks
       WHERE blocks.inserted_at > NOW() - interval '1 minute'
   """
 
   @transaction_velocity_query """
-    SELECT count(transactions.id)
+    SELECT count(transactions.hash)
       FROM transactions
       WHERE transactions.inserted_at > NOW() - interval '1 minute'
   """
@@ -130,21 +130,33 @@ defmodule Explorer.Chain.Statistics do
         limit: 5
       )
 
-    last_block = Block |> Block.latest() |> limit(1) |> Repo.one()
-    latest_block = last_block || Block.null()
-
     %__MODULE__{
-      number: latest_block.number,
-      timestamp: latest_block.timestamp,
       average_time: query_duration(@average_time_query),
-      transaction_count: query_value(@transaction_count_query),
-      skipped_blocks: query_value(@skipped_blocks_query, [latest_block.number]),
-      lag: query_duration(@lag_query),
       block_velocity: query_value(@block_velocity_query),
-      transaction_velocity: query_value(@transaction_velocity_query),
       blocks: Repo.all(blocks),
+      lag: query_duration(@lag_query),
+      transaction_count: query_value(@transaction_count_query),
+      transaction_velocity: query_value(@transaction_velocity_query),
       transactions: Repo.all(transactions)
     }
+    |> put_max_numbered_block()
+  end
+
+  ## Private Functions
+
+  defp put_max_numbered_block(state) do
+    case Chain.max_numbered_block() do
+      {:ok, %Block{number: number, timestamp: timestamp}} ->
+        %__MODULE__{
+          state
+          | number: number,
+            skipped_blocks: query_value(@skipped_blocks_query, [number]),
+            timestamp: timestamp
+        }
+
+      {:error, :not_found} ->
+        state
+    end
   end
 
   defp query_value(query, args \\ []) do

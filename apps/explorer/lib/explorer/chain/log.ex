@@ -3,12 +3,10 @@ defmodule Explorer.Chain.Log do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, Receipt}
+  alias Explorer.Chain.{Address, Hash, Receipt}
 
-  @required_attrs ~w(address_id data index type)a
-  @optional_attrs ~w(
-    first_topic second_topic third_topic fourth_topic
-  )a
+  @required_attrs ~w(address_hash data index type)a
+  @optional_attrs ~w(first_topic second_topic third_topic fourth_topic)a
 
   schema "logs" do
     field(:data, :string)
@@ -21,7 +19,7 @@ defmodule Explorer.Chain.Log do
 
     timestamps()
 
-    belongs_to(:address, Address)
+    belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Truncated)
     belongs_to(:receipt, Receipt)
     has_one(:transaction, through: [:receipt, :transaction])
   end

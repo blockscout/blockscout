@@ -3,9 +3,9 @@ defmodule Explorer.Chain.Receipt do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Log, Transaction}
+  alias Explorer.Chain.{Hash, Log, Transaction}
 
-  @optional_attrs ~w(transaction_id)a
+  @optional_attrs ~w(transaction_hash)a
   @required_attrs ~w(cumulative_gas_used gas_used status index)a
   @allowed_attrs @optional_attrs ++ @required_attrs
 
@@ -15,7 +15,7 @@ defmodule Explorer.Chain.Receipt do
     field(:status, :integer)
     field(:index, :integer)
 
-    belongs_to(:transaction, Transaction)
+    belongs_to(:transaction, Transaction, foreign_key: :transaction_hash, references: :hash, type: Hash.Full)
     has_many(:logs, Log)
 
     timestamps()
@@ -29,18 +29,18 @@ defmodule Explorer.Chain.Receipt do
     |> cast_assoc(:transaction)
     |> cast_assoc(:logs)
     |> validate_required(@required_attrs)
-    |> foreign_key_constraint(:transaction_id)
-    |> unique_constraint(:transaction_id)
+    |> foreign_key_constraint(:transaction_hash)
+    |> unique_constraint(:transaction_hash)
   end
 
-  def extract(raw_receipt, transaction_id, %{} = timestamps) do
+  def extract(raw_receipt, transaction_hash, %{} = timestamps) do
     logs =
       raw_receipt
       |> Map.fetch!("logs")
       |> Enum.map(&extract_log(&1, timestamps))
 
     receipt = %{
-      transaction_id: transaction_id,
+      transaction_hash: transaction_hash,
       index: raw_receipt["transactionIndex"],
       cumulative_gas_used: raw_receipt["cumulativeGasUsed"],
       gas_used: raw_receipt["gasUsed"],

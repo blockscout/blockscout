@@ -17,7 +17,7 @@ defmodule Explorer.Chain.CreditTest do
     test "returns a credit when there is an address with a receipt" do
       recipient = insert(:address)
       sender = insert(:address)
-      transaction = insert(:transaction, to_address_id: recipient.id, from_address_id: sender.id)
+      transaction = insert(:transaction, to_address_hash: recipient.hash, from_address_hash: sender.hash)
       insert(:receipt, transaction: transaction, status: 1)
       Credit.refresh()
       credits = Credit |> Repo.all()
@@ -28,12 +28,12 @@ defmodule Explorer.Chain.CreditTest do
       recipient = insert(:address)
       sender = insert(:address)
 
-      transaction = insert(:transaction, value: 21, to_address_id: recipient.id, from_address_id: sender.id)
+      transaction = insert(:transaction, value: 21, to_address_hash: recipient.hash, from_address_hash: sender.hash)
 
       insert(:receipt, transaction: transaction, status: 1)
-      address_id = sender.id
+      address_hash = sender.hash
       Credit.refresh()
-      credit = Credit |> where(address_id: ^address_id) |> Repo.one()
+      credit = Credit |> where(address_hash: ^address_hash) |> Repo.one()
       assert credit == nil
     end
 
@@ -41,12 +41,12 @@ defmodule Explorer.Chain.CreditTest do
       recipient = insert(:address)
       sender = insert(:address)
 
-      transaction = insert(:transaction, value: 21, to_address_id: recipient.id, from_address_id: sender.id)
+      transaction = insert(:transaction, value: 21, to_address_hash: recipient.hash, from_address_hash: sender.hash)
 
       insert(:receipt, transaction: transaction, status: 1)
-      address_id = recipient.id
+      address_hash = recipient.hash
       Credit.refresh()
-      credit = Credit |> where(address_id: ^address_id) |> Repo.one()
+      credit = Credit |> where(address_hash: ^address_hash) |> Repo.one()
       assert credit.value == Decimal.new(21)
     end
   end

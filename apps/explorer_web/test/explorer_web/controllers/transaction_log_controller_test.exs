@@ -14,9 +14,9 @@ defmodule ExplorerWeb.TransactionLogControllerTest do
       transaction = insert(:transaction)
       receipt = insert(:receipt, transaction: transaction)
       address = insert(:address)
-      insert(:log, receipt: receipt, address_id: address.id)
+      insert(:log, receipt: receipt, address_hash: address.hash)
 
-      conn = get(conn, transaction_log_path(ExplorerWeb.Endpoint, :index, :en, transaction.hash))
+      conn = get(conn, transaction_log_path(ExplorerWeb.Endpoint, :index, :en, transaction))
 
       first_log = List.first(conn.assigns.logs.entries)
       assert first_log.receipt_id == receipt.id
@@ -24,7 +24,7 @@ defmodule ExplorerWeb.TransactionLogControllerTest do
 
     test "assigns no logs when there are none", %{conn: conn} do
       transaction = insert(:transaction)
-      path = transaction_log_path(ExplorerWeb.Endpoint, :index, :en, transaction.hash)
+      path = transaction_log_path(ExplorerWeb.Endpoint, :index, :en, transaction)
 
       conn = get(conn, path)
 

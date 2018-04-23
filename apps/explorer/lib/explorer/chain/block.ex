@@ -7,8 +7,12 @@ defmodule Explorer.Chain.Block do
 
   use Explorer.Schema
 
-  alias Ecto.Changeset
-  alias Explorer.Chain.{Gas, Hash, Transaction}
+  alias Explorer.Chain.{Address, Gas, Hash, Transaction}
+
+  # Constants
+
+  @required_attrs ~w(difficulty gas_limit gas_used hash miner_hash nonce number parent_hash size timestamp
+                     total_difficulty)a
 
   # Types
 
@@ -47,7 +51,8 @@ defmodule Explorer.Chain.Block do
           gas_limit: Gas.t(),
           gas_used: Gas.t(),
           hash: Hash.t(),
-          miner: Address.hash(),
+          miner: %Ecto.Association.NotLoaded{} | Address.t(),
+          miner_hash: Hash.Truncated.t(),
           nonce: Hash.t(),
           number: block_number(),
           parent_hash: Hash.t(),
@@ -57,84 +62,33 @@ defmodule Explorer.Chain.Block do
           transactions: %Ecto.Association.NotLoaded{} | [Transaction.t()]
         }
 
+  # Schema
+
+  @primary_key {:hash, Hash.Full, autogenerate: false}
   schema "blocks" do
     field(:difficulty, :decimal)
     field(:gas_limit, :integer)
     field(:gas_used, :integer)
-    field(:hash, :string)
-    field(:miner, :string)
     field(:nonce, :string)
     field(:number, :integer)
-    field(:parent_hash, :string)
     field(:size, :integer)
     field(:timestamp, Timex.Ecto.DateTime)
     field(:total_difficulty, :decimal)
 
     timestamps()
 
+    belongs_to(:miner, Address, foreign_key: :miner_hash, references: :hash, type: Hash.Truncated)
+    belongs_to(:parent, __MODULE__, foreign_key: :parent_hash, references: :hash, type: Hash.Full)
     has_many(:transactions, Transaction)
   end
 
-  @required_attrs ~w(difficulty gas_limit gas_used hash miner nonce number parent_hash size timestamp total_difficulty)a
+  # Functions
 
-  @doc false
   def changeset(%__MODULE__{} = block, attrs) do
     block
     |> cast(attrs, @required_attrs)
     |> validate_required(@required_attrs)
-    |> update_change(:hash, &String.downcase/1)
-    |> unique_constraint(:hash)
-  end
-
-  @doc false
-  def extract(raw_block, %{} = timestamps) do
-    raw_block
-    |> extract_block(timestamps)
-    |> extract_transactions(raw_block["transactions"], timestamps)
-  end
-
-  def null, do: %__MODULE__{number: -1, timestamp: :calendar.universal_time()}
-
-  def latest(query) do
-    query |> order_by(desc: :number)
-  end
-
-  ## Private Functions
-
-  defp extract_block(raw_block, %{} = timestamps) do
-    attrs = %{
-      hash: raw_block["hash"],
-      number: raw_block["number"],
-      gas_used: raw_block["gasUsed"],
-      timestamp: raw_block["timestamp"],
-      parent_hash: raw_block["parentHash"],
-      miner: raw_block["miner"],
-      difficulty: raw_block["difficulty"],
-      total_difficulty: raw_block["totalDifficulty"],
-      size: raw_block["size"],
-      gas_limit: raw_block["gasLimit"],
-      nonce: raw_block["nonce"] || "0"
-    }
-
-    case changeset(%__MODULE__{}, attrs) do
-      %Changeset{valid?: true, changes: changes} -> {:ok, Map.merge(changes, timestamps)}
-      %Changeset{valid?: false, errors: errors} -> {:error, {:block, errors}}
-    end
-  end
-
-  defp extract_transactions({:ok, block_changes}, raw_transactions, %{} = timestamps) do
-    raw_transactions
-    |> Enum.map(&Transaction.decode(&1, block_changes.number, timestamps))
-    |> Enum.reduce_while({:ok, block_changes, []}, fn
-      {:ok, trans_changes}, {:ok, block, acc} ->
-        {:cont, {:ok, block, [trans_changes | acc]}}
-
-      {:error, reason}, _ ->
-        {:halt, {:error, {:transaction, reason}}}
-    end)
-  end
-
-  defp extract_transactions({:error, reason}, _transactions, _timestamps) do
-    {:error, reason}
+    |> foreign_key_constraint(:parent_hash)
+    |> unique_constraint(:hash, name: :blocks_pkey)
   end
 end

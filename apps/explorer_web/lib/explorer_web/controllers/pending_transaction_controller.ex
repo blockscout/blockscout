@@ -2,45 +2,36 @@ defmodule ExplorerWeb.PendingTransactionController do
   use ExplorerWeb, :controller
 
   alias Explorer.Chain
-  alias Explorer.Chain.Transaction
 
-  def index(conn, %{"last_seen" => last_seen_id} = _) do
-    total = Chain.transaction_count(pending: true)
+  def index(conn, params) do
+    with %{"last_seen_pending_inserted_at" => last_seen_pending_inserted_at_string} <- params,
+         {:ok, last_seen_pending_inserted_at} = Timex.parse(last_seen_pending_inserted_at_string, "{ISO:Extended:Z}") do
+      do_index(conn, inserted_after: last_seen_pending_inserted_at)
+    else
+      _ -> do_index(conn)
+    end
+  end
 
-    transactions =
-      Chain.transactions_recently_before_id(
-        last_seen_id,
-        necessity_by_association: %{from_address: :optional, to_address: :optional},
-        pending: true
-      )
+  ## Private Functions
 
-    last_seen_transaction_id =
-      case transactions do
-        [] ->
-          nil
-
-        _ ->
-          transactions
-          |> Stream.map(fn %Transaction{id: id} -> id end)
-          |> Enum.max()
-      end
+  defp do_index(conn, options \\ []) when is_list(options) do
+    full_options = Keyword.merge([necessity_by_association: %{from_address: :optional, to_address: :optional}], options)
+    transactions = Chain.recent_pending_transactions(full_options)
+    last_seen_pending_inserted_at = last_seen_pending_inserted_at(transactions)
+    transaction_count = Chain.transaction_count(pending: true)
 
     render(
       conn,
       "index.html",
-      last_seen_transaction_id: last_seen_transaction_id,
-      transaction_count: total,
+      last_seen_pending_inserted_at: last_seen_pending_inserted_at,
+      transaction_count: transaction_count,
       transactions: transactions
     )
   end
 
-  def index(conn, params) do
-    last_seen =
-      [pending: true]
-      |> Chain.last_transaction_id()
-      |> Kernel.+(1)
-      |> Integer.to_string()
+  defp last_seen_pending_inserted_at([]), do: nil
 
-    index(conn, Map.put(params, "last_seen", last_seen))
+  defp last_seen_pending_inserted_at(transactions) do
+    List.last(transactions).inserted_at
   end
 end

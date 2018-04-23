@@ -7,8 +7,11 @@ defmodule Explorer.Application do
 
   import Supervisor.Spec, only: [supervisor: 3]
 
-  # See https://hexdocs.pm/elixir/Application.html
-  # for more information on OTP Applications
+  # Functions
+
+  ## Application callbacks
+
+  @impl Application
   def start(_type, _args) do
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
@@ -16,12 +19,14 @@ defmodule Explorer.Application do
     Supervisor.start_link(children(Mix.env()), opts)
   end
 
+  ## Private Functions
+
   defp children(:test), do: children()
 
   defp children(_) do
     children() ++
       [
-        Explorer.ETH,
+        Explorer.JSONRPC,
         supervisor(Task.Supervisor, [[name: Explorer.TaskSupervisor]], id: Explorer.TaskSupervisor),
         Explorer.Indexer,
         Explorer.Chain.Statistics.Server,
