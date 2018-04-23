@@ -2,7 +2,7 @@ defmodule Explorer.BalanceImporterTest do
   use Explorer.DataCase
 
   alias Explorer.{Chain, BalanceImporter}
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, Wei}
 
   describe "import/1" do
     test "it updates the balance for an address" do
@@ -10,7 +10,7 @@ defmodule Explorer.BalanceImporterTest do
 
       BalanceImporter.import("0x5cc18cc34175d358ff8e19b7f98566263c4106a0")
 
-      expected_balance = Decimal.new(1_572_374_181_095_000_000)
+      expected_balance = %Wei{value: Decimal.new(1_572_374_181_095_000_000)}
 
       assert {:ok, %Address{balance: ^expected_balance}} =
                Chain.hash_to_address("0x5cc18cc34175d358ff8e19b7f98566263c4106a0")

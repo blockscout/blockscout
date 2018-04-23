@@ -1,7 +1,7 @@
 defmodule ExplorerWeb.BlockView do
   use ExplorerWeb, :view
 
-  alias Explorer.Chain.Block
+  alias Explorer.Chain.{Block, Wei}
 
   @dialyzer :no_match
 
@@ -13,5 +13,9 @@ defmodule ExplorerWeb.BlockView do
 
   def formatted_timestamp(%Block{timestamp: timestamp}) do
     Timex.format!(timestamp, "%b-%d-%Y %H:%M:%S %p %Z", :strftime)
+  end
+
+  def to_gwei(%Wei{} = wei) do
+    Wei.to(wei, :gwei)
   end
 end

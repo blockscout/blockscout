@@ -2,7 +2,7 @@ defmodule Explorer.Workers.ImportBalanceTest do
   import Mock
 
   alias Explorer.Chain
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, Wei}
   alias Explorer.Workers.ImportBalance
 
   use Explorer.DataCase
@@ -11,7 +11,7 @@ defmodule Explorer.Workers.ImportBalanceTest do
     test "imports the balance for an address" do
       ImportBalance.perform("0x1d12e5716c593b156eb7152ca4360f6224ba3b0a")
 
-      expected_balance = Decimal.new(1_572_374_181_095_000_000)
+      expected_balance = %Wei{value: Decimal.new(1_572_374_181_095_000_000)}
 
       assert {:ok, %Address{balance: ^expected_balance}} =
                Chain.hash_to_address("0x1d12e5716c593b156eb7152ca4360f6224ba3b0a")
@@ -30,7 +30,7 @@ defmodule Explorer.Workers.ImportBalanceTest do
         end do
         ImportBalance.perform_later("0xskateboards")
 
-        expected_balance = Decimal.new(66)
+        expected_balance = %Wei{value: Decimal.new(66)}
 
         assert {:ok, %Address{balance: ^expected_balance}} = Chain.hash_to_address("0xskateboards")
       end

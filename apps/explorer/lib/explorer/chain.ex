@@ -108,7 +108,7 @@ defmodule Explorer.Chain do
   @doc """
   The `t:Explorer.Chain.Address.t/0` `balance` in `unit`.
   """
-  @spec balance(Address.t(), :wei) :: Wei.t() | nil
+  @spec balance(Address.t(), :wei) :: Wei.wei() | nil
   @spec balance(Address.t(), :gwei) :: Wei.gwei() | nil
   @spec balance(Address.t(), :ether) :: Wei.ether() | nil
   def balance(%Address{balance: balance}, unit) do
@@ -253,9 +253,9 @@ defmodule Explorer.Chain do
   @spec fee(%Transaction{receipt: nil}, :ether | :gwei | :wei) :: {:maximum, Decimal.t()}
   def fee(%Transaction{gas: gas, gas_price: gas_price, receipt: nil}, unit) do
     fee =
-      gas
-      |> Decimal.mult(gas_price)
+      gas_price
       |> Wei.to(unit)
+      |> Decimal.mult(gas)
 
     {:maximum, fee}
   end
@@ -263,9 +263,9 @@ defmodule Explorer.Chain do
   @spec fee(%Transaction{receipt: Receipt.t()}, :ether | :gwei | :wei) :: {:actual, Decimal.t()}
   def fee(%Transaction{gas_price: gas_price, receipt: %Receipt{gas_used: gas_used}}, unit) do
     fee =
-      gas_used
-      |> Decimal.mult(gas_price)
+      gas_price
       |> Wei.to(unit)
+      |> Decimal.mult(gas_used)
 
     {:actual, fee}
   end
@@ -273,7 +273,7 @@ defmodule Explorer.Chain do
   @doc """
   The `t:Explorer.Chain.Transaction.t/0` `gas_price` of the `transaction` in `unit`.
   """
-  @spec gas_price(Transaction.t(), :wei) :: Wei.t()
+  @spec gas_price(Transaction.t(), :wei) :: Wei.wei()
   @spec gas_price(Transaction.t(), :gwei) :: Wei.gwei()
   @spec gas_price(Transaction.t(), :ether) :: Wei.ether()
   def gas_price(%Transaction{gas_price: gas_price}, unit) do
@@ -570,10 +570,10 @@ defmodule Explorer.Chain do
   The `t:Explorer.Chain.Transaction.t/0` or `t:Explorer.Chain.InternalTransaction.t/0` `value` of the `transaction` in
   `unit`.
   """
-  @spec value(InternalTransaction.t(), :wei) :: Wei.t()
+  @spec value(InternalTransaction.t(), :wei) :: Wei.wei()
   @spec value(InternalTransaction.t(), :gwei) :: Wei.gwei()
   @spec value(InternalTransaction.t(), :ether) :: Wei.ether()
-  @spec value(Transaction.t(), :wei) :: Wei.t()
+  @spec value(Transaction.t(), :wei) :: Wei.wei()
   @spec value(Transaction.t(), :gwei) :: Wei.gwei()
   @spec value(Transaction.t(), :ether) :: Wei.ether()
   def value(%type{value: value}, unit) when type in [InternalTransaction, Transaction] do
