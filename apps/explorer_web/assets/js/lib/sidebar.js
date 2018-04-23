@@ -1,4 +1,4 @@
 $('#sidebarCollapse').on('click', function () {
-  $('#sidebar').toggleClass('active');
-  $(this).toggleClass('active');
-});
+  $('#sidebar').toggleClass('active')
+  $(this).toggleClass('active')
+})
