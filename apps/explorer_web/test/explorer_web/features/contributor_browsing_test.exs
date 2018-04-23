@@ -223,38 +223,5 @@ defmodule ExplorerWeb.UserListTest do
       |> click(css(".transaction-log__link", text: "0xlincoln"))
       |> assert_has(css(".address__subheading", text: "0xlincoln"))
     end
-
-    test "see's all addresses transactions by default", %{session: session} do
-      session
-      |> visit("/en/addresses/0xlincoln")
-      |> assert_has(css(".transactions__link--long-hash", text: "0xSk8"))
-      |> assert_has(css(".transactions__link--long-hash", text: "0xrazerscooter"))
-    end
-
-    test "can filter to only see transactions to an address", %{session: session} do
-      session
-      |> visit("/en/addresses/0xlincoln")
-      |> click(css("[data-test='filter_dropdown']", text: "Filter: All"))
-      |> click(css(".address__link", text: "To"))
-      |> assert_has(css(".transactions__link--long-hash", text: "0xSk8"))
-      |> refute_has(css(".transactions__link--long-hash", text: "0xrazerscooter"))
-    end
-
-    test "can filter to only see transactions from an address", %{session: session} do
-      session
-      |> visit("/en/addresses/0xlincoln")
-      |> click(css("[data-test='filter_dropdown']", text: "Filter: All"))
-      |> click(css(".address__link", text: "From"))
-      |> assert_has(css(".transactions__link--long-hash", text: "0xrazerscooter"))
-      |> refute_has(css(".transactions__link--long-hash", text: "0xSk8"))
-    end
-  end
-
-  test "views addresses", %{session: session} do
-    insert(:address, hash: "0xthinmints", balance: 500)
-
-    session
-    |> visit("/en/addresses/0xthinmints")
-    |> assert_has(css(".address__balance", text: "0.000,000,000,000,000,500 POA"))
   end
 end
