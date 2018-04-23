@@ -6,12 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><%= gettext "POA Network Explorer" %></title>
     <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
-    <!-- Bootstrap core CSS-->
-    <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <!-- Custom fonts for this template-->
     <link href="vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
-    <!-- Custom styles for this template-->
-    <link href="css/sb-admin.css" rel="stylesheet">
   </head>
 
   <body>
@@ -87,11 +83,6 @@
              });
          });
       </script>
-      <script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/fastclick/1.0.6/fastclick.js'></script>
-      <script type='text/javascript'>
-        $(function() {
-          FastClick.attach(document.body);
-        });
-      </script>
+ 
   </body>
 </html>
