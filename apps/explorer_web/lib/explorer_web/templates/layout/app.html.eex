@@ -65,7 +65,7 @@
             <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
             <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
             <%= render @view_module, @view_template, assigns %>
-             <%= render ExplorerWeb.LayoutView, "_footer.html", assigns %>
+            <%= render ExplorerWeb.LayoutView, "_footer.html", assigns %>
           </main>
         </div>
         <!-- <%= render ExplorerWeb.LayoutView, "_footer.html", assigns %> -->
