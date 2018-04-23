@@ -113,6 +113,7 @@ a[data-toggle="collapse"] {
     #sidebar.active {
         margin-left: 0;
         transform: none;
+        outline: none;
 
         ~ #content {
           position: absolute;
@@ -131,6 +132,7 @@ a[data-toggle="collapse"] {
       background-image: none;
       border-color: transparent !important;
       box-shadow: 0 2px 2px 0 rgba(38,50,56,.16), 0 0 2px 0 rgba(38,50,56,.12);
+      outline: none;
     }
 
     #sidebarCollapse span {
@@ -154,6 +156,7 @@ a[data-toggle="collapse"] {
         transform: none;
         opacity: 1;
         margin: 0 auto;
+
     }
     #sidebarCollapse.active span:first-of-type {
         transform: rotate(45deg) translate(2px, 2px);
