@@ -1,17 +1,13 @@
 <section class="container__section block">
   <div class="block__header">
     <h1 class="block__heading"><%= gettext("Block Details") %></h1>
-    <h2 class="block__subheading">#<%= @block.number %></h2>
+    <h2 class="block__subheading"><%= @block.number %></h2>
   </div>
 
   <div class="block__container">
     <div class="block__attributes">
       <div class="block__column">
         <dl>
-          <div class="block__item">
-            <dt class="block__item-key"><%= gettext "Number" %></dt>
-            <dd class="block__item-value"><%= @block.number %></dd>
-          </div>
           <div class="block__item">
             <dt class="block__item-key"><%= gettext "Timestamp" %></dt>
             <dd class="block__item-value"><%= age(@block) %> (<%= formatted_timestamp(@block) %>)</dd>
