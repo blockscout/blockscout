@@ -4,6 +4,7 @@ defmodule ExplorerWeb.AddressPageTest do
   import Wallaby.Query, only: [css: 2]
 
   alias Explorer.Chain.{Credit, Debit}
+  alias ExplorerWeb.AddressPage
 
   setup do
     block =
@@ -60,22 +61,28 @@ defmodule ExplorerWeb.AddressPageTest do
     {:ok, %{internal: internal}}
   end
 
-  test "see's all addresses transactions by default", %{session: session} do
+  def assert_true(session, assertion) do
+    assert assertion.(session)
     session
-    |> visit("/en/addresses/0xlincoln")
-    |> assert_has(css(".transactions__link--long-hash", text: "0xSk8"))
-    |> assert_has(css(".transactions__link--long-hash", text: "0xrazerscooter"))
   end
 
-  # test "can see internal transactions for an address", %{
-  #   session: session,
-  #   internal: internal
-  # } do
-  #   session
-  #   |> visit("/en/transactions/0xSk8")
-  #   |> click(link("Internal Transactions"))
-  #   |> assert_has(css(".internal-transaction__table", text: internal.call_type))
-  # end
+  test "sees all addresses transactions by default", %{session: session} do
+    session
+    |> AddressPage.visit_page("0xlincoln")
+    |> assert_has(AddressPage.transaction("0xSk8"))
+    |> assert_has(AddressPage.transaction("0xrazerscooter"))
+  end
+
+  test "can see internal transactions for an address", %{
+    session: session
+    # internal: internal
+  } do
+
+    session
+    |> AddressPage.visit_page("0xlincoln")
+    |> AddressPage.click_internal_transactions()
+    |> assert_has(AddressPage.internal_transactions(count: 1))
+  end
 
   test "can filter to only see transactions to an address", %{session: session} do
     session

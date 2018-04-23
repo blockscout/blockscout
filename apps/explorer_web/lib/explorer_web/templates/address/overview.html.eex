@@ -1,0 +1,16 @@
+<div class="address__header">
+  <h1 class="address__heading"><%= gettext "Address" %></h1>
+  <h3 class="address__subheading"><%= @address.hash %></h3>
+</div>
+<div class="address__container">
+  <div class="address__attributes">
+    <dl>
+      <div class="address__item">
+        <dt class="address__item-key"><%= gettext "Balance" %></dt>
+        <dd class="address__item-value address__balance" title="<%= @address.hash %>">
+          <%= balance(@address) %> <%= gettext "Ether" %>
+        </dd>
+      </div>
+    </dl>
+  </div>
+</div>

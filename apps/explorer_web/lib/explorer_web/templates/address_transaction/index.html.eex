@@ -1,20 +1,5 @@
 <section class="container__section block">
-  <div class="address__header">
-    <h1 class="address__heading"><%= gettext "Address" %></h1>
-    <h3 class="address__subheading"><%= @address.hash %></h3>
-  </div>
-  <div class="address__container">
-    <div class="address__attributes">
-      <dl>
-        <div class="address__item">
-          <dt class="address__item-key"><%= gettext "Balance" %></dt>
-          <dd class="address__item-value address__balance" title="<%= @address.hash %>">
-            <%= balance(@address) %> <%= gettext "Ether" %>
-          </dd>
-        </div>
-      </dl>
-    </div>
-  </div>
+  <%= render ExplorerWeb.AddressView, "overview.html", assigns %>
 
   <div class="address__container">
     <div class="address__tabs">
@@ -23,6 +8,14 @@
               gettext("Transactions"),
               class: "address__link address__link--active",
               to: address_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
+            ) %>
+      </h2>
+      <h2 class="address__tab address__tab">
+        <%= link(
+              gettext("Internal Transactions"),
+              class: "address__link address__link",
+              "data-test": "internal_transactions_tab_link",
+              to: address_internal_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
             ) %>
       </h2>
     </div>

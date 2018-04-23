@@ -40,7 +40,8 @@ defmodule ExplorerWeb.Router do
   end
 
   pipeline :jasmine do
-    if Mix.env() != :prod, do: plug(Jasmine, js_files: ["js/test.js"], css_files: ["css/test.css"])
+    if Mix.env() != :prod,
+      do: plug(Jasmine, js_files: ["js/test.js"], css_files: ["css/test.css"])
   end
 
   pipeline :api do
@@ -76,11 +77,13 @@ defmodule ExplorerWeb.Router do
     end
 
     resources "/addresses", AddressController, only: [:show] do
+      resources("/transactions", AddressTransactionController, only: [:index], as: :transaction)
+
       resources(
-        "/transactions",
-        AddressTransactionController,
+        "/internal_transactions",
+        AddressInternalTransactionController,
         only: [:index],
-        as: :transaction
+        as: :internal_transaction
       )
     end
 
