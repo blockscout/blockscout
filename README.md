@@ -13,7 +13,6 @@ This is a tool for inspecting and analyzing the POA Network blockchain.
 
 ## Required Accounts
 
-* Heroku for deployment
 * GitHub for code storage
 
 
