@@ -1,8 +1,8 @@
 #: lib/explorer_web/templates/address_transaction/index.html.eex:73
 #: lib/explorer_web/templates/block/index.html.eex:30
 #: lib/explorer_web/templates/block_transaction/index.html.eex:43
-#: lib/explorer_web/templates/chain/show.html.eex:65
-#: lib/explorer_web/templates/chain/show.html.eex:101
+#: lib/explorer_web/templates/chain/show.html.eex:71
+#: lib/explorer_web/templates/chain/show.html.eex:110
 #: lib/explorer_web/templates/transaction/index.html.eex:36
 #: lib/explorer_web/templates/transaction/overview.html.eex:37
 msgid "Age"
@@ -11,7 +11,7 @@ msgstr ""
 #: lib/explorer_web/templates/address_transaction/index.html.eex:72
 #: lib/explorer_web/templates/block_transaction/index.html.eex:42
 #: lib/explorer_web/templates/chain/show.html.eex:28
-#: lib/explorer_web/templates/chain/show.html.eex:100
+#: lib/explorer_web/templates/chain/show.html.eex:109
 #: lib/explorer_web/templates/transaction/index.html.eex:35
 msgid "Block"
 msgstr ""
@@ -27,21 +27,21 @@ msgstr ""
 
 #: lib/explorer_web/templates/block/index.html.eex:32
 #: lib/explorer_web/templates/block/show.html.eex:77
-#: lib/explorer_web/templates/chain/show.html.eex:67
+#: lib/explorer_web/templates/chain/show.html.eex:73
 msgid "Gas Used"
 msgstr ""
 
 #: lib/explorer_web/templates/address_transaction/index.html.eex:71
 #: lib/explorer_web/templates/block/show.html.eex:40
 #: lib/explorer_web/templates/block_transaction/index.html.eex:41
-#: lib/explorer_web/templates/chain/show.html.eex:99
+#: lib/explorer_web/templates/chain/show.html.eex:108
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:34
 #: lib/explorer_web/templates/transaction/index.html.eex:34
 msgid "Hash"
 msgstr ""
 
 #: lib/explorer_web/templates/block/index.html.eex:29
-#: lib/explorer_web/templates/chain/show.html.eex:64
+#: lib/explorer_web/templates/chain/show.html.eex:70
 msgid "Height"
 msgstr ""
 
@@ -55,8 +55,8 @@ msgstr ""
 #: lib/explorer_web/templates/block/show.html.eex:34
 #: lib/explorer_web/templates/block_transaction/index.html.eex:28
 #: lib/explorer_web/templates/chain/show.html.eex:45
-#: lib/explorer_web/templates/chain/show.html.eex:66
-#: lib/explorer_web/templates/chain/show.html.eex:93
+#: lib/explorer_web/templates/chain/show.html.eex:72
+#: lib/explorer_web/templates/chain/show.html.eex:99
 #: lib/explorer_web/templates/layout/app.html.eex:30
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:12
 #: lib/explorer_web/templates/transaction/index.html.eex:12
@@ -65,7 +65,7 @@ msgstr ""
 
 #: lib/explorer_web/templates/address_transaction/index.html.eex:76
 #: lib/explorer_web/templates/block_transaction/index.html.eex:46
-#: lib/explorer_web/templates/chain/show.html.eex:102
+#: lib/explorer_web/templates/chain/show.html.eex:111
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:38
 #: lib/explorer_web/templates/transaction/index.html.eex:39
 #: lib/explorer_web/templates/transaction/overview.html.eex:43
@@ -323,7 +323,7 @@ msgstr ""
 #: lib/explorer_web/templates/address_transaction/index.html.eex:124
 #: lib/explorer_web/templates/address_transaction/index.html.eex:127
 #: lib/explorer_web/templates/block_transaction/index.html.eex:90
-#: lib/explorer_web/templates/chain/show.html.eex:128
+#: lib/explorer_web/templates/chain/show.html.eex:137
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:80
 #: lib/explorer_web/templates/transaction/index.html.eex:84
 #: lib/explorer_web/templates/transaction/overview.html.eex:44
