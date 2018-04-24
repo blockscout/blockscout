@@ -13,17 +13,17 @@
       <!-- Sidebar Holder -->
       <nav id="sidebar" class="sticky fixed-top">
         <div class="sidebar-header">
-          <a href="<%= chain_path(@conn, :show) %>" data-test="header_logo" >
+          <%= link to: chain_path(@conn, :show), "data-test": "header_logo" do %>
             <img class="" src="<%= static_path(@conn, "/images/logo.svg") %>" />
-          </a>
+          <% end %>
         </div>
         <div class="menu-items">
-          <a href="<%= block_path(@conn, :index, Gettext.get_locale) %>" class="header__link">
+          <%= link to: block_path(@conn, :index, Gettext.get_locale), class: "header__link" do %>
             <div tabindex="0" class="icon-locate">
                 <img class="" src="<%= static_path(@conn, "/images/block.svg") %>" />
                 <%= gettext("Blocks") %>
             </div>
-          </a>
+          <% end %>
           <div tabindex="0" class="icon-locate">
             <a href="#pageSubmenu" data-toggle="collapse" aria-expanded="false">
               <img class="" src="<%= static_path(@conn, "/images/transaction.svg") %>" />
@@ -31,8 +31,8 @@
               <i class="fa fa-caret-down"></i>
             </a>
             <ul class="collapse list-unstyled" id="pageSubmenu">
-              <li><a href="<%= transaction_path(@conn, :index, Gettext.get_locale) %>">Validated</a></li>
-              <li><a href="<%= pending_transaction_path(@conn, :index, Gettext.get_locale) %>">Pending</a></li>
+              <li><%= link(gettext("Validated"), to: transaction_path(@conn, :index, Gettext.get_locale)) %></li>
+              <li><%= link(gettext("Pending"), to: pending_transaction_path(@conn, :index, Gettext.get_locale)) %></li>
             </ul>
           </div>
         </div>

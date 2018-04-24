@@ -236,6 +236,7 @@ msgstr "Showing #%{start_block} to #%{end_block}"
 msgid "Showing %{count} Transactions"
 msgstr "Showing %{count} Transactions"
 
+#: lib/explorer_web/templates/layout/app.html.eex:35
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:19
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:64
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:76
@@ -392,4 +393,8 @@ msgstr ""
 
 #: lib/explorer_web/templates/address_transaction/index.html.eex:77
 msgid "Fee"
+msgstr ""
+
+#: lib/explorer_web/templates/layout/app.html.eex:34
+msgid "Validated"
 msgstr ""
