@@ -588,6 +588,49 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "address_to_internal_transactions/1" do
+    test "with single transaction containing an internal transaction" do
+      address = insert(:address)
+      transaction = insert(:transaction, to_address_id: address.id)
+
+      %InternalTransaction{id: expected_id} =
+        insert(:internal_transaction, transaction_id: transaction.id, to_address_id: address.id)
+
+      result = address |> Chain.address_to_internal_transactions() |> List.first()
+      assert result.id == expected_id
+    end
+
+    test "loads associations in necessity_by_association" do
+      address = insert(:address)
+      transaction = insert(:transaction, to_address_id: address.id)
+      insert(:internal_transaction, transaction_id: transaction.id, to_address_id: address.id)
+
+      assert [
+               %InternalTransaction{
+                 from_address: %Ecto.Association.NotLoaded{},
+                 to_address: %Ecto.Association.NotLoaded{},
+                 transaction: %Ecto.Association.NotLoaded{}
+               }
+             ] = Chain.address_to_internal_transactions(address)
+
+      assert [
+               %InternalTransaction{
+                 from_address: %Address{},
+                 to_address: %Address{},
+                 transaction: %Transaction{}
+               }
+             ] =
+               Chain.address_to_internal_transactions(
+                 address,
+                 necessity_by_association: %{
+                   from_address: :optional,
+                   to_address: :optional,
+                   transaction: :optional
+                 }
+               )
+    end
+  end
+
   describe "transaction_hash_to_internal_transactions/1" do
     test "without transaction" do
       assert Chain.transaction_hash_to_internal_transactions("unknown").entries == []
@@ -615,7 +658,7 @@ defmodule Explorer.ChainTest do
       assert Enum.member?(results, second.id)
     end
 
-    test "with transaction with internal transactions loads associations with in necessity_by_assocation" do
+    test "with transaction with internal transactions loads associations with in necessity_by_association" do
       %Transaction{hash: hash, id: transaction_id} = insert(:transaction)
       insert(:internal_transaction, transaction_id: transaction_id, index: 0)
       insert(:internal_transaction, transaction_id: transaction_id, index: 1)
