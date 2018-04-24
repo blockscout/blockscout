@@ -21,7 +21,7 @@ msgstr ""
 msgid "Blocks"
 msgstr ""
 
-#: lib/explorer_web/templates/layout/app.html.eex:40
+#: lib/explorer_web/templates/layout/_footer.html.eex:2
 msgid "Copyright %{year} POA"
 msgstr ""
 
@@ -340,7 +340,7 @@ msgstr ""
 msgid "Internal Transactions"
 msgstr ""
 
-#: lib/explorer_web/templates/layout/app.html.eex:59
+#: lib/explorer_web/templates/layout/app.html.eex:56
 msgid "Search by address, transaction hash, or block number"
 msgstr ""
 
