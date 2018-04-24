@@ -3,14 +3,25 @@
 
   &__container {
     padding: explorer-size(-1) explorer-size(0);
-    & + & { padding-top: 0; }
-    &--title { padding-top: explorer-size(0); }
+
+    &__flex {
+      display: flex;
+    }
+
+    & + & {
+      padding-top: 0;
+    }
+    
+    &--title {
+      padding-top: explorer-size(0);
+    }
   }
 
   &__headline-title,
   &__title {
     @include explorer-typography("title");
     color: explorer-color("slate", "900");
+    width: 90%;
   }
 
   &__title { margin: 0; }

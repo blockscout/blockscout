@@ -3,6 +3,7 @@
 
   &__container {
     padding: explorer-size(-1) explorer-size(0);
+    display: flex;
     & + & { padding-top: 0; }
     &--title { padding-top: explorer-size(0); }
   }
@@ -12,6 +13,7 @@
     @include explorer-typography("title");
     color: explorer-color("slate", "900");
     margin: 0;
+    width: 90%;
   }
 
   &__headline-title { line-height: 18px; }

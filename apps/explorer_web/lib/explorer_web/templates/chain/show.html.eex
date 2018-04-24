@@ -56,6 +56,12 @@
     <div class="blocks container__subsection">
       <div class="blocks__container blocks__container--title">
         <h2 class="blocks__title"><%= gettext "Blocks" %></h2>
+        <a href="<%= block_path(@conn, :index, Gettext.get_locale) %>" class="header__link">
+          <div class="button button--secondary button--xsmall u-float-right">View All</div>
+        </a>
+      </div>
+      <div>
+
       </div>
       <div class="blocks__container">
         <table class="blocks__table">
@@ -89,8 +95,11 @@
       </div>
     </div>
     <div class="transactions container__subsection">
-      <div class="transactions__container transactions__container--title">
+      <div class="transactions__container transactions__container__flex transactions__container--title">
         <h2 class="transactions__title"><%= gettext "Transactions" %></h2>
+        <a href="<%= transaction_path(@conn, :index, Gettext.get_locale) %>" class="header__link">
+          <div class="button button--secondary button--xsmall u-float-right">View All</div>
+        </a>
       </div>
       <div class="transactions__container">
         <table class="transactions__table">
