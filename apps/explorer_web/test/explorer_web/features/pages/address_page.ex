@@ -22,4 +22,10 @@ defmodule ExplorerWeb.AddressPage do
   def internal_transactions(count: count) do
     css(@internal_transactions_selector, count: count)
   end
+
+  def apply_filter(session, direction) do
+    session
+    |> click(css("[data-test='filter_dropdown']", text: "Filter: All"))
+    |> click(css(".address__link", text: direction))
+  end
 end

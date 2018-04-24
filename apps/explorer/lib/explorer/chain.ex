@@ -3,7 +3,7 @@ defmodule Explorer.Chain do
   The chain context.
   """
 
-  import Ecto.Query, only: [from: 2, or_where: 3, order_by: 2, preload: 2, where: 2, where: 3]
+  import Ecto.Query, only: [from: 2, join: 4, or_where: 3, order_by: 2, preload: 2, where: 2, where: 3]
 
   alias Explorer.Chain.{
     Address,
@@ -415,12 +415,35 @@ defmodule Explorer.Chain do
     |> Repo.aggregate(:count, :id)
   end
 
+  @doc """
+  `t:Explorer.Chain.InternalTransaction/0`s from `address`.
+
+  ## Options
+
+  * `:direction` - if specified, will filter internal transactions by address type. If `:to` is specified, only internal
+  transactions where the "to" address matches will be returned. Likewise, if `:from` is specified, only internal
+  transactions where the "from" address matches will be returned. If :direction is omitted, internal transactions either
+  to or from the address will be returned.
+  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`. If an association is
+  `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association, then
+  the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the page `entries`.
+  * `:pagination` - pagination params to pass to scrivener.
+
+  """
   def address_to_internal_transactions(%Address{id: id}, options \\ []) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    address_fields = [:to_address_id, :from_address_id]
+
+    address_fields =
+      case Keyword.get(options, :direction) do
+        :to -> [:to_address_id]
+        :from -> [:from_address_id]
+        nil -> [:to_address_id, :from_address_id]
+      end
 
     InternalTransaction
     |> where_address_fields_match(address_fields, id)
+    |> join(:inner, [inner_transaction], transaction in assoc(inner_transaction, :transaction))
+    |> preload(transaction: :block)
     |> join_associations(necessity_by_association)
     |> Repo.all()
   end

@@ -9,10 +9,10 @@ defmodule ExplorerWeb.AddressPageTest do
   setup do
     block =
       insert(:block, %{
-            number: 555,
-            timestamp: Timex.now() |> Timex.shift(hours: -2),
-            gas_used: 123_987
-             })
+        number: 555,
+        timestamp: Timex.now() |> Timex.shift(hours: -2),
+        gas_used: 123_987
+      })
 
     for _ <- 0..3, do: insert(:transaction) |> with_block(block)
     insert(:transaction, hash: "0xC001", gas: 5891) |> with_block
@@ -53,56 +53,13 @@ defmodule ExplorerWeb.AddressPageTest do
 
     insert(:receipt, transaction: txn_from_lincoln)
 
-    internal = insert(:internal_transaction, transaction_id: transaction.id)
-
     Credit.refresh()
     Debit.refresh()
 
-    {:ok, %{internal: internal}}
+    {:ok, %{address: lincoln, transaction: transaction}}
   end
 
-  def assert_true(session, assertion) do
-    assert assertion.(session)
-    session
-  end
-
-  test "sees all addresses transactions by default", %{session: session} do
-    session
-    |> AddressPage.visit_page("0xlincoln")
-    |> assert_has(AddressPage.transaction("0xSk8"))
-    |> assert_has(AddressPage.transaction("0xrazerscooter"))
-  end
-
-  test "can see internal transactions for an address", %{
-    session: session
-    # internal: internal
-  } do
-
-    session
-    |> AddressPage.visit_page("0xlincoln")
-    |> AddressPage.click_internal_transactions()
-    |> assert_has(AddressPage.internal_transactions(count: 1))
-  end
-
-  test "can filter to only see transactions to an address", %{session: session} do
-    session
-    |> visit("/en/addresses/0xlincoln")
-    |> click(css("[data-test='filter_dropdown']", text: "Filter: All"))
-    |> click(css(".address__link", text: "To"))
-    |> assert_has(css(".transactions__link--long-hash", text: "0xSk8"))
-    |> refute_has(css(".transactions__link--long-hash", text: "0xrazerscooter"))
-  end
-
-  test "can filter to only see transactions from an address", %{session: session} do
-    session
-    |> visit("/en/addresses/0xlincoln")
-    |> click(css("[data-test='filter_dropdown']", text: "Filter: All"))
-    |> click(css(".address__link", text: "From"))
-    |> assert_has(css(".transactions__link--long-hash", text: "0xrazerscooter"))
-    |> refute_has(css(".transactions__link--long-hash", text: "0xSk8"))
-  end
-
-  test "views addresses", %{session: session} do
+  test "viewing address overview information", %{session: session} do
     insert(:address, hash: "0xthinmints", balance: 500)
 
     session
@@ -110,4 +67,61 @@ defmodule ExplorerWeb.AddressPageTest do
     |> assert_has(css(".address__balance", text: "0.000,000,000,000,000,500 POA"))
   end
 
+  describe "viewing transactions" do
+    test "sees all addresses transactions by default", %{address: address, session: session} do
+      session
+      |> AddressPage.visit_page(address.hash)
+      |> assert_has(AddressPage.transaction("0xSk8"))
+      |> assert_has(AddressPage.transaction("0xrazerscooter"))
+    end
+
+    test "can filter to only see transactions to an address", %{address: address, session: session} do
+      session
+      |> visit("/en/addresses/#{address.hash}")
+      |> click(css("[data-test='filter_dropdown']", text: "Filter: All"))
+      |> click(css(".address__link", text: "To"))
+      |> assert_has(css(".transactions__link--long-hash", text: "0xSk8"))
+      |> refute_has(css(".transactions__link--long-hash", text: "0xrazerscooter"))
+    end
+
+    test "can filter to only see transactions from an address", %{address: address, session: session} do
+      session
+      |> visit("/en/addresses/#{address.hash}")
+      |> click(css("[data-test='filter_dropdown']", text: "Filter: All"))
+      |> click(css(".address__link", text: "From"))
+      |> assert_has(css(".transactions__link--long-hash", text: "0xrazerscooter"))
+      |> refute_has(css(".transactions__link--long-hash", text: "0xSk8"))
+    end
+  end
+
+  describe "viewing internal transactions" do
+    setup %{address: address, transaction: transaction} do
+      insert(:internal_transaction, transaction_id: transaction.id, to_address_id: address.id)
+      insert(:internal_transaction, transaction_id: transaction.id, from_address_id: address.id)
+      :ok
+    end
+
+    test "can see internal transactions for an address", %{address: address, session: session} do
+      session
+      |> AddressPage.visit_page(address.hash)
+      |> AddressPage.click_internal_transactions()
+      |> assert_has(AddressPage.internal_transactions(count: 2))
+    end
+
+    test "can filter to only see internal transactions from an address", %{addresses: addresses, session: session} do
+      session
+      |> AddressPage.visit_page(addresses.lincoln)
+      |> AddressPage.click_internal_transactions()
+      |> AddressPage.apply_filter("From")
+      |> assert_has(AddressPage.internal_transactions(count: 1))
+    end
+
+    test "can filter to only see internal transactions to an address", %{addresses: addresses, session: session} do
+      session
+      |> AddressPage.visit_page(address.hash)
+      |> AddressPage.click_internal_transactions()
+      |> AddressPage.apply_filter("To")
+      |> assert_has(AddressPage.internal_transactions(count: 1))
+    end
+  end
 end

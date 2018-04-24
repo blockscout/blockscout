@@ -609,7 +609,7 @@ defmodule Explorer.ChainTest do
                %InternalTransaction{
                  from_address: %Ecto.Association.NotLoaded{},
                  to_address: %Ecto.Association.NotLoaded{},
-                 transaction: %Ecto.Association.NotLoaded{}
+                 transaction: %Transaction{}
                }
              ] = Chain.address_to_internal_transactions(address)
 
