@@ -591,7 +591,7 @@ defmodule Explorer.ChainTest do
   describe "address_to_internal_transactions/1" do
     test "with single transaction containing an internal transaction" do
       address = insert(:address)
-      transaction = insert(:transaction, to_address_id: address.id)
+      transaction = insert(:transaction)
 
       %InternalTransaction{id: expected_id} =
         insert(:internal_transaction, transaction_id: transaction.id, to_address_id: address.id)
@@ -628,6 +628,41 @@ defmodule Explorer.ChainTest do
                    transaction: :optional
                  }
                )
+    end
+
+    test "Returns results in reverse chronological order by block number, transaction index, internal transaction index" do
+      address = insert(:address)
+
+      pending_transaction = :transaction |> insert(transaction_index: "3")
+
+      first_block = insert(:block, number: 2000)
+      first_transaction = :transaction |> insert(transaction_index: "10") |> with_block(first_block)
+      second_transaction = :transaction |> insert(transaction_index: "20") |> with_block(first_block)
+
+      second_block = insert(:block, number: 4000)
+      third_transaction = :transaction |> insert(transaction_index: "5") |> with_block(second_block)
+
+      %InternalTransaction{id: pending_id} =
+        insert(:internal_transaction, transaction: pending_transaction, to_address_id: address.id, index: 0)
+
+      %InternalTransaction{id: first_id} =
+        insert(:internal_transaction, transaction: first_transaction, to_address_id: address.id, index: 0)
+
+      %InternalTransaction{id: second_id} =
+        insert(:internal_transaction, transaction: second_transaction, to_address_id: address.id, index: 0)
+
+      %InternalTransaction{id: third_id} =
+        insert(:internal_transaction, transaction: third_transaction, to_address_id: address.id, index: 0)
+
+      %InternalTransaction{id: fourth_id} =
+        insert(:internal_transaction, transaction: third_transaction, to_address_id: address.id, index: 1)
+
+      result =
+        address
+        |> Chain.address_to_internal_transactions()
+        |> Enum.map(fn internal_transaction -> internal_transaction.id end)
+
+      assert [pending_id, fourth_id, third_id, second_id, first_id] == result
     end
   end
 

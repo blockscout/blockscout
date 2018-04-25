@@ -442,7 +442,9 @@ defmodule Explorer.Chain do
 
     InternalTransaction
     |> where_address_fields_match(address_fields, id)
-    |> join(:inner, [inner_transaction], transaction in assoc(inner_transaction, :transaction))
+    |> join(:inner, [internal_transaction], transaction in assoc(internal_transaction, :transaction))
+    |> join(:left, [internal_transaction, transaction], block in assoc(transaction, :block))
+    |> order_by([it, transaction, block], desc: block.number, desc: transaction.transaction_index, desc: it.index)
     |> preload(transaction: :block)
     |> join_associations(necessity_by_association)
     |> Repo.all()
