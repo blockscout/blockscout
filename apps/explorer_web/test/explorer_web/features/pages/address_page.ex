@@ -3,6 +3,9 @@ defmodule ExplorerWeb.AddressPage do
 
   use Wallaby.DSL
   import Wallaby.Query, only: [css: 1, css: 2]
+  alias Explorer.Chain.{Address, Transaction}
+
+  def visit_page(session, %Address{hash: address_hash}), do: visit_page(session, address_hash)
 
   def visit_page(session, address_hash) do
     visit(session, "/en/addresses/#{address_hash}")
@@ -13,7 +16,9 @@ defmodule ExplorerWeb.AddressPage do
     click(session, css(@internal_transactions_link_selector))
   end
 
-  @transaction_selector ".transactions__link--long-hash"
+  @transaction_selector "[data-test='transaction_hash']"
+  def transaction(%Transaction{hash: transaction_hash}), do: transaction(transaction_hash)
+
   def transaction(transaction_hash) do
     css(@transaction_selector, text: transaction_hash)
   end
@@ -26,6 +31,10 @@ defmodule ExplorerWeb.AddressPage do
   def apply_filter(session, direction) do
     session
     |> click(css("[data-test='filter_dropdown']", text: "Filter: All"))
-    |> click(css(".address__link", text: direction))
+    |> click(css("[data-test='filter_option']", text: direction))
+  end
+
+  def balance do
+    css("[data-test='address_balance']")
   end
 end

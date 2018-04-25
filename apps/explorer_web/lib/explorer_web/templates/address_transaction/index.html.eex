@@ -27,30 +27,33 @@
       <div class="dropdown-menu dropdown-menu-right filter" aria-labelledby="dropdownMenu2">
         <%= link(
               gettext("All"),
+              to: address_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"]),
               class: "address__link address__link--active dropdown-item",
-              to: address_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
+              "data-test": "filter_option"
             ) %>
         <%= link(
               gettext("To"),
-              class: "address__link address__link--active dropdown-item",
               to: address_transaction_path(
                 @conn,
                 :index,
                 @conn.assigns.locale,
                 @conn.params["address_id"],
                 filter: "to"
-              )
+              ),
+              class: "address__link address__link--active dropdown-item",
+              "data-test": "filter_option"
             ) %>
         <%= link(
               gettext("From"),
-              class: "address__link address__link--active dropdown-item",
               to: address_transaction_path(
                 @conn,
                 :index,
                 @conn.assigns.locale,
                 @conn.params["address_id"],
                 filter: "from"
-              )
+              ),
+              class: "address__link address__link--active dropdown-item",
+              "data-test": "filter_option"
             ) %>
       </div>
     </div>
@@ -80,8 +83,9 @@
                 <div class="transactions__hash">
                   <%= link(
                         transaction.hash,
+                        to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.hash),
                         class: "transactions__link transactions__link--truncated transactions__link--long-hash",
-                        to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.hash)
+                        "data-test": "transaction_hash"
                       ) %>
                 </div>
               </td>

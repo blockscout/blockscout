@@ -23,14 +23,19 @@ defmodule Explorer.Chain.TransactionFactory do
         }
       end
 
+      def list_with_block(transactions, block \\ nil) do
+        Enum.map(transactions, fn transaction -> with_block(transaction, block) end)
+      end
+
       def with_block(transaction, block \\ nil) do
         block = block || insert(:block)
-        insert(:block_transaction, %{block_id: block.id, transaction_id: transaction.id})
+        insert(:block_transaction, block_id: block.id, transaction_id: transaction.id)
         transaction
       end
 
-      def list_with_block(transactions, block \\ nil) do
-        Enum.map(transactions, fn transaction -> with_block(transaction, block) end)
+      def with_receipt(transaction) do
+        insert(:receipt, transaction_id: transaction.id)
+        transaction
       end
     end
   end

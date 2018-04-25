@@ -7,7 +7,7 @@
     <dl>
       <div class="address__item">
         <dt class="address__item-key"><%= gettext "Balance" %></dt>
-        <dd class="address__item-value address__balance" title="<%= @address.hash %>">
+        <dd class="address__item-value address__balance" title="<%= @address.hash %>" data-test="address_balance">
           <%= balance(@address) %> <%= gettext "Ether" %>
         </dd>
       </div>
