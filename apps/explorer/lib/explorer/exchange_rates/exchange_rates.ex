@@ -1,6 +1,6 @@
 defmodule Explorer.ExchangeRates do
   @moduledoc """
-  Local cache for relevant exchange rates.
+  Local cache for token exchange rates.
 
   Exchange rate data is updated every 5 minutes.
   """
@@ -9,9 +9,8 @@ defmodule Explorer.ExchangeRates do
 
   require Logger
 
-  alias Explorer.ExchangeRates.Rate
+  alias Explorer.ExchangeRates.Token
 
-  @default_tickers ~w(poa-network)
   @interval :timer.minutes(5)
   @table_name :exchange_rates
 
@@ -21,29 +20,30 @@ defmodule Explorer.ExchangeRates do
   def handle_info(:update, state) do
     Logger.debug(fn -> "Updating cached exchange rates" end)
 
-    for ticker <- @default_tickers do
-      fetch_ticker(ticker)
-    end
+    fetch_rates()
 
     {:noreply, state}
   end
 
-  # Callback for successful ticker fetch
+  # Callback for successful fetch
   @impl GenServer
-  def handle_info({_ref, {ticker, {:ok, %Rate{} = rate}}}, state) do
-    :ets.insert(table_name(), {ticker, rate})
+  def handle_info({_ref, {:ok, tokens}}, state) do
+    records =
+      for %Token{symbol: symbol} = token <- tokens do
+        {symbol, token}
+      end
+
+    :ets.insert(table_name(), records)
 
     {:noreply, state}
   end
 
-  # Callback for errored ticker fetch
+  # Callback for errored fetch
   @impl GenServer
-  def handle_info({_ref, {ticker, {:error, reason}}}, state) do
-    Logger.warn(fn ->
-      "Failed to get exchange rates for ticker '#{ticker}' with reason '#{reason}'."
-    end)
+  def handle_info({_ref, {:error, reason}}, state) do
+    Logger.warn(fn -> "Failed to get exchange rates with reason '#{reason}'." end)
 
-    fetch_ticker(ticker)
+    fetch_rates()
 
     {:noreply, state}
   end
@@ -81,12 +81,12 @@ defmodule Explorer.ExchangeRates do
   @doc """
   Lists exchange rates for the tracked tickers.
   """
-  @spec all_tickers() :: [Rate.t()]
-  def all_tickers do
+  @spec list :: [Token.t()]
+  def list do
     table_name()
     |> :ets.tab2list()
     |> Enum.map(fn {_, rate} -> rate end)
-    |> Enum.sort_by(fn %Rate{symbol: symbol} -> symbol end)
+    |> Enum.sort_by(fn %Token{symbol: symbol} -> symbol end)
   end
 
   ## Undocumented public functions
@@ -102,15 +102,15 @@ defmodule Explorer.ExchangeRates do
     Application.get_env(:explorer, __MODULE__, [])[key]
   end
 
-  @spec fetch_ticker(String.t()) :: Task.t()
-  defp fetch_ticker(ticker) do
-    Task.Supervisor.async_nolink(Explorer.ExchangeRateTaskSupervisor, fn ->
-      {ticker, ticker_source().fetch_exchange_rate(ticker)}
-    end)
+  @spec exchange_rates_source() :: module()
+  defp exchange_rates_source do
+    config(:source) || Explorer.ExchangeRates.Source.CoinMarketCap
   end
 
-  @spec ticker_source() :: module()
-  defp ticker_source do
-    config(:source) || Explorer.ExchangeRates.Source.CoinMarketCap
+  @spec fetch_rates :: Task.t()
+  defp fetch_rates do
+    Task.Supervisor.async_nolink(Explorer.MarketTaskSupervisor, fn ->
+      exchange_rates_source().fetch_exchange_rates()
+    end)
   end
 end

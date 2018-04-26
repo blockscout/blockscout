@@ -32,7 +32,7 @@ defmodule Explorer.Application do
   defp children do
     [
       supervisor(Explorer.Repo, []),
-      {Task.Supervisor, name: Explorer.ExchangeRateTaskSupervisor}
+      {Task.Supervisor, name: Explorer.MarketTaskSupervisor}
     ]
   end
 end

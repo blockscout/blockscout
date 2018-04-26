@@ -3,10 +3,10 @@ defmodule Explorer.ExchangeRates.Source do
   Behaviour for fetching exchange rates from external sources.
   """
 
-  alias Explorer.ExchangeRates.Rate
+  alias Explorer.ExchangeRates.Token
 
   @doc """
-  Callback for fetching an exchange rate for a given cryptocurrency.
+  Callback for fetching an exchange rates for currencies/tokens.
   """
-  @callback fetch_exchange_rate(ticker :: String.t()) :: {:ok, Rate.t()} | {:error, any}
+  @callback fetch_exchange_rates :: {:ok, [Token.t()]} | {:error, any}
 end
