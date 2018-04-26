@@ -3,34 +3,32 @@
   background: explorer-color("gray", "50");
   box-shadow: 0 2px 2px 0 rgba(explorer-color("slate", "900"), 0.16),
               0 0px 2px 0 rgba(explorer-color("slate", "900"), 0.12);
-  display: flex;
-  width: 100%;
   top: 0;
   left: 0;
   right: 0;
+  width: 100%;
 
   &__container {
-    width: 100%;
     margin-top: 7px;
   }
 
   &__row {
     vertical-align: middle;
+    display: flex;
   }
 
   &__cell {
-
-
-    &--links {
-      display: flex;
-      flex-direction: row-reverse;
-      padding-right: explorer-size(0);
-    }
+     &--links {
+       display: flex;
+       flex-direction: row-reverse;
+       padding-right: explorer-size(0);
+     }
 
 
     &--search {
       @include explorer-typography("body1");
       padding-left: 8px;
+      width: 90%;
     }
 
     &--search-form {
@@ -47,7 +45,7 @@
     }
 
     &--search-input {
-      width: 50%;
+      width: 100%;
       border: none;
       background-color: transparent;
       height: 50px;
@@ -61,6 +59,6 @@
 
     &--search-input[placeholder] {
       text-overflow: ellipsis;
+      }
     }
   }
-}

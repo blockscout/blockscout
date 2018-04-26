@@ -48,16 +48,33 @@
             </button>
           </nav>
           <header class="header">
-            <table class="header__container" cellspacing="0" cellpadding="0" border="0">
-              <tr class="header__row">
-                <td class="header__cell header__cell--search">
+            <div class="header__container" cellspacing="0" cellpadding="0" border="0">
+              <div class="header__row">
+                <div class="header__cell header__cell--search">
                   <%= form_for @conn, chain_path(@conn, :search, Gettext.get_locale), [class: "header__cell--search-form", method: :get, enforce_utf8: false], fn f -> %>
                     <%= img_tag :svg, src: static_path(@conn, "/images/mgi.svg"), class: "header__cell--search-glass" %>
                     <%= search_input f, :q, class: 'header__cell--search-input', placeholder: gettext "Search by address, transaction hash, or block number" %>
                   <% end %>
-                </td>
-              </tr>
-            </table>
+                </div>
+                <div class="header__cell header__cell--links" align="right">
+                  <a href="https://www.facebook.com/PoaNetwork/" target="_blank" class="header__link">
+                    <div class="social-media">
+                      <i class="fa fa-facebook-f"></i>
+                    </div>
+                  </a>
+                  <a href="https://www.instagram.com/PoaNetwork/" target="_blank" class="header__link">
+                    <div class="social-media">
+                      <i class="fa fa-instagram"></i>
+                    </div>
+                  </a>
+                  <a href="https://www.twitter.com/PoaNetwork/" target="_blank" class="header__link">
+                    <div class="social-media">
+                      <i class="fa fa-twitter"></i>
+                    </div>
+                  </a> 
+                </div>
+              </div>
+            </div>
           </header>
         </div>
         <div class="content-container">

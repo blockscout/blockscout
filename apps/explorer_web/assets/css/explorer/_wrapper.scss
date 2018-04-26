@@ -29,7 +29,7 @@
   }
 
   .content-header {
-    width: 100%;
+    width: calc(100% - 200px);
     display: flex;
     z-index: 1000;
 
