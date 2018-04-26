@@ -7,7 +7,8 @@ defmodule ExplorerWeb.BlockTransactionController do
 
   def index(conn, %{"block_id" => formatted_block_number} = params) do
     with {:ok, block_number} <- param_to_block_number(formatted_block_number),
-         {:ok, block} <- Chain.number_to_block(block_number) do
+         {:ok, block} <- Chain.number_to_block(block_number),
+         block_transaction_count <- Chain.block_to_transaction_count(block) do
       page =
         Chain.block_to_transactions(
           block,
@@ -20,7 +21,7 @@ defmodule ExplorerWeb.BlockTransactionController do
           pagination: params
         )
 
-      render(conn, "index.html", page: page)
+      render(conn, "index.html", block: block, block_transaction_count: block_transaction_count, page: page)
     else
       {:error, :invalid} ->
         not_found(conn)
