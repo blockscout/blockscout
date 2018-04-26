@@ -115,8 +115,9 @@ a[data-toggle="collapse"] {
     #sidebarCollapse {
       display: block;
       width: 45px;
-      height: 65px;
+      height: 66px;
       background-image: none;
+      background-color: $primary;
       border-color: transparent !important;
       box-shadow: 0 2px 2px 0 rgba(38,50,56,.16), 0 0 2px 0 rgba(38,50,56,.12);
       outline: none;
@@ -127,7 +128,7 @@ a[data-toggle="collapse"] {
         height: 2px;
         margin: 0 auto;
         display: block;
-        background: $black;
+        background: $white;
         transition: all 0.8s;
     }
 

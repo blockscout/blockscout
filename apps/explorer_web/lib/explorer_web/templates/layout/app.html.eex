@@ -58,7 +58,7 @@
                     <%= search_input f, :q, class: 'header__cell--search-input', placeholder: gettext "Search by address, transaction hash, or block number" %>
                   <% end %>
                 </div>
-                <div class="header__cell header__cell--links" align="right">
+                <div class="header__cell header__cell--links u-nudge-top" align="right">
                   <a href="https://www.facebook.com/PoaNetwork/" target="_blank" class="header__link">
                     <div class="social-media">
                       <i class="fa fa-facebook-f"></i>
