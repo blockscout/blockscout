@@ -10,8 +10,7 @@
   right: 0;
 
   &__container {
-    width: 100%;
-    margin-top: 7px;
+
   }
 
   &__row {
@@ -31,6 +30,8 @@
     &--search {
       @include explorer-typography("body1");
       padding-left: 8px;
+      width: 90%;
+      margin-top: 7px;
     }
 
     &--search-form {
