@@ -32,14 +32,14 @@
             <tgroup>
               <tr>
                 <td><%= transaction.call_type %></td>
-                <td class="internal-transaction__to-address">
-                  <%= link(transaction.to_address.hash,
-                  to: address_path(@conn, :show, @conn.assigns.locale, transaction.to_address.hash),
-                  class: "transaction-log__link") %>
-                </td>
                 <td class="internal-transaction__from-address">
                   <%= link(transaction.from_address.hash,
                   to: address_path(@conn, :show, @conn.assigns.locale, transaction.from_address.hash),
+                  class: "transaction-log__link") %>
+                </td>
+                <td class="internal-transaction__to-address">
+                  <%= link(transaction.to_address.hash,
+                  to: address_path(@conn, :show, @conn.assigns.locale, transaction.to_address.hash),
                   class: "transaction-log__link") %>
                 </td>
                 <td><%= value(transaction) %></td>
