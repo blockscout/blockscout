@@ -1,4 +1,4 @@
-.wrapper {
+.content-wrapper {
   display: flex;
   align-items: stretch;
   min-height: 100vh;
@@ -13,9 +13,7 @@
 .content-container {
   flex-grow: 1;
   padding-top: 90px;
-
 }
-
 
 .content-header {
   display: flex;
@@ -24,6 +22,7 @@
 }
 
 .container {
+
   &__section {
     display: block;
     padding: 0 15px;

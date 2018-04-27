@@ -9,7 +9,7 @@
   </head>
 
   <body>
-    <div class="wrapper wrapper-overflow">
+    <div class="content-wrapper">
       <!-- Sidebar Holder -->
       <div id="sidebar--container">
       <nav id="sidebar">
