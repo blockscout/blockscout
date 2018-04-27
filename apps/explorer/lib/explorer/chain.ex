@@ -3,7 +3,7 @@ defmodule Explorer.Chain do
   The chain context.
   """
 
-  import Ecto.Query, only: [from: 2, join: 4, or_where: 3, order_by: 2, preload: 2, where: 2, where: 3]
+  import Ecto.Query, only: [from: 2, join: 4, or_where: 3, order_by: 2, order_by: 3, preload: 2, where: 2, where: 3]
 
   alias Explorer.Chain.{
     Address,
@@ -418,6 +418,10 @@ defmodule Explorer.Chain do
   @doc """
   `t:Explorer.Chain.InternalTransaction/0`s from `address`.
 
+  This function excludes any "representative" internal transactions, where the internal transaction is a mirror of the
+  parent transaction's value, to and from addresses. In the case of multiple internal transactions that have the same
+  value, to, and from address, it excludes the internal transaction with the lowest id.
+
   ## Options
 
   * `:direction` - if specified, will filter internal transactions by address type. If `:to` is specified, only internal
@@ -432,18 +436,22 @@ defmodule Explorer.Chain do
   """
   def address_to_internal_transactions(%Address{id: id}, options \\ []) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-
-    address_fields =
-      case Keyword.get(options, :direction) do
-        :to -> [:to_address_id]
-        :from -> [:from_address_id]
-        nil -> [:to_address_id, :from_address_id]
-      end
+    direction = Keyword.get(options, :direction)
 
     InternalTransaction
-    |> where_address_fields_match(address_fields, id)
     |> join(:inner, [internal_transaction], transaction in assoc(internal_transaction, :transaction))
     |> join(:left, [internal_transaction, transaction], block in assoc(transaction, :block))
+    |> where_address_fields_match(direction, id)
+    |> where([it], fragment("""
+                            ? NOT IN (
+                              SELECT min(it.id) FROM "internal_transactions" AS it
+                              INNER JOIN "transactions" AS t ON t.id = it.transaction_id
+                              WHERE it.value = t.value
+                              AND it.from_address_id = t.from_address_id
+                              AND it.to_address_id = t.to_address_id
+                              GROUP BY t.id
+                            )
+                            """ , it.id))
     |> order_by([it, transaction, block], desc: block.number, desc: transaction.transaction_index, desc: it.index)
     |> preload(transaction: :block)
     |> join_associations(necessity_by_association)
@@ -591,20 +599,15 @@ defmodule Explorer.Chain do
 
   defp address_id_to_transactions(address_id, named_arguments)
        when is_integer(address_id) and is_list(named_arguments) do
-    address_fields =
-      case Keyword.get(named_arguments, :direction) do
-        :to -> [:to_address_id]
-        :from -> [:from_address_id]
-        nil -> [:to_address_id, :from_address_id]
-      end
 
+    direction = Keyword.get(named_arguments, :direction)
     necessity_by_association = Keyword.get(named_arguments, :necessity_by_association, %{})
     pagination = Keyword.get(named_arguments, :pagination, %{})
 
     Transaction
     |> join_associations(necessity_by_association)
     |> reverse_chronologically()
-    |> where_address_fields_match(address_fields, address_id)
+    |> where_address_fields_match(direction, address_id)
     |> Repo.paginate(pagination)
   end
 
@@ -664,7 +667,14 @@ defmodule Explorer.Chain do
     |> Repo.paginate(pagination)
   end
 
-  defp where_address_fields_match(query, address_fields, address_id) do
+  defp where_address_fields_match(query, direction, address_id) do
+    address_fields =
+      case direction do
+        :to -> [:to_address_id]
+        :from -> [:from_address_id]
+        nil -> [:to_address_id, :from_address_id]
+      end
+
     Enum.reduce(address_fields, query, fn field, query ->
       or_where(query, [t], field(t, ^field) == ^address_id)
     end)

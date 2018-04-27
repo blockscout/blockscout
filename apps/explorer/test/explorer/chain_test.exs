@@ -664,6 +664,43 @@ defmodule Explorer.ChainTest do
 
       assert [pending_id, fourth_id, third_id, second_id, first_id] == result
     end
+
+    test "Filters out internal transaction (with lowest id if multiple) that represents the parent transaction" do
+      address = insert(:address)
+      transaction = :transaction |> insert(to_address_id: address.id) |> with_block()
+
+      %InternalTransaction{id: first_id} =
+        insert(:internal_transaction, transaction: transaction, to_address_id: address.id, index: 0)
+
+      %InternalTransaction{id: excluded_id} =
+        insert(
+          :internal_transaction,
+          transaction: transaction,
+          to_address_id: address.id,
+          index: 1,
+          value: transaction.value,
+          from_address_id: transaction.from_address_id
+        )
+
+      %InternalTransaction{id: third_id} =
+        insert(
+          :internal_transaction,
+          transaction: transaction,
+          to_address_id: address.id,
+          index: 2,
+          value: transaction.value,
+          from_address_id: transaction.from_address_id
+        )
+
+      result =
+        address
+        |> Chain.address_to_internal_transactions()
+        |> Enum.map(fn internal_transaction -> internal_transaction.id end)
+
+      assert Enum.member?(result, first_id)
+      refute Enum.member?(result, excluded_id)
+      assert Enum.member?(result, third_id)
+    end
   end
 
   describe "transaction_hash_to_internal_transactions/1" do
