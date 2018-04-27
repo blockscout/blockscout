@@ -453,6 +453,7 @@ defmodule Explorer.Chain do
         it.id
       )
     )
+    |> order_by(:index)
     |> Repo.all()
   end
 

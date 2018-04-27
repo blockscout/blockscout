@@ -674,6 +674,19 @@ defmodule Explorer.ChainTest do
       refute Enum.member?(result, excluded_id)
       assert Enum.member?(result, third_id)
     end
+
+    test "returns the internal transactions in index order" do
+      %Transaction{id: id, hash: hash} = :transaction |> insert() |> with_block()
+      %InternalTransaction{id: first_id} = insert(:internal_transaction, transaction_id: id, index: 0)
+      %InternalTransaction{id: second_id} = insert(:internal_transaction, transaction_id: id, index: 1)
+
+      result =
+        hash
+        |> Chain.transaction_hash_to_internal_transactions()
+        |> Enum.map(fn it -> it.id end)
+
+      assert [first_id, second_id] == result
+    end
   end
 
   describe "transactions_recently_before_id" do
