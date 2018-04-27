@@ -636,6 +636,44 @@ defmodule Explorer.ChainTest do
                  }
                )
     end
+
+    test "filters out internal transaction that matches parent transaction's value, to, and from addresses" do
+      %Transaction{id: id, hash: hash, to_address_id: to, from_address_id: from, value: value} =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      %InternalTransaction{id: first_id} = insert(:internal_transaction, transaction_id: id, index: 0)
+
+      %InternalTransaction{id: excluded_id} =
+        insert(
+          :internal_transaction,
+          transaction_id: id,
+          value: value,
+          to_address_id: to,
+          from_address_id: from,
+          index: 1
+        )
+
+      %InternalTransaction{id: third_id} =
+        insert(
+          :internal_transaction,
+          transaction_id: id,
+          value: value,
+          to_address_id: to,
+          from_address_id: from,
+          index: 2
+        )
+
+      result =
+        hash
+        |> Chain.transaction_hash_to_internal_transactions()
+        |> Enum.map(fn it -> it.id end)
+
+      assert Enum.member?(result, first_id)
+      refute Enum.member?(result, excluded_id)
+      assert Enum.member?(result, third_id)
+    end
   end
 
   describe "transactions_recently_before_id" do

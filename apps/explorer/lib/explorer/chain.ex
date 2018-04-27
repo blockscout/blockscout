@@ -3,7 +3,7 @@ defmodule Explorer.Chain do
   The chain context.
   """
 
-  import Ecto.Query, only: [from: 2, or_where: 3, order_by: 2, preload: 2, where: 2]
+  import Ecto.Query, only: [from: 2, or_where: 3, order_by: 2, preload: 2, where: 2, where: 3]
 
   alias Explorer.Chain.{
     Address,
@@ -418,6 +418,10 @@ defmodule Explorer.Chain do
   @doc """
   `t:Explorer.Chain.InternalTransaction/0`s in `t:Explorer.Chain.Transaction.t/0` with `hash`
 
+  This function excludes any "representative" internal transactions, where the internal transaction is a mirror of the
+  parent transaction's value, to, and from addresses. In the case of multiple internal transactions that have the same
+  value, to, and from address, it excludes the internal transaction with the lowest id.
+
   ## Options
 
   * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
@@ -433,6 +437,22 @@ defmodule Explorer.Chain do
     InternalTransaction
     |> for_parent_transaction(hash)
     |> join_associations(necessity_by_association)
+    |> where(
+      [it],
+      fragment(
+        """
+        ? NOT IN (
+          SELECT min(it.id) FROM internal_transactions AS it
+          INNER JOIN transactions AS t ON t.id = it.transaction_id
+          WHERE it.value = t.value
+          AND it.from_address_id = t.from_address_id
+          AND it.to_address_id = t.to_address_id
+          GROUP BY t.id
+        )
+        """,
+        it.id
+      )
+    )
     |> Repo.all()
   end
 
