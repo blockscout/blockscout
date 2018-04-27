@@ -40,7 +40,7 @@
       </nav>
     </div>
       <!-- Page Content Holder -->
-      <div id="content" class="size-content">
+      <div id="content">
         <div class="content-header">
           <nav>
             <button type="button" id="sidebarCollapse" class="navbar-btn" data-test="hamburger_menu_button">
