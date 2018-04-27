@@ -49,6 +49,55 @@ defmodule Explorer.Chain do
   # Functions
 
   @doc """
+  `t:Explorer.Chain.InternalTransaction/0`s from `address`.
+
+  This function excludes any "representative" internal transactions, where the internal transaction is a mirror of the
+  parent transaction's value, to and from addresses. In the case of multiple internal transactions that have the same
+  value, to, and from address, it excludes the internal transaction with the lowest id.
+
+  ## Options
+
+  * `:direction` - if specified, will filter internal transactions by address type. If `:to` is specified, only internal
+  transactions where the "to" address matches will be returned. Likewise, if `:from` is specified, only internal
+  transactions where the "from" address matches will be returned. If :direction is omitted, internal transactions either
+  to or from the address will be returned.
+  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`. If an association is
+  `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association, then
+  the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the page `entries`.
+  * `:pagination` - pagination params to pass to scrivener.
+
+  """
+  def address_to_internal_transactions(%Address{id: id}, options \\ []) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    direction = Keyword.get(options, :direction)
+
+    InternalTransaction
+    |> join(:inner, [internal_transaction], transaction in assoc(internal_transaction, :transaction))
+    |> join(:left, [internal_transaction, transaction], block in assoc(transaction, :block))
+    |> where_address_fields_match(direction, id)
+    |> where(
+      [it],
+      fragment(
+        """
+        ? NOT IN (
+          SELECT min(it.id) FROM internal_transactions AS it
+          INNER JOIN transactions AS t ON t.id = it.transaction_id
+          WHERE it.value = t.value
+          AND it.from_address_id = t.from_address_id
+          AND it.to_address_id = t.to_address_id
+          GROUP BY t.id
+        )
+        """,
+        it.id
+      )
+    )
+    |> order_by([it, transaction, block], desc: block.number, desc: transaction.transaction_index, desc: it.index)
+    |> preload(transaction: :block)
+    |> join_associations(necessity_by_association)
+    |> Repo.all()
+  end
+
+  @doc """
   `t:Explorer.Chain.Transaction/0`s from `address`.
 
   ## Options
@@ -416,49 +465,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  `t:Explorer.Chain.InternalTransaction/0`s from `address`.
-
-  This function excludes any "representative" internal transactions, where the internal transaction is a mirror of the
-  parent transaction's value, to and from addresses. In the case of multiple internal transactions that have the same
-  value, to, and from address, it excludes the internal transaction with the lowest id.
-
-  ## Options
-
-  * `:direction` - if specified, will filter internal transactions by address type. If `:to` is specified, only internal
-  transactions where the "to" address matches will be returned. Likewise, if `:from` is specified, only internal
-  transactions where the "from" address matches will be returned. If :direction is omitted, internal transactions either
-  to or from the address will be returned.
-  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`. If an association is
-  `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association, then
-  the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the page `entries`.
-  * `:pagination` - pagination params to pass to scrivener.
-
-  """
-  def address_to_internal_transactions(%Address{id: id}, options \\ []) do
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    direction = Keyword.get(options, :direction)
-
-    InternalTransaction
-    |> join(:inner, [internal_transaction], transaction in assoc(internal_transaction, :transaction))
-    |> join(:left, [internal_transaction, transaction], block in assoc(transaction, :block))
-    |> where_address_fields_match(direction, id)
-    |> where([it], fragment("""
-                            ? NOT IN (
-                              SELECT min(it.id) FROM "internal_transactions" AS it
-                              INNER JOIN "transactions" AS t ON t.id = it.transaction_id
-                              WHERE it.value = t.value
-                              AND it.from_address_id = t.from_address_id
-                              AND it.to_address_id = t.to_address_id
-                              GROUP BY t.id
-                            )
-                            """ , it.id))
-    |> order_by([it, transaction, block], desc: block.number, desc: transaction.transaction_index, desc: it.index)
-    |> preload(transaction: :block)
-    |> join_associations(necessity_by_association)
-    |> Repo.all()
-  end
-
-  @doc """
   `t:Explorer.Chain.InternalTransaction/0`s in `t:Explorer.Chain.Transaction.t/0` with `hash`
 
   This function excludes any internal transactions that have no siblings within the parent transaction.
@@ -599,7 +605,6 @@ defmodule Explorer.Chain do
 
   defp address_id_to_transactions(address_id, named_arguments)
        when is_integer(address_id) and is_list(named_arguments) do
-
     direction = Keyword.get(named_arguments, :direction)
     necessity_by_association = Keyword.get(named_arguments, :necessity_by_association, %{})
     pagination = Keyword.get(named_arguments, :pagination, %{})
