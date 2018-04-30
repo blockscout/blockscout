@@ -589,21 +589,26 @@ defmodule Explorer.ChainTest do
   end
 
   describe "address_to_internal_transactions/1" do
-    test "with single transaction containing an internal transaction" do
+    test "with single transaction containing two internal transactions" do
       address = insert(:address)
       transaction = insert(:transaction)
 
-      %InternalTransaction{id: expected_id} =
+      %InternalTransaction{id: first_id} =
         insert(:internal_transaction, transaction_id: transaction.id, to_address_id: address.id)
 
-      result = address |> Chain.address_to_internal_transactions() |> List.first()
-      assert result.id == expected_id
+      %InternalTransaction{id: second_id} =
+        insert(:internal_transaction, transaction_id: transaction.id, to_address_id: address.id)
+
+      result = address |> Chain.address_to_internal_transactions() |> Enum.map(fn it -> it.id end)
+      assert Enum.member?(result, first_id)
+      assert Enum.member?(result, second_id)
     end
 
     test "loads associations in necessity_by_association" do
       address = insert(:address)
       transaction = insert(:transaction, to_address_id: address.id)
-      insert(:internal_transaction, transaction_id: transaction.id, to_address_id: address.id)
+      insert(:internal_transaction, transaction_id: transaction.id, to_address_id: address.id, index: 0)
+      insert(:internal_transaction, transaction_id: transaction.id, to_address_id: address.id, index: 1)
 
       assert [
                %InternalTransaction{
@@ -611,7 +616,8 @@ defmodule Explorer.ChainTest do
                  to_address: %Ecto.Association.NotLoaded{},
                  transaction: %Transaction{}
                }
-             ] = Chain.address_to_internal_transactions(address)
+               | _
+             ] = Map.get(Chain.address_to_internal_transactions(address), :entries, [])
 
       assert [
                %InternalTransaction{
@@ -619,14 +625,19 @@ defmodule Explorer.ChainTest do
                  to_address: %Address{},
                  transaction: %Transaction{}
                }
+               | _
              ] =
-               Chain.address_to_internal_transactions(
-                 address,
-                 necessity_by_association: %{
-                   from_address: :optional,
-                   to_address: :optional,
-                   transaction: :optional
-                 }
+               Map.get(
+                 Chain.address_to_internal_transactions(
+                   address,
+                   necessity_by_association: %{
+                     from_address: :optional,
+                     to_address: :optional,
+                     transaction: :optional
+                   }
+                 ),
+                 :entries,
+                 []
                )
     end
 
@@ -635,71 +646,53 @@ defmodule Explorer.ChainTest do
 
       pending_transaction = :transaction |> insert(transaction_index: "3")
 
-      first_block = insert(:block, number: 2000)
-      first_transaction = :transaction |> insert(transaction_index: "10") |> with_block(first_block)
-      second_transaction = :transaction |> insert(transaction_index: "20") |> with_block(first_block)
-
-      second_block = insert(:block, number: 4000)
-      third_transaction = :transaction |> insert(transaction_index: "5") |> with_block(second_block)
-
-      %InternalTransaction{id: pending_id} =
+      %InternalTransaction{id: first_pending} =
         insert(:internal_transaction, transaction: pending_transaction, to_address_id: address.id, index: 0)
 
-      %InternalTransaction{id: first_id} =
-        insert(:internal_transaction, transaction: first_transaction, to_address_id: address.id, index: 0)
+      %InternalTransaction{id: second_pending} =
+        insert(:internal_transaction, transaction: pending_transaction, to_address_id: address.id, index: 1)
 
-      %InternalTransaction{id: second_id} =
-        insert(:internal_transaction, transaction: second_transaction, to_address_id: address.id, index: 0)
+      a_block = insert(:block, number: 2000)
+      first_a_transaction = :transaction |> insert(transaction_index: "10") |> with_block(a_block)
 
-      %InternalTransaction{id: third_id} =
-        insert(:internal_transaction, transaction: third_transaction, to_address_id: address.id, index: 0)
+      %InternalTransaction{id: first} =
+        insert(:internal_transaction, transaction: first_a_transaction, to_address_id: address.id, index: 0)
 
-      %InternalTransaction{id: fourth_id} =
-        insert(:internal_transaction, transaction: third_transaction, to_address_id: address.id, index: 1)
+      %InternalTransaction{id: second} =
+        insert(:internal_transaction, transaction: first_a_transaction, to_address_id: address.id, index: 1)
+
+      second_a_transaction = :transaction |> insert(transaction_index: "20") |> with_block(a_block)
+
+      %InternalTransaction{id: third} =
+        insert(:internal_transaction, transaction: second_a_transaction, to_address_id: address.id, index: 0)
+
+      %InternalTransaction{id: fourth} =
+        insert(:internal_transaction, transaction: second_a_transaction, to_address_id: address.id, index: 1)
+
+      b_block = insert(:block, number: 6000)
+      first_b_transaction = :transaction |> insert(transaction_index: "20") |> with_block(b_block)
+
+      %InternalTransaction{id: fifth} =
+        insert(:internal_transaction, transaction: first_b_transaction, to_address_id: address.id, index: 0)
+
+      %InternalTransaction{id: sixth} =
+        insert(:internal_transaction, transaction: first_b_transaction, to_address_id: address.id, index: 1)
 
       result =
         address
         |> Chain.address_to_internal_transactions()
+        |> Map.get(:entries, [])
         |> Enum.map(fn internal_transaction -> internal_transaction.id end)
 
-      assert [pending_id, fourth_id, third_id, second_id, first_id] == result
+      assert [second_pending, first_pending, sixth, fifth, fourth, third, second, first] == result
     end
 
-    test "Filters out internal transaction (with lowest id if multiple) that represents the parent transaction" do
+    test "Excludes internal transactions where they are alone in the parent transaction" do
       address = insert(:address)
       transaction = :transaction |> insert(to_address_id: address.id) |> with_block()
+      insert(:internal_transaction, transaction: transaction, to_address_id: address.id)
 
-      %InternalTransaction{id: first_id} =
-        insert(:internal_transaction, transaction: transaction, to_address_id: address.id, index: 0)
-
-      %InternalTransaction{id: excluded_id} =
-        insert(
-          :internal_transaction,
-          transaction: transaction,
-          to_address_id: address.id,
-          index: 1,
-          value: transaction.value,
-          from_address_id: transaction.from_address_id
-        )
-
-      %InternalTransaction{id: third_id} =
-        insert(
-          :internal_transaction,
-          transaction: transaction,
-          to_address_id: address.id,
-          index: 2,
-          value: transaction.value,
-          from_address_id: transaction.from_address_id
-        )
-
-      result =
-        address
-        |> Chain.address_to_internal_transactions()
-        |> Enum.map(fn internal_transaction -> internal_transaction.id end)
-
-      assert Enum.member?(result, first_id)
-      refute Enum.member?(result, excluded_id)
-      assert Enum.member?(result, third_id)
+      assert %{entries: []} = Chain.address_to_internal_transactions(address)
     end
   end
 

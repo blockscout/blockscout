@@ -51,9 +51,8 @@ defmodule Explorer.Chain do
   @doc """
   `t:Explorer.Chain.InternalTransaction/0`s from `address`.
 
-  This function excludes any "representative" internal transactions, where the internal transaction is a mirror of the
-  parent transaction's value, to and from addresses. In the case of multiple internal transactions that have the same
-  value, to, and from address, it excludes the internal transaction with the lowest id.
+  This function excludes any internal transactions in the results where the internal transaction has no siblings within
+  the parent transaction.
 
   ## Options
 
@@ -70,31 +69,23 @@ defmodule Explorer.Chain do
   def address_to_internal_transactions(%Address{id: id}, options \\ []) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     direction = Keyword.get(options, :direction)
+    pagination = Keyword.get(options, :pagination, %{})
 
     InternalTransaction
     |> join(:inner, [internal_transaction], transaction in assoc(internal_transaction, :transaction))
     |> join(:left, [internal_transaction, transaction], block in assoc(transaction, :block))
     |> where_address_fields_match(direction, id)
     |> where(
-      [it],
+      [_it, t],
       fragment(
-        """
-        ? NOT IN (
-          SELECT min(it.id) FROM internal_transactions AS it
-          INNER JOIN transactions AS t ON t.id = it.transaction_id
-          WHERE it.value = t.value
-          AND it.from_address_id = t.from_address_id
-          AND it.to_address_id = t.to_address_id
-          GROUP BY t.id
-        )
-        """,
-        it.id
+        "(SELECT COUNT(sibling.id) FROM internal_transactions as sibling WHERE sibling.transaction_id = ?) > 1",
+        t.id
       )
     )
     |> order_by([it, transaction, block], desc: block.number, desc: transaction.transaction_index, desc: it.index)
     |> preload(transaction: :block)
     |> join_associations(necessity_by_association)
-    |> Repo.all()
+    |> Repo.paginate(pagination)
   end
 
   @doc """
