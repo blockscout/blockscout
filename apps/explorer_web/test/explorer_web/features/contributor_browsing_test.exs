@@ -210,16 +210,6 @@ defmodule ExplorerWeb.UserListTest do
       |> assert_has(css(".transaction__item", text: "38 years ago"))
     end
 
-    test "can see internal transactions for a transaction", %{
-      session: session,
-      internal: internal
-    } do
-      session
-      |> visit("/en/transactions/0xSk8")
-      |> click(link("Internal Transactions"))
-      |> assert_has(css(".internal-transaction__table", text: internal.call_type))
-    end
-
     test "can view a transaction's logs", %{session: session} do
       session
       |> visit("/en/transactions/0xSk8")

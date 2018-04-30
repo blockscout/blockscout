@@ -418,43 +418,34 @@ defmodule Explorer.Chain do
   @doc """
   `t:Explorer.Chain.InternalTransaction/0`s in `t:Explorer.Chain.Transaction.t/0` with `hash`
 
-  This function excludes any "representative" internal transactions, where the internal transaction is a mirror of the
-  parent transaction's value, to, and from addresses. In the case of multiple internal transactions that have the same
-  value, to, and from address, it excludes the internal transaction with the lowest id.
+  This function excludes any internal transactions that have no siblings within the parent transaction.
 
   ## Options
 
   * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
       then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
+  * `:pagination` - pagination params to pass to scrivener.
 
   """
   @spec transaction_hash_to_internal_transactions(Transaction.hash()) :: [InternalTransaction.t()]
   def transaction_hash_to_internal_transactions(hash, options \\ [])
       when is_binary(hash) and is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    pagination = Keyword.get(options, :pagination, %{})
 
     InternalTransaction
     |> for_parent_transaction(hash)
     |> join_associations(necessity_by_association)
     |> where(
-      [it],
+      [_it, t],
       fragment(
-        """
-        ? NOT IN (
-          SELECT min(it.id) FROM internal_transactions AS it
-          INNER JOIN transactions AS t ON t.id = it.transaction_id
-          WHERE it.value = t.value
-          AND it.from_address_id = t.from_address_id
-          AND it.to_address_id = t.to_address_id
-          GROUP BY t.id
-        )
-        """,
-        it.id
+        "(SELECT COUNT(sibling.id) FROM internal_transactions as sibling WHERE sibling.transaction_id = ?) > 1",
+        t.id
       )
     )
     |> order_by(:index)
-    |> Repo.all()
+    |> Repo.paginate(pagination)
   end
 
   @doc """
