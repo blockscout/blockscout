@@ -89,6 +89,7 @@ defmodule Explorer.Chain.InternalTransaction do
   def changeset(%__MODULE__{} = internal_transaction, attrs \\ %{}) do
     internal_transaction
     |> cast(attrs, ~w(type)a)
+    |> validate_required(~w(type)a)
     |> type_changeset(attrs)
   end
 
@@ -138,6 +139,8 @@ defmodule Explorer.Chain.InternalTransaction do
     |> foreign_key_constraint(:transaction_hash)
     |> unique_constraint(:index)
   end
+
+  defp type_changeset(changeset, _, nil), do: changeset
 
   defp validate_disallowed(changeset, field, named_arguments) when is_atom(field) do
     case get_field(changeset, field) do

@@ -106,14 +106,16 @@ defmodule ExplorerWeb.TransactionControllerTest do
     end
 
     test "returns internal transactions for the transaction", %{conn: conn} do
-      transaction = insert(:transaction)
-      internal_transaction = insert(:internal_transaction, transaction_hash: transaction.hash)
+      block = insert(:block)
+      transaction = insert(:transaction, block_hash: block.hash, index: 0)
+      receipt = insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
+      internal_transaction = insert(:internal_transaction, transaction_hash: receipt.transaction_hash, index: 0)
 
       path = transaction_path(ExplorerWeb.Endpoint, :show, :en, transaction)
 
       conn = get(conn, path)
 
-      first_internal_transaction = List.first(conn.assigns.internal_transactions)
+      assert [first_internal_transaction] = conn.assigns.internal_transactions
 
       assert conn.assigns.transaction.hash == transaction.hash
       assert first_internal_transaction.id == internal_transaction.id

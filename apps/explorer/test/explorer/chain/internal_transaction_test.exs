@@ -19,6 +19,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
           to_address_hash: "0x6295ee1b4f6dd65047762f924ecd367c17eabf8f",
           trace_address: [0, 1],
           transaction_hash: transaction.hash,
+          type: "call",
           value: 100
         })
 
@@ -43,7 +44,8 @@ defmodule Explorer.Chain.InternalTransactionTest do
           output: "munchos",
           trace_address: [0, 1],
           transaction: transaction,
-          value: 100
+          type: "call",
+          value: 100,
         })
 
       assert Repo.insert(changeset)

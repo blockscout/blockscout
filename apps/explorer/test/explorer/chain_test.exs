@@ -530,7 +530,7 @@ defmodule Explorer.ChainTest do
       block = insert(:block)
       transaction = insert(:transaction, block_hash: block.hash, index: 0)
       insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
-      logs = insert_list(2, :log, transaction_hash: transaction.hash)
+      logs = Enum.map(0..1, &insert(:log, index: &1, transaction_hash: transaction.hash))
 
       [%Log{id: first_log_id}, %Log{id: second_log_id}] = logs
 

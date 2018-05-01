@@ -63,9 +63,10 @@ defmodule Explorer.Factory do
       data: sequence("0x"),
       first_topic: nil,
       fourth_topic: nil,
-      index: sequence(""),
+      index: 0,
       second_topic: nil,
       third_topic: nil,
+      transaction_hash: insert(:transaction).hash,
       type: sequence("0x")
     }
   end
@@ -137,16 +138,21 @@ defmodule Explorer.Factory do
     gas = Enum.random(21_000..100_000)
     gas_used = Enum.random(0..gas)
 
+    block = insert(:block)
+    transaction = insert(:transaction, block_hash: block.hash, index: 0)
+    receipt = insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
+
     %InternalTransaction{
       created_contract_code: sequence("internal_transaction_created_contract_code", &integer_to_hexadecimal/1),
       created_contract_address_hash: insert(:address).hash,
       from_address_hash: insert(:address).hash,
       gas: gas,
       gas_used: gas_used,
+      index: 0,
       # caller MUST suppy `index`
       init: sequence("internal_transaction_init", &integer_to_hexadecimal/1),
       trace_address: [],
-      transaction_hash: insert(:transaction).hash,
+      transaction_hash: receipt.transaction_hash,
       type: type,
       value: sequence("internal_transaction_value", &Decimal.new(&1))
     }

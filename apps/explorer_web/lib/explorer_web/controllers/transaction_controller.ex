@@ -27,7 +27,7 @@ defmodule ExplorerWeb.TransactionController do
       internal_transactions =
         Chain.transaction_hash_to_internal_transactions(
           transaction.hash,
-          necessity_by_association: %{from_address: :required, to_address: :required}
+          necessity_by_association: %{from_address: :required, to_address: :optional}
         )
 
       max_block_number = Chain.max_block_number()
