@@ -1,7 +1,7 @@
 defmodule ExplorerWeb.BlockTransactionView do
   use ExplorerWeb, :view
 
-  alias ExplorerWeb.TransactionView
+  alias ExplorerWeb.{BlockView, TransactionView}
 
   # Functions
 
@@ -11,4 +11,6 @@ defmodule ExplorerWeb.BlockTransactionView do
   defdelegate status(transacton), to: TransactionView
   defdelegate to_address(transaction), to: TransactionView
   defdelegate value(transaction), to: TransactionView
+  defdelegate age(block), to: BlockView
+  defdelegate formatted_timestamp(block), to: BlockView
 end

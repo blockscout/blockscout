@@ -29,6 +29,18 @@ defmodule ExplorerWeb.TransactionView do
     end
   end
 
+  def fee(transaction) do
+    transaction
+    |> Chain.fee(:ether)
+    |> case do
+      {:actual, actual} ->
+        Cldr.Number.to_string!(actual, fractional_digits: 18)
+
+      {:maximum, maximum} ->
+        "<= " <> Cldr.Number.to_string!(maximum, fractional_digits: 18)
+    end
+  end
+
   def first_seen(%Transaction{inserted_at: inserted_at}) do
     Timex.from_now(inserted_at)
   end

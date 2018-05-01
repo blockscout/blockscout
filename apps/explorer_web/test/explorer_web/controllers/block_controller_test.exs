@@ -6,18 +6,10 @@ defmodule ExplorerWeb.BlockControllerTest do
   @locale "en"
 
   describe "GET show/2" do
-    test "without block", %{conn: conn} do
+    test "with block redirects to block transactions route", %{conn: conn} do
+      insert(:block, number: 3)
       conn = get(conn, "/en/blocks/3")
-
-      assert html_response(conn, 404)
-    end
-
-    test "with block returns a block", %{conn: conn} do
-      block = insert(:block)
-
-      conn = get(conn, block_path(conn, :show, @locale, block))
-
-      assert conn.assigns.block.hash == block.hash
+      assert redirected_to(conn) =~ "/en/blocks/3/transactions"
     end
   end
 

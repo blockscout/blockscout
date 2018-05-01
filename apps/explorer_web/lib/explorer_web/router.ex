@@ -55,17 +55,10 @@ defmodule ExplorerWeb.Router do
 
     resources "/addresses", AddressController, only: [:show] do
       resources(
-        "/transactions_to",
-        AddressTransactionToController,
+        "/transactions",
+        AddressTransactionController,
         only: [:index],
-        as: :transaction_to
-      )
-
-      resources(
-        "/transactions_from",
-        AddressTransactionFromController,
-        only: [:index],
-        as: :transaction_from
+        as: :transaction
       )
     end
 

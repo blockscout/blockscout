@@ -5,11 +5,26 @@
 .alert:empty { display: none; }
 
 /* This file is for your main application css. */
-$icon-font-path: "/fonts/"; /* use fonts from priv/static/fonts/ */
-@import "bootstrap";
-@import "explorer/sb-admin-2";
-@import "variables";
-@import "fonts";
-@import "typography";
+
+// Font Awesome
+@import "font-awesome";
+
+// Bootstrap Core CSS
+@import "node_modules/bootstrap/scss/functions";
+@import "theme/variables";
+@import "node_modules/bootstrap/scss/mixins";
+@import "node_modules/bootstrap/scss/root";
+@import "node_modules/bootstrap/scss/reboot";
+
+// Bootstrap Components
+@import "node_modules/bootstrap/scss/dropdown";
+@import "node_modules/bootstrap/scss/transitions";
+
+// Custom SCSS
+@import "explorer/wrapper";
+@import "theme/fonts";
 @import "utilities";
+@import "typography";
+@import "components/menu";
 @import "explorer/button";
+@import "explorer/filter";

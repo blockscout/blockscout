@@ -3,7 +3,7 @@ defmodule Explorer.Chain do
   The chain context.
   """
 
-  import Ecto.Query, only: [from: 2, order_by: 2, preload: 2, where: 2, where: 3]
+  import Ecto.Query, only: [from: 2, or_where: 3, order_by: 2, preload: 2, where: 2]
 
   alias Ecto.{Changeset, Multi}
   alias Explorer.Chain.{Address, Block, Hash, InternalTransaction, Log, Receipt, Transaction, Wei}
@@ -15,6 +15,8 @@ defmodule Explorer.Chain do
   The name of an association on the `t:Ecto.Schema.t/0`
   """
   @type association :: atom()
+
+  @type direction :: :from | :to
 
   @typedoc """
   * `:optional` - the association is optional and only needs to be loaded if available
@@ -34,6 +36,7 @@ defmodule Explorer.Chain do
   @type pagination :: map()
 
   @typep after_hash_option :: {:after_hash, Hash.t()}
+  @typep direction_option :: {:direction, direction}
   @typep inserted_after_option :: {:inserted_after, DateTime.t()}
   @typep necessity_by_association_option :: {:necessity_by_association, necessity_by_association}
   @typep pagination_option :: {:pagination, pagination}
@@ -41,6 +44,40 @@ defmodule Explorer.Chain do
   @typep timestamps_option :: {:timestamps, timestamps}
 
   # Functions
+  @doc """
+  `t:Explorer.Chain.Transaction/0`s from `address`.
+
+  ## Options
+
+  * `:direction` - if specified, will filter transactions by address type. If `:to` is specified, only transactions
+      where the "to" address matches will be returned. Likewise, if `:from` is specified, only transactions where the
+      "from" address matches will be returned. If :direction is omitted, transactions either to or from the address
+      will be returned.
+  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+      `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association, then the
+      `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
+  * `:pagination` - pagination params to pass to scrivener.
+
+  """
+  @spec address_to_transactions(Address.t(), [
+          direction_option | necessity_by_association_option | pagination_option
+        ]) :: %Scrivener.Page{entries: [Transaction.t()]}
+  def address_to_transactions(%Address{hash: hash}, options \\ []) when is_list(options) do
+    address_hash_to_transactions(hash, options)
+  end
+
+  @doc """
+  The `t:Explorer.Chain.Address.t/0` `balance` in `unit`.
+  """
+  @spec balance(Address.t(), :wei) :: Wei.t() | nil
+  @spec balance(Address.t(), :gwei) :: Wei.gwei() | nil
+  @spec balance(Address.t(), :ether) :: Wei.ether() | nil
+  def balance(%Address{balance: balance}, unit) do
+    case balance do
+      nil -> nil
+      _ -> Wei.to(balance, unit)
+    end
+  end
 
   @doc """
   The number of `t:Explorer.Chain.Block.t/0`.
@@ -146,26 +183,50 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  `t:Explorer.Chain.Transaction/0`s from `address`.
+  The fee a `transaction` paid for the `t:Explorer.Transaction.t/0` `gas`
 
-  ## Options
+  If the transaction is pending, then the fee will be a range of `unit`
 
-  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
-      `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association, then the
-      `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
-  * `:pagination` - pagination params to pass to scrivener.
+      iex> Explorer.Chain.fee(
+      ...>   %Explorer.Chain.Transaction{gas: Decimal.new(3), gas_price: Decimal.new(2), receipt: nil},
+      ...>   :wei
+      ...> )
+      {:maximum, Decimal.new(6)}
+
+  If the transaction has been confirmed in block, then the fee will be the actual fee paid in `unit` for the `gas_used`
+  in the `receipt`.
+
+      iex> Explorer.Chain.fee(
+      ...>   %Explorer.Chain.Transaction{
+      ...>     gas: Decimal.new(3),
+      ...>     gas_price: Decimal.new(2),
+      ...>     receipt: %Explorer.Chain.Receipt{gas_used: Decimal.new(2)}
+      ...>   },
+      ...>   :wei
+      ...> )
+      {:actual, Decimal.new(4)}
 
   """
-  @spec from_address_to_transactions(Address.t(), [
-          necessity_by_association_option | pagination_option
-        ]) :: %Scrivener.Page{entries: [Transaction.t()]}
-  def from_address_to_transactions(address = %Address{}, options \\ []) when is_list(options) do
-    address_to_transactions(address, Keyword.put(options, :direction, :from))
+  @spec fee(%Transaction{receipt: nil}, :ether | :gwei | :wei) :: {:maximum, Decimal.t()}
+  def fee(%Transaction{gas: gas, gas_price: gas_price, receipt: nil}, unit) do
+    fee =
+      gas
+      |> Decimal.mult(gas_price)
+      |> Wei.to(unit)
+
+    {:maximum, fee}
   end
 
-  @doc """
-  TODO
-  """
+  @spec fee(%Transaction{receipt: Receipt.t()}, :ether | :gwei | :wei) :: {:actual, Decimal.t()}
+  def fee(%Transaction{gas_price: gas_price, receipt: %Receipt{gas_used: gas_used}}, unit) do
+    fee =
+      gas_used
+      |> Decimal.mult(gas_price)
+      |> Wei.to(unit)
+
+    {:actual, fee}
+  end
+
   def get_latest_block do
     Repo.one(from(b in Block, limit: 1, order_by: [desc: b.number]))
   end
@@ -407,7 +468,7 @@ defmodule Explorer.Chain do
 
   * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.Block.t/0` has no associated record for that association, then the
-      `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
+      `t:Explorer.Chain.Block.t/0` will not be included in the page `entries`.
   * `:pagination` - pagination params to pass to scrivener.
 
   """
@@ -476,11 +537,22 @@ defmodule Explorer.Chain do
 
   @doc """
   Finds `t:Explorer.Chain.Block.t/0` with `number`
+
+  ## Options
+
+  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+      `:required`, and the `t:Explorer.Chain.Block.t/0` has no associated record for that association, then the
+      `t:Explorer.Chain.Block.t/0` will not be included in the page `entries`.
+
   """
-  @spec number_to_block(Block.block_number()) :: {:ok, Block.t()} | {:error, :not_found}
-  def number_to_block(number) do
+  @spec number_to_block(Block.block_number(), [necessity_by_association_option]) ::
+          {:ok, Block.t()} | {:error, :not_found}
+  def number_to_block(number, options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
     Block
     |> where(number: ^number)
+    |> join_associations(necessity_by_association)
     |> Repo.one()
     |> case do
       nil -> {:error, :not_found}
@@ -867,15 +939,16 @@ defmodule Explorer.Chain do
 
   ## Private Functions
 
-  defp address_hash_to_transaction(
+  defp address_hash_to_transactions(
          %Hash{byte_count: unquote(Hash.Truncated.byte_count())} = address_hash,
          named_arguments
        )
        when is_list(named_arguments) do
-    field =
-      case Keyword.fetch!(named_arguments, :direction) do
-        :to -> :to_address_hash
-        :from -> :from_address_hash
+    address_fields =
+      case Keyword.get(named_arguments, :direction) do
+        :to -> [:to_address_hash]
+        :from -> [:from_address_hash]
+        nil -> [:from_address_hash, :to_address_hash]
       end
 
     necessity_by_association = Keyword.get(named_arguments, :necessity_by_association, %{})
@@ -883,13 +956,9 @@ defmodule Explorer.Chain do
 
     Transaction
     |> join_associations(necessity_by_association)
-    |> chronologically()
-    |> where([t], field(t, ^field) == ^address_hash)
+    |> reverse_chronologically()
+    |> where_address_fields_match(address_fields, address_hash)
     |> Repo.paginate(pagination)
-  end
-
-  defp address_to_transactions(%Address{hash: address_hash}, options) when is_list(options) do
-    address_hash_to_transaction(address_hash, options)
   end
 
   defp after_hash(query, options) do
@@ -927,10 +996,6 @@ defmodule Explorer.Chain do
       end)
 
     {status, Enum.reverse(acc)}
-  end
-
-  defp chronologically(query) do
-    from(q in query, order_by: [desc: q.inserted_at, desc: q.hash])
   end
 
   defp ecto_schema_module_changes_list_to_address_hash_set({ecto_schema_module, changes_list}) do
@@ -1116,6 +1181,10 @@ defmodule Explorer.Chain do
     end)
   end
 
+  defp reverse_chronologically(query) do
+    from(q in query, order_by: [desc: q.inserted_at, desc: q.hash])
+  end
+
   defp timestamp_params(changes, timestamps) when is_map(changes) do
     Map.merge(changes, timestamps)
   end
@@ -1145,6 +1214,12 @@ defmodule Explorer.Chain do
     query
     |> join_associations(necessity_by_association)
     |> Repo.paginate(pagination)
+  end
+
+  defp where_address_fields_match(query, address_fields, address_hash) do
+    Enum.reduce(address_fields, query, fn field, query ->
+      or_where(query, [t], field(t, ^field) == ^address_hash)
+    end)
   end
 
   defp where_pending(query, options) when is_list(options) do

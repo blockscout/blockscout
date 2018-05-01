@@ -26,6 +26,7 @@ config :explorer_web, ExplorerWeb.Endpoint,
   secret_key_base: System.get_env("SECRET_KEY_BASE"),
   url: [
     scheme: "https",
-    host: Map.fetch!(System.get_env(), "HEROKU_APP_NAME") <> ".herokuapp.com",
+    # TODO update before prod push
+    host: "",
     port: 443
   ]

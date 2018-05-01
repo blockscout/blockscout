@@ -10,6 +10,173 @@ defmodule Explorer.ChainTest do
 
   # Tests
 
+  describe "address_to_transactions/2" do
+    test "without transactions" do
+      address = insert(:address)
+
+      assert Repo.aggregate(Transaction, :count, :hash) == 0
+
+      assert %Scrivener.Page{
+               entries: [],
+               page_number: 1,
+               total_entries: 0
+             } = Chain.address_to_transactions(address)
+    end
+
+    test "with from transactions" do
+      %Transaction{from_address_hash: from_address_hash, hash: transaction_hash} = insert(:transaction)
+      address = Repo.get!(Address, from_address_hash)
+
+      assert %Scrivener.Page{
+               entries: [%Transaction{hash: ^transaction_hash}],
+               page_number: 1,
+               total_entries: 1
+             } = Chain.address_to_transactions(address, direction: :from)
+    end
+
+    test "with to transactions" do
+      %Transaction{to_address_hash: to_address_hash, hash: transaction_hash} = insert(:transaction)
+      address = Repo.get!(Address, to_address_hash)
+
+      assert %Scrivener.Page{
+               entries: [%Transaction{hash: ^transaction_hash}],
+               page_number: 1,
+               total_entries: 1
+             } = Chain.address_to_transactions(address, direction: :to)
+    end
+
+    test "with to and from transactions and direction: :from" do
+      %Transaction{from_address_hash: address_hash, hash: from_transaction_hash} = insert(:transaction)
+      %Transaction{} = insert(:transaction, to_address_hash: address_hash)
+      address = Repo.get!(Address, address_hash)
+
+      # only contains "from" transaction
+      assert %Scrivener.Page{
+               entries: [%Transaction{hash: ^from_transaction_hash}],
+               page_number: 1,
+               total_entries: 1
+             } = Chain.address_to_transactions(address, direction: :from)
+    end
+
+    test "with to and from transactions and direction: :to" do
+      %Transaction{from_address_hash: address_hash} = insert(:transaction)
+      %Transaction{hash: to_transaction_hash} = insert(:transaction, to_address_hash: address_hash)
+      address = Repo.get!(Address, address_hash)
+
+      # only contains "to" transaction
+      assert %Scrivener.Page{
+               entries: [%Transaction{hash: ^to_transaction_hash}],
+               page_number: 1,
+               total_entries: 1
+             } = Chain.address_to_transactions(address, direction: :to)
+    end
+
+    test "with to and from transactions and no :direction option" do
+      %Transaction{from_address_hash: address_hash, hash: from_transaction_hash} = insert(:transaction)
+      %Transaction{hash: to_transaction_hash} = insert(:transaction, to_address_hash: address_hash)
+      address = Repo.get!(Address, address_hash)
+
+      # only contains "to" transaction
+      assert %Scrivener.Page{
+               entries: [
+                 %Transaction{hash: ^to_transaction_hash},
+                 %Transaction{hash: ^from_transaction_hash}
+               ],
+               page_number: 1,
+               total_entries: 2
+             } = Chain.address_to_transactions(address)
+    end
+
+    test "with transactions with receipt required without receipt does not return transaction" do
+      address = %Address{hash: to_address_hash} = insert(:address)
+
+      block = insert(:block)
+
+      %Transaction{hash: transaction_hash_with_receipt, index: transaction_index_with_receipt} =
+        insert(:transaction, block_hash: block.hash, index: 0, to_address_hash: to_address_hash)
+
+      insert(
+        :receipt,
+        transaction_hash: transaction_hash_with_receipt,
+        transaction_index: transaction_index_with_receipt
+      )
+
+      %Transaction{hash: transaction_hash_without_receipt} = insert(:transaction, to_address_hash: to_address_hash)
+
+      assert %Scrivener.Page{
+               entries: [%Transaction{hash: ^transaction_hash_with_receipt, receipt: %Receipt{}}],
+               page_number: 1,
+               total_entries: 1
+             } =
+               Chain.address_to_transactions(
+                 address,
+                 necessity_by_association: %{receipt: :required}
+               )
+
+      assert %Scrivener.Page{
+               entries: transactions,
+               page_number: 1,
+               total_entries: 2
+             } =
+               Chain.address_to_transactions(
+                 address,
+                 necessity_by_association: %{receipt: :optional}
+               )
+
+      assert length(transactions) == 2
+
+      transaction_by_hash =
+        Enum.into(transactions, %{}, fn transaction = %Transaction{hash: hash} ->
+          {hash, transaction}
+        end)
+
+      assert %Transaction{receipt: %Receipt{}} = transaction_by_hash[transaction_hash_with_receipt]
+      assert %Transaction{receipt: nil} = transaction_by_hash[transaction_hash_without_receipt]
+    end
+
+    test "with transactions can be paginated" do
+      adddress = %Address{hash: to_address_hash} = insert(:address)
+      transactions = insert_list(2, :transaction, to_address_hash: to_address_hash)
+
+      [%Transaction{hash: oldest_transaction_hash}, %Transaction{hash: newest_transaction_hash}] = transactions
+
+      assert %Scrivener.Page{
+               entries: [%Transaction{hash: ^newest_transaction_hash}],
+               page_number: 1,
+               page_size: 1,
+               total_entries: 2,
+               total_pages: 2
+             } = Chain.address_to_transactions(adddress, pagination: %{page_size: 1})
+
+      assert %Scrivener.Page{
+               entries: [%Transaction{hash: ^oldest_transaction_hash}],
+               page_number: 2,
+               page_size: 1,
+               total_entries: 2,
+               total_pages: 2
+             } = Chain.address_to_transactions(adddress, pagination: %{page: 2, page_size: 1})
+    end
+  end
+
+  describe "balance/2" do
+    test "with Address.t with :wei" do
+      assert Chain.balance(%Address{balance: Decimal.new(1)}, :wei) == Decimal.new(1)
+      assert Chain.balance(%Address{balance: nil}, :wei) == nil
+    end
+
+    test "with Address.t with :gwei" do
+      assert Chain.balance(%Address{balance: Decimal.new(1)}, :gwei) == Decimal.new("1e-9")
+      assert Chain.balance(%Address{balance: Decimal.new("1e9")}, :gwei) == Decimal.new(1)
+      assert Chain.balance(%Address{balance: nil}, :gwei) == nil
+    end
+
+    test "with Address.t with :ether" do
+      assert Chain.balance(%Address{balance: Decimal.new(1)}, :ether) == Decimal.new("1e-18")
+      assert Chain.balance(%Address{balance: Decimal.new("1e18")}, :ether) == Decimal.new(1)
+      assert Chain.balance(%Address{balance: nil}, :ether) == nil
+    end
+  end
+
   describe "block_to_transactions/1" do
     test "without transactions" do
       block = insert(:block)
@@ -138,6 +305,56 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "fee/2" do
+    test "without receipt with :wei unit" do
+      assert Chain.fee(%Transaction{gas: Decimal.new(3), gas_price: Decimal.new(2), receipt: nil}, :wei) ==
+               {:maximum, Decimal.new(6)}
+    end
+
+    test "without receipt with :gwei unit" do
+      assert Chain.fee(%Transaction{gas: Decimal.new(3), gas_price: Decimal.new(2), receipt: nil}, :gwei) ==
+               {:maximum, Decimal.new("6e-9")}
+    end
+
+    test "without receipt with :ether unit" do
+      assert Chain.fee(%Transaction{gas: Decimal.new(3), gas_price: Decimal.new(2), receipt: nil}, :ether) ==
+               {:maximum, Decimal.new("6e-18")}
+    end
+
+    test "with receipt with :wei unit" do
+      assert Chain.fee(
+               %Transaction{
+                 gas: Decimal.new(3),
+                 gas_price: Decimal.new(2),
+                 receipt: %Receipt{gas_used: Decimal.new(2)}
+               },
+               :wei
+             ) == {:actual, Decimal.new(4)}
+    end
+
+    test "with receipt with :gwei unit" do
+      assert Chain.fee(
+               %Transaction{
+                 gas: Decimal.new(3),
+                 gas_price: Decimal.new(2),
+                 receipt: %Receipt{gas_used: Decimal.new(2)}
+               },
+               :gwei
+             ) == {:actual, Decimal.new("4e-9")}
+    end
+
+    test "with receipt with :ether unit" do
+      assert Chain.fee(
+               %Transaction{
+                 gas: Decimal.new(3),
+                 gas_price: Decimal.new(2),
+                 receipt: %Receipt{gas_used: Decimal.new(2)}
+               },
+               :ether
+             ) == {:actual, Decimal.new("4e-18")}
+    end
+  end
+
   describe "gas_price/2" do
     test ":wei unit" do
       assert Chain.gas_price(%Transaction{gas_price: Decimal.new(1)}, :wei) == Decimal.new(1)
@@ -153,101 +370,6 @@ defmodule Explorer.ChainTest do
       assert Chain.gas_price(%Transaction{gas_price: Decimal.new(1)}, :ether) == Decimal.new("1e-18")
 
       assert Chain.gas_price(%Transaction{gas_price: Decimal.new("1e18")}, :ether) == Decimal.new(1)
-    end
-  end
-
-  describe "from_address_to_transactions/2" do
-    test "without transactions" do
-      address = insert(:address)
-
-      assert Repo.aggregate(Transaction, :count, :hash) == 0
-
-      assert %Scrivener.Page{
-               entries: [],
-               page_number: 1,
-               total_entries: 0
-             } = Chain.from_address_to_transactions(address)
-    end
-
-    test "with transactions" do
-      %Transaction{from_address_hash: from_address_hash, hash: transaction_hash} = insert(:transaction)
-      address = Repo.get!(Address, from_address_hash)
-
-      assert %Scrivener.Page{
-               entries: [%Transaction{hash: ^transaction_hash}],
-               page_number: 1,
-               total_entries: 1
-             } = Chain.from_address_to_transactions(address)
-    end
-
-    test "with transactions with receipt required without receipt does not return transaction" do
-      address = %Address{hash: from_address_hash} = insert(:address)
-
-      block = insert(:block)
-
-      %Transaction{hash: transaction_hash_with_receipt, index: transaction_index_with_receipt} =
-        insert(:transaction, block_hash: block.hash, index: 0, from_address_hash: from_address_hash)
-
-      insert(
-        :receipt,
-        transaction_hash: transaction_hash_with_receipt,
-        transaction_index: transaction_index_with_receipt
-      )
-
-      %Transaction{hash: transaction_hash_without_receipt} = insert(:transaction, from_address_hash: from_address_hash)
-
-      assert %Scrivener.Page{
-               entries: [%Transaction{hash: ^transaction_hash_with_receipt, receipt: %Receipt{}}],
-               page_number: 1,
-               total_entries: 1
-             } =
-               Chain.from_address_to_transactions(
-                 address,
-                 necessity_by_association: %{receipt: :required}
-               )
-
-      assert %Scrivener.Page{
-               entries: transactions,
-               page_number: 1,
-               total_entries: 2
-             } =
-               Chain.from_address_to_transactions(
-                 address,
-                 necessity_by_association: %{receipt: :optional}
-               )
-
-      assert length(transactions) == 2
-
-      transaction_by_hash =
-        Enum.into(transactions, %{}, fn transaction = %Transaction{hash: hash} ->
-          {hash, transaction}
-        end)
-
-      assert %Transaction{receipt: %Receipt{}} = transaction_by_hash[transaction_hash_with_receipt]
-      assert %Transaction{receipt: nil} = transaction_by_hash[transaction_hash_without_receipt]
-    end
-
-    test "with transactions can be paginated" do
-      adddress = %Address{hash: from_address_hash} = insert(:address)
-      transactions = insert_list(2, :transaction, from_address_hash: from_address_hash)
-
-      [%Transaction{hash: oldest_transaction_hash}, %Transaction{hash: newest_transaction_hash}] = transactions
-
-      assert %Scrivener.Page{
-               entries: [%Transaction{hash: ^newest_transaction_hash}],
-               page_number: 1,
-               page_size: 1,
-               total_entries: 2,
-               total_pages: 2
-             } = Chain.from_address_to_transactions(adddress, pagination: %{page_size: 1})
-
-      assert %Scrivener.Page{
-               entries: [%Transaction{hash: ^oldest_transaction_hash}],
-               page_number: 2,
-               page_size: 1,
-               total_entries: 2,
-               total_pages: 2
-             } = Chain.from_address_to_transactions(adddress, pagination: %{page: 2, page_size: 1})
     end
   end
 
@@ -349,101 +471,6 @@ defmodule Explorer.ChainTest do
       %Block{number: number} = insert(:block)
 
       assert {:ok, %Block{number: ^number}} = Chain.number_to_block(number)
-    end
-  end
-
-  describe "to_address_to_transactions/2" do
-    test "without transactions" do
-      address = insert(:address)
-
-      assert Repo.aggregate(Transaction, :count, :hash) == 0
-
-      assert %Scrivener.Page{
-               entries: [],
-               page_number: 1,
-               total_entries: 0
-             } = Chain.to_address_to_transactions(address)
-    end
-
-    test "with transactions" do
-      %Transaction{to_address_hash: to_address_hash, hash: transaction_hash} = insert(:transaction)
-      address = Repo.get!(Address, to_address_hash)
-
-      assert %Scrivener.Page{
-               entries: [%Transaction{hash: ^transaction_hash}],
-               page_number: 1,
-               total_entries: 1
-             } = Chain.to_address_to_transactions(address)
-    end
-
-    test "with transactions with receipt required without receipt does not return transaction" do
-      address = %Address{hash: to_address_hash} = insert(:address)
-
-      block = insert(:block)
-
-      %Transaction{hash: transaction_hash_with_receipt, index: transaction_index_with_receipt} =
-        insert(:transaction, block_hash: block.hash, index: 0, to_address_hash: to_address_hash)
-
-      insert(
-        :receipt,
-        transaction_hash: transaction_hash_with_receipt,
-        transaction_index: transaction_index_with_receipt
-      )
-
-      %Transaction{hash: transaction_hash_without_receipt} = insert(:transaction, to_address_hash: to_address_hash)
-
-      assert %Scrivener.Page{
-               entries: [%Transaction{hash: ^transaction_hash_with_receipt, receipt: %Receipt{}}],
-               page_number: 1,
-               total_entries: 1
-             } =
-               Chain.to_address_to_transactions(
-                 address,
-                 necessity_by_association: %{receipt: :required}
-               )
-
-      assert %Scrivener.Page{
-               entries: transactions,
-               page_number: 1,
-               total_entries: 2
-             } =
-               Chain.to_address_to_transactions(
-                 address,
-                 necessity_by_association: %{receipt: :optional}
-               )
-
-      assert length(transactions) == 2
-
-      transaction_by_hash =
-        Enum.into(transactions, %{}, fn transaction = %Transaction{hash: hash} ->
-          {hash, transaction}
-        end)
-
-      assert %Transaction{receipt: %Receipt{}} = transaction_by_hash[transaction_hash_with_receipt]
-      assert %Transaction{receipt: nil} = transaction_by_hash[transaction_hash_without_receipt]
-    end
-
-    test "with transactions can be paginated" do
-      adddress = %Address{hash: to_address_hash} = insert(:address)
-      transactions = insert_list(2, :transaction, to_address_hash: to_address_hash)
-
-      [%Transaction{hash: oldest_transaction_hash}, %Transaction{hash: newest_transaction_hash}] = transactions
-
-      assert %Scrivener.Page{
-               entries: [%Transaction{hash: ^newest_transaction_hash}],
-               page_number: 1,
-               page_size: 1,
-               total_entries: 2,
-               total_pages: 2
-             } = Chain.to_address_to_transactions(adddress, pagination: %{page_size: 1})
-
-      assert %Scrivener.Page{
-               entries: [%Transaction{hash: ^oldest_transaction_hash}],
-               page_number: 2,
-               page_size: 1,
-               total_entries: 2,
-               total_pages: 2
-             } = Chain.to_address_to_transactions(adddress, pagination: %{page: 2, page_size: 1})
     end
   end
 

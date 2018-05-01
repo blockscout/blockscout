@@ -3,24 +3,32 @@
   background: explorer-color("gray", "50");
   box-shadow: 0 2px 2px 0 rgba(explorer-color("slate", "900"), 0.16),
               0 0px 2px 0 rgba(explorer-color("slate", "900"), 0.12);
-  position: fixed;
   top: 0;
   left: 0;
   right: 0;
+  width: 100%;
 
-  &__container { width: 100%; }
-  &__row { vertical-align: middle; }
+  &__container {
+    margin-top: 7px;
+  }
+
+  &__row {
+    vertical-align: middle;
+    display: flex;
+  }
+
   &__cell {
-    @extend %explorer-header-height;
-    &--logo { @extend %explorer-header-square-width; }
-    &--links {
-      display: flex;
-      flex-direction: row-reverse;
-      padding-right: explorer-size(0);
-    }
+     &--links {
+       display: flex;
+       flex-direction: row-reverse;
+       padding-right: explorer-size(0);
+     }
+
+
     &--search {
       @include explorer-typography("body1");
-      padding-left: explorer-size(0);
+      padding-left: 8px;
+      width: 90%;
     }
 
     &--search-form {
@@ -31,7 +39,7 @@
       height: 16px;
       width: 16px;
       position: absolute;
-      top: 14px;
+      top: 18px;
       left: 16px;
       opacity: 0.5;
     }
@@ -40,65 +48,17 @@
       width: 100%;
       border: none;
       background-color: transparent;
-      height: explorer-size(1);
-      padding-left: explorer-size(1);
-      padding-right: explorer-size(-1);
+      height: 50px;
+      padding-left: 45px;
+
+      @media (max-width: 768px) {
+        width: 90%;
+        padding-top: 5px;
+      }
     }
 
     &--search-input[placeholder] {
       text-overflow: ellipsis;
+      }
     }
   }
-
-  &__logo-link {
-    @extend %explorer-header-height;
-    @extend %explorer-header-square-width;
-    display: flex;
-    background: explorer-color("blue", "500");
-    align-items: center;
-    justify-content: center;
-  }
-
-  &__logo {
-    width: 32px;
-    height: 36px;
-    display: block;
-  }
-
-  &__link {
-    @extend %explorer-header-height;
-    display: block;
-    text-decoration: none;
-    border-top: explorer-size(-4) solid transparent;
-    border-left: explorer-size(-4) solid transparent;
-    border-right: explorer-size(-4) solid transparent;
-    padding: explorer-size(-3);
-    color: explorer-color("slate", "900");
-
-    &:hover {
-      border-top-color: explorer-color("blue", "500");
-      color: explorer-color("blue", "500");
-    }
-
-    & + & { margin-right: explorer-size(-2); }
-    &--optional { display: none; }
-  }
-
-  &__link-name {
-    @include explorer-typography("body1");
-    margin-left: explorer-size(-3);
-  }
-
-  &__link-image, &__link-name {
-    display: inline-block;
-    vertical-align: middle;
-  }
-}
-
-@media (min-width: $explorer-breakpoint-sm) {
-  .header {
-    &__link {
-      &--optional { display: block; }
-    }
-  }
-}

@@ -1,17 +1,13 @@
 
 body {
-  color: $ma-grey;
-  font-family: $ma-body-sans-serif;
+  color: $gray-500;
+  font-family: $font-family-sans-serif;
 }
 
 
 h1 {
   font-size: 28px;
-  font-family: $ma-sans-serif;
-
-  @media screen and (max-width: 768px) {
-    font-size: 22px;
-   }
+  font-family: $font-family-sans-serif;
 }
 
 h2 {
@@ -28,7 +24,7 @@ h4 {
   font-size: 16px !important;
   line-height: 24px !important;
   font-weight: 300 !important;
-  color: $ma-md-grey !important;
+  color: $gray-600 !important;
   margin-top: 4px !important;
 
   &.underline {
@@ -38,30 +34,20 @@ h4 {
 
 p {
   font-size: 12px;
-  color: $ma-md-grey;
+  color: $gray-600;
 
   @media screen and (max-width: 768px) {
     font-size: 14px !important;
    }
 }
 
-.special {
-  font-size: 11px;
-  font-style: italic;
-}
-
-
 a {
   text-decoration: none;
-  color: $ma-teal;
+  color: $gray-800;
   font-size: 12px;
 
   &:hover,
   &:focus {
     text-decoration: none;
   }
-}
-
-.support {
-  font-size: 15px !important;
 }

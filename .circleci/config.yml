@@ -158,13 +158,8 @@ jobs:
           fingerprints:
             - "c4:fd:a8:f8:48:a8:09:e5:3e:be:30:62:4d:6f:6f:36"
 
-      - run:
-          name: Setup Heroku
-          command: bash .circleci/setup-heroku.sh
+      # TODO update for deployment to AWS
 
-      - run:
-          name: Deploy Production to Heroku
-          command: bin/deploy poa-explorer-production
   deploy_staging:
     docker:
       # Ensure .tool-versions matches
@@ -182,13 +177,7 @@ jobs:
           fingerprints:
             - "c4:fd:a8:f8:48:a8:09:e5:3e:be:30:62:4d:6f:6f:36"
 
-      - run:
-          name: Setup Heroku
-          command: bash .circleci/setup-heroku.sh
-
-      - run:
-          name: Deploy Staging to Heroku
-          command: bin/deploy poa-explorer-staging
+      # TODO update for deployment to AWS
   dialyzer:
     docker:
       # Ensure .tool-versions matches

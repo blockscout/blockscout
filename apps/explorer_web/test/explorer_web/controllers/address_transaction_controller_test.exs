@@ -1,24 +1,25 @@
-defmodule ExplorerWeb.AddressTransactionFromControllerTest do
+defmodule ExplorerWeb.AddressTransactionControllerTest do
   use ExplorerWeb.ConnCase
 
-  import ExplorerWeb.Router.Helpers, only: [address_transaction_from_path: 4]
+  import ExplorerWeb.Router.Helpers, only: [address_transaction_path: 4]
 
   describe "GET index/2" do
     test "without address", %{conn: conn} do
-      conn = get(conn, address_transaction_from_path(conn, :index, :en, "unknown"))
+      conn = get(conn, address_transaction_path(conn, :index, :en, "unknown"))
 
       assert html_response(conn, 404)
     end
 
-    test "returns transactions from this address", %{conn: conn} do
+    test "returns transactions to this address", %{conn: conn} do
       address = insert(:address)
       block = insert(:block)
-      transaction = insert(:transaction, block_hash: block.hash, from_address_hash: address.hash, index: 0)
+      transaction = insert(:transaction, block_hash: block.hash, index: 0, to_address_hash: address.hash)
       insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
 
-      conn = get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
+      conn = get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address))
 
       assert html = html_response(conn, 200)
+      assert html |> Floki.find("tbody tr") |> length == 1
 
       transaction_hash_divs = Floki.find(html, "td.transactions__column--hash div.transactions__hash a")
 
@@ -29,24 +30,31 @@ defmodule ExplorerWeb.AddressTransactionFromControllerTest do
              ]
     end
 
-    test "does not return transactions to this address", %{conn: conn} do
+    test "does not return transactions from this address", %{conn: conn} do
       block = insert(:block)
       transaction = insert(:transaction, block_hash: block.hash, index: 0)
       insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
       address = insert(:address)
 
-      conn = get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
+      conn = get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address))
 
       assert html = html_response(conn, 200)
       assert html |> Floki.find("tbody tr") |> length == 0
     end
 
     test "does not return related transactions without a receipt", %{conn: conn} do
-      block = insert(:block)
-      insert(:transaction, block_hash: block.hash, index: 0)
       address = insert(:address)
+      block = insert(:block)
 
-      conn = get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
+      insert(
+        :transaction,
+        block_hash: block.hash,
+        from_address_hash: address.hash,
+        index: 0,
+        to_address_hash: address.hash
+      )
+
+      conn = get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address))
 
       assert html = html_response(conn, 200)
       assert html |> Floki.find("tbody tr") |> length == 0
@@ -58,19 +66,19 @@ defmodule ExplorerWeb.AddressTransactionFromControllerTest do
       insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
       address = insert(:address)
 
-      conn = get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
+      conn = get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address), filter: "from")
 
       assert html = html_response(conn, 200)
       assert html |> Floki.find("tbody tr") |> length == 0
     end
 
     test "does not return related transactions without a to address", %{conn: conn} do
-      block = insert(:block)
-      transaction = insert(:transaction, block_hash: block.hash, index: 0)
-      insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
       address = insert(:address)
+      block = insert(:block)
+      transaction = insert(:transaction, block_hash: block.hash, index: 0, from_address_hash: address.hash, index: 0)
+      insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
 
-      conn = get(conn, address_transaction_from_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
+      conn = get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address), filter: "to")
 
       assert html = html_response(conn, 200)
       assert html |> Floki.find("tbody tr") |> length == 0
