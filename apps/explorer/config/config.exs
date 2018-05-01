@@ -8,7 +8,9 @@ use Mix.Config
 config :ethereumex, url: "http://localhost:8545"
 
 # General application configuration
-config :explorer, ecto_repos: [Explorer.Repo]
+config :explorer,
+  ecto_repos: [Explorer.Repo],
+  coin: "POA"
 
 config :explorer, :ethereum, backend: Explorer.Ethereum.Live
 
