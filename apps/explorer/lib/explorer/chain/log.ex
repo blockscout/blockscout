@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Log do
 
   alias Explorer.Chain.{Address, Hash, Receipt}
 
-  @required_attrs ~w(address_hash data index type)a
+  @required_attrs ~w(address_hash data index transaction_hash type)a
   @optional_attrs ~w(first_topic second_topic third_topic fourth_topic)a
 
   schema "logs" do
@@ -20,7 +20,7 @@ defmodule Explorer.Chain.Log do
     timestamps()
 
     belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Truncated)
-    belongs_to(:receipt, Receipt)
+    belongs_to(:receipt, Receipt, foreign_key: :transaction_hash, references: :transaction_hash, type: Hash.Full)
     has_one(:transaction, through: [:receipt, :transaction])
   end
 
@@ -31,5 +31,9 @@ defmodule Explorer.Chain.Log do
     |> cast_assoc(:address)
     |> cast_assoc(:receipt)
     |> validate_required(@required_attrs)
+  end
+
+  def changes_to_address_hash_set(%{address_hash: address_hash}) do
+    MapSet.new([address_hash])
   end
 end

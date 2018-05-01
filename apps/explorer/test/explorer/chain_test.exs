@@ -25,7 +25,7 @@ defmodule Explorer.ChainTest do
 
     test "with transactions" do
       block = insert(:block)
-      %Transaction{hash: transaction_hash} = insert(:transaction, block_hash: block.hash)
+      %Transaction{hash: transaction_hash} = insert(:transaction, block_hash: block.hash, index: 0)
 
       assert %Scrivener.Page{
                entries: [%Transaction{hash: ^transaction_hash}],
@@ -37,10 +37,16 @@ defmodule Explorer.ChainTest do
     test "with transaction with receipt required without receipt does not return transaction" do
       block = %Block{hash: block_hash} = insert(:block)
 
-      %Transaction{hash: transaction_hash_with_receipt} = insert(:transaction, block_hash: block_hash)
-      insert(:receipt, transaction_hash: transaction_hash_with_receipt)
+      %Transaction{hash: transaction_hash_with_receipt, index: transaction_index_with_receipt} =
+        insert(:transaction, block_hash: block_hash, index: 0)
 
-      %Transaction{hash: transaction_hash_without_receipt} = insert(:transaction, block_hash: block_hash)
+      insert(
+        :receipt,
+        transaction_hash: transaction_hash_with_receipt,
+        transaction_index: transaction_index_with_receipt
+      )
+
+      %Transaction{hash: transaction_hash_without_receipt} = insert(:transaction, block_hash: block_hash, index: 1)
 
       assert %Scrivener.Page{
                entries: [%Transaction{hash: ^transaction_hash_with_receipt, receipt: %Receipt{}}],
@@ -76,7 +82,7 @@ defmodule Explorer.ChainTest do
     test "with transactions can be paginated" do
       block = insert(:block)
 
-      transactions = insert_list(2, :transaction, block_hash: block.hash)
+      transactions = Enum.map(0..1, &insert(:transaction, block_hash: block.hash, index: &1))
 
       [%Transaction{hash: first_transaction_hash}, %Transaction{hash: second_transaction_hash}] = transactions
 
@@ -107,7 +113,7 @@ defmodule Explorer.ChainTest do
 
     test "with transactions" do
       block = insert(:block)
-      insert(:transaction, block_hash: block.hash)
+      insert(:transaction, block_hash: block.hash, index: 0)
 
       assert Chain.block_to_transaction_count(block) == 1
     end
@@ -177,9 +183,16 @@ defmodule Explorer.ChainTest do
     test "with transactions with receipt required without receipt does not return transaction" do
       address = %Address{hash: from_address_hash} = insert(:address)
 
-      %Transaction{hash: transaction_hash_with_receipt} = insert(:transaction, from_address_hash: from_address_hash)
+      block = insert(:block)
 
-      insert(:receipt, transaction_hash: transaction_hash_with_receipt)
+      %Transaction{hash: transaction_hash_with_receipt, index: transaction_index_with_receipt} =
+        insert(:transaction, block_hash: block.hash, index: 0, from_address_hash: from_address_hash)
+
+      insert(
+        :receipt,
+        transaction_hash: transaction_hash_with_receipt,
+        transaction_index: transaction_index_with_receipt
+      )
 
       %Transaction{hash: transaction_hash_without_receipt} = insert(:transaction, from_address_hash: from_address_hash)
 
@@ -240,9 +253,12 @@ defmodule Explorer.ChainTest do
 
   describe "hash_to_transaction/2" do
     test "with transaction with receipt required without receipt returns {:error, :not_found}" do
-      %Transaction{hash: hash_with_receipt} = insert(:transaction)
+      block = insert(:block)
 
-      insert(:receipt, transaction_hash: hash_with_receipt)
+      %Transaction{hash: hash_with_receipt, index: index_with_receipt} =
+        insert(:transaction, block_hash: block.hash, index: 0)
+
+      insert(:receipt, transaction_hash: hash_with_receipt, transaction_index: index_with_receipt)
 
       %Transaction{hash: hash_without_receipt} = insert(:transaction)
 
@@ -363,9 +379,16 @@ defmodule Explorer.ChainTest do
     test "with transactions with receipt required without receipt does not return transaction" do
       address = %Address{hash: to_address_hash} = insert(:address)
 
-      %Transaction{hash: transaction_hash_with_receipt} = insert(:transaction, to_address_hash: to_address_hash)
+      block = insert(:block)
 
-      insert(:receipt, transaction_hash: transaction_hash_with_receipt)
+      %Transaction{hash: transaction_hash_with_receipt, index: transaction_index_with_receipt} =
+        insert(:transaction, block_hash: block.hash, index: 0, to_address_hash: to_address_hash)
+
+      insert(
+        :receipt,
+        transaction_hash: transaction_hash_with_receipt,
+        transaction_index: transaction_index_with_receipt
+      )
 
       %Transaction{hash: transaction_hash_without_receipt} = insert(:transaction, to_address_hash: to_address_hash)
 
@@ -440,7 +463,7 @@ defmodule Explorer.ChainTest do
 
     test "with transaction with internal transactions returns all internal transactions for a given transaction hash" do
       transaction = insert(:transaction)
-      internal_transaction = insert(:internal_transaction, transaction_hash: transaction.hash)
+      internal_transaction = insert(:internal_transaction, transaction_hash: transaction.hash, index: 0)
 
       result = hd(Chain.transaction_hash_to_internal_transactions(transaction.hash))
 
@@ -449,7 +472,7 @@ defmodule Explorer.ChainTest do
 
     test "with transaction with internal transactions loads associations with in necessity_by_assocation" do
       %Transaction{hash: hash} = insert(:transaction)
-      insert(:internal_transaction, transaction_hash: hash)
+      insert(:internal_transaction, transaction_hash: hash, index: 0)
 
       assert [
                %InternalTransaction{
@@ -462,7 +485,7 @@ defmodule Explorer.ChainTest do
       assert [
                %InternalTransaction{
                  from_address: %Address{},
-                 to_address: %Address{},
+                 to_address: nil,
                  transaction: %Transaction{}
                }
              ] =
@@ -490,9 +513,10 @@ defmodule Explorer.ChainTest do
     end
 
     test "with logs" do
-      transaction = insert(:transaction)
-      %Receipt{id: receipt_id} = insert(:receipt, transaction_hash: transaction.hash)
-      %Log{id: id} = insert(:log, receipt_id: receipt_id)
+      block = insert(:block)
+      transaction = insert(:transaction, block_hash: block.hash, index: 0)
+      insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
+      %Log{id: id} = insert(:log, transaction_hash: transaction.hash)
 
       assert %Scrivener.Page{
                entries: [%Log{id: ^id}],
@@ -503,9 +527,10 @@ defmodule Explorer.ChainTest do
     end
 
     test "with logs can be paginated" do
-      transaction = insert(:transaction)
-      %Receipt{id: receipt_id} = insert(:receipt, transaction_hash: transaction.hash)
-      logs = insert_list(2, :log, receipt_id: receipt_id)
+      block = insert(:block)
+      transaction = insert(:transaction, block_hash: block.hash, index: 0)
+      insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
+      logs = insert_list(2, :log, transaction_hash: transaction.hash)
 
       [%Log{id: first_log_id}, %Log{id: second_log_id}] = logs
 
@@ -527,9 +552,10 @@ defmodule Explorer.ChainTest do
     end
 
     test "with logs necessity_by_association loads associations" do
-      transaction = insert(:transaction)
-      %Receipt{id: receipt_id} = insert(:receipt, transaction_hash: transaction.hash)
-      insert(:log, receipt_id: receipt_id)
+      block = insert(:block)
+      transaction = insert(:transaction, block_hash: block.hash, index: 0)
+      insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
+      insert(:log, transaction_hash: transaction.hash)
 
       assert %Scrivener.Page{
                entries: [

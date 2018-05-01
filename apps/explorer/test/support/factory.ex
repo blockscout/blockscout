@@ -26,7 +26,7 @@ defmodule Explorer.Factory do
       number: sequence("block_number", & &1),
       hash: block_hash(),
       parent_hash: block_hash(),
-      nonce: sequence("block_nonce"),
+      nonce: sequence("block_nonce", & &1),
       miner_hash: insert(:address).hash,
       difficulty: Enum.random(1..100_000),
       total_difficulty: Enum.random(1..100_000),
@@ -47,18 +47,14 @@ defmodule Explorer.Factory do
   end
 
   def internal_transaction_factory do
-    %InternalTransaction{
-      call_type: Enum.random(["call", "creates", "calldelegate"]),
-      from_address_hash: insert(:address).hash,
-      gas: Enum.random(1..100_000),
-      gas_used: Enum.random(1..100_000),
-      index: Enum.random(0..9),
-      input: sequence("0x"),
-      output: sequence("0x"),
-      to_address_hash: insert(:address).hash,
-      trace_address: [Enum.random(0..4), Enum.random(0..4)],
-      value: Enum.random(1..100_000)
-    }
+    type = internal_transaction_type()
+
+    internal_transaction_factory(type)
+  end
+
+  # TODO add call, reward, and suicide
+  def internal_transaction_type do
+    Enum.random(~w(create)a)
   end
 
   def log_factory do
@@ -78,8 +74,7 @@ defmodule Explorer.Factory do
     %Receipt{
       cumulative_gas_used: Enum.random(21_000..100_000),
       gas_used: Enum.random(21_000..100_000),
-      status: Enum.random(0..1),
-      index: sequence("")
+      status: Enum.random(0..1)
     }
   end
 
@@ -120,14 +115,40 @@ defmodule Explorer.Factory do
 
   def validate(%Transaction{hash: hash} = transaction) do
     block = insert(:block)
+    index = 0
 
     block_transaction =
       transaction
-      |> Explorer.Chain.Transaction.changeset(%{block_hash: block.hash, index: 0})
+      |> Explorer.Chain.Transaction.changeset(%{block_hash: block.hash, index: index})
       |> Repo.update!()
 
-    insert(:receipt, transaction_hash: hash)
+    insert(:receipt, transaction_hash: hash, transaction_index: index)
 
     Repo.preload(block_transaction, [:block, :receipt])
+  end
+
+  ## Private Functions
+
+  defp integer_to_hexadecimal(integer) when is_integer(integer) do
+    "0x" <> Integer.to_string(integer, 16)
+  end
+
+  defp internal_transaction_factory(:create = type) do
+    gas = Enum.random(21_000..100_000)
+    gas_used = Enum.random(0..gas)
+
+    %InternalTransaction{
+      created_contract_code: sequence("internal_transaction_created_contract_code", &integer_to_hexadecimal/1),
+      created_contract_address_hash: insert(:address).hash,
+      from_address_hash: insert(:address).hash,
+      gas: gas,
+      gas_used: gas_used,
+      # caller MUST suppy `index`
+      init: sequence("internal_transaction_init", &integer_to_hexadecimal/1),
+      trace_address: [],
+      transaction_hash: insert(:transaction).hash,
+      type: type,
+      value: sequence("internal_transaction_value", &Decimal.new(&1))
+    }
   end
 end

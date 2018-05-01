@@ -5,7 +5,7 @@ defmodule Explorer.Chain do
 
   import Ecto.Query, only: [from: 2, order_by: 2, preload: 2, where: 2, where: 3]
 
-  alias Ecto.Multi
+  alias Ecto.{Changeset, Multi}
   alias Explorer.Chain.{Address, Block, Hash, InternalTransaction, Log, Receipt, Transaction, Wei}
   alias Explorer.Repo
 
@@ -37,11 +37,26 @@ defmodule Explorer.Chain do
   @typep inserted_after_option :: {:inserted_after, DateTime.t()}
   @typep necessity_by_association_option :: {:necessity_by_association, necessity_by_association}
   @typep pagination_option :: {:pagination, pagination}
+  @typep timestamps :: %{inserted_at: DateTime.t(), updated_at: DateTime.t()}
+  @typep timestamps_option :: {:timestamps, timestamps}
 
   # Functions
 
+  @doc """
+  The number of `t:Explorer.Chain.Block.t/0`.
+
+      iex> insert_list(2, :block)
+      iex> Explorer.Chain.block_count()
+      2
+
+  When there are no `t:Explorer.Chain.Block.t/0`.
+
+      iex> Explorer.Chain.block_count()
+      0
+
+  """
   def block_count do
-    Repo.one(from(b in Block, select: count(b.id)))
+    Repo.aggregate(Block, :count, :hash)
   end
 
   @doc """
@@ -311,7 +326,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Bulk insert tree of resource from a list of blocks
+  Bulk insert tree of resource from a list of blocks.
 
   ## Tree
 
@@ -319,27 +334,45 @@ defmodule Explorer.Chain do
     * `t:Explorer.Chain.Transaction.t/0`
       * `t.Explorer.Chain.InternalTransaction.t/0`
       * `t.Explorer.Chain.Receipt.t/0`
+        * `t.Explorer.Chain.Log.t/0`
 
   """
   def insert(%{
         blocks_params: blocks_params,
+        logs_params: logs_params,
         internal_transactions_params: internal_transactions_params,
         receipts_params: receipts_params,
         transactions_params: transactions_params
       })
-      when is_list(blocks_params) and is_list(internal_transactions_params) and is_list(receipts_params) and
-             is_list(transactions_params) do
-    Multi.new()
-    |> Multi.run(:blocks, &insert_blocks(&1, blocks_params))
-    |> Multi.run(:transactions, &insert_transactions(&1, transactions_params))
-    |> Multi.run(:internal, &insert_internal(&1, internal_transactions_params))
-    |> Multi.run(:receipts, &insert_receipts(&1, receipts_params))
-    |> Multi.run(:logs, &insert_logs(&1))
-    |> Repo.transaction()
+      when is_list(blocks_params) and is_list(internal_transactions_params) and is_list(logs_params) and
+             is_list(receipts_params) and is_list(transactions_params) do
+    with {:ok, ecto_schema_module_to_changes_list} <-
+           ecto_schema_module_to_params_list_to_ecto_schema_module_to_changes_list(%{
+             Block => blocks_params,
+             Log => logs_params,
+             InternalTransaction => internal_transactions_params,
+             Receipt => receipts_params,
+             Transaction => transactions_params
+           }) do
+      insert_ecto_schema_module_to_changes_list(ecto_schema_module_to_changes_list)
+    end
   end
 
+  @doc """
+  The number of `t:Explorer.Chain.InternalTransaction.t/0`.
+
+      iex> insert(:internal_transaction, index: 0)
+      iex> Explorer.Chain.internal_transaction_count()
+      1
+
+  If there are none, the count is `0`.
+
+      iex> Explorer.Chain.internal_transaction_count()
+      0
+
+  """
   def internal_transaction_count do
-    Repo.one(from(t in InternalTransaction, select: count(t.id)))
+    Repo.aggregate(InternalTransaction, :count, :id)
   end
 
   @doc """
@@ -391,8 +424,24 @@ defmodule Explorer.Chain do
     |> Repo.paginate(pagination)
   end
 
+  @doc """
+  The number of `t:Explorer.Chain.Log.t/0`.
+
+      iex> block = insert(:block)
+      iex> transaction = insert(:transaction, block_hash: block.hash, index: 0)
+      iex> receipt = insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
+      iex> insert(:log, transaction_hash: receipt.transaction_hash, index: 0)
+      iex> Explorer.Chain.log_count()
+      1
+
+  When there are no `t:Explorer.Chain.Log.t/0`.
+
+      iex> Explorer.Chain.log_count()
+      0
+
+  """
   def log_count do
-    Repo.one(from(l in Log, select: count(l.id)))
+    Repo.aggregate(Log, :count, :id)
   end
 
   @doc """
@@ -439,8 +488,23 @@ defmodule Explorer.Chain do
     end
   end
 
+  @doc """
+  The number of `t:Explorer.Chain.Receipt.t/0`.
+
+      iex> block = insert(:block)
+      iex> transaction = insert(:transaction, block_hash: block.hash, index: 0)
+      iex> insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
+      iex> Explorer.Chain.receipt_count()
+      1
+
+  When there are no `t:Explorer.Chain.Receipt.t/0`.
+
+      iex> Explorer.Chain.receipt_count()
+      0
+
+  """
   def receipt_count do
-    Repo.one(from(r in Receipt, select: count(r.id)))
+    Repo.aggregate(Receipt, :count, :transaction_hash)
   end
 
   @doc """
@@ -775,17 +839,17 @@ defmodule Explorer.Chain do
   """
   @spec transaction_to_status(Transaction.t()) :: :failed | :pending | :out_of_gas | :success
   def transaction_to_status(%Transaction{receipt: nil}), do: :pending
-  def transaction_to_status(%Transaction{receipt: %Receipt{status: 1}}), do: :success
+  def transaction_to_status(%Transaction{receipt: %Receipt{status: :ok}}), do: :success
 
   def transaction_to_status(%Transaction{
         gas: gas,
-        receipt: %Receipt{gas_used: gas_used, status: 0}
+        receipt: %Receipt{gas_used: gas_used, status: :error}
       })
       when gas_used >= gas do
     :out_of_gas
   end
 
-  def transaction_to_status(%Transaction{receipt: %Receipt{status: 0}}), do: :failed
+  def transaction_to_status(%Transaction{receipt: %Receipt{status: :error}}), do: :failed
 
   @doc """
   The `t:Explorer.Chain.Transaction.t/0` or `t:Explorer.Chain.InternalTransaction.t/0` `value` of the `transaction` in
@@ -847,8 +911,62 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec changes_list(params :: map, [{:for, module}]) :: {:ok, changes :: map} | {:error, [Changeset.t()]}
+  defp changes_list(params, named_arguments) when is_list(named_arguments) do
+    ecto_schema_module = Keyword.fetch!(named_arguments, :for)
+    struct = ecto_schema_module.__struct__()
+
+    {status, acc} =
+      params
+      |> Stream.map(&ecto_schema_module.changeset(struct, &1))
+      |> Enum.reduce({:ok, []}, fn
+        changeset = %Changeset{valid?: false}, {:ok, _} -> {:error, [changeset]}
+        changeset = %Changeset{valid?: false}, {:error, acc_changesets} -> {:error, [changeset | acc_changesets]}
+        %Changeset{changes: changes, valid?: true}, {:ok, acc_changes} -> {:ok, [changes | acc_changes]}
+        %Changeset{valid?: true}, {:error, _} = error -> error
+      end)
+
+    {status, Enum.reverse(acc)}
+  end
+
   defp chronologically(query) do
     from(q in query, order_by: [desc: q.inserted_at, desc: q.hash])
+  end
+
+  defp ecto_schema_module_changes_list_to_address_hash_set({ecto_schema_module, changes_list}) do
+    Enum.reduce(changes_list, MapSet.new(), fn changes, acc ->
+      changes
+      |> ecto_schema_module.changes_to_address_hash_set()
+      |> MapSet.union(acc)
+    end)
+  end
+
+  defp ecto_schema_module_to_changes_list_to_address_hash_set(ecto_schema_module_to_changes_list) do
+    Enum.reduce(ecto_schema_module_to_changes_list, MapSet.new(), fn ecto_schema_module_changes_list, acc ->
+      ecto_schema_module_changes_list
+      |> ecto_schema_module_changes_list_to_address_hash_set()
+      |> MapSet.union(acc)
+    end)
+  end
+
+  defp ecto_schema_module_to_params_list_to_ecto_schema_module_to_changes_list(ecto_schema_module_to_params_list) do
+    ecto_schema_module_to_params_list
+    |> Stream.map(fn {ecto_schema_module, params} ->
+      {ecto_schema_module, changes_list(params, for: ecto_schema_module)}
+    end)
+    |> Enum.reduce({:ok, %{}}, fn
+      {ecto_schema_module, {:ok, changes_list}}, {:ok, ecto_schema_module_to_changes_list} ->
+        {:ok, Map.put(ecto_schema_module_to_changes_list, ecto_schema_module, changes_list)}
+
+      {_, {:ok, _}}, {:error, _} = error ->
+        error
+
+      {_, {:error, _} = error}, {:ok, _} ->
+        error
+
+      {_, {:error, changesets}}, {:error, acc_changesets} ->
+        {:error, acc_changesets ++ changesets}
+    end)
   end
 
   defp for_parent_transaction(query, %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash) do
@@ -859,95 +977,121 @@ defmodule Explorer.Chain do
     )
   end
 
-  defp insert_blocks(%{}, blocks) do
-    {_, inserted_blocks} =
-      Repo.safe_insert_all(
-        Block,
-        blocks,
-        returning: [:id, :number],
-        on_conflict: :replace_all,
-        conflict_target: :number
-      )
+  @spec insert_addresses([map()], [timestamps_option]) :: {:ok, Block.t()} | {:error, [Changeset.t()]}
+  defp insert_addresses(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
+    timestamps = Keyword.fetch!(named_arguments, :timestamps)
 
-    {:ok, inserted_blocks}
+    insert_changes_list(
+      changes_list,
+      conflict_target: :hash,
+      # Do nothing so that pre-existing balance is not overwritten
+      on_conflict: :nothing,
+      for: Address,
+      timestamps: timestamps
+    )
   end
 
-  defp insert_internal(%{transactions: transactions}, internal_transactions) do
+  @spec insert_blocks([map()], [timestamps_option]) :: {:ok, Block.t()} | {:error, [Changeset.t()]}
+  defp insert_blocks(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
+    timestamps = Keyword.fetch!(named_arguments, :timestamps)
+
+    insert_changes_list(
+      changes_list,
+      conflict_target: :number,
+      on_conflict: :replace_all,
+      for: Block,
+      timestamps: timestamps
+    )
+  end
+
+  defp insert_ecto_schema_module_to_changes_list(
+         %{
+           Block => blocks_changes,
+           Log => logs_changes,
+           InternalTransaction => internal_transactions_changes,
+           Receipt => receipts_changes,
+           Transaction => transactions_changes
+         } = ecto_schema_module_to_changes_list
+       ) do
+    address_hash_set = ecto_schema_module_to_changes_list_to_address_hash_set(ecto_schema_module_to_changes_list)
+    addresses_changes = Address.hash_set_to_changes_list(address_hash_set)
+
     timestamps = timestamps()
 
-    internals =
-      Enum.flat_map(transactions, fn %{hash: hash, id: id} ->
-        case Map.fetch(internal_transactions, hash) do
-          {:ok, traces} ->
-            Enum.map(traces, &InternalTransaction.extract(&1, id, timestamps))
+    Multi.new()
+    |> Multi.run(:addresses, fn _ -> insert_addresses(addresses_changes, timestamps: timestamps) end)
+    |> Multi.run(:blocks, fn _ -> insert_blocks(blocks_changes, timestamps: timestamps) end)
+    |> Multi.run(:transactions, fn _ -> insert_transactions(transactions_changes, timestamps: timestamps) end)
+    |> Multi.run(:internal_transactions, fn _ ->
+      insert_internal_transactions(internal_transactions_changes, timestamps: timestamps)
+    end)
+    |> Multi.run(:receipts, fn _ -> insert_receipts(receipts_changes, timestamps: timestamps) end)
+    |> Multi.run(:logs, fn _ -> insert_logs(logs_changes, timestamps: timestamps) end)
+    |> Repo.transaction()
+  end
 
-          :error ->
-            []
-        end
-      end)
+  @spec insert_internal_transactions([map()], [timestamps_option]) ::
+          {:ok, InternalTransaction.t()} | {:error, [Changeset.t()]}
+  defp insert_internal_transactions(changes_list, named_arguments)
+       when is_list(changes_list) and is_list(named_arguments) do
+    timestamps = Keyword.fetch!(named_arguments, :timestamps)
 
-    {_, inserted} = Repo.safe_insert_all(InternalTransaction, internals, on_conflict: :nothing)
+    insert_changes_list(
+      changes_list,
+      for: InternalTransaction,
+      timestamps: timestamps
+    )
+  end
 
+  @spec insert_logs([map()], [timestamps_option]) :: {:ok, Log.t()} | {:error, [Changeset.t()]}
+  defp insert_logs(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
+    timestamps = Keyword.fetch!(named_arguments, :timestamps)
+
+    insert_changes_list(
+      changes_list,
+      conflict_target: [:transaction_hash, :index],
+      on_conflict: :replace_all,
+      for: Log,
+      timestamps: timestamps
+    )
+  end
+
+  @spec insert_receipts([map()], [timestamps_option]) :: {:ok, Receipt.t()} | {:error, [Changeset.t()]}
+  defp insert_receipts(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
+    timestamps = Keyword.fetch!(named_arguments, :timestamps)
+
+    insert_changes_list(
+      changes_list,
+      conflict_target: :transaction_hash,
+      on_conflict: :replace_all,
+      for: Receipt,
+      timestamps: timestamps
+    )
+  end
+
+  defp insert_changes_list(changes_list, options) when is_list(changes_list) do
+    ecto_schema_module = Keyword.fetch!(options, :for)
+
+    timestamped_changes_list = timestamp_changes_list(changes_list, Keyword.fetch!(options, :timestamps))
+    {_, inserted} = Repo.safe_insert_all(ecto_schema_module, timestamped_changes_list, Keyword.delete(options, :for))
     {:ok, inserted}
+  rescue
+    e in Postgrex.Error ->
+      IO.inspect(changes_list, label: "CHANGES_LIST")
+      raise e
   end
 
-  defp insert_logs(%{receipts: %{inserted: receipts, logs: logs_map}}) do
-    logs_to_insert =
-      Enum.reduce(receipts, [], fn receipt, acc ->
-        case Map.fetch(logs_map, receipt.transaction_id) do
-          {:ok, []} ->
-            acc
+  @spec insert_transactions([map()], [timestamps_option]) :: {:ok, Transaction.t()} | {:error, [Changeset.t()]}
+  defp insert_transactions(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
+    timestamps = Keyword.fetch!(named_arguments, :timestamps)
 
-          {:ok, [_ | _] = logs} ->
-            logs = Enum.map(logs, &Map.put(&1, :receipt_id, receipt.id))
-            logs ++ acc
-        end
-      end)
-
-    {_, inserted_logs} = Repo.safe_insert_all(Log, logs_to_insert, returning: [:id])
-    {:ok, inserted_logs}
-  end
-
-  defp insert_receipts(%{transactions: transactions}, raw_receipts) do
-    timestamps = timestamps()
-
-    {receipts_to_insert, logs_map} =
-      Enum.reduce(transactions, {[], %{}}, fn trans, {receipts_acc, logs_acc} ->
-        case Map.fetch(raw_receipts, trans.hash) do
-          {:ok, raw_receipt} ->
-            {receipt, logs} = Receipt.extract(raw_receipt, trans.id, timestamps)
-            {[receipt | receipts_acc], Map.put(logs_acc, trans.id, logs)}
-
-          :error ->
-            {receipts_acc, logs_acc}
-        end
-      end)
-
-    {_, inserted_receipts} =
-      Repo.safe_insert_all(
-        Receipt,
-        receipts_to_insert,
-        returning: [:id, :transaction_id]
-      )
-
-    {:ok, %{inserted: inserted_receipts, logs: logs_map}}
-  end
-
-  defp insert_transactions(%{blocks: blocks}, transactions) do
-    blocks_map = for block <- blocks, into: %{}, do: {block.number, block}
-
-    transactions =
-      for transaction <- transactions do
-        %{id: id} = Map.fetch!(blocks_map, transaction.block_number)
-
-        transaction
-        |> Map.put(:block_id, id)
-        |> Map.delete(:block_number)
-      end
-
-    {_, inserted} = Repo.safe_insert_all(Transaction, transactions, returning: [:id, :hash])
-
-    {:ok, inserted}
+    insert_changes_list(
+      changes_list,
+      conflict_target: :hash,
+      on_conflict: :replace_all,
+      for: Transaction,
+      timestamps: timestamps
+    )
   end
 
   defp inserted_after(query, options) do
@@ -974,6 +1118,14 @@ defmodule Explorer.Chain do
     Enum.reduce(necessity_by_association, query, fn {association, join}, acc_query ->
       join_association(acc_query, association, join)
     end)
+  end
+
+  defp timestamp_params(changes, timestamps) when is_map(changes) do
+    Map.merge(changes, timestamps)
+  end
+
+  defp timestamp_changes_list(changes_list, timestamps) when is_list(changes_list) do
+    Enum.map(changes_list, &timestamp_params(&1, timestamps))
   end
 
   defp timestamps do

@@ -162,45 +162,28 @@ defmodule Explorer.Chain.Transaction do
 
   # Functions
 
-  @doc false
   def changeset(%__MODULE__{} = transaction, attrs \\ %{}) do
     transaction
     |> cast(attrs, @required_attrs ++ @optional_attrs)
     |> validate_required(@required_attrs)
     |> validate_collated()
+    |> check_constraint(
+      :index,
+      message: "cannot be set when block_hash is nil and must be set when block_hash is not nil",
+      name: :indexed
+    )
     |> foreign_key_constraint(:block_hash)
     |> unique_constraint(:hash)
   end
 
-  def decode(raw_transaction, block_number, %{} = timestamps) do
-    attrs = %{
-      hash: raw_transaction["hash"],
-      index: raw_transaction["transactionIndex"],
-      value: raw_transaction["value"],
-      gas: raw_transaction["gas"],
-      gas_price: raw_transaction["gasPrice"],
-      input: raw_transaction["input"],
-      nonce: raw_transaction["nonce"],
-      public_key: raw_transaction["publicKey"],
-      r: raw_transaction["r"],
-      s: raw_transaction["s"],
-      standard_v: raw_transaction["standardV"],
-      v: raw_transaction["v"]
-    }
-
-    case changeset(%__MODULE__{}, attrs) do
-      %Changeset{valid?: true, changes: changes} ->
-        {:ok,
-         changes
-         |> Map.put(:block_number, block_number)
-         |> Map.merge(timestamps)}
-
-      %Changeset{valid?: false, errors: errors} ->
-        {:error, errors}
-    end
+  def changes_to_address_hash_set(changes) do
+    Enum.reduce(~w(from_address_hash to_address_hash)a, MapSet.new(), fn field, acc ->
+      case Map.get(changes, field) do
+        nil -> acc
+        value -> MapSet.put(acc, value)
+      end
+    end)
   end
-
-  def null, do: %__MODULE__{}
 
   ## Private Functions
 

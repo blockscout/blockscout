@@ -16,13 +16,18 @@ defmodule Explorer.Repo.Migrations.CreateLogs do
       # Foreign Keys
 
       add(:address_hash, references(:addresses, column: :hash, on_delete: :delete_all, type: :bytea), null: true)
-      add(:receipt_id, references(:receipts, on_delete: :delete_all), null: false)
+
+      add(
+        :transaction_hash,
+        references(:receipts, column: :transaction_hash, on_delete: :delete_all, type: :bytea),
+        null: false
+      )
     end
 
     # Foreign Key indexes
 
     create(index(:logs, :address_hash))
-    create(index(:logs, :receipt_id))
+    create(index(:logs, :transaction_hash))
 
     # Search indexes
 
@@ -32,6 +37,6 @@ defmodule Explorer.Repo.Migrations.CreateLogs do
     create(index(:logs, :second_topic))
     create(index(:logs, :third_topic))
     create(index(:logs, :fourth_topic))
-    create(unique_index(:logs, [:receipt_id, :index]))
+    create(unique_index(:logs, [:transaction_hash, :index]))
   end
 end

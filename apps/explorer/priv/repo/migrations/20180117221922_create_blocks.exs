@@ -8,7 +8,7 @@ defmodule Explorer.Repo.Migrations.CreateBlocks do
       add(:gas_used, :integer, null: false)
       add(:hash, :bytea, null: false, primary_key: true)
       add(:miner_hash, references(:addresses, column: :hash, type: :bytea), null: false)
-      add(:nonce, :string, null: false)
+      add(:nonce, :integer, null: false)
       add(:number, :bigint, null: false)
 
       # not a foreign key to allow skipped blocks

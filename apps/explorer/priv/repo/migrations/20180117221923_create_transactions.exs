@@ -33,6 +33,16 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
       add(:to_address_hash, references(:addresses, column: :hash, on_delete: :delete_all, type: :bytea), null: true)
     end
 
+    # Constraints
+
+    create(
+      constraint(
+        :transactions,
+        :indexed,
+        check: "(block_hash IS NULL AND index IS NULL) OR (block_hash IS NOT NULL AND index IS NOT NULL)"
+      )
+    )
+
     # Foreign Key indexes
 
     create(index(:transactions, :block_hash))

@@ -18,7 +18,7 @@ defmodule Explorer.JSONRPC do
 
   require Logger
 
-  alias Explorer.JSONRPC.{Blocks, Receipts, Transactions}
+  alias Explorer.JSONRPC.{Blocks, Parity, Receipts, Transactions}
 
   # Types
 
@@ -84,6 +84,24 @@ defmodule Explorer.JSONRPC do
   end
 
   @doc """
+  Fetches configuration for this module under `key`
+
+  Configuration can be set a compile time using `config`
+
+      config :explorer, Explorer.JSONRRPC, key: value
+
+  Configuration can be set a runtime using `Application.put_env/3`
+
+      Application.put_env(:explorer, Explorer.JSONRPC, key: value)
+
+  """
+  def config(key) do
+    :explorer
+    |> Application.fetch_env!(__MODULE__)
+    |> Keyword.fetch!(key)
+  end
+
+  @doc """
   Fetches blocks by block hashes.
 
   Transaction data is included for each block.
@@ -112,32 +130,38 @@ defmodule Explorer.JSONRPC do
     |> handle_get_block_by_number(block_start, block_end)
   end
 
+  @doc """
+  Fetches internal transactions from client-specific API.
+  """
   def fetch_internal_transactions(hashes) when is_list(hashes) do
-    hashes
-    |> Enum.map(fn hash ->
-      %{
-        "id" => hash,
-        "jsonrpc" => "2.0",
-        "method" => "trace_replayTransaction",
-        "params" => [hash, ["trace"]]
-      }
-    end)
-    |> json_rpc(config(:trace_url))
-    |> handle_internal_transactions()
+    Parity.fetch_internal_transactions(hashes)
   end
 
   def fetch_transaction_receipts(hashes) when is_list(hashes) do
-    hashes
-    |> Enum.map(fn hash ->
-      %{
-        "id" => hash,
-        "jsonrpc" => "2.0",
-        "method" => "eth_getTransactionReceipt",
-        "params" => [hash]
-      }
-    end)
-    |> json_rpc(config(:url))
-    |> handle_receipts()
+    Receipts.fetch(hashes)
+  end
+
+  @doc """
+  1. POSTs JSON `payload` to `url`
+  2. Decodes the response
+  3. Handles the response
+
+  ## Returns
+
+  * Handled response
+  * `{:error, reason}` if POST failes
+  """
+  def json_rpc(payload, url) do
+    json = encode_json(payload)
+    headers = [{"Content-Type", "application/json"}]
+
+    case HTTPoison.post(url, json, headers, config(:http)) do
+      {:ok, %HTTPoison.Response{body: body, status_code: code}} ->
+        body |> decode_json(payload) |> handle_response(code)
+
+      {:error, %HTTPoison.Error{reason: reason}} ->
+        {:error, reason}
+    end
   end
 
   @doc """
@@ -192,24 +216,6 @@ defmodule Explorer.JSONRPC do
     end
   end
 
-  defp config(key) do
-    :explorer
-    |> Application.fetch_env!(__MODULE__)
-    |> Keyword.fetch!(key)
-  end
-
-  defp decode_trace(%{"action" => action} = trace) do
-    trace
-    |> Map.merge(%{
-      "action" =>
-        Map.merge(action, %{
-          "value" => quantity_to_integer(action["value"]),
-          "gas" => quantity_to_integer(action["gas"])
-        })
-    })
-    |> put_gas_used()
-  end
-
   defp encode_json(data), do: Jason.encode_to_iodata!(data)
 
   defp decode_json(body, posted_payload) do
@@ -253,38 +259,6 @@ defmodule Explorer.JSONRPC do
     {:error, reason, {block_start, block_end}}
   end
 
-  defp handle_internal_transactions({:ok, results}) do
-    results_map =
-      Enum.into(results, %{}, fn
-        %{"error" => error} ->
-          throw({:error, error})
-
-        %{"id" => hash, "result" => %{"trace" => traces}} ->
-          {hash, Enum.map(traces, &decode_trace(&1))}
-      end)
-
-    {:ok, results_map}
-  catch
-    {:error, reason} -> {:error, reason}
-  end
-
-  defp handle_internal_transactions({:error, reason}) do
-    {:error, reason}
-  end
-
-  defp handle_receipts({:ok, results}) do
-    results_params =
-      results
-      |> Receipts.to_elixir()
-      |> Receipts.elixir_to_params()
-
-    {:ok, results_params}
-  end
-
-  defp handle_receipts({:error, reason}) do
-    {:error, reason}
-  end
-
   defp handle_response(resp, 200) do
     case resp do
       [%{} | _] = batch_resp -> {:ok, batch_resp}
@@ -302,23 +276,4 @@ defmodule Explorer.JSONRPC do
   end
 
   defp int_to_hash_string(number), do: "0x" <> Integer.to_string(number, 16)
-
-  defp json_rpc(payload, url) do
-    json = encode_json(payload)
-    headers = [{"Content-Type", "application/json"}]
-
-    case HTTPoison.post(url, json, headers, config(:http)) do
-      {:ok, %HTTPoison.Response{body: body, status_code: code}} ->
-        body |> decode_json(payload) |> handle_response(code)
-
-      {:error, %HTTPoison.Error{reason: reason}} ->
-        {:error, reason}
-    end
-  end
-
-  defp put_gas_used(%{"error" => _} = trace), do: trace
-
-  defp put_gas_used(%{"result" => %{"gasUsed" => gas}} = trace) do
-    put_in(trace, ["result", "gasUsed"], quantity_to_integer(gas))
-  end
 end

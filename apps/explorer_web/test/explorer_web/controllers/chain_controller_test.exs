@@ -67,7 +67,8 @@ defmodule ExplorerWeb.ChainControllerTest do
     end
 
     test "finds a transaction by hash", %{conn: conn} do
-      transaction = insert(:transaction, block_hash: insert(:block).hash)
+      block = insert(:block)
+      transaction = insert(:transaction, block_hash: block.hash, index: 0)
       conn = get(conn, "/en/search?q=#{to_string(transaction.hash)}")
 
       assert redirected_to(conn) == transaction_path(conn, :show, "en", transaction)

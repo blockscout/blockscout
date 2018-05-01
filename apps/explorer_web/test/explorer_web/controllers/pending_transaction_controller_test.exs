@@ -19,7 +19,7 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
     test "does not count transactions that have a receipt", %{conn: conn} do
       block = insert(:block)
       transaction = insert(:transaction, block_hash: block.hash, index: 0)
-      insert(:receipt, transaction: transaction)
+      insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
 
       conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
 

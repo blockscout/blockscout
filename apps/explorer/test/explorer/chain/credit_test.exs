@@ -17,8 +17,18 @@ defmodule Explorer.Chain.CreditTest do
     test "returns a credit when there is an address with a receipt" do
       recipient = insert(:address)
       sender = insert(:address)
-      transaction = insert(:transaction, to_address_hash: recipient.hash, from_address_hash: sender.hash)
-      insert(:receipt, transaction: transaction, status: 1)
+      block = insert(:block)
+
+      transaction =
+        insert(
+          :transaction,
+          block_hash: block.hash,
+          index: 0,
+          to_address_hash: recipient.hash,
+          from_address_hash: sender.hash
+        )
+
+      insert(:receipt, status: :ok, transaction_hash: transaction.hash, transaction_index: transaction.index)
       Credit.refresh()
       credits = Credit |> Repo.all()
       assert credits |> Enum.count() == 1
@@ -28,9 +38,19 @@ defmodule Explorer.Chain.CreditTest do
       recipient = insert(:address)
       sender = insert(:address)
 
-      transaction = insert(:transaction, value: 21, to_address_hash: recipient.hash, from_address_hash: sender.hash)
+      block = insert(:block)
 
-      insert(:receipt, transaction: transaction, status: 1)
+      transaction =
+        insert(
+          :transaction,
+          block_hash: block.hash,
+          index: 0,
+          value: 21,
+          to_address_hash: recipient.hash,
+          from_address_hash: sender.hash
+        )
+
+      insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index, status: :ok)
       address_hash = sender.hash
       Credit.refresh()
       credit = Credit |> where(address_hash: ^address_hash) |> Repo.one()
@@ -41,9 +61,19 @@ defmodule Explorer.Chain.CreditTest do
       recipient = insert(:address)
       sender = insert(:address)
 
-      transaction = insert(:transaction, value: 21, to_address_hash: recipient.hash, from_address_hash: sender.hash)
+      block = insert(:block)
 
-      insert(:receipt, transaction: transaction, status: 1)
+      transaction =
+        insert(
+          :transaction,
+          block_hash: block.hash,
+          index: 0,
+          value: 21,
+          to_address_hash: recipient.hash,
+          from_address_hash: sender.hash
+        )
+
+      insert(:receipt, status: :ok, transaction_hash: transaction.hash, transaction_index: transaction.index)
       address_hash = recipient.hash
       Credit.refresh()
       credit = Credit |> where(address_hash: ^address_hash) |> Repo.one()

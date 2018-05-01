@@ -18,8 +18,8 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
 
     test "returns transactions for the block", %{conn: conn} do
       block = insert(:block)
-      transaction = insert(:transaction, block_hash: block.hash)
-      insert(:receipt, transaction: transaction)
+      transaction = insert(:transaction, block_hash: block.hash, index: 0)
+      insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
 
       conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block.number))
 
@@ -55,7 +55,7 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
     test "does not return related transactions without a to address", %{conn: conn} do
       block = insert(:block)
       transaction = insert(:transaction, block_hash: block.hash, index: 0, to_address_hash: nil)
-      insert(:receipt, transaction: transaction)
+      insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
 
       conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block))
 

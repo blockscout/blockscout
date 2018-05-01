@@ -15,10 +15,11 @@ defmodule ExplorerWeb.TransactionViewTest do
       assert TransactionView.formatted_status(transaction) == "Pending"
     end
 
-    test "with receipt with status 0 with gas_used < gas" do
+    test "with receipt with status :error with gas_used < gas" do
       gas = 2
-      %Transaction{hash: hash} = insert(:transaction, gas: gas)
-      insert(:receipt, gas_used: gas - 1, status: 0, transaction_hash: hash)
+      block = insert(:block)
+      %Transaction{hash: hash, index: index} = insert(:transaction, block_hash: block.hash, gas: gas, index: 0)
+      insert(:receipt, gas_used: gas - 1, status: :error, transaction_hash: hash, transaction_index: index)
 
       transaction =
         Transaction
@@ -28,10 +29,11 @@ defmodule ExplorerWeb.TransactionViewTest do
       assert TransactionView.formatted_status(transaction) == "Failed"
     end
 
-    test "with receipt with status 0 with gas <= gas_used" do
+    test "with receipt with status :error with gas <= gas_used" do
       gas = 2
-      %Transaction{hash: hash} = insert(:transaction, gas: gas)
-      insert(:receipt, gas_used: gas, status: 0, transaction_hash: hash)
+      block = insert(:block)
+      %Transaction{hash: hash, index: index} = insert(:transaction, block_hash: block.hash, gas: gas, index: 0)
+      insert(:receipt, gas_used: gas, status: 0, transaction_hash: hash, transaction_index: index)
 
       transaction =
         Transaction
@@ -41,10 +43,11 @@ defmodule ExplorerWeb.TransactionViewTest do
       assert TransactionView.formatted_status(transaction) == "Out of Gas"
     end
 
-    test "with receipt with status 1" do
+    test "with receipt with status :ok" do
       gas = 2
-      %Transaction{hash: hash} = insert(:transaction, gas: gas)
-      insert(:receipt, gas_used: gas - 1, status: 1, transaction_hash: hash)
+      block = insert(:block)
+      %Transaction{hash: hash, index: index} = insert(:transaction, block_hash: block.hash, gas: gas, index: 0)
+      insert(:receipt, gas_used: gas - 1, status: :ok, transaction_hash: hash, transaction_index: index)
 
       transaction =
         Transaction

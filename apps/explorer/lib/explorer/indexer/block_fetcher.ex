@@ -21,17 +21,16 @@ defmodule Explorer.Indexer.BlockFetcher do
 
   # Constants
 
-  # 50
-  @batch_size 1
-  @blocks_concurrency 10
+  @batch_size 50
+  @blocks_concurrency 20
 
   @internal_batch_size 50
-  @internal_concurrency 4
+  @internal_concurrency 8
 
   @polling_interval 20_000
 
   @receipts_batch_size 250
-  @receipts_concurrency 10
+  @receipts_concurrency 20
 
   # Functions
 
@@ -119,7 +118,7 @@ defmodule Explorer.Indexer.BlockFetcher do
     :ok
   end
 
-  defp fetch_internal_transactions([]), do: {:ok, %{}}
+  defp fetch_internal_transactions([]), do: {:ok, []}
 
   defp fetch_internal_transactions(hashes) do
     Logger.debug(fn -> "fetching #{length(hashes)} internal transactions" end)
@@ -128,14 +127,14 @@ defmodule Explorer.Indexer.BlockFetcher do
     hashes
     |> Enum.chunk_every(@internal_batch_size)
     |> Task.async_stream(&JSONRPC.fetch_internal_transactions(&1), stream_opts)
-    |> Enum.reduce_while({:ok, %{}}, fn
-      {:ok, {:ok, trans}}, {:ok, acc} -> {:cont, {:ok, Map.merge(acc, trans)}}
+    |> Enum.reduce_while({:ok, []}, fn
+      {:ok, {:ok, internal_transactions_params}}, {:ok, acc} -> {:cont, {:ok, acc ++ internal_transactions_params}}
       {:ok, {:error, reason}}, {:ok, _acc} -> {:halt, {:error, reason}}
       {:error, reason}, {:ok, _acc} -> {:halt, {:error, reason}}
     end)
   end
 
-  defp fetch_transaction_receipts([]), do: {:ok, []}
+  defp fetch_transaction_receipts([]), do: {:ok, %{logs_params: [], receipts_params: []}}
 
   defp fetch_transaction_receipts(hashes) do
     Logger.debug(fn -> "fetching #{length(hashes)} transaction receipts" end)
@@ -144,16 +143,24 @@ defmodule Explorer.Indexer.BlockFetcher do
     hashes
     |> Enum.chunk_every(@receipts_batch_size)
     |> Task.async_stream(&JSONRPC.fetch_transaction_receipts(&1), stream_opts)
-    |> Enum.reduce_while({:ok, []}, fn
-      {:ok, {:ok, receipt_params}}, {:ok, acc} -> {:cont, {:ok, acc ++ receipt_params}}
-      {:ok, {:error, reason}}, {:ok, _acc} -> {:halt, {:error, reason}}
-      {:error, reason}, {:ok, _acc} -> {:halt, {:error, reason}}
+    |> Enum.reduce_while({:ok, %{logs_params: [], receipts_params: []}}, fn
+      {:ok, {:ok, %{logs_params: logs_params, receipts_params: receipts_params}}},
+      {:ok, %{logs_params: acc_log_params, receipts_params: acc_receipts_params}} ->
+        {:cont,
+         {:ok, %{logs_params: acc_log_params ++ logs_params, receipts_params: acc_receipts_params ++ receipts_params}}}
+
+      {:ok, {:error, reason}}, {:ok, _acc} ->
+        {:halt, {:error, reason}}
+
+      {:error, reason}, {:ok, _acc} ->
+        {:halt, {:error, reason}}
     end)
   end
 
   defp insert(%{
          blocks_params: blocks_params,
          internal_transactions_params: internal_transactions_params,
+         logs_params: log_params,
          range: range,
          receipts_params: receipt_params,
          seq: seq,
@@ -162,6 +169,7 @@ defmodule Explorer.Indexer.BlockFetcher do
     case Chain.insert(%{
            blocks_params: blocks_params,
            internal_transactions_params: internal_transactions_params,
+           logs_params: log_params,
            receipts_params: receipt_params,
            transactions_params: transactions_params
          }) do
@@ -214,11 +222,13 @@ defmodule Explorer.Indexer.BlockFetcher do
                value,
              :ok <- cap_seq(seq, next, range),
              transaction_hashes <- Transactions.params_to_hashes(transactions_params),
-             {:ok, receipts_params} <- fetch_transaction_receipts(transaction_hashes),
+             {:ok, %{logs_params: logs_params, receipts_params: receipts_params}} <-
+               fetch_transaction_receipts(transaction_hashes),
              {:ok, internal_transactions_params} <- fetch_internal_transactions(transaction_hashes) do
           insert(%{
             blocks_params: blocks_params,
             internal_transactions_params: internal_transactions_params,
+            logs_params: logs_params,
             range: range,
             receipts_params: receipts_params,
             seq: seq,

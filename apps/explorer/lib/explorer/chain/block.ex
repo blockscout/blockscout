@@ -69,7 +69,7 @@ defmodule Explorer.Chain.Block do
     field(:difficulty, :decimal)
     field(:gas_limit, :integer)
     field(:gas_used, :integer)
-    field(:nonce, :string)
+    field(:nonce, :integer)
     field(:number, :integer)
     field(:size, :integer)
     field(:timestamp, Timex.Ecto.DateTime)
@@ -90,5 +90,9 @@ defmodule Explorer.Chain.Block do
     |> validate_required(@required_attrs)
     |> foreign_key_constraint(:parent_hash)
     |> unique_constraint(:hash, name: :blocks_pkey)
+  end
+
+  def changes_to_address_hash_set(%{miner_hash: miner_hash}) do
+    MapSet.new([miner_hash])
   end
 end

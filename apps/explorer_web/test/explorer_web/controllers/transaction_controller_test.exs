@@ -17,8 +17,8 @@ defmodule ExplorerWeb.TransactionControllerTest do
 
     test "returns a count of transactions", %{conn: conn} do
       block = insert(:block)
-      transaction = insert(:transaction, block_hash: block.hash)
-      insert(:receipt, transaction: transaction)
+      transaction = insert(:transaction, block_hash: block.hash, index: 0)
+      insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
 
       conn = get(conn, "/en/transactions")
 
@@ -44,7 +44,7 @@ defmodule ExplorerWeb.TransactionControllerTest do
     test "paginates transactions using the last seen transaction", %{conn: conn} do
       block = insert(:block)
       transaction = insert(:transaction, block_hash: block.hash, index: 0)
-      insert(:receipt, transaction: transaction)
+      insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
 
       conn =
         get(
