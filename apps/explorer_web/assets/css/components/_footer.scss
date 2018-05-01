@@ -1,7 +1,5 @@
 .footer {
   font-size: 12px;
-  position: fixed;
-  width: calc(100% - 200px);
   display: block;
   bottom: 0;
   background: explorer-color("gray", "50");
@@ -9,6 +7,7 @@
   text-align: center;
   padding: 14px;
   height: 50px;
+
 
   @media (max-width: 768px) {
     width: 100%;

@@ -21,10 +21,10 @@
 @import "node_modules/bootstrap/scss/transitions";
 
 // Custom SCSS
-@import "explorer/wrapper";
+@import "content";
 @import "theme/fonts";
 @import "utilities";
 @import "typography";
-@import "components/menu";
+@import "components/sidebar";
 @import "explorer/button";
 @import "explorer/filter";
