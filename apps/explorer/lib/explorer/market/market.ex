@@ -1,6 +1,6 @@
 defmodule Explorer.Market do
   @moduledoc """
-  Context for data related to the crypocurrency market.
+  Context for data related to the cryptocurrency market.
   """
 
   import Ecto.Query

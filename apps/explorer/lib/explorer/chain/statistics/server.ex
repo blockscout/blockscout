@@ -15,18 +15,18 @@ defmodule Explorer.Chain.Statistics.Server do
     end
   end
 
-  def start_link, do: start_link(true)
-
-  def start_link(refresh) do
-    GenServer.start_link(__MODULE__, refresh, name: __MODULE__)
+  def start_link(opts \\ []) do
+    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-  def init(true) do
-    {:noreply, chain} = handle_cast({:update, Statistics.fetch()}, %Statistics{})
-    {:ok, chain}
+  def init(opts) do
+    if Keyword.get(opts, :refresh, true) do
+      {:noreply, chain} = handle_cast({:update, Statistics.fetch()}, %Statistics{})
+      {:ok, chain}
+    else
+      {:ok, Statistics.fetch()}
+    end
   end
-
-  def init(false), do: {:ok, Statistics.fetch()}
 
   def handle_info(:refresh, %Statistics{} = statistics) do
     Task.start_link(fn ->
