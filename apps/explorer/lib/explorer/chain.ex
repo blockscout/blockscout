@@ -1075,10 +1075,6 @@ defmodule Explorer.Chain do
     timestamped_changes_list = timestamp_changes_list(changes_list, Keyword.fetch!(options, :timestamps))
     {_, inserted} = Repo.safe_insert_all(ecto_schema_module, timestamped_changes_list, Keyword.delete(options, :for))
     {:ok, inserted}
-  rescue
-    e in Postgrex.Error ->
-      IO.inspect(changes_list, label: "CHANGES_LIST")
-      raise e
   end
 
   @spec insert_transactions([map()], [timestamps_option]) :: {:ok, Transaction.t()} | {:error, [Changeset.t()]}
