@@ -31,8 +31,8 @@ defmodule Explorer.Chain.Address do
   @type t :: %__MODULE__{
           balance: Decimal.t(),
           balance_updated_at: DateTime.t(),
-          credit: Ecto.Association.NotLoaded.t() | Credit.t() | nil,
-          debit: Ecto.Association.NotLoaded.t() | Debit.t() | nil,
+          credit: %Ecto.Association.NotLoaded{} | Credit.t() | nil,
+          debit: %Ecto.Association.NotLoaded{} | Debit.t() | nil,
           hash: Hash.Truncated.t(),
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()

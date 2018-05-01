@@ -36,7 +36,7 @@ defmodule Explorer.Chain.Block do
       still valid and the fee can still be collected by the miner.
   * `gas_used` - The actual `t:gas/0` used to mine/validate the transactions in the block.
   * `hash` - the hash of the block.
-  * `miner` - the hash of the `t:Explorer.Address.t/0` of the miner.  In Proof-of-Authority chains, this is the
+  * `miner` - the hash of the `t:Explorer.Chain.Address.t/0` of the miner.  In Proof-of-Authority chains, this is the
       validator.
   * `nonce` - the hash of the generated proof-of-work.  Not used in Proof-of-Authority chains.
   * `number` - which block this is along the chain.

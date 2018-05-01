@@ -3,10 +3,46 @@ defmodule Explorer.Chain.Log do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, Hash, Receipt}
+  alias Explorer.Chain.{Address, Hash, Receipt, Transaction}
+
+  # Constants
 
   @required_attrs ~w(address_hash data index transaction_hash type)a
   @optional_attrs ~w(first_topic second_topic third_topic fourth_topic)a
+
+  # Types
+
+  @typedoc """
+  * `address` - address of contract that generate the event
+  * `address_hash` - foreign key for `address`
+  * `data` - non-indexed log parameters.
+  * `first_topic` - `topics[0]`
+  * `fourth_topic` - `topics[3]`
+  * `index` - index of the log entry in all logs for the `receipt` / `transaction`
+  * `receipt` - receipt for the `transaction` being mined in a block
+  * `second_topic` - `topics[1]`
+  * `transaction` - transaction for which `receipt` is
+  * `transaction_hash` - foreign key for `receipt`.  **ALWAYS join throught `receipts` and not directly to `transaction`
+      to ensure that any `t:Explorer.Chain.Transaction.t/0` has a receipt before it has logs in that receipt.**
+  * `third_topic` - `topics[2]`
+  * `type` - type of event
+  """
+  @type t :: %__MODULE__{
+          address: %Ecto.Association.NotLoaded{} | Address.t(),
+          address_hash: Hash.Truncated.t(),
+          data: String.t(),
+          first_topic: String.t(),
+          fourth_topic: String.t(),
+          index: non_neg_integer(),
+          receipt: %Ecto.Association.NotLoaded{} | Receipt.t(),
+          second_topic: String.t(),
+          transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
+          transaction_hash: Hash.Full.t(),
+          third_topic: String.t(),
+          type: String.t()
+        }
+
+  # Schema
 
   schema "logs" do
     field(:data, :string)
@@ -23,6 +59,8 @@ defmodule Explorer.Chain.Log do
     belongs_to(:receipt, Receipt, foreign_key: :transaction_hash, references: :transaction_hash, type: Hash.Full)
     has_one(:transaction, through: [:receipt, :transaction])
   end
+
+  # Functions
 
   def changeset(%__MODULE__{} = log, attrs \\ %{}) do
     log

@@ -7,6 +7,13 @@ defmodule Explorer.JSONRPC.Transactions do
 
   alias Explorer.JSONRPC.Transaction
 
+  # Types
+
+  @type elixir :: [Transaction.elixir()]
+  @type t :: [Transaction.t()]
+
+  # Functions
+
   def elixir_to_params(elixir) when is_list(elixir) do
     Enum.map(elixir, &Transaction.elixir_to_params/1)
   end

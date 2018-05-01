@@ -89,7 +89,7 @@ defmodule Explorer.Chain.Statistics do
           block_velocity: blocks_per_minute(),
           blocks: [Block.t()],
           lag: Duration.t(),
-          number: Block.number(),
+          number: Block.block_number(),
           skipped_blocks: non_neg_integer(),
           timestamp: :calendar.datetime(),
           transaction_count: non_neg_integer(),

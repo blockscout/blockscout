@@ -12,9 +12,11 @@ defmodule ExplorerWeb.Chain do
       string_to_transaction_hash: 1
     ]
 
+  alias Explorer.Chain.{Address, Block, Transaction}
+
   # Functions
 
-  @spec from_param(String.t()) :: {:ok, Address.t() | Transaction.t() | Block.t()} | {:error, :not_found}
+  @spec from_param(String.t()) :: {:ok, Address.t() | Block.t() | Transaction.t()} | {:error, :not_found}
   def from_param(param)
 
   def from_param("0x" <> number_string = param) do

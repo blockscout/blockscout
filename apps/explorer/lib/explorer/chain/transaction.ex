@@ -4,7 +4,7 @@ defmodule Explorer.Chain.Transaction do
   use Explorer.Schema
 
   alias Ecto.Changeset
-  alias Explorer.Chain.{Address, Block, Hash, InternalTransaction, Receipt, Wei}
+  alias Explorer.Chain.{Address, Block, Gas, Hash, InternalTransaction, Receipt, Wei}
 
   # Constants
 
