@@ -241,6 +241,13 @@ defmodule Explorer.Indexer.BlockFetcher do
             end)
 
             :ok = Sequence.inject_range(seq, range)
+
+          {:error, reason, range} ->
+            Logger.debug(fn ->
+              "failed to fetch blocks #{inspect(range)}: #{inspect(reason)}. Retrying"
+            end)
+
+            :ok = Sequence.inject_range(seq, range)
         end
       end,
       max_concurrency: @blocks_concurrency,

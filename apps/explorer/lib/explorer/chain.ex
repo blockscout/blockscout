@@ -234,9 +234,6 @@ defmodule Explorer.Chain do
   @doc """
   The `t:Explorer.Chain.Transaction.t/0` `gas_price` of the `transaction` in `unit`.
   """
-  @spec gas_price(Transaction.t(), :wei) :: Wei.t()
-  @spec gas_price(Transaction.t(), :gwei) :: Wei.gwei()
-  @spec gas_price(Transaction.t(), :ether) :: Wei.ether()
   def gas_price(%Transaction{gas_price: gas_price}, unit) do
     Wei.to(gas_price, unit)
   end

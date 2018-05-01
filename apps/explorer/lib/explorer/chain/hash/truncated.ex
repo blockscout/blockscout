@@ -81,7 +81,7 @@ defmodule Explorer.Chain.Hash.Truncated do
 
   """
   @impl Ecto.Type
-  @spec cast(term()) :: {:ok, t()} :: :error
+  @spec cast(term()) :: {:ok, t()} | :error
   def cast(term) do
     Hash.cast(__MODULE__, term)
   end

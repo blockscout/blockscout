@@ -44,16 +44,18 @@ defmodule Explorer.JSONRPC.Transaction do
 
   @type params :: %{
           block_hash: JSONRPC.hash(),
+          from_address_hash: JSONRPC.address(),
           gas: non_neg_integer(),
           gas_price: non_neg_integer(),
           hash: JSONRPC.hash(),
           index: non_neg_integer(),
           input: String.t(),
           nonce: non_neg_integer(),
-          publicKey: String.t(),
+          public_key: String.t(),
           r: non_neg_integer(),
           s: non_neg_integer(),
           standard_v: 0 | 1,
+          to_address_hash: JSONRPC.address(),
           v: non_neg_integer(),
           value: non_neg_integer()
         }

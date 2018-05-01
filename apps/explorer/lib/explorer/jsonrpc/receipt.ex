@@ -6,12 +6,13 @@ defmodule Explorer.JSONRPC.Receipt do
 
   import Explorer.JSONRPC, only: [quantity_to_integer: 1]
 
+  alias Explorer.Chain.Receipt.Status
   alias Explorer.JSONRPC
   alias Explorer.JSONRPC.Logs
 
   # Types
 
-  @type elixir :: %{String.t() => nil}
+  @type elixir :: %{String.t() => String.t() | non_neg_integer}
 
   @typedoc """
   * `"contractAddress"` - The contract `t:Explorer.JSONRPC.address/0` created, if the transaction was a contract
@@ -65,7 +66,13 @@ defmodule Explorer.JSONRPC.Receipt do
       }
 
   """
-  @spec elixir_to_params(elixir) :: [map]
+  @spec elixir_to_params(elixir) :: %{
+          cumulative_gas_used: non_neg_integer,
+          gas_used: non_neg_integer,
+          status: Status.t(),
+          transaction_hash: String.t(),
+          transaction_index: non_neg_integer()
+        }
   def elixir_to_params(%{
         "cumulativeGasUsed" => cumulative_gas_used,
         "gasUsed" => gas_used,
