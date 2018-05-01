@@ -45,7 +45,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
           trace_address: [0, 1],
           transaction: transaction,
           type: "call",
-          value: 100,
+          value: 100
         })
 
       assert Repo.insert(changeset)
