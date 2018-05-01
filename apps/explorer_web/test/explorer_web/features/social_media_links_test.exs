@@ -1,5 +1,5 @@
 defmodule ExplorerWeb.SocialMediaLinksTest do
-  use ExplorerWeb.FeatureCase, async: true
+  use ExplorerWeb.FeatureCase
 
   import Wallaby.Query
 
