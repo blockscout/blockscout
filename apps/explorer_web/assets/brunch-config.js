@@ -27,8 +27,7 @@ exports.config = {
     },
     stylesheets: {
       joinTo: {
-        'css/app.css': 'css/app.scss',
-        'css/test.css': 'spec/support/jasmine.scss',
+        'css/app.css': 'css/app.scss'
       }
     },
     templates: {
@@ -71,8 +70,7 @@ exports.config = {
       options: {
         includePaths: [
           'node_modules/bootstrap/scss',
-          'node_modules/font-awesome/scss',
-          'node_modules/jasmine-core/lib'
+          'node_modules/font-awesome/scss'
         ]
       }
     },

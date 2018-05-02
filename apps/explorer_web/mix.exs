@@ -55,7 +55,6 @@ defmodule ExplorerWeb.Mixfile do
     do: [
       :scrivener_html,
       :ex_cldr,
-      :ex_jasmine,
       :timex,
       :timex_ecto,
       :crontab,
@@ -76,7 +75,6 @@ defmodule ExplorerWeb.Mixfile do
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       {:ex_cldr_numbers, "~> 1.0"},
       {:ex_cldr_units, "~> 1.0"},
-      {:ex_jasmine, github: "minifast/ex_jasmine", branch: "master"},
       {:ex_machina, "~> 2.1", only: [:test]},
       # Code coverage
       {:excoveralls, "~> 0.8.1", only: [:test]},
