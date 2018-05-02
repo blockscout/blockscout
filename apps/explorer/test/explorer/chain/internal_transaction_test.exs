@@ -3,6 +3,8 @@ defmodule Explorer.Chain.InternalTransactionTest do
 
   alias Explorer.Chain.InternalTransaction
 
+  doctest InternalTransaction
+
   describe "changeset/2" do
     test "with valid attributes" do
       transaction = insert(:transaction)

@@ -86,6 +86,222 @@ defmodule Explorer.Chain.InternalTransaction do
     belongs_to(:transaction, Transaction, foreign_key: :transaction_hash, references: :hash, type: Hash.Full)
   end
 
+  @doc """
+  Validates that the `attrs` are valid.
+
+  `:create` type traces generated when a contract is created are valid.  `created_contract_address_hash`,
+  `from_address_hash`, and `transaction_hash` are converted to `t:Explorer.Chain.Hash.t/0`, and `type` is converted to
+  `t:Explorer.Chain.InternalTransaction.Type.t/0`
+
+      iex> changeset = Explorer.Chain.InternalTransaction.changeset(
+      ...>   %Explorer.Chain.InternalTransaction{},
+      ...>   %{
+      ...>     created_contract_address_hash: "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb4",
+      ...>     created_contract_code: "0x606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
+      ...>     from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>     gas: 4597044,
+      ...>     gas_used: 166651,
+      ...>     index: 0,
+      ...>     init: "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
+      ...>     trace_address: [],
+      ...>     transaction_hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
+      ...>     type: "create",
+      ...>     value: 0
+      ...>   }
+      ...> )
+      iex> changeset.valid?
+      true
+      iex> changeset.changes.created_contract_address_hash
+      %Explorer.Chain.Hash{
+        byte_count: 20,
+        bytes: <<255, 200, 114, 57, 235, 2, 103, 188, 60, 162, 205, 81, 209, 47, 191, 39, 142, 2, 204, 180>>
+      }
+      iex> changeset.changes.from_address_hash
+      %Explorer.Chain.Hash{
+        byte_count: 20,
+        bytes: <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132, 89, 192, 16, 79, 223, 94, 152, 122, 202>>
+      }
+      iex> changeset.changes.transaction_hash
+      %Explorer.Chain.Hash{
+        byte_count: 32,
+        bytes: <<58, 62, 177, 52, 230, 121, 44, 233, 64, 62, 164, 24, 142, 94, 121, 105, 61, 233, 228, 201, 78, 73, 157,
+                177, 50, 190, 8, 100, 0, 218, 121, 230>>
+      }
+      iex> changeset.changes.type
+      :create
+
+  `:create` type can fail due to a Bad Instruction in the `init`, but these need to be valid, so we can display the
+  failures.  `to_address_hash` is converted to `t:Explorer.Chain.Hash.t/0`.
+
+      iex> changeset = Explorer.Chain.InternalTransaction.changeset(
+      ...>   %Explorer.Chain.InternalTransaction{},
+      ...>   %{
+      ...>     error: "Bad instruction",
+      ...>     from_address_hash: "0x78a42d3705fb3c26a4b54737a784bf064f0815fb",
+      ...>     gas: 3946728,
+      ...>     index: 0,
+      ...>     init: "0x4bb278f3",
+      ...>     trace_address: [],
+      ...>     transaction_hash: "0x3c624bb4852fb5e35a8f45644cec7a486211f6ba89034768a2b763194f22f97d",
+      ...>     type: "create",
+      ...>     value: 0
+      ...>   }
+      iex> )
+      iex> changeset.valid?
+      true
+      iex> changeset.changes.from_address_hash
+      %Explorer.Chain.Hash{
+        byte_count: 20,
+        bytes: <<120, 164, 45, 55, 5, 251, 60, 38, 164, 181, 71, 55, 167, 132, 191, 6, 79, 8, 21, 251>>
+      }
+
+  `:call` type traces are generated when a method in a contrat is call.
+
+      iex> changeset = Explorer.Chain.InternalTransaction.changeset(
+      ...>   %Explorer.Chain.InternalTransaction{},
+      ...>   %{
+      ...>     call_type: "call",
+      ...>     from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>     gas: 4677320,
+      ...>     gas_used: 27770,
+      ...>     index: 0,
+      ...>     output: "0x",
+      ...>     to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+      ...>     trace_address: [],
+      ...>     transaction_hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
+      ...>     type: "call",
+      ...>     value: 0
+      ...>   }
+      ...> )
+      iex> changeset.valid?
+      true
+
+  `:call` type traces can also fail, in which case it will be reverted.
+
+      iex> changeset = Explorer.Chain.InternalTransaction.changeset(
+      ...>   %Explorer.Chain.InternalTransaction{},
+      ...>   %{
+      ...>     call_type: "call",
+      ...>     error: "Reverted",
+      ...>     from_address_hash: "0xc9266e6fdf5182dc47d27e0dc32bdff9e4cd2e32",
+      ...>     gas: 7578728,
+      ...>     index: 0,
+      ...>     to_address_hash: "0xfdca0da4158740a93693441b35809b5bb463e527",
+      ...>     trace_address: [],
+      ...>     transaction_hash: "0xcd7c15dbbc797722bef6e1d551edfd644fc7f4fb2ccd6a7947b2d1ade9ed140b",
+      ...>     type: "call",
+      ...>     value: 10000000000000000
+      ...>   }
+      ...> )
+      iex> changeset.valid?
+      true
+
+  Failed `:call`s are not allowed to set `gas_used` or `output` because they are part of the successful `result` object
+  in the Parity JSONRPC response.
+
+      iex> changeset = Explorer.Chain.InternalTransaction.changeset(
+      ...>   %Explorer.Chain.InternalTransaction{},
+      ...>   %{
+      ...>     call_type: "call",
+      ...>     error: "Reverted",
+      ...>     from_address_hash: "0xc9266e6fdf5182dc47d27e0dc32bdff9e4cd2e32",
+      ...>     gas: 7578728,
+      ...>     gas_used: 7578727,
+      ...>     index: 0,
+      ...>     output: "0x",
+      ...>     to_address_hash: "0xfdca0da4158740a93693441b35809b5bb463e527",
+      ...>     trace_address: [],
+      ...>     transaction_hash: "0xcd7c15dbbc797722bef6e1d551edfd644fc7f4fb2ccd6a7947b2d1ade9ed140b",
+      ...>     type: "call",
+      ...>     value: 10000000000000000
+      ...>   }
+      ...> )
+      iex> changeset.valid?
+      false
+      iex> changeset.errors
+      [
+        output: {"can't be present for failed call", []},
+        gas_used: {"can't be present for failed call", []}
+      ]
+
+  Likewise, successful `:call`s require `gas_used` and `output` to be set.
+
+      iex> changeset = Explorer.Chain.InternalTransaction.changeset(
+      ...>   %Explorer.Chain.InternalTransaction{},
+      ...>   %{
+      ...>     call_type: "call",
+      ...>     from_address_hash: "0xc9266e6fdf5182dc47d27e0dc32bdff9e4cd2e32",
+      ...>     gas: 7578728,
+      ...>     index: 0,
+      ...>     to_address_hash: "0xfdca0da4158740a93693441b35809b5bb463e527",
+      ...>     trace_address: [],
+      ...>     transaction_hash: "0xcd7c15dbbc797722bef6e1d551edfd644fc7f4fb2ccd6a7947b2d1ade9ed140b",
+      ...>     type: "call",
+      ...>     value: 10000000000000000
+      ...>   }
+      ...> )
+      iex> changeset.valid?
+      false
+      iex> changeset.errors
+      [
+        gas_used: {"can't be blank for successful call", [validation: :required]},
+        output: {"can't be blank for successful call", [validation: :required]}
+      ]
+
+  For failed `:create`, `created_contract_code`, `created_contract_address_hash`, and `gas_used` are not allowed to be
+  set because they come from `result` object, which shouldn't be returned from Parity.
+
+      iex> changeset = Explorer.Chain.InternalTransaction.changeset(
+      ...>   %Explorer.Chain.InternalTransaction{},
+      ...>   %{
+      ...>     created_contract_address_hash: "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb4",
+      ...>     created_contract_code: "0x606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
+      ...>     error: "Bad instruction",
+      ...>     from_address_hash: "0x78a42d3705fb3c26a4b54737a784bf064f0815fb",
+      ...>     gas: 3946728,
+      ...>     gas_used: 166651,
+      ...>     index: 0,
+      ...>     init: "0x4bb278f3",
+      ...>     trace_address: [],
+      ...>     transaction_hash: "0x3c624bb4852fb5e35a8f45644cec7a486211f6ba89034768a2b763194f22f97d",
+      ...>     type: "create",
+      ...>     value: 0
+      ...>   }
+      iex> )
+      iex> changeset.valid?
+      false
+      iex> changeset.errors
+      [
+        gas_used: {"can't be present for failed create", []},
+        created_contract_address_hash: {"can't be present for failed create", []},
+        created_contract_code: {"can't be present for failed create", []}
+      ]
+
+  For successful `:create`,  `created_contract_code`, `created_contract_address_hash`, and `gas_used` are required.
+
+      iex> changeset = Explorer.Chain.InternalTransaction.changeset(
+      ...>   %Explorer.Chain.InternalTransaction{},
+      ...>   %{
+      ...>     from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>     gas: 4597044,
+      ...>     index: 0,
+      ...>     init: "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
+      ...>     trace_address: [],
+      ...>     transaction_hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
+      ...>     type: "create",
+      ...>     value: 0
+      ...>   }
+      ...> )
+      iex> changeset.valid?
+      false
+      iex> changeset.errors
+      [
+        created_contract_code: {"can't be blank for successful create", [validation: :required]},
+        created_contract_address_hash: {"can't be blank for successful create", [validation: :required]},
+        gas_used: {"can't be blank for successful create", [validation: :required]}
+      ]
+
+  """
   def changeset(%__MODULE__{} = internal_transaction, attrs \\ %{}) do
     internal_transaction
     |> cast(attrs, ~w(type)a)
@@ -93,6 +309,63 @@ defmodule Explorer.Chain.InternalTransaction do
     |> type_changeset(attrs)
   end
 
+  @doc """
+  Extracts non-`nil` `t:Explorer.Chain.Address.t/0` `hash`es from fields
+
+  * `created_contract_address_hash`
+  * `from_address_hash`
+  * `to_address_hash`
+
+  For `:call` type internal transactions, `from_address_hash` and `to_address_hash` are set
+
+      iex> %Ecto.Changeset{changes: changes, valid?: true} = Explorer.Chain.InternalTransaction.changeset(
+      ...>   %Explorer.Chain.InternalTransaction{},
+      ...>   %{
+      ...>     call_type: "call",
+      ...>     from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>     gas: 4677320,
+      ...>     gas_used: 27770,
+      ...>     index: 0,
+      ...>     output: "0x",
+      ...>     to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+      ...>     trace_address: [],
+      ...>     transaction_hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
+      ...>     type: "call",
+      ...>     value: 0
+      ...>   }
+      ...> )
+      iex> address_hash_set = Explorer.Chain.InternalTransaction.changes_to_address_hash_set(changes)
+      iex> changes.from_address_hash in address_hash_set
+      true
+      iex> changes.to_address_hash in address_hash_set
+      true
+
+  For `:create` type internal transactions, `created_contract_address_hash` and `from_address_hash` are set, but
+  `to_address_hash` is not
+
+      iex> %Ecto.Changeset{changes: changes, valid?: true} = Explorer.Chain.InternalTransaction.changeset(
+      ...>   %Explorer.Chain.InternalTransaction{},
+      ...>   %{
+      ...>     created_contract_address_hash: "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb4",
+      ...>     created_contract_code: "0x606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
+      ...>     from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>     gas: 4597044,
+      ...>     gas_used: 166651,
+      ...>     index: 0,
+      ...>     init: "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
+      ...>     trace_address: [],
+      ...>     transaction_hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
+      ...>     type: "create",
+      ...>     value: 0
+      ...>   }
+      ...> )
+      iex> address_hash_set = Explorer.Chain.InternalTransaction.changes_to_address_hash_set(changes)
+      iex> changes.created_contract_address_hash in address_hash_set
+      true
+      iex> changes.from_address_hash in address_hash_set
+      true
+
+  """
   def changes_to_address_hash_set(changes) do
     Enum.reduce(~w(created_contract_address_hash from_address_hash to_address_hash)a, MapSet.new(), fn field, acc ->
       case Map.get(changes, field) do
