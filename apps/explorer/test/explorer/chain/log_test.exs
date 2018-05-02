@@ -4,6 +4,8 @@ defmodule Explorer.Chain.LogTest do
   alias Ecto.Changeset
   alias Explorer.Chain.Log
 
+  doctest Log
+
   describe "changeset/2" do
     test "accepts valid attributes" do
       params = params_for(:log)
