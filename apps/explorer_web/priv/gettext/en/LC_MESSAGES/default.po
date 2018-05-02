@@ -29,7 +29,7 @@ msgid "Block"
 msgstr "Block"
 
 #: lib/explorer_web/templates/chain/show.html.eex:58
-#: lib/explorer_web/templates/layout/app.html.eex:24
+#: lib/explorer_web/templates/layout/app.html.eex:25
 msgid "Blocks"
 msgstr "Blocks"
 
@@ -68,7 +68,7 @@ msgstr "POA Network Explorer"
 #: lib/explorer_web/templates/chain/show.html.eex:45
 #: lib/explorer_web/templates/chain/show.html.eex:72
 #: lib/explorer_web/templates/chain/show.html.eex:99
-#: lib/explorer_web/templates/layout/app.html.eex:30
+#: lib/explorer_web/templates/layout/app.html.eex:31
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:12
 #: lib/explorer_web/templates/transaction/index.html.eex:12
 msgid "Transactions"
@@ -235,7 +235,7 @@ msgstr "Showing #%{start_block} to #%{end_block}"
 msgid "Showing %{count} Transactions"
 msgstr "Showing %{count} Transactions"
 
-#: lib/explorer_web/templates/layout/app.html.eex:35
+#: lib/explorer_web/templates/layout/app.html.eex:36
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:19
 #: lib/explorer_web/templates/transaction/index.html.eex:19
 #: lib/explorer_web/templates/transaction/overview.html.eex:56
@@ -351,7 +351,7 @@ msgstr ""
 msgid "Internal Transactions"
 msgstr ""
 
-#: lib/explorer_web/templates/layout/app.html.eex:56
+#: lib/explorer_web/templates/layout/app.html.eex:58
 msgid "Search by address, transaction hash, or block number"
 msgstr ""
 
@@ -393,7 +393,7 @@ msgstr ""
 msgid "Fee"
 msgstr ""
 
-#: lib/explorer_web/templates/layout/app.html.eex:34
+#: lib/explorer_web/templates/layout/app.html.eex:35
 msgid "Validated"
 msgstr ""
 

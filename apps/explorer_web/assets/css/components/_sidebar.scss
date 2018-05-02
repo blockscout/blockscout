@@ -2,25 +2,14 @@
 /* ---------------------------------------------------
     SIDEBAR STYLE
 ----------------------------------------------------- */
-#sidebar {
-    min-width: 200px;
-    background: $gray-200;
-    position: sticky;
+#sidebar  {
+    width: 200px;
+    background: $navbar-light-color;
     top: 0px;
-
-    @media (max-width: 768px) {
-      transition: all 0.6s cubic-bezier(0.945, 0.020, 0.270, 0.665);
-      transform-origin: bottom left;
-    }
+    z-index: 9999;
+    height: 100%;
+    position: fixed;
 }
-
-#sidebar .active {
-
-  @media (max-width: 768px) {
-    margin-left: -200px;
-    transform: rotateY(100deg);
-    }
-  }
 
 #sidebar .sidebar-header {
   background-color: $primary;
@@ -64,11 +53,6 @@
 
 }
 
-
-#sidebar ul li.active > a, a[aria-expanded="true"] {
-
-}
-
 #sidebar li {
   list-style-type: none;
   padding-left: 5px;
@@ -76,6 +60,10 @@
 }
 a[data-toggle="collapse"] {
     position: relative;
+}
+
+#sidebar--container {
+  width: 200px;
 }
 
 #pageSubmenu {
@@ -94,24 +82,31 @@ a[data-toggle="collapse"] {
     MEDIAQUERIES
 ----------------------------------------------------- */
 @media (max-width: 768px) {
-    #sidebar {
+    #sidebar--container {
         margin-left: -200px;
         transform: rotateY(90deg);
         height: 100vh;
         position: fixed;
+        transition: all 0.6s cubic-bezier(0.945, 0.020, 0.270, 0.665);
 
+        ~ #content {
+          position: absolute;
+          left: 0;
+          right: 0;
+          transition: all 0.6s cubic-bezier(0.945, 0.020, 0.270, 0.665);
+        }
+      }
 
-    }
-    #sidebar.active {
+    #sidebar--container.active {
         margin-left: 0;
         transform: none;
         outline: none;
 
         ~ #content {
-          position: absolute;
+          left: 200px;
           right: -200px;
         }
-    }
+      }
 
     #sidebar .menu-items div {
       padding-top: 11px;
@@ -120,8 +115,9 @@ a[data-toggle="collapse"] {
     #sidebarCollapse {
       display: block;
       width: 45px;
-      height: 65px;
+      height: 66px;
       background-image: none;
+      background-color: $primary;
       border-color: transparent !important;
       box-shadow: 0 2px 2px 0 rgba(38,50,56,.16), 0 0 2px 0 rgba(38,50,56,.12);
       outline: none;
@@ -132,7 +128,7 @@ a[data-toggle="collapse"] {
         height: 2px;
         margin: 0 auto;
         display: block;
-        background: $black;
+        background: $white;
         transition: all 0.8s;
     }
 
