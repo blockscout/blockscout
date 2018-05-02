@@ -3,7 +3,7 @@ defmodule Explorer.Chain do
   The chain context.
   """
 
-  import Ecto.Query, only: [from: 2, or_where: 3, order_by: 2, preload: 2, where: 2]
+  import Ecto.Query, only: [from: 2, or_where: 3, order_by: 2, preload: 2, where: 2, where: 3]
 
   alias Explorer.Chain.{
     Address,
@@ -418,22 +418,34 @@ defmodule Explorer.Chain do
   @doc """
   `t:Explorer.Chain.InternalTransaction/0`s in `t:Explorer.Chain.Transaction.t/0` with `hash`
 
+  This function excludes any internal transactions that have no siblings within the parent transaction.
+
   ## Options
 
   * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
       then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
+  * `:pagination` - pagination params to pass to scrivener.
 
   """
   @spec transaction_hash_to_internal_transactions(Transaction.hash()) :: [InternalTransaction.t()]
   def transaction_hash_to_internal_transactions(hash, options \\ [])
       when is_binary(hash) and is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    pagination = Keyword.get(options, :pagination, %{})
 
     InternalTransaction
     |> for_parent_transaction(hash)
     |> join_associations(necessity_by_association)
-    |> Repo.all()
+    |> where(
+      [_it, t],
+      fragment(
+        "(SELECT COUNT(sibling.id) FROM internal_transactions as sibling WHERE sibling.transaction_id = ?) > 1",
+        t.id
+      )
+    )
+    |> order_by(:index)
+    |> Repo.paginate(pagination)
   end
 
   @doc """
