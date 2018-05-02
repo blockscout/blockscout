@@ -12,35 +12,40 @@
     "npm": "5.x"
   },
   "scripts": {
-    "deploy": "brunch build --production",
-    "watch": "brunch watch --stdin",
-    "build": "brunch build",
+    "deploy": "webpack --mode production",
+    "watch": "webpack --mode development --watch",
+    "build": "webpack --mode development",
     "eslint": "eslint js/**"
   },
   "dependencies": {
-    "@babel/polyfill": "^7.0.0-beta.39",
-    "autoprefixer": "^8.3.0",
-    "babel-brunch": "6.1.1",
-    "babel-preset-env": "^1.6.1",
     "bootstrap": "^4.1.0",
-    "brunch": "2.10.9",
-    "copycat-brunch": "^1.1.0",
-    "csswring": "^6.0.3",
     "font-awesome": "^4.7.0",
     "jquery": "^3.3.1",
     "phoenix": "file:../../../deps/phoenix",
     "phoenix_html": "file:../../../deps/phoenix_html",
-    "popper.js": "^1.14.3",
-    "postcss-brunch": "0.5.0",
-    "sass-brunch": "^2.10.4",
-    "uglify-js-brunch": "2.10.0"
+    "popper.js": "^1.14.3"
   },
   "devDependencies": {
+    "@babel/polyfill": "^7.0.0-beta.46",
+    "autoprefixer": "^8.4.1",
+    "babel-core": "^6.26.3",
+    "babel-loader": "^7.1.4",
+    "babel-preset-env": "^1.6.1",
+    "copy-webpack-plugin": "^4.5.1",
+    "css-loader": "^0.28.11",
     "eslint": "^4.15.0",
     "eslint-config-standard": "^11.0.0-beta.0",
     "eslint-plugin-import": "^2.8.0",
     "eslint-plugin-node": "^5.2.1",
     "eslint-plugin-promise": "^3.6.0",
-    "eslint-plugin-standard": "^3.0.1"
+    "eslint-plugin-standard": "^3.0.1",
+    "extract-text-webpack-plugin": "^4.0.0-beta.0",
+    "file-loader": "^1.1.11",
+    "node-sass": "^4.9.0",
+    "postcss-loader": "^2.1.4",
+    "sass-loader": "^7.0.1",
+    "style-loader": "^0.21.0",
+    "webpack": "^4.6.0",
+    "webpack-cli": "^2.1.2"
   }
 }
