@@ -13,7 +13,6 @@
 // to also remove its path from "config.paths.watched".
 import '@babel/polyfill'
 import 'phoenix_html'
-import './lib/react_phoenix'
 import 'bootstrap'
 
 // Import local files

@@ -41,7 +41,6 @@ defmodule ExplorerWeb do
       use Phoenix.HTML
 
       import ExplorerWeb.{ErrorHelpers, Gettext, Router.Helpers}
-      import ReactPhoenix.ClientSide
       import Scrivener.HTML
     end
   end

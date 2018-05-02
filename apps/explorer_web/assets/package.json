@@ -22,7 +22,6 @@
     "autoprefixer": "^8.3.0",
     "babel-brunch": "6.1.1",
     "babel-preset-env": "^1.6.1",
-    "babel-preset-react": "^6.24.1",
     "bootstrap": "^4.1.0",
     "brunch": "2.10.9",
     "copycat-brunch": "^1.1.0",
@@ -33,20 +32,16 @@
     "phoenix_html": "file:../../../deps/phoenix_html",
     "popper.js": "^1.14.3",
     "postcss-brunch": "0.5.0",
-    "react": "^16.2.0",
-    "react-dom": "^16.2.0",
     "sass-brunch": "^2.10.4",
     "uglify-js-brunch": "2.10.0"
   },
   "devDependencies": {
     "eslint": "^4.15.0",
     "eslint-config-standard": "^11.0.0-beta.0",
-    "eslint-config-standard-jsx": "^4.0.2",
     "eslint-plugin-import": "^2.8.0",
     "eslint-plugin-jasmine": "^2.9.1",
     "eslint-plugin-node": "^5.2.1",
     "eslint-plugin-promise": "^3.6.0",
-    "eslint-plugin-react": "^7.5.1",
     "eslint-plugin-standard": "^3.0.1",
     "jasmine-core": "^2.9.1"
   }
