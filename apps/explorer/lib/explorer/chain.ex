@@ -75,13 +75,7 @@ defmodule Explorer.Chain do
     |> join(:inner, [internal_transaction], transaction in assoc(internal_transaction, :transaction))
     |> join(:left, [internal_transaction, transaction], block in assoc(transaction, :block))
     |> where_address_fields_match(direction, id)
-    |> where(
-      [_it, t],
-      fragment(
-        "(SELECT COUNT(sibling.id) FROM internal_transactions as sibling WHERE sibling.transaction_id = ?) > 1",
-        t.id
-      )
-    )
+    |> where_transaction_has_multiple_internal_transactions()
     |> order_by([it, transaction, block], desc: block.number, desc: transaction.transaction_index, desc: it.index)
     |> preload(transaction: :block)
     |> join_associations(necessity_by_association)
@@ -477,13 +471,7 @@ defmodule Explorer.Chain do
     InternalTransaction
     |> for_parent_transaction(hash)
     |> join_associations(necessity_by_association)
-    |> where(
-      [_it, t],
-      fragment(
-        "(SELECT COUNT(sibling.id) FROM internal_transactions as sibling WHERE sibling.transaction_id = ?) > 1",
-        t.id
-      )
-    )
+    |> where_transaction_has_multiple_internal_transactions()
     |> order_by(:index)
     |> Repo.paginate(pagination)
   end
@@ -699,6 +687,17 @@ defmodule Explorer.Chain do
           "NOT EXISTS (SELECT true FROM receipts WHERE receipts.transaction_id = ?)",
           transaction.id
         )
+    )
+  end
+
+  defp where_transaction_has_multiple_internal_transactions(query) do
+    where(
+      query,
+      [_it, transaction],
+      fragment(
+        "(SELECT COUNT(sibling.id) FROM internal_transactions as sibling WHERE sibling.transaction_id = ?) > 1",
+        transaction.id
+      )
     )
   end
 end
