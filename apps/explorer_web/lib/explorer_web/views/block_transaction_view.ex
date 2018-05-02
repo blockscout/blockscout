@@ -6,7 +6,6 @@ defmodule ExplorerWeb.BlockTransactionView do
   # Functions
 
   defdelegate status(transacton), to: TransactionView
-  defdelegate value(transaction), to: TransactionView
   defdelegate age(block), to: BlockView
   defdelegate formatted_timestamp(block), to: BlockView
 end

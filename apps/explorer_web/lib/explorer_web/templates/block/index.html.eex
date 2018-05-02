@@ -57,11 +57,7 @@
                 <%= block.gas_limit |> Cldr.Number.to_string! %>
               </td>
               <td class="blocks__column blocks__column--optional blocks__column--gas-price">
-                <%= block.transactions
-                    |> Enum.map(fn(transaction) -> Decimal.to_float(to_gwei(transaction.gas_price)) end)
-                    |> Math.Enum.mean()
-                    |> Kernel.||(0)
-                    |> Cldr.Number.to_string! %> Gwei
+                <%= average_gas_price(block) %>
               </td>
             </tr>
           <% end %>

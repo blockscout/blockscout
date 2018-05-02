@@ -9,7 +9,7 @@ defmodule ExplorerWeb.WeiHelpers do
 
   @valid_units ~w(wei gwei ether)a
 
-  @type format_option :: {:fractional_digits, pos_integer()}
+  @type format_option :: {:fractional_digits, pos_integer()} | {:include_unit_label, boolean()}
 
   @type format_options :: [format_option()]
 
@@ -23,6 +23,8 @@ defmodule ExplorerWeb.WeiHelpers do
   converted number.
 
   * `:fractional_digits` - Integer. Number of fractional digits to include
+  * `:include_unit_label` - Boolean (Defaults to `true`). Flag for if the unit
+    label should be included in the returned string
 
   ## Examples
 
@@ -43,27 +45,35 @@ defmodule ExplorerWeb.WeiHelpers do
       ...>   fractional_digits: 3
       ...> )
       "1.000 Wei"
+
+      iex> format_wei_value(
+      ...>   %Wei{value: Decimal.new(10)},
+      ...>   :wei,
+      ...>   include_unit_label: false
+      ...> )
+      "10"
   """
   @spec format_wei_value(Wei.t(), Wei.unit(), format_options()) :: String.t()
   def format_wei_value(%Wei{} = wei, unit, options \\ []) when unit in @valid_units do
-    format_options = build_format_options(options)
+    number_format_options = build_number_format_options(options)
+
     converted_value =
       wei
       |> Wei.to(unit)
-      |> Cldr.Number.to_string!(format_options)
+      |> Cldr.Number.to_string!(number_format_options)
 
-    display_unit = display_unit(unit)
-
-    "#{converted_value} #{display_unit}"
+    if Keyword.get(options, :include_unit_label, true) do
+      display_unit = display_unit(unit)
+      "#{converted_value} #{display_unit}"
+    else
+      converted_value
+    end
   end
 
-  ## Private functions
-
-  defp build_format_options(options) do
-    Enum.reduce(options, [], fn (option, formatted_options) ->
-      case parse_format_option(option) do
+  defp build_number_format_options(options) do
+    Enum.reduce(options, [], fn option, formatted_options ->
+      case parse_number_format_option(option) do
         nil -> formatted_options
-
         {key, value} -> Keyword.put(formatted_options, key, value)
       end
     end)
@@ -75,9 +85,9 @@ defmodule ExplorerWeb.WeiHelpers do
 
   defguardp is_fractional_digit(digits) when is_integer(digits) and digits > 0
 
-  defp parse_format_option({:fractional_digits, digits}) when is_fractional_digit(digits) do
+  defp parse_number_format_option({:fractional_digits, digits}) when is_fractional_digit(digits) do
     {:fractional_digits, digits}
   end
 
-  defp parse_format_option(_), do: nil
+  defp parse_number_format_option(_), do: nil
 end

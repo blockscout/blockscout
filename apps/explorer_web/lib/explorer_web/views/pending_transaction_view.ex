@@ -23,6 +23,4 @@ defmodule ExplorerWeb.PendingTransactionView do
       _ -> nil
     end
   end
-
-  defdelegate value(transaction), to: TransactionView
 end
