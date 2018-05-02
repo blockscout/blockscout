@@ -20,9 +20,10 @@ config :explorer_web, ExplorerWeb.Endpoint,
 config :explorer_web, ExplorerWeb.Gettext, locales: ~w(en), default_locale: "en"
 
 config :explorer_web, ExplorerWeb.SocialMedia,
-  facebook: "https://www.facebook.com/PoaNetwork",
-  instagram: "https://www.instagram.com/PoaNetwork",
-  twitter: "https://www.twitter.com/PoaNetwork"
+  twitter: "PoaNetwork",
+  telegram: "oraclesnetwork",
+  facebook: "PoaNetwork",
+  instagram: "PoaNetwork"
 
 config :ex_cldr,
   default_locale: "en",
