@@ -43,7 +43,7 @@
       <div id="content">
         <div class="content-header">
           <nav>
-            <button type="button" id="sidebarCollapse" class="navbar-btn" data-test="hamburger_menu_button">
+            <button type="button" id="sidebarCollapse" class="navbar-btn">
                 <span></span>
                 <span></span>
                 <span></span>
