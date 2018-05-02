@@ -30,13 +30,11 @@ defmodule ExplorerWeb.TransactionController do
           necessity_by_association: %{from_address: :required, to_address: :optional}
         )
 
-      max_block_number = Chain.max_block_number()
-
       render(
         conn,
         "show.html",
         internal_transactions: internal_transactions,
-        max_block_number: max_block_number,
+        max_block_number: max_block_number(),
         transaction: transaction
       )
     else
@@ -81,5 +79,12 @@ defmodule ExplorerWeb.TransactionController do
 
   defp last_seen_collated_hash(transactions) do
     List.last(transactions).hash
+  end
+
+  defp max_block_number do
+    case Chain.max_block_number() do
+      {:ok, number} -> number
+      {:error, :not_found} -> 0
+    end
   end
 end

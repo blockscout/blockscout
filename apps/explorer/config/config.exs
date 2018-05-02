@@ -19,8 +19,6 @@ config :explorer, Explorer.JSONRPC,
   trace_url: "https://sokol-trace.poa.network",
   url: url
 
-config :explorer, :ethereum, backend: Explorer.Ethereum.Live
-
 config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: 2_000
 
 config :explorer, Explorer.Repo, migration_timestamps: [type: :utc_datetime]

@@ -227,10 +227,6 @@ defmodule Explorer.Chain do
     {:actual, fee}
   end
 
-  def get_latest_block do
-    Repo.one(from(b in Block, limit: 1, order_by: [desc: b.number]))
-  end
-
   @doc """
   The `t:Explorer.Chain.Transaction.t/0` `gas_price` of the `transaction` in `unit`.
   """
@@ -504,10 +500,26 @@ defmodule Explorer.Chain do
 
   @doc """
   The maximum `t:Explorer.Chain.Block.t/0` `number`
+
+  If blocks are skipped and inserted out of number order, the max number is still returned
+
+      iex> insert(:block, number: 2)
+      iex> insert(:block, number: 1)
+      iex> Explorer.Chain.max_block_number()
+      {:ok, 2}
+
+  If there are no blocks, `{:error, :not_found}` is returned
+
+      iex> Explorer.Chain.max_block_number()
+      {:error, :not_found}
+
   """
-  @spec max_block_number() :: Block.block_number()
+  @spec max_block_number() :: {:ok, Block.block_number()} | {:error, :not_found}
   def max_block_number do
-    Repo.aggregate(Block, :max, :number)
+    case Repo.aggregate(Block, :max, :number) do
+      nil -> {:error, :not_found}
+      number -> {:ok, number}
+    end
   end
 
   @doc """

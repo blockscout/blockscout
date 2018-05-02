@@ -289,7 +289,7 @@ defmodule Explorer.ChainTest do
   describe "confirmations/1" do
     test "with block.number == max_block_number " do
       block = insert(:block)
-      max_block_number = Chain.max_block_number()
+      {:ok, max_block_number} = Chain.max_block_number()
 
       assert block.number == max_block_number
       assert Chain.confirmations(block, max_block_number: max_block_number) == 0
@@ -444,21 +444,6 @@ defmodule Explorer.ChainTest do
                total_entries: 2,
                total_pages: 2
              } = Chain.list_blocks(pagination: %{page: 2, page_size: 1})
-    end
-  end
-
-  describe "max_block_number/0" do
-    test "without blocks is nil" do
-      assert Chain.max_block_number() == nil
-    end
-
-    test "with blocks is max number regardless of insertion order" do
-      max_number = 2
-      insert(:block, number: max_number)
-
-      insert(:block, number: 1)
-
-      assert Chain.max_block_number() == max_number
     end
   end
 
