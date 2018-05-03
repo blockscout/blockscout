@@ -178,7 +178,7 @@ defmodule Explorer.Indexer.BlockFetcher do
            transactions_params: transactions_params
          }) do
       {:ok, %{addresses: address_hashes}} ->
-        :ok = AddressFetcher.async_fetch_addresses(address_hashes)
+        :ok = AddressFetcher.async_fetch_balances(address_hashes)
         :ok
 
       {:error, step, reason, _changes} ->
