@@ -40,7 +40,7 @@ defmodule Explorer.Chain do
   @typep inserted_after_option :: {:inserted_after, DateTime.t()}
   @typep necessity_by_association_option :: {:necessity_by_association, necessity_by_association}
   @typep pagination_option :: {:pagination, pagination}
-  @typep timestamps :: %{inserted_at: DateTime.t(), updated_at: DateTime.t()}
+  @typep timestamps :: %{inserted_at: %Ecto.DateTime{}, updated_at: %Ecto.DateTime{}}
   @typep timestamps_option :: {:timestamps, timestamps}
 
   # Functions
@@ -757,7 +757,9 @@ defmodule Explorer.Chain do
   * `:pagination` - pagination params to pass to scrivener.
 
   """
-  @spec recent_pending_transactions([inserted_after_option | necessity_by_association_option]) :: [Transaction.t()]
+  @spec recent_pending_transactions([inserted_after_option | necessity_by_association_option]) :: %Scrivener.Page{
+          entries: [Transaction.t()]
+        }
   def recent_pending_transactions(options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     pagination = Keyword.get(options, :pagination, %{})
@@ -924,7 +926,11 @@ defmodule Explorer.Chain do
    * `:pagination` - pagination params to pass to scrivener.
 
   """
-  @spec transaction_hash_to_internal_transactions(Hash.Full.t()) :: [InternalTransaction.t()]
+  @spec transaction_hash_to_internal_transactions(Hash.Full.t()) :: %Scrivener.Page{entries: [InternalTransaction.t()]}
+  @spec transaction_hash_to_internal_transactions(Hash.Full.t(), [necessity_by_association_option | pagination_option]) ::
+          %Scrivener.Page{
+            entries: [InternalTransaction.t()]
+          }
   def transaction_hash_to_internal_transactions(
         %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash,
         options \\ []
@@ -1073,6 +1079,7 @@ defmodule Explorer.Chain do
     end)
   end
 
+  @spec ecto_schema_module_to_changes_list_to_address_hash_set(%{module => [map()]}) :: MapSet.t(Hash.Truncated.t())
   defp ecto_schema_module_to_changes_list_to_address_hash_set(ecto_schema_module_to_changes_list) do
     Enum.reduce(ecto_schema_module_to_changes_list, MapSet.new(), fn ecto_schema_module_changes_list, acc ->
       ecto_schema_module_changes_list
@@ -1109,7 +1116,7 @@ defmodule Explorer.Chain do
     )
   end
 
-  @spec insert_addresses([map()], [timestamps_option]) :: {:ok, Block.t()} | {:error, [Changeset.t()]}
+  @spec insert_addresses([%{hash: Hash.Truncated.t()}], [timestamps_option, ...]) :: {:ok, [Hash.Truncated.t()]}
   defp insert_addresses(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
 
@@ -1261,6 +1268,7 @@ defmodule Explorer.Chain do
     Enum.map(changes_list, &timestamp_params(&1, timestamps))
   end
 
+  @spec timestamps() :: timestamps
   defp timestamps do
     now = Ecto.DateTime.utc()
     %{inserted_at: now, updated_at: now}
