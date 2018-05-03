@@ -78,12 +78,13 @@ defmodule Explorer.Repo.Migrations.CreateInternalTransactions do
 
     # Foreign Key indexes
 
+    create(index(:internal_transactions, :created_contract_address_hash))
     create(index(:internal_transactions, :from_address_hash))
     create(index(:internal_transactions, :to_address_hash))
     create(index(:internal_transactions, :transaction_hash))
 
     # Unique indexes
 
-    create(index(:internal_transactions, [:transaction_hash, :index]))
+    create(unique_index(:internal_transactions, [:transaction_hash, :index]))
   end
 end
