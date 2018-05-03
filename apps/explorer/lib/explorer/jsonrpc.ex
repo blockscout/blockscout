@@ -119,6 +119,7 @@ defmodule Explorer.JSONRPC do
     |> json_rpc(config(:url))
     |> handle_balances()
   end
+
   defp handle_balances({:ok, results}) do
     native_results =
       for response <- results, into: %{} do
@@ -127,8 +128,8 @@ defmodule Explorer.JSONRPC do
 
     {:ok, native_results}
   end
-  defp handle_balances({:error, _reason} = err), do: err
 
+  defp handle_balances({:error, _reason} = err), do: err
 
   @doc """
   Fetches blocks by block hashes.

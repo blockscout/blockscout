@@ -464,27 +464,35 @@ defmodule Explorer.ChainTest do
       {:ok, hash} =
         Chain.string_to_transaction_hash("0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b")
 
-      assert Chain.transaction_hash_to_internal_transactions(hash) == []
+      assert Chain.transaction_hash_to_internal_transactions(hash).entries == []
     end
 
     test "with transaction without internal transactions" do
       %Transaction{hash: hash} = insert(:transaction)
 
-      assert Chain.transaction_hash_to_internal_transactions(hash) == []
+      assert Chain.transaction_hash_to_internal_transactions(hash).entries == []
     end
 
     test "with transaction with internal transactions returns all internal transactions for a given transaction hash" do
       transaction = insert(:transaction)
-      internal_transaction = insert(:internal_transaction, transaction_hash: transaction.hash, index: 0)
+      first = insert(:internal_transaction, transaction_hash: transaction.hash, index: 0)
+      second = insert(:internal_transaction, transaction_hash: transaction.hash, index: 1)
 
-      result = hd(Chain.transaction_hash_to_internal_transactions(transaction.hash))
+      results =
+        transaction.hash
+        |> Chain.transaction_hash_to_internal_transactions()
+        |> Map.get(:entries, [])
+        |> Enum.map(fn it -> it.id end)
 
-      assert result.id == internal_transaction.id
+      assert 2 == length(results)
+      assert Enum.member?(results, first.id)
+      assert Enum.member?(results, second.id)
     end
 
     test "with transaction with internal transactions loads associations with in necessity_by_assocation" do
       %Transaction{hash: hash} = insert(:transaction)
       insert(:internal_transaction, transaction_hash: hash, index: 0)
+      insert(:internal_transaction, transaction_hash: hash, index: 1)
 
       assert [
                %InternalTransaction{
@@ -492,7 +500,8 @@ defmodule Explorer.ChainTest do
                  to_address: %Ecto.Association.NotLoaded{},
                  transaction: %Ecto.Association.NotLoaded{}
                }
-             ] = Chain.transaction_hash_to_internal_transactions(hash)
+               | _
+             ] = Chain.transaction_hash_to_internal_transactions(hash).entries
 
       assert [
                %InternalTransaction{
@@ -500,6 +509,7 @@ defmodule Explorer.ChainTest do
                  to_address: nil,
                  transaction: %Transaction{}
                }
+               | _
              ] =
                Chain.transaction_hash_to_internal_transactions(
                  hash,
@@ -508,7 +518,33 @@ defmodule Explorer.ChainTest do
                    to_address: :optional,
                    transaction: :optional
                  }
-               )
+               ).entries
+    end
+
+    test "excludes internal transaction with no siblings in the transaction" do
+      block = insert(:block)
+      %Transaction{hash: hash} = insert(:transaction, block_hash: block.hash, index: 0)
+      insert(:internal_transaction, transaction_hash: hash)
+
+      result =
+        hash
+        |> Chain.transaction_hash_to_internal_transactions()
+
+      assert %{entries: []} = result
+    end
+
+    test "returns the internal transactions in index order" do
+      block = insert(:block)
+      %Transaction{hash: hash} = insert(:transaction, block_hash: block.hash, index: 0)
+      %InternalTransaction{id: first_id} = insert(:internal_transaction, transaction_hash: hash, index: 0)
+      %InternalTransaction{id: second_id} = insert(:internal_transaction, transaction_hash: hash, index: 1)
+
+      result =
+        hash
+        |> Chain.transaction_hash_to_internal_transactions()
+        |> Enum.map(fn it -> it.id end)
+
+      assert [first_id, second_id] == result
     end
   end
 

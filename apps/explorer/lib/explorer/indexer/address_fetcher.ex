@@ -5,14 +5,12 @@ defmodule Explorer.Indexer.AddressFetcher do
   use GenServer
   require Logger
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, JSONRPC}
 
   alias Explorer.Chain.{
     Address,
     Hash
   }
-
-  alias Explorer.JSONRPC
 
   @fetch_interval :timer.seconds(3)
   @max_batch_size 500

@@ -214,17 +214,6 @@ defmodule ExplorerWeb.ContributorBrowsingTest do
       |> assert_has(css(".transaction__item", text: "38 years ago"))
     end
 
-    test "can see internal transactions for a transaction", %{
-      internal: internal,
-      session: session,
-      txn_from_lincoln: txn_from_lincoln
-    } do
-      session
-      |> visit("/en/transactions/#{Phoenix.Param.to_param(txn_from_lincoln)}")
-      |> click(link("Internal Transactions"))
-      |> assert_has(css(".internal-transaction__table", text: internal.call_type))
-    end
-
     test "can view a transaction's logs", %{lincoln: lincoln, session: session, transaction: transaction} do
       session
       |> visit("/en/transactions/#{Phoenix.Param.to_param(transaction)}")
@@ -285,7 +274,7 @@ defmodule ExplorerWeb.ContributorBrowsingTest do
   end
 
   test "views addresses", %{session: session} do
-    address = insert(:address, balance: 500)
+    address = insert(:address, fetched_balance: 500)
 
     session
     |> visit("/en/addresses/#{Phoenix.Param.to_param(address)}")

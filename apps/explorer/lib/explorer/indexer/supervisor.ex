@@ -23,7 +23,7 @@ defmodule Explorer.Indexer.Supervisor do
     children = [
       {Task.Supervisor, name: Explorer.Indexer.TaskSupervisor},
       {BlockFetcher, []},
-      {AddressFetcher, []},
+      {AddressFetcher, []}
     ]
 
     Supervisor.init(children, strategy: :rest_for_one)

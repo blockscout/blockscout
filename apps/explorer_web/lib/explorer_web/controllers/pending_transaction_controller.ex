@@ -17,7 +17,7 @@ defmodule ExplorerWeb.PendingTransactionController do
   defp do_index(conn, options \\ []) when is_list(options) do
     full_options = Keyword.merge([necessity_by_association: %{from_address: :optional, to_address: :optional}], options)
     transactions = Chain.recent_pending_transactions(full_options)
-    last_seen_pending_inserted_at = last_seen_pending_inserted_at(transactions)
+    last_seen_pending_inserted_at = last_seen_pending_inserted_at(transactions.entries)
     transaction_count = Chain.transaction_count(pending: true)
 
     render(

@@ -12,10 +12,12 @@ defmodule Explorer.Indexer.BlockFetcher do
   require Logger
 
   alias Explorer.{Chain, Indexer, JSONRPC}
+
   alias Explorer.Indexer.{
     Sequence,
-    AddressFetcher,
+    AddressFetcher
   }
+
   alias Explorer.JSONRPC.Transactions
 
   # Struct

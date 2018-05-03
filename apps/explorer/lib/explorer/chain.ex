@@ -3,7 +3,7 @@ defmodule Explorer.Chain do
   The chain context.
   """
 
-  import Ecto.Query, only: [from: 2, or_where: 3, order_by: 2, preload: 2, where: 2]
+  import Ecto.Query, only: [from: 2, or_where: 3, order_by: 2, preload: 2, where: 2, where: 3]
 
   alias Ecto.{Changeset, Multi}
   alias Explorer.Chain.{Address, Block, Hash, InternalTransaction, Log, Receipt, Transaction, Wei}
@@ -79,23 +79,22 @@ defmodule Explorer.Chain do
     end
   end
 
-  @spec update_balances(
-          %{address_hash :: String.t => balance :: integer}
-        ) :: :ok | {:error, reason :: term}
+  @spec update_balances(%{(address_hash :: String.t()) => balance :: integer}) :: :ok | {:error, reason :: term}
   def update_balances(balances) do
     timestamps = timestamps()
+
     changes =
       for {hash_string, amount} <- balances do
         {:ok, truncated_hash} = Explorer.Chain.Hash.Truncated.cast(hash_string)
+
         Map.merge(timestamps, %{
           hash: truncated_hash,
           fetched_balance: amount,
-          balance_fetched_at: timestamps.updated_at,
+          balance_fetched_at: timestamps.updated_at
         })
       end
 
-    {_, _} = Repo.safe_insert_all(Address, changes,
-      conflict_target: :hash, on_conflict: :replace_all)
+    {_, _} = Repo.safe_insert_all(Address, changes, conflict_target: :hash, on_conflict: :replace_all)
     :ok
   end
 
@@ -510,7 +509,9 @@ defmodule Explorer.Chain do
   """
   def stream_unfetched_addresses(initial, reducer) when is_function(reducer) do
     Repo.transaction(fn ->
-      from(a in Address, where: is_nil(a.balance_fetched_at))
+      query = from(a in Address, where: is_nil(a.balance_fetched_at))
+
+      query
       |> Repo.stream()
       |> Enum.reduce(initial, reducer)
     end)
@@ -709,7 +710,7 @@ defmodule Explorer.Chain do
       iex> 2 |> insert_list(:transaction)
       iex> :transaction |> insert() |> validate()
       iex> 8 |> insert_list(:transaction)
-      iex> recent_pending_transactions = Explorer.Chain.recent_pending_transactions()
+      iex> %Scrivener.Page{entries: recent_pending_transactions} = Explorer.Chain.recent_pending_transactions()
       iex> length(recent_pending_transactions)
       10
       iex> Enum.all?(recent_pending_transactions, fn %Explorer.Chain.Transaction{block_hash: block_hash} ->
@@ -725,10 +726,14 @@ defmodule Explorer.Chain do
       iex> insert(:transaction, inserted_at: first_inserted_at)
       iex> {:ok, second_inserted_at, 0} = DateTime.from_iso8601("2016-01-23T23:50:07Z")
       iex> insert(:transaction, inserted_at: second_inserted_at)
-      iex> after_first_transaction = Explorer.Chain.recent_pending_transactions(inserted_after: first_inserted_at)
+      iex> %Scrivener.Page{entries: after_first_transaction} = Explorer.Chain.recent_pending_transactions(
+      ...>   inserted_after: first_inserted_at
+      ...> )
       iex> length(after_first_transaction)
       1
-      iex> after_second_transaction = Explorer.Chain.recent_pending_transactions(inserted_after: second_inserted_at)
+      iex> %Scrivener.Page{entries: after_second_transaction} = Explorer.Chain.recent_pending_transactions(
+      ...>   inserted_after: second_inserted_at
+      ...> )
       iex> length(after_second_transaction)
       0
 
@@ -738,7 +743,10 @@ defmodule Explorer.Chain do
       iex> :transaction |> insert(inserted_at: first_inserted_at) |> validate()
       iex> {:ok, second_inserted_at, 0} = DateTime.from_iso8601("2016-01-23T23:50:07Z")
       iex> :transaction |> insert(inserted_at: second_inserted_at) |> validate()
-      iex> Explorer.Chain.recent_pending_transactions(after_inserted_at: first_inserted_at)
+      iex> %Scrivener.Page{entries: entries} = Explorer.Chain.recent_pending_transactions(
+      ...>   after_inserted_at: first_inserted_at
+      ...> )
+      iex> entries
       []
 
   ## Options
@@ -746,11 +754,13 @@ defmodule Explorer.Chain do
   * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
       then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
+  * `:pagination` - pagination params to pass to scrivener.
 
   """
   @spec recent_pending_transactions([inserted_after_option | necessity_by_association_option]) :: [Transaction.t()]
   def recent_pending_transactions(options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    pagination = Keyword.get(options, :pagination, %{})
 
     query =
       from(
@@ -768,7 +778,7 @@ defmodule Explorer.Chain do
     query
     |> inserted_after(options)
     |> join_associations(necessity_by_association)
-    |> Repo.all()
+    |> Repo.paginate(pagination)
   end
 
   @doc """
@@ -911,6 +921,7 @@ defmodule Explorer.Chain do
   * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
       then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
+   * `:pagination` - pagination params to pass to scrivener.
 
   """
   @spec transaction_hash_to_internal_transactions(Hash.Full.t()) :: [InternalTransaction.t()]
@@ -920,11 +931,20 @@ defmodule Explorer.Chain do
       )
       when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    pagination = Keyword.get(options, :pagination, %{})
 
     InternalTransaction
     |> for_parent_transaction(hash)
     |> join_associations(necessity_by_association)
-    |> Repo.all()
+    |> where(
+      [_it, t],
+      fragment(
+        "(SELECT COUNT(sibling.id) FROM internal_transactions as sibling WHERE sibling.transaction_hash = ?) > 1",
+        t.hash
+      )
+    )
+    |> order_by(:index)
+    |> Repo.paginate(pagination)
   end
 
   @doc """
@@ -1100,6 +1120,7 @@ defmodule Explorer.Chain do
       for: Address,
       timestamps: timestamps
     )
+
     {:ok, for(changes <- changes_list, do: changes.hash)}
   end
 
