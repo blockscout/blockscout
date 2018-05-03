@@ -26,11 +26,11 @@ defmodule Explorer.Chain.Statistics.Server do
   end
 
   def init(true) do
-    {:noreply, chain} = handle_cast({:update, Statistics.fetch()}, %Statistics{})
-    {:ok, chain}
+    send(self(), :refresh)
+    init(false)
   end
 
-  def init(false), do: {:ok, Statistics.fetch()}
+  def init(false), do: {:ok, %Statistics{}}
 
   def handle_info(:refresh, %Statistics{} = statistics) do
     Task.start_link(fn ->
