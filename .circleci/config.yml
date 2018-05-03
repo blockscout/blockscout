@@ -145,8 +145,6 @@ jobs:
     docker:
       # Ensure .tool-versions matches
       - image: circleci/elixir:1.6.4
-        environment:
-          MIX_ENV: test
 
     working_directory: ~/app
 
@@ -158,14 +156,14 @@ jobs:
           fingerprints:
             - "c4:fd:a8:f8:48:a8:09:e5:3e:be:30:62:4d:6f:6f:36"
 
-      # TODO update for deployment to AWS
+      - run:
+          name: Deploy Production to AWS
+          command: bin/deploy production
 
   deploy_staging:
     docker:
       # Ensure .tool-versions matches
       - image: circleci/elixir:1.6.4
-        environment:
-          MIX_ENV: test
 
     working_directory: ~/app
 
@@ -177,7 +175,10 @@ jobs:
           fingerprints:
             - "c4:fd:a8:f8:48:a8:09:e5:3e:be:30:62:4d:6f:6f:36"
 
-      # TODO update for deployment to AWS
+      - run:
+        name: Deploy Staging to AWS
+        command: bin/deploy staging
+
   dialyzer:
     docker:
       # Ensure .tool-versions matches

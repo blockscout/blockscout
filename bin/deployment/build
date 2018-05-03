@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+set -x
+
+cd /opt/app || exit 1
+
+export MIX_ENV=prod
+
+mix local.rebar --force
+mix local.hex --force
+
+mix deps.get
+
+mix compile
+
+exit 0

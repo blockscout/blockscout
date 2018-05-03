@@ -1,0 +1,19 @@
+version: 0.0
+os: linux
+files:
+  - source: .
+    destination: /opt/app
+hooks:
+  ApplicationStop:
+    - location: bin/deployment/stop
+      timeout: 300
+  AfterInstall:
+    - location: bin/deployment/build
+  ApplicationStart:
+    - location: bin/deployment/migrate
+      timeout: 300
+    - location: bin/deployment/start
+      timeout: 3600
+  ValidateService:
+    - location: bin/deployment/health_check
+      timeout: 3600
