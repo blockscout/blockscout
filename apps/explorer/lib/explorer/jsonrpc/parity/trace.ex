@@ -146,28 +146,41 @@ defmodule Explorer.JSONRPC.Parity.Trace do
        value: 10000000000000000
      }
 
+  Suicides transfer a `"balance"` from `"address"` to `"refundAddress"`.  These suicide-unique fields can be mapped to
+  pre-existing `t:Explorer.Chain.InternalTransaction.t/0` fields.
+
+  | Elixir            | Params               |
+  |-------------------|----------------------|
+  | `"address"`       | `:from_address_hash` |
+  | `"balance"`       | `:value`             |
+  | `"refundAddress"` | `:to_address_hash`   |
+
+      iex> Explorer.JSONRPC.Parity.Trace.elixir_to_params(
+      ...>   %{
+      ...>     "action" => %{
+      ...>       "address" => "0xa7542d78b9a0be6147536887e0065f16182d294b",
+      ...>       "balance" => 0,
+      ...>       "refundAddress" => "0x59e2e9ecf133649b1a7efc731162ff09d29ca5a5"
+      ...>     },
+      ...>     "index" => 1,
+      ...>     "result" => nil,
+      ...>     "subtraces" => 0,
+      ...>     "traceAddress" => [0],
+      ...>     "transactionHash" => "0xb012b8c53498c669d87d85ed90f57385848b86d3f44ed14b2784ec685d6fda98",
+      ...>     "type" => "suicide"
+      ...>   }
+      ...> )
+      %{
+        from_address_hash: "0xa7542d78b9a0be6147536887e0065f16182d294b",
+        index: 1,
+        to_address_hash: "0x59e2e9ecf133649b1a7efc731162ff09d29ca5a5",
+        trace_address: [0],
+        transaction_hash: "0xb012b8c53498c669d87d85ed90f57385848b86d3f44ed14b2784ec685d6fda98",
+        type: "suicide",
+        value: 0
+      }
+
   """
-
-  def elixir_to_params(%{"type" => "create" = type} = elixir) do
-    %{
-      "action" => %{"from" => from_address_hash, "gas" => gas, "init" => init, "value" => value},
-      "index" => index,
-      "traceAddress" => trace_address,
-      "transactionHash" => transaction_hash
-    } = elixir
-
-    %{
-      from_address_hash: from_address_hash,
-      gas: gas,
-      index: index,
-      init: init,
-      trace_address: trace_address,
-      transaction_hash: transaction_hash,
-      type: type,
-      value: value
-    }
-    |> put_create_error_or_result(elixir)
-  end
 
   def elixir_to_params(%{"type" => "call" = type} = elixir) do
     %{
@@ -195,6 +208,46 @@ defmodule Explorer.JSONRPC.Parity.Trace do
       value: value
     }
     |> put_call_error_or_result(elixir)
+  end
+
+  def elixir_to_params(%{"type" => "create" = type} = elixir) do
+    %{
+      "action" => %{"from" => from_address_hash, "gas" => gas, "init" => init, "value" => value},
+      "index" => index,
+      "traceAddress" => trace_address,
+      "transactionHash" => transaction_hash
+    } = elixir
+
+    %{
+      from_address_hash: from_address_hash,
+      gas: gas,
+      index: index,
+      init: init,
+      trace_address: trace_address,
+      transaction_hash: transaction_hash,
+      type: type,
+      value: value
+    }
+    |> put_create_error_or_result(elixir)
+  end
+
+  def elixir_to_params(%{"type" => "suicide" = type} = elixir) do
+    %{
+      "action" => %{"address" => from_address_hash, "balance" => value, "refundAddress" => to_address_hash},
+      "index" => index,
+      "traceAddress" => trace_address,
+      "transactionHash" => transaction_hash
+    } = elixir
+
+    %{
+      from_address_hash: from_address_hash,
+      index: index,
+      to_address_hash: to_address_hash,
+      trace_address: trace_address,
+      transaction_hash: transaction_hash,
+      type: type,
+      value: value
+    }
   end
 
   @doc """
@@ -262,7 +315,40 @@ defmodule Explorer.JSONRPC.Parity.Trace do
       ...> )
       ** (ArgumentError) Caller must `Map.put/2` `"index"` and `"transactionHash"` in trace
 
+  `"suicide"` `"type"` traces are different in that they have a `nil` `"result"`.  This is because the `"result"` key
+  is used to indicate success from Parity.
+
+      iex> Explorer.JSONRPC.Parity.Trace.to_elixir(
+      ...>   %{
+      ...>     "action" => %{
+      ...>       "address" => "0xa7542d78b9a0be6147536887e0065f16182d294b",
+      ...>       "balance" => "0x0",
+      ...>       "refundAddress" => "0x59e2e9ecf133649b1a7efc731162ff09d29ca5a5"
+      ...>     },
+      ...>     "index" => 1,
+      ...>     "result" => nil,
+      ...>     "subtraces" => 0,
+      ...>     "traceAddress" => [0],
+      ...>     "transactionHash" => "0xb012b8c53498c669d87d85ed90f57385848b86d3f44ed14b2784ec685d6fda98",
+      ...>     "type" => "suicide"
+      ...>   }
+      ...> )
+      %{
+        "action" => %{
+          "address" => "0xa7542d78b9a0be6147536887e0065f16182d294b",
+          "balance" => 0,
+          "refundAddress" => "0x59e2e9ecf133649b1a7efc731162ff09d29ca5a5"
+        },
+        "index" => 1,
+        "result" => nil,
+        "subtraces" => 0,
+        "traceAddress" => [0],
+        "transactionHash" => "0xb012b8c53498c669d87d85ed90f57385848b86d3f44ed14b2784ec685d6fda98",
+        "type" => "suicide"
+      }
+
   """
+
   def to_elixir(%{"index" => _, "transactionHash" => _} = trace) when is_map(trace) do
     Enum.into(trace, %{}, &entry_to_elixir/1)
   end

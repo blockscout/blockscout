@@ -7,8 +7,10 @@ defmodule Explorer.Repo.Migrations.CreateInternalTransactions do
       add(:created_contract_code, :text, null: true)
       # null unless there is an error
       add(:error, :string, null: true)
-      add(:gas, :numeric, precision: 100, null: false)
+      # no gas budget for suicide
+      add(:gas, :numeric, precision: 100, null: true)
       # can be null when `error` is not `null`
+      # no gas_used for suicide
       add(:gas_used, :numeric, precision: 100, null: true)
       add(:index, :integer, null: false)
       add(:init, :text)
@@ -40,11 +42,12 @@ defmodule Explorer.Repo.Migrations.CreateInternalTransactions do
     create(
       constraint(
         :internal_transactions,
-        :create_has_error_or_result,
+        :call_has_error_or_result,
         check: """
-        type != 'create' OR
-        (error IS NULL AND created_contract_address_hash IS NOT NULL AND created_contract_code IS NOT NULL AND gas_used IS NOT NULL) OR
-        (error IS NOT NULL AND created_contract_address_hash IS NULL AND created_contract_code IS NULL AND gas_used IS NULL)
+        type != 'call' OR
+        (gas IS NOT NULL AND
+         ((error IS NULL AND gas_used IS NOT NULL and output IS NOT NULL) OR
+          (error IS NOT NULL AND gas_used IS NULL and output is NULL)))
         """
       )
     )
@@ -52,11 +55,23 @@ defmodule Explorer.Repo.Migrations.CreateInternalTransactions do
     create(
       constraint(
         :internal_transactions,
-        :call_has_error_or_result,
+        :create_has_error_or_result,
         check: """
-        type != 'call' OR
-        (error IS NULL AND gas_used IS NOT NULL and output IS NOT NULL) OR
-        (error IS NOT NULL AND gas_used IS NULL and output is NULL)
+        type != 'create' OR
+        (gas IS NOT NULL AND
+         ((error IS NULL AND created_contract_address_hash IS NOT NULL AND created_contract_code IS NOT NULL AND gas_used IS NOT NULL) OR
+          (error IS NOT NULL AND created_contract_address_hash IS NULL AND created_contract_code IS NULL AND gas_used IS NULL)))
+        """
+      )
+    )
+
+    create(
+      constraint(
+        :internal_transactions,
+        :suicide_has_from_and_to_address_hashes,
+        check: """
+        type != 'suicide' OR
+        (from_address_hash IS NOT NULL AND gas IS NULL AND to_address_hash IS NOT NULL)
         """
       )
     )

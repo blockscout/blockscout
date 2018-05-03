@@ -21,10 +21,18 @@ defmodule Explorer.JSONRPC.Parity.Trace.Result do
         "gasUsed" => 166651
       }
 
+  `nil` resultscan occur for suicide type traces.
+
+      iex> Explorer.JSONRPC.Parity.Trace.Result.to_elixir(nil)
+      nil
+
   """
-  def to_elixir(action) when is_map(action) do
-    Enum.into(action, %{}, &entry_to_elixir/1)
+
+  def to_elixir(result) when is_map(result) do
+    Enum.into(result, %{}, &entry_to_elixir/1)
   end
+
+  def to_elixir(nil), do: nil
 
   ## Private Functions
 

@@ -301,6 +301,23 @@ defmodule Explorer.Chain.InternalTransaction do
         gas_used: {"can't be blank for successful create", [validation: :required]}
       ]
 
+  For `:suicide`s, it looks like a simple value transfer between the addresses.
+
+      iex> changeset = Explorer.Chain.InternalTransaction.changeset(
+      ...>   %Explorer.Chain.InternalTransaction{},
+      ...>   %{
+      ...>     from_address_hash: "0xa7542d78b9a0be6147536887e0065f16182d294b",
+      ...>     index: 1,
+      ...>     to_address_hash: "0x59e2e9ecf133649b1a7efc731162ff09d29ca5a5",
+      ...>     trace_address: [0],
+      ...>     transaction_hash: "0xb012b8c53498c669d87d85ed90f57385848b86d3f44ed14b2784ec685d6fda98",
+      ...>     type: "suicide",
+      ...>     value: 0
+      ...>   }
+      ...> )
+      iex> changeset.valid?
+      true
+
   """
   def changeset(%__MODULE__{} = internal_transaction, attrs \\ %{}) do
     internal_transaction
@@ -365,6 +382,26 @@ defmodule Explorer.Chain.InternalTransaction do
       iex> changes.from_address_hash in address_hash_set
       true
 
+  For `:suicide` type internal transactions, `from_address_hash` and `to_address_hash` are set.
+
+      iex> %Ecto.Changeset{changes: changes, valid?: true} = Explorer.Chain.InternalTransaction.changeset(
+      ...>   %Explorer.Chain.InternalTransaction{},
+      ...>   %{
+      ...>     from_address_hash: "0xa7542d78b9a0be6147536887e0065f16182d294b",
+      ...>     index: 1,
+      ...>     to_address_hash: "0x59e2e9ecf133649b1a7efc731162ff09d29ca5a5",
+      ...>     trace_address: [0],
+      ...>     transaction_hash: "0xb012b8c53498c669d87d85ed90f57385848b86d3f44ed14b2784ec685d6fda98",
+      ...>     type: "suicide",
+      ...>     value: 0
+      ...>   }
+      ...> )
+      iex> address_hash_set = Explorer.Chain.InternalTransaction.changes_to_address_hash_set(changes)
+      iex> changes.from_address_hash in address_hash_set
+      true
+      iex> changes.to_address_hash in address_hash_set
+      true
+
   """
   def changes_to_address_hash_set(changes) do
     Enum.reduce(~w(created_contract_address_hash from_address_hash to_address_hash)a, MapSet.new(), fn field, acc ->
@@ -410,6 +447,18 @@ defmodule Explorer.Chain.InternalTransaction do
     |> foreign_key_constraint(:created_contract_address_hash)
     |> foreign_key_constraint(:from_address_hash)
     |> foreign_key_constraint(:transaction_hash)
+    |> unique_constraint(:index)
+  end
+
+  @suicide_required_fields ~w(from_address_hash index to_address_hash trace_address transaction_hash type value)a
+  @suicide_allowed_fields @suicide_required_fields
+
+  defp type_changeset(changeset, attrs, :suicide) do
+    changeset
+    |> cast(attrs, @suicide_allowed_fields)
+    |> validate_required(@suicide_required_fields)
+    |> foreign_key_constraint(:from_address_hash)
+    |> foreign_key_constraint(:to_address_hash)
     |> unique_constraint(:index)
   end
 

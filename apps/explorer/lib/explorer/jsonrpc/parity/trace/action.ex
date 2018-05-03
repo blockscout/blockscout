@@ -23,6 +23,22 @@ defmodule Explorer.JSONRPC.Parity.Trace.Action do
         "value" => 0
       }
 
+  For a suicide, the `"balance"` is converted to a `t:non_neg_integer/0` while the `"address" and `"refundAddress"`
+  `t:Explorer.JSONRPC.hash/0` pass through.
+
+      iex> Explorer.JSONRPC.Parity.Trace.Action.to_elixir(
+      ...>   %{
+      ...>    "address" => "0xa7542d78b9a0be6147536887e0065f16182d294b",
+      ...>    "balance" => "0x0",
+      ...>    "refundAddress" => "0x59e2e9ecf133649b1a7efc731162ff09d29ca5a5"
+      ...>   }
+      ...> )
+      %{
+        "address" => "0xa7542d78b9a0be6147536887e0065f16182d294b",
+        "balance" => 0,
+        "refundAddress" => "0x59e2e9ecf133649b1a7efc731162ff09d29ca5a5"
+      }
+
   """
   def to_elixir(action) when is_map(action) do
     Enum.into(action, %{}, &entry_to_elixir/1)
@@ -30,9 +46,9 @@ defmodule Explorer.JSONRPC.Parity.Trace.Action do
 
   ## Private Functions
 
-  defp entry_to_elixir({key, _} = entry) when key in ~w(callType from init input to), do: entry
+  defp entry_to_elixir({key, _} = entry) when key in ~w(address callType from init input refundAddress to), do: entry
 
-  defp entry_to_elixir({key, quantity}) when key in ~w(gas value) do
+  defp entry_to_elixir({key, quantity}) when key in ~w(balance gas value) do
     {key, quantity_to_integer(quantity)}
   end
 end
