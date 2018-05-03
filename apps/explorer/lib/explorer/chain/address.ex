@@ -20,8 +20,8 @@ defmodule Explorer.Chain.Address do
   @type hash :: Hash.t()
 
   @typedoc """
-  * `balance` - `credit.value - debit.value`
-  * `balance_updated_at` - the last time `balance` was recalculated
+  * `fetched_balance` - The last fetched balance from Parity
+  * `balance_fetched_at` - the last time `balance` was fetched
   * `credit` - accumulation of all credits to the address `hash`
   * `debit` - accumulation of all debits to the address `hash`
   * `hash` - the hash of the address's public key
@@ -29,8 +29,8 @@ defmodule Explorer.Chain.Address do
   * `updated_at` when this address was last updated
   """
   @type t :: %__MODULE__{
-          balance: Decimal.t(),
-          balance_updated_at: DateTime.t(),
+          fetched_balance: Decimal.t(),
+          balance_fetched_at: DateTime.t(),
           credit: %Ecto.Association.NotLoaded{} | Credit.t() | nil,
           debit: %Ecto.Association.NotLoaded{} | Debit.t() | nil,
           hash: Hash.Truncated.t(),
@@ -40,8 +40,8 @@ defmodule Explorer.Chain.Address do
 
   @primary_key {:hash, Hash.Truncated, autogenerate: false}
   schema "addresses" do
-    field(:balance, :decimal)
-    field(:balance_updated_at, Timex.Ecto.DateTime)
+    field(:fetched_balance, :decimal)
+    field(:balance_fetched_at, Timex.Ecto.DateTime)
 
     timestamps()
 
@@ -49,13 +49,11 @@ defmodule Explorer.Chain.Address do
     has_one(:debit, Debit)
   end
 
-  # Functions
-
   def balance_changeset(%__MODULE__{} = address, attrs) do
     address
-    |> cast(attrs, [:balance])
-    |> validate_required([:balance])
-    |> put_balance_updated_at()
+    |> cast(attrs, [:fetched_balance])
+    |> validate_required([:fetched_balance])
+    |> put_change(:balance_fetched_at, Timex.now())
   end
 
   def changeset(%__MODULE__{} = address, attrs) do
@@ -69,15 +67,8 @@ defmodule Explorer.Chain.Address do
     Enum.map(hash_set, &hash_to_changes/1)
   end
 
-  ## Private Functions
-
   defp hash_to_changes(%Hash{byte_count: 20} = hash) do
     %{hash: hash}
-  end
-
-  defp put_balance_updated_at(changeset) do
-    changeset
-    |> put_change(:balance_updated_at, Timex.now())
   end
 
   defimpl String.Chars do

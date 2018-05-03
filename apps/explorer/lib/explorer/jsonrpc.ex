@@ -102,6 +102,35 @@ defmodule Explorer.JSONRPC do
   end
 
   @doc """
+  Fetches address balances by address hashes.
+  """
+  def fetch_balances_by_hash(address_hashes) do
+    batched_requests =
+      for hash <- address_hashes do
+        %{
+          "id" => hash,
+          "jsonrpc" => "2.0",
+          "method" => "eth_getBalance",
+          "params" => [hash, "latest"]
+        }
+      end
+
+    batched_requests
+    |> json_rpc(config(:url))
+    |> handle_balances()
+  end
+  defp handle_balances({:ok, results}) do
+    native_results =
+      for response <- results, into: %{} do
+        {response["id"], hexadecimal_to_integer(response["result"])}
+      end
+
+    {:ok, native_results}
+  end
+  defp handle_balances({:error, _reason} = err), do: err
+
+
+  @doc """
   Fetches blocks by block hashes.
 
   Transaction data is included for each block.
@@ -157,7 +186,7 @@ defmodule Explorer.JSONRPC do
 
     case HTTPoison.post(url, json, headers, config(:http)) do
       {:ok, %HTTPoison.Response{body: body, status_code: code}} ->
-        body |> decode_json(payload) |> handle_response(code)
+        body |> decode_json(payload, url) |> handle_response(code)
 
       {:error, %HTTPoison.Error{reason: reason}} ->
         {:error, reason}
@@ -218,16 +247,18 @@ defmodule Explorer.JSONRPC do
 
   defp encode_json(data), do: Jason.encode_to_iodata!(data)
 
-  defp decode_json(body, posted_payload) do
+  defp decode_json(body, posted_payload, url) do
     Jason.decode!(body)
   rescue
     Jason.DecodeError ->
       Logger.error("""
       failed to decode json payload:
 
-          #{inspect(body)}
+          url: #{inspect(url)}
 
-          #{inspect(posted_payload)}
+          body: #{inspect(body)}
+
+          posted payload: #{inspect(posted_payload)}
 
       """)
 

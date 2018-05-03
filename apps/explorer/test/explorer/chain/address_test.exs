@@ -18,7 +18,7 @@ defmodule Explorer.Chain.AddressTest do
 
   describe "balance_changeset/2" do
     test "with a new balance" do
-      changeset = Address.balance_changeset(%Address{}, %{balance: 99})
+      changeset = Address.balance_changeset(%Address{}, %{fetched_balance: 99})
       assert changeset.valid?
     end
 
