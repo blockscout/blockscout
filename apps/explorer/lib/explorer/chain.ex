@@ -928,9 +928,7 @@ defmodule Explorer.Chain do
   """
   @spec transaction_hash_to_internal_transactions(Hash.Full.t()) :: %Scrivener.Page{entries: [InternalTransaction.t()]}
   @spec transaction_hash_to_internal_transactions(Hash.Full.t(), [necessity_by_association_option | pagination_option]) ::
-          %Scrivener.Page{
-            entries: [InternalTransaction.t()]
-          }
+          %Scrivener.Page{entries: [InternalTransaction.t()]}
   def transaction_hash_to_internal_transactions(
         %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash,
         options \\ []
