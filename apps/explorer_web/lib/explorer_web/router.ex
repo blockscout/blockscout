@@ -39,10 +39,6 @@ defmodule ExplorerWeb.Router do
     plug(ExqUi.RouterPlug, namespace: "exq")
   end
 
-  pipeline :jasmine do
-    if Mix.env() != :prod, do: plug(Jasmine, js_files: ["js/test.js"], css_files: ["css/test.css"])
-  end
-
   pipeline :api do
     plug(:accepts, ["json"])
   end
@@ -54,14 +50,12 @@ defmodule ExplorerWeb.Router do
 
   scope "/", ExplorerWeb do
     pipe_through(:browser)
-    pipe_through(:jasmine)
     pipe_through(:set_locale)
     resources("/", ChainController, only: [:show], singleton: true, as: :chain)
   end
 
   scope "/:locale", ExplorerWeb do
     pipe_through(:browser)
-    pipe_through(:jasmine)
     pipe_through(:set_locale)
     resources("/", ChainController, only: [:show], singleton: true, as: :chain)
 

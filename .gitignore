@@ -13,9 +13,6 @@ erl_crash.dump
 # Generated on crash by NPM
 npm-debug.log
 
-# Generated on crash by Yarn
-yarn-error.log
-
 # Static artifacts
 /apps/explorer_web/assets/node_modules
 
