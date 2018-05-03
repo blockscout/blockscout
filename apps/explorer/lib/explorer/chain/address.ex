@@ -63,6 +63,7 @@ defmodule Explorer.Chain.Address do
     |> unique_constraint(:hash)
   end
 
+  @spec hash_set_to_changes_list(MapSet.t(Hash.Truncated.t())) :: [%{hash: Hash.Truncated.t()}]
   def hash_set_to_changes_list(hash_set) do
     Enum.map(hash_set, &hash_to_changes/1)
   end
