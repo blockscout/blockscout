@@ -41,7 +41,7 @@ defmodule ExplorerWeb.Mixfile do
   end
 
   # Specifies which paths to compile per environment.
-  defp elixirc_paths(:test), do: ["test/support" | elixirc_paths()]
+  defp elixirc_paths(:test), do: ["test/support", "test/explorer_web/features/pages"] ++ elixirc_paths()
   defp elixirc_paths(_), do: elixirc_paths()
   defp elixirc_paths, do: ["lib"]
 

@@ -1,9 +1,8 @@
 defmodule ExplorerWeb.AddressTransactionView do
   use ExplorerWeb, :view
 
-  alias ExplorerWeb.{AddressView, TransactionView}
+  alias ExplorerWeb.TransactionView
 
-  defdelegate balance(address), to: AddressView
   defdelegate fee(transaction), to: TransactionView
 
   def format_current_filter(filter) do
