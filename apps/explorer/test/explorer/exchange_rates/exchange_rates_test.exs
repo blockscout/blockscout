@@ -4,7 +4,7 @@ defmodule Explorer.ExchangeRatesTest do
   import Mox
 
   alias Explorer.ExchangeRates
-  alias Explorer.ExchangeRates.Rate
+  alias Explorer.ExchangeRates.Token
   alias Explorer.ExchangeRates.Source.TestSource
 
   @moduletag :capture_log
@@ -12,7 +12,7 @@ defmodule Explorer.ExchangeRatesTest do
   setup :verify_on_exit!
 
   test "start_link" do
-    stub(TestSource, :fetch_exchange_rate, fn _ -> {:ok, %Rate{}} end)
+    stub(TestSource, :fetch_exchange_rates, fn -> {:ok, [%Token{}]} end)
     set_mox_global()
 
     assert {:ok, _} = ExchangeRates.start_link([])
@@ -34,14 +34,13 @@ defmodule Explorer.ExchangeRatesTest do
 
   test "handle_info with :update" do
     ExchangeRates.init([])
-    ticker = "poa-network"
     state = %{}
 
-    expect(TestSource, :fetch_exchange_rate, fn ^ticker -> {:ok, %Rate{}} end)
+    expect(TestSource, :fetch_exchange_rates, fn -> {:ok, [%Token{}]} end)
     set_mox_global()
 
     assert {:noreply, ^state} = ExchangeRates.handle_info(:update, state)
-    assert_receive {_, {^ticker, _}}
+    assert_receive {_, {:ok, [%Token{}]}}
   end
 
   describe "ticker fetch task" do
@@ -51,48 +50,50 @@ defmodule Explorer.ExchangeRatesTest do
     end
 
     test "with successful fetch" do
-      expected_rate = %Rate{
-        btc_value: "1.000",
+      expected_token = %Token{
+        available_supply: Decimal.new("1000000.0"),
+        btc_value: Decimal.new("1.000"),
         id: "test",
         last_updated: DateTime.utc_now(),
-        market_cap_usd: "123456789.0000000",
+        market_cap_usd: Decimal.new("1000000.0"),
         name: "test",
         symbol: "test",
-        usd_value: "9000.000001"
+        usd_value: Decimal.new("1.0"),
+        volume_24h_usd: Decimal.new("1000.0")
       }
 
-      id = expected_rate.id
+      expected_id = expected_token.id
+
       state = %{}
 
-      assert {:noreply, ^state} = ExchangeRates.handle_info({nil, {id, {:ok, expected_rate}}}, state)
+      assert {:noreply, ^state} = ExchangeRates.handle_info({nil, {:ok, [expected_token]}}, state)
 
-      assert [{^id, ^expected_rate}] = :ets.lookup(ExchangeRates.table_name(), id)
+      assert [{^expected_id, ^expected_token}] = :ets.lookup(ExchangeRates.table_name(), expected_id)
     end
 
     test "with failed fetch" do
-      ticker = "failed-ticker"
       state = %{}
 
-      expect(TestSource, :fetch_exchange_rate, fn "failed-ticker" -> {:ok, %Rate{}} end)
+      expect(TestSource, :fetch_exchange_rates, fn -> {:ok, [%Token{}]} end)
       set_mox_global()
 
-      assert {:noreply, ^state} = ExchangeRates.handle_info({nil, {ticker, {:error, "some error"}}}, state)
+      assert {:noreply, ^state} = ExchangeRates.handle_info({nil, {:error, "some error"}}, state)
 
-      assert_receive {_, {^ticker, {:ok, _}}}
+      assert_receive {_, {:ok, _}}
     end
   end
 
-  test "all_tickers/0" do
+  test "list/0" do
     ExchangeRates.init([])
 
     rates = [
-      %Rate{id: "z", symbol: "z"},
-      %Rate{id: "a", symbol: "a"}
+      %Token{id: "z", symbol: "z"},
+      %Token{id: "a", symbol: "a"}
     ]
 
     expected_rates = Enum.reverse(rates)
     for rate <- rates, do: :ets.insert(ExchangeRates.table_name(), {rate.id, rate})
 
-    assert expected_rates == ExchangeRates.all_tickers()
+    assert expected_rates == ExchangeRates.list()
   end
 end

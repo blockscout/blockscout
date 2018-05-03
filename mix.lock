@@ -35,7 +35,7 @@
   "html_entities": {:hex, :html_entities, "0.4.0", "f2fee876858cf6aaa9db608820a3209e45a087c5177332799592142b50e89a6b", [:mix], [], "hexpm"},
   "httpoison": {:hex, :httpoison, "1.1.0", "497949fb62924432f64a45269d20e6f61ecf35084ffa270917afcdb7cd4d8061", [:mix], [{:hackney, "~> 1.8", [hex: :hackney, repo: "hexpm", optional: false]}], "hexpm"},
   "idna": {:hex, :idna, "5.1.1", "cbc3b2fa1645113267cc59c760bafa64b2ea0334635ef06dbac8801e42f7279c", [:rebar3], [{:unicode_util_compat, "0.3.1", [hex: :unicode_util_compat, repo: "hexpm", optional: false]}], "hexpm"},
-  "jiffy": {:hex, :jiffy, "0.15.1", "be83b09388da1a6c7e798207c9d6a1c4d71bb95fcc387d37d35861788f49ab97", [:rebar3], [], "hexpm"},
+  "jason": {:hex, :jason, "1.0.0", "0f7cfa9bdb23fed721ec05419bcee2b2c21a77e926bce0deda029b5adc716fe2", [:mix], [{:decimal, "~> 1.0", [hex: :decimal, repo: "hexpm", optional: true]}], "hexpm"},
   "jsx": {:hex, :jsx, "2.8.3", "a05252d381885240744d955fbe3cf810504eb2567164824e19303ea59eef62cf", [:mix, :rebar3], [], "hexpm"},
   "junit_formatter": {:hex, :junit_formatter, "2.1.0", "ff03d2bbe9a67041f2488d8e72180ddcf4dff9e9c8a39b79eac9828fcb9e9bbf", [:mix], [], "hexpm"},
   "math": {:hex, :math, "0.3.0", "e14e7291115201cb155a3567e66d196bf5088a6f55b030d598107d7ae934a11c", [:mix], [], "hexpm"},

@@ -3,22 +3,18 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
   Adapter for fetching exchange rates from https://coinmarketcap.com.
   """
 
-  alias Explorer.ExchangeRates.{Rate, Source}
+  alias Explorer.ExchangeRates.{Source, Token}
   alias HTTPoison.{Error, Response}
 
   @behaviour Source
 
   @impl Source
-  def fetch_exchange_rate(ticker) do
-    url = source_url(ticker)
+  def fetch_exchange_rates do
     headers = [{"Content-Type", "application/json"}]
 
-    case HTTPoison.get(url, headers) do
+    case HTTPoison.get(source_url(), headers) do
       {:ok, %Response{body: body, status_code: 200}} ->
         {:ok, format_data(body)}
-
-      {:ok, %Response{status_code: 404}} ->
-        {:error, :not_found}
 
       {:ok, %Response{body: body, status_code: status_code}} when status_code in 400..499 ->
         {:error, decode_json(body)["error"]}
@@ -30,19 +26,22 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
 
   @doc false
   def format_data(data) do
-    [json] = decode_json(data)
-    {last_updated_as_unix, _} = Integer.parse(json["last_updated"])
-    last_updated = DateTime.from_unix!(last_updated_as_unix)
+    for item <- decode_json(data), not is_nil(item["last_updated"]) do
+      {last_updated_as_unix, _} = Integer.parse(item["last_updated"])
+      last_updated = DateTime.from_unix!(last_updated_as_unix)
 
-    %Rate{
-      btc_value: Decimal.new(json["price_btc"]),
-      id: json["id"],
-      last_updated: last_updated,
-      market_cap_usd: Decimal.new(json["market_cap_usd"]),
-      name: json["name"],
-      symbol: json["symbol"],
-      usd_value: Decimal.new(json["price_usd"])
-    }
+      %Token{
+        available_supply: to_decimal(item["available_supply"]),
+        btc_value: to_decimal(item["price_btc"]),
+        id: item["id"],
+        last_updated: last_updated,
+        market_cap_usd: to_decimal(item["market_cap_usd"]),
+        name: item["name"],
+        symbol: item["symbol"],
+        usd_value: to_decimal(item["price_usd"]),
+        volume_24h_usd: to_decimal(item["24h_volume_usd"])
+      }
+    end
   end
 
   defp base_url do
@@ -51,10 +50,16 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
   end
 
   defp decode_json(data) do
-    :jiffy.decode(data, [:return_maps])
+    Jason.decode!(data)
   end
 
-  defp source_url(ticker) do
-    "#{base_url()}/v1/ticker/#{ticker}/"
+  defp to_decimal(nil), do: nil
+
+  defp to_decimal(value) do
+    Decimal.new(value)
+  end
+
+  defp source_url do
+    "#{base_url()}/v1/ticker/?limit=0"
   end
 end
