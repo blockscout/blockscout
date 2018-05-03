@@ -72,11 +72,31 @@ defmodule Explorer.Chain do
   @spec balance(Address.t(), :wei) :: Wei.t() | nil
   @spec balance(Address.t(), :gwei) :: Wei.gwei() | nil
   @spec balance(Address.t(), :ether) :: Wei.ether() | nil
-  def balance(%Address{balance: balance}, unit) do
+  def balance(%Address{fetched_balance: balance}, unit) do
     case balance do
       nil -> nil
       _ -> Wei.to(balance, unit)
     end
+  end
+
+  @spec update_balances(
+          %{address_hash :: String.t => balance :: integer}
+        ) :: :ok | {:error, reason :: term}
+  def update_balances(balances) do
+    timestamps = timestamps()
+    changes =
+      for {hash_string, amount} <- balances do
+        {:ok, truncated_hash} = Explorer.Chain.Hash.Truncated.cast(hash_string)
+        Map.merge(timestamps, %{
+          hash: truncated_hash,
+          fetched_balance: amount,
+          balance_fetched_at: timestamps.updated_at,
+        })
+      end
+
+    {_, _} = Repo.safe_insert_all(Address, changes,
+      conflict_target: :hash, on_conflict: :replace_all)
+    :ok
   end
 
   @doc """
@@ -380,7 +400,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Bulk insert tree of resource from a list of blocks.
+  Bulk insert blocks from a list of blocks.
 
   ## Tree
 
@@ -391,7 +411,7 @@ defmodule Explorer.Chain do
         * `t.Explorer.Chain.Log.t/0`
 
   """
-  def insert(%{
+  def import_blocks(%{
         blocks_params: blocks_params,
         logs_params: logs_params,
         internal_transactions_params: internal_transactions_params,
@@ -410,6 +430,13 @@ defmodule Explorer.Chain do
            }) do
       insert_ecto_schema_module_to_changes_list(ecto_schema_module_to_changes_list)
     end
+  end
+
+  @doc """
+  The number of `t:Explorer.Chain.Address.t/0`.
+  """
+  def address_count do
+    Repo.aggregate(Address, :count, :hash)
   end
 
   @doc """
@@ -476,6 +503,17 @@ defmodule Explorer.Chain do
     |> join_associations(necessity_by_association)
     |> order_by(desc: :number)
     |> Repo.paginate(pagination)
+  end
+
+  @doc """
+  Returns a stream of unfetched `Explorer.Chain.Address.t/0`.
+  """
+  def stream_unfetched_addresses(initial, reducer) when is_function(reducer) do
+    Repo.transaction(fn ->
+      from(a in Address, where: is_nil(a.balance_fetched_at))
+      |> Repo.stream()
+      |> Enum.reduce(initial, reducer)
+    end)
   end
 
   @doc """
@@ -1058,11 +1096,11 @@ defmodule Explorer.Chain do
     insert_changes_list(
       changes_list,
       conflict_target: :hash,
-      # Do nothing so that pre-existing balance is not overwritten
-      on_conflict: :nothing,
+      on_conflict: [set: [balance_fetched_at: nil]],
       for: Address,
       timestamps: timestamps
     )
+    {:ok, for(changes <- changes_list, do: changes.hash)}
   end
 
   @spec insert_blocks([map()], [timestamps_option]) :: {:ok, Block.t()} | {:error, [Changeset.t()]}

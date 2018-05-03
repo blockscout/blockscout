@@ -12,7 +12,10 @@ defmodule Explorer.Indexer.BlockFetcher do
   require Logger
 
   alias Explorer.{Chain, Indexer, JSONRPC}
-  alias Explorer.Indexer.Sequence
+  alias Explorer.Indexer.{
+    Sequence,
+    AddressFetcher,
+  }
   alias Explorer.JSONRPC.Transactions
 
   # Struct
@@ -92,6 +95,7 @@ defmodule Explorer.Indexer.BlockFetcher do
         internal transactions: #{Chain.internal_transaction_count()}
         receipts: #{Chain.receipt_count()}
         logs: #{Chain.log_count()}
+        addresses: #{Chain.address_count()}
       """
     end)
 
@@ -166,14 +170,15 @@ defmodule Explorer.Indexer.BlockFetcher do
          seq: seq,
          transactions_params: transactions_params
        }) do
-    case Chain.insert(%{
+    case Chain.import_blocks(%{
            blocks_params: blocks_params,
            internal_transactions_params: internal_transactions_params,
            logs_params: log_params,
            receipts_params: receipt_params,
            transactions_params: transactions_params
          }) do
-      {:ok, _results} ->
+      {:ok, %{addresses: address_hashes}} ->
+        :ok = AddressFetcher.async_fetch_addresses(address_hashes)
         :ok
 
       {:error, step, reason, _changes} ->

@@ -3,8 +3,8 @@ defmodule Explorer.Repo.Migrations.CreateAddress do
 
   def change do
     create table(:addresses, primary_key: false) do
-      add(:balance, :numeric, precision: 100)
-      add(:balance_updated_at, :utc_datetime)
+      add(:fetched_balance, :numeric, precision: 100)
+      add(:balance_fetched_at, :utc_datetime)
       add(:hash, :bytea, null: false, primary_key: true)
 
       timestamps(null: false)

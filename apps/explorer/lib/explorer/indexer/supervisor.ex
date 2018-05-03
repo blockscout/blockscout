@@ -5,7 +5,10 @@ defmodule Explorer.Indexer.Supervisor do
 
   use Supervisor
 
-  alias Explorer.Indexer.BlockFetcher
+  alias Explorer.Indexer.{
+    BlockFetcher,
+    AddressFetcher
+  }
 
   # Functions
 
@@ -18,9 +21,11 @@ defmodule Explorer.Indexer.Supervisor do
   @impl Supervisor
   def init(_opts) do
     children = [
-      {BlockFetcher, []}
+      {Task.Supervisor, name: Explorer.Indexer.TaskSupervisor},
+      {BlockFetcher, []},
+      {AddressFetcher, []},
     ]
 
-    Supervisor.init(children, strategy: :one_for_one)
+    Supervisor.init(children, strategy: :rest_for_one)
   end
 end
