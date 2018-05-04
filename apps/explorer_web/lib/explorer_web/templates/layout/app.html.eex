@@ -62,7 +62,7 @@
                   <%= for {service, link} <- configured_social_media_services() do %>
                       <%= link to: link, class: "header__link", target: "_blank", "data-test": "#{service}_link" do %>
                         <div class="social-media">
-                          <i class="fa fa-<%= service %>"></i>
+                          <i class="fab fa-<%= service %>"></i>
                         </div>
                     <% end %>
                   <% end %>
