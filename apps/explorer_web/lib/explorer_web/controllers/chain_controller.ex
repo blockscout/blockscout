@@ -2,10 +2,16 @@ defmodule ExplorerWeb.ChainController do
   use ExplorerWeb, :controller
 
   alias Explorer.Chain.{Address, Block, Statistics, Transaction}
+  alias Explorer.Market
   alias ExplorerWeb.Chain
 
   def show(conn, _params) do
-    render(conn, "show.html", chain: Statistics.fetch())
+    render(
+      conn,
+      "show.html",
+      chain: Statistics.fetch(),
+      market_history_data: Market.fetch_recent_history(8)
+    )
   end
 
   def search(conn, %{"q" => query}) do

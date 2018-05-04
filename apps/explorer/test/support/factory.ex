@@ -10,4 +10,5 @@ defmodule Explorer.Factory do
   use Explorer.Chain.ReceiptFactory
   use Explorer.Chain.ToAddressFactory
   use Explorer.Chain.TransactionFactory
+  use Explorer.Market.MarketHistoryFactory
 end
