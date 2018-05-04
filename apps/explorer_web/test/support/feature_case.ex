@@ -24,6 +24,7 @@ defmodule ExplorerWeb.FeatureCase do
 
     metadata = Phoenix.Ecto.SQL.Sandbox.metadata_for(Explorer.Repo, self())
     {:ok, session} = Wallaby.start_session(metadata: metadata)
+    session = Wallaby.Browser.resize_window(session, 1200, 800)
     {:ok, session: session}
   end
 end

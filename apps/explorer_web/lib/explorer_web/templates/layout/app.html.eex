@@ -43,7 +43,7 @@
       <div id="content">
         <div class="content-header">
           <nav>
-            <button type="button" id="sidebarCollapse" class="navbar-btn" data-test="hamburger_menu_button">
+            <button type="button" id="sidebarCollapse" class="navbar-btn">
                 <span></span>
                 <span></span>
                 <span></span>
@@ -59,21 +59,13 @@
                   <% end %>
                 </div>
                 <div class="header__cell header__cell--links u-nudge-top" align="right">
-                  <a href="https://www.facebook.com/PoaNetwork/" target="_blank" class="header__link">
-                    <div class="social-media">
-                      <i class="fa fa-facebook-f"></i>
-                    </div>
-                  </a>
-                  <a href="https://www.instagram.com/PoaNetwork/" target="_blank" class="header__link">
-                    <div class="social-media">
-                      <i class="fa fa-instagram"></i>
-                    </div>
-                  </a>
-                  <a href="https://www.twitter.com/PoaNetwork/" target="_blank" class="header__link">
-                    <div class="social-media">
-                      <i class="fa fa-twitter"></i>
-                    </div>
-                  </a>
+                  <%= for {service, link} <- configured_social_media_services() do %>
+                      <%= link to: link, class: "header__link", target: "_blank", "data-test": "#{service}_link" do %>
+                        <div class="social-media">
+                          <i class="fa fa-<%= service %>"></i>
+                        </div>
+                    <% end %>
+                  <% end %>
                 </div>
               </div>
             </div>

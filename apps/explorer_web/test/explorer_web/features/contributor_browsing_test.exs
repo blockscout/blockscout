@@ -12,7 +12,6 @@ defmodule ExplorerWeb.UserListTest do
     assert current_path(session) == "/en"
 
     session
-    |> click(css("[data-test='hamburger_menu_button']"))
     |> click(@logo)
     |> assert_has(css("main", text: "Blocks"))
   end
@@ -91,7 +90,6 @@ defmodule ExplorerWeb.UserListTest do
     |> assert_has(css(".blocks__column--gas-used", count: 5, text: "10"))
 
     session
-    |> click(css("[data-test='hamburger_menu_button']"))
     |> click(link("Blocks"))
     |> assert_has(css(".blocks__column--height", text: "311"))
     |> click(link("311"))
@@ -168,7 +166,7 @@ defmodule ExplorerWeb.UserListTest do
       |> assert_has(css(".transactions__title", text: "Transactions"))
       |> assert_has(css(".transactions__column--hash", count: 5))
       |> assert_has(css(".transactions__column--value", count: 5))
-      |> assert_has(css(".transactions__column--age", count: 5, visible: false))
+      |> assert_has(css(".transactions__column--age", count: 5))
     end
 
     test "can see pending transactions", %{session: session} do
