@@ -34,7 +34,7 @@ defmodule Explorer.Indexer.BlockFetcher do
   ## Options
 
   Default options are pulled from application config under the
-  `:explorer, :index` keyspace. The follow options can be overridden:
+  `:explorer, :indexer` keyspace. The follow options can be overridden:
 
     * `:debug_logs` - When `true` logs verbose index progress. Defaults `false`.
     * `:block_rate` - The millisecond rate new blocks are published at.
