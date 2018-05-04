@@ -7,6 +7,10 @@ use Mix.Config
 
 url = "https://sokol.poa.network"
 
+config :explorer, :indexer,
+  block_rate: 5_000,
+  debug_logs: !!System.get_env("DEBUG_LOGS")
+
 config :ethereumex,
   url: url,
   http_options: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :eth]]

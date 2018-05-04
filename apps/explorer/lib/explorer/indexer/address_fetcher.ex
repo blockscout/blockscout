@@ -24,10 +24,12 @@ defmodule Explorer.Indexer.AddressFetcher do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-  def init(_opts) do
+  def init(opts) do
+    opts = Keyword.merge(Application.fetch_env!(:explorer, :indexer), opts)
     send(self(), :fetch_unfetched_addresses)
 
     state = %{
+      debug_logs: Keyword.get(opts, :debug_logs, false),
       flush_timer: nil,
       fetch_interval: @fetch_interval,
       buffer: :queue.new(),
@@ -137,7 +139,7 @@ defmodule Explorer.Indexer.AddressFetcher do
     if Enum.count(state.tasks) < @max_concurrency and :queue.len(state.buffer) > 0 do
       {batch, new_queue} = take_batch(state.buffer)
       task = Task.Supervisor.async_nolink(Explorer.Indexer.TaskSupervisor, fn ->
-        Logger.debug(fn -> "fetching #{Enum.count(batch)} balances" end)
+        debug(state, fn -> "fetching #{Enum.count(batch)} balances" end)
         {:ok, balances} = do_fetch_addresses(batch)
         {:fetched_balances, balances}
       end)
@@ -147,4 +149,7 @@ defmodule Explorer.Indexer.AddressFetcher do
       buffer_addresses(state, hashes)
     end
   end
+
+  defp debug(%{debug_logs: true}, func), do: Logger.debug(func)
+  defp debug(%{debug_logs: false}, _func), do: :noop
 end

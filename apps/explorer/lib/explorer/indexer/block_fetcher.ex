@@ -33,6 +33,10 @@ defmodule Explorer.Indexer.BlockFetcher do
 
   ## Options
 
+  Default options are pulled from application config under the
+  `:explorer, :index` keyspace. The follow options can be overridden:
+
+    * `:debug_logs` - When `true` logs verbose index progress. Defaults `false`.
     * `:block_rate` - The millisecond rate new blocks are published at.
       Defaults to `#{@block_rate}`.
   """
@@ -42,11 +46,14 @@ defmodule Explorer.Indexer.BlockFetcher do
 
   @impl GenServer
   def init(opts) do
+    opts = Keyword.merge(Application.fetch_env!(:explorer, :indexer), opts)
+
     send(self(), :catchup_index)
     :timer.send_interval(15_000, self(), :debug_count)
 
     state = %{
       genesis_task: nil,
+      debug_logs: Keyword.get(opts, :debug_logs, false),
       realtime_interval: (opts[:block_rate] || @block_rate) * 2,
     }
 
@@ -58,12 +65,12 @@ defmodule Explorer.Indexer.BlockFetcher do
     {count, missing_ranges} = missing_block_numbers()
     current_block = Indexer.next_block_number()
 
-    Logger.debug(fn -> "#{count} missed block ranges between genesis and #{current_block}" end)
+    debug(state, fn -> "#{count} missed block ranges between genesis and #{current_block}" end)
 
     {:ok, genesis_task} =
       Task.start_link(fn ->
         {:ok, seq} = Sequence.start_link(missing_ranges, current_block, @batch_size)
-        stream_import(seq, max_concurrency: @blocks_concurrency)
+        stream_import(state, seq, max_concurrency: @blocks_concurrency)
       end)
 
     Process.monitor(genesis_task)
@@ -75,7 +82,7 @@ defmodule Explorer.Indexer.BlockFetcher do
     {:ok, realtime_task} =
       Task.start_link(fn ->
         {:ok, seq} = Sequence.start_link([], Indexer.next_block_number(), 2)
-        stream_import(seq, max_concurrency: 1)
+        stream_import(state, seq, max_concurrency: 1)
       end)
 
     Process.monitor(realtime_task)
@@ -93,7 +100,7 @@ defmodule Explorer.Indexer.BlockFetcher do
   end
 
   def handle_info(:debug_count, state) do
-    Logger.debug(fn ->
+    debug(state, fn ->
       """
 
       ================================
@@ -110,19 +117,19 @@ defmodule Explorer.Indexer.BlockFetcher do
     {:noreply, state}
   end
 
-  defp cap_seq(seq, :end_of_chain, {_block_start, _block_end}) do
+  defp cap_seq(seq, :end_of_chain, {_block_start, _block_end}, _state) do
     :ok = Sequence.cap(seq)
   end
 
-  defp cap_seq(_seq, :more, {block_start, block_end}) do
-    Logger.debug(fn -> "got blocks #{block_start} - #{block_end}" end)
+  defp cap_seq(_seq, :more, {block_start, block_end}, state) do
+    debug(state, fn -> "got blocks #{block_start} - #{block_end}" end)
     :ok
   end
 
-  defp fetch_internal_transactions([]), do: {:ok, []}
+  defp fetch_internal_transactions(_state, []), do: {:ok, []}
 
-  defp fetch_internal_transactions(hashes) do
-    Logger.debug(fn -> "fetching #{length(hashes)} internal transactions" end)
+  defp fetch_internal_transactions(state, hashes) do
+    debug(state, fn -> "fetching #{length(hashes)} internal transactions" end)
     stream_opts = [max_concurrency: @internal_concurrency, timeout: :infinity]
 
     hashes
@@ -135,10 +142,10 @@ defmodule Explorer.Indexer.BlockFetcher do
     end)
   end
 
-  defp fetch_transaction_receipts([]), do: {:ok, %{logs: [], receipts: []}}
+  defp fetch_transaction_receipts(_state, []), do: {:ok, %{logs: [], receipts: []}}
 
-  defp fetch_transaction_receipts(hashes) do
-    Logger.debug(fn -> "fetching #{length(hashes)} transaction receipts" end)
+  defp fetch_transaction_receipts(state, hashes) do
+    debug(state, fn -> "fetching #{length(hashes)} transaction receipts" end)
     stream_opts = [max_concurrency: @receipts_concurrency, timeout: :infinity]
 
     hashes
@@ -157,13 +164,13 @@ defmodule Explorer.Indexer.BlockFetcher do
     end)
   end
 
-  defp insert(seq, range, params) do
+  defp insert(state, seq, range, params) do
     case BlockImporter.import_blocks(params) do
       :ok ->
         :ok
 
       {:error, step, reason} ->
-        Logger.debug(fn ->
+        debug(state, fn ->
           "failed to insert blocks during #{step} #{inspect(range)}: #{inspect(reason)}. Retrying"
         end)
 
@@ -195,20 +202,20 @@ defmodule Explorer.Indexer.BlockFetcher do
     {count, chunked_ranges}
   end
 
-  defp stream_import(seq, task_opts) do
+  defp stream_import(state, seq, task_opts) do
     seq
     |> Sequence.build_stream()
     |> Task.async_stream(
       fn {block_start, block_end} = range ->
         with {:ok, next, result} <- JSONRPC.fetch_blocks_by_range(block_start, block_end),
              %{blocks: blocks, transactions: transactions} <- result,
-             :ok <- cap_seq(seq, next, range),
+             :ok <- cap_seq(seq, next, range, state),
              transaction_hashes <- Transactions.params_to_hashes(transactions),
-             {:ok, receipt_params} <- fetch_transaction_receipts(transaction_hashes),
+             {:ok, receipt_params} <- fetch_transaction_receipts(state, transaction_hashes),
              %{logs: logs, receipts: receipts} <- receipt_params,
-             {:ok, internal_transactions} <- fetch_internal_transactions(transaction_hashes) do
+             {:ok, internal_transactions} <- fetch_internal_transactions(state, transaction_hashes) do
 
-          insert(seq, range, %{
+          insert(state, seq, range, %{
             blocks: blocks,
             internal_transactions: internal_transactions,
             logs: logs,
@@ -218,7 +225,7 @@ defmodule Explorer.Indexer.BlockFetcher do
 
         else
           {:error, reason} ->
-            Logger.debug(fn ->
+            debug(state, fn ->
               "failed to fetch blocks #{inspect(range)}: #{inspect(reason)}. Retrying"
             end)
 
@@ -234,4 +241,7 @@ defmodule Explorer.Indexer.BlockFetcher do
     timer = Process.send_after(self(), :realtime_index, state.realtime_interval)
     %{state | poll_timer: timer}
   end
+
+  defp debug(%{debug_logs: true}, func), do: Logger.debug(func)
+  defp debug(%{debug_logs: false}, _func), do: :noop
 end
