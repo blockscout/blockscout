@@ -3,7 +3,7 @@ defmodule Explorer.Mixfile do
 
   def project do
     [
-      aliases: aliases(),
+      aliases: aliases(Mix.env()),
       app: :explorer,
       build_path: "../../_build",
       config_path: "../../config/config.exs",
@@ -98,13 +98,16 @@ defmodule Explorer.Mixfile do
   #     $ mix ecto.setup
   #
   # See the documentation for `Mix` for more info on aliases.
-  defp aliases do
+  defp aliases(env) do
     [
-      compile: "compile --warnings-as-errors",
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.drop", "ecto.create --quiet", "ecto.migrate", "test"]
-    ]
+    ] ++ env_aliases(env)
+  end
+  defp env_aliases(:dev), do: []
+  defp env_aliases(_env) do
+    [compile: "compile --warnings-as-errors"]
   end
 
   defp package do

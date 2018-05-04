@@ -411,11 +411,11 @@ defmodule Explorer.Chain do
 
   """
   def import_blocks(%{
-        blocks_params: blocks_params,
-        logs_params: logs_params,
-        internal_transactions_params: internal_transactions_params,
-        receipts_params: receipts_params,
-        transactions_params: transactions_params
+        blocks: blocks_params,
+        logs: logs_params,
+        internal_transactions: internal_transactions_params,
+        receipts: receipts_params,
+        transactions: transactions_params
       })
       when is_list(blocks_params) and is_list(internal_transactions_params) and is_list(logs_params) and
              is_list(receipts_params) and is_list(transactions_params) do

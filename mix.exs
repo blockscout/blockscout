@@ -5,7 +5,7 @@ defmodule ExplorerUmbrella.Mixfile do
 
   def project do
     [
-      aliases: aliases(),
+      aliases: aliases(Mix.env()),
       apps_path: "apps",
       deps: deps(),
       dialyzer: [
@@ -27,7 +27,10 @@ defmodule ExplorerUmbrella.Mixfile do
 
   ## Private Functions
 
-  defp aliases do
+  defp aliases(:dev) do
+    []
+  end
+  defp aliases(_env) do
     [
       compile: "compile --warnings-as-errors"
     ]

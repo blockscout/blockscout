@@ -27,20 +27,24 @@ defmodule Explorer.JSONRPC.Receipts do
   end
 
   def fetch(hashes) when is_list(hashes) do
-    with {:ok, responses} <-
-           hashes
-           |> Enum.map(&hash_to_json/1)
-           |> json_rpc(config(:url)) do
-      elixir_receipts =
-        responses
-        |> responses_to_receipts()
-        |> to_elixir()
+    hashes
+    |> Enum.map(&hash_to_json/1)
+    |> json_rpc(config(:url))
+    |> case do
+      {:ok, responses} ->
+        elixir_receipts =
+          responses
+          |> responses_to_receipts()
+          |> to_elixir()
 
-      elixir_logs = elixir_to_logs(elixir_receipts)
-      receipts_params = elixir_to_params(elixir_receipts)
-      logs_params = Logs.elixir_to_params(elixir_logs)
+        elixir_logs = elixir_to_logs(elixir_receipts)
+        receipts = elixir_to_params(elixir_receipts)
+        logs = Logs.elixir_to_params(elixir_logs)
 
-      {:ok, %{logs_params: logs_params, receipts_params: receipts_params}}
+        {:ok, %{logs: logs, receipts: receipts}}
+
+      {:error, _reason} = err ->
+        err
     end
   end
 

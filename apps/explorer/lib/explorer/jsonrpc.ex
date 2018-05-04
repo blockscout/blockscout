@@ -147,7 +147,13 @@ defmodule Explorer.JSONRPC do
         }
       end
 
-    json_rpc(batched_requests, config(:url))
+    batched_requests
+    |> json_rpc(config(:url))
+    |> handle_get_block_by_number()
+    |> case do
+      {:ok, _next, results}  -> {:ok, results}
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   @doc """
@@ -157,7 +163,7 @@ defmodule Explorer.JSONRPC do
     block_start
     |> build_batch_get_block_by_number(block_end)
     |> json_rpc(config(:url))
-    |> handle_get_block_by_number(block_start, block_end)
+    |> handle_get_block_by_number()
   end
 
   @doc """
@@ -266,7 +272,7 @@ defmodule Explorer.JSONRPC do
       raise("bad jason")
   end
 
-  defp handle_get_block_by_number({:ok, results}, block_start, block_end) do
+  defp handle_get_block_by_number({:ok, results}) do
     {blocks, next} =
       Enum.reduce(results, {[], :more}, fn
         %{"result" => nil}, {blocks, _} -> {blocks, :end_of_chain}
@@ -278,17 +284,15 @@ defmodule Explorer.JSONRPC do
     blocks_params = Blocks.elixir_to_params(elixir_blocks)
     transactions_params = Transactions.elixir_to_params(elixir_transactions)
 
-    {:ok,
+    {:ok, next,
      %{
-       next: next,
-       blocks_params: blocks_params,
-       range: {block_start, block_end},
-       transactions_params: transactions_params
+       blocks: blocks_params,
+       transactions: transactions_params
      }}
   end
 
-  defp handle_get_block_by_number({:error, reason}, block_start, block_end) do
-    {:error, reason, {block_start, block_end}}
+  defp handle_get_block_by_number({:error, reason}) do
+    {:error, reason}
   end
 
   defp handle_response(resp, 200) do

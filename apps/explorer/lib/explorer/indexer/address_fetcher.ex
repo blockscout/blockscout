@@ -13,7 +13,8 @@ defmodule Explorer.Indexer.AddressFetcher do
   }
 
   @fetch_interval :timer.seconds(3)
-  @max_batch_size 500
+  @max_batch_size 100
+  @max_concurrency 2
 
   def async_fetch_balances(address_hashes) do
     GenServer.cast(__MODULE__, {:buffer_addresses, address_hashes})
@@ -26,17 +27,25 @@ defmodule Explorer.Indexer.AddressFetcher do
   def init(_opts) do
     send(self(), :fetch_unfetched_addresses)
 
-    {:ok, %{buffer: MapSet.new(), tasks: %{}}}
+    state = %{
+      flush_timer: nil,
+      fetch_interval: @fetch_interval,
+      buffer: :queue.new(),
+      tasks: %{}
+    }
+
+    {:ok, state}
   end
 
   def handle_info(:fetch_unfetched_addresses, state) do
-    schedule_next_buffer_fetch(0)
     {:noreply, stream_unfetched_addresses(state)}
   end
 
-  def handle_info(:buffer_fetch, state) do
-    schedule_next_buffer_fetch()
-    {:noreply, flush_buffer(state)}
+  def handle_info(:flush, state) do
+    {:noreply, state |> fetch_next_batch([]) |> schedule_next_buffer_flush()}
+  end
+  def handle_info({:async_fetch, hashes}, state) do
+    {:noreply, fetch_next_batch(state, hashes)}
   end
 
   def handle_info({ref, {:fetched_balances, results}}, state) do
@@ -60,69 +69,82 @@ defmodule Explorer.Indexer.AddressFetcher do
   end
 
   def handle_cast({:buffer_addresses, address_hashes}, state) do
-    {:noreply, buffer_addresses(state, address_hashes)}
+    string_hashes = for hash <- address_hashes, do: Hash.to_string(hash)
+    {:noreply, buffer_addresses(state, string_hashes)}
   end
 
   defp drop_task(state, ref) do
+    schedule_async_fetch([])
     %{state | tasks: Map.delete(state.tasks, ref)}
   end
 
-  defp buffer_addresses(state, address_hashes) do
-    string_hashes = for hash <- address_hashes, do: Hash.to_string(hash)
-    %{state | buffer: MapSet.union(state.buffer, MapSet.new(string_hashes))}
+  defp buffer_addresses(state, string_hashes) do
+    %{state | buffer: :queue.join(state.buffer, :queue.from_list(string_hashes))}
   end
 
   defp stream_unfetched_addresses(state) do
-    tasks =
-      {state.tasks, state.buffer}
-      |> Chain.stream_unfetched_addresses(fn %Address{hash: hash}, {tasks, batch} ->
-        batch = MapSet.put(batch, Hash.to_string(hash))
+    state.buffer
+    |> Chain.stream_unfetched_addresses(fn %Address{hash: hash}, batch ->
+      batch = :queue.in(Hash.to_string(hash), batch)
 
-        if MapSet.size(batch) >= @max_batch_size do
-          task = do_async_fetch_balances(batch)
-          {Map.put(tasks, task.ref, batch), MapSet.new()}
-        else
-          {tasks, batch}
-        end
-      end)
-      |> fetch_remaining()
+      if :queue.len(batch) >= @max_batch_size do
+        schedule_async_fetch(:queue.to_list(batch))
+        :queue.new()
+      else
+        batch
+      end
+    end)
+    |> fetch_remaining()
 
-    %{state | tasks: tasks}
+    schedule_next_buffer_flush(state)
   end
 
-  defp fetch_remaining({:ok, {tasks, batch}}) do
-    if MapSet.size(batch) > 0 do
-      task = do_async_fetch_balances(batch)
-      Map.put(tasks, task.ref, batch)
-    else
-      tasks
+  defp fetch_remaining({:ok, batch}) do
+    if :queue.len(batch) > 0 do
+      schedule_async_fetch(:queue.to_list(batch))
     end
-  end
-
-  defp flush_buffer(state) do
-    if MapSet.size(state.buffer) > 0 do
-      task = do_async_fetch_balances(state.buffer)
-      new_tasks = Map.put(state.tasks, task.ref, state.buffer)
-
-      %{state | tasks: new_tasks, buffer: MapSet.new()}
-    else
-      state
-    end
-  end
-
-  defp schedule_next_buffer_fetch(after_ms \\ @fetch_interval) do
-    Process.send_after(self(), :buffer_fetch, after_ms)
+    :ok
   end
 
   defp do_fetch_addresses(address_hashes) do
     JSONRPC.fetch_balances_by_hash(address_hashes)
   end
 
-  defp do_async_fetch_balances(hashes_mapset) do
-    Task.Supervisor.async_nolink(Explorer.Indexer.TaskSupervisor, fn ->
-      Logger.debug(fn -> "fetching #{MapSet.size(hashes_mapset)} balances" end)
-      {:ok, balances} = do_fetch_addresses(Enum.to_list(hashes_mapset))
-      {:fetched_balances, balances}
-    end)
+  defp take_batch(queue) do
+    {hashes, remaining_queue} =
+      Enum.reduce_while(1..@max_batch_size, {[], queue}, fn _, {hashes, queue_acc} ->
+        case :queue.out(queue_acc) do
+          {{:value, hash}, new_queue} -> {:cont, {[hash | hashes], new_queue}}
+          {:empty, new_queue} -> {:halt, {hashes, new_queue}}
+        end
+      end)
+
+    {Enum.reverse(hashes), remaining_queue}
+  end
+
+  defp schedule_async_fetch(hashes, after_ms \\ 0) do
+    Process.send_after(self(), {:async_fetch, hashes}, after_ms)
+  end
+
+  defp schedule_next_buffer_flush(state) do
+    timer = Process.send_after(self(), :flush, state.fetch_interval)
+    %{state | flush_timer: timer}
+  end
+
+  defp fetch_next_batch(state, hashes) do
+    state = buffer_addresses(state, hashes)
+
+    if Enum.count(state.tasks) < @max_concurrency and :queue.len(state.buffer) > 0 do
+      {batch, new_queue} = take_batch(state.buffer)
+      task = Task.Supervisor.async_nolink(Explorer.Indexer.TaskSupervisor, fn ->
+        Logger.debug(fn -> "fetching #{Enum.count(batch)} balances" end)
+        {:ok, balances} = do_fetch_addresses(batch)
+        {:fetched_balances, balances}
+      end)
+
+      %{state | tasks: Map.put(state.tasks, task.ref, batch), buffer: new_queue}
+    else
+      buffer_addresses(state, hashes)
+    end
   end
 end
