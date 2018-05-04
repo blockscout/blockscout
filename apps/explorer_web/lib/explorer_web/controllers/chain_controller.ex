@@ -10,7 +10,7 @@ defmodule ExplorerWeb.ChainController do
       conn,
       "show.html",
       chain: Statistics.fetch(),
-      market_history_data: Market.fetch_recent_history(8)
+      market_history_data: Market.fetch_recent_history(30)
     )
   end
 

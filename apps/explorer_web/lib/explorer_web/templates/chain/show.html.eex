@@ -1,6 +1,9 @@
 <section>
   <section class="container__section container__section--partitioned">
     <div class="chain container__subsection">
+    <canvas data-chart="marketHistoryChart" data-market_history_data='<%=raw encode_market_history_data(@market_history_data) %>' width="400" height="200"></canvas>
+    </div>
+    <div class="chain container__subsection">
       <div class="chain__container">
         <img class="chain__image" src="<%= static_path(@conn, "/images/blocks.svg") %>" />
         <div class="chain__title"><%= gettext("Skipped") %></div>
