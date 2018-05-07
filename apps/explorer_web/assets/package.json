@@ -22,6 +22,7 @@
     "bootstrap": "^4.1.0",
     "chart.js": "^2.7.2",
     "jquery": "^3.3.1",
+    "numeral": "^2.0.6",
     "phoenix": "file:../../../deps/phoenix",
     "phoenix_html": "file:../../../deps/phoenix_html",
     "popper.js": "^1.14.3"
