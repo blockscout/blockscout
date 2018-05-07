@@ -30,7 +30,7 @@ module.exports = {
               precision: 8,
               includePaths: [
                 'node_modules/bootstrap/scss',
-                'node_modules/font-awesome/scss'
+                'node_modules/@fortawesome/fontawesome-free/scss'
               ]
             }
           }],

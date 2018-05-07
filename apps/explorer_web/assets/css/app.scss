@@ -7,8 +7,11 @@
 /* This file is for your main application css. */
 
 // Font Awesome
-$fa-font-path: "~font-awesome/fonts";
-@import "font-awesome";
+$fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
+@import "fontawesome";
+@import "fa-brands";
+@import "fa-regular";
+@import "fa-solid";
 
 // Bootstrap Core CSS
 @import "node_modules/bootstrap/scss/functions";
