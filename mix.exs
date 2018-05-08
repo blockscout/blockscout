@@ -30,6 +30,7 @@ defmodule ExplorerUmbrella.Mixfile do
   defp aliases(:dev) do
     []
   end
+
   defp aliases(_env) do
     [
       compile: "compile --warnings-as-errors"

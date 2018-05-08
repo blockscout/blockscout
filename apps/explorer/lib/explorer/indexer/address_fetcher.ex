@@ -46,6 +46,7 @@ defmodule Explorer.Indexer.AddressFetcher do
   def handle_info(:flush, state) do
     {:noreply, state |> fetch_next_batch([]) |> schedule_next_buffer_flush()}
   end
+
   def handle_info({:async_fetch, hashes}, state) do
     {:noreply, fetch_next_batch(state, hashes)}
   end
@@ -105,6 +106,7 @@ defmodule Explorer.Indexer.AddressFetcher do
     if :queue.len(batch) > 0 do
       schedule_async_fetch(:queue.to_list(batch))
     end
+
     :ok
   end
 
@@ -138,11 +140,13 @@ defmodule Explorer.Indexer.AddressFetcher do
 
     if Enum.count(state.tasks) < @max_concurrency and :queue.len(state.buffer) > 0 do
       {batch, new_queue} = take_batch(state.buffer)
-      task = Task.Supervisor.async_nolink(Explorer.Indexer.TaskSupervisor, fn ->
-        debug(state, fn -> "fetching #{Enum.count(batch)} balances" end)
-        {:ok, balances} = do_fetch_addresses(batch)
-        {:fetched_balances, balances}
-      end)
+
+      task =
+        Task.Supervisor.async_nolink(Explorer.Indexer.TaskSupervisor, fn ->
+          debug(state, fn -> "fetching #{Enum.count(batch)} balances" end)
+          {:ok, balances} = do_fetch_addresses(batch)
+          {:fetched_balances, balances}
+        end)
 
       %{state | tasks: Map.put(state.tasks, task.ref, batch), buffer: new_queue}
     else

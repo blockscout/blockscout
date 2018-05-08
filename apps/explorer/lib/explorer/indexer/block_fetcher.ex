@@ -11,7 +11,7 @@ defmodule Explorer.Indexer.BlockFetcher do
 
   alias Explorer.Indexer.{
     Sequence,
-    BlockImporter,
+    BlockImporter
   }
 
   alias Explorer.JSONRPC.Transactions
@@ -26,7 +26,6 @@ defmodule Explorer.Indexer.BlockFetcher do
 
   @receipts_batch_size 250
   @receipts_concurrency 20
-
 
   @doc """
   Starts the server.
@@ -54,7 +53,7 @@ defmodule Explorer.Indexer.BlockFetcher do
     state = %{
       genesis_task: nil,
       debug_logs: Keyword.get(opts, :debug_logs, false),
-      realtime_interval: (opts[:block_rate] || @block_rate) * 2,
+      realtime_interval: (opts[:block_rate] || @block_rate) * 2
     }
 
     {:ok, state}
@@ -152,8 +151,7 @@ defmodule Explorer.Indexer.BlockFetcher do
     |> Enum.chunk_every(@receipts_batch_size)
     |> Task.async_stream(&JSONRPC.fetch_transaction_receipts(&1), stream_opts)
     |> Enum.reduce_while({:ok, %{logs: [], receipts: []}}, fn
-      {:ok, {:ok, %{logs: logs, receipts: receipts}}},
-      {:ok, %{logs: acc_logs, receipts: acc_receipts}} ->
+      {:ok, {:ok, %{logs: logs, receipts: receipts}}}, {:ok, %{logs: acc_logs, receipts: acc_receipts}} ->
         {:cont, {:ok, %{logs: acc_logs ++ logs, receipts: acc_receipts ++ receipts}}}
 
       {:ok, {:error, reason}}, {:ok, _acc} ->
@@ -214,7 +212,6 @@ defmodule Explorer.Indexer.BlockFetcher do
              {:ok, receipt_params} <- fetch_transaction_receipts(state, transaction_hashes),
              %{logs: logs, receipts: receipts} <- receipt_params,
              {:ok, internal_transactions} <- fetch_internal_transactions(state, transaction_hashes) do
-
           insert(state, seq, range, %{
             blocks: blocks,
             internal_transactions: internal_transactions,
@@ -222,7 +219,6 @@ defmodule Explorer.Indexer.BlockFetcher do
             receipts: receipts,
             transactions: transactions
           })
-
         else
           {:error, reason} ->
             debug(state, fn ->

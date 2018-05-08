@@ -8,7 +8,7 @@ defmodule Explorer.Indexer.Supervisor do
   alias Explorer.Indexer.{
     BlockFetcher,
     BlockImporter,
-    AddressFetcher,
+    AddressFetcher
   }
 
   def start_link(opts) do
@@ -21,7 +21,7 @@ defmodule Explorer.Indexer.Supervisor do
       {Task.Supervisor, name: Explorer.Indexer.TaskSupervisor},
       {BlockFetcher, []},
       {BlockImporter, []},
-      {AddressFetcher, []},
+      {AddressFetcher, []}
     ]
 
     Supervisor.init(children, strategy: :rest_for_one)

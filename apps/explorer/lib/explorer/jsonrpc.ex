@@ -151,7 +151,7 @@ defmodule Explorer.JSONRPC do
     |> json_rpc(config(:url))
     |> handle_get_block_by_number()
     |> case do
-      {:ok, _next, results}  -> {:ok, results}
+      {:ok, _next, results} -> {:ok, results}
       {:error, reason} -> {:error, reason}
     end
   end
