@@ -71,26 +71,26 @@
             <tgroup>
               <tr data-test="internal_transaction">
                 <td>
-                  <%= link(internal_transaction.transaction.hash,
-                    to: transaction_path(@conn, :show, @conn.assigns.locale, internal_transaction.transaction.hash),
+                  <%= link(internal_transaction.transaction,
+                    to: transaction_path(@conn, :show, @conn.assigns.locale, internal_transaction.transaction),
                     class: "transaction-log__link") %>
                 </td>
                 <td>
-                  <%= link(internal_transaction.transaction.block.number,
-                    to: block_path(@conn, :show, @conn.assigns.locale, internal_transaction.transaction.block.number),
+                  <%= link(internal_transaction.transaction.block,
+                    to: block_path(@conn, :show, @conn.assigns.locale, internal_transaction.transaction.block),
                     class: "transaction-log__link") %>
                 </td>
                 <td class="internal-transaction__to-address"><%= ExplorerWeb.BlockView.age(internal_transaction.transaction.block) %></td>
                 <td class="internal-transaction__from-address">
-                  <%= link(internal_transaction.from_address.hash,
-                    to: address_path(@conn, :show, @conn.assigns.locale, internal_transaction.from_address.hash),
+                  <%= link(internal_transaction.from_address,
+                    to: address_path(@conn, :show, @conn.assigns.locale, internal_transaction.from_address),
                     class: "transaction-log__link") %>
                 </td>
                 <td class="internal-transaction__to-address">
                   <% to_address = internal_transaction.to_address %>
                   <%= if to_address do %>
-                    <%= link(to_address.hash,
-                      to: address_path(@conn, :show, @conn.assigns.locale, internal_transaction.to_address.hash),
+                    <%= link(to_address,
+                      to: address_path(@conn, :show, @conn.assigns.locale, internal_transaction.to_address),
                       class: "transaction-log__link") %>
                   <% end %>
                 </td>

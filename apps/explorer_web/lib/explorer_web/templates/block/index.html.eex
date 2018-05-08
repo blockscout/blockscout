@@ -39,9 +39,9 @@
             <tr class="blocks__row">
               <td class="blocks__column blocks__column--height">
                 <%= link(
-                      block.number,
+                      block,
                       class: "blocks__link",
-                      to: block_path(@conn, :show, @conn.assigns.locale, block.number)
+                      to: block_path(@conn, :show, @conn.assigns.locale, block)
                     ) %>
               </td>
               <td class="transactions__column transactions__column--age"><%= block.timestamp |> Timex.from_now  %></td>

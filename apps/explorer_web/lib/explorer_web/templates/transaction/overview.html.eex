@@ -1,6 +1,6 @@
 <div class="transaction__header">
   <h1 class="transaction__heading"><%= gettext "Transaction Details" %></h1>
-  <h3 class="transaction__subheading"><%= @transaction.hash %></h3>
+  <h3 class="transaction__subheading"><%= @transaction %></h3>
 </div>
 <div class="transaction__container">
   <div class="transaction__attributes">
@@ -22,9 +22,9 @@
               <% block = @transaction.block %>
               <%= if block do %>
                 <%= link(
-                      block.number,
+                      block,
                       class: "transaction__link",
-                      to: block_path(@conn, :show, @conn.assigns.locale, block.number)
+                      to: block_path(@conn, :show, @conn.assigns.locale, block)
                     ) %>
               <% end %>
             </span>
@@ -48,9 +48,9 @@
           <dd class="transaction__item-value">
             <%= if @transaction.from_address do %>
               <%= link(
-                    @transaction.from_address.hash,
+                    @transaction.from_address,
                     class: "transaction__link",
-                    to: address_path(@conn, :show, @conn.assigns.locale, @transaction.from_address.hash)
+                    to: address_path(@conn, :show, @conn.assigns.locale, @transaction.from_address)
                   ) %>
             <% else %>
               <%= gettext "Pending" %>
@@ -62,9 +62,9 @@
           <dd class="transaction__item-value">
             <%= if @transaction.to_address do %>
               <%= link(
-                    @transaction.to_address.hash,
+                    @transaction.to_address,
                     class: "transaction__link",
-                    to: address_path(@conn, :show, @conn.assigns.locale, @transaction.to_address.hash)
+                    to: address_path(@conn, :show, @conn.assigns.locale, @transaction.to_address)
                   ) %>
             <% else %>
               <%= gettext "Pending" %>
