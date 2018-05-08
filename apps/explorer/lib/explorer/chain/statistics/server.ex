@@ -13,10 +13,7 @@ defmodule Explorer.Chain.Statistics.Server do
 
   @spec fetch() :: Statistics.t()
   def fetch do
-    case GenServer.whereis(__MODULE__) do
-      nil -> Statistics.fetch()
-      _ -> GenServer.call(__MODULE__, :fetch)
-    end
+    GenServer.call(__MODULE__, :fetch)
   end
 
   def start_link(opts \\ []) do
