@@ -19,18 +19,17 @@ defmodule Explorer.Chain.Statistics.Server do
     end
   end
 
-  def start_link, do: start_link(true)
-
-  def start_link(refresh) do
-    GenServer.start_link(__MODULE__, refresh, name: __MODULE__)
+  def start_link(opts \\ []) do
+    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-  def init(true) do
-    send(self(), :refresh)
-    init(false)
-  end
+  def init(options) when is_list(options) do
+    if Keyword.get(options, :refresh, true) do
+      send(self(), :refresh)
+    end
 
-  def init(false), do: {:ok, %Statistics{}}
+    {:ok, %Statistics{}}
+  end
 
   def handle_info(:refresh, %Statistics{} = statistics) do
     Task.start_link(fn ->

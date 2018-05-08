@@ -16,7 +16,9 @@ config :ethereumex,
   http_options: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :eth]]
 
 # General application configuration
-config :explorer, ecto_repos: [Explorer.Repo]
+config :explorer,
+  ecto_repos: [Explorer.Repo],
+  coin: "POA"
 
 config :explorer, Explorer.JSONRPC,
   http: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :eth]],

@@ -459,6 +459,155 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "address_to_internal_transactions/1" do
+    test "with single transaction containing two internal transactions" do
+      address = insert(:address)
+      transaction = insert(:transaction)
+
+      %InternalTransaction{id: first_id} =
+        insert(:internal_transaction, index: 0, transaction_hash: transaction.hash, to_address_hash: address.hash)
+
+      %InternalTransaction{id: second_id} =
+        insert(:internal_transaction, index: 1, transaction_hash: transaction.hash, to_address_hash: address.hash)
+
+      result = address |> Chain.address_to_internal_transactions() |> Enum.map(fn it -> it.id end)
+      assert Enum.member?(result, first_id)
+      assert Enum.member?(result, second_id)
+    end
+
+    test "loads associations in necessity_by_association" do
+      address = insert(:address)
+      transaction = insert(:transaction, to_address_hash: address.hash)
+      insert(:internal_transaction, transaction_hash: transaction.hash, to_address_hash: address.hash, index: 0)
+      insert(:internal_transaction, transaction_hash: transaction.hash, to_address_hash: address.hash, index: 1)
+
+      assert [
+               %InternalTransaction{
+                 from_address: %Ecto.Association.NotLoaded{},
+                 to_address: %Ecto.Association.NotLoaded{},
+                 transaction: %Transaction{}
+               }
+               | _
+             ] = Map.get(Chain.address_to_internal_transactions(address), :entries, [])
+
+      assert [
+               %InternalTransaction{
+                 from_address: %Address{},
+                 to_address: %Address{},
+                 transaction: %Transaction{}
+               }
+               | _
+             ] =
+               Map.get(
+                 Chain.address_to_internal_transactions(
+                   address,
+                   necessity_by_association: %{
+                     from_address: :optional,
+                     to_address: :optional,
+                     transaction: :optional
+                   }
+                 ),
+                 :entries,
+                 []
+               )
+    end
+
+    test "Returns results in reverse chronological order by block number, transaction index, internal transaction index" do
+      address = insert(:address)
+
+      pending_transaction = insert(:transaction)
+
+      %InternalTransaction{id: first_pending} =
+        insert(
+          :internal_transaction,
+          transaction_hash: pending_transaction.hash,
+          to_address_hash: address.hash,
+          index: 0
+        )
+
+      %InternalTransaction{id: second_pending} =
+        insert(
+          :internal_transaction,
+          transaction_hash: pending_transaction.hash,
+          to_address_hash: address.hash,
+          index: 1
+        )
+
+      a_block = insert(:block, number: 2000)
+      first_a_transaction = insert(:transaction, block_hash: a_block.hash, index: 10)
+
+      %InternalTransaction{id: first} =
+        insert(
+          :internal_transaction,
+          transaction_hash: first_a_transaction.hash,
+          to_address_hash: address.hash,
+          index: 0
+        )
+
+      %InternalTransaction{id: second} =
+        insert(
+          :internal_transaction,
+          transaction_hash: first_a_transaction.hash,
+          to_address_hash: address.hash,
+          index: 1
+        )
+
+      second_a_transaction = insert(:transaction, block_hash: a_block.hash, index: 20)
+
+      %InternalTransaction{id: third} =
+        insert(
+          :internal_transaction,
+          transaction_hash: second_a_transaction.hash,
+          to_address_hash: address.hash,
+          index: 0
+        )
+
+      %InternalTransaction{id: fourth} =
+        insert(
+          :internal_transaction,
+          transaction_hash: second_a_transaction.hash,
+          to_address_hash: address.hash,
+          index: 1
+        )
+
+      b_block = insert(:block, number: 6000)
+      first_b_transaction = insert(:transaction, block_hash: b_block.hash, index: 20)
+
+      %InternalTransaction{id: fifth} =
+        insert(
+          :internal_transaction,
+          transaction_hash: first_b_transaction.hash,
+          to_address_hash: address.hash,
+          index: 0
+        )
+
+      %InternalTransaction{id: sixth} =
+        insert(
+          :internal_transaction,
+          transaction_hash: first_b_transaction.hash,
+          to_address_hash: address.hash,
+          index: 1
+        )
+
+      result =
+        address
+        |> Chain.address_to_internal_transactions()
+        |> Map.get(:entries, [])
+        |> Enum.map(fn internal_transaction -> internal_transaction.id end)
+
+      assert [second_pending, first_pending, sixth, fifth, fourth, third, second, first] == result
+    end
+
+    test "Excludes internal transactions where they are alone in the parent transaction" do
+      address = insert(:address)
+      block = insert(:block)
+      transaction = insert(:transaction, block_hash: block.hash, index: 0, to_address_hash: address.hash)
+      insert(:internal_transaction, transaction_hash: transaction.hash, to_address_hash: address.hash)
+
+      assert %{entries: []} = Chain.address_to_internal_transactions(address)
+    end
+  end
+
   describe "transaction_hash_to_internal_transactions/1" do
     test "without transaction" do
       {:ok, hash} =
@@ -489,7 +638,7 @@ defmodule Explorer.ChainTest do
       assert Enum.member?(results, second.id)
     end
 
-    test "with transaction with internal transactions loads associations with in necessity_by_assocation" do
+    test "with transaction with internal transactions loads associations with in necessity_by_association" do
       %Transaction{hash: hash} = insert(:transaction)
       insert(:internal_transaction, transaction_hash: hash, index: 0)
       insert(:internal_transaction, transaction_hash: hash, index: 1)

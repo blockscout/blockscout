@@ -10,14 +10,20 @@ config :explorer_web,
   namespace: ExplorerWeb,
   ecto_repos: [Explorer.Repo]
 
-# Configures gettext
-config :explorer_web, ExplorerWeb.Gettext, locales: ~w(en), default_locale: "en"
-
 # Configures the endpoint
 config :explorer_web, ExplorerWeb.Endpoint,
   url: [host: "localhost"],
   render_errors: [view: ExplorerWeb.ErrorView, accepts: ~w(html json)],
   pubsub: [name: ExplorerWeb.PubSub, adapter: Phoenix.PubSub.PG2]
+
+# Configures gettext
+config :explorer_web, ExplorerWeb.Gettext, locales: ~w(en), default_locale: "en"
+
+config :explorer_web, ExplorerWeb.SocialMedia,
+  twitter: "PoaNetwork",
+  telegram: "oraclesnetwork",
+  facebook: "PoaNetwork",
+  instagram: "PoaNetwork"
 
 config :ex_cldr,
   default_locale: "en",

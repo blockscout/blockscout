@@ -87,7 +87,7 @@ jobs:
 
       - run:
           name: Build assets
-          command: node node_modules/brunch/bin/brunch build
+          command: node node_modules/webpack/bin/webpack.js --mode development
           working_directory: "apps/explorer_web/assets"
 
       - persist_to_workspace:

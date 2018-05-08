@@ -41,7 +41,7 @@ defmodule ExplorerWeb.Mixfile do
   end
 
   # Specifies which paths to compile per environment.
-  defp elixirc_paths(:test), do: ["test/support" | elixirc_paths()]
+  defp elixirc_paths(:test), do: ["test/support", "test/explorer_web/features/pages"] ++ elixirc_paths()
   defp elixirc_paths(_), do: elixirc_paths()
   defp elixirc_paths, do: ["lib"]
 
@@ -54,7 +54,6 @@ defmodule ExplorerWeb.Mixfile do
     do: [
       :scrivener_html,
       :ex_cldr,
-      :ex_jasmine,
       :timex,
       :timex_ecto,
       :crontab,
@@ -74,7 +73,6 @@ defmodule ExplorerWeb.Mixfile do
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       {:ex_cldr_numbers, "~> 1.0"},
       {:ex_cldr_units, "~> 1.0"},
-      {:ex_jasmine, github: "minifast/ex_jasmine", branch: "master"},
       {:ex_machina, "~> 2.1", only: [:test]},
       # Code coverage
       {:excoveralls, "~> 0.8.1", only: [:test]},
@@ -95,7 +93,6 @@ defmodule ExplorerWeb.Mixfile do
       {:phoenix_pubsub, "~> 1.0"},
       {:phoenix_pubsub_redis, "~> 2.1.0", only: [:prod]},
       {:postgrex, ">= 0.0.0"},
-      {:react_phoenix, "~> 0.5"},
       {:scrivener_html, "~> 1.7"},
       # Waiting on https://github.com/smeevil/set_locale/pull/9
       {:set_locale, github: "minifast/set_locale", branch: "master"},

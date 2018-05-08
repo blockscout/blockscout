@@ -6,19 +6,19 @@ defmodule Explorer.Chain.Statistics.ServerTest do
 
   describe "init/1" do
     test "returns a new chain when not told to refresh" do
-      {:ok, statistics} = Server.init(false)
+      {:ok, statistics} = Server.init(refresh: false)
 
       assert statistics.number == Statistics.fetch().number
     end
 
     test "returns a new chain when told to refresh" do
-      {:ok, statistics} = Server.init(true)
+      {:ok, statistics} = Server.init(refresh: true)
 
       assert statistics == Statistics.fetch()
     end
 
     test "refreshes when told to refresh" do
-      {:ok, _} = Server.init(true)
+      {:ok, _} = Server.init([])
 
       assert_receive :refresh, 2_000
     end

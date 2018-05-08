@@ -78,7 +78,6 @@ defmodule Explorer.Mixfile do
       {:exvcr, "~> 0.10", only: :test},
       {:httpoison, "~> 1.0", override: true},
       {:jason, "~> 1.0"},
-      {:jiffy, "~> 0.15.1"},
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       {:math, "~> 0.3.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},

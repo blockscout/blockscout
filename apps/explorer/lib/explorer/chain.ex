@@ -3,7 +3,7 @@ defmodule Explorer.Chain do
   The chain context.
   """
 
-  import Ecto.Query, only: [from: 2, or_where: 3, order_by: 2, preload: 2, where: 2, where: 3]
+  import Ecto.Query, only: [from: 2, join: 4, or_where: 3, order_by: 2, order_by: 3, preload: 2, where: 2, where: 3]
 
   alias Ecto.{Changeset, Multi}
   alias Explorer.Chain.{Address, Block, Hash, InternalTransaction, Log, Receipt, Transaction, Wei}
@@ -44,6 +44,41 @@ defmodule Explorer.Chain do
   @typep timestamps_option :: {:timestamps, timestamps}
 
   # Functions
+
+  @doc """
+  `t:Explorer.Chain.InternalTransaction/0`s from `address`.
+
+  This function excludes any internal transactions in the results where the internal transaction has no siblings within
+  the parent transaction.
+
+  ## Options
+
+  * `:direction` - if specified, will filter internal transactions by address type. If `:to` is specified, only internal
+  transactions where the "to" address matches will be returned. Likewise, if `:from` is specified, only internal
+  transactions where the "from" address matches will be returned. If :direction is omitted, internal transactions either
+  to or from the address will be returned.
+  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`. If an association is
+  `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association, then
+  the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the page `entries`.
+  * `:pagination` - pagination params to pass to scrivener.
+
+  """
+  def address_to_internal_transactions(%Address{hash: hash}, options \\ []) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    direction = Keyword.get(options, :direction)
+    pagination = Keyword.get(options, :pagination, %{})
+
+    InternalTransaction
+    |> join(:inner, [internal_transaction], transaction in assoc(internal_transaction, :transaction))
+    |> join(:left, [internal_transaction, transaction], block in assoc(transaction, :block))
+    |> where_address_fields_match(direction, hash)
+    |> where_transaction_has_multiple_internal_transactions()
+    |> order_by([it, transaction, block], desc: block.number, desc: transaction.index, desc: it.index)
+    |> preload(transaction: :block)
+    |> join_associations(necessity_by_association)
+    |> Repo.paginate(pagination)
+  end
+
   @doc """
   `t:Explorer.Chain.Transaction/0`s from `address`.
 
@@ -940,13 +975,7 @@ defmodule Explorer.Chain do
     InternalTransaction
     |> for_parent_transaction(hash)
     |> join_associations(necessity_by_association)
-    |> where(
-      [_it, t],
-      fragment(
-        "(SELECT COUNT(sibling.id) FROM internal_transactions as sibling WHERE sibling.transaction_hash = ?) > 1",
-        t.hash
-      )
-    )
+    |> where_transaction_has_multiple_internal_transactions()
     |> order_by(:index)
     |> Repo.paginate(pagination)
   end
@@ -1015,20 +1044,14 @@ defmodule Explorer.Chain do
          named_arguments
        )
        when is_list(named_arguments) do
-    address_fields =
-      case Keyword.get(named_arguments, :direction) do
-        :to -> [:to_address_hash]
-        :from -> [:from_address_hash]
-        nil -> [:from_address_hash, :to_address_hash]
-      end
-
+    direction = Keyword.get(named_arguments, :direction)
     necessity_by_association = Keyword.get(named_arguments, :necessity_by_association, %{})
     pagination = Keyword.get(named_arguments, :pagination, %{})
 
     Transaction
     |> join_associations(necessity_by_association)
     |> reverse_chronologically()
-    |> where_address_fields_match(address_fields, address_hash)
+    |> where_address_fields_match(direction, address_hash)
     |> Repo.paginate(pagination)
   end
 
@@ -1290,7 +1313,14 @@ defmodule Explorer.Chain do
     |> Repo.paginate(pagination)
   end
 
-  defp where_address_fields_match(query, address_fields, address_hash) do
+  defp where_address_fields_match(query, direction, address_hash) do
+    address_fields =
+      case direction do
+        :to -> [:to_address_hash]
+        :from -> [:from_address_hash]
+        nil -> [:to_address_hash, :from_address_hash]
+      end
+
     Enum.reduce(address_fields, query, fn field, query ->
       or_where(query, [t], field(t, ^field) == ^address_hash)
     end)
@@ -1309,5 +1339,16 @@ defmodule Explorer.Chain do
       nil ->
         query
     end
+  end
+
+  defp where_transaction_has_multiple_internal_transactions(query) do
+    where(
+      query,
+      [_it, transaction],
+      fragment(
+        "(SELECT COUNT(sibling.id) FROM internal_transactions as sibling WHERE sibling.transaction_hash = ?) > 1",
+        transaction.hash
+      )
+    )
   end
 end

@@ -13,35 +13,32 @@ defmodule Explorer.Application do
 
   @impl Application
   def start(_type, _args) do
-    # See https://hexdocs.pm/elixir/Supervisor.html
-    # for other strategies and supported options
+    # Children to start in all environments
+    base_children = [
+      Explorer.Repo,
+      {Task.Supervisor, name: Explorer.MarketTaskSupervisor}
+    ]
+
+    children = base_children ++ secondary_children(Mix.env())
+
     opts = [strategy: :one_for_one, name: Explorer.Supervisor]
-    Supervisor.start_link(children(Mix.env()), opts)
+
+    Supervisor.start_link(children, opts)
   end
 
   ## Private Functions
 
-  defp children(:test), do: children()
+  defp secondary_children(:test), do: []
 
-  defp children(_) do
-    children() ++
-      [
-        Explorer.JSONRPC,
-        supervisor(Task.Supervisor, [[name: Explorer.TaskSupervisor]], id: Explorer.TaskSupervisor),
-        Explorer.Indexer,
-        Explorer.Chain.Statistics.Server,
-        Explorer.ExchangeRates
-      ]
-  end
-
-  defp children do
+  # Children to start when not testing
+  defp secondary_children(_) do
     [
-      Explorer.Repo,
-      supervisor(
-        Task.Supervisor,
-        [[name: Explorer.ExchangeRateTaskSupervisor]],
-        id: Explorer.ExchangeRateTaskSupervisor
-      )
+      Explorer.JSONRPC,
+      supervisor(Task.Supervisor, [[name: Explorer.TaskSupervisor]], id: Explorer.TaskSupervisor),
+      Explorer.Indexer,
+      Explorer.Chain.Statistics.Server,
+      Explorer.ExchangeRates,
+      Explorer.Market.History.Cataloger
     ]
   end
 end

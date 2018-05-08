@@ -22,24 +22,18 @@ defmodule ExplorerWeb.Router do
     plug(SetLocale, gettext: ExplorerWeb.Gettext, default_locale: "en")
   end
 
-  pipeline :jasmine do
-    if Mix.env() != :prod, do: plug(Jasmine, js_files: ["js/test.js"], css_files: ["css/test.css"])
-  end
-
   pipeline :api do
     plug(:accepts, ["json"])
   end
 
   scope "/", ExplorerWeb do
     pipe_through(:browser)
-    pipe_through(:jasmine)
     pipe_through(:set_locale)
     resources("/", ChainController, only: [:show], singleton: true, as: :chain)
   end
 
   scope "/:locale", ExplorerWeb do
     pipe_through(:browser)
-    pipe_through(:jasmine)
     pipe_through(:set_locale)
     resources("/", ChainController, only: [:show], singleton: true, as: :chain)
 
@@ -54,11 +48,13 @@ defmodule ExplorerWeb.Router do
     end
 
     resources "/addresses", AddressController, only: [:show] do
+      resources("/transactions", AddressTransactionController, only: [:index], as: :transaction)
+
       resources(
-        "/transactions",
-        AddressTransactionController,
+        "/internal_transactions",
+        AddressInternalTransactionController,
         only: [:index],
-        as: :transaction
+        as: :internal_transaction
       )
     end
 

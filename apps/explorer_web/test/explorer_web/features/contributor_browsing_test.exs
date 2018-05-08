@@ -12,7 +12,6 @@ defmodule ExplorerWeb.ContributorBrowsingTest do
     assert current_path(session) == "/en"
 
     session
-    |> click(css("[data-test='hamburger_menu_button']"))
     |> click(@logo)
     |> assert_has(css("main", text: "Blocks"))
   end
@@ -88,7 +87,6 @@ defmodule ExplorerWeb.ContributorBrowsingTest do
     |> assert_has(css(".blocks__column--gas-used", count: 5, text: "10"))
 
     session
-    |> click(css("[data-test='hamburger_menu_button']"))
     |> click(link("Blocks"))
     |> assert_has(css(".blocks__column--height", text: "311"))
     |> click(link("311"))
@@ -172,7 +170,7 @@ defmodule ExplorerWeb.ContributorBrowsingTest do
       |> assert_has(css(".transactions__title", text: "Transactions"))
       |> assert_has(css(".transactions__column--hash", count: 5))
       |> assert_has(css(".transactions__column--value", count: 5))
-      |> assert_has(css(".transactions__column--age", count: 5, visible: false))
+      |> assert_has(css(".transactions__column--age", count: 5))
     end
 
     test "can see pending transactions", %{pending: pending, session: session} do
@@ -209,7 +207,6 @@ defmodule ExplorerWeb.ContributorBrowsingTest do
       |> assert_has(css(".transaction__item", text: "123,987"))
       |> assert_has(css(".transaction__item", text: to_string(lincoln.hash)))
       |> assert_has(css(".transaction__item", text: to_string(taft.hash)))
-      |> assert_has(css(".transaction__item", text: "block confirmations"))
       |> assert_has(css(".transaction__item", text: "49 years ago"))
       |> assert_has(css(".transaction__item", text: "38 years ago"))
     end
