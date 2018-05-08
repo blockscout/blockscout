@@ -1,9 +1,28 @@
 defmodule Explorer.MarketTest do
   use Explorer.DataCase
 
+  alias Explorer.ExchangeRates
+  alias Explorer.ExchangeRates.Token
   alias Explorer.Market
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
+
+  describe "fetch_exchange_rate/1" do
+    setup do
+      {:ok, _} = ExchangeRates.start_link([])
+      rate = %Token{id: "POA", symbol: "POA"}
+      :ets.insert(ExchangeRates.table_name(), {rate.id, rate})
+      {:ok, %{rate: rate}}
+    end
+
+    test "with matching symbol", %{rate: rate} do
+      assert Market.fetch_exchange_rate("POA") == rate
+    end
+
+    test "with no matching symbol" do
+      assert Market.fetch_exchange_rate("ETH") == nil
+    end
+  end
 
   test "fetch_recent_history/1" do
     today = Date.utc_today()
