@@ -68,7 +68,7 @@ defmodule Explorer.Chain.Transaction do
   @typedoc """
   How much the sender is willing to pay in wei per unit of gas.
   """
-  @type wei_per_gas :: non_neg_integer()
+  @type wei_per_gas :: Wei.t()
 
   @typedoc """
   * `block` - the block in which this transaction was mined/validated.  `nil` when transaction is pending.
@@ -119,7 +119,7 @@ defmodule Explorer.Chain.Transaction do
   @primary_key {:hash, Hash.Full, autogenerate: false}
   schema "transactions" do
     field(:gas, :decimal)
-    field(:gas_price, :decimal)
+    field(:gas_price, Wei)
     field(:index, :integer)
     field(:input, :string)
     field(:nonce, :integer)
@@ -128,7 +128,7 @@ defmodule Explorer.Chain.Transaction do
     field(:s, :string)
     field(:standard_v, :string)
     field(:v, :string)
-    field(:value, :decimal)
+    field(:value, Wei)
 
     timestamps()
 
@@ -246,7 +246,6 @@ defmodule Explorer.Chain.Transaction do
       false
       iex> changeset.errors
       [index: {"can't be blank when transaction is collated into a block", []}]
-
 
   """
   def changeset(%__MODULE__{} = transaction, attrs \\ %{}) do

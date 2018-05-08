@@ -100,7 +100,7 @@ defmodule Explorer.Chain do
   @doc """
   The `t:Explorer.Chain.Address.t/0` `balance` in `unit`.
   """
-  @spec balance(Address.t(), :wei) :: Wei.t() | nil
+  @spec balance(Address.t(), :wei) :: Wei.wei() | nil
   @spec balance(Address.t(), :gwei) :: Wei.gwei() | nil
   @spec balance(Address.t(), :ether) :: Wei.ether() | nil
   def balance(%Address{fetched_balance: balance}, unit) do
@@ -119,7 +119,7 @@ defmodule Explorer.Chain do
       iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x8bf38d4764929064f2d4d3a56520a76ab3df415b")
       iex> {:ok, address} = Explorer.Chain.hash_to_address(hash)
       iex> address.fetched_balance
-      Decimal.new(100)
+      %Explorer.Chain.Wei{value: Decimal.new(100)}
 
   There don't need to be any updates.
 
@@ -134,10 +134,11 @@ defmodule Explorer.Chain do
     changes =
       for {hash_string, amount} <- balances do
         {:ok, truncated_hash} = Explorer.Chain.Hash.Truncated.cast(hash_string)
+        {:ok, wei} = Wei.cast(amount)
 
         Map.merge(timestamps, %{
           hash: truncated_hash,
-          fetched_balance: amount,
+          fetched_balance: wei,
           balance_fetched_at: timestamps.updated_at
         })
       end
@@ -255,7 +256,11 @@ defmodule Explorer.Chain do
   If the transaction is pending, then the fee will be a range of `unit`
 
       iex> Explorer.Chain.fee(
-      ...>   %Explorer.Chain.Transaction{gas: Decimal.new(3), gas_price: Decimal.new(2), receipt: nil},
+      ...>   %Explorer.Chain.Transaction{
+      ...>     gas: Decimal.new(3),
+      ...>     gas_price: %Explorer.Chain.Wei{value: Decimal.new(2)},
+      ...>     receipt: nil
+      ...>   },
       ...>   :wei
       ...> )
       {:maximum, Decimal.new(6)}
@@ -266,7 +271,7 @@ defmodule Explorer.Chain do
       iex> Explorer.Chain.fee(
       ...>   %Explorer.Chain.Transaction{
       ...>     gas: Decimal.new(3),
-      ...>     gas_price: Decimal.new(2),
+      ...>     gas_price: %Explorer.Chain.Wei{value: Decimal.new(2)},
       ...>     receipt: %Explorer.Chain.Receipt{gas_used: Decimal.new(2)}
       ...>   },
       ...>   :wei
@@ -277,9 +282,9 @@ defmodule Explorer.Chain do
   @spec fee(%Transaction{receipt: nil}, :ether | :gwei | :wei) :: {:maximum, Decimal.t()}
   def fee(%Transaction{gas: gas, gas_price: gas_price, receipt: nil}, unit) do
     fee =
-      gas
-      |> Decimal.mult(gas_price)
+      gas_price
       |> Wei.to(unit)
+      |> Decimal.mult(gas)
 
     {:maximum, fee}
   end
@@ -287,9 +292,9 @@ defmodule Explorer.Chain do
   @spec fee(%Transaction{receipt: Receipt.t()}, :ether | :gwei | :wei) :: {:actual, Decimal.t()}
   def fee(%Transaction{gas_price: gas_price, receipt: %Receipt{gas_used: gas_used}}, unit) do
     fee =
-      gas_used
-      |> Decimal.mult(gas_price)
+      gas_price
       |> Wei.to(unit)
+      |> Decimal.mult(gas_used)
 
     {:actual, fee}
   end
@@ -1349,10 +1354,10 @@ defmodule Explorer.Chain do
   The `t:Explorer.Chain.Transaction.t/0` or `t:Explorer.Chain.InternalTransaction.t/0` `value` of the `transaction` in
   `unit`.
   """
-  @spec value(InternalTransaction.t(), :wei) :: Wei.t()
+  @spec value(InternalTransaction.t(), :wei) :: Wei.wei()
   @spec value(InternalTransaction.t(), :gwei) :: Wei.gwei()
   @spec value(InternalTransaction.t(), :ether) :: Wei.ether()
-  @spec value(Transaction.t(), :wei) :: Wei.t()
+  @spec value(Transaction.t(), :wei) :: Wei.wei()
   @spec value(Transaction.t(), :gwei) :: Wei.gwei()
   @spec value(Transaction.t(), :ether) :: Wei.ether()
   def value(%type{value: value}, unit) when type in [InternalTransaction, Transaction] do
@@ -1472,7 +1477,7 @@ defmodule Explorer.Chain do
     {:ok, for(changes <- changes_list, do: changes.hash)}
   end
 
-  @spec insert_blocks([map()], [timestamps_option]) :: {:ok, Block.t()} | {:error, [Changeset.t()]}
+  @spec insert_blocks([map()], [timestamps_option]) :: {:ok, [Hash.t()]} | {:error, [Changeset.t()]}
   defp insert_blocks(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
 
@@ -1515,7 +1520,7 @@ defmodule Explorer.Chain do
   end
 
   @spec insert_internal_transactions([map()], [timestamps_option]) ::
-          {:ok, InternalTransaction.t()} | {:error, [Changeset.t()]}
+          {:ok, [%{index: non_neg_integer, transaction_hash: Hash.t()}]} | {:error, [Changeset.t()]}
   defp insert_internal_transactions(changes_list, named_arguments)
        when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
@@ -1532,7 +1537,8 @@ defmodule Explorer.Chain do
      for(internal_transaction <- internal_transactions, do: Map.take(internal_transaction, [:index, :transaction_hash]))}
   end
 
-  @spec insert_logs([map()], [timestamps_option]) :: {:ok, Log.t()} | {:error, [Changeset.t()]}
+  @spec insert_logs([map()], [timestamps_option]) ::
+          {:ok, [%{index: non_neg_integer, transaction_hash: Hash.t()}]} | {:error, [Changeset.t()]}
   defp insert_logs(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
 
@@ -1549,7 +1555,7 @@ defmodule Explorer.Chain do
     {:ok, for(log <- logs, do: Map.take(log, [:index, :transaction_hash]))}
   end
 
-  @spec insert_receipts([map()], [timestamps_option]) :: {:ok, Receipt.t()} | {:error, [Changeset.t()]}
+  @spec insert_receipts([map()], [timestamps_option]) :: {:ok, [Hash.t()]} | {:error, [Changeset.t()]}
   defp insert_receipts(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
 
@@ -1574,18 +1580,19 @@ defmodule Explorer.Chain do
     {:ok, inserted}
   end
 
-  @spec insert_transactions([map()], [timestamps_option]) :: {:ok, Transaction.t()} | {:error, [Changeset.t()]}
+  @spec insert_transactions([map()], [timestamps_option]) :: {:ok, [Hash.t()]} | {:error, [Changeset.t()]}
   defp insert_transactions(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
 
-    {:ok, transactions} = insert_changes_list(
-      changes_list,
-      conflict_target: :hash,
-      on_conflict: :replace_all,
-      for: Transaction,
-      returning: [:hash],
-      timestamps: timestamps
-    )
+    {:ok, transactions} =
+      insert_changes_list(
+        changes_list,
+        conflict_target: :hash,
+        on_conflict: :replace_all,
+        for: Transaction,
+        returning: [:hash],
+        timestamps: timestamps
+      )
 
     {:ok, for(transaction <- transactions, do: transaction.hash)}
   end

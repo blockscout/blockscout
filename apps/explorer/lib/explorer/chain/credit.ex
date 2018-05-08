@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Credit do
   use Explorer.Schema
 
   alias Ecto.Adapters.SQL
-  alias Explorer.Chain.{Address, Hash}
+  alias Explorer.Chain.{Address, Hash, Wei}
   alias Explorer.Repo
 
   @typedoc """
@@ -25,7 +25,7 @@ defmodule Explorer.Chain.Credit do
   @primary_key false
   schema "credits" do
     field(:count, :integer)
-    field(:value, :decimal)
+    field(:value, Wei)
 
     timestamps()
 

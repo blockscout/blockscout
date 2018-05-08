@@ -55,7 +55,7 @@ defmodule Explorer.Chain.InternalTransaction do
     field(:output, :string)
     field(:trace_address, {:array, :integer})
     field(:type, Type)
-    field(:value, :decimal)
+    field(:value, Wei)
 
     timestamps()
 

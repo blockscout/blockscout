@@ -1,7 +1,7 @@
 defmodule Explorer.Chain.CreditTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.Credit
+  alias Explorer.Chain.{Credit, Wei}
 
   describe "Repo.all/1" do
     test "returns no rows when there are no addresses" do
@@ -77,7 +77,7 @@ defmodule Explorer.Chain.CreditTest do
       address_hash = recipient.hash
       Credit.refresh()
       credit = Credit |> where(address_hash: ^address_hash) |> Repo.one()
-      assert credit.value == Decimal.new(21)
+      assert credit.value == %Wei{value: Decimal.new(21)}
     end
   end
 end

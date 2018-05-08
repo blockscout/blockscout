@@ -44,7 +44,7 @@
                                class: "transaction-log__link") %>
                   <% end %>
                 </td>
-                <td><%= value(transaction) %></td>
+                <td><%= value(transaction, include_label: false) %></td>
                 <td><%= gas(transaction) %></td>
               </tr>
             </tgroup>

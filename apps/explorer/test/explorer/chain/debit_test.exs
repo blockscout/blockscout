@@ -1,7 +1,7 @@
 defmodule Explorer.Chain.DebitTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.Debit
+  alias Explorer.Chain.{Debit, Wei}
 
   describe "Repo.all/1" do
     test "returns no rows when there are no addresses" do
@@ -54,7 +54,7 @@ defmodule Explorer.Chain.DebitTest do
       address_hash = sender.hash
       Debit.refresh()
       debit = Debit |> where(address_hash: ^address_hash) |> Repo.one()
-      assert debit.value == Decimal.new(21)
+      assert debit.value == %Wei{value: Decimal.new(21)}
     end
 
     test "returns no debits against the recipient" do

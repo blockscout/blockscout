@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Address do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Credit, Debit, Hash}
+  alias Explorer.Chain.{Credit, Debit, Hash, Wei}
 
   @optional_attrs ~w()a
   @required_attrs ~w(hash)a
@@ -25,7 +25,7 @@ defmodule Explorer.Chain.Address do
   * `updated_at` when this address was last updated
   """
   @type t :: %__MODULE__{
-          fetched_balance: Decimal.t(),
+          fetched_balance: Wei.t(),
           balance_fetched_at: DateTime.t(),
           credit: %Ecto.Association.NotLoaded{} | Credit.t() | nil,
           debit: %Ecto.Association.NotLoaded{} | Debit.t() | nil,
@@ -36,7 +36,7 @@ defmodule Explorer.Chain.Address do
 
   @primary_key {:hash, Hash.Truncated, autogenerate: false}
   schema "addresses" do
-    field(:fetched_balance, :decimal)
+    field(:fetched_balance, Wei)
     field(:balance_fetched_at, Timex.Ecto.DateTime)
 
     timestamps()

@@ -81,7 +81,7 @@
                         ) %></div>
                 </td>
                 <td class="transactions__column transactions__column--value">
-                  <%= value(transaction) %> <%= gettext "Ether" %>
+                  <%= value(transaction) %>
                 </td>
               </tr>
             <% end %>

@@ -1,16 +1,16 @@
 defmodule ExplorerWeb.AddressView do
   use ExplorerWeb, :view
 
-  alias Explorer.Chain
+  alias Explorer.Chain.Address
 
   @dialyzer :no_match
 
-  def balance(address) do
-    address
-    |> Chain.balance(:ether)
-    |> case do
-      nil -> ""
-      ether -> Cldr.Number.to_string!(ether, fractional_digits: 18)
-    end
+  def balance(%Address{fetched_balance: nil}), do: ""
+
+  @doc """
+  Returns a formatted address balance and includes the unit.
+  """
+  def balance(%Address{fetched_balance: balance}) do
+    format_wei_value(balance, :ether, fractional_digits: 18)
   end
 end

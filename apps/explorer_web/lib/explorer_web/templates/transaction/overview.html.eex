@@ -41,7 +41,7 @@
         </div>
         <div class="transaction__item">
           <dt class="transaction__item-key"><%= gettext "Value" %></dt>
-          <dd class="transaction__item-value"><%= value(@transaction) %> <%= gettext "Ether" %></dd>
+          <dd class="transaction__item-value"><%= value(@transaction) %></dd>
         </div>
         <div class="transaction__item">
           <dt class="transaction__item-key"><%= gettext "From" %></dt>
@@ -96,8 +96,8 @@
         <div class="transaction__item">
           <dt class="transaction__item-key"><%= gettext "Gas Price" %></dt>
           <dd class="transaction__item-value">
-            <%= gas_price(@transaction, :wei) %> <%= gettext("Wei") %>
-              (<%= gas_price(@transaction, :gwei) %> <%= gettext "Gwei" %>)
+            <%= gas_price(@transaction, :wei) %>
+              (<%= gas_price(@transaction, :gwei) %>)
           </dd>
         </div>
         <div class="transaction__item">
