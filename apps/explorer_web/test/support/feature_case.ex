@@ -15,6 +15,7 @@ defmodule ExplorerWeb.FeatureCase do
       import Ecto.Query
       import ExplorerWeb.Router.Helpers
       import Explorer.Factory
+      import ExplorerWeb.Factory
     end
   end
 
