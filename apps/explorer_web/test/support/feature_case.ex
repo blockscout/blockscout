@@ -1,6 +1,9 @@
 defmodule ExplorerWeb.FeatureCase do
   use ExUnit.CaseTemplate
 
+  # Types on  Wallaby.Browser.resize_window don't allow session from start_session to be passed, so setup breaks
+  @dialyzer {:nowarn_function, __ex_unit_setup_0: 1}
+
   using do
     quote do
       use Wallaby.DSL

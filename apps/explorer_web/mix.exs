@@ -22,7 +22,8 @@ defmodule ExplorerWeb.Mixfile do
         coveralls: :test,
         "coveralls.detail": :test,
         "coveralls.post": :test,
-        "coveralls.html": :test
+        "coveralls.html": :test,
+        dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
       test_coverage: [tool: ExCoveralls],
