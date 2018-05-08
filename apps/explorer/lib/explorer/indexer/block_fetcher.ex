@@ -16,7 +16,7 @@ defmodule Explorer.Indexer.BlockFetcher do
 
   alias Explorer.JSONRPC.Transactions
 
-  @batch_size 50
+  @batch_size 1
   @blocks_concurrency 10
 
   @internal_batch_size 50

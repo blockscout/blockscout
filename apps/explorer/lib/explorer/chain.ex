@@ -110,6 +110,23 @@ defmodule Explorer.Chain do
     end
   end
 
+  @doc """
+  Updates `t:Explorer.Chain.Address.t/0` with `hash` of `address_hash` to have `fetched_balance` of `balance` in
+  `t:map/0` `balances` of `address_hash` to `balance`.
+
+      iex> Explorer.Chain.update_balances(%{"0x8bf38d4764929064f2d4d3a56520a76ab3df415b" => 100})
+      :ok
+      iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x8bf38d4764929064f2d4d3a56520a76ab3df415b")
+      iex> {:ok, address} = Explorer.Chain.hash_to_address(hash)
+      iex> address.fetched_balance
+      Decimal.new(100)
+
+  There don't need to be any updates.
+
+      iex> Explorer.Chain.update_balances(%{})
+      :ok
+
+  """
   @spec update_balances(%{(address_hash :: String.t()) => balance :: integer}) :: :ok | {:error, reason :: term}
   def update_balances(balances) do
     timestamps = timestamps()
@@ -432,6 +449,272 @@ defmodule Explorer.Chain do
   @doc """
   Bulk insert blocks from a list of blocks.
 
+  The import returns the unique key(s0 for each type of record inserted.  For record that don't have a primary key, such
+  as `t:Explorer.Chain.Receipt.t/0`, the key that uniquely identifies the record is returned.
+
+  | Key                      | Value Type                                                                 | Value Description                                                                             |
+  |--------------------------|----------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
+  | `:addresses`             | `[Explorer.Chain.Hash.t()]`                                                | List of `t:Explorer.Chain.Address.t/0` `hash`                                                 |
+  | `:blocks`                | `[Explorer.Chain.Hash.t()]`                                                | List of `t:Explorer.Chain.Block.t/0` `hash`                                                   |
+  | `:internal_transactions` | `[%{index: non_neg_integer(), transaction_hash: Explorer.Chain.Hash.t()}]` | List of maps of the `t:Explorer.Chain.InternalTransaction.t/0` `index` and `transaction_hash` |
+  | `:logs`                  | `[%{index: non_neg_integer(), transaction_hash: Explorer.Chain.Hash.t()}]` | List of maps of the `t:Explorer.Chain.Log.t/0` `index` and `transaction_hash`                 |
+  | `:receipts`              | `[Explorer.Chain.Hash.t()]`                                                | List of `t:Explorer.Chain.Receipt.t/0` `transaction_hash`                                     |
+  | `:transactions`          | `[Explorer.Chain.Hash.t()]`                                                | List of `t:Explorer.Chain.Transaction.t/0` `hash`                                             |
+
+      iex> Explorer.Chain.import_blocks(
+      ...>   %{
+      ...>     blocks: [
+      ...>       %{
+      ...>         difficulty: 340282366920938463463374607431768211454,
+      ...>         gas_limit: 6946336,
+      ...>         gas_used: 50450,
+      ...>         hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+      ...>         miner_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>         nonce: 0,
+      ...>         number: 37,
+      ...>         parent_hash: "0xc37bbad7057945d1bf128c1ff009fb1ad632110bf6a000aac025a80f7766b66e",
+      ...>         size: 719,
+      ...>         timestamp: Timex.parse!("2017-12-15T21:06:30Z", "{ISO:Extended:Z}"),
+      ...>         total_difficulty: 12590447576074723148144860474975121280509
+      ...>       }
+      ...>     ],
+      ...>     internal_transactions: [
+      ...>       %{
+      ...>         call_type: "call",
+      ...>         from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>         gas: 4677320,
+      ...>         gas_used: 27770,
+      ...>         index: 0,
+      ...>         output: "0x",
+      ...>         to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+      ...>         trace_address: [],
+      ...>         transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+      ...>         type: "call",
+      ...>         value: 0
+      ...>       }
+      ...>     ],
+      ...>     logs: [
+      ...>       %{
+      ...>         address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+      ...>         data: "0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
+      ...>         first_topic: "0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22",
+      ...>         fourth_topic: nil,
+      ...>         index: 0,
+      ...>         second_topic: nil,
+      ...>         third_topic: nil,
+      ...>         transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+      ...>         type: "mined"
+      ...>       }
+      ...>     ],
+      ...>     receipts: [
+      ...>       %{
+      ...>         cumulative_gas_used: 50450,
+      ...>         gas_used: 50450,
+      ...>         status: :ok,
+      ...>         transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+      ...>         transaction_index: 0
+      ...>       }
+      ...>     ],
+      ...>     transactions: [
+      ...>       %{
+      ...>         block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+      ...>         from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>         gas: 4700000,
+      ...>         gas_price: 100000000000,
+      ...>         hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+      ...>         index: 0,
+      ...>         input: "0x10855269000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
+      ...>         nonce: 4,
+      ...>         public_key: "0xe5d196ad4ceada719d9e592f7166d0c75700f6eab2e3c3de34ba751ea786527cb3f6eb96ad9fdfdb9989ff572df50f1c42ef800af9c5207a38b929aff969b5c9",
+      ...>         r: "0xa7f8f45cce375bb7af8750416e1b03e0473f93c256da2285d1134fc97a700e01",
+      ...>         s: "0x1f87a076f13824f4be8963e3dffd7300dae64d5f23c9a062af0c6ead347c135f",
+      ...>         standard_v: "0x1",
+      ...>         to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+      ...>         v: "0xbe",
+      ...>         value: 0
+      ...>       }
+      ...>     ]
+      ...>   }
+      ...> )
+      {:ok,
+       %{
+         addresses: [
+           %Explorer.Chain.Hash{
+             byte_count: 20,
+             bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211,
+               165, 101, 32, 167, 106, 179, 223, 65, 91>>
+           },
+           %Explorer.Chain.Hash{
+             byte_count: 20,
+             bytes: <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121,
+               132, 89, 192, 16, 79, 223, 94, 152, 122, 202>>
+           }
+         ],
+         blocks: [
+           %Explorer.Chain.Hash{
+             byte_count: 32,
+             bytes: <<246, 180, 184, 200, 141, 243, 235, 210, 82, 236, 71,
+               99, 40, 51, 77, 192, 38, 207, 102, 96, 106, 132, 251, 118,
+               155, 61, 60, 188, 204, 132, 113, 189>>
+           }
+         ],
+         internal_transactions: [
+           %{
+             index: 0,
+             transaction_hash: %Explorer.Chain.Hash{
+               byte_count: 32,
+               bytes: <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136,
+                 27, 174, 236, 38, 46, 123, 149, 35, 77, 57, 101, 36, 140,
+                 57, 254, 153, 47, 255, 212, 51, 229>>
+             }
+           }
+         ],
+         logs: [
+           %{
+             index: 0,
+             transaction_hash: %Explorer.Chain.Hash{
+               byte_count: 32,
+               bytes: <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136,
+                 27, 174, 236, 38, 46, 123, 149, 35, 77, 57, 101, 36, 140,
+                 57, 254, 153, 47, 255, 212, 51, 229>>
+             }
+           }
+         ],
+         receipts: [
+           %Explorer.Chain.Hash{
+             byte_count: 32,
+             bytes: <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136,
+               27, 174, 236, 38, 46, 123, 149, 35, 77, 57, 101, 36, 140,
+               57, 254, 153, 47, 255, 212, 51, 229>>
+           }
+         ],
+         transactions: [
+           %Explorer.Chain.Hash{
+             byte_count: 32,
+             bytes: <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136,
+               27, 174, 236, 38, 46, 123, 149, 35, 77, 57, 101, 36, 140,
+               57, 254, 153, 47, 255, 212, 51, 229>>
+           }
+         ]
+       }}
+
+  A completely empty tree can be imported, but all `t:list/0` arguments must still be supplied
+
+      iex> Explorer.Chain.import_blocks(
+      ...>   %{
+      ...>     blocks: [],
+      ...>     logs: [],
+      ...>     internal_transactions: [],
+      ...>     receipts: [],
+      ...>     transactions: []
+      ...>   }
+      ...> )
+      {:ok,
+       %{
+         addresses: [],
+         blocks: [],
+         internal_transactions: [],
+         logs: [],
+         receipts: [],
+         transactions: []
+       }}
+
+  The params for each key are validated using the corresponding `Ecto.Schema` module's `changeset/2` function.  If there
+  are errors, they are returned in `Ecto.Changeset.t`s, so that the original, invalid value can be reconstructed for any
+  error messages.
+
+      iex> {:error, [internal_transaction_changeset, receipt_changeset]} = Explorer.Chain.import_blocks(
+      ...>   %{
+      ...>     blocks: [
+      ...>       %{
+      ...>         difficulty: 340282366920938463463374607431768211454,
+      ...>         gas_limit: 6946336,
+      ...>         gas_used: 50450,
+      ...>         hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+      ...>         miner_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>         nonce: 0,
+      ...>         number: 37,
+      ...>         parent_hash: "0xc37bbad7057945d1bf128c1ff009fb1ad632110bf6a000aac025a80f7766b66e",
+      ...>         size: 719,
+      ...>         timestamp: Timex.parse!("2017-12-15T21:06:30Z", "{ISO:Extended:Z}"),
+      ...>         total_difficulty: 12590447576074723148144860474975121280509
+      ...>       }
+      ...>     ],
+      ...>     internal_transactions: [
+      ...>       %{
+      ...>         from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>         gas: 4677320,
+      ...>         gas_used: 27770,
+      ...>         index: 0,
+      ...>         output: "0x",
+      ...>         to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+      ...>         trace_address: [],
+      ...>         transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+      ...>         type: "call",
+      ...>         value: 0
+      ...>       },
+      ...>       # valid after invalid
+      ...>       %{
+      ...>         created_contract_address_hash: "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb4",
+      ...>         created_contract_code: "0x606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
+      ...>         from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>         gas: 4597044,
+      ...>         gas_used: 166651,
+      ...>         index: 0,
+      ...>         init: "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
+      ...>         trace_address: [],
+      ...>         transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+      ...>         type: "create",
+      ...>         value: 0
+      ...>       }
+      ...>     ],
+      ...>     logs: [
+      ...>       %{
+      ...>         address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+      ...>         data: "0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
+      ...>         first_topic: "0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22",
+      ...>         fourth_topic: nil,
+      ...>         index: 0,
+      ...>         second_topic: nil,
+      ...>         third_topic: nil,
+      ...>         transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+      ...>         type: "mined"
+      ...>       }
+      ...>     ],
+      ...>     receipts: [
+      ...>       %{
+      ...>         cumulative_gas_used: 50450,
+      ...>         gas_used: 50450,
+      ...>         transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+      ...>         transaction_index: 0
+      ...>       }
+      ...>     ],
+      ...>     transactions: [
+      ...>       %{
+      ...>         block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+      ...>         from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>         gas: 4700000,
+      ...>         gas_price: 100000000000,
+      ...>         hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+      ...>         index: 0,
+      ...>         input: "0x10855269000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
+      ...>         nonce: 4,
+      ...>         public_key: "0xe5d196ad4ceada719d9e592f7166d0c75700f6eab2e3c3de34ba751ea786527cb3f6eb96ad9fdfdb9989ff572df50f1c42ef800af9c5207a38b929aff969b5c9",
+      ...>         r: "0xa7f8f45cce375bb7af8750416e1b03e0473f93c256da2285d1134fc97a700e01",
+      ...>         s: "0x1f87a076f13824f4be8963e3dffd7300dae64d5f23c9a062af0c6ead347c135f",
+      ...>         standard_v: "0x1",
+      ...>         to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+      ...>         v: "0xbe",
+      ...>         value: 0
+      ...>       }
+      ...>     ]
+      ...>   }
+      ...> )
+      iex> internal_transaction_changeset.errors
+      [call_type: {"can't be blank", [validation: :required]}]
+      iex> receipt_changeset.errors
+      [status: {"can't be blank", [validation: :required]}]
+
   ## Tree
 
   * `t:Explorer.Chain.Block.t/0`s
@@ -464,6 +747,16 @@ defmodule Explorer.Chain do
 
   @doc """
   The number of `t:Explorer.Chain.Address.t/0`.
+
+      iex> insert_list(2, :address)
+      iex> Explorer.Chain.address_count()
+      2
+
+  When there are no `t:Explorer.Chain.Address.t/0`, the count is `0`.
+
+      iex> Explorer.Chain.address_count()
+      0
+
   """
   def address_count do
     Repo.aggregate(Address, :count, :hash)
@@ -537,6 +830,32 @@ defmodule Explorer.Chain do
 
   @doc """
   Returns a stream of unfetched `Explorer.Chain.Address.t/0`.
+
+  When there are addresses, the `reducer` is called for each `t:Explorer.Chain.Address.t/0`.
+
+      iex> [first_address_hash, second_address_hash] = 2 |> insert_list(:address) |> Enum.map(& &1.hash)
+      iex> {:ok, address_hash_set} = Explorer.Chain.stream_unfetched_addresses(
+      ...>   MapSet.new([]),
+      ...>   fn %Explorer.Chain.Address{hash: hash}, acc ->
+      ...>     MapSet.put(acc, hash)
+      ...>   end
+      ...> )
+      ...> first_address_hash in address_hash_set
+      true
+      ...> second_address_hash in address_hash_set
+      true
+
+  When there are no addresses, the `reducer` is never called and the `initial` is returned in an `:ok` tuple.
+
+      iex> {:ok, pid} = Agent.start_link(fn -> 0 end)
+      iex> Explorer.Chain.stream_unfetched_addresses(MapSet.new([]), fn %Explorer.Chain.Address{hash: hash}, acc ->
+      ...>   Agent.update(pid, &(&1 + 1))
+      ...>   MapSet.put(acc, hash)
+      ...> end)
+      {:ok, MapSet.new([])}
+      iex> Agent.get(pid, & &1)
+      0
+
   """
   def stream_unfetched_addresses(initial, reducer) when is_function(reducer) do
     Repo.transaction(fn ->
@@ -593,7 +912,32 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  TODO
+  Calculates the overall missing number of blocks and the ranges of missing blocks.
+
+  `missing_block_numbers/0` does not take into account block numbers that have appeared on-chain after the
+  `max_block_number/0`; it only uses the missing blocks in the database between `0` and `max_block_number/0`.
+
+  When there are no `t:Explorer.Chain.Block.t/0`, there can be no missing blocks.
+
+      iex> Explorer.Chain.missing_block_numbers()
+      {0, []}
+
+  If the block numbers from `0` to `max_block_number/0` are contiguous, then no block numbers are missing
+
+      iex> insert(:block, number: 0)
+      iex> insert(:block, number: 1)
+      iex> Explorer.Chain.missing_block_numbers()
+      {0, []}
+
+  If there are gaps between `0` and `max_block_number/0`, then the missing numbers are compacted into ranges.  Single
+  missing numbers become ranges with the single number as the start and end.
+
+      iex> insert(:block, number: 0)
+      iex> insert(:block, number: 2)
+      iex> insert(:block, number: 5)
+      iex> Explorer.Chain.missing_block_numbers()
+      {3, [{3, 4}, {1, 1}]}
+
   """
   def missing_block_numbers do
     {:ok, {_, missing_count, missing_ranges}} =
@@ -888,24 +1232,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  `t:Explorer.Chain.Transaction/0`s to `address`.
-
-  ## Options
-
-  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
-      `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association, then the
-      `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
-  * `:pagination` - pagination params to pass to scrivener.
-
-  """
-  @spec to_address_to_transactions(Address.t(), [
-          necessity_by_association_option | pagination_option
-        ]) :: %Scrivener.Page{entries: [Transaction.t()]}
-  def to_address_to_transactions(address = %Address{}, options \\ []) when is_list(options) do
-    address_to_transactions(address, Keyword.put(options, :direction, :to))
-  end
-
-  @doc """
   Count of `t:Explorer.Chain.Transaction.t/0`.
 
   With no options or an explicit `pending: nil`, both collated and pending transactions will be counted.
@@ -1150,13 +1476,16 @@ defmodule Explorer.Chain do
   defp insert_blocks(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
 
-    insert_changes_list(
-      changes_list,
-      conflict_target: :number,
-      on_conflict: :replace_all,
-      for: Block,
-      timestamps: timestamps
-    )
+    {:ok, _} =
+      insert_changes_list(
+        changes_list,
+        conflict_target: :number,
+        on_conflict: :replace_all,
+        for: Block,
+        timestamps: timestamps
+      )
+
+    {:ok, for(changes <- changes_list, do: changes.hash)}
   end
 
   defp insert_ecto_schema_module_to_changes_list(
@@ -1191,37 +1520,50 @@ defmodule Explorer.Chain do
        when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
 
-    insert_changes_list(
-      changes_list,
-      for: InternalTransaction,
-      timestamps: timestamps
-    )
+    {:ok, internal_transactions} =
+      insert_changes_list(
+        changes_list,
+        for: InternalTransaction,
+        returning: [:index, :transaction_hash],
+        timestamps: timestamps
+      )
+
+    {:ok,
+     for(internal_transaction <- internal_transactions, do: Map.take(internal_transaction, [:index, :transaction_hash]))}
   end
 
   @spec insert_logs([map()], [timestamps_option]) :: {:ok, Log.t()} | {:error, [Changeset.t()]}
   defp insert_logs(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
 
-    insert_changes_list(
-      changes_list,
-      conflict_target: [:transaction_hash, :index],
-      on_conflict: :replace_all,
-      for: Log,
-      timestamps: timestamps
-    )
+    {:ok, logs} =
+      insert_changes_list(
+        changes_list,
+        conflict_target: [:transaction_hash, :index],
+        on_conflict: :replace_all,
+        for: Log,
+        returning: [:index, :transaction_hash],
+        timestamps: timestamps
+      )
+
+    {:ok, for(log <- logs, do: Map.take(log, [:index, :transaction_hash]))}
   end
 
   @spec insert_receipts([map()], [timestamps_option]) :: {:ok, Receipt.t()} | {:error, [Changeset.t()]}
   defp insert_receipts(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
 
-    insert_changes_list(
-      changes_list,
-      conflict_target: :transaction_hash,
-      on_conflict: :replace_all,
-      for: Receipt,
-      timestamps: timestamps
-    )
+    {:ok, receipts} =
+      insert_changes_list(
+        changes_list,
+        conflict_target: :transaction_hash,
+        on_conflict: :replace_all,
+        for: Receipt,
+        returning: [:transaction_hash],
+        timestamps: timestamps
+      )
+
+    {:ok, for(receipt <- receipts, do: receipt.transaction_hash)}
   end
 
   defp insert_changes_list(changes_list, options) when is_list(changes_list) do
@@ -1236,13 +1578,16 @@ defmodule Explorer.Chain do
   defp insert_transactions(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
 
-    insert_changes_list(
+    {:ok, transactions} = insert_changes_list(
       changes_list,
       conflict_target: :hash,
       on_conflict: :replace_all,
       for: Transaction,
+      returning: [:hash],
       timestamps: timestamps
     )
+
+    {:ok, for(transaction <- transactions, do: transaction.hash)}
   end
 
   defp inserted_after(query, options) do

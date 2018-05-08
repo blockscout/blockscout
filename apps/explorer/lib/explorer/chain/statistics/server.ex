@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Statistics.Server do
   @interval 1_000
 
   def child_spec(_) do
-    Supervisor.Spec.worker(__MODULE__, [true])
+    Supervisor.Spec.worker(__MODULE__, [[refresh: true]])
   end
 
   @spec fetch() :: Statistics.t()
