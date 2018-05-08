@@ -3,6 +3,8 @@ defmodule Explorer.Chain.TransactionTest do
 
   alias Explorer.Chain.Transaction
 
+  doctest Transaction
+
   describe "changeset/2" do
     test "with valid attributes" do
       changeset =
