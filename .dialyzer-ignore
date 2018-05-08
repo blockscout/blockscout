@@ -1,4 +1,3 @@
 :0: Unknown function 'Elixir.ExUnit.Callbacks':'__merge__'/3
 :0: Unknown function 'Elixir.ExUnit.CaseTemplate':'__proxy__'/2
 :0: Unknown type 'Elixir.Map':t/0
-apps/explorer/lib/explorer/indexer/block_fetcher.ex:224: The created fun has no local return

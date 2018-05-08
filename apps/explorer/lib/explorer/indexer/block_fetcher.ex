@@ -16,6 +16,9 @@ defmodule Explorer.Indexer.BlockFetcher do
 
   alias Explorer.JSONRPC.Transactions
 
+  # dialyzer thinks that Logger.debug functions always have no_local_return
+  @dialyzer {:nowarn_function, stream_import: 3}
+
   @batch_size 1
   @blocks_concurrency 10
 
