@@ -69,6 +69,24 @@ defmodule Explorer.Chain.Address do
   end
 
   defimpl String.Chars do
+    @doc """
+    Uses `hash` as string representation
+
+        iex> address = %Explorer.Chain.Address{
+        ...>   hash: %Explorer.Chain.Hash{
+        ...>     byte_count: 20,
+        ...>     bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211,
+        ...>              165, 101, 32, 167, 106, 179, 223, 65, 91>>
+        ...>   }
+        ...> }
+        iex> to_string(address)
+        "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
+        iex> to_string(address.hash)
+        "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
+        iex> to_string(address) == to_string(address.hash)
+        true
+
+    """
     def to_string(%@for{hash: hash}) do
       @protocol.to_string(hash)
     end
