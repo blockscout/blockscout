@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Address do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Credit, Debit}
+  alias Explorer.Chain.{Credit, Debit, Hash, Wei}
 
   @typedoc """
   Hash of the public key for this address.
@@ -21,7 +21,7 @@ defmodule Explorer.Chain.Address do
   * `updated_at` when this address was last updated
   """
   @type t :: %__MODULE__{
-          balance: Decimal.t(),
+          balance: Wei.t(),
           balance_updated_at: DateTime.t(),
           credit: Ecto.Association.NotLoaded.t() | Credit.t() | nil,
           debit: Ecto.Association.NotLoaded.t() | Debit.t() | nil,
@@ -31,7 +31,7 @@ defmodule Explorer.Chain.Address do
         }
 
   schema "addresses" do
-    field(:balance, :decimal)
+    field(:balance, Wei)
     field(:balance_updated_at, Timex.Ecto.DateTime)
     field(:hash, :string)
 

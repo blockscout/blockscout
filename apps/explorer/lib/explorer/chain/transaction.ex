@@ -73,7 +73,7 @@ defmodule Explorer.Chain.Transaction do
   @typedoc """
   How much the sender is willing to pay in wei per unit of gas.
   """
-  @type wei_per_gas :: non_neg_integer()
+  @type wei_per_gas :: Wei.t()
 
   @typedoc """
   * `block_transaction` - joins this transaction to its `block`
@@ -125,7 +125,7 @@ defmodule Explorer.Chain.Transaction do
 
   schema "transactions" do
     field(:gas, :decimal)
-    field(:gas_price, :decimal)
+    field(:gas_price, Wei)
     field(:hash, :string)
     field(:input, :string)
     field(:nonce, :integer)
@@ -135,7 +135,7 @@ defmodule Explorer.Chain.Transaction do
     field(:standard_v, :string)
     field(:transaction_index, :string)
     field(:v, :string)
-    field(:value, :decimal)
+    field(:value, Wei)
 
     timestamps()
 

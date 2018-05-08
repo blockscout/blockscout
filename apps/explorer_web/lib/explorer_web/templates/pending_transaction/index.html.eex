@@ -77,7 +77,7 @@
                   <% end %>
                 </td>
                 <td class="transactions__column transactions__column--value">
-                  <%= value(transaction) %> <%= gettext "Ether" %>
+                  <%= ExplorerWeb.TransactionView.value(transaction) %>
                 </td>
               </tr>
             <% end %>

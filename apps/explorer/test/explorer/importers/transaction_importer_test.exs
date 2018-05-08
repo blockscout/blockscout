@@ -1,7 +1,7 @@
 defmodule Explorer.TransactionImporterTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.{Address, BlockTransaction, Transaction}
+  alias Explorer.Chain.{Address, BlockTransaction, Transaction, Wei}
   alias Explorer.TransactionImporter
 
   @raw_transaction %{
@@ -188,8 +188,8 @@ defmodule Explorer.TransactionImporterTest do
       from_address = Address |> Repo.get_by(hash: "0xb2867180771b196518651c174c9240d5e8bd0ecd")
       to_address = Address |> Repo.get_by(hash: "0x24e5b8528fe83257d5fe3497ef616026713347f8")
 
-      assert(from_address.balance == Decimal.new(1_572_374_181_095_000_000))
-      assert(to_address.balance == Decimal.new(1_572_374_181_095_000_000))
+      assert(from_address.balance == %Wei{value: Decimal.new(1_572_374_181_095_000_000)})
+      assert(to_address.balance == %Wei{value: Decimal.new(1_572_374_181_095_000_000)})
     end
   end
 

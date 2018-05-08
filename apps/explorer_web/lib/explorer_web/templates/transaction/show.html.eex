@@ -42,7 +42,7 @@
                   to: address_path(@conn, :show, @conn.assigns.locale, transaction.to_address.hash),
                   class: "transaction-log__link") %>
                 </td>
-                <td><%= value(transaction) %></td>
+                <td><%= value(transaction, include_label: false) %></td>
                 <td><%= gas(transaction) %></td>
               </tr>
             </tgroup>

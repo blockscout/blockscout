@@ -3,7 +3,7 @@ defmodule ExplorerWeb.TransactionView do
 
   alias Cldr.Number
   alias Explorer.Chain
-  alias Explorer.Chain.{Block, InternalTransaction, Transaction}
+  alias Explorer.Chain.{Block, InternalTransaction, Transaction, Wei}
   alias ExplorerWeb.BlockView
 
   # Functions
@@ -22,15 +22,16 @@ defmodule ExplorerWeb.TransactionView do
     end
   end
 
-  def fee(transaction) do
-    transaction
-    |> Chain.fee(:ether)
-    |> case do
+  @doc """
+  Calculates the transaction fee and returns a formatted display value.
+  """
+  def fee(%Transaction{} = transaction) do
+    case Chain.fee(transaction, :wei) do
       {:actual, actual} ->
-        Cldr.Number.to_string!(actual, fractional_digits: 18)
+        format_wei_value(Wei.from(actual, :wei), :ether, fractional_digits: 18)
 
       {:maximum, maximum} ->
-        "<= " <> Cldr.Number.to_string!(maximum, fractional_digits: 18)
+        "<= " <> format_wei_value(Wei.from(maximum, :wei), :ether, fractional_digits: 18)
     end
   end
 
@@ -56,14 +57,17 @@ defmodule ExplorerWeb.TransactionView do
     end
   end
 
-  def gas(%type{gas: gas}) when type in [InternalTransaction, Transaction] do
+  defguardp is_transaction_type(mod) when mod in [InternalTransaction, Transaction]
+
+  def gas(%type{gas: gas}) when is_transaction_type(type) do
     Cldr.Number.to_string!(gas)
   end
 
-  def gas_price(transaction, unit) do
-    transaction
-    |> Chain.gas_price(unit)
-    |> Cldr.Number.to_string!()
+  @doc """
+  Converts a transaction's gas price to a displayable value.
+  """
+  def gas_price(%Transaction{gas_price: gas_price}, unit) when unit in ~w(wei gwei ether)a do
+    format_wei_value(gas_price, unit)
   end
 
   def last_seen(%Transaction{updated_at: updated_at}) do
@@ -85,9 +89,15 @@ defmodule ExplorerWeb.TransactionView do
     end
   end
 
-  def value(transaction) do
-    transaction
-    |> Chain.value(:ether)
-    |> Cldr.Number.to_string!()
+  @doc """
+  Converts a transaction's Wei value to Ether and returns a formatted display value.
+
+  ## Options
+
+  * `:include_label` - Boolean. Defaults to true. Flag for displaying unit with value.
+  """
+  def value(%mod{value: value}, opts \\ []) when is_transaction_type(mod) do
+    include_label? = Keyword.get(opts, :include_label, true)
+    format_wei_value(value, :ether, include_unit_label: include_label?)
   end
 end

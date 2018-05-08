@@ -3,7 +3,7 @@ defmodule Explorer.Workers.RefreshBalanceTest do
 
   import Mock
 
-  alias Explorer.Chain.{Credit, Debit}
+  alias Explorer.Chain.{Credit, Debit, Wei}
   alias Explorer.Workers.RefreshBalance
 
   describe "perform/0" do
@@ -14,7 +14,7 @@ defmodule Explorer.Workers.RefreshBalanceTest do
         insert(:to_address, address: address, transaction: transaction)
         insert(:receipt, transaction: transaction, status: 1)
         RefreshBalance.perform()
-        assert Repo.one(Credit).value == Decimal.new(20)
+        assert Repo.one(Credit).value == %Wei{value: Decimal.new(20)}
       end
     end
 
@@ -25,7 +25,7 @@ defmodule Explorer.Workers.RefreshBalanceTest do
         insert(:from_address, address: address, transaction: transaction)
         insert(:receipt, transaction: transaction, status: 1)
         RefreshBalance.perform()
-        assert Repo.one(Debit).value == Decimal.new(20)
+        assert Repo.one(Debit).value == %Wei{value: Decimal.new(20)}
       end
     end
   end
@@ -37,7 +37,7 @@ defmodule Explorer.Workers.RefreshBalanceTest do
       insert(:to_address, address: address, transaction: transaction)
       insert(:receipt, transaction: transaction, status: 1)
       RefreshBalance.perform("credit")
-      assert Repo.one(Credit).value == Decimal.new(20)
+      assert Repo.one(Credit).value == %Wei{value: Decimal.new(20)}
     end
 
     test "refreshes debit balances" do
@@ -46,7 +46,7 @@ defmodule Explorer.Workers.RefreshBalanceTest do
       insert(:from_address, address: address, transaction: transaction)
       insert(:receipt, transaction: transaction, status: 1)
       RefreshBalance.perform("debit")
-      assert Repo.one(Debit).value == Decimal.new(20)
+      assert Repo.one(Debit).value == %Wei{value: Decimal.new(20)}
     end
   end
 end
