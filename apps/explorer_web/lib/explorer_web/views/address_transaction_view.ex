@@ -1,11 +1,9 @@
 defmodule ExplorerWeb.AddressTransactionView do
   use ExplorerWeb, :view
 
-  alias ExplorerWeb.{AddressView, TransactionView}
+  alias ExplorerWeb.TransactionView
 
-  defdelegate balance(address), to: AddressView
   defdelegate block(transaction), to: TransactionView
-  defdelegate fee(transaction), to: TransactionView
   defdelegate from_address(transaction), to: TransactionView
   defdelegate hash(transaction), to: TransactionView
 
@@ -19,5 +17,4 @@ defmodule ExplorerWeb.AddressTransactionView do
 
   defdelegate status(transacton), to: TransactionView
   defdelegate to_address(transaction), to: TransactionView
-  defdelegate value(transaction), to: TransactionView
 end

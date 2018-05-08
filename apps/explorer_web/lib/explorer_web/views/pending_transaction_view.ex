@@ -9,5 +9,4 @@ defmodule ExplorerWeb.PendingTransactionView do
   defdelegate hash(transaction), to: TransactionView
   defdelegate last_seen(transaction), to: TransactionView
   defdelegate to_address(transaction), to: TransactionView
-  defdelegate value(transaction), to: TransactionView
 end

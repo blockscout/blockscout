@@ -10,5 +10,4 @@ defmodule ExplorerWeb.BlockTransactionView do
   defdelegate hash(transaction), to: TransactionView
   defdelegate status(transacton), to: TransactionView
   defdelegate to_address(transaction), to: TransactionView
-  defdelegate value(transaction), to: TransactionView
 end
