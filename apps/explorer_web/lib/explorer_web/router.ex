@@ -22,10 +22,6 @@ defmodule ExplorerWeb.Router do
     plug(SetLocale, gettext: ExplorerWeb.Gettext, default_locale: "en")
   end
 
-  pipeline :api do
-    plug(:accepts, ["json"])
-  end
-
   scope "/", ExplorerWeb do
     pipe_through(:browser)
     pipe_through(:set_locale)
