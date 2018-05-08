@@ -73,8 +73,18 @@ defmodule ExplorerWeb.TransactionControllerTest do
   end
 
   describe "GET show/3" do
-    test "without transaction", %{conn: conn} do
-      conn = get(conn, "/en/transactions/0x1")
+    test "with invalid transaction hash", %{conn: conn} do
+      conn = get(conn, transaction_path(conn, :show, :en, "invalid_transaction_hash"))
+
+      assert html_response(conn, 404)
+    end
+
+    test "with valid transaction hash without transaction", %{conn: conn} do
+      conn =
+        get(
+          conn,
+          transaction_path(conn, :show, :en, "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6")
+        )
 
       assert html_response(conn, 404)
     end

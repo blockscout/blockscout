@@ -4,8 +4,14 @@ defmodule ExplorerWeb.AddressTransactionControllerTest do
   import ExplorerWeb.Router.Helpers, only: [address_transaction_path: 4]
 
   describe "GET index/2" do
-    test "without address", %{conn: conn} do
-      conn = get(conn, address_transaction_path(conn, :index, :en, "unknown"))
+    test "with invalid address hash", %{conn: conn} do
+      conn = get(conn, address_transaction_path(conn, :index, :en, "invalid_address"))
+
+      assert html_response(conn, 404)
+    end
+
+    test "with valid address hash without address", %{conn: conn} do
+      conn = get(conn, address_transaction_path(conn, :index, :en, "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"))
 
       assert html_response(conn, 404)
     end

@@ -4,8 +4,18 @@ defmodule ExplorerWeb.TransactionLogControllerTest do
   import ExplorerWeb.Router.Helpers, only: [transaction_log_path: 4]
 
   describe "GET index/2" do
-    test "without transaction", %{conn: conn} do
-      conn = get(conn, transaction_log_path(conn, :index, :en, "unknown"))
+    test "with invalid transaction hash", %{conn: conn} do
+      conn = get(conn, transaction_log_path(conn, :index, :en, "invalid_transaction_string"))
+
+      assert html_response(conn, 404)
+    end
+
+    test "with valid transaction hash without transaction", %{conn: conn} do
+      conn =
+        get(
+          conn,
+          transaction_log_path(conn, :index, :en, "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6")
+        )
 
       assert html_response(conn, 404)
     end
