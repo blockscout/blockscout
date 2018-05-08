@@ -40,7 +40,7 @@ defmodule ExplorerWeb do
       # Use all HTML functionality (forms, tags, etc)
       use Phoenix.HTML
 
-      import ExplorerWeb.{ErrorHelpers, Gettext, Router.Helpers}
+      import ExplorerWeb.{Gettext, Router.Helpers}
       import Scrivener.HTML
     end
   end
