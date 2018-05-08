@@ -10,8 +10,6 @@ defmodule Explorer.Repo.Migrations.CreateReceipts do
 
       timestamps(null: false)
 
-      # Foreign keys
-
       add(
         :transaction_hash,
         references(:transactions, column: :hash, on_delete: :delete_all, type: :bytea),

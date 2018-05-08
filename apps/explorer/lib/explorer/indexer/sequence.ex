@@ -3,15 +3,9 @@ defmodule Explorer.Indexer.Sequence do
 
   use Agent
 
-  # Struct
-
   defstruct ~w(current mode queue step)a
 
-  # Types
-
   @type range :: {pos_integer(), pos_integer()}
-
-  # Functions
 
   @doc """
   Builds an enumerable stream using a sequencer agent.

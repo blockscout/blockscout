@@ -3,8 +3,6 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
 
   def change do
     create table(:transactions, primary_key: false) do
-      # Fields
-
       add(:gas, :numeric, precision: 100, null: false)
       add(:gas_price, :numeric, precision: 100, null: false)
       add(:hash, :bytea, null: false, primary_key: true)
@@ -23,8 +21,6 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
 
       timestamps(null: false)
 
-      # Foreign Keys
-
       # `null` when a pending transaction
       add(:block_hash, references(:blocks, column: :hash, on_delete: :delete_all, type: :bytea), null: true)
 
@@ -32,8 +28,6 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
       # `null` when it is a contract creation transaction
       add(:to_address_hash, references(:addresses, column: :hash, on_delete: :delete_all, type: :bytea), null: true)
     end
-
-    # Constraints
 
     create(
       constraint(
@@ -43,18 +37,12 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
       )
     )
 
-    # Foreign Key indexes
-
     create(index(:transactions, :block_hash))
     create(index(:transactions, :from_address_hash))
     create(index(:transactions, :to_address_hash))
 
-    # Search indexes
-
     create(index(:transactions, :inserted_at))
     create(index(:transactions, :updated_at))
-
-    # Unique indexes
 
     create(unique_index(:transactions, [:block_hash, :index]))
   end

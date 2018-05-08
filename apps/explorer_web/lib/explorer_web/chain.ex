@@ -14,8 +14,6 @@ defmodule ExplorerWeb.Chain do
 
   alias Explorer.Chain.{Address, Block, Transaction}
 
-  # Functions
-
   @spec from_param(String.t()) :: {:ok, Address.t() | Block.t() | Transaction.t()} | {:error, :not_found}
   def from_param(param)
 
@@ -40,8 +38,6 @@ defmodule ExplorerWeb.Chain do
       _ -> {:error, :invalid}
     end
   end
-
-  ## Private Functions
 
   defp address_from_param(param) do
     with {:ok, hash} <- string_to_address_hash(param) do

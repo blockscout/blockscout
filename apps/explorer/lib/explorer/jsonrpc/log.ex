@@ -6,8 +6,6 @@ defmodule Explorer.JSONRPC.Log do
 
   import Explorer.JSONRPC, only: [quantity_to_integer: 1]
 
-  # Types
-
   @type elixir :: %{String.t() => String.t() | [String.t()] | non_neg_integer()}
 
   @typedoc """
@@ -21,8 +19,6 @@ defmodule Explorer.JSONRPC.Log do
   * `"transactionIndex"` - `t:Explorer.JSONRPC.quantity/0` for the index of the transaction in the block.
   """
   @type t :: %{String.t() => String.t() | [String.t()]}
-
-  # Functions
 
   @doc """
   Converts `t:elixir/0` format to params used in `Explorer.Chain`.
@@ -106,8 +102,6 @@ defmodule Explorer.JSONRPC.Log do
   def to_elixir(log) when is_map(log) do
     Enum.into(log, %{}, &entry_to_elixir/1)
   end
-
-  ## Private Functions
 
   defp entry_to_elixir({key, _} = entry) when key in ~w(address blockHash data topics transactionHash type), do: entry
 

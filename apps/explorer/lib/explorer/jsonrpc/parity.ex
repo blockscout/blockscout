@@ -7,8 +7,6 @@ defmodule Explorer.JSONRPC.Parity do
 
   alias Explorer.JSONRPC.Parity.Traces
 
-  # Functions
-
   def fetch_internal_transactions(transaction_hashes) when is_list(transaction_hashes) do
     with {:ok, responses} <-
            transaction_hashes
@@ -23,8 +21,6 @@ defmodule Explorer.JSONRPC.Parity do
       {:ok, internal_transactions_params}
     end
   end
-
-  ## Private Functions
 
   defp response_to_trace(%{"id" => transaction_hash, "result" => %{"trace" => traces}}) when is_list(traces) do
     traces

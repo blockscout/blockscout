@@ -9,12 +9,8 @@ defmodule Explorer.JSONRPC.Receipts do
 
   alias Explorer.JSONRPC.{Logs, Receipt}
 
-  # Types
-
   @type elixir :: [Receipt.elixir()]
   @type t :: [Receipt.t()]
-
-  # Functions
 
   @spec elixir_to_logs(elixir) :: Logs.elixir()
   def elixir_to_logs(elixir) when is_list(elixir) do
@@ -52,8 +48,6 @@ defmodule Explorer.JSONRPC.Receipts do
   def to_elixir(receipts) when is_list(receipts) do
     Enum.map(receipts, &Receipt.to_elixir/1)
   end
-
-  ## Private Functons
 
   defp hash_to_json(hash) do
     %{

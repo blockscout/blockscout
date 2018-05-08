@@ -7,12 +7,8 @@ defmodule Explorer.Chain.Address do
 
   alias Explorer.Chain.{Credit, Debit, Hash}
 
-  # Constants
-
   @optional_attrs ~w()a
   @required_attrs ~w(hash)a
-
-  # Types
 
   @typedoc """
   Hash of the public key for this address.

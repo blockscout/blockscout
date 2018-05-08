@@ -6,12 +6,8 @@ defmodule Explorer.Chain.Transaction do
   alias Ecto.Changeset
   alias Explorer.Chain.{Address, Block, Gas, Hash, InternalTransaction, Receipt, Wei}
 
-  # Constants
-
   @optional_attrs ~w(block_hash from_address_hash index to_address_hash)a
   @required_attrs ~w(gas gas_price hash input nonce public_key r s standard_v v value)a
-
-  # Types
 
   @typedoc """
   The full public key of the signer of the transaction.
@@ -120,8 +116,6 @@ defmodule Explorer.Chain.Transaction do
           value: Wei.t()
         }
 
-  # Schema
-
   @primary_key {:hash, Hash.Full, autogenerate: false}
   schema "transactions" do
     field(:gas, :decimal)
@@ -160,8 +154,6 @@ defmodule Explorer.Chain.Transaction do
     )
   end
 
-  # Functions
-
   def changeset(%__MODULE__{} = transaction, attrs \\ %{}) do
     transaction
     |> cast(attrs, @required_attrs ++ @optional_attrs)
@@ -184,8 +176,6 @@ defmodule Explorer.Chain.Transaction do
       end
     end)
   end
-
-  ## Private Functions
 
   defp validate_collated(%Changeset{} = changeset) do
     case {Changeset.get_field(changeset, :block_hash), Changeset.get_field(changeset, :index)} do

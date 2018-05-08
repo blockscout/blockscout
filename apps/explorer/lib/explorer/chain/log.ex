@@ -5,12 +5,8 @@ defmodule Explorer.Chain.Log do
 
   alias Explorer.Chain.{Address, Hash, Receipt, Transaction}
 
-  # Constants
-
   @required_attrs ~w(address_hash data index transaction_hash type)a
   @optional_attrs ~w(first_topic second_topic third_topic fourth_topic)a
-
-  # Types
 
   @typedoc """
   * `address` - address of contract that generate the event
@@ -42,8 +38,6 @@ defmodule Explorer.Chain.Log do
           type: String.t()
         }
 
-  # Schema
-
   schema "logs" do
     field(:data, :string)
     field(:first_topic, :string)
@@ -59,8 +53,6 @@ defmodule Explorer.Chain.Log do
     belongs_to(:receipt, Receipt, foreign_key: :transaction_hash, references: :transaction_hash, type: Hash.Full)
     has_one(:transaction, through: [:receipt, :transaction])
   end
-
-  # Functions
 
   @doc """
   `address_hash` and `transaction_hash` are converted to `t:Explorer.Chain.Hash.t/0`.  The allowed values for `type`

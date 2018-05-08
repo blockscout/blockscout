@@ -9,12 +9,8 @@ defmodule Explorer.Chain.Block do
 
   alias Explorer.Chain.{Address, Gas, Hash, Transaction}
 
-  # Constants
-
   @required_attrs ~w(difficulty gas_limit gas_used hash miner_hash nonce number parent_hash size timestamp
                      total_difficulty)a
-
-  # Types
 
   @typedoc """
   How much work is required to find a hash with some number of leading 0s.  It is measured in hashes for PoW
@@ -62,8 +58,6 @@ defmodule Explorer.Chain.Block do
           transactions: %Ecto.Association.NotLoaded{} | [Transaction.t()]
         }
 
-  # Schema
-
   @primary_key {:hash, Hash.Full, autogenerate: false}
   schema "blocks" do
     field(:difficulty, :decimal)
@@ -81,8 +75,6 @@ defmodule Explorer.Chain.Block do
     belongs_to(:parent, __MODULE__, foreign_key: :parent_hash, references: :hash, type: Hash.Full)
     has_many(:transactions, Transaction)
   end
-
-  # Functions
 
   def changeset(%__MODULE__{} = block, attrs) do
     block

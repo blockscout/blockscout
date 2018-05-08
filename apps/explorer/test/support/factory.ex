@@ -145,8 +145,6 @@ defmodule Explorer.Factory do
     Repo.preload(transaction, :receipt)
   end
 
-  ## Private Functions
-
   defp block_hash_to_next_transaction_index(block_hash) do
     query =
       from(

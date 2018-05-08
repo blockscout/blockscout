@@ -6,8 +6,6 @@ defmodule ExplorerWeb.TransactionView do
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction}
   alias ExplorerWeb.BlockView
 
-  # Functions
-
   def block(%Transaction{block: block}) do
     case block do
       nil -> gettext("Pending")

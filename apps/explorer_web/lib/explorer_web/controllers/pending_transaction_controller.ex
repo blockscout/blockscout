@@ -12,8 +12,6 @@ defmodule ExplorerWeb.PendingTransactionController do
     end
   end
 
-  ## Private Functions
-
   defp do_index(conn, options \\ []) when is_list(options) do
     full_options = Keyword.merge([necessity_by_association: %{from_address: :optional, to_address: :optional}], options)
     transactions = Chain.recent_pending_transactions(full_options)

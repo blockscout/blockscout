@@ -9,8 +9,6 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.{Address, Block, Hash, InternalTransaction, Log, Receipt, Transaction, Wei}
   alias Explorer.Repo
 
-  # Types
-
   @typedoc """
   The name of an association on the `t:Ecto.Schema.t/0`
   """
@@ -42,8 +40,6 @@ defmodule Explorer.Chain do
   @typep pagination_option :: {:pagination, pagination}
   @typep timestamps :: %{inserted_at: %Ecto.DateTime{}, updated_at: %Ecto.DateTime{}}
   @typep timestamps_option :: {:timestamps, timestamps}
-
-  # Functions
 
   @doc """
   `t:Explorer.Chain.InternalTransaction/0`s from `address`.
@@ -1036,8 +1032,6 @@ defmodule Explorer.Chain do
   def value(%type{value: value}, unit) when type in [InternalTransaction, Transaction] do
     Wei.to(value, unit)
   end
-
-  ## Private Functions
 
   defp address_hash_to_transactions(
          %Hash{byte_count: unquote(Hash.Truncated.byte_count())} = address_hash,

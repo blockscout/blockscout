@@ -7,10 +7,6 @@ defmodule Explorer.Application do
 
   import Supervisor.Spec, only: [supervisor: 3]
 
-  # Functions
-
-  ## Application callbacks
-
   @impl Application
   def start(_type, _args) do
     # Children to start in all environments
@@ -25,8 +21,6 @@ defmodule Explorer.Application do
 
     Supervisor.start_link(children, opts)
   end
-
-  ## Private Functions
 
   defp secondary_children(:test), do: []
 

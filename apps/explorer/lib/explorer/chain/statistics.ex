@@ -10,8 +10,6 @@ defmodule Explorer.Chain.Statistics do
   alias Explorer.Chain.{Block, Transaction}
   alias Timex.Duration
 
-  # Constants
-
   @average_time_query """
     SELECT coalesce(avg(difference), interval '0 seconds')
     FROM (
@@ -58,8 +56,6 @@ defmodule Explorer.Chain.Statistics do
       WHERE transactions.inserted_at > NOW() - interval '1 minute'
   """
 
-  # Types
-
   @typedoc """
   The number of `t:Explorer.Chain.Block.t/0` mined/validated per minute.
   """
@@ -97,8 +93,6 @@ defmodule Explorer.Chain.Statistics do
           transactions: [Transaction.t()]
         }
 
-  # Struct
-
   defstruct average_time: %Duration{seconds: 0, megaseconds: 0, microseconds: 0},
             block_velocity: 0,
             blocks: [],
@@ -109,8 +103,6 @@ defmodule Explorer.Chain.Statistics do
             transaction_count: 0,
             transaction_velocity: 0,
             transactions: []
-
-  # Functions
 
   def fetch do
     blocks =
@@ -141,8 +133,6 @@ defmodule Explorer.Chain.Statistics do
     }
     |> put_max_numbered_block()
   end
-
-  ## Private Functions
 
   defp put_max_numbered_block(state) do
     case Chain.max_numbered_block() do

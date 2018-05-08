@@ -8,21 +8,13 @@ defmodule Explorer.Chain.Hash.Full do
   @behaviour Ecto.Type
   @behaviour Hash
 
-  # Constants
-
   @byte_count 32
   @hexadecimal_digit_count Hash.hexadecimal_digits_per_byte() * @byte_count
-
-  # Types
 
   @typedoc """
   A #{@byte_count}-byte hash of the `t:Explorer.Chain.Block.t/0` or `t:Explorer.Chain.Transaction.t/0`.
   """
   @type t :: %Hash{byte_count: unquote(@byte_count), bytes: <<_::unquote(@byte_count * Hash.bits_per_byte())>>}
-
-  # Functions
-
-  ## Ecto.Type callbacks
 
   @doc """
   Casts `term` to `t:t/0`
@@ -152,8 +144,6 @@ defmodule Explorer.Chain.Hash.Full do
   @impl Ecto.Type
   @spec type() :: :binary
   def type, do: :binary
-
-  ## Explorer.Chain.Hash callbacks
 
   @impl Hash
   def byte_count, do: @byte_count

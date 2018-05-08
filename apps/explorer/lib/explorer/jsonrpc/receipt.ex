@@ -10,8 +10,6 @@ defmodule Explorer.JSONRPC.Receipt do
   alias Explorer.JSONRPC
   alias Explorer.JSONRPC.Logs
 
-  # Types
-
   @type elixir :: %{String.t() => String.t() | non_neg_integer}
 
   @typedoc """
@@ -30,8 +28,6 @@ defmodule Explorer.JSONRPC.Receipt do
   * `"transactionIndex"` - `t:Explorer.JSONRPC.quantity/0` for the transaction index in the block.
   """
   @type t :: %{String.t() => JSONRPC.address() | JSONRPC.data() | JSONRPC.hash() | JSONRPC.quantity() | list | nil}
-
-  # Functions
 
   @doc """
   `Get `t:Explorer.JSONRPC.Logs.elixir/0` from `t:elixir/0`
@@ -126,8 +122,6 @@ defmodule Explorer.JSONRPC.Receipt do
   def to_elixir(receipt) when is_map(receipt) do
     Enum.into(receipt, %{}, &entry_to_elixir/1)
   end
-
-  ## Private Functions
 
   # double check that no new keys are being missed by requiring explicit match for passthrough
   # `t:Explorer.JSONRPC.address/0` and `t:Explorer.JSONRPC.hash/0` pass through as `Explorer.Chain` can verify correct

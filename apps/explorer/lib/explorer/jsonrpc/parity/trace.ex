@@ -7,8 +7,6 @@ defmodule Explorer.JSONRPC.Parity.Trace do
 
   alias Explorer.JSONRPC.Parity.Trace.{Action, Result}
 
-  # Functions
-
   @doc """
   Create type traces are generated when a contract is created.
 
@@ -356,8 +354,6 @@ defmodule Explorer.JSONRPC.Parity.Trace do
   def to_elixir(_) do
     raise ArgumentError, ~S|Caller must `Map.put/2` `"index"` and `"transactionHash"` in trace|
   end
-
-  ## Private Functions
 
   # subtraces is an actual integer in JSON and not hex-encoded
   # traceAddress is a list of actual integers, not a list of hex-encoded

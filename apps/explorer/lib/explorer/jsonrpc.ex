@@ -20,8 +20,6 @@ defmodule Explorer.JSONRPC do
 
   alias Explorer.JSONRPC.{Blocks, Parity, Receipts, Transactions}
 
-  # Types
-
   @typedoc """
   Truncated 20-byte [KECCAK-256](https://en.wikipedia.org/wiki/SHA-3) hash encoded as a hexadecimal number in a
   `String.t`.
@@ -62,8 +60,6 @@ defmodule Explorer.JSONRPC do
   Unix timestamp encoded as a hexadecimal number in a `String.t`
   """
   @type timestamp :: String.t()
-
-  # Functions
 
   def child_spec(_opts) do
     :hackney_pool.child_spec(:eth, recv_timeout: 60_000, timeout: 60_000, max_connections: 1000)
@@ -238,8 +234,6 @@ defmodule Explorer.JSONRPC do
     |> hexadecimal_to_integer()
     |> Timex.from_unix()
   end
-
-  ## Private Functions
 
   defp build_batch_get_block_by_number(block_start, block_end) do
     for current <- block_start..block_end do

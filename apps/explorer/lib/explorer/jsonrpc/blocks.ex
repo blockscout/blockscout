@@ -6,12 +6,8 @@ defmodule Explorer.JSONRPC.Blocks do
 
   alias Explorer.JSONRPC.{Block, Transactions}
 
-  # Types
-
   @type elixir :: [Block.elixir()]
   @type t :: [Block.t()]
-
-  # Functions
 
   @spec elixir_to_params(elixir) :: [map]
   def elixir_to_params(elixir) when is_list(elixir) do

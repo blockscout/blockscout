@@ -8,8 +8,6 @@ defmodule Explorer.ChainTest do
 
   doctest Explorer.Chain
 
-  # Tests
-
   describe "address_to_transactions/2" do
     test "without transactions" do
       address = insert(:address)

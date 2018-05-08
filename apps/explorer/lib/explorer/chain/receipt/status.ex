@@ -8,17 +8,11 @@ defmodule Explorer.Chain.Receipt.Status do
 
   @behaviour Ecto.Type
 
-  # Types
-
   @typedoc """
   * `:ok` - transaction succeeded
   * `:error` - transaction failed
   """
   @type t :: :ok | :error
-
-  # Functions
-
-  ## Ecto.Type callbacks
 
   @doc """
   Casts `term` to `t:t/0`

@@ -5,8 +5,6 @@ defmodule Explorer.Indexer do
 
   alias Explorer.Chain
 
-  # Functions
-
   @doc """
   Options passed to `child_spec` are passed to `Explorer.Indexer.Supervisor.start_link/1`
 

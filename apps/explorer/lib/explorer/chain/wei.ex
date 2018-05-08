@@ -30,12 +30,8 @@ defmodule Explorer.Chain.Wei do
   @typedoc @moduledoc
   @type t :: Decimal.t()
 
-  # Constants
-
   @wei_per_ether Decimal.new(1_000_000_000_000_000_000)
   @wei_per_gwei Decimal.new(1_000_000_000)
-
-  ## Functions
 
   @doc """
   Convert wei to itself.

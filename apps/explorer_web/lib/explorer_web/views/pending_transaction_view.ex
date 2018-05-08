@@ -5,8 +5,6 @@ defmodule ExplorerWeb.PendingTransactionView do
 
   @dialyzer :no_match
 
-  # Functions
-
   defdelegate from_address(transaction), to: TransactionView
   defdelegate hash(transaction), to: TransactionView
   defdelegate last_seen(transaction), to: TransactionView

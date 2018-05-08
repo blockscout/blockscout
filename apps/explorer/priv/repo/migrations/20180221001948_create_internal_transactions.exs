@@ -23,8 +23,6 @@ defmodule Explorer.Repo.Migrations.CreateInternalTransactions do
 
       timestamps(null: false)
 
-      # Foreign keys
-
       # Nullability controlled by create_has_created constraint below
       add(:created_contract_address_hash, references(:addresses, column: :hash, type: :bytea), null: true)
       add(:from_address_hash, references(:addresses, column: :hash, type: :bytea))
@@ -36,8 +34,6 @@ defmodule Explorer.Repo.Migrations.CreateInternalTransactions do
         null: false
       )
     end
-
-    # Constraints
 
     create(
       constraint(
@@ -76,14 +72,10 @@ defmodule Explorer.Repo.Migrations.CreateInternalTransactions do
       )
     )
 
-    # Foreign Key indexes
-
     create(index(:internal_transactions, :created_contract_address_hash))
     create(index(:internal_transactions, :from_address_hash))
     create(index(:internal_transactions, :to_address_hash))
     create(index(:internal_transactions, :transaction_hash))
-
-    # Unique indexes
 
     create(unique_index(:internal_transactions, [:transaction_hash, :index]))
   end

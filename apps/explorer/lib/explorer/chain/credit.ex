@@ -9,8 +9,6 @@ defmodule Explorer.Chain.Credit do
   alias Explorer.Chain.{Address, Hash}
   alias Explorer.Repo
 
-  # Types
-
   @typedoc """
   * `address` - address that was the `to_address`
   * `address_hash` - foreign key for `address`
@@ -24,8 +22,6 @@ defmodule Explorer.Chain.Credit do
           value: Decimal.t()
         }
 
-  # Schema
-
   @primary_key false
   schema "credits" do
     field(:count, :integer)
@@ -35,8 +31,6 @@ defmodule Explorer.Chain.Credit do
 
     belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Truncated)
   end
-
-  # Functions
 
   def refresh do
     SQL.query!(Repo, "REFRESH MATERIALIZED VIEW CONCURRENTLY credits;", [], timeout: 120_000)

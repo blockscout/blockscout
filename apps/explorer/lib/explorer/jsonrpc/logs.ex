@@ -6,12 +6,8 @@ defmodule Explorer.JSONRPC.Logs do
 
   alias Explorer.JSONRPC.Log
 
-  # Types
-
   @type elixir :: [Log.elixir()]
   @type t :: [Log.t()]
-
-  # Functions
 
   @spec elixir_to_params(elixir) :: [map]
   def elixir_to_params(elixir) when is_list(elixir) do

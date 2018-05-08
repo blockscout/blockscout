@@ -3,10 +3,6 @@ defmodule ExplorerWeb.TransactionLogController do
 
   alias Explorer.Chain
 
-  # Functions
-
-  ## Actions
-
   def index(conn, %{"transaction_id" => transaction_hash_string} = params) do
     with {:ok, transaction_hash} <- Chain.string_to_transaction_hash(transaction_hash_string),
          {:ok, transaction} <-
@@ -41,8 +37,6 @@ defmodule ExplorerWeb.TransactionLogController do
         not_found(conn)
     end
   end
-
-  ## Private Functions
 
   defp max_block_number do
     case Chain.max_block_number() do

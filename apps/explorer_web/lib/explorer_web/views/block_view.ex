@@ -5,8 +5,6 @@ defmodule ExplorerWeb.BlockView do
 
   @dialyzer :no_match
 
-  # Functions
-
   def age(%Block{timestamp: timestamp}) do
     Timex.from_now(timestamp)
   end

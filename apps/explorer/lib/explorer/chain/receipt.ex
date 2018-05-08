@@ -6,13 +6,9 @@ defmodule Explorer.Chain.Receipt do
   alias Explorer.Chain.{Gas, Hash, Log, Transaction}
   alias Explorer.Chain.Receipt.Status
 
-  # Constants
-
   @optional_attrs ~w()a
   @required_attrs ~w(cumulative_gas_used gas_used status transaction_hash transaction_index)a
   @allowed_attrs @optional_attrs ++ @required_attrs
-
-  # Types
 
   @typedoc """
   * `cumulative_gas_used` - the cumulative gas used in `transaction`'s `t:Explorer.Chain.Block.t/0` before
@@ -34,8 +30,6 @@ defmodule Explorer.Chain.Receipt do
           transaction_index: non_neg_integer()
         }
 
-  # Schema
-
   @primary_key false
   schema "receipts" do
     field(:cumulative_gas_used, :decimal)
@@ -48,8 +42,6 @@ defmodule Explorer.Chain.Receipt do
 
     timestamps()
   end
-
-  # Functions
 
   def changeset(%__MODULE__{} = transaction_receipt, attrs \\ %{}) do
     transaction_receipt

@@ -5,8 +5,6 @@ defmodule Explorer.Chain.InternalTransaction.Type do
 
   @behaviour Ecto.Type
 
-  # Types
-
   @typedoc """
   * `:call`
   * `:create`
@@ -14,10 +12,6 @@ defmodule Explorer.Chain.InternalTransaction.Type do
   * `:reward`
   """
   @type t :: :call | :create | :suicide | :reward
-
-  # Functions
-
-  ## Ecto.Type callbacks
 
   @doc """
   Casts `term` to `t:t/0`

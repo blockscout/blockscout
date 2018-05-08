@@ -5,8 +5,6 @@ defmodule Explorer.Chain.InternalTransaction.CallType do
 
   @behaviour Ecto.Type
 
-  # Types
-
   @typedoc """
   * `:call` - call a function in a contract by jumping into the contract's context
   * `:callcode`
@@ -16,10 +14,6 @@ defmodule Explorer.Chain.InternalTransaction.CallType do
   * `:staticcall`
   """
   @type t :: :call | :callcode | :delegatecall | :staticcall
-
-  # Functions
-
-  ## Ecto.Type callbacks
 
   @doc """
   Casts `term` to `t:t/0`

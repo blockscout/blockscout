@@ -46,8 +46,6 @@ defmodule ExplorerWeb.TransactionController do
     end
   end
 
-  ## Private Functions
-
   defp do_index(conn, options \\ []) when is_list(options) do
     full_options =
       Keyword.merge(

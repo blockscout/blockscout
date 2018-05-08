@@ -14,8 +14,6 @@ defmodule Explorer.ExchangeRates do
   @interval :timer.minutes(5)
   @table_name :exchange_rates
 
-  ## GenServer functions
-
   @impl GenServer
   def handle_info(:update, state) do
     Logger.debug(fn -> "Updating cached exchange rates" end)
@@ -76,8 +74,6 @@ defmodule Explorer.ExchangeRates do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-  ## Public functions
-
   @doc """
   Lists exchange rates for the tracked tickers.
   """
@@ -89,13 +85,9 @@ defmodule Explorer.ExchangeRates do
     |> Enum.sort_by(fn %Token{symbol: symbol} -> symbol end)
   end
 
-  ## Undocumented public functions
-
   @doc false
   @spec table_name() :: atom()
   def table_name, do: @table_name
-
-  ## Private functions
 
   @spec config(atom()) :: term
   defp config(key) do

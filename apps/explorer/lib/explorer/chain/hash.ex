@@ -5,17 +5,11 @@ defmodule Explorer.Chain.Hash do
 
   import Bitwise
 
-  # Constants
-
   @bits_per_byte 8
   @hexadecimal_digits_per_byte 2
   @max_byte_count 32
 
-  # Struct
-
   defstruct ~w(byte_count bytes)a
-
-  # Types
 
   @typedoc """
   A full [KECCAK-256](https://en.wikipedia.org/wiki/SHA-3) hash is #{@max_byte_count}, but it can also be truncated to
@@ -31,11 +25,7 @@ defmodule Explorer.Chain.Hash do
           bytes: <<_::_*8>>
         }
 
-  # Callbacks
-
   @callback byte_count() :: byte_count()
-
-  # Functions
 
   @doc """
   Number of bits in a byte
@@ -46,8 +36,6 @@ defmodule Explorer.Chain.Hash do
   How many hexadecimal digits are used to represent a byte
   """
   def hexadecimal_digits_per_byte, do: 2
-
-  ## Ecto.Type callbacks
 
   @doc """
   Casts `term` to `t:t/0` using `c:byte_count/0` in `module`
@@ -236,8 +224,6 @@ defmodule Explorer.Chain.Hash do
     |> to_iodata()
     |> IO.iodata_to_binary()
   end
-
-  ## Private Functions
 
   defp byte_count_to_hexadecimal_digit_count(byte_count) do
     byte_count * @hexadecimal_digits_per_byte

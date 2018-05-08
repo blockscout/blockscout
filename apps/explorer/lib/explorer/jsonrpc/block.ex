@@ -9,8 +9,6 @@ defmodule Explorer.JSONRPC.Block do
   alias Explorer.JSONRPC
   alias Explorer.JSONRPC.Transactions
 
-  # Types
-
   @type elixir :: %{String.t() => non_neg_integer | DateTime.t() | String.t() | nil}
 
   @typedoc """
@@ -274,8 +272,6 @@ defmodule Explorer.JSONRPC.Block do
   def to_elixir(block) when is_map(block) do
     Enum.into(block, %{}, &entry_to_elixir/1)
   end
-
-  ## Private Functions
 
   defp entry_to_elixir({key, quantity}) when key in ~w(difficulty gasLimit gasUsed number size totalDifficulty) do
     {key, quantity_to_integer(quantity)}

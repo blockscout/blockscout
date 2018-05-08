@@ -34,8 +34,6 @@ defmodule Explorer.JSONRPC.Parity.Trace.Result do
 
   def to_elixir(nil), do: nil
 
-  ## Private Functions
-
   defp entry_to_elixir({key, _} = entry) when key in ~w(address code output), do: entry
 
   defp entry_to_elixir({key, quantity}) when key in ~w(gasUsed) do

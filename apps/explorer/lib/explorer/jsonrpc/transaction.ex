@@ -12,8 +12,6 @@ defmodule Explorer.JSONRPC.Transaction do
 
   alias Explorer.JSONRPC
 
-  # Types
-
   @type elixir :: %{String.t() => JSONRPC.address() | JSONRPC.hash() | String.t() | non_neg_integer() | nil}
 
   @typedoc """
@@ -59,8 +57,6 @@ defmodule Explorer.JSONRPC.Transaction do
           v: non_neg_integer(),
           value: non_neg_integer()
         }
-
-  # Functions
 
   @spec elixir_to_params(elixir) :: params
   def elixir_to_params(%{
@@ -130,8 +126,6 @@ defmodule Explorer.JSONRPC.Transaction do
   def to_elixir(transaction) when is_map(transaction) do
     Enum.into(transaction, %{}, &entry_to_elixir/1)
   end
-
-  ## Private Functions
 
   # double check that no new keys are being missed by requiring explicit match for passthrough
   # `t:Explorer.JSONRPC.address/0` and `t:Explorer.JSONRPC.hash/0` pass through as `Explorer.Chain` can verify correct

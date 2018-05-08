@@ -412,8 +412,6 @@ defmodule Explorer.Chain.InternalTransaction do
     end)
   end
 
-  ## Private Functions
-
   defp type_changeset(changeset, attrs) do
     type = get_field(changeset, :type)
 

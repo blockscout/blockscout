@@ -13,8 +13,6 @@ defmodule Explorer.Repo.Migrations.CreateLogs do
 
       timestamps(null: false)
 
-      # Foreign Keys
-
       add(:address_hash, references(:addresses, column: :hash, on_delete: :delete_all, type: :bytea), null: true)
 
       add(
@@ -24,12 +22,8 @@ defmodule Explorer.Repo.Migrations.CreateLogs do
       )
     end
 
-    # Foreign Key indexes
-
     create(index(:logs, :address_hash))
     create(index(:logs, :transaction_hash))
-
-    # Search indexes
 
     create(index(:logs, :index))
     create(index(:logs, :type))

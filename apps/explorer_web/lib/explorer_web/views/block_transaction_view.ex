@@ -3,8 +3,6 @@ defmodule ExplorerWeb.BlockTransactionView do
 
   alias ExplorerWeb.{BlockView, TransactionView}
 
-  # Functions
-
   defdelegate from_address(transaction), to: TransactionView
   defdelegate block(transaction), to: TransactionView
   defdelegate hash(transaction), to: TransactionView
