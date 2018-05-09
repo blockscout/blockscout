@@ -31,7 +31,8 @@ defmodule Explorer.Indexer.AddressFetcher do
     state = %{
       debug_logs: Keyword.get(opts, :debug_logs, false),
       flush_timer: nil,
-      fetch_interval: @fetch_interval,
+      fetch_interval: Keyword.get(opts, :fetch_interval, @fetch_interval),
+      max_batch_size: Keyword.get(opts, :max_batch_size, @max_batch_size),
       buffer: :queue.new(),
       tasks: %{}
     }
@@ -90,7 +91,7 @@ defmodule Explorer.Indexer.AddressFetcher do
     |> Chain.stream_unfetched_addresses(fn %Address{hash: hash}, batch ->
       batch = :queue.in(Hash.to_string(hash), batch)
 
-      if :queue.len(batch) >= @max_batch_size do
+      if :queue.len(batch) >= state.max_batch_size do
         schedule_async_fetch(:queue.to_list(batch))
         :queue.new()
       else
