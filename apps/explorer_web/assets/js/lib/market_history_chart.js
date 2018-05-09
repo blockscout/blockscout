@@ -34,7 +34,8 @@ function createMarketHistoryChart (ctx) {
         fill: false,
         pointRadius: 0,
         backgroundColor: sassVariables.primary,
-        borderColor: sassVariables.primary
+        borderColor: sassVariables.primary,
+        lineTension: 0
       }, {
         label: 'Market Cap',
         yAxisID: 'marketCap',
@@ -42,7 +43,8 @@ function createMarketHistoryChart (ctx) {
         fill: false,
         pointRadius: 0.5,
         backgroundColor: sassVariables.secondary,
-        borderColor: sassVariables.secondary
+        borderColor: sassVariables.secondary,
+        lineTension: 0
       }]
     },
     options: {
