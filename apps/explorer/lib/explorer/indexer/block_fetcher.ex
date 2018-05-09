@@ -19,12 +19,17 @@ defmodule Explorer.Indexer.BlockFetcher do
   # dialyzer thinks that Logger.debug functions always have no_local_return
   @dialyzer {:nowarn_function, import_range: 3}
 
+  # These are all the *default* values for options.  DO NOT use them directly in the code.  Get options from `state`.
+
+  @debug_logs false
+
   @blocks_batch_size 10
   @blocks_concurrency 10
 
-  @internal_batch_size 50
-  @internal_concurrency 8
+  @internal_transactions_batch_size 50
+  @internal_transactions_concurrency 8
 
+  # milliseconds
   @block_rate 5_000
 
   @receipts_batch_size 250
@@ -39,8 +44,31 @@ defmodule Explorer.Indexer.BlockFetcher do
   `:explorer, :indexer` keyspace. The follow options can be overridden:
 
     * `:debug_logs` - When `true` logs verbose index progress. Defaults `false`.
-    * `:block_rate` - The millisecond rate new blocks are published at.
-      Defaults to `#{@block_rate}`.
+    * `:blocks_batch_size` - The number of blocks to request in one call to the JSONRPC.  Defaults to
+      `#{@blocks_batch_size}`.  Block requests also include the transactions for those blocks.  *These transactions
+      are not paginated.*
+    * `:blocks_concurrency` - The number of concurrent requests of `:blocks_batch_size` to allow against the JSONRPC.
+      Defaults to #{@blocks_concurrency}.  So upto `blocks_concurrency * block_batch_size` (defaults to
+      `#{@blocks_concurrency * @blocks_batch_size}`) blocks can be requested from the JSONRPC at once over all
+      connections.
+    * `:block_rate` - The millisecond rate new blocks are published at. Defaults to `#{@block_rate}` milliseconds.
+    * `:internal transactions_batch_size` - The number of transaction hashes to request internal transactions for
+      in one call to the JSONRPC. Defaults to `#{@internal_transactions_batch_size}`.
+    * `:internal transactions_concurrency` - The number of concurrent requests of `:internal transactions_batch_size` to
+      allow against the JSONRPC **for each block range**.  Defaults to `#{@internal_transactions_concurrency}`.  So upto
+      `block_concurrency * internal_transactions_batch_size * internal transactions_concurrency` (defaults to
+      `#{@blocks_concurrency * @internal_transactions_concurrency * @internal_transactions_batch_size}`) transactions
+      can be requesting their internal transactions can be requested from the JSONRPC at once over all connections.
+      *The internal transactions for individual transactions cannot be paginated, so the total number of internal
+      transactions that could be produced is unknown.*
+    * `:receipts_batch_size` - The number of receipts to request in one call to the JSONRPC.  Defaults to
+      `#{@receipts_batch_size}`.  Receipt requests also include the logs for when the transaction was collated into the
+      block.  *These logs are not paginated.*
+    * `:receipts_concurrency` - The number of concurrent requests of `:receipts_batch_size` to allow against the JSONRPC
+      **for each block range**. Defaults to `#{@receipts_concurrency}`.  So upto
+      `block_concurrency * receipts_batch_size * receipts_concurrency` (defaults to
+      `#{@blocks_concurrency * @receipts_concurrency * @receipts_batch_size}`) receipts can be requested from the
+      JSONRPC at once over all connections. *Each transaction only has one receipt.*
   """
   def start_link(opts) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
@@ -55,10 +83,16 @@ defmodule Explorer.Indexer.BlockFetcher do
 
     state = %{
       genesis_task: nil,
-      debug_logs: Keyword.get(opts, :debug_logs, false),
+      debug_logs: Keyword.get(opts, :debug_logs, @debug_logs),
       realtime_interval: (opts[:block_rate] || @block_rate) * 2,
       blocks_batch_size: Keyword.get(opts, :blocks_batch_size, @blocks_batch_size),
-      blocks_concurrency: Keyword.get(opts, :blocks_concurrency, @blocks_concurrency)
+      blocks_concurrency: Keyword.get(opts, :blocks_concurrency, @blocks_concurrency),
+      internal_transactions_batch_size:
+        Keyword.get(opts, :internal_transactions_batch_size, @internal_transactions_batch_size),
+      internal_transactions_concurrency:
+        Keyword.get(opts, :internal_transactions_concurrency, @internal_transactions_concurrency),
+      receipts_batch_size: Keyword.get(opts, :receipts_batch_size, @receipts_batch_size),
+      receipts_concurrency: Keyword.get(opts, :receipts_concurrency, @receipts_concurrency)
     }
 
     {:ok, state}
@@ -133,11 +167,11 @@ defmodule Explorer.Indexer.BlockFetcher do
   defp fetch_internal_transactions(_state, []), do: {:ok, []}
 
   defp fetch_internal_transactions(state, hashes) do
-    debug(state, fn -> "fetching #{length(hashes)} internal transactions" end)
-    stream_opts = [max_concurrency: @internal_concurrency, timeout: :infinity]
+    debug(state, fn -> "fetching internal transactions for #{length(hashes)} transactions" end)
+    stream_opts = [max_concurrency: state.internal_transactions_concurrency, timeout: :infinity]
 
     hashes
-    |> Enum.chunk_every(@internal_batch_size)
+    |> Enum.chunk_every(state.internal_transactions_batch_size)
     |> Task.async_stream(&JSONRPC.fetch_internal_transactions(&1), stream_opts)
     |> Enum.reduce_while({:ok, []}, fn
       {:ok, {:ok, internal_transactions}}, {:ok, acc} -> {:cont, {:ok, acc ++ internal_transactions}}
@@ -150,10 +184,10 @@ defmodule Explorer.Indexer.BlockFetcher do
 
   defp fetch_transaction_receipts(state, hashes) do
     debug(state, fn -> "fetching #{length(hashes)} transaction receipts" end)
-    stream_opts = [max_concurrency: @receipts_concurrency, timeout: :infinity]
+    stream_opts = [max_concurrency: state.receipts_concurrency, timeout: :infinity]
 
     hashes
-    |> Enum.chunk_every(@receipts_batch_size)
+    |> Enum.chunk_every(state.receipts_batch_size)
     |> Task.async_stream(&JSONRPC.fetch_transaction_receipts(&1), stream_opts)
     |> Enum.reduce_while({:ok, %{logs: [], receipts: []}}, fn
       {:ok, {:ok, %{logs: logs, receipts: receipts}}}, {:ok, %{logs: acc_logs, receipts: acc_receipts}} ->
@@ -212,6 +246,7 @@ defmodule Explorer.Indexer.BlockFetcher do
     |> Enum.each(fn {:ok, :ok} -> :ok end)
   end
 
+  # Run at state.blocks_concurrency max_concurrency
   defp import_range({block_start, block_end} = range, state, seq) do
     with {:blocks, {:ok, next, result}} <- {:blocks, JSONRPC.fetch_blocks_by_range(block_start, block_end)},
          %{blocks: blocks, transactions: transactions} = result,
