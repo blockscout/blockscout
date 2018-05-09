@@ -9,6 +9,8 @@ defmodule Explorer.MarketTest do
 
   describe "fetch_exchange_rate/1" do
     setup do
+      use_ets_store()
+
       {:ok, _} = ExchangeRates.start_link([])
       rate = %Token{id: "POA", symbol: "POA"}
       :ets.insert(ExchangeRates.table_name(), {rate.id, rate})
@@ -102,5 +104,20 @@ defmodule Explorer.MarketTest do
       assert fetched_record.closing_price == new_record.closing_price
       assert fetched_record.opening_price == new_record.opening_price
     end
+  end
+
+  defp use_ets_store do
+    # Use ets tables as ExchangeRates store and put some test data in to
+    # exercise Context filtering
+    exchange_config = Application.get_env(:explorer, Explorer.ExchangeRates)
+    Application.put_env(
+      :explorer,
+      Explorer.ExchangeRates,
+      Keyword.put(exchange_config, :store, :ets)
+    )
+
+    on_exit(fn ->
+      Application.put_env(:explorer, Explorer.ExchangeRates, exchange_config)
+    end)
   end
 end

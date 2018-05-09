@@ -11,6 +11,16 @@ defmodule Explorer.ExchangeRatesTest do
 
   setup :verify_on_exit!
 
+  setup do
+    # Use TestSource mock and ets table for this test set
+    configuration = Application.get_env(:explorer, Explorer.ExchangeRates)
+    Application.put_env(:explorer, Explorer.ExchangeRates, source: TestSource)
+
+    on_exit(fn ->
+      Application.put_env(:explorer, Explorer.ExchangeRates, configuration)
+    end)
+  end
+
   test "start_link" do
     stub(TestSource, :fetch_exchange_rates, fn -> {:ok, [%Token{}]} end)
     set_mox_global()

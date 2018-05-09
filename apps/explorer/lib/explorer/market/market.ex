@@ -5,10 +5,9 @@ defmodule Explorer.Market do
 
   import Ecto.Query
 
-  alias Explorer.ExchangeRates
+  alias Explorer.{ExchangeRates, Repo}
   alias Explorer.ExchangeRates.Token
   alias Explorer.Market.MarketHistory
-  alias Explorer.Repo
 
   @doc """
   Get most recent exchange rate for the given symbol.
@@ -16,7 +15,7 @@ defmodule Explorer.Market do
   @spec fetch_exchange_rate(String.t()) :: Token.t()
   def fetch_exchange_rate(symbol) do
     ExchangeRates.list()
-    |> Enum.find(fn(token) -> token.symbol == symbol end)
+    |> Enum.find(fn token -> token.symbol == symbol end)
   end
 
   @doc """

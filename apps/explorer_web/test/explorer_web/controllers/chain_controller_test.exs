@@ -60,13 +60,13 @@ defmodule ExplorerWeb.ChainControllerTest do
     end
 
     test "returns market history data", %{conn: conn} do
-      today = Date.utc_today
-      for day <- -14..0, do: insert(:market_history, date: Date.add(today, day))
+      today = Date.utc_today()
+      for day <- -40..0, do: insert(:market_history, date: Date.add(today, day))
 
       conn = get(conn, "/en")
 
       assert Map.has_key?(conn.assigns, :market_history_data)
-      assert length(conn.assigns.market_history_data) == 8
+      assert length(conn.assigns.market_history_data) == 30
     end
   end
 
