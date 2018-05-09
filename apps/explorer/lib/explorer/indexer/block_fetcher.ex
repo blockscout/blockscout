@@ -17,9 +17,9 @@ defmodule Explorer.Indexer.BlockFetcher do
   alias Explorer.JSONRPC.Transactions
 
   # dialyzer thinks that Logger.debug functions always have no_local_return
-  @dialyzer {:nowarn_function, stream_import: 3}
+  @dialyzer {:nowarn_function, import_range: 3}
 
-  @batch_size 50
+  @blocks_batch_size 10
   @blocks_concurrency 10
 
   @internal_batch_size 50
@@ -56,7 +56,9 @@ defmodule Explorer.Indexer.BlockFetcher do
     state = %{
       genesis_task: nil,
       debug_logs: Keyword.get(opts, :debug_logs, false),
-      realtime_interval: (opts[:block_rate] || @block_rate) * 2
+      realtime_interval: (opts[:block_rate] || @block_rate) * 2,
+      blocks_batch_size: Keyword.get(opts, :blocks_batch_size, @blocks_batch_size),
+      blocks_concurrency: Keyword.get(opts, :blocks_concurrency, @blocks_concurrency)
     }
 
     {:ok, state}
@@ -64,15 +66,15 @@ defmodule Explorer.Indexer.BlockFetcher do
 
   @impl GenServer
   def handle_info(:catchup_index, state) do
-    {count, missing_ranges} = missing_block_numbers()
+    {count, missing_ranges} = missing_block_numbers(state)
     current_block = Indexer.next_block_number()
 
     debug(state, fn -> "#{count} missed block ranges between genesis and #{current_block}" end)
 
     {:ok, genesis_task} =
       Task.start_link(fn ->
-        {:ok, seq} = Sequence.start_link(missing_ranges, current_block, @batch_size)
-        stream_import(state, seq, max_concurrency: @blocks_concurrency)
+        {:ok, seq} = Sequence.start_link(missing_ranges, current_block, state.blocks_batch_size)
+        stream_import(state, seq, max_concurrency: state.blocks_concurrency)
       end)
 
     Process.monitor(genesis_task)
@@ -179,23 +181,23 @@ defmodule Explorer.Indexer.BlockFetcher do
     end
   end
 
-  defp missing_block_numbers do
+  defp missing_block_numbers(%{blocks_batch_size: blocks_batch_size}) do
     {count, missing_ranges} = Chain.missing_block_numbers()
 
     chunked_ranges =
       Enum.flat_map(missing_ranges, fn
-        {start, ending} when ending - start <= @batch_size ->
+        {start, ending} when ending - start <= blocks_batch_size ->
           [{start, ending}]
 
         {start, ending} ->
           start
-          |> Stream.iterate(&(&1 + @batch_size))
+          |> Stream.iterate(&(&1 + blocks_batch_size))
           |> Enum.reduce_while([], fn
-            chunk_start, acc when chunk_start + @batch_size >= ending ->
+            chunk_start, acc when chunk_start + blocks_batch_size >= ending ->
               {:halt, [{chunk_start, ending} | acc]}
 
             chunk_start, acc ->
-              {:cont, [{chunk_start, chunk_start + @batch_size - 1} | acc]}
+              {:cont, [{chunk_start, chunk_start + blocks_batch_size - 1} | acc]}
           end)
           |> Enum.reverse()
       end)
@@ -206,34 +208,34 @@ defmodule Explorer.Indexer.BlockFetcher do
   defp stream_import(state, seq, task_opts) do
     seq
     |> Sequence.build_stream()
-    |> Task.async_stream(
-      fn {block_start, block_end} = range ->
-        with {:ok, next, result} <- JSONRPC.fetch_blocks_by_range(block_start, block_end),
-             %{blocks: blocks, transactions: transactions} <- result,
-             :ok <- cap_seq(seq, next, range, state),
-             transaction_hashes <- Transactions.params_to_hashes(transactions),
-             {:ok, receipt_params} <- fetch_transaction_receipts(state, transaction_hashes),
-             %{logs: logs, receipts: receipts} <- receipt_params,
-             {:ok, internal_transactions} <- fetch_internal_transactions(state, transaction_hashes) do
-          insert(state, seq, range, %{
-            blocks: blocks,
-            internal_transactions: internal_transactions,
-            logs: logs,
-            receipts: receipts,
-            transactions: transactions
-          })
-        else
-          {:error, reason} ->
-            debug(state, fn ->
-              "failed to fetch blocks #{inspect(range)}: #{inspect(reason)}. Retrying"
-            end)
-
-            :ok = Sequence.inject_range(seq, range)
-        end
-      end,
-      Keyword.merge(task_opts, timeout: :infinity)
-    )
+    |> Task.async_stream(&import_range(&1, state, seq), Keyword.merge(task_opts, timeout: :infinity))
     |> Enum.each(fn {:ok, :ok} -> :ok end)
+  end
+
+  defp import_range({block_start, block_end} = range, state, seq) do
+    with {:blocks, {:ok, next, result}} <- {:blocks, JSONRPC.fetch_blocks_by_range(block_start, block_end)},
+         %{blocks: blocks, transactions: transactions} = result,
+         cap_seq(seq, next, range, state),
+         transaction_hashes = Transactions.params_to_hashes(transactions),
+         {:receipts, {:ok, receipt_params}} <- {:receipts, fetch_transaction_receipts(state, transaction_hashes)},
+         %{logs: logs, receipts: receipts} = receipt_params,
+         {:internal_transactions, {:ok, internal_transactions}} <-
+           {:internal_transactions, fetch_internal_transactions(state, transaction_hashes)} do
+      insert(state, seq, range, %{
+        blocks: blocks,
+        internal_transactions: internal_transactions,
+        logs: logs,
+        receipts: receipts,
+        transactions: transactions
+      })
+    else
+      {step, {:error, reason}} ->
+        debug(state, fn ->
+          "failed to fetch #{step} for blocks #{block_start} - #{block_end}: #{inspect(reason)}. Retrying block range."
+        end)
+
+        :ok = Sequence.inject_range(seq, range)
+    end
   end
 
   defp schedule_next_realtime_fetch(state) do
