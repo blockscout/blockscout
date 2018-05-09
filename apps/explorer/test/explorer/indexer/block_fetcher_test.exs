@@ -4,11 +4,17 @@ defmodule Explorer.Indexer.BlockFetcherTest do
 
   import ExUnit.CaptureLog
 
-  alias Explorer.Chain.{Address, Block}
+  alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Receipt, Transaction}
   alias Explorer.JSONRPC
   alias Explorer.Indexer.{BlockFetcher, Sequence}
 
   @tag capture_log: true
+
+  setup do
+    {:ok, state} = BlockFetcher.init(debug_logs: false)
+
+    %{state: state}
+  end
 
   describe "handle_info(:debug_count, state)" do
     setup do
@@ -24,16 +30,16 @@ defmodule Explorer.Indexer.BlockFetcherTest do
       :ok
     end
 
-    test "without debug_logs" do
+    test "without debug_logs", %{state: state} do
       assert capture_log_at_level(:debug, fn ->
-               BlockFetcher.handle_info(:debug_count, %{debug_logs: false})
+               BlockFetcher.handle_info(:debug_count, %{state | debug_logs: false})
              end) == ""
     end
 
-    test "with debug_logs" do
+    test "with debug_logs", %{state: state} do
       log =
         capture_log_at_level(:debug, fn ->
-          BlockFetcher.handle_info(:debug_count, %{debug_logs: true})
+          BlockFetcher.handle_info(:debug_count, %{state | debug_logs: true})
         end)
 
       assert log =~ "blocks: 4"
@@ -49,10 +55,12 @@ defmodule Explorer.Indexer.BlockFetcherTest do
       start_supervised!({JSONRPC, []})
       start_supervised!({Task.Supervisor, name: Explorer.Indexer.TaskSupervisor})
 
-      :ok
+      {:ok, state} = BlockFetcher.init(debug_logs: false)
+
+      %{state: state}
     end
 
-    test "with single element range that is valid imports one block" do
+    test "with single element range that is valid imports one block", %{state: state} do
       {:ok, sequence} = Sequence.start_link([], 0, 1)
 
       assert {:ok,
@@ -75,10 +83,98 @@ defmodule Explorer.Indexer.BlockFetcherTest do
                 logs: [],
                 receipts: [],
                 transactions: []
-              }} = BlockFetcher.import_range({0, 0}, %{debug_logs: false}, sequence)
+              }} = BlockFetcher.import_range({0, 0}, state, sequence)
 
       assert Repo.aggregate(Block, :count, :hash) == 1
       assert Repo.aggregate(Address, :count, :hash) == 1
+    end
+
+    test "can import range with all imported schemas", %{state: state} do
+      {:ok, sequence} = Sequence.start_link([], 0, 1)
+
+      # 37 is determined using the following query:
+      # SELECT MIN(blocks.number) FROM
+      # (SELECT blocks.number
+      #  FROM internal_transactions
+      #  INNER JOIN transactions
+      #  ON transactions.hash = internal_transactions.transaction_hash
+      #  INNER JOIN blocks
+      #  ON blocks.hash = transactions.block_hash
+      #  INTERSECT
+      #  SELECT blocks.number
+      #  FROM logs
+      #  INNER JOIN transactions
+      #  ON transactions.hash = logs.transaction_hash
+      #  INNER JOIN blocks
+      #  ON blocks.hash = transactions.block_hash) as blocks
+      assert {:ok,
+              %{
+                addresses: [
+                  %Explorer.Chain.Hash{
+                    byte_count: 20,
+                    bytes:
+                      <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179, 223, 65, 91>>
+                  },
+                  %Explorer.Chain.Hash{
+                    byte_count: 20,
+                    bytes:
+                      <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132, 89, 192, 16, 79, 223, 94, 152, 122, 202>>
+                  }
+                ],
+                blocks: [
+                  %Explorer.Chain.Hash{
+                    byte_count: 32,
+                    bytes:
+                      <<246, 180, 184, 200, 141, 243, 235, 210, 82, 236, 71, 99, 40, 51, 77, 192, 38, 207, 102, 96, 106,
+                        132, 251, 118, 155, 61, 60, 188, 204, 132, 113, 189>>
+                  }
+                ],
+                internal_transactions: [
+                  %{
+                    index: 0,
+                    transaction_hash: %Explorer.Chain.Hash{
+                      byte_count: 32,
+                      bytes:
+                        <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57,
+                          101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
+                    }
+                  }
+                ],
+                logs: [
+                  %{
+                    index: 0,
+                    transaction_hash: %Explorer.Chain.Hash{
+                      byte_count: 32,
+                      bytes:
+                        <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57,
+                          101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
+                    }
+                  }
+                ],
+                receipts: [
+                  %Explorer.Chain.Hash{
+                    byte_count: 32,
+                    bytes:
+                      <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57,
+                        101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
+                  }
+                ],
+                transactions: [
+                  %Explorer.Chain.Hash{
+                    byte_count: 32,
+                    bytes:
+                      <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57,
+                        101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
+                  }
+                ]
+              }} = BlockFetcher.import_range({37, 37}, state, sequence)
+
+      assert Repo.aggregate(Block, :count, :hash) == 1
+      assert Repo.aggregate(Address, :count, :hash) == 2
+      assert Repo.aggregate(InternalTransaction, :count, :id) == 1
+      assert Repo.aggregate(Log, :count, :id) == 1
+      assert Repo.aggregate(Receipt, :count, :transaction_hash) == 1
+      assert Repo.aggregate(Transaction, :count, :hash) == 1
     end
   end
 
