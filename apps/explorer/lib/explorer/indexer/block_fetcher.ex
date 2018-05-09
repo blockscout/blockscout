@@ -9,10 +9,7 @@ defmodule Explorer.Indexer.BlockFetcher do
 
   alias Explorer.{Chain, Indexer, JSONRPC}
 
-  alias Explorer.Indexer.{
-    Sequence,
-    BlockImporter
-  }
+  alias Explorer.Indexer.{AddressFetcher, Sequence}
 
   alias Explorer.JSONRPC.Transactions
 
@@ -199,10 +196,10 @@ defmodule Explorer.Indexer.BlockFetcher do
   end
 
   defp insert(state, seq, range, params) do
-    case BlockImporter.import_blocks(params) do
-      :ok ->
-        :ok
-
+    with {:ok, %{addresses: address_hashes}} <- Chain.import_blocks(params) do
+      :ok = AddressFetcher.async_fetch_balances(address_hashes)
+      :ok
+    else
       {:error, step, reason} ->
         debug(state, fn ->
           "failed to insert blocks during #{step} #{inspect(range)}: #{inspect(reason)}. Retrying"

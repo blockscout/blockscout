@@ -131,7 +131,7 @@ defmodule Explorer.Chain do
   def update_balances(balances) do
     timestamps = timestamps()
 
-    changes =
+    changes_list =
       for {hash_string, amount} <- balances do
         {:ok, truncated_hash} = Explorer.Chain.Hash.Truncated.cast(hash_string)
         {:ok, wei} = Wei.cast(amount)
@@ -143,7 +143,11 @@ defmodule Explorer.Chain do
         })
       end
 
-    {_, _} = Repo.safe_insert_all(Address, changes, conflict_target: :hash, on_conflict: :replace_all)
+    # order so that row ShareLocks are grabbed in a consistent order.
+    # MUST match order used in `insert_addresses/2`
+    ordered_changes_list = sort_address_changes_list(changes_list)
+
+    {_, _} = Repo.safe_insert_all(Address, ordered_changes_list, conflict_target: :hash, on_conflict: :replace_all)
     :ok
   end
 
@@ -1466,31 +1470,41 @@ defmodule Explorer.Chain do
   defp insert_addresses(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
 
+    # order so that row ShareLocks are grabbed in a consistent order
+    ordered_changes_list = sort_address_changes_list(changes_list)
+
     insert_changes_list(
-      changes_list,
+      ordered_changes_list,
       conflict_target: :hash,
       on_conflict: [set: [balance_fetched_at: nil]],
       for: Address,
       timestamps: timestamps
     )
 
-    {:ok, for(changes <- changes_list, do: changes.hash)}
+    {:ok, for(changes <- ordered_changes_list, do: changes.hash)}
+  end
+
+  defp sort_address_changes_list(changes_list) do
+    Enum.sort_by(changes_list, & &1.hash)
   end
 
   @spec insert_blocks([map()], [timestamps_option]) :: {:ok, [Hash.t()]} | {:error, [Changeset.t()]}
   defp insert_blocks(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
 
+    # order so that row ShareLocks are grabbed in a consistent order
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.number, &1.hash})
+
     {:ok, _} =
       insert_changes_list(
-        changes_list,
+        ordered_changes_list,
         conflict_target: :number,
         on_conflict: :replace_all,
         for: Block,
         timestamps: timestamps
       )
 
-    {:ok, for(changes <- changes_list, do: changes.hash)}
+    {:ok, for(changes <- ordered_changes_list, do: changes.hash)}
   end
 
   defp insert_ecto_schema_module_to_changes_list(
@@ -1525,9 +1539,12 @@ defmodule Explorer.Chain do
        when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
 
+    # order so that row ShareLocks are grabbed in a consistent order
+    ordered_changes_list = Enum.sort_by(changes_list, & {&1.transaction_hash, &1.index})
+
     {:ok, internal_transactions} =
       insert_changes_list(
-        changes_list,
+        ordered_changes_list,
         for: InternalTransaction,
         returning: [:index, :transaction_hash],
         timestamps: timestamps
@@ -1542,9 +1559,12 @@ defmodule Explorer.Chain do
   defp insert_logs(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
 
+    # order so that row ShareLocks are grabbed in a consistent order
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.index})
+
     {:ok, logs} =
       insert_changes_list(
-        changes_list,
+        ordered_changes_list,
         conflict_target: [:transaction_hash, :index],
         on_conflict: :replace_all,
         for: Log,
@@ -1559,9 +1579,12 @@ defmodule Explorer.Chain do
   defp insert_receipts(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
 
+    # order so that row ShareLocks are grabbed in a consistent order
+    ordered_changes_list = Enum.sort_by(changes_list, & &1.transaction_hash)
+
     {:ok, receipts} =
       insert_changes_list(
-        changes_list,
+        ordered_changes_list,
         conflict_target: :transaction_hash,
         on_conflict: :replace_all,
         for: Receipt,
@@ -1584,9 +1607,12 @@ defmodule Explorer.Chain do
   defp insert_transactions(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
 
+    # order so that row ShareLocks are grabbed in a consistent order
+    ordered_changes_list = Enum.sort_by(changes_list, & &1.hash)
+
     {:ok, transactions} =
       insert_changes_list(
-        changes_list,
+        ordered_changes_list,
         conflict_target: :hash,
         on_conflict: :replace_all,
         for: Transaction,
