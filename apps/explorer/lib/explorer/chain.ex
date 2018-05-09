@@ -941,7 +941,7 @@ defmodule Explorer.Chain do
       iex> insert(:block, number: 2)
       iex> insert(:block, number: 5)
       iex> Explorer.Chain.missing_block_numbers()
-      {3, [{3, 4}, {1, 1}]}
+      {3, [{1, 1}, {3, 4}]}
 
   """
   def missing_block_numbers do
@@ -960,7 +960,7 @@ defmodule Explorer.Chain do
         end)
       end)
 
-    {missing_count, missing_ranges}
+    {missing_count, Enum.reverse(missing_ranges)}
   end
 
   @doc """
