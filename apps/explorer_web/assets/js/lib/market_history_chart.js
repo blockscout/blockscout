@@ -1,6 +1,7 @@
 import $ from 'jquery'
 import Chart from 'chart.js'
 import numeral from 'numeral'
+import sassVariables from '../../css/app.scss'
 
 function formatPrice(price) {
   return '$' + price.toFixed(2)
@@ -24,14 +25,16 @@ $('[data-chart="marketHistoryChart"]').each((i, ctx)=> {
         data: marketHistoryData.map(({ date, closing_price }) => ({x: date, y: closing_price})),
         fill: false,
         pointRadius: 0,
-        borderColor: 'darkgray'
+        backgroundColor: sassVariables.primary,
+        borderColor: sassVariables.primary
       },{
         label: 'Market Cap',
         yAxisID: 'marketCap',
         data: marketHistoryData.map(({ date, closing_price }) => ({x: date, y: closing_price * availableSupply})),
         fill: false,
         pointRadius: 0.5,
-        borderColor: 'lightgray'
+        backgroundColor: sassVariables.secondary,
+        borderColor: sassVariables.secondary
       }]
     },
     options: {
