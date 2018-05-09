@@ -100,16 +100,7 @@ defmodule Explorer.Indexer.BlockFetcher do
 
   @impl GenServer
   def handle_info(:catchup_index, state) do
-    {count, missing_ranges} = missing_block_numbers(state)
-    current_block = Indexer.next_block_number()
-
-    debug(state, fn -> "#{count} missed block ranges between genesis and #{current_block}" end)
-
-    {:ok, genesis_task} =
-      Task.start_link(fn ->
-        {:ok, seq} = Sequence.start_link(missing_ranges, current_block, state.blocks_batch_size)
-        stream_import(state, seq, max_concurrency: state.blocks_concurrency)
-      end)
+    {:ok, genesis_task} = Task.start_link(fn -> genesis_task(state) end)
 
     Process.monitor(genesis_task)
 
@@ -117,11 +108,7 @@ defmodule Explorer.Indexer.BlockFetcher do
   end
 
   def handle_info(:realtime_index, state) do
-    {:ok, realtime_task} =
-      Task.start_link(fn ->
-        {:ok, seq} = Sequence.start_link([], Indexer.next_block_number(), 2)
-        stream_import(state, seq, max_concurrency: 1)
-      end)
+    {:ok, realtime_task} = Task.start_link(fn -> realtime_task(state) end)
 
     Process.monitor(realtime_task)
 
@@ -201,6 +188,16 @@ defmodule Explorer.Indexer.BlockFetcher do
     end)
   end
 
+  defp genesis_task(state) do
+    {count, missing_ranges} = missing_block_numbers(state)
+    current_block = Indexer.next_block_number()
+
+    debug(state, fn -> "#{count} missed block ranges between genesis and #{current_block}" end)
+
+    {:ok, seq} = Sequence.start_link(missing_ranges, current_block, state.blocks_batch_size)
+    stream_import(state, seq, max_concurrency: state.blocks_concurrency)
+  end
+
   defp insert(state, seq, range, params) do
     case BlockImporter.import_blocks(params) do
       :ok ->
@@ -237,6 +234,11 @@ defmodule Explorer.Indexer.BlockFetcher do
       end)
 
     {count, chunked_ranges}
+  end
+
+  defp realtime_task(state) do
+    {:ok, seq} = Sequence.start_link([], Indexer.next_block_number(), 2)
+    stream_import(state, seq, max_concurrency: 1)
   end
 
   defp stream_import(state, seq, task_opts) do
