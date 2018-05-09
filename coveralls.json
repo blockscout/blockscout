@@ -1,7 +1,7 @@
 {
   "coverage_options": {
     "treat_no_relevant_lines_as_covered": true,
-    "minimum_coverage": 88.1
+    "minimum_coverage": 90.4
   },
   "terminal_options": {
     "file_column_width": 120

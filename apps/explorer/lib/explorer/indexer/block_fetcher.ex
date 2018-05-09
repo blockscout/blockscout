@@ -196,16 +196,18 @@ defmodule Explorer.Indexer.BlockFetcher do
   end
 
   defp insert(state, seq, range, params) do
-    with {:ok, %{addresses: address_hashes}} <- Chain.import_blocks(params) do
+    with {:ok, %{addresses: address_hashes}} = ok <- Chain.import_blocks(params) do
       :ok = AddressFetcher.async_fetch_balances(address_hashes)
-      :ok
+      ok
     else
-      {:error, step, reason} ->
+      {:error, step, reason} = error ->
         debug(state, fn ->
           "failed to insert blocks during #{step} #{inspect(range)}: #{inspect(reason)}. Retrying"
         end)
 
         :ok = Sequence.inject_range(seq, range)
+
+        error
     end
   end
 
@@ -242,11 +244,13 @@ defmodule Explorer.Indexer.BlockFetcher do
     seq
     |> Sequence.build_stream()
     |> Task.async_stream(&import_range(&1, state, seq), Keyword.merge(task_opts, timeout: :infinity))
-    |> Enum.each(fn {:ok, :ok} -> :ok end)
+    |> Stream.run()
   end
 
-  # Run at state.blocks_concurrency max_concurrency
-  defp import_range({block_start, block_end} = range, state, seq) do
+  # Run at state.blocks_concurrency max_concurrency when called by `stream_import/3`
+  # Only public for testing
+  @doc false
+  def import_range({block_start, block_end} = range, state, seq) do
     with {:blocks, {:ok, next, result}} <- {:blocks, JSONRPC.fetch_blocks_by_range(block_start, block_end)},
          %{blocks: blocks, transactions: transactions} = result,
          cap_seq(seq, next, range, state),
@@ -269,6 +273,8 @@ defmodule Explorer.Indexer.BlockFetcher do
         end)
 
         :ok = Sequence.inject_range(seq, range)
+
+        {:error, step, reason}
     end
   end
 

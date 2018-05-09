@@ -4,7 +4,9 @@ defmodule Explorer.Indexer.BlockFetcherTest do
 
   import ExUnit.CaptureLog
 
-  alias Explorer.Indexer.BlockFetcher
+  alias Explorer.Chain.{Address, Block}
+  alias Explorer.JSONRPC
+  alias Explorer.Indexer.{BlockFetcher, Sequence}
 
   @tag capture_log: true
 
@@ -39,6 +41,44 @@ defmodule Explorer.Indexer.BlockFetcherTest do
       assert log =~ "receipts: 6"
       assert log =~ "logs: 3"
       assert log =~ "addresses: 31"
+    end
+  end
+
+  describe "import_range/3" do
+    setup do
+      start_supervised!({JSONRPC, []})
+      start_supervised!({Task.Supervisor, name: Explorer.Indexer.TaskSupervisor})
+
+      :ok
+    end
+
+    test "with single element range that is valid imports one block" do
+      {:ok, sequence} = Sequence.start_link([], 0, 1)
+
+      assert {:ok,
+              %{
+                addresses: [
+                  %Explorer.Chain.Hash{
+                    byte_count: 20,
+                    bytes: <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>
+                  }
+                ],
+                blocks: [
+                  %Explorer.Chain.Hash{
+                    byte_count: 32,
+                    bytes:
+                      <<91, 40, 193, 191, 211, 161, 82, 48, 201, 164, 107, 57, 156, 208, 249, 166, 146, 13, 67, 46, 133,
+                        56, 28, 198, 161, 64, 176, 110, 132, 16, 17, 47>>
+                  }
+                ],
+                internal_transactions: [],
+                logs: [],
+                receipts: [],
+                transactions: []
+              }} = BlockFetcher.import_range({0, 0}, %{debug_logs: false}, sequence)
+
+      assert Repo.aggregate(Block, :count, :hash) == 1
+      assert Repo.aggregate(Address, :count, :hash) == 1
     end
   end
 
