@@ -345,6 +345,43 @@ defmodule Explorer.JSONRPC.Parity.Trace do
         "type" => "suicide"
       }
 
+  A call type trace can error and be reverted.
+
+      iex> Explorer.JSONRPC.Parity.Trace.to_elixir(
+      ...>   %{
+      ...>     "action" => %{
+      ...>       "callType" => "call",
+      ...>       "from" => "0xc9266e6fdf5182dc47d27e0dc32bdff9e4cd2e32",
+      ...>       "gas" => "0x73a468",
+      ...>       "input" => "0xa6f2ae3a",
+      ...>       "to" => "0xfdca0da4158740a93693441b35809b5bb463e527",
+      ...>       "value" => "0x2386f26fc10000"
+      ...>     },
+      ...>     "error" => "Reverted",
+      ...>     "index" => 0,
+      ...>     "subtraces" => 7,
+      ...>     "traceAddress" => [],
+      ...>     "transactionHash" => "0xcd7c15dbbc797722bef6e1d551edfd644fc7f4fb2ccd6a7947b2d1ade9ed140b",
+      ...>     "type" => "call"
+      ...>   }
+      ...> )
+      %{
+        "action" => %{
+          "callType" => "call",
+          "from" => "0xc9266e6fdf5182dc47d27e0dc32bdff9e4cd2e32",
+          "gas" => 7578728,
+          "input" => "0xa6f2ae3a",
+          "to" => "0xfdca0da4158740a93693441b35809b5bb463e527",
+          "value" => 10000000000000000
+        },
+        "error" => "Reverted",
+        "index" => 0,
+        "subtraces" => 7,
+        "traceAddress" => [],
+        "transactionHash" => "0xcd7c15dbbc797722bef6e1d551edfd644fc7f4fb2ccd6a7947b2d1ade9ed140b",
+        "type" => "call"
+      }
+
   """
 
   def to_elixir(%{"index" => _, "transactionHash" => _} = trace) when is_map(trace) do
