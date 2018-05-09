@@ -1,6 +1,6 @@
 defmodule Explorer.Indexer do
   @moduledoc """
-  Indexers an Ethereum-based chain using JSONRPC.
+  Indexes an Ethereum-based chain using JSONRPC.
   """
 
   alias Explorer.Chain
