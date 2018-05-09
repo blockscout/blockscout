@@ -24,13 +24,13 @@ defmodule Explorer.JSONRPC.Receipt do
       [Bloom filter](https://en.wikipedia.org/wiki/Bloom_filter) for light clients to quickly retrieve related logs.
   * `"root"` - `t:Explorer.JSONRPC.hash/0`  of post-transaction stateroot (pre-Byzantium)
   * `"status"` - `t:Explorer.JSONRPC.quantity/0` of either 1 (success) or 0 (failure) (post-Byzantium)
-  * `"transactionHash" - `t:Explorer.JSONRPC.hash/0` the transaction.
+  * `"transactionHash"` - `t:Explorer.JSONRPC.hash/0` the transaction.
   * `"transactionIndex"` - `t:Explorer.JSONRPC.quantity/0` for the transaction index in the block.
   """
   @type t :: %{String.t() => JSONRPC.address() | JSONRPC.data() | JSONRPC.hash() | JSONRPC.quantity() | list | nil}
 
   @doc """
-  `Get `t:Explorer.JSONRPC.Logs.elixir/0` from `t:elixir/0`
+  Get `t:Explorer.JSONRPC.Logs.elixir/0` from `t:elixir/0`
   """
   @spec elixir_to_logs(elixir) :: Logs.elixir()
   def elixir_to_logs(%{"logs" => logs}), do: logs

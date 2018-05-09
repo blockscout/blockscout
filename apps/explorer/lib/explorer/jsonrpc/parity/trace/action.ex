@@ -23,7 +23,7 @@ defmodule Explorer.JSONRPC.Parity.Trace.Action do
         "value" => 0
       }
 
-  For a suicide, the `"balance"` is converted to a `t:non_neg_integer/0` while the `"address" and `"refundAddress"`
+  For a suicide, the `"balance"` is converted to a `t:non_neg_integer/0` while the `"address"` and `"refundAddress"`
   `t:Explorer.JSONRPC.hash/0` pass through.
 
       iex> Explorer.JSONRPC.Parity.Trace.Action.to_elixir(

@@ -14,7 +14,7 @@ defmodule Explorer.JSONRPC.Log do
   * `"blockNumber"` - `t:Explorer.JSONRPC.quantity/0` for the block number this transaction is in.
   * `"data"` - Data containing non-indexed log parameter
   * `"logIndex"` - `t:Explorer.JSONRPC.quantity/0` of the event index positon in the block.
-  * `"topics" - `t:list/0` of at most 4 32-byte topics.  Topic 1-3 contains indexed parameters of the log.
+  * `"topics"` - `t:list/0` of at most 4 32-byte topics.  Topic 1-3 contains indexed parameters of the log.
   * `"transactionHash"` - `t:Explorer.JSONRPC.hash/0` of the transaction
   * `"transactionIndex"` - `t:Explorer.JSONRPC.quantity/0` for the index of the transaction in the block.
   """
