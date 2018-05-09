@@ -5,15 +5,9 @@
 # is restricted to this project.
 use Mix.Config
 
-url = "https://sokol.poa.network"
-
 config :explorer, :indexer,
   block_rate: 5_000,
   debug_logs: !!System.get_env("DEBUG_LOGS")
-
-config :ethereumex,
-  url: url,
-  http_options: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :eth]]
 
 # General application configuration
 config :explorer,
@@ -23,7 +17,7 @@ config :explorer,
 config :explorer, Explorer.JSONRPC,
   http: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :eth]],
   trace_url: "https://sokol-trace.poa.network",
-  url: url
+  url: "https://sokol.poa.network"
 
 config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: 2_000
 

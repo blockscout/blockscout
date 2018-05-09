@@ -9,6 +9,3 @@ config :explorer, Explorer.Repo,
   prepare: :unnamed,
   timeout: 60_000,
   pool_timeout: 60_000
-
-# Configure Web3
-config :ethereumex, url: System.get_env("ETHEREUM_URL")

@@ -54,7 +54,6 @@ defmodule Explorer.Mixfile do
   defp extra_applications,
     do: [
       :crontab,
-      :ethereumex,
       :logger,
       :mix,
       :runtime_tools,
@@ -72,7 +71,6 @@ defmodule Explorer.Mixfile do
       {:credo, "0.9.2", only: [:dev, :test], runtime: false},
       {:crontab, "~> 1.1"},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
-      {:ethereumex, "~> 0.3"},
       {:ex_machina, "~> 2.1", only: [:test]},
       # Code coverage
       {:excoveralls, "~> 0.8.1", only: [:test]},
