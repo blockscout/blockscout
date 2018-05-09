@@ -38,6 +38,7 @@ defmodule Explorer.Chain do
   @typep inserted_after_option :: {:inserted_after, DateTime.t()}
   @typep necessity_by_association_option :: {:necessity_by_association, necessity_by_association}
   @typep pagination_option :: {:pagination, pagination}
+  @typep timeout_option :: {:timeout, timeout}
   @typep timestamps :: %{inserted_at: %Ecto.DateTime{}, updated_at: %Ecto.DateTime{}}
   @typep timestamps_option :: {:timestamps, timestamps}
 
@@ -110,6 +111,16 @@ defmodule Explorer.Chain do
     end
   end
 
+  # timeouts all in milliseconds
+
+  @transaction_timeout 60_000
+  @insert_addresses_timeout 60_000
+  @insert_blocks_timeout 60_000
+  @insert_internal_transactions_timeout 60_000
+  @insert_logs_timeout 60_000
+  @insert_receipts_timeout 60_000
+  @insert_transactions_timeout 60_000
+
   @doc """
   Updates `t:Explorer.Chain.Address.t/0` with `hash` of `address_hash` to have `fetched_balance` of `balance` in
   `t:map/0` `balances` of `address_hash` to `balance`.
@@ -127,8 +138,8 @@ defmodule Explorer.Chain do
       :ok
 
   """
-  @spec update_balances(%{(address_hash :: String.t()) => balance :: integer}) :: :ok | {:error, reason :: term}
-  def update_balances(balances) do
+  @spec update_balances(%{(address_hash :: String.t()) => balance :: integer}, [timeout_option]) :: :ok
+  def update_balances(balances, options \\ []) when is_list(options) do
     timestamps = timestamps()
 
     changes_list =
@@ -147,7 +158,15 @@ defmodule Explorer.Chain do
     # MUST match order used in `insert_addresses/2`
     ordered_changes_list = sort_address_changes_list(changes_list)
 
-    {_, _} = Repo.safe_insert_all(Address, ordered_changes_list, conflict_target: :hash, on_conflict: :replace_all)
+    {_, _} =
+      Repo.safe_insert_all(
+        Address,
+        ordered_changes_list,
+        conflict_target: :hash,
+        on_conflict: :replace_all,
+        timeout: Keyword.get(options, :timeout, @insert_addresses_timeout)
+      )
+
     :ok
   end
 
@@ -732,16 +751,34 @@ defmodule Explorer.Chain do
       * `t.Explorer.Chain.Receipt.t/0`
         * `t.Explorer.Chain.Log.t/0`
 
+  ## Options
+
+  * `:timeout` - the timeout for the whole `c:Ecto.Repo.transaction/0` call.  Defaults to `#{@transaction_timeout}`
+    milliseconds.
+  * `:insert_addresses_timeout` - the timeout for inserting all addresses found in the params lists across all types.
+    Defaults to `#{@insert_addresses_timeout}` milliseconds.
+  * `:insert_blocks_timeout` - the timeout for inserting all blocks. Defaults to `#{@insert_blocks_timeout}`
+    milliseconds.
+  * `:insert_internal_transactions_timeout` - the timeout for inserting all internal transactions. Defaults to
+    `#{@insert_internal_transactions_timeout}` milliseconds.
+  * `:insert_logs_timeout` - the timeout for inserting all logs. Defaults to `#{@insert_logs_timeout}` milliseconds.
+  * `:insert_receipts_timeout` - the timeout for inserting all receipts. Defaults to `#{@insert_receipts_timeout}`
+    milliseconds.
+  * `:insert_transactions_timeout` - the timeout for inserting all transactions found in the params lists across all types.
+    Defaults to `#{@insert_transactions_timeout}` milliseconds.
   """
-  def import_blocks(%{
-        blocks: blocks_params,
-        logs: logs_params,
-        internal_transactions: internal_transactions_params,
-        receipts: receipts_params,
-        transactions: transactions_params
-      })
+  def import_blocks(
+        %{
+          blocks: blocks_params,
+          logs: logs_params,
+          internal_transactions: internal_transactions_params,
+          receipts: receipts_params,
+          transactions: transactions_params
+        },
+        options \\ []
+      )
       when is_list(blocks_params) and is_list(internal_transactions_params) and is_list(logs_params) and
-             is_list(receipts_params) and is_list(transactions_params) do
+             is_list(receipts_params) and is_list(transactions_params) and is_list(options) do
     with {:ok, ecto_schema_module_to_changes_list} <-
            ecto_schema_module_to_params_list_to_ecto_schema_module_to_changes_list(%{
              Block => blocks_params,
@@ -750,7 +787,7 @@ defmodule Explorer.Chain do
              Receipt => receipts_params,
              Transaction => transactions_params
            }) do
-      insert_ecto_schema_module_to_changes_list(ecto_schema_module_to_changes_list)
+      insert_ecto_schema_module_to_changes_list(ecto_schema_module_to_changes_list, options)
     end
   end
 
@@ -1466,9 +1503,11 @@ defmodule Explorer.Chain do
     )
   end
 
-  @spec insert_addresses([%{hash: Hash.Truncated.t()}], [timestamps_option, ...]) :: {:ok, [Hash.Truncated.t()]}
+  @spec insert_addresses([%{hash: Hash.Truncated.t()}], [timeout_option | timestamps_option]) ::
+          {:ok, [Hash.Truncated.t()]}
   defp insert_addresses(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
+    timeout = Keyword.fetch!(named_arguments, :timeout)
 
     # order so that row ShareLocks are grabbed in a consistent order
     ordered_changes_list = sort_address_changes_list(changes_list)
@@ -1478,6 +1517,7 @@ defmodule Explorer.Chain do
       conflict_target: :hash,
       on_conflict: [set: [balance_fetched_at: nil]],
       for: Address,
+      timeout: timeout,
       timestamps: timestamps
     )
 
@@ -1488,9 +1528,10 @@ defmodule Explorer.Chain do
     Enum.sort_by(changes_list, & &1.hash)
   end
 
-  @spec insert_blocks([map()], [timestamps_option]) :: {:ok, [Hash.t()]} | {:error, [Changeset.t()]}
+  @spec insert_blocks([map()], [timeout_option | timestamps_option]) :: {:ok, [Hash.t()]} | {:error, [Changeset.t()]}
   defp insert_blocks(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
+    timeout = Keyword.fetch!(named_arguments, :timeout)
 
     # order so that row ShareLocks are grabbed in a consistent order
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.number, &1.hash})
@@ -1501,6 +1542,7 @@ defmodule Explorer.Chain do
         conflict_target: :number,
         on_conflict: :replace_all,
         for: Block,
+        timeout: timeout,
         timestamps: timestamps
       )
 
@@ -1514,7 +1556,8 @@ defmodule Explorer.Chain do
            InternalTransaction => internal_transactions_changes,
            Receipt => receipts_changes,
            Transaction => transactions_changes
-         } = ecto_schema_module_to_changes_list
+         } = ecto_schema_module_to_changes_list,
+         options
        ) do
     address_hash_set = ecto_schema_module_to_changes_list_to_address_hash_set(ecto_schema_module_to_changes_list)
     addresses_changes = Address.hash_set_to_changes_list(address_hash_set)
@@ -1522,15 +1565,49 @@ defmodule Explorer.Chain do
     timestamps = timestamps()
 
     Multi.new()
-    |> Multi.run(:addresses, fn _ -> insert_addresses(addresses_changes, timestamps: timestamps) end)
-    |> Multi.run(:blocks, fn _ -> insert_blocks(blocks_changes, timestamps: timestamps) end)
-    |> Multi.run(:transactions, fn _ -> insert_transactions(transactions_changes, timestamps: timestamps) end)
-    |> Multi.run(:internal_transactions, fn _ ->
-      insert_internal_transactions(internal_transactions_changes, timestamps: timestamps)
+    |> Multi.run(:addresses, fn _ ->
+      insert_addresses(
+        addresses_changes,
+        timeout: Keyword.get(options, :insert_addresses_timeout, @insert_addresses_timeout),
+        timestamps: timestamps
+      )
     end)
-    |> Multi.run(:receipts, fn _ -> insert_receipts(receipts_changes, timestamps: timestamps) end)
-    |> Multi.run(:logs, fn _ -> insert_logs(logs_changes, timestamps: timestamps) end)
-    |> Repo.transaction()
+    |> Multi.run(:blocks, fn _ ->
+      insert_blocks(
+        blocks_changes,
+        timeout: Keyword.get(options, :insert_blocks_timeout, @insert_blocks_timeout),
+        timestamps: timestamps
+      )
+    end)
+    |> Multi.run(:transactions, fn _ ->
+      insert_transactions(
+        transactions_changes,
+        timeout: Keyword.get(options, :insert_transactions_timeout, @insert_transactions_timeout),
+        timestamps: timestamps
+      )
+    end)
+    |> Multi.run(:internal_transactions, fn _ ->
+      insert_internal_transactions(
+        internal_transactions_changes,
+        timeout: Keyword.get(options, :insert_internal_transactions_timeout, @insert_internal_transactions_timeout),
+        timestamps: timestamps
+      )
+    end)
+    |> Multi.run(:receipts, fn _ ->
+      insert_receipts(
+        receipts_changes,
+        timeout: Keyword.get(options, :insert_receipts_timeout, @insert_receipts_timeout),
+        timestamps: timestamps
+      )
+    end)
+    |> Multi.run(:logs, fn _ ->
+      insert_logs(
+        logs_changes,
+        timeout: Keyword.get(options, :insert_logs_timeout, @insert_logs_timeout),
+        timestamps: timestamps
+      )
+    end)
+    |> Repo.transaction(timeout: Keyword.get(options, :transaction_timeout, @transaction_timeout))
   end
 
   @spec insert_internal_transactions([map()], [timestamps_option]) ::
@@ -1540,7 +1617,7 @@ defmodule Explorer.Chain do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
 
     # order so that row ShareLocks are grabbed in a consistent order
-    ordered_changes_list = Enum.sort_by(changes_list, & {&1.transaction_hash, &1.index})
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.index})
 
     {:ok, internal_transactions} =
       insert_changes_list(
@@ -1554,10 +1631,11 @@ defmodule Explorer.Chain do
      for(internal_transaction <- internal_transactions, do: Map.take(internal_transaction, [:index, :transaction_hash]))}
   end
 
-  @spec insert_logs([map()], [timestamps_option]) ::
+  @spec insert_logs([map()], [timeout_option | timestamps_option]) ::
           {:ok, [%{index: non_neg_integer, transaction_hash: Hash.t()}]} | {:error, [Changeset.t()]}
   defp insert_logs(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
+    timeout = Keyword.fetch!(named_arguments, :timeout)
 
     # order so that row ShareLocks are grabbed in a consistent order
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.index})
@@ -1569,15 +1647,17 @@ defmodule Explorer.Chain do
         on_conflict: :replace_all,
         for: Log,
         returning: [:index, :transaction_hash],
+        timeout: timeout,
         timestamps: timestamps
       )
 
     {:ok, for(log <- logs, do: Map.take(log, [:index, :transaction_hash]))}
   end
 
-  @spec insert_receipts([map()], [timestamps_option]) :: {:ok, [Hash.t()]} | {:error, [Changeset.t()]}
+  @spec insert_receipts([map()], [timeout_option | timestamps_option]) :: {:ok, [Hash.t()]} | {:error, [Changeset.t()]}
   defp insert_receipts(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
+    timeout = Keyword.fetch!(named_arguments, :timeout)
 
     # order so that row ShareLocks are grabbed in a consistent order
     ordered_changes_list = Enum.sort_by(changes_list, & &1.transaction_hash)
@@ -1589,6 +1669,7 @@ defmodule Explorer.Chain do
         on_conflict: :replace_all,
         for: Receipt,
         returning: [:transaction_hash],
+        timeout: timeout,
         timestamps: timestamps
       )
 
@@ -1603,9 +1684,11 @@ defmodule Explorer.Chain do
     {:ok, inserted}
   end
 
-  @spec insert_transactions([map()], [timestamps_option]) :: {:ok, [Hash.t()]} | {:error, [Changeset.t()]}
+  @spec insert_transactions([map()], [timeout_option | timestamps_option]) ::
+          {:ok, [Hash.t()]} | {:error, [Changeset.t()]}
   defp insert_transactions(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
+    timeout = Keyword.fetch!(named_arguments, :timeout)
 
     # order so that row ShareLocks are grabbed in a consistent order
     ordered_changes_list = Enum.sort_by(changes_list, & &1.hash)
@@ -1617,6 +1700,7 @@ defmodule Explorer.Chain do
         on_conflict: :replace_all,
         for: Transaction,
         returning: [:hash],
+        timeout: timeout,
         timestamps: timestamps
       )
 

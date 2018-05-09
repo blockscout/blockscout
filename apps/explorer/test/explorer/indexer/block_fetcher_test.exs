@@ -24,14 +24,15 @@ defmodule Explorer.Indexer.BlockFetcherTest do
 
     test "without debug_logs" do
       assert capture_log_at_level(:debug, fn ->
-        BlockFetcher.handle_info(:debug_count, %{debug_logs: false})
-      end) == ""
+               BlockFetcher.handle_info(:debug_count, %{debug_logs: false})
+             end) == ""
     end
 
     test "with debug_logs" do
-      log = capture_log_at_level(:debug, fn ->
-        BlockFetcher.handle_info(:debug_count, %{debug_logs: true})
-      end)
+      log =
+        capture_log_at_level(:debug, fn ->
+          BlockFetcher.handle_info(:debug_count, %{debug_logs: true})
+        end)
 
       assert log =~ "blocks: 4"
       assert log =~ "internal transactions: 3"
@@ -44,6 +45,7 @@ defmodule Explorer.Indexer.BlockFetcherTest do
   defp capture_log_at_level(level, block) do
     logger_level_transaction(fn ->
       Logger.configure(level: level)
+
       capture_log(fn ->
         block.()
         Process.sleep(10)

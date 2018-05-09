@@ -7,8 +7,6 @@ config :explorer, Explorer.Repo,
   hostname: "localhost",
   loggers: [],
   pool_size: 20,
-  pool_timeout: 60_000,
-  # Default value of 15_000 causes timeouts around block 813200
-  timeout: 60_000
+  pool_timeout: 60_000
 
 import_config "dev.secret.exs"
