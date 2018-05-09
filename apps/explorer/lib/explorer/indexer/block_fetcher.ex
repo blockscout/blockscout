@@ -19,7 +19,7 @@ defmodule Explorer.Indexer.BlockFetcher do
   # dialyzer thinks that Logger.debug functions always have no_local_return
   @dialyzer {:nowarn_function, stream_import: 3}
 
-  @batch_size 1
+  @batch_size 50
   @blocks_concurrency 10
 
   @internal_batch_size 50
