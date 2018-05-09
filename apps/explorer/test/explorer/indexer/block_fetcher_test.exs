@@ -10,13 +10,41 @@ defmodule Explorer.Indexer.BlockFetcherTest do
 
   @tag capture_log: true
 
-  setup do
-    {:ok, state} = BlockFetcher.init(debug_logs: false)
+  # First block with all schemas to import
+  # 37 is determined using the following query:
+  # SELECT MIN(blocks.number) FROM
+  # (SELECT blocks.number
+  #  FROM internal_transactions
+  #  INNER JOIN transactions
+  #  ON transactions.hash = internal_transactions.transaction_hash
+  #  INNER JOIN blocks
+  #  ON blocks.hash = transactions.block_hash
+  #  INTERSECT
+  #  SELECT blocks.number
+  #  FROM logs
+  #  INNER JOIN transactions
+  #  ON transactions.hash = logs.transaction_hash
+  #  INNER JOIN blocks
+  #  ON blocks.hash = transactions.block_hash) as blocks
+  @first_full_block_number 37
 
-    %{state: state}
+  describe "start_link/1" do
+    test "starts fetching blocks from Genesis" do
+      assert Repo.aggregate(Block, :count, :hash) == 0
+
+      start_supervised!(BlockFetcher)
+
+      wait(fn ->
+        Repo.one!(from(block in Block, where: block.number == @first_full_block_number))
+      end)
+
+      assert Repo.aggregate(Block, :count, :hash) >= @first_full_block_number
+    end
   end
 
   describe "handle_info(:debug_count, state)" do
+    setup :state
+
     setup do
       block = insert(:block)
 
@@ -51,6 +79,8 @@ defmodule Explorer.Indexer.BlockFetcherTest do
   end
 
   describe "import_range/3" do
+    setup :state
+
     setup do
       start_supervised!({JSONRPC, []})
       start_supervised!({Task.Supervisor, name: Explorer.Indexer.TaskSupervisor})
@@ -92,21 +122,6 @@ defmodule Explorer.Indexer.BlockFetcherTest do
     test "can import range with all imported schemas", %{state: state} do
       {:ok, sequence} = Sequence.start_link([], 0, 1)
 
-      # 37 is determined using the following query:
-      # SELECT MIN(blocks.number) FROM
-      # (SELECT blocks.number
-      #  FROM internal_transactions
-      #  INNER JOIN transactions
-      #  ON transactions.hash = internal_transactions.transaction_hash
-      #  INNER JOIN blocks
-      #  ON blocks.hash = transactions.block_hash
-      #  INTERSECT
-      #  SELECT blocks.number
-      #  FROM logs
-      #  INNER JOIN transactions
-      #  ON transactions.hash = logs.transaction_hash
-      #  INNER JOIN blocks
-      #  ON blocks.hash = transactions.block_hash) as blocks
       assert {:ok,
               %{
                 addresses: [
@@ -167,7 +182,7 @@ defmodule Explorer.Indexer.BlockFetcherTest do
                         101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
                   }
                 ]
-              }} = BlockFetcher.import_range({37, 37}, state, sequence)
+              }} = BlockFetcher.import_range({@first_full_block_number, @first_full_block_number}, state, sequence)
 
       assert Repo.aggregate(Block, :count, :hash) == 1
       assert Repo.aggregate(Address, :count, :hash) == 2
@@ -201,5 +216,19 @@ defmodule Explorer.Indexer.BlockFetcherTest do
     Logger.configure(level: level_before)
 
     return
+  end
+
+  defp state(_) do
+    {:ok, state} = BlockFetcher.init(debug_logs: false)
+
+    %{state: state}
+  end
+
+  defp wait(producer) do
+    producer.()
+  rescue
+    Ecto.NoResultsError ->
+      Process.sleep(100)
+      wait(producer)
   end
 end
