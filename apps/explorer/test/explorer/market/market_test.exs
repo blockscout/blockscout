@@ -110,6 +110,7 @@ defmodule Explorer.MarketTest do
     # Use ets tables as ExchangeRates store and put some test data in to
     # exercise Context filtering
     exchange_config = Application.get_env(:explorer, Explorer.ExchangeRates)
+
     Application.put_env(
       :explorer,
       Explorer.ExchangeRates,
