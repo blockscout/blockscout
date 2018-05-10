@@ -11,6 +11,12 @@
           <%= balance(@address) %>
         </dd>
       </div>
+      <div class="address__item">
+        <dt class="address__item-key"><%= gettext "Number of Transactions" %></dt>
+        <dd class="address__item-value" data-test="transaction_count">
+          <%= Cldr.Number.to_string!(@transaction_count) %>
+        </dd>
+      </div>
     </dl>
   </div>
 </div>

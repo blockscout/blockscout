@@ -8,6 +8,22 @@ defmodule Explorer.ChainTest do
 
   doctest Explorer.Chain
 
+  describe "address_to_transaction_count/1" do
+    test "without transactions" do
+      address = insert(:address)
+
+      assert Chain.address_to_transaction_count(address) == 0
+    end
+
+    test "with transactions" do
+      %Transaction{from_address_hash: address_hash} = insert(:transaction)
+      insert(:transaction, to_address_hash: address_hash)
+      address = Repo.get!(Address, address_hash)
+
+      assert Chain.address_to_transaction_count(address) == 2
+    end
+  end
+
   describe "address_to_transactions/2" do
     test "without transactions" do
       address = insert(:address)
@@ -74,7 +90,6 @@ defmodule Explorer.ChainTest do
       %Transaction{hash: to_transaction_hash} = insert(:transaction, to_address_hash: address_hash)
       address = Repo.get!(Address, address_hash)
 
-      # only contains "to" transaction
       assert %Scrivener.Page{
                entries: [
                  %Transaction{hash: ^to_transaction_hash},
@@ -269,7 +284,7 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "block_to_transaction_bound/1" do
+  describe "block_to_transaction_count/1" do
     test "without transactions" do
       block = insert(:block)
 

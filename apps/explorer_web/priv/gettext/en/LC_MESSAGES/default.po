@@ -434,3 +434,7 @@ msgstr ""
 #: lib/explorer_web/templates/chain/show.html.eex:35
 msgid "USD"
 msgstr ""
+
+#: lib/explorer_web/templates/address/overview.html.eex:15
+msgid "Number of Transactions"
+msgstr ""

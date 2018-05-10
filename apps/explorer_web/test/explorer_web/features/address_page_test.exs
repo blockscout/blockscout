@@ -104,4 +104,12 @@ defmodule ExplorerWeb.AddressPageTest do
       |> assert_has(AddressPage.internal_transactions(count: 1))
     end
   end
+
+  test "viewing transaction count", %{addresses: addresses, session: session} do
+    insert_list(1000, :transaction, to_address_hash: addresses.lincoln.hash)
+
+    session
+    |> AddressPage.visit_page(addresses.lincoln)
+    |> assert_text(AddressPage.transaction_count(), "1,002")
+  end
 end
