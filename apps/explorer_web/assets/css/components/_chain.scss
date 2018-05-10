@@ -1,9 +1,5 @@
 .chain {
   @extend %paper;
-
-  display: flex;
-  justify-conntent: space-around;
-  align-items: flex-start;
   padding: explorer-size(0) 0;
 
   &__container {
@@ -27,24 +23,40 @@
 
 .container__stats {
   @extend %paper;
+  display: flex;
   padding: 15px;
-  width: 18%;
+  width: 100%;
   font-size: 12px;
-  justify-conntent: space-around;
   text-align: center;
+  flex-direction: row;
+  justify-content: space-around;
 
-  &--contain {
-    padding: 10px;
-
-    & img {
-      display: inline-block;
-      height: explorer-size(1);
-      margin-bottom: explorer-size(-2);
-      text-align: center;
-    }
+  img {
+    display: inline-block;
+    height: explorer-size(1);
+    margin-bottom: explorer-size(-2);
+    text-align: center;
   }
 }
 
+.graph__squares {
+  width: 12px;
+  height: 12px;
+  display: inline-block;
+
+  &--price {
+    background-color: explorer-color("blue", "500");
+  }
+
+  &--mcap {
+    background-color: explorer-color("gray", "500");
+  }
+}
+
+.flex {
+  display: flex;
+  justify-content: space-between;
+}
 
 @media (min-width: $explorer-breakpoint-sm) {
   .chain {
@@ -59,6 +71,23 @@
 }
 
 @media (min-width: $explorer-breakpoint-md) {
+
+  .container__stats {
+    width: 18%;
+    flex-direction: column;
+    align-content: space-between;
+
+    img {
+      display: inline-block;
+      height: explorer-size(1);
+      margin-bottom: explorer-size(-2);
+      text-align: center;
+    }
+
+    div {
+      flex-grow: 1;
+    }
+  }
   .chain {
     &__image {
       height: explorer-size(1);
