@@ -32,3 +32,8 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/sidebar";
 @import "explorer/button";
 @import "explorer/filter";
+
+:export {
+  primary: $primary;
+  secondary: $secondary;
+}

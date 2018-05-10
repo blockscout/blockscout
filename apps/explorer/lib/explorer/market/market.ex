@@ -5,8 +5,17 @@ defmodule Explorer.Market do
 
   import Ecto.Query
 
+  alias Explorer.{ExchangeRates, Repo}
+  alias Explorer.ExchangeRates.Token
   alias Explorer.Market.MarketHistory
-  alias Explorer.Repo
+
+  @doc """
+  Get most recent exchange rate for the given symbol.
+  """
+  @spec get_exchange_rate(String.t()) :: Token.t()
+  def get_exchange_rate(symbol) do
+    ExchangeRates.lookup(symbol)
+  end
 
   @doc """
   Retrieves the history for the recent specified amount of days.
