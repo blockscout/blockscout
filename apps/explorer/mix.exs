@@ -70,7 +70,7 @@ defmodule Explorer.Mixfile do
   defp deps do
     [
       {:bypass, "~> 0.8", only: :test},
-      {:credo, "0.9.1", only: [:dev, :test], runtime: false},
+      {:credo, "0.9.2", only: [:dev, :test], runtime: false},
       {:crontab, "~> 1.1"},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       {:ethereumex, "~> 0.3"},
