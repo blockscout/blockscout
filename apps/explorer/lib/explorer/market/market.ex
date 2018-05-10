@@ -12,10 +12,9 @@ defmodule Explorer.Market do
   @doc """
   Get most recent exchange rate for the given symbol.
   """
-  @spec fetch_exchange_rate(String.t()) :: Token.t()
-  def fetch_exchange_rate(symbol) do
-    ExchangeRates.list()
-    |> Enum.find(fn token -> token.symbol == symbol end)
+  @spec get_exchange_rate(String.t()) :: Token.t()
+  def get_exchange_rate(symbol) do
+    ExchangeRates.lookup(symbol)
   end
 
   @doc """

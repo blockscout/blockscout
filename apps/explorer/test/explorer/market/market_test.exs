@@ -1,30 +1,9 @@
 defmodule Explorer.MarketTest do
   use Explorer.DataCase
 
-  alias Explorer.ExchangeRates
-  alias Explorer.ExchangeRates.Token
   alias Explorer.Market
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
-
-  describe "fetch_exchange_rate/1" do
-    setup do
-      use_ets_store()
-
-      {:ok, _} = ExchangeRates.start_link([])
-      rate = %Token{id: "POA", symbol: "POA"}
-      :ets.insert(ExchangeRates.table_name(), {rate.id, rate})
-      {:ok, %{rate: rate}}
-    end
-
-    test "with matching symbol", %{rate: rate} do
-      assert Market.fetch_exchange_rate("POA") == rate
-    end
-
-    test "with no matching symbol" do
-      assert Market.fetch_exchange_rate("ETH") == nil
-    end
-  end
 
   test "fetch_recent_history/1" do
     today = Date.utc_today()
@@ -104,21 +83,5 @@ defmodule Explorer.MarketTest do
       assert fetched_record.closing_price == new_record.closing_price
       assert fetched_record.opening_price == new_record.opening_price
     end
-  end
-
-  defp use_ets_store do
-    # Use ets tables as ExchangeRates store and put some test data in to
-    # exercise Context filtering
-    exchange_config = Application.get_env(:explorer, Explorer.ExchangeRates)
-
-    Application.put_env(
-      :explorer,
-      Explorer.ExchangeRates,
-      Keyword.put(exchange_config, :store, :ets)
-    )
-
-    on_exit(fn ->
-      Application.put_env(:explorer, Explorer.ExchangeRates, exchange_config)
-    end)
   end
 end
