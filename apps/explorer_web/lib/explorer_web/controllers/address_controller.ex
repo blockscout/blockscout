@@ -8,6 +8,10 @@ defmodule ExplorerWeb.AddressController do
     redirect(conn, to: address_transaction_path(conn, :index, locale, id))
   end
 
+  def coin do
+    Application.get_env(:explorer, :coin)
+  end
+
   def transaction_count(%Address{} = address) do
     Chain.address_to_transaction_count(address)
   end

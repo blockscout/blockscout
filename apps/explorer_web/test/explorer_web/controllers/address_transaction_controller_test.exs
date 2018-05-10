@@ -4,6 +4,8 @@ defmodule ExplorerWeb.AddressTransactionControllerTest do
   import ExplorerWeb.Router.Helpers, only: [address_transaction_path: 4]
   import ExplorerWeb.Factory
 
+  alias Explorer.ExchangeRates.Token
+
   describe "GET index/2" do
     test "with invalid address hash", %{conn: conn} do
       conn = get(conn, address_transaction_path(conn, :index, :en, "invalid_address"))
@@ -58,7 +60,18 @@ defmodule ExplorerWeb.AddressTransactionControllerTest do
       conn = get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address))
 
       assert html_response(conn, 200)
+      assert conn.status == 200
       assert Enum.empty?(conn.assigns.page)
+      assert conn.status == 200
+      assert Enum.empty?(conn.assigns.page)
+    end
+
+    test "includes USD exchange rate value for address in assigns", %{conn: conn} do
+      address = insert(:address)
+
+      conn = get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
+
+      assert %Token{} = conn.assigns.exchange_rate
     end
   end
 end
