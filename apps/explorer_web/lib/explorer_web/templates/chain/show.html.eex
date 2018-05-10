@@ -24,11 +24,11 @@
     </div>
     <div>
       <div><%= gettext "Price" %></div>
-      <div>$<%= @exchange_rate.usd_value %> <%= gettext "USD" %></div>
+      <div>$<%= @exchange_rate.usd_value |> Cldr.Number.to_string!(fractional_digits: 6) %> <%= gettext "USD" %></div>
       <div><%= gettext "Market Cap" %></div>
-      <div>$<%= @exchange_rate.market_cap_usd %> <%= gettext "USD" %></div>
+      <div>$<%= @exchange_rate.market_cap_usd |> Cldr.Number.to_string! %> <%= gettext "USD" %></div>
       <div><%= gettext "24h Volume" %></div>
-      <div>$<%= @exchange_rate.volume_24h_usd %> <%= gettext "USD" %></div>
+      <div>$<%= @exchange_rate.volume_24h_usd |> Cldr.Number.to_string! %> <%= gettext "USD" %></div>
     </div>
   </section>
 </section>
