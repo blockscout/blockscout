@@ -1,65 +1,117 @@
 .header {
-  @extend %explorer-header-min-height;
-  background: explorer-color("gray", "50");
-  box-shadow: 0 2px 2px 0 rgba(explorer-color("slate", "900"), 0.16),
-              0 0px 2px 0 rgba(explorer-color("slate", "900"), 0.12);
+  background: $gray-100;
+  box-shadow: 0 2px 2px 0 rgba($gray-900, 0.16),
+              0 0px 2px 0 rgba($gray-900, 0.12);
   top: 0;
   left: 0;
   right: 0;
   width: 100%;
 
-  &__container {
-
-  }
-
   &__row {
     vertical-align: middle;
     display: flex;
+
+    &--theme {
+      display: none;
+    }
+
+    &--search {
+      background-color: $secondary;
+      padding: 5px;
+    }
   }
 
   &__cell {
+
      &--links {
        display: flex;
-       flex-direction: row-reverse;
-       padding-right: explorer-size(0);
+       padding: 15px 25px;
+
+       img {
+         height: 20px;
+       }
+
+       i {
+         font-size: 1.55em;
+         color: $gray-500;
+
+       }
      }
 
-
     &--search {
-      @include explorer-typography("body1");
-      padding-left: 8px;
-      width: 90%;
-      margin-top: 7px;
-    }
+      font-size: 12px;
+      width: 75%;
+      height: 45px;
+      margin: 3px;
 
-    &--search-form {
-      position: relative;
-    }
-
-    &--search-glass {
-      height: 16px;
-      width: 16px;
-      position: absolute;
-      top: 18px;
-      left: 16px;
-      opacity: 0.5;
-    }
-
-    &--search-input {
-      width: 100%;
-      border: none;
-      background-color: transparent;
-      height: 50px;
-      padding-left: 45px;
-
-      @media (max-width: 768px) {
-        width: 90%;
-        padding-top: 5px;
+      &-form {
+        position: relative;
+        border: 1px solid darken($secondary, 35%);
       }
-    }
 
-    &--search-input[placeholder] {
-      text-overflow: ellipsis;
+      &-glass {
+        height: 15px;
+        width: 15px;
+        position: absolute;
+        top: 18px;
+        left: 16px;
+        opacity: 0.5;
+        color: darken($secondary, 45%);
+      }
+
+      &-input  {
+        width: 100%;
+        border: none;
+        background-color: transparent;
+        height: 45px;
+        padding-left: 45px;
+
+
+        &[placeholder] {
+          text-overflow: ellipsis;
+        }
       }
     }
   }
+}
+
+input::-webkit-input-placeholder {
+  color: darken($secondary, 75%);
+}
+
+@media (max-width: 768px) {
+  .header {
+    &__row {
+
+      &--topnav {
+        display: none;
+      }
+
+      &--theme {
+        background-color: $primary;
+        padding: 5px;
+      }
+    }
+
+    &__cell {
+
+      &--search {
+        padding-left: 8px;
+        width: 95%;
+        height: 50px;
+        margin: 3px 0px;
+      }
+    }
+  }
+}
+
+.topnav-dropdown {
+  background: $gray-100;
+  width: 85px;
+  border: none;
+  transform: translate3d(48px, 35px, 0px) !important;
+}
+
+.topnav-dropdown-items {
+  padding-left: 12px;
+}

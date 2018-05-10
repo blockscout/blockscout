@@ -1,0 +1,43 @@
+<div class="panels container__subsection">
+  <div class="panels__container panels__container--title">
+    <%= link(gettext("View All"), to: block_path(@conn, :index, Gettext.get_locale), class: "button button--secondary button--xsmall u-float-right") %>
+    <h2 class="panels__title"><%= gettext "Blocks" %></h2>
+  </div>
+  <table class="table table-font">
+    <thead>
+      <th><%= gettext "Height" %></th>
+      <th><%= gettext "Age" %></th>
+      <th><%= gettext "TXNs" %></th>
+      <th><%= gettext "Gas" %></th>
+      <th><%= gettext "Validator" %></th>
+    </thead>
+    <tbody>
+      <tr>
+        <td colspan="5">
+          <i class="fas fa-spinner fa-pulse"></i>
+          Coming soon
+        </td>
+      </tr>
+      <%= for block <- @chain.blocks do %>
+      <tr>
+        <td>
+          <img src="<%= static_path(@conn, "/images/block.svg") %>" />
+          <%= link(block.number,to: block_path(@conn, :show, @conn.assigns.locale, block.number)) %>
+        </td>
+        <td><%= block.timestamp |> Timex.from_now %></td>
+        <td><%= block.transactions |> Enum.count %></td>
+        <td><%= block.gas_used |> Cldr.Number.to_string! %></td>
+        <td>
+          <i class="fa fa-address-card"></i>
+          <%= link to: block_path(@conn, :show, @conn.assigns.locale, block.number),
+              "data-toggle": "tooltip",
+              "data-placement": "top",
+              title: block.miner do %>
+            <%= String.slice(block.miner, 0..3) %> <i class="fas fa-ellipsis-v"></i> <%= String.slice(block.miner, -4..-1) %>
+          <% end %>
+        </td>
+      </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

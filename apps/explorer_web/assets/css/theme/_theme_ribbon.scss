@@ -1,0 +1,144 @@
+.theme__ribbon {
+  width: 155px;
+  height: 160px;
+  position: absolute;
+  right: 8%;
+  color: white;
+  padding: 10px;
+  z-index: 9999;
+  perspective: 800px;
+  backface-visibility: hidden;
+  outline: 1px solid transparent;
+
+  @media (max-width: 890px) {
+    right: 1%;
+  }
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+
+  &--logo {
+    width: 100%;
+    padding: 35px 15px;
+  }
+
+  &--social {
+    display: flex;
+    position: absolute;
+    bottom: 0;
+    margin-bottom: 2px;
+    justify-content: center;
+    width: 100%;
+
+    &-icons {
+      display: flex;
+      font-size: 15px;
+      padding: 8px;
+      color: lighten($primary, 25%);
+      justify-content: space-between;
+    }
+
+    &-divider {
+      width: 1px;
+      padding: 0px !important;
+      background: lighten($primary, 25%);
+    }
+  }
+}
+
+.flex {
+  display: flex;
+  justify-content: center;
+  position: absolute;
+  bottom: 0;
+  margin-left: 8px;
+}
+
+
+//Ribbon FLip Syles
+
+.card {
+    width: 100%;
+    height: 100%;
+    transition: all .5s;
+    backface-visibility: hidden;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    outline: 1px solid transparent;
+
+}
+
+.front {
+    z-index: 2;
+    background-color:  $primary;
+    outline: 1px solid transparent;
+    box-shadow: 0 2px 2px 0 rgba(#212529, 0.16),
+                0 0px 2px 0 rgba(#212529, 0.12);
+}
+
+.back {
+    z-index: 1;
+    transform: rotateY(-180deg);
+    background-color:  $primary;
+    outline: 1px solid transparent;
+    box-shadow: 0 2px 2px 0 rgba(#212529, 0.16),
+                0 0px 2px 0 rgba(#212529, 0.12);
+
+    & .switch-network {
+      font-size: 12px;
+      padding: 3px;
+      background-color: lighten($primary, 25%);
+      width: 115px;
+    }
+
+    & .switch-network-menu {
+      width: 115px;
+    }
+
+    & .switch-network-item {
+      padding: 3px 5px;
+    }
+
+    & .back-arrow {
+      position: absolute;
+      bottom: 0;
+      margin: 0px 0px 10px -10px;
+    }
+}
+
+.rotatecard, .rotatecardback{
+  z-index: 3;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0px;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.flipped{
+  z-index: 1;
+  transform: rotateY(180deg);
+  backface-visibility: hidden;
+  outline: 1px solid transparent;
+}
+
+.backflip {
+  z-index: 2;
+  transform: rotateY(0deg);
+  transition: all .5s;
+  outline: 1px solid transparent;
+}
+
+.change-color svg {
+  width: 20px;
+  height: 20px;
+
+path {
+  fill: $primary;
+  }
+}

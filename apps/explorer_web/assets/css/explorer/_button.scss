@@ -4,7 +4,7 @@
   text-align: center;
   text-decoration: none;
   white-space:  nowrap;
-  padding: 4px 10px;
+  padding: 8px 10px;
   border-radius: .14589803rem;
 
   &--primary {
@@ -28,23 +28,23 @@
   }
 
   &--secondary {
-    border: 1px solid $gray-500;
-    color: $gray-600;
+    border: 1px solid $primary;
+    color: $primary;
     -webkit-transition: background-color .25s;
     transition: background-color .25s;
     font-weight: 400;
 
     &:hover,
     &:focus {
-      background-color: explorer-color("gray", "400");
-      color: explorer-color("gray", "900");;
+      background-color: $primary;
+      color: $white;
       text-decoration: none;
       outline: none !important;
     }
   }
 
   &--tertiary {
-    background-color: $gray-500;
+    border: 1px solid $primary;
     color: $gray-800;
     -webkit-transition: background-color .25s, color .25s;
     transition: background-color .25s, color .25s;

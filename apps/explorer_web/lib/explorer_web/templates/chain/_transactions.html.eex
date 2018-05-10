@@ -1,0 +1,47 @@
+<div class="panels container__subsection">
+  <div class="panels__container panels__container--title">
+    <%= link(gettext("View All"), to: transaction_path(@conn, :index, Gettext.get_locale), class: "button button--secondary button--xsmall u-float-right") %>
+    <h2 class="panels__title"><%= gettext "Transactions" %></h2>
+  </div>
+  <table class="table table-font">
+    <thead>
+      <th><%= gettext "TX Hash" %></th>
+      <th><%= gettext "From" %></th>
+      <th><%= gettext "To" %></th>
+      <th><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
+      <th><%= gettext "Age" %></th>
+    </thead>
+    <tbody>
+      <%= for transaction <- @chain.transactions do %>
+      <tr>
+        <td>
+          <%= link(transaction.hash |> String.slice(2..7),to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.hash),
+              "data-toggle": "tooltip",
+              "data-placement": "top",
+              title: transaction.hash) %>
+        </td>
+        <td class="">
+          <i class="fa fa-address-card"></i>
+          <%= link to: address_path(@conn, :show, @conn.assigns.locale, transaction.from_address.hash),
+              "data-toggle": "tooltip",
+              "data-placement": "top",
+              title: transaction.from_address.hash do %>
+            <%= String.slice(transaction.from_address.hash, 0..3) %> <i class="fas fa-ellipsis-v"></i> <%= String.slice(transaction.from_address.hash, -4..-1) %>
+          <% end %>
+        </td>
+        <td>
+          <i class="fa fa-address-card"></i>
+          <%= link to: address_path(@conn, :show, @conn.assigns.locale, transaction.to_address.hash),
+              "data-toggle": "tooltip",
+              "data-placement": "top",
+              title: transaction.to_address.hash do %>
+            <%= String.slice(transaction.to_address.hash, 0..3) %> <i class="fas fa-ellipsis-v"></i> <%= String.slice(transaction.to_address.hash, -4..-1) %>
+          <% end %>
+        </td>
+        <td><%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> </td>
+        <td><%= transaction.block.timestamp |> Timex.from_now() %></td>
+      </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

@@ -1,12 +1,16 @@
-%dot {
-  display: inline-block;
-  height: map-get(map-get($explorer-typography-styles, "body1"), "line-height") / 4;
-  width: map-get(map-get($explorer-typography-styles, "body1"), "line-height") / 4;
-  line-height: map-get(map-get($explorer-typography-styles, "body1"), "line-height");
-  border-radius: 50%;
-}
+.transaction {
 
-%dot--pending { background-color: explorer-color("gray", "500"); }
-%dot--succeeded { background-color: explorer-color("green", "500"); }
-%dot--failed { background-color: explorer-color("red", "500"); }
-%dot--warned { background-color: explorer-color("yellow", "500"); }
+  &__dot {
+    display: inline-block;
+    height: 10px;
+    width: 10px ;
+    border-radius: 50%;
+    margin-left: 5px;
+    vertical-align: baseline;
+
+    &--pending { background-color: $gray-500; }
+    &--success { background-color: $success; }
+    &--failed { background-color: $danger; }
+    &--out_of_gas { background-color: $warning; }
+  }
+}

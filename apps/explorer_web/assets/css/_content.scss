@@ -12,7 +12,7 @@
 
 .content-container {
   flex-grow: 1;
-  padding-top: 90px;
+  padding-top: 85px;
 }
 
 .content-header {
@@ -32,8 +32,13 @@
 
 
 @media (min-width: 768px) {
+
   .content-header {
-    width: calc(100% - 200px);
+    width: 100%;
+  }
+
+  .content-container {
+    padding-top: 155px;
   }
 
   .container {

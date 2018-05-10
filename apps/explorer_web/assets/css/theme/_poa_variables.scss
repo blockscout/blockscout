@@ -15,7 +15,7 @@ $gray-200: #e9ecef !default;
 $gray-300: #dee2e6 !default;
 $gray-400: #ced4da !default;
 $gray-500: #adb5bd !default;
-$gray-600: #6c757d !default;
+$gray-600: #cdcdcc !default;
 $gray-700: #495057 !default;
 $gray-800: #343a40 !default;
 $gray-900: #212529 !default;
@@ -35,15 +35,15 @@ $grays: map-merge((
 ), $grays);
 
 $blue:    #4786ff !default;
-$indigo:  #6610f2 !default;
-$purple:  #8940d5 !default;
+$indigo:  #5b33a1 !default;
+$purple:  #9987fc !default;
 $pink:    #e83e8c !default;
 $red:     #dc3545 !default;
 $orange:  #fd7e14 !default;
 $yellow:  #ffc107 !default;
-$green:   #1bb85a !default;
-$teal:    #20c997 !default;
-$cyan:    #17a2b8 !default;
+$green:   #61db97 !default;
+$teal:            !default;
+$cyan:    #90e1d8 !default;
 
 $colors: () !default;
 $colors: map-merge((
@@ -62,8 +62,8 @@ $colors: map-merge((
   "gray-dark":  $gray-800
 ), $colors);
 
-$primary:       $blue !default;
-$secondary:     $gray-600 !default;
+$primary:       $indigo !default;
+$secondary:     $cyan !default;
 $success:       $green !default;
 $info:          $cyan !default;
 $warning:       $yellow !default;
@@ -74,7 +74,7 @@ $dark:          $gray-800 !default;
 $theme-colors: () !default;
 $theme-colors: map-merge((
   "primary":    $primary,
-  "secondary":  $secondary,
+  "secondary":  $cyan,
   "success":    $success,
   "info":       $info,
   "warning":    $warning,
@@ -150,7 +150,7 @@ $body-color:                $gray-900 !default;
 
 $link-color:                theme-color("primary") !default;
 $link-decoration:           none !default;
-$link-hover-color:          darken($link-color, 15%) !default;
+$link-hover-color:          darken(map-get($theme-colors, primary), 15%) !default;
 $link-hover-decoration:     underline !default;
 
 // Paragraphs
@@ -708,13 +708,13 @@ $card-columns-margin:               $card-spacer-y !default;
 // Tooltips
 
 $tooltip-font-size:                 $font-size-sm !default;
-$tooltip-max-width:                 200px !default;
+$tooltip-max-width:                 70ch !default;
 $tooltip-color:                     $white !default;
-$tooltip-bg:                        $black !default;
+$tooltip-bg:                        darken($secondary, 25%) !default;
 $tooltip-border-radius:             $border-radius !default;
-$tooltip-opacity:                   .9 !default;
-$tooltip-padding-y:                 .25rem !default;
-$tooltip-padding-x:                 .5rem !default;
+$tooltip-opacity:                   1 !default;
+$tooltip-padding-y:                 .30rem !default;
+$tooltip-padding-x:                 .6rem !default;
 $tooltip-margin:                    0 !default;
 
 $tooltip-arrow-width:               .8rem !default;

@@ -1,39 +1,38 @@
 <section class="container__section">
   <%= render ExplorerWeb.TransactionView, "overview.html", assigns %>
-
-  <div class="transaction-log">
-    <div class="transaction-log__tabs">
-      <h2 class="transaction__tab">
+  <div>
+    <ul class="nav nav-tabs">
+      <li class="nav-item">
         <%= link(
               gettext("Internal Transactions"),
-              class: "transaction__link",
-              to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction)
+              class: "nav-link",
+              to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction.hash)
             ) %>
-      </h2>
-      <h2 class="transaction__tab transaction__tab--active">
+      </li>
+      <li class="nav-item">
         <%= link(
               gettext("Logs"),
-              class: "transaction__link transaction__link--active",
-              to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction)
+              class: "nav-link active",
+              to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction.hash)
             ) %>
-      </h2>
-    </div>
-
-    <div class="transaction-log__container">
+      </li>
+    </ul>
+  </div>
+  <div class="panels container__subsection">
+    <div class="panels__container">
       <%= if length(@logs.entries) > 0 do %>
-        <table class="transaction-log__table">
+        <table class="table table-responsive-sm table-font">
           <thead>
-            <th class="transaction-log__column-header"><%= gettext "Address" %></th>
-            <th class="transaction-log__column-header"><%= gettext "Topic" %></th>
+            <th><%= gettext "Address" %></th>
+            <th><%= gettext "Topic" %></th>
           </thead>
           <%= for log <- @logs.entries do %>
             <tgroup>
               <tr>
                 <td>
                   <%= link(
-                        log.address,
-                        class: "transaction-log__link",
-                        to: address_path(@conn, :show, @conn.assigns.locale, log.address)
+                        log.address.hash,
+                        to: address_path(@conn, :show, @conn.assigns.locale, log.address.hash)
                       ) %>
                 </td>
                 <td><%= log.first_topic %></td>

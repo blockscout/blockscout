@@ -1,12 +1,11 @@
 .chain {
   @extend %paper;
+  justify-conntent: space-around;
+  align-items: flex-start;
   padding: explorer-size(0) 0;
 
   &__container {
-    flex: 1;
     text-align: center;
-    &--secondary { display: none; }
-    &--tertiary { display: none; }
   }
 
   &__image {
@@ -16,10 +15,11 @@
   }
 
   &__title {
-    @include explorer-typography("caption");
-    &--data { color: explorer-color("blue", "500"); }
+    font-size: 13px;
+    line-height: 24px;
   }
 }
+
 
 .container__stats {
   @extend %paper;
@@ -37,6 +37,20 @@
     margin-bottom: explorer-size(-2);
     text-align: center;
   }
+
+  svg {
+    width: 30px;
+  }
+
+  path {
+    fill: $primary;
+  }
+
+  .stroke {
+    stroke: $primary;
+  }
+
+
 }
 
 .graph__squares {
@@ -45,37 +59,29 @@
   display: inline-block;
 
   &--price {
-    background-color: explorer-color("blue", "500");
+    background-color: $primary;
   }
 
   &--mcap {
-    background-color: explorer-color("gray", "500");
+    background-color: $secondary;
   }
 }
 
-.flex {
+.graph-flex {
+  font-size: 12px;
   display: flex;
   justify-content: space-between;
-}
-
-@media (min-width: $explorer-breakpoint-sm) {
-  .chain {
-    &__image {
-      height: explorer-size(1);
-    }
-
-    &__container {
-      &--secondary { display: block; }
-    }
-  }
+  margin-top: 25px;
+  color: $gray-500;
 }
 
 @media (min-width: $explorer-breakpoint-md) {
 
   .container__stats {
-    width: 18%;
+    width: 15%;
     flex-direction: column;
     align-content: space-between;
+    color: $gray-500;
 
     img {
       display: inline-block;
@@ -95,30 +101,6 @@
 
     &__container {
       &--secondary { display: none; }
-    }
-  }
-}
-
-@media (min-width: $explorer-breakpoint-lg) {
-  .chain {
-    &__image {
-      height: explorer-size(1);
-    }
-
-    &__container {
-      &--secondary { display: block; }
-    }
-  }
-}
-
-@media (min-width: $explorer-breakpoint-xl) {
-  .chain {
-    &__image {
-      height: explorer-size(1);
-    }
-
-    &__container {
-      &--tertiary { display: block; }
     }
   }
 }

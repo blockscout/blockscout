@@ -1,25 +1,26 @@
-<section class="container__section block">
+<section class="container__section">
   <%= render ExplorerWeb.AddressView, "overview.html", assigns %>
-
-  <div class="address__container">
-    <div class="address__tabs">
-      <h2 class="address__tab address__tab--active">
+  <div>
+    <ul class="nav nav-tabs">
+      <li class="nav-item">
         <%= link(
               gettext("Transactions"),
-              class: "address__link address__link--active",
+              class: "nav-link active",
               to: address_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
             ) %>
-      </h2>
-      <h2 class="address__tab address__tab">
+      </li>
+      <li class="nav-item">
         <%= link(
               gettext("Internal Transactions"),
-              class: "address__link address__link",
+              class: "nav-link",
               "data-test": "internal_transactions_tab_link",
               to: address_internal_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
             ) %>
-      </h2>
-    </div>
-    <div class="dropdown u-float-right u-push-sm-right u-push-sm-bottom">
+      </li>
+    </ul>
+  </div>
+  <div class="panels container__subsection">
+    <div class="dropdown u-float-right u-push-sm">
       <button data-test="filter_dropdown" class="button button--secondary button--xsmall dropdown-toggle" type="button"
               id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         Filter: <%= format_current_filter(@filter) %>
@@ -57,72 +58,52 @@
             ) %>
       </div>
     </div>
-    <div class="transactions__container">
-      <table class="transactions__table">
-        <thead class="transactions__header">
+    <div class="panels__container">
+      <table class="table table-responsive-sm table-font">
+        <thead>
           <tr>
             <th class="transactions__column-header transactions__column-header--status">
               <span class="transactions__column-title transactions__column-title--status"><%= gettext "Status" %></span>
             </th>
-            <th class="transactions__column-header"><%= gettext "Hash" %></th>
-            <th class="transactions__column-header transactions__column-header--optional"><%= gettext "Block" %></th>
-            <th class="transactions__column-header"><%= gettext "Age" %></th>
-            <th class="transactions__column-header transactions__column-header--optional"><%= gettext "From" %></th>
-            <th class="transactions__column-header transactions__column-header--optional"><%= gettext "To" %></th>
-            <th class="transactions__column-header"><%= gettext "Value" %></th>
-            <th class="transactions__column-header"><%= gettext "Fee" %></th>
+            <th><%= gettext "Hash" %></th>
+            <th><%= gettext "Block" %></th>
+            <th><%= gettext "Age" %></th>
+            <th><%= gettext "From" %></th>
+            <th><%= gettext "To" %></th>
+            <th><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
+            <th><%= gettext "Fee" %></th>
           </tr>
         </thead>
         <tbody>
           <%= for transaction <- @page.entries do %>
-            <tr class="transactions__row">
-              <td class="transactions__column transactions__column--status">
-                <div class="transactions__dot transactions__dot--<%= status(transaction) %>"></div>
-              </td>
-              <td class="transactions__column transactions__column--hash">
-                <div class="transactions__hash">
-                  <%= link(
-                        hash(transaction),
-                        to: transaction_path(@conn, :show, @conn.assigns.locale, transaction),
-                        class: "transactions__link transactions__link--truncated transactions__link--long-hash",
-                        "data-test": "transaction_hash"
-                      ) %>
-                </div>
-              </td>
-              <td class="transactions__column transactions__column--block transactions__column--optional">
+            <tr>
+              <td><div class="transaction__dot transaction__dot--<%= status(transaction) %>"></div></td>
+              <td><%= link(transaction.hash |> String.slice(0..7),to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.hash), "data-test": "transaction_hash") %></td>
+              <td>
                 <%= link(
-                      block(transaction),
-                      class: "transactions__link",
-                      to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
+                      transaction.block.number,
+                      to: block_path(@conn, :show, @conn.assigns.locale, transaction.block.number)
                     ) %>
               </td>
-              <td class="transactions__column transactions__column--age">
-                <%= transaction.block.timestamp |> Timex.from_now %>
+              <td><%= transaction.block.timestamp |> Timex.from_now %></td>
+              <td>
+                <%= link to: address_path(@conn, :show, @conn.assigns.locale, transaction.from_address.hash),
+                    "data-toggle": "tooltip",
+                    "data-placement": "top",
+                    title: transaction.from_address.hash do %>
+                  <%= String.slice(transaction.from_address.hash, 0..3) %> <i class="fas fa-ellipsis-v"></i> <%= String.slice(transaction.from_address.hash, -4..-1) %>
+                <% end %>
               </td>
-              <td class="transactions__column transactions__column--from transactions__column--optional">
-                <div class="transactions__hash">
-                  <%= link(
-                        from_address(transaction),
-                        class: "transactions__link transactions__link--truncated transactions__link--hash",
-                        to: address_path(@conn, :show, @conn.assigns.locale, transaction.from_address)
-                      ) %>
-                </div>
+              <td>
+                <%= link to: address_path(@conn, :show, @conn.assigns.locale, transaction.to_address.hash),
+                    "data-toggle": "tooltip",
+                    "data-placement": "top",
+                    title: transaction.to_address.hash do %>
+                  <%= String.slice(transaction.to_address.hash, 0..3) %> <i class="fas fa-ellipsis-v"></i> <%= String.slice(transaction.to_address.hash, -4..-1) %>
+                <% end %>
               </td>
-              <td class="transactions__column transactions__column--to transactions__column--optional">
-                <div class="transactions__hash">
-                  <%= link(
-                        to_address(transaction),
-                        class: "transactions__link transactions__link--truncated transactions__link--hash",
-                        to: address_path(@conn, :show, @conn.assigns.locale, transaction.to_address)
-                      ) %>
-                </div>
-              </td>
-              <td class="transactions__column transactions__column--value">
-                <%= ExplorerWeb.TransactionView.value(transaction) %>
-              </td>
-              <td class="transactions__column transactions__column--value">
-                <%= ExplorerWeb.TransactionView.fee(transaction) %>
-              </td>
+              <td><%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %></td>
+              <td><%= ExplorerWeb.TransactionView.fee(transaction) %></td>
             </tr>
           <% end %>
         </tbody>

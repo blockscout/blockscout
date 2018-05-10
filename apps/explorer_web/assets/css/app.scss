@@ -19,19 +19,34 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "node_modules/bootstrap/scss/mixins";
 @import "node_modules/bootstrap/scss/root";
 @import "node_modules/bootstrap/scss/reboot";
+@import "node_modules/bootstrap/scss/grid";
 
 // Bootstrap Components
 @import "node_modules/bootstrap/scss/dropdown";
 @import "node_modules/bootstrap/scss/transitions";
+@import "node_modules/bootstrap/scss/tables";
+@import "node_modules/bootstrap/scss/nav";
+// @import "node_modules/bootstrap/scss/tooltip";
+
+//Custom theme
+@import "theme/theme_ribbon";
+@import "theme/fonts";
 
 // Custom SCSS
 @import "content";
-@import "theme/fonts";
 @import "utilities";
 @import "typography";
+@import "components/panels";
+@import "components/header";
 @import "components/sidebar";
+@import "components/nav_tabs";
+@import "components/chain";
+@import "components/dot";
+@import "components/pagination";
 @import "explorer/button";
 @import "explorer/filter";
+@import "explorer/table";
+@import "tooltip";
 
 :export {
   primary: $primary;

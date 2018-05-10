@@ -1,0 +1,53 @@
+<div id="sidebar--container">
+  <nav id="sidebar">
+    <div class="sidebar-header">
+      <%= link to: chain_path(@conn, :show) do %>
+        <img class="" src="<%= static_path(@conn, "/images/logo.svg") %>" />
+      <% end %>
+    </div>
+    <div class="menu-items">
+      <%= link to: block_path(@conn, :index, Gettext.get_locale), class: "header__link" do %>
+        <div tabindex="0" class="icon-locate">
+            <img class="" src="<%= static_path(@conn, "/images/block.svg") %>" />
+            <%= gettext("Blocks") %>
+        </div>
+      <% end %>
+      <div tabindex="0" class="icon-locate">
+        <a href="#pageSubmenu" data-toggle="collapse" aria-expanded="false">
+          <img class="" src="<%= static_path(@conn, "/images/transaction.svg") %>" />
+          <%= gettext("Transactions") %>
+          <i class="fa fa-caret-down"></i>
+        </a>
+        <ul class="collapse list-unstyled" id="pageSubmenu">
+          <li><%= link(gettext("Validated"), to: transaction_path(@conn, :index, Gettext.get_locale)) %></li>
+          <li><%= link(gettext("Pending"), to: pending_transaction_path(@conn, :index, Gettext.get_locale)) %></li>
+        </ul>
+      </div>
+      <div class="" align="right">
+        <a href="https://www.facebook.com/PoaNetwork/" target="_blank">
+          <div class="theme__ribbon--social-icons">
+            <i class="fab fa-facebook-f"></i>
+          </div>
+        </a>
+        <a href="https://www.instagram.com/PoaNetwork/" target="_blank">
+          <div class="theme__ribbon--social-icons">
+            <i class="fab fa-instagram"></i>
+          </div>
+        </a>
+        <a href="https://www.twitter.com/PoaNetwork/" target="_blank">
+          <div class="theme__ribbon--social-icons">
+            <i class="fab fa-twitter"></i>
+          </div>
+        </a>
+        <a href="https://www.twitter.com/PoaNetwork/" target="_blank">
+          <div class="theme__ribbon--social-icons">
+            <i class="fab fa-telegram-plane"></i>
+          </div>
+        </a>
+        <div class="theme__ribbon--social-icons u-padding-none">
+          <i class="theme__ribbon--social-divider"></i>
+        </div>
+      </div>
+    </div>
+  </nav>
+</div>

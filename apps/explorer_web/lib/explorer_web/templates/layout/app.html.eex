@@ -11,34 +11,7 @@
   <body>
     <div class="content-wrapper">
       <!-- Sidebar Holder -->
-      <div id="sidebar--container">
-      <nav id="sidebar">
-        <div class="sidebar-header">
-          <%= link to: chain_path(@conn, :show), "data-test": "header_logo" do %>
-            <img class="" src="<%= static_path(@conn, "/images/logo.svg") %>" />
-          <% end %>
-        </div>
-        <div class="menu-items">
-          <%= link to: block_path(@conn, :index, Gettext.get_locale), class: "header__link" do %>
-            <div tabindex="0" class="icon-locate">
-                <img class="" src="<%= static_path(@conn, "/images/block.svg") %>" />
-                <%= gettext("Blocks") %>
-            </div>
-          <% end %>
-          <div tabindex="0" class="icon-locate">
-            <a href="#pageSubmenu" data-toggle="collapse" aria-expanded="false">
-              <img class="" src="<%= static_path(@conn, "/images/transaction.svg") %>" />
-              <%= gettext("Transactions") %>
-              <i class="fa fa-caret-down"></i>
-            </a>
-            <ul class="collapse list-unstyled" id="pageSubmenu">
-              <li><%= link(gettext("Validated"), to: transaction_path(@conn, :index, Gettext.get_locale)) %></li>
-              <li><%= link(gettext("Pending"), to: pending_transaction_path(@conn, :index, Gettext.get_locale)) %></li>
-            </ul>
-          </div>
-        </div>
-      </nav>
-    </div>
+      <%= render ExplorerWeb.LayoutView, "_sidebar.html", assigns %>
       <!-- Page Content Holder -->
       <div id="content">
         <div class="content-header">
@@ -49,27 +22,8 @@
                 <span></span>
             </button>
           </nav>
-          <header class="header">
-            <div class="header__container" cellspacing="0" cellpadding="0" border="0">
-              <div class="header__row">
-                <div class="header__cell header__cell--search">
-                  <%= form_for @conn, chain_path(@conn, :search, Gettext.get_locale), [class: "header__cell--search-form", method: :get, enforce_utf8: false], fn f -> %>
-                    <%= img_tag :svg, src: static_path(@conn, "/images/mgi.svg"), class: "header__cell--search-glass" %>
-                    <%= search_input f, :q, class: 'header__cell--search-input', placeholder: gettext "Search by address, transaction hash, or block number" %>
-                  <% end %>
-                </div>
-                <div class="header__cell header__cell--links u-nudge-top" align="right">
-                  <%= for {service, link} <- configured_social_media_services() do %>
-                      <%= link to: link, class: "header__link", target: "_blank", "data-test": "#{service}_link" do %>
-                        <div class="social-media">
-                          <i class="fab fa-<%= service %>"></i>
-                        </div>
-                    <% end %>
-                  <% end %>
-                </div>
-              </div>
-            </div>
-          </header>
+          <%= render ExplorerWeb.LayoutView, "_ribbon.html", assigns %>
+          <%= render ExplorerWeb.LayoutView, "_topnav.html", assigns %>
         </div>
         <div class="content-container">
           <main>
@@ -79,7 +33,6 @@
           </main>
         </div>
         <%= render ExplorerWeb.LayoutView, "_footer.html", assigns %>
-        <!-- <%= render ExplorerWeb.LayoutView, "_footer.html", assigns %> -->
       </div>
       <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
   </body>

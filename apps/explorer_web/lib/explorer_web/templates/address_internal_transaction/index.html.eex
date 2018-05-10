@@ -1,24 +1,26 @@
 <section class="container__section block">
   <%= render ExplorerWeb.AddressView, "overview.html", assigns %>
-
-  <div class="address__container">
-    <div class="address__tabs">
-      <h2 class="address__tab address__tab">
+  <div>
+    <ul class="nav nav-tabs">
+      <li class="nav-item">
         <%= link(
-          gettext("Transactions"),
-          class: "address__link address__link",
-          to: address_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
-        ) %>
-      </h2>
-      <h2 class="address__tab address__tab--active">
+              gettext("Transactions"),
+              class: "nav-link",
+              to: address_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
+            ) %>
+      </li>
+      <li class="nav-item">
         <%= link(
-          gettext("Internal Transactions"),
-          class: "address__link address__link--active",
-          to: address_internal_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
-        ) %>
-      </h2>
-    </div>
-    <div class="dropdown u-float-right u-push-sm-right u-push-sm-bottom">
+              gettext("Internal Transactions"),
+              class: "nav-link active",
+              "data-test": "internal_transactions_tab_link",
+              to: address_internal_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
+            ) %>
+      </li>
+    </ul>
+  </div>
+  <div class="panels container__subsection">
+    <div class="dropdown u-float-right u-push-sm">
       <button data-test="filter_dropdown" class="button button--secondary button--xsmall dropdown-toggle" type="button"
         id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         Filter: <%= format_current_filter(@filter) %>
@@ -56,45 +58,46 @@
         ) %>
       </div>
     </div>
-    <div class="internal-transaction__container">
+    <div class="panels__container">
       <%= if length(@page.entries) > 0 do %>
-        <table class="internal-transaction__table">
+        <table class="table table-responsive-sm table-font">
           <thead>
-            <th class="internal-transaction__column-header"><%= gettext "Parent Tx Hash" %></th>
-            <th class="internal-transaction__column-header"><%= gettext "Block" %></th>
-            <th class="internal-transaction__column-header"><%= gettext "Age" %></th>
-            <th class="internal-transaction__column-header"><%= gettext "From" %></th>
-            <th class="internal-transaction__column-header"><%= gettext "To" %></th>
-            <th class="internal-transaction__column-header"><%= gettext "Value" %></th>
+            <th><%= gettext "Parent Tx Hash" %></th>
+            <th><%= gettext "Block" %></th>
+            <th><%= gettext "Age" %></th>
+            <th><%= gettext "From" %></th>
+            <th><%= gettext "To" %></th>
+            <th><%= gettext "Value" %></th>
           </thead>
           <%= for internal_transaction <- @page do %>
             <tgroup>
               <tr data-test="internal_transaction">
                 <td>
-                  <%= link(internal_transaction.transaction,
-                    to: transaction_path(@conn, :show, @conn.assigns.locale, internal_transaction.transaction),
-                    class: "transaction-log__link") %>
+                  <%= link(internal_transaction.transaction.hash |> String.slice(2..7),to: transaction_path(@conn, :show, @conn.assigns.locale, internal_transaction.transaction.hash)) %>
                 </td>
                 <td>
-                  <%= link(internal_transaction.transaction.block,
-                    to: block_path(@conn, :show, @conn.assigns.locale, internal_transaction.transaction.block),
-                    class: "transaction-log__link") %>
+                  <%= link(internal_transaction.transaction.block.number,
+                    to: block_path(@conn, :show, @conn.assigns.locale, internal_transaction.transaction.block.number)
+                    ) %>
                 </td>
-                <td class="internal-transaction__to-address"><%= ExplorerWeb.BlockView.age(internal_transaction.transaction.block) %></td>
-                <td class="internal-transaction__from-address">
-                  <%= link(internal_transaction.from_address,
-                    to: address_path(@conn, :show, @conn.assigns.locale, internal_transaction.from_address),
-                    class: "transaction-log__link") %>
-                </td>
-                <td class="internal-transaction__to-address">
-                  <% to_address = internal_transaction.to_address %>
-                  <%= if to_address do %>
-                    <%= link(to_address,
-                      to: address_path(@conn, :show, @conn.assigns.locale, internal_transaction.to_address),
-                      class: "transaction-log__link") %>
+                <td><%= ExplorerWeb.BlockView.age(internal_transaction.transaction.block) %></td>
+                <td>
+                  <%= link to: address_path(@conn, :show, @conn.assigns.locale, internal_transaction.from_address.hash),
+                      "data-toggle": "tooltip",
+                      "data-placement": "top",
+                      title: internal_transaction.from_address.hash do %>
+                    <%= String.slice(internal_transaction.from_address.hash, 0..3) %> <i class="fas fa-ellipsis-v"></i> <%= String.slice(internal_transaction.from_address.hash, -4..-1) %>
                   <% end %>
                 </td>
-                <td class="internal-transaction__to-address"><%= ExplorerWeb.TransactionView.value(internal_transaction) %></td>
+                <td>
+                  <%= link to: address_path(@conn, :show, @conn.assigns.locale, internal_transaction.to_address.hash),
+                      "data-toggle": "tooltip",
+                      "data-placement": "top",
+                      title: internal_transaction.to_address.hash do %>
+                    <%= String.slice(internal_transaction.to_address.hash, 0..3) %> <i class="fas fa-ellipsis-v"></i> <%= String.slice(internal_transaction.to_address.hash, -4..-1) %>
+                  <% end %>
+                </td>
+                <td><%= ExplorerWeb.TransactionView.value(internal_transaction) %></td>
               </tr>
             </tgroup>
           <% end %>
