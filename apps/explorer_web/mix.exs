@@ -70,7 +70,7 @@ defmodule ExplorerWeb.Mixfile do
   defp deps do
     [
       {:cowboy, "~> 1.0"},
-      {:credo, "0.9.1", only: [:dev, :test], runtime: false},
+      {:credo, "0.9.2", only: [:dev, :test], runtime: false},
       {:crontab, "~> 1.1"},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       {:ex_cldr_numbers, "~> 1.0"},
