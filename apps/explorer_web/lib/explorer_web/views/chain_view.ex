@@ -16,8 +16,7 @@ defmodule ExplorerWeb.ChainView do
   def format_exchange_rate(%Token{usd_value: nil}), do: nil
 
   def format_exchange_rate(%Token{usd_value: usd_value}) do
-    usd_value
-    |> Cldr.Number.to_string!(fractional_digits: 6)
+    Cldr.Number.to_string!(usd_value, fractional_digits: 6)
   end
 
   def format_volume_24h(%Token{volume_24h_usd: volume_24h}) do

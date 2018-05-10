@@ -33,7 +33,9 @@ defmodule Explorer.ExchangeRates do
         {symbol, token}
       end
 
-    if store() == :ets, do: :ets.insert(table_name(), records)
+    if store() == :ets do
+      :ets.insert(table_name(), records)
+    end
 
     {:noreply, state}
   end
@@ -67,7 +69,9 @@ defmodule Explorer.ExchangeRates do
       write_concurrency: true
     ]
 
-    if store() == :ets, do: :ets.new(table_name(), table_opts)
+    if store() == :ets do
+      :ets.new(table_name(), table_opts)
+    end
 
     {:ok, %{}}
   end
