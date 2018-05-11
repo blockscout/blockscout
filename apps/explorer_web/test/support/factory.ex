@@ -28,6 +28,9 @@ defmodule ExplorerWeb.Factory do
         where: transaction.block_hash == ^block_hash
       )
 
-    Repo.one!(query) + 1
+    case Repo.one(query) do
+      nil -> 0
+      index -> index + 1
+    end
   end
 end

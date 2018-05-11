@@ -12,38 +12,8 @@ defmodule ExplorerWeb.TransactionController do
     end
   end
 
-  def show(conn, %{"id" => hash_string}) do
-    with {:ok, hash} <- Chain.string_to_transaction_hash(hash_string),
-         {:ok, transaction} <-
-           Chain.hash_to_transaction(
-             hash,
-             necessity_by_association: %{
-               block: :optional,
-               from_address: :optional,
-               to_address: :optional,
-               receipt: :optional
-             }
-           ) do
-      internal_transactions =
-        Chain.transaction_hash_to_internal_transactions(
-          transaction.hash,
-          necessity_by_association: %{from_address: :required, to_address: :optional}
-        )
-
-      render(
-        conn,
-        "show.html",
-        internal_transactions: internal_transactions,
-        max_block_number: max_block_number(),
-        transaction: transaction
-      )
-    else
-      :error ->
-        not_found(conn)
-
-      {:error, :not_found} ->
-        not_found(conn)
-    end
+  def show(conn, %{"id" => id, "locale" => locale}) do
+    redirect(conn, to: transaction_internal_transaction_path(conn, :index, locale, id))
   end
 
   defp do_index(conn, options \\ []) when is_list(options) do
@@ -77,12 +47,5 @@ defmodule ExplorerWeb.TransactionController do
 
   defp last_seen_collated_hash(transactions) do
     List.last(transactions).hash
-  end
-
-  defp max_block_number do
-    case Chain.max_block_number() do
-      {:ok, number} -> number
-      {:error, :not_found} -> 0
-    end
   end
 end

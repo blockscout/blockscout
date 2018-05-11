@@ -22,7 +22,7 @@ defmodule Explorer.Chain.InternalTransaction do
    * `to_address_hash` - hash of the sink of the `value`
    * `trace_address` - list of traces
    * `transaction` - transaction in which this transaction occured
-   * `transaction_id` - foreign key for `transaction`
+   * `transaction_hash` - foreign key for `transaction`
    * `type` - type of internal transaction
    * `value` - value of transfered from `from_address` to `to_address`
   """
