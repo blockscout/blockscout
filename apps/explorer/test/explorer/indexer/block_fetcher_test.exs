@@ -32,6 +32,8 @@ defmodule Explorer.Indexer.BlockFetcherTest do
     test "starts fetching blocks from Genesis" do
       assert Repo.aggregate(Block, :count, :hash) == 0
 
+      start_supervised!({JSONRPC, []})
+      start_supervised!({Task.Supervisor, name: Explorer.Indexer.TaskSupervisor})
       start_supervised!(BlockFetcher)
 
       wait(fn ->
