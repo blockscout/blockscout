@@ -35,7 +35,7 @@
               <%= gettext "Age" %>
             </th>
             <td title="<%= formatted_timestamp(@transaction) %>">
-              <%= formatted_age(@transaction) %>
+            <%= formatted_age(@transaction) %>
             </td>
           </tr>
           <tr>
@@ -43,7 +43,7 @@
               <%= gettext "Value" %>
             </th>
             <td>
-              <%= value(@transaction) %>
+              <%= value(@transaction) %> <%= format_usd(@transaction, @exchange_rate) %>
             </td>
           </tr>
           <tr>
@@ -51,15 +51,15 @@
               <%= gettext "From" %>
             </th>
             <td>
-              <%= if @transaction.from_address do %>
-                <%= link(
-                      @transaction.from_address,
-                      class: "transaction__link",
-                      to: address_path(@conn, :show, @conn.assigns.locale, @transaction.from_address)
-                    ) %>
-              <% else %>
-                <%= gettext "Pending" %>
-              <% end %>
+            <%= if @transaction.from_address do %>
+              <%= link(
+                    @transaction.from_address,
+                    class: "transaction__link",
+                    to: address_path(@conn, :show, @conn.assigns.locale, @transaction.from_address)
+                  ) %>
+            <% else %>
+              <%= gettext "Pending" %>
+            <% end %>
             </td>
           </tr>
           <tr>
@@ -67,15 +67,15 @@
               <%= gettext "To" %>
             </th>
             <td>
-              <%= if @transaction.to_address do %>
-                <%= link(
-                      @transaction.to_address,
-                      class: "transaction__link",
-                      to: address_path(@conn, :show, @conn.assigns.locale, @transaction.to_address)
-                    ) %>
-              <% else %>
-                <%= gettext "Pending" %>
-              <% end %>
+            <%= if @transaction.to_address do %>
+              <%= link(
+                    @transaction.to_address,
+                    class: "transaction__link",
+                    to: address_path(@conn, :show, @conn.assigns.locale, @transaction.to_address)
+                  ) %>
+            <% else %>
+              <%= gettext "Pending" %>
+            <% end %>
             </td>
           </tr>
           <tr>
@@ -88,7 +88,7 @@
           </tr>
         </tbody>
       </table>
-    </div>
+        </div>
     <div class="col-md-6">
       <table class="table table-font table-responsive-sm table-horizontal">
         <tbody>
@@ -96,7 +96,7 @@
             <th scope="row">
               <%= gettext "First Seen" %>
             </th>
-            <% first_seen = first_seen(@transaction) %>
+          <% first_seen = first_seen(@transaction) %>
             <td title="<%= first_seen %>">
               <%= first_seen %>
             </td>
@@ -105,7 +105,7 @@
             <th scope="row">
               <%= gettext "Last Seen" %>
             </th>
-            <% last_seen = last_seen(@transaction) %>
+          <% last_seen = last_seen(@transaction) %>
             <td title="<%= last_seen %>">
               <%= last_seen %>
             </td>
@@ -123,7 +123,7 @@
               <%= gettext "Gas Price" %>
             </th>
             <td title="<%= last_seen %>">
-              <%= gas_price(@transaction, :wei) %>
+            <%= gas_price(@transaction, :wei) %>
               (<%= gas_price(@transaction, :gwei) %>)
             </td>
           </tr>

@@ -4,6 +4,7 @@ defmodule ExplorerWeb.TransactionView do
   alias Cldr.Number
   alias Explorer.Chain
   alias Explorer.Chain.{Block, InternalTransaction, Transaction, Wei}
+  alias Explorer.ExchangeRates.Token
   alias ExplorerWeb.BlockView
 
   def confirmations(%Transaction{block: block}, named_arguments) when is_list(named_arguments) do
@@ -96,10 +97,24 @@ defmodule ExplorerWeb.TransactionView do
 
   ## Options
 
-    * `:include_label` - Boolean. Defaults to true. Flag for displaying unit with value.
+  * `:include_label` - Boolean. Defaults to true. Flag for displaying unit with value.
   """
   def value(%mod{value: value}, opts \\ []) when is_transaction_type(mod) do
     include_label? = Keyword.get(opts, :include_label, true)
     format_wei_value(value, :ether, include_unit_label: include_label?)
+  end
+
+  def format_usd(_, %Token{usd_value: nil}), do: nil
+  def format_usd(%Transaction{value: nil}, _), do: nil
+
+  def format_usd(%Transaction{value: value}, %Token{usd_value: usd_value}) do
+    with {:ok, wei} <- Wei.cast(value),
+         ether <- Wei.to(wei, :ether),
+         usd <- Decimal.mult(ether, usd_value) do
+      currency = gettext("USD")
+      "($#{usd} #{currency})"
+    else
+      _ -> nil
+    end
   end
 end

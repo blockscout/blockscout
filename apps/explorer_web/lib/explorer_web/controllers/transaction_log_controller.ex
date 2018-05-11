@@ -1,7 +1,10 @@
 defmodule ExplorerWeb.TransactionLogController do
   use ExplorerWeb, :controller
 
-  alias Explorer.Chain
+  import ExplorerWeb.TransactionController, only: [coin: 0]
+
+  alias Explorer.{Chain, Market}
+  alias Explorer.ExchangeRates.Token
 
   def index(conn, %{"transaction_id" => transaction_hash_string} = params) do
     with {:ok, transaction_hash} <- Chain.string_to_transaction_hash(transaction_hash_string),
@@ -27,7 +30,8 @@ defmodule ExplorerWeb.TransactionLogController do
         "index.html",
         logs: logs,
         max_block_number: max_block_number(),
-        transaction: transaction
+        transaction: transaction,
+        exchange_rate: Market.get_exchange_rate(coin()) || Token.null()
       )
     else
       :error ->

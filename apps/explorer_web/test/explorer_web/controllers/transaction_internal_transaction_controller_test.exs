@@ -3,6 +3,8 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
 
   import ExplorerWeb.Router.Helpers, only: [transaction_internal_transaction_path: 4]
 
+  alias Explorer.ExchangeRates.Token
+
   describe "GET index/3" do
     test "without transaction", %{conn: conn} do
       conn = get(conn, transaction_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, "nope"))
@@ -40,6 +42,14 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
       assert html_response(conn, 200)
 
       assert Enum.member?(actual_internal_transaction_ids, expected_internal_transaction.id)
+    end
+
+    test "includes USD exchange rate value for address in assigns", %{conn: conn} do
+      transaction = insert(:transaction)
+
+      conn = get(conn, transaction_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, transaction.hash))
+
+      assert %Token{} = conn.assigns.exchange_rate
     end
   end
 end
