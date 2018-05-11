@@ -43,7 +43,8 @@
               <%= gettext "Value" %>
             </th>
             <td>
-              <%= value(@transaction) %> <%= format_usd(@transaction, @exchange_rate) %>
+              <div><%= value(@transaction) %> </div>
+              <div><%= format_usd(@transaction, @exchange_rate) %></div>
             </td>
           </tr>
           <tr>

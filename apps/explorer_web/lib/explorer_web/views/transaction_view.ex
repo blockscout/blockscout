@@ -112,7 +112,7 @@ defmodule ExplorerWeb.TransactionView do
          ether <- Wei.to(wei, :ether),
          usd <- Decimal.mult(ether, usd_value) do
       currency = gettext("USD")
-      "($#{usd} #{currency})"
+      "$#{usd} #{currency}"
     else
       _ -> nil
     end
