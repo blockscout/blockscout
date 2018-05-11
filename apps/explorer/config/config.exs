@@ -7,7 +7,7 @@ use Mix.Config
 
 config :explorer, :indexer,
   block_rate: 5_000,
-  debug_logs: !!System.get_env("DEBUG_LOGS")
+  debug_logs: !!System.get_env("DEBUG_INDEXER")
 
 # General application configuration
 config :explorer,
