@@ -37,11 +37,6 @@ defmodule Explorer.Market.History.Source.CryptoCompare do
     configured_url || "https://min-api.cryptocompare.com"
   end
 
-  @spec configured_coin :: String.t()
-  defp configured_coin do
-    Application.get_env(:explorer, :coin)
-  end
-
   @spec date(unix_timestamp()) :: Date.t()
   defp date(unix_timestamp) do
     unix_timestamp
@@ -65,7 +60,7 @@ defmodule Explorer.Market.History.Source.CryptoCompare do
   @spec history_url(non_neg_integer()) :: String.t()
   defp history_url(previous_days) do
     query_params = %{
-      "fsym" => configured_coin(),
+      "fsym" => Explorer.coin(),
       "limit" => previous_days,
       "tsym" => "USD"
     }

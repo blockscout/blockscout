@@ -48,8 +48,4 @@ defmodule ExplorerWeb.TransactionController do
   defp last_seen_collated_hash(transactions) do
     List.last(transactions).hash
   end
-
-  def coin do
-    Application.get_env(:explorer, :coin)
-  end
 end

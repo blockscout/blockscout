@@ -5,7 +5,7 @@ defmodule ExplorerWeb.AddressInternalTransactionController do
 
   use ExplorerWeb, :controller
 
-  import ExplorerWeb.AddressController, only: [coin: 0, transaction_count: 1]
+  import ExplorerWeb.AddressController, only: [transaction_count: 1]
 
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
@@ -31,7 +31,7 @@ defmodule ExplorerWeb.AddressInternalTransactionController do
         conn,
         "index.html",
         address: address,
-        exchange_rate: Market.get_exchange_rate(coin()) || Token.null(),
+        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
         page: page,
         transaction_count: transaction_count(address)

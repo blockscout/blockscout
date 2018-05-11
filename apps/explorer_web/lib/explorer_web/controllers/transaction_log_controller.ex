@@ -1,8 +1,6 @@
 defmodule ExplorerWeb.TransactionLogController do
   use ExplorerWeb, :controller
 
-  import ExplorerWeb.TransactionController, only: [coin: 0]
-
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
 
@@ -31,7 +29,7 @@ defmodule ExplorerWeb.TransactionLogController do
         logs: logs,
         max_block_number: max_block_number(),
         transaction: transaction,
-        exchange_rate: Market.get_exchange_rate(coin()) || Token.null()
+        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
       )
     else
       :error ->

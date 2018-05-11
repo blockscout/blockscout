@@ -12,7 +12,7 @@ defmodule ExplorerWeb.ChainController do
       "show.html",
       chain: Statistics.fetch(),
       market_history_data: Market.fetch_recent_history(30),
-      exchange_rate: Market.get_exchange_rate(coin()) || Token.null()
+      exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
     )
   end
 
@@ -27,10 +27,6 @@ defmodule ExplorerWeb.ChainController do
       {:error, :not_found} ->
         not_found(conn)
     end
-  end
-
-  defp coin do
-    Application.get_env(:explorer, :coin)
   end
 
   defp redirect_search_results(conn, %Address{} = item) do
