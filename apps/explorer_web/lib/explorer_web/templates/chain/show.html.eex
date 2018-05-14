@@ -1,50 +1,38 @@
 <section>
   <section class="container__section container__section--partitioned">
-    <div class="chain container__subsection">
-      <div class="chain__container">
-        <img class="chain__image" src="<%= static_path(@conn, "/images/blocks.svg") %>" />
-        <div class="chain__title"><%= gettext("Skipped") %></div>
-        <div class="chain__title chain__title--data"><%= @chain.skipped_blocks |> Cldr.Number.to_string! %></div>
-      </div>
-      <div class="chain__container">
-        <img class="chain__image" src="<%= static_path(@conn, "/images/last_block.svg") %>" />
-        <div class="chain__title"><%= gettext("Lag") %></div>
-        <div class="chain__title chain__title--data"><%= @chain.lag |> Timex.format_duration(:humanized) %></div>
-      </div>
-      <div class="chain__container chain__container--secondary">
-        <img class="chain__image" src="<%= static_path(@conn, "/images/average_time.svg") %>" />
-        <div class="chain__title"><%= gettext("BPM") %></div>
-        <div class="chain__title chain__title--data"><%= @chain.block_velocity |> Cldr.Number.to_string! %></div>
-      </div>
-      <div class="chain__container">
-        <img class="chain__image" src="<%= static_path(@conn, "/images/transactions.svg") %>" />
-        <div class="chain__title"><%= gettext("TPM") %></div>
-        <div class="chain__title chain__title--data"><%= @chain.transaction_velocity |> Cldr.Number.to_string! %></div>
-      </div>
-    </div>
-    <div class="chain container__subsection">
-      <div class="chain__container">
+    <div class="container__stats">
+      <div>
         <img class="chain__image" src="<%= static_path(@conn, "/images/blocks.svg") %>" />
         <div class="chain__title"><%= gettext("Block") %></div>
         <div class="chain__title chain__title--data">#<%= @chain.number %></div>
       </div>
-      <div class="chain__container">
-        <img class="chain__image" src="<%= static_path(@conn, "/images/last_block.svg") %>" />
+      <div>
+        <img class="" src="<%= static_path(@conn, "/images/last_block.svg") %>" />
         <div class="chain__title"><%= gettext("Last Block") %></div>
         <div class="chain__title chain__title--data"><%= @chain.timestamp |> Timex.from_now() %></div>
       </div>
-      <div class="chain__container chain__container--secondary">
-        <img class="chain__image" src="<%= static_path(@conn, "/images/average_time.svg") %>" />
-        <div class="chain__title"><%= gettext("Average Block Time") %></div>
-        <div class="chain__title chain__title--data">
-          <%= @chain.average_time |> Timex.format_duration(:humanized) %>
-        </div>
+      <div>
+        <img class="" src="<%= static_path(@conn, "/images/average_time.svg") %>" />
+        <div class=""><%= gettext("Avg Block Time") %></div>
+        <%= @chain.average_time |> Timex.format_duration(:humanized) %>
       </div>
-      <div class="chain__container">
-        <img class="chain__image" src="<%= static_path(@conn, "/images/transactions.svg") %>" />
-        <div class="chain__title"><%= gettext("Transactions") %></div>
-        <div class="chain__title chain__title--data">
-          <%= gettext("%{count} per day", count: Cldr.Number.to_string!(@chain.transaction_count)) %>
+    </div>
+    <div class="chain container__subsection u-push-sm-left">
+      <canvas data-chart="marketHistoryChart" data-current_exchange_rate ='<%= @exchange_rate.usd_value %>' data-available_supply='<%= @exchange_rate.available_supply %>' data-market_history_data='<%=raw encode_market_history_data(@market_history_data) %>' width="400" height="200"></canvas>
+      <div class="flex">
+        <div class="u-push-md-left">
+          <div class="graph__squares graph__squares--price"></div>
+          <%= gettext "Price" %> </br>
+          $<%= format_exchange_rate(@exchange_rate) %> <%= gettext "USD" %>
+        </div>
+        <div>
+          <div class="graph__squares graph__squares--mcap"></div>
+          <%= gettext "Market Cap" %> </br>
+          $<%= format_market_cap(@exchange_rate) %> <%= gettext "USD" %>
+        </div>
+        <div class="u-push-md-right">
+          <%= gettext "24h Volume" %> </br>
+          $<%= format_volume_24h(@exchange_rate) %> <%= gettext "USD" %>
         </div>
       </div>
     </div>

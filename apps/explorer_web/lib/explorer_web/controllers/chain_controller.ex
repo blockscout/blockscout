@@ -2,10 +2,18 @@ defmodule ExplorerWeb.ChainController do
   use ExplorerWeb, :controller
 
   alias Explorer.Chain.{Address, Block, Statistics, Transaction}
+  alias Explorer.ExchangeRates.Token
+  alias Explorer.Market
   alias ExplorerWeb.Chain
 
   def show(conn, _params) do
-    render(conn, "show.html", chain: Statistics.fetch())
+    render(
+      conn,
+      "show.html",
+      chain: Statistics.fetch(),
+      market_history_data: Market.fetch_recent_history(30),
+      exchange_rate: Market.get_exchange_rate(coin()) || Token.null()
+    )
   end
 
   def search(conn, %{"q" => query}) do
@@ -19,6 +27,10 @@ defmodule ExplorerWeb.ChainController do
       {:error, :not_found} ->
         not_found(conn)
     end
+  end
+
+  defp coin do
+    Application.get_env(:explorer, :coin)
   end
 
   defp redirect_search_results(conn, %Address{} = item) do

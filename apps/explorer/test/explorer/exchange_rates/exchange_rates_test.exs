@@ -11,6 +11,16 @@ defmodule Explorer.ExchangeRatesTest do
 
   setup :verify_on_exit!
 
+  setup do
+    # Use TestSource mock and ets table for this test set
+    configuration = Application.get_env(:explorer, Explorer.ExchangeRates)
+    Application.put_env(:explorer, Explorer.ExchangeRates, source: TestSource)
+
+    on_exit(fn ->
+      Application.put_env(:explorer, Explorer.ExchangeRates, configuration)
+    end)
+  end
+
   test "start_link" do
     stub(TestSource, :fetch_exchange_rates, fn -> {:ok, [%Token{}]} end)
     set_mox_global()
@@ -87,13 +97,26 @@ defmodule Explorer.ExchangeRatesTest do
     ExchangeRates.init([])
 
     rates = [
-      %Token{id: "z", symbol: "z"},
-      %Token{id: "a", symbol: "a"}
+      %Token{symbol: "z"},
+      %Token{symbol: "a"}
     ]
 
     expected_rates = Enum.reverse(rates)
-    for rate <- rates, do: :ets.insert(ExchangeRates.table_name(), {rate.id, rate})
+    for rate <- rates, do: :ets.insert(ExchangeRates.table_name(), {rate.symbol, rate})
 
     assert expected_rates == ExchangeRates.list()
+  end
+
+  test "lookup/1" do
+    ExchangeRates.init([])
+
+    z = %Token{symbol: "z"}
+
+    rates = [z, %Token{symbol: "a"}]
+
+    for rate <- rates, do: :ets.insert(ExchangeRates.table_name(), {rate.symbol, rate})
+
+    assert z == ExchangeRates.lookup("z")
+    assert nil == ExchangeRates.lookup("nope")
   end
 end

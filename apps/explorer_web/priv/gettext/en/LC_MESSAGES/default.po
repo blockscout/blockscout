@@ -14,8 +14,8 @@ msgstr ""
 #: lib/explorer_web/templates/address_transaction/index.html.eex:69
 #: lib/explorer_web/templates/block/index.html.eex:30
 #: lib/explorer_web/templates/block_transaction/index.html.eex:99
-#: lib/explorer_web/templates/chain/show.html.eex:71
-#: lib/explorer_web/templates/chain/show.html.eex:110
+#: lib/explorer_web/templates/chain/show.html.eex:59
+#: lib/explorer_web/templates/chain/show.html.eex:98
 #: lib/explorer_web/templates/transaction/index.html.eex:36
 #: lib/explorer_web/templates/transaction/overview.html.eex:37
 msgid "Age"
@@ -24,13 +24,13 @@ msgstr "Age"
 #: lib/explorer_web/templates/address_internal_transaction/index.html.eex:64
 #: lib/explorer_web/templates/address_transaction/index.html.eex:68
 #: lib/explorer_web/templates/block_transaction/index.html.eex:98
-#: lib/explorer_web/templates/chain/show.html.eex:28
-#: lib/explorer_web/templates/chain/show.html.eex:109
+#: lib/explorer_web/templates/chain/show.html.eex:6
+#: lib/explorer_web/templates/chain/show.html.eex:97
 #: lib/explorer_web/templates/transaction/index.html.eex:35
 msgid "Block"
 msgstr "Block"
 
-#: lib/explorer_web/templates/chain/show.html.eex:58
+#: lib/explorer_web/templates/chain/show.html.eex:46
 #: lib/explorer_web/templates/layout/app.html.eex:25
 msgid "Blocks"
 msgstr "Blocks"
@@ -41,21 +41,21 @@ msgstr "%{year} POA Network Ltd. All rights reserved"
 
 #: lib/explorer_web/templates/block/index.html.eex:32
 #: lib/explorer_web/templates/block_transaction/index.html.eex:60
-#: lib/explorer_web/templates/chain/show.html.eex:73
+#: lib/explorer_web/templates/chain/show.html.eex:61
 msgid "Gas Used"
 msgstr "Gas Used"
 
 #: lib/explorer_web/templates/address_transaction/index.html.eex:67
 #: lib/explorer_web/templates/block_transaction/index.html.eex:22
 #: lib/explorer_web/templates/block_transaction/index.html.eex:97
-#: lib/explorer_web/templates/chain/show.html.eex:108
+#: lib/explorer_web/templates/chain/show.html.eex:96
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:34
 #: lib/explorer_web/templates/transaction/index.html.eex:34
 msgid "Hash"
 msgstr "Hash"
 
 #: lib/explorer_web/templates/block/index.html.eex:29
-#: lib/explorer_web/templates/chain/show.html.eex:70
+#: lib/explorer_web/templates/chain/show.html.eex:58
 msgid "Height"
 msgstr "Height"
 
@@ -68,9 +68,8 @@ msgstr "POA Network Explorer"
 #: lib/explorer_web/templates/block/index.html.eex:31
 #: lib/explorer_web/templates/block_transaction/index.html.eex:16
 #: lib/explorer_web/templates/block_transaction/index.html.eex:84
-#: lib/explorer_web/templates/chain/show.html.eex:45
-#: lib/explorer_web/templates/chain/show.html.eex:72
-#: lib/explorer_web/templates/chain/show.html.eex:99
+#: lib/explorer_web/templates/chain/show.html.eex:60
+#: lib/explorer_web/templates/chain/show.html.eex:87
 #: lib/explorer_web/templates/layout/app.html.eex:31
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:12
 #: lib/explorer_web/templates/transaction/index.html.eex:12
@@ -80,7 +79,7 @@ msgstr "Transactions"
 #: lib/explorer_web/templates/address_internal_transaction/index.html.eex:68
 #: lib/explorer_web/templates/address_transaction/index.html.eex:72
 #: lib/explorer_web/templates/block_transaction/index.html.eex:102
-#: lib/explorer_web/templates/chain/show.html.eex:111
+#: lib/explorer_web/templates/chain/show.html.eex:99
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:38
 #: lib/explorer_web/templates/transaction/index.html.eex:39
 #: lib/explorer_web/templates/transaction/overview.html.eex:43
@@ -300,7 +299,7 @@ msgstr ""
 msgid "Lag"
 msgstr ""
 
-#: lib/explorer_web/templates/chain/show.html.eex:33
+#: lib/explorer_web/templates/chain/show.html.eex:11
 msgid "Last Block"
 msgstr ""
 
@@ -412,4 +411,26 @@ msgstr ""
 
 #: lib/explorer_web/templates/address_internal_transaction/index.html.eex:63
 msgid "Parent Tx Hash"
+msgstr ""
+
+#: lib/explorer_web/templates/chain/show.html.eex:34
+msgid "24h Volume"
+msgstr ""
+
+#: lib/explorer_web/templates/chain/show.html.eex:16
+msgid "Avg Block Time"
+msgstr ""
+
+#: lib/explorer_web/templates/chain/show.html.eex:30
+msgid "Market Cap"
+msgstr ""
+
+#: lib/explorer_web/templates/chain/show.html.eex:25
+msgid "Price"
+msgstr ""
+
+#: lib/explorer_web/templates/chain/show.html.eex:26
+#: lib/explorer_web/templates/chain/show.html.eex:31
+#: lib/explorer_web/templates/chain/show.html.eex:35
+msgid "USD"
 msgstr ""

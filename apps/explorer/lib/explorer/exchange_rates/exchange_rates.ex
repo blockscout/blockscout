@@ -31,7 +31,9 @@ defmodule Explorer.ExchangeRates do
         {symbol, token}
       end
 
-    :ets.insert(table_name(), records)
+    if store() == :ets do
+      :ets.insert(table_name(), records)
+    end
 
     {:noreply, state}
   end
@@ -65,7 +67,9 @@ defmodule Explorer.ExchangeRates do
       write_concurrency: true
     ]
 
-    :ets.new(table_name(), table_opts)
+    if store() == :ets do
+      :ets.new(table_name(), table_opts)
+    end
 
     {:ok, %{}}
   end
@@ -79,10 +83,20 @@ defmodule Explorer.ExchangeRates do
   """
   @spec list :: [Token.t()]
   def list do
-    table_name()
-    |> :ets.tab2list()
-    |> Enum.map(fn {_, rate} -> rate end)
-    |> Enum.sort_by(fn %Token{symbol: symbol} -> symbol end)
+    list_from_store(store())
+  end
+
+  @doc """
+  Returns a specific rate from the tracked tickers by symbol
+  """
+  @spec lookup(String.t()) :: Token.t()
+  def lookup(symbol) do
+    if store() == :ets do
+      case :ets.lookup(table_name(), symbol) do
+        [{_key, token} | _] -> token
+        _ -> nil
+      end
+    end
   end
 
   @doc false
@@ -104,5 +118,18 @@ defmodule Explorer.ExchangeRates do
     Task.Supervisor.async_nolink(Explorer.MarketTaskSupervisor, fn ->
       exchange_rates_source().fetch_exchange_rates()
     end)
+  end
+
+  defp list_from_store(:ets) do
+    table_name()
+    |> :ets.tab2list()
+    |> Enum.map(fn {_, rate} -> rate end)
+    |> Enum.sort_by(fn %Token{symbol: symbol} -> symbol end)
+  end
+
+  defp list_from_store(_), do: []
+
+  defp store do
+    config(:store) || :ets
   end
 end

@@ -2,6 +2,7 @@ defmodule Explorer.Factory do
   use ExMachina.Ecto, repo: Explorer.Repo
 
   alias Explorer.Chain.{Address, Block, Hash, InternalTransaction, Log, Receipt, Transaction}
+  alias Explorer.Market.MarketHistory
   alias Explorer.Repo
 
   @dialyzer {:nowarn_function, fields_for: 1}
@@ -68,6 +69,14 @@ defmodule Explorer.Factory do
       third_topic: nil,
       transaction_hash: insert(:transaction).hash,
       type: sequence("0x")
+    }
+  end
+
+  def market_history_factory do
+    %MarketHistory{
+      closing_price: Decimal.new(Enum.random(1..10_000) / 100),
+      opening_price: Decimal.new(Enum.random(1..10_000) / 100),
+      date: Date.utc_today()
     }
   end
 

@@ -29,4 +29,6 @@ defmodule Explorer.ExchangeRates.Token do
         }
 
   defstruct ~w(available_supply btc_value id last_updated market_cap_usd name symbol usd_value volume_24h_usd)a
+
+  def null, do: %__MODULE__{}
 end

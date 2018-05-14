@@ -56,6 +56,16 @@ defmodule ExplorerWeb.ChainControllerTest do
 
       assert(List.first(conn.assigns.chain.transactions).hash == transaction.hash)
     end
+
+    test "returns market history data", %{conn: conn} do
+      today = Date.utc_today()
+      for day <- -40..0, do: insert(:market_history, date: Date.add(today, day))
+
+      conn = get(conn, "/en")
+
+      assert Map.has_key?(conn.assigns, :market_history_data)
+      assert length(conn.assigns.market_history_data) == 30
+    end
   end
 
   describe "GET q/2" do
