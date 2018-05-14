@@ -368,65 +368,24 @@ defmodule Explorer.Chain do
   @doc """
   Converts the `t:t/0` to string representation shown to users.
 
-      iex> Explorer.Chain.hash_to_iodata(
-      ...>   %Explorer.Chain.Hash{
-      ...>     byte_count: 32,
-      ...>     bytes: <<0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b ::
-      ...>              big-integer-size(32)-unit(8)>>
-      ...>   }
-      ...> )
-      [
-        "0x",
-        ['9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b']
-      ]
+      iex> %Explorer.Chain.Hash{
+      ...>   byte_count: 32,
+      ...>   bytes: <<0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b ::
+      ...>            big-integer-size(32)-unit(8)>>
+      ...> } |>
+      ...> Explorer.Chain.hash_to_iodata() |>
+      ...> IO.iodata_to_binary()
+      "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
 
   Always pads number, so that it is a valid format for casting.
 
-      iex> Explorer.Chain.hash_to_iodata(
-      ...>   %Explorer.Chain.Hash{
-      ...>     byte_count: 32,
-      ...>     bytes: <<0x1234567890abcdef :: big-integer-size(32)-unit(8)>>
-      ...>   }
-      ...> )
-      [
-        "0x",
-        [
-          [
-            [
-              [
-                [['000', 48, 48, 48], '000', 48, 48, 48],
-                ['000', 48, 48, 48],
-                '000',
-                48,
-                48,
-                48
-              ],
-              [['000', 48, 48, 48], '000', 48, 48, 48],
-              ['000', 48, 48, 48],
-              '000',
-              48,
-              48,
-              48
-            ],
-            49,
-            50,
-            51,
-            52,
-            53,
-            54,
-            55,
-            56,
-            57,
-            48,
-            97,
-            98,
-            99,
-            100,
-            101,
-            102
-          ]
-        ]
-      ]
+      iex> %Explorer.Chain.Hash{
+      ...>   byte_count: 32,
+      ...>   bytes: <<0x1234567890abcdef :: big-integer-size(32)-unit(8)>>
+      ...> } |>
+      ...> Explorer.Chain.hash_to_iodata() |>
+      ...> IO.iodata_to_binary()
+      "0x0000000000000000000000000000000000000000000000001234567890abcdef"
 
   """
   @spec hash_to_iodata(Hash.t()) :: iodata()
