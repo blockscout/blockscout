@@ -37,7 +37,7 @@ defmodule ExplorerWeb.Mixfile do
   def application do
     [
       mod: {ExplorerWeb.Application, []},
-      extra_applications: extra_applications(Mix.env())
+      extra_applications: extra_applications()
     ]
   end
 
@@ -45,11 +45,6 @@ defmodule ExplorerWeb.Mixfile do
   defp elixirc_paths(:test), do: ["test/support", "test/explorer_web/features/pages"] ++ elixirc_paths()
   defp elixirc_paths(_), do: elixirc_paths()
   defp elixirc_paths, do: ["lib"]
-
-  # Specifies extra applications to start per environment
-  defp extra_applications(:prod), do: [:phoenix_pubsub_redis | extra_applications()]
-
-  defp extra_applications(_), do: extra_applications()
 
   defp extra_applications,
     do: [
@@ -92,7 +87,6 @@ defmodule ExplorerWeb.Mixfile do
       {:phoenix_html, "~> 2.10"},
       {:phoenix_live_reload, "~> 1.0", only: [:dev]},
       {:phoenix_pubsub, "~> 1.0"},
-      {:phoenix_pubsub_redis, "~> 2.1.0", only: [:prod]},
       {:postgrex, ">= 0.0.0"},
       {:scrivener_html, "~> 1.7"},
       # Waiting on https://github.com/smeevil/set_locale/pull/9

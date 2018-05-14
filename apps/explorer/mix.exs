@@ -37,7 +37,7 @@ defmodule Explorer.Mixfile do
   def application do
     [
       mod: {Explorer.Application, []},
-      extra_applications: extra_applications(Mix.env())
+      extra_applications: extra_applications()
     ]
   end
 
@@ -45,11 +45,6 @@ defmodule Explorer.Mixfile do
   defp elixirc_paths(:test), do: ["test/support" | elixirc_paths()]
   defp elixirc_paths(_), do: elixirc_paths()
   defp elixirc_paths, do: ["lib"]
-
-  # Specifies extra applications to start per environment
-  defp extra_applications(:prod), do: [:phoenix_pubsub_redis | extra_applications()]
-
-  defp extra_applications(_), do: extra_applications()
 
   defp extra_applications,
     do: [
