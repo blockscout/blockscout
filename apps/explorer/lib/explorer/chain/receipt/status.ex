@@ -11,8 +11,8 @@ defmodule Explorer.Chain.Receipt.Status do
   @behaviour Ecto.Type
 
   @typedoc """
-  * `:ok` - transaction succeeded
-  * `:error` - transaction failed
+   * `:ok` - transaction succeeded
+   * `:error` - transaction failed
   """
   @type t :: :ok | :error
 

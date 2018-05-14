@@ -13,19 +13,20 @@ defmodule Explorer.JSONRPC.Receipt do
   @type elixir :: %{String.t() => String.t() | non_neg_integer}
 
   @typedoc """
-  * `"contractAddress"` - The contract `t:Explorer.JSONRPC.address/0` created, if the transaction was a contract
-      creation, otherwise `nil`.
-  * `"blockHash"` - `t:Explorer.JSONRPC.hash/0` of the block where `"transactionHash"` was in.
-  * `"blockNumber"` - The block number `t:Explorer.JSONRPC.quanity/0`.
-  * `"cumulativeGasUsed"` - `t:Explorer.JSONRPC.quantity/0` of gas used when this transaction was executed in the block.
-  * `"gasUsed"` - `t:Explorer.JSONRPC.quantity/0` of gas used by this specific transaction alone.
-  * `"logs"` - `t:list/0` of log objects, which this transaction generated.
-  * `"logsBloom"` - `t:Explorer.JSONRPC.data/0` of 256 Bytes for
-      [Bloom filter](https://en.wikipedia.org/wiki/Bloom_filter) for light clients to quickly retrieve related logs.
-  * `"root"` - `t:Explorer.JSONRPC.hash/0`  of post-transaction stateroot (pre-Byzantium)
-  * `"status"` - `t:Explorer.JSONRPC.quantity/0` of either 1 (success) or 0 (failure) (post-Byzantium)
-  * `"transactionHash"` - `t:Explorer.JSONRPC.hash/0` the transaction.
-  * `"transactionIndex"` - `t:Explorer.JSONRPC.quantity/0` for the transaction index in the block.
+   * `"contractAddress"` - The contract `t:Explorer.JSONRPC.address/0` created, if the transaction was a contract
+     creation, otherwise `nil`.
+   * `"blockHash"` - `t:Explorer.JSONRPC.hash/0` of the block where `"transactionHash"` was in.
+   * `"blockNumber"` - The block number `t:Explorer.JSONRPC.quanity/0`.
+   * `"cumulativeGasUsed"` - `t:Explorer.JSONRPC.quantity/0` of gas used when this transaction was executed in the
+     block.
+   * `"gasUsed"` - `t:Explorer.JSONRPC.quantity/0` of gas used by this specific transaction alone.
+   * `"logs"` - `t:list/0` of log objects, which this transaction generated.
+   * `"logsBloom"` - `t:Explorer.JSONRPC.data/0` of 256 Bytes for
+     [Bloom filter](https://en.wikipedia.org/wiki/Bloom_filter) for light clients to quickly retrieve related logs.
+   * `"root"` - `t:Explorer.JSONRPC.hash/0`  of post-transaction stateroot (pre-Byzantium)
+   * `"status"` - `t:Explorer.JSONRPC.quantity/0` of either 1 (success) or 0 (failure) (post-Byzantium)
+   * `"transactionHash"` - `t:Explorer.JSONRPC.hash/0` the transaction.
+   * `"transactionIndex"` - `t:Explorer.JSONRPC.quantity/0` for the transaction index in the block.
   """
   @type t :: %{String.t() => JSONRPC.address() | JSONRPC.data() | JSONRPC.hash() | JSONRPC.quantity() | list | nil}
 

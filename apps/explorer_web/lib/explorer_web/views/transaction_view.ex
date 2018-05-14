@@ -114,7 +114,7 @@ defmodule ExplorerWeb.TransactionView do
 
   ## Options
 
-  * `:include_label` - Boolean. Defaults to true. Flag for displaying unit with value.
+    * `:include_label` - Boolean. Defaults to true. Flag for displaying unit with value.
   """
   def value(%mod{value: value}, opts \\ []) when is_transaction_type(mod) do
     include_label? = Keyword.get(opts, :include_label, true)

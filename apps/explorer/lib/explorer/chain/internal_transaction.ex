@@ -7,22 +7,22 @@ defmodule Explorer.Chain.InternalTransaction do
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
 
   @typedoc """
-  * `call_type` - the type of call.  `nil` when `type` is not `:call`.
-  * `error` - error message when `:call` `type` errors
-  * `from_address` - the source of the `value`
-  * `from_address_hash` - hash of the source of the `value`
-  * `gas` - the amount of gas allowed
-  * `gas_used` - the amount of gas used.  `nil` when a call errors.
-  * `index` - the index of this internal transaction inside the `transaction`
-  * `input` - input bytes to the call
-  * `output` - output bytes from the call.  `nil` when a call errors.
-  * `to_address` - the sink of the `value`
-  * `to_address_hash` - hash of the sink of the `value`
-  * `trace_address` - list of traces
-  * `transaction` - transaction in which this transaction occured
-  * `transaction_id` - foreign key for `transaction`
-  * `type` - type of internal transaction
-  * `value` - value of transfered from `from_address` to `to_address`
+   * `call_type` - the type of call.  `nil` when `type` is not `:call`.
+   * `error` - error message when `:call` `type` errors
+   * `from_address` - the source of the `value`
+   * `from_address_hash` - hash of the source of the `value`
+   * `gas` - the amount of gas allowed
+   * `gas_used` - the amount of gas used.  `nil` when a call errors.
+   * `index` - the index of this internal transaction inside the `transaction`
+   * `input` - input bytes to the call
+   * `output` - output bytes from the call.  `nil` when a call errors.
+   * `to_address` - the sink of the `value`
+   * `to_address_hash` - hash of the sink of the `value`
+   * `trace_address` - list of traces
+   * `transaction` - transaction in which this transaction occured
+   * `transaction_id` - foreign key for `transaction`
+   * `type` - type of internal transaction
+   * `value` - value of transfered from `from_address` to `to_address`
   """
   @type t :: %__MODULE__{
           call_type: CallType.t() | nil,

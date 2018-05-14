@@ -9,14 +9,14 @@ defmodule Explorer.JSONRPC.Log do
   @type elixir :: %{String.t() => String.t() | [String.t()] | non_neg_integer()}
 
   @typedoc """
-  * `"address"` - `t:Explorer.JSONRPC.address/0` from which event originated.
-  * `"blockHash"` - `t:Explorer.JSONRPC.hash/0` of the block this transaction is in.
-  * `"blockNumber"` - `t:Explorer.JSONRPC.quantity/0` for the block number this transaction is in.
-  * `"data"` - Data containing non-indexed log parameter
-  * `"logIndex"` - `t:Explorer.JSONRPC.quantity/0` of the event index positon in the block.
-  * `"topics"` - `t:list/0` of at most 4 32-byte topics.  Topic 1-3 contains indexed parameters of the log.
-  * `"transactionHash"` - `t:Explorer.JSONRPC.hash/0` of the transaction
-  * `"transactionIndex"` - `t:Explorer.JSONRPC.quantity/0` for the index of the transaction in the block.
+   * `"address"` - `t:Explorer.JSONRPC.address/0` from which event originated.
+   * `"blockHash"` - `t:Explorer.JSONRPC.hash/0` of the block this transaction is in.
+   * `"blockNumber"` - `t:Explorer.JSONRPC.quantity/0` for the block number this transaction is in.
+   * `"data"` - Data containing non-indexed log parameter
+   * `"logIndex"` - `t:Explorer.JSONRPC.quantity/0` of the event index positon in the block.
+   * `"topics"` - `t:list/0` of at most 4 32-byte topics.  Topic 1-3 contains indexed parameters of the log.
+   * `"transactionHash"` - `t:Explorer.JSONRPC.hash/0` of the transaction
+   * `"transactionIndex"` - `t:Explorer.JSONRPC.quantity/0` for the index of the transaction in the block.
   """
   @type t :: %{String.t() => String.t() | [String.t()]}
 

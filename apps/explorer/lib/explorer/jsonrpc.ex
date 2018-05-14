@@ -174,14 +174,14 @@ defmodule Explorer.JSONRPC do
   end
 
   @doc """
-  1. POSTs JSON `payload` to `url`
-  2. Decodes the response
-  3. Handles the response
+    1. POSTs JSON `payload` to `url`
+    2. Decodes the response
+    3. Handles the response
 
   ## Returns
 
-  * Handled response
-  * `{:error, reason}` if POST failes
+    * Handled response
+    * `{:error, reason}` if POST failes
   """
   def json_rpc(payload, url) do
     json = encode_json(payload)

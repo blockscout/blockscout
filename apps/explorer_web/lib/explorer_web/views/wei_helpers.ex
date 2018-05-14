@@ -22,9 +22,9 @@ defmodule ExplorerWeb.WeiHelpers do
   The third argument allows for keyword options to be passed for formatting the
   converted number.
 
-  * `:fractional_digits` - Integer. Number of fractional digits to include
-  * `:include_unit_label` - Boolean (Defaults to `true`). Flag for if the unit
-    label should be included in the returned string
+    * `:fractional_digits` - Integer. Number of fractional digits to include
+    * `:include_unit_label` - Boolean (Defaults to `true`). Flag for if the unit
+      label should be included in the returned string
 
   ## Examples
 

@@ -13,9 +13,9 @@ defmodule Explorer.Market.MarketHistory do
   @typedoc """
   The recorded values of the configured coin to USD for a single day.
 
-  * `:closing_price` - Closing price in USD.
-  * `:date` - The date in UTC.
-  * `:opening_price` - Opening price in USD.
+   * `:closing_price` - Closing price in USD.
+   * `:date` - The date in UTC.
+   * `:opening_price` - Opening price in USD.
   """
   @type t :: %__MODULE__{
           closing_price: Decimal.t(),

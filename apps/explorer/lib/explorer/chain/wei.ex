@@ -89,7 +89,7 @@ defmodule Explorer.Chain.Wei do
   @typedoc """
   Short for giga-wei
 
-  * 10<sup>9</sup> wei is one gwei
+  10<sup>9</sup> wei is 1 gwei.
   """
   @type gwei :: Decimal.t()
 

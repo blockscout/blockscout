@@ -25,22 +25,22 @@ defmodule Explorer.Chain.Block do
   @type block_number :: non_neg_integer()
 
   @typedoc """
-  * `difficulty` - how hard the block was to mine.
-  * `gas_limit` - If the total number of gas used by the computation spawned by the transaction, including the original
-      message and any sub-messages that may be triggered, is less than or equal to the gas limit, then the transaction
-      processes. If the total gas exceeds the gas limit, then all changes are reverted, except that the transaction is
-      still valid and the fee can still be collected by the miner.
-  * `gas_used` - The actual `t:gas/0` used to mine/validate the transactions in the block.
-  * `hash` - the hash of the block.
-  * `miner` - the hash of the `t:Explorer.Chain.Address.t/0` of the miner.  In Proof-of-Authority chains, this is the
-      validator.
-  * `nonce` - the hash of the generated proof-of-work.  Not used in Proof-of-Authority chains.
-  * `number` - which block this is along the chain.
-  * `parent_hash` - the hash of the parent block, which should have the previous `number`
-  * `size` - The size of the block in bytes.
-  * `timestamp` - When the block was collated
-  * `total_diffficulty` - the total `difficulty` of the chain until this block.
-  * `transactions` - the `t:Explorer.Chain.Transaction.t/0` in this block.
+   * `difficulty` - how hard the block was to mine.
+   * `gas_limit` - If the total number of gas used by the computation spawned by the transaction, including the
+     original message and any sub-messages that may be triggered, is less than or equal to the gas limit, then the
+     transaction processes. If the total gas exceeds the gas limit, then all changes are reverted, except that the
+     transaction is still valid and the fee can still be collected by the miner.
+   * `gas_used` - The actual `t:gas/0` used to mine/validate the transactions in the block.
+   * `hash` - the hash of the block.
+   * `miner` - the hash of the `t:Explorer.Chain.Address.t/0` of the miner.  In Proof-of-Authority chains, this is the
+     validator.
+   * `nonce` - the hash of the generated proof-of-work.  Not used in Proof-of-Authority chains.
+   * `number` - which block this is along the chain.
+   * `parent_hash` - the hash of the parent block, which should have the previous `number`
+   * `size` - The size of the block in bytes.
+   * `timestamp` - When the block was collated
+   * `total_diffficulty` - the total `difficulty` of the chain until this block.
+   * `transactions` - the `t:Explorer.Chain.Transaction.t/0` in this block.
   """
   @type t :: %__MODULE__{
           difficulty: difficulty(),

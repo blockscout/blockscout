@@ -6,12 +6,12 @@ defmodule Explorer.Chain.InternalTransaction.CallType do
   @behaviour Ecto.Type
 
   @typedoc """
-  * `:call` - call a function in a contract by jumping into the contract's context
-  * `:callcode`
-  * `:delegatecall` - Instead of jumping into the code as with `"call"`, and using the call's contract's context, use
-      the current contract's context with the delegated contract's code.  There's some good chances for finding bugs
-      when fuzzing these if the memory layout differs between the current contract and the delegated contract.
-  * `:staticcall`
+   * `:call` - call a function in a contract by jumping into the contract's context
+   * `:callcode`
+   * `:delegatecall` - Instead of jumping into the code as with `"call"`, and using the call's contract's context, use
+     the current contract's context with the delegated contract's code.  There's some good chances for finding bugs
+     when fuzzing these if the memory layout differs between the current contract and the delegated contract.
+   * `:staticcall`
   """
   @type t :: :call | :callcode | :delegatecall | :staticcall
 

@@ -16,13 +16,13 @@ defmodule Explorer.Chain.Address do
   @type hash :: Hash.t()
 
   @typedoc """
-  * `fetched_balance` - The last fetched balance from Parity
-  * `balance_fetched_at` - the last time `balance` was fetched
-  * `credit` - accumulation of all credits to the address `hash`
-  * `debit` - accumulation of all debits to the address `hash`
-  * `hash` - the hash of the address's public key
-  * `inserted_at` - when this address was inserted
-  * `updated_at` when this address was last updated
+   * `fetched_balance` - The last fetched balance from Parity
+   * `balance_fetched_at` - the last time `balance` was fetched
+   * `credit` - accumulation of all credits to the address `hash`
+   * `debit` - accumulation of all debits to the address `hash`
+   * `hash` - the hash of the address's public key
+   * `inserted_at` - when this address was inserted
+   * `updated_at` when this address was last updated
   """
   @type t :: %__MODULE__{
           fetched_balance: Wei.t(),

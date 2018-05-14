@@ -6,12 +6,12 @@ defmodule Explorer.Chain.InternalTransaction.Type do
   @behaviour Ecto.Type
 
   @typedoc """
-  * `:call`
-  * `:create`
-  * `:suicide`
-  * `:reward`
+   * `:call`
+   * `:create`
+   * `:reward`
+   * `:suicide`
   """
-  @type t :: :call | :create | :suicide | :reward
+  @type t :: :call | :create | :reward | :suicide
 
   @doc """
   Casts `term` to `t:t/0`

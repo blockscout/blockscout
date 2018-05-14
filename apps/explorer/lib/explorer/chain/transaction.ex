@@ -71,27 +71,28 @@ defmodule Explorer.Chain.Transaction do
   @type wei_per_gas :: Wei.t()
 
   @typedoc """
-  * `block` - the block in which this transaction was mined/validated.  `nil` when transaction is pending.
-  * `block_hash` - `block` foreign key. `nil` when transaction is pending.
-  * `from_address` - the source of `value`
-  * `from_address_hash` - foreign key of `from_address`
-  * `gas` - Gas provided by the sender
-  * `gas_price` - How much the sender is willing to pay for `gas`
-  * `hash` - hash of contents of this transaction
-  * `index` - index of this transaction in `block`.  `nil` when transaction is pending.
-  * `input`- data sent along with the transaction
-  * `internal_transactions` - transactions (value transfers) created while executing contract used for this transaction
-  * `nonce` - the number of transaction made by the sender prior to this one
-  * `public_key` - public key of the signer of the transaction
-  * `r` - the R field of the signature. The (r, s) is the normal output of an ECDSA signature, where r is computed as
-      the X coordinate of a point R, modulo the curve order n.
-  * `s` - The S field of the signature.  The (r, s) is the normal output of an ECDSA signature, where r is computed as
-      the X coordinate of a point R, modulo the curve order n.
-  * `standard_v` - The standardized V field of the signature
-  * `to_address` - sink of `value`
-  * `to_address_hash` - `to_address` foreign key
-  * `v` - The V field of the signature.
-  * `value` - wei transferred from `from_address` to `to_address`
+   * `block` - the block in which this transaction was mined/validated.  `nil` when transaction is pending.
+   * `block_hash` - `block` foreign key. `nil` when transaction is pending.
+   * `from_address` - the source of `value`
+   * `from_address_hash` - foreign key of `from_address`
+   * `gas` - Gas provided by the sender
+   * `gas_price` - How much the sender is willing to pay for `gas`
+   * `hash` - hash of contents of this transaction
+   * `index` - index of this transaction in `block`.  `nil` when transaction is pending.
+   * `input`- data sent along with the transaction
+   * `internal_transactions` - transactions (value transfers) created while executing contract used for this
+     transaction
+   * `nonce` - the number of transaction made by the sender prior to this one
+   * `public_key` - public key of the signer of the transaction
+   * `r` - the R field of the signature. The (r, s) is the normal output of an ECDSA signature, where r is computed as
+       the X coordinate of a point R, modulo the curve order n.
+   * `s` - The S field of the signature.  The (r, s) is the normal output of an ECDSA signature, where r is computed as
+       the X coordinate of a point R, modulo the curve order n.
+   * `standard_v` - The standardized V field of the signature
+   * `to_address` - sink of `value`
+   * `to_address_hash` - `to_address` foreign key
+   * `v` - The V field of the signature.
+   * `value` - wei transferred from `from_address` to `to_address`
   """
   @type t :: %__MODULE__{
           block: %Ecto.Association.NotLoaded{} | Block.t() | nil,

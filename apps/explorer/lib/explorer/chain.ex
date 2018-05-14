@@ -17,9 +17,9 @@ defmodule Explorer.Chain do
   @type direction :: :from | :to
 
   @typedoc """
-  * `:optional` - the association is optional and only needs to be loaded if available
-  * `:required` - the association is required and MUST be loaded.  If it is not available, then the parent struct
-      SHOULD NOT be returned.
+   * `:optional` - the association is optional and only needs to be loaded if available
+   * `:required` - the association is required and MUST be loaded.  If it is not available, then the parent struct
+     SHOULD NOT be returned.
   """
   @type necessity :: :optional | :required
 
@@ -50,14 +50,14 @@ defmodule Explorer.Chain do
 
   ## Options
 
-  * `:direction` - if specified, will filter internal transactions by address type. If `:to` is specified, only internal
-  transactions where the "to" address matches will be returned. Likewise, if `:from` is specified, only internal
-  transactions where the "from" address matches will be returned. If :direction is omitted, internal transactions either
-  to or from the address will be returned.
-  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`. If an association is
-  `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association, then
-  the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the page `entries`.
-  * `:pagination` - pagination params to pass to scrivener.
+    * `:direction` - if specified, will filter internal transactions by address type. If `:to` is specified, only
+      internal transactions where the "to" address matches will be returned. Likewise, if `:from` is specified, only
+      internal transactions where the "from" address matches will be returned. If :direction is omitted, internal
+      transactions either to or from the address will be returned.
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`. If an association is
+      `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
+      then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the page `entries`.
+    * `:pagination` - pagination params to pass to scrivener.
 
   """
   def address_to_internal_transactions(%Address{hash: hash}, options \\ []) do
@@ -81,14 +81,14 @@ defmodule Explorer.Chain do
 
   ## Options
 
-  * `:direction` - if specified, will filter transactions by address type. If `:to` is specified, only transactions
+    * `:direction` - if specified, will filter transactions by address type. If `:to` is specified, only transactions
       where the "to" address matches will be returned. Likewise, if `:from` is specified, only transactions where the
       "from" address matches will be returned. If :direction is omitted, transactions either to or from the address
       will be returned.
-  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association, then the
       `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
-  * `:pagination` - pagination params to pass to scrivener.
+    * `:pagination` - pagination params to pass to scrivener.
 
   """
   @spec address_to_transactions(Address.t(), [
@@ -192,10 +192,10 @@ defmodule Explorer.Chain do
 
   ## Options
 
-  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association, then the
       `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
-  * `:pagination` - pagination params to pass to scrivener.
+    * `:pagination` - pagination params to pass to scrivener.
   """
   @spec block_to_transactions(Block.t()) :: %Scrivener.Page{entries: [Transaction.t()]}
   @spec block_to_transactions(Block.t(), [necessity_by_association_option | pagination_option]) :: %Scrivener.Page{
@@ -413,7 +413,7 @@ defmodule Explorer.Chain do
 
   ## Options
 
-  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association, then the
       `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
   """
@@ -704,27 +704,27 @@ defmodule Explorer.Chain do
 
   ## Tree
 
-  * `t:Explorer.Chain.Block.t/0`s
-    * `t:Explorer.Chain.Transaction.t/0`
-      * `t.Explorer.Chain.InternalTransaction.t/0`
-      * `t.Explorer.Chain.Receipt.t/0`
-        * `t.Explorer.Chain.Log.t/0`
+    * `t:Explorer.Chain.Block.t/0`s
+      * `t:Explorer.Chain.Transaction.t/0`
+        * `t.Explorer.Chain.InternalTransaction.t/0`
+        * `t.Explorer.Chain.Receipt.t/0`
+          * `t.Explorer.Chain.Log.t/0`
 
   ## Options
 
-  * `:timeout` - the timeout for the whole `c:Ecto.Repo.transaction/0` call.  Defaults to `#{@transaction_timeout}`
-    milliseconds.
-  * `:insert_addresses_timeout` - the timeout for inserting all addresses found in the params lists across all types.
-    Defaults to `#{@insert_addresses_timeout}` milliseconds.
-  * `:insert_blocks_timeout` - the timeout for inserting all blocks. Defaults to `#{@insert_blocks_timeout}`
-    milliseconds.
-  * `:insert_internal_transactions_timeout` - the timeout for inserting all internal transactions. Defaults to
-    `#{@insert_internal_transactions_timeout}` milliseconds.
-  * `:insert_logs_timeout` - the timeout for inserting all logs. Defaults to `#{@insert_logs_timeout}` milliseconds.
-  * `:insert_receipts_timeout` - the timeout for inserting all receipts. Defaults to `#{@insert_receipts_timeout}`
-    milliseconds.
-  * `:insert_transactions_timeout` - the timeout for inserting all transactions found in the params lists across all types.
-    Defaults to `#{@insert_transactions_timeout}` milliseconds.
+    * `:timeout` - the timeout for the whole `c:Ecto.Repo.transaction/0` call.  Defaults to `#{@transaction_timeout}`
+      milliseconds.
+    * `:insert_addresses_timeout` - the timeout for inserting all addresses found in the params lists across all types.
+      Defaults to `#{@insert_addresses_timeout}` milliseconds.
+    * `:insert_blocks_timeout` - the timeout for inserting all blocks. Defaults to `#{@insert_blocks_timeout}`
+      milliseconds.
+    * `:insert_internal_transactions_timeout` - the timeout for inserting all internal transactions. Defaults to
+      `#{@insert_internal_transactions_timeout}` milliseconds.
+    * `:insert_logs_timeout` - the timeout for inserting all logs. Defaults to `#{@insert_logs_timeout}` milliseconds.
+    * `:insert_receipts_timeout` - the timeout for inserting all receipts. Defaults to `#{@insert_receipts_timeout}`
+      milliseconds.
+    * `:insert_transactions_timeout` - the timeout for inserting all transactions found in the params lists across all
+      types. Defaults to `#{@insert_transactions_timeout}` milliseconds.
   """
   def import_blocks(
         %{
@@ -814,10 +814,10 @@ defmodule Explorer.Chain do
 
   ## Options
 
-  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
-      `:required`, and the `t:Explorer.Chain.Block.t/0` has no associated record for that association, then the
-      `t:Explorer.Chain.Block.t/0` will not be included in the page `entries`.
-  * `:pagination` - pagination params to pass to scrivener.
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+        `:required`, and the `t:Explorer.Chain.Block.t/0` has no associated record for that association, then the
+        `t:Explorer.Chain.Block.t/0` will not be included in the page `entries`.
+    * `:pagination` - pagination params to pass to scrivener.
 
   """
   @spec list_blocks([necessity_by_association_option | pagination_option]) :: %Scrivener.Page{
@@ -968,7 +968,7 @@ defmodule Explorer.Chain do
 
   ## Options
 
-  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.Block.t/0` has no associated record for that association, then the
       `t:Explorer.Chain.Block.t/0` will not be included in the page `entries`.
 
@@ -1061,7 +1061,7 @@ defmodule Explorer.Chain do
 
   ## Options
 
-  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
       then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
 
@@ -1131,10 +1131,10 @@ defmodule Explorer.Chain do
 
   ## Options
 
-  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
       then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
-  * `:pagination` - pagination params to pass to scrivener.
+    * `:pagination` - pagination params to pass to scrivener.
 
   """
   @spec recent_pending_transactions([inserted_after_option | necessity_by_association_option]) :: %Scrivener.Page{
@@ -1264,10 +1264,10 @@ defmodule Explorer.Chain do
 
   ## Options
 
-  * `:pending`
-    * `nil` - count all transactions
-    * `true` - only count pending transactions
-    * `false` - only count collated transactions
+    * `:pending`
+      * `nil` - count all transactions
+      * `true` - only count pending transactions
+      * `false` - only count collated transactions
 
   """
   @spec transaction_count([{:pending, boolean()}]) :: non_neg_integer()
@@ -1282,10 +1282,10 @@ defmodule Explorer.Chain do
 
   ## Options
 
-  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
       then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
-   * `:pagination` - pagination params to pass to scrivener.
+    * `:pagination` - pagination params to pass to scrivener.
 
   """
   @spec transaction_hash_to_internal_transactions(Hash.Full.t()) :: %Scrivener.Page{entries: [InternalTransaction.t()]}
@@ -1312,10 +1312,10 @@ defmodule Explorer.Chain do
 
   ## Options
 
-  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.Log.t/0` has no associated record for that association, then the
       `t:Explorer.Chain.Log.t/0` will not be included in the page `entries`.
-  * `:pagination` - pagination params to pass to scrivener.
+    * `:pagination` - pagination params to pass to scrivener.
 
   """
   @spec transaction_to_logs(Transaction.t(), [
@@ -1330,10 +1330,10 @@ defmodule Explorer.Chain do
 
   ## Returns
 
-  * `:failed` - the transaction failed without running out of gas
-  * `:pending` - the transaction has not be confirmed in a block yet
-  * `:out_of_gas` - the transaction failed because it ran out of gas
-  * `:success` - the transaction has been confirmed in a block
+    * `:failed` - the transaction failed without running out of gas
+    * `:pending` - the transaction has not be confirmed in a block yet
+    * `:out_of_gas` - the transaction failed because it ran out of gas
+    * `:success` - the transaction has been confirmed in a block
 
   """
   @spec transaction_to_status(Transaction.t()) :: :failed | :pending | :out_of_gas | :success

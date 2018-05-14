@@ -10,10 +10,10 @@ defmodule Explorer.Chain.Credit do
   alias Explorer.Repo
 
   @typedoc """
-  * `address` - address that was the `to_address`
-  * `address_hash` - foreign key for `address`
-  * `count` - the number of credits to `address`
-  * `value` - sum of all credit values.
+   * `address` - address that was the `to_address`
+   * `address_hash` - foreign key for `address`
+   * `count` - the number of credits to `address`
+   * `value` - sum of all credit values.
   """
   @type t :: %__MODULE__{
           address: %Ecto.Association.NotLoaded{} | Address.t(),

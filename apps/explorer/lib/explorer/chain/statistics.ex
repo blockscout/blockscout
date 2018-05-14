@@ -67,18 +67,19 @@ defmodule Explorer.Chain.Statistics do
   @type transactions_per_minute :: non_neg_integer()
 
   @typedoc """
-  * `average_time` - the average time it took to mine/validate the last <= 100 `t:Explorer.Chain.Block.t/0`
-  * `block_velocity` - the number of `t:Explorer.Chain.Block.t/0` mined/validated in the last minute
-  * `blocks` - the last <= 5 `t:Explorer.Chain.Block.t/0`
-  * `lag` - the average time over the last hour between when the block was mined/validated
-      (`t:Explorer.Chain.Block.t/0` `timestamp`) and when it was inserted into the databasse
-      (`t:Explorer.Chain.Block.t/0` `inserted_at`)
-  * `number` - the latest `t:Explorer.Chain.Block.t/0` `number`
-  * `skipped_blocks` - the number of blocks that were mined/validated, but do not exist as `t:Explorer.Chain.Block.t/0`
-  * `timestamp` - when the last `t:Explorer.Chain.Block.t/0` was mined/validated
-  * `transaction_count` - the number of transactions confirmed in blocks that were mined/validated in the last day
-  * `transaction_velocity` - the number of `t:Explorer.Chain.Block.t/0` mined/validated in the last minute
-  * `transactions` - the last <= 5 `t:Explorer.Chain.Transaction.t/0`
+   * `average_time` - the average time it took to mine/validate the last <= 100 `t:Explorer.Chain.Block.t/0`
+   * `block_velocity` - the number of `t:Explorer.Chain.Block.t/0` mined/validated in the last minute
+   * `blocks` - the last <= 5 `t:Explorer.Chain.Block.t/0`
+   * `lag` - the average time over the last hour between when the block was mined/validated
+     (`t:Explorer.Chain.Block.t/0` `timestamp`) and when it was inserted into the databasse
+     (`t:Explorer.Chain.Block.t/0` `inserted_at`)
+   * `number` - the latest `t:Explorer.Chain.Block.t/0` `number`
+   * `skipped_blocks` - the number of blocks that were mined/validated, but do not exist as
+     `t:Explorer.Chain.Block.t/0`
+   * `timestamp` - when the last `t:Explorer.Chain.Block.t/0` was mined/validated
+   * `transaction_count` - the number of transactions confirmed in blocks that were mined/validated in the last day
+   * `transaction_velocity` - the number of `t:Explorer.Chain.Block.t/0` mined/validated in the last minute
+   * `transactions` - the last <= 5 `t:Explorer.Chain.Transaction.t/0`
   """
   @type t :: %__MODULE__{
           average_time: Duration.t(),

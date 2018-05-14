@@ -10,10 +10,10 @@ defmodule Explorer.Chain.Debit do
   alias Explorer.Repo
 
   @typedoc """
-  * `address` - address that was the `from_address`
-  * `address_hash` - foreign key for `address`
-  * `count` - the number of debits to `address`
-  * `value` - sum of all debit values.
+   * `address` - address that was the `from_address`
+   * `address_hash` - foreign key for `address`
+   * `count` - the number of debits to `address`
+   * `value` - sum of all debit values.
   """
   @type t :: %__MODULE__{
           address: %Ecto.Association.NotLoaded{} | Address.t(),

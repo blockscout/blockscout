@@ -9,19 +9,20 @@ defmodule Explorer.Chain.Log do
   @optional_attrs ~w(first_topic second_topic third_topic fourth_topic)a
 
   @typedoc """
-  * `address` - address of contract that generate the event
-  * `address_hash` - foreign key for `address`
-  * `data` - non-indexed log parameters.
-  * `first_topic` - `topics[0]`
-  * `fourth_topic` - `topics[3]`
-  * `index` - index of the log entry in all logs for the `receipt` / `transaction`
-  * `receipt` - receipt for the `transaction` being mined in a block
-  * `second_topic` - `topics[1]`
-  * `transaction` - transaction for which `receipt` is
-  * `transaction_hash` - foreign key for `receipt`.  **ALWAYS join throught `receipts` and not directly to `transaction`
-      to ensure that any `t:Explorer.Chain.Transaction.t/0` has a receipt before it has logs in that receipt.**
-  * `third_topic` - `topics[2]`
-  * `type` - type of event
+   * `address` - address of contract that generate the event
+   * `address_hash` - foreign key for `address`
+   * `data` - non-indexed log parameters.
+   * `first_topic` - `topics[0]`
+   * `fourth_topic` - `topics[3]`
+   * `index` - index of the log entry in all logs for the `receipt` / `transaction`
+   * `receipt` - receipt for the `transaction` being mined in a block
+   * `second_topic` - `topics[1]`
+   * `transaction` - transaction for which `receipt` is
+   * `transaction_hash` - foreign key for `receipt`.  **ALWAYS join through `receipts` and not directly to
+     `transaction` to ensure that any `t:Explorer.Chain.Transaction.t/0` has a receipt before it has logs in that
+     receipt.**
+   * `third_topic` - `topics[2]`
+   * `type` - type of event
   """
   @type t :: %__MODULE__{
           address: %Ecto.Association.NotLoaded{} | Address.t(),

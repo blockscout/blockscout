@@ -12,37 +12,37 @@ defmodule Explorer.JSONRPC.Block do
   @type elixir :: %{String.t() => non_neg_integer | DateTime.t() | String.t() | nil}
 
   @typedoc """
-  * `"author"` - `t:Explorer.JSONRPC.address/0` that created the block.  Aliased by `"miner"`.
-  * `"difficulty"` - `t:Explorer.JSONRPC.quantity/0`` of the difficulty for this block.
-  * `"extraData"` - the extra `t:Explorer.JSONRPC.data/0`` field of this block.
-  * `"gasLimit" - maximum gas `t:Explorer.JSONRPC.quantity/0`` in this block.
-  * `"gasUsed" - the total `t:Explorer.JSONRPC.quantity/0`` of gas used by all transactions in this block.
-  * `"hash"` - the `t:Explorer.JSONRPC.hash/0` of the block.
-  * `"logsBloom"` - `t:Explorer.JSONRPC.data/0`` for the [Bloom filter](https://en.wikipedia.org/wiki/Bloom_filter) for
-      the logs of the block. `nil` when block is pending.
-  * `"miner"` - `t:Explorer.JSONRPC.address/0` of the beneficiary to whom the mining rewards were given.  Aliased by
+   * `"author"` - `t:Explorer.JSONRPC.address/0` that created the block.  Aliased by `"miner"`.
+   * `"difficulty"` - `t:Explorer.JSONRPC.quantity/0`` of the difficulty for this block.
+   * `"extraData"` - the extra `t:Explorer.JSONRPC.data/0`` field of this block.
+   * `"gasLimit" - maximum gas `t:Explorer.JSONRPC.quantity/0`` in this block.
+   * `"gasUsed" - the total `t:Explorer.JSONRPC.quantity/0`` of gas used by all transactions in this block.
+   * `"hash"` - the `t:Explorer.JSONRPC.hash/0` of the block.
+   * `"logsBloom"` - `t:Explorer.JSONRPC.data/0`` for the [Bloom filter](https://en.wikipedia.org/wiki/Bloom_filter)
+     for the logs of the block. `nil` when block is pending.
+   * `"miner"` - `t:Explorer.JSONRPC.address/0` of the beneficiary to whom the mining rewards were given.  Aliased by
       `"author"`.
-  * `"nonce"` -  `t:Explorer.JSONRPC.nonce/0`. `nil` when its pending block.
-  * `"number"` - the block number `t:Explorer.JSONRPC.quantity/0`. `nil` when block is pending.
-  * `"parentHash" - the `t:Explorer.JSONRPC.hash/0` of the parent block.
-  * `"receiptsRoot"` - `t:Explorer.JSONRPC.hash/0` of the root of the receipts.
-      [trie](https://github.com/ethereum/wiki/wiki/Patricia-Tree) of the block.
-  * `"sealFields"` - UNKNOWN
-  * `"sha3Uncles"` - `t:Explorer.JSONRPC.hash/0` of the
-      [uncles](https://bitcoin.stackexchange.com/questions/39329/in-ethereum-what-is-an-uncle-block) data in the block.
-  * `"signature"` - UNKNOWN
-  * `"size"` - `t:Explorer.JSONRPC.quantity/0`` of bytes in this block
-  * `"stateRoot" - `t:Explorer.JSONRPC.hash/0` of the root of the final state
-      [trie](https://github.com/ethereum/wiki/wiki/Patricia-Tree) of the block.
-  * `"step"` - UNKNOWN
-  * `"timestamp"`: the unix timestamp as a `t:Explorer.JSONRPC.quantity/0`` for when the block was collated.
-  * `"totalDifficulty" - `t:Explorer.JSONRPC.quantity/0`` of the total difficulty of the chain until this block.
-  * `"transactions"` - `t:list/0` of `t:Explorer.JSONRPC.Transaction.t/0`.
-  * `"transactionsRoot" - `t:Explorer.JSONRPC.hash/0` of the root of the transaction
-      [trie](https://github.com/ethereum/wiki/wiki/Patricia-Tree) of the block.
-  * `uncles`: `t:list/0` of
-      [uncles](https://bitcoin.stackexchange.com/questions/39329/in-ethereum-what-is-an-uncle-block)
-      `t:Explorer.JSONRPC.hash/0`.
+   * `"nonce"` -  `t:Explorer.JSONRPC.nonce/0`. `nil` when its pending block.
+   * `"number"` - the block number `t:Explorer.JSONRPC.quantity/0`. `nil` when block is pending.
+   * `"parentHash" - the `t:Explorer.JSONRPC.hash/0` of the parent block.
+   * `"receiptsRoot"` - `t:Explorer.JSONRPC.hash/0` of the root of the receipts.
+     [trie](https://github.com/ethereum/wiki/wiki/Patricia-Tree) of the block.
+   * `"sealFields"` - UNKNOWN
+   * `"sha3Uncles"` - `t:Explorer.JSONRPC.hash/0` of the
+     [uncles](https://bitcoin.stackexchange.com/questions/39329/in-ethereum-what-is-an-uncle-block) data in the block.
+   * `"signature"` - UNKNOWN
+   * `"size"` - `t:Explorer.JSONRPC.quantity/0`` of bytes in this block
+   * `"stateRoot" - `t:Explorer.JSONRPC.hash/0` of the root of the final state
+     [trie](https://github.com/ethereum/wiki/wiki/Patricia-Tree) of the block.
+   * `"step"` - UNKNOWN
+   * `"timestamp"`: the unix timestamp as a `t:Explorer.JSONRPC.quantity/0`` for when the block was collated.
+   * `"totalDifficulty" - `t:Explorer.JSONRPC.quantity/0`` of the total difficulty of the chain until this block.
+   * `"transactions"` - `t:list/0` of `t:Explorer.JSONRPC.Transaction.t/0`.
+   * `"transactionsRoot" - `t:Explorer.JSONRPC.hash/0` of the root of the transaction
+     [trie](https://github.com/ethereum/wiki/wiki/Patricia-Tree) of the block.
+   * `uncles`: `t:list/0` of
+     [uncles](https://bitcoin.stackexchange.com/questions/39329/in-ethereum-what-is-an-uncle-block)
+     `t:Explorer.JSONRPC.hash/0`.
   """
   @type t :: %{String.t() => JSONRPC.data() | JSONRPC.hash() | JSONRPC.quantity() | nil}
 

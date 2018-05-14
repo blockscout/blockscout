@@ -11,14 +11,14 @@ defmodule Explorer.Chain.Receipt do
   @allowed_attrs @optional_attrs ++ @required_attrs
 
   @typedoc """
-  * `cumulative_gas_used` - the cumulative gas used in `transaction`'s `t:Explorer.Chain.Block.t/0` before
-      `transaction`'s `index`
-  * `gas_used` - the gas used for just `transaction`
-  * `logs` - events that occurred while mining the `transaction`
-  * `status` - whether the transaction was successfully mined or failed
-  * `transaction` - the transaction for which this receipt is for
-  * `transaction_hash` - foreign key for `transaction`
-  * `transaction_index` - index of `transaction` in its `t:Explorer.Chain.Block.t/0`.
+   * `cumulative_gas_used` - the cumulative gas used in `transaction`'s `t:Explorer.Chain.Block.t/0` before
+     `transaction`'s `index`
+   * `gas_used` - the gas used for just `transaction`
+   * `logs` - events that occurred while mining the `transaction`
+   * `status` - whether the transaction was successfully mined or failed
+   * `transaction` - the transaction for which this receipt is for
+   * `transaction_hash` - foreign key for `transaction`
+   * `transaction_index` - index of `transaction` in its `t:Explorer.Chain.Block.t/0`.
   """
   @type t :: %__MODULE__{
           cumulative_gas_used: Gas.t(),
