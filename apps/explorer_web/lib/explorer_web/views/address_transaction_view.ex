@@ -15,6 +15,6 @@ defmodule ExplorerWeb.AddressTransactionView do
     end
   end
 
-  defdelegate status(transacton), to: TransactionView
+  defdelegate status(transaction), to: TransactionView
   defdelegate to_address(transaction), to: TransactionView
 end
