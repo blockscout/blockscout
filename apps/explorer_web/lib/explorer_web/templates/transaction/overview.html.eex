@@ -44,7 +44,7 @@
             </th>
             <td>
               <div><%= value(@transaction) %> </div>
-              <div><%= format_usd(@transaction, @exchange_rate) %></div>
+              <div><%= format_usd_value(@transaction, @exchange_rate) %></div>
             </td>
           </tr>
           <tr>
@@ -126,6 +126,14 @@
             <td title="<%= last_seen %>">
             <%= gas_price(@transaction, :wei) %>
               (<%= gas_price(@transaction, :gwei) %>)
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">
+              <%= gettext "TX Fee" %>
+            </th>
+            <td>
+              <%= formatted_fee(@transaction, denomination: :ether) %> <%= formatted_fee(@transaction, exchange_rate: @exchange_rate) %>
             </td>
           </tr>
           <tr>

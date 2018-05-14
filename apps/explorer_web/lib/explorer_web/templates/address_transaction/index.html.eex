@@ -97,7 +97,7 @@
                 <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
               </td>
               <td><%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %></td>
-              <td><%= ExplorerWeb.TransactionView.fee(transaction) %></td>
+              <td><%= ExplorerWeb.TransactionView.formatted_fee(transaction, denomination: :ether) %></td>
             </tr>
           <% end %>
         </tbody>
