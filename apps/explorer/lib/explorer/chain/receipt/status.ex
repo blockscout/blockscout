@@ -1,5 +1,7 @@
 defmodule Explorer.Chain.Receipt.Status do
   @moduledoc """
+  Whether a transaction succeeded (`:ok`) or failed (`:error`).
+
   Post-[Byzantium](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-609.md) status is `0x1` for success and `0x0`
   for failure, but instead of keeping track of just an integer and having to remember if its like C boolean (`0` for
   `false`, `1` for `true`) or a Posix exit code, let's represent it as native elixir - `:ok` for success and `:error`
