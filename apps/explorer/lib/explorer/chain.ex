@@ -52,7 +52,7 @@ defmodule Explorer.Chain do
 
     * `:direction` - if specified, will filter internal transactions by address type. If `:to` is specified, only
       internal transactions where the "to" address matches will be returned. Likewise, if `:from` is specified, only
-      internal transactions where the "from" address matches will be returned. If :direction is omitted, internal
+      internal transactions where the "from" address matches will be returned. If `:direction` is omitted, internal
       transactions either to or from the address will be returned.
     * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`. If an association is
       `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
@@ -83,7 +83,7 @@ defmodule Explorer.Chain do
 
     * `:direction` - if specified, will filter transactions by address type. If `:to` is specified, only transactions
       where the "to" address matches will be returned. Likewise, if `:from` is specified, only transactions where the
-      "from" address matches will be returned. If :direction is omitted, transactions either to or from the address
+      "from" address matches will be returned. If `:direction` is omitted, transactions either to or from the address
       will be returned.
     * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association, then the
