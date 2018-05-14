@@ -1,13 +1,13 @@
-defmodule Explorer.JSONRPC.Receipts do
+defmodule EthereumJSONRPC.Receipts do
   @moduledoc """
   Receipts format as returned by
   [`eth_getTransactionReceipt`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactionreceipt) from batch
   requests.
   """
 
-  import Explorer.JSONRPC, only: [config: 1, json_rpc: 2]
+  import EthereumJSONRPC, only: [config: 1, json_rpc: 2]
 
-  alias Explorer.JSONRPC.{Logs, Receipt}
+  alias EthereumJSONRPC.{Logs, Receipt}
 
   @type elixir :: [Receipt.elixir()]
   @type t :: [Receipt.t()]
@@ -15,7 +15,7 @@ defmodule Explorer.JSONRPC.Receipts do
   @doc """
   Extracts logs from `t:elixir/0`
 
-      iex> Explorer.JSONRPC.Receipts.elixir_to_logs([
+      iex> EthereumJSONRPC.Receipts.elixir_to_logs([
       ...>   %{
       ...>     "blockHash" => "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>     "blockNumber" => 37,
@@ -67,7 +67,7 @@ defmodule Explorer.JSONRPC.Receipts do
   @doc """
   Converts each element of `t:elixir/0` to params used by `Explorer.Chain.Receipt.changeset/2`.
 
-      iex> Explorer.JSONRPC.Receipts.elixir_to_params([
+      iex> EthereumJSONRPC.Receipts.elixir_to_params([
       ...>   %{
       ...>     "blockHash" => "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>     "blockNumber" => 37,
@@ -136,7 +136,7 @@ defmodule Explorer.JSONRPC.Receipts do
   @doc """
   Converts stringly typed fields to native Elixir types.
 
-      iex> Explorer.JSONRPC.Receipts.to_elixir([
+      iex> EthereumJSONRPC.Receipts.to_elixir([
       ...>   %{
       ...>     "blockHash" => "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>     "blockNumber" => "0x25",

@@ -1,4 +1,4 @@
-defmodule Explorer.JSONRPC.Transaction do
+defmodule EthereumJSONRPC.Transaction do
   @moduledoc """
   Transaction format included in the return of
   [`eth_getBlockByHash`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbyhash)
@@ -8,45 +8,50 @@ defmodule Explorer.JSONRPC.Transaction do
   and [`eth_getTransactionByBlockNumberAndIndex`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactionbyblocknumberandindex)
   """
 
-  import Explorer.JSONRPC, only: [quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
-  alias Explorer.JSONRPC
+  alias EthereumJSONRPC
 
-  @type elixir :: %{String.t() => JSONRPC.address() | JSONRPC.hash() | String.t() | non_neg_integer() | nil}
+  @type elixir :: %{
+          String.t() => EthereumJSONRPC.address() | EthereumJSONRPC.hash() | String.t() | non_neg_integer() | nil
+        }
 
   @typedoc """
-   * `"blockHash"` - `t:Explorer.JSONRPC.hash/0` of the block this transaction is in.  `nil` when transaction is
+   * `"blockHash"` - `t:EthereumJSONRPC.hash/0` of the block this transaction is in.  `nil` when transaction is
      pending.
-   * `"blockNumber"` - `t:Explorer.JSONRPC.quantity/0` for the block number this transaction is in.  `nil` when
+   * `"blockNumber"` - `t:EthereumJSONRPC.quantity/0` for the block number this transaction is in.  `nil` when
      transaction is pending.
    * `"chainId"` - the chain on which the transaction exists.
    * `"condition"` - UNKNOWN
-   * `"creates"` - `t:Explorer.JSONRPC.address/0` of the created contract, if the transaction creates a contract.
-   * `"from"` - `t:Explorer.JSONRPC.address/0` of the sender.
-   * `"gas"` - `t:Explorer.JSONRPC.quantity/0` of gas provided by the sender.  This is the max gas that may be used.
+   * `"creates"` - `t:EthereumJSONRPC.address/0` of the created contract, if the transaction creates a contract.
+   * `"from"` - `t:EthereumJSONRPC.address/0` of the sender.
+   * `"gas"` - `t:EthereumJSONRPC.quantity/0` of gas provided by the sender.  This is the max gas that may be used.
      `gas * gasPrice` is the max fee in wei that the sender is willing to pay for the transaction to be executed.
-   * `"gasPrice"` - `t:Explorer.JSONRPC.quantity/0` of wei to pay per unit of gas used.
-   * `"hash"` - `t:Explorer.JSONRPC.hash/0` of the transaction
-   * `"input"` - `t:Explorer.JSONRPC.data/0` sent along with the transaction, such as input to the contract.
-   * `"nonce"` - `t:Explorer.JSONRPC.quantity/0` of transactions made by the sender prior to this one.
-   * `"publicKey"` - `t:Explorer.JSONRPC.hash/0` of the public key of the signer.
-   * `"r"` - `t:Explorer.JSONRPC.quantity/0` for the R field of the signature.
-   * `"raw"` - Raw transaction `t:Explorer.JSONRPC.data/0`
-   * `"standardV"` - `t:Explorer.JSONRPC.quantity/0` for the standardized V (`0` or `1`) field of the signature.
-   * `"to"` - `t:Explorer.JSONRPC.address/0` of the receiver.  `nil` when it is a contract creation transaction.
-   * `"transactionIndex"` - `t:Explorer.JSONRPC.quantity/0` for the index of the transaction in the block.  `nil` when
+   * `"gasPrice"` - `t:EthereumJSONRPC.quantity/0` of wei to pay per unit of gas used.
+   * `"hash"` - `t:EthereumJSONRPC.hash/0` of the transaction
+   * `"input"` - `t:EthereumJSONRPC.data/0` sent along with the transaction, such as input to the contract.
+   * `"nonce"` - `t:EthereumJSONRPC.quantity/0` of transactions made by the sender prior to this one.
+   * `"publicKey"` - `t:EthereumJSONRPC.hash/0` of the public key of the signer.
+   * `"r"` - `t:EthereumJSONRPC.quantity/0` for the R field of the signature.
+   * `"raw"` - Raw transaction `t:EthereumJSONRPC.data/0`
+   * `"standardV"` - `t:EthereumJSONRPC.quantity/0` for the standardized V (`0` or `1`) field of the signature.
+   * `"to"` - `t:EthereumJSONRPC.address/0` of the receiver.  `nil` when it is a contract creation transaction.
+   * `"transactionIndex"` - `t:EthereumJSONRPC.quantity/0` for the index of the transaction in the block.  `nil` when
      transaction is pending.
-   * `"v"` - `t:Explorer.JSONRPC.quantity/0` for the V field of the signature.
-   * `"value"` - `t:Explorer.JSONRPC.quantity/0` of wei transfered
+   * `"v"` - `t:EthereumJSONRPC.quantity/0` for the V field of the signature.
+   * `"value"` - `t:EthereumJSONRPC.quantity/0` of wei transfered
   """
-  @type t :: %{String.t() => JSONRPC.address() | JSONRPC.hash() | JSONRPC.quantity() | String.t() | nil}
+  @type t :: %{
+          String.t() =>
+            EthereumJSONRPC.address() | EthereumJSONRPC.hash() | EthereumJSONRPC.quantity() | String.t() | nil
+        }
 
   @type params :: %{
-          block_hash: JSONRPC.hash(),
-          from_address_hash: JSONRPC.address(),
+          block_hash: EthereumJSONRPC.hash(),
+          from_address_hash: EthereumJSONRPC.address(),
           gas: non_neg_integer(),
           gas_price: non_neg_integer(),
-          hash: JSONRPC.hash(),
+          hash: EthereumJSONRPC.hash(),
           index: non_neg_integer(),
           input: String.t(),
           nonce: non_neg_integer(),
@@ -54,7 +59,7 @@ defmodule Explorer.JSONRPC.Transaction do
           r: non_neg_integer(),
           s: non_neg_integer(),
           standard_v: 0 | 1,
-          to_address_hash: JSONRPC.address(),
+          to_address_hash: EthereumJSONRPC.address(),
           v: non_neg_integer(),
           value: non_neg_integer()
         }
@@ -97,9 +102,9 @@ defmodule Explorer.JSONRPC.Transaction do
   end
 
   @doc """
-  Extracts `t:Explorer.JSONRPC.hash/0` from transaction `params`
+  Extracts `t:EthereumJSONRPC.hash/0` from transaction `params`
 
-      iex> Explorer.JSONRPC.Transaction.params_to_hash(
+      iex> EthereumJSONRPC.Transaction.params_to_hash(
       ...>   %{
       ...>     block_hash: "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47",
       ...>     gas: 4700000,
@@ -129,7 +134,7 @@ defmodule Explorer.JSONRPC.Transaction do
   end
 
   # double check that no new keys are being missed by requiring explicit match for passthrough
-  # `t:Explorer.JSONRPC.address/0` and `t:Explorer.JSONRPC.hash/0` pass through as `Explorer.Chain` can verify correct
+  # `t:EthereumJSONRPC.address/0` and `t:EthereumJSONRPC.hash/0` pass through as `Explorer.Chain` can verify correct
   # hash format
   # r s standardV and v pass through because they exceed postgres integer limits
   defp entry_to_elixir({key, value})

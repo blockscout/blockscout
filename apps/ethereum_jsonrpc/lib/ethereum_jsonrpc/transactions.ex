@@ -1,11 +1,11 @@
-defmodule Explorer.JSONRPC.Transactions do
+defmodule EthereumJSONRPC.Transactions do
   @moduledoc """
   List of transactions format as included in return from
   [`eth_getBlockByHash`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbyhash) and
   [`eth_getBlockByNumber`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbynumber).
   """
 
-  alias Explorer.JSONRPC.Transaction
+  alias EthereumJSONRPC.Transaction
 
   @type elixir :: [Transaction.elixir()]
   @type t :: [Transaction.t()]
@@ -13,7 +13,7 @@ defmodule Explorer.JSONRPC.Transactions do
   @doc """
   Converts each entry in `elixir` to params used in `Explorer.Chain.Transaction.changeset/2`.
 
-      iex> Explorer.JSONRPC.Transactions.elixir_to_params(
+      iex> EthereumJSONRPC.Transactions.elixir_to_params(
       ...>   [
       ...>     %{
       ...>       "blockHash" => "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47",
@@ -67,7 +67,7 @@ defmodule Explorer.JSONRPC.Transactions do
   @doc """
   Extract just the `t:Explorer.Chain.Transaction.t/0` `hash` from `params` list elements.
 
-      iex> Explorer.JSONRPC.Transactions.params_to_hashes(
+      iex> EthereumJSONRPC.Transactions.params_to_hashes(
       ...>   [
       ...>     %{
       ...>       block_hash: "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47",
@@ -98,7 +98,7 @@ defmodule Explorer.JSONRPC.Transactions do
   @doc """
   Decodes stringly typed fields in entries in `transactions`
 
-      iex> Explorer.JSONRPC.Transactions.to_elixir([
+      iex> EthereumJSONRPC.Transactions.to_elixir([
       ...>   %{
       ...>     "blockHash" => "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47",
       ...>     "blockNumber" => "0x22",

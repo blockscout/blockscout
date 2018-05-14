@@ -5,7 +5,6 @@ defmodule Explorer.Indexer.BlockFetcherTest do
   import ExUnit.CaptureLog
 
   alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Receipt, Transaction}
-  alias Explorer.JSONRPC
   alias Explorer.Indexer.{BlockFetcher, Sequence}
 
   @tag capture_log: true
@@ -32,7 +31,6 @@ defmodule Explorer.Indexer.BlockFetcherTest do
     test "starts fetching blocks from Genesis" do
       assert Repo.aggregate(Block, :count, :hash) == 0
 
-      start_supervised!({JSONRPC, []})
       start_supervised!({Task.Supervisor, name: Explorer.Indexer.TaskSupervisor})
       start_supervised!(BlockFetcher)
 
@@ -84,7 +82,6 @@ defmodule Explorer.Indexer.BlockFetcherTest do
     setup :state
 
     setup do
-      start_supervised!({JSONRPC, []})
       start_supervised!({Task.Supervisor, name: Explorer.Indexer.TaskSupervisor})
 
       {:ok, state} = BlockFetcher.init(debug_logs: false)

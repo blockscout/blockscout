@@ -1,29 +1,29 @@
-defmodule Explorer.JSONRPC.Log do
+defmodule EthereumJSONRPC.Log do
   @moduledoc """
   Log included in return from
   [`eth_getTransactionReceipt`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactionreceipt).
   """
 
-  import Explorer.JSONRPC, only: [quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   @type elixir :: %{String.t() => String.t() | [String.t()] | non_neg_integer()}
 
   @typedoc """
-   * `"address"` - `t:Explorer.JSONRPC.address/0` from which event originated.
-   * `"blockHash"` - `t:Explorer.JSONRPC.hash/0` of the block this transaction is in.
-   * `"blockNumber"` - `t:Explorer.JSONRPC.quantity/0` for the block number this transaction is in.
+   * `"address"` - `t:EthereumJSONRPC.address/0` from which event originated.
+   * `"blockHash"` - `t:EthereumJSONRPC.hash/0` of the block this transaction is in.
+   * `"blockNumber"` - `t:EthereumJSONRPC.quantity/0` for the block number this transaction is in.
    * `"data"` - Data containing non-indexed log parameter
-   * `"logIndex"` - `t:Explorer.JSONRPC.quantity/0` of the event index positon in the block.
+   * `"logIndex"` - `t:EthereumJSONRPC.quantity/0` of the event index positon in the block.
    * `"topics"` - `t:list/0` of at most 4 32-byte topics.  Topic 1-3 contains indexed parameters of the log.
-   * `"transactionHash"` - `t:Explorer.JSONRPC.hash/0` of the transaction
-   * `"transactionIndex"` - `t:Explorer.JSONRPC.quantity/0` for the index of the transaction in the block.
+   * `"transactionHash"` - `t:EthereumJSONRPC.hash/0` of the transaction
+   * `"transactionIndex"` - `t:EthereumJSONRPC.quantity/0` for the index of the transaction in the block.
   """
   @type t :: %{String.t() => String.t() | [String.t()]}
 
   @doc """
   Converts `t:elixir/0` format to params used in `Explorer.Chain`.
 
-      iex> Explorer.JSONRPC.Log.elixir_to_params(
+      iex> EthereumJSONRPC.Log.elixir_to_params(
       ...>   %{
       ...>     "address" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
       ...>     "blockHash" => "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
@@ -71,7 +71,7 @@ defmodule Explorer.JSONRPC.Log do
   @doc """
   Decodes the stringly typed numerical fields to `t:non_neg_integer/0`.
 
-      iex> Explorer.JSONRPC.Log.to_elixir(
+      iex> EthereumJSONRPC.Log.to_elixir(
       ...>   %{
       ...>   "address" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
       ...>   "blockHash" => "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",

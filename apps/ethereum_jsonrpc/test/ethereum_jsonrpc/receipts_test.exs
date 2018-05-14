@@ -1,13 +1,13 @@
-defmodule Explorer.JSONRPC.ReceiptsTest do
+defmodule EthereumJSONRPC.ReceiptsTest do
   use ExUnit.Case, async: true
 
-  alias Explorer.JSONRPC.Receipts
+  alias EthereumJSONRPC.Receipts
 
   doctest Receipts
 
   # These are integration tests that depend on the sokol chain being used.  sokol can be used with the following config
   #
-  #     config :explorer, Explorer.JSONRPC,
+  #     config :explorer, EthereumJSONRPC,
   #       trace_url: "https://sokol-trace.poa.network",
   #       url: "https://sokol.poa.network"
   #

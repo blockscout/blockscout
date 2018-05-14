@@ -1,16 +1,16 @@
-defmodule Explorer.JSONRPC.Parity do
+defmodule EthereumJSONRPC.Parity do
   @moduledoc """
   Ethereum JSONRPC methods that are only supported by [Parity](https://wiki.parity.io/).
   """
 
-  import Explorer.JSONRPC, only: [config: 1, json_rpc: 2]
+  import EthereumJSONRPC, only: [config: 1, json_rpc: 2]
 
-  alias Explorer.JSONRPC.Parity.Traces
+  alias EthereumJSONRPC.Parity.Traces
 
   @doc """
   Fetches the `t:Explorer.Chain.InternalTransaction.changeset/2` params from the Parity trace URL.
 
-      iex> Explorer.JSONRPC.Parity.fetch_internal_transactions([
+      iex> EthereumJSONRPC.Parity.fetch_internal_transactions([
       ...>   "0x0fa6f723216dba694337f9bb37d8870725655bdf2573526a39454685659e39b1"
       ...> ])
       {:ok,

@@ -4,7 +4,6 @@ defmodule Explorer.Indexer.AddressFetcherTest do
   use Explorer.DataCase, async: false
 
   alias Explorer.Chain.Address
-  alias Explorer.JSONRPC
   alias Explorer.Indexer.AddressFetcher
 
   @hash %Explorer.Chain.Hash{
@@ -13,7 +12,6 @@ defmodule Explorer.Indexer.AddressFetcherTest do
   }
 
   setup do
-    start_supervised!({JSONRPC, []})
     start_supervised!({Task.Supervisor, name: Explorer.Indexer.TaskSupervisor})
 
     :ok

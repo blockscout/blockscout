@@ -1,14 +1,14 @@
-defmodule Explorer.JSONRPC.Parity.Trace.Action do
+defmodule EthereumJSONRPC.Parity.Trace.Action do
   @moduledoc """
-  The action that was peformed in a `t:Explorer.JSONRPC.Parity.Trace.t/0`
+  The action that was peformed in a `t:EthereumJSONRPC.Parity.Trace.t/0`
   """
 
-  import Explorer.JSONRPC, only: [quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   @doc """
   Decodes the stringly typed numerical fields to `t:non_neg_integer/0`.
 
-      iex> Explorer.JSONRPC.Parity.Trace.Action.to_elixir(
+      iex> EthereumJSONRPC.Parity.Trace.Action.to_elixir(
       ...>   %{
       ...>     "from" => "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
       ...>     "gas" => "0x462534",
@@ -24,9 +24,9 @@ defmodule Explorer.JSONRPC.Parity.Trace.Action do
       }
 
   For a suicide, the `"balance"` is converted to a `t:non_neg_integer/0` while the `"address"` and `"refundAddress"`
-  `t:Explorer.JSONRPC.hash/0` pass through.
+  `t:EthereumJSONRPC.hash/0` pass through.
 
-      iex> Explorer.JSONRPC.Parity.Trace.Action.to_elixir(
+      iex> EthereumJSONRPC.Parity.Trace.Action.to_elixir(
       ...>   %{
       ...>    "address" => "0xa7542d78b9a0be6147536887e0065f16182d294b",
       ...>    "balance" => "0x0",

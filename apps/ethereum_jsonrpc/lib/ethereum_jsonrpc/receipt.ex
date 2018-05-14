@@ -1,37 +1,45 @@
-defmodule Explorer.JSONRPC.Receipt do
+defmodule EthereumJSONRPC.Receipt do
   @moduledoc """
   Receipts format as returned by
   [`eth_getTransactionReceipt`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactionreceipt).
   """
 
-  import Explorer.JSONRPC, only: [quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   alias Explorer.Chain.Receipt.Status
-  alias Explorer.JSONRPC
-  alias Explorer.JSONRPC.Logs
+  alias EthereumJSONRPC
+  alias EthereumJSONRPC.Logs
 
   @type elixir :: %{String.t() => String.t() | non_neg_integer}
 
   @typedoc """
-   * `"contractAddress"` - The contract `t:Explorer.JSONRPC.address/0` created, if the transaction was a contract
+   * `"contractAddress"` - The contract `t:EthereumJSONRPC.address/0` created, if the transaction was a contract
      creation, otherwise `nil`.
-   * `"blockHash"` - `t:Explorer.JSONRPC.hash/0` of the block where `"transactionHash"` was in.
-   * `"blockNumber"` - The block number `t:Explorer.JSONRPC.quanity/0`.
-   * `"cumulativeGasUsed"` - `t:Explorer.JSONRPC.quantity/0` of gas used when this transaction was executed in the
+   * `"blockHash"` - `t:EthereumJSONRPC.hash/0` of the block where `"transactionHash"` was in.
+   * `"blockNumber"` - The block number `t:EthereumJSONRPC.quanity/0`.
+   * `"cumulativeGasUsed"` - `t:EthereumJSONRPC.quantity/0` of gas used when this transaction was executed in the
      block.
-   * `"gasUsed"` - `t:Explorer.JSONRPC.quantity/0` of gas used by this specific transaction alone.
+   * `"gasUsed"` - `t:EthereumJSONRPC.quantity/0` of gas used by this specific transaction alone.
    * `"logs"` - `t:list/0` of log objects, which this transaction generated.
-   * `"logsBloom"` - `t:Explorer.JSONRPC.data/0` of 256 Bytes for
+   * `"logsBloom"` - `t:EthereumJSONRPC.data/0` of 256 Bytes for
      [Bloom filter](https://en.wikipedia.org/wiki/Bloom_filter) for light clients to quickly retrieve related logs.
-   * `"root"` - `t:Explorer.JSONRPC.hash/0`  of post-transaction stateroot (pre-Byzantium)
-   * `"status"` - `t:Explorer.JSONRPC.quantity/0` of either 1 (success) or 0 (failure) (post-Byzantium)
-   * `"transactionHash"` - `t:Explorer.JSONRPC.hash/0` the transaction.
-   * `"transactionIndex"` - `t:Explorer.JSONRPC.quantity/0` for the transaction index in the block.
+   * `"root"` - `t:EthereumJSONRPC.hash/0`  of post-transaction stateroot (pre-Byzantium)
+   * `"status"` - `t:EthereumJSONRPC.quantity/0` of either 1 (success) or 0 (failure) (post-Byzantium)
+   * `"transactionHash"` - `t:EthereumJSONRPC.hash/0` the transaction.
+   * `"transactionIndex"` - `t:EthereumJSONRPC.quantity/0` for the transaction index in the block.
   """
-  @type t :: %{String.t() => JSONRPC.address() | JSONRPC.data() | JSONRPC.hash() | JSONRPC.quantity() | list | nil}
+  @type t :: %{
+          String.t() =>
+            EthereumJSONRPC.address()
+            | EthereumJSONRPC.data()
+            | EthereumJSONRPC.hash()
+            | EthereumJSONRPC.quantity()
+            | list
+            | nil
+        }
 
   @doc """
-  Get `t:Explorer.JSONRPC.Logs.elixir/0` from `t:elixir/0`
+  Get `t:EthereumJSONRPC.Logs.elixir/0` from `t:elixir/0`
   """
   @spec elixir_to_logs(elixir) :: Logs.elixir()
   def elixir_to_logs(%{"logs" => logs}), do: logs
@@ -39,7 +47,7 @@ defmodule Explorer.JSONRPC.Receipt do
   @doc """
   Converts `t:elixir/0` format to params used in `Explorer.Chain`.
 
-      iex> Explorer.JSONRPC.Receipt.elixir_to_params(
+      iex> EthereumJSONRPC.Receipt.elixir_to_params(
       ...>   %{
       ...>     "blockHash" => "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47",
       ...>     "blockNumber" => 34,
@@ -89,7 +97,7 @@ defmodule Explorer.JSONRPC.Receipt do
   @doc """
   Decodes the stringly typed numerical fields to `t:non_neg_integer/0`.
 
-      iex> Explorer.JSONRPC.Receipt.to_elixir(
+      iex> EthereumJSONRPC.Receipt.to_elixir(
       ...>   %{
       ...>     "blockHash" => "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47",
       ...>     "blockNumber" => "0x22",
@@ -125,7 +133,7 @@ defmodule Explorer.JSONRPC.Receipt do
   end
 
   # double check that no new keys are being missed by requiring explicit match for passthrough
-  # `t:Explorer.JSONRPC.address/0` and `t:Explorer.JSONRPC.hash/0` pass through as `Explorer.Chain` can verify correct
+  # `t:EthereumJSONRPC.address/0` and `t:EthereumJSONRPC.hash/0` pass through as `Explorer.Chain` can verify correct
   # hash format
   defp entry_to_elixir({key, _} = entry) when key in ~w(blockHash contractAddress logsBloom root transactionHash),
     do: entry

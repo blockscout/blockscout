@@ -1,10 +1,10 @@
-defmodule Explorer.JSONRPC.Blocks do
+defmodule EthereumJSONRPC.Blocks do
   @moduledoc """
   Blocks format as returned by [`eth_getBlockByHash`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbyhash)
   and [`eth_getBlockByNumber`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbynumber) from batch requests.
   """
 
-  alias Explorer.JSONRPC.{Block, Transactions}
+  alias EthereumJSONRPC.{Block, Transactions}
 
   @type elixir :: [Block.elixir()]
   @type t :: [Block.t()]
@@ -12,7 +12,7 @@ defmodule Explorer.JSONRPC.Blocks do
   @doc """
   Converts `t:elixir/0` elements to params used by `Explorer.Chain.Block.changeset/2`.
 
-      iex> Explorer.JSONRPC.Blocks.elixir_to_params(
+      iex> EthereumJSONRPC.Blocks.elixir_to_params(
       ...>   [
       ...>     %{
       ...>       "author" => "0x0000000000000000000000000000000000000000",
@@ -64,9 +64,9 @@ defmodule Explorer.JSONRPC.Blocks do
   end
 
   @doc """
-  Extracts the `t:Explorer.JSONRPC.Transactions.elixir/0` from the `t:elixir/0`.
+  Extracts the `t:EthereumJSONRPC.Transactions.elixir/0` from the `t:elixir/0`.
 
-      iex> Explorer.JSONRPC.Blocks.elixir_to_transactions([
+      iex> EthereumJSONRPC.Blocks.elixir_to_transactions([
       ...>   %{
       ...>     "author" => "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
       ...>     "difficulty" => 340282366920938463463374607431768211454,
@@ -150,7 +150,7 @@ defmodule Explorer.JSONRPC.Blocks do
   @doc """
   Decodes the stringly typed numerical fields to `t:non_neg_integer/0` and the timestamps to `t:DateTime.t/0`
 
-      iex> Explorer.JSONRPC.Blocks.to_elixir(
+      iex> EthereumJSONRPC.Blocks.to_elixir(
       ...>   [
       ...>     %{
       ...>       "author" => "0x0000000000000000000000000000000000000000",

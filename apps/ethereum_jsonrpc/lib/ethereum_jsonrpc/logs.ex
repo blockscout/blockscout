@@ -1,10 +1,10 @@
-defmodule Explorer.JSONRPC.Logs do
+defmodule EthereumJSONRPC.Logs do
   @moduledoc """
   Collection of logs included in return from
   [`eth_getTransactionReceipt`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactionreceipt).
   """
 
-  alias Explorer.JSONRPC.Log
+  alias EthereumJSONRPC.Log
 
   @type elixir :: [Log.elixir()]
   @type t :: [Log.t()]

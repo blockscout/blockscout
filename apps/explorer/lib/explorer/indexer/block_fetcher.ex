@@ -7,9 +7,10 @@ defmodule Explorer.Indexer.BlockFetcher do
 
   require Logger
 
-  alias Explorer.{Chain, Indexer, JSONRPC}
+  alias EthereumJSONRPC
+  alias EthereumJSONRPC.Transactions
+  alias Explorer.{Chain, Indexer}
   alias Explorer.Indexer.{AddressFetcher, Sequence}
-  alias Explorer.JSONRPC.Transactions
 
   # dialyzer thinks that Logger.debug functions always have no_local_return
   @dialyzer {:nowarn_function, import_range: 3}
@@ -161,7 +162,7 @@ defmodule Explorer.Indexer.BlockFetcher do
 
     hashes
     |> Enum.chunk_every(state.internal_transactions_batch_size)
-    |> Task.async_stream(&JSONRPC.fetch_internal_transactions(&1), stream_opts)
+    |> Task.async_stream(&EthereumJSONRPC.fetch_internal_transactions(&1), stream_opts)
     |> Enum.reduce_while({:ok, []}, fn
       {:ok, {:ok, internal_transactions}}, {:ok, acc} -> {:cont, {:ok, acc ++ internal_transactions}}
       {:ok, {:error, reason}}, {:ok, _acc} -> {:halt, {:error, reason}}
@@ -177,7 +178,7 @@ defmodule Explorer.Indexer.BlockFetcher do
 
     hashes
     |> Enum.chunk_every(state.receipts_batch_size)
-    |> Task.async_stream(&JSONRPC.fetch_transaction_receipts(&1), stream_opts)
+    |> Task.async_stream(&EthereumJSONRPC.fetch_transaction_receipts(&1), stream_opts)
     |> Enum.reduce_while({:ok, %{logs: [], receipts: []}}, fn
       {:ok, {:ok, %{logs: logs, receipts: receipts}}}, {:ok, %{logs: acc_logs, receipts: acc_receipts}} ->
         {:cont, {:ok, %{logs: acc_logs ++ logs, receipts: acc_receipts ++ receipts}}}
@@ -256,7 +257,7 @@ defmodule Explorer.Indexer.BlockFetcher do
   # Only public for testing
   @doc false
   def import_range({block_start, block_end} = range, %{} = state, seq) do
-    with {:blocks, {:ok, next, result}} <- {:blocks, JSONRPC.fetch_blocks_by_range(block_start, block_end)},
+    with {:blocks, {:ok, next, result}} <- {:blocks, EthereumJSONRPC.fetch_blocks_by_range(block_start, block_end)},
          %{blocks: blocks, transactions: transactions} = result,
          cap_seq(seq, next, range, state),
          transaction_hashes = Transactions.params_to_hashes(transactions),

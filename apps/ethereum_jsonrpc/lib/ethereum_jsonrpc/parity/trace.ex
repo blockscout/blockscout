@@ -1,16 +1,16 @@
-defmodule Explorer.JSONRPC.Parity.Trace do
+defmodule EthereumJSONRPC.Parity.Trace do
   @moduledoc """
   Trace returned by
   [`trace_replayTransaction`](https://wiki.parity.io/JSONRPC-trace-module.html#trace_replaytransaction), which is an
   extension to the Ethereum JSONRPC standard that is only supported by [Parity](https://wiki.parity.io/).
   """
 
-  alias Explorer.JSONRPC.Parity.Trace.{Action, Result}
+  alias EthereumJSONRPC.Parity.Trace.{Action, Result}
 
   @doc """
   Create type traces are generated when a contract is created.
 
-      iex> Explorer.JSONRPC.Parity.Trace.elixir_to_params(
+      iex> EthereumJSONRPC.Parity.Trace.elixir_to_params(
       ...>   %{
       ...>     "action" => %{
       ...>       "from" => "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
@@ -46,7 +46,7 @@ defmodule Explorer.JSONRPC.Parity.Trace do
 
   A create can fail due to a Bad Instruction in the `init` that is meant to form the `code` of the contract
 
-      iex> Explorer.JSONRPC.Parity.Trace.elixir_to_params(
+      iex> EthereumJSONRPC.Parity.Trace.elixir_to_params(
       ...>   %{
       ...>     "action" => %{
       ...>       "from" => "0x78a42d3705fb3c26a4b54737a784bf064f0815fb",
@@ -76,7 +76,7 @@ defmodule Explorer.JSONRPC.Parity.Trace do
 
   Call type traces are generated when a method is called.  Calls are further divided by call type.
 
-      iex> Explorer.JSONRPC.Parity.Trace.elixir_to_params(
+      iex> EthereumJSONRPC.Parity.Trace.elixir_to_params(
       ...>   %{
       ...>     "action" => %{
       ...>       "callType" => "call",
@@ -113,7 +113,7 @@ defmodule Explorer.JSONRPC.Parity.Trace do
 
   Calls can error and be reverted
 
-     iex> Explorer.JSONRPC.Parity.Trace.elixir_to_params(
+     iex> EthereumJSONRPC.Parity.Trace.elixir_to_params(
      ...>   %{
      ...>     "action" => %{
      ...>       "callType" => "call",
@@ -153,7 +153,7 @@ defmodule Explorer.JSONRPC.Parity.Trace do
   | `"balance"`       | `:value`             |
   | `"refundAddress"` | `:to_address_hash`   |
 
-      iex> Explorer.JSONRPC.Parity.Trace.elixir_to_params(
+      iex> EthereumJSONRPC.Parity.Trace.elixir_to_params(
       ...>   %{
       ...>     "action" => %{
       ...>       "address" => "0xa7542d78b9a0be6147536887e0065f16182d294b",
@@ -251,7 +251,7 @@ defmodule Explorer.JSONRPC.Parity.Trace do
   @doc """
   Decodes the stringly typed numerical fields to `t:non_neg_integer/0`.
 
-      iex> Explorer.JSONRPC.Parity.Trace.to_elixir(
+      iex> EthereumJSONRPC.Parity.Trace.to_elixir(
       ...>   %{
       ...>     "action" => %{
       ...>       "from" => "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
@@ -293,7 +293,7 @@ defmodule Explorer.JSONRPC.Parity.Trace do
   The caller must put `"index"` and `"transactionHash"` into the incoming map, as Parity itself does not include that
   information, but it is needed to locate the trace in history fully.
 
-      iex> Explorer.JSONRPC.Parity.Trace.to_elixir(
+      iex> EthereumJSONRPC.Parity.Trace.to_elixir(
       ...>   %{
       ...>     "action" => %{
       ...>       "from" => "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
@@ -316,7 +316,7 @@ defmodule Explorer.JSONRPC.Parity.Trace do
   `"suicide"` `"type"` traces are different in that they have a `nil` `"result"`.  This is because the `"result"` key
   is used to indicate success from Parity.
 
-      iex> Explorer.JSONRPC.Parity.Trace.to_elixir(
+      iex> EthereumJSONRPC.Parity.Trace.to_elixir(
       ...>   %{
       ...>     "action" => %{
       ...>       "address" => "0xa7542d78b9a0be6147536887e0065f16182d294b",
@@ -347,7 +347,7 @@ defmodule Explorer.JSONRPC.Parity.Trace do
 
   A call type trace can error and be reverted.
 
-      iex> Explorer.JSONRPC.Parity.Trace.to_elixir(
+      iex> EthereumJSONRPC.Parity.Trace.to_elixir(
       ...>   %{
       ...>     "action" => %{
       ...>       "callType" => "call",

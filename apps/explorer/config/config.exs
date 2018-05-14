@@ -14,11 +14,6 @@ config :explorer,
   ecto_repos: [Explorer.Repo],
   coin: "POA"
 
-config :explorer, Explorer.JSONRPC,
-  http: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :eth]],
-  trace_url: "https://sokol-trace.poa.network",
-  url: "https://sokol.poa.network"
-
 config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: 2_000
 
 config :explorer, Explorer.Repo, migration_timestamps: [type: :utc_datetime]

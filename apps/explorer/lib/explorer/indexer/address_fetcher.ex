@@ -5,12 +5,9 @@ defmodule Explorer.Indexer.AddressFetcher do
   use GenServer
   require Logger
 
-  alias Explorer.{Chain, JSONRPC}
-
-  alias Explorer.Chain.{
-    Address,
-    Hash
-  }
+  alias EthereumJSONRPC
+  alias Explorer.Chain
+  alias Explorer.Chain.{Address, Hash}
 
   @fetch_interval :timer.seconds(3)
   @max_batch_size 100
@@ -112,7 +109,7 @@ defmodule Explorer.Indexer.AddressFetcher do
   end
 
   defp do_fetch_addresses(address_hashes) do
-    JSONRPC.fetch_balances_by_hash(address_hashes)
+    EthereumJSONRPC.fetch_balances_by_hash(address_hashes)
   end
 
   defp take_batch(queue) do

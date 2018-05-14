@@ -25,7 +25,6 @@ defmodule Explorer.Application do
   # Children to start when not testing
   defp secondary_children(_) do
     [
-      Explorer.JSONRPC,
       Supervisor.child_spec({Task.Supervisor, name: Explorer.TaskSupervisor}, id: Explorer.TaskSupervisor),
       Explorer.Indexer.Supervisor,
       Explorer.Chain.Statistics.Server,
