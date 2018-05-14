@@ -26,8 +26,6 @@
           ~r"/_build/",
           ~r"/deps/",
           ~r"/node_modules/",
-          # `There are spaces around operators most of the time, but not here` disagrees with `mix format`
-          ~r"/apps/explorer/lib/explorer/chain/hash.ex",
           ~r"/apps/explorer_web/lib/explorer_web.ex"
         ]
       },
@@ -55,12 +53,23 @@
       #     {Credo.Check.Design.DuplicatedCode, false}
       #
       checks: [
+        # outdated by formatter in Elixir 1.6.  See https://github.com/rrrene/credo/issues/505
+        {Credo.Check.Consistency.LineEndings, false},
+        {Credo.Check.Consistency.SpaceAroundOperators, false},
+        {Credo.Check.Consistency.SpaceInParentheses, false},
+        {Credo.Check.Consistency.TabsOrSpaces, false},
+        {Credo.Check.Readability.LargeNumbers, false},
+        {Credo.Check.Readability.MaxLineLength, false},
+        {Credo.Check.Readability.ParenthesesInCondition, false},
+        {Credo.Check.Readability.RedundantBlankLines, false},
+        {Credo.Check.Readability.Semicolons, false},
+        {Credo.Check.Readability.SpaceAfterCommas, false},
+        {Credo.Check.Readability.TrailingBlankLine, false},
+        {Credo.Check.Readability.TrailingWhiteSpace, false},
+
+        # not handled by formatter
         {Credo.Check.Consistency.ExceptionNames},
-        {Credo.Check.Consistency.LineEndings},
         {Credo.Check.Consistency.ParameterPatternMatching},
-        {Credo.Check.Consistency.SpaceAroundOperators},
-        {Credo.Check.Consistency.SpaceInParentheses},
-        {Credo.Check.Consistency.TabsOrSpaces},
 
         # You can customize the priority of any check
         # Priority values are: `low, normal, high, higher`
@@ -83,23 +92,14 @@
         {Credo.Check.Design.TagTODO, exit_status: 0},
         {Credo.Check.Design.TagFIXME},
         {Credo.Check.Readability.FunctionNames},
-        {Credo.Check.Readability.LargeNumbers},
-        # mix format handles line length and using both hits some `mix format` bugs
-        {Credo.Check.Readability.MaxLineLength, false},
         {Credo.Check.Readability.ModuleAttributeNames},
         {Credo.Check.Readability.ModuleDoc},
         {Credo.Check.Readability.ModuleNames},
         {Credo.Check.Readability.ParenthesesOnZeroArityDefs},
-        {Credo.Check.Readability.ParenthesesInCondition},
         {Credo.Check.Readability.PredicateFunctionNames},
         {Credo.Check.Readability.PreferImplicitTry},
-        {Credo.Check.Readability.RedundantBlankLines},
         {Credo.Check.Readability.StringSigils},
-        {Credo.Check.Readability.TrailingBlankLine},
-        {Credo.Check.Readability.TrailingWhiteSpace},
         {Credo.Check.Readability.VariableNames},
-        {Credo.Check.Readability.Semicolons},
-        {Credo.Check.Readability.SpaceAfterCommas},
         {Credo.Check.Refactor.DoubleBooleanNegation},
         {Credo.Check.Refactor.CondStatements},
         {Credo.Check.Refactor.CyclomaticComplexity},
