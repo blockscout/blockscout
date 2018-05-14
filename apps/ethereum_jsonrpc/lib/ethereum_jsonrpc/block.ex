@@ -13,12 +13,12 @@ defmodule EthereumJSONRPC.Block do
 
   @typedoc """
    * `"author"` - `t:EthereumJSONRPC.address/0` that created the block.  Aliased by `"miner"`.
-   * `"difficulty"` - `t:EthereumJSONRPC.quantity/0`` of the difficulty for this block.
-   * `"extraData"` - the extra `t:EthereumJSONRPC.data/0`` field of this block.
-   * `"gasLimit" - maximum gas `t:EthereumJSONRPC.quantity/0`` in this block.
-   * `"gasUsed" - the total `t:EthereumJSONRPC.quantity/0`` of gas used by all transactions in this block.
+   * `"difficulty"` - `t:EthereumJSONRPC.quantity/0` of the difficulty for this block.
+   * `"extraData"` - the extra `t:EthereumJSONRPC.data/0` field of this block.
+   * `"gasLimit" - maximum gas `t:EthereumJSONRPC.quantity/0` in this block.
+   * `"gasUsed" - the total `t:EthereumJSONRPC.quantity/0` of gas used by all transactions in this block.
    * `"hash"` - the `t:EthereumJSONRPC.hash/0` of the block.
-   * `"logsBloom"` - `t:EthereumJSONRPC.data/0`` for the [Bloom filter](https://en.wikipedia.org/wiki/Bloom_filter)
+   * `"logsBloom"` - `t:EthereumJSONRPC.data/0` for the [Bloom filter](https://en.wikipedia.org/wiki/Bloom_filter)
      for the logs of the block. `nil` when block is pending.
    * `"miner"` - `t:EthereumJSONRPC.address/0` of the beneficiary to whom the mining rewards were given.  Aliased by
       `"author"`.
@@ -31,12 +31,12 @@ defmodule EthereumJSONRPC.Block do
    * `"sha3Uncles"` - `t:EthereumJSONRPC.hash/0` of the
      [uncles](https://bitcoin.stackexchange.com/questions/39329/in-ethereum-what-is-an-uncle-block) data in the block.
    * `"signature"` - UNKNOWN
-   * `"size"` - `t:EthereumJSONRPC.quantity/0`` of bytes in this block
+   * `"size"` - `t:EthereumJSONRPC.quantity/0` of bytes in this block
    * `"stateRoot" - `t:EthereumJSONRPC.hash/0` of the root of the final state
      [trie](https://github.com/ethereum/wiki/wiki/Patricia-Tree) of the block.
    * `"step"` - UNKNOWN
-   * `"timestamp"`: the unix timestamp as a `t:EthereumJSONRPC.quantity/0`` for when the block was collated.
-   * `"totalDifficulty" - `t:EthereumJSONRPC.quantity/0`` of the total difficulty of the chain until this block.
+   * `"timestamp"`: the unix timestamp as a `t:EthereumJSONRPC.quantity/0` for when the block was collated.
+   * `"totalDifficulty" - `t:EthereumJSONRPC.quantity/0` of the total difficulty of the chain until this block.
    * `"transactions"` - `t:list/0` of `t:EthereumJSONRPC.Transaction.t/0`.
    * `"transactionsRoot" - `t:EthereumJSONRPC.hash/0` of the root of the transaction
      [trie](https://github.com/ethereum/wiki/wiki/Patricia-Tree) of the block.
