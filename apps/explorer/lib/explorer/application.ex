@@ -5,8 +5,6 @@ defmodule Explorer.Application do
 
   use Application
 
-  import Supervisor.Spec, only: [supervisor: 3]
-
   @impl Application
   def start(_type, _args) do
     # Children to start in all environments
@@ -28,7 +26,7 @@ defmodule Explorer.Application do
   defp secondary_children(_) do
     [
       Explorer.JSONRPC,
-      supervisor(Task.Supervisor, [[name: Explorer.TaskSupervisor]], id: Explorer.TaskSupervisor),
+      Supervisor.child_spec({Task.Supervisor, name: Explorer.TaskSupervisor}, id: Explorer.TaskSupervisor),
       Explorer.Indexer,
       Explorer.Chain.Statistics.Server,
       Explorer.ExchangeRates,
