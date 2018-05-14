@@ -8,9 +8,7 @@ defmodule Explorer.Indexer.BlockFetcher do
   require Logger
 
   alias Explorer.{Chain, Indexer, JSONRPC}
-
   alias Explorer.Indexer.{AddressFetcher, Sequence}
-
   alias Explorer.JSONRPC.Transactions
 
   # dialyzer thinks that Logger.debug functions always have no_local_return
