@@ -89,7 +89,7 @@ defmodule Explorer.ExchangeRates do
   @doc """
   Returns a specific rate from the tracked tickers by symbol
   """
-  @spec lookup(String.t()) :: Token.t()
+  @spec lookup(String.t()) :: Token.t() | nil
   def lookup(symbol) do
     if store() == :ets do
       case :ets.lookup(table_name(), symbol) do

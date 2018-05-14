@@ -74,8 +74,8 @@ defmodule Explorer.Factory do
 
   def market_history_factory do
     %MarketHistory{
-      closing_price: Decimal.new(Enum.random(1..10_000) / 100),
-      opening_price: Decimal.new(Enum.random(1..10_000) / 100),
+      closing_price: price(),
+      opening_price: price(),
       date: Date.utc_today()
     }
   end
@@ -163,5 +163,12 @@ defmodule Explorer.Factory do
       type: type,
       value: sequence("internal_transaction_value", &Decimal.new(&1))
     }
+  end
+
+  defp price do
+    1..10_000
+    |> Enum.random()
+    |> Decimal.new()
+    |> Decimal.div(Decimal.new(100))
   end
 end
