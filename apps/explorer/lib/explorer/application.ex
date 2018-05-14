@@ -27,7 +27,7 @@ defmodule Explorer.Application do
     [
       Explorer.JSONRPC,
       Supervisor.child_spec({Task.Supervisor, name: Explorer.TaskSupervisor}, id: Explorer.TaskSupervisor),
-      Explorer.Indexer,
+      Explorer.Indexer.Supervisor,
       Explorer.Chain.Statistics.Server,
       Explorer.ExchangeRates,
       Explorer.Market.History.Cataloger

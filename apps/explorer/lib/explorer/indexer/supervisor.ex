@@ -8,7 +8,7 @@ defmodule Explorer.Indexer.Supervisor do
   alias Explorer.Indexer.{AddressFetcher, BlockFetcher}
 
   def start_link(opts) do
-    Supervisor.start_link(__MODULE__, opts)
+    Supervisor.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
   @impl Supervisor
