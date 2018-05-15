@@ -7,3 +7,11 @@ config :explorer, Explorer.Repo,
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox,
   ownership_timeout: 60_000
+
+config :explorer, Explorer.Chain.Statistics.Server, enabled: false
+
+config :explorer, Explorer.ExchangeRates, enabled: false
+
+config :explorer, Explorer.Indexer.Supervisor, enabled: false
+
+config :explorer, Explorer.Market.History.Cataloger, enabled: false
