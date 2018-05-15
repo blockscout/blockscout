@@ -79,6 +79,13 @@ defmodule ExplorerWeb.Router do
         AddressContractController,
         only: [:index],
         as: :contract
+      end
+
+      resources(
+        "/contract",
+        AddressVerifyContractController,
+        only: [:new, :create],
+        as: :verify_contract
       )
     end
 

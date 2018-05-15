@@ -26,6 +26,9 @@ config :explorer, Explorer.Market.History.Cataloger, enabled: true
 
 config :explorer, Explorer.Repo, migration_timestamps: [type: :utc_datetime]
 
+config :explorer,
+  solc_bin_api_url: "https://solc-bin.ethereum.org"
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
