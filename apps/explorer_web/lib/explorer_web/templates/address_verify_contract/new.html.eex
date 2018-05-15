@@ -1,0 +1,47 @@
+<section class="container__section block">
+  <div class="address__container">
+    <div class="address__tabs">
+      <h2 class="address__tab address__tab--active">
+        <%= link(
+          gettext("Contract Source Code"),
+          class: "address__link address__link--active",
+          to: '#'
+        ) %>
+      </h2>
+    </div>
+    <div class="contract__container">
+      <%= form_for @changeset,
+          address_verify_contract_path(@conn, :create, @conn.assigns.locale, @conn.params["address_id"]),
+          fn f -> %>
+
+        <div class="form-group">
+          <label>Contract Address</label>
+          <%= text_input f, :address, class: "form-control" %>
+        </div>
+
+        <div class="form-group">
+          <label>Contract Name:</label>
+          <%= text_input f, :name, class: "form-control" %>
+        </div>
+
+        <div class="form-group">
+          <label>Compiler:</label>
+          <%= select f, :compiler, @compiler_versions, class: "form-control" %>
+        </div>
+
+        <div class="form-group">
+          <label>Optimization:</label>
+          <%= select f, :optimization, ["yes", "no"], class: "form-control" %>
+        </div>
+
+        <div class="form-group">
+          <label>Enter the Solidity Contract Code below</label>
+          <%= textarea f, :code, class: "form-control", rows: 3 %>
+        </div>
+
+        <%= submit "Verify and publish", class: "button--primary" %>
+        <%= reset "Reset", class: "button--tertiary" %>
+      <% end %>
+    </div>
+  </div>
+</section>
