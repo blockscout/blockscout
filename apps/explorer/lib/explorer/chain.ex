@@ -553,6 +553,10 @@ defmodule Explorer.Chain do
       ...>         v: 0xbe,
       ...>         value: 0
       ...>       }
+      ...>     ],
+      ...>     addresses: [
+      ...>        %{hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"},
+      ...>        %{hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"}
       ...>     ]
       ...>   }
       ...> )
@@ -626,7 +630,8 @@ defmodule Explorer.Chain do
       ...>     logs: [],
       ...>     internal_transactions: [],
       ...>     receipts: [],
-      ...>     transactions: []
+      ...>     transactions: [],
+      ...>     addresses: []
       ...>   }
       ...> )
       {:ok,
@@ -727,7 +732,12 @@ defmodule Explorer.Chain do
       ...>         v: 0xbe,
       ...>         value: 0
       ...>       }
-      ...>     ]
+      ...>     ],
+      ...>     addresses: [
+      ...>       %{hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"},
+      ...>       %{hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"},
+      ...>       %{hash: "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb4"}
+      ...>    ]
       ...>   }
       ...> )
       iex> internal_transaction_changeset.errors
@@ -765,19 +775,23 @@ defmodule Explorer.Chain do
           logs: logs_params,
           internal_transactions: internal_transactions_params,
           receipts: receipts_params,
-          transactions: transactions_params
+          transactions: transactions_params,
+          addresses: addresses_params
         },
         options \\ []
       )
-      when is_list(blocks_params) and is_list(internal_transactions_params) and is_list(logs_params) and
-             is_list(receipts_params) and is_list(transactions_params) and is_list(options) do
+      when is_list(blocks_params) and is_list(internal_transactions_params) and
+           is_list(logs_params) and is_list(receipts_params) and
+           is_list(transactions_params) and is_list(addresses_params) and
+           is_list(options) do
     with {:ok, ecto_schema_module_to_changes_list} <-
            ecto_schema_module_to_params_list_to_ecto_schema_module_to_changes_list(%{
              Block => blocks_params,
              Log => logs_params,
              InternalTransaction => internal_transactions_params,
              Receipt => receipts_params,
-             Transaction => transactions_params
+             Transaction => transactions_params,
+             Address => addresses_params
            }) do
       insert_ecto_schema_module_to_changes_list(ecto_schema_module_to_changes_list, options)
     end
@@ -1446,25 +1460,7 @@ defmodule Explorer.Chain do
         %Changeset{changes: changes, valid?: true}, {:ok, acc_changes} -> {:ok, [changes | acc_changes]}
         %Changeset{valid?: true}, {:error, _} = error -> error
       end)
-
     {status, Enum.reverse(acc)}
-  end
-
-  defp ecto_schema_module_changes_list_to_address_hash_set({ecto_schema_module, changes_list}) do
-    Enum.reduce(changes_list, MapSet.new(), fn changes, acc ->
-      changes
-      |> ecto_schema_module.changes_to_address_hash_set()
-      |> MapSet.union(acc)
-    end)
-  end
-
-  @spec ecto_schema_module_to_changes_list_to_address_hash_set(%{module => [map()]}) :: MapSet.t(Hash.Truncated.t())
-  defp ecto_schema_module_to_changes_list_to_address_hash_set(ecto_schema_module_to_changes_list) do
-    Enum.reduce(ecto_schema_module_to_changes_list, MapSet.new(), fn ecto_schema_module_changes_list, acc ->
-      ecto_schema_module_changes_list
-      |> ecto_schema_module_changes_list_to_address_hash_set()
-      |> MapSet.union(acc)
-    end)
   end
 
   defp ecto_schema_module_to_params_list_to_ecto_schema_module_to_changes_list(ecto_schema_module_to_params_list) do
@@ -1543,17 +1539,15 @@ defmodule Explorer.Chain do
 
   defp insert_ecto_schema_module_to_changes_list(
          %{
+           Address => addresses_changes,
            Block => blocks_changes,
            Log => logs_changes,
            InternalTransaction => internal_transactions_changes,
            Receipt => receipts_changes,
            Transaction => transactions_changes
-         } = ecto_schema_module_to_changes_list,
+         },
          options
        ) do
-    address_hash_set = ecto_schema_module_to_changes_list_to_address_hash_set(ecto_schema_module_to_changes_list)
-    addresses_changes = Address.hash_set_to_changes_list(address_hash_set)
-
     timestamps = timestamps()
 
     Multi.new()

@@ -50,6 +50,4 @@ defmodule Explorer.Chain.Receipt do
     |> foreign_key_constraint(:transaction_hash)
     |> unique_constraint(:transaction_hash)
   end
-
-  def changes_to_address_hash_set(_), do: MapSet.new()
 end
