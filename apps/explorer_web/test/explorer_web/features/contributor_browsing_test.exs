@@ -29,7 +29,7 @@ defmodule ExplorerWeb.ContributorBrowsingTest do
   end
 
   test "search for transactions", %{session: session} do
-    transaction = insert(:transaction, input: "socks")
+    transaction = insert(:transaction, input: "0x736f636b73")
 
     session
     |> visit("/")
@@ -38,7 +38,7 @@ defmodule ExplorerWeb.ContributorBrowsingTest do
       with: to_string(transaction.hash)
     )
     |> send_keys([:enter])
-    |> assert_has(css(".transaction__item", text: transaction.input))
+    |> assert_has(css(".transaction__item", text: to_string(transaction.input)))
   end
 
   test "search for address", %{session: session} do
@@ -124,7 +124,7 @@ defmodule ExplorerWeb.ContributorBrowsingTest do
           gas: Decimal.new(1_230_000_000_000_123_123),
           gas_price: Decimal.new(7_890_000_000_898_912_300_045),
           index: 4,
-          input: "0x00012",
+          input: "0x000012",
           nonce: 99045,
           inserted_at: Timex.parse!("1970-01-01T00:00:18-00:00", "{ISO:Extended}"),
           updated_at: Timex.parse!("1980-01-01T00:00:18-00:00", "{ISO:Extended}"),
@@ -202,7 +202,7 @@ defmodule ExplorerWeb.ContributorBrowsingTest do
         )
       )
       |> assert_has(css(".transaction__item", text: "1,230,000,000,000,123,123 Gas"))
-      |> assert_has(css(".transaction__item", text: "0x00012"))
+      |> assert_has(css(".transaction__item", text: to_string(transaction.input)))
       |> assert_has(css(".transaction__item", text: "99045"))
       |> assert_has(css(".transaction__item", text: "123,987"))
       |> assert_has(css(".transaction__item", text: to_string(lincoln.hash)))

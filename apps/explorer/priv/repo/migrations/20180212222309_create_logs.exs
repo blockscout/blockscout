@@ -3,7 +3,7 @@ defmodule Explorer.Repo.Migrations.CreateLogs do
 
   def change do
     create table(:logs) do
-      add(:data, :text, null: false)
+      add(:data, :bytea, null: false)
       add(:index, :integer, null: false)
       add(:type, :string, null: false)
       add(:first_topic, :string, null: true)

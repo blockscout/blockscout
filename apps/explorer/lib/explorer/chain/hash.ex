@@ -123,7 +123,7 @@ defmodule Explorer.Chain.Hash do
   end
 
   @doc """
-  Converts the `t:t/0` to string representation shown to users.
+  Converts the `t:t/0` to `iodata` representation shown to users.
 
       iex> %Explorer.Chain.Hash{
       ...>   byte_count: 32,

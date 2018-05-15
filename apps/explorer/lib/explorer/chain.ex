@@ -6,7 +6,7 @@ defmodule Explorer.Chain do
   import Ecto.Query, only: [from: 2, join: 4, or_where: 3, order_by: 2, order_by: 3, preload: 2, where: 2, where: 3]
 
   alias Ecto.{Changeset, Multi}
-  alias Explorer.Chain.{Address, Block, Hash, InternalTransaction, Log, Receipt, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, Data, Hash, InternalTransaction, Log, Receipt, Transaction, Wei}
   alias Explorer.Repo
 
   @typedoc """
@@ -284,6 +284,30 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Converts the `Explorer.Chain.Data.t:t/0` to `iodata` representation that can be written to users effciently.
+
+      iex> %Explorer.Chain.Data{
+      ...>   bytes: <<>>
+      ...> } |>
+      ...> Explorer.Chain.data_to_iodata() |>
+      ...> IO.iodata_to_binary()
+      "0x"
+      iex> %Explorer.Chain.Data{
+      ...>   bytes: <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 134, 45, 103, 203, 7,
+      ...>     115, 238, 63, 140, 231, 234, 137, 179, 40, 255, 234, 134, 26,
+      ...>     179, 239>>
+      ...> } |>
+      ...> Explorer.Chain.data_to_iodata() |>
+      ...> IO.iodata_to_binary()
+      "0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef"
+
+  """
+  @spec data_to_iodata(Data.t()) :: iodata()
+  def data_to_iodata(data) do
+    Data.to_iodata(data)
+  end
+
+  @doc """
   The fee a `transaction` paid for the `t:Explorer.Transaction.t/0` `gas`
 
   If the transaction is pending, then the fee will be a range of `unit`
@@ -376,7 +400,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Converts the `t:t/0` to string representation shown to users.
+  Converts the `Explorer.Chain.Hash.t:t/0` to `iodata` representation that can be written efficiently to users.
 
       iex> %Explorer.Chain.Hash{
       ...>   byte_count: 32,

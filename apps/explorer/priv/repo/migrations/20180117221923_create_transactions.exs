@@ -10,9 +10,9 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
       # `null` when a pending transaction
       add(:index, :integer, null: true)
 
-      add(:input, :text, null: false)
+      add(:input, :bytea, null: false)
       add(:nonce, :integer, null: false)
-      add(:public_key, :string, null: false)
+      add(:public_key, :bytea, null: false)
       add(:r, :string, null: false)
       add(:s, :string, null: false)
       add(:standard_v, :string, null: false)
