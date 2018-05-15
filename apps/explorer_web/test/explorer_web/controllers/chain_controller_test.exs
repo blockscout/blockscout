@@ -36,27 +36,25 @@ defmodule ExplorerWeb.ChainControllerTest do
     test "only returns transactions with an associated block", %{conn: conn} do
       block = insert(:block, number: 33)
 
-      insert(:transaction, id: 10, hash: "0xDECAFBAD") |> with_block(block)
+      associated = insert(:transaction, block_hash: block.hash, index: 0)
+      unassociated = insert(:transaction)
 
-      insert(:transaction, id: 30)
       conn = get(conn, "/en")
 
-      transaction_ids =
-        conn.assigns.chain.transactions
-        |> Enum.map(fn transaction -> transaction.id end)
+      transaction_hashes = Enum.map(conn.assigns.chain.transactions, fn transaction -> transaction.hash end)
 
-      assert(Enum.member?(transaction_ids, 10))
-      refute(Enum.member?(transaction_ids, 30))
+      assert(Enum.member?(transaction_hashes, associated.hash))
+      refute(Enum.member?(transaction_hashes, unassociated.hash))
     end
 
     test "returns a transaction", %{conn: conn} do
       block = insert(:block, number: 33)
 
-      insert(:transaction, hash: "0xDECAFBAD") |> with_block(block)
+      transaction = insert(:transaction, block_hash: block.hash, index: 0)
 
       conn = get(conn, "/en")
 
-      assert(List.first(conn.assigns.chain.transactions).hash == "0xDECAFBAD")
+      assert(List.first(conn.assigns.chain.transactions).hash == transaction.hash)
     end
 
     test "returns market history data", %{conn: conn} do
@@ -79,24 +77,25 @@ defmodule ExplorerWeb.ChainControllerTest do
     end
 
     test "finds a transaction by hash", %{conn: conn} do
-      transaction = insert(:transaction) |> with_block()
-      conn = get(conn, "/en/search?q=#{transaction.hash}")
+      block = insert(:block)
+      transaction = insert(:transaction, block_hash: block.hash, index: 0)
+      conn = get(conn, "/en/search?q=#{to_string(transaction.hash)}")
 
-      assert redirected_to(conn) == transaction_path(conn, :show, "en", transaction.hash)
+      assert redirected_to(conn) == transaction_path(conn, :show, "en", transaction)
     end
 
     test "finds an address by hash", %{conn: conn} do
       address = insert(:address)
-      conn = get(conn, "en/search?q=#{address.hash}")
+      conn = get(conn, "en/search?q=#{to_string(address.hash)}")
 
-      assert redirected_to(conn) == address_path(conn, :show, "en", address.hash)
+      assert redirected_to(conn) == address_path(conn, :show, "en", address)
     end
 
     test "finds an address by hash when there are extra spaces", %{conn: conn} do
       address = insert(:address)
-      conn = get(conn, "en/search?q=#{address.hash}    ")
+      conn = get(conn, "en/search?q=#{to_string(address.hash)}    ")
 
-      assert redirected_to(conn) == address_path(conn, :show, "en", address.hash)
+      assert redirected_to(conn) == address_path(conn, :show, "en", address)
     end
 
     test "redirects to 404 when it finds nothing", %{conn: conn} do

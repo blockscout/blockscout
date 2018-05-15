@@ -3,7 +3,7 @@ defmodule ExplorerWeb.AddressPage do
 
   use Wallaby.DSL
   import Wallaby.Query, only: [css: 1, css: 2]
-  alias Explorer.Chain.{Address, Transaction}
+  alias Explorer.Chain.{Address, Hash, Transaction}
 
   def apply_filter(session, direction) do
     session
@@ -24,6 +24,12 @@ defmodule ExplorerWeb.AddressPage do
   end
 
   def transaction(%Transaction{hash: transaction_hash}), do: transaction(transaction_hash)
+
+  def transaction(%Hash{} = hash) do
+    hash
+    |> to_string()
+    |> transaction()
+  end
 
   def transaction(transaction_hash) do
     css("[data-test='transaction_hash']", text: transaction_hash)

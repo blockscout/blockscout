@@ -53,17 +53,29 @@
       #     {Credo.Check.Design.DuplicatedCode, false}
       #
       checks: [
+        # outdated by formatter in Elixir 1.6.  See https://github.com/rrrene/credo/issues/505
+        {Credo.Check.Consistency.LineEndings, false},
+        {Credo.Check.Consistency.SpaceAroundOperators, false},
+        {Credo.Check.Consistency.SpaceInParentheses, false},
+        {Credo.Check.Consistency.TabsOrSpaces, false},
+        {Credo.Check.Readability.LargeNumbers, false},
+        {Credo.Check.Readability.MaxLineLength, false},
+        {Credo.Check.Readability.ParenthesesInCondition, false},
+        {Credo.Check.Readability.RedundantBlankLines, false},
+        {Credo.Check.Readability.Semicolons, false},
+        {Credo.Check.Readability.SpaceAfterCommas, false},
+        {Credo.Check.Readability.TrailingBlankLine, false},
+        {Credo.Check.Readability.TrailingWhiteSpace, false},
+
+        # not handled by formatter
         {Credo.Check.Consistency.ExceptionNames},
-        {Credo.Check.Consistency.LineEndings},
         {Credo.Check.Consistency.ParameterPatternMatching},
-        {Credo.Check.Consistency.SpaceAroundOperators},
-        {Credo.Check.Consistency.SpaceInParentheses},
-        {Credo.Check.Consistency.TabsOrSpaces},
 
         # You can customize the priority of any check
         # Priority values are: `low, normal, high, higher`
         #
-        {Credo.Check.Design.AliasUsage, excluded_lastnames: ~w(Number Time), priority: :low},
+        {Credo.Check.Design.AliasUsage,
+         excluded_lastnames: ~w(DateTime Full Number Repo Time Truncated), priority: :low},
 
         # For some checks, you can also set other parameters
         #
@@ -77,25 +89,17 @@
         # If you don't want TODO comments to cause `mix credo` to fail, just
         # set this value to 0 (zero).
         #
-        {Credo.Check.Design.TagTODO, exit_status: 2},
+        {Credo.Check.Design.TagTODO, exit_status: 0},
         {Credo.Check.Design.TagFIXME},
         {Credo.Check.Readability.FunctionNames},
-        {Credo.Check.Readability.LargeNumbers},
-        {Credo.Check.Readability.MaxLineLength, priority: :low, max_length: 120},
         {Credo.Check.Readability.ModuleAttributeNames},
         {Credo.Check.Readability.ModuleDoc},
         {Credo.Check.Readability.ModuleNames},
         {Credo.Check.Readability.ParenthesesOnZeroArityDefs},
-        {Credo.Check.Readability.ParenthesesInCondition},
         {Credo.Check.Readability.PredicateFunctionNames},
         {Credo.Check.Readability.PreferImplicitTry},
-        {Credo.Check.Readability.RedundantBlankLines},
         {Credo.Check.Readability.StringSigils},
-        {Credo.Check.Readability.TrailingBlankLine},
-        {Credo.Check.Readability.TrailingWhiteSpace},
         {Credo.Check.Readability.VariableNames},
-        {Credo.Check.Readability.Semicolons},
-        {Credo.Check.Readability.SpaceAfterCommas},
         {Credo.Check.Refactor.DoubleBooleanNegation},
         {Credo.Check.Refactor.CondStatements},
         {Credo.Check.Refactor.CyclomaticComplexity},
@@ -122,11 +126,12 @@
         {Credo.Check.Warning.UnusedRegexOperation},
         {Credo.Check.Warning.UnusedStringOperation},
         {Credo.Check.Warning.UnusedTupleOperation},
-        {Credo.Check.Warning.RaiseInsideRescue},
+        {Credo.Check.Warning.RaiseInsideRescue, false},
 
         # Controversial and experimental checks (opt-in, just remove `, false`)
         #
-        {Credo.Check.Refactor.ABCSize},
+        # TODO reenable before merging optimized-indexer branch
+        {Credo.Check.Refactor.ABCSize, false},
         {Credo.Check.Refactor.AppendSingleItem},
         {Credo.Check.Refactor.VariableRebinding},
         {Credo.Check.Warning.MapGetUnsafePass},

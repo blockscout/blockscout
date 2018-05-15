@@ -5,7 +5,7 @@ defmodule ExplorerUmbrella.Mixfile do
 
   def project do
     [
-      aliases: aliases(),
+      aliases: aliases(Mix.env()),
       apps_path: "apps",
       deps: deps(),
       dialyzer: [
@@ -18,7 +18,8 @@ defmodule ExplorerUmbrella.Mixfile do
         coveralls: :test,
         "coveralls.detail": :test,
         "coveralls.post": :test,
-        "coveralls.html": :test
+        "coveralls.html": :test,
+        dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
       test_coverage: [tool: ExCoveralls]
@@ -27,7 +28,11 @@ defmodule ExplorerUmbrella.Mixfile do
 
   ## Private Functions
 
-  defp aliases do
+  defp aliases(:dev) do
+    []
+  end
+
+  defp aliases(_env) do
     [
       compile: "compile --warnings-as-errors"
     ]

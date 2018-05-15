@@ -5,12 +5,12 @@ defmodule ExplorerWeb.AddressView do
 
   @dialyzer :no_match
 
-  def balance(%Address{balance: nil}), do: ""
+  def balance(%Address{fetched_balance: nil}), do: ""
 
   @doc """
   Returns a formatted address balance and includes the unit.
   """
-  def balance(%Address{balance: balance}) do
+  def balance(%Address{fetched_balance: balance}) do
     format_wei_value(balance, :ether, fractional_digits: 18)
   end
 end

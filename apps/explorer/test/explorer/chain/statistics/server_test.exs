@@ -4,6 +4,12 @@ defmodule Explorer.Chain.Statistics.ServerTest do
   alias Explorer.Chain.Statistics
   alias Explorer.Chain.Statistics.Server
 
+  describe "child_spec/1" do
+    test "it defines a child_spec/1 that works with supervisors" do
+      assert {:ok, _} = start_supervised(Server)
+    end
+  end
+
   describe "init/1" do
     test "returns a new chain when not told to refresh" do
       {:ok, statistics} = Server.init(refresh: false)
@@ -21,14 +27,6 @@ defmodule Explorer.Chain.Statistics.ServerTest do
       {:ok, _} = Server.init([])
 
       assert_receive :refresh, 2_000
-    end
-  end
-
-  describe "fetch/0" do
-    test "fetches the chain when not started" do
-      original = Statistics.fetch()
-
-      assert Server.fetch() == original
     end
   end
 

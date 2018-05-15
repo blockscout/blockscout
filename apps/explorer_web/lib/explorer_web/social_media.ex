@@ -17,8 +17,6 @@ defmodule ExplorerWeb.SocialMedia do
     |> filter_and_build_links()
   end
 
-  # Private functions
-
   defp filter_and_build_links(configured_services) do
     for {name, account} <- configured_services, Map.has_key?(@services, name) do
       {name, @services[name] <> account}

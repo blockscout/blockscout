@@ -229,7 +229,7 @@ jobs:
           paths:
             - plts
 
-      - run: mix dialyzer
+      - run: mix dialyzer --halt-exit-status
   eslint:
     docker:
       # Ensure .tool-versions matches
@@ -314,7 +314,6 @@ jobs:
           POSTGRES_PASSWORD: postgres
           # match PGUSER for elixir image above
           POSTGRES_USER: postgres
-      - image: circleci/redis:4.0.9-alpine
 
     working_directory: ~/app
 
@@ -328,10 +327,6 @@ jobs:
       - run:
           name: Wait for DB
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
-
-      - run:
-          name: Wait for Redis
-          command: dockerize -wait tcp://localhost:6379 -timeout 1m
 
       - run: mix coveralls.circle --umbrella
 

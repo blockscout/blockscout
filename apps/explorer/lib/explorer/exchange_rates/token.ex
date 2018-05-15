@@ -6,15 +6,15 @@ defmodule Explorer.ExchangeRates.Token do
   @typedoc """
   Represents an exchange rate for a given token.
 
-  * `:available_supply` - Available supply of a token
-  * `:btc_value` - The Bitcoin value of the currency
-  * `:id` - ID of a currency
-  * `:last_updated` - Timestamp of when the value was last updated
-  * `:market_cap_usd` - Market capitalization of the currency
-  * `:name` - Human-readable name of a ticker
-  * `:symbol` - Trading symbol used to represent a currency
-  * `:usd_value` - The USD value of the currency
-  * `:volume_24h_usd` - The volume from the last 24 hours in USD
+   * `:available_supply` - Available supply of a token
+   * `:btc_value` - The Bitcoin value of the currency
+   * `:id` - ID of a currency
+   * `:last_updated` - Timestamp of when the value was last updated
+   * `:market_cap_usd` - Market capitalization of the currency
+   * `:name` - Human-readable name of a ticker
+   * `:symbol` - Trading symbol used to represent a currency
+   * `:usd_value` - The USD value of the currency
+   * `:volume_24h_usd` - The volume from the last 24 hours in USD
   """
   @type t :: %__MODULE__{
           available_supply: Decimal.t(),

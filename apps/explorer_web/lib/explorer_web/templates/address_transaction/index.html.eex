@@ -82,8 +82,8 @@
               <td class="transactions__column transactions__column--hash">
                 <div class="transactions__hash">
                   <%= link(
-                        transaction.hash,
-                        to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.hash),
+                        hash(transaction),
+                        to: transaction_path(@conn, :show, @conn.assigns.locale, transaction),
                         class: "transactions__link transactions__link--truncated transactions__link--long-hash",
                         "data-test": "transaction_hash"
                       ) %>
@@ -91,9 +91,9 @@
               </td>
               <td class="transactions__column transactions__column--block transactions__column--optional">
                 <%= link(
-                      transaction.block.number,
+                      block(transaction),
                       class: "transactions__link",
-                      to: block_path(@conn, :show, @conn.assigns.locale, transaction.block.number)
+                      to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
                     ) %>
               </td>
               <td class="transactions__column transactions__column--age">
@@ -102,18 +102,18 @@
               <td class="transactions__column transactions__column--from transactions__column--optional">
                 <div class="transactions__hash">
                   <%= link(
-                        transaction.from_address.hash,
+                        from_address(transaction),
                         class: "transactions__link transactions__link--truncated transactions__link--hash",
-                        to: address_path(@conn, :show, @conn.assigns.locale, transaction.from_address.hash)
+                        to: address_path(@conn, :show, @conn.assigns.locale, transaction.from_address)
                       ) %>
                 </div>
               </td>
               <td class="transactions__column transactions__column--to transactions__column--optional">
                 <div class="transactions__hash">
                   <%= link(
-                        transaction.to_address.hash,
+                        to_address(transaction),
                         class: "transactions__link transactions__link--truncated transactions__link--hash",
-                        to: address_path(@conn, :show, @conn.assigns.locale, transaction.to_address.hash)
+                        to: address_path(@conn, :show, @conn.assigns.locale, transaction.to_address)
                       ) %>
                 </div>
               </td>

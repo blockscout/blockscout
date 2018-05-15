@@ -6,18 +6,30 @@ defmodule Explorer.Chain.Credit do
   use Explorer.Schema
 
   alias Ecto.Adapters.SQL
-  alias Explorer.Chain.{Address, Wei}
+  alias Explorer.Chain.{Address, Hash, Wei}
   alias Explorer.Repo
 
-  @primary_key false
+  @typedoc """
+   * `address` - address that was the `to_address`
+   * `address_hash` - foreign key for `address`
+   * `count` - the number of credits to `address`
+   * `value` - sum of all credit values.
+  """
+  @type t :: %__MODULE__{
+          address: %Ecto.Association.NotLoaded{} | Address.t(),
+          address_hash: Hash.Truncated.t(),
+          count: non_neg_integer,
+          value: Decimal.t()
+        }
 
+  @primary_key false
   schema "credits" do
     field(:count, :integer)
     field(:value, Wei)
 
     timestamps()
 
-    belongs_to(:address, Address, primary_key: true)
+    belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Truncated)
   end
 
   def refresh do

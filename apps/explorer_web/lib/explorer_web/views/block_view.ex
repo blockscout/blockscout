@@ -7,14 +7,8 @@ defmodule ExplorerWeb.BlockView do
 
   @dialyzer :no_match
 
-  # Functions
-
   def age(%Block{timestamp: timestamp}) do
     Timex.from_now(timestamp)
-  end
-
-  def formatted_timestamp(%Block{timestamp: timestamp}) do
-    Timex.format!(timestamp, "%b-%d-%Y %H:%M:%S %p %Z", :strftime)
   end
 
   def average_gas_price(%Block{transactions: transactions}) do
@@ -28,5 +22,9 @@ defmodule ExplorerWeb.BlockView do
     unit_text = gettext("Gwei")
 
     "#{average} #{unit_text}"
+  end
+
+  def formatted_timestamp(%Block{timestamp: timestamp}) do
+    Timex.format!(timestamp, "%b-%d-%Y %H:%M:%S %p %Z", :strftime)
   end
 end

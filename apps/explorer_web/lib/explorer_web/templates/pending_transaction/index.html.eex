@@ -46,35 +46,25 @@
                 </td>
                 <td class="transactions__column transactions__column--hash">
                   <%= link(
-                        transaction.hash,
+                        hash(transaction),
                         class: "transactions__link transactions__link--truncated transactions__link--long-hash",
-                        to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.hash)
+                        to: transaction_path(@conn, :show, @conn.assigns.locale, transaction)
                       ) %>
                 </td>
                 <td class="transactions__column transactions__column--last-seen"><%= last_seen(transaction) %></td>
-                <td class="transactions__column transactions__column--optional transactions__column--from-address">
-                  <% to_address_hash = to_address_hash(transaction) %>
-                  <%= if to_address_hash do %>
-                    <%= link(
-                          to_address_hash,
-                          class: "transactions__link transactions__link--truncated transactions__link--hash",
-                          to: address_path(@conn, :show, @conn.assigns.locale, to_address_hash)
-                        ) %>
-                  <% else %>
-                    <%= gettext "Pending" %>
-                  <% end %>
-                </td>
                 <td class="transactions__column transactions__column--optional transactions__column--to-address">
-                  <% from_address_hash = from_address_hash(transaction) %>
-                  <%= if from_address_hash do %>
-                    <%= link(
-                          from_address_hash,
-                          class: "transactions__link transactions__link--truncated transactions__link--hash",
-                          to: address_path(@conn, :show, @conn.assigns.locale, from_address_hash)
-                        ) %>
-                  <% else %>
-                    <%= gettext "Pending" %>
-                  <% end %>
+                  <%= link(
+                        from_address(transaction),
+                        class: "transactions__link transactions__link--truncated transactions__link--hash",
+                        to: address_path(@conn, :show, @conn.assigns.locale, transaction.from_address)
+                      ) %>
+                </td>
+                <td class="transactions__column transactions__column--optional transactions__column--from-address">
+                  <%= link(
+                        to_address(transaction),
+                        class: "transactions__link transactions__link--truncated transactions__link--hash",
+                        to: address_path(@conn, :show, @conn.assigns.locale, transaction.to_address)
+                      ) %>
                 </td>
                 <td class="transactions__column transactions__column--value">
                   <%= ExplorerWeb.TransactionView.value(transaction) %>
@@ -83,16 +73,21 @@
             <% end %>
           </tbody>
         </table>
-        <%= link(
-              gettext("Next Page"),
-              class: "transactions__link transactions__link--next-page",
-              to: pending_transaction_path(
-                @conn,
-                :index,
-                @conn.assigns.locale,
-                %{"last_seen" => @last_seen_transaction_id}
-              )
-            ) %>
+        <%= if @last_seen_pending_inserted_at do %>
+          <%= link(
+                gettext("Next Page"),
+                class: "transactions__link transactions__link--next-page",
+                to: pending_transaction_path(
+                  @conn,
+                  :index,
+                  @conn.assigns.locale,
+                  %{
+                     "last_seen_inserted_at" =>
+                       Timex.format!(@last_seen_pending_inserted_at, "{ISO:Extended:Z}")
+                  }
+                )
+              ) %>
+        <% end %>
       </div>
     </div>
   </section>

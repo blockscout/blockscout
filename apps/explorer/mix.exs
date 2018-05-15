@@ -3,7 +3,7 @@ defmodule Explorer.Mixfile do
 
   def project do
     [
-      aliases: aliases(),
+      aliases: aliases(Mix.env()),
       app: :explorer,
       build_path: "../../_build",
       config_path: "../../config/config.exs",
@@ -22,7 +22,8 @@ defmodule Explorer.Mixfile do
         coveralls: :test,
         "coveralls.detail": :test,
         "coveralls.post": :test,
-        "coveralls.html": :test
+        "coveralls.html": :test,
+        dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
       test_coverage: [tool: ExCoveralls],
@@ -36,7 +37,7 @@ defmodule Explorer.Mixfile do
   def application do
     [
       mod: {Explorer.Application, []},
-      extra_applications: extra_applications(Mix.env())
+      extra_applications: extra_applications()
     ]
   end
 
@@ -45,19 +46,11 @@ defmodule Explorer.Mixfile do
   defp elixirc_paths(_), do: elixirc_paths()
   defp elixirc_paths, do: ["lib"]
 
-  # Specifies extra applications to start per environment
-  defp extra_applications(:prod), do: [:phoenix_pubsub_redis, :exq, :exq_ui | extra_applications()]
-
-  defp extra_applications(:dev), do: [:exq, :exq_ui | extra_applications()]
-  defp extra_applications(_), do: extra_applications()
-
   defp extra_applications,
     do: [
       :crontab,
-      :ethereumex,
       :logger,
       :mix,
-      :new_relixir,
       :runtime_tools,
       :scrivener_ecto,
       :timex,
@@ -73,23 +66,19 @@ defmodule Explorer.Mixfile do
       {:credo, "0.9.2", only: [:dev, :test], runtime: false},
       {:crontab, "~> 1.1"},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
-      {:ethereumex, "~> 0.3"},
       {:ex_machina, "~> 2.1", only: [:test]},
       # Code coverage
       {:excoveralls, "~> 0.8.1", only: [:test]},
-      {:exq, "~> 0.9.1"},
-      {:exq_ui, "~> 0.9.0"},
       {:exvcr, "~> 0.10", only: :test},
-      {:flow, "~> 0.12"},
+      # JSONRPC access to Parity for `Explorer.Indexer`
+      {:ethereum_jsonrpc, in_umbrella: true},
       {:httpoison, "~> 1.0", override: true},
       {:jason, "~> 1.0"},
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       {:math, "~> 0.3.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:mox, "~> 0.3.2", only: [:test]},
-      {:new_relixir, "~> 0.4"},
       {:postgrex, ">= 0.0.0"},
-      {:quantum, "~> 2.2.1"},
       {:scrivener_ecto, "~> 1.0"},
       {:scrivener_html, "~> 1.7"},
       {:sobelow, ">= 0.0.0", only: [:dev, :test], runtime: false},
@@ -104,13 +93,18 @@ defmodule Explorer.Mixfile do
   #     $ mix ecto.setup
   #
   # See the documentation for `Mix` for more info on aliases.
-  defp aliases do
+  defp aliases(env) do
     [
-      compile: "compile --warnings-as-errors",
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate", "test"]
-    ]
+    ] ++ env_aliases(env)
+  end
+
+  defp env_aliases(:dev), do: []
+
+  defp env_aliases(_env) do
+    [compile: "compile --warnings-as-errors"]
   end
 
   defp package do

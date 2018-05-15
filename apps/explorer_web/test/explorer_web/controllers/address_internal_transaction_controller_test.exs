@@ -4,10 +4,17 @@ defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
   import ExplorerWeb.Router.Helpers, only: [address_internal_transaction_path: 4]
 
   describe "GET index/3" do
-    test "without address", %{conn: conn} do
+    test "with invalid address hash", %{conn: conn} do
       conn =
         conn
-        |> get(address_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, "0xcafe"))
+        |> get(address_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, "invalid_address"))
+
+      assert html_response(conn, 404)
+    end
+
+    test "with valid address hash without address", %{conn: conn} do
+      conn =
+        get(conn, address_internal_transaction_path(conn, :index, :en, "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"))
 
       assert html_response(conn, 404)
     end
@@ -15,16 +22,15 @@ defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
     test "returns internal transactions for the address", %{conn: conn} do
       address = insert(:address)
       block = insert(:block)
-      transaction = insert(:transaction)
-      insert(:block_transaction, block_id: block.id, transaction_id: transaction.id)
+      transaction = insert(:transaction, block_hash: block.hash, index: 0)
 
       from_internal_transaction =
-        insert(:internal_transaction, transaction_id: transaction.id, from_address_id: address.id, index: 1)
+        insert(:internal_transaction, transaction_hash: transaction.hash, from_address_hash: address.hash, index: 1)
 
       to_internal_transaction =
-        insert(:internal_transaction, transaction_id: transaction.id, to_address_id: address.id, index: 2)
+        insert(:internal_transaction, transaction_hash: transaction.hash, to_address_hash: address.hash, index: 2)
 
-      path = address_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, address.hash)
+      path = address_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, address)
 
       conn = get(conn, path)
 

@@ -5,30 +5,21 @@ defmodule Explorer.Chain do
 
   import Ecto.Query, only: [from: 2, join: 4, or_where: 3, order_by: 2, order_by: 3, preload: 2, where: 2, where: 3]
 
-  alias Explorer.Chain.{
-    Address,
-    Block,
-    BlockTransaction,
-    InternalTransaction,
-    Log,
-    Receipt,
-    Transaction,
-    Wei
-  }
-
-  alias Explorer.Repo.NewRelic, as: Repo
-
-  # Types
+  alias Ecto.{Changeset, Multi}
+  alias Explorer.Chain.{Address, Block, Hash, InternalTransaction, Log, Receipt, Transaction, Wei}
+  alias Explorer.Repo
 
   @typedoc """
   The name of an association on the `t:Ecto.Schema.t/0`
   """
   @type association :: atom()
 
+  @type direction :: :from | :to
+
   @typedoc """
-  * `:optional` - the association is optional and only needs to be loaded if available
-  * `:required` - the association is required and MUST be loaded.  If it is not available, then the parent struct
-      SHOULD NOT be returned.
+   * `:optional` - the association is optional and only needs to be loaded if available
+   * `:required` - the association is required and MUST be loaded.  If it is not available, then the parent struct
+     SHOULD NOT be returned.
   """
   @type necessity :: :optional | :required
 
@@ -42,11 +33,14 @@ defmodule Explorer.Chain do
   """
   @type pagination :: map()
 
-  @typep direction_option :: :to | :from
+  @typep after_hash_option :: {:after_hash, Hash.t()}
+  @typep direction_option :: {:direction, direction}
+  @typep inserted_after_option :: {:inserted_after, DateTime.t()}
   @typep necessity_by_association_option :: {:necessity_by_association, necessity_by_association}
   @typep pagination_option :: {:pagination, pagination}
-
-  # Functions
+  @typep timeout_option :: {:timeout, timeout}
+  @typep timestamps :: %{inserted_at: %Ecto.DateTime{}, updated_at: %Ecto.DateTime{}}
+  @typep timestamps_option :: {:timestamps, timestamps}
 
   @doc """
   `t:Explorer.Chain.InternalTransaction/0`s from `address`.
@@ -56,17 +50,17 @@ defmodule Explorer.Chain do
 
   ## Options
 
-  * `:direction` - if specified, will filter internal transactions by address type. If `:to` is specified, only internal
-  transactions where the "to" address matches will be returned. Likewise, if `:from` is specified, only internal
-  transactions where the "from" address matches will be returned. If :direction is omitted, internal transactions either
-  to or from the address will be returned.
-  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`. If an association is
-  `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association, then
-  the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the page `entries`.
-  * `:pagination` - pagination params to pass to scrivener.
+    * `:direction` - if specified, will filter internal transactions by address type. If `:to` is specified, only
+      internal transactions where the "to" address matches will be returned. Likewise, if `:from` is specified, only
+      internal transactions where the "from" address matches will be returned. If `:direction` is omitted, internal
+      transactions either to or from the address will be returned.
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`. If an association is
+      `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
+      then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the page `entries`.
+    * `:pagination` - pagination params to pass to scrivener.
 
   """
-  def address_to_internal_transactions(%Address{id: id}, options \\ []) do
+  def address_to_internal_transactions(%Address{hash: hash}, options \\ []) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     direction = Keyword.get(options, :direction)
     pagination = Keyword.get(options, :pagination, %{})
@@ -74,9 +68,9 @@ defmodule Explorer.Chain do
     InternalTransaction
     |> join(:inner, [internal_transaction], transaction in assoc(internal_transaction, :transaction))
     |> join(:left, [internal_transaction, transaction], block in assoc(transaction, :block))
-    |> where_address_fields_match(direction, id)
+    |> where_address_fields_match(direction, hash)
     |> where_transaction_has_multiple_internal_transactions()
-    |> order_by([it, transaction, block], desc: block.number, desc: transaction.transaction_index, desc: it.index)
+    |> order_by([it, transaction, block], desc: block.number, desc: transaction.index, desc: it.index)
     |> preload(transaction: :block)
     |> join_associations(necessity_by_association)
     |> Repo.paginate(pagination)
@@ -87,22 +81,21 @@ defmodule Explorer.Chain do
 
   ## Options
 
-  * `:direction` - if specified, will filter transactions by address type. If `:to` is specified, only transactions
+    * `:direction` - if specified, will filter transactions by address type. If `:to` is specified, only transactions
       where the "to" address matches will be returned. Likewise, if `:from` is specified, only transactions where the
-      "from" address matches will be returned. If :direction is omitted, transactions either to or from the address
+      "from" address matches will be returned. If `:direction` is omitted, transactions either to or from the address
       will be returned.
-  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association, then the
       `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
-  * `:pagination` - pagination params to pass to scrivener.
+    * `:pagination` - pagination params to pass to scrivener.
 
   """
   @spec address_to_transactions(Address.t(), [
           direction_option | necessity_by_association_option | pagination_option
         ]) :: %Scrivener.Page{entries: [Transaction.t()]}
-  def address_to_transactions(address = %Address{}, options \\ [])
-      when is_list(options) do
-    address_id_to_transactions(address.id, options)
+  def address_to_transactions(%Address{hash: hash}, options \\ []) when is_list(options) do
+    address_hash_to_transactions(hash, options)
   end
 
   @doc """
@@ -111,11 +104,87 @@ defmodule Explorer.Chain do
   @spec balance(Address.t(), :wei) :: Wei.wei() | nil
   @spec balance(Address.t(), :gwei) :: Wei.gwei() | nil
   @spec balance(Address.t(), :ether) :: Wei.ether() | nil
-  def balance(%Address{balance: balance}, unit) do
+  def balance(%Address{fetched_balance: balance}, unit) do
     case balance do
       nil -> nil
       _ -> Wei.to(balance, unit)
     end
+  end
+
+  # timeouts all in milliseconds
+
+  @transaction_timeout 60_000
+  @insert_addresses_timeout 60_000
+  @insert_blocks_timeout 60_000
+  @insert_internal_transactions_timeout 60_000
+  @insert_logs_timeout 60_000
+  @insert_receipts_timeout 60_000
+  @insert_transactions_timeout 60_000
+
+  @doc """
+  Updates `t:Explorer.Chain.Address.t/0` with `hash` of `address_hash` to have `fetched_balance` of `balance` in
+  `t:map/0` `balances` of `address_hash` to `balance`.
+
+      iex> Explorer.Chain.update_balances(%{"0x8bf38d4764929064f2d4d3a56520a76ab3df415b" => 100})
+      :ok
+      iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x8bf38d4764929064f2d4d3a56520a76ab3df415b")
+      iex> {:ok, address} = Explorer.Chain.hash_to_address(hash)
+      iex> address.fetched_balance
+      %Explorer.Chain.Wei{value: Decimal.new(100)}
+
+  There don't need to be any updates.
+
+      iex> Explorer.Chain.update_balances(%{})
+      :ok
+
+  """
+  @spec update_balances(%{(address_hash :: String.t()) => balance :: integer}, [timeout_option]) :: :ok
+  def update_balances(balances, options \\ []) when is_list(options) do
+    timestamps = timestamps()
+
+    changes_list =
+      for {hash_string, amount} <- balances do
+        {:ok, truncated_hash} = Explorer.Chain.Hash.Truncated.cast(hash_string)
+        {:ok, wei} = Wei.cast(amount)
+
+        Map.merge(timestamps, %{
+          hash: truncated_hash,
+          fetched_balance: wei,
+          balance_fetched_at: timestamps.updated_at
+        })
+      end
+
+    # order so that row ShareLocks are grabbed in a consistent order.
+    # MUST match order used in `insert_addresses/2`
+    ordered_changes_list = sort_address_changes_list(changes_list)
+
+    {_, _} =
+      Repo.safe_insert_all(
+        Address,
+        ordered_changes_list,
+        conflict_target: :hash,
+        on_conflict: :replace_all,
+        timeout: Keyword.get(options, :timeout, @insert_addresses_timeout)
+      )
+
+    :ok
+  end
+
+  @doc """
+  The number of `t:Explorer.Chain.Block.t/0`.
+
+      iex> insert_list(2, :block)
+      iex> Explorer.Chain.block_count()
+      2
+
+  When there are no `t:Explorer.Chain.Block.t/0`.
+
+      iex> Explorer.Chain.block_count()
+      0
+
+  """
+  def block_count do
+    Repo.aggregate(Block, :count, :hash)
   end
 
   @doc """
@@ -123,16 +192,16 @@ defmodule Explorer.Chain do
 
   ## Options
 
-  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association, then the
       `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
-  * `:pagination` - pagination params to pass to scrivener.
+    * `:pagination` - pagination params to pass to scrivener.
   """
   @spec block_to_transactions(Block.t()) :: %Scrivener.Page{entries: [Transaction.t()]}
   @spec block_to_transactions(Block.t(), [necessity_by_association_option | pagination_option]) :: %Scrivener.Page{
           entries: [Transaction.t()]
         }
-  def block_to_transactions(%Block{id: block_id}, options \\ []) when is_list(options) do
+  def block_to_transactions(%Block{hash: block_hash}, options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     pagination = Keyword.get(options, :pagination, %{})
 
@@ -140,8 +209,8 @@ defmodule Explorer.Chain do
       from(
         transaction in Transaction,
         inner_join: block in assoc(transaction, :block),
-        where: block.id == ^block_id,
-        order_by: [desc: transaction.inserted_at]
+        where: block.hash == ^block_hash,
+        order_by: [desc: transaction.inserted_at, desc: transaction.hash]
       )
 
     query
@@ -153,15 +222,14 @@ defmodule Explorer.Chain do
   Counts the number of `t:Explorer.Chain.Transaction.t/0` in the `block`.
   """
   @spec block_to_transaction_count(Block.t()) :: non_neg_integer()
-  def block_to_transaction_count(%Block{id: block_id}) do
+  def block_to_transaction_count(%Block{hash: block_hash}) do
     query =
       from(
-        block_transaction in BlockTransaction,
-        join: block in assoc(block_transaction, :block),
-        where: block_transaction.block_id == ^block_id
+        transaction in Transaction,
+        where: transaction.block_hash == ^block_hash
       )
 
-    Repo.aggregate(query, :count, :block_id)
+    Repo.aggregate(query, :count, :hash)
   end
 
   @doc """
@@ -177,13 +245,25 @@ defmodule Explorer.Chain do
   @doc """
   Creates an address.
 
-  ## Examples
+      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.create_address(
+      ...>   %{hash: "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b"}
+      ...> )
+      ...> to_string(hash)
+      "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b"
 
-      iex> Explorer.Addresses.create_address(%{field: value})
-      {:ok, %Address{}}
+  A `String.t/0` value for `Explorer.Chain.Addres.t/0` `hash` must have 40 hexadecimal characters after the `0x` prefix
+  to prevent short- and long-hash transcription errors.
 
-      iex> Explorer.Addresses.create_address(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
+      iex> {:error, %Ecto.Changeset{errors: errors}} = Explorer.Chain.create_address(
+      ...>   %{hash: "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0"}
+      ...> )
+      ...> errors
+      [hash: {"is invalid", [type: Explorer.Chain.Hash.Truncated, validation: :cast]}]
+      iex> {:error, %Ecto.Changeset{errors: errors}} = Explorer.Chain.create_address(
+      ...>   %{hash: "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0ba"}
+      ...> )
+      ...> errors
+      [hash: {"is invalid", [type: Explorer.Chain.Hash.Truncated, validation: :cast]}]
 
   """
   @spec create_address(map()) :: {:ok, Address.t()} | {:error, Ecto.Changeset.t()}
@@ -194,44 +274,16 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Ensures that an `t:Explorer.Address.t/0` exists with the given `hash`.
-
-  If a `t:Explorer.Address.t/0` with `hash` already exists, it is returned
-
-      iex> Explorer.Addresses.ensure_hash_address(existing_hash)
-      {:ok, %Address{}}
-
-  If a `t:Explorer.Address.t/0` does not exist with `hash`, it is created and returned
-
-      iex> Explorer.Addresses.ensure_hash_address(new_hash)
-      {:ok, %Address{}}
-
-  There is a chance of a race condition when interacting with the database: the `t:Explorer.Address.t/0` may not exist
-  when first checked, then already exist when it is tried to be created because another connection creates the addres,
-  then another process deletes the address after this process's connection see it was created, but before it can be
-  retrieved.  In scenario, the address may be not found as only one retry is attempted to prevent infinite loops.
-
-      iex> Explorer.Addresses.ensure_hash_address(flicker_hash)
-      {:error, :not_found}
-
-  """
-  @spec ensure_hash_address(Address.hash()) :: {:ok, Address.t()} | {:error, :not_found}
-  def ensure_hash_address(hash) when is_binary(hash) do
-    with {:error, :not_found} <- hash_to_address(hash),
-         {:error, _} <- create_address(%{hash: hash}) do
-      # assume race condition occurred and someone else created the address between the first
-      # hash_to_address and create_address
-      hash_to_address(hash)
-    end
-  end
-
-  @doc """
   The fee a `transaction` paid for the `t:Explorer.Transaction.t/0` `gas`
 
   If the transaction is pending, then the fee will be a range of `unit`
 
       iex> Explorer.Chain.fee(
-      ...>   %Explorer.Chain.Transaction{gas: Decimal.new(3), gas_price: Decimal.new(2), receipt: nil},
+      ...>   %Explorer.Chain.Transaction{
+      ...>     gas: Decimal.new(3),
+      ...>     gas_price: %Explorer.Chain.Wei{value: Decimal.new(2)},
+      ...>     receipt: nil
+      ...>   },
       ...>   :wei
       ...> )
       {:maximum, Decimal.new(6)}
@@ -242,8 +294,8 @@ defmodule Explorer.Chain do
       iex> Explorer.Chain.fee(
       ...>   %Explorer.Chain.Transaction{
       ...>     gas: Decimal.new(3),
-      ...>     gas_price: Decimal.new(2),
-      ...>     receipt: Explorer.Chain.Receipt{gas_used: Decimal.new(2)}
+      ...>     gas_price: %Explorer.Chain.Wei{value: Decimal.new(2)},
+      ...>     receipt: %Explorer.Chain.Receipt{gas_used: Decimal.new(2)}
       ...>   },
       ...>   :wei
       ...> )
@@ -273,9 +325,6 @@ defmodule Explorer.Chain do
   @doc """
   The `t:Explorer.Chain.Transaction.t/0` `gas_price` of the `transaction` in `unit`.
   """
-  @spec gas_price(Transaction.t(), :wei) :: Wei.wei()
-  @spec gas_price(Transaction.t(), :gwei) :: Wei.gwei()
-  @spec gas_price(Transaction.t(), :ether) :: Wei.ether()
   def gas_price(%Transaction{gas_price: gas_price}, unit) do
     Wei.to(gas_price, unit)
   end
@@ -285,20 +334,30 @@ defmodule Explorer.Chain do
 
   Returns `{:ok, %Explorer.Chain.Address{}}` if found
 
-      iex> hash_to_address("0x0addressaddressaddressaddressaddressaddr")
-      {:ok, %Explorer.Chain.Address{}}
+      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.create_address(
+      ...>   %{hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"}
+      ...> )
+      iex> {:ok, %Explorer.Chain.Address{hash: found_hash}} = Explorer.Chain.hash_to_address(hash)
+      iex> found_hash == hash
+      true
 
   Returns `{:error, :not_found}` if not found
 
-      iex> hash_to_address("0x1addressaddressaddressaddressaddressaddr")
+      iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
+      iex> Explorer.Chain.hash_to_address(hash)
       {:error, :not_found}
 
   """
-  @spec hash_to_address(Address.hash()) :: {:ok, Address.t()} | {:error, :not_found}
-  def hash_to_address(hash) do
-    Address
-    |> where_hash(hash)
-    |> preload([:credit, :debit])
+  @spec hash_to_address(Hash.Truncated.t()) :: {:ok, Address.t()} | {:error, :not_found}
+  def hash_to_address(%Hash{byte_count: unquote(Hash.Truncated.byte_count())} = hash) do
+    query =
+      from(
+        address in Address,
+        where: address.hash == ^hash,
+        preload: [:credit, :debit]
+      )
+
+    query
     |> Repo.one()
     |> case do
       nil -> {:error, :not_found}
@@ -307,32 +366,66 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Converts the `t:t/0` to string representation shown to users.
+
+      iex> %Explorer.Chain.Hash{
+      ...>   byte_count: 32,
+      ...>   bytes: <<0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b ::
+      ...>            big-integer-size(32)-unit(8)>>
+      ...> } |>
+      ...> Explorer.Chain.hash_to_iodata() |>
+      ...> IO.iodata_to_binary()
+      "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
+
+  Always pads number, so that it is a valid format for casting.
+
+      iex> %Explorer.Chain.Hash{
+      ...>   byte_count: 32,
+      ...>   bytes: <<0x1234567890abcdef :: big-integer-size(32)-unit(8)>>
+      ...> } |>
+      ...> Explorer.Chain.hash_to_iodata() |>
+      ...> IO.iodata_to_binary()
+      "0x0000000000000000000000000000000000000000000000001234567890abcdef"
+
+  """
+  @spec hash_to_iodata(Hash.t()) :: iodata()
+  def hash_to_iodata(hash) do
+    Hash.to_iodata(hash)
+  end
+
+  @doc """
   Converts `t:Explorer.Chain.Transaction.t/0` `hash` to the `t:Explorer.Chain.Transaction.t/0` with that `hash`.
 
   Returns `{:ok, %Explorer.Chain.Transaction{}}` if found
 
-      iex> hash_to_transaction("0x0addressaddressaddressaddressaddressaddr")
-      {:ok, %Explorer.Chain.Transaction{}}
+      iex> %Transaction{hash: hash} = insert(:transaction)
+      iex> {:ok, %Explorer.Chain.Transaction{hash: found_hash}} = Explorer.Chain.hash_to_transaction(hash)
+      iex> found_hash == hash
+      true
 
   Returns `{:error, :not_found}` if not found
 
-      iex> hash_to_transaction("0x1addressaddressaddressaddressaddressaddr")
+      iex> {:ok, hash} = Explorer.Chain.string_to_transaction_hash(
+      ...>   "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
+      ...> )
+      iex> Explorer.Chain.hash_to_transaction(hash)
       {:error, :not_found}
 
   ## Options
 
-  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association, then the
       `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
   """
-  @spec hash_to_transaction(Transaction.hash(), [necessity_by_association_option]) ::
+  @spec hash_to_transaction(Hash.Full.t(), [necessity_by_association_option]) ::
           {:ok, Transaction.t()} | {:error, :not_found}
-  def hash_to_transaction(hash, options \\ []) when is_list(options) do
+  def hash_to_transaction(%Hash{byte_count: unquote(Hash.Full.byte_count())} = hash, options \\ [])
+      when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     Transaction
+    |> where(hash: ^hash)
     |> join_associations(necessity_by_association)
-    |> where_hash(hash)
     |> Repo.one()
     |> case do
       nil -> {:error, :not_found}
@@ -341,49 +434,379 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Converts `t:Explorer.Address.t/0` `id` to the `t:Explorer.Address.t/0` with that `id`.
+  Bulk insert blocks from a list of blocks.
 
-  Returns `{:ok, %Explorer.Address{}}` if found
+  The import returns the unique key(s0 for each type of record inserted.  For record that don't have a primary key, such
+  as `t:Explorer.Chain.Receipt.t/0`, the key that uniquely identifies the record is returned.
 
-      iex> id_to_address(123)
-      {:ok, %Address{}}
+  | Key                      | Value Type                                                                 | Value Description                                                                             |
+  |--------------------------|----------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
+  | `:addresses`             | `[Explorer.Chain.Hash.t()]`                                                | List of `t:Explorer.Chain.Address.t/0` `hash`                                                 |
+  | `:blocks`                | `[Explorer.Chain.Hash.t()]`                                                | List of `t:Explorer.Chain.Block.t/0` `hash`                                                   |
+  | `:internal_transactions` | `[%{index: non_neg_integer(), transaction_hash: Explorer.Chain.Hash.t()}]` | List of maps of the `t:Explorer.Chain.InternalTransaction.t/0` `index` and `transaction_hash` |
+  | `:logs`                  | `[%{index: non_neg_integer(), transaction_hash: Explorer.Chain.Hash.t()}]` | List of maps of the `t:Explorer.Chain.Log.t/0` `index` and `transaction_hash`                 |
+  | `:receipts`              | `[Explorer.Chain.Hash.t()]`                                                | List of `t:Explorer.Chain.Receipt.t/0` `transaction_hash`                                     |
+  | `:transactions`          | `[Explorer.Chain.Hash.t()]`                                                | List of `t:Explorer.Chain.Transaction.t/0` `hash`                                             |
 
-  Returns `{:error, :not_found}` if not found
+      iex> Explorer.Chain.import_blocks(
+      ...>   %{
+      ...>     blocks: [
+      ...>       %{
+      ...>         difficulty: 340282366920938463463374607431768211454,
+      ...>         gas_limit: 6946336,
+      ...>         gas_used: 50450,
+      ...>         hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+      ...>         miner_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>         nonce: 0,
+      ...>         number: 37,
+      ...>         parent_hash: "0xc37bbad7057945d1bf128c1ff009fb1ad632110bf6a000aac025a80f7766b66e",
+      ...>         size: 719,
+      ...>         timestamp: Timex.parse!("2017-12-15T21:06:30Z", "{ISO:Extended:Z}"),
+      ...>         total_difficulty: 12590447576074723148144860474975121280509
+      ...>       }
+      ...>     ],
+      ...>     internal_transactions: [
+      ...>       %{
+      ...>         call_type: "call",
+      ...>         from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>         gas: 4677320,
+      ...>         gas_used: 27770,
+      ...>         index: 0,
+      ...>         output: "0x",
+      ...>         to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+      ...>         trace_address: [],
+      ...>         transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+      ...>         type: "call",
+      ...>         value: 0
+      ...>       }
+      ...>     ],
+      ...>     logs: [
+      ...>       %{
+      ...>         address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+      ...>         data: "0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
+      ...>         first_topic: "0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22",
+      ...>         fourth_topic: nil,
+      ...>         index: 0,
+      ...>         second_topic: nil,
+      ...>         third_topic: nil,
+      ...>         transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+      ...>         type: "mined"
+      ...>       }
+      ...>     ],
+      ...>     receipts: [
+      ...>       %{
+      ...>         cumulative_gas_used: 50450,
+      ...>         gas_used: 50450,
+      ...>         status: :ok,
+      ...>         transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+      ...>         transaction_index: 0
+      ...>       }
+      ...>     ],
+      ...>     transactions: [
+      ...>       %{
+      ...>         block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+      ...>         from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>         gas: 4700000,
+      ...>         gas_price: 100000000000,
+      ...>         hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+      ...>         index: 0,
+      ...>         input: "0x10855269000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
+      ...>         nonce: 4,
+      ...>         public_key: "0xe5d196ad4ceada719d9e592f7166d0c75700f6eab2e3c3de34ba751ea786527cb3f6eb96ad9fdfdb9989ff572df50f1c42ef800af9c5207a38b929aff969b5c9",
+      ...>         r: "0xa7f8f45cce375bb7af8750416e1b03e0473f93c256da2285d1134fc97a700e01",
+      ...>         s: "0x1f87a076f13824f4be8963e3dffd7300dae64d5f23c9a062af0c6ead347c135f",
+      ...>         standard_v: "0x1",
+      ...>         to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+      ...>         v: "0xbe",
+      ...>         value: 0
+      ...>       }
+      ...>     ]
+      ...>   }
+      ...> )
+      {:ok,
+       %{
+         addresses: [
+           %Explorer.Chain.Hash{
+             byte_count: 20,
+             bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211,
+               165, 101, 32, 167, 106, 179, 223, 65, 91>>
+           },
+           %Explorer.Chain.Hash{
+             byte_count: 20,
+             bytes: <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121,
+               132, 89, 192, 16, 79, 223, 94, 152, 122, 202>>
+           }
+         ],
+         blocks: [
+           %Explorer.Chain.Hash{
+             byte_count: 32,
+             bytes: <<246, 180, 184, 200, 141, 243, 235, 210, 82, 236, 71,
+               99, 40, 51, 77, 192, 38, 207, 102, 96, 106, 132, 251, 118,
+               155, 61, 60, 188, 204, 132, 113, 189>>
+           }
+         ],
+         internal_transactions: [
+           %{
+             index: 0,
+             transaction_hash: %Explorer.Chain.Hash{
+               byte_count: 32,
+               bytes: <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136,
+                 27, 174, 236, 38, 46, 123, 149, 35, 77, 57, 101, 36, 140,
+                 57, 254, 153, 47, 255, 212, 51, 229>>
+             }
+           }
+         ],
+         logs: [
+           %{
+             index: 0,
+             transaction_hash: %Explorer.Chain.Hash{
+               byte_count: 32,
+               bytes: <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136,
+                 27, 174, 236, 38, 46, 123, 149, 35, 77, 57, 101, 36, 140,
+                 57, 254, 153, 47, 255, 212, 51, 229>>
+             }
+           }
+         ],
+         receipts: [
+           %Explorer.Chain.Hash{
+             byte_count: 32,
+             bytes: <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136,
+               27, 174, 236, 38, 46, 123, 149, 35, 77, 57, 101, 36, 140,
+               57, 254, 153, 47, 255, 212, 51, 229>>
+           }
+         ],
+         transactions: [
+           %Explorer.Chain.Hash{
+             byte_count: 32,
+             bytes: <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136,
+               27, 174, 236, 38, 46, 123, 149, 35, 77, 57, 101, 36, 140,
+               57, 254, 153, 47, 255, 212, 51, 229>>
+           }
+         ]
+       }}
 
-      iex> id_to_address(456)
-      {:error, :not_found}
+  A completely empty tree can be imported, but all `t:list/0` arguments must still be supplied
 
+      iex> Explorer.Chain.import_blocks(
+      ...>   %{
+      ...>     blocks: [],
+      ...>     logs: [],
+      ...>     internal_transactions: [],
+      ...>     receipts: [],
+      ...>     transactions: []
+      ...>   }
+      ...> )
+      {:ok,
+       %{
+         addresses: [],
+         blocks: [],
+         internal_transactions: [],
+         logs: [],
+         receipts: [],
+         transactions: []
+       }}
+
+  The params for each key are validated using the corresponding `Ecto.Schema` module's `changeset/2` function.  If there
+  are errors, they are returned in `Ecto.Changeset.t`s, so that the original, invalid value can be reconstructed for any
+  error messages.
+
+      iex> {:error, [internal_transaction_changeset, receipt_changeset]} = Explorer.Chain.import_blocks(
+      ...>   %{
+      ...>     blocks: [
+      ...>       %{
+      ...>         difficulty: 340282366920938463463374607431768211454,
+      ...>         gas_limit: 6946336,
+      ...>         gas_used: 50450,
+      ...>         hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+      ...>         miner_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>         nonce: 0,
+      ...>         number: 37,
+      ...>         parent_hash: "0xc37bbad7057945d1bf128c1ff009fb1ad632110bf6a000aac025a80f7766b66e",
+      ...>         size: 719,
+      ...>         timestamp: Timex.parse!("2017-12-15T21:06:30Z", "{ISO:Extended:Z}"),
+      ...>         total_difficulty: 12590447576074723148144860474975121280509
+      ...>       }
+      ...>     ],
+      ...>     internal_transactions: [
+      ...>       %{
+      ...>         from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>         gas: 4677320,
+      ...>         gas_used: 27770,
+      ...>         index: 0,
+      ...>         output: "0x",
+      ...>         to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+      ...>         trace_address: [],
+      ...>         transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+      ...>         type: "call",
+      ...>         value: 0
+      ...>       },
+      ...>       # valid after invalid
+      ...>       %{
+      ...>         created_contract_address_hash: "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb4",
+      ...>         created_contract_code: "0x606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
+      ...>         from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>         gas: 4597044,
+      ...>         gas_used: 166651,
+      ...>         index: 0,
+      ...>         init: "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
+      ...>         trace_address: [],
+      ...>         transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+      ...>         type: "create",
+      ...>         value: 0
+      ...>       }
+      ...>     ],
+      ...>     logs: [
+      ...>       %{
+      ...>         address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+      ...>         data: "0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
+      ...>         first_topic: "0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22",
+      ...>         fourth_topic: nil,
+      ...>         index: 0,
+      ...>         second_topic: nil,
+      ...>         third_topic: nil,
+      ...>         transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+      ...>         type: "mined"
+      ...>       }
+      ...>     ],
+      ...>     receipts: [
+      ...>       %{
+      ...>         cumulative_gas_used: 50450,
+      ...>         gas_used: 50450,
+      ...>         transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+      ...>         transaction_index: 0
+      ...>       }
+      ...>     ],
+      ...>     transactions: [
+      ...>       %{
+      ...>         block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+      ...>         from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>         gas: 4700000,
+      ...>         gas_price: 100000000000,
+      ...>         hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+      ...>         index: 0,
+      ...>         input: "0x10855269000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
+      ...>         nonce: 4,
+      ...>         public_key: "0xe5d196ad4ceada719d9e592f7166d0c75700f6eab2e3c3de34ba751ea786527cb3f6eb96ad9fdfdb9989ff572df50f1c42ef800af9c5207a38b929aff969b5c9",
+      ...>         r: "0xa7f8f45cce375bb7af8750416e1b03e0473f93c256da2285d1134fc97a700e01",
+      ...>         s: "0x1f87a076f13824f4be8963e3dffd7300dae64d5f23c9a062af0c6ead347c135f",
+      ...>         standard_v: "0x1",
+      ...>         to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+      ...>         v: "0xbe",
+      ...>         value: 0
+      ...>       }
+      ...>     ]
+      ...>   }
+      ...> )
+      iex> internal_transaction_changeset.errors
+      [call_type: {"can't be blank", [validation: :required]}]
+      iex> receipt_changeset.errors
+      [status: {"can't be blank", [validation: :required]}]
+
+  ## Tree
+
+    * `t:Explorer.Chain.Block.t/0`s
+      * `t:Explorer.Chain.Transaction.t/0`
+        * `t.Explorer.Chain.InternalTransaction.t/0`
+        * `t.Explorer.Chain.Receipt.t/0`
+          * `t.Explorer.Chain.Log.t/0`
+
+  ## Options
+
+    * `:timeout` - the timeout for the whole `c:Ecto.Repo.transaction/0` call.  Defaults to `#{@transaction_timeout}`
+      milliseconds.
+    * `:insert_addresses_timeout` - the timeout for inserting all addresses found in the params lists across all types.
+      Defaults to `#{@insert_addresses_timeout}` milliseconds.
+    * `:insert_blocks_timeout` - the timeout for inserting all blocks. Defaults to `#{@insert_blocks_timeout}`
+      milliseconds.
+    * `:insert_internal_transactions_timeout` - the timeout for inserting all internal transactions. Defaults to
+      `#{@insert_internal_transactions_timeout}` milliseconds.
+    * `:insert_logs_timeout` - the timeout for inserting all logs. Defaults to `#{@insert_logs_timeout}` milliseconds.
+    * `:insert_receipts_timeout` - the timeout for inserting all receipts. Defaults to `#{@insert_receipts_timeout}`
+      milliseconds.
+    * `:insert_transactions_timeout` - the timeout for inserting all transactions found in the params lists across all
+      types. Defaults to `#{@insert_transactions_timeout}` milliseconds.
   """
-  @spec id_to_address(id :: non_neg_integer()) :: {:ok, Address.t()} | {:error, :not_found}
-  def id_to_address(id) do
-    Address
-    |> Repo.get(id)
-    |> case do
-      nil ->
-        {:error, :not_found}
-
-      address ->
-        {:ok, Repo.preload(address, [:credit, :debit])}
+  def import_blocks(
+        %{
+          blocks: blocks_params,
+          logs: logs_params,
+          internal_transactions: internal_transactions_params,
+          receipts: receipts_params,
+          transactions: transactions_params
+        },
+        options \\ []
+      )
+      when is_list(blocks_params) and is_list(internal_transactions_params) and is_list(logs_params) and
+             is_list(receipts_params) and is_list(transactions_params) and is_list(options) do
+    with {:ok, ecto_schema_module_to_changes_list} <-
+           ecto_schema_module_to_params_list_to_ecto_schema_module_to_changes_list(%{
+             Block => blocks_params,
+             Log => logs_params,
+             InternalTransaction => internal_transactions_params,
+             Receipt => receipts_params,
+             Transaction => transactions_params
+           }) do
+      insert_ecto_schema_module_to_changes_list(ecto_schema_module_to_changes_list, options)
     end
   end
 
   @doc """
-  The last `t:Explorer.Chain.Transaction.t/0` `id`.
-  """
-  @spec last_transaction_id([{:pending, boolean()}]) :: non_neg_integer()
-  def last_transaction_id(options \\ []) when is_list(options) do
-    query =
-      from(
-        t in Transaction,
-        select: t.id,
-        order_by: [desc: t.id],
-        limit: 1
-      )
+  The number of `t:Explorer.Chain.Address.t/0`.
 
-    query
-    |> where_pending(options)
-    |> Repo.one()
-    |> Kernel.||(0)
+      iex> insert_list(2, :address)
+      iex> Explorer.Chain.address_count()
+      2
+
+  When there are no `t:Explorer.Chain.Address.t/0`, the count is `0`.
+
+      iex> Explorer.Chain.address_count()
+      0
+
+  """
+  def address_count do
+    Repo.aggregate(Address, :count, :hash)
+  end
+
+  @doc """
+  The number of `t:Explorer.Chain.InternalTransaction.t/0`.
+
+      iex> insert(:internal_transaction, index: 0)
+      iex> Explorer.Chain.internal_transaction_count()
+      1
+
+  If there are none, the count is `0`.
+
+      iex> Explorer.Chain.internal_transaction_count()
+      0
+
+  """
+  def internal_transaction_count do
+    Repo.aggregate(InternalTransaction, :count, :id)
+  end
+
+  @doc """
+  Finds block with greatest number.
+
+      iex> insert(:block, number: 2)
+      iex> insert(:block, number: 1)
+      iex> {:ok, %Explorer.Chain.Block{number: number}} = Explorer.Chain.max_numbered_block()
+      iex> number
+      2
+
+  If there are no blocks `{:error, :not_found}` is returned.
+
+      iex> Explorer.Chain.max_numbered_block()
+      {:error, :not_found}
+
+  """
+  @spec max_numbered_block() :: {:ok, Block.t()} | {:error, :not_found}
+  def max_numbered_block do
+    query = from(block in Block, order_by: [desc: block.number], limit: 1)
+
+    case Repo.one(query) do
+      nil -> {:error, :not_found}
+      block -> {:ok, block}
+    end
   end
 
   @doc """
@@ -391,10 +814,10 @@ defmodule Explorer.Chain do
 
   ## Options
 
-  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
-      `:required`, and the `t:Explorer.Chain.Block.t/0` has no associated record for that association, then the
-      `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
-  * `:pagination` - pagination params to pass to scrivener.
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+        `:required`, and the `t:Explorer.Chain.Block.t/0` has no associated record for that association, then the
+        `t:Explorer.Chain.Block.t/0` will not be included in the page `entries`.
+    * `:pagination` - pagination params to pass to scrivener.
 
   """
   @spec list_blocks([necessity_by_association_option | pagination_option]) :: %Scrivener.Page{
@@ -411,20 +834,153 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  The maximum `t:Explorer.Chain.Block.t/0` `number`
+  Returns a stream of unfetched `Explorer.Chain.Address.t/0`.
+
+  When there are addresses, the `reducer` is called for each `t:Explorer.Chain.Address.t/0`.
+
+      iex> [first_address_hash, second_address_hash] = 2 |> insert_list(:address) |> Enum.map(& &1.hash)
+      iex> {:ok, address_hash_set} = Explorer.Chain.stream_unfetched_addresses(
+      ...>   MapSet.new([]),
+      ...>   fn %Explorer.Chain.Address{hash: hash}, acc ->
+      ...>     MapSet.put(acc, hash)
+      ...>   end
+      ...> )
+      ...> first_address_hash in address_hash_set
+      true
+      ...> second_address_hash in address_hash_set
+      true
+
+  When there are no addresses, the `reducer` is never called and the `initial` is returned in an `:ok` tuple.
+
+      iex> {:ok, pid} = Agent.start_link(fn -> 0 end)
+      iex> Explorer.Chain.stream_unfetched_addresses(MapSet.new([]), fn %Explorer.Chain.Address{hash: hash}, acc ->
+      ...>   Agent.update(pid, &(&1 + 1))
+      ...>   MapSet.put(acc, hash)
+      ...> end)
+      {:ok, MapSet.new([])}
+      iex> Agent.get(pid, & &1)
+      0
+
   """
-  @spec max_block_number() :: Block.block_number()
+  def stream_unfetched_addresses(initial, reducer) when is_function(reducer) do
+    Repo.transaction(fn ->
+      query = from(a in Address, where: is_nil(a.balance_fetched_at))
+
+      query
+      |> Repo.stream()
+      |> Enum.reduce(initial, reducer)
+    end)
+  end
+
+  @doc """
+  The number of `t:Explorer.Chain.Log.t/0`.
+
+      iex> block = insert(:block)
+      iex> transaction = insert(:transaction, block_hash: block.hash, index: 0)
+      iex> receipt = insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
+      iex> insert(:log, transaction_hash: receipt.transaction_hash, index: 0)
+      iex> Explorer.Chain.log_count()
+      1
+
+  When there are no `t:Explorer.Chain.Log.t/0`.
+
+      iex> Explorer.Chain.log_count()
+      0
+
+  """
+  def log_count do
+    Repo.aggregate(Log, :count, :id)
+  end
+
+  @doc """
+  The maximum `t:Explorer.Chain.Block.t/0` `number`
+
+  If blocks are skipped and inserted out of number order, the max number is still returned
+
+      iex> insert(:block, number: 2)
+      iex> insert(:block, number: 1)
+      iex> Explorer.Chain.max_block_number()
+      {:ok, 2}
+
+  If there are no blocks, `{:error, :not_found}` is returned
+
+      iex> Explorer.Chain.max_block_number()
+      {:error, :not_found}
+
+  """
+  @spec max_block_number() :: {:ok, Block.block_number()} | {:error, :not_found}
   def max_block_number do
-    Repo.aggregate(Block, :max, :number)
+    case Repo.aggregate(Block, :max, :number) do
+      nil -> {:error, :not_found}
+      number -> {:ok, number}
+    end
+  end
+
+  @doc """
+  Calculates the overall missing number of blocks and the ranges of missing blocks.
+
+  `missing_block_numbers/0` does not take into account block numbers that have appeared on-chain after the
+  `max_block_number/0`; it only uses the missing blocks in the database between `0` and `max_block_number/0`.
+
+  When there are no `t:Explorer.Chain.Block.t/0`, there can be no missing blocks.
+
+      iex> Explorer.Chain.missing_block_numbers()
+      {0, []}
+
+  If the block numbers from `0` to `max_block_number/0` are contiguous, then no block numbers are missing
+
+      iex> insert(:block, number: 0)
+      iex> insert(:block, number: 1)
+      iex> Explorer.Chain.missing_block_numbers()
+      {0, []}
+
+  If there are gaps between `0` and `max_block_number/0`, then the missing numbers are compacted into ranges.  Single
+  missing numbers become ranges with the single number as the start and end.
+
+      iex> insert(:block, number: 0)
+      iex> insert(:block, number: 2)
+      iex> insert(:block, number: 5)
+      iex> Explorer.Chain.missing_block_numbers()
+      {3, [{1, 1}, {3, 4}]}
+
+  """
+  def missing_block_numbers do
+    {:ok, {_, missing_count, missing_ranges}} =
+      Repo.transaction(fn ->
+        query = from(b in Block, select: b.number, order_by: [asc: b.number])
+
+        query
+        |> Repo.stream(max_rows: 1000)
+        |> Enum.reduce({-1, 0, []}, fn
+          num, {prev, missing_count, acc} when prev + 1 == num ->
+            {num, missing_count, acc}
+
+          num, {prev, missing_count, acc} ->
+            {num, missing_count + (num - prev - 1), [{prev + 1, num - 1} | acc]}
+        end)
+      end)
+
+    {missing_count, Enum.reverse(missing_ranges)}
   end
 
   @doc """
   Finds `t:Explorer.Chain.Block.t/0` with `number`
+
+  ## Options
+
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+      `:required`, and the `t:Explorer.Chain.Block.t/0` has no associated record for that association, then the
+      `t:Explorer.Chain.Block.t/0` will not be included in the page `entries`.
+
   """
-  @spec number_to_block(Block.block_number()) :: {:ok, Block.t()} | {:error, :not_found}
-  def number_to_block(number) do
+  @spec number_to_block(Block.block_number(), [necessity_by_association_option]) ::
+          {:ok, Block.t()} | {:error, :not_found}
+  def number_to_block(number, options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
     Block
     |> where(number: ^number)
+    |> join_associations(necessity_by_association)
     |> Repo.one()
     |> case do
       nil -> {:error, :not_found}
@@ -433,38 +989,313 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Count of `t:Explorer.Chain.Transaction.t/0`.
+  The number of `t:Explorer.Chain.Receipt.t/0`.
+
+      iex> block = insert(:block)
+      iex> transaction = insert(:transaction, block_hash: block.hash, index: 0)
+      iex> insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
+      iex> Explorer.Chain.receipt_count()
+      1
+
+  When there are no `t:Explorer.Chain.Receipt.t/0`.
+
+      iex> Explorer.Chain.receipt_count()
+      0
+
+  """
+  def receipt_count do
+    Repo.aggregate(Receipt, :count, :transaction_hash)
+  end
+
+  @doc """
+  Returns the list of collated transactions that occurred recently (10).
+
+      iex> 2 |> insert_list(:transaction) |> validate()
+      iex> insert(:transaction) # unvalidated transaction
+      iex> 8 |> insert_list(:transaction) |> validate()
+      iex> recent_collated_transactions = Explorer.Chain.recent_collated_transactions()
+      iex> length(recent_collated_transactions)
+      10
+      iex> Enum.all?(recent_collated_transactions, fn %Explorer.Chain.Transaction{block_hash: block_hash} ->
+      ...>   !is_nil(block_hash)
+      ...> end)
+      true
+
+  A `t:Explorer.Chain.Transaction.t/0` `hash` can be supplied to the `:after_hash` option, then only transactions in
+  after the transaction (with a greater index) in the same block or in a later block (with a greater number) will be
+  returned.  This can be used to generate paging for collated transaction.
+
+      iex> first_block = insert(:block, number: 1)
+      iex> first_transaction_in_first_block = insert(:transaction, block_hash: first_block.hash, index: 0)
+      iex> second_transaction_in_first_block = insert(:transaction, block_hash: first_block.hash, index: 1)
+      iex> second_block = insert(:block, number: 2)
+      iex> first_transaction_in_second_block = insert(:transaction, block_hash: second_block.hash, index: 0)
+      iex> after_first_transaciton_in_first_block = Explorer.Chain.recent_collated_transactions(
+      ...>   after_hash: first_transaction_in_first_block.hash
+      ...> )
+      iex> length(after_first_transaciton_in_first_block)
+      2
+      iex> after_second_transaciton_in_first_block = Explorer.Chain.recent_collated_transactions(
+      ...>   after_hash: second_transaction_in_first_block.hash
+      ...> )
+      iex> length(after_second_transaciton_in_first_block)
+      1
+      iex> after_first_transaciton_in_second_block = Explorer.Chain.recent_collated_transactions(
+      ...>   after_hash: first_transaction_in_second_block.hash
+      ...> )
+      iex> length(after_first_transaciton_in_second_block)
+      0
+
+  When there are no collated transactions, an empty list is returned.
+
+     iex> insert(:transaction)
+     iex> Explorer.Chain.recent_collated_transactions()
+     []
+
+  Using an unvalidated transaction's hash for `:after_hash` will also yield an empty list.
+
+     iex> %Explorer.Chain.Transaction{hash: hash} = insert(:transaction)
+     iex> insert(:transaction)
+     iex> Explorer.Chain.recent_collated_transactions(after_hash: hash)
+     []
 
   ## Options
 
-  * `:pending`
-    * `true` - only count pending transactions
-    * `false` - count all transactions
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+      `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
+      then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
+
+  """
+  @spec recent_collated_transactions([after_hash_option | necessity_by_association_option]) :: [Transaction.t()]
+  def recent_collated_transactions(options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    query =
+      from(
+        transaction in Transaction,
+        inner_join: block in assoc(transaction, :block),
+        order_by: [desc: block.number, desc: transaction.index],
+        limit: 10
+      )
+
+    query
+    |> after_hash(options)
+    |> join_associations(necessity_by_association)
+    |> Repo.all()
+  end
+
+  @doc """
+  Return the list of pending transactions that occurred recently (10).
+
+      iex> 2 |> insert_list(:transaction)
+      iex> :transaction |> insert() |> validate()
+      iex> 8 |> insert_list(:transaction)
+      iex> %Scrivener.Page{entries: recent_pending_transactions} = Explorer.Chain.recent_pending_transactions()
+      iex> length(recent_pending_transactions)
+      10
+      iex> Enum.all?(recent_pending_transactions, fn %Explorer.Chain.Transaction{block_hash: block_hash} ->
+      ...>   is_nil(block_hash)
+      ...> end)
+      true
+
+  A `t:Explorer.Chain.Transaction.t/0` `inserted_at` can be supplied to the `:inserted_after` option, then only pending
+  transactions inserted after that transaction will be returned.  This can be used to generate paging for pending
+  transactions.
+
+      iex> {:ok, first_inserted_at, 0} = DateTime.from_iso8601("2015-01-23T23:50:07Z")
+      iex> insert(:transaction, inserted_at: first_inserted_at)
+      iex> {:ok, second_inserted_at, 0} = DateTime.from_iso8601("2016-01-23T23:50:07Z")
+      iex> insert(:transaction, inserted_at: second_inserted_at)
+      iex> %Scrivener.Page{entries: after_first_transaction} = Explorer.Chain.recent_pending_transactions(
+      ...>   inserted_after: first_inserted_at
+      ...> )
+      iex> length(after_first_transaction)
+      1
+      iex> %Scrivener.Page{entries: after_second_transaction} = Explorer.Chain.recent_pending_transactions(
+      ...>   inserted_after: second_inserted_at
+      ...> )
+      iex> length(after_second_transaction)
+      0
+
+  When there are no pending transaction and a collated transaction's inserted_at is used, an empty list is returned
+
+      iex> {:ok, first_inserted_at, 0} = DateTime.from_iso8601("2015-01-23T23:50:07Z")
+      iex> :transaction |> insert(inserted_at: first_inserted_at) |> validate()
+      iex> {:ok, second_inserted_at, 0} = DateTime.from_iso8601("2016-01-23T23:50:07Z")
+      iex> :transaction |> insert(inserted_at: second_inserted_at) |> validate()
+      iex> %Scrivener.Page{entries: entries} = Explorer.Chain.recent_pending_transactions(
+      ...>   after_inserted_at: first_inserted_at
+      ...> )
+      iex> entries
+      []
+
+  ## Options
+
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+      `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
+      then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
+    * `:pagination` - pagination params to pass to scrivener.
+
+  """
+  @spec recent_pending_transactions([inserted_after_option | necessity_by_association_option]) :: %Scrivener.Page{
+          entries: [Transaction.t()]
+        }
+  def recent_pending_transactions(options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    pagination = Keyword.get(options, :pagination, %{})
+
+    query =
+      from(
+        transaction in Transaction,
+        where: is_nil(transaction.block_hash),
+        order_by: [
+          desc: transaction.inserted_at,
+          # arbitary tie-breaker when inserted at is the same.  hash is random distribution, but using it keeps order
+          # consistent at least
+          desc: transaction.hash
+        ],
+        limit: 10
+      )
+
+    query
+    |> inserted_after(options)
+    |> join_associations(necessity_by_association)
+    |> Repo.paginate(pagination)
+  end
+
+  @doc """
+  The `string` must start with `0x`, then is converted to an integer and then to `t:Explorer.Chain.Hash.Truncated.t/0`.
+
+      iex> Explorer.Chain.string_to_address_hash("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed")
+      {
+        :ok,
+        %Explorer.Chain.Hash{
+          byte_count: 20,
+          bytes: <<0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed :: big-integer-size(20)-unit(8)>>
+        }
+      }
+
+  `String.t` format must always have 40 hexadecimal digits after the `0x` base prefix.
+
+      iex> Explorer.Chain.string_to_address_hash("0x0")
+      :error
+
+  """
+  @spec string_to_address_hash(String.t()) :: {:ok, Hash.Truncated.t()} | :error
+  def string_to_address_hash(string) when is_binary(string) do
+    Hash.Truncated.cast(string)
+  end
+
+  @doc """
+  The `string` must start with `0x`, then is converted to an integer and then to `t:Explorer.Chain.Hash.t/0`.
+
+      iex> Explorer.Chain.string_to_block_hash(
+      ...>   "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
+      ...> )
+      {
+        :ok,
+        %Explorer.Chain.Hash{
+          byte_count: 32,
+          bytes: <<0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b :: big-integer-size(32)-unit(8)>>
+        }
+      }
+
+  `String.t` format must always have 64 hexadecimal digits after the `0x` base prefix.
+
+      iex> Explorer.Chain.string_to_block_hash("0x0")
+      :error
+
+  """
+  @spec string_to_block_hash(String.t()) :: {:ok, Hash.t()} | :error
+  def string_to_block_hash(string) when is_binary(string) do
+    Hash.Full.cast(string)
+  end
+
+  @doc """
+  The `string` must start with `0x`, then is converted to an integer and then to `t:Explorer.Chain.Hash.t/0`.
+
+      iex> Explorer.Chain.string_to_transaction_hash(
+      ...>  "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
+      ...> )
+      {
+        :ok,
+        %Explorer.Chain.Hash{
+          byte_count: 32,
+          bytes: <<0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b :: big-integer-size(32)-unit(8)>>
+        }
+      }
+
+  `String.t` format must always have 64 hexadecimal digits after the `0x` base prefix.
+
+      iex> Explorer.Chain.string_to_transaction_hash("0x0")
+      :error
+
+  """
+  @spec string_to_transaction_hash(String.t()) :: {:ok, Hash.t()} | :error
+  def string_to_transaction_hash(string) when is_binary(string) do
+    Hash.Full.cast(string)
+  end
+
+  @doc """
+  Count of `t:Explorer.Chain.Transaction.t/0`.
+
+  With no options or an explicit `pending: nil`, both collated and pending transactions will be counted.
+
+      iex> insert(:transaction)
+      iex> :transaction |> insert() |> validate()
+      iex> Explorer.Chain.transaction_count()
+      2
+      iex> Explorer.Chain.transaction_count(pending: nil)
+      2
+
+  To count only collated transactions, pass `pending: false`.
+
+      iex> 2 |> insert_list(:transaction)
+      iex> 3 |> insert_list(:transaction) |> validate()
+      iex> Explorer.Chain.transaction_count(pending: false)
+      3
+
+  To count only pending transactions, pass `pending: true`.
+
+      iex> 2 |> insert_list(:transaction)
+      iex> 3 |> insert_list(:transaction) |> validate()
+      iex> Explorer.Chain.transaction_count(pending: true)
+      2
+
+  ## Options
+
+    * `:pending`
+      * `nil` - count all transactions
+      * `true` - only count pending transactions
+      * `false` - only count collated transactions
 
   """
   @spec transaction_count([{:pending, boolean()}]) :: non_neg_integer()
   def transaction_count(options \\ []) when is_list(options) do
     Transaction
     |> where_pending(options)
-    |> Repo.aggregate(:count, :id)
+    |> Repo.aggregate(:count, :hash)
   end
 
   @doc """
-  `t:Explorer.Chain.InternalTransaction/0`s in `t:Explorer.Chain.Transaction.t/0` with `hash`
-
-  This function excludes any internal transactions that have no siblings within the parent transaction.
+  `t:Explorer.Chain.InternalTransaction/0`s in `t:Explorer.Chain.Transaction.t/0` with `hash`.
 
   ## Options
 
-  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
       then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
-  * `:pagination` - pagination params to pass to scrivener.
+    * `:pagination` - pagination params to pass to scrivener.
 
   """
-  @spec transaction_hash_to_internal_transactions(Transaction.hash()) :: [InternalTransaction.t()]
-  def transaction_hash_to_internal_transactions(hash, options \\ [])
-      when is_binary(hash) and is_list(options) do
+  @spec transaction_hash_to_internal_transactions(Hash.Full.t()) :: %Scrivener.Page{entries: [InternalTransaction.t()]}
+  @spec transaction_hash_to_internal_transactions(Hash.Full.t(), [necessity_by_association_option | pagination_option]) ::
+          %Scrivener.Page{entries: [InternalTransaction.t()]}
+  def transaction_hash_to_internal_transactions(
+        %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash,
+        options \\ []
+      )
+      when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     pagination = Keyword.get(options, :pagination, %{})
 
@@ -477,42 +1308,14 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Returns the list of transactions that occurred recently (10) before `t:Explorer.Chain.Transaction.t/0` `id`.
-
-  ## Examples
-
-      iex> Explorer.Chain.list_transactions_before_id(id)
-      [%Explorer.Chain.Transaction{}, ...]
-
-  ## Options
-
-  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
-      `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
-      then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
-
-  """
-  @spec transactions_recently_before_id(id :: non_neg_integer, [necessity_by_association_option]) :: [
-          Transaction.t()
-        ]
-  def transactions_recently_before_id(id, options \\ []) when is_list(options) do
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-
-    Transaction
-    |> join_associations(necessity_by_association)
-    |> recently_before_id(id)
-    |> where_pending(options)
-    |> Repo.all()
-  end
-
-  @doc """
   Finds all `t:Explorer.Chain.Log.t/0`s for `t:Explorer.Chain.Transaction.t/0`.
 
   ## Options
 
-  * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.Log.t/0` has no associated record for that association, then the
       `t:Explorer.Chain.Log.t/0` will not be included in the page `entries`.
-  * `:pagination` - pagination params to pass to scrivener.
+    * `:pagination` - pagination params to pass to scrivener.
 
   """
   @spec transaction_to_logs(Transaction.t(), [
@@ -527,44 +1330,25 @@ defmodule Explorer.Chain do
 
   ## Returns
 
-  * `:failed` - the transaction failed without running out of gas
-  * `:pending` - the transaction has not be confirmed in a block yet
-  * `:out_of_gas` - the transaction failed because it ran out of gas
-  * `:success` - the transaction has been confirmed in a block
+    * `:failed` - the transaction failed without running out of gas
+    * `:pending` - the transaction has not be confirmed in a block yet
+    * `:out_of_gas` - the transaction failed because it ran out of gas
+    * `:success` - the transaction has been confirmed in a block
 
   """
   @spec transaction_to_status(Transaction.t()) :: :failed | :pending | :out_of_gas | :success
   def transaction_to_status(%Transaction{receipt: nil}), do: :pending
-  def transaction_to_status(%Transaction{receipt: %Receipt{status: 1}}), do: :success
+  def transaction_to_status(%Transaction{receipt: %Receipt{status: :ok}}), do: :success
 
   def transaction_to_status(%Transaction{
         gas: gas,
-        receipt: %Receipt{gas_used: gas_used, status: 0}
+        receipt: %Receipt{gas_used: gas_used, status: :error}
       })
       when gas_used >= gas do
     :out_of_gas
   end
 
-  def transaction_to_status(%Transaction{receipt: %Receipt{status: 0}}), do: :failed
-
-  @doc """
-  Updates `balance` of `t:Explorer.Address.t/0` with `hash`.
-
-  If `t:Explorer.Address.t/0` with `hash` does not already exist, it is created first.
-  """
-  @spec update_balance(Address.hash(), Address.balance()) ::
-          {:ok, Address.t()} | {:error, Ecto.Changeset.t()} | {:error, reason :: term}
-  def update_balance(hash, balance) when is_binary(hash) do
-    changes = %{
-      balance: balance
-    }
-
-    with {:ok, address} <- ensure_hash_address(hash) do
-      address
-      |> Address.balance_changeset(changes)
-      |> Repo.update()
-    end
-  end
+  def transaction_to_status(%Transaction{receipt: %Receipt{status: :error}}), do: :failed
 
   @doc """
   The `t:Explorer.Chain.Transaction.t/0` or `t:Explorer.Chain.InternalTransaction.t/0` `value` of the `transaction` in
@@ -580,10 +1364,11 @@ defmodule Explorer.Chain do
     Wei.to(value, unit)
   end
 
-  ## Private Functions
-
-  defp address_id_to_transactions(address_id, named_arguments)
-       when is_integer(address_id) and is_list(named_arguments) do
+  defp address_hash_to_transactions(
+         %Hash{byte_count: unquote(Hash.Truncated.byte_count())} = address_hash,
+         named_arguments
+       )
+       when is_list(named_arguments) do
     direction = Keyword.get(named_arguments, :direction)
     necessity_by_association = Keyword.get(named_arguments, :necessity_by_association, %{})
     pagination = Keyword.get(named_arguments, :pagination, %{})
@@ -591,16 +1376,304 @@ defmodule Explorer.Chain do
     Transaction
     |> join_associations(necessity_by_association)
     |> reverse_chronologically()
-    |> where_address_fields_match(direction, address_id)
+    |> where_address_fields_match(direction, address_hash)
     |> Repo.paginate(pagination)
   end
 
-  defp for_parent_transaction(query, hash) when is_binary(hash) do
+  defp after_hash(query, options) do
+    case Keyword.fetch(options, :after_hash) do
+      {:ok, hash} ->
+        from(
+          transaction in query,
+          inner_join: block in assoc(transaction, :block),
+          join: hash_transaction in Transaction,
+          on: hash_transaction.hash == ^hash,
+          inner_join: hash_block in assoc(hash_transaction, :block),
+          where:
+            block.number > hash_block.number or
+              (block.number == hash_block.number and transaction.index > hash_transaction.index)
+        )
+
+      :error ->
+        query
+    end
+  end
+
+  @spec changes_list(params :: map, [{:for, module}]) :: {:ok, changes :: map} | {:error, [Changeset.t()]}
+  defp changes_list(params, named_arguments) when is_list(named_arguments) do
+    ecto_schema_module = Keyword.fetch!(named_arguments, :for)
+    struct = ecto_schema_module.__struct__()
+
+    {status, acc} =
+      params
+      |> Stream.map(&ecto_schema_module.changeset(struct, &1))
+      |> Enum.reduce({:ok, []}, fn
+        changeset = %Changeset{valid?: false}, {:ok, _} -> {:error, [changeset]}
+        changeset = %Changeset{valid?: false}, {:error, acc_changesets} -> {:error, [changeset | acc_changesets]}
+        %Changeset{changes: changes, valid?: true}, {:ok, acc_changes} -> {:ok, [changes | acc_changes]}
+        %Changeset{valid?: true}, {:error, _} = error -> error
+      end)
+
+    {status, Enum.reverse(acc)}
+  end
+
+  defp ecto_schema_module_changes_list_to_address_hash_set({ecto_schema_module, changes_list}) do
+    Enum.reduce(changes_list, MapSet.new(), fn changes, acc ->
+      changes
+      |> ecto_schema_module.changes_to_address_hash_set()
+      |> MapSet.union(acc)
+    end)
+  end
+
+  @spec ecto_schema_module_to_changes_list_to_address_hash_set(%{module => [map()]}) :: MapSet.t(Hash.Truncated.t())
+  defp ecto_schema_module_to_changes_list_to_address_hash_set(ecto_schema_module_to_changes_list) do
+    Enum.reduce(ecto_schema_module_to_changes_list, MapSet.new(), fn ecto_schema_module_changes_list, acc ->
+      ecto_schema_module_changes_list
+      |> ecto_schema_module_changes_list_to_address_hash_set()
+      |> MapSet.union(acc)
+    end)
+  end
+
+  defp ecto_schema_module_to_params_list_to_ecto_schema_module_to_changes_list(ecto_schema_module_to_params_list) do
+    ecto_schema_module_to_params_list
+    |> Stream.map(fn {ecto_schema_module, params} ->
+      {ecto_schema_module, changes_list(params, for: ecto_schema_module)}
+    end)
+    |> Enum.reduce({:ok, %{}}, fn
+      {ecto_schema_module, {:ok, changes_list}}, {:ok, ecto_schema_module_to_changes_list} ->
+        {:ok, Map.put(ecto_schema_module_to_changes_list, ecto_schema_module, changes_list)}
+
+      {_, {:ok, _}}, {:error, _} = error ->
+        error
+
+      {_, {:error, _} = error}, {:ok, _} ->
+        error
+
+      {_, {:error, changesets}}, {:error, acc_changesets} ->
+        {:error, acc_changesets ++ changesets}
+    end)
+  end
+
+  defp for_parent_transaction(query, %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash) do
     from(
       child in query,
       inner_join: transaction in assoc(child, :transaction),
-      where: fragment("lower(?)", transaction.hash) == ^String.downcase(hash)
+      where: transaction.hash == ^hash
     )
+  end
+
+  @spec insert_addresses([%{hash: Hash.Truncated.t()}], [timeout_option | timestamps_option]) ::
+          {:ok, [Hash.Truncated.t()]}
+  defp insert_addresses(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
+    timestamps = Keyword.fetch!(named_arguments, :timestamps)
+    timeout = Keyword.fetch!(named_arguments, :timeout)
+
+    # order so that row ShareLocks are grabbed in a consistent order
+    ordered_changes_list = sort_address_changes_list(changes_list)
+
+    insert_changes_list(
+      ordered_changes_list,
+      conflict_target: :hash,
+      on_conflict: [set: [balance_fetched_at: nil]],
+      for: Address,
+      timeout: timeout,
+      timestamps: timestamps
+    )
+
+    {:ok, for(changes <- ordered_changes_list, do: changes.hash)}
+  end
+
+  defp sort_address_changes_list(changes_list) do
+    Enum.sort_by(changes_list, & &1.hash)
+  end
+
+  @spec insert_blocks([map()], [timeout_option | timestamps_option]) :: {:ok, [Hash.t()]} | {:error, [Changeset.t()]}
+  defp insert_blocks(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
+    timestamps = Keyword.fetch!(named_arguments, :timestamps)
+    timeout = Keyword.fetch!(named_arguments, :timeout)
+
+    # order so that row ShareLocks are grabbed in a consistent order
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.number, &1.hash})
+
+    {:ok, _} =
+      insert_changes_list(
+        ordered_changes_list,
+        conflict_target: :number,
+        on_conflict: :replace_all,
+        for: Block,
+        timeout: timeout,
+        timestamps: timestamps
+      )
+
+    {:ok, for(changes <- ordered_changes_list, do: changes.hash)}
+  end
+
+  defp insert_ecto_schema_module_to_changes_list(
+         %{
+           Block => blocks_changes,
+           Log => logs_changes,
+           InternalTransaction => internal_transactions_changes,
+           Receipt => receipts_changes,
+           Transaction => transactions_changes
+         } = ecto_schema_module_to_changes_list,
+         options
+       ) do
+    address_hash_set = ecto_schema_module_to_changes_list_to_address_hash_set(ecto_schema_module_to_changes_list)
+    addresses_changes = Address.hash_set_to_changes_list(address_hash_set)
+
+    timestamps = timestamps()
+
+    Multi.new()
+    |> Multi.run(:addresses, fn _ ->
+      insert_addresses(
+        addresses_changes,
+        timeout: Keyword.get(options, :insert_addresses_timeout, @insert_addresses_timeout),
+        timestamps: timestamps
+      )
+    end)
+    |> Multi.run(:blocks, fn _ ->
+      insert_blocks(
+        blocks_changes,
+        timeout: Keyword.get(options, :insert_blocks_timeout, @insert_blocks_timeout),
+        timestamps: timestamps
+      )
+    end)
+    |> Multi.run(:transactions, fn _ ->
+      insert_transactions(
+        transactions_changes,
+        timeout: Keyword.get(options, :insert_transactions_timeout, @insert_transactions_timeout),
+        timestamps: timestamps
+      )
+    end)
+    |> Multi.run(:internal_transactions, fn _ ->
+      insert_internal_transactions(
+        internal_transactions_changes,
+        timeout: Keyword.get(options, :insert_internal_transactions_timeout, @insert_internal_transactions_timeout),
+        timestamps: timestamps
+      )
+    end)
+    |> Multi.run(:receipts, fn _ ->
+      insert_receipts(
+        receipts_changes,
+        timeout: Keyword.get(options, :insert_receipts_timeout, @insert_receipts_timeout),
+        timestamps: timestamps
+      )
+    end)
+    |> Multi.run(:logs, fn _ ->
+      insert_logs(
+        logs_changes,
+        timeout: Keyword.get(options, :insert_logs_timeout, @insert_logs_timeout),
+        timestamps: timestamps
+      )
+    end)
+    |> Repo.transaction(timeout: Keyword.get(options, :transaction_timeout, @transaction_timeout))
+  end
+
+  @spec insert_internal_transactions([map()], [timestamps_option]) ::
+          {:ok, [%{index: non_neg_integer, transaction_hash: Hash.t()}]} | {:error, [Changeset.t()]}
+  defp insert_internal_transactions(changes_list, named_arguments)
+       when is_list(changes_list) and is_list(named_arguments) do
+    timestamps = Keyword.fetch!(named_arguments, :timestamps)
+
+    # order so that row ShareLocks are grabbed in a consistent order
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.index})
+
+    {:ok, internal_transactions} =
+      insert_changes_list(
+        ordered_changes_list,
+        for: InternalTransaction,
+        returning: [:index, :transaction_hash],
+        timestamps: timestamps
+      )
+
+    {:ok,
+     for(internal_transaction <- internal_transactions, do: Map.take(internal_transaction, [:index, :transaction_hash]))}
+  end
+
+  @spec insert_logs([map()], [timeout_option | timestamps_option]) ::
+          {:ok, [%{index: non_neg_integer, transaction_hash: Hash.t()}]} | {:error, [Changeset.t()]}
+  defp insert_logs(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
+    timestamps = Keyword.fetch!(named_arguments, :timestamps)
+    timeout = Keyword.fetch!(named_arguments, :timeout)
+
+    # order so that row ShareLocks are grabbed in a consistent order
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.index})
+
+    {:ok, logs} =
+      insert_changes_list(
+        ordered_changes_list,
+        conflict_target: [:transaction_hash, :index],
+        on_conflict: :replace_all,
+        for: Log,
+        returning: [:index, :transaction_hash],
+        timeout: timeout,
+        timestamps: timestamps
+      )
+
+    {:ok, for(log <- logs, do: Map.take(log, [:index, :transaction_hash]))}
+  end
+
+  @spec insert_receipts([map()], [timeout_option | timestamps_option]) :: {:ok, [Hash.t()]} | {:error, [Changeset.t()]}
+  defp insert_receipts(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
+    timestamps = Keyword.fetch!(named_arguments, :timestamps)
+    timeout = Keyword.fetch!(named_arguments, :timeout)
+
+    # order so that row ShareLocks are grabbed in a consistent order
+    ordered_changes_list = Enum.sort_by(changes_list, & &1.transaction_hash)
+
+    {:ok, receipts} =
+      insert_changes_list(
+        ordered_changes_list,
+        conflict_target: :transaction_hash,
+        on_conflict: :replace_all,
+        for: Receipt,
+        returning: [:transaction_hash],
+        timeout: timeout,
+        timestamps: timestamps
+      )
+
+    {:ok, for(receipt <- receipts, do: receipt.transaction_hash)}
+  end
+
+  defp insert_changes_list(changes_list, options) when is_list(changes_list) do
+    ecto_schema_module = Keyword.fetch!(options, :for)
+
+    timestamped_changes_list = timestamp_changes_list(changes_list, Keyword.fetch!(options, :timestamps))
+    {_, inserted} = Repo.safe_insert_all(ecto_schema_module, timestamped_changes_list, Keyword.delete(options, :for))
+    {:ok, inserted}
+  end
+
+  @spec insert_transactions([map()], [timeout_option | timestamps_option]) ::
+          {:ok, [Hash.t()]} | {:error, [Changeset.t()]}
+  defp insert_transactions(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
+    timestamps = Keyword.fetch!(named_arguments, :timestamps)
+    timeout = Keyword.fetch!(named_arguments, :timeout)
+
+    # order so that row ShareLocks are grabbed in a consistent order
+    ordered_changes_list = Enum.sort_by(changes_list, & &1.hash)
+
+    {:ok, transactions} =
+      insert_changes_list(
+        ordered_changes_list,
+        conflict_target: :hash,
+        on_conflict: :replace_all,
+        for: Transaction,
+        returning: [:hash],
+        timeout: timeout,
+        timestamps: timestamps
+      )
+
+    {:ok, for(transaction <- transactions, do: transaction.hash)}
+  end
+
+  defp inserted_after(query, options) do
+    case Keyword.fetch(options, :inserted_after) do
+      {:ok, inserted_after} ->
+        from(transaction in query, where: ^inserted_after < transaction.inserted_at)
+
+      :error ->
+        query
+    end
   end
 
   defp join_association(query, association, necessity) when is_atom(association) do
@@ -619,22 +1692,26 @@ defmodule Explorer.Chain do
     end)
   end
 
-  defp recently_before_id(query, id) do
-    from(
-      q in query,
-      where: q.id < ^id,
-      order_by: [desc: q.id],
-      limit: 10
-    )
-  end
-
   defp reverse_chronologically(query) do
-    from(q in query, order_by: [desc: q.inserted_at, desc: q.id])
+    from(q in query, order_by: [desc: q.inserted_at, desc: q.hash])
   end
 
-  defp transaction_hash_to_logs(transaction_hash, options)
-       when is_binary(transaction_hash) and is_list(options) do
-    lower_transaction_hash = String.downcase(transaction_hash)
+  defp timestamp_params(changes, timestamps) when is_map(changes) do
+    Map.merge(changes, timestamps)
+  end
+
+  defp timestamp_changes_list(changes_list, timestamps) when is_list(changes_list) do
+    Enum.map(changes_list, &timestamp_params(&1, timestamps))
+  end
+
+  @spec timestamps() :: timestamps
+  defp timestamps do
+    now = Ecto.DateTime.utc()
+    %{inserted_at: now, updated_at: now}
+  end
+
+  defp transaction_hash_to_logs(%Hash{byte_count: unquote(Hash.Full.byte_count())} = transaction_hash, options)
+       when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     pagination = Keyword.get(options, :pagination, %{})
 
@@ -642,7 +1719,7 @@ defmodule Explorer.Chain do
       from(
         log in Log,
         join: transaction in assoc(log, :transaction),
-        where: fragment("lower(?)", transaction.hash) == ^lower_transaction_hash,
+        where: transaction.hash == ^transaction_hash,
         order_by: [asc: :index]
       )
 
@@ -651,43 +1728,32 @@ defmodule Explorer.Chain do
     |> Repo.paginate(pagination)
   end
 
-  defp where_address_fields_match(query, direction, address_id) do
+  defp where_address_fields_match(query, direction, address_hash) do
     address_fields =
       case direction do
-        :to -> [:to_address_id]
-        :from -> [:from_address_id]
-        nil -> [:to_address_id, :from_address_id]
+        :to -> [:to_address_hash]
+        :from -> [:from_address_hash]
+        nil -> [:to_address_hash, :from_address_hash]
       end
 
     Enum.reduce(address_fields, query, fn field, query ->
-      or_where(query, [t], field(t, ^field) == ^address_id)
+      or_where(query, [t], field(t, ^field) == ^address_hash)
     end)
   end
 
-  defp where_hash(query, hash) do
-    from(
-      q in query,
-      where: fragment("lower(?)", q.hash) == ^String.downcase(hash)
-    )
-  end
-
   defp where_pending(query, options) when is_list(options) do
-    pending = Keyword.get(options, :pending, false)
+    pending = Keyword.get(options, :pending)
 
-    where_pending(query, pending)
-  end
+    case pending do
+      false ->
+        from(transaction in query, where: not is_nil(transaction.block_hash))
 
-  defp where_pending(query, false), do: query
+      true ->
+        from(transaction in query, where: is_nil(transaction.block_hash))
 
-  defp where_pending(query, true) do
-    from(
-      transaction in query,
-      where:
-        fragment(
-          "NOT EXISTS (SELECT true FROM receipts WHERE receipts.transaction_id = ?)",
-          transaction.id
-        )
-    )
+      nil ->
+        query
+    end
   end
 
   defp where_transaction_has_multiple_internal_transactions(query) do
@@ -695,8 +1761,8 @@ defmodule Explorer.Chain do
       query,
       [_it, transaction],
       fragment(
-        "(SELECT COUNT(sibling.id) FROM internal_transactions as sibling WHERE sibling.transaction_id = ?) > 1",
-        transaction.id
+        "(SELECT COUNT(sibling.id) FROM internal_transactions as sibling WHERE sibling.transaction_hash = ?) > 1",
+        transaction.hash
       )
     )
   end

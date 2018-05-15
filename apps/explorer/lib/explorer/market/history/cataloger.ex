@@ -28,8 +28,6 @@ defmodule Explorer.Market.History.Cataloger do
 
   @typep milliseconds :: non_neg_integer()
 
-  ## GenServer callbacks
-
   @impl GenServer
   def init(:ok) do
     send(self(), {:fetch_history, 365})
@@ -79,8 +77,6 @@ defmodule Explorer.Market.History.Cataloger do
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
-
-  ## Private Functions
 
   @spec base_backoff :: milliseconds()
   defp base_backoff do

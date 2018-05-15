@@ -12,7 +12,7 @@ defmodule Explorer.Market do
   @doc """
   Get most recent exchange rate for the given symbol.
   """
-  @spec get_exchange_rate(String.t()) :: Token.t()
+  @spec get_exchange_rate(String.t()) :: Token.t() | nil
   def get_exchange_rate(symbol) do
     ExchangeRates.lookup(symbol)
   end

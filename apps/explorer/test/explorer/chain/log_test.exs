@@ -1,7 +1,10 @@
 defmodule Explorer.Chain.LogTest do
   use Explorer.DataCase
 
+  alias Ecto.Changeset
   alias Explorer.Chain.Log
+
+  doctest Log
 
   describe "changeset/2" do
     test "accepts valid attributes" do
@@ -18,8 +21,8 @@ defmodule Explorer.Chain.LogTest do
 
     test "accepts optional attributes" do
       params = Map.put(params_for(:log), :first_topic, "ham")
-      changeset = Log.changeset(%Log{}, params)
-      assert changeset.valid?
+
+      assert %Changeset{valid?: true} = Log.changeset(%Log{}, params)
     end
 
     test "assigns optional attributes" do

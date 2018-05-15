@@ -3,23 +3,26 @@ defmodule Explorer.Chain.InternalTransactionTest do
 
   alias Explorer.Chain.InternalTransaction
 
+  doctest InternalTransaction
+
   describe "changeset/2" do
     test "with valid attributes" do
       transaction = insert(:transaction)
 
       changeset =
         InternalTransaction.changeset(%InternalTransaction{}, %{
-          transaction_id: transaction.id,
-          index: 0,
           call_type: "call",
-          trace_address: [0, 1],
-          value: 100,
+          from_address_hash: "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b",
           gas: 100,
           gas_used: 100,
+          index: 0,
           input: "pintos",
           output: "refried",
-          to_address_id: 1,
-          from_address_id: 2
+          to_address_hash: "0x6295ee1b4f6dd65047762f924ecd367c17eabf8f",
+          trace_address: [0, 1],
+          transaction_hash: transaction.hash,
+          type: "call",
+          value: 100
         })
 
       assert changeset.valid?
@@ -35,15 +38,16 @@ defmodule Explorer.Chain.InternalTransactionTest do
 
       changeset =
         InternalTransaction.changeset(%InternalTransaction{}, %{
-          transaction: transaction,
-          index: 0,
           call_type: "call",
-          trace_address: [0, 1],
-          value: 100,
           gas: 100,
           gas_used: 100,
+          index: 0,
           input: "thin-mints",
-          output: "munchos"
+          output: "munchos",
+          trace_address: [0, 1],
+          transaction: transaction,
+          type: "call",
+          value: 100
         })
 
       assert Repo.insert(changeset)

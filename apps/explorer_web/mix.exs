@@ -22,7 +22,8 @@ defmodule ExplorerWeb.Mixfile do
         coveralls: :test,
         "coveralls.detail": :test,
         "coveralls.post": :test,
-        "coveralls.html": :test
+        "coveralls.html": :test,
+        dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
       test_coverage: [tool: ExCoveralls],
@@ -36,7 +37,7 @@ defmodule ExplorerWeb.Mixfile do
   def application do
     [
       mod: {ExplorerWeb.Application, []},
-      extra_applications: extra_applications(Mix.env())
+      extra_applications: extra_applications()
     ]
   end
 
@@ -44,12 +45,6 @@ defmodule ExplorerWeb.Mixfile do
   defp elixirc_paths(:test), do: ["test/support", "test/explorer_web/features/pages"] ++ elixirc_paths()
   defp elixirc_paths(_), do: elixirc_paths()
   defp elixirc_paths, do: ["lib"]
-
-  # Specifies extra applications to start per environment
-  defp extra_applications(:prod), do: [:phoenix_pubsub_redis, :exq, :exq_ui | extra_applications()]
-
-  defp extra_applications(:dev), do: [:exq, :exq_ui | extra_applications()]
-  defp extra_applications(_), do: extra_applications()
 
   defp extra_applications,
     do: [
@@ -60,8 +55,7 @@ defmodule ExplorerWeb.Mixfile do
       :crontab,
       :set_locale,
       :logger,
-      :runtime_tools,
-      :new_relixir
+      :runtime_tools
     ]
 
   # Specifies your project dependencies.
@@ -88,13 +82,11 @@ defmodule ExplorerWeb.Mixfile do
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       {:math, "~> 0.3.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
-      {:new_relixir, "~> 0.4"},
       {:phoenix, "~> 1.3.0"},
       {:phoenix_ecto, "~> 3.2"},
       {:phoenix_html, "~> 2.10"},
       {:phoenix_live_reload, "~> 1.0", only: [:dev]},
       {:phoenix_pubsub, "~> 1.0"},
-      {:phoenix_pubsub_redis, "~> 2.1.0", only: [:prod]},
       {:postgrex, ">= 0.0.0"},
       {:scrivener_html, "~> 1.7"},
       # Waiting on https://github.com/smeevil/set_locale/pull/9

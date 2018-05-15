@@ -7,25 +7,25 @@ defmodule Explorer.Chain.Statistics.Server do
 
   @interval 1_000
 
+  def child_spec(_) do
+    Supervisor.Spec.worker(__MODULE__, [[refresh: true]])
+  end
+
   @spec fetch() :: Statistics.t()
   def fetch do
-    case GenServer.whereis(__MODULE__) do
-      nil -> Statistics.fetch()
-      _ -> GenServer.call(__MODULE__, :fetch)
-    end
+    GenServer.call(__MODULE__, :fetch)
   end
 
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-  def init(opts) do
-    if Keyword.get(opts, :refresh, true) do
-      {:noreply, chain} = handle_cast({:update, Statistics.fetch()}, %Statistics{})
-      {:ok, chain}
-    else
-      {:ok, Statistics.fetch()}
+  def init(options) when is_list(options) do
+    if Keyword.get(options, :refresh, true) do
+      send(self(), :refresh)
     end
+
+    {:ok, %Statistics{}}
   end
 
   def handle_info(:refresh, %Statistics{} = statistics) do

@@ -89,7 +89,7 @@ defmodule Explorer.Chain.Wei do
   @typedoc """
   Short for giga-wei
 
-  * 10<sup>9</sup> wei is one gwei
+  10<sup>9</sup> wei is 1 gwei.
   """
   @type gwei :: Decimal.t()
 
@@ -108,12 +108,8 @@ defmodule Explorer.Chain.Wei do
           value: Decimal.t()
         }
 
-  # Constants
-
   @wei_per_ether Decimal.new(1_000_000_000_000_000_000)
   @wei_per_gwei Decimal.new(1_000_000_000)
-
-  ## Functions
 
   @doc """
   Converts `Decimal` representations of various wei denominations (wei, Gwei, ether) to
@@ -148,7 +144,7 @@ defmodule Explorer.Chain.Wei do
     %__MODULE__{value: Decimal.mult(gwei, @wei_per_gwei)}
   end
 
-  @spec from(t(), :wei) :: t()
+  @spec from(wei(), :wei) :: t()
   def from(%Decimal{} = wei, :wei) do
     %__MODULE__{value: wei}
   end

@@ -11,13 +11,12 @@ defmodule ExplorerWeb.AddressPageTest do
 
     from_taft =
       :transaction
-      |> insert(from_address_id: taft.id, to_address_id: lincoln.id)
-      |> with_block(block)
+      |> insert(block_hash: block.hash, from_address_hash: taft.hash, index: 0, to_address_hash: lincoln.hash)
       |> with_receipt()
 
     from_lincoln =
       :transaction
-      |> insert(from_address_id: lincoln.id, to_address_id: taft.id)
+      |> insert(from_address_hash: lincoln.hash, to_address_hash: taft.hash)
       |> with_block(block)
       |> with_receipt()
 
@@ -29,7 +28,7 @@ defmodule ExplorerWeb.AddressPageTest do
   end
 
   test "viewing address overview information", %{session: session} do
-    address = insert(:address, balance: 500)
+    address = insert(:address, fetched_balance: 500)
 
     session
     |> AddressPage.visit_page(address)
@@ -75,10 +74,10 @@ defmodule ExplorerWeb.AddressPageTest do
 
   describe "viewing internal transactions" do
     setup %{addresses: addresses, transactions: transactions} do
-      address_id = addresses.lincoln.id
-      transaction_id = transactions.from_lincoln.id
-      insert(:internal_transaction, transaction_id: transaction_id, to_address_id: address_id, index: 0)
-      insert(:internal_transaction, transaction_id: transaction_id, from_address_id: address_id, index: 1)
+      address_hash = addresses.lincoln.hash
+      transaction_hash = transactions.from_lincoln.hash
+      insert(:internal_transaction, transaction_hash: transaction_hash, to_address_hash: address_hash, index: 0)
+      insert(:internal_transaction, transaction_hash: transaction_hash, from_address_hash: address_hash, index: 1)
       :ok
     end
 

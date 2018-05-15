@@ -4,27 +4,38 @@ defmodule ExplorerWeb.TransactionLogControllerTest do
   import ExplorerWeb.Router.Helpers, only: [transaction_log_path: 4]
 
   describe "GET index/2" do
-    test "without transaction", %{conn: conn} do
-      conn = get(conn, transaction_log_path(conn, :index, :en, "unknown"))
+    test "with invalid transaction hash", %{conn: conn} do
+      conn = get(conn, transaction_log_path(conn, :index, :en, "invalid_transaction_string"))
+
+      assert html_response(conn, 404)
+    end
+
+    test "with valid transaction hash without transaction", %{conn: conn} do
+      conn =
+        get(
+          conn,
+          transaction_log_path(conn, :index, :en, "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6")
+        )
 
       assert html_response(conn, 404)
     end
 
     test "returns logs for the transaction", %{conn: conn} do
-      transaction = insert(:transaction)
-      receipt = insert(:receipt, transaction: transaction)
+      block = insert(:block)
+      transaction = insert(:transaction, block_hash: block.hash, index: 0)
+      receipt = insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
       address = insert(:address)
-      insert(:log, receipt: receipt, address_id: address.id)
+      insert(:log, address_hash: address.hash, transaction_hash: transaction.hash)
 
-      conn = get(conn, transaction_log_path(ExplorerWeb.Endpoint, :index, :en, transaction.hash))
+      conn = get(conn, transaction_log_path(conn, :index, :en, transaction))
 
       first_log = List.first(conn.assigns.logs.entries)
-      assert first_log.receipt_id == receipt.id
+      assert first_log.transaction_hash == receipt.transaction_hash
     end
 
     test "assigns no logs when there are none", %{conn: conn} do
       transaction = insert(:transaction)
-      path = transaction_log_path(ExplorerWeb.Endpoint, :index, :en, transaction.hash)
+      path = transaction_log_path(conn, :index, :en, transaction)
 
       conn = get(conn, path)
 

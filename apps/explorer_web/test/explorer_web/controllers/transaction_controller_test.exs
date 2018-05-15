@@ -5,62 +5,86 @@ defmodule ExplorerWeb.TransactionControllerTest do
 
   describe "GET index/2" do
     test "returns a transaction with a receipt", %{conn: conn} do
-      transaction = insert(:transaction)
-      block = insert(:block)
-      insert(:receipt, transaction: transaction)
-      insert(:block_transaction, transaction: transaction, block: block)
+      transaction =
+        :transaction
+        |> insert()
+        |> validate()
+
       conn = get(conn, "/en/transactions")
-      assert List.first(conn.assigns.transactions.entries).id == transaction.id
+
+      assert List.first(conn.assigns.transactions).hash == transaction.hash
     end
 
     test "returns a count of transactions", %{conn: conn} do
-      transaction = insert(:transaction)
       block = insert(:block)
-      insert(:receipt, transaction: transaction)
-      insert(:block_transaction, transaction: transaction, block: block)
+      transaction = insert(:transaction, block_hash: block.hash, index: 0)
+      insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
 
       conn = get(conn, "/en/transactions")
 
-      assert length(conn.assigns.transactions.entries) === 1
+      assert length(conn.assigns.transactions) == 1
     end
 
     test "returns no pending transactions", %{conn: conn} do
-      insert(:transaction) |> with_block()
+      insert(:transaction)
+
       conn = get(conn, "/en/transactions")
-      assert conn.assigns.transactions.entries == []
+
+      assert conn.assigns.transactions == []
     end
 
     test "only returns transactions that have a receipt", %{conn: conn} do
       insert(:transaction)
+
       conn = get(conn, "/en/transactions")
-      assert length(conn.assigns.transactions.entries) === 0
+
+      assert length(conn.assigns.transactions) == 0
     end
 
     test "paginates transactions using the last seen transaction", %{conn: conn} do
-      transaction = insert(:transaction)
       block = insert(:block)
-      insert(:receipt, transaction: transaction)
-      insert(:block_transaction, transaction: transaction, block: block)
-      conn = get(conn, "/en/transactions", last_seen: transaction.id)
-      assert conn.assigns.transactions.entries == []
+      transaction = insert(:transaction, block_hash: block.hash, index: 0)
+      insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
+
+      conn =
+        get(
+          conn,
+          "/en/transactions",
+          last_seen_collated_hash: to_string(transaction.hash)
+        )
+
+      assert conn.assigns.transactions == []
     end
 
-    test "sends back an estimate of the number of transactions", %{conn: conn} do
+    test "sends back the number of transactions", %{conn: conn} do
       insert(:transaction)
+
       conn = get(conn, "/en/transactions")
-      refute conn.assigns.transactions.total_entries == nil
+
+      refute conn.assigns.transaction_count == nil
     end
 
     test "works when there are no transactions", %{conn: conn} do
       conn = get(conn, "/en/transactions")
-      assert conn.assigns.transactions.total_entries == 0
-      assert conn.assigns.transactions.entries == []
+
+      assert conn.assigns.transaction_count == 0
+      assert conn.assigns.transactions == []
     end
   end
 
   describe "GET show/3" do
-    test "without transaction", %{conn: conn} do
-      conn = get(conn, "/en/transactions/0x1")
+    test "with invalid transaction hash", %{conn: conn} do
+      conn = get(conn, transaction_path(conn, :show, :en, "invalid_transaction_hash"))
+
+      assert html_response(conn, 404)
+    end
+
+    test "with valid transaction hash without transaction", %{conn: conn} do
+      conn =
+        get(
+          conn,
+          transaction_path(conn, :show, :en, "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6")
+        )
 
       assert html_response(conn, 404)
     end
@@ -69,34 +93,34 @@ defmodule ExplorerWeb.TransactionControllerTest do
       conn: conn
     } do
       block = insert(:block, %{number: 777})
-      transaction = insert(:transaction, hash: "0x8") |> with_block(block)
+      transaction = insert(:transaction, block_hash: block.hash, index: 0)
 
-      conn = get(conn, "/en/transactions/0x8")
+      conn = get(conn, transaction_path(conn, :show, :en, transaction))
 
       assert html = html_response(conn, 200)
 
-      assert html |> Floki.find("div.transaction__header h3") |> Floki.text() == transaction.hash
+      assert html |> Floki.find("div.transaction__header h3") |> Floki.text() == to_string(transaction.hash)
 
       assert html |> Floki.find("span.transaction__item--primary a") |> Floki.text() == to_string(block.number)
     end
 
     test "returns a transaction without associated block data", %{conn: conn} do
-      transaction = insert(:transaction, hash: "0x8")
+      transaction = insert(:transaction)
 
-      conn = get(conn, "/en/transactions/0x8")
+      conn = get(conn, transaction_path(conn, :show, :en, transaction))
 
       assert html = html_response(conn, 200)
 
-      assert html |> Floki.find("div.transaction__header h3") |> Floki.text() == transaction.hash
+      assert html |> Floki.find("div.transaction__header h3") |> Floki.text() == to_string(transaction.hash)
       assert html |> Floki.find("span.transaction__item--primary a") |> Floki.text() == ""
     end
 
     test "returns internal transactions for the transaction", %{conn: conn} do
       transaction = insert(:transaction)
-      expected_internal_transaction = insert(:internal_transaction, transaction_id: transaction.id, index: 0)
-      insert(:internal_transaction, transaction_id: transaction.id, index: 1)
+      expected_internal_transaction = insert(:internal_transaction, transaction_hash: transaction.hash, index: 0)
+      insert(:internal_transaction, transaction_hash: transaction.hash, index: 1)
 
-      path = transaction_path(ExplorerWeb.Endpoint, :show, :en, transaction.hash)
+      path = transaction_path(ExplorerWeb.Endpoint, :show, :en, transaction)
 
       conn = get(conn, path)
 

@@ -14,16 +14,16 @@ defmodule ExplorerWeb.ChainTest do
                |> Chain.from_param()
     end
 
-    test "finds a transaction by hash" do
-      %Transaction{hash: hash} = insert(:transaction)
+    test "finds a transaction by hash string" do
+      transaction = %Transaction{hash: hash} = insert(:transaction)
 
-      assert {:ok, %Transaction{hash: ^hash}} = Chain.from_param(hash)
+      assert {:ok, %Transaction{hash: ^hash}} = transaction |> Phoenix.Param.to_param() |> Chain.from_param()
     end
 
-    test "finds an address by hash" do
-      %Address{hash: hash} = insert(:address)
+    test "finds an address by hash string" do
+      address = %Address{hash: hash} = insert(:address)
 
-      assert {:ok, %Address{hash: ^hash}} = Chain.from_param(hash)
+      assert {:ok, %Address{hash: ^hash}} = address |> Phoenix.Param.to_param() |> Chain.from_param()
     end
 
     test "returns {:error, :not_found} when garbage is passed in" do

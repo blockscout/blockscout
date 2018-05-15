@@ -7,14 +7,14 @@
         <%= link(
               gettext("Internal Transactions"),
               class: "transaction__link",
-              to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction.hash)
+              to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction)
             ) %>
       </h2>
       <h2 class="transaction__tab transaction__tab--active">
         <%= link(
               gettext("Logs"),
               class: "transaction__link transaction__link--active",
-              to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction.hash)
+              to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction)
             ) %>
       </h2>
     </div>
@@ -31,9 +31,9 @@
               <tr>
                 <td>
                   <%= link(
-                        log.address.hash,
+                        log.address,
                         class: "transaction-log__link",
-                        to: address_path(@conn, :show, @conn.assigns.locale, log.address.hash)
+                        to: address_path(@conn, :show, @conn.assigns.locale, log.address)
                       ) %>
                 </td>
                 <td><%= log.first_topic %></td>

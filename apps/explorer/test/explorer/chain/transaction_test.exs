@@ -3,11 +3,13 @@ defmodule Explorer.Chain.TransactionTest do
 
   alias Explorer.Chain.Transaction
 
+  doctest Transaction
+
   describe "changeset/2" do
     test "with valid attributes" do
       changeset =
         Transaction.changeset(%Transaction{}, %{
-          hash: "0x0",
+          hash: "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b",
           value: 1,
           gas: 21000,
           gas_price: 10000,

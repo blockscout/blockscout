@@ -16,8 +16,6 @@ defmodule Explorer.DataCase do
 
   using do
     quote do
-      alias Explorer.Repo
-
       use ExVCR.Mock, adapter: ExVCR.Adapter.Hackney
 
       import Ecto
@@ -25,6 +23,8 @@ defmodule Explorer.DataCase do
       import Ecto.Query
       import Explorer.DataCase
       import Explorer.Factory
+
+      alias Explorer.Repo
     end
   end
 

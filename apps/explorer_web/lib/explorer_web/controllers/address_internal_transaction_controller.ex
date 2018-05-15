@@ -7,24 +7,27 @@ defmodule ExplorerWeb.AddressInternalTransactionController do
 
   alias Explorer.Chain
 
-  def index(conn, %{"address_id" => address_hash} = params) do
-    case Chain.hash_to_address(address_hash) do
-      {:ok, address} ->
-        options = [
-          necessity_by_association: %{
-            from_address: :optional,
-            to_address: :optional
-          },
-          pagination: params
-        ]
+  def index(conn, %{"address_id" => address_hash_string} = params) do
+    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+         {:ok, address} <- Chain.hash_to_address(address_hash) do
+      options = [
+        necessity_by_association: %{
+          from_address: :optional,
+          to_address: :optional
+        },
+        pagination: params
+      ]
 
-        page =
-          Chain.address_to_internal_transactions(
-            address,
-            Keyword.merge(options, current_filter(params))
-          )
+      page =
+        Chain.address_to_internal_transactions(
+          address,
+          Keyword.merge(options, current_filter(params))
+        )
 
-        render(conn, "index.html", address: address, filter: params["filter"], page: page)
+      render(conn, "index.html", address: address, filter: params["filter"], page: page)
+    else
+      :error ->
+        not_found(conn)
 
       {:error, :not_found} ->
         not_found(conn)

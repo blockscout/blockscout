@@ -7,9 +7,10 @@ defmodule Explorer.Chain.Block do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{BlockTransaction, Gas, Hash, Transaction}
+  alias Explorer.Chain.{Address, Gas, Hash, Transaction}
 
-  # Types
+  @required_attrs ~w(difficulty gas_limit gas_used hash miner_hash nonce number parent_hash size timestamp
+                     total_difficulty)a
 
   @typedoc """
   How much work is required to find a hash with some number of leading 0s.  It is measured in hashes for PoW
@@ -24,31 +25,30 @@ defmodule Explorer.Chain.Block do
   @type block_number :: non_neg_integer()
 
   @typedoc """
-  * `block_transactions` - The `t:Explorer.Chain.BlockTransaction.t/0`s joins this block to its `transactions`
-  * `difficulty` - how hard the block was to mine.
-  * `gas_limit` - If the total number of gas used by the computation spawned by the transaction, including the original
-      message and any sub-messages that may be triggered, is less than or equal to the gas limit, then the transaction
-      processes. If the total gas exceeds the gas limit, then all changes are reverted, except that the transaction is
-      still valid and the fee can still be collected by the miner.
-  * `gas_used` - The actual `t:gas/0` used to mine/validate the transactions in the block.
-  * `hash` - the hash of the block.
-  * `miner` - the hash of the `t:Explorer.Address.t/0` of the miner.  In Proof-of-Authority chains, this is the
-      validator.
-  * `nonce` - the hash of the generated proof-of-work.  Not used in Proof-of-Authority chains.
-  * `number` - which block this is along the chain.
-  * `parent_hash` - the hash of the parent block, which should have the previous `number`
-  * `size` - The size of the block in bytes.
-  * `timestamp` - When the block was collated
-  * `total_diffficulty` - the total `difficulty` of the chain until this block.
-  * `transactions` - the `t:Explorer.Chain.Transaction.t/0` in this block.
+   * `difficulty` - how hard the block was to mine.
+   * `gas_limit` - If the total number of gas used by the computation spawned by the transaction, including the
+     original message and any sub-messages that may be triggered, is less than or equal to the gas limit, then the
+     transaction processes. If the total gas exceeds the gas limit, then all changes are reverted, except that the
+     transaction is still valid and the fee can still be collected by the miner.
+   * `gas_used` - The actual `t:gas/0` used to mine/validate the transactions in the block.
+   * `hash` - the hash of the block.
+   * `miner` - the hash of the `t:Explorer.Chain.Address.t/0` of the miner.  In Proof-of-Authority chains, this is the
+     validator.
+   * `nonce` - the hash of the generated proof-of-work.  Not used in Proof-of-Authority chains.
+   * `number` - which block this is along the chain.
+   * `parent_hash` - the hash of the parent block, which should have the previous `number`
+   * `size` - The size of the block in bytes.
+   * `timestamp` - When the block was collated
+   * `total_diffficulty` - the total `difficulty` of the chain until this block.
+   * `transactions` - the `t:Explorer.Chain.Transaction.t/0` in this block.
   """
   @type t :: %__MODULE__{
-          block_transactions: %Ecto.Association.NotLoaded{} | [BlockTransaction.t()],
           difficulty: difficulty(),
           gas_limit: Gas.t(),
           gas_used: Gas.t(),
           hash: Hash.t(),
-          miner: Address.hash(),
+          miner: %Ecto.Association.NotLoaded{} | Address.t(),
+          miner_hash: Hash.Truncated.t(),
           nonce: Hash.t(),
           number: block_number(),
           parent_hash: Hash.t(),
@@ -58,41 +58,33 @@ defmodule Explorer.Chain.Block do
           transactions: %Ecto.Association.NotLoaded{} | [Transaction.t()]
         }
 
+  @primary_key {:hash, Hash.Full, autogenerate: false}
   schema "blocks" do
     field(:difficulty, :decimal)
     field(:gas_limit, :integer)
     field(:gas_used, :integer)
-    field(:hash, :string)
-    field(:miner, :string)
-    field(:nonce, :string)
+    field(:nonce, :integer)
     field(:number, :integer)
-    field(:parent_hash, :string)
     field(:size, :integer)
     field(:timestamp, Timex.Ecto.DateTime)
     field(:total_difficulty, :decimal)
 
     timestamps()
 
-    has_many(:block_transactions, BlockTransaction)
-    many_to_many(:transactions, Transaction, join_through: "block_transactions")
+    belongs_to(:miner, Address, foreign_key: :miner_hash, references: :hash, type: Hash.Truncated)
+    belongs_to(:parent, __MODULE__, foreign_key: :parent_hash, references: :hash, type: Hash.Full)
+    has_many(:transactions, Transaction)
   end
 
-  @required_attrs ~w(number hash parent_hash nonce miner difficulty
-                     total_difficulty size gas_limit gas_used timestamp)a
-
-  @doc false
   def changeset(%__MODULE__{} = block, attrs) do
     block
     |> cast(attrs, @required_attrs)
     |> validate_required(@required_attrs)
-    |> update_change(:hash, &String.downcase/1)
-    |> unique_constraint(:hash)
-    |> cast_assoc(:transactions)
+    |> foreign_key_constraint(:parent_hash)
+    |> unique_constraint(:hash, name: :blocks_pkey)
   end
 
-  def null, do: %__MODULE__{number: -1, timestamp: :calendar.universal_time()}
-
-  def latest(query) do
-    query |> order_by(desc: :number)
+  def changes_to_address_hash_set(%{miner_hash: miner_hash}) do
+    MapSet.new([miner_hash])
   end
 end

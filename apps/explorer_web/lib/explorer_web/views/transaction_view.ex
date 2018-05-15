@@ -3,10 +3,15 @@ defmodule ExplorerWeb.TransactionView do
 
   alias Cldr.Number
   alias Explorer.Chain
-  alias Explorer.Chain.{Block, InternalTransaction, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
   alias ExplorerWeb.BlockView
 
-  # Functions
+  def block(%Transaction{block: block}) do
+    case block do
+      nil -> gettext("Pending")
+      _ -> to_string(block.number)
+    end
+  end
 
   def confirmations(%Transaction{block: block}, named_arguments) when is_list(named_arguments) do
     case block do
@@ -57,6 +62,10 @@ defmodule ExplorerWeb.TransactionView do
     end
   end
 
+  def from_address(%Transaction{from_address: %Address{hash: hash}}) do
+    to_string(hash)
+  end
+
   defguardp is_transaction_type(mod) when mod in [InternalTransaction, Transaction]
 
   def gas(%type{gas: gas}) when is_transaction_type(type) do
@@ -68,6 +77,10 @@ defmodule ExplorerWeb.TransactionView do
   """
   def gas_price(%Transaction{gas_price: gas_price}, unit) when unit in ~w(wei gwei ether)a do
     format_wei_value(gas_price, unit)
+  end
+
+  def hash(%Transaction{hash: hash}) do
+    to_string(hash)
   end
 
   def last_seen(%Transaction{updated_at: updated_at}) do
@@ -89,12 +102,19 @@ defmodule ExplorerWeb.TransactionView do
     end
   end
 
+  def to_address(%Transaction{to_address: to_address}) do
+    case to_address do
+      nil -> "Contract Creation"
+      _ -> to_string(to_address)
+    end
+  end
+
   @doc """
   Converts a transaction's Wei value to Ether and returns a formatted display value.
 
   ## Options
 
-  * `:include_label` - Boolean. Defaults to true. Flag for displaying unit with value.
+    * `:include_label` - Boolean. Defaults to true. Flag for displaying unit with value.
   """
   def value(%mod{value: value}, opts \\ []) when is_transaction_type(mod) do
     include_label? = Keyword.get(opts, :include_label, true)

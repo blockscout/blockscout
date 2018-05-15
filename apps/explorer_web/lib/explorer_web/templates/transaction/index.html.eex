@@ -2,7 +2,7 @@
   <section class="container__subsection">
     <div class="transactions__headline">
       <h1 class="transactions__headline-title">
-        <%= gettext("Showing %{count} Transactions", count: @transactions.total_entries) %>
+        <%= gettext("Showing %{count} Transactions", count: @transaction_count) %>
       </h1>
     </div>
     <div class="transactions">
@@ -40,7 +40,7 @@
             </tr>
           </thead>
           <tbody>
-            <%= for transaction <- @transactions.entries do %>
+            <%= for transaction <- @transactions do %>
               <tr class="transactions__row">
                 <td class="transactions__column transactions__column--status">
                   <div class="transactions__dot transactions__dot--<%= status(transaction) %>"></div>
@@ -48,17 +48,17 @@
                 <td class="transactions__column transactions__column--hash">
                   <div class="transactions__hash">
                     <%= link(
-                          transaction.hash,
+                          hash(transaction),
                           class: "transactions__link transactions__link--truncated transactions__link--long-hash",
-                          to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.hash)
+                          to: transaction_path(@conn, :show, @conn.assigns.locale, transaction)
                         ) %>
                    </div>
                 </td>
                 <td class="transactions__column transactions__column--block transactions__column--optional">
                   <%= link(
-                        transaction.block.number,
+                        block(transaction),
                         class: "transactions__link",
-                        to: block_path(@conn, :show, @conn.assigns.locale, transaction.block.number)
+                        to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
                       ) %>
                 </td>
                 <td class="transactions__column transactions__column--age">
@@ -67,17 +67,17 @@
                 <td class="transactions__column transactions__column--from transactions__column--optional">
                   <div class="transactions__hash">
                     <%= link(
-                          transaction.from_address.hash,
+                          from_address(transaction),
                           class: "transactions__link transactions__link--truncated transactions__link--hash",
-                          to: address_path(@conn, :show, @conn.assigns.locale, transaction.from_address.hash)
+                          to: address_path(@conn, :show, @conn.assigns.locale, transaction.from_address)
                         ) %></div>
                 </td>
                 <td class="transactions__column transactions__column--to transactions__column--optional">
                   <div class="transactions__hash">
                     <%= link(
-                          transaction.to_address.hash,
+                          to_address(transaction),
                           class: "transactions__link transactions__link--truncated transactions__link--hash",
-                          to: address_path(@conn, :show, @conn.assigns.locale, transaction.to_address.hash)
+                          to: address_path(@conn, :show, @conn.assigns.locale, transaction.to_address)
                         ) %></div>
                 </td>
                 <td class="transactions__column transactions__column--value">
@@ -87,11 +87,18 @@
             <% end %>
           </tbody>
         </table>
-        <%= link(
-              gettext("Next Page"),
-              class: "transactions__link transactions__link--next-page",
-              to: transaction_path(@conn, :index, @conn.assigns.locale, %{"last_seen" => @transactions.last_seen})
-            ) %>
+        <%= if @last_seen_collated_hash do %>
+          <%= link(
+                gettext("Next Page"),
+                class: "transactions__link transactions__link--next-page",
+                to: transaction_path(
+                  @conn,
+                  :index,
+                  @conn.assigns.locale,
+                  %{"last_seen_collated_hash" => to_string(@last_seen_collated_hash)}
+                )
+              ) %>
+        <% end %>
       </div>
     </div>
   </section>
