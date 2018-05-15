@@ -68,12 +68,22 @@ defmodule Explorer.Chain do
     InternalTransaction
     |> join(:inner, [internal_transaction], transaction in assoc(internal_transaction, :transaction))
     |> join(:left, [internal_transaction, transaction], block in assoc(transaction, :block))
-    |> where_address_fields_match(direction, hash)
+    |> where_address_fields_match(hash, direction)
     |> where_transaction_has_multiple_internal_transactions()
     |> order_by([it, transaction, block], desc: block.number, desc: transaction.index, desc: it.index)
     |> preload(transaction: :block)
     |> join_associations(necessity_by_association)
     |> Repo.paginate(pagination)
+  end
+
+  @doc """
+  Counts the number of `t:Explorer.Chain.Transaction.t/0` to or from the `address`.
+  """
+  @spec address_to_transaction_count(Address.t()) :: non_neg_integer()
+  def address_to_transaction_count(%Address{hash: hash}) do
+    Transaction
+    |> where_address_fields_match(hash)
+    |> Repo.aggregate(:count, :hash)
   end
 
   @doc """
@@ -1376,7 +1386,7 @@ defmodule Explorer.Chain do
     Transaction
     |> join_associations(necessity_by_association)
     |> reverse_chronologically()
-    |> where_address_fields_match(direction, address_hash)
+    |> where_address_fields_match(address_hash, direction)
     |> Repo.paginate(pagination)
   end
 
@@ -1728,7 +1738,7 @@ defmodule Explorer.Chain do
     |> Repo.paginate(pagination)
   end
 
-  defp where_address_fields_match(query, direction, address_hash) do
+  defp where_address_fields_match(query, address_hash, direction \\ nil) do
     address_fields =
       case direction do
         :to -> [:to_address_hash]

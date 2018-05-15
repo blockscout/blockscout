@@ -5,6 +5,8 @@ defmodule ExplorerWeb.AddressInternalTransactionController do
 
   use ExplorerWeb, :controller
 
+  import ExplorerWeb.AddressController, only: [transaction_count: 1]
+
   alias Explorer.Chain
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
@@ -24,7 +26,14 @@ defmodule ExplorerWeb.AddressInternalTransactionController do
           Keyword.merge(options, current_filter(params))
         )
 
-      render(conn, "index.html", address: address, filter: params["filter"], page: page)
+      render(
+        conn,
+        "index.html",
+        address: address,
+        filter: params["filter"],
+        page: page,
+        transaction_count: transaction_count(address)
+      )
     else
       :error ->
         not_found(conn)

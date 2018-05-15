@@ -35,6 +35,10 @@ defmodule ExplorerWeb.AddressPage do
     css("[data-test='transaction_hash']", text: transaction_hash)
   end
 
+  def transaction_count do
+    css("[data-test='transaction_count']")
+  end
+
   def visit_page(session, %Address{hash: address_hash}), do: visit_page(session, address_hash)
 
   def visit_page(session, address_hash) do
