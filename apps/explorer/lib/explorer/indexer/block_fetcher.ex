@@ -279,8 +279,8 @@ defmodule Explorer.Indexer.BlockFetcher do
         blocks: blocks,
         internal_transactions: internal_transactions,
         logs: logs,
-        receipts: receipts,
-        transactions: transactions
+        transactions: transactions,
+        receipts: receipts
       })
     else
       {step, {:error, reason}} ->
