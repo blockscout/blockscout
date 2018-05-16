@@ -11,6 +11,17 @@ defmodule Explorer.Accounts.User do
   alias Ecto.Changeset
   alias Explorer.Accounts.{User, UserContact}
 
+  @typedoc """
+  * `:username` - A unique username
+  * `:password_hash` - Encrypted password
+  * `:contacts` - List of `t:UserContact.t/0`
+  """
+  @type t :: %User{
+          username: String.t(),
+          password_hash: String.t(),
+          contacts: [UserContact.t()]
+        }
+
   schema "users" do
     field(:username, :string)
     field(:password, :string, virtual: true)

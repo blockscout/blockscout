@@ -13,6 +13,19 @@ defmodule Explorer.Accounts.UserContact do
   alias Ecto.Changeset
   alias Explorer.Accounts.{User, UserContact}
 
+  @typedoc """
+  * `:email` - Email address
+  * `:primary` - Flag indicating if record is primary contact address
+  * `:verified` - Flag indicating if email contact has been verified
+  * `:user` - owning `t:User.t/0`
+  """
+  @type t :: %UserContact{
+          email: String.t(),
+          primary: boolean(),
+          verified: boolean(),
+          user: User.t()
+        }
+
   schema "user_contacts" do
     field(:email, :string)
     field(:primary, :boolean, default: false)
