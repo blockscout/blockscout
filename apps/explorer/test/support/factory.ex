@@ -122,7 +122,7 @@ defmodule Explorer.Factory do
       public_key: public_key(),
       r: sequence(:transaction_r, & &1),
       s: sequence(:transaction_s, & &1),
-      standard_v: sequence("0x"),
+      standard_v: Enum.random(0..3),
       to_address_hash: insert(:address).hash,
       v: sequence("0x"),
       value: Enum.random(1..100_000)

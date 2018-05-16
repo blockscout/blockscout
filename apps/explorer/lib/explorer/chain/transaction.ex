@@ -127,7 +127,7 @@ defmodule Explorer.Chain.Transaction do
     field(:public_key, Data)
     field(:r, :decimal)
     field(:s, :decimal)
-    field(:standard_v, :string)
+    field(:standard_v, :integer)
     field(:v, :string)
     field(:value, Wei)
 
@@ -254,6 +254,7 @@ defmodule Explorer.Chain.Transaction do
     |> cast(attrs, @required_attrs ++ @optional_attrs)
     |> validate_required(@required_attrs)
     |> validate_collated()
+    |> validate_number(:standard_v, greater_than_or_equal_to: 0, less_than_or_equal_to: 3)
     |> check_constraint(
       :index,
       message: "cannot be set when block_hash is nil and must be set when block_hash is not nil",
