@@ -3,17 +3,19 @@ defmodule Explorer.Chain.InternalTransaction do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, Gas, Hash, Transaction, Wei}
+  alias Explorer.Chain.{Address, Data, Gas, Hash, Transaction, Wei}
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
 
   @typedoc """
    * `call_type` - the type of call.  `nil` when `type` is not `:call`.
+   * `created_contract_code` - the code of the contract that was crarted when `type` is `:create`.
    * `error` - error message when `:call` `type` errors
    * `from_address` - the source of the `value`
    * `from_address_hash` - hash of the source of the `value`
    * `gas` - the amount of gas allowed
    * `gas_used` - the amount of gas used.  `nil` when a call errors.
    * `index` - the index of this internal transaction inside the `transaction`
+   * `init` - the constructor arguments for creating `created_contract_code` when `type` is `:create`.
    * `input` - input bytes to the call
    * `output` - output bytes from the call.  `nil` when a call errors.
    * `to_address` - the sink of the `value`
@@ -26,14 +28,16 @@ defmodule Explorer.Chain.InternalTransaction do
   """
   @type t :: %__MODULE__{
           call_type: CallType.t() | nil,
+          created_contract_code: Data.t() | nil,
           error: String.t(),
           from_address: %Ecto.Association.NotLoaded{} | Address.t(),
           from_address_hash: Hash.Truncated.t(),
           gas: Gas.t(),
           gas_used: Gas.t() | nil,
           index: non_neg_integer(),
-          input: String.t(),
-          output: String.t() | nil,
+          init: Data.t() | nil,
+          input: Data.t(),
+          output: Data.t() | nil,
           to_address: %Ecto.Association.NotLoaded{} | Address.t(),
           to_address_hash: Hash.Truncated.t(),
           trace_address: [non_neg_integer()],
@@ -45,14 +49,14 @@ defmodule Explorer.Chain.InternalTransaction do
 
   schema "internal_transactions" do
     field(:call_type, CallType)
-    field(:created_contract_code, :string)
+    field(:created_contract_code, Data)
     field(:error, :string)
     field(:gas, :decimal)
     field(:gas_used, :decimal)
     field(:index, :integer)
-    field(:init, :string)
-    field(:input, :string)
-    field(:output, :string)
+    field(:init, Data)
+    field(:input, Data)
+    field(:output, Data)
     field(:trace_address, {:array, :integer})
     field(:type, Type)
     field(:value, Wei)

@@ -123,7 +123,7 @@ defmodule Explorer.Chain.Hash do
   end
 
   @doc """
-  Converts the `t:t/0` to string representation shown to users.
+  Converts the `t:t/0` to `iodata` representation shown to users.
 
       iex> %Explorer.Chain.Hash{
       ...>   byte_count: 32,
@@ -196,8 +196,8 @@ defmodule Explorer.Chain.Hash do
     hexadecimal_digit_count = byte_count_to_hexadecimal_digit_count(byte_count)
 
     with ^hexadecimal_digit_count <- String.length(hexadecimal_digits),
-         {integer, ""} <- Integer.parse(hexadecimal_digits, 16) do
-      cast_integer(integer, byte_count)
+         {:ok, bytes} <- Base.decode16(hexadecimal_digits, case: :mixed) do
+      {:ok, %__MODULE__{byte_count: byte_count, bytes: bytes}}
     else
       _ -> :error
     end

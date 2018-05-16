@@ -4,7 +4,7 @@ defmodule Explorer.Repo.Migrations.CreateInternalTransactions do
   def change do
     create table(:internal_transactions) do
       add(:call_type, :string, null: true)
-      add(:created_contract_code, :text, null: true)
+      add(:created_contract_code, :bytea, null: true)
       # null unless there is an error
       add(:error, :string, null: true)
       # no gas budget for suicide
@@ -13,10 +13,10 @@ defmodule Explorer.Repo.Migrations.CreateInternalTransactions do
       # no gas_used for suicide
       add(:gas_used, :numeric, precision: 100, null: true)
       add(:index, :integer, null: false)
-      add(:init, :text)
-      add(:input, :text)
+      add(:init, :bytea)
+      add(:input, :bytea)
       # can be null when `error` is not `null`
-      add(:output, :text)
+      add(:output, :bytea)
       add(:trace_address, {:array, :integer}, null: false)
       add(:type, :string, null: false)
       add(:value, :numeric, precision: 100, null: false)

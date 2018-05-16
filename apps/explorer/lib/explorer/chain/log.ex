@@ -3,7 +3,7 @@ defmodule Explorer.Chain.Log do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, Hash, Receipt, Transaction}
+  alias Explorer.Chain.{Address, Data, Hash, Receipt, Transaction}
 
   @required_attrs ~w(address_hash data index transaction_hash type)a
   @optional_attrs ~w(first_topic second_topic third_topic fourth_topic)a
@@ -27,7 +27,7 @@ defmodule Explorer.Chain.Log do
   @type t :: %__MODULE__{
           address: %Ecto.Association.NotLoaded{} | Address.t(),
           address_hash: Hash.Truncated.t(),
-          data: String.t(),
+          data: Data.t(),
           first_topic: String.t(),
           fourth_topic: String.t(),
           index: non_neg_integer(),
@@ -40,7 +40,7 @@ defmodule Explorer.Chain.Log do
         }
 
   schema "logs" do
-    field(:data, :string)
+    field(:data, Data)
     field(:first_topic, :string)
     field(:fourth_topic, :string)
     field(:index, :integer)

@@ -1,7 +1,7 @@
 defmodule Explorer.Factory do
   use ExMachina.Ecto, repo: Explorer.Repo
 
-  alias Explorer.Chain.{Address, Block, Hash, InternalTransaction, Log, Receipt, Transaction}
+  alias Explorer.Chain.{Address, Block, Data, Hash, InternalTransaction, Log, Receipt, Transaction}
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
 
@@ -47,6 +47,25 @@ defmodule Explorer.Factory do
     block_hash
   end
 
+  def data(sequence_name) do
+    unpadded =
+      sequence_name
+      |> sequence(& &1)
+      |> Integer.to_string(16)
+
+    unpadded_length = String.length(unpadded)
+
+    padded =
+      case rem(unpadded_length, 2) do
+        0 -> unpadded
+        1 -> "0" <> unpadded
+      end
+
+    {:ok, data} = Data.cast("0x#{padded}")
+
+    data
+  end
+
   def internal_transaction_factory do
     type = internal_transaction_type()
 
@@ -61,7 +80,7 @@ defmodule Explorer.Factory do
   def log_factory do
     %Log{
       address_hash: insert(:address).hash,
-      data: sequence("0x"),
+      data: data(:log_data),
       first_topic: nil,
       fourth_topic: nil,
       index: 0,
@@ -70,6 +89,10 @@ defmodule Explorer.Factory do
       transaction_hash: insert(:transaction).hash,
       type: sequence("0x")
     }
+  end
+
+  def public_key do
+    data(:public_key)
   end
 
   def market_history_factory do
@@ -94,9 +117,9 @@ defmodule Explorer.Factory do
       gas: Enum.random(21_000..100_000),
       gas_price: Enum.random(10..99) * 1_000_000_00,
       hash: transaction_hash(),
-      input: sequence("0x"),
+      input: transaction_input(),
       nonce: Enum.random(1..1_000),
-      public_key: sequence("0x"),
+      public_key: public_key(),
       r: sequence("0x"),
       s: sequence("0x"),
       standard_v: sequence("0x"),
@@ -113,6 +136,10 @@ defmodule Explorer.Factory do
       |> Hash.Full.cast()
 
     transaction_hash
+  end
+
+  def transaction_input do
+    data(:transaction_input)
   end
 
   @doc """
@@ -137,10 +164,6 @@ defmodule Explorer.Factory do
     Repo.preload(block_transaction, [:block, :receipt])
   end
 
-  defp integer_to_hexadecimal(integer) when is_integer(integer) do
-    "0x" <> Integer.to_string(integer, 16)
-  end
-
   defp internal_transaction_factory(:create = type) do
     gas = Enum.random(21_000..100_000)
     gas_used = Enum.random(0..gas)
@@ -150,14 +173,14 @@ defmodule Explorer.Factory do
     receipt = insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
 
     %InternalTransaction{
-      created_contract_code: sequence("internal_transaction_created_contract_code", &integer_to_hexadecimal/1),
+      created_contract_code: data(:internal_transaction_created_contract_code),
       created_contract_address_hash: insert(:address).hash,
       from_address_hash: insert(:address).hash,
       gas: gas,
       gas_used: gas_used,
       index: 0,
       # caller MUST suppy `index`
-      init: sequence("internal_transaction_init", &integer_to_hexadecimal/1),
+      init: data(:internal_transaction_init),
       trace_address: [],
       transaction_hash: receipt.transaction_hash,
       type: type,

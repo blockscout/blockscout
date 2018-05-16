@@ -4,7 +4,7 @@ defmodule Explorer.Chain.Transaction do
   use Explorer.Schema
 
   alias Ecto.Changeset
-  alias Explorer.Chain.{Address, Block, Gas, Hash, InternalTransaction, Receipt, Wei}
+  alias Explorer.Chain.{Address, Block, Data, Gas, Hash, InternalTransaction, Receipt, Wei}
 
   @optional_attrs ~w(block_hash from_address_hash index to_address_hash)a
   @required_attrs ~w(gas gas_price hash input nonce public_key r s standard_v v value)a
@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Transaction do
   @typedoc """
   The full public key of the signer of the transaction.
   """
-  @type public_key :: String.t()
+  @type public_key :: Data.t()
 
   @typedoc """
   X coordinate module n in
@@ -103,7 +103,7 @@ defmodule Explorer.Chain.Transaction do
           gas_price: wei_per_gas,
           hash: Hash.t(),
           index: non_neg_integer() | nil,
-          input: String.t(),
+          input: Data.t(),
           internal_transactions: %Ecto.Association.NotLoaded{} | [InternalTransaction.t()],
           nonce: non_neg_integer(),
           public_key: public_key(),
@@ -122,9 +122,9 @@ defmodule Explorer.Chain.Transaction do
     field(:gas, :decimal)
     field(:gas_price, Wei)
     field(:index, :integer)
-    field(:input, :string)
+    field(:input, Data)
     field(:nonce, :integer)
-    field(:public_key, :string)
+    field(:public_key, Data)
     field(:r, :string)
     field(:s, :string)
     field(:standard_v, :string)
