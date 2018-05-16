@@ -14,13 +14,13 @@ defmodule Explorer.Chain.Statistics.ServerTest do
     test "returns a new chain when not told to refresh" do
       {:ok, statistics} = Server.init(refresh: false)
 
-      assert statistics.number == Statistics.fetch().number
+      assert statistics == %Statistics{}
     end
 
     test "returns a new chain when told to refresh" do
       {:ok, statistics} = Server.init(refresh: true)
 
-      assert statistics == Statistics.fetch()
+      assert statistics == %Statistics{}
     end
 
     test "refreshes when told to refresh" do
