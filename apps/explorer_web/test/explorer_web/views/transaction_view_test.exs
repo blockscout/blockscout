@@ -33,7 +33,7 @@ defmodule ExplorerWeb.TransactionViewTest do
 
       expected_value = "0.003,102,702,000,000,000 POA"
       assert expected_value == TransactionView.formatted_fee(transaction, denomination: :ether)
-      assert "$0.0015513510 USD" == TransactionView.formatted_fee(transaction, exchange_rate: token)
+      assert "$0.001551351 USD" == TransactionView.formatted_fee(transaction, exchange_rate: token)
     end
 
     test "with fee but no available exchange_rate" do

@@ -9,7 +9,7 @@
         <dt class="address__item-key"><%= gettext "Balance" %></dt>
         <dd class="address__item-value address__balance u-text-right" title="<%= @address %>" data-test="address_balance">
           <div><%= balance(@address) %> </div>
-          <div><%= format_usd(@address, @exchange_rate) %> </div>
+          <div><%= formatted_usd(@address, @exchange_rate) %> </div>
         </dd>
       </div>
       <div class="address__item">

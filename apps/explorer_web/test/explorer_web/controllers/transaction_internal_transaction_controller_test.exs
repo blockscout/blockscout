@@ -6,7 +6,14 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
   alias Explorer.ExchangeRates.Token
 
   describe "GET index/3" do
-    test "without transaction", %{conn: conn} do
+    test "with missing transaction", %{conn: conn} do
+      hash = transaction_hash()
+      conn = get(conn, transaction_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, hash))
+
+      assert html_response(conn, 404)
+    end
+
+    test "with invalid transaction hash", %{conn: conn} do
       conn = get(conn, transaction_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, "nope"))
 
       assert html_response(conn, 404)

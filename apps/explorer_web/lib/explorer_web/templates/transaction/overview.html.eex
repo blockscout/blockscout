@@ -44,7 +44,7 @@
             </th>
             <td>
               <div><%= value(@transaction) %> </div>
-              <div><%= format_usd_value(@transaction, @exchange_rate) %></div>
+              <div><%= formatted_usd_value(@transaction, @exchange_rate) %></div>
             </td>
           </tr>
           <tr>
@@ -133,7 +133,7 @@
               <%= gettext "TX Fee" %>
             </th>
             <td>
-              <%= formatted_fee(@transaction, denomination: :ether) %> <%= formatted_fee(@transaction, exchange_rate: @exchange_rate) %>
+              <%= formatted_fee(@transaction, denomination: :ether) %> (<%= formatted_fee(@transaction, exchange_rate: @exchange_rate) %>)
             </td>
           </tr>
           <tr>

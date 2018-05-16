@@ -6,6 +6,7 @@ defmodule ExplorerWeb.TransactionView do
   alias Explorer.Chain.{Block, InternalTransaction, Transaction, Wei}
   alias Explorer.ExchangeRates.Token
   alias ExplorerWeb.BlockView
+  alias ExplorerWeb.ExchangeRates.USD
 
   def confirmations(%Transaction{block: block}, named_arguments) when is_list(named_arguments) do
     case block do
@@ -26,9 +27,9 @@ defmodule ExplorerWeb.TransactionView do
     |> Chain.fee(:wei)
     |> fee_to_currency(opts)
     |> case do
+      {_, nil} -> nil
       {:actual, value} -> value
       {:maximum, value} -> "<= " <> value
-      nil -> nil
     end
   end
 
@@ -36,17 +37,14 @@ defmodule ExplorerWeb.TransactionView do
     {fee_type, format_wei_value(Wei.from(fee, :wei), denomination, fractional_digits: 18)}
   end
 
-  defp fee_to_currency(_, exchange_rate: %Token{usd_value: nil}), do: nil
-
-  defp fee_to_currency({fee_type, fee}, exchange_rate: %Token{usd_value: usd_value}) do
-    usd =
+  defp fee_to_currency({fee_type, fee}, exchange_rate: %Token{} = exchange_rate) do
+    formatted =
       fee
       |> Wei.from(:wei)
-      |> Wei.to(:ether)
-      |> Decimal.mult(usd_value)
+      |> USD.from(exchange_rate)
+      |> format_usd_value()
 
-    currency = gettext("USD")
-    {fee_type, "$#{usd} #{currency}"}
+    {fee_type, formatted}
   end
 
   def first_seen(%Transaction{inserted_at: inserted_at}) do
@@ -57,36 +55,10 @@ defmodule ExplorerWeb.TransactionView do
     Number.to_string!(gas)
   end
 
-  def format_usd(_, %Token{usd_value: nil}), do: nil
-  def format_usd(nil, _), do: nil
+  def formatted_usd_value(%Transaction{value: nil}, _token), do: nil
 
-  def format_usd(value, %Token{usd_value: usd_value}) do
-    with {:ok, wei} <- Wei.cast(value),
-         ether <- Wei.to(wei, :ether),
-         usd <- Decimal.mult(ether, usd_value) do
-      currency = gettext("USD")
-      "$#{usd} #{currency}"
-    else
-      _ -> "HMMMM"
-    end
-  end
-
-  def format_usd_transaction_fee(nil, _token), do: nil
-
-  def format_usd_transaction_fee(%Transaction{} = transaction, token) do
-    transaction
-    |> Chain.fee(:wei)
-    |> case do
-      {:actual, actual} -> actual
-      {:maximum, maximum} -> maximum
-    end
-    |> format_usd(token)
-  end
-
-  def format_usd_value(%Transaction{value: nil}, _token), do: nil
-
-  def format_usd_value(%Transaction{value: value}, token) do
-    format_usd(value, token)
+  def formatted_usd_value(%Transaction{value: value}, token) do
+    format_usd_value(USD.from(value, token))
   end
 
   def formatted_age(%Transaction{block: block}) do
