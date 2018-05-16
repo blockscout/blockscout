@@ -120,11 +120,11 @@ defmodule Explorer.Factory do
       input: transaction_input(),
       nonce: Enum.random(1..1_000),
       public_key: public_key(),
-      r: sequence("0x"),
-      s: sequence("0x"),
-      standard_v: sequence("0x"),
+      r: sequence(:transaction_r, & &1),
+      s: sequence(:transaction_s, & &1),
+      standard_v: Enum.random(0..3),
       to_address_hash: insert(:address).hash,
-      v: sequence("0x"),
+      v: Enum.random(27..30),
       value: Enum.random(1..100_000)
     }
   end

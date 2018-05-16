@@ -13,10 +13,10 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
       add(:input, :bytea, null: false)
       add(:nonce, :integer, null: false)
       add(:public_key, :bytea, null: false)
-      add(:r, :string, null: false)
-      add(:s, :string, null: false)
-      add(:standard_v, :string, null: false)
-      add(:v, :string, null: false)
+      add(:r, :numeric, precision: 100, null: false)
+      add(:s, :numeric, precision: 100, null: false)
+      add(:standard_v, :smallint, null: false)
+      add(:v, :integer, null: false)
       add(:value, :numeric, precision: 100, null: false)
 
       timestamps(null: false)
@@ -36,6 +36,8 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
         check: "(block_hash IS NULL AND index IS NULL) OR (block_hash IS NOT NULL AND index IS NOT NULL)"
       )
     )
+
+    create(constraint(:transactions, :standard_v, check: "0 <= standard_v AND standard_v <= 3"))
 
     create(index(:transactions, :block_hash))
     create(index(:transactions, :from_address_hash))

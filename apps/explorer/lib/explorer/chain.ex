@@ -547,11 +547,11 @@ defmodule Explorer.Chain do
       ...>         input: "0x10855269000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
       ...>         nonce: 4,
       ...>         public_key: "0xe5d196ad4ceada719d9e592f7166d0c75700f6eab2e3c3de34ba751ea786527cb3f6eb96ad9fdfdb9989ff572df50f1c42ef800af9c5207a38b929aff969b5c9",
-      ...>         r: "0xa7f8f45cce375bb7af8750416e1b03e0473f93c256da2285d1134fc97a700e01",
-      ...>         s: "0x1f87a076f13824f4be8963e3dffd7300dae64d5f23c9a062af0c6ead347c135f",
-      ...>         standard_v: "0x1",
+      ...>         r: 0xa7f8f45cce375bb7af8750416e1b03e0473f93c256da2285d1134fc97a700e01,
+      ...>         s: 0x1f87a076f13824f4be8963e3dffd7300dae64d5f23c9a062af0c6ead347c135f,
+      ...>         standard_v: 1,
       ...>         to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
-      ...>         v: "0xbe",
+      ...>         v: 0xbe,
       ...>         value: 0
       ...>       }
       ...>     ]
@@ -721,11 +721,11 @@ defmodule Explorer.Chain do
       ...>         input: "0x10855269000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
       ...>         nonce: 4,
       ...>         public_key: "0xe5d196ad4ceada719d9e592f7166d0c75700f6eab2e3c3de34ba751ea786527cb3f6eb96ad9fdfdb9989ff572df50f1c42ef800af9c5207a38b929aff969b5c9",
-      ...>         r: "0xa7f8f45cce375bb7af8750416e1b03e0473f93c256da2285d1134fc97a700e01",
-      ...>         s: "0x1f87a076f13824f4be8963e3dffd7300dae64d5f23c9a062af0c6ead347c135f",
-      ...>         standard_v: "0x1",
+      ...>         r: 0xa7f8f45cce375bb7af8750416e1b03e0473f93c256da2285d1134fc97a700e01,
+      ...>         s: 0x1f87a076f13824f4be8963e3dffd7300dae64d5f23c9a062af0c6ead347c135f,
+      ...>         standard_v: 1,
       ...>         to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
-      ...>         v: "0xbe",
+      ...>         v: 0xbe,
       ...>         value: 0
       ...>       }
       ...>     ]
