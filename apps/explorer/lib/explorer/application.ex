@@ -10,26 +10,38 @@ defmodule Explorer.Application do
     # Children to start in all environments
     base_children = [
       Explorer.Repo,
-      {Task.Supervisor, name: Explorer.MarketTaskSupervisor}
+      Supervisor.child_spec({Task.Supervisor, name: Explorer.MarketTaskSupervisor}, id: Explorer.MarketTaskSupervisor),
+      Supervisor.child_spec({Task.Supervisor, name: Explorer.TaskSupervisor}, id: Explorer.TaskSupervisor)
     ]
 
-    children = base_children ++ secondary_children(Mix.env())
+    children = base_children ++ configurable_children()
 
     opts = [strategy: :one_for_one, name: Explorer.Supervisor]
 
     Supervisor.start_link(children, opts)
   end
 
-  defp secondary_children(:test), do: []
-
-  # Children to start when not testing
-  defp secondary_children(_) do
+  defp configurable_children do
     [
-      Supervisor.child_spec({Task.Supervisor, name: Explorer.TaskSupervisor}, id: Explorer.TaskSupervisor),
-      Explorer.Indexer.Supervisor,
-      Explorer.Chain.Statistics.Server,
-      Explorer.ExchangeRates,
-      Explorer.Market.History.Cataloger
+      configure(Explorer.Chain.Statistics.Server),
+      configure(Explorer.ExchangeRates),
+      configure(Explorer.Indexer.Supervisor),
+      configure(Explorer.Market.History.Cataloger)
     ]
+    |> List.flatten()
+  end
+
+  defp should_start?(process) do
+    :explorer
+    |> Application.fetch_env!(process)
+    |> Keyword.fetch!(:enabled)
+  end
+
+  defp configure(process) do
+    if should_start?(process) do
+      process
+    else
+      []
+    end
   end
 end
