@@ -142,7 +142,7 @@ defmodule EthereumJSONRPC.Transactions do
           "standardV" => 0,
           "to" => nil,
           "transactionIndex" => 0,
-          "v" => "0xbd",
+          "v" => 189,
           "value" => 0
         }
       ]

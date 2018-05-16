@@ -19,9 +19,9 @@ defmodule Explorer.Chain.TransactionTest do
                  public_key: "0xb39af9cb",
                  r: 0x9,
                  s: 0x10,
-                 standard_v: "0x11",
+                 standard_v: 0x1,
                  transaction_index: "0x12",
-                 v: "0x13"
+                 v: 27
                })
     end
 

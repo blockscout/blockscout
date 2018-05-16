@@ -551,7 +551,7 @@ defmodule Explorer.Chain do
       ...>         s: 0x1f87a076f13824f4be8963e3dffd7300dae64d5f23c9a062af0c6ead347c135f,
       ...>         standard_v: 1,
       ...>         to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
-      ...>         v: "0xbe",
+      ...>         v: 0xbe,
       ...>         value: 0
       ...>       }
       ...>     ]
@@ -725,7 +725,7 @@ defmodule Explorer.Chain do
       ...>         s: 0x1f87a076f13824f4be8963e3dffd7300dae64d5f23c9a062af0c6ead347c135f,
       ...>         standard_v: 1,
       ...>         to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
-      ...>         v: "0xbe",
+      ...>         v: 0xbe,
       ...>         value: 0
       ...>       }
       ...>     ]

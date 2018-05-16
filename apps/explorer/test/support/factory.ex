@@ -124,7 +124,7 @@ defmodule Explorer.Factory do
       s: sequence(:transaction_s, & &1),
       standard_v: Enum.random(0..3),
       to_address_hash: insert(:address).hash,
-      v: sequence("0x"),
+      v: Enum.random(27..30),
       value: Enum.random(1..100_000)
     }
   end

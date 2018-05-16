@@ -16,7 +16,7 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
       add(:r, :numeric, precision: 100, null: false)
       add(:s, :numeric, precision: 100, null: false)
       add(:standard_v, :smallint, null: false)
-      add(:v, :string, null: false)
+      add(:v, :integer, null: false)
       add(:value, :numeric, precision: 100, null: false)
 
       timestamps(null: false)

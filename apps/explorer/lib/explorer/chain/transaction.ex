@@ -128,7 +128,7 @@ defmodule Explorer.Chain.Transaction do
     field(:r, :decimal)
     field(:s, :decimal)
     field(:standard_v, :integer)
-    field(:v, :string)
+    field(:v, :integer)
     field(:value, Wei)
 
     timestamps()
@@ -169,8 +169,8 @@ defmodule Explorer.Chain.Transaction do
       ...>     public_key: "0xe5d196ad4ceada719d9e592f7166d0c75700f6eab2e3c3de34ba751ea786527cb3f6eb96ad9fdfdb9989ff572df50f1c42ef800af9c5207a38b929aff969b5c9",
       ...>     r: 0xAD3733DF250C87556335FFE46C23E34DBAFFDE93097EF92F52C88632A40F0C75,
       ...>     s: 0x72caddc0371451a58de2ca6ab64e0f586ccdb9465ff54e1c82564940e89291e3,
-      ...>     standard_v: "0x0",
-      ...>     v: "0x8d",
+      ...>     standard_v: 0x0,
+      ...>     v: 0x8d,
       ...>     value: 0
       ...>   }
       ...> )
@@ -191,8 +191,8 @@ defmodule Explorer.Chain.Transaction do
       ...>     public_key: "0xe5d196ad4ceada719d9e592f7166d0c75700f6eab2e3c3de34ba751ea786527cb3f6eb96ad9fdfdb9989ff572df50f1c42ef800af9c5207a38b929aff969b5c9",
       ...>     r: 0xAD3733DF250C87556335FFE46C23E34DBAFFDE93097EF92F52C88632A40F0C75,
       ...>     s: 0x72caddc0371451a58de2ca6ab64e0f586ccdb9465ff54e1c82564940e89291e3,
-      ...>     standard_v: "0x0",
-      ...>     v: "0x8d",
+      ...>     standard_v: 0x0,
+      ...>     v: 0x8d,
       ...>     value: 0
       ...>   }
       ...> )
@@ -216,8 +216,8 @@ defmodule Explorer.Chain.Transaction do
       ...>     public_key: "0xe5d196ad4ceada719d9e592f7166d0c75700f6eab2e3c3de34ba751ea786527cb3f6eb96ad9fdfdb9989ff572df50f1c42ef800af9c5207a38b929aff969b5c9",
       ...>     r: 0xAD3733DF250C87556335FFE46C23E34DBAFFDE93097EF92F52C88632A40F0C75,
       ...>     s: 0x72caddc0371451a58de2ca6ab64e0f586ccdb9465ff54e1c82564940e89291e3,
-      ...>     standard_v: "0x0",
-      ...>     v: "0x8d",
+      ...>     standard_v: 0x0,
+      ...>     v: 0x8d,
       ...>     value: 0
       ...>   }
       ...> )
@@ -238,8 +238,8 @@ defmodule Explorer.Chain.Transaction do
       ...>     public_key: "0xe5d196ad4ceada719d9e592f7166d0c75700f6eab2e3c3de34ba751ea786527cb3f6eb96ad9fdfdb9989ff572df50f1c42ef800af9c5207a38b929aff969b5c9",
       ...>     r: 0xAD3733DF250C87556335FFE46C23E34DBAFFDE93097EF92F52C88632A40F0C75,
       ...>     s: 0x72caddc0371451a58de2ca6ab64e0f586ccdb9465ff54e1c82564940e89291e3,
-      ...>     standard_v: "0x0",
-      ...>     v: "0x8d",
+      ...>     standard_v: 0x0,
+      ...>     v: 0x8d,
       ...>     value: 0
       ...>   }
       ...> )
@@ -281,9 +281,9 @@ defmodule Explorer.Chain.Transaction do
       ...>     public_key: "0xe5d196ad4ceada719d9e592f7166d0c75700f6eab2e3c3de34ba751ea786527cb3f6eb96ad9fdfdb9989ff572df50f1c42ef800af9c5207a38b929aff969b5c9",
       ...>     r: 0xAD3733DF250C87556335FFE46C23E34DBAFFDE93097EF92F52C88632A40F0C75,
       ...>     s: 0x72caddc0371451a58de2ca6ab64e0f586ccdb9465ff54e1c82564940e89291e3,
-      ...>     standard_v: "0x0",
+      ...>     standard_v: 0x0,
       ...>     to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
-      ...>     v: "0x8d",
+      ...>     v: 0x8d,
       ...>     value: 0
       ...>   }
       ...> )
@@ -309,9 +309,9 @@ defmodule Explorer.Chain.Transaction do
       ...>     public_key: "0xe5d196ad4ceada719d9e592f7166d0c75700f6eab2e3c3de34ba751ea786527cb3f6eb96ad9fdfdb9989ff572df50f1c42ef800af9c5207a38b929aff969b5c9",
       ...>     r: 0xAD3733DF250C87556335FFE46C23E34DBAFFDE93097EF92F52C88632A40F0C75,
       ...>     s: 0x72caddc0371451a58de2ca6ab64e0f586ccdb9465ff54e1c82564940e89291e3,
-      ...>     standard_v: "0x0",
+      ...>     standard_v: 0x0,
       ...>     to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
-      ...>     v: "0x8d",
+      ...>     v: 0x8d,
       ...>     value: 0
       ...>   }
       ...> )
