@@ -4,12 +4,10 @@ defmodule Explorer.Chain.Receipt do
   use Explorer.Schema
 
   alias Explorer.Chain.{Gas, Hash, Log, Transaction}
-  # alias Explorer.Chain.Receipt.Status
-
-  # remove status from poa
+  alias Explorer.Chain.Receipt.Status
 
   @optional_attrs ~w()a
-  @required_attrs ~w(cumulative_gas_used gas_used transaction_hash transaction_index)a
+  @required_attrs ~w(cumulative_gas_used gas_used status transaction_hash transaction_index)a
   @allowed_attrs @optional_attrs ++ @required_attrs
 
   @typedoc """
@@ -26,6 +24,7 @@ defmodule Explorer.Chain.Receipt do
           cumulative_gas_used: Gas.t(),
           gas_used: Gas.t(),
           logs: %Ecto.Association.NotLoaded{} | [Log.t()],
+          status: Status.t(),
           transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
           transaction_hash: Hash.Full.t(),
           transaction_index: non_neg_integer()
@@ -35,6 +34,7 @@ defmodule Explorer.Chain.Receipt do
   schema "receipts" do
     field(:cumulative_gas_used, :decimal)
     field(:gas_used, :decimal)
+    field(:status, Status)
     field(:transaction_index, :integer)
 
     belongs_to(:transaction, Transaction, foreign_key: :transaction_hash, references: :hash, type: Hash.Full)
