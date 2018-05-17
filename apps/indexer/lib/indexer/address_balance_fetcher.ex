@@ -22,7 +22,7 @@ defmodule Indexer.AddressBalanceFetcher do
   @doc """
   Asynchronously fetches balances for each address `hash` at the `block_number`.
   """
-  @spec async_fetch_balances([%{required(:block_number) => Block.block_number(), required(:hash) => Hash.Truncated.t()}]) ::
+  @spec async_fetch_balances([%{required(:block_number) => Block.block_number(), required(:hash) => Hash.Address.t()}]) ::
           :ok
   def async_fetch_balances(address_fields) when is_list(address_fields) do
     params_list = Enum.map(address_fields, &address_fields_to_params/1)

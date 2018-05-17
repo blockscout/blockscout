@@ -65,7 +65,7 @@ defmodule Explorer.Factory do
     {:ok, address_hash} =
       "address_hash"
       |> sequence(& &1)
-      |> Hash.Truncated.cast()
+      |> Hash.Address.cast()
 
     address_hash
   end

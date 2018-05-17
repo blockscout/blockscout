@@ -33,7 +33,7 @@ defmodule Explorer.Chain.InternalTransaction do
           created_contract_code: Data.t() | nil,
           error: String.t(),
           from_address: %Ecto.Association.NotLoaded{} | Address.t(),
-          from_address_hash: Hash.Truncated.t(),
+          from_address_hash: Hash.Address.t(),
           gas: Gas.t(),
           gas_used: Gas.t() | nil,
           index: non_neg_integer(),
@@ -41,7 +41,7 @@ defmodule Explorer.Chain.InternalTransaction do
           input: Data.t(),
           output: Data.t() | nil,
           to_address: %Ecto.Association.NotLoaded{} | Address.t(),
-          to_address_hash: Hash.Truncated.t(),
+          to_address_hash: Hash.Address.t(),
           trace_address: [non_neg_integer()],
           transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
           transaction_hash: Explorer.Chain.Hash.t(),
@@ -70,7 +70,7 @@ defmodule Explorer.Chain.InternalTransaction do
       Address,
       foreign_key: :created_contract_address_hash,
       references: :hash,
-      type: Hash.Truncated
+      type: Hash.Address
     )
 
     belongs_to(
@@ -78,7 +78,7 @@ defmodule Explorer.Chain.InternalTransaction do
       Address,
       foreign_key: :from_address_hash,
       references: :hash,
-      type: Hash.Truncated
+      type: Hash.Address
     )
 
     belongs_to(
@@ -86,7 +86,7 @@ defmodule Explorer.Chain.InternalTransaction do
       Address,
       foreign_key: :to_address_hash,
       references: :hash,
-      type: Hash.Truncated
+      type: Hash.Address
     )
 
     belongs_to(:transaction, Transaction, foreign_key: :transaction_hash, references: :hash, type: Hash.Full)

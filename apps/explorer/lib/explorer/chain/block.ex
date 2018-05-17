@@ -48,7 +48,7 @@ defmodule Explorer.Chain.Block do
           gas_used: Gas.t(),
           hash: Hash.t(),
           miner: %Ecto.Association.NotLoaded{} | Address.t(),
-          miner_hash: Hash.Truncated.t(),
+          miner_hash: Hash.Address.t(),
           nonce: Hash.t(),
           number: block_number(),
           parent_hash: Hash.t(),
@@ -71,7 +71,7 @@ defmodule Explorer.Chain.Block do
 
     timestamps()
 
-    belongs_to(:miner, Address, foreign_key: :miner_hash, references: :hash, type: Hash.Truncated)
+    belongs_to(:miner, Address, foreign_key: :miner_hash, references: :hash, type: Hash.Address)
     belongs_to(:parent, __MODULE__, foreign_key: :parent_hash, references: :hash, type: Hash.Full)
     has_many(:transactions, Transaction)
   end
