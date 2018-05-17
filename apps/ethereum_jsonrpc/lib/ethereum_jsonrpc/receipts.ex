@@ -108,7 +108,6 @@ defmodule EthereumJSONRPC.Receipts do
   """
   @spec elixir_to_params(elixir) :: [map]
   def elixir_to_params(elixir) when is_list(elixir) do
-    IO.inspect(elixir)
     Enum.map(elixir, &Receipt.elixir_to_params/1)
   end
 
