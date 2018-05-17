@@ -62,12 +62,13 @@ function deploy_chain() {
 }
 
 # Make sure we got an environment as an argument to this script
-DEPLOY_ENV="$1"
+DEPLOY_ENV="${1:-$CIRCLE_BRANCH}"
 if [ -z "$DEPLOY_ENV" ]; then
-    error "Expected deployment environment as an argument, but none was provided!"
+    error "Expected deployment environment as an argument or via \$CIRCLE_BRANCH, but neither was provided!"
 fi
-# Convert it to uppercase for environment variable lookups
-DEPLOY_ENV="$(echo "$DEPLOY_ENV" | tr '[:lower:]' '[:upper:]')"
+# Strip deploy- prefix if one was set and convert it
+# to uppercase for environment variable lookups
+DEPLOY_ENV="$(echo "$DEPLOY_ENV" | sed -e 's/^deploy-//' | tr '[:lower:]' '[:upper:]')"
 
 log "Deploying to environment '${DEPLOY_ENV}'"
 
