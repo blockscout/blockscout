@@ -4,7 +4,7 @@ defmodule EthereumJSONRPC.Block do
   and [`eth_getBlockByNumber`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbynumber).
   """
 
-  import EthereumJSONRPC, only: [nonce_to_integer: 1, quantity_to_integer: 1, timestamp_to_datetime: 1]
+  import EthereumJSONRPC, only: [quantity_to_integer: 1, timestamp_to_datetime: 1]
 
   alias EthereumJSONRPC
   alias EthereumJSONRPC.Transactions
@@ -322,13 +322,9 @@ defmodule EthereumJSONRPC.Block do
   # `t:EthereumJSONRPC.address/0` and `t:EthereumJSONRPC.hash/0` pass through as `Explorer.Chain` can verify correct
   # hash format
   defp entry_to_elixir({key, _} = entry)
-       when key in ~w(author extraData hash logsBloom miner mixHash parentHash receiptsRoot sealFields sha3Uncles
+       when key in ~w(author extraData hash logsBloom miner mixHash nonce parentHash receiptsRoot sealFields sha3Uncles
                      signature stateRoot step transactionsRoot uncles),
        do: entry
-
-  defp entry_to_elixir({"nonce" = key, nonce}) do
-    {key, nonce_to_integer(nonce)}
-  end
 
   defp entry_to_elixir({"timestamp" = key, timestamp}) do
     {key, timestamp_to_datetime(timestamp)}

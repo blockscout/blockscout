@@ -46,10 +46,10 @@ defmodule Explorer.Chain.Block do
           difficulty: difficulty(),
           gas_limit: Gas.t(),
           gas_used: Gas.t(),
-          hash: Hash.t(),
+          hash: Hash.Full.t(),
           miner: %Ecto.Association.NotLoaded{} | Address.t(),
           miner_hash: Hash.Address.t(),
-          nonce: Hash.t(),
+          nonce: Hash.Nonce.t(),
           number: block_number(),
           parent_hash: Hash.t(),
           size: non_neg_integer(),
@@ -63,7 +63,7 @@ defmodule Explorer.Chain.Block do
     field(:difficulty, :decimal)
     field(:gas_limit, :integer)
     field(:gas_used, :integer)
-    field(:nonce, :integer)
+    field(:nonce, Hash.Nonce)
     field(:number, :integer)
     field(:size, :integer)
     field(:timestamp, :utc_datetime)
