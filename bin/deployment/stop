@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -x
+
+if systemctl is-active explorer.service; then
+    systemctl stop explorer.service
+fi
+
+exit 0

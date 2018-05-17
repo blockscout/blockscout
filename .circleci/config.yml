@@ -141,12 +141,10 @@ jobs:
       - run: mix local.hex --force
 
       - run: mix credo
-  deploy_production:
+  deploy_aws:
     docker:
       # Ensure .tool-versions matches
       - image: circleci/elixir:1.6.4
-        environment:
-          MIX_ENV: test
 
     working_directory: ~/app
 
@@ -158,26 +156,9 @@ jobs:
           fingerprints:
             - "c4:fd:a8:f8:48:a8:09:e5:3e:be:30:62:4d:6f:6f:36"
 
-      # TODO update for deployment to AWS
-
-  deploy_staging:
-    docker:
-      # Ensure .tool-versions matches
-      - image: circleci/elixir:1.6.4
-        environment:
-          MIX_ENV: test
-
-    working_directory: ~/app
-
-    steps:
-      - attach_workspace:
-          at: .
-
-      - add_ssh_keys:
-          fingerprints:
-            - "c4:fd:a8:f8:48:a8:09:e5:3e:be:30:62:4d:6f:6f:36"
-
-      # TODO update for deployment to AWS
+      - run:
+          name: Deploy to AWS
+          command: bin/deploy
   dialyzer:
     docker:
       # Ensure .tool-versions matches
@@ -343,20 +324,13 @@ workflows:
       - credo:
           requires:
             - build
-      - deploy_production:
+      - deploy_aws:
           filters:
             branches:
-              only: production
-          requires:
-            - check_formatted
-            - credo
-            - eslint
-            - sobelow
-            - test
-      - deploy_staging:
-          filters:
-            branches:
-              only: master
+              only:
+                - production
+                - staging
+                - /deploy-[A-Za-z0-9]+$/
           requires:
             - check_formatted
             - credo

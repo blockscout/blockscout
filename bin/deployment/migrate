@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -x
+
+cd /opt/app || exit 1
+
+mix ecto.migrate
+
+exit 0

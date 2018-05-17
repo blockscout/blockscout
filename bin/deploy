@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+
+set -x
+
+# Log a timestamped message to the console
+function log() {
+    ts=$(date '+%Y-%m-%dT%H:%M:%SZ')
+    printf '%s [bin/deploy] %s\n' "$ts" "$1"
+}
+
+# Log an error message to the console and exit
+function error() {
+    log "$1"
+    exit 1
+}
+
+# Perform the deployment for a specific chain
+function deploy_chain() {
+    chain="$1"
+    if [ -z "$chain" ]; then
+        error "Expected a chain name as the first argument to 'deploy_chain', but did not get one!"
+    fi
+    chain_index="$2"
+    if [ -z "$chain_index" ]; then
+        error "Expected a chain index as the second argument to 'deploy_chain', but did not get one!"
+    fi
+
+    log "Creating deployment for chain '${chain}'.."
+
+    ts="$(date --utc '+%Y-%m-%dT%H:%M:%SZ')"
+
+    app="${PREFIX}-explorer"
+    bucket="${PREFIX}-explorer-codedeploy-releases"
+    release_name="${CIRCLE_SHA1}_${CIRCLE_BUILD_NUM}"
+
+    log "Pushing new revision to CodeDeploy app '${app}' in S3 bucket '${bucket}', as '${release_name}.zip'.."
+
+    aws deploy push \
+        --description="${PREFIX} release at commit ${CIRCLE_SHA1} via build ${CIRCLE_BUILD_NUM} at ${ts}" \
+        --application-name="${app}" \
+        --s3-location="s3://${bucket}/${release_name}.zip" \
+        --source=./
+
+    log "Push successful!"
+
+    deploy_config="CodeDeployDefault.OneAtATime"
+    deploy_group="${PREFIX}-explorer-dg${chain_index}"
+
+    log "Creating deployment for CodeDeploy app '${app}', using deployment config ${deploy_config}, and group ${deploy_group}"
+
+    aws create-deployment \
+        --description="${PREFIX} deployment of commit ${CIRCLE_SHA1} via build ${CIRCLE_BUILD_NUM} at ${ts}" \
+        --application-name="${app}" \
+        --deployment-config-name="${deploy_config}" \
+        --deployment-group-name="${deploy_group}" \
+        --s3-location="bucket=${bucket},key=${release_name}.zip,bundleType=zip"
+
+    log 'Deployment successfully created!'
+    log 'You may check deploy progress via the AWS Console or AWS CLI using the deployment ID shown above.'
+
+    return 0
+}
+
+# Make sure we got an environment as an argument to this script
+DEPLOY_ENV="${1:-$CIRCLE_BRANCH}"
+if [ -z "$DEPLOY_ENV" ]; then
+    error "Expected deployment environment as an argument or via \$CIRCLE_BRANCH, but neither was provided!"
+fi
+# Strip deploy- prefix if one was set and convert it
+# to uppercase for environment variable lookups
+DEPLOY_ENV="$(echo "$DEPLOY_ENV" | sed -e 's/^deploy-//' | tr '[:lower:]' '[:upper:]')"
+
+log "Deploying to environment '${DEPLOY_ENV}'"
+
+# Make sure we have credentials set
+log "Verifying credentials.."
+if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
+    error "Unable to perform deploy: missing AWS credentials!"
+fi
+
+# Lookup the infrastructure prefix for the target system in the environment
+log "Verifying infrastructure prefix.."
+PREFIX_VAR="AWS_${DEPLOY_ENV}_PREFIX"
+PREFIX="${!PREFIX_VAR}"
+if [ -z "$PREFIX" ]; then
+    error "Unknown deploy environment '$DEPLOY_ENV', or AWS_${DEPLOY_ENV}_PREFIX is unset!"
+    exit 1
+fi
+
+# Lookup the list of chains for the target system in the environment
+log "Verifying deployment groups.."
+CHAINS_VAR="AWS_${DEPLOY_ENV}_CHAINS"
+CHAINS="${!CHAINS_VAR}"
+if [ -z "$CHAINS" ]; then
+    error "AWS_${DEPLOY_ENV}_CHAINS is unset!"
+fi
+
+# Convert the comma-separated list of names into a newline-separated list of names
+CHAINS="$(echo "$CHAINS" | tr ',' '\n')"
+
+# Install AWS CLI
+if ! which aws >/dev/null; then
+    log "Installing AWS CLI.."
+    mkdir -p ~/bin
+    wget "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip"
+    unzip awscli-bundle.zip
+    ./awscli-bundle/install -b ~/bin/aws
+    export PATH=$HOME/bin:$PATH
+    log "Install completed successfully!"
+fi
+
+# For each chain perform a deployment
+i=0
+for chain in $CHAINS; do
+    deploy_chain "$chain" "$i"
+    i=$((i+1))
+done
+
+log "Deployment task has succesfully completed!"
+exit 0
