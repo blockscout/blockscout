@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Address do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Credit, Debit, Hash, Wei}
+  alias Explorer.Chain.{Hash, Wei}
 
   @optional_attrs ~w()a
   @required_attrs ~w(hash)a
@@ -18,8 +18,6 @@ defmodule Explorer.Chain.Address do
   @typedoc """
    * `fetched_balance` - The last fetched balance from Parity
    * `balance_fetched_at` - the last time `balance` was fetched
-   * `credit` - accumulation of all credits to the address `hash`
-   * `debit` - accumulation of all debits to the address `hash`
    * `hash` - the hash of the address's public key
    * `inserted_at` - when this address was inserted
    * `updated_at` when this address was last updated
@@ -27,8 +25,6 @@ defmodule Explorer.Chain.Address do
   @type t :: %__MODULE__{
           fetched_balance: Wei.t(),
           balance_fetched_at: DateTime.t(),
-          credit: %Ecto.Association.NotLoaded{} | Credit.t() | nil,
-          debit: %Ecto.Association.NotLoaded{} | Debit.t() | nil,
           hash: Hash.Truncated.t(),
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
@@ -40,9 +36,6 @@ defmodule Explorer.Chain.Address do
     field(:balance_fetched_at, Timex.Ecto.DateTime)
 
     timestamps()
-
-    has_one(:credit, Credit)
-    has_one(:debit, Debit)
   end
 
   def balance_changeset(%__MODULE__{} = address, attrs) do
