@@ -41,7 +41,7 @@ defmodule ExplorerWeb.ViewingAddressesTest do
 
     session
     |> AddressPage.visit_page(address)
-    |> assert_text(AddressPage.balance(), "0.000,000,000,000,000,500 POA")
+    |> assert_text(AddressPage.balance(), "0.0000000000000005 POA")
   end
 
   describe "viewing transactions" do
