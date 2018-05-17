@@ -22,6 +22,8 @@ defmodule EthereumJSONRPC.Block do
      for the logs of the block. `nil` when block is pending.
    * `"miner"` - `t:EthereumJSONRPC.address/0` of the beneficiary to whom the mining rewards were given.  Aliased by
       `"author"`.
+   * `"mixHash"` - Generated from [DAG](https://ethereum.stackexchange.com/a/10353) as part of Proof-of-Work for EthHash
+     algorithm.  **[Geth](https://github.com/ethereum/go-ethereum/wiki/geth) + Proof-of-Work-only**
    * `"nonce"` -  `t:EthereumJSONRPC.nonce/0`. `nil` when its pending block.
    * `"number"` - the block number `t:EthereumJSONRPC.quantity/0`. `nil` when block is pending.
    * `"parentHash" - the `t:EthereumJSONRPC.hash/0` of the parent block.
@@ -92,11 +94,50 @@ defmodule EthereumJSONRPC.Block do
         total_difficulty: 340282366920938463463374607431465668165
       }
 
+  [Geth] `elixir` can be converted to params
+
+      iex> EthereumJSONRPC.Block.elixir_to_params(
+      ...>   %{
+      ...>     "difficulty" => 17561410778,
+      ...>     "extraData" => "0x476574682f4c5649562f76312e302e302f6c696e75782f676f312e342e32",
+      ...>     "gasLimit" => 5000,
+      ...>     "gasUsed" => 0,
+      ...>     "hash" => "0x4d9423080290a650eaf6db19c87c76dff83d1b4ab64aefe6e5c5aa2d1f4b6623",
+      ...>     "logsBloom" => "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      ...>     "miner" => "0xbb7b8287f3f0a933474a79eae42cbca977791171",
+      ...>     "mixHash" => "0xbbb93d610b2b0296a59f18474ac3d6086a9902aa7ca4b9a306692f7c3d496fdf",
+      ...>     "nonce" => 5539500215739777653,
+      ...>     "number" => 59,
+      ...>     "parentHash" => "0xcd5b5c4cecd7f18a13fe974255badffd58e737dc67596d56bc01f063dd282e9e",
+      ...>     "receiptsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+      ...>     "sha3Uncles" => "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+      ...>     "size" => 542,
+      ...>     "stateRoot" => "0x6fd0a5d82ca77d9f38c3ebbde11b11d304a5fcf3854f291df64395ab38ed43ba",
+      ...>     "timestamp" => Timex.parse!("2015-07-30T15:32:07Z", "{ISO:Extended:Z}"),
+      ...>     "totalDifficulty" => 1039309006117,
+      ...>     "transactions" => [],
+      ...>     "transactionsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+      ...>     "uncles" => []
+      ...>   }
+      ...> )
+      %{
+        difficulty: 17561410778,
+        gas_limit: 5000,
+        gas_used: 0,
+        hash: "0x4d9423080290a650eaf6db19c87c76dff83d1b4ab64aefe6e5c5aa2d1f4b6623",
+        miner_hash: "0xbb7b8287f3f0a933474a79eae42cbca977791171",
+        nonce: 5539500215739777653,
+        number: 59,
+        parent_hash: "0xcd5b5c4cecd7f18a13fe974255badffd58e737dc67596d56bc01f063dd282e9e",
+        size: 542,
+        timestamp: Timex.parse!("2015-07-30T15:32:07Z", "{ISO:Extended:Z}"),
+        total_difficulty: 1039309006117
+      }
+
   """
   @spec elixir_to_params(elixir) :: map
   def elixir_to_params(
         %{
-          "author" => miner_hash,
           "difficulty" => difficulty,
           "gasLimit" => gas_limit,
           "gasUsed" => gas_used,
@@ -281,8 +322,8 @@ defmodule EthereumJSONRPC.Block do
   # `t:EthereumJSONRPC.address/0` and `t:EthereumJSONRPC.hash/0` pass through as `Explorer.Chain` can verify correct
   # hash format
   defp entry_to_elixir({key, _} = entry)
-       when key in ~w(author extraData hash logsBloom miner parentHash receiptsRoot sealFields sha3Uncles signature
-                     stateRoot step transactionsRoot uncles),
+       when key in ~w(author extraData hash logsBloom miner mixHash parentHash receiptsRoot sealFields sha3Uncles
+                     signature stateRoot step transactionsRoot uncles),
        do: entry
 
   defp entry_to_elixir({"nonce" = key, nonce}) do
