@@ -420,13 +420,17 @@ defmodule EthereumJSONRPC do
         """
         failed to decode json payload:
 
-            request url: #{inspect(request_url)}
+            request:
 
-            request body: #{inspect(request_body)}
+              url: #{inspect(request_url)}
 
-            response status code: #{inspect(response_status_code)}
+              body: #{inspect(request_body)}
 
-            response body: #{inspect(response_body)}
+            response:
+
+              status code: #{inspect(response_status_code)}
+
+              body: #{inspect(response_body)}
         """
       end)
 
