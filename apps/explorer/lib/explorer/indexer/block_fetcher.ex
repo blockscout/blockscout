@@ -154,21 +154,21 @@ defmodule Explorer.Indexer.BlockFetcher do
     :ok
   end
 
-  defp fetch_internal_transactions(_state, []), do: {:ok, []}
+  # defp fetch_internal_transactions(_state, []), do: {:ok, []}
 
-  defp fetch_internal_transactions(%{} = state, hashes) do
-    debug(state, fn -> "fetching internal transactions for #{length(hashes)} transactions" end)
-    stream_opts = [max_concurrency: state.internal_transactions_concurrency, timeout: :infinity]
+ # defp fetch_internal_transactions(%{} = state, hashes) do
+ #   debug(state, fn -> "fetching internal transactions for #{length(hashes)} transactions" end)
+ #   stream_opts = [max_concurrency: state.internal_transactions_concurrency, timeout: :infinity]
 
-    hashes
-    |> Enum.chunk_every(state.internal_transactions_batch_size)
-    |> Task.async_stream(&EthereumJSONRPC.fetch_internal_transactions(&1), stream_opts)
-    |> Enum.reduce_while({:ok, []}, fn
-      {:ok, {:ok, internal_transactions}}, {:ok, acc} -> {:cont, {:ok, acc ++ internal_transactions}}
-      {:ok, {:error, reason}}, {:ok, _acc} -> {:halt, {:error, reason}}
-      {:error, reason}, {:ok, _acc} -> {:halt, {:error, reason}}
-    end)
-  end
+ #   hashes
+ #   |> Enum.chunk_every(state.internal_transactions_batch_size)
+ #   |> Task.async_stream(&EthereumJSONRPC.fetch_internal_transactions(&1), stream_opts)
+ #   |> Enum.reduce_while({:ok, []}, fn
+ #     {:ok, {:ok, internal_transactions}}, {:ok, acc} -> {:cont, {:ok, acc ++ internal_transactions}}
+ #     {:ok, {:error, reason}}, {:ok, _acc} -> {:halt, {:error, reason}}
+ #     {:error, reason}, {:ok, _acc} -> {:halt, {:error, reason}}
+ #   end)
+ # end
 
   defp fetch_transaction_receipts(_state, []), do: {:ok, %{logs: [], receipts: []}}
 
@@ -202,6 +202,7 @@ defmodule Explorer.Indexer.BlockFetcher do
   end
 
   defp insert(%{} = state, seq, range, params) do
+    IO.inspect(Chain.import_blocks(params))
     with {:ok, %{addresses: address_hashes}} = ok <- Chain.import_blocks(params) do
       :ok = AddressFetcher.async_fetch_balances(address_hashes)
       ok
@@ -255,6 +256,8 @@ defmodule Explorer.Indexer.BlockFetcher do
 
   # Run at state.blocks_concurrency max_concurrency when called by `stream_import/3`
   # Only public for testing
+
+  # remove everything about internal_transaction for ethereum
   @doc false
   def import_range({block_start, block_end} = range, %{} = state, seq) do
     with {:blocks, {:ok, next, result}} <- {:blocks, EthereumJSONRPC.fetch_blocks_by_range(block_start, block_end)},
@@ -262,12 +265,9 @@ defmodule Explorer.Indexer.BlockFetcher do
          cap_seq(seq, next, range, state),
          transaction_hashes = Transactions.params_to_hashes(transactions),
          {:receipts, {:ok, receipt_params}} <- {:receipts, fetch_transaction_receipts(state, transaction_hashes)},
-         %{logs: logs, receipts: receipts} = receipt_params,
-         {:internal_transactions, {:ok, internal_transactions}} <-
-           {:internal_transactions, fetch_internal_transactions(state, transaction_hashes)} do
+         %{logs: logs, receipts: receipts} = receipt_params do
       insert(state, seq, range, %{
         blocks: blocks,
-        internal_transactions: internal_transactions,
         logs: logs,
         receipts: receipts,
         transactions: transactions

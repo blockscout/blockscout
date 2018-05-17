@@ -31,10 +31,10 @@ defmodule EthereumJSONRPC.Transaction do
    * `"hash"` - `t:EthereumJSONRPC.hash/0` of the transaction
    * `"input"` - `t:EthereumJSONRPC.data/0` sent along with the transaction, such as input to the contract.
    * `"nonce"` - `t:EthereumJSONRPC.quantity/0` of transactions made by the sender prior to this one.
-   * `"publicKey"` - `t:EthereumJSONRPC.hash/0` of the public key of the signer.
+#   * `"publicKey"` - `t:EthereumJSONRPC.hash/0` of the public key of the signer.
    * `"r"` - `t:EthereumJSONRPC.quantity/0` for the R field of the signature.
    * `"raw"` - Raw transaction `t:EthereumJSONRPC.data/0`
-   * `"standardV"` - `t:EthereumJSONRPC.quantity/0` for the standardized V (`0` or `1`) field of the signature.
+#   * `"standardV"` - `t:EthereumJSONRPC.quantity/0` for the standardized V (`0` or `1`) field of the signature.
    * `"to"` - `t:EthereumJSONRPC.address/0` of the receiver.  `nil` when it is a contract creation transaction.
    * `"transactionIndex"` - `t:EthereumJSONRPC.quantity/0` for the index of the transaction in the block.  `nil` when
      transaction is pending.
@@ -46,8 +46,11 @@ defmodule EthereumJSONRPC.Transaction do
             EthereumJSONRPC.address() | EthereumJSONRPC.hash() | EthereumJSONRPC.quantity() | String.t() | nil
         }
 
+  # add block_number for ethereum
+
   @type params :: %{
           block_hash: EthereumJSONRPC.hash(),
+	  block_number: non_neg_integer(),
           from_address_hash: EthereumJSONRPC.address(),
           gas: non_neg_integer(),
           gas_price: non_neg_integer(),
@@ -55,28 +58,28 @@ defmodule EthereumJSONRPC.Transaction do
           index: non_neg_integer(),
           input: String.t(),
           nonce: non_neg_integer(),
-          public_key: String.t(),
           r: non_neg_integer(),
           s: non_neg_integer(),
-          standard_v: 0 | 1,
           to_address_hash: EthereumJSONRPC.address(),
           v: non_neg_integer(),
           value: non_neg_integer()
         }
 
+  # add blockNumber for ethereum
+  # remove publicKey and standardV
+
   @spec elixir_to_params(elixir) :: params
   def elixir_to_params(%{
         "blockHash" => block_hash,
+        "blockNumber" => block_number,
         "from" => from_address_hash,
         "gas" => gas,
         "gasPrice" => gas_price,
         "hash" => hash,
         "input" => input,
         "nonce" => nonce,
-        "publicKey" => public_key,
         "r" => r,
         "s" => s,
-        "standardV" => standard_v,
         "to" => to_address_hash,
         "transactionIndex" => index,
         "v" => v,
@@ -84,6 +87,7 @@ defmodule EthereumJSONRPC.Transaction do
       }) do
     %{
       block_hash: block_hash,
+      block_number: block_number,
       from_address_hash: from_address_hash,
       gas: gas,
       gas_price: gas_price,
@@ -91,10 +95,8 @@ defmodule EthereumJSONRPC.Transaction do
       index: index,
       input: input,
       nonce: nonce,
-      public_key: public_key,
       r: r,
       s: s,
-      standard_v: standard_v,
       to_address_hash: to_address_hash,
       v: v,
       value: value
@@ -137,11 +139,11 @@ defmodule EthereumJSONRPC.Transaction do
   # `t:EthereumJSONRPC.address/0` and `t:EthereumJSONRPC.hash/0` pass through as `Explorer.Chain` can verify correct
   # hash format
   defp entry_to_elixir({key, value})
-       when key in ~w(blockHash condition creates from hash input jsonrpc publicKey raw to),
+       when key in ~w(blockHash condition creates from hash input jsonrpc raw to),
        do: {key, value}
 
   defp entry_to_elixir({key, quantity})
-       when key in ~w(blockNumber gas gasPrice nonce r s standardV transactionIndex v value) do
+       when key in ~w(blockNumber gas gasPrice nonce r s transactionIndex v value) do
     {key, quantity_to_integer(quantity)}
   end
 

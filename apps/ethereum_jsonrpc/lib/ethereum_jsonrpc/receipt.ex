@@ -71,24 +71,50 @@ defmodule EthereumJSONRPC.Receipt do
       }
 
   """
+
+  # add blockHash, blockNumber, contractAddress,
+  # from, logs, logsBloom, root, to
+  # remove status from poa
+
   @spec elixir_to_params(elixir) :: %{
-          cumulative_gas_used: non_neg_integer,
-          gas_used: non_neg_integer,
-          status: Status.t(),
+          block_hash: EthereumJSONRPC.hash() ,
+          block_number: non_neg_integer(),
+          contract_address: EthereumJSONRPC.address(),
+          cumulative_gas_used: non_neg_integer(),
+          from: EthereumJSONRPC.address(),
+	  gas_used: non_neg_integer(),
+          logs: String.t(),
+          logs_bloom: String.t(),
+          root: String.t(),
+          to: EthereumJSONRPC.address(),
           transaction_hash: String.t(),
           transaction_index: non_neg_integer()
         }
   def elixir_to_params(%{
+	"blockHash" => block_hash,
+	"blockNumber" => block_number,
+	"contractAddress" => contract_address,
         "cumulativeGasUsed" => cumulative_gas_used,
+	"from" => from,
         "gasUsed" => gas_used,
-        "status" => status,
+	"logs" => logs,
+	"logsBloom" => logs_bloom,
+	"root" => root,
+	"to" => to,
         "transactionHash" => transaction_hash,
         "transactionIndex" => transaction_index
       }) do
     %{
+      block_hash: block_hash,
+      block_number: block_number,
+      contract_address: contract_address,
       cumulative_gas_used: cumulative_gas_used,
+      from: from,
       gas_used: gas_used,
-      status: status,
+      logs: logs,
+      logs_bloom: logs_bloom,
+      root: root,
+      to: to,
       transaction_hash: transaction_hash,
       transaction_index: transaction_index
     }
@@ -135,7 +161,10 @@ defmodule EthereumJSONRPC.Receipt do
   # double check that no new keys are being missed by requiring explicit match for passthrough
   # `t:EthereumJSONRPC.address/0` and `t:EthereumJSONRPC.hash/0` pass through as `Explorer.Chain` can verify correct
   # hash format
-  defp entry_to_elixir({key, _} = entry) when key in ~w(blockHash contractAddress logsBloom root transactionHash),
+
+  # add from, to for ethereum
+
+  defp entry_to_elixir({key, _} = entry) when key in ~w(blockHash from to contractAddress logsBloom root transactionHash),
     do: entry
 
   defp entry_to_elixir({key, quantity}) when key in ~w(blockNumber cumulativeGasUsed gasUsed transactionIndex) do

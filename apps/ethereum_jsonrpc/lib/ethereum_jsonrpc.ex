@@ -159,9 +159,9 @@ defmodule EthereumJSONRPC do
   @doc """
   Fetches internal transactions from client-specific API.
   """
-  def fetch_internal_transactions(hashes) when is_list(hashes) do
-    Parity.fetch_internal_transactions(hashes)
-  end
+  # def fetch_internal_transactions(hashes) when is_list(hashes) do
+  #  Parity.fetch_internal_transactions(hashes)
+  # end
 
   def fetch_transaction_receipts(hashes) when is_list(hashes) do
     Receipts.fetch(hashes)

@@ -6,13 +6,15 @@ defmodule Explorer.Chain.Transaction do
   alias Ecto.Changeset
   alias Explorer.Chain.{Address, Block, Data, Gas, Hash, InternalTransaction, Receipt, Wei}
 
-  @optional_attrs ~w(block_hash from_address_hash index to_address_hash)a
-  @required_attrs ~w(gas gas_price hash input nonce public_key r s standard_v v value)a
+  # remove standard_v and public_key for ethereum
 
-  @typedoc """
-  The full public key of the signer of the transaction.
-  """
-  @type public_key :: Data.t()
+  @optional_attrs ~w(block_hash from_address_hash index to_address_hash)a
+  @required_attrs ~w(gas gas_price hash input nonce r s v value)a
+
+  #  @typedoc """
+  #  The full public key of the signer of the transaction.
+  #  """
+  # @type public_key :: Data.t()
 
   @typedoc """
   X coordinate module n in
@@ -28,27 +30,27 @@ defmodule Explorer.Chain.Transaction do
   """
   @type s :: Decimal.t()
 
-  @typedoc """
-  For message signatures, we use a trick called public key recovery. The fact is that if you have the full R point
-  (not just its X coordinate) and `t:s/0`, and a message, you can compute for which public key this would be a valid
-  signature. What this allows is to 'verify' a message with an address, without needing to know the full key (we just to
-  public key recovery on the signature, and then hash the recovered key and compare it with the address).
+  # @typedoc """
+  # For message signatures, we use a trick called public key recovery. The fact is that if you have the full R point
+  # (not just its X coordinate) and `t:s/0`, and a message, you can compute for which public key this would be a valid
+  # signature. What this allows is to 'verify' a message with an address, without needing to know the full key (we just to
+  # public key recovery on the signature, and then hash the recovered key and compare it with the address).
 
-  However, this means we need the full R coordinates. There can be up to 4 different points with a given
-  "X coordinate modulo n". (2 because each X coordinate has two possible Y coordinates, and 2 because r+n may still be a
-  valid X coordinate). That number between 0 and 3 is standard_v.
+  # However, this means we need the full R coordinates. There can be up to 4 different points with a given
+  # "X coordinate modulo n". (2 because each X coordinate has two possible Y coordinates, and 2 because r+n may still be a
+  # valid X coordinate). That number between 0 and 3 is standard_v.
 
-  | `standard_v`  | X      | Y    |
-  |---------------|--------|------|
-  | `0`           | lower  | even |
-  | `1`           | lower  | odd  |
-  | `2`           | higher | even |
-  | `3`           | higher | odd  |
+  # | `standard_v`  | X      | Y    |
+  # |---------------|--------|------|
+  # | `0`           | lower  | even |
+  # | `1`           | lower  | odd  |
+  # | `2`           | higher | even |
+  # | `3`           | higher | odd  |
 
-  **Note: that `2` and `3` are exceedingly rarely, and will in practice only ever be seen in specifically generated
-  examples.**
-  """
-  @type standard_v :: 0..3
+  # **Note: that `2` and `3` are exceedingly rarely, and will in practice only ever be seen in specifically generated
+  # examples.**
+  # """
+  # @type standard_v :: 0..3
 
   @typedoc """
   `t:standard_v/0` + `27`
@@ -94,6 +96,8 @@ defmodule Explorer.Chain.Transaction do
    * `v` - The V field of the signature.
    * `value` - wei transferred from `from_address` to `to_address`
   """
+
+  # remove public_key, standard_v and internal_transactions for ethereum
   @type t :: %__MODULE__{
           block: %Ecto.Association.NotLoaded{} | Block.t() | nil,
           block_hash: Hash.t() | nil,
@@ -104,18 +108,17 @@ defmodule Explorer.Chain.Transaction do
           hash: Hash.t(),
           index: non_neg_integer() | nil,
           input: Data.t(),
-          internal_transactions: %Ecto.Association.NotLoaded{} | [InternalTransaction.t()],
           nonce: non_neg_integer(),
-          public_key: public_key(),
           r: r(),
           receipt: %Ecto.Association.NotLoaded{} | Receipt.t(),
           s: s(),
-          standard_v: standard_v(),
           to_address: %Ecto.Association.NotLoaded{} | Address.t(),
           to_address_hash: Hash.Truncated.t(),
           v: v(),
           value: Wei.t()
         }
+
+  # remove public_key, standard_v for ethereum
 
   @primary_key {:hash, Hash.Full, autogenerate: false}
   schema "transactions" do
@@ -124,10 +127,8 @@ defmodule Explorer.Chain.Transaction do
     field(:index, :integer)
     field(:input, Data)
     field(:nonce, :integer)
-    field(:public_key, Data)
     field(:r, :decimal)
     field(:s, :decimal)
-    field(:standard_v, :integer)
     field(:v, :integer)
     field(:value, Wei)
 
@@ -254,7 +255,6 @@ defmodule Explorer.Chain.Transaction do
     |> cast(attrs, @required_attrs ++ @optional_attrs)
     |> validate_required(@required_attrs)
     |> validate_collated()
-    |> validate_number(:standard_v, greater_than_or_equal_to: 0, less_than_or_equal_to: 3)
     |> check_constraint(
       :index,
       message: "cannot be set when block_hash is nil and must be set when block_hash is not nil",
