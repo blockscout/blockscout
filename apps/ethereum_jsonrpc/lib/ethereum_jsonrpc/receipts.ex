@@ -108,6 +108,7 @@ defmodule EthereumJSONRPC.Receipts do
   """
   @spec elixir_to_params(elixir) :: [map]
   def elixir_to_params(elixir) when is_list(elixir) do
+    IO.inspect(elixir)
     Enum.map(elixir, &Receipt.elixir_to_params/1)
   end
 
@@ -121,7 +122,6 @@ defmodule EthereumJSONRPC.Receipts do
           responses
           |> responses_to_receipts()
           |> to_elixir()
-
         elixir_logs = elixir_to_logs(elixir_receipts)
         receipts = elixir_to_params(elixir_receipts)
         logs = Logs.elixir_to_params(elixir_logs)
