@@ -999,6 +999,17 @@ defmodule Explorer.Chain do
     end)
   end
 
+  def stream_transactions_with_unfetched_internal_transactions(initial, reducer)
+      when is_function(reducer) do
+    Repo.transaction(fn ->
+      query = from(t in Transaction, where: is_nil(t.internal_transactions_indexed_at))
+
+      query
+      |> Repo.stream()
+      |> Enum.reduce(initial, reducer)
+    end)
+  end
+
   @doc """
   The number of `t:Explorer.Chain.Log.t/0`.
 
@@ -1661,6 +1672,21 @@ defmodule Explorer.Chain do
       )
     end)
     |> Repo.transaction(timeout: Keyword.get(options, :transaction_timeout, @transaction_timeout))
+  end
+
+  def import_internal_transactions(internal_transactions_params) do
+    changes =
+      ecto_schema_module_to_params_list_to_ecto_schema_module_to_changes_list(%{
+        InternalTransaction => internal_transactions_params
+      })
+
+    Repo.transaction(fn ->
+      insert_internal_transactions(
+        changes,
+        timestamps: timestamps(),
+        timeout: @insert_internal_transactions_timeout
+      )
+    end)
   end
 
   @spec insert_internal_transactions([map()], [timestamps_option]) ::

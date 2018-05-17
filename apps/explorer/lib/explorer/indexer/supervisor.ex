@@ -5,6 +5,7 @@ defmodule Explorer.Indexer.Supervisor do
 
   use Supervisor
 
+  alias Explorer.BufferedTask
   alias Explorer.Indexer.{AddressBalanceFetcher, BlockFetcher}
 
   def start_link(opts) do
@@ -15,7 +16,7 @@ defmodule Explorer.Indexer.Supervisor do
   def init(_opts) do
     children = [
       {Task.Supervisor, name: Explorer.Indexer.TaskSupervisor},
-      {AddressBalanceFetcher, []},
+      {BufferedTask, {AddressBalanceFetcher, max_batch_size: 100, max_concurrency: 2, name: AddressBalanceFetcher}},
       {BlockFetcher, []}
     ]
 

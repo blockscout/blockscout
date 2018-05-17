@@ -5,7 +5,7 @@ defmodule Explorer.Indexer.BlockFetcherTest do
   import ExUnit.CaptureLog
 
   alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Transaction}
-  alias Explorer.Indexer.{BlockFetcher, Sequence}
+  alias Explorer.Indexer.{AddressBalanceFetcherCase, BlockFetcher, Sequence}
 
   @tag capture_log: true
 
@@ -32,6 +32,7 @@ defmodule Explorer.Indexer.BlockFetcherTest do
       assert Repo.aggregate(Block, :count, :hash) == 0
 
       start_supervised!({Task.Supervisor, name: Explorer.Indexer.TaskSupervisor})
+      AddressBalanceFetcherCase.start_supervised!()
       start_supervised!(BlockFetcher)
 
       wait(fn ->
@@ -85,6 +86,7 @@ defmodule Explorer.Indexer.BlockFetcherTest do
 
     setup do
       start_supervised!({Task.Supervisor, name: Explorer.Indexer.TaskSupervisor})
+      AddressBalanceFetcherCase.start_supervised!()
 
       {:ok, state} = BlockFetcher.init(debug_logs: false)
 
