@@ -40,9 +40,6 @@ function deploy_chain() {
     # when trying to add files with timestamps before 1980 in them.
     find ./ -exec touch {} \;
 
-    # TODO: REMOVE THIS
-    ls -la
-
     log "Pushing new revision to CodeDeploy app '${app}' in S3 bucket '${bucket}', as '${release_name}.zip'.."
 
     aws deploy push \
@@ -58,7 +55,7 @@ function deploy_chain() {
 
     log "Creating deployment for CodeDeploy app '${app}', using deployment config ${deploy_config}, and group ${deploy_group}"
 
-    aws create-deployment \
+    aws deploy create-deployment \
         --description="${PREFIX} deployment of commit ${CIRCLE_SHA1} via build ${CIRCLE_BUILD_NUM} at ${ts}" \
         --application-name="${app}" \
         --deployment-config-name="${deploy_config}" \
