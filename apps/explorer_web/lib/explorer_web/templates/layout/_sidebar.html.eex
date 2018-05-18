@@ -41,28 +41,20 @@
           <li><%= link(gettext("Pending"), to: pending_transaction_path(@conn, :index, Gettext.get_locale)) %></li>
         </ul>
       </div>
-      <div class="flex">
-        <a href="https://www.facebook.com/PoaNetwork/" target="_blank">
-          <div class="">
-            <i class="fab fa-facebook-f"></i>
-          </div>
-        </a>
-        <a href="https://www.instagram.com/PoaNetwork/" target="_blank">
-          <div class="">
-            <i class="fab fa-instagram"></i>
-          </div>
-        </a>
-        <a href="https://www.twitter.com/PoaNetwork/" target="_blank">
-          <div class="">
-            <i class="fab fa-twitter"></i>
-          </div>
-        </a>
-        <a href="https://www.twitter.com/PoaNetwork/" target="_blank">
-          <div class="">
-            <i class="fab fa-telegram-plane"></i>
-          </div>
-        </a>
-      </div>
+    </div>
+    <div class="social-media">
+      <a href="https://www.facebook.com/PoaNetwork/" target="_blank">
+        <i class="fab fa-facebook-f"></i>
+      </a>
+      <a href="https://www.instagram.com/PoaNetwork/" target="_blank">
+        <i class="fab fa-instagram"></i>
+      </a>
+      <a href="https://www.twitter.com/PoaNetwork/" target="_blank">
+        <i class="fab fa-twitter"></i>
+      </a>
+      <a href="https://www.twitter.com/PoaNetwork/" target="_blank">
+        <i class="fab fa-telegram-plane"></i>
+      </a>
     </div>
   </nav>
 </div>

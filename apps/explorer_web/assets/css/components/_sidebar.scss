@@ -22,6 +22,19 @@
       width: 65%;
     }
   }
+  .social-media {
+    display: flex;
+    width: 100%;
+    position: absolute;
+    bottom: 15px;
+    justify-content: space-evenly;
+
+    a {
+      font-size: 18px;
+      color: $primary;
+    }
+
+  }
 }
 
 #sidebar .menu-items {
@@ -57,7 +70,6 @@
   .fa-sitemap, .fa-home {
     color: $gray-500;
   }
-
 }
 
 #sidebar li {
