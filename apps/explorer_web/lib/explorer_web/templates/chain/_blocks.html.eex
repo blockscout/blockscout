@@ -29,12 +29,7 @@
         <td><%= block.gas_used |> Cldr.Number.to_string! %></td>
         <td>
           <i class="fa fa-address-card"></i>
-          <%= link to: block_path(@conn, :show, @conn.assigns.locale, block.number),
-              "data-toggle": "tooltip",
-              "data-placement": "top",
-              title: block.miner do %>
-            <%= String.slice(block.miner, 0..3) %> <i class="fas fa-ellipsis-v"></i> <%= String.slice(block.miner, -4..-1) %>
-          <% end %>
+          <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: block.miner %>
         </td>
       </tr>
       <% end %>

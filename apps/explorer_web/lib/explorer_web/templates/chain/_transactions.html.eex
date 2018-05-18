@@ -22,21 +22,11 @@
         </td>
         <td class="">
           <i class="fa fa-address-card"></i>
-          <%= link to: address_path(@conn, :show, @conn.assigns.locale, transaction.from_address.hash),
-              "data-toggle": "tooltip",
-              "data-placement": "top",
-              title: transaction.from_address.hash do %>
-            <%= String.slice(transaction.from_address.hash, 0..3) %> <i class="fas fa-ellipsis-v"></i> <%= String.slice(transaction.from_address.hash, -4..-1) %>
-          <% end %>
+          <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
         </td>
         <td>
           <i class="fa fa-address-card"></i>
-          <%= link to: address_path(@conn, :show, @conn.assigns.locale, transaction.to_address.hash),
-              "data-toggle": "tooltip",
-              "data-placement": "top",
-              title: transaction.to_address.hash do %>
-            <%= String.slice(transaction.to_address.hash, 0..3) %> <i class="fas fa-ellipsis-v"></i> <%= String.slice(transaction.to_address.hash, -4..-1) %>
-          <% end %>
+          <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
         </td>
         <td><%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> </td>
         <td><%= transaction.block.timestamp |> Timex.from_now() %></td>

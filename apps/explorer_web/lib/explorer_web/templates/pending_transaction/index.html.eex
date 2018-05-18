@@ -54,30 +54,10 @@
                 </td>
                 <td><%= last_seen(transaction) %></td>
                 <td>
-                  <% from_address_hash = from_address_hash(transaction) %>
-                  <%= if from_address_hash do %>
-                    <%= link to: address_path(@conn, :show, @conn.assigns.locale, transaction.from_address.hash),
-                        "data-toggle": "tooltip",
-                        "data-placement": "top",
-                        title: transaction.from_address.hash do %>
-                      <%= String.slice(transaction.from_address.hash, 0..3) %> <i class="fas fa-ellipsis-v"></i> <%= String.slice(transaction.from_address.hash, -4..-1) %>
-                    <% end %>
-                  <% else %>
-                    <%= gettext "Pending" %>
-                  <% end %>
+                  <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
                 </td>
                 <td>
-                  <% to_address_hash = to_address_hash(transaction) %>
-                  <%= if to_address_hash do %>
-                    <%= link to: address_path(@conn, :show, @conn.assigns.locale, transaction.to_address.hash),
-                        "data-toggle": "tooltip",
-                        "data-placement": "top",
-                        title: transaction.to_address.hash do %>
-                      <%= String.slice(transaction.to_address.hash, 0..3) %> <i class="fas fa-ellipsis-v"></i> <%= String.slice(transaction.to_address.hash, -4..-1) %>
-                    <% end %>
-                  <% else %>
-                    <%= gettext "Pending" %>
-                  <% end %>
+                  <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
                 </td>
                 <td>
                 <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %>
