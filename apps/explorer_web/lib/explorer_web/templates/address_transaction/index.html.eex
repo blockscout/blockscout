@@ -78,7 +78,9 @@
           <%= for transaction <- @page.entries do %>
             <tr>
               <td><div class="transaction__dot transaction__dot--<%= status(transaction) %>"></div></td>
-              <td><%= link(transaction.hash |> String.slice(0..7),to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.hash), "data-test": "transaction_hash") %></td>
+              <td>
+                <%= render ExplorerWeb.TransactionView, "_link.html", conn: @conn, transaction: transaction %>
+              </td>
               <td>
                 <%= link(
                       transaction.block.number,

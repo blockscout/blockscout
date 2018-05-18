@@ -145,7 +145,7 @@
                 <div class="transaction__dot transaction__dot--<%= status(transaction) %>"></div>
               </td>
               <td>
-                <%= link(transaction.hash |> String.slice(2..7),to: transaction_path(@conn, :show, @conn.assigns.locale, transaction.hash)) %>
+                <%= render ExplorerWeb.TransactionView, "_link.html", conn: @conn, transaction: transaction %>
               </td>
               <td>
                 <%= link(
