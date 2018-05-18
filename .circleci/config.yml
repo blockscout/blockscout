@@ -111,6 +111,7 @@ jobs:
             - doc
             - mix.exs
             - mix.lock
+            - appspec.yml
   check_formatted:
     docker:
       # Ensure .tool-versions matches
