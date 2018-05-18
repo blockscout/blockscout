@@ -33,6 +33,16 @@ function deploy_chain() {
     bucket="${PREFIX}-explorer-codedeploy-releases"
     release_name="${CIRCLE_SHA1}_${CIRCLE_BUILD_NUM}"
 
+    log "Fixing timestamps on source files for AWS CLI..."
+
+    # Make sure any files with mod times greater than 1000 days are
+    # given updated timestamps so that the zip is valid. AWS CLI will blow up
+    # when trying to add files with timestamps before 1980 in them.
+    find ./ -exec touch {} \;
+
+    # TODO: REMOVE THIS
+    ls -la
+
     log "Pushing new revision to CodeDeploy app '${app}' in S3 bucket '${bucket}', as '${release_name}.zip'.."
 
     aws deploy push \
