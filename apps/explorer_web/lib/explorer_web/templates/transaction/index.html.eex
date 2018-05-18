@@ -48,9 +48,9 @@
                 </td>
                 <td>
                   <%= link(
-                        transaction.block.number,
+                        transaction.block,
                         class: "transactions__link",
-                        to: block_path(@conn, :show, @conn.assigns.locale, transaction.block.number)
+                        to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
                       ) %>
                 </td>
                 <td>

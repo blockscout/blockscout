@@ -76,8 +76,8 @@
                   <%= render ExplorerWeb.TransactionView, "_link.html", conn: @conn, transaction: internal_transaction.transaction %>
                 </td>
                 <td>
-                  <%= link(internal_transaction.transaction.block.number,
-                    to: block_path(@conn, :show, @conn.assigns.locale, internal_transaction.transaction.block.number)
+                  <%= link(internal_transaction.transaction.block,
+                    to: block_path(@conn, :show, @conn.assigns.locale, internal_transaction.transaction.block)
                     ) %>
                 </td>
                 <td><%= ExplorerWeb.BlockView.age(internal_transaction.transaction.block) %></td>

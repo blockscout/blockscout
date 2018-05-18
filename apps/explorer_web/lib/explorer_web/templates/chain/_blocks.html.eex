@@ -22,7 +22,7 @@
       <tr>
         <td>
           <img src="<%= static_path(@conn, "/images/block.svg") %>" />
-          <%= link(block.number,to: block_path(@conn, :show, @conn.assigns.locale, block.number)) %>
+          <%= link(block, to: block_path(@conn, :show, @conn.assigns.locale, block)) %>
         </td>
         <td><%= block.timestamp |> Timex.from_now %></td>
         <td><%= block.transactions |> Enum.count %></td>

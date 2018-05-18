@@ -83,8 +83,8 @@
               </td>
               <td>
                 <%= link(
-                      transaction.block.number,
-                      to: block_path(@conn, :show, @conn.assigns.locale, transaction.block.number)
+                      transaction.block,
+                      to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
                     ) %>
               </td>
               <td><%= transaction.block.timestamp |> Timex.from_now %></td>

@@ -1,5 +1,5 @@
 <h1><%= gettext "Transaction Details" %></h1>
-<p><%= @transaction.hash %></p>
+<p><%= @transaction %></p>
 <div class="panels container__subsection">
   <div class="panels__container row">
     <div class="col-md-6">
@@ -22,9 +22,9 @@
               <% block = @transaction.block %>
               <%= if block do %>
                 <%= link(
-                      block.number,
+                      block,
                       class: "transaction__link",
-                      to: block_path(@conn, :show, @conn.assigns.locale, block.number)
+                      to: block_path(@conn, :show, @conn.assigns.locale, block)
                     ) %>
               <% end %>
               (<%= gettext "%{confirmations} block confirmations", confirmations: confirmations(@transaction, max_block_number: @max_block_number) %>)
@@ -53,9 +53,9 @@
             <td>
               <%= if @transaction.from_address do %>
                 <%= link(
-                      @transaction.from_address.hash,
+                      @transaction.from_address,
                       class: "transaction__link",
-                      to: address_path(@conn, :show, @conn.assigns.locale, @transaction.from_address.hash)
+                      to: address_path(@conn, :show, @conn.assigns.locale, @transaction.from_address)
                     ) %>
               <% else %>
                 <%= gettext "Pending" %>
@@ -69,9 +69,9 @@
             <td>
               <%= if @transaction.to_address do %>
                 <%= link(
-                      @transaction.to_address.hash,
+                      @transaction.to_address,
                       class: "transaction__link",
-                      to: address_path(@conn, :show, @conn.assigns.locale, @transaction.to_address.hash)
+                      to: address_path(@conn, :show, @conn.assigns.locale, @transaction.to_address)
                     ) %>
               <% else %>
                 <%= gettext "Pending" %>
