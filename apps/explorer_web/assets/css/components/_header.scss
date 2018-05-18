@@ -16,7 +16,7 @@
     }
 
     &--search {
-      background-color: $secondary;
+      background-color: lighten($secondary, 20%);
       padding: 5px;
     }
   }
