@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -x
+set -e
 
 # Log a timestamped message to the console
 function log() {
@@ -101,11 +101,8 @@ CHAINS="$(echo "$CHAINS" | tr ',' '\n')"
 # Install AWS CLI
 if ! which aws >/dev/null; then
     log "Installing AWS CLI.."
-    mkdir -p ~/bin
-    wget "https://s3.amazonaws.com/aws-cli/awscli-bundle.zip"
-    unzip awscli-bundle.zip
-    ./awscli-bundle/install -b ~/bin/aws
-    export PATH=$HOME/bin:$PATH
+    pip install awscli --upgrade --user
+    export PATH=$HOME/.local/bin:$PATH
     log "Install completed successfully!"
 fi
 
