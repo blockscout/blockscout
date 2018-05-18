@@ -52,9 +52,7 @@
 
     &__subsection {
       flex: 1;
-      margin-right: 10px;
-
-      & + & { margin-left: 5px; }
+      margin: 10px 5px;
     }
   }
 }
