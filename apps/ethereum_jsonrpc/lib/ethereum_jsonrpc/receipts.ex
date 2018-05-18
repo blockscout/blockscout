@@ -121,6 +121,7 @@ defmodule EthereumJSONRPC.Receipts do
           responses
           |> responses_to_receipts()
           |> to_elixir()
+
         elixir_logs = elixir_to_logs(elixir_receipts)
         receipts = elixir_to_params(elixir_receipts)
         logs = Logs.elixir_to_params(elixir_logs)

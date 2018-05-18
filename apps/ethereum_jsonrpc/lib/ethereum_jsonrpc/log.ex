@@ -59,7 +59,7 @@ defmodule EthereumJSONRPC.Log do
         "blockHash" => block_hash,
         "blockNumber" => block_number,
         "removed" => removed,
-	"transactionIndex" => transaction_index
+        "transactionIndex" => transaction_index
       }) do
     %{
       address_hash: address_hash,

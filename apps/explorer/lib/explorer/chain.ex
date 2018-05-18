@@ -1365,7 +1365,7 @@ defmodule Explorer.Chain do
   @doc """
   Converts `transaction` with its `receipt` loaded to the status of the `t:Explorer.Chain.Transaction.t/0`.
 
-  # Returns
+  ## Returns
 
     * `:failed` - the transaction failed without running out of gas
     * `:pending` - the transaction has not be confirmed in a block yet
@@ -1373,9 +1373,7 @@ defmodule Explorer.Chain do
     * `:success` - the transaction has been confirmed in a block
 
   """
-
   @spec transaction_to_status(Transaction.t()) :: :failed | :pending | :out_of_gas | :success
-  IO.inspect("FIRE FROM HERE")
   def transaction_to_status(%Transaction{receipt: nil}), do: :pending
   def transaction_to_status(%Transaction{receipt: %Receipt{status: :ok}}), do: :success
 
@@ -1388,7 +1386,6 @@ defmodule Explorer.Chain do
   end
 
   def transaction_to_status(%Transaction{receipt: %Receipt{status: :error}}), do: :failed
-
 
   @doc """
   The `t:Explorer.Chain.Transaction.t/0` or `t:Explorer.Chain.InternalTransaction.t/0` `value` of the `transaction` in

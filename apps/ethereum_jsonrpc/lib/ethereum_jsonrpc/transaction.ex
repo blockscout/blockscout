@@ -31,10 +31,10 @@ defmodule EthereumJSONRPC.Transaction do
    * `"hash"` - `t:EthereumJSONRPC.hash/0` of the transaction
    * `"input"` - `t:EthereumJSONRPC.data/0` sent along with the transaction, such as input to the contract.
    * `"nonce"` - `t:EthereumJSONRPC.quantity/0` of transactions made by the sender prior to this one.
-#   * `"publicKey"` - `t:EthereumJSONRPC.hash/0` of the public key of the signer.
+   * `"publicKey"` - `t:EthereumJSONRPC.hash/0` of the public key of the signer.
    * `"r"` - `t:EthereumJSONRPC.quantity/0` for the R field of the signature.
    * `"raw"` - Raw transaction `t:EthereumJSONRPC.data/0`
-#   * `"standardV"` - `t:EthereumJSONRPC.quantity/0` for the standardized V (`0` or `1`) field of the signature.
+   * `"standardV"` - `t:EthereumJSONRPC.quantity/0` for the standardized V (`0` or `1`) field of the signature.
    * `"to"` - `t:EthereumJSONRPC.address/0` of the receiver.  `nil` when it is a contract creation transaction.
    * `"transactionIndex"` - `t:EthereumJSONRPC.quantity/0` for the index of the transaction in the block.  `nil` when
      transaction is pending.
@@ -50,7 +50,7 @@ defmodule EthereumJSONRPC.Transaction do
 
   @type params :: %{
           block_hash: EthereumJSONRPC.hash(),
-	  block_number: non_neg_integer(),
+          block_number: non_neg_integer(),
           from_address_hash: EthereumJSONRPC.address(),
           gas: non_neg_integer(),
           gas_price: non_neg_integer(),

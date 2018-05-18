@@ -72,9 +72,6 @@ defmodule EthereumJSONRPC.Receipt do
 
   """
 
-  # add blockHash, blockNumber, contractAddress,
-  # from, logs, logsBloom, root, to
-
   @spec elixir_to_params(elixir) :: %{
           cumulative_gas_used: non_neg_integer,
 	  gas_used: non_neg_integer,
@@ -157,7 +154,6 @@ defmodule EthereumJSONRPC.Receipt do
       case status do
         "0x0" -> :error
         "0x1" -> :ok
-        "nil" -> :error
       end
 
     {key, elixir_status}
