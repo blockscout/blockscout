@@ -7,6 +7,7 @@
 
   &__copy-icon {
     color: $gray-800;
-    display: none;
+    appearance: none;
+    border: none;
   }
 }
