@@ -1,12 +1,16 @@
 .panels {
   @extend %paper;
 
-    &__container {
-      padding: 20px;
-    }
+  &__container {
+    padding: 20px;
   }
+}
 
-  .pagination {
-    text-align: right;
-    margin: 10px;
-  }
+.pagination {
+  text-align: right;
+  margin: 10px;
+}
+
+.monospace {
+  font-family: $font-family-monospace;
+}

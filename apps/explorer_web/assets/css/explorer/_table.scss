@@ -1,8 +1,6 @@
 .table-font {
-  font-size: 12px;
-  color: $gray-800;
 
-  thead th, td, th, tbody+tbody {
+  thead th, td, th {
     border-top: none;
     border-bottom: none;
   }
