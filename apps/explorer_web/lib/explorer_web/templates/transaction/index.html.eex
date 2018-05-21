@@ -18,7 +18,8 @@
           <%= link(
                 gettext("Pending"),
                 class: "nav-link",
-                to: pending_transaction_path(@conn, :index, @conn.assigns.locale)
+                to: pending_transaction_path(@conn, :index, @conn.assigns.locale),
+                "data-test": "pending_transactions_link"
               ) %>
         </li>
       </ul>

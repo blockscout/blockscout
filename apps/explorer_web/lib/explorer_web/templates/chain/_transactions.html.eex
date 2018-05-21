@@ -13,7 +13,7 @@
     </thead>
     <tbody>
       <%= for transaction <- @chain.transactions do %>
-      <tr>
+      <tr data-test="chain_transaction">
         <td>
           <%= render ExplorerWeb.TransactionView, "_link.html", conn: @conn, transaction: transaction %>
         </td>

@@ -4,54 +4,35 @@ defmodule ExplorerWeb.ContributorBrowsingTest do
   import Wallaby.Query, only: [css: 1, css: 2, link: 1]
 
   alias Explorer.Chain.{Credit, Debit}
+  alias ExplorerWeb.{AddressPage, BlockPage, HomePage, TransactionPage}
 
   @logo css("[data-test='header_logo']")
-
-  test "browses the home page", %{session: session} do
-    session |> visit("/")
-    assert current_path(session) == "/en"
-
-    session
-    |> click(@logo)
-    |> assert_has(css("main", text: "Blocks"))
-  end
 
   test "search for blocks", %{session: session} do
     block = insert(:block, number: 42)
 
-    refute block.miner_hash == nil
-
     session
-    |> visit("/")
-    |> fill_in(css(".header__cell--search-input"), with: to_string(block.number))
-    |> send_keys([:enter])
-    |> assert_has(css(".block__item", text: to_string(block.miner_hash)))
+    |> HomePage.visit_page()
+    |> HomePage.search(to_string(block.number))
+    |> assert_has(BlockPage.detail_number(block))
   end
 
   test "search for transactions", %{session: session} do
     transaction = insert(:transaction, input: "0x736f636b73")
 
     session
-    |> visit("/")
-    |> fill_in(
-      css(".header__cell--search-input"),
-      with: to_string(transaction.hash)
-    )
-    |> send_keys([:enter])
-    |> assert_has(css(".transaction__item", text: to_string(transaction.input)))
+    |> HomePage.visit_page()
+    |> HomePage.search(to_string(transaction.hash))
+    |> assert_has(TransactionPage.detail_hash(transaction))
   end
 
   test "search for address", %{session: session} do
     address = insert(:address)
 
     session
-    |> visit("/")
-    |> fill_in(
-      css(".header__cell--search-input"),
-      with: to_string(address.hash)
-    )
-    |> send_keys([:enter])
-    |> assert_has(css(".address__subheading", text: to_string(address.hash)))
+    |> HomePage.visit_page()
+    |> HomePage.search(to_string(address.hash))
+    |> assert_has(AddressPage.detail_hash(address))
   end
 
   test "views blocks", %{session: session} do
@@ -162,29 +143,6 @@ defmodule ExplorerWeb.ContributorBrowsingTest do
          transaction: transaction,
          txn_from_lincoln: txn_from_lincoln
        }}
-    end
-
-    test "views transactions", %{session: session} do
-      session
-      |> visit("/en")
-      |> assert_has(css(".transactions__title", text: "Transactions"))
-      |> assert_has(css(".transactions__column--hash", count: 5))
-      |> assert_has(css(".transactions__column--value", count: 5))
-      |> assert_has(css(".transactions__column--age", count: 5))
-    end
-
-    test "can see pending transactions", %{pending: pending, session: session} do
-      session
-      |> visit("/transactions")
-      |> click(css(".transactions__tab-link", text: "Pending"))
-      |> click(css(".transactions__link", text: to_string(pending.hash)))
-      |> assert_has(css(".transaction__item-value--status", text: "Pending"))
-    end
-
-    test "don't see pending transactions by default", %{session: session} do
-      session
-      |> visit("/transactions")
-      |> refute_has(css(".transactions__column--block", text: "Pending"))
     end
 
     test "see's all addresses transactions by default", %{

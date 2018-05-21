@@ -1,7 +1,7 @@
 <section class="container__section">
   <div>
     <h1><%= gettext("Block Details") %></h1>
-    <h2><%= @block.number %></h2>
+    <h2 data-test="block_detail_number"><%= @block.number %></h2>
   </div>
   <div class="panels container__subsection">
     <div class="panels__container row">

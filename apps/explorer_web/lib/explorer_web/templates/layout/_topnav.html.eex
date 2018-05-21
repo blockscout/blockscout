@@ -3,7 +3,7 @@
       <div class="header__cell header__cell--search">
         <%= form_for @conn, chain_path(@conn, :search, Gettext.get_locale), [class: "header__cell--search-form", method: :get, enforce_utf8: false], fn f -> %>
           <i class="header__cell--search-glass fa fa-search"></i>
-          <%= search_input f, :q, class: 'header__cell--search-input', placeholder: gettext "Search by address, transaction hash, or block number" %>
+          <%= search_input f, :q, class: 'header__cell--search-input', placeholder: gettext("Search by address, transaction hash, or block number"), "data-test": "search_input" %>
         <% end %>
       </div>
     </div>

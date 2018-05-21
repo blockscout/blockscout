@@ -14,4 +14,12 @@ defmodule ExplorerWeb.TransactionListPage do
   def visit_page(session) do
     visit(session, "/en/transactions")
   end
+
+  def click_pending(session) do
+    click(session, css("[data-test='pending_transactions_link']"))
+  end
+
+  def transaction(%Transaction{hash: transaction_hash}) do
+    css("[data-test='transaction_hash'][data-transaction-hash='#{transaction_hash}']")
+  end
 end

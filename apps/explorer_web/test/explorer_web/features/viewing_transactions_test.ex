@@ -1,8 +1,8 @@
-defmodule ExplorerWeb.TransactionPageTest do
+defmodule ExplorerWeb.ViewingTransactionsTest do
   use ExplorerWeb.FeatureCase, async: true
 
   alias Explorer.Chain.{Credit, Debit, Wei}
-  alias ExplorerWeb.{AddressPage, TransactionListPage, TransactionLogsPage, TransactionPage}
+  alias ExplorerWeb.{AddressPage, HomePage, TransactionListPage, TransactionLogsPage, TransactionPage}
 
   setup do
     block =
@@ -64,6 +64,29 @@ defmodule ExplorerWeb.TransactionPageTest do
        transaction: transaction,
        txn_from_lincoln: txn_from_lincoln
      }}
+  end
+
+  describe "viewing transaction lists" do
+    test "transactions on the home page", %{session: session} do
+      session
+      |> HomePage.visit_page()
+      |> assert_has(HomePage.transactions(count: 5))
+    end
+
+    test "viewing the default transactions tab", %{session: session, transaction: transaction, pending: pending} do
+      session
+      |> TransactionListPage.visit_page()
+      |> assert_has(TransactionListPage.transaction(transaction))
+      |> refute_has(TransactionListPage.transaction(pending))
+    end
+
+    test "viewing the pending tab", %{pending: pending, session: session} do
+      session
+      |> TransactionListPage.visit_page()
+      |> TransactionListPage.click_pending()
+      |> assert_has(TransactionListPage.transaction(pending))
+      # |> click(css(".transactions__link", text: to_string(pending.hash)))
+    end
   end
 
   describe "viewing a transaction page" do
