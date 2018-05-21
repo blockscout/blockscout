@@ -52,7 +52,10 @@
 
     &__subsection {
       flex: 1;
-      margin: 10px 5px;
+
+        &-chain {
+        margin: 10px 5px;
+      }
     }
   }
 }
