@@ -22,7 +22,6 @@
         <td><%= block.transactions |> Enum.count %></td>
         <td><%= block.gas_used |> Cldr.Number.to_string! %></td>
         <td>
-          <i class="fa fa-address-card"></i>
           <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: block.miner %>
         </td>
       </tr>
