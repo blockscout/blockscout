@@ -12,12 +12,6 @@
       <th><%= gettext "Validator" %></th>
     </thead>
     <tbody>
-      <tr>
-        <td colspan="5">
-          <i class="fas fa-spinner fa-pulse"></i>
-          Coming soon
-        </td>
-      </tr>
       <%= for block <- @chain.blocks do %>
       <tr>
         <td>

@@ -120,7 +120,7 @@ defmodule Explorer.Chain.Statistics do
         join: block in assoc(transaction, :block),
         order_by: [desc: block.number],
         preload: [:from_address, :to_address, block: block],
-        limit: 6
+        limit: 5
       )
 
     %__MODULE__{
