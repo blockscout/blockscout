@@ -1,0 +1,12 @@
+.address-link {
+  font-family: $font-family-monospace;
+
+  &__seperator {
+    margin: 0 2px;
+  }
+
+  &__copy-icon {
+    color: $gray-800;
+    display: none;
+  }
+}

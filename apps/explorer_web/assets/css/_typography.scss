@@ -1,8 +1,7 @@
-
 body {
   font-family: $font-family-sans-serif;
+  font-size: 13px;
 }
-
 
 h1 {
   font-size: 18px;
@@ -49,4 +48,7 @@ a {
   &:focus {
     text-decoration: none;
   }
+}
+.monospace {
+  font-family: $font-family-monospace;
 }

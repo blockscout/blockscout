@@ -1,5 +1,7 @@
-<%= link(@transaction |> hash |> String.slice(2..7),to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction),
+<%= link(@transaction |> hash |> String.slice(2..7),
+    to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction),
     "data-toggle": "tooltip",
     "data-placement": "top",
     "data-test": "transaction_hash",
+    class: "monospace",
     title: @transaction) %>

@@ -2,7 +2,9 @@
   <%= link to: address_path(@conn, :show, @conn.assigns.locale, @address),
       "data-toggle": "tooltip",
       "data-placement": "top",
+      class: "address-link",
       title: @address do %>
-    <%= @address |> hash |> String.slice(0..3) %> <i class="fas fa-ellipsis-v"></i> <%= @address |> hash |> String.slice(-4..-1) %>
-  <% end %>
+    <%= @address |> hash |> String.slice(0..3) %><i class="fas fa-ellipsis-v address-link__seperator"></i><%= @address |> hash |> String.slice(-4..-1) %>
+<% end %>
+<i class="fa fa-clipboard address-link__copy-icon"></i>
 <% end %>
