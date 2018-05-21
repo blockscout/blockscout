@@ -3,5 +3,6 @@
     "data-toggle": "tooltip",
     "data-placement": "top",
     "data-test": "transaction_hash",
+    "data-transaction-hash": @transaction.hash,
     class: "monospace",
     title: @transaction) %>

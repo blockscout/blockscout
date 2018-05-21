@@ -19,6 +19,10 @@ defmodule ExplorerWeb.AddressPage do
     click(session, css("[data-test='internal_transactions_tab_link']"))
   end
 
+  def detail_hash(%Address{hash: address_hash}) do
+    css("[data-test='address_detail_hash']", text: to_string(address_hash))
+  end
+
   def internal_transactions(count: count) do
     css("[data-test='internal_transaction']", count: count)
   end
@@ -32,7 +36,7 @@ defmodule ExplorerWeb.AddressPage do
   end
 
   def transaction(transaction_hash) do
-    css("[data-test='transaction_hash']", text: transaction_hash)
+    css("[data-test='transaction_hash'][data-transaction-hash='#{transaction_hash}']")
   end
 
   def transaction_count do

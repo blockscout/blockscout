@@ -28,11 +28,13 @@
           </thead>
           <%= for log <- @logs.entries do %>
             <tgroup>
-              <tr>
+              <tr data-test="transaction_log">
                 <td>
                   <%= link(
                         log.address,
-                        to: address_path(@conn, :show, @conn.assigns.locale, log.address)
+                        to: address_path(@conn, :show, @conn.assigns.locale, log.address),
+                        "data-test": "log_address_link",
+                        "data-address-hash": log.address
                       ) %>
                 </td>
                 <td><%= log.first_topic %></td>

@@ -13,7 +13,8 @@
         <%= link(
               gettext("Logs"),
               class: "nav-link",
-              to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction)
+              to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction),
+              "data-test": "transaction_logs_link"
             ) %>
       </li>
     </ul>

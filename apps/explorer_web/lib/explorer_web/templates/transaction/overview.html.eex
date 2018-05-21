@@ -1,5 +1,5 @@
 <h1><%= gettext "Transaction Details" %></h1>
-<p><%= @transaction %></p>
+<p data-test="transaction_detail_hash"><%= @transaction %></p>
 <div class="panels container__subsection">
   <div class="panels__container row">
     <div class="col-md-6">

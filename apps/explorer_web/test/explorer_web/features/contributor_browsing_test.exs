@@ -187,48 +187,6 @@ defmodule ExplorerWeb.ContributorBrowsingTest do
       |> refute_has(css(".transactions__column--block", text: "Pending"))
     end
 
-    test "can see a transaction's details", %{lincoln: lincoln, session: session, taft: taft, transaction: transaction} do
-      session
-      |> visit("/transactions")
-      |> click(link(to_string(transaction.hash)))
-      |> assert_has(css(".transaction__subheading", text: to_string(transaction.hash)))
-      |> assert_has(css(".transaction__item", text: "123,987"))
-      |> assert_has(css(".transaction__item", text: "5,656 POA"))
-      |> assert_has(css(".transaction__item", text: "Success"))
-      |> assert_has(
-        css(
-          ".transaction__item",
-          text: "7,890,000,000,898,912,300,045 Wei (7,890,000,000,898.912 Gwei)"
-        )
-      )
-      |> assert_has(css(".transaction__item", text: "1,230,000,000,000,123,123 Gas"))
-      |> assert_has(css(".transaction__item", text: to_string(transaction.input)))
-      |> assert_has(css(".transaction__item", text: "99045"))
-      |> assert_has(css(".transaction__item", text: "123,987"))
-      |> assert_has(css(".transaction__item", text: to_string(lincoln.hash)))
-      |> assert_has(css(".transaction__item", text: to_string(taft.hash)))
-      |> assert_has(css(".transaction__item", text: "49 years ago"))
-      |> assert_has(css(".transaction__item", text: "38 years ago"))
-    end
-
-    test "can view a transaction's logs", %{lincoln: lincoln, session: session, transaction: transaction} do
-      session
-      |> visit("/en/transactions/#{Phoenix.Param.to_param(transaction)}")
-      |> click(link("Logs"))
-      |> assert_has(css(".transaction-log__link", text: to_string(lincoln.hash)))
-    end
-
-    test "can visit an address from the transaction logs page", %{
-      lincoln: lincoln,
-      session: session,
-      transaction: transaction
-    } do
-      session
-      |> visit("/en/transactions/#{Phoenix.Param.to_param(transaction)}/logs")
-      |> click(css(".transaction-log__link", text: to_string(lincoln.hash)))
-      |> assert_has(css(".address__subheading", text: to_string(lincoln.hash)))
-    end
-
     test "see's all addresses transactions by default", %{
       lincoln: lincoln,
       session: session,
