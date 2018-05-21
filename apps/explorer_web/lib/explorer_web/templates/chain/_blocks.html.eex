@@ -1,4 +1,4 @@
-<div class="panels container__subsection">
+<div class="panels container__subsection container__subsection-chain">
   <div class="panels__container panels__container--title">
     <%= link(gettext("View All"), to: block_path(@conn, :index, Gettext.get_locale), class: "button button--secondary button--xsmall u-float-right") %>
     <h2 class="panels__title"><%= gettext "Blocks" %></h2>

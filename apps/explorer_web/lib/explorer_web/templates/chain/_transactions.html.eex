@@ -1,4 +1,4 @@
-<div class="panels container__subsection">
+<div class="panels container__subsection container__subsection-chain">
   <div class="panels__container panels__container--title">
     <%= link(gettext("View All"), to: transaction_path(@conn, :index, Gettext.get_locale), class: "button button--secondary button--xsmall u-float-right") %>
     <h2 class="panels__title"><%= gettext "Transactions" %></h2>
@@ -17,12 +17,10 @@
         <td>
           <%= render ExplorerWeb.TransactionView, "_link.html", conn: @conn, transaction: transaction %>
         </td>
-        <td class="">
-          <i class="fa fa-address-card"></i>
+        <td>
           <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
         </td>
         <td>
-          <i class="fa fa-address-card"></i>
           <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
         </td>
         <td><%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> </td>
