@@ -68,6 +68,15 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
      }}
   end
 
+  test "search for transactions", %{session: session} do
+    transaction = insert(:transaction, input: "0x736f636b73")
+
+    session
+    |> HomePage.visit_page()
+    |> HomePage.search(to_string(transaction.hash))
+    |> assert_has(TransactionPage.detail_hash(transaction))
+  end
+
   describe "viewing transaction lists" do
     test "transactions on the home page", %{session: session} do
       session

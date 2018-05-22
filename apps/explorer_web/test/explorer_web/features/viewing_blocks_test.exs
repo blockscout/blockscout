@@ -1,7 +1,7 @@
 defmodule ExplorerWeb.ViewingBlocksTest do
   use ExplorerWeb.FeatureCase, async: true
 
-  alias ExplorerWeb.{BlockListPage, HomePage}
+  alias ExplorerWeb.{BlockListPage, BlockPage, HomePage}
 
   setup do
     timestamp = Timex.now() |> Timex.shift(hours: -1)
@@ -18,6 +18,15 @@ defmodule ExplorerWeb.ViewingBlocksTest do
       })
 
     {:ok, block: block}
+  end
+
+  test "search for blocks", %{session: session} do
+    block = insert(:block, number: 42)
+
+    session
+    |> HomePage.visit_page()
+    |> HomePage.search(to_string(block.number))
+    |> assert_has(BlockPage.detail_number(block))
   end
 
   test "viewing blocks on the home page", %{session: session} do
