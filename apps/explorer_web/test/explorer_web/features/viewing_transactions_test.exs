@@ -1,4 +1,6 @@
 defmodule ExplorerWeb.ViewingTransactionsTest do
+  @moduledoc false
+
   use ExplorerWeb.FeatureCase, async: true
 
   alias Explorer.Chain.{Credit, Debit, Wei}
