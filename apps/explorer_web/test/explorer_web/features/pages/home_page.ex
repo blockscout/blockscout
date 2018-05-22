@@ -5,6 +5,10 @@ defmodule ExplorerWeb.HomePage do
 
   import Wallaby.Query, only: [css: 1, css: 2]
 
+  def blocks(count: count) do
+    css("[data-test='chain_block']", count: count)
+  end
+
   def search(session, text) do
     session
     |> fill_in(css("[data-test='search_input']"), with: text)

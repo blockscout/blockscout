@@ -13,7 +13,7 @@
     </thead>
     <tbody>
       <%= for block <- @chain.blocks do %>
-      <tr>
+      <tr data-test="chain_block">
         <td>
           <img src="<%= static_path(@conn, "/images/block.svg") %>" />
           <%= link(block, to: block_path(@conn, :show, @conn.assigns.locale, block)) %>

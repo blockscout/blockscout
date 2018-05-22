@@ -31,7 +31,9 @@
                 <%= link(
                       block,
                       class: "blocks__link",
-                      to: block_path(@conn, :show, @conn.assigns.locale, block)
+                      to: block_path(@conn, :show, @conn.assigns.locale, block),
+                      "data-test": "block_number",
+                      "data-block-number": to_string(block.number)
                     ) %>
               </td>
               <td><%= block.timestamp |> Timex.from_now  %></td>

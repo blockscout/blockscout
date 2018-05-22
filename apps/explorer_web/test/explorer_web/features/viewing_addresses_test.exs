@@ -1,4 +1,4 @@
-defmodule ExplorerWeb.AddressPageTest do
+defmodule ExplorerWeb.ViewingAddressesTest do
   use ExplorerWeb.FeatureCase, async: true
 
   alias ExplorerWeb.AddressPage
