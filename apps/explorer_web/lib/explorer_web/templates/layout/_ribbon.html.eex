@@ -44,9 +44,8 @@
           Switch Network
         </button>
         <div class="dropdown-menu switch-network-menu" aria-labelledby="dropdownMenuButton">
-          <a class="dropdown-item switch-network-item" href="#">Explorer</a>
-          <a class="dropdown-item switch-network-item" href="#">Sokol (Testnet)</a>
-          <a class="dropdown-item switch-network-item" href="#">Mainnet</a>
+          <a class="dropdown-item switch-network-item" href="https://explorer-core.poanetwork/">POA Core</a>
+          <a class="dropdown-item switch-network-item" href="https://explorer-sokol.poanetwork/">POA Sokol</a>
         </div>
       </div>
 
