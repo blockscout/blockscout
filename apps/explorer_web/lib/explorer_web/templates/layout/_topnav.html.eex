@@ -33,21 +33,5 @@
           <%= link(gettext("Pending"), to: pending_transaction_path(@conn, :index, Gettext.get_locale), class: "dropdown-item topnav-dropdown-items") %>
         </div>
       </div>
-      <div class="header__cell header__cell--links" align="right">
-        <%= link to: block_path(@conn, :index, Gettext.get_locale) do %>
-          <div tabindex="0">
-              <img src="<%= static_path(@conn, "/images/token.svg") %>" />
-              <%= gettext("Tokens") %>
-          </div>
-        <% end %>
-      </div>
-      <div class="header__cell header__cell--links" align="right">
-        <%= link to: block_path(@conn, :index, Gettext.get_locale) do %>
-        <div tabindex="0">
-            <img src="<%= static_path(@conn, "/images/smart_contract.svg") %>" />
-            <%= gettext("Smart Contract") %>
-        </div>
-        <% end %>
-      </div>
     </div>
 </header>
