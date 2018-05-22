@@ -19,6 +19,7 @@
   display: flex;
   position: fixed;
   width: 100%;
+  z-index: 10001;
 }
 
 .container {
@@ -27,6 +28,13 @@
     display: block;
     padding: 0 15px;
     margin: 0 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  
+  #content {
+    height: 100%;
   }
 }
 
@@ -42,6 +50,7 @@
   }
 
   .container {
+
     &__section {
       &--partitioned {
         display: flex;
