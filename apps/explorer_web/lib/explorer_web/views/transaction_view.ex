@@ -3,15 +3,8 @@ defmodule ExplorerWeb.TransactionView do
 
   alias Cldr.Number
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
+  alias Explorer.Chain.{Block, InternalTransaction, Transaction, Wei}
   alias ExplorerWeb.BlockView
-
-  def block(%Transaction{block: block}) do
-    case block do
-      nil -> gettext("Pending")
-      _ -> to_string(block.number)
-    end
-  end
 
   def confirmations(%Transaction{block: block}, named_arguments) when is_list(named_arguments) do
     case block do
@@ -62,10 +55,6 @@ defmodule ExplorerWeb.TransactionView do
     end
   end
 
-  def from_address(%Transaction{from_address: %Address{hash: hash}}) do
-    to_string(hash)
-  end
-
   defguardp is_transaction_type(mod) when mod in [InternalTransaction, Transaction]
 
   def gas(%type{gas: gas}) when is_transaction_type(type) do
@@ -99,13 +88,6 @@ defmodule ExplorerWeb.TransactionView do
       :out_of_gas -> gettext("Out of Gas")
       :pending -> gettext("Pending")
       :success -> gettext("Success")
-    end
-  end
-
-  def to_address(%Transaction{to_address: to_address}) do
-    case to_address do
-      nil -> "Contract Creation"
-      _ -> to_string(to_address)
     end
   end
 
