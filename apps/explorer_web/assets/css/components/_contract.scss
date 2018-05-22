@@ -1,0 +1,12 @@
+.contract {
+  &__code {
+    max-width: explorer-size(7);
+    background-color: #f9f2f4;
+    color: #c7254e;
+  }
+
+  &__code p {
+    overflow-wrap: break-word;
+    word-break: break-all;
+  }
+}

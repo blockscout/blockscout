@@ -3,7 +3,7 @@ defmodule Explorer.ChainTest do
 
   import Explorer.Factory
 
-  alias Explorer.{Chain, Repo}
+  alias Explorer.{Chain, Repo, Factory}
   alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Receipt, Transaction, Wei}
 
   doctest Explorer.Chain

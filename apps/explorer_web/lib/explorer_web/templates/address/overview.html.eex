@@ -1,5 +1,5 @@
 <section>
-  <h1><%= gettext "Address" %></h1>
+  <h1><%= address_title(@address) %></h1>
   <p data-test="address_detail_hash"><%= @address %></p>
 
   <div class="card mb-3">

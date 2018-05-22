@@ -1,6 +1,8 @@
 defmodule ExplorerWeb.AddressTransactionView do
   use ExplorerWeb, :view
 
+  import ExplorerWeb.AddressView, only: [contract?: 1]
+
   alias ExplorerWeb.TransactionView
 
   def format_current_filter(filter) do

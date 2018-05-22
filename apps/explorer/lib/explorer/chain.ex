@@ -429,6 +429,22 @@ defmodule Explorer.Chain do
     end
   end
 
+  def find_contract_address(%Hash{byte_count: unquote(Hash.Truncated.byte_count())} = hash) do
+    address =
+      Repo.one(
+        from(
+          address in Address,
+          where: address.hash == ^hash and not is_nil(address.contract_code)
+        )
+      )
+
+    if address do
+      {:ok, address}
+    else
+      {:error, :not_found}
+    end
+  end
+
   @doc """
   Converts the `Explorer.Chain.Hash.t:t/0` to `iodata` representation that can be written efficiently to users.
 
