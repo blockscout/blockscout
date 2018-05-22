@@ -3,7 +3,7 @@
     <%= link(gettext("View All"), to: transaction_path(@conn, :index, Gettext.get_locale), class: "button button--secondary button--xsmall u-float-right") %>
     <h2 class="panels__title"><%= gettext "Transactions" %></h2>
   </div>
-  <table class="table table-font">
+  <table class="table table-font table-responsive-sm">
     <thead>
       <th><%= gettext "TX Hash" %></th>
       <th><%= gettext "From" %></th>

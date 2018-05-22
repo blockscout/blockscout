@@ -69,6 +69,7 @@
             <th><%= gettext "Block" %></th>
             <th><%= gettext "Age" %></th>
             <th><%= gettext "From" %></th>
+            <th></th>
             <th><%= gettext "To" %></th>
             <th><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
             <th><%= gettext "Fee" %></th>
@@ -88,9 +89,10 @@
                     ) %>
               </td>
               <td><%= transaction.block.timestamp |> Timex.from_now %></td>
-              <td>
+              <td class="address-cell">
                 <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
               </td>
+              <td class="u-text-center"><i class="fas fa-arrow-circle-right"></i></td>
               <td>
                 <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
               </td>

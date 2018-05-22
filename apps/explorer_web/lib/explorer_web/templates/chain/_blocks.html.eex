@@ -3,7 +3,7 @@
     <%= link(gettext("View All"), to: block_path(@conn, :index, Gettext.get_locale), class: "button button--secondary button--xsmall u-float-right") %>
     <h2 class="panels__title"><%= gettext "Blocks" %></h2>
   </div>
-  <table class="table table-font">
+  <table class="table table-font table-responsive-sm">
     <thead>
       <th><%= gettext "Height" %></th>
       <th><%= gettext "Age" %></th>

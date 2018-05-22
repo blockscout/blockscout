@@ -1,13 +1,27 @@
 .address-link {
-  font-family: $font-family-monospace;
+  border: 1px solid $border-color;
+  white-space: nowrap;
+  display: inline-block;
+
+  &__font {
+    font-family: $font-family-monospace;
+  }
+
+  &__type {
+    padding: 0 3px;
+  }
 
   &__seperator {
     margin: 0 2px;
   }
 
-  &__copy-icon {
-    color: $gray-800;
+  &__copy-button {
+    background-color: $gray-100;
     appearance: none;
-    border: none;
+    border-color: transparent transparent transparent $border-color;
+
+    i {
+      color:$gray-500 !important;
+    }
   }
 }
