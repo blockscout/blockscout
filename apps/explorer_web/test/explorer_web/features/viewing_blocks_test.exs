@@ -9,13 +9,13 @@ defmodule ExplorerWeb.ViewingBlocksTest do
 
     block =
       insert(:block, %{
-            gas_limit: 5_030_101,
-            gas_used: 1_010_101,
-            nonce: 123_456_789,
-            number: 311,
-            size: 9_999_999,
-            timestamp: timestamp
-             })
+        gas_limit: 5_030_101,
+        gas_used: 1_010_101,
+        nonce: 123_456_789,
+        number: 311,
+        size: 9_999_999,
+        timestamp: timestamp
+      })
 
     {:ok, block: block}
   end

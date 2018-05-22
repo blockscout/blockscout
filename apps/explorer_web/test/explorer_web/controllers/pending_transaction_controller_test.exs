@@ -10,10 +10,8 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
 
       conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
 
-      assert html = html_response(conn, 200)
-
-      assert html =~ ~r/Showing 0 Pending Transactions/
-      refute html =~ ~r/transactions__row/
+      assert html_response(conn, 200)
+      assert Enum.empty?(conn.assigns.transactions)
     end
 
     test "does not count transactions that have a receipt", %{conn: conn} do
@@ -23,10 +21,8 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
 
       conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
 
-      assert html = html_response(conn, 200)
-
-      assert html =~ ~r/Showing 0 Pending Transactions/
-      refute html =~ ~r/transactions__row/
+      assert html_response(conn, 200)
+      assert Enum.empty?(conn.assigns.transactions)
     end
 
     test "returns pending transactions", %{conn: conn} do
@@ -34,7 +30,12 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
 
       conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
 
-      assert html_response(conn, 200) =~ to_string(transaction.hash)
+      actual_transaction_hashes =
+        conn.assigns.transactions
+        |> Enum.map(fn transaction -> transaction.hash end)
+
+      assert html_response(conn, 200)
+      assert Enum.member?(actual_transaction_hashes, transaction.hash)
     end
 
     test "returns a count of pending transactions", %{conn: conn} do
@@ -42,7 +43,8 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
 
       conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
 
-      assert html_response(conn, 200) =~ ~r/Showing 1 Pending Transactions/
+      assert html_response(conn, 200)
+      assert 1 == conn.assigns.transaction_count
     end
 
     test "paginates transactions using the last seen transaction", %{conn: conn} do
@@ -51,41 +53,21 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
       {:ok, second_inserted_at, 0} = DateTime.from_iso8601("2016-01-23T23:50:07Z")
       insert(:transaction, inserted_at: second_inserted_at)
 
-      first_response_conn =
+      conn =
         get(
           conn,
           pending_transaction_path(ExplorerWeb.Endpoint, :index, :en),
           last_seen_pending_inserted_at: Timex.format!(first_inserted_at, "{ISO:Extended:Z}")
         )
 
-      assert first_html = html_response(first_response_conn, 200)
-      assert first_html |> Floki.find("table.transactions__table tbody tr") |> Enum.count() == 1
-
-      second_response_conn =
-        get(
-          conn,
-          pending_transaction_path(ExplorerWeb.Endpoint, :index, :en),
-          last_seen_pending_inserted_at: Timex.format!(second_inserted_at, "{ISO:Extended:Z}")
-        )
-
-      assert second_html = html_response(second_response_conn, 200)
-      assert second_html |> Floki.find("table.transactions__table tbody tr") |> Enum.count() == 0
-    end
-
-    test "sends back an estimate of the number of transactions", %{conn: conn} do
-      insert(:transaction)
-      conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
-
-      assert html_response(conn, 200) =~ ~r/Showing 1 Pending Transactions/
+      assert html_response(conn, 200)
+      assert 1 == length(conn.assigns.transactions.entries)
     end
 
     test "works when there are no transactions", %{conn: conn} do
       conn = get(conn, pending_transaction_path(conn, :index, :en))
 
-      assert html = html_response(conn, 200)
-
-      assert html =~ ~r/Showing 0 Pending Transactions/
-      refute html =~ ~r/transactions__row/
+      assert html_response(conn, 200)
     end
   end
 end

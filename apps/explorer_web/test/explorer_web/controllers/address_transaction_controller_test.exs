@@ -2,6 +2,7 @@ defmodule ExplorerWeb.AddressTransactionControllerTest do
   use ExplorerWeb.ConnCase
 
   import ExplorerWeb.Router.Helpers, only: [address_transaction_path: 4]
+  import ExplorerWeb.Factory
 
   describe "GET index/2" do
     test "with invalid address hash", %{conn: conn} do
@@ -16,36 +17,30 @@ defmodule ExplorerWeb.AddressTransactionControllerTest do
       assert html_response(conn, 404)
     end
 
-    test "returns transactions to this address", %{conn: conn} do
-      address = insert(:address)
-      block = insert(:block)
-      transaction = insert(:transaction, block_hash: block.hash, index: 0, to_address_hash: address.hash)
-      insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
-
-      conn = get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address))
-
-      assert html = html_response(conn, 200)
-      assert html |> Floki.find("tbody tr") |> length == 1
-
-      transaction_hash_divs = Floki.find(html, "td.transactions__column--hash div.transactions__hash a")
-
-      assert length(transaction_hash_divs) == 1
-
-      assert List.first(transaction_hash_divs) |> Floki.attribute("href") == [
-               "/en/transactions/#{Phoenix.Param.to_param(transaction)}"
-             ]
-    end
-
-    test "does not return transactions from this address", %{conn: conn} do
-      block = insert(:block)
-      transaction = insert(:transaction, block_hash: block.hash, index: 0)
-      insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
+    test "returns transactions for the address", %{conn: conn} do
       address = insert(:address)
 
-      conn = get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address))
+      block = insert(:block)
 
-      assert html = html_response(conn, 200)
-      assert html |> Floki.find("tbody tr") |> length == 0
+      from_transaction =
+        :transaction
+        |> insert(block_hash: block.hash, from_address_hash: address.hash, index: 0)
+        |> with_receipt()
+
+      to_transaction =
+        :transaction
+        |> insert(block_hash: block.hash, to_address_hash: address.hash, index: 1)
+        |> with_receipt()
+
+      conn = get(conn, address_transaction_path(conn, :index, :en, address))
+
+      actual_transaction_hashes =
+        conn.assigns.page
+        |> Enum.map(fn transaction -> transaction.hash end)
+
+      assert html_response(conn, 200)
+      assert Enum.member?(actual_transaction_hashes, from_transaction.hash)
+      assert Enum.member?(actual_transaction_hashes, to_transaction.hash)
     end
 
     test "does not return related transactions without a receipt", %{conn: conn} do
@@ -62,32 +57,8 @@ defmodule ExplorerWeb.AddressTransactionControllerTest do
 
       conn = get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address))
 
-      assert html = html_response(conn, 200)
-      assert html |> Floki.find("tbody tr") |> length == 0
-    end
-
-    test "does not return related transactions without a from address", %{conn: conn} do
-      block = insert(:block)
-      transaction = insert(:transaction, block_hash: block.hash, index: 0)
-      insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
-      address = insert(:address)
-
-      conn = get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address), filter: "from")
-
-      assert html = html_response(conn, 200)
-      assert html |> Floki.find("tbody tr") |> length == 0
-    end
-
-    test "does not return related transactions without a to address", %{conn: conn} do
-      address = insert(:address)
-      block = insert(:block)
-      transaction = insert(:transaction, block_hash: block.hash, index: 0, from_address_hash: address.hash, index: 0)
-      insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
-
-      conn = get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address), filter: "to")
-
-      assert html = html_response(conn, 200)
-      assert html |> Floki.find("tbody tr") |> length == 0
+      assert html_response(conn, 200)
+      assert Enum.empty?(conn.assigns.page)
     end
   end
 end

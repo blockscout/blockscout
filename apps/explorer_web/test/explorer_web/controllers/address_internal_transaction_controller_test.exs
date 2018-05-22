@@ -30,8 +30,7 @@ defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
       to_internal_transaction =
         insert(:internal_transaction, transaction_hash: transaction.hash, to_address_hash: address.hash, index: 2)
 
-      path = address_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, address)
-
+      path = address_internal_transaction_path(conn, :index, :en, address)
       conn = get(conn, path)
 
       actual_transaction_ids =

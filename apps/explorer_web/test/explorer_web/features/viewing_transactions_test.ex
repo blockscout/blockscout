@@ -85,6 +85,7 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
       |> TransactionListPage.visit_page()
       |> TransactionListPage.click_pending()
       |> assert_has(TransactionListPage.transaction(pending))
+
       # |> click(css(".transactions__link", text: to_string(pending.hash)))
     end
   end
