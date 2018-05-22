@@ -110,7 +110,7 @@ defmodule Explorer.Chain.Statistics do
       from(
         block in Block,
         order_by: [desc: block.number],
-        preload: [:transactions, :miner],
+        preload: [:miner, :transactions],
         limit: 5
       )
 
