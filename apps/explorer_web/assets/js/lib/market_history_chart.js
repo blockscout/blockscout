@@ -71,7 +71,7 @@ function createMarketHistoryChart (ctx) {
         }, {
           id: 'marketCap',
           position: 'right',
-          gridLines: { 
+          gridLines: {
             display: false
           },
           ticks: {
