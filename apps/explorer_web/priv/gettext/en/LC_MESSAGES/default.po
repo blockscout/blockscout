@@ -342,12 +342,12 @@ msgstr ""
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:40
 #: lib/explorer_web/templates/transaction/index.html.eex:38
 #: lib/explorer_web/templates/transaction_internal_transaction/index.html.eex:30
-#: lib/explorer_web/views/wei_helpers.ex:84
+#: lib/explorer_web/views/wei_helpers.ex:71
 msgid "Ether"
 msgstr "POA"
 
 #: lib/explorer_web/views/block_view.ex:22
-#: lib/explorer_web/views/wei_helpers.ex:83
+#: lib/explorer_web/views/wei_helpers.ex:70
 msgid "Gwei"
 msgstr ""
 
@@ -388,7 +388,7 @@ msgid "Type"
 msgstr ""
 
 #: lib/explorer_web/templates/transaction/overview.html.eex:145
-#: lib/explorer_web/views/wei_helpers.ex:82
+#: lib/explorer_web/views/wei_helpers.ex:69
 msgid "Wei"
 msgstr ""
 
@@ -434,9 +434,6 @@ msgstr ""
 msgid "Price"
 msgstr ""
 
-#: lib/explorer_web/templates/chain/show.html.eex:31
-#: lib/explorer_web/templates/chain/show.html.eex:36
-#: lib/explorer_web/templates/chain/show.html.eex:40
 #: lib/explorer_web/views/currency_helpers.ex:32
 msgid "USD"
 msgstr ""
