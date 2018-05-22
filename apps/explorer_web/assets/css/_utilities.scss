@@ -472,11 +472,11 @@ $padding-xs: 5px;
   }
 
   &-top {
-    border-top: 1px solid lighten($gray-300, 42%);
+    border-top: 1px solid lighten($primary, 40%);
   }
 
   &-bottom {
-    border-bottom: 1px solid lighten($gray-300, 42%);
+    border-bottom: 1px solid lighten($primary, 40%);
 
     &-bold {
       border-bottom: 2px solid lighten($gray-300, 32%);

@@ -9,6 +9,7 @@
   }
 
   li {
+    font-size: 13px;
     display: inline-block;
     margin: 0;
     margin-right: explorer-size(-3);
@@ -16,20 +17,19 @@
   }
 
   &-link {
-    @include explorer-typography("body1");
     display: block;
     line-height: 1;
-    color: lighten(explorer-color("gray", "700"), 10);
+    color: $gray-400;
     text-decoration: none;
-    padding: explorer-size(-3) explorer-size(-3) + explorer-size(-5);
-    border: 1px solid lighten(explorer-color("gray", "500"), 10);
-    border-radius: explorer-size(-5);
+    padding: 7px 9px;
+    border: 1px solid $border-color;
+    border-radius: $border-radius;
 
     &:hover,
     &.is-current {
-      border-color: explorer-color("blue", "500");
-      background: explorer-color("blue", "500");
-      color: explorer-color("white");
+      border-color: $primary;
+      background: $primary;
+      color: $white;
     }
   }
 }

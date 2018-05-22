@@ -23,15 +23,8 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
 
       conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block.number))
 
-      assert html = html_response(conn, 200)
-
-      transaction_hash_divs = Floki.find(html, "td.transactions__column--hash div.transactions__hash a")
-
-      assert length(transaction_hash_divs) == 1
-
-      assert List.first(transaction_hash_divs) |> Floki.attribute("href") == [
-               "/en/transactions/#{Phoenix.Param.to_param(transaction)}"
-             ]
+      assert html_response(conn, 200)
+      assert 1 == length(conn.assigns.page.entries)
     end
 
     test "does not return unrelated transactions", %{conn: conn} do
@@ -40,7 +33,8 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
 
       conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block))
 
-      refute html_response(conn, 200) =~ ~r/transactions__row/
+      assert html_response(conn, 200)
+      assert Enum.empty?(conn.assigns.page)
     end
 
     test "does not return related transactions without a receipt", %{conn: conn} do
@@ -49,7 +43,8 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
 
       conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block))
 
-      refute html_response(conn, 200) =~ ~r/transactions__row/
+      assert html_response(conn, 200)
+      assert Enum.empty?(conn.assigns.page)
     end
 
     test "does not return related transactions without a to address", %{conn: conn} do
@@ -59,7 +54,8 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
 
       conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block))
 
-      refute html_response(conn, 200) =~ ~r/transactions__row/
+      assert html_response(conn, 200)
+      assert Enum.empty?(conn.assigns.page)
     end
   end
 end

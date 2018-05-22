@@ -1,48 +1,44 @@
-<section class="container__section transaction">
+<section class="container__section">
   <%= render "overview.html", assigns %>
-
-  <div class="transaction__container">
-    <div class="transaction__tabs">
-      <h2 class="transaction__tab transaction__tab--active">
+  <div>
+    <ul class="nav nav-tabs">
+      <li class="nav-item">
         <%= link(
               gettext("Internal Transactions"),
-              class: "transaction__link transaction__link--active",
+              class: "nav-link active",
               to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction)
             ) %>
-      </h2>
-      <h2 class="transaction__tab">
+      </li>
+      <li class="nav-item">
         <%= link(
               gettext("Logs"),
-              class: "transaction__link",
-              to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction)
+              class: "nav-link",
+              to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction),
+              "data-test": "transaction_logs_link"
             ) %>
-      </h2>
-    </div>
-    <div class="internal-transaction__container">
+      </li>
+    </ul>
+  </div>
+  <div class="panels container__subsection">
+    <div class="panels__container">
       <%= if length(@internal_transactions.entries) > 0 do %>
-        <table class="internal-transaction__table">
+        <table class="table table-responsive-sm table-font">
           <thead>
-            <th class="internal-transaction__column-header"><%= gettext "Type" %></th>
-            <th class="internal-transaction__column-header"><%= gettext "From" %></th>
-            <th class="internal-transaction__column-header"><%= gettext "To" %></th>
-            <th class="internal-transaction__column-header"><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
-            <th class="internal-transaction__column-header"><%= gettext "Gas Limit" %> (<%= gettext "Gas" %>)</th>
+            <th><%= gettext "Type" %></th>
+            <th><%= gettext "From" %></th>
+            <th><%= gettext "To" %></th>
+            <th><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
+            <th><%= gettext "Gas Limit" %> (<%= gettext "Gas" %>)</th>
           </thead>
           <%= for transaction <- @internal_transactions do %>
             <tgroup>
               <tr>
                 <td><%= transaction.call_type %></td>
-                <td class="internal-transaction__from-address">
-                  <%= link(transaction.from_address,
-                  to: address_path(@conn, :show, @conn.assigns.locale, transaction.from_address),
-                  class: "transaction-log__link") %>
+                <td>
+                  <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
                 </td>
-                <td class="internal-transaction__to-address">
-                  <%= if transaction.to_address do %>
-                      <%= link(transaction.to_address,
-                               to: address_path(@conn, :show, @conn.assigns.locale, transaction.to_address),
-                               class: "transaction-log__link") %>
-                  <% end %>
+                <td>
+                  <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
                 </td>
                 <td><%= value(transaction, include_label: false) %></td>
                 <td><%= gas(transaction) %></td>

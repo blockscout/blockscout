@@ -21,7 +21,7 @@
   &__link { color: explorer-color("blue", "500"); }
 
   &__table {
-    @extend %table;
+  
     @include explorer-typography("body1");
     color: explorer-color("slate", "900");
   }

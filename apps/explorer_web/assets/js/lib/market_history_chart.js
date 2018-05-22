@@ -71,9 +71,13 @@ function createMarketHistoryChart (ctx) {
         }, {
           id: 'marketCap',
           position: 'right',
+          gridLines: {
+            display: false
+          },
           ticks: {
             callback: (value, index, values) => formatMarketCap(value),
-            maxTicksLimit: 6
+            maxTicksLimit: 6,
+            drawOnChartArea: false
           }
         }]
       },

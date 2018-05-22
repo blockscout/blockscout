@@ -1,62 +1,54 @@
 <section class="container__section">
-  <div class="blocks__headline">
-    <h1 class="blocks__headline-title">
+  <div>
+    <h1>
+      Blocks
+    </h1>
+    <p>
       <%= gettext(
             "Showing #%{start_block} to #%{end_block}",
             start_block: List.first(@blocks.entries).number,
             end_block: List.last(@blocks.entries).number
           ) %>
-    </h1>
-    <div class="blocks__pagination">
-      <%= pagination_links(
-            @conn,
-            @blocks,
-            ["en"],
-            distance: 1,
-            first: true,
-            next: Phoenix.HTML.raw("&rsaquo;"),
-            path: &block_path/4,
-            previous: Phoenix.HTML.raw("&lsaquo;"),
-            view_style: :bulma
-          ) %>
-    </div>
+    </p>
   </div>
-  <div class="blocks">
-    <div class="blocks__container">
-      <table class="blocks__table">
-        <thead class="blocks__header">
+  <div class="panels container__subsection">
+    <div class="panels__container">
+      <table class="table table-responsive-sm table-font">
+        <thead>
           <tr>
-            <th class="blocks__column-header"><%= gettext "Height" %></th>
-            <th class="blocks__column-header"><%= gettext "Age" %></th>
-            <th class="blocks__column-header"><%= gettext "Transactions" %></th>
-            <th class="blocks__column-header blocks__column-header--optional"><%= gettext "Gas Used" %> (<%= gettext("Gas") %>)</th>
-            <th class="blocks__column-header blocks__column-header--optional"><%= gettext "Gas Limit" %> (<%= gettext("Gas") %>)</th>
-            <th class="blocks__column-header blocks__column-header--optional"><%= gettext "Gas Price" %></th>
+            <th><%= gettext "Height" %></th>
+            <th><%= gettext "Age" %></th>
+            <th><%= gettext "Transactions" %></th>
+            <th><%= gettext "Gas Used" %> (<%= gettext("Gas") %>)</th>
+            <th><%= gettext "Gas Limit" %> (<%= gettext("Gas") %>)</th>
+            <th><%= gettext "Gas Price" %></th>
           </tr>
         </thead>
         <tbody>
           <%= for block <- @blocks do %>
-            <tr class="blocks__row">
-              <td class="blocks__column blocks__column--height">
+            <tr>
+              <td>
                 <%= link(
                       block,
                       class: "blocks__link",
-                      to: block_path(@conn, :show, @conn.assigns.locale, block)
+                      to: block_path(@conn, :show, @conn.assigns.locale, block),
+                      "data-test": "block_number",
+                      "data-block-number": to_string(block.number)
                     ) %>
               </td>
-              <td class="transactions__column transactions__column--age"><%= block.timestamp |> Timex.from_now  %></td>
-              <td class="blocks__column blocks__column--transactions-count">
+              <td><%= block.timestamp |> Timex.from_now  %></td>
+              <td>
                 <%= gettext("%{count} transactions", count: block.transactions |> Enum.count) %>
               </td>
-              <td class="blocks__column blocks__column--optional blocks__column--gas-used">
+              <td>
                 <%= block.gas_used |> Cldr.Number.to_string! %> (<%=
                 block.gas_used / block.gas_limit |> Cldr.Number.to_string!(format: "#.#%")
                 %>)
               </td>
-              <td class="blocks__column blocks__column--optional blocks__column--gas-limit">
+              <td>
                 <%= block.gas_limit |> Cldr.Number.to_string! %>
               </td>
-              <td class="blocks__column blocks__column--optional blocks__column--gas-price">
+              <td>
                 <%= average_gas_price(block) %>
               </td>
             </tr>
@@ -64,5 +56,18 @@
         </tbody>
       </table>
     </div>
+  </div>
+  <div class="blocks__pagination">
+    <%= pagination_links(
+          @conn,
+          @blocks,
+          ["en"],
+          distance: 1,
+          first: true,
+          next: Phoenix.HTML.raw("&rsaquo;"),
+          path: &block_path/4,
+          previous: Phoenix.HTML.raw("&lsaquo;"),
+          view_style: :bulma
+        ) %>
   </div>
 </section>

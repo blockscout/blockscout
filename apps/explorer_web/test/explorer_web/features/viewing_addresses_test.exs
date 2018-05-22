@@ -1,7 +1,7 @@
-defmodule ExplorerWeb.AddressPageTest do
+defmodule ExplorerWeb.ViewingAddressesTest do
   use ExplorerWeb.FeatureCase, async: true
 
-  alias ExplorerWeb.AddressPage
+  alias ExplorerWeb.{AddressPage, HomePage}
 
   setup do
     block = insert(:block)
@@ -25,6 +25,15 @@ defmodule ExplorerWeb.AddressPageTest do
        transactions: %{from_lincoln: from_lincoln, from_taft: from_taft},
        addresses: %{lincoln: lincoln, taft: taft}
      }}
+  end
+
+  test "search for address", %{session: session} do
+    address = insert(:address)
+
+    session
+    |> HomePage.visit_page()
+    |> HomePage.search(to_string(address.hash))
+    |> assert_has(AddressPage.detail_hash(address))
   end
 
   test "viewing address overview information", %{session: session} do

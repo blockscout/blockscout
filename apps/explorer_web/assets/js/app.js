@@ -21,3 +21,6 @@ import 'bootstrap'
 // import socket from "./socket"
 import './lib/sidebar'
 import './lib/market_history_chart'
+import './lib/card_flip'
+import './lib/tooltip'
+import './lib/clipboard_buttons'

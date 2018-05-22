@@ -1,0 +1,37 @@
+<header class="header">
+    <div class="header__row header__row--search">
+      <div class="header__cell header__cell--search">
+        <%= form_for @conn, chain_path(@conn, :search, Gettext.get_locale), [class: "header__cell--search-form", method: :get, enforce_utf8: false], fn f -> %>
+          <i class="header__cell--search-glass fa fa-search"></i>
+          <%= search_input f, :q, class: 'header__cell--search-input', placeholder: gettext("Search by address, transaction hash, or block number"), "data-test": "search_input" %>
+        <% end %>
+      </div>
+    </div>
+    <div class="header__row header__row--topnav">
+      <div class="header__cell header__cell--links" align="right">
+        <%= link to: chain_path(@conn, :show) do %>
+        <div tabindex="0">
+            <i class="fas fa-home fa-2x"></i>
+        </div>
+        <% end %>
+      </div>
+      <div class="header__cell header__cell--links" align="right">
+        <%= link to: block_path(@conn, :index, Gettext.get_locale) do %>
+          <div tabindex="0">
+              <img src="<%= static_path(@conn, "/images/block.svg") %>" />
+              <%= gettext("Blocks") %>
+          </div>
+        <% end %>
+      </div>
+      <div class="header__cell header__cell--links dropdown">
+        <a class="dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <img src="<%= static_path(@conn, "/images/transaction.svg") %>" />
+          <%= gettext("Transactions") %>
+        </a>
+        <div class="dropdown-menu topnav-dropdown" aria-labelledby="navbarDropdown">
+          <%= link(gettext("Validated"), to: transaction_path(@conn, :index, Gettext.get_locale), class: "dropdown-item topnav-dropdown-items")  %>
+          <%= link(gettext("Pending"), to: pending_transaction_path(@conn, :index, Gettext.get_locale), class: "dropdown-item topnav-dropdown-items") %>
+        </div>
+      </div>
+    </div>
+</header>

@@ -1,24 +1,24 @@
-<div class="transaction__header">
-  <h1 class="transaction__heading"><%= gettext "Transaction Details" %></h1>
-  <h3 class="transaction__subheading"><%= @transaction %></h3>
-</div>
-<div class="transaction__container">
-  <div class="transaction__attributes">
-    <div class="transaction__column">
-      <dl>
-        <div class="transaction__item">
-          <dt class="transaction__item-key"><%= gettext "Transaction Status" %></dt>
-          <dd class="transaction__item-value transaction__item-value--status">
-            <div class="transaction__status">
+<h1><%= gettext "Transaction Details" %></h1>
+<p data-test="transaction_detail_hash"><%= @transaction %></p>
+<div class="panels container__subsection">
+  <div class="panels__container row">
+    <div class="col-md-6">
+      <table class="table table-font table-responsive-sm table-horizontal">
+        <tbody>
+          <tr>
+            <th scope="row">
+              <%= gettext "Transaction Status" %>
+            </th>
+            <td>
               <%= formatted_status(@transaction) %>
               <div class="transaction__dot transaction__dot--<%= status(@transaction) %>"></div>
-            </div>
-          </dd>
-        </div>
-        <div class="transaction__item">
-          <dt class="transaction__item-key"><%= gettext "Block Number" %></dt>
-          <dd class="transaction__item-value">
-            <span class="transaction__item--primary">
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">
+              <%= gettext "Block Number" %>
+            </th>
+            <td>
               <% block = @transaction.block %>
               <%= if block do %>
                 <%= link(
@@ -27,88 +27,124 @@
                       to: block_path(@conn, :show, @conn.assigns.locale, block)
                     ) %>
               <% end %>
-            </span>
-            <span class="transaction__item--secondary">
               (<%= gettext "%{confirmations} block confirmations", confirmations: confirmations(@transaction, max_block_number: @max_block_number) %>)
-            </span>
-          </dd>
-        </div>
-        <div class="transaction__item">
-          <dt class="transaction__item-key"><%= gettext "Age" %></dt>
-          <dd class="transaction__item-value" title="<%= formatted_timestamp(@transaction) %>">
-            <%= formatted_age(@transaction) %>
-          </dd>
-        </div>
-        <div class="transaction__item">
-          <dt class="transaction__item-key"><%= gettext "Value" %></dt>
-          <dd class="transaction__item-value"><%= value(@transaction) %></dd>
-        </div>
-        <div class="transaction__item">
-          <dt class="transaction__item-key"><%= gettext "From" %></dt>
-          <dd class="transaction__item-value">
-            <%= if @transaction.from_address do %>
-              <%= link(
-                    @transaction.from_address,
-                    class: "transaction__link",
-                    to: address_path(@conn, :show, @conn.assigns.locale, @transaction.from_address)
-                  ) %>
-            <% else %>
-              <%= gettext "Pending" %>
-            <% end %>
-          </dd>
-        </div>
-        <div class="transaction__item">
-          <dt class="transaction__item-key"><%= gettext "To" %></dt>
-          <dd class="transaction__item-value">
-            <%= if @transaction.to_address do %>
-              <%= link(
-                    @transaction.to_address,
-                    class: "transaction__link",
-                    to: address_path(@conn, :show, @conn.assigns.locale, @transaction.to_address)
-                  ) %>
-            <% else %>
-              <%= gettext "Pending" %>
-            <% end %>
-          </dd>
-        </div>
-        <div class="transaction__item">
-          <dt class="transaction__item-key"><%= gettext "Nonce" %></dt>
-          <dd class="transaction__item-value"><%= @transaction.nonce %></dd>
-        </div>
-      </dl>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">
+              <%= gettext "Age" %>
+            </th>
+            <td title="<%= formatted_timestamp(@transaction) %>">
+              <%= formatted_age(@transaction) %>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">
+              <%= gettext "Value" %>
+            </th>
+            <td>
+              <%= value(@transaction) %>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">
+              <%= gettext "From" %>
+            </th>
+            <td>
+              <%= if @transaction.from_address do %>
+                <%= link(
+                      @transaction.from_address,
+                      class: "transaction__link",
+                      to: address_path(@conn, :show, @conn.assigns.locale, @transaction.from_address)
+                    ) %>
+              <% else %>
+                <%= gettext "Pending" %>
+              <% end %>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">
+              <%= gettext "To" %>
+            </th>
+            <td>
+              <%= if @transaction.to_address do %>
+                <%= link(
+                      @transaction.to_address,
+                      class: "transaction__link",
+                      to: address_path(@conn, :show, @conn.assigns.locale, @transaction.to_address)
+                    ) %>
+              <% else %>
+                <%= gettext "Pending" %>
+              <% end %>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">
+              <%= gettext "Nonce" %>
+            </th>
+            <td>
+              <%= @transaction.nonce %>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-    <div class="transaction__column">
-      <dl>
-        <div class="transaction__item">
-          <dt class="transaction__item-key"><%= gettext "First Seen" %></dt>
-          <% first_seen = first_seen(@transaction) %>
-          <dd class="transaction__item-value" title="<%= first_seen %>"><%= first_seen %></dd>
-        </div>
-        <div class="transaction__item">
-          <dt class="transaction__item-key"><%= gettext "Last Seen" %></dt>
-          <% last_seen = last_seen(@transaction) %>
-          <dd class="transaction__item-value" title="<%= last_seen %>"><%= last_seen %></dd>
-        </div>
-        <div class="transaction__item">
-          <dt class="transaction__item-key"><%= gettext "Gas Limit" %></dt>
-          <dd class="transaction__item-value"><%= format_gas_limit(@transaction.gas) %> <%= gettext("Gas") %></dd>
-        </div>
-        <div class="transaction__item">
-          <dt class="transaction__item-key"><%= gettext "Gas Price" %></dt>
-          <dd class="transaction__item-value">
-            <%= gas_price(@transaction, :wei) %>
+    <div class="col-md-6">
+      <table class="table table-font table-responsive-sm table-horizontal">
+        <tbody>
+          <tr>
+            <th scope="row">
+              <%= gettext "First Seen" %>
+            </th>
+            <% first_seen = first_seen(@transaction) %>
+            <td title="<%= first_seen %>">
+              <%= first_seen %>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">
+              <%= gettext "Last Seen" %>
+            </th>
+            <% last_seen = last_seen(@transaction) %>
+            <td title="<%= last_seen %>">
+              <%= last_seen %>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">
+              <%= gettext "Gas Limit" %>
+            </th>
+            <td title="<%= last_seen %>">
+              <%= format_gas_limit(@transaction.gas) %> <%= gettext("Gas") %>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">
+              <%= gettext "Gas Price" %>
+            </th>
+            <td title="<%= last_seen %>">
+              <%= gas_price(@transaction, :wei) %>
               (<%= gas_price(@transaction, :gwei) %>)
-          </dd>
-        </div>
-        <div class="transaction__item">
-          <dt class="transaction__item-key"><%= gettext "Cumulative Gas Used" %></dt>
-          <dd class="transaction__item-value"><%= cumulative_gas_used(@transaction) %> <%= gettext("Wei") %></dd>
-        </div>
-        <div class="transaction__item">
-          <dt class="transaction__item-key"><%= gettext "Input" %></dt>
-          <dd class="transaction__item-value" title="<%= @transaction.input %>"><%= @transaction.input %></dd>
-        </div>
-      </dl>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">
+              <%= gettext "Total Gas Used" %>
+            </th>
+            <td title="<%= last_seen %>">
+              <%= cumulative_gas_used(@transaction) %> <%= gettext("Wei") %>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">
+              <%= gettext "Input" %>
+            </th>
+            <td title="<%= @transaction.input %>">
+              <%= @transaction.input %>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </div>

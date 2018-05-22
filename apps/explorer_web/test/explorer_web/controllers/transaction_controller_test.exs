@@ -97,11 +97,9 @@ defmodule ExplorerWeb.TransactionControllerTest do
 
       conn = get(conn, transaction_path(conn, :show, :en, transaction))
 
-      assert html = html_response(conn, 200)
-
-      assert html |> Floki.find("div.transaction__header h3") |> Floki.text() == to_string(transaction.hash)
-
-      assert html |> Floki.find("span.transaction__item--primary a") |> Floki.text() == to_string(block.number)
+      assert html_response(conn, 200)
+      assert transaction.hash == conn.assigns.transaction.hash
+      assert block.number == conn.assigns.transaction.block.number
     end
 
     test "returns a transaction without associated block data", %{conn: conn} do
@@ -109,10 +107,8 @@ defmodule ExplorerWeb.TransactionControllerTest do
 
       conn = get(conn, transaction_path(conn, :show, :en, transaction))
 
-      assert html = html_response(conn, 200)
-
-      assert html |> Floki.find("div.transaction__header h3") |> Floki.text() == to_string(transaction.hash)
-      assert html |> Floki.find("span.transaction__item--primary a") |> Floki.text() == ""
+      assert html_response(conn, 200)
+      assert transaction.hash == conn.assigns.transaction.hash
     end
 
     test "returns internal transactions for the transaction", %{conn: conn} do
