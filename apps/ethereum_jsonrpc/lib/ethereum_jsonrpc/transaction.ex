@@ -56,15 +56,52 @@ defmodule EthereumJSONRPC.Transaction do
           index: non_neg_integer(),
           input: String.t(),
           nonce: non_neg_integer(),
-          public_key: String.t(),
           r: non_neg_integer(),
           s: non_neg_integer(),
-          standard_v: 0 | 1,
           to_address_hash: EthereumJSONRPC.address(),
           v: non_neg_integer(),
           value: non_neg_integer()
         }
 
+  @doc """
+  Geth `elixir` can be converted to `params`.  Geth does not supply `"publicKey"` or `"standardV"`, unlike Parity.
+
+      iex> EthereumJSONRPC.Transaction.elixir_to_params(
+      ...>   %{
+      ...>     "blockHash" => "0x4e3a3754410177e6937ef1f84bba68ea139e8d1a2258c5f85db9f1cd715a1bdd",
+      ...>     "blockNumber" => 46147,
+      ...>     "from" => "0xa1e4380a3b1f749673e270229993ee55f35663b4",
+      ...>     "gas" => 21000,
+      ...>     "gasPrice" => 50000000000000,
+      ...>     "hash" => "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
+      ...>     "input" => "0x",
+      ...>     "nonce" => 0,
+      ...>     "r" => 61965845294689009770156372156374760022787886965323743865986648153755601564112,
+      ...>     "s" => 31606574786494953692291101914709926755545765281581808821704454381804773090106,
+      ...>     "to" => "0x5df9b87991262f6ba471f09758cde1c0fc1de734",
+      ...>     "transactionIndex" => 0,
+      ...>     "v" => 28,
+      ...>     "value" => 31337
+      ...>   }
+      ...> )
+      %{
+        block_hash: "0x4e3a3754410177e6937ef1f84bba68ea139e8d1a2258c5f85db9f1cd715a1bdd",
+        block_number: 46147,
+        from_address_hash: "0xa1e4380a3b1f749673e270229993ee55f35663b4",
+        gas: 21000,
+        gas_price: 50000000000000,
+        hash: "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
+        index: 0,
+        input: "0x",
+        nonce: 0,
+        r: 61965845294689009770156372156374760022787886965323743865986648153755601564112,
+        s: 31606574786494953692291101914709926755545765281581808821704454381804773090106,
+        to_address_hash: "0x5df9b87991262f6ba471f09758cde1c0fc1de734",
+        v: 28,
+        value: 31337
+      }
+
+  """
   @spec elixir_to_params(elixir) :: params
   def elixir_to_params(%{
         "blockHash" => block_hash,
@@ -75,10 +112,8 @@ defmodule EthereumJSONRPC.Transaction do
         "hash" => hash,
         "input" => input,
         "nonce" => nonce,
-        "publicKey" => public_key,
         "r" => r,
         "s" => s,
-        "standardV" => standard_v,
         "to" => to_address_hash,
         "transactionIndex" => index,
         "v" => v,
@@ -94,10 +129,8 @@ defmodule EthereumJSONRPC.Transaction do
       index: index,
       input: input,
       nonce: nonce,
-      public_key: public_key,
       r: r,
       s: s,
-      standard_v: standard_v,
       to_address_hash: to_address_hash,
       v: v,
       value: value
@@ -117,10 +150,8 @@ defmodule EthereumJSONRPC.Transaction do
       ...>     index: 0,
       ...>     input: "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
       ...>     nonce: 0,
-      ...>     public_key: "0xe5d196ad4ceada719d9e592f7166d0c75700f6eab2e3c3de34ba751ea786527cb3f6eb96ad9fdfdb9989ff572df50f1c42ef800af9c5207a38b929aff969b5c9",
       ...>     r: "0xAD3733DF250C87556335FFE46C23E34DBAFFDE93097EF92F52C88632A40F0C75",
       ...>     s: "0x72caddc0371451a58de2ca6ab64e0f586ccdb9465ff54e1c82564940e89291e3",
-      ...>     standard_v: 0,
       ...>     v: "0x8d",
       ...>     value: 0
       ...>   }

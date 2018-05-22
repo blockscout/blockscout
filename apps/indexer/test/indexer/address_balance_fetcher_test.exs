@@ -20,7 +20,7 @@ defmodule Indexer.AddressBalanceFetcherTest do
 
   describe "init/1" do
     test "fetches unfetched Block miner balance" do
-      {:ok, miner_hash} = Hash.Truncated.cast("0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca")
+      {:ok, miner_hash} = Hash.Address.cast("0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca")
       miner = insert(:address, hash: miner_hash)
       block = insert(:block, miner: miner, number: 34)
 
@@ -41,7 +41,7 @@ defmodule Indexer.AddressBalanceFetcherTest do
     end
 
     test "fetches unfetched addresses when less than max batch size" do
-      {:ok, miner_hash} = Hash.Truncated.cast("0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca")
+      {:ok, miner_hash} = Hash.Address.cast("0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca")
       miner = insert(:address, hash: miner_hash)
       block = insert(:block, miner: miner, number: 34)
 

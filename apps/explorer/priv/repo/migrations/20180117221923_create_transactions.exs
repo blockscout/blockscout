@@ -23,10 +23,8 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
       add(:internal_transactions_indexed_at, :utc_datetime, null: true)
 
       add(:nonce, :integer, null: false)
-      add(:public_key, :bytea, null: false)
       add(:r, :numeric, precision: 100, null: false)
       add(:s, :numeric, precision: 100, null: false)
-      add(:standard_v, :smallint, null: false)
 
       # `null` when a pending transaction
       add(:status, :integer, null: true)
@@ -127,8 +125,6 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
         check: "block_hash IS NOT NULL OR status IS NULL"
       )
     )
-
-    create(constraint(:transactions, :standard_v, check: "0 <= standard_v AND standard_v <= 3"))
 
     create(index(:transactions, :block_hash))
     create(index(:transactions, :from_address_hash))
