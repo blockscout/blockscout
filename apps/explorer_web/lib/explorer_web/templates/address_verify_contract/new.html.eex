@@ -1,46 +1,55 @@
-<section class="container__section block">
-  <div class="address__container">
-    <div class="address__tabs">
-      <h2 class="address__tab address__tab--active">
-        <%= link(
-          gettext("Contract Source Code"),
-          class: "address__link address__link--active",
-          to: '#'
-        ) %>
-      </h2>
+<section class="container-fluid">
+  <h1>Smart Contract</h1>
+
+  <div class="card">
+    <div class="card-header">
+      <ul class="nav nav-tabs card-header-tabs">
+        <li class="nav-item">
+          <%= link(
+            gettext("Contract Source Code"),
+            class: "nav-link active",
+            to: '#'
+          ) %>
+        </li>
+      </ul>
     </div>
-    <div class="contract__container">
+    <div class="card-body">
       <%= form_for @changeset,
           address_verify_contract_path(@conn, :create, @conn.assigns.locale, @conn.params["address_id"]),
           fn f -> %>
 
         <div class="form-group">
-          <label>Contract Address</label>
-          <%= text_input f, :address, class: "form-control" %>
+          <%= label f, :address_hash, "Contract Address" %>
+          <%= text_input f, :address_hash, class: "form-control", disabled: true %>
+          <%= error_tag f, :address_hash %>
         </div>
 
         <div class="form-group">
-          <label>Contract Name:</label>
+          <%= label f, :name, "Contract Name" %>
           <%= text_input f, :name, class: "form-control" %>
+          <%= error_tag f, :name %>
         </div>
 
         <div class="form-group">
-          <label>Compiler:</label>
-          <%= select f, :compiler, @compiler_versions, class: "form-control" %>
+          <%= label f, :compiler, "Compiler" %>
+          <%= select f, :compiler, @compiler_versions, class: "form-control", selected: "0.4.24" %>
+          <%= error_tag f, :compiler %>
         </div>
 
         <div class="form-group">
-          <label>Optimization:</label>
-          <%= select f, :optimization, ["yes", "no"], class: "form-control" %>
+          <%= label f, :optimization, "Optimization" %>
+          <%= select f, :optimization, ["No": false, "Yes": true], class: "form-control" %>
+          <%= error_tag f, :optimization %>
         </div>
 
         <div class="form-group">
-          <label>Enter the Solidity Contract Code below</label>
-          <%= textarea f, :code, class: "form-control", rows: 3 %>
+          <%= label f, :contract_source_code, "Enter the Solidity Contract Code below" %>
+          <%= textarea f, :contract_source_code, class: "form-control", rows: 3 %>
+          <%= error_tag f, :contract_source_code %>
         </div>
 
-        <%= submit "Verify and publish", class: "button--primary" %>
-        <%= reset "Reset", class: "button--tertiary" %>
+        <%= submit "Verify and publish", class: "button button--secondary button--sm" %>
+        <%= reset "Reset", class: "button button--tertiary button--sm" %>
       <% end %>
     </div>
   </div>

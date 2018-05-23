@@ -5,12 +5,13 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
 
   alias Explorer.SmartContract.Solidity.CodeCompiler
 
-  describe "run" do
+  describe "run/2" do
     test "compiles a smart contract using the solidity command line" do
       name = "SimpleStorage"
+      optimization = false
 
       code = """
-      pragma solidity ^0.4.23;
+      pragma solidity ^0.4.24;
 
       contract SimpleStorage {
           uint storedData;
@@ -25,18 +26,30 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
       }
       """
 
-      response = CodeCompiler.run(name, code)
+      response = CodeCompiler.run(name, code, optimization)
 
-      assert response["contracts"] != nil
+      assert %{
+               "contracts" => %{
+                 ^name => %{
+                   ^name => %{
+                     "abi" => _,
+                     "evm" => %{
+                       "bytecode" => %{"object" => _}
+                     }
+                   }
+                 }
+               }
+             } = response
     end
   end
 
-  describe "generate_settings" do
+  describe "generate_settings/2" do
     test "creates a json file with the solidity compiler expected settings" do
       name = "SimpleStorage"
+      optimization = false
 
       code = """
-      pragma solidity ^0.4.23;
+      pragma solidity ^0.4.24;
 
       contract SimpleStorage {
           uint storedData;
@@ -51,7 +64,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
       }
       """
 
-      generated = CodeCompiler.generate_settings(name, code)
+      generated = CodeCompiler.generate_settings(name, code, optimization)
 
       assert String.contains?(generated, "contract SimpleStorage") == true
       assert String.contains?(generated, "settings") == true
