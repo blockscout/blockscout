@@ -14,10 +14,10 @@ defmodule ExplorerWeb.CurrencyHelpers do
   ## Examples
 
       iex> format_usd_value(%USD{value: Decimal.new(5)})
-      "$5 USD"
+      "$5.00 USD"
 
       iex> format_usd_value(%USD{value: Decimal.new(5000)})
-      "$5,000 USD"
+      "$5,000.00 USD"
 
       iex> format_usd_value(%USD{value: Decimal.new(0.000005)})
       "$0.000005 USD"
@@ -28,7 +28,7 @@ defmodule ExplorerWeb.CurrencyHelpers do
   def format_usd_value(%USD{value: nil}), do: nil
 
   def format_usd_value(%USD{value: value}) do
-    case Number.to_string(value, format: "#,##0.##################") do
+    case Number.to_string(value, format: "#,##0.00################") do
       {:ok, formatted} -> "$#{formatted} " <> gettext("USD")
       _ -> nil
     end

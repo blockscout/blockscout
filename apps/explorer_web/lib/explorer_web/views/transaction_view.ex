@@ -34,7 +34,7 @@ defmodule ExplorerWeb.TransactionView do
   end
 
   defp fee_to_currency({fee_type, fee}, denomination: denomination) do
-    {fee_type, format_wei_value(Wei.from(fee, :wei), denomination, fractional_digits: 18)}
+    {fee_type, format_wei_value(Wei.from(fee, :wei), denomination)}
   end
 
   defp fee_to_currency({fee_type, fee}, exchange_rate: %Token{} = exchange_rate) do
