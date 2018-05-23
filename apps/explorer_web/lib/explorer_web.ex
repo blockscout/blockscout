@@ -24,6 +24,7 @@ defmodule ExplorerWeb do
       import ExplorerWeb.Controller
       import ExplorerWeb.Router.Helpers
       import ExplorerWeb.Gettext
+      import ExplorerWeb.ErrorHelpers
       import Plug.Conn
     end
   end
@@ -40,7 +41,7 @@ defmodule ExplorerWeb do
       # Use all HTML functionality (forms, tags, etc)
       use Phoenix.HTML
 
-      import ExplorerWeb.{CurrencyHelpers, Gettext, Router.Helpers, WeiHelpers}
+      import ExplorerWeb.{CurrencyHelpers, Gettext, Router.Helpers, WeiHelpers, ErrorHelpers}
       import Scrivener.HTML
     end
   end

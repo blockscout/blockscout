@@ -79,7 +79,7 @@ defmodule ExplorerWeb.Router do
         AddressContractController,
         only: [:index],
         as: :contract
-      end
+      )
 
       resources(
         "/contract",

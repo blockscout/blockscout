@@ -3,32 +3,33 @@ defmodule Explorer.SmartContract.Solidity.CompilerVersion do
   Adapter for fetching compiler versions from https://solc-bin.ethereum.org/bin/list.json.
   """
 
-  alias HTTPoison.{Error, Response}
-
   @doc """
-  Fetches list of compilers from Ethereum Solidity API.
+  Fetches a list of compilers from the Ethereum Solidity API.
   """
-  def fetch_versions() do
+  @spec fetch_versions :: {atom, [map]}
+  def fetch_versions do
     headers = [{"Content-Type", "application/json"}]
 
     case HTTPoison.get(source_url(), headers) do
-      {:ok, %Response{body: body, status_code: 200}} ->
+      {:ok, %{status_code: 200, body: body}} ->
         {:ok, format_data(body)}
 
-      {:ok, %Response{body: body, status_code: status_code}} when status_code in 400..499 ->
+      {:ok, %{status_code: _status_code, body: body}} ->
         {:error, decode_json(body)["error"]}
 
-      {:error, %Error{reason: reason}} ->
+      {:error, %{reason: reason}} ->
         {:error, reason}
     end
   end
 
   defp format_data(json) do
     {:ok, releases} =
-      Jason.decode!(json)
+      json
+      |> Jason.decode!()
       |> Map.fetch("releases")
 
-    Map.to_list(releases)
+    releases
+    |> Map.to_list()
     |> Enum.map(fn {key, _value} -> {key, key} end)
     |> Enum.sort()
     |> Enum.reverse()

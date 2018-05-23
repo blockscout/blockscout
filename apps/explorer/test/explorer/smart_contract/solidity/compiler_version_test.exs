@@ -15,7 +15,7 @@ defmodule Explorer.SmartContract.Solidity.CompilerVersionTest do
       {:ok, bypass: bypass}
     end
 
-    test "fetches the list of the solidity compiler versions", %{ bypass: bypass } do
+    test "fetches the list of the solidity compiler versions", %{bypass: bypass} do
       Bypass.expect(bypass, fn conn ->
         assert "GET" == conn.method
         assert "/bin/list.json" == conn.request_path
@@ -24,7 +24,21 @@ defmodule Explorer.SmartContract.Solidity.CompilerVersionTest do
       end)
 
       assert {:ok, versions} = CompilerVersion.fetch_versions()
-      assert Enum.any?(versions, fn (item) -> item == {"0.4.9", "0.4.9"} end) == true
+      assert Enum.any?(versions, fn item -> item == {"0.4.9", "0.4.9"} end) == true
+    end
+
+    test "returns error when list of versions is not available", %{bypass: bypass} do
+      Bypass.expect(bypass, fn conn ->
+        Conn.resp(conn, 400, ~S({"error": "bad request"}))
+      end)
+
+      assert {:error, "bad request"} = CompilerVersion.fetch_versions()
+    end
+
+    test "returns error when there is server error", %{bypass: bypass} do
+      Bypass.down(bypass)
+
+      assert {:error, :econnrefused} = CompilerVersion.fetch_versions()
     end
   end
 

@@ -516,3 +516,7 @@ msgstr ""
 #: lib/explorer_web/templates/address_contract/index.html.eex:34
 msgid "Contract bytecode"
 msgstr ""
+
+#: lib/explorer_web/templates/address_verify_contract/new.html.eex:9
+msgid "Contract Source Code"
+msgstr "Contract Source Code"

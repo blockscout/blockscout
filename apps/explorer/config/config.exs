@@ -5,6 +5,8 @@
 # is restricted to this project.
 use Mix.Config
 
+config :ecto, json_library: Jason
+
 config :explorer, :indexer,
   block_rate: 5_000,
   debug_logs: !!System.get_env("DEBUG_INDEXER")
