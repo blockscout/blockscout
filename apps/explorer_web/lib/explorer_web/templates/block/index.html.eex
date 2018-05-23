@@ -1,4 +1,4 @@
-<section class="container__section">
+<section class="container-fluid">
   <div>
     <h1>
       Blocks
@@ -11,8 +11,8 @@
           ) %>
     </p>
   </div>
-  <div class="panels container__subsection">
-    <div class="panels__container">
+  <div class="card">
+    <div class="card-body">
       <table class="table table-responsive-sm table-font">
         <thead>
           <tr>
