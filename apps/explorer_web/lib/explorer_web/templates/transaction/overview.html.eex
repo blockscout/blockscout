@@ -124,7 +124,7 @@
               <%= gettext "Gas Price" %>
             </th>
             <td title="<%= last_seen %>">
-              <%= gas_price(@transaction, :wei) %>
+              <%= gas_price(@transaction, :ether) %>
               (<%= gas_price(@transaction, :gwei) %>)
             </td>
           </tr>
