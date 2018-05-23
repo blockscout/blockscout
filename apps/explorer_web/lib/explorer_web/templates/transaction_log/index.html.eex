@@ -1,6 +1,8 @@
-<section class="container__section">
+<section class="container-fluid">
+
   <%= render ExplorerWeb.TransactionView, "overview.html", assigns %>
-  <div>
+
+  <section>
     <ul class="nav nav-tabs">
       <li class="nav-item">
         <%= link(
@@ -17,52 +19,52 @@
             ) %>
       </li>
     </ul>
-  </div>
-  <div class="panels container__subsection">
-    <div class="panels__container">
-      <%= if length(@logs.entries) > 0 do %>
-        <table class="table table-responsive-sm table-font">
-          <thead>
-            <th><%= gettext "Address" %></th>
-            <th><%= gettext "Topic" %></th>
-          </thead>
-          <%= for log <- @logs.entries do %>
-            <tgroup>
-              <tr data-test="transaction_log">
-                <td>
-                  <%= link(
-                        log.address,
-                        to: address_path(@conn, :show, @conn.assigns.locale, log.address),
-                        "data-test": "log_address_link",
-                        "data-address-hash": log.address
-                      ) %>
-                </td>
-                <td><%= log.first_topic %></td>
-              </tr>
-              <% unless is_nil(log.second_topic) do %>
-                <tr>
-                  <td>topic[1]</td>
-                  <td><%= log.second_topic %></td>
+    <div class="card">
+      <div class="card-body">
+        <%= if length(@logs.entries) > 0 do %>
+          <table class="table table-responsive-sm table-font">
+            <thead>
+              <th><%= gettext "Address" %></th>
+              <th><%= gettext "Topic" %></th>
+            </thead>
+            <%= for log <- @logs.entries do %>
+              <tgroup>
+                <tr data-test="transaction_log">
+                  <td>
+                    <%= link(
+                          log.address,
+                          to: address_path(@conn, :show, @conn.assigns.locale, log.address),
+                          "data-test": "log_address_link",
+                          "data-address-hash": log.address
+                        ) %>
+                  </td>
+                  <td><%= log.first_topic %></td>
                 </tr>
-              <% end %>
-              <% unless is_nil(log.third_topic) do %>
-                <tr>
-                  <td>topic[2]</td>
-                  <td><%= log.third_topic %></td>
-                </tr>
-              <% end %>
-              <% unless is_nil(log.data) do %>
-                <tr>
-                  <td>↠</td>
-                  <td><%= log.data %></td>
-                </tr>
-              <% end %>
-            </tgroup>
-          <% end %>
-        </table>
-      <% else %>
-      <p><%= gettext "There are no logs currently." %></p>
-      <% end %>
+                <% unless is_nil(log.second_topic) do %>
+                  <tr>
+                    <td>topic[1]</td>
+                    <td><%= log.second_topic %></td>
+                  </tr>
+                <% end %>
+                <% unless is_nil(log.third_topic) do %>
+                  <tr>
+                    <td>topic[2]</td>
+                    <td><%= log.third_topic %></td>
+                  </tr>
+                <% end %>
+                <% unless is_nil(log.data) do %>
+                  <tr>
+                    <td>↠</td>
+                    <td><%= log.data %></td>
+                  </tr>
+                <% end %>
+              </tgroup>
+            <% end %>
+          </table>
+        <% else %>
+        <p><%= gettext "There are no logs currently." %></p>
+        <% end %>
+      </div>
     </div>
-  </div>
+  </section>
 </section>

@@ -1,6 +1,8 @@
-<section class="container__section">
+<section class="container-fluid">
+
   <%= render ExplorerWeb.TransactionView, "overview.html", assigns %>
-  <div>
+
+  <section>
     <ul class="nav nav-tabs">
       <li class="nav-item">
         <%= link(
@@ -18,37 +20,37 @@
             ) %>
       </li>
     </ul>
-  </div>
-  <div class="panels container__subsection">
-    <div class="panels__container">
-      <%= if length(@internal_transactions.entries) > 0 do %>
-        <table class="table table-responsive-sm table-font">
-          <thead>
-            <th><%= gettext "Type" %></th>
-            <th><%= gettext "From" %></th>
-            <th><%= gettext "To" %></th>
-            <th><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
-            <th><%= gettext "Gas Limit" %> (<%= gettext "Gas" %>)</th>
-          </thead>
-          <%= for transaction <- @internal_transactions do %>
-            <tgroup>
-              <tr>
-                <td><%= transaction.call_type %></td>
-                <td>
-                  <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
-                </td>
-                <td>
-                  <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
-                </td>
-                <td><%= value(transaction, include_label: false) %></td>
-                <td><%= gas(transaction) %></td>
-              </tr>
-            </tgroup>
-          <% end %>
-        </table>
-      <% else %>
-        <p><%= gettext "There are no Internal Transactions" %></p>
-      <% end %>
+    <div class="card">
+      <div class="card-body">
+        <%= if length(@internal_transactions.entries) > 0 do %>
+          <table class="table table-responsive-sm table-font">
+            <thead>
+              <th><%= gettext "Type" %></th>
+              <th><%= gettext "From" %></th>
+              <th><%= gettext "To" %></th>
+              <th><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
+              <th><%= gettext "Gas Limit" %> (<%= gettext "Gas" %>)</th>
+            </thead>
+            <%= for transaction <- @internal_transactions do %>
+              <tgroup>
+                <tr>
+                  <td><%= transaction.call_type %></td>
+                  <td>
+                    <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
+                  </td>
+                  <td>
+                    <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
+                  </td>
+                  <td><%= value(transaction, include_label: false) %></td>
+                  <td><%= gas(transaction) %></td>
+                </tr>
+              </tgroup>
+            <% end %>
+          </table>
+        <% else %>
+          <p><%= gettext "There are no Internal Transactions" %></p>
+        <% end %>
+      </div>
     </div>
-  </div>
+  </section>
 </section>

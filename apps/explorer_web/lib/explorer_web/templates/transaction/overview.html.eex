@@ -1,160 +1,165 @@
-<h1><%= gettext "Transaction Details" %></h1>
-<p data-test="transaction_detail_hash"><%= @transaction %></p>
-<div class="panels container__subsection">
-  <div class="panels__container row">
-    <div class="col-md-6">
-      <table class="table table-font table-responsive-sm table-horizontal">
-        <tbody>
-          <tr>
-            <th scope="row">
-              <%= gettext "Transaction Status" %>
-            </th>
-            <td>
-              <%= formatted_status(@transaction) %>
-              <div class="transaction__dot transaction__dot--<%= status(@transaction) %>"></div>
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">
-              <%= gettext "Block Number" %>
-            </th>
-            <td>
-              <% block = @transaction.block %>
-              <%= if block do %>
-                <%= link(
-                      block,
-                      class: "transaction__link",
-                      to: block_path(@conn, :show, @conn.assigns.locale, block)
-                    ) %>
-              <% end %>
-              (<%= gettext "%{confirmations} block confirmations", confirmations: confirmations(@transaction, max_block_number: @max_block_number) %>)
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">
-              <%= gettext "Age" %>
-            </th>
-            <td title="<%= formatted_timestamp(@transaction) %>">
-              <%= formatted_age(@transaction) %>
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">
-              <%= gettext "Value" %>
-            </th>
-            <td>
-              <div><%= value(@transaction) %> </div>
-              <div><%= formatted_usd_value(@transaction, @exchange_rate) %></div>
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">
-              <%= gettext "From" %>
-            </th>
-            <td>
-              <%= if @transaction.from_address do %>
-                <%= link(
-                      @transaction.from_address,
-                      class: "transaction__link",
-                      to: address_path(@conn, :show, @conn.assigns.locale, @transaction.from_address)
-                    ) %>
-              <% else %>
-                <%= gettext "Pending" %>
-              <% end %>
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">
-              <%= gettext "To" %>
-            </th>
-            <td>
-              <%= if @transaction.to_address do %>
-                <%= link(
-                      @transaction.to_address,
-                      class: "transaction__link",
-                      to: address_path(@conn, :show, @conn.assigns.locale, @transaction.to_address)
-                    ) %>
-              <% else %>
-                <%= gettext "Pending" %>
-              <% end %>
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">
-              <%= gettext "Nonce" %>
-            </th>
-            <td>
-              <%= @transaction.nonce %>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="col-md-6">
-      <table class="table table-font table-responsive-sm table-horizontal">
-        <tbody>
-          <tr>
-            <th scope="row">
-              <%= gettext "First Seen" %>
-            </th>
-            <% first_seen = first_seen(@transaction) %>
-            <td title="<%= first_seen %>">
-              <%= first_seen %>
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">
-              <%= gettext "Last Seen" %>
-            </th>
-            <% last_seen = last_seen(@transaction) %>
-            <td title="<%= last_seen %>">
-              <%= last_seen %>
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">
-              <%= gettext "Gas Limit" %>
-            </th>
-            <td title="<%= last_seen %>">
-              <%= format_gas_limit(@transaction.gas) %> <%= gettext("Gas") %>
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">
-              <%= gettext "Gas Price" %>
-            </th>
-            <td title="<%= last_seen %>">
-              <%= gas_price(@transaction, :wei) %>
-              (<%= gas_price(@transaction, :gwei) %>)
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">
-              <%= gettext "TX Fee" %>
-            </th>
-            <td>
-              <div><%= formatted_fee(@transaction, denomination: :ether) %></div>
-              <div><%= formatted_fee(@transaction, exchange_rate: @exchange_rate) %></div>
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">
-              <%= gettext "Total Gas Used" %>
-            </th>
-            <td title="<%= last_seen %>">
-              <%= cumulative_gas_used(@transaction) %> <%= gettext("Wei") %>
-            </td>
-          </tr>
-          <tr>
-            <th scope="row">
-              <%= gettext "Input" %>
-            </th>
-            <td title="<%= @transaction.input %>">
-              <%= @transaction.input %>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+<section>
+  <h1><%= gettext "Transaction Details" %></h1>
+  <p data-test="transaction_detail_hash"><%= @transaction %></p>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <table class="table table-font table-responsive-sm table-horizontal">
+            <tbody>
+              <tr>
+                <th scope="row">
+                  <%= gettext "Transaction Status" %>
+                </th>
+                <td>
+                  <%= formatted_status(@transaction) %>
+                  <div class="transaction__dot transaction__dot--<%= status(@transaction) %>"></div>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  <%= gettext "Block Number" %>
+                </th>
+                <td>
+                  <% block = @transaction.block %>
+                  <%= if block do %>
+                    <%= link(
+                          block,
+                          class: "transaction__link",
+                          to: block_path(@conn, :show, @conn.assigns.locale, block)
+                        ) %>
+                  <% end %>
+                  (<%= gettext "%{confirmations} block confirmations", confirmations: confirmations(@transaction, max_block_number: @max_block_number) %>)
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  <%= gettext "Age" %>
+                </th>
+                <td title="<%= formatted_timestamp(@transaction) %>">
+                  <%= formatted_age(@transaction) %>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  <%= gettext "Value" %>
+                </th>
+                <td>
+                  <div><%= value(@transaction) %> </div>
+                  <div><%= formatted_usd_value(@transaction, @exchange_rate) %></div>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  <%= gettext "From" %>
+                </th>
+                <td>
+                  <%= if @transaction.from_address do %>
+                    <%= link(
+                          @transaction.from_address,
+                          class: "transaction__link",
+                          to: address_path(@conn, :show, @conn.assigns.locale, @transaction.from_address)
+                        ) %>
+                  <% else %>
+                    <%= gettext "Pending" %>
+                  <% end %>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  <%= gettext "To" %>
+                </th>
+                <td>
+                  <%= if @transaction.to_address do %>
+                    <%= link(
+                          @transaction.to_address,
+                          class: "transaction__link",
+                          to: address_path(@conn, :show, @conn.assigns.locale, @transaction.to_address)
+                        ) %>
+                  <% else %>
+                    <%= gettext "Pending" %>
+                  <% end %>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  <%= gettext "Nonce" %>
+                </th>
+                <td>
+                  <%= @transaction.nonce %>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="col-md-6">
+          <table class="table table-font table-responsive-sm table-horizontal">
+            <tbody>
+              <tr>
+                <th scope="row">
+                  <%= gettext "First Seen" %>
+                </th>
+                <% first_seen = first_seen(@transaction) %>
+                <td title="<%= first_seen %>">
+                  <%= first_seen %>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  <%= gettext "Last Seen" %>
+                </th>
+                <% last_seen = last_seen(@transaction) %>
+                <td title="<%= last_seen %>">
+                  <%= last_seen %>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  <%= gettext "Gas Limit" %>
+                </th>
+                <td title="<%= last_seen %>">
+                  <%= format_gas_limit(@transaction.gas) %> <%= gettext("Gas") %>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  <%= gettext "Gas Price" %>
+                </th>
+                <td title="<%= last_seen %>">
+                  <%= gas_price(@transaction, :wei) %>
+                  (<%= gas_price(@transaction, :gwei) %>)
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  <%= gettext "TX Fee" %>
+                </th>
+                <td>
+                  <div><%= formatted_fee(@transaction, denomination: :ether) %></div>
+                  <div><%= formatted_fee(@transaction, exchange_rate: @exchange_rate) %></div>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  <%= gettext "Total Gas Used" %>
+                </th>
+                <td title="<%= last_seen %>">
+                  <%= cumulative_gas_used(@transaction) %> <%= gettext("Wei") %>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  <%= gettext "Input" %>
+                </th>
+                <td title="<%= @transaction.input %>">
+                  <%= @transaction.input %>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
-</div>
+</section>
