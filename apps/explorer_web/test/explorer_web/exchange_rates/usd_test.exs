@@ -38,5 +38,11 @@ defmodule ExplorerWeb.ExchangeRates.USDTest do
 
       assert %USD{value: Decimal.new(0.000005)} == USD.from(wei, token)
     end
+
+    test "returns USD struct from decimal usd value" do
+      value = Decimal.new(0.000005)
+
+      assert %USD{value: ^value} = USD.from(value)
+    end
   end
 end
