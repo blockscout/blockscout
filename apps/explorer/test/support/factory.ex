@@ -178,7 +178,6 @@ defmodule Explorer.Factory do
       from_address_hash: insert(:address).hash,
       gas: gas,
       gas_used: gas_used,
-      index: 0,
       # caller MUST suppy `index`
       init: data(:internal_transaction_init),
       trace_address: [],

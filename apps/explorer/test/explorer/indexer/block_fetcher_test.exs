@@ -52,7 +52,7 @@ defmodule Explorer.Indexer.BlockFetcherTest do
         transaction = insert(:transaction, block_hash: block.hash, index: index)
         receipt = insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
         insert(:log, transaction_hash: receipt.transaction_hash)
-        insert(:internal_transaction, transaction_hash: transaction.hash)
+        insert(:internal_transaction, transaction_hash: transaction.hash, index: 0)
       end)
 
       :ok

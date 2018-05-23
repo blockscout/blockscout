@@ -52,7 +52,7 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
     internal_receipt =
       insert(:receipt, transaction_hash: txn_from_lincoln.hash, transaction_index: txn_from_lincoln.index)
 
-    internal = insert(:internal_transaction, transaction_hash: internal_receipt.transaction_hash)
+    internal = insert(:internal_transaction, index: 0, transaction_hash: internal_receipt.transaction_hash)
 
     {:ok,
      %{
