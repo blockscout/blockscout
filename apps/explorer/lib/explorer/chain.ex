@@ -387,8 +387,7 @@ defmodule Explorer.Chain do
     query =
       from(
         address in Address,
-        where: address.hash == ^hash,
-        preload: [:credit, :debit]
+        where: address.hash == ^hash
       )
 
     query
