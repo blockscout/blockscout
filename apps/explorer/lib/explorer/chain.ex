@@ -3,10 +3,32 @@ defmodule Explorer.Chain do
   The chain context.
   """
 
-  import Ecto.Query, only: [from: 2, join: 4, or_where: 3, order_by: 2, order_by: 3, preload: 2, where: 2, where: 3]
+  import Ecto.Query,
+    only: [
+      from: 2,
+      join: 4,
+      or_where: 3,
+      order_by: 2,
+      order_by: 3,
+      preload: 2,
+      where: 2,
+      where: 3
+    ]
 
   alias Ecto.{Changeset, Multi}
-  alias Explorer.Chain.{Address, Block, Data, Hash, InternalTransaction, Log, Receipt, Transaction, Wei}
+
+  alias Explorer.Chain.{
+    Address,
+    Block,
+    Data,
+    Hash,
+    InternalTransaction,
+    Log,
+    Receipt,
+    Transaction,
+    Wei
+  }
+
   alias Explorer.Repo
 
   @typedoc """
@@ -66,11 +88,20 @@ defmodule Explorer.Chain do
     pagination = Keyword.get(options, :pagination, %{})
 
     InternalTransaction
-    |> join(:inner, [internal_transaction], transaction in assoc(internal_transaction, :transaction))
+    |> join(
+      :inner,
+      [internal_transaction],
+      transaction in assoc(internal_transaction, :transaction)
+    )
     |> join(:left, [internal_transaction, transaction], block in assoc(transaction, :block))
     |> where_address_fields_match(hash, direction)
     |> where_transaction_has_multiple_internal_transactions()
-    |> order_by([it, transaction, block], desc: block.number, desc: transaction.index, desc: it.index)
+    |> order_by(
+      [it, transaction, block],
+      desc: block.number,
+      desc: transaction.index,
+      desc: it.index
+    )
     |> preload(transaction: :block)
     |> join_associations(necessity_by_association)
     |> Repo.paginate(pagination)
@@ -452,7 +483,10 @@ defmodule Explorer.Chain do
   """
   @spec hash_to_transaction(Hash.Full.t(), [necessity_by_association_option]) ::
           {:ok, Transaction.t()} | {:error, :not_found}
-  def hash_to_transaction(%Hash{byte_count: unquote(Hash.Full.byte_count())} = hash, options \\ [])
+  def hash_to_transaction(
+        %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash,
+        options \\ []
+      )
       when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
@@ -780,10 +814,9 @@ defmodule Explorer.Chain do
         },
         options \\ []
       )
-      when is_list(blocks_params) and is_list(internal_transactions_params) and
-           is_list(logs_params) and is_list(receipts_params) and
-           is_list(transactions_params) and is_list(addresses_params) and
-           is_list(options) do
+      when is_list(blocks_params) and is_list(internal_transactions_params) and is_list(logs_params) and
+             is_list(receipts_params) and is_list(transactions_params) and is_list(addresses_params) and
+             is_list(options) do
     with {:ok, ecto_schema_module_to_changes_list} <-
            ecto_schema_module_to_params_list_to_ecto_schema_module_to_changes_list(%{
              Block => blocks_params,
@@ -1113,7 +1146,9 @@ defmodule Explorer.Chain do
       then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
 
   """
-  @spec recent_collated_transactions([after_hash_option | necessity_by_association_option]) :: [Transaction.t()]
+  @spec recent_collated_transactions([after_hash_option | necessity_by_association_option]) :: [
+          Transaction.t()
+        ]
   def recent_collated_transactions(options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
@@ -1335,9 +1370,12 @@ defmodule Explorer.Chain do
     * `:pagination` - pagination params to pass to scrivener.
 
   """
-  @spec transaction_hash_to_internal_transactions(Hash.Full.t()) :: %Scrivener.Page{entries: [InternalTransaction.t()]}
-  @spec transaction_hash_to_internal_transactions(Hash.Full.t(), [necessity_by_association_option | pagination_option]) ::
-          %Scrivener.Page{entries: [InternalTransaction.t()]}
+  @spec transaction_hash_to_internal_transactions(Hash.Full.t()) :: %Scrivener.Page{
+          entries: [InternalTransaction.t()]
+        }
+  @spec transaction_hash_to_internal_transactions(Hash.Full.t(), [
+          necessity_by_association_option | pagination_option
+        ]) :: %Scrivener.Page{entries: [InternalTransaction.t()]}
   def transaction_hash_to_internal_transactions(
         %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash,
         options \\ []
@@ -1455,11 +1493,19 @@ defmodule Explorer.Chain do
       params
       |> Stream.map(&ecto_schema_module.changeset(struct, &1))
       |> Enum.reduce({:ok, []}, fn
-        changeset = %Changeset{valid?: false}, {:ok, _} -> {:error, [changeset]}
-        changeset = %Changeset{valid?: false}, {:error, acc_changesets} -> {:error, [changeset | acc_changesets]}
-        %Changeset{changes: changes, valid?: true}, {:ok, acc_changes} -> {:ok, [changes | acc_changes]}
-        %Changeset{valid?: true}, {:error, _} = error -> error
+        changeset = %Changeset{valid?: false}, {:ok, _} ->
+          {:error, [changeset]}
+
+        changeset = %Changeset{valid?: false}, {:error, acc_changesets} ->
+          {:error, [changeset | acc_changesets]}
+
+        %Changeset{changes: changes, valid?: true}, {:ok, acc_changes} ->
+          {:ok, [changes | acc_changes]}
+
+        %Changeset{valid?: true}, {:error, _} = error ->
+          error
       end)
+
     {status, Enum.reverse(acc)}
   end
 
@@ -1493,7 +1539,8 @@ defmodule Explorer.Chain do
 
   @spec insert_addresses([%{hash: Hash.Truncated.t()}], [timeout_option | timestamps_option]) ::
           {:ok, [Hash.Truncated.t()]}
-  defp insert_addresses(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
+  defp insert_addresses(changes_list, named_arguments)
+       when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
     timeout = Keyword.fetch!(named_arguments, :timeout)
 
@@ -1517,7 +1564,8 @@ defmodule Explorer.Chain do
   end
 
   @spec insert_blocks([map()], [timeout_option | timestamps_option]) :: {:ok, [Hash.t()]} | {:error, [Changeset.t()]}
-  defp insert_blocks(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
+  defp insert_blocks(changes_list, named_arguments)
+       when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
     timeout = Keyword.fetch!(named_arguments, :timeout)
 
@@ -1575,7 +1623,12 @@ defmodule Explorer.Chain do
     |> Multi.run(:internal_transactions, fn _ ->
       insert_internal_transactions(
         internal_transactions_changes,
-        timeout: Keyword.get(options, :insert_internal_transactions_timeout, @insert_internal_transactions_timeout),
+        timeout:
+          Keyword.get(
+            options,
+            :insert_internal_transactions_timeout,
+            @insert_internal_transactions_timeout
+          ),
         timestamps: timestamps
       )
     end)
@@ -1597,7 +1650,8 @@ defmodule Explorer.Chain do
   end
 
   @spec insert_internal_transactions([map()], [timestamps_option]) ::
-          {:ok, [%{index: non_neg_integer, transaction_hash: Hash.t()}]} | {:error, [Changeset.t()]}
+          {:ok, [%{index: non_neg_integer, transaction_hash: Hash.t()}]}
+          | {:error, [Changeset.t()]}
   defp insert_internal_transactions(changes_list, named_arguments)
        when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
@@ -1614,12 +1668,17 @@ defmodule Explorer.Chain do
       )
 
     {:ok,
-     for(internal_transaction <- internal_transactions, do: Map.take(internal_transaction, [:index, :transaction_hash]))}
+     for(
+       internal_transaction <- internal_transactions,
+       do: Map.take(internal_transaction, [:index, :transaction_hash])
+     )}
   end
 
   @spec insert_logs([map()], [timeout_option | timestamps_option]) ::
-          {:ok, [%{index: non_neg_integer, transaction_hash: Hash.t()}]} | {:error, [Changeset.t()]}
-  defp insert_logs(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
+          {:ok, [%{index: non_neg_integer, transaction_hash: Hash.t()}]}
+          | {:error, [Changeset.t()]}
+  defp insert_logs(changes_list, named_arguments)
+       when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
     timeout = Keyword.fetch!(named_arguments, :timeout)
 
@@ -1641,7 +1700,8 @@ defmodule Explorer.Chain do
   end
 
   @spec insert_receipts([map()], [timeout_option | timestamps_option]) :: {:ok, [Hash.t()]} | {:error, [Changeset.t()]}
-  defp insert_receipts(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
+  defp insert_receipts(changes_list, named_arguments)
+       when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
     timeout = Keyword.fetch!(named_arguments, :timeout)
 
@@ -1666,13 +1726,21 @@ defmodule Explorer.Chain do
     ecto_schema_module = Keyword.fetch!(options, :for)
 
     timestamped_changes_list = timestamp_changes_list(changes_list, Keyword.fetch!(options, :timestamps))
-    {_, inserted} = Repo.safe_insert_all(ecto_schema_module, timestamped_changes_list, Keyword.delete(options, :for))
+
+    {_, inserted} =
+      Repo.safe_insert_all(
+        ecto_schema_module,
+        timestamped_changes_list,
+        Keyword.delete(options, :for)
+      )
+
     {:ok, inserted}
   end
 
   @spec insert_transactions([map()], [timeout_option | timestamps_option]) ::
           {:ok, [Hash.t()]} | {:error, [Changeset.t()]}
-  defp insert_transactions(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
+  defp insert_transactions(changes_list, named_arguments)
+       when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
     timeout = Keyword.fetch!(named_arguments, :timeout)
 
@@ -1737,7 +1805,10 @@ defmodule Explorer.Chain do
     %{inserted_at: now, updated_at: now}
   end
 
-  defp transaction_hash_to_logs(%Hash{byte_count: unquote(Hash.Full.byte_count())} = transaction_hash, options)
+  defp transaction_hash_to_logs(
+         %Hash{byte_count: unquote(Hash.Full.byte_count())} = transaction_hash,
+         options
+       )
        when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     pagination = Keyword.get(options, :pagination, %{})
