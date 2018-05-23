@@ -204,7 +204,7 @@ defmodule Explorer.Indexer.BlockFetcher do
 
   defp insert(%{} = state, seq, range, params) do
     with {:ok, %{addresses: address_hashes}} = ok <- Chain.import_blocks(params) do
-      :ok = AddressFetcher.async_fetch_balances(address_hashes)
+      :ok = AddressBalanceFetcher.async_fetch_balances(address_hashes)
       ok
     else
       {:error, step, reason} = error ->

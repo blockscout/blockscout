@@ -1,10 +1,10 @@
-defmodule Explorer.Indexer.AddressFetcherTest do
-  # MUST be `async: false` so that {:shared, pid} is set for connection to allow AddressFetcher's self-send to have
+defmodule Explorer.Indexer.AddressBalanceFetcherTest do
+  # MUST be `async: false` so that {:shared, pid} is set for connection to allow AddressBalanceFetcher's self-send to have
   # connection allowed immediately.
   use Explorer.DataCase, async: false
 
   alias Explorer.Chain.Address
-  alias Explorer.Indexer.AddressFetcher
+  alias Explorer.Indexer.AddressBalanceFetcher
 
   @hash %Explorer.Chain.Hash{
     byte_count: 20,
@@ -52,7 +52,7 @@ defmodule Explorer.Indexer.AddressFetcherTest do
     test "fetches balances for address_hashes" do
       start_address_fetcher()
 
-      assert :ok = AddressFetcher.async_fetch_balances([@hash])
+      assert :ok = AddressBalanceFetcher.async_fetch_balances([@hash])
 
       address =
         wait(fn ->
@@ -65,7 +65,7 @@ defmodule Explorer.Indexer.AddressFetcherTest do
 
   defp start_address_fetcher(options \\ []) when is_list(options) do
     start_supervised!(
-      {AddressFetcher,
+      {AddressBalanceFetcher,
        Keyword.merge(
          [debug_logs: false, fetch_interval: 1, max_batch_size: 1, max_concurrency: 1],
          options
