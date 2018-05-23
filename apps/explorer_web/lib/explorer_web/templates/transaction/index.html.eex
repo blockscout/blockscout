@@ -1,87 +1,87 @@
-  <section class="container__section">
-    <h1>
-      Transactions
-    </h1>
-    <p>
-      <%= gettext("Showing %{count} Validated Transactions", count: @transaction_count) %>
-    </p>
-    <div>
-      <ul class="nav nav-tabs">
-        <li class="nav-item">
-          <%= link(
-                gettext("Validated"),
-                class: "nav-link active",
-                to: transaction_path(@conn, :index, @conn.assigns.locale)
-              ) %>
-        </li>
-        <li class="nav-item">
-          <%= link(
-                gettext("Pending"),
-                class: "nav-link",
-                to: pending_transaction_path(@conn, :index, @conn.assigns.locale),
-                "data-test": "pending_transactions_link"
-              ) %>
-        </li>
-      </ul>
-    </div>
-    <div class="panels container__subsection">
-      <div class="panels__container">
-        <table class="table table-responsive-sm table-font">
-          <thead>
+<section class="container-fluid">
+  <h1>
+    Transactions
+  </h1>
+  <p>
+    <%= gettext("Showing %{count} Validated Transactions", count: @transaction_count) %>
+  </p>
+  <div>
+    <ul class="nav nav-tabs">
+      <li class="nav-item">
+        <%= link(
+              gettext("Validated"),
+              class: "nav-link active",
+              to: transaction_path(@conn, :index, @conn.assigns.locale)
+            ) %>
+      </li>
+      <li class="nav-item">
+        <%= link(
+              gettext("Pending"),
+              class: "nav-link",
+              to: pending_transaction_path(@conn, :index, @conn.assigns.locale),
+              "data-test": "pending_transactions_link"
+            ) %>
+      </li>
+    </ul>
+  </div>
+  <div class="card">
+    <div class="card-body">
+      <table class="table table-responsive-sm table-font">
+        <thead>
+          <tr>
+            <th><%= gettext "Status" %></th>
+            <th><%= gettext "Hash" %></th>
+            <th><%= gettext "Block" %></th>
+            <th><%= gettext "Age" %></th>
+            <th><%= gettext "From" %></th>
+            <th><%= gettext "To" %></th>
+            <th><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <%= for transaction <- @transactions do %>
             <tr>
-              <th><%= gettext "Status" %></th>
-              <th><%= gettext "Hash" %></th>
-              <th><%= gettext "Block" %></th>
-              <th><%= gettext "Age" %></th>
-              <th><%= gettext "From" %></th>
-              <th><%= gettext "To" %></th>
-              <th><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
+              <td>
+                <div class="transaction__dot transaction__dot--<%= status(transaction) %>"></div>
+              </td>
+              <td>
+                <%= render ExplorerWeb.TransactionView, "_link.html", conn: @conn, transaction: transaction %>
+              </td>
+              <td>
+                <%= link(
+                      transaction.block,
+                      class: "transactions__link",
+                      to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
+                    ) %>
+              </td>
+              <td>
+                <%= transaction.block.timestamp |> Timex.from_now %>
+              </td>
+              <td>
+                <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
+              </td>
+              <td>
+                <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
+              </td>
+              <td>
+                <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            <%= for transaction <- @transactions do %>
-              <tr>
-                <td>
-                  <div class="transaction__dot transaction__dot--<%= status(transaction) %>"></div>
-                </td>
-                <td>
-                  <%= render ExplorerWeb.TransactionView, "_link.html", conn: @conn, transaction: transaction %>
-                </td>
-                <td>
-                  <%= link(
-                        transaction.block,
-                        class: "transactions__link",
-                        to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
-                      ) %>
-                </td>
-                <td>
-                  <%= transaction.block.timestamp |> Timex.from_now %>
-                </td>
-                <td>
-                  <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
-                </td>
-                <td>
-                  <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
-                </td>
-                <td>
-                  <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %>
-                </td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
+          <% end %>
+        </tbody>
+      </table>
     </div>
-    <%= if @last_seen_collated_hash do %>
-      <%= link(
-            gettext("Next Page"),
-            class: "button button--secondary button--sm u-float-right",
-            to: transaction_path(
-              @conn,
-              :index,
-              @conn.assigns.locale,
-              %{"last_seen_collated_hash" => to_string(@last_seen_collated_hash)}
-            )
-          ) %>
-    <% end %>
-  </section>
+  </div>
+  <%= if @last_seen_collated_hash do %>
+    <%= link(
+          gettext("Next Page"),
+          class: "button button--secondary button--sm u-float-right mt-3",
+          to: transaction_path(
+            @conn,
+            :index,
+            @conn.assigns.locale,
+            %{"last_seen_collated_hash" => to_string(@last_seen_collated_hash)}
+          )
+        ) %>
+  <% end %>
+</section>

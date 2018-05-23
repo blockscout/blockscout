@@ -1,4 +1,4 @@
-<section class="container__section">
+<section class="container-fluid">
     <div>
       <h1>
         Transactions
@@ -25,8 +25,8 @@
         </li>
       </ul>
     </div>
-    <div class="panels container__subsection">
-      <div class="panels__container">
+    <div class="card">
+      <div class="card-body">
         <table class="table table-responsive-sm table-font">
           <thead>
             <tr>
@@ -68,7 +68,7 @@
     <%= if @last_seen_pending_inserted_at do %>
       <%= link(
             gettext("Next Page"),
-            class: "button button--secondary button--sm u-float-right",
+            class: "button button--secondary button--sm u-float-right mt-3",
             to: pending_transaction_path(
               @conn,
               :index,
