@@ -1,4 +1,4 @@
-<div class="container-fluid">
+<section class="container-fluid">
   <div class="d-flex flex-md-row flex-column">
     <div class="container__stats card mr-sm-4 mb-4 mb-sm-0">
       <div class="card-body d-flex flex-md-column justify-content-around">
@@ -56,4 +56,4 @@
       <%= render ExplorerWeb.ChainView, "_transactions.html", assigns %>
     </div>
   </div>
-</div>
+</section>
