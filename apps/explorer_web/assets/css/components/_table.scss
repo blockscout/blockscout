@@ -1,0 +1,25 @@
+.table-font {
+
+  thead th, td, th {
+    border-top: none;
+    border-bottom: none;
+  }
+
+  i {
+    color: $gray-500;
+  }
+
+  img {
+    width: 12px;
+  }
+}
+
+.table-horizontal {
+  th {
+    width: 35%;
+  }
+}
+
+.address-cell {
+  width: 150px;
+}
