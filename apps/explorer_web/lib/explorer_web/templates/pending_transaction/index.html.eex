@@ -1,14 +1,14 @@
 <section class="container-fluid">
-    <div>
-      <h1>
-        Transactions
-      </h1>
-      <p>
-        <%= gettext("Showing %{count} Pending Transactions", count: @transaction_count) %>
-      </p>
-    </div>
-    <div>
-      <ul class="nav nav-tabs">
+  <h1>
+    Transactions
+  </h1>
+  <p>
+    <%= gettext("Showing %{count} Pending Transactions", count: @transaction_count) %>
+  </p>
+
+  <div class="card">
+    <div class="card-header">
+      <ul class="nav nav-tabs card-header-tabs">
         <li class="nav-item">
           <%= link(
                 gettext("Validated"),
@@ -25,59 +25,58 @@
         </li>
       </ul>
     </div>
-    <div class="card">
-      <div class="card-body">
-        <table class="table table-responsive-sm table-font">
-          <thead>
+    <div class="card-body">
+      <table class="table table-responsive-sm table-font">
+        <thead>
+          <tr>
+            <th>
+              <%= gettext "Status" %>
+            </th>
+            <th><%= gettext "Hash" %></th>
+            <th><%= gettext "Last Seen" %></th>
+            <th><%= gettext "From" %></th>
+            <th><%= gettext "To" %></th>
+            <th><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <%= for transaction <- @transactions do %>
             <tr>
-              <th>
-                <%= gettext "Status" %>
-              </th>
-              <th><%= gettext "Hash" %></th>
-              <th><%= gettext "Last Seen" %></th>
-              <th><%= gettext "From" %></th>
-              <th><%= gettext "To" %></th>
-              <th><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
+              <td>
+                <div class="transaction__dot transaction__dot--pending"></div>
+              </td>
+              <td>
+              <%= render ExplorerWeb.TransactionView, "_link.html", conn: @conn, transaction: transaction %>
+              </td>
+              <td><%= last_seen(transaction) %></td>
+              <td>
+                <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
+              </td>
+              <td>
+                <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
+              </td>
+              <td>
+              <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            <%= for transaction <- @transactions do %>
-              <tr>
-                <td>
-                  <div class="transaction__dot transaction__dot--pending"></div>
-                </td>
-                <td>
-                <%= render ExplorerWeb.TransactionView, "_link.html", conn: @conn, transaction: transaction %>
-                </td>
-                <td><%= last_seen(transaction) %></td>
-                <td>
-                  <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
-                </td>
-                <td>
-                  <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
-                </td>
-                <td>
-                <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %>
-                </td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
+          <% end %>
+        </tbody>
+      </table>
     </div>
-    <%= if @last_seen_pending_inserted_at do %>
-      <%= link(
-            gettext("Next Page"),
-            class: "button button--secondary button--sm u-float-right mt-3",
-            to: pending_transaction_path(
-              @conn,
-              :index,
-              @conn.assigns.locale,
-              %{
-                 "last_seen_inserted_at" =>
-                   Timex.format!(@last_seen_pending_inserted_at, "{ISO:Extended:Z}")
-              }
-            )
-          ) %>
-    <% end %>
+  </div>
+  <%= if @last_seen_pending_inserted_at do %>
+    <%= link(
+          gettext("Next Page"),
+          class: "button button--secondary button--sm u-float-right mt-3",
+          to: pending_transaction_path(
+            @conn,
+            :index,
+            @conn.assigns.locale,
+            %{
+               "last_seen_inserted_at" =>
+                 Timex.format!(@last_seen_pending_inserted_at, "{ISO:Extended:Z}")
+            }
+          )
+        ) %>
+  <% end %>
 </section>

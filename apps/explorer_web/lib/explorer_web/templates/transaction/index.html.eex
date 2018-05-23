@@ -5,26 +5,27 @@
   <p>
     <%= gettext("Showing %{count} Validated Transactions", count: @transaction_count) %>
   </p>
-  <div>
-    <ul class="nav nav-tabs">
-      <li class="nav-item">
-        <%= link(
-              gettext("Validated"),
-              class: "nav-link active",
-              to: transaction_path(@conn, :index, @conn.assigns.locale)
-            ) %>
-      </li>
-      <li class="nav-item">
-        <%= link(
-              gettext("Pending"),
-              class: "nav-link",
-              to: pending_transaction_path(@conn, :index, @conn.assigns.locale),
-              "data-test": "pending_transactions_link"
-            ) %>
-      </li>
-    </ul>
-  </div>
+
   <div class="card">
+    <div class="card-header">
+      <ul class="nav nav-tabs card-header-tabs">
+        <li class="nav-item">
+          <%= link(
+                gettext("Validated"),
+                class: "nav-link active",
+                to: transaction_path(@conn, :index, @conn.assigns.locale)
+              ) %>
+        </li>
+        <li class="nav-item">
+          <%= link(
+                gettext("Pending"),
+                class: "nav-link",
+                to: pending_transaction_path(@conn, :index, @conn.assigns.locale),
+                "data-test": "pending_transactions_link"
+              ) %>
+        </li>
+      </ul>
+    </div>
     <div class="card-body">
       <table class="table table-responsive-sm table-font">
         <thead>

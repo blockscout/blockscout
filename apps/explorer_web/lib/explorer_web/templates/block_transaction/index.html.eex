@@ -116,17 +116,18 @@
   </section>
 
   <section>
-    <ul class="nav nav-tabs">
-      <li class="nav-item">
-        <%= link(
-              gettext("Transactions"),
-              class: "nav-link active",
-              to: block_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["block_id"])
-            ) %>
-      </li>
-    </ul>
-
     <div class="card mb-3">
+      <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs">
+          <li class="nav-item">
+            <%= link(
+                  gettext("Transactions"),
+                  class: "nav-link active",
+                  to: block_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["block_id"])
+                ) %>
+          </li>
+        </ul>
+      </div>
       <div class="card-body">
         <table class="table table-responsive-sm table-font">
           <thead>

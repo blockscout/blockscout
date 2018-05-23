@@ -3,23 +3,25 @@
   <%= render ExplorerWeb.TransactionView, "overview.html", assigns %>
 
   <section>
-    <ul class="nav nav-tabs">
-      <li class="nav-item">
-        <%= link(
-              gettext("Internal Transactions"),
-              class: "nav-link",
-              to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction)
-            ) %>
-      </li>
-      <li class="nav-item">
-        <%= link(
-              gettext("Logs"),
-              class: "nav-link active",
-              to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction)
-            ) %>
-      </li>
-    </ul>
     <div class="card">
+      <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs">
+          <li class="nav-item">
+            <%= link(
+                  gettext("Internal Transactions"),
+                  class: "nav-link",
+                  to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction)
+                ) %>
+          </li>
+          <li class="nav-item">
+            <%= link(
+                  gettext("Logs"),
+                  class: "nav-link active",
+                  to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction)
+                ) %>
+          </li>
+        </ul>
+      </div>
       <div class="card-body">
         <%= if length(@logs.entries) > 0 do %>
           <table class="table table-responsive-sm table-font">

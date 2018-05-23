@@ -3,127 +3,125 @@
   <%= render ExplorerWeb.AddressView, "overview.html", assigns %>
 
   <section>
-    <ul class="nav nav-tabs">
-      <li class="nav-item">
-        <%= link(
-              gettext("Transactions"),
-              class: "nav-link active",
-              to: address_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
-            ) %>
-      </li>
-      <li class="nav-item">
-        <%= link(
-              gettext("Internal Transactions"),
-              class: "nav-link",
-              "data-test": "internal_transactions_tab_link",
-              to: address_internal_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
-            ) %>
-      </li>
-    </ul>
-
-
-  </section>
-
-
-  <div class="card">
-    <div class="card-body">
-      <div class="dropdown u-float-right u-push-sm">
-        <button data-test="filter_dropdown" class="button button--secondary button--xsmall dropdown-toggle" type="button"
-                id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          Filter: <%= format_current_filter(@filter) %>
-        </button>
-        <div class="dropdown-menu dropdown-menu-right filter" aria-labelledby="dropdownMenu2">
-          <%= link(
-                gettext("All"),
-                to: address_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"]),
-                class: "address__link address__link--active dropdown-item",
-                "data-test": "filter_option"
-              ) %>
-          <%= link(
-                gettext("To"),
-                to: address_transaction_path(
-                  @conn,
-                  :index,
-                  @conn.assigns.locale,
-                  @conn.params["address_id"],
-                  filter: "to"
-                ),
-                class: "address__link address__link--active dropdown-item",
-                "data-test": "filter_option"
-              ) %>
-          <%= link(
-                gettext("From"),
-                to: address_transaction_path(
-                  @conn,
-                  :index,
-                  @conn.assigns.locale,
-                  @conn.params["address_id"],
-                  filter: "from"
-                ),
-                class: "address__link address__link--active dropdown-item",
-                "data-test": "filter_option"
-              ) %>
-        </div>
+    <div class="card">
+      <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs">
+          <li class="nav-item">
+            <%= link(
+                  gettext("Transactions"),
+                  class: "nav-link active",
+                  to: address_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
+                ) %>
+          </li>
+          <li class="nav-item">
+            <%= link(
+                  gettext("Internal Transactions"),
+                  class: "nav-link",
+                  "data-test": "internal_transactions_tab_link",
+                  to: address_internal_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
+                ) %>
+          </li>
+        </ul>
       </div>
+      <div class="card-body">
+        <div class="dropdown u-float-right u-push-sm">
+          <button data-test="filter_dropdown" class="button button--secondary button--xsmall dropdown-toggle" type="button"
+                  id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Filter: <%= format_current_filter(@filter) %>
+          </button>
+          <div class="dropdown-menu dropdown-menu-right filter" aria-labelledby="dropdownMenu2">
+            <%= link(
+                  gettext("All"),
+                  to: address_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"]),
+                  class: "address__link address__link--active dropdown-item",
+                  "data-test": "filter_option"
+                ) %>
+            <%= link(
+                  gettext("To"),
+                  to: address_transaction_path(
+                    @conn,
+                    :index,
+                    @conn.assigns.locale,
+                    @conn.params["address_id"],
+                    filter: "to"
+                  ),
+                  class: "address__link address__link--active dropdown-item",
+                  "data-test": "filter_option"
+                ) %>
+            <%= link(
+                  gettext("From"),
+                  to: address_transaction_path(
+                    @conn,
+                    :index,
+                    @conn.assigns.locale,
+                    @conn.params["address_id"],
+                    filter: "from"
+                  ),
+                  class: "address__link address__link--active dropdown-item",
+                  "data-test": "filter_option"
+                ) %>
+          </div>
+        </div>
 
-      <table class="table table-responsive-sm table-font">
-        <thead>
-          <tr>
-            <th class="transactions__column-header transactions__column-header--status">
-              <span class="transactions__column-title transactions__column-title--status"><%= gettext "Status" %></span>
-            </th>
-            <th><%= gettext "Hash" %></th>
-            <th><%= gettext "Block" %></th>
-            <th><%= gettext "Age" %></th>
-            <th><%= gettext "From" %></th>
-            <th></th>
-            <th><%= gettext "To" %></th>
-            <th><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
-            <th><%= gettext "Fee" %></th>
-          </tr>
-        </thead>
-        <tbody>
-          <%= for transaction <- @page.entries do %>
+        <table class="table table-responsive-sm table-font">
+          <thead>
             <tr>
-              <td><div class="transaction__dot transaction__dot--<%= status(transaction) %>"></div></td>
-              <td>
-                <%= render ExplorerWeb.TransactionView, "_link.html", conn: @conn, transaction: transaction %>
-              </td>
-              <td>
-                <%= link(
-                      transaction.block,
-                      to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
-                    ) %>
-              </td>
-              <td><%= transaction.block.timestamp |> Timex.from_now %></td>
-              <td class="address-cell">
-                <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
-              </td>
-              <td class="u-text-center"><i class="fas fa-arrow-circle-right"></i></td>
-              <td>
-                <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
-              </td>
-              <td><%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %></td>
-              <td><%= ExplorerWeb.TransactionView.formatted_fee(transaction, denomination: :ether) %></td>
+              <th class="transactions__column-header transactions__column-header--status">
+                <span class="transactions__column-title transactions__column-title--status"><%= gettext "Status" %></span>
+              </th>
+              <th><%= gettext "Hash" %></th>
+              <th><%= gettext "Block" %></th>
+              <th><%= gettext "Age" %></th>
+              <th><%= gettext "From" %></th>
+              <th></th>
+              <th><%= gettext "To" %></th>
+              <th><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
+              <th><%= gettext "Fee" %></th>
             </tr>
-          <% end %>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <%= for transaction <- @page.entries do %>
+              <tr>
+                <td><div class="transaction__dot transaction__dot--<%= status(transaction) %>"></div></td>
+                <td>
+                  <%= render ExplorerWeb.TransactionView, "_link.html", conn: @conn, transaction: transaction %>
+                </td>
+                <td>
+                  <%= link(
+                        transaction.block,
+                        to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
+                      ) %>
+                </td>
+                <td><%= transaction.block.timestamp |> Timex.from_now %></td>
+                <td class="address-cell">
+                  <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
+                </td>
+                <td class="u-text-center"><i class="fas fa-arrow-circle-right"></i></td>
+                <td>
+                  <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
+                </td>
+                <td><%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %></td>
+                <td><%= ExplorerWeb.TransactionView.formatted_fee(transaction, denomination: :ether) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
 
-  <div class="address__pagination">
-    <%= pagination_links(
-          @conn,
-          @page,
-          ["en", @conn.params["address_id"]],
-          distance: 1,
-          filter: @conn.params["filter"],
-          first: true,
-          next: Phoenix.HTML.raw("&rsaquo;"),
-          path: &address_transaction_path/5,
-          previous: Phoenix.HTML.raw("&lsaquo;"),
-          view_style: :bulma
-        ) %>
-  </div>
+    <div class="address__pagination">
+      <%= pagination_links(
+            @conn,
+            @page,
+            ["en", @conn.params["address_id"]],
+            distance: 1,
+            filter: @conn.params["filter"],
+            first: true,
+            next: Phoenix.HTML.raw("&rsaquo;"),
+            path: &address_transaction_path/5,
+            previous: Phoenix.HTML.raw("&lsaquo;"),
+            view_style: :bulma
+          ) %>
+    </div>
+  </section>
 </section>
