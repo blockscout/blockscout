@@ -1,7 +1,7 @@
 %paper {
   margin-bottom: 1rem;
-  border-radius: explorer-size(-4);
-  background-color: explorer-color("white");
-  box-shadow: 0 2px 2px 0 rgba(explorer-color("black"), 0.16),
-              0 0px 2px 0 rgba(explorer-color("black"), 0.12);
+  border-radius: 5px;
+  background-color: #fff;
+  box-shadow: 0 2px 2px 0 rgba(0, 0,0, 0.16),
+              0 0px 2px 0 rgba(0, 0, 0, 0.12);
 }

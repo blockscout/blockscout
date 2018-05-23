@@ -1,8 +1,6 @@
 <section class="container__section">
   <div>
-    <h1>
-      Blocks
-    </h1>
+    <h1>Blocks</h1>
     <p>
       <%= gettext(
             "Showing #%{start_block} to #%{end_block}",
