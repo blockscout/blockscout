@@ -1,23 +1,34 @@
-<div class="address__header">
-  <h1 class="address__heading"><%= gettext "Address" %></h1>
-  <h3 class="address__subheading" data-test="address_detail_hash"><%= @address %></h3>
-</div>
-<div class="address__container">
-  <div class="address__attributes">
-    <dl>
-      <div class="address__item">
-        <dt class="address__item-key"><%= gettext "Balance" %></dt>
-        <dd class="address__item-value address__balance u-text-right" title="<%= @address %>" data-test="address_balance">
-          <div><%= balance(@address) %> </div>
-          <div><%= formatted_usd(@address, @exchange_rate) %> </div>
-        </dd>
+<section>
+  <h1><%= gettext "Address" %></h1>
+  <p data-test="address_detail_hash"><%= @address %></p>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-sm-6">
+          <table class="table table-font table-responsive-sm table-horizontal">
+            <tbody>
+              <tr>
+                <th scope="row">
+                  <%= gettext "Balance" %>
+                </th>
+                <td>
+                  <%= balance(@address) %> </br>
+                  <%= formatted_usd(@address, @exchange_rate) %>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  <%= gettext "Number of Transactions" %>
+                </th>
+                <td data-test="transaction_count">
+                  <%= Cldr.Number.to_string!(@transaction_count) %>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div class="address__item">
-        <dt class="address__item-key"><%= gettext "Number of Transactions" %></dt>
-        <dd class="address__item-value" data-test="transaction_count">
-          <%= Cldr.Number.to_string!(@transaction_count) %>
-        </dd>
-      </div>
-    </dl>
+    </div>
   </div>
-</div>
+</section>
