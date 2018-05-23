@@ -1,32 +1,32 @@
-<div class="panels container__subsection container__subsection-chain">
-  <div class="panels__container panels__container--title">
+<div class="card">
+  <div class="card-body">
     <%= link(gettext("View All"), to: transaction_path(@conn, :index, Gettext.get_locale), class: "button button--secondary button--xsmall u-float-right") %>
-    <h2 class="panels__title"><%= gettext "Transactions" %></h2>
+    <h2 class="card-title"><%= gettext "Transactions" %></h2>
+    <table class="table table-font table-responsive-lg">
+      <thead>
+        <th><%= gettext "TX Hash" %></th>
+        <th><%= gettext "From" %></th>
+        <th><%= gettext "To" %></th>
+        <th><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
+        <th><%= gettext "Age" %></th>
+      </thead>
+      <tbody>
+        <%= for transaction <- @chain.transactions do %>
+        <tr data-test="chain_transaction">
+          <td>
+            <%= render ExplorerWeb.TransactionView, "_link.html", conn: @conn, transaction: transaction %>
+          </td>
+          <td>
+            <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
+          </td>
+          <td>
+            <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
+          </td>
+          <td><%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> </td>
+          <td><%= transaction.block.timestamp |> Timex.from_now() %></td>
+        </tr>
+        <% end %>
+      </tbody>
+    </table>
   </div>
-  <table class="table table-font table-responsive-sm">
-    <thead>
-      <th><%= gettext "TX Hash" %></th>
-      <th><%= gettext "From" %></th>
-      <th><%= gettext "To" %></th>
-      <th><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
-      <th><%= gettext "Age" %></th>
-    </thead>
-    <tbody>
-      <%= for transaction <- @chain.transactions do %>
-      <tr data-test="chain_transaction">
-        <td>
-          <%= render ExplorerWeb.TransactionView, "_link.html", conn: @conn, transaction: transaction %>
-        </td>
-        <td>
-          <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
-        </td>
-        <td>
-          <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
-        </td>
-        <td><%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> </td>
-        <td><%= transaction.block.timestamp |> Timex.from_now() %></td>
-      </tr>
-      <% end %>
-    </tbody>
-  </table>
 </div>

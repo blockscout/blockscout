@@ -22,14 +22,10 @@
 
 
 .container__stats {
-  @extend %paper;
   display: flex;
-  padding: 15px;
-  width: 100%;
   font-size: 12px;
   text-align: center;
   flex-direction: row;
-  justify-content: space-around;
 
   img {
     display: inline-block;
@@ -39,7 +35,7 @@
   }
 
   svg {
-    width: 30px;
+    height: 30px;
   }
 
   path {
@@ -49,8 +45,6 @@
   .stroke {
     stroke: $primary;
   }
-
-
 }
 
 .graph__squares {
@@ -67,22 +61,11 @@
   }
 }
 
-.graph-flex {
-  font-size: 12px;
-  display: flex;
-  justify-content: space-between;
-  margin-top: 25px;
-  color: $gray-500;
-}
-
 @media (min-width: $explorer-breakpoint-md) {
 
   .container__stats {
-    width: 15%;
-    flex-direction: column;
-    align-content: space-between;
     color: $gray-500;
-    margin: 10px 5px;
+    width: 16.67%;
 
     img {
       display: inline-block;
@@ -90,11 +73,12 @@
       margin-bottom: explorer-size(-2);
       text-align: center;
     }
-
-    div {
-      flex-grow: 1;
-    }
   }
+
+  .container__graph {
+    flex-grow: 1;
+  }
+
   .chain {
     &__image {
       height: explorer-size(1);

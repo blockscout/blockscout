@@ -1,5 +1,5 @@
 <div class="theme__ribbon">
-    <div class="front card">
+    <div class="front ribbon">
       <%= link to: chain_path(@conn, :show), "data-test": "header_logo" do %>
         <img class="theme__ribbon--logo" src="<%= static_path(@conn, "/images/poa_logo.svg") %>" />
       <% end %>
@@ -34,7 +34,7 @@
         </button>
       </div>
     </div>
-    <div class="back card">
+    <div class="back ribbon">
       <%= link to: chain_path(@conn, :show) do %>
         <img class="theme__ribbon--logo" src="<%= static_path(@conn, "/images/poa_logo.svg") %>" />
       <% end %>
