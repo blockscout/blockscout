@@ -40,6 +40,13 @@ defmodule ExplorerWeb.Router do
     resources("/pending_transactions", PendingTransactionController, only: [:index])
 
     resources "/transactions", TransactionController, only: [:index, :show] do
+      resources(
+        "/internal_transactions",
+        TransactionInternalTransactionController,
+        only: [:index],
+        as: :internal_transaction
+      )
+
       resources("/logs", TransactionLogController, only: [:index], as: :log)
     end
 

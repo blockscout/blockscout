@@ -7,7 +7,8 @@ defmodule ExplorerWeb.AddressInternalTransactionController do
 
   import ExplorerWeb.AddressController, only: [transaction_count: 1]
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, Market}
+  alias Explorer.ExchangeRates.Token
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
@@ -30,6 +31,7 @@ defmodule ExplorerWeb.AddressInternalTransactionController do
         conn,
         "index.html",
         address: address,
+        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
         page: page,
         transaction_count: transaction_count(address)

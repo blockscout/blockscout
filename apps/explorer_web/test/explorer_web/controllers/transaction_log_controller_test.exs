@@ -3,6 +3,8 @@ defmodule ExplorerWeb.TransactionLogControllerTest do
 
   import ExplorerWeb.Router.Helpers, only: [transaction_log_path: 4]
 
+  alias Explorer.ExchangeRates.Token
+
   describe "GET index/2" do
     test "with invalid transaction hash", %{conn: conn} do
       conn = get(conn, transaction_log_path(conn, :index, :en, "invalid_transaction_string"))
@@ -41,5 +43,13 @@ defmodule ExplorerWeb.TransactionLogControllerTest do
 
       assert Enum.count(conn.assigns.logs.entries) == 0
     end
+  end
+
+  test "includes USD exchange rate value for address in assigns", %{conn: conn} do
+    transaction = insert(:transaction)
+
+    conn = get(conn, transaction_log_path(ExplorerWeb.Endpoint, :index, :en, transaction.hash))
+
+    assert %Token{} = conn.assigns.exchange_rate
   end
 end

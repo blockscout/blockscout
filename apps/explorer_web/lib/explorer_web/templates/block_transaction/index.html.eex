@@ -100,7 +100,7 @@
             </tr>
             <tr>
               <th scope="Nonce">
-                <%= gettext "Gas Limit" %>
+                <%= gettext "Nonce" %>
               </th>
               <td>
                 <%= @block.nonce %>

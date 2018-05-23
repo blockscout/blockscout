@@ -43,7 +43,8 @@
               <%= gettext "Value" %>
             </th>
             <td>
-              <%= value(@transaction) %>
+              <div><%= value(@transaction) %> </div>
+              <div><%= formatted_usd_value(@transaction, @exchange_rate) %></div>
             </td>
           </tr>
           <tr>
@@ -125,6 +126,15 @@
             <td title="<%= last_seen %>">
               <%= gas_price(@transaction, :wei) %>
               (<%= gas_price(@transaction, :gwei) %>)
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">
+              <%= gettext "TX Fee" %>
+            </th>
+            <td>
+              <div><%= formatted_fee(@transaction, denomination: :ether) %></div>
+              <div><%= formatted_fee(@transaction, exchange_rate: @exchange_rate) %></div>
             </td>
           </tr>
           <tr>

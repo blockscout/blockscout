@@ -3,6 +3,8 @@ defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
 
   import ExplorerWeb.Router.Helpers, only: [address_internal_transaction_path: 4]
 
+  alias Explorer.ExchangeRates.Token
+
   describe "GET index/3" do
     test "with invalid address hash", %{conn: conn} do
       conn =
@@ -39,6 +41,14 @@ defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
 
       assert Enum.member?(actual_transaction_ids, from_internal_transaction.id)
       assert Enum.member?(actual_transaction_ids, to_internal_transaction.id)
+    end
+
+    test "includes USD exchange rate value for address in assigns", %{conn: conn} do
+      address = insert(:address)
+
+      conn = get(conn, address_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
+
+      assert %Token{} = conn.assigns.exchange_rate
     end
   end
 end

@@ -4,7 +4,9 @@ defmodule ExplorerWeb.TransactionView do
   alias Cldr.Number
   alias Explorer.Chain
   alias Explorer.Chain.{Block, InternalTransaction, Transaction, Wei}
+  alias Explorer.ExchangeRates.Token
   alias ExplorerWeb.BlockView
+  alias ExplorerWeb.ExchangeRates.USD
 
   def confirmations(%Transaction{block: block}, named_arguments) when is_list(named_arguments) do
     case block do
@@ -20,17 +22,29 @@ defmodule ExplorerWeb.TransactionView do
     end
   end
 
-  @doc """
-  Calculates the transaction fee and returns a formatted display value.
-  """
-  def fee(%Transaction{} = transaction) do
-    case Chain.fee(transaction, :wei) do
-      {:actual, actual} ->
-        format_wei_value(Wei.from(actual, :wei), :ether, fractional_digits: 18)
-
-      {:maximum, maximum} ->
-        "<= " <> format_wei_value(Wei.from(maximum, :wei), :ether, fractional_digits: 18)
+  def formatted_fee(%Transaction{} = transaction, opts) do
+    transaction
+    |> Chain.fee(:wei)
+    |> fee_to_currency(opts)
+    |> case do
+      {_, nil} -> nil
+      {:actual, value} -> value
+      {:maximum, value} -> "<= " <> value
     end
+  end
+
+  defp fee_to_currency({fee_type, fee}, denomination: denomination) do
+    {fee_type, format_wei_value(Wei.from(fee, :wei), denomination, fractional_digits: 18)}
+  end
+
+  defp fee_to_currency({fee_type, fee}, exchange_rate: %Token{} = exchange_rate) do
+    formatted =
+      fee
+      |> Wei.from(:wei)
+      |> USD.from(exchange_rate)
+      |> format_usd_value()
+
+    {fee_type, formatted}
   end
 
   def first_seen(%Transaction{inserted_at: inserted_at}) do
@@ -39,6 +53,12 @@ defmodule ExplorerWeb.TransactionView do
 
   def format_gas_limit(gas) do
     Number.to_string!(gas)
+  end
+
+  def formatted_usd_value(%Transaction{value: nil}, _token), do: nil
+
+  def formatted_usd_value(%Transaction{value: value}, token) do
+    format_usd_value(USD.from(value, token))
   end
 
   def formatted_age(%Transaction{block: block}) do
@@ -96,7 +116,7 @@ defmodule ExplorerWeb.TransactionView do
 
   ## Options
 
-    * `:include_label` - Boolean. Defaults to true. Flag for displaying unit with value.
+  * `:include_label` - Boolean. Defaults to true. Flag for displaying unit with value.
   """
   def value(%mod{value: value}, opts \\ []) when is_transaction_type(mod) do
     include_label? = Keyword.get(opts, :include_label, true)
