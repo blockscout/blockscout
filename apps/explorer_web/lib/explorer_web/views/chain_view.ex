@@ -14,8 +14,6 @@ defmodule ExplorerWeb.ChainView do
     end
   end
 
-  def format_exchange_rate(%Token{usd_value: nil}), do: nil
-
   def format_exchange_rate(%Token{usd_value: usd_value}) do
     usd_value
     |> USD.from()
