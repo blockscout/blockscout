@@ -153,7 +153,15 @@
                   <%= gettext "Input" %>
                 </th>
                 <td title="<%= @transaction.input %>">
-                  <%= @transaction.input %>
+                  <div class="card bg-light">
+                    <div class="card-body">
+                      <pre class="pre-scrollable pre-wrap mb-0">
+                        <code>
+                          <%= @transaction.input %>
+                        </code>
+                      </pre>
+                    </div>
+                  </div>
                 </td>
               </tr>
             </tbody>

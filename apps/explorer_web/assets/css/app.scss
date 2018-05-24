@@ -19,11 +19,13 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "node_modules/bootstrap/scss/root";
 @import "node_modules/bootstrap/scss/reboot";
 @import "node_modules/bootstrap/scss/grid";
+@import "node_modules/bootstrap/scss/code";
 @import "node_modules/bootstrap/scss/utilities/spacing";
 @import "node_modules/bootstrap/scss/utilities/sizing";
 @import "node_modules/bootstrap/scss/utilities/display";
 @import "node_modules/bootstrap/scss/utilities/flex";
 @import "node_modules/bootstrap/scss/utilities/text";
+@import "node_modules/bootstrap/scss/utilities/background";
 
 // Bootstrap Components
 @import "node_modules/bootstrap/scss/dropdown";
@@ -40,6 +42,8 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "content";
 @import "utilities";
 @import "typography";
+@import "tooltip";
+@import "code";
 @import "components/panels";
 @import "components/header";
 @import "components/sidebar";
@@ -52,7 +56,6 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/filter";
 @import "components/button";
 @import "components/table";
-@import "tooltip";
 
 :export {
   primary: $primary;
