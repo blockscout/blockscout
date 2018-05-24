@@ -23,7 +23,7 @@ defmodule Explorer.Indexer.InternalTransactionFetcher do
     end)
   end
 
-  def run(transaction_hashes) do
+  def run(transaction_hashes, _retries) do
     case EthereumJSONRPC.fetch_internal_transactions(transaction_hashes) do
       {:ok, internal_params} ->
         {:ok, _} = Chain.import_internal_transactions(internal_params)

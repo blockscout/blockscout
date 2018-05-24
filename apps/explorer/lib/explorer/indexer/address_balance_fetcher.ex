@@ -19,7 +19,7 @@ defmodule Explorer.Indexer.AddressBalanceFetcher do
     end)
   end
 
-  def run(string_hashes) do
+  def run(string_hashes, _retries) do
     {:ok, results} = EthereumJSONRPC.fetch_balances_by_hash(string_hashes)
     :ok = Chain.update_balances(results)
 

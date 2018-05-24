@@ -20,27 +20,49 @@ defmodule Explorer.BufferedTaskTest do
       {:ok, Enum.reduce(initial_collection(), acc, fn item, acc -> reducer.(item, acc) end)}
     end
 
-    def run(batch) do
+    def run(batch, 0) do
       send(__MODULE__, {:run, batch})
       :ok
     end
   end
 
-  defmodule FunTask do
+  defmodule EmptyTask do
     @behaviour BufferedTask
 
     def init(acc, _reducer) do
       {:ok, acc}
     end
 
-    def run([agent, func]) when is_function(func) do
-      count = Agent.get_and_update(agent, &{&1, &1 + 1})
-      send(__MODULE__, {:run, count})
-      func.(count)
+    def run(batch, 0) do
+      send(__MODULE__, {:run, batch})
+      :ok
+    end
+  end
+
+  defmodule RetryableTask do
+    @behaviour BufferedTask
+
+    def init(acc, _reducer) do
+      {:ok, acc}
     end
 
-    def run(batch) do
-      send(__MODULE__, {:run, batch})
+    def run([:boom], 0) do
+      send(__MODULE__, {:run, {0, :boom}})
+      raise "boom"
+    end
+
+    def run([:boom], 1) do
+      send(__MODULE__, {:run, {1, :boom}})
+      :ok
+    end
+
+    def run(batch, retries) when retries < 2 do
+      send(__MODULE__, {:run, {retries, batch}})
+      {:retry, :because_reasons}
+    end
+
+    def run(batch, retries) do
+      send(__MODULE__, {:final_run, {retries, batch}})
       :ok
     end
   end
@@ -69,8 +91,8 @@ defmodule Explorer.BufferedTaskTest do
   end
 
   test "init with zero entries schedules future buffer flushes" do
-    Process.register(self(), FunTask)
-    {:ok, buffer} = start_buffer(FunTask)
+    Process.register(self(), EmptyTask)
+    {:ok, buffer} = start_buffer(EmptyTask)
     refute_receive _
 
     BufferedTask.buffer(buffer, ~w(some more entries))
@@ -80,23 +102,28 @@ defmodule Explorer.BufferedTaskTest do
     refute_receive _
   end
 
+  @tag :capture_log
+  test "crashed runs are retried" do
+    Process.register(self(), RetryableTask)
+    {:ok, buffer} = start_buffer(RetryableTask)
+
+    BufferedTask.buffer(buffer, [:boom])
+    assert_receive {:run, {0, :boom}}
+    assert_receive {:run, {1, :boom}}
+    refute_receive _
+  end
+
   test "run/1 allows tasks to be programmatically retried" do
-    Process.register(self(), FunTask)
-    {:ok, buffer} = start_buffer(FunTask)
-    {:ok, count} = Agent.start_link(fn -> 1 end)
+    Process.register(self(), RetryableTask)
+    {:ok, buffer} = start_buffer(RetryableTask)
 
-    BufferedTask.buffer(buffer, [
-      count,
-      fn
-        1 -> {:retry, :because_reasons}
-        2 -> {:retry, :because_reasons}
-        3 -> :ok
-      end
-    ])
-
-    assert_receive {:run, 1}
-    assert_receive {:run, 2}
-    assert_receive {:run, 3}
+    BufferedTask.buffer(buffer, [1, 2, 3])
+    assert_receive {:run, {0, [1, 2]}}
+    assert_receive {:run, {0, [3]}}
+    assert_receive {:run, {1, [1, 2]}}
+    assert_receive {:run, {1, [3]}}
+    assert_receive {:final_run, {2, [1, 2]}}
+    assert_receive {:final_run, {2, [3]}}
     refute_receive _
   end
 end
