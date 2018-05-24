@@ -1,11 +1,11 @@
-#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:67
-#: lib/explorer_web/templates/address_transaction/index.html.eex:70
+#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:72
+#: lib/explorer_web/templates/address_transaction/index.html.eex:74
 #: lib/explorer_web/templates/block/index.html.eex:18
-#: lib/explorer_web/templates/block_transaction/index.html.eex:135
-#: lib/explorer_web/templates/chain/_blocks.html.eex:9
-#: lib/explorer_web/templates/chain/_transactions.html.eex:12
-#: lib/explorer_web/templates/transaction/index.html.eex:35
-#: lib/explorer_web/templates/transaction/overview.html.eex:35
+#: lib/explorer_web/templates/block_transaction/index.html.eex:140
+#: lib/explorer_web/templates/chain/_blocks.html.eex:8
+#: lib/explorer_web/templates/chain/_transactions.html.eex:11
+#: lib/explorer_web/templates/transaction/index.html.eex:36
+#: lib/explorer_web/templates/transaction/overview.html.eex:38
 msgid "Age"
 msgstr ""
 
@@ -28,7 +28,7 @@ msgid "Copyright %{year} POA"
 msgstr ""
 
 #: lib/explorer_web/templates/block/index.html.eex:20
-#: lib/explorer_web/templates/block_transaction/index.html.eex:87
+#: lib/explorer_web/templates/block_transaction/index.html.eex:88
 msgid "Gas Used"
 msgstr ""
 
@@ -41,7 +41,7 @@ msgid "Hash"
 msgstr ""
 
 #: lib/explorer_web/templates/block/index.html.eex:17
-#: lib/explorer_web/templates/chain/_blocks.html.eex:8
+#: lib/explorer_web/templates/chain/_blocks.html.eex:7
 msgid "Height"
 msgstr ""
 
@@ -49,10 +49,10 @@ msgstr ""
 msgid "POA Network Explorer"
 msgstr ""
 
-#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:7
-#: lib/explorer_web/templates/address_transaction/index.html.eex:7
+#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:11
+#: lib/explorer_web/templates/address_transaction/index.html.eex:11
 #: lib/explorer_web/templates/block/index.html.eex:19
-#: lib/explorer_web/templates/block_transaction/index.html.eex:118
+#: lib/explorer_web/templates/block_transaction/index.html.eex:124
 #: lib/explorer_web/templates/chain/_transactions.html.eex:4
 #: lib/explorer_web/templates/layout/_sidebar.html.eex:36
 #: lib/explorer_web/templates/layout/_topnav.html.eex:27
@@ -79,9 +79,9 @@ msgid "Difficulty"
 msgstr ""
 
 #: lib/explorer_web/templates/block/index.html.eex:21
-#: lib/explorer_web/templates/block_transaction/index.html.eex:95
-#: lib/explorer_web/templates/transaction/overview.html.eex:116
-#: lib/explorer_web/templates/transaction_internal_transaction/index.html.eex:31
+#: lib/explorer_web/templates/block_transaction/index.html.eex:96
+#: lib/explorer_web/templates/transaction/overview.html.eex:119
+#: lib/explorer_web/templates/transaction_internal_transaction/index.html.eex:34
 msgid "Gas Limit"
 msgstr ""
 
@@ -128,14 +128,14 @@ msgstr ""
 
 #: lib/explorer_web/templates/block/index.html.eex:20
 #: lib/explorer_web/templates/block/index.html.eex:21
-#: lib/explorer_web/templates/chain/_blocks.html.eex:11
-#: lib/explorer_web/templates/transaction/overview.html.eex:119
-#: lib/explorer_web/templates/transaction_internal_transaction/index.html.eex:31
+#: lib/explorer_web/templates/chain/_blocks.html.eex:10
+#: lib/explorer_web/templates/transaction/overview.html.eex:122
+#: lib/explorer_web/templates/transaction_internal_transaction/index.html.eex:34
 msgid "Gas"
 msgstr ""
 
 #: lib/explorer_web/templates/block/index.html.eex:22
-#: lib/explorer_web/templates/transaction/overview.html.eex:124
+#: lib/explorer_web/templates/transaction/overview.html.eex:127
 msgid "Gas Price"
 msgstr ""
 
@@ -204,7 +204,7 @@ msgstr ""
 msgid "Transaction Status"
 msgstr ""
 
-#: lib/explorer_web/templates/address/overview.html.eex:11
+#: lib/explorer_web/templates/address/overview.html.eex:13
 msgid "Balance"
 msgstr ""
 
@@ -325,11 +325,11 @@ msgstr ""
 msgid "Showing #%{number}"
 msgstr ""
 
-#: lib/explorer_web/templates/address_transaction/index.html.eex:74
-#: lib/explorer_web/templates/chain/_transactions.html.eex:11
-#: lib/explorer_web/templates/pending_transaction/index.html.eex:40
-#: lib/explorer_web/templates/transaction/index.html.eex:38
-#: lib/explorer_web/templates/transaction_internal_transaction/index.html.eex:30
+#: lib/explorer_web/templates/address_transaction/index.html.eex:78
+#: lib/explorer_web/templates/chain/_transactions.html.eex:10
+#: lib/explorer_web/templates/pending_transaction/index.html.eex:39
+#: lib/explorer_web/templates/transaction/index.html.eex:39
+#: lib/explorer_web/templates/transaction_internal_transaction/index.html.eex:33
 #: lib/explorer_web/views/wei_helpers.ex:71
 msgid "Ether"
 msgstr ""
@@ -375,7 +375,7 @@ msgstr ""
 msgid "Type"
 msgstr ""
 
-#: lib/explorer_web/templates/transaction/overview.html.eex:145
+#: lib/explorer_web/templates/transaction/overview.html.eex:148
 #: lib/explorer_web/views/wei_helpers.ex:69
 msgid "Wei"
 msgstr ""
@@ -422,11 +422,14 @@ msgstr ""
 msgid "Price"
 msgstr ""
 
+#: lib/explorer_web/templates/chain/show.html.eex:35
+#: lib/explorer_web/templates/chain/show.html.eex:40
+#: lib/explorer_web/templates/chain/show.html.eex:44
 #: lib/explorer_web/views/currency_helpers.ex:32
 msgid "USD"
 msgstr ""
 
-#: lib/explorer_web/templates/address/overview.html.eex:18
+#: lib/explorer_web/templates/address/overview.html.eex:22
 msgid "Number of Transactions"
 msgstr ""
 
