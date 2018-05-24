@@ -5,7 +5,7 @@
         <img class="" src="<%= static_path(@conn, "/images/poa_logo.svg") %>" />
       <% end %>
     </div>
-    <div class="menu-items">
+    <div class="menu-items" role="navigation">
       <div tabindex="0" class="icon-locate">
         <a href="#pageSubmenu" data-toggle="collapse" aria-expanded="false">
           <i class="fa fa-sitemap fa-2x u-nudge-right u-nudge-top"></i>
