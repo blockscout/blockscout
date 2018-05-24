@@ -24,7 +24,7 @@
         </ul>
       </div>
       <div class="card-body">
-        <%= if length(@internal_transactions.entries) > 0 do %>
+        <%= if length(@page) > 0 do %>
           <table class="table table-responsive-sm table-font">
             <thead>
               <th><%= gettext "Type" %></th>
@@ -33,7 +33,7 @@
               <th><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
               <th><%= gettext "Gas Limit" %> (<%= gettext "Gas" %>)</th>
             </thead>
-            <%= for internal_transaction <- @internal_transactions do %>
+            <%= for internal_transaction <- @page do %>
               <tgroup>
                 <tr>
                   <td><%= internal_transaction.call_type %></td>
@@ -43,8 +43,8 @@
                   <td>
                     <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: internal_transaction.to_address %>
                   </td>
-                  <td><%= value(internal_transaction, include_label: false) %></td>
-                  <td><%= gas(internal_transaction) %></td>
+                  <td><%= ExplorerWeb.TransactionView.value(internal_transaction, include_label: false) %></td>
+                  <td><%= ExplorerWeb.TransactionView.gas(internal_transaction) %></td>
                 </tr>
               </tgroup>
             <% end %>
@@ -53,6 +53,20 @@
           <p><%= gettext "There are no Internal Transactions" %></p>
         <% end %>
       </div>
+    </div>
+
+    <div class="address__pagination">
+      <%= pagination_links(
+        @conn,
+        @page,
+        ["en", @conn.params["transaction_id"]],
+        distance: 1,
+        first: true,
+        next: Phoenix.HTML.raw("&rsaquo;"),
+        path: &transaction_internal_transaction_path/5,
+        previous: Phoenix.HTML.raw("&lsaquo;"),
+        view_style: :bulma
+      ) %>
     </div>
   </section>
 </section>
