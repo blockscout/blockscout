@@ -116,7 +116,7 @@ jobs:
   check_formatted:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.6.4
+      - image: circleci/elixir:1.6.5
         environment:
           MIX_ENV: test
 
