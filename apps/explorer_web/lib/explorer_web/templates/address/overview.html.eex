@@ -12,7 +12,7 @@
                 <th scope="row">
                   <%= gettext "Balance" %>
                 </th>
-                <td>
+                <td data-test="address_balance">
                   <%= balance(@address) %> </br>
                   <%= formatted_usd(@address, @exchange_rate) %>
                 </td>
