@@ -160,6 +160,7 @@ defmodule Explorer.Chain do
   @insert_internal_transactions_timeout 60_000
   @insert_logs_timeout 60_000
   @insert_transactions_timeout 60_000
+  @update_transactions_timeout 60_000
 
   @doc """
   Updates `t:Explorer.Chain.Address.t/0` with `hash` of `address_hash` to have `fetched_balance` of `balance` in
@@ -575,8 +576,7 @@ defmodule Explorer.Chain do
   @doc """
   Bulk insert blocks from a list of blocks.
 
-  The import returns the unique key(s0 for each type of record inserted.  For record that don't have a primary key, such
-  as `t:Explorer.Chain.Receipt.t/0`, the key that uniquely identifies the record is returned.
+  The import returns the unique key(s) for each type of record inserted.
 
   | Key                      | Value Type                                                                 | Value Description                                                                             |
   |--------------------------|----------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
@@ -587,8 +587,8 @@ defmodule Explorer.Chain do
   | `:transactions`          | `[Explorer.Chain.Hash.t()]`                                                | List of `t:Explorer.Chain.Transaction.t/0` `hash`                                             |
 
       iex> Explorer.Chain.import_blocks(
-      ...>   %{
-      ...>     blocks: [
+      ...>   blocks: [
+      ...>     params: [
       ...>       %{
       ...>         difficulty: 340282366920938463463374607431768211454,
       ...>         gas_limit: 6946336,
@@ -603,7 +603,9 @@ defmodule Explorer.Chain do
       ...>         total_difficulty: 12590447576074723148144860474975121280509
       ...>       }
       ...>     ],
-      ...>     internal_transactions: [
+      ...>   ],
+      ...>   internal_transactions: [
+      ...>     params: [
       ...>       %{
       ...>         call_type: "call",
       ...>         from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
@@ -618,7 +620,9 @@ defmodule Explorer.Chain do
       ...>         value: 0
       ...>       }
       ...>     ],
-      ...>     logs: [
+      ...>   ],
+      ...>   logs: [
+      ...>     params: [
       ...>       %{
       ...>         address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
       ...>         data: "0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
@@ -631,7 +635,9 @@ defmodule Explorer.Chain do
       ...>         type: "mined"
       ...>       }
       ...>     ],
-      ...>     transactions: [
+      ...>   ],
+      ...>   transactions: [
+      ...>     params: [
       ...>       %{
       ...>         block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>         block_number: 37,
@@ -653,12 +659,14 @@ defmodule Explorer.Chain do
       ...>         v: 0xbe,
       ...>         value: 0
       ...>       }
-      ...>     ],
-      ...>     addresses: [
+      ...>     ]
+      ...>   ],
+      ...>   addresses: [
+      ...>     params: [
       ...>        %{hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"},
       ...>        %{hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"}
       ...>     ]
-      ...>   }
+      ...>   ]
       ...> )
       {:ok,
        %{
@@ -714,33 +722,21 @@ defmodule Explorer.Chain do
          ]
        }}
 
-  A completely empty tree can be imported, but all `t:list/0` arguments must still be supplied
+  A completely empty tree can be imported, but options must still be supplied.  It is a non-zero amount of time to
+  process the empty options, so if there is nothing to import, you should avoid calling
+  `Explorer.Chain.import_blocks/1`.  If you don't supply any options with params, then nothing is run so there result is
+  an empty map.
 
-      iex> Explorer.Chain.import_blocks(
-      ...>   %{
-      ...>     blocks: [],
-      ...>     logs: [],
-      ...>     internal_transactions: [],
-      ...>     transactions: [],
-      ...>     addresses: []
-      ...>   }
-      ...> )
-      {:ok,
-       %{
-         addresses: [],
-         blocks: [],
-         internal_transactions: [],
-         logs: [],
-         transactions: []
-       }}
+      iex> Explorer.Chain.import_blocks([])
+      {:ok, %{}}
 
   The params for each key are validated using the corresponding `Ecto.Schema` module's `changeset/2` function.  If there
   are errors, they are returned in `Ecto.Changeset.t`s, so that the original, invalid value can be reconstructed for any
   error messages.
 
       iex> {:error, [internal_transaction_changeset, transaction_changeset]} = Explorer.Chain.import_blocks(
-      ...>   %{
-      ...>     blocks: [
+      ...>   blocks: [
+      ...>     params: [
       ...>       %{
       ...>         difficulty: 340282366920938463463374607431768211454,
       ...>         gas_limit: 6946336,
@@ -754,8 +750,10 @@ defmodule Explorer.Chain do
       ...>         timestamp: Timex.parse!("2017-12-15T21:06:30Z", "{ISO:Extended:Z}"),
       ...>         total_difficulty: 12590447576074723148144860474975121280509
       ...>       }
-      ...>     ],
-      ...>     internal_transactions: [
+      ...>     ]
+      ...>   ],
+      ...>   internal_transactions: [
+      ...>     params: [
       ...>       %{
       ...>         from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
       ...>         gas: 4677320,
@@ -782,8 +780,10 @@ defmodule Explorer.Chain do
       ...>         type: "create",
       ...>         value: 0
       ...>       }
-      ...>     ],
-      ...>     logs: [
+      ...>     ]
+      ...>   ],
+      ...>   logs: [
+      ...>     params: [
       ...>       %{
       ...>         address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
       ...>         data: "0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
@@ -795,8 +795,10 @@ defmodule Explorer.Chain do
       ...>         transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
       ...>         type: "mined"
       ...>       }
-      ...>     ],
-      ...>     transactions: [
+      ...>     ]
+      ...>   ],
+      ...>   transactions: [
+      ...>     params: [
       ...>       %{
       ...>         block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>         block_number: 37,
@@ -817,13 +819,15 @@ defmodule Explorer.Chain do
       ...>         v: 0xbe,
       ...>         value: 0
       ...>       }
-      ...>     ],
-      ...>     addresses: [
+      ...>     ]
+      ...>   ],
+      ...>   addresses: [
+      ...>     params: [
       ...>       %{hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"},
       ...>       %{hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"},
       ...>       %{hash: "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb4"}
-      ...>    ]
-      ...>   }
+      ...>     ]
+      ...>   ]
       ...> )
       iex> internal_transaction_changeset.errors
       [call_type: {"can't be blank", [validation: :required]}]
@@ -841,39 +845,88 @@ defmodule Explorer.Chain do
 
   ## Options
 
+    * `:addresses`
+      * `:params` - `list` of params for `Explorer.Chain.Address.changeset/2`.
+      * `:timeout` - the timeout for inserting all addresses.  Defaults to `#{@insert_addresses_timeout}` milliseconds.
+    * `:blocks`
+      * `:params` - `list` of params for `Explorer.Chain.Block.changeset/2`.
+      * `:timeout` - the timeout for inserting all blocks. Defaults to `#{@insert_blocks_timeout}` milliseconds.
+    * `:internal_transactions`
+      * `:params` - `list` of params for `Explorer.Chain.InternalTransaction.changeset/2`.
+      * `:timeout` - the timeout for inserting all internal transactions. Defaults to
+        `#{@insert_internal_transactions_timeout}` milliseconds.
+    * `:logs`
+      * `:params` - `list` of params for `Explorer.Chain.Log.changeset/2`.
+      * `:timeout` - the timeout for inserting all logs. Defaults to `#{@insert_logs_timeout}` milliseconds.
     * `:timeout` - the timeout for the whole `c:Ecto.Repo.transaction/0` call.  Defaults to `#{@transaction_timeout}`
       milliseconds.
-    * `:insert_addresses_timeout` - the timeout for inserting all addresses found in the params lists across all types.
-      Defaults to `#{@insert_addresses_timeout}` milliseconds.
-    * `:insert_blocks_timeout` - the timeout for inserting all blocks. Defaults to `#{@insert_blocks_timeout}`
-      milliseconds.
-    * `:insert_internal_transactions_timeout` - the timeout for inserting all internal transactions. Defaults to
-      `#{@insert_internal_transactions_timeout}` milliseconds.
-    * `:insert_logs_timeout` - the timeout for inserting all logs. Defaults to `#{@insert_logs_timeout}` milliseconds.
-    * `:insert_transactions_timeout` - the timeout for inserting all transactions found in the params lists across all
-      types. Defaults to `#{@insert_transactions_timeout}` milliseconds.
+    * `:transactions`
+      * `:params` - `list` of params for `Explorer.Chain.Transaction.changeset/2`.
+      * `:timeout` - the timeout for inserting all transactions found in the params lists across all
+        types. Defaults to `#{@insert_transactions_timeout}` milliseconds.
   """
-  def import_blocks(
-        %{
-          blocks: blocks_params,
-          logs: logs_params,
-          internal_transactions: internal_transactions_params,
-          transactions: transactions_params,
-          addresses: addresses_params
-        },
-        options \\ []
-      )
-      when is_list(blocks_params) and is_list(internal_transactions_params) and is_list(logs_params) and
-             is_list(transactions_params) and is_list(addresses_params) and is_list(options) do
+  def import_blocks(options) when is_list(options) do
+    ecto_schema_module_to_params_list = import_options_to_ecto_schema_module_to_params_list(options)
+
     with {:ok, ecto_schema_module_to_changes_list} <-
-           ecto_schema_module_to_params_list_to_ecto_schema_module_to_changes_list(%{
-             Block => blocks_params,
-             Log => logs_params,
-             InternalTransaction => internal_transactions_params,
-             Transaction => transactions_params,
-             Address => addresses_params
-           }) do
+           ecto_schema_module_to_params_list_to_ecto_schema_module_to_changes_list(ecto_schema_module_to_params_list) do
       insert_ecto_schema_module_to_changes_list(ecto_schema_module_to_changes_list, options)
+    end
+  end
+
+  """
+  Bulk insert internal transactions for a list of transactions.
+
+  ## Options
+
+    * `:addresses`
+      * `:params` - `list` of params for `Explorer.Chain.Address.changeset/2`.
+      * `:timeout` - the timeout for inserting all addresses.  Defaults to `#{@insert_addresses_timeout}` milliseconds.
+    * `:internal_transactions`
+      * `:params` - `list` of params for `Explorer.Chain.InternalTransaction.changeset/2`.
+      * `:timeout` - the timeout for inserting all internal transactions. Defaults to
+        `#{@insert_internal_transactions_timeout}` milliseconds.
+    * `:transactions`
+      * `:hashes` - `list` of `t:Explorer.Chain.Transaction.t/0` `hash`es that should have their
+          `internal_transactions_indexed_at` updated.
+      * `:timeout` - the timeout for updating transactions with `:hashes`.  Defaults to
+        `#{@update_transactions_timeout}` milliseconds.
+    * `:timeout` - the timeout for the whole `c:Ecto.Repo.transaction/0` call.  Defaults to `#{@transaction_timeout}`
+      milliseconds.
+  """
+
+  @spec import_internal_transactions([
+          {:adddresses, [{:params, map()} | {:timeout, timeout()}]}
+          | {:internal_transactions, [{:params, map()} | {:timeout, timeout()}]}
+          | {:transactions, [{:hashes, [String.t()]} | {:timeout, timeout()}]}
+          | {:timeout, timeout()}
+        ]) :: term()
+  def import_internal_transactions(options) when is_list(options) do
+    {transactions_options, import_options} = Keyword.pop(options, :transactions)
+    ecto_schema_module_to_params_list = import_options_to_ecto_schema_module_to_params_list(import_options)
+
+    with {:ok, ecto_schema_module_to_changes_list} <-
+           ecto_schema_module_to_params_list_to_ecto_schema_module_to_changes_list(ecto_schema_module_to_params_list) do
+      timestamps = timestamps()
+
+      ecto_schema_module_to_changes_list
+      |> ecto_schema_module_to_changes_list_to_multi(Keyword.put(options, :timestamps, timestamps))
+      |> Multi.run(:transactions, fn _ ->
+        transaction_hashes = Keyword.get(transactions_options, :hashes)
+        transactions_count = length(transaction_hashes)
+
+        query =
+          from(
+            t in Transaction,
+            where: t.hash in ^transaction_hashes,
+            update: [set: [internal_transactions_indexed_at: ^timestamps.updated_at]]
+          )
+
+        {^transactions_count, result} = Repo.update_all(query, [])
+
+        {:ok, result}
+      end)
+      |> import_transaction(options)
     end
   end
 
@@ -999,6 +1052,9 @@ defmodule Explorer.Chain do
     end)
   end
 
+  @doc """
+  Returns a stream of all transactions with unfetched internal transactions.
+  """
   def stream_transactions_with_unfetched_internal_transactions(initial, reducer)
       when is_function(reducer) do
     Repo.transaction(fn ->
@@ -1596,6 +1652,26 @@ defmodule Explorer.Chain do
     Enum.sort_by(changes_list, & &1.hash)
   end
 
+  @import_option_key_to_ecto_schema_module %{
+    addresses: Address,
+    blocks: Block,
+    internal_transactions: InternalTransaction,
+    logs: Log,
+    transactions: Transaction
+  }
+
+  defp import_options_to_ecto_schema_module_to_params_list(options) do
+    Enum.reduce(@import_option_key_to_ecto_schema_module, %{}, fn {option_key, ecto_schema_module}, acc ->
+      case Keyword.fetch(options, option_key) do
+        {:ok, option_value} when is_list(option_value) ->
+          Map.put(acc, ecto_schema_module, Keyword.fetch!(option_value, :params))
+
+        :error ->
+          acc
+      end
+    end)
+  end
+
   @spec insert_blocks([map()], [timeout_option | timestamps_option]) :: {:ok, [Hash.t()]} | {:error, [Changeset.t()]}
   defp insert_blocks(changes_list, named_arguments)
        when is_list(changes_list) and is_list(named_arguments) do
@@ -1618,75 +1694,28 @@ defmodule Explorer.Chain do
     {:ok, for(changes <- ordered_changes_list, do: changes.hash)}
   end
 
-  defp insert_ecto_schema_module_to_changes_list(
-         %{
-           Address => addresses_changes,
-           Block => blocks_changes,
-           Log => logs_changes,
-           InternalTransaction => internal_transactions_changes,
-           Transaction => transactions_changes
-         },
-         options
-       ) do
+  defp insert_ecto_schema_module_to_changes_list(ecto_schema_module_to_changes_list, options) do
     timestamps = timestamps()
 
-    Multi.new()
-    |> Multi.run(:addresses, fn _ ->
-      insert_addresses(
-        addresses_changes,
-        timeout: Keyword.get(options, :insert_addresses_timeout, @insert_addresses_timeout),
-        timestamps: timestamps
-      )
-    end)
-    |> Multi.run(:blocks, fn _ ->
-      insert_blocks(
-        blocks_changes,
-        timeout: Keyword.get(options, :insert_blocks_timeout, @insert_blocks_timeout),
-        timestamps: timestamps
-      )
-    end)
-    |> Multi.run(:transactions, fn _ ->
-      insert_transactions(
-        transactions_changes,
-        timeout: Keyword.get(options, :insert_transactions_timeout, @insert_transactions_timeout),
-        timestamps: timestamps
-      )
-    end)
-    |> Multi.run(:internal_transactions, fn _ ->
-      insert_internal_transactions(
-        internal_transactions_changes,
-        timeout:
-          Keyword.get(
-            options,
-            :insert_internal_transactions_timeout,
-            @insert_internal_transactions_timeout
-          ),
-        timestamps: timestamps
-      )
-    end)
-    |> Multi.run(:logs, fn _ ->
-      insert_logs(
-        logs_changes,
-        timeout: Keyword.get(options, :insert_logs_timeout, @insert_logs_timeout),
-        timestamps: timestamps
-      )
-    end)
-    |> Repo.transaction(timeout: Keyword.get(options, :transaction_timeout, @transaction_timeout))
+    ecto_schema_module_to_changes_list
+    |> ecto_schema_module_to_changes_list_to_multi(Keyword.put(options, :timestamps, timestamps))
+    |> import_transaction(options)
   end
 
-  def import_internal_transactions(internal_transactions_params) do
-    changes =
-      ecto_schema_module_to_params_list_to_ecto_schema_module_to_changes_list(%{
-        InternalTransaction => internal_transactions_params
-      })
+  defp import_transaction(%Multi{} = multi, options) when is_list(options) do
+    Repo.transaction(multi, timeout: Keyword.get(options, :transaction, @transaction_timeout))
+  end
 
-    Repo.transaction(fn ->
-      insert_internal_transactions(
-        changes,
-        timestamps: timestamps(),
-        timeout: @insert_internal_transactions_timeout
-      )
-    end)
+  defp ecto_schema_module_to_changes_list_to_multi(ecto_schema_module_to_changes_list, options) when is_list(options) do
+    timestamps = timestamps()
+    full_options = Keyword.put(options, :timestamps, timestamps)
+
+    Multi.new()
+    |> run_addresses(ecto_schema_module_to_changes_list, full_options)
+    |> run_blocks(ecto_schema_module_to_changes_list, full_options)
+    |> run_transactions(ecto_schema_module_to_changes_list, full_options)
+    |> run_internal_transactions(ecto_schema_module_to_changes_list, full_options)
+    |> run_logs(ecto_schema_module_to_changes_list, full_options)
   end
 
   @spec insert_internal_transactions([map()], [timestamps_option]) ::
@@ -1806,6 +1835,91 @@ defmodule Explorer.Chain do
 
   defp reverse_chronologically(query) do
     from(q in query, order_by: [desc: q.inserted_at, desc: q.hash])
+  end
+
+  defp run_addresses(%Multi{} = multi, ecto_schema_module_to_changes_list, options)
+       when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
+    case ecto_schema_module_to_changes_list do
+      %{Address => addresses_changes} ->
+        Multi.run(multi, :addresses, fn _ ->
+          insert_addresses(
+            addresses_changes,
+            timeout: Keyword.get(options, :insert_addresses_timeout, @insert_addresses_timeout),
+            timestamps: Keyword.fetch!(options, :timestamps)
+          )
+        end)
+
+      _ ->
+        multi
+    end
+  end
+
+  defp run_blocks(%Multi{} = multi, ecto_schema_module_to_changes_list, options)
+       when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
+    case ecto_schema_module_to_changes_list do
+      %{Block => blocks_changes} ->
+        Multi.run(multi, :blocks, fn _ ->
+          insert_blocks(
+            blocks_changes,
+            timeout: Keyword.get(options, :insert_blocks_timeout, @insert_blocks_timeout),
+            timestamps: Keyword.fetch!(options, :timestamps)
+          )
+        end)
+
+      _ ->
+        multi
+    end
+  end
+
+  defp run_transactions(%Multi{} = multi, ecto_schema_module_to_changes_list, options)
+       when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
+    case ecto_schema_module_to_changes_list do
+      %{Transaction => transactions_changes} ->
+        Multi.run(multi, :transactions, fn _ ->
+          insert_transactions(
+            transactions_changes,
+            timeout: Keyword.get(options, :insert_transactions_timeout, @insert_transactions_timeout),
+            timestamps: Keyword.fetch!(options, :timestamps)
+          )
+        end)
+
+      _ ->
+        multi
+    end
+  end
+
+  defp run_internal_transactions(%Multi{} = multi, ecto_schema_module_to_changes_list, options)
+       when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
+    case ecto_schema_module_to_changes_list do
+      %{InternalTransaction => internal_transactions_changes} ->
+        Multi.run(multi, :internal_transactions, fn _ ->
+          insert_internal_transactions(
+            internal_transactions_changes,
+            timeout: Keyword.get(options, :insert_internal_transactions_timeout, @insert_internal_transactions_timeout),
+            timestamps: Keyword.fetch!(options, :timestamps)
+          )
+        end)
+
+      _ ->
+        multi
+    end
+  end
+
+  defp run_logs(%Multi{} = multi, ecto_schema_module_to_changes_list, options)
+       when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
+    case ecto_schema_module_to_changes_list do
+      %{Log => logs_changes} ->
+        Multi.run(multi, :logs, fn _ ->
+          insert_logs(
+            logs_changes,
+            timeout: Keyword.get(options, :insert_logs_timeout, @insert_logs_timeout),
+            timestamps: Keyword.fetch!(options, :timestamps)
+          )
+        end)
+
+      _ ->
+        multi
+    end
   end
 
   defp timestamp_params(changes, timestamps) when is_map(changes) do

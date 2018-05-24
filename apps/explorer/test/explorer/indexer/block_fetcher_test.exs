@@ -4,8 +4,9 @@ defmodule Explorer.Indexer.BlockFetcherTest do
 
   import ExUnit.CaptureLog
 
-  alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Transaction}
-  alias Explorer.Indexer.{AddressBalanceFetcherCase, BlockFetcher, Sequence}
+  alias Explorer.Chain.{Address, Block, Log, Transaction}
+  alias Explorer.Indexer
+  alias Explorer.Indexer.{AddressBalanceFetcherCase, BlockFetcher, InternalTransactionFetcherCase, Sequence}
 
   @tag capture_log: true
 
@@ -33,6 +34,7 @@ defmodule Explorer.Indexer.BlockFetcherTest do
 
       start_supervised!({Task.Supervisor, name: Explorer.Indexer.TaskSupervisor})
       AddressBalanceFetcherCase.start_supervised!()
+      InternalTransactionFetcherCase.start_supervised!()
       start_supervised!(BlockFetcher)
 
       wait(fn ->
@@ -64,14 +66,16 @@ defmodule Explorer.Indexer.BlockFetcherTest do
 
     test "without debug_logs", %{state: state} do
       assert capture_log_at_level(:debug, fn ->
-               BlockFetcher.handle_info(:debug_count, %{state | debug_logs: false})
+               Indexer.disable_debug_logs()
+               BlockFetcher.handle_info(:debug_count, state)
              end) == ""
     end
 
     test "with debug_logs", %{state: state} do
       log =
         capture_log_at_level(:debug, fn ->
-          BlockFetcher.handle_info(:debug_count, %{state | debug_logs: true})
+          Indexer.enable_debug_logs()
+          BlockFetcher.handle_info(:debug_count, state)
         end)
 
       assert log =~ "blocks: 4"
@@ -87,7 +91,7 @@ defmodule Explorer.Indexer.BlockFetcherTest do
     setup do
       start_supervised!({Task.Supervisor, name: Explorer.Indexer.TaskSupervisor})
       AddressBalanceFetcherCase.start_supervised!()
-
+      InternalTransactionFetcherCase.start_supervised!()
       {:ok, state} = BlockFetcher.init(debug_logs: false)
 
       %{state: state}
@@ -112,7 +116,6 @@ defmodule Explorer.Indexer.BlockFetcherTest do
                         56, 28, 198, 161, 64, 176, 110, 132, 16, 17, 47>>
                   }
                 ],
-                internal_transactions: [],
                 logs: [],
                 transactions: []
               }} = BlockFetcher.import_range({0, 0}, state, sequence)
@@ -121,7 +124,7 @@ defmodule Explorer.Indexer.BlockFetcherTest do
       assert Repo.aggregate(Address, :count, :hash) == 1
     end
 
-    test "can import range with all imported schemas", %{state: state} do
+    test "can import range with all synchronous imported schemas", %{state: state} do
       {:ok, sequence} = Sequence.start_link([], 0, 1)
 
       assert {:ok,
@@ -144,17 +147,6 @@ defmodule Explorer.Indexer.BlockFetcherTest do
                     bytes:
                       <<246, 180, 184, 200, 141, 243, 235, 210, 82, 236, 71, 99, 40, 51, 77, 192, 38, 207, 102, 96, 106,
                         132, 251, 118, 155, 61, 60, 188, 204, 132, 113, 189>>
-                  }
-                ],
-                internal_transactions: [
-                  %{
-                    index: 0,
-                    transaction_hash: %Explorer.Chain.Hash{
-                      byte_count: 32,
-                      bytes:
-                        <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57,
-                          101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
-                    }
                   }
                 ],
                 logs: [
@@ -180,7 +172,6 @@ defmodule Explorer.Indexer.BlockFetcherTest do
 
       assert Repo.aggregate(Block, :count, :hash) == 1
       assert Repo.aggregate(Address, :count, :hash) == 2
-      assert Repo.aggregate(InternalTransaction, :count, :id) == 1
       assert Repo.aggregate(Log, :count, :id) == 1
       assert Repo.aggregate(Transaction, :count, :hash) == 1
     end
@@ -212,7 +203,7 @@ defmodule Explorer.Indexer.BlockFetcherTest do
   end
 
   defp state(_) do
-    {:ok, state} = BlockFetcher.init(debug_logs: false)
+    {:ok, state} = BlockFetcher.init([])
 
     %{state: state}
   end
