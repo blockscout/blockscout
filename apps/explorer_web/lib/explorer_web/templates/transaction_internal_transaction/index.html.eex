@@ -33,18 +33,18 @@
               <th><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
               <th><%= gettext "Gas Limit" %> (<%= gettext "Gas" %>)</th>
             </thead>
-            <%= for transaction <- @internal_transactions do %>
+            <%= for internal_transaction <- @internal_transactions do %>
               <tgroup>
                 <tr>
-                  <td><%= transaction.call_type %></td>
+                  <td><%= internal_transaction.call_type %></td>
                   <td>
-                    <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
+                    <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: internal_transaction.from_address %>
                   </td>
                   <td>
-                    <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
+                    <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: internal_transaction.to_address %>
                   </td>
-                  <td><%= value(transaction, include_label: false) %></td>
-                  <td><%= gas(transaction) %></td>
+                  <td><%= value(internal_transaction, include_label: false) %></td>
+                  <td><%= gas(internal_transaction) %></td>
                 </tr>
               </tgroup>
             <% end %>

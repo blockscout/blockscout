@@ -72,7 +72,7 @@
               <th><%= gettext "Age" %></th>
               <th><%= gettext "From" %></th>
               <th><%= gettext "To" %></th>
-              <th><%= gettext "Value" %></th>
+              <th><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
             </thead>
             <%= for internal_transaction <- @page do %>
               <tgroup>
@@ -92,7 +92,7 @@
                   <td>
                     <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: internal_transaction.to_address %>
                   </td>
-                  <td><%= ExplorerWeb.TransactionView.value(internal_transaction) %></td>
+                  <td><%= ExplorerWeb.TransactionView.value(internal_transaction, include_label: false) %></td>
                 </tr>
               </tgroup>
             <% end %>
