@@ -1,31 +1,31 @@
-<div class="panels container__subsection container__subsection-chain">
-  <div class="panels__container panels__container--title">
+<div class="card">
+  <div class="card-body">
     <%= link(gettext("View All"), to: block_path(@conn, :index, Gettext.get_locale), class: "button button--secondary button--xsmall u-float-right") %>
-    <h2 class="panels__title"><%= gettext "Blocks" %></h2>
+    <h2 class="card-title"><%= gettext "Blocks" %></h2>
+    <table class="table table-font table-responsive-lg">
+      <thead>
+        <th><%= gettext "Height" %></th>
+        <th><%= gettext "Age" %></th>
+        <th><%= gettext "TXNs" %></th>
+        <th><%= gettext "Gas" %></th>
+        <th><%= gettext "Validator" %></th>
+      </thead>
+      <tbody>
+        <%= for block <- @chain.blocks do %>
+        <tr data-test="chain_block">
+          <td>
+            <img src="<%= static_path(@conn, "/images/block.svg") %>" />
+            <%= link(block, to: block_path(@conn, :show, @conn.assigns.locale, block)) %>
+          </td>
+          <td><%= block.timestamp |> Timex.from_now %></td>
+          <td><%= block.transactions |> Enum.count %></td>
+          <td><%= block.gas_used |> Cldr.Number.to_string! %></td>
+          <td>
+            <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: block.miner %>
+          </td>
+        </tr>
+        <% end %>
+      </tbody>
+    </table>
   </div>
-  <table class="table table-font table-responsive-sm">
-    <thead>
-      <th><%= gettext "Height" %></th>
-      <th><%= gettext "Age" %></th>
-      <th><%= gettext "TXNs" %></th>
-      <th><%= gettext "Gas" %></th>
-      <th><%= gettext "Validator" %></th>
-    </thead>
-    <tbody>
-      <%= for block <- @chain.blocks do %>
-      <tr data-test="chain_block">
-        <td>
-          <img src="<%= static_path(@conn, "/images/block.svg") %>" />
-          <%= link(block, to: block_path(@conn, :show, @conn.assigns.locale, block)) %>
-        </td>
-        <td><%= block.timestamp |> Timex.from_now %></td>
-        <td><%= block.transactions |> Enum.count %></td>
-        <td><%= block.gas_used |> Cldr.Number.to_string! %></td>
-        <td>
-          <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: block.miner %>
-        </td>
-      </tr>
-      <% end %>
-    </tbody>
-  </table>
 </div>

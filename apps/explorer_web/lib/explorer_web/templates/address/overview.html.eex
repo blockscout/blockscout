@@ -1,25 +1,34 @@
-<div>
+<section>
   <h1><%= gettext "Address" %></h1>
-  <h2 data-test="address_detail_hash"><%= @address %></h2>
-</div>
-<div class="panels container__subsection">
-  <div class="panels__container">
-    <table class="table table-responsive-sm table-font">
-      <table class="table table-responsive-sm table-font">
-        <tbody>
-          <tr>
-            <th scope="row"><%= gettext "Balance" %></th>
-            <td class="u-text-right" data-test="address_balance">
-              <div><%= balance(@address) %></div>
-              <div><%= formatted_usd(@address, @exchange_rate) %></div>
-            </td>
-          </tr>
-          <tr>
-            <th scope="row"> <%= gettext "Number of Transactions" %></th>
-            <td class="u-text-right" data-test="transaction_count"><%= Cldr.Number.to_string!(@transaction_count) %></td>
-          </tr>
-        </tbody>
-      </table>
-    </table>
+  <p data-test="address_detail_hash"><%= @address %></p>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-sm-6">
+          <table class="table table-font table-responsive-sm table-horizontal">
+            <tbody>
+              <tr>
+                <th scope="row">
+                  <%= gettext "Balance" %>
+                </th>
+                <td data-test="address_balance">
+                  <%= balance(@address) %> </br>
+                  <%= formatted_usd(@address, @exchange_rate) %>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  <%= gettext "Number of Transactions" %>
+                </th>
+                <td data-test="transaction_count">
+                  <%= Cldr.Number.to_string!(@transaction_count) %>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
-</div>
+</section>

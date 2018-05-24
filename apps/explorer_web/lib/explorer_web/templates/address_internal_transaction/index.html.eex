@@ -1,114 +1,121 @@
-<section class="container__section block">
+<section class="container-fluid">
+
   <%= render ExplorerWeb.AddressView, "overview.html", assigns %>
-  <div>
-    <ul class="nav nav-tabs">
-      <li class="nav-item">
-        <%= link(
-              gettext("Transactions"),
-              class: "nav-link",
-              to: address_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
-            ) %>
-      </li>
-      <li class="nav-item">
-        <%= link(
-              gettext("Internal Transactions"),
-              class: "nav-link active",
-              "data-test": "internal_transactions_tab_link",
-              to: address_internal_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
-            ) %>
-      </li>
-    </ul>
-  </div>
-  <div class="panels container__subsection">
-    <div class="dropdown u-float-right u-push-sm">
-      <button data-test="filter_dropdown" class="button button--secondary button--xsmall dropdown-toggle" type="button"
-        id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        Filter: <%= format_current_filter(@filter) %>
-      </button>
-      <div class="dropdown-menu dropdown-menu-right filter" aria-labelledby="dropdownMenu2">
-        <%= link(
-          gettext("All"),
-          to: address_internal_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"]),
-          class: "address__link address__link--active dropdown-item",
-          "data-test": "filter_option"
-        ) %>
-        <%= link(
-          gettext("To"),
-          to: address_internal_transaction_path(
-            @conn,
-            :index,
-            @conn.assigns.locale,
-            @conn.params["address_id"],
-            filter: "to"
-          ),
-          class: "address__link address__link--active dropdown-item",
-          "data-test": "filter_option"
-        ) %>
-        <%= link(
-          gettext("From"),
-          to: address_internal_transaction_path(
-            @conn,
-            :index,
-            @conn.assigns.locale,
-            @conn.params["address_id"],
-            filter: "from"
-          ),
-          class: "address__link address__link--active dropdown-item",
-          "data-test": "filter_option"
-        ) %>
+
+  <section>
+    <div class="card">
+      <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs">
+          <li class="nav-item">
+            <%= link(
+                  gettext("Transactions"),
+                  class: "nav-link",
+                  to: address_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
+                ) %>
+          </li>
+          <li class="nav-item">
+            <%= link(
+                  gettext("Internal Transactions"),
+                  class: "nav-link active",
+                  "data-test": "internal_transactions_tab_link",
+                  to: address_internal_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
+                ) %>
+          </li>
+        </ul>
+      </div>
+      <div class="card-body">
+
+        <%= if length(@page.entries) > 0 do %>
+          <div class="dropdown u-float-right u-push-sm">
+            <button data-test="filter_dropdown" class="button button--secondary button--xsmall dropdown-toggle" type="button"
+              id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Filter: <%= format_current_filter(@filter) %>
+            </button>
+            <div class="dropdown-menu dropdown-menu-right filter" aria-labelledby="dropdownMenu2">
+              <%= link(
+                gettext("All"),
+                to: address_internal_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"]),
+                class: "address__link address__link--active dropdown-item",
+                "data-test": "filter_option"
+              ) %>
+              <%= link(
+                gettext("To"),
+                to: address_internal_transaction_path(
+                  @conn,
+                  :index,
+                  @conn.assigns.locale,
+                  @conn.params["address_id"],
+                  filter: "to"
+                ),
+                class: "address__link address__link--active dropdown-item",
+                "data-test": "filter_option"
+              ) %>
+              <%= link(
+                gettext("From"),
+                to: address_internal_transaction_path(
+                  @conn,
+                  :index,
+                  @conn.assigns.locale,
+                  @conn.params["address_id"],
+                  filter: "from"
+                ),
+                class: "address__link address__link--active dropdown-item",
+                "data-test": "filter_option"
+              ) %>
+            </div>
+          </div>
+
+          <table class="table table-responsive-sm table-font">
+            <thead>
+              <th><%= gettext "Parent Tx Hash" %></th>
+              <th><%= gettext "Block" %></th>
+              <th><%= gettext "Age" %></th>
+              <th><%= gettext "From" %></th>
+              <th><%= gettext "To" %></th>
+              <th><%= gettext "Value" %></th>
+            </thead>
+            <%= for internal_transaction <- @page do %>
+              <tgroup>
+                <tr data-test="internal_transaction">
+                  <td>
+                    <%= render ExplorerWeb.TransactionView, "_link.html", conn: @conn, transaction: internal_transaction.transaction %>
+                  </td>
+                  <td>
+                    <%= link(internal_transaction.transaction.block,
+                      to: block_path(@conn, :show, @conn.assigns.locale, internal_transaction.transaction.block)
+                      ) %>
+                  </td>
+                  <td><%= ExplorerWeb.BlockView.age(internal_transaction.transaction.block) %></td>
+                  <td>
+                    <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: internal_transaction.from_address %>
+                  </td>
+                  <td>
+                    <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: internal_transaction.to_address %>
+                  </td>
+                  <td><%= ExplorerWeb.TransactionView.value(internal_transaction) %></td>
+                </tr>
+              </tgroup>
+            <% end %>
+          </table>
+        <% else %>
+          <p><%= gettext "There are no Internal Transactions" %></p>
+        <% end %>
       </div>
     </div>
-    <div class="panels__container">
-      <%= if length(@page.entries) > 0 do %>
-        <table class="table table-responsive-sm table-font">
-          <thead>
-            <th><%= gettext "Parent Tx Hash" %></th>
-            <th><%= gettext "Block" %></th>
-            <th><%= gettext "Age" %></th>
-            <th><%= gettext "From" %></th>
-            <th><%= gettext "To" %></th>
-            <th><%= gettext "Value" %></th>
-          </thead>
-          <%= for internal_transaction <- @page do %>
-            <tgroup>
-              <tr data-test="internal_transaction">
-                <td>
-                  <%= render ExplorerWeb.TransactionView, "_link.html", conn: @conn, transaction: internal_transaction.transaction %>
-                </td>
-                <td>
-                  <%= link(internal_transaction.transaction.block,
-                    to: block_path(@conn, :show, @conn.assigns.locale, internal_transaction.transaction.block)
-                    ) %>
-                </td>
-                <td><%= ExplorerWeb.BlockView.age(internal_transaction.transaction.block) %></td>
-                <td>
-                  <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: internal_transaction.from_address %>
-                </td>
-                <td>
-                  <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: internal_transaction.to_address %>
-                </td>
-                <td><%= ExplorerWeb.TransactionView.value(internal_transaction) %></td>
-              </tr>
-            </tgroup>
-          <% end %>
-        </table>
-      <% else %>
-        <p><%= gettext "There are no Internal Transactions" %></p>
-      <% end %>
+
+    <div class="address__pagination">
+      <%= pagination_links(
+        @conn,
+        @page,
+        ["en", @conn.params["address_id"]],
+        distance: 1,
+        filter: @conn.params["filter"],
+        first: true,
+        next: Phoenix.HTML.raw("&rsaquo;"),
+        path: &address_internal_transaction_path/5,
+        previous: Phoenix.HTML.raw("&lsaquo;"),
+        view_style: :bulma
+      ) %>
     </div>
-  </div>
-  <div class="address__pagination">
-    <%= pagination_links(
-      @conn,
-      @page,
-      ["en", @conn.params["address_id"]],
-      distance: 1,
-      filter: @conn.params["filter"],
-      first: true,
-      next: Phoenix.HTML.raw("&rsaquo;"),
-      path: &address_internal_transaction_path/5,
-      previous: Phoenix.HTML.raw("&lsaquo;"),
-      view_style: :bulma
-    ) %>
-  </div>
+  </section>
 </section>
