@@ -18,7 +18,7 @@ defmodule ExplorerWeb.TransactionView do
   def gas_used(%Transaction{receipt: nil}), do: gettext("Pending")
 
   def gas_used(%Transaction{receipt: %Receipt{gas_used: gas_used}}) do
-    "#{Number.to_string!(gas_used)} " <> gettext("Gas")
+    Number.to_string!(gas_used)
   end
 
   def formatted_fee(%Transaction{} = transaction, opts) do
