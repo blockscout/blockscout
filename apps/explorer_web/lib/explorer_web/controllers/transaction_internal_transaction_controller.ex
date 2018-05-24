@@ -16,18 +16,14 @@ defmodule ExplorerWeb.TransactionInternalTransactionController do
                receipt: :optional
              }
            ) do
-      options = [
-        necessity_by_association: %{
-          from_address: :required,
-          to_address: :optional
-        },
-        pagination: params
-      ]
-
       page =
         Chain.transaction_hash_to_internal_transactions(
           transaction.hash,
-          options
+          necessity_by_association: %{
+            from_address: :required,
+            to_address: :optional
+          },
+          pagination: params
         )
 
       max_block_number = max_block_number()
