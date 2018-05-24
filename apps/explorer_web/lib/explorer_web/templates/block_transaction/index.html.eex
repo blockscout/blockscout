@@ -145,7 +145,7 @@
             </tr>
           </thead>
           <tbody>
-            <%= for transaction <- @page.entries do %>
+            <%= for transaction <- @page do %>
               <tr>
                 <td>
                   <div class="transaction__dot transaction__dot--<%= status(transaction) %>"></div>

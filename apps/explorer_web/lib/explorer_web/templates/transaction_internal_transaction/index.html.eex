@@ -24,7 +24,7 @@
         </ul>
       </div>
       <div class="card-body">
-        <%= if length(@page) > 0 do %>
+        <%= if Enum.count(@page) > 0 do %>
           <table class="table table-responsive-sm table-font">
             <thead>
               <th><%= gettext "Type" %></th>

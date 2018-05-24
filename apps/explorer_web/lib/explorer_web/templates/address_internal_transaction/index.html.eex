@@ -25,7 +25,7 @@
       </div>
       <div class="card-body">
 
-        <%= if length(@page.entries) > 0 do %>
+        <%= if Enum.count(@page) > 0 do %>
           <div class="dropdown u-float-right u-push-sm">
             <button data-test="filter_dropdown" class="button button--secondary button--xsmall dropdown-toggle" type="button"
               id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
