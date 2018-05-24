@@ -20,7 +20,7 @@ defmodule ExplorerWeb.TransactionViewTest do
 
       token = %Token{usd_value: Decimal.new(0.50)}
 
-      expected_value = "<= 0.009,000,000,000,000,000 POA"
+      expected_value = "<= 0.009 POA"
       assert expected_value == TransactionView.formatted_fee(transaction, denomination: :ether)
       assert "<= $0.0045 USD" == TransactionView.formatted_fee(transaction, exchange_rate: token)
     end
@@ -31,7 +31,7 @@ defmodule ExplorerWeb.TransactionViewTest do
       transaction = build(:transaction, gas_price: gas_price, receipt: receipt)
       token = %Token{usd_value: Decimal.new(0.50)}
 
-      expected_value = "0.003,102,702,000,000,000 POA"
+      expected_value = "0.003102702 POA"
       assert expected_value == TransactionView.formatted_fee(transaction, denomination: :ether)
       assert "$0.001551351 USD" == TransactionView.formatted_fee(transaction, exchange_rate: token)
     end

@@ -17,6 +17,12 @@ defmodule ExplorerWeb.ExchangeRates.USD do
   alias Explorer.Chain.Wei
   alias Explorer.ExchangeRates.Token
 
+  def from(nil), do: null()
+
+  def from(%Decimal{} = usd_decimal) do
+    %__MODULE__{value: usd_decimal}
+  end
+
   def from(nil, _), do: null()
 
   def from(_, nil), do: null()

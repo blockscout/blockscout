@@ -118,7 +118,7 @@
                 <th scope="row">
                   <%= gettext "Gas Limit" %>
                 </th>
-                <td title="<%= last_seen %>">
+                <td title="<%= format_gas_limit(@transaction.gas) %>">
                   <%= format_gas_limit(@transaction.gas) %> <%= gettext("Gas") %>
                 </td>
               </tr>
@@ -126,7 +126,7 @@
                 <th scope="row">
                   <%= gettext "Gas Price" %>
                 </th>
-                <td title="<%= last_seen %>">
+                <td title="<%= gas_price(@transaction, :wei) %>">
                   <%= gas_price(@transaction, :wei) %>
                   (<%= gas_price(@transaction, :gwei) %>)
                 </td>
@@ -144,7 +144,7 @@
                 <th scope="row">
                   <%= gettext "Total Gas Used" %>
                 </th>
-                <td title="<%= last_seen %>">
+                <td title="<%= cumulative_gas_used(@transaction) %>">
                   <%= cumulative_gas_used(@transaction) %> <%= gettext("Wei") %>
                 </td>
               </tr>

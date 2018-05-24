@@ -3,7 +3,7 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
 
   use ExplorerWeb.FeatureCase, async: true
 
-  alias Explorer.Chain.{Credit, Debit, Wei}
+  alias Explorer.Chain.Wei
   alias ExplorerWeb.{AddressPage, HomePage, TransactionListPage, TransactionLogsPage, TransactionPage}
 
   setup do
@@ -52,10 +52,7 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
     internal_receipt =
       insert(:receipt, transaction_hash: txn_from_lincoln.hash, transaction_index: txn_from_lincoln.index)
 
-    internal = insert(:internal_transaction, transaction_hash: internal_receipt.transaction_hash)
-
-    Credit.refresh()
-    Debit.refresh()
+    internal = insert(:internal_transaction, index: 0, transaction_hash: internal_receipt.transaction_hash)
 
     {:ok,
      %{

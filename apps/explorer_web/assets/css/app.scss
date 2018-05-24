@@ -1,5 +1,4 @@
 @import "explorer/all";
-@import "components/all";
 
 /* Phoenix flash messages */
 .alert:empty { display: none; }
@@ -49,9 +48,10 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/dot";
 @import "components/pagination";
 @import "components/address_link";
-@import "explorer/button";
-@import "explorer/filter";
-@import "explorer/table";
+@import "components/footer";
+@import "components/filter";
+@import "components/button";
+@import "components/table";
 @import "tooltip";
 
 :export {

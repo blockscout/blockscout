@@ -13,7 +13,7 @@ defmodule ExplorerWeb.AddressView do
   Returns a formatted address balance and includes the unit.
   """
   def balance(%Address{fetched_balance: balance}) do
-    format_wei_value(balance, :ether, fractional_digits: 18)
+    format_wei_value(balance, :ether)
   end
 
   def formatted_usd(%Address{fetched_balance: nil}, _), do: nil

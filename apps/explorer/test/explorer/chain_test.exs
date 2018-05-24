@@ -615,7 +615,7 @@ defmodule Explorer.ChainTest do
       address = insert(:address)
       block = insert(:block)
       transaction = insert(:transaction, block_hash: block.hash, index: 0, to_address_hash: address.hash)
-      insert(:internal_transaction, transaction_hash: transaction.hash, to_address_hash: address.hash)
+      insert(:internal_transaction, index: 0, to_address_hash: address.hash, transaction_hash: transaction.hash)
 
       assert %{entries: []} = Chain.address_to_internal_transactions(address)
     end
@@ -686,7 +686,7 @@ defmodule Explorer.ChainTest do
     test "excludes internal transaction with no siblings in the transaction" do
       block = insert(:block)
       %Transaction{hash: hash} = insert(:transaction, block_hash: block.hash, index: 0)
-      insert(:internal_transaction, transaction_hash: hash)
+      insert(:internal_transaction, transaction_hash: hash, index: 0)
 
       result =
         hash
