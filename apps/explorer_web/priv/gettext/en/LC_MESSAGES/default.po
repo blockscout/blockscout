@@ -41,6 +41,7 @@ msgstr "%{year} POA Network Ltd. All rights reserved"
 
 #: lib/explorer_web/templates/block/index.html.eex:20
 #: lib/explorer_web/templates/block_transaction/index.html.eex:88
+#: lib/explorer_web/templates/transaction/overview.html.eex:145
 msgid "Gas Used"
 msgstr "Gas Used"
 
@@ -141,7 +142,6 @@ msgstr "Cumulative Gas Used"
 #: lib/explorer_web/templates/block/index.html.eex:20
 #: lib/explorer_web/templates/block/index.html.eex:21
 #: lib/explorer_web/templates/chain/_blocks.html.eex:10
-#: lib/explorer_web/templates/transaction/overview.html.eex:122
 #: lib/explorer_web/templates/transaction_internal_transaction/index.html.eex:34
 msgid "Gas"
 msgstr "Gas"
@@ -188,7 +188,7 @@ msgstr "From"
 msgid "Overview"
 msgstr "Overview"
 
-#: lib/explorer_web/views/transaction_view.ex:110
+#: lib/explorer_web/views/transaction_view.ex:109
 msgid "Success"
 msgstr "Success"
 
@@ -248,10 +248,10 @@ msgstr "Showing %{count} Transactions"
 #: lib/explorer_web/templates/transaction/index.html.eex:21
 #: lib/explorer_web/templates/transaction/overview.html.eex:65
 #: lib/explorer_web/templates/transaction/overview.html.eex:81
-#: lib/explorer_web/views/transaction_view.ex:20
-#: lib/explorer_web/views/transaction_view.ex:66
-#: lib/explorer_web/views/transaction_view.ex:73
-#: lib/explorer_web/views/transaction_view.ex:109
+#: lib/explorer_web/views/transaction_view.ex:18
+#: lib/explorer_web/views/transaction_view.ex:65
+#: lib/explorer_web/views/transaction_view.ex:72
+#: lib/explorer_web/views/transaction_view.ex:108
 msgid "Pending"
 msgstr "Pending"
 
@@ -314,11 +314,11 @@ msgstr ""
 msgid "Next Page"
 msgstr ""
 
-#: lib/explorer_web/views/transaction_view.ex:107
+#: lib/explorer_web/views/transaction_view.ex:106
 msgid "Failed"
 msgstr ""
 
-#: lib/explorer_web/views/transaction_view.ex:108
+#: lib/explorer_web/views/transaction_view.ex:107
 msgid "Out of Gas"
 msgstr ""
 
@@ -387,7 +387,6 @@ msgstr ""
 msgid "Type"
 msgstr ""
 
-#: lib/explorer_web/templates/transaction/overview.html.eex:148
 #: lib/explorer_web/views/wei_helpers.ex:69
 msgid "Wei"
 msgstr ""
