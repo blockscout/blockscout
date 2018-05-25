@@ -11,9 +11,10 @@ defmodule Explorer.Indexer.AddressBalanceFetcher do
 
   @defaults [
     flush_interval: :timer.seconds(3),
-    max_batch_size: 100,
+    max_batch_size: 500,
     max_concurrency: 4,
-    stream_chunk_size: 1000
+    init_chunk_size: 1000,
+    task_supervisor: Explorer.Indexer.TaskSupervisor
   ]
 
   @doc """

@@ -1,6 +1,48 @@
 defmodule Explorer.BufferedTask do
   @moduledoc """
-  TODO
+  Provides a behaviour for batched task running with retries.
+
+  ## Options
+
+  The following list of options may be passed when starting a child:
+
+    * `:name` - The optional registred name for the new process.
+    * `:flush_interval` - The required interval in milliseconds to flush the buffer.
+    * `:max_concurrency` - The required maximum number of tasks to run
+      concurrently at any give time.
+    * `:max_batch_size` - The required maximum batch passed to run callbacks.
+    * `:init_chunk_size` - The required chunk size to chunk init entries for
+      initial buffer population.
+    * `:task_supervisor` - The required  `Task.Supervisor` name to spawn tasks under.
+
+  ## Callbacks
+
+  The `init/2` is used for a task to populate the buffer on
+  boot with an initial set of entries. For example, the follow
+  callback would buffer all unfetched account balances on startup:
+
+      def init(acc, reducer) do
+        Chain.stream_unfetched_addresses([:hash], acc, fn %{hash: hash}, acc ->
+          reducer.(Hash.to_string(hash), acc)
+        end)
+      end
+
+  The `init/2` operation may be long running and allows concurrent calls to
+  `Explorer.BufferedTask.buffer/2` for on-demand entries. As concurrency becomes
+  available, the `run/2` callback of the task is invoked, with a list of batched
+  entries to be processed. For example, the `run/2` callback for above may look
+  like:
+
+      def run(string_hashes, _retries) do
+        case EthereumJSONRPC.fetch_balances_by_hash(string_hashes) do
+          {:ok, results} -> :ok = Chain.update_balances(results)
+          {:error, reason} -> {:retry, reason}
+        end
+      end
+
+  If a task crashes, it will be retries automatically with an increased `retries`
+  passed in as the second argument. Tasks may also be programmatically
+  retried by returning `{:retry, reason}` from `run/2`.
   """
   use GenServer
   require Logger
@@ -37,10 +79,11 @@ defmodule Explorer.BufferedTask do
       init_task: nil,
       flush_timer: nil,
       callback_module: callback_module,
+      task_supervisor: Keyword.fetch!(opts, :task_supervisor),
       flush_interval: Keyword.fetch!(opts, :flush_interval),
       max_batch_size: Keyword.fetch!(opts, :max_batch_size),
       max_concurrency: Keyword.fetch!(opts, :max_concurrency),
-      stream_chunk_size: Keyword.fetch!(opts, :stream_chunk_size),
+      init_chunk_size: Keyword.fetch!(opts, :init_chunk_size),
       current_buffer: [],
       buffer: :queue.new(),
       tasks: %{}
@@ -97,7 +140,7 @@ defmodule Explorer.BufferedTask do
   def handle_call(:debug_count, _from, state) do
     count = length(state.current_buffer) + :queue.len(state.buffer) * state.max_batch_size
 
-    {:reply, count, state}
+    {:reply, %{buffer: count, tasks: Enum.count(state.tasks)}, state}
   end
 
   defp drop_task(state, ref) do
@@ -126,12 +169,12 @@ defmodule Explorer.BufferedTask do
     :queue.in({batch, retries}, que)
   end
 
-  defp do_initial_stream(%{stream_chunk_size: stream_chunk_size} = state) do
+  defp do_initial_stream(%{init_chunk_size: init_chunk_size} = state) do
     task =
-      Task.Supervisor.async(Explorer.TaskSupervisor, fn ->
+      Task.Supervisor.async(state.task_supervisor, fn ->
         {0, []}
         |> state.callback_module.init(fn
-          entry, {len, acc} when len + 1 >= stream_chunk_size ->
+          entry, {len, acc} when len + 1 >= init_chunk_size ->
             [entry | acc]
             |> chunk_into_queue(state)
             |> async_perform(state.pid)
@@ -185,7 +228,7 @@ defmodule Explorer.BufferedTask do
       {{batch, retries}, new_queue} = take_batch(state)
 
       task =
-        Task.Supervisor.async_nolink(Explorer.TaskSupervisor, fn ->
+        Task.Supervisor.async_nolink(state.task_supervisor, fn ->
           {:performed, state.callback_module.run(batch, retries)}
         end)
 

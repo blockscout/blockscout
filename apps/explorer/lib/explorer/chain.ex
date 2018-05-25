@@ -1014,8 +1014,7 @@ defmodule Explorer.Chain do
   When there are addresses, the `reducer` is called for each `t:Explorer.Chain.Address.t/0`.
 
       iex> [first_address_hash, second_address_hash] = 2 |> insert_list(:address) |> Enum.map(& &1.hash)
-      iex> {:ok, address_hash_set} = Explorer.Chain.stream_unfetched_addresses(
-      ...>   [:hash],
+      iex> {:ok, address_hash_set} = Explorer.Chain.stream_unfetched_addresses([:hash],
       ...>   MapSet.new([]),
       ...>   fn %Explorer.Chain.Address{hash: hash}, acc ->
       ...>     MapSet.put(acc, hash)
@@ -1029,14 +1028,10 @@ defmodule Explorer.Chain do
   When there are no addresses, the `reducer` is never called and the `initial` is returned in an `:ok` tuple.
 
       iex> {:ok, pid} = Agent.start_link(fn -> 0 end)
-      iex> Explorer.Chain.stream_unfetched_addresses(
-      ...>   [:hash],
-      ...>   MapSet.new([]),
-      ...>   fn %Explorer.Chain.Address{hash: hash}, acc ->
-      ...>     Agent.update(pid, &(&1 + 1))
-      ...>     MapSet.put(acc, hash)
-      ...>   end
-      ...> )
+      iex> Explorer.Chain.stream_unfetched_addresses([:hash], MapSet.new([]), fn %Explorer.Chain.Address{hash: hash}, acc ->
+      ...>   Agent.update(pid, &(&1 + 1))
+      ...>   MapSet.put(acc, hash)
+      ...> end)
       {:ok, MapSet.new([])}
       iex> Agent.get(pid, & &1)
       0

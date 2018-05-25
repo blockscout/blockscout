@@ -6,10 +6,16 @@ defmodule Explorer.BufferedTaskTest do
   @max_batch_size 2
 
   defp start_buffer(callback_module) do
+    start_supervised!({Task.Supervisor, name: BufferedTaskSup})
+
     start_supervised(
       {BufferedTask,
        {callback_module,
-        flush_interval: 50, max_batch_size: @max_batch_size, max_concurrency: 2, stream_chunk_size: @max_batch_size * 2}}
+        task_supervisor: BufferedTaskSup,
+        flush_interval: 50,
+        max_batch_size: @max_batch_size,
+        max_concurrency: 2,
+        init_chunk_size: @max_batch_size * 2}}
     )
   end
 
@@ -136,10 +142,10 @@ defmodule Explorer.BufferedTaskTest do
 
   test "debug_count/1 returns count of buffered entries" do
     {:ok, buffer} = start_buffer(RetryableTask)
-    assert 0 = BufferedTask.debug_count(buffer)
+    assert %{buffer: 0, tasks: 0} = BufferedTask.debug_count(buffer)
     BufferedTask.buffer(buffer, [{:sleep, 100}])
     BufferedTask.buffer(buffer, [{:sleep, 100}])
     BufferedTask.buffer(buffer, [{:sleep, 100}])
-    assert 3 = BufferedTask.debug_count(buffer)
+    assert %{buffer: 3, tasks: 0} = BufferedTask.debug_count(buffer)
   end
 end

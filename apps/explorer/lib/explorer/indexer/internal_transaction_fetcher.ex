@@ -18,7 +18,8 @@ defmodule Explorer.Indexer.InternalTransactionFetcher do
     flush_interval: :timer.seconds(3),
     max_concurrency: @max_concurrency,
     max_batch_size: @max_batch_size,
-    stream_chunk_size: 5000
+    init_chunk_size: 5000,
+    task_supervisor: Explorer.Indexer.TaskSupervisor
   ]
 
   @doc """
@@ -37,10 +38,10 @@ defmodule Explorer.Indexer.InternalTransactionFetcher do
   *Note*: The internal transactions for individual transactions cannot be paginated,
   so the total number of internal transactions that could be produced is unknown.
   """
-  def async_fetch(transaction_hashes) do
+  def async_fetch(transaction_hashes, timeout \\ 5000) do
     string_hashes = for hash <- transaction_hashes, do: Hash.to_string(hash)
 
-    BufferedTask.buffer(__MODULE__, string_hashes)
+    BufferedTask.buffer(__MODULE__, string_hashes, timeout)
   end
 
   @doc false

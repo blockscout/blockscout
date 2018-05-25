@@ -21,14 +21,14 @@ defmodule Explorer.Indexer.BlockFetcher do
   # These are all the *default* values for options.
   # DO NOT use them directly in the code.  Get options from `state`.
 
-  @blocks_batch_size 50
+  @blocks_batch_size 10
   @blocks_concurrency 10
 
   # milliseconds
   @block_rate 5_000
 
   @receipts_batch_size 250
-  @receipts_concurrency 20
+  @receipts_concurrency 10
 
   @doc """
   Starts the server.
@@ -121,13 +121,13 @@ defmodule Explorer.Indexer.BlockFetcher do
         blocks: #{Chain.block_count()}
         internal transactions: #{Chain.internal_transaction_count()}
         logs: #{Chain.log_count()}
+        addresses: #{Chain.address_count()}
 
       ================================
       deferred fetches
       ================================
-        address balances: #{BufferedTask.debug_count(AddressBalanceFetcher)}
-        internal transactions: #{BufferedTask.debug_count(InternalTransactionFetcher)}
-
+        address balances: #{inspect(BufferedTask.debug_count(AddressBalanceFetcher))}
+        internal transactions: #{inspect(BufferedTask.debug_count(InternalTransactionFetcher))}
       """
     end)
 
@@ -194,7 +194,7 @@ defmodule Explorer.Indexer.BlockFetcher do
     %{transactions: transaction_hashes, addresses: address_hashes} = results
 
     AddressBalanceFetcher.async_fetch_balances(address_hashes)
-    InternalTransactionFetcher.async_fetch(transaction_hashes)
+    InternalTransactionFetcher.async_fetch(transaction_hashes, 10_000)
   end
 
   defp missing_block_numbers(%{blocks_batch_size: blocks_batch_size}) do
