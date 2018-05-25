@@ -1,4 +1,4 @@
-defmodule Explorer.Indexer.AddressFetcher do
+defmodule Explorer.Indexer.AddressBalanceFetcher do
   @moduledoc """
   Fetches and indexes `t:Explorer.Chain.Address.t/0` balances.
   """

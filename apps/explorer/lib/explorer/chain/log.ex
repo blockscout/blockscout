@@ -98,30 +98,4 @@ defmodule Explorer.Chain.Log do
     |> cast_assoc(:receipt)
     |> validate_required(@required_attrs)
   end
-
-  @doc """
-  `address_hash` is always present, so it is always returned in the set.
-
-      iex> %Ecto.Changeset{changes: changes, valid?: true} = Explorer.Chain.Log.changeset(
-      ...>   %Explorer.Chain.Log{},
-      ...>   %{
-      ...>     address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
-      ...>     data: "0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
-      ...>     first_topic: "0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22",
-      ...>     fourth_topic: nil,
-      ...>     index: 0,
-      ...>     second_topic: nil,
-      ...>     third_topic: nil,
-      ...>     transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-      ...>     type: "mined"
-      ...>   }
-      ...> )
-      iex> address_hash_set = Explorer.Chain.Log.changes_to_address_hash_set(changes)
-      iex> changes.address_hash in address_hash_set
-      true
-
-  """
-  def changes_to_address_hash_set(%{address_hash: address_hash}) do
-    MapSet.new([address_hash])
-  end
 end

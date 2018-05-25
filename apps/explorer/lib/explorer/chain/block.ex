@@ -83,8 +83,4 @@ defmodule Explorer.Chain.Block do
     |> foreign_key_constraint(:parent_hash)
     |> unique_constraint(:hash, name: :blocks_pkey)
   end
-
-  def changes_to_address_hash_set(%{miner_hash: miner_hash}) do
-    MapSet.new([miner_hash])
-  end
 end
