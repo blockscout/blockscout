@@ -7,7 +7,13 @@ defmodule Explorer.Indexer.BlockFetcherTest do
   alias Explorer.Chain.{Address, Block, Log, Transaction}
   alias Explorer.Indexer
 
-  alias Explorer.Indexer.{AddressBalanceFetcherCase, BlockFetcher, InternalTransactionFetcher, InternalTransactionFetcherCase, Sequence}
+  alias Explorer.Indexer.{
+    AddressBalanceFetcherCase,
+    BlockFetcher,
+    InternalTransactionFetcher,
+    InternalTransactionFetcherCase,
+    Sequence
+  }
 
   @tag capture_log: true
 

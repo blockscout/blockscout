@@ -17,8 +17,8 @@ defmodule Explorer.BufferedTask do
 
   ## Callbacks
 
-  The `init/2` is used for a task to populate the buffer on
-  boot with an initial set of entries. For example, the follow
+  The `init/2` callback is used for a task to populate its buffer on
+  boot with an initial set of entries. For example, the following
   callback would buffer all unfetched account balances on startup:
 
       def init(acc, reducer) do
@@ -27,11 +27,11 @@ defmodule Explorer.BufferedTask do
         end)
       end
 
-  The `init/2` operation may be long running and allows concurrent calls to
+  The `init/2` operation may be long-running and allows concurrent calls to
   `Explorer.BufferedTask.buffer/2` for on-demand entries. As concurrency becomes
   available, the `run/2` callback of the task is invoked, with a list of batched
-  entries to be processed. For example, the `run/2` callback for above may look
-  like:
+  entries to be processed. For example, the `run/2` callback for above could
+  be written:
 
       def run(string_hashes, _retries) do
         case EthereumJSONRPC.fetch_balances_by_hash(string_hashes) do
@@ -40,8 +40,8 @@ defmodule Explorer.BufferedTask do
         end
       end
 
-  If a task crashes, it will be retries automatically with an increased `retries`
-  passed in as the second argument. Tasks may also be programmatically
+  If a task crashes, it will be retried automatically with an increased `retries`
+  count passed in as the second argument. Tasks may also be programmatically
   retried by returning `{:retry, reason}` from `run/2`.
   """
   use GenServer
