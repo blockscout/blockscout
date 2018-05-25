@@ -61,7 +61,7 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
         )
 
       assert html_response(conn, 200)
-      assert 1 == length(conn.assigns.transactions.entries)
+      assert 1 == Enum.count(conn.assigns.transactions)
     end
 
     test "works when there are no transactions", %{conn: conn} do

@@ -24,7 +24,7 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
       conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block.number))
 
       assert html_response(conn, 200)
-      assert 1 == length(conn.assigns.page.entries)
+      assert 1 == Enum.count(conn.assigns.page)
     end
 
     test "does not return unrelated transactions", %{conn: conn} do

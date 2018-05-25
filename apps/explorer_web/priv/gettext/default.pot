@@ -325,6 +325,7 @@ msgstr ""
 msgid "Showing #%{number}"
 msgstr ""
 
+#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:75
 #: lib/explorer_web/templates/address_transaction/index.html.eex:78
 #: lib/explorer_web/templates/chain/_transactions.html.eex:10
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:39

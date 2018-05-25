@@ -23,13 +23,13 @@
         </ul>
       </div>
       <div class="card-body">
-        <%= if length(@logs.entries) > 0 do %>
+        <%= if Enum.count(@logs) > 0 do %>
           <table class="table table-responsive-sm table-font">
             <thead>
               <th><%= gettext "Address" %></th>
               <th><%= gettext "Topic" %></th>
             </thead>
-            <%= for log <- @logs.entries do %>
+            <%= for log <- @logs do %>
               <tgroup>
                 <tr data-test="transaction_log">
                   <td>

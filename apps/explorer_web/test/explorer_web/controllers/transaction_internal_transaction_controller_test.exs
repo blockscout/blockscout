@@ -43,7 +43,7 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
       conn = get(conn, path)
 
       actual_internal_transaction_ids =
-        conn.assigns.internal_transactions.entries
+        conn.assigns.page
         |> Enum.map(fn it -> it.id end)
 
       assert html_response(conn, 200)

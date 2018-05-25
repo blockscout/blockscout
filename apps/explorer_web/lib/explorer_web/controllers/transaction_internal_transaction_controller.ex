@@ -4,7 +4,7 @@ defmodule ExplorerWeb.TransactionInternalTransactionController do
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
 
-  def index(conn, %{"transaction_id" => hash_string}) do
+  def index(conn, %{"transaction_id" => hash_string} = params) do
     with {:ok, hash} <- Chain.string_to_transaction_hash(hash_string),
          {:ok, transaction} <-
            Chain.hash_to_transaction(
@@ -16,10 +16,14 @@ defmodule ExplorerWeb.TransactionInternalTransactionController do
                receipt: :optional
              }
            ) do
-      internal_transactions =
+      page =
         Chain.transaction_hash_to_internal_transactions(
           transaction.hash,
-          necessity_by_association: %{from_address: :required, to_address: :optional}
+          necessity_by_association: %{
+            from_address: :required,
+            to_address: :optional
+          },
+          pagination: params
         )
 
       max_block_number = max_block_number()
@@ -28,8 +32,8 @@ defmodule ExplorerWeb.TransactionInternalTransactionController do
         conn,
         "index.html",
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-        internal_transactions: internal_transactions,
         max_block_number: max_block_number,
+        page: page,
         transaction: transaction
       )
     else
