@@ -7,7 +7,9 @@ defmodule Explorer.BufferedTaskTest do
 
   defp start_buffer(callback_module) do
     start_supervised(
-      {BufferedTask, {callback_module, flush_interval: 50, max_batch_size: @max_batch_size, max_concurrency: 2}}
+      {BufferedTask,
+       {callback_module,
+        flush_interval: 50, max_batch_size: @max_batch_size, max_concurrency: 2, stream_chunk_size: @max_batch_size * 2}}
     )
   end
 
@@ -53,6 +55,11 @@ defmodule Explorer.BufferedTaskTest do
 
     def run([:boom], 1) do
       send(__MODULE__, {:run, {1, :boom}})
+      :ok
+    end
+
+    def run([{:sleep, time}], _) do
+      :timer.sleep(time)
       :ok
     end
 
@@ -125,5 +132,14 @@ defmodule Explorer.BufferedTaskTest do
     assert_receive {:final_run, {2, [1, 2]}}
     assert_receive {:final_run, {2, [3]}}
     refute_receive _
+  end
+
+  test "debug_count/1 returns count of buffered entries" do
+    {:ok, buffer} = start_buffer(RetryableTask)
+    assert 0 = BufferedTask.debug_count(buffer)
+    BufferedTask.buffer(buffer, [{:sleep, 100}])
+    BufferedTask.buffer(buffer, [{:sleep, 100}])
+    BufferedTask.buffer(buffer, [{:sleep, 100}])
+    assert 3 = BufferedTask.debug_count(buffer)
   end
 end

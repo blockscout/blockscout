@@ -3,17 +3,7 @@ defmodule Explorer.Chain do
   The chain context.
   """
 
-  import Ecto.Query,
-    only: [
-      from: 2,
-      join: 4,
-      or_where: 3,
-      order_by: 2,
-      order_by: 3,
-      preload: 2,
-      where: 2,
-      where: 3
-    ]
+  import Ecto.Query, only: [from: 2, join: 4, or_where: 3, order_by: 2, order_by: 3, preload: 2, where: 2, where: 3]
 
   alias Ecto.{Changeset, Multi}
 
@@ -154,7 +144,7 @@ defmodule Explorer.Chain do
 
   # timeouts all in milliseconds
 
-  @transaction_timeout 60_000
+  @transaction_timeout 120_000
   @insert_addresses_timeout 60_000
   @insert_blocks_timeout 60_000
   @insert_internal_transactions_timeout 60_000
@@ -199,14 +189,19 @@ defmodule Explorer.Chain do
     # MUST match order used in `insert_addresses/2`
     ordered_changes_list = sort_address_changes_list(changes_list)
 
-    {_, _} =
-      Repo.safe_insert_all(
-        Address,
-        ordered_changes_list,
-        conflict_target: :hash,
-        on_conflict: :replace_all,
-        timeout: Keyword.get(options, :timeout, @insert_addresses_timeout)
-      )
+    Repo.transaction(
+      fn ->
+        {_, _} =
+          Repo.safe_insert_all(
+            Address,
+            ordered_changes_list,
+            conflict_target: :hash,
+            on_conflict: :replace_all,
+            timeout: Keyword.get(options, :timeout, @insert_addresses_timeout)
+          )
+      end,
+      timeout: @transaction_timeout
+    )
 
     :ok
   end
@@ -1020,6 +1015,7 @@ defmodule Explorer.Chain do
 
       iex> [first_address_hash, second_address_hash] = 2 |> insert_list(:address) |> Enum.map(& &1.hash)
       iex> {:ok, address_hash_set} = Explorer.Chain.stream_unfetched_addresses(
+      ...>   [:hash],
       ...>   MapSet.new([]),
       ...>   fn %Explorer.Chain.Address{hash: hash}, acc ->
       ...>     MapSet.put(acc, hash)
@@ -1033,37 +1029,47 @@ defmodule Explorer.Chain do
   When there are no addresses, the `reducer` is never called and the `initial` is returned in an `:ok` tuple.
 
       iex> {:ok, pid} = Agent.start_link(fn -> 0 end)
-      iex> Explorer.Chain.stream_unfetched_addresses(MapSet.new([]), fn %Explorer.Chain.Address{hash: hash}, acc ->
-      ...>   Agent.update(pid, &(&1 + 1))
-      ...>   MapSet.put(acc, hash)
-      ...> end)
+      iex> Explorer.Chain.stream_unfetched_addresses(
+      ...>   [:hash],
+      ...>   MapSet.new([]),
+      ...>   fn %Explorer.Chain.Address{hash: hash}, acc ->
+      ...>     Agent.update(pid, &(&1 + 1))
+      ...>     MapSet.put(acc, hash)
+      ...>   end
+      ...> )
       {:ok, MapSet.new([])}
       iex> Agent.get(pid, & &1)
       0
 
   """
-  def stream_unfetched_addresses(initial, reducer) when is_function(reducer) do
-    Repo.transaction(fn ->
-      query = from(a in Address, where: is_nil(a.balance_fetched_at))
+  def stream_unfetched_addresses(fields, initial, reducer) when is_function(reducer) do
+    Repo.transaction(
+      fn ->
+        query = from(a in Address, where: is_nil(a.balance_fetched_at), select: ^fields)
 
-      query
-      |> Repo.stream()
-      |> Enum.reduce(initial, reducer)
-    end)
+        query
+        |> Repo.stream(timeout: :infinity)
+        |> Enum.reduce(initial, reducer)
+      end,
+      timeout: :infinity
+    )
   end
 
   @doc """
   Returns a stream of all transactions with unfetched internal transactions.
   """
-  def stream_transactions_with_unfetched_internal_transactions(initial, reducer)
+  def stream_transactions_with_unfetched_internal_transactions(fields, initial, reducer)
       when is_function(reducer) do
-    Repo.transaction(fn ->
-      query = from(t in Transaction, where: is_nil(t.internal_transactions_indexed_at))
+    Repo.transaction(
+      fn ->
+        query = from(t in Transaction, where: is_nil(t.internal_transactions_indexed_at), select: ^fields)
 
-      query
-      |> Repo.stream()
-      |> Enum.reduce(initial, reducer)
-    end)
+        query
+        |> Repo.stream(timeout: :infinity)
+        |> Enum.reduce(initial, reducer)
+      end,
+      timeout: :infinity
+    )
   end
 
   @doc """
@@ -1142,7 +1148,7 @@ defmodule Explorer.Chain do
         query = from(b in Block, select: b.number, order_by: [asc: b.number])
 
         query
-        |> Repo.stream(max_rows: 1000)
+        |> Repo.stream(max_rows: 1000, timeout: :infinity)
         |> Enum.reduce({-1, 0, []}, fn
           num, {prev, missing_count, acc} when prev + 1 == num ->
             {num, missing_count, acc}

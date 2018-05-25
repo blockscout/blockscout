@@ -72,6 +72,9 @@ defmodule Explorer.Indexer.BlockFetcherTest do
     end
 
     test "with debug_logs", %{state: state} do
+      AddressBalanceFetcherCase.start_supervised!()
+      InternalTransactionFetcherCase.start_supervised!()
+
       log =
         capture_log_at_level(:debug, fn ->
           Indexer.enable_debug_logs()
