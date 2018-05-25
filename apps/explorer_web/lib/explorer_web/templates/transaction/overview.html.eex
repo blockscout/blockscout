@@ -126,8 +126,8 @@
                 <th scope="row">
                   <%= gettext "Gas Price" %>
                 </th>
-                <td title="<%= gas_price(@transaction, :wei) %>">
-                  <%= gas_price(@transaction, :wei) %>
+                <td title="<%= gas_price(@transaction, :ether) %>">
+                  <%= gas_price(@transaction, :ether) %>
                   (<%= gas_price(@transaction, :gwei) %>)
                 </td>
               </tr>
