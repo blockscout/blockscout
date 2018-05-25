@@ -9,6 +9,17 @@
           <table class="table table-font table-responsive-sm table-horizontal">
             <tbody>
               <tr>
+                <th scpoe="row">
+                  <%= gettext "QR Code" %>
+                </th>
+                <td>
+                  <!-- Button trigger modal -->
+                  <button type="button" class="btn btn-link" >
+                    <i class="fas fa-qrcode" data-toggle="modal" data-target="#qrModal"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr>
                 <th scope="row">
                   <%= gettext "Balance" %>
                 </th>
@@ -32,3 +43,30 @@
     </div>
   </div>
 </section>
+
+<!-- Modal -->
+<div class="modal fade" id="qrModal" tabindex="-1" role="dialog" aria-labelledby="qrModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="qrModalLabel">QR Code</h2>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <label class="sr-only" for="inlineFormInputGroup">Address</label>
+        <div class="input-group mb-3">
+          <input type="text" readonly class="form-control" id="inlineFormInputGroup" value="<%= @address %>">
+          <div class="input-group-append">
+            <button class="btn btn-primary" data-clipboard-text="<%= @address %>">Copy</button>
+          </div>
+        </div>
+        <img src="http://via.placeholder.com/300x300" alt="qr_code">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
