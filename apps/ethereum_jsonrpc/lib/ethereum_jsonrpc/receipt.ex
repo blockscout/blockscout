@@ -71,9 +71,10 @@ defmodule EthereumJSONRPC.Receipt do
       }
 
   """
+
   @spec elixir_to_params(elixir) :: %{
           cumulative_gas_used: non_neg_integer,
-          gas_used: non_neg_integer,
+	  gas_used: non_neg_integer,
           status: Status.t(),
           transaction_hash: String.t(),
           transaction_index: non_neg_integer()
@@ -81,14 +82,13 @@ defmodule EthereumJSONRPC.Receipt do
   def elixir_to_params(%{
         "cumulativeGasUsed" => cumulative_gas_used,
         "gasUsed" => gas_used,
-        "status" => status,
         "transactionHash" => transaction_hash,
         "transactionIndex" => transaction_index
       }) do
     %{
       cumulative_gas_used: cumulative_gas_used,
       gas_used: gas_used,
-      status: status,
+      status: 1,
       transaction_hash: transaction_hash,
       transaction_index: transaction_index
     }
@@ -135,7 +135,10 @@ defmodule EthereumJSONRPC.Receipt do
   # double check that no new keys are being missed by requiring explicit match for passthrough
   # `t:EthereumJSONRPC.address/0` and `t:EthereumJSONRPC.hash/0` pass through as `Explorer.Chain` can verify correct
   # hash format
-  defp entry_to_elixir({key, _} = entry) when key in ~w(blockHash contractAddress logsBloom root transactionHash),
+
+  # add from, to for ethereum
+
+  defp entry_to_elixir({key, _} = entry) when key in ~w(blockHash from to contractAddress logsBloom root transactionHash),
     do: entry
 
   defp entry_to_elixir({key, quantity}) when key in ~w(blockNumber cumulativeGasUsed gasUsed transactionIndex) do

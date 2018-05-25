@@ -92,11 +92,13 @@ defmodule EthereumJSONRPC.Block do
         total_difficulty: 340282366920938463463374607431465668165
       }
 
+  # added mixHash, nonce for ethereum
+  # removed author
+
   """
   @spec elixir_to_params(elixir) :: map
   def elixir_to_params(
         %{
-          "author" => miner_hash,
           "difficulty" => difficulty,
           "gasLimit" => gas_limit,
           "gasUsed" => gas_used,
@@ -106,7 +108,9 @@ defmodule EthereumJSONRPC.Block do
           "parentHash" => parent_hash,
           "size" => size,
           "timestamp" => timestamp,
-          "totalDifficulty" => total_difficulty
+          "totalDifficulty" => total_difficulty,
+	  "mixHash" => mix_hash,
+	  "nonce" => nonce
         } = elixir
       ) do
     %{
@@ -273,13 +277,16 @@ defmodule EthereumJSONRPC.Block do
     Enum.into(block, %{}, &entry_to_elixir/1)
   end
 
-  defp entry_to_elixir({key, quantity}) when key in ~w(difficulty gasLimit gasUsed number size totalDifficulty) do
+  # add mixHash and nonce for ethereurm
+  defp entry_to_elixir({key, quantity}) when key in ~w(difficulty gasLimit gasUsed number size totalDifficulty mixHash nonce) do
     {key, quantity_to_integer(quantity)}
   end
 
   # double check that no new keys are being missed by requiring explicit match for passthrough
   # `t:EthereumJSONRPC.address/0` and `t:EthereumJSONRPC.hash/0` pass through as `Explorer.Chain` can verify correct
   # hash format
+
+  # can remove author, sealFields, step, and signature if not on PoA
   defp entry_to_elixir({key, _} = entry)
        when key in ~w(author extraData hash logsBloom miner parentHash receiptsRoot sealFields sha3Uncles signature
                      stateRoot step transactionsRoot uncles),

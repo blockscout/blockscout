@@ -42,7 +42,8 @@ defmodule Explorer.Chain do
   @typep timestamps :: %{inserted_at: %Ecto.DateTime{}, updated_at: %Ecto.DateTime{}}
   @typep timestamps_option :: {:timestamps, timestamps}
 
-  @doc """
+  #  @doc
+  """
   `t:Explorer.Chain.InternalTransaction/0`s from `address`.
 
   This function excludes any internal transactions in the results where the internal transaction has no siblings within
@@ -60,21 +61,21 @@ defmodule Explorer.Chain do
     * `:pagination` - pagination params to pass to scrivener.
 
   """
-  def address_to_internal_transactions(%Address{hash: hash}, options \\ []) do
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    direction = Keyword.get(options, :direction)
-    pagination = Keyword.get(options, :pagination, %{})
+  # def address_to_internal_transactions(%Address{hash: hash}, options \\ []) do
+  #   necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+  #   direction = Keyword.get(options, :direction)
+  #   pagination = Keyword.get(options, :pagination, %{})
 
-    InternalTransaction
-    |> join(:inner, [internal_transaction], transaction in assoc(internal_transaction, :transaction))
-    |> join(:left, [internal_transaction, transaction], block in assoc(transaction, :block))
-    |> where_address_fields_match(hash, direction)
-    |> where_transaction_has_multiple_internal_transactions()
-    |> order_by([it, transaction, block], desc: block.number, desc: transaction.index, desc: it.index)
-    |> preload(transaction: :block)
-    |> join_associations(necessity_by_association)
-    |> Repo.paginate(pagination)
-  end
+  #   InternalTransaction
+  #   |> join(:inner, [internal_transaction], transaction in assoc(internal_transaction, :transaction))
+  #   |> join(:left, [internal_transaction, transaction], block in assoc(transaction, :block))
+  #   |> where_address_fields_match(hash, direction)
+  #   |> where_transaction_has_multiple_internal_transactions()
+  #   |> order_by([it, transaction, block], desc: block.number, desc: transaction.index, desc: it.index)
+  #   |> preload(transaction: :block)
+  #   |> join_associations(necessity_by_association)
+  #   |> Repo.paginate(pagination)
+  # end
 
   @doc """
   Counts the number of `t:Explorer.Chain.Transaction.t/0` to or from the `address`.
@@ -759,23 +760,24 @@ defmodule Explorer.Chain do
     * `:insert_transactions_timeout` - the timeout for inserting all transactions found in the params lists across all
       types. Defaults to `#{@insert_transactions_timeout}` milliseconds.
   """
+
+  # remove internal_transactions and internal_transactions_params for ethereum
+
   def import_blocks(
         %{
           blocks: blocks_params,
           logs: logs_params,
-          internal_transactions: internal_transactions_params,
           receipts: receipts_params,
           transactions: transactions_params
         },
         options \\ []
       )
-      when is_list(blocks_params) and is_list(internal_transactions_params) and is_list(logs_params) and
+      when is_list(blocks_params) and is_list(logs_params) and
              is_list(receipts_params) and is_list(transactions_params) and is_list(options) do
     with {:ok, ecto_schema_module_to_changes_list} <-
            ecto_schema_module_to_params_list_to_ecto_schema_module_to_changes_list(%{
              Block => blocks_params,
              Log => logs_params,
-             InternalTransaction => internal_transactions_params,
              Receipt => receipts_params,
              Transaction => transactions_params
            }) do
@@ -1310,7 +1312,8 @@ defmodule Explorer.Chain do
     |> Repo.aggregate(:count, :hash)
   end
 
-  @doc """
+  # @doc """
+  """
   `t:Explorer.Chain.InternalTransaction/0`s in `t:Explorer.Chain.Transaction.t/0` with `hash`.
 
   ## Options
@@ -1321,24 +1324,24 @@ defmodule Explorer.Chain do
     * `:pagination` - pagination params to pass to scrivener.
 
   """
-  @spec transaction_hash_to_internal_transactions(Hash.Full.t()) :: %Scrivener.Page{entries: [InternalTransaction.t()]}
-  @spec transaction_hash_to_internal_transactions(Hash.Full.t(), [necessity_by_association_option | pagination_option]) ::
-          %Scrivener.Page{entries: [InternalTransaction.t()]}
-  def transaction_hash_to_internal_transactions(
-        %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash,
-        options \\ []
-      )
-      when is_list(options) do
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    pagination = Keyword.get(options, :pagination, %{})
+ #  @spec transaction_hash_to_internal_transactions(Hash.Full.t()) :: %Scrivener.Page{entries: [InternalTransaction.t()]}
+ #  @spec transaction_hash_to_internal_transactions(Hash.Full.t(), [necessity_by_association_option | pagination_option]) ::
+ #          %Scrivener.Page{entries: [InternalTransaction.t()]}
+ #  def transaction_hash_to_internal_transactions(
+ #        %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash,
+ #        options \\ []
+ #      )
+ #      when is_list(options) do
+ #    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+ #    pagination = Keyword.get(options, :pagination, %{})
 
-    InternalTransaction
-    |> for_parent_transaction(hash)
-    |> join_associations(necessity_by_association)
-    |> where_transaction_has_multiple_internal_transactions()
-    |> order_by(:index)
-    |> Repo.paginate(pagination)
-  end
+ #    InternalTransaction
+ #    |> for_parent_transaction(hash)
+ #    |> join_associations(necessity_by_association)
+ #    |> where_transaction_has_multiple_internal_transactions()
+ #    |> order_by(:index)
+ #    |> Repo.paginate(pagination)
+ #  end
 
   @doc """
   Finds all `t:Explorer.Chain.Log.t/0`s for `t:Explorer.Chain.Transaction.t/0`.
@@ -1541,11 +1544,12 @@ defmodule Explorer.Chain do
     {:ok, for(changes <- ordered_changes_list, do: changes.hash)}
   end
 
+  # remove InternalTransaction
+
   defp insert_ecto_schema_module_to_changes_list(
          %{
            Block => blocks_changes,
            Log => logs_changes,
-           InternalTransaction => internal_transactions_changes,
            Receipt => receipts_changes,
            Transaction => transactions_changes
          } = ecto_schema_module_to_changes_list,
@@ -1578,13 +1582,13 @@ defmodule Explorer.Chain do
         timestamps: timestamps
       )
     end)
-    |> Multi.run(:internal_transactions, fn _ ->
-      insert_internal_transactions(
-        internal_transactions_changes,
-        timeout: Keyword.get(options, :insert_internal_transactions_timeout, @insert_internal_transactions_timeout),
-        timestamps: timestamps
-      )
-    end)
+    # |> Multi.run(:internal_transactions, fn _ ->
+    #  insert_internal_transactions(
+    #    internal_transactions_changes,
+    #    timeout: Keyword.get(options, :insert_internal_transactions_timeout, @insert_internal_transactions_timeout),
+    #    timestamps: timestamps
+    #  )
+    # end)
     |> Multi.run(:receipts, fn _ ->
       insert_receipts(
         receipts_changes,
@@ -1602,26 +1606,26 @@ defmodule Explorer.Chain do
     |> Repo.transaction(timeout: Keyword.get(options, :transaction_timeout, @transaction_timeout))
   end
 
-  @spec insert_internal_transactions([map()], [timestamps_option]) ::
-          {:ok, [%{index: non_neg_integer, transaction_hash: Hash.t()}]} | {:error, [Changeset.t()]}
-  defp insert_internal_transactions(changes_list, named_arguments)
-       when is_list(changes_list) and is_list(named_arguments) do
-    timestamps = Keyword.fetch!(named_arguments, :timestamps)
+ #  @spec insert_internal_transactions([map()], [timestamps_option]) ::
+ #         {:ok, [%{index: non_neg_integer, transaction_hash: Hash.t()}]} | {:error, [Changeset.t()]}
+ #  defp insert_internal_transactions(changes_list, named_arguments)
+ #      when is_list(changes_list) and is_list(named_arguments) do
+ #   timestamps = Keyword.fetch!(named_arguments, :timestamps)
 
     # order so that row ShareLocks are grabbed in a consistent order
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.index})
+ #   ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.index})
 
-    {:ok, internal_transactions} =
-      insert_changes_list(
-        ordered_changes_list,
-        for: InternalTransaction,
-        returning: [:index, :transaction_hash],
-        timestamps: timestamps
-      )
+ #    {:ok, internal_transactions} =
+ #      insert_changes_list(
+ #        ordered_changes_list,
+ #        for: InternalTransaction,
+ #        returning: [:index, :transaction_hash],
+ #        timestamps: timestamps
+ #      )
 
-    {:ok,
-     for(internal_transaction <- internal_transactions, do: Map.take(internal_transaction, [:index, :transaction_hash]))}
-  end
+ #     {:ok,
+ #      for(internal_transaction <- internal_transactions, do: Map.take(internal_transaction, [:index, :transaction_hash]))}
+ #  end
 
   @spec insert_logs([map()], [timeout_option | timestamps_option]) ::
           {:ok, [%{index: non_neg_integer, transaction_hash: Hash.t()}]} | {:error, [Changeset.t()]}
@@ -1789,14 +1793,14 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp where_transaction_has_multiple_internal_transactions(query) do
-    where(
-      query,
-      [_it, transaction],
-      fragment(
-        "(SELECT COUNT(sibling.id) FROM internal_transactions as sibling WHERE sibling.transaction_hash = ?) > 1",
-        transaction.hash
-      )
-    )
-  end
+  # defp where_transaction_has_multiple_internal_transactions(query) do
+  #   where(
+  #     query,
+  #     [_it, transaction],
+  #     fragment(
+  #       "(SELECT COUNT(sibling.id) FROM internal_transactions as sibling WHERE sibling.transaction_hash = ?) > 1",
+  #       transaction.hash
+  #     )
+  #   )
+  # end
 end
