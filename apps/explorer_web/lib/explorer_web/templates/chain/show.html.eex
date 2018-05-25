@@ -32,16 +32,16 @@
           <div>
             <div class="graph__squares graph__squares--price"></div>
             <%= gettext "Price" %> </br>
-            $<%= format_exchange_rate(@exchange_rate) %> <%= gettext "USD" %>
+            <%= format_exchange_rate(@exchange_rate) %>
           </div>
           <div class="mx-2">
             <div class="graph__squares graph__squares--mcap"></div>
             <%= gettext "Market Cap" %> </br>
-            $<%= format_market_cap(@exchange_rate) %> <%= gettext "USD" %>
+            <%= format_market_cap(@exchange_rate) %>
           </div>
           <div>
             <%= gettext "24h Volume" %> </br>
-            $<%= format_volume_24h(@exchange_rate) %> <%= gettext "USD" %>
+            <%= format_volume_24h(@exchange_rate) %>
           </div>
         </div>
       </div>

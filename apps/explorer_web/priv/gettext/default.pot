@@ -421,9 +421,6 @@ msgstr ""
 msgid "Price"
 msgstr ""
 
-#: lib/explorer_web/templates/chain/show.html.eex:35
-#: lib/explorer_web/templates/chain/show.html.eex:40
-#: lib/explorer_web/templates/chain/show.html.eex:44
 #: lib/explorer_web/views/currency_helpers.ex:32
 msgid "USD"
 msgstr ""
