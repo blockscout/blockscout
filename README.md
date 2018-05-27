@@ -60,6 +60,18 @@ Configure your local CCMenu with the following url: [`https://circleci.com/gh/po
     * `cd apps/explorer_web && mix sobelow --config; cd -`
   * Lint the JavaScript code: `cd apps/explorer_web/assets && npm run eslint; cd -`
 
+##### Running the tests - Troubleshooting
+
+You may need to add a `username` and `password` in your database config for Ubuntu. 
+
+```
+# apps/explorer/config/test.exs
+
+  hostname: "localhost",
+  username: "postgres", # Add
+  password: "postgres", # Add
+  pool: Ecto.Adapters.SQL.Sandbox,
+```
 
 ## Internationalization
 
