@@ -3,7 +3,7 @@ defmodule Explorer.ChainTest do
 
   import Explorer.Factory
 
-  alias Explorer.{Chain, Repo}
+  alias Explorer.{Chain, Repo, Factory}
   alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Receipt, Transaction, Wei}
 
   doctest Explorer.Chain
@@ -832,6 +832,32 @@ defmodule Explorer.ChainTest do
     test "with Transaction.t with :ether" do
       assert Chain.value(%Transaction{value: %Wei{value: Decimal.new(1)}}, :ether) == Decimal.new("1e-18")
       assert Chain.value(%Transaction{value: %Wei{value: Decimal.new("1e18")}}, :ether) == Decimal.new(1)
+    end
+  end
+
+  describe "find_contract_address/1" do
+    test "doesn't find an address that doesn't have a code" do
+      address = insert(:address, contract_code: nil)
+
+      response = Chain.find_contract_address(address.hash)
+
+      assert {:error, :not_found} == response
+    end
+
+    test "doesn't find a unexistent address" do
+      unexistent_address_hash = Factory.address_hash()
+
+      response = Chain.find_contract_address(unexistent_address_hash)
+
+      assert {:error, :not_found} == response
+    end
+
+    test "finds an contract address" do
+      address = insert(:address, contract_code: Factory.data("contract_code"))
+
+      response = Chain.find_contract_address(address.hash)
+
+      assert response == {:ok, address}
     end
   end
 end

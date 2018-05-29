@@ -1,6 +1,8 @@
 defmodule ExplorerWeb.AddressInternalTransactionView do
   use ExplorerWeb, :view
 
+  import ExplorerWeb.AddressView, only: [contract?: 1]
+
   def format_current_filter(filter) do
     case filter do
       "to" -> gettext("To")

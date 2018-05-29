@@ -21,6 +21,15 @@
                   to: address_internal_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
                 ) %>
           </li>
+          <%= if contract?(@address) do %>
+            <li class="nav-item">
+              <%= link(
+                    gettext("Contract"),
+                    class: "nav-link",
+                    to: address_contract_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
+                  ) %>
+            </li>
+          <% end %>
         </ul>
       </div>
       <div class="card-body">

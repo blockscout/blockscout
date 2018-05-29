@@ -7,6 +7,17 @@ defmodule ExplorerWeb.AddressView do
 
   @dialyzer :no_match
 
+  def contract?(%Address{contract_code: nil}), do: false
+  def contract?(%Address{contract_code: _}), do: true
+
+  def address_title(%Address{} = address) do
+    if contract?(address) do
+      gettext("Contract Address")
+    else
+      gettext("Address")
+    end
+  end
+
   def balance(%Address{fetched_balance: nil}), do: ""
 
   @doc """

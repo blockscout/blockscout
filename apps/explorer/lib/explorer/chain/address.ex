@@ -5,10 +5,11 @@ defmodule Explorer.Chain.Address do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Hash, Wei}
+  alias Explorer.Chain.{Data, Hash, Wei}
 
-  @optional_attrs ~w()a
+  @optional_attrs ~w(contract_code)a
   @required_attrs ~w(hash)a
+  @allowed_attrs @optional_attrs ++ @required_attrs
 
   @typedoc """
   Hash of the public key for this address.
@@ -19,6 +20,7 @@ defmodule Explorer.Chain.Address do
    * `fetched_balance` - The last fetched balance from Parity
    * `balance_fetched_at` - the last time `balance` was fetched
    * `hash` - the hash of the address's public key
+   * `contract_code` - the code of the contract when an Address is a contract
    * `inserted_at` - when this address was inserted
    * `updated_at` when this address was last updated
   """
@@ -26,6 +28,7 @@ defmodule Explorer.Chain.Address do
           fetched_balance: Wei.t(),
           balance_fetched_at: DateTime.t(),
           hash: Hash.Truncated.t(),
+          contract_code: Data.t() | nil,
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
         }
@@ -34,6 +37,7 @@ defmodule Explorer.Chain.Address do
   schema "addresses" do
     field(:fetched_balance, Wei)
     field(:balance_fetched_at, Timex.Ecto.DateTime)
+    field(:contract_code, Data)
 
     timestamps()
   end
@@ -47,7 +51,7 @@ defmodule Explorer.Chain.Address do
 
   def changeset(%__MODULE__{} = address, attrs) do
     address
-    |> cast(attrs, @required_attrs, @optional_attrs)
+    |> cast(attrs, @allowed_attrs)
     |> validate_required(@required_attrs)
     |> unique_constraint(:hash)
   end

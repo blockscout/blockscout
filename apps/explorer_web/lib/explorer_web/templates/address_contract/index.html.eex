@@ -1,0 +1,41 @@
+<section class="container-fluid">
+
+  <%= render ExplorerWeb.AddressView, "overview.html", assigns %>
+
+  <div class="card">
+    <div class="card-header">
+      <ul class="nav nav-tabs card-header-tabs">
+        <li class="nav-item">
+          <%= link(
+                gettext("Transactions"),
+                class: "nav-link",
+                to: address_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
+              ) %>
+        </li>
+        <li class="nav-item">
+          <%= link(
+                gettext("Internal Transactions"),
+                class: "nav-link",
+                "data-test": "internal_transactions_tab_link",
+                to: address_internal_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
+              ) %>
+        </li>
+        <li class="nav-item">
+          <%= link(
+                gettext("Contract"),
+                class: "nav-link active",
+                to: address_contract_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
+              ) %>
+        </li>
+      </ul>
+    </div>
+
+    <div class="card-body">
+      <h2 class="card-title"><%= gettext "Contract bytecode" %></h2>
+
+      <pre class="pre-wrap p-2 bg-light mb-0">
+        <code><%= @address.contract_code %></code>
+      </pre>
+    </div>
+  </div>
+</section>

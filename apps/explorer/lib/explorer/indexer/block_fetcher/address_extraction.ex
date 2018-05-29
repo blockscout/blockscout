@@ -26,6 +26,21 @@ defmodule Explorer.Indexer.BlockFetcher.AddressExtraction do
 
   The structure above means any item in `blocks` list that has a `:miner_hash` attribute should
   be mapped to a `hash` Address attribute.
+
+  Each item in the `List`s relates to a single Address. So, having more than one attribute definition
+  within an inner `List` means that the attributes are considered part of the same Address.
+
+  For example:
+
+      %{
+        internal_transactions: [
+          ...,
+          [
+            %{from: :created_contract_address_hash, to: :hash},
+            %{from: :created_contract_code, to: :contract_code}
+          ]
+        ]
+      }
   """
 
   @entity_to_address_map %{
@@ -33,7 +48,10 @@ defmodule Explorer.Indexer.BlockFetcher.AddressExtraction do
     internal_transactions: [
       %{from: :from_address_hash, to: :hash},
       %{from: :to_address_hash, to: :hash},
-      %{from: :created_contract_address_hash, to: :hash}
+      [
+        %{from: :created_contract_address_hash, to: :hash},
+        %{from: :created_contract_code, to: :contract_code}
+      ]
     ],
     transactions: [
       %{from: :from_address_hash, to: :hash},
@@ -50,7 +68,7 @@ defmodule Explorer.Indexer.BlockFetcher.AddressExtraction do
 
     addresses
     |> List.flatten()
-    |> Enum.uniq()
+    |> merge_addresses()
   end
 
   def extract_addresses_from_collection(items, fields),
@@ -58,11 +76,33 @@ defmodule Explorer.Indexer.BlockFetcher.AddressExtraction do
 
   def extract_addresses_from_item(item, fields), do: Enum.map(fields, &extract_address(&1, item))
 
+  defp extract_address(attrs, item) when is_list(attrs) do
+    Enum.reduce(attrs, %{}, fn field, acc ->
+      address = extract_address(field, item)
+
+      if is_list(address) do
+        address
+      else
+        Map.merge(address, acc)
+      end
+    end)
+  end
+
   defp extract_address(%{from: from_attribute, to: to_attribute}, item) do
     if value = Map.get(item, from_attribute) do
       %{to_attribute => value}
     else
       []
     end
+  end
+
+  defp merge_addresses(addresses) do
+    addresses
+    |> Enum.group_by(fn address -> address.hash end)
+    |> Enum.map(fn {_, similar_addresses} ->
+      Enum.reduce(similar_addresses, %{}, fn address, acc ->
+        Map.merge(acc, address)
+      end)
+    end)
   end
 end
