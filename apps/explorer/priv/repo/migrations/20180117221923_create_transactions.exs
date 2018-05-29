@@ -114,6 +114,7 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
     create(index(:transactions, :updated_at))
 
     create(index(:transactions, :status))
+    create(index(:transactions, ["index DESC NULLS FIRST"], name: "transactions_index_index"))
 
     create(unique_index(:transactions, [:block_hash, :index]))
   end

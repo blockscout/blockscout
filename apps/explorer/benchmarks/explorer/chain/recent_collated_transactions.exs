@@ -50,7 +50,7 @@ Benchee.run(
   load: path,
   save: [
     path: path,
-    tag: "fold-receipts-into-transactions"
+    tag: "transactions-index-index"
   ],
   time: 10
 )
