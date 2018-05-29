@@ -2,7 +2,6 @@ defmodule ExplorerWeb.AddressTransactionControllerTest do
   use ExplorerWeb.ConnCase
 
   import ExplorerWeb.Router.Helpers, only: [address_transaction_path: 4]
-  import ExplorerWeb.Factory
 
   alias Explorer.ExchangeRates.Token
 

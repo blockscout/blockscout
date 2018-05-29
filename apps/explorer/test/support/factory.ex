@@ -1,6 +1,11 @@
 defmodule Explorer.Factory do
   use ExMachina.Ecto, repo: Explorer.Repo
 
+  require Ecto.Query
+
+  import Ecto.Query
+  import Kernel, except: [+: 2]
+
   alias Explorer.Chain.Block.{Range, Reward}
 
   alias Explorer.Chain.{
@@ -126,8 +131,8 @@ defmodule Explorer.Factory do
   def block_reward_factory do
     # Generate ranges like 1 - 10,000; 10,001 - 20,000, 20,001 - 30,000; etc
     x = sequence("block_range", & &1)
-    lower = x * 10_000 + 1
-    upper = lower + 9_999
+    lower = x * Kernel.+(10_000, 1)
+    upper = Kernel.+(lower, 9_999)
 
     wei_per_ether = Decimal.new(1_000_000_000_000_000_000)
 
@@ -203,6 +208,45 @@ defmodule Explorer.Factory do
     insert(:receipt, transaction_hash: hash, transaction_index: index)
 
     Repo.preload(block_transaction, [:block, :receipt])
+  end
+
+  def with_block(%Transaction{index: nil} = transaction, %Block{hash: block_hash}) do
+    next_transaction_index = block_hash_to_next_transaction_index(block_hash)
+
+    transaction
+    |> Transaction.changeset(%{block_hash: block_hash, index: next_transaction_index})
+    |> Repo.update!()
+    |> Repo.preload(:block)
+  end
+
+  def with_receipt(%Transaction{hash: hash, index: index} = transaction) do
+    insert(:receipt, transaction_hash: hash, transaction_index: index)
+
+    Repo.preload(transaction, :receipt)
+  end
+
+  defmacrop left + right do
+    quote do
+      fragment("? + ?", unquote(left), unquote(right))
+    end
+  end
+
+  defmacrop coalesce(left, right) do
+    quote do
+      fragment("coalesce(?, ?)", unquote(left), unquote(right))
+    end
+  end
+
+  defp block_hash_to_next_transaction_index(block_hash) do
+    import Kernel, except: [+: 2]
+
+    Repo.one!(
+      from(
+        transaction in Transaction,
+        select: coalesce(max(transaction.index), -1) + 1,
+        where: transaction.block_hash == ^block_hash
+      )
+    )
   end
 
   defp internal_transaction_factory(:call = type) do
