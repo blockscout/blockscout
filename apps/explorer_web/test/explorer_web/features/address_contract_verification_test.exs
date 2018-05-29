@@ -50,7 +50,7 @@ defmodule ExplorerWeb.AddressContractVerificationTest do
     |> visit("/en/addresses/#{address_hash}/contract_verifications/new")
     |> fill_in(text_field("Contract Name"), with: "SimpleStorage")
     |> click(option("0.4.24"))
-    |> click(option("No"))
+    |> click(radio_button("No"))
     |> fill_in(text_field("Enter the Solidity Contract Code below"), with: code)
     |> click(button("Verify and publish"))
 

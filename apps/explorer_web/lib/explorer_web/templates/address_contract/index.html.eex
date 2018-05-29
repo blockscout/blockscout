@@ -22,10 +22,14 @@
         </li>
         <li class="nav-item">
           <%= link(
-                gettext("Contract"),
-                class: "nav-link active",
-                to: address_contract_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
-              ) %>
+              to: address_contract_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"]),
+              class: "nav-link active") do %>
+            <%= gettext("Code") %>
+
+            <%= if smart_contract_verified?(@address) do %>
+              <i class="far fa-check-circle"></i>
+            <% end %>
+          <% end %>
         </li>
       </ul>
     </div>

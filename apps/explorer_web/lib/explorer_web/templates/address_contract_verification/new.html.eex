@@ -37,8 +37,18 @@
         </div>
 
         <div class="form-group">
-          <%= label f, :optimization, "Optimization" %>
-          <%= select f, :optimization, ["No": false, "Yes": true], class: "form-control" %>
+          <%= label f, "Optimization", class: "d-block" %>
+
+          <div class="form-check form-check-inline">
+            <%= radio_button f, :optimization, false, checked: true, class: "form-check-input" %>
+            <%= label :smart_contract_optimization, :false, "No", class: "form-check-label" %>
+          </div>
+
+          <div class="form-check form-check-inline">
+            <%= radio_button f, :optimization, true, class: "form-check-input" %>
+            <%= label :smart_contract_optimization, :true, "Yes", class: "form-check-label" %>
+          </div>
+
           <%= error_tag f, :optimization %>
         </div>
 
