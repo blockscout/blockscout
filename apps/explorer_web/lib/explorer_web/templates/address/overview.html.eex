@@ -21,10 +21,17 @@
               </tr>
               <tr>
                 <th scope="row">
-                  <%= gettext "Balance" %>
+                  <%= gettext "POA Balance" %>
                 </th>
                 <td data-test="address_balance">
-                  <%= balance(@address) %> </br>
+                  <%= balance(@address) %>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  <%= gettext "USD Balance" %>
+                </th>
+                <td>
                   <%= formatted_usd(@address, @exchange_rate) %>
                 </td>
               </tr>
