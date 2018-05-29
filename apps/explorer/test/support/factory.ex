@@ -80,9 +80,9 @@ defmodule Explorer.Factory do
     internal_transaction_factory(:call)
   end
 
-  # TODO add call, reward, and suicide
+  # TODO add reward and suicide
   def internal_transaction_type do
-    Enum.random(~w(create)a)
+    Enum.random(~w(call create)a)
   end
 
   def log_factory do
