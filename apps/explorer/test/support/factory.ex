@@ -1,7 +1,19 @@
 defmodule Explorer.Factory do
   use ExMachina.Ecto, repo: Explorer.Repo
 
-  alias Explorer.Chain.{Address, Block, Data, Hash, InternalTransaction, Log, Receipt, Transaction}
+  alias Explorer.Chain.{
+    Address,
+    Block,
+    BlockRange,
+    BlockReward,
+    Data,
+    Hash,
+    InternalTransaction,
+    Log,
+    Receipt,
+    Transaction
+  }
+
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
 
@@ -100,6 +112,27 @@ defmodule Explorer.Factory do
       closing_price: price(),
       opening_price: price(),
       date: Date.utc_today()
+    }
+  end
+
+  def block_reward_factory do
+    # Generate ranges like 1 - 10,000; 10,001 - 20,000, 20,001 - 30,000; etc
+    x = sequence("block_range", & &1)
+    lower = x * 10_000 + 1
+    upper = lower + 9_999
+
+    wei_per_ether = Decimal.new(1_000_000_000_000_000_000)
+
+    reward_multiplier =
+      1..5
+      |> Enum.random()
+      |> Decimal.new()
+
+    reward = Decimal.mult(reward_multiplier, wei_per_ether)
+
+    %BlockReward{
+      block_range: %BlockRange{from: lower, to: upper},
+      reward: reward
     }
   end
 

@@ -18,8 +18,22 @@ defmodule ExplorerWeb.Router do
     })
   end
 
+  pipeline :api do
+    plug(:accepts, ["json"])
+  end
+
   pipeline :set_locale do
     plug(SetLocale, gettext: ExplorerWeb.Gettext, default_locale: "en")
+  end
+
+  scope "/api", ExplorerWeb.API.RPC do
+    pipe_through(:api)
+
+    alias ExplorerWeb.API.RPC
+
+    forward("/", RPCTranslator, %{
+      "block" => RPC.BlockController
+    })
   end
 
   scope "/", ExplorerWeb do
