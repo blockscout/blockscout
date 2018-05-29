@@ -50,7 +50,7 @@ Benchee.run(
   load: path,
   save: [
     path: path,
-    tag: "transactions-index-index"
+    tag: "transactions-block-number"
   ],
   time: 10
 )

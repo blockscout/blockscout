@@ -7,7 +7,8 @@ defmodule Explorer.Chain.Transaction do
   alias Explorer.Chain.{Address, Block, Data, Gas, Hash, InternalTransaction, Log, Wei}
   alias Explorer.Chain.Transaction.Status
 
-  @optional_attrs ~w(block_hash cumulative_gas_used from_address_hash gas_used index status to_address_hash)a
+  @optional_attrs ~w(block_hash block_number cumulative_gas_used from_address_hash gas_used index status
+                     to_address_hash)a
   @required_attrs ~w(gas gas_price hash input nonce public_key r s standard_v v value)a
 
   @typedoc """
@@ -74,6 +75,7 @@ defmodule Explorer.Chain.Transaction do
   @typedoc """
    * `block` - the block in which this transaction was mined/validated.  `nil` when transaction is pending.
    * `block_hash` - `block` foreign key. `nil` when transaction is pending.
+   * `block_number` - Denormalized `block` `number`. `nil` when transaction is pending.
    * `cumulative_gas_used` - the cumulative gas used in `transaction`'s `t:Explorer.Chain.Block.t/0` before
      `transaction`'s `index`.  `nil` when transaction is pending.
    * `from_address` - the source of `value`
@@ -103,6 +105,7 @@ defmodule Explorer.Chain.Transaction do
   @type t :: %__MODULE__{
           block: %Ecto.Association.NotLoaded{} | Block.t() | nil,
           block_hash: Hash.t() | nil,
+          block_number: Block.block_number() | nil,
           cumulative_gas_used: Gas.t() | nil,
           from_address: %Ecto.Association.NotLoaded{} | Address.t(),
           from_address_hash: Hash.Truncated.t(),
@@ -128,6 +131,7 @@ defmodule Explorer.Chain.Transaction do
 
   @primary_key {:hash, Hash.Full, autogenerate: false}
   schema "transactions" do
+    field(:block_number, :integer)
     field(:cumulative_gas_used, :decimal)
     field(:gas, :decimal)
     field(:gas_price, Wei)
@@ -189,12 +193,13 @@ defmodule Explorer.Chain.Transaction do
       iex> changeset.valid?
       true
 
-  A pending transaction (which is indicated by not having a `block_hash`) can't have `cumulative_gas_used`, `gas_used`,
-  or `index`.
+  A pending transaction (which is indicated by not having a `block_hash`) can't have `block_number`,
+  `cumulative_gas_used`, `gas_used`, or `index`.
 
       iex> changeset = Explorer.Chain.Transaction.changeset(
       ...>   %Transaction{},
       ...>   %{
+      ...>     block_number: 34,
       ...>     cumulative_gas_used: 0,
       ...>     gas: 4700000,
       ...>     gas_price: 100000000000,
@@ -214,6 +219,8 @@ defmodule Explorer.Chain.Transaction do
       ...> )
       iex> changeset.valid?
       false
+      iex> Keyword.get_values(changeset.errors, :block_number)
+      [{"can't be set when the transaction is pending", []}]
       iex> Keyword.get_values(changeset.errors, :cumulative_gas_used)
       [{"can't be set when the transaction is pending", []}]
       iex> Keyword.get_values(changeset.errors, :gas_used)
@@ -229,6 +236,7 @@ defmodule Explorer.Chain.Transaction do
       ...>   %Transaction{},
       ...>   %{
       ...>     block_hash: "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47",
+      ...>     block_number: 34,
       ...>     cumulative_gas_used: 0,
       ...>     gas: 4700000,
       ...>     gas_price: 100000000000,
@@ -271,6 +279,8 @@ defmodule Explorer.Chain.Transaction do
       ...> )
       iex> changeset.valid?
       false
+      iex> Keyword.get_values(changeset.errors, :block_number)
+      [{"can't be blank when the transaction is collated into a block", []}]
       iex> Keyword.get_values(changeset.errors, :cumulative_gas_used)
       [{"can't be blank when the transaction is collated into a block", []}]
       iex> Keyword.get_values(changeset.errors, :gas_used)
@@ -293,7 +303,7 @@ defmodule Explorer.Chain.Transaction do
     |> unique_constraint(:hash)
   end
 
-  @collated_fields ~w(cumulative_gas_used gas_used index status)a
+  @collated_fields ~w(block_number cumulative_gas_used gas_used index status)a
 
   @collated_message "can't be blank when the transaction is collated into a block"
   @collated_field_to_check Enum.into(@collated_fields, %{}, fn collated_field ->

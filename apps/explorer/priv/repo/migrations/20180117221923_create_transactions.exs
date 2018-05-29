@@ -35,10 +35,22 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
       # `null` when a pending transaction
       add(:block_hash, references(:blocks, column: :hash, on_delete: :delete_all, type: :bytea), null: true)
 
+      # `null` when a pending transaction
+      # denormalized from `blocks.number` to improve `Explorer.Chain.recent_collated_transactions/0` performance
+      add(:block_number, :integer, null: true)
+
       add(:from_address_hash, references(:addresses, column: :hash, on_delete: :delete_all, type: :bytea), null: false)
       # `null` when it is a contract creation transaction
       add(:to_address_hash, references(:addresses, column: :hash, on_delete: :delete_all, type: :bytea), null: true)
     end
+
+    create(
+      constraint(
+        :transactions,
+        :collated_block_number,
+        check: "block_hash IS NULL OR block_number IS NOT NULL"
+      )
+    )
 
     create(
       constraint(
@@ -69,6 +81,14 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
         :transactions,
         :collated_status,
         check: "block_hash IS NULL OR status IS NOT NULL"
+      )
+    )
+
+    create(
+      constraint(
+        :transactions,
+        :pending_block_number,
+        check: "block_hash IS NOT NULL OR block_number IS NULL"
       )
     )
 
@@ -114,7 +134,14 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
     create(index(:transactions, :updated_at))
 
     create(index(:transactions, :status))
-    create(index(:transactions, ["index DESC NULLS FIRST"], name: "transactions_index_index"))
+
+    create(
+      index(
+        :transactions,
+        ["block_number DESC NULLS FIRST", "index DESC NULLS FIRST"],
+        name: "transactions_recent_collated_index"
+      )
+    )
 
     create(unique_index(:transactions, [:block_hash, :index]))
   end

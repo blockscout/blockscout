@@ -85,7 +85,11 @@ defmodule Explorer.Factory do
     with_block(transaction, block, collated_params)
   end
 
-  def with_block(%Transaction{index: nil} = transaction, %Block{hash: block_hash}, collated_params)
+  def with_block(
+        %Transaction{index: nil} = transaction,
+        %Block{hash: block_hash, number: block_number},
+        collated_params
+      )
       when is_list(collated_params) do
     next_transaction_index = block_hash_to_next_transaction_index(block_hash)
 
@@ -96,6 +100,7 @@ defmodule Explorer.Factory do
     transaction
     |> Transaction.changeset(%{
       block_hash: block_hash,
+      block_number: block_number,
       cumulative_gas_used: cumulative_gas_used,
       gas_used: gas_used,
       index: next_transaction_index,

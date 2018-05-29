@@ -39,4 +39,5 @@ To get POA Explorer up and running locally:
 #### `Explorer.Chain.recent_collated_transactions/0`
 
 * Reset the test database: `MIX_ENV=test mix do ecto.drop, ecto.create, ecto.migrate`
+* Change `tag` in `benchmarks/explorer/chain/recent_collated_transactions.exs` to a new value, so that it will compare against the old values saved in `benchmarks/explorer/chain/recent_collated_transactions.benchee`
 * Run the benchmark: `MIX_ENV=test mix run benchmarks/explorer/chain/recent_collated_transactions.exs`

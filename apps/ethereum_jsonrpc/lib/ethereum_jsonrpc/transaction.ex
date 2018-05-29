@@ -48,6 +48,7 @@ defmodule EthereumJSONRPC.Transaction do
 
   @type params :: %{
           block_hash: EthereumJSONRPC.hash(),
+          block_number: non_neg_integer(),
           from_address_hash: EthereumJSONRPC.address(),
           gas: non_neg_integer(),
           gas_price: non_neg_integer(),
@@ -67,6 +68,7 @@ defmodule EthereumJSONRPC.Transaction do
   @spec elixir_to_params(elixir) :: params
   def elixir_to_params(%{
         "blockHash" => block_hash,
+        "blockNumber" => block_number,
         "from" => from_address_hash,
         "gas" => gas,
         "gasPrice" => gas_price,
@@ -84,6 +86,7 @@ defmodule EthereumJSONRPC.Transaction do
       }) do
     %{
       block_hash: block_hash,
+      block_number: block_number,
       from_address_hash: from_address_hash,
       gas: gas,
       gas_price: gas_price,
@@ -107,6 +110,7 @@ defmodule EthereumJSONRPC.Transaction do
       iex> EthereumJSONRPC.Transaction.params_to_hash(
       ...>   %{
       ...>     block_hash: "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47",
+      ...>     block_number: 34,
       ...>     gas: 4700000,
       ...>     gas_price: 100000000000,
       ...>     hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
