@@ -483,7 +483,7 @@ defmodule Explorer.ChainTest do
       %InternalTransaction{id: second_id} =
         insert(:internal_transaction, index: 1, transaction_hash: transaction.hash, to_address_hash: address.hash)
 
-      result = address |> Chain.address_to_internal_transactions() |> Enum.map(&(&1.id))
+      result = address |> Chain.address_to_internal_transactions() |> Enum.map(& &1.id)
       assert Enum.member?(result, first_id)
       assert Enum.member?(result, second_id)
     end
@@ -606,7 +606,7 @@ defmodule Explorer.ChainTest do
         address
         |> Chain.address_to_internal_transactions()
         |> Map.get(:entries, [])
-        |> Enum.map(&(&1.id))
+        |> Enum.map(& &1.id)
 
       assert [second_pending, first_pending, sixth, fifth, fourth, third, second, first] == result
     end
@@ -624,7 +624,14 @@ defmodule Explorer.ChainTest do
       address = insert(:address)
       block = insert(:block)
       transaction = insert(:transaction, block_hash: block.hash, index: 0, to_address_hash: address.hash)
-      expected = insert(:internal_transaction_create, index: 0, from_address_hash: address.hash, transaction_hash: transaction.hash)
+
+      expected =
+        insert(
+          :internal_transaction_create,
+          index: 0,
+          from_address_hash: address.hash,
+          transaction_hash: transaction.hash
+        )
 
       actual = Enum.at(Chain.address_to_internal_transactions(address), 0)
 
@@ -655,7 +662,7 @@ defmodule Explorer.ChainTest do
         transaction.hash
         |> Chain.transaction_hash_to_internal_transactions()
         |> Map.get(:entries, [])
-        |> Enum.map(&(&1.id))
+        |> Enum.map(& &1.id)
 
       assert 2 == length(results)
       assert Enum.member?(results, first.id)
@@ -723,7 +730,7 @@ defmodule Explorer.ChainTest do
       result =
         hash
         |> Chain.transaction_hash_to_internal_transactions()
-        |> Enum.map(&(&1.id))
+        |> Enum.map(& &1.id)
 
       assert [first_id, second_id] == result
     end

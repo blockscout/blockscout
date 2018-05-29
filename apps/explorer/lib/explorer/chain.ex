@@ -1856,11 +1856,12 @@ defmodule Explorer.Chain do
 
   defp where_transaction_has_multiple_internal_transactions(query) do
     query
-    |> where([it], it.type == ^:create)
-    |> or_where(
+    |> where(
       [it, transaction],
       fragment(
-        "(SELECT COUNT(sibling.id) FROM internal_transactions as sibling WHERE sibling.transaction_hash = ?) > 1",
+        "(? = ? OR (SELECT COUNT(sibling.id) FROM internal_transactions as sibling WHERE sibling.transaction_hash = ?) > 1)",
+        it.type,
+        "create",
         transaction.hash
       )
     )
