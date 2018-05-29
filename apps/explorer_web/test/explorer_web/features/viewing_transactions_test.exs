@@ -14,20 +14,21 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
         gas_used: 123_987
       })
 
-    for index <- 0..3, do: insert(:transaction, block_hash: block.hash, index: index)
+    4
+    |> insert_list(:transaction)
+    |> with_block()
+
     pending = insert(:transaction, block_hash: nil, gas: 5891, index: nil)
 
     lincoln = insert(:address)
     taft = insert(:address)
 
     transaction =
-      insert(
-        :transaction,
-        block_hash: block.hash,
+      :transaction
+      |> insert(
         value: Wei.from(Decimal.new(5656), :ether),
         gas: Decimal.new(1_230_000_000_000_123_123),
         gas_price: Decimal.new(7_890_000_000_898_912_300_045),
-        index: 4,
         input: "0x000012",
         nonce: 99045,
         inserted_at: Timex.parse!("1970-01-01T00:00:18-00:00", "{ISO:Extended}"),
@@ -35,24 +36,17 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
         from_address_hash: taft.hash,
         to_address_hash: lincoln.hash
       )
+      |> with_block(block, gas_used: Decimal.new(1_230_000_000_000_123_000), status: :ok)
 
-    receipt = insert(:receipt, status: :ok, transaction_hash: transaction.hash, transaction_index: transaction.index)
-    insert(:log, address_hash: lincoln.hash, index: 0, transaction_hash: receipt.transaction_hash)
+    insert(:log, address_hash: lincoln.hash, index: 0, transaction_hash: transaction.hash)
 
     # From Lincoln to Taft.
     txn_from_lincoln =
-      insert(
-        :transaction,
-        block_hash: block.hash,
-        index: 5,
-        from_address_hash: lincoln.hash,
-        to_address_hash: taft.hash
-      )
+      :transaction
+      |> insert(from_address_hash: lincoln.hash, to_address_hash: taft.hash)
+      |> with_block(block)
 
-    internal_receipt =
-      insert(:receipt, transaction_hash: txn_from_lincoln.hash, transaction_index: txn_from_lincoln.index)
-
-    internal = insert(:internal_transaction, index: 0, transaction_hash: internal_receipt.transaction_hash)
+    internal = insert(:internal_transaction, index: 0, transaction_hash: transaction.hash)
 
     {:ok,
      %{

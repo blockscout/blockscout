@@ -3,7 +3,7 @@ defmodule ExplorerWeb.TransactionView do
 
   alias Cldr.Number
   alias Explorer.Chain
-  alias Explorer.Chain.{InternalTransaction, Receipt, Transaction, Wei}
+  alias Explorer.Chain.{InternalTransaction, Transaction, Wei}
   alias Explorer.ExchangeRates.Token
   alias ExplorerWeb.BlockView
   alias ExplorerWeb.ExchangeRates.USD
@@ -15,9 +15,9 @@ defmodule ExplorerWeb.TransactionView do
     end
   end
 
-  def gas_used(%Transaction{receipt: nil}), do: gettext("Pending")
+  def gas_used(%Transaction{gas_used: nil}), do: gettext("Pending")
 
-  def gas_used(%Transaction{receipt: %Receipt{gas_used: gas_used}}) do
+  def gas_used(%Transaction{gas_used: gas_used}) do
     Number.to_string!(gas_used)
   end
 

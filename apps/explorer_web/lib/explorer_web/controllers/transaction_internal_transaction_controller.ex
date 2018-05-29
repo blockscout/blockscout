@@ -12,8 +12,7 @@ defmodule ExplorerWeb.TransactionInternalTransactionController do
              necessity_by_association: %{
                block: :optional,
                from_address: :optional,
-               to_address: :optional,
-               receipt: :optional
+               to_address: :optional
              }
            ) do
       page =

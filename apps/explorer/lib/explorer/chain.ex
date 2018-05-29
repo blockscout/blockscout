@@ -24,7 +24,6 @@ defmodule Explorer.Chain do
     Hash,
     InternalTransaction,
     Log,
-    Receipt,
     Transaction,
     Wei
   }
@@ -160,7 +159,6 @@ defmodule Explorer.Chain do
   @insert_blocks_timeout 60_000
   @insert_internal_transactions_timeout 60_000
   @insert_logs_timeout 60_000
-  @insert_receipts_timeout 60_000
   @insert_transactions_timeout 60_000
 
   @doc """
@@ -266,14 +264,13 @@ defmodule Explorer.Chain do
       from(
         block in Block,
         left_join: transaction in assoc(block, :transactions),
-        left_join: receipt in assoc(transaction, :receipt),
         inner_join: block_reward in Reward,
         on: fragment("? <@ ?", block.number, block_reward.block_range),
         where: block.number == ^block_number,
         group_by: block_reward.reward,
         select: %{
           transaction_reward: %Wei{
-            value: default_if_empty(sum_of_products(receipt.gas_used, transaction.gas_price), 0)
+            value: default_if_empty(sum_of_products(transaction.gas_used, transaction.gas_price), 0)
           },
           static_reward: block_reward.reward
         }
@@ -406,28 +403,28 @@ defmodule Explorer.Chain do
       ...>   %Explorer.Chain.Transaction{
       ...>     gas: Decimal.new(3),
       ...>     gas_price: %Explorer.Chain.Wei{value: Decimal.new(2)},
-      ...>     receipt: nil
+      ...>     gas_used: nil
       ...>   },
       ...>   :wei
       ...> )
       {:maximum, Decimal.new(6)}
 
   If the transaction has been confirmed in block, then the fee will be the actual fee paid in `unit` for the `gas_used`
-  in the `receipt`.
+  in the `transaction`.
 
       iex> Explorer.Chain.fee(
       ...>   %Explorer.Chain.Transaction{
       ...>     gas: Decimal.new(3),
       ...>     gas_price: %Explorer.Chain.Wei{value: Decimal.new(2)},
-      ...>     receipt: %Explorer.Chain.Receipt{gas_used: Decimal.new(2)}
+      ...>     gas_used: Decimal.new(2)
       ...>   },
       ...>   :wei
       ...> )
       {:actual, Decimal.new(4)}
 
   """
-  @spec fee(%Transaction{receipt: nil}, :ether | :gwei | :wei) :: {:maximum, Decimal.t()}
-  def fee(%Transaction{gas: gas, gas_price: gas_price, receipt: nil}, unit) do
+  @spec fee(%Transaction{gas_used: nil}, :ether | :gwei | :wei) :: {:maximum, Decimal.t()}
+  def fee(%Transaction{gas: gas, gas_price: gas_price, gas_used: nil}, unit) do
     fee =
       gas_price
       |> Wei.to(unit)
@@ -436,8 +433,8 @@ defmodule Explorer.Chain do
     {:maximum, fee}
   end
 
-  @spec fee(%Transaction{receipt: Receipt.t()}, :ether | :gwei | :wei) :: {:actual, Decimal.t()}
-  def fee(%Transaction{gas_price: gas_price, receipt: %Receipt{gas_used: gas_used}}, unit) do
+  @spec fee(%Transaction{gas_used: Decimal.t()}, :ether | :gwei | :wei) :: {:actual, Decimal.t()}
+  def fee(%Transaction{gas_price: gas_price, gas_used: gas_used}, unit) do
     fee =
       gas_price
       |> Wei.to(unit)
@@ -587,7 +584,6 @@ defmodule Explorer.Chain do
   | `:blocks`                | `[Explorer.Chain.Hash.t()]`                                                | List of `t:Explorer.Chain.Block.t/0` `hash`                                                   |
   | `:internal_transactions` | `[%{index: non_neg_integer(), transaction_hash: Explorer.Chain.Hash.t()}]` | List of maps of the `t:Explorer.Chain.InternalTransaction.t/0` `index` and `transaction_hash` |
   | `:logs`                  | `[%{index: non_neg_integer(), transaction_hash: Explorer.Chain.Hash.t()}]` | List of maps of the `t:Explorer.Chain.Log.t/0` `index` and `transaction_hash`                 |
-  | `:receipts`              | `[Explorer.Chain.Hash.t()]`                                                | List of `t:Explorer.Chain.Receipt.t/0` `transaction_hash`                                     |
   | `:transactions`          | `[Explorer.Chain.Hash.t()]`                                                | List of `t:Explorer.Chain.Transaction.t/0` `hash`                                             |
 
       iex> Explorer.Chain.import_blocks(
@@ -635,21 +631,14 @@ defmodule Explorer.Chain do
       ...>         type: "mined"
       ...>       }
       ...>     ],
-      ...>     receipts: [
-      ...>       %{
-      ...>         cumulative_gas_used: 50450,
-      ...>         gas_used: 50450,
-      ...>         status: :ok,
-      ...>         transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-      ...>         transaction_index: 0
-      ...>       }
-      ...>     ],
       ...>     transactions: [
       ...>       %{
       ...>         block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+      ...>         cumulative_gas_used: 50450,
       ...>         from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
       ...>         gas: 4700000,
       ...>         gas_price: 100000000000,
+      ...>         gas_used: 50450,
       ...>         hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
       ...>         index: 0,
       ...>         input: "0x10855269000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
@@ -658,6 +647,7 @@ defmodule Explorer.Chain do
       ...>         r: 0xa7f8f45cce375bb7af8750416e1b03e0473f93c256da2285d1134fc97a700e01,
       ...>         s: 0x1f87a076f13824f4be8963e3dffd7300dae64d5f23c9a062af0c6ead347c135f,
       ...>         standard_v: 1,
+      ...>         status: :ok,
       ...>         to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
       ...>         v: 0xbe,
       ...>         value: 0
@@ -713,14 +703,6 @@ defmodule Explorer.Chain do
              }
            }
          ],
-         receipts: [
-           %Explorer.Chain.Hash{
-             byte_count: 32,
-             bytes: <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136,
-               27, 174, 236, 38, 46, 123, 149, 35, 77, 57, 101, 36, 140,
-               57, 254, 153, 47, 255, 212, 51, 229>>
-           }
-         ],
          transactions: [
            %Explorer.Chain.Hash{
              byte_count: 32,
@@ -738,7 +720,6 @@ defmodule Explorer.Chain do
       ...>     blocks: [],
       ...>     logs: [],
       ...>     internal_transactions: [],
-      ...>     receipts: [],
       ...>     transactions: [],
       ...>     addresses: []
       ...>   }
@@ -749,7 +730,6 @@ defmodule Explorer.Chain do
          blocks: [],
          internal_transactions: [],
          logs: [],
-         receipts: [],
          transactions: []
        }}
 
@@ -757,7 +737,7 @@ defmodule Explorer.Chain do
   are errors, they are returned in `Ecto.Changeset.t`s, so that the original, invalid value can be reconstructed for any
   error messages.
 
-      iex> {:error, [internal_transaction_changeset, receipt_changeset]} = Explorer.Chain.import_blocks(
+      iex> {:error, [internal_transaction_changeset, transaction_changeset]} = Explorer.Chain.import_blocks(
       ...>   %{
       ...>     blocks: [
       ...>       %{
@@ -815,20 +795,14 @@ defmodule Explorer.Chain do
       ...>         type: "mined"
       ...>       }
       ...>     ],
-      ...>     receipts: [
-      ...>       %{
-      ...>         cumulative_gas_used: 50450,
-      ...>         gas_used: 50450,
-      ...>         transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-      ...>         transaction_index: 0
-      ...>       }
-      ...>     ],
       ...>     transactions: [
       ...>       %{
       ...>         block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+      ...>         cumulative_gas_used: 50450,
       ...>         from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
       ...>         gas: 4700000,
       ...>         gas_price: 100000000000,
+      ...>         gas_used: 50450,
       ...>         hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
       ...>         index: 0,
       ...>         input: "0x10855269000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
@@ -851,16 +825,17 @@ defmodule Explorer.Chain do
       ...> )
       iex> internal_transaction_changeset.errors
       [call_type: {"can't be blank", [validation: :required]}]
-      iex> receipt_changeset.errors
-      [status: {"can't be blank", [validation: :required]}]
+      iex> transaction_changeset.errors
+      [
+        status: {"can't be blank when the transaction is collated into a block", []}
+      ]
 
   ## Tree
 
     * `t:Explorer.Chain.Block.t/0`s
       * `t:Explorer.Chain.Transaction.t/0`
         * `t.Explorer.Chain.InternalTransaction.t/0`
-        * `t.Explorer.Chain.Receipt.t/0`
-          * `t.Explorer.Chain.Log.t/0`
+        * `t.Explorer.Chain.Log.t/0`
 
   ## Options
 
@@ -873,8 +848,6 @@ defmodule Explorer.Chain do
     * `:insert_internal_transactions_timeout` - the timeout for inserting all internal transactions. Defaults to
       `#{@insert_internal_transactions_timeout}` milliseconds.
     * `:insert_logs_timeout` - the timeout for inserting all logs. Defaults to `#{@insert_logs_timeout}` milliseconds.
-    * `:insert_receipts_timeout` - the timeout for inserting all receipts. Defaults to `#{@insert_receipts_timeout}`
-      milliseconds.
     * `:insert_transactions_timeout` - the timeout for inserting all transactions found in the params lists across all
       types. Defaults to `#{@insert_transactions_timeout}` milliseconds.
   """
@@ -883,21 +856,18 @@ defmodule Explorer.Chain do
           blocks: blocks_params,
           logs: logs_params,
           internal_transactions: internal_transactions_params,
-          receipts: receipts_params,
           transactions: transactions_params,
           addresses: addresses_params
         },
         options \\ []
       )
       when is_list(blocks_params) and is_list(internal_transactions_params) and is_list(logs_params) and
-             is_list(receipts_params) and is_list(transactions_params) and is_list(addresses_params) and
-             is_list(options) do
+             is_list(transactions_params) and is_list(addresses_params) and is_list(options) do
     with {:ok, ecto_schema_module_to_changes_list} <-
            ecto_schema_module_to_params_list_to_ecto_schema_module_to_changes_list(%{
              Block => blocks_params,
              Log => logs_params,
              InternalTransaction => internal_transactions_params,
-             Receipt => receipts_params,
              Transaction => transactions_params,
              Address => addresses_params
            }) do
@@ -1030,10 +1000,8 @@ defmodule Explorer.Chain do
   @doc """
   The number of `t:Explorer.Chain.Log.t/0`.
 
-      iex> block = insert(:block)
-      iex> transaction = insert(:transaction, block_hash: block.hash, index: 0)
-      iex> receipt = insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
-      iex> insert(:log, transaction_hash: receipt.transaction_hash, index: 0)
+      iex> transaction = :transaction |> insert() |> with_block()
+      iex> insert(:log, transaction_hash: transaction.hash, index: 0)
       iex> Explorer.Chain.log_count()
       1
 
@@ -1144,30 +1112,11 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  The number of `t:Explorer.Chain.Receipt.t/0`.
-
-      iex> block = insert(:block)
-      iex> transaction = insert(:transaction, block_hash: block.hash, index: 0)
-      iex> insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
-      iex> Explorer.Chain.receipt_count()
-      1
-
-  When there are no `t:Explorer.Chain.Receipt.t/0`.
-
-      iex> Explorer.Chain.receipt_count()
-      0
-
-  """
-  def receipt_count do
-    Repo.aggregate(Receipt, :count, :transaction_hash)
-  end
-
-  @doc """
   Returns the list of collated transactions that occurred recently (10).
 
-      iex> 2 |> insert_list(:transaction) |> validate()
+      iex> 2 |> insert_list(:transaction) |> with_block()
       iex> insert(:transaction) # unvalidated transaction
-      iex> 8 |> insert_list(:transaction) |> validate()
+      iex> 8 |> insert_list(:transaction) |> with_block()
       iex> recent_collated_transactions = Explorer.Chain.recent_collated_transactions()
       iex> length(recent_collated_transactions)
       10
@@ -1181,10 +1130,10 @@ defmodule Explorer.Chain do
   returned.  This can be used to generate paging for collated transaction.
 
       iex> first_block = insert(:block, number: 1)
-      iex> first_transaction_in_first_block = insert(:transaction, block_hash: first_block.hash, index: 0)
-      iex> second_transaction_in_first_block = insert(:transaction, block_hash: first_block.hash, index: 1)
+      iex> first_transaction_in_first_block = :transaction |> insert() |> with_block(first_block)
+      iex> second_transaction_in_first_block = :transaction |> insert() |> with_block(first_block)
       iex> second_block = insert(:block, number: 2)
-      iex> first_transaction_in_second_block = insert(:transaction, block_hash: second_block.hash, index: 0)
+      iex> first_transaction_in_second_block = :transaction |> insert() |> with_block(second_block)
       iex> after_first_transaciton_in_first_block = Explorer.Chain.recent_collated_transactions(
       ...>   after_hash: first_transaction_in_first_block.hash
       ...> )
@@ -1245,7 +1194,7 @@ defmodule Explorer.Chain do
   Return the list of pending transactions that occurred recently (10).
 
       iex> 2 |> insert_list(:transaction)
-      iex> :transaction |> insert() |> validate()
+      iex> :transaction |> insert() |> with_block()
       iex> 8 |> insert_list(:transaction)
       iex> %Scrivener.Page{entries: recent_pending_transactions} = Explorer.Chain.recent_pending_transactions()
       iex> length(recent_pending_transactions)
@@ -1277,9 +1226,9 @@ defmodule Explorer.Chain do
   When there are no pending transaction and a collated transaction's inserted_at is used, an empty list is returned
 
       iex> {:ok, first_inserted_at, 0} = DateTime.from_iso8601("2015-01-23T23:50:07Z")
-      iex> :transaction |> insert(inserted_at: first_inserted_at) |> validate()
+      iex> :transaction |> insert(inserted_at: first_inserted_at) |> with_block()
       iex> {:ok, second_inserted_at, 0} = DateTime.from_iso8601("2016-01-23T23:50:07Z")
-      iex> :transaction |> insert(inserted_at: second_inserted_at) |> validate()
+      iex> :transaction |> insert(inserted_at: second_inserted_at) |> with_block()
       iex> %Scrivener.Page{entries: entries} = Explorer.Chain.recent_pending_transactions(
       ...>   after_inserted_at: first_inserted_at
       ...> )
@@ -1399,7 +1348,7 @@ defmodule Explorer.Chain do
   With no options or an explicit `pending: nil`, both collated and pending transactions will be counted.
 
       iex> insert(:transaction)
-      iex> :transaction |> insert() |> validate()
+      iex> :transaction |> insert() |> with_block()
       iex> Explorer.Chain.transaction_count()
       2
       iex> Explorer.Chain.transaction_count(pending: nil)
@@ -1408,14 +1357,14 @@ defmodule Explorer.Chain do
   To count only collated transactions, pass `pending: false`.
 
       iex> 2 |> insert_list(:transaction)
-      iex> 3 |> insert_list(:transaction) |> validate()
+      iex> 3 |> insert_list(:transaction) |> with_block()
       iex> Explorer.Chain.transaction_count(pending: false)
       3
 
   To count only pending transactions, pass `pending: true`.
 
       iex> 2 |> insert_list(:transaction)
-      iex> 3 |> insert_list(:transaction) |> validate()
+      iex> 3 |> insert_list(:transaction) |> with_block()
       iex> Explorer.Chain.transaction_count(pending: true)
       2
 
@@ -1486,7 +1435,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Converts `transaction` with its `receipt` loaded to the status of the `t:Explorer.Chain.Transaction.t/0`.
+  Converts `transaction` to the status of the `t:Explorer.Chain.Transaction.t/0` whether pending or collated.
 
   ## Returns
 
@@ -1497,18 +1446,14 @@ defmodule Explorer.Chain do
 
   """
   @spec transaction_to_status(Transaction.t()) :: :failed | :pending | :out_of_gas | :success
-  def transaction_to_status(%Transaction{receipt: nil}), do: :pending
-  def transaction_to_status(%Transaction{receipt: %Receipt{status: :ok}}), do: :success
+  def transaction_to_status(%Transaction{status: nil}), do: :pending
+  def transaction_to_status(%Transaction{status: :ok}), do: :success
 
-  def transaction_to_status(%Transaction{
-        gas: gas,
-        receipt: %Receipt{gas_used: gas_used, status: :error}
-      })
-      when gas_used >= gas do
+  def transaction_to_status(%Transaction{gas: gas, gas_used: gas_used, status: :error}) when gas_used >= gas do
     :out_of_gas
   end
 
-  def transaction_to_status(%Transaction{receipt: %Receipt{status: :error}}), do: :failed
+  def transaction_to_status(%Transaction{status: :error}), do: :failed
 
   @doc """
   The `t:Explorer.Chain.Transaction.t/0` or `t:Explorer.Chain.InternalTransaction.t/0` `value` of the `transaction` in
@@ -1666,7 +1611,6 @@ defmodule Explorer.Chain do
            Block => blocks_changes,
            Log => logs_changes,
            InternalTransaction => internal_transactions_changes,
-           Receipt => receipts_changes,
            Transaction => transactions_changes
          },
          options
@@ -1704,13 +1648,6 @@ defmodule Explorer.Chain do
             :insert_internal_transactions_timeout,
             @insert_internal_transactions_timeout
           ),
-        timestamps: timestamps
-      )
-    end)
-    |> Multi.run(:receipts, fn _ ->
-      insert_receipts(
-        receipts_changes,
-        timeout: Keyword.get(options, :insert_receipts_timeout, @insert_receipts_timeout),
         timestamps: timestamps
       )
     end)
@@ -1772,29 +1709,6 @@ defmodule Explorer.Chain do
       )
 
     {:ok, for(log <- logs, do: Map.take(log, [:index, :transaction_hash]))}
-  end
-
-  @spec insert_receipts([map()], [timeout_option | timestamps_option]) :: {:ok, [Hash.t()]} | {:error, [Changeset.t()]}
-  defp insert_receipts(changes_list, named_arguments)
-       when is_list(changes_list) and is_list(named_arguments) do
-    timestamps = Keyword.fetch!(named_arguments, :timestamps)
-    timeout = Keyword.fetch!(named_arguments, :timeout)
-
-    # order so that row ShareLocks are grabbed in a consistent order
-    ordered_changes_list = Enum.sort_by(changes_list, & &1.transaction_hash)
-
-    {:ok, receipts} =
-      insert_changes_list(
-        ordered_changes_list,
-        conflict_target: :transaction_hash,
-        on_conflict: :replace_all,
-        for: Receipt,
-        returning: [:transaction_hash],
-        timeout: timeout,
-        timestamps: timestamps
-      )
-
-    {:ok, for(receipt <- receipts, do: receipt.transaction_hash)}
   end
 
   defp insert_changes_list(changes_list, options) when is_list(changes_list) do

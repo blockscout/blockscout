@@ -6,7 +6,7 @@ defmodule EthereumJSONRPC.Receipt do
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
-  alias Explorer.Chain.Receipt.Status
+  alias Explorer.Chain.Transaction.Status
   alias EthereumJSONRPC
   alias EthereumJSONRPC.Logs
 

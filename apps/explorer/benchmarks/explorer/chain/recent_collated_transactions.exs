@@ -39,11 +39,7 @@ Benchee.run(
     |> Enum.each(fn block ->
       transaction_count_per_block
       |> insert_list(:transaction)
-      |> Enum.each(fn transaction ->
-        transaction
-        |> with_block(block)
-        |> with_receipt()
-      end)
+      |> with_block(block)
     end)
 
     input
@@ -54,7 +50,7 @@ Benchee.run(
   load: path,
   save: [
     path: path,
-    tag: "separate-receipts"
+    tag: "fold-receipts-into-transactions"
   ],
   time: 10
 )

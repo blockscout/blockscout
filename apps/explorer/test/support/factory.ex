@@ -15,7 +15,6 @@ defmodule Explorer.Factory do
     Hash,
     InternalTransaction,
     Log,
-    Receipt,
     Transaction
   }
 
@@ -62,6 +61,48 @@ defmodule Explorer.Factory do
       |> Hash.Full.cast()
 
     block_hash
+  end
+
+  def with_block(%Transaction{index: nil} = transaction) do
+    with_block(transaction, insert(:block))
+  end
+
+  def with_block(transactions) when is_list(transactions) do
+    block = insert(:block)
+    with_block(transactions, block)
+  end
+
+  def with_block(%Transaction{} = transaction, %Block{} = block) do
+    with_block(transaction, block, [])
+  end
+
+  def with_block(transactions, %Block{} = block) when is_list(transactions) do
+    Enum.map(transactions, &with_block(&1, block))
+  end
+
+  def with_block(%Transaction{index: nil} = transaction, collated_params) when is_list(collated_params) do
+    block = insert(:block)
+    with_block(transaction, block, collated_params)
+  end
+
+  def with_block(%Transaction{index: nil} = transaction, %Block{hash: block_hash}, collated_params)
+      when is_list(collated_params) do
+    next_transaction_index = block_hash_to_next_transaction_index(block_hash)
+
+    cumulative_gas_used = collated_params[:cumulative_gas_used] || Enum.random(21_000..100_000)
+    gas_used = collated_params[:gas_used] || Enum.random(21_000..100_000)
+    status = collated_params[:status] || Enum.random(0..1)
+
+    transaction
+    |> Transaction.changeset(%{
+      block_hash: block_hash,
+      cumulative_gas_used: cumulative_gas_used,
+      gas_used: gas_used,
+      index: next_transaction_index,
+      status: status
+    })
+    |> Repo.update!()
+    |> Repo.preload(:block)
   end
 
   def data(sequence_name) do
@@ -149,14 +190,6 @@ defmodule Explorer.Factory do
     }
   end
 
-  def receipt_factory do
-    %Receipt{
-      cumulative_gas_used: Enum.random(21_000..100_000),
-      gas_used: Enum.random(21_000..100_000),
-      status: Enum.random(0..1)
-    }
-  end
-
   def transaction_factory do
     %Transaction{
       from_address_hash: insert(:address).hash,
@@ -188,43 +221,6 @@ defmodule Explorer.Factory do
     data(:transaction_input)
   end
 
-  @doc """
-  Validates the pending `transaction`(s) by add it to a `t:Explorer.Chain.Block.t/0` and giving it a `receipt`
-  """
-
-  def validate(transactions) when is_list(transactions) do
-    Enum.map(transactions, &validate/1)
-  end
-
-  def validate(%Transaction{hash: hash} = transaction) do
-    block = insert(:block)
-    index = 0
-
-    block_transaction =
-      transaction
-      |> Explorer.Chain.Transaction.changeset(%{block_hash: block.hash, index: index})
-      |> Repo.update!()
-
-    insert(:receipt, transaction_hash: hash, transaction_index: index)
-
-    Repo.preload(block_transaction, [:block, :receipt])
-  end
-
-  def with_block(%Transaction{index: nil} = transaction, %Block{hash: block_hash}) do
-    next_transaction_index = block_hash_to_next_transaction_index(block_hash)
-
-    transaction
-    |> Transaction.changeset(%{block_hash: block_hash, index: next_transaction_index})
-    |> Repo.update!()
-    |> Repo.preload(:block)
-  end
-
-  def with_receipt(%Transaction{hash: hash, index: index} = transaction) do
-    insert(:receipt, transaction_hash: hash, transaction_index: index)
-
-    Repo.preload(transaction, :receipt)
-  end
-
   defmacrop left + right do
     quote do
       fragment("? + ?", unquote(left), unquote(right))
@@ -253,9 +249,10 @@ defmodule Explorer.Factory do
     gas = Enum.random(21_000..100_000)
     gas_used = Enum.random(0..gas)
 
-    block = insert(:block)
-    transaction = insert(:transaction, block_hash: block.hash, index: 0)
-    receipt = insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
+    transaction =
+      :transaction
+      |> insert()
+      |> with_block()
 
     %InternalTransaction{
       from_address_hash: insert(:address).hash,
@@ -266,7 +263,7 @@ defmodule Explorer.Factory do
       output: %Data{bytes: <<1>>},
       # caller MUST suppy `index`
       trace_address: [],
-      transaction_hash: receipt.transaction_hash,
+      transaction_hash: transaction.hash,
       type: type,
       value: sequence("internal_transaction_value", &Decimal.new(&1))
     }
@@ -276,9 +273,10 @@ defmodule Explorer.Factory do
     gas = Enum.random(21_000..100_000)
     gas_used = Enum.random(0..gas)
 
-    block = insert(:block)
-    transaction = insert(:transaction, block_hash: block.hash, index: 0)
-    receipt = insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
+    transaction =
+      :transaction
+      |> insert()
+      |> with_block()
 
     %InternalTransaction{
       created_contract_code: data(:internal_transaction_created_contract_code),
@@ -289,7 +287,7 @@ defmodule Explorer.Factory do
       # caller MUST suppy `index`
       init: data(:internal_transaction_init),
       trace_address: [],
-      transaction_hash: receipt.transaction_hash,
+      transaction_hash: transaction.hash,
       type: type,
       value: sequence("internal_transaction_value", &Decimal.new(&1))
     }

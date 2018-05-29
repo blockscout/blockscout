@@ -25,13 +25,13 @@ defmodule ExplorerWeb.AddressTransactionControllerTest do
 
       from_transaction =
         :transaction
-        |> insert(block_hash: block.hash, from_address_hash: address.hash, index: 0)
-        |> with_receipt()
+        |> insert(from_address_hash: address.hash)
+        |> with_block(block)
 
       to_transaction =
         :transaction
-        |> insert(block_hash: block.hash, to_address_hash: address.hash, index: 1)
-        |> with_receipt()
+        |> insert(to_address_hash: address.hash)
+        |> with_block(block)
 
       conn = get(conn, address_transaction_path(conn, :index, :en, address))
 
@@ -44,17 +44,10 @@ defmodule ExplorerWeb.AddressTransactionControllerTest do
       assert Enum.member?(actual_transaction_hashes, to_transaction.hash)
     end
 
-    test "does not return related transactions without a receipt", %{conn: conn} do
+    test "does not return related transactions without a block", %{conn: conn} do
       address = insert(:address)
-      block = insert(:block)
 
-      insert(
-        :transaction,
-        block_hash: block.hash,
-        from_address_hash: address.hash,
-        index: 0,
-        to_address_hash: address.hash
-      )
+      insert(:transaction, from_address_hash: address.hash, to_address_hash: address.hash)
 
       conn = get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address))
 

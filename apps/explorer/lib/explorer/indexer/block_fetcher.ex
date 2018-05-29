@@ -137,7 +137,6 @@ defmodule Explorer.Indexer.BlockFetcher do
       ================================
         blocks: #{Chain.block_count()}
         internal transactions: #{Chain.internal_transaction_count()}
-        receipts: #{Chain.receipt_count()}
         logs: #{Chain.log_count()}
         addresses: #{Chain.address_count()}
       """
@@ -259,11 +258,12 @@ defmodule Explorer.Indexer.BlockFetcher do
   @doc false
   def import_range({block_start, block_end} = range, %{} = state, seq) do
     with {:blocks, {:ok, next, result}} <- {:blocks, EthereumJSONRPC.fetch_blocks_by_range(block_start, block_end)},
-         %{blocks: blocks, transactions: transactions} = result,
+         %{blocks: blocks, transactions: transactions_without_receipts} = result,
          cap_seq(seq, next, range, state),
-         transaction_hashes = Transactions.params_to_hashes(transactions),
+         transaction_hashes = Transactions.params_to_hashes(transactions_without_receipts),
          {:receipts, {:ok, receipt_params}} <- {:receipts, fetch_transaction_receipts(state, transaction_hashes)},
          %{logs: logs, receipts: receipts} = receipt_params,
+         transactions_with_receipts = put_receipts(transactions_without_receipts, receipts),
          {:internal_transactions, {:ok, internal_transactions}} <-
            {:internal_transactions, fetch_internal_transactions(state, transaction_hashes)} do
       addresses =
@@ -271,7 +271,7 @@ defmodule Explorer.Indexer.BlockFetcher do
           blocks: blocks,
           internal_transactions: internal_transactions,
           logs: logs,
-          transactions: transactions
+          transactions: transactions_with_receipts
         })
 
       insert(state, seq, range, %{
@@ -279,8 +279,7 @@ defmodule Explorer.Indexer.BlockFetcher do
         blocks: blocks,
         internal_transactions: internal_transactions,
         logs: logs,
-        receipts: receipts,
-        transactions: transactions
+        transactions: transactions_with_receipts
       })
     else
       {step, {:error, reason}} ->
@@ -292,6 +291,18 @@ defmodule Explorer.Indexer.BlockFetcher do
 
         {:error, step, reason}
     end
+  end
+
+  defp put_receipts(transactions_params, receipts_params)
+       when is_list(transactions_params) and is_list(receipts_params) do
+    transaction_hash_to_receipt_params =
+      Enum.into(receipts_params, %{}, fn %{transaction_hash: transaction_hash} = receipt_params ->
+        {transaction_hash, receipt_params}
+      end)
+
+    Enum.map(transactions_params, fn %{hash: transaction_hash} = transaction_params ->
+      Map.merge(transaction_params, Map.fetch!(transaction_hash_to_receipt_params, transaction_hash))
+    end)
   end
 
   defp schedule_next_catchup_index(state) do

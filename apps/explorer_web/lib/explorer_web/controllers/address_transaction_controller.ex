@@ -17,8 +17,7 @@ defmodule ExplorerWeb.AddressTransactionController do
         necessity_by_association: %{
           block: :required,
           from_address: :optional,
-          to_address: :optional,
-          receipt: :required
+          to_address: :optional
         },
         pagination: params
       ]

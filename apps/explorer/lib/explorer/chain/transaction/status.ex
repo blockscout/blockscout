@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Receipt.Status do
+defmodule Explorer.Chain.Transaction.Status do
   @moduledoc """
   Whether a transaction succeeded (`:ok`) or failed (`:error`).
 
@@ -21,27 +21,27 @@ defmodule Explorer.Chain.Receipt.Status do
 
   If the `term` is already in `t:t/0`, then it is returned
 
-      iex> Explorer.Chain.Receipt.Status.cast(:ok)
+      iex> Explorer.Chain.Transaction.Status.cast(:ok)
       {:ok, :ok}
-      iex> Explorer.Chain.Receipt.Status.cast(:error)
+      iex> Explorer.Chain.Transaction.Status.cast(:error)
       {:ok, :error}
 
   If the `term` is an `non_neg_integer`, then it is converted only if it is `0` or `1`.
 
-      iex> Explorer.Chain.Receipt.Status.cast(0)
+      iex> Explorer.Chain.Transaction.Status.cast(0)
       {:ok, :error}
-      iex> Explorer.Chain.Receipt.Status.cast(1)
+      iex> Explorer.Chain.Transaction.Status.cast(1)
       {:ok, :ok}
-      iex> Explorer.Chain.Receipt.Status.cast(2)
+      iex> Explorer.Chain.Transaction.Status.cast(2)
       :error
 
   If the `term` is in the quantity format used by `Explorer.JSONRPC`, it is converted only if `0x0` or `0x1`
 
-      iex> Explorer.Chain.Receipt.Status.cast("0x0")
+      iex> Explorer.Chain.Transaction.Status.cast("0x0")
       {:ok, :error}
-      iex> Explorer.Chain.Receipt.Status.cast("0x1")
+      iex> Explorer.Chain.Transaction.Status.cast("0x1")
       {:ok, :ok}
-      iex> Explorer.Chain.Receipt.Status.cast("0x2")
+      iex> Explorer.Chain.Transaction.Status.cast("0x2")
       :error
 
   """
@@ -58,20 +58,20 @@ defmodule Explorer.Chain.Receipt.Status do
   @doc """
   Dumps the `atom` format to `integer` format used in database.
 
-      iex> Explorer.Chain.Receipt.Status.dump(:ok)
+      iex> Explorer.Chain.Transaction.Status.dump(:ok)
       {:ok, 1}
-      iex> Explorer.Chain.Receipt.Status.dump(:error)
+      iex> Explorer.Chain.Transaction.Status.dump(:error)
       {:ok, 0}
 
   If the value hasn't been cast first, it can't be dumped.
 
-      iex> Explorer.Chain.Receipt.Status.dump(0)
+      iex> Explorer.Chain.Transaction.Status.dump(0)
       :error
-      iex> Explorer.Chain.Receipt.Status.dump(1)
+      iex> Explorer.Chain.Transaction.Status.dump(1)
       :error
-      iex> Explorer.Chain.Receipt.Status.dump("0x0")
+      iex> Explorer.Chain.Transaction.Status.dump("0x0")
       :error
-      iex> Explorer.Chain.Receipt.Status.dump("0x1")
+      iex> Explorer.Chain.Transaction.Status.dump("0x1")
       :error
 
   """
@@ -86,11 +86,11 @@ defmodule Explorer.Chain.Receipt.Status do
 
   Only loads integers `0` and `1`.
 
-      iex> Explorer.Chain.Receipt.Status.load(0)
+      iex> Explorer.Chain.Transaction.Status.load(0)
       {:ok, :error}
-      iex> Explorer.Chain.Receipt.Status.load(1)
+      iex> Explorer.Chain.Transaction.Status.load(1)
       {:ok, :ok}
-      iex> Explorer.Chain.Receipt.Status.load(2)
+      iex> Explorer.Chain.Transaction.Status.load(2)
       :error
 
   """

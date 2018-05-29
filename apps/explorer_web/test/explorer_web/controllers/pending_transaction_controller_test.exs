@@ -5,8 +5,9 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
 
   describe "GET index/2" do
     test "returns no transactions that are in a block", %{conn: conn} do
-      block = insert(:block)
-      insert(:transaction, block_hash: block.hash, index: 0)
+      :transaction
+      |> insert()
+      |> with_block()
 
       conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
 
@@ -14,10 +15,10 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
       assert Enum.empty?(conn.assigns.transactions)
     end
 
-    test "does not count transactions that have a receipt", %{conn: conn} do
-      block = insert(:block)
-      transaction = insert(:transaction, block_hash: block.hash, index: 0)
-      insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
+    test "does not count transactions that have a block", %{conn: conn} do
+      :transaction
+      |> insert()
+      |> with_block()
 
       conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
 

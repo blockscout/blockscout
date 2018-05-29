@@ -12,7 +12,6 @@ defmodule ExplorerWeb.TransactionLogController do
              necessity_by_association: %{
                block: :optional,
                from_address: :required,
-               receipt: :optional,
                to_address: :required
              }
            ) do
