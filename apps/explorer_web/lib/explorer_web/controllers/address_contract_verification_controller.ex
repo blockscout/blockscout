@@ -1,4 +1,4 @@
-defmodule ExplorerWeb.AddressVerifyContractController do
+defmodule ExplorerWeb.AddressContractVerificationController do
   use ExplorerWeb, :controller
 
   alias Explorer.Chain.SmartContract

@@ -24,7 +24,7 @@
           <%= if contract?(@address) do %>
             <li class="nav-item">
               <%= link(
-                    gettext("Contract"),
+                    gettext("Code"),
                     class: "nav-link",
                     to: address_contract_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
                   ) %>
