@@ -1859,9 +1859,9 @@ defmodule Explorer.Chain do
     |> where(
       [it, transaction],
       fragment(
-        "(? = ? OR (SELECT COUNT(sibling.id) FROM internal_transactions as sibling WHERE sibling.transaction_hash = ?) > 1)",
+        "(? != ? OR (SELECT COUNT(sibling.id) FROM internal_transactions as sibling WHERE sibling.transaction_hash = ?) > 1)",
         it.type,
-        "create",
+        "call",
         transaction.hash
       )
     )
