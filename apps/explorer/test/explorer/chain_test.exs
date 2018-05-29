@@ -483,7 +483,7 @@ defmodule Explorer.ChainTest do
       %InternalTransaction{id: second_id} =
         insert(:internal_transaction, index: 1, transaction_hash: transaction.hash, to_address_hash: address.hash)
 
-      result = address |> Chain.address_to_internal_transactions() |> Enum.map(fn it -> it.id end)
+      result = address |> Chain.address_to_internal_transactions() |> Enum.map(&(&1.id))
       assert Enum.member?(result, first_id)
       assert Enum.member?(result, second_id)
     end
@@ -606,18 +606,29 @@ defmodule Explorer.ChainTest do
         address
         |> Chain.address_to_internal_transactions()
         |> Map.get(:entries, [])
-        |> Enum.map(fn internal_transaction -> internal_transaction.id end)
+        |> Enum.map(&(&1.id))
 
       assert [second_pending, first_pending, sixth, fifth, fourth, third, second, first] == result
     end
 
-    test "Excludes internal transactions where they are alone in the parent transaction" do
+    test "Excludes internal transactions of type `call` when they are alone in the parent transaction" do
       address = insert(:address)
       block = insert(:block)
       transaction = insert(:transaction, block_hash: block.hash, index: 0, to_address_hash: address.hash)
-      insert(:internal_transaction, index: 0, to_address_hash: address.hash, transaction_hash: transaction.hash)
+      insert(:internal_transaction_call, index: 0, to_address_hash: address.hash, transaction_hash: transaction.hash)
 
-      assert %{entries: []} = Chain.address_to_internal_transactions(address)
+      assert Enum.empty?(Chain.address_to_internal_transactions(address))
+    end
+
+    test "Includes internal transactions of type `create` even when they are alone in the parent transaction" do
+      address = insert(:address)
+      block = insert(:block)
+      transaction = insert(:transaction, block_hash: block.hash, index: 0, to_address_hash: address.hash)
+      expected = insert(:internal_transaction_create, index: 0, from_address_hash: address.hash, transaction_hash: transaction.hash)
+
+      actual = Enum.at(Chain.address_to_internal_transactions(address), 0)
+
+      assert actual.id == expected.id
     end
   end
 
@@ -644,7 +655,7 @@ defmodule Explorer.ChainTest do
         transaction.hash
         |> Chain.transaction_hash_to_internal_transactions()
         |> Map.get(:entries, [])
-        |> Enum.map(fn it -> it.id end)
+        |> Enum.map(&(&1.id))
 
       assert 2 == length(results)
       assert Enum.member?(results, first.id)
@@ -683,16 +694,24 @@ defmodule Explorer.ChainTest do
                ).entries
     end
 
-    test "excludes internal transaction with no siblings in the transaction" do
+    test "Excludes internal transactions of type call with no siblings in the transaction" do
       block = insert(:block)
       %Transaction{hash: hash} = insert(:transaction, block_hash: block.hash, index: 0)
-      insert(:internal_transaction, transaction_hash: hash, index: 0)
+      insert(:internal_transaction_call, transaction_hash: hash, index: 0)
 
-      result =
-        hash
-        |> Chain.transaction_hash_to_internal_transactions()
+      result = Chain.transaction_hash_to_internal_transactions(hash)
 
-      assert %{entries: []} = result
+      assert Enum.empty?(result)
+    end
+
+    test "Includes internal transactions of type `create` even when they are alone in the parent transaction" do
+      block = insert(:block)
+      transaction = insert(:transaction, block_hash: block.hash, index: 0)
+      expected = insert(:internal_transaction_create, index: 0, transaction_hash: transaction.hash)
+
+      actual = Enum.at(Chain.transaction_hash_to_internal_transactions(transaction.hash), 0)
+
+      assert actual.id == expected.id
     end
 
     test "returns the internal transactions in index order" do
@@ -704,7 +723,7 @@ defmodule Explorer.ChainTest do
       result =
         hash
         |> Chain.transaction_hash_to_internal_transactions()
-        |> Enum.map(fn it -> it.id end)
+        |> Enum.map(&(&1.id))
 
       assert [first_id, second_id] == result
     end

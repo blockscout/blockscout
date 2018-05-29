@@ -1855,9 +1855,10 @@ defmodule Explorer.Chain do
   end
 
   defp where_transaction_has_multiple_internal_transactions(query) do
-    where(
-      query,
-      [_it, transaction],
+    query
+    |> where([it], it.type == ^:create)
+    |> or_where(
+      [it, transaction],
       fragment(
         "(SELECT COUNT(sibling.id) FROM internal_transactions as sibling WHERE sibling.transaction_hash = ?) > 1",
         transaction.hash
