@@ -1,11 +1,11 @@
 defmodule Explorer.Factory do
   use ExMachina.Ecto, repo: Explorer.Repo
 
+  alias Explorer.Chain.Block.{Range, Reward}
+
   alias Explorer.Chain.{
     Address,
     Block,
-    BlockRange,
-    BlockReward,
     Data,
     Hash,
     InternalTransaction,
@@ -130,8 +130,8 @@ defmodule Explorer.Factory do
 
     reward = Decimal.mult(reward_multiplier, wei_per_ether)
 
-    %BlockReward{
-      block_range: %BlockRange{from: lower, to: upper},
+    %Reward{
+      block_range: %Range{from: lower, to: upper},
       reward: reward
     }
   end

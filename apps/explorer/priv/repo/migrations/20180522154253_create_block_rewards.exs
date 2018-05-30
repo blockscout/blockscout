@@ -7,8 +7,6 @@ defmodule Explorer.Repo.Migrations.CreateBlockRewards do
       add(:reward, :decimal)
     end
 
-    execute("CREATE EXTENSION IF NOT EXISTS btree_gist")
-
     create(constraint(:block_rewards, :no_overlapping_ranges, exclude: ~s|gist (block_range WITH &&)|))
   end
 end
