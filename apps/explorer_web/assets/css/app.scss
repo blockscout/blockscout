@@ -61,6 +61,7 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/filter";
 @import "components/button";
 @import "components/table";
+@import "components/qr-code";
 
 :export {
   primary: $primary;
