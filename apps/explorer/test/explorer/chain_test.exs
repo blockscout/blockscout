@@ -671,8 +671,7 @@ defmodule Explorer.ChainTest do
 
     test "with transaction with internal transactions loads associations with in necessity_by_association" do
       %Transaction{hash: hash} = insert(:transaction)
-      insert(:internal_transaction, transaction_hash: hash, index: 0)
-      insert(:internal_transaction, transaction_hash: hash, index: 1)
+      insert(:internal_transaction_create, transaction_hash: hash, index: 0)
 
       assert [
                %InternalTransaction{
@@ -680,7 +679,6 @@ defmodule Explorer.ChainTest do
                  to_address: %Ecto.Association.NotLoaded{},
                  transaction: %Ecto.Association.NotLoaded{}
                }
-               | _
              ] = Chain.transaction_hash_to_internal_transactions(hash).entries
 
       assert [
@@ -689,7 +687,6 @@ defmodule Explorer.ChainTest do
                  to_address: nil,
                  transaction: %Transaction{}
                }
-               | _
              ] =
                Chain.transaction_hash_to_internal_transactions(
                  hash,
