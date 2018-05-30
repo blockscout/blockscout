@@ -8,6 +8,7 @@ defmodule Explorer.Indexer.BlockFetcherTest do
   alias Explorer.Indexer
 
   alias Explorer.Indexer.{
+    AddressBalanceFetcher,
     AddressBalanceFetcherCase,
     BlockFetcher,
     InternalTransactionFetcher,

@@ -4,12 +4,18 @@ defmodule Explorer.Indexer.AddressBalanceFetcherTest do
   use Explorer.DataCase, async: false
 
   alias Explorer.Chain.Address
-  alias Explorer.Indexer.{AddressBalanceFetcher, AddressBalanceFetcherCase, InternalTransactionFetcherCase}
+  alias Explorer.Indexer.{AddressBalanceFetcher, AddressBalanceFetcherCase}
 
   @hash %Explorer.Chain.Hash{
     byte_count: 20,
     bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179, 223, 65, 91>>
   }
+
+  setup do
+    start_supervised!({Task.Supervisor, name: Explorer.Indexer.TaskSupervisor})
+
+    :ok
+  end
 
   describe "init/1" do
     test "fetches unfetched addresses" do
@@ -19,7 +25,6 @@ defmodule Explorer.Indexer.AddressBalanceFetcherTest do
       assert unfetched_address.balance_fetched_at == nil
 
       AddressBalanceFetcherCase.start_supervised!()
-      InternalTransactionFetcherCase.start_supervised!()
 
       fetched_address =
         wait(fn ->
