@@ -39,7 +39,7 @@ defmodule Explorer.Chain.Address do
     field(:balance_fetched_at, :utc_datetime)
     field(:contract_code, Data)
 
-    has_one :smart_contract, SmartContract
+    has_one(:smart_contract, SmartContract)
 
     timestamps()
   end

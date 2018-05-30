@@ -16,8 +16,7 @@ defmodule Explorer.Chain do
     Log,
     Transaction,
     Wei,
-    SmartContract,
-    Data
+    SmartContract
   }
 
   alias Explorer.Chain.Block.Reward
@@ -501,13 +500,14 @@ defmodule Explorer.Chain do
   end
 
   def find_contract_address(%Hash{byte_count: unquote(Hash.Truncated.byte_count())} = hash) do
-    address =
-      Repo.one(
-        from(
-          address in Address,
-          where: address.hash == ^hash and not is_nil(address.contract_code)
-        )
+    query =
+      from(
+        address in Address,
+        preload: [:smart_contract],
+        where: address.hash == ^hash and not is_nil(address.contract_code)
       )
+
+    address = Repo.one(query)
 
     if address do
       {:ok, address}
