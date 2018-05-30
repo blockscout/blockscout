@@ -15,7 +15,7 @@ defmodule Explorer.Indexer.Supervisor do
   def init(_opts) do
     children = [
       {Task.Supervisor, name: Explorer.Indexer.TaskSupervisor},
-      {AddressBalancerFetcher, name: AddressBalanceFetcher},
+      {AddressBalanceFetcher, name: AddressBalanceFetcher},
       {InternalTransactionFetcher, name: InternalTransactionFetcher},
       {BlockFetcher, []}
     ]
