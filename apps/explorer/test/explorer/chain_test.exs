@@ -860,4 +860,45 @@ defmodule Explorer.ChainTest do
       assert response == {:ok, address}
     end
   end
+
+  describe "block_reward/1" do
+    setup do
+      %{block_range: range} = block_reward = insert(:block_reward)
+
+      block = insert(:block, number: Enum.random(Range.new(range.from, range.to)))
+      insert(:transaction)
+
+      {:ok, block: block, block_reward: block_reward}
+    end
+
+    test "with block containing transactions", %{block: block, block_reward: block_reward} do
+      insert(
+        :transaction,
+        block: block,
+        index: 0,
+        gas_price: 1,
+        receipt: build(:receipt, gas_used: 1, transaction_index: 0)
+      )
+
+      insert(
+        :transaction,
+        block: block,
+        index: 1,
+        gas_price: 1,
+        receipt: build(:receipt, gas_used: 2, transaction_index: 1)
+      )
+
+      expected =
+        block_reward.reward
+        |> Wei.to(:wei)
+        |> Decimal.add(Decimal.new(3))
+        |> Wei.from(:wei)
+
+      assert expected == Chain.block_reward(block)
+    end
+
+    test "with block without transactions", %{block: block, block_reward: block_reward} do
+      assert block_reward.reward == Chain.block_reward(block)
+    end
+  end
 end

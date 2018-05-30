@@ -29,6 +29,7 @@ defmodule Explorer.Chain do
     Wei
   }
 
+  alias Explorer.Chain.Block.Reward
   alias Explorer.Repo
 
   @typedoc """
@@ -226,6 +227,64 @@ defmodule Explorer.Chain do
   """
   def block_count do
     Repo.aggregate(Block, :count, :hash)
+  end
+
+  @doc !"""
+       Returns a default value if no value is found.
+       """
+  defmacrop default_if_empty(value, default) do
+    quote do
+      fragment("coalesce(?, ?)", unquote(value), unquote(default))
+    end
+  end
+
+  @doc !"""
+       Sum of the products of two columns.
+       """
+  defmacrop sum_of_products(col_a, col_b) do
+    quote do
+      sum(fragment("?*?", unquote(col_a), unquote(col_b)))
+    end
+  end
+
+  @doc """
+  Reward for mining a block.
+
+  The block reward is the sum of the following:
+
+  * Sum of the transaction fees (gas_used * gas_price) for the block
+  * A static reward for miner (this value may change during the life of the chain)
+  * The reward for uncle blocks (1/32 * static_reward * number_of_uncles)
+
+  *NOTE*
+
+  Uncles are not currently accounted for.
+  """
+  @spec block_reward(Block.t()) :: Wei.t()
+  def block_reward(%Block{number: block_number}) do
+    query =
+      from(
+        block in Block,
+        left_join: transaction in assoc(block, :transactions),
+        left_join: receipt in assoc(transaction, :receipt),
+        inner_join: block_reward in Reward,
+        on: fragment("? <@ ?", block.number, block_reward.block_range),
+        where: block.number == ^block_number,
+        group_by: block_reward.reward,
+        select: %{
+          transaction_reward: %Wei{
+            value: default_if_empty(sum_of_products(receipt.gas_used, transaction.gas_price), 0)
+          },
+          static_reward: block_reward.reward
+        }
+      )
+
+    %{
+      transaction_reward: transaction_reward,
+      static_reward: static_reward
+    } = Repo.one(query)
+
+    Wei.sum(transaction_reward, static_reward)
   end
 
   @doc """
