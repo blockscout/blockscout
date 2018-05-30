@@ -44,7 +44,9 @@ defmodule Explorer.BufferedTask do
   count passed in as the second argument. Tasks may also be programmatically
   retried by returning `{:retry, reason}` from `run/2`.
   """
+
   use GenServer
+
   require Logger
 
   @callback init(initial :: term, reducer :: function) ::
