@@ -1703,7 +1703,7 @@ defmodule Explorer.Chain do
     |> import_transaction(options)
   end
 
-  defp import_transaction(%Multi{} = multi, options) when is_list(options) do
+  defp import_transaction(multi, options) when is_list(options) do
     Repo.transaction(multi, timeout: Keyword.get(options, :transaction, @transaction_timeout))
   end
 
@@ -1838,7 +1838,7 @@ defmodule Explorer.Chain do
     from(q in query, order_by: [desc: q.inserted_at, desc: q.hash])
   end
 
-  defp run_addresses(%Multi{} = multi, ecto_schema_module_to_changes_list, options)
+  defp run_addresses(multi, ecto_schema_module_to_changes_list, options)
        when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
     case ecto_schema_module_to_changes_list do
       %{Address => addresses_changes} ->
@@ -1855,7 +1855,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp run_blocks(%Multi{} = multi, ecto_schema_module_to_changes_list, options)
+  defp run_blocks(multi, ecto_schema_module_to_changes_list, options)
        when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
     case ecto_schema_module_to_changes_list do
       %{Block => blocks_changes} ->
@@ -1872,7 +1872,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp run_transactions(%Multi{} = multi, ecto_schema_module_to_changes_list, options)
+  defp run_transactions(multi, ecto_schema_module_to_changes_list, options)
        when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
     case ecto_schema_module_to_changes_list do
       %{Transaction => transactions_changes} ->
@@ -1889,7 +1889,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp run_internal_transactions(%Multi{} = multi, ecto_schema_module_to_changes_list, options)
+  defp run_internal_transactions(multi, ecto_schema_module_to_changes_list, options)
        when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
     case ecto_schema_module_to_changes_list do
       %{InternalTransaction => internal_transactions_changes} ->
@@ -1906,7 +1906,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp run_logs(%Multi{} = multi, ecto_schema_module_to_changes_list, options)
+  defp run_logs(multi, ecto_schema_module_to_changes_list, options)
        when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
     case ecto_schema_module_to_changes_list do
       %{Log => logs_changes} ->
