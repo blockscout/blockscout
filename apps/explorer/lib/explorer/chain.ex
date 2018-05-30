@@ -50,9 +50,16 @@ defmodule Explorer.Chain do
   @typep inserted_after_option :: {:inserted_after, DateTime.t()}
   @typep necessity_by_association_option :: {:necessity_by_association, necessity_by_association}
   @typep pagination_option :: {:pagination, pagination}
+  @typep params_option :: {:params, map()}
   @typep timeout_option :: {:timeout, timeout}
   @typep timestamps :: %{inserted_at: %Ecto.DateTime{}, updated_at: %Ecto.DateTime{}}
   @typep timestamps_option :: {:timestamps, timestamps}
+  @typep addresses_option :: {:adddresses, [params_option | timeout_option]}
+  @typep blocks_option :: {:blocks, [params_option | timeout_option]}
+  @typep internal_transactions_option :: {:internal_transactions, [params_option | timeout_option]}
+  @typep logs_option :: {:logs, [params_option | timeout_option]}
+  @typep receipts_option :: {:receipts, [params_option | timeout_option]}
+  @typep transactions_option :: {:transactions, [params_option | timeout_option]}
 
   @doc """
   `t:Explorer.Chain.InternalTransaction/0`s from `address`.
@@ -168,8 +175,18 @@ defmodule Explorer.Chain do
       iex> Explorer.Chain.update_balances(%{})
       :ok
 
+  ## Options
+
+   * `:addresses`
+      * `:timeout` - the timeout for upserting all addresses with the updated balances.  Defaults to
+        `#{@insert_addresses_timeout}`.
+   * `:timeout` - the timeout for the whole `c:Ecto.Repo.transaction/0` call.  Defaults to `#{@transaction_timeout}`
+      milliseconds.
+
   """
-  @spec update_balances(%{(address_hash :: String.t()) => balance :: integer}, [timeout_option]) :: :ok
+  @spec update_balances(%{(address_hash :: String.t()) => balance :: integer}, [
+          [{:addresses, [timeout_option]}] | timeout_option
+        ]) :: :ok
   def update_balances(balances, options \\ []) when is_list(options) do
     timestamps = timestamps()
 
@@ -197,10 +214,10 @@ defmodule Explorer.Chain do
             ordered_changes_list,
             conflict_target: :hash,
             on_conflict: :replace_all,
-            timeout: Keyword.get(options, :timeout, @insert_addresses_timeout)
+            timeout: options[:addresses][:timeout] || @insert_addresses_timeout
           )
       end,
-      timeout: @transaction_timeout
+      timeout: options[:timeout] || @transaction_timeout
     )
 
     :ok
@@ -860,6 +877,31 @@ defmodule Explorer.Chain do
       * `:timeout` - the timeout for inserting all transactions found in the params lists across all
         types. Defaults to `#{@insert_transactions_timeout}` milliseconds.
   """
+  @spec import_blocks([
+          addresses_option
+          | blocks_option
+          | internal_transactions_option
+          | logs_option
+          | receipts_option
+          | timeout_option
+          | transactions_option
+        ]) ::
+          {:ok,
+           %{
+             optional(:addresses) => [Hash.Truncated.t()],
+             optional(:blocks) => [Hash.Full.t()],
+             optional(:internal_transactions) => [
+               %{required(:index) => non_neg_integer(), required(:transaction_hash) => Hash.Full.t()}
+             ],
+             optional(:logs) => [
+               %{required(:index) => non_neg_integer(), required(:transaction_hash) => Hash.Full.t()}
+             ],
+             optional(:receipts) => [Hash.Full.t()],
+             optional(:transactions) => [Hash.Full.t()]
+           }}
+          | {:error, [Changeset.t()]}
+          | {:error, step :: Ecto.Multi.name(), failed_value :: any(),
+             changes_so_far :: %{optional(Ecto.Multi.name()) => any()}}
   def import_blocks(options) when is_list(options) do
     ecto_schema_module_to_params_list = import_options_to_ecto_schema_module_to_params_list(options)
 
@@ -869,7 +911,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  """
+  @doc """
   Bulk insert internal transactions for a list of transactions.
 
   ## Options
@@ -889,13 +931,22 @@ defmodule Explorer.Chain do
     * `:timeout` - the timeout for the whole `c:Ecto.Repo.transaction/0` call.  Defaults to `#{@transaction_timeout}`
       milliseconds.
   """
-
   @spec import_internal_transactions([
-          {:adddresses, [{:params, map()} | {:timeout, timeout()}]}
-          | {:internal_transactions, [{:params, map()} | {:timeout, timeout()}]}
-          | {:transactions, [{:hashes, [String.t()]} | {:timeout, timeout()}]}
-          | {:timeout, timeout()}
-        ]) :: term()
+          addresses_option
+          | internal_transactions_option
+          | timeout_option
+          | {:transactions, [{:hashes, [String.t()]} | timeout_option]}
+        ]) ::
+          {:ok,
+           %{
+             optional(:addresses) => [Hash.Truncated.t()],
+             optional(:internal_transactions) => [
+               %{required(:index) => non_neg_integer(), required(:transaction_hash) => Hash.Full.t()}
+             ]
+           }}
+          | {:error, [Changeset.t()]}
+          | {:error, step :: Ecto.Multi.name(), failed_value :: any(),
+             changes_so_far :: %{optional(Ecto.Multi.name()) => any()}}
   def import_internal_transactions(options) when is_list(options) do
     {transactions_options, import_options} = Keyword.pop(options, :transactions)
     ecto_schema_module_to_params_list = import_options_to_ecto_schema_module_to_params_list(import_options)
@@ -1704,7 +1755,7 @@ defmodule Explorer.Chain do
   end
 
   defp import_transaction(multi, options) when is_list(options) do
-    Repo.transaction(multi, timeout: Keyword.get(options, :transaction, @transaction_timeout))
+    Repo.transaction(multi, timeout: Keyword.get(options, :timeout, @transaction_timeout))
   end
 
   defp ecto_schema_module_to_changes_list_to_multi(ecto_schema_module_to_changes_list, options) when is_list(options) do
@@ -1845,7 +1896,7 @@ defmodule Explorer.Chain do
         Multi.run(multi, :addresses, fn _ ->
           insert_addresses(
             addresses_changes,
-            timeout: Keyword.get(options, :insert_addresses_timeout, @insert_addresses_timeout),
+            timeout: options[:addresses][:timeout] || @insert_addresses_timeout,
             timestamps: Keyword.fetch!(options, :timestamps)
           )
         end)
@@ -1862,7 +1913,7 @@ defmodule Explorer.Chain do
         Multi.run(multi, :blocks, fn _ ->
           insert_blocks(
             blocks_changes,
-            timeout: Keyword.get(options, :insert_blocks_timeout, @insert_blocks_timeout),
+            timeout: options[:blocks][:timeout] || @insert_blocks_timeout,
             timestamps: Keyword.fetch!(options, :timestamps)
           )
         end)
@@ -1879,7 +1930,7 @@ defmodule Explorer.Chain do
         Multi.run(multi, :transactions, fn _ ->
           insert_transactions(
             transactions_changes,
-            timeout: Keyword.get(options, :insert_transactions_timeout, @insert_transactions_timeout),
+            timeout: options[:transations][:timeout] || @insert_transactions_timeout,
             timestamps: Keyword.fetch!(options, :timestamps)
           )
         end)
@@ -1896,7 +1947,7 @@ defmodule Explorer.Chain do
         Multi.run(multi, :internal_transactions, fn _ ->
           insert_internal_transactions(
             internal_transactions_changes,
-            timeout: Keyword.get(options, :insert_internal_transactions_timeout, @insert_internal_transactions_timeout),
+            timeout: options[:internal_transactions][:timeout] || @insert_internal_transactions_timeout,
             timestamps: Keyword.fetch!(options, :timestamps)
           )
         end)
@@ -1913,7 +1964,7 @@ defmodule Explorer.Chain do
         Multi.run(multi, :logs, fn _ ->
           insert_logs(
             logs_changes,
-            timeout: Keyword.get(options, :insert_logs_timeout, @insert_logs_timeout),
+            timeout: options[:logs][:timeout] || @insert_logs_timeout,
             timestamps: Keyword.fetch!(options, :timestamps)
           )
         end)

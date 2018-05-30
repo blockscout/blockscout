@@ -179,9 +179,9 @@ defmodule Explorer.Indexer.BlockFetcher do
       async_import_remaining_block_data(results)
       {:ok, results}
     else
-      {:error, step, reason} = error ->
+      {:error, step, failed_value, _changes_so_far} = error ->
         debug(fn ->
-          "failed to insert blocks during #{step} #{inspect(range)}: #{inspect(reason)}. Retrying"
+          "failed to insert blocks during #{step} #{inspect(range)}: #{inspect(failed_value)}. Retrying"
         end)
 
         :ok = Sequence.inject_range(seq, range)
