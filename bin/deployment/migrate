@@ -4,6 +4,6 @@ set -x
 
 cd /opt/app || exit 1
 
-mix ecto.migrate
+mix do ecto.create, ecto.migrate
 
 exit 0
