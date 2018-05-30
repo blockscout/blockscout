@@ -10,13 +10,13 @@
             <tbody>
               <tr>
                 <th scpoe="row">
-                  <%= gettext "Copy Address" %>
+                  <%= gettext "Overview" %>
                 </th>
                 <td>
                   <!-- Button trigger modal -->
-                  <button type="button" class="btn btn-link" >
-                    <i class="fas fa-qrcode" data-toggle="modal" data-target="#qrModal"></i>
-                  </button>
+                  <a href="#">
+                    <i class="fas fa-qrcode fa-lg" data-toggle="modal" data-target="#qrModal"></i>
+                  </a>
                 </td>
               </tr>
               <tr>
