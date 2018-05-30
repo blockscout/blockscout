@@ -117,7 +117,7 @@ defmodule Explorer.Chain.Transaction do
           index: non_neg_integer() | nil,
           input: Data.t(),
           internal_transactions: %Ecto.Association.NotLoaded{} | [InternalTransaction.t()],
-          internal_transactions_indexed_at: Timex.Ecto.DateTime.t(),
+          internal_transactions_indexed_at: DateTime.t(),
           logs: %Ecto.Association.NotLoaded{} | [Log.t()],
           nonce: non_neg_integer(),
           public_key: public_key(),
