@@ -81,7 +81,7 @@ defmodule ExplorerWeb.Router do
         as: :contract
       )
 
-      resources("/qrcode", AddressQRCodeController, only: [:index], as: :qr_code)
+      resources("/qrcode.png", AddressQRCodeController, only: [:index], as: :qr_code)
     end
 
     get("/search", ChainController, :search)
