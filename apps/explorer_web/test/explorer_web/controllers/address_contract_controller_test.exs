@@ -33,7 +33,7 @@ defmodule ExplorerWeb.AddressContractControllerTest do
     end
 
     test "suscefully renders the page", %{conn: conn} do
-      address = insert(:address, contract_code: Factory.data("contract_code"))
+      address = insert(:address, contract_code: Factory.data("contract_code"), smart_contract: nil)
 
       conn = get(conn, address_contract_path(ExplorerWeb.Endpoint, :index, :en, address))
 

@@ -23,7 +23,7 @@ defmodule ExplorerWeb.AddressContractVerificationController do
       }) do
     case Publisher.publish(address_hash_string, smart_contract) do
       {:ok, _smart_contract} ->
-        redirect(conn, to: address_transaction_path(conn, :index, locale, address_hash_string))
+        redirect(conn, to: address_contract_path(conn, :index, locale, address_hash_string))
 
       {:error, changeset} ->
         {:ok, compiler_versions} = CompilerVersion.fetch_versions()

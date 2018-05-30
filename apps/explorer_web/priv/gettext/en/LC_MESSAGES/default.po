@@ -502,7 +502,6 @@ msgstr ""
 msgid "TX Fee"
 msgstr ""
 
-#: lib/explorer_web/templates/address_contract/index.html.eex:25
 #: lib/explorer_web/templates/address_internal_transaction/index.html.eex:27
 #: lib/explorer_web/templates/address_transaction/index.html.eex:27
 msgid "Contract"
@@ -512,7 +511,7 @@ msgstr ""
 msgid "Contract Address"
 msgstr ""
 
-#: lib/explorer_web/templates/address_contract/index.html.eex:34
+#: lib/explorer_web/templates/address_contract/index.html.eex:38
 msgid "Contract bytecode"
 msgstr ""
 
@@ -525,5 +524,14 @@ msgid "Older"
 msgstr ""
 
 #: lib/explorer_web/templates/address_verify_contract/new.html.eex:9
+#: lib/explorer_web/templates/address_contract_verification/new.html.eex:9
 msgid "Contract Source Code"
 msgstr "Contract Source Code"
+
+#: lib/explorer_web/templates/address_contract/index.html.eex:46
+msgid "Verify and Publish"
+msgstr ""
+
+#: lib/explorer_web/templates/address_contract/index.html.eex:27
+msgid "Code"
+msgstr ""

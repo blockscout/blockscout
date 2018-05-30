@@ -822,7 +822,7 @@ defmodule Explorer.ChainTest do
     end
 
     test "finds an contract address" do
-      address = insert(:address, contract_code: Factory.data("contract_code"))
+      address = insert(:address, contract_code: Factory.data("contract_code"), smart_contract: nil)
 
       response = Chain.find_contract_address(address.hash)
 

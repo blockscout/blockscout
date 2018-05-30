@@ -37,6 +37,17 @@
     <div class="card-body">
       <h2 class="card-title"><%= gettext "Contract bytecode" %></h2>
 
+      <%= if !smart_contract_verified?(@address) do %>
+        <p>
+          <%= link(
+                to: address_verify_contract_path(@conn, :new, @conn.assigns.locale, @conn.params["address_id"])
+              ) do %>
+              <i class="fas fa-info-circle"></i>
+              <%= gettext("Verify and Publish") %>
+          <% end %>
+        </p>
+      <% end %>
+
       <pre class="pre-wrap p-2 bg-light mb-0">
         <code><%= @address.contract_code %></code>
       </pre>
