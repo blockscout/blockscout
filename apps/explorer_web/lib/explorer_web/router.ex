@@ -80,6 +80,8 @@ defmodule ExplorerWeb.Router do
         only: [:index],
         as: :contract
       )
+
+      resources("/qrcode", AddressQRCodeController, only: [:index], as: :qr_code)
     end
 
     get("/search", ChainController, :search)

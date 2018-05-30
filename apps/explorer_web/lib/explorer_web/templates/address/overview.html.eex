@@ -69,7 +69,7 @@
             <button class="btn btn-primary" data-clipboard-text="<%= @address %>">Copy</button>
           </div>
         </div>
-        <img src="http://via.placeholder.com/300x300" alt="qr_code">
+        <%= img_tag(address_qr_code_path(@conn, :index, @conn.assigns.locale, @address), alt: "qr_code") %>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
