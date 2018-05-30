@@ -62,6 +62,7 @@ defmodule ExplorerWeb.Router do
       )
 
       resources("/logs", TransactionLogController, only: [:index], as: :log)
+      resources("/qrcode.png", TransactionQRCodeController, only: [:index], as: :qr_code)
     end
 
     resources "/addresses", AddressController, only: [:show] do
