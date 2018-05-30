@@ -91,7 +91,7 @@ defmodule ExplorerWeb.Mixfile do
       {:scrivener_html, "~> 1.7"},
       # Waiting on https://github.com/smeevil/set_locale/pull/9
       {:set_locale, github: "minifast/set_locale", branch: "master"},
-      {:sobelow, ">= 0.0.0", only: [:dev, :test], runtime: false},
+      {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
       {:timex, "~> 3.1.24"},
       {:timex_ecto, "~> 3.2.1"},
       {:wallaby, "~> 0.20", only: [:test], runtime: false},
