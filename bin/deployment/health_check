@@ -2,6 +2,8 @@
 
 set -x
 
+# Timeout after 2 min if we still haven't gotten a response
+timeout 120s bash <<EOT
 # Wait until an HTTP request succeeds against localhost:PORT
 function ping_server(){
     while true; do
@@ -11,5 +13,5 @@ function ping_server(){
     done
 }
 
-# Timeout after 2 min if we still haven't gotten a response
-timeout 120s ping_server
+ping_server
+EOT
