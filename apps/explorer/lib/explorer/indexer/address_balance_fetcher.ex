@@ -32,10 +32,12 @@ defmodule Explorer.Indexer.AddressBalanceFetcher do
   end
 
   @impl BufferedTask
-  def init(acc, reducer) do
-    Chain.stream_unfetched_addresses([:hash], acc, fn %Address{hash: hash}, acc ->
+  def init(initial, reducer) do
+    {:ok, final} = Chain.stream_unfetched_addresses([:hash], initial, fn %Address{hash: hash}, acc ->
       reducer.(Hash.to_string(hash), acc)
     end)
+
+    final
   end
 
   @impl BufferedTask
@@ -48,7 +50,7 @@ defmodule Explorer.Indexer.AddressBalanceFetcher do
 
       {:error, reason} ->
         Indexer.debug(fn -> "failed to fetch #{length(string_hashes)} balances, #{inspect(reason)}" end)
-        {:retry, reason}
+        :retry
     end
   end
 end

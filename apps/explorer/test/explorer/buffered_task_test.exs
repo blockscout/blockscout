@@ -24,8 +24,8 @@ defmodule Explorer.BufferedTaskTest do
 
     def initial_collection, do: for(i <- 1..11, do: "#{i}")
 
-    def init(acc, reducer) do
-      {:ok, Enum.reduce(initial_collection(), acc, fn item, acc -> reducer.(item, acc) end)}
+    def init(initial, reducer) do
+      Enum.reduce(initial_collection(), initial, fn item, acc -> reducer.(item, acc) end)
     end
 
     def run(batch, 0) do
@@ -37,8 +37,8 @@ defmodule Explorer.BufferedTaskTest do
   defmodule EmptyTask do
     @behaviour BufferedTask
 
-    def init(acc, _reducer) do
-      {:ok, acc}
+    def init(initial, _reducer) do
+      initial
     end
 
     def run(batch, 0) do
@@ -50,8 +50,8 @@ defmodule Explorer.BufferedTaskTest do
   defmodule RetryableTask do
     @behaviour BufferedTask
 
-    def init(acc, _reducer) do
-      {:ok, acc}
+    def init(initial, _reducer) do
+      initial
     end
 
     def run([:boom], 0) do
@@ -71,7 +71,7 @@ defmodule Explorer.BufferedTaskTest do
 
     def run(batch, retries) when retries < 2 do
       send(__MODULE__, {:run, {retries, batch}})
-      {:retry, :because_reasons}
+      :retry
     end
 
     def run(batch, retries) do

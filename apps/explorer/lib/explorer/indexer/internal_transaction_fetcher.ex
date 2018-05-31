@@ -51,10 +51,12 @@ defmodule Explorer.Indexer.InternalTransactionFetcher do
   end
 
   @impl BufferedTask
-  def init(acc, reducer) do
-    Chain.stream_transactions_with_unfetched_internal_transactions([:hash], acc, fn %Transaction{hash: hash}, acc ->
+  def init(initial, reducer) do
+    {:ok, final} = Chain.stream_transactions_with_unfetched_internal_transactions([:hash], initial, fn %Transaction{hash: hash}, acc ->
       reducer.(Hash.to_string(hash), acc)
     end)
+
+    final
   end
 
   @impl BufferedTask
@@ -78,7 +80,7 @@ defmodule Explorer.Indexer.InternalTransactionFetcher do
           "failed to fetch internal transactions for #{length(transaction_hashes)} transactions: #{inspect(reason)}"
         end)
 
-        {:retry, reason}
+        :retry
     end
   end
 
@@ -87,7 +89,7 @@ defmodule Explorer.Indexer.InternalTransactionFetcher do
     :ok
   end
 
-  defp fetch_new_balances({:error, failed_operation, reason, _changes}) do
-    {:retry, {failed_operation, reason}}
+  defp fetch_new_balances({:error, _step, _reason, _changes_so_far}) do
+    :retry
   end
 end
