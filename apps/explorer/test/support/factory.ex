@@ -84,9 +84,17 @@ defmodule Explorer.Factory do
     internal_transaction_factory(type)
   end
 
-  # TODO add call, reward, and suicide
+  def internal_transaction_create_factory do
+    internal_transaction_factory(:create)
+  end
+
+  def internal_transaction_call_factory do
+    internal_transaction_factory(:call)
+  end
+
+  # TODO add reward and suicide
   def internal_transaction_type do
-    Enum.random(~w(create)a)
+    Enum.random(~w(call create)a)
   end
 
   def log_factory do
@@ -195,6 +203,29 @@ defmodule Explorer.Factory do
     insert(:receipt, transaction_hash: hash, transaction_index: index)
 
     Repo.preload(block_transaction, [:block, :receipt])
+  end
+
+  defp internal_transaction_factory(:call = type) do
+    gas = Enum.random(21_000..100_000)
+    gas_used = Enum.random(0..gas)
+
+    block = insert(:block)
+    transaction = insert(:transaction, block_hash: block.hash, index: 0)
+    receipt = insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
+
+    %InternalTransaction{
+      from_address_hash: insert(:address).hash,
+      to_address_hash: insert(:address).hash,
+      call_type: :delegatecall,
+      gas: gas,
+      gas_used: gas_used,
+      output: %Data{bytes: <<1>>},
+      # caller MUST suppy `index`
+      trace_address: [],
+      transaction_hash: receipt.transaction_hash,
+      type: type,
+      value: sequence("internal_transaction_value", &Decimal.new(&1))
+    }
   end
 
   defp internal_transaction_factory(:create = type) do
