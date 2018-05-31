@@ -4,7 +4,7 @@ defmodule Explorer.Indexer.BlockFetcherTest do
 
   import ExUnit.CaptureLog
 
-  alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Receipt, Transaction}
+  alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Transaction}
   alias Explorer.Indexer.{BlockFetcher, Sequence}
 
   @tag capture_log: true
@@ -48,10 +48,13 @@ defmodule Explorer.Indexer.BlockFetcherTest do
     setup do
       block = insert(:block)
 
-      Enum.map(0..2, fn index ->
-        transaction = insert(:transaction, block_hash: block.hash, index: index)
-        receipt = insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
-        insert(:log, transaction_hash: receipt.transaction_hash)
+      Enum.map(0..2, fn _ ->
+        transaction =
+          :transaction
+          |> insert()
+          |> with_block(block)
+
+        insert(:log, transaction_hash: transaction.hash)
         insert(:internal_transaction, transaction_hash: transaction.hash, index: 0)
       end)
 
@@ -72,7 +75,6 @@ defmodule Explorer.Indexer.BlockFetcherTest do
 
       assert log =~ "blocks: 4"
       assert log =~ "internal transactions: 3"
-      assert log =~ "receipts: 6"
       assert log =~ "logs: 3"
       assert log =~ "addresses: 31"
     end
@@ -110,7 +112,6 @@ defmodule Explorer.Indexer.BlockFetcherTest do
                 ],
                 internal_transactions: [],
                 logs: [],
-                receipts: [],
                 transactions: []
               }} = BlockFetcher.import_range({0, 0}, state, sequence)
 
@@ -165,14 +166,6 @@ defmodule Explorer.Indexer.BlockFetcherTest do
                     }
                   }
                 ],
-                receipts: [
-                  %Explorer.Chain.Hash{
-                    byte_count: 32,
-                    bytes:
-                      <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57,
-                        101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
-                  }
-                ],
                 transactions: [
                   %Explorer.Chain.Hash{
                     byte_count: 32,
@@ -187,7 +180,6 @@ defmodule Explorer.Indexer.BlockFetcherTest do
       assert Repo.aggregate(Address, :count, :hash) == 2
       assert Repo.aggregate(InternalTransaction, :count, :id) == 1
       assert Repo.aggregate(Log, :count, :id) == 1
-      assert Repo.aggregate(Receipt, :count, :transaction_hash) == 1
       assert Repo.aggregate(Transaction, :count, :hash) == 1
     end
   end

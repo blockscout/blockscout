@@ -42,6 +42,7 @@ defmodule EthereumJSONRPC.Transactions do
       [
         %{
           block_hash: "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47",
+          block_number: 34,
           from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
           gas: 4700000,
           gas_price: 100000000000,
@@ -71,6 +72,7 @@ defmodule EthereumJSONRPC.Transactions do
       ...>   [
       ...>     %{
       ...>       block_hash: "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47",
+      ...>       block_number: 34,
       ...>       from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
       ...>       gas: 4700000,
       ...>       gas_price: 100000000000,

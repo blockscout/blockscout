@@ -44,13 +44,9 @@ defmodule ExplorerWeb.API.RPC.BlockControllerTest do
       %{block_range: range} = block_reward = insert(:block_reward)
       block = insert(:block, number: Enum.random(Range.new(range.from, range.to)))
 
-      insert(
-        :transaction,
-        block: block,
-        index: 0,
-        gas_price: 1,
-        receipt: build(:receipt, gas_used: 1, transaction_index: 0)
-      )
+      :transaction
+      |> insert(gas_price: 1)
+      |> with_block(block, gas_used: 1)
 
       expected_reward =
         block_reward.reward

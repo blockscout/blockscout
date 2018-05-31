@@ -11,14 +11,13 @@ defmodule ExplorerWeb.ViewingAddressesTest do
 
     from_taft =
       :transaction
-      |> insert(block_hash: block.hash, from_address_hash: taft.hash, index: 0, to_address_hash: lincoln.hash)
-      |> with_receipt()
+      |> insert(from_address_hash: taft.hash, to_address_hash: lincoln.hash)
+      |> with_block(block)
 
     from_lincoln =
       :transaction
       |> insert(from_address_hash: lincoln.hash, to_address_hash: taft.hash)
       |> with_block(block)
-      |> with_receipt()
 
     {:ok,
      %{

@@ -12,7 +12,6 @@ defmodule ExplorerWeb.FeatureCase do
       import Ecto.Changeset
       import Ecto.Query
       import Explorer.Factory
-      import ExplorerWeb.Factory
       import ExplorerWeb.Router.Helpers
 
       alias Explorer.Repo

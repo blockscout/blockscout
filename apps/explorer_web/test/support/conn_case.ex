@@ -25,7 +25,6 @@ defmodule ExplorerWeb.ConnCase do
       @endpoint ExplorerWeb.Endpoint
 
       import Explorer.Factory
-      import ExplorerWeb.Factory
     end
   end
 

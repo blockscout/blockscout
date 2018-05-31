@@ -44,11 +44,18 @@ defmodule Explorer.Chain.StatisticsTest do
 
     test "returns the count of transactions from blocks in the last day" do
       time = DateTime.utc_now()
-      last_week = Timex.shift(time, days: -8)
       block = insert(:block, timestamp: time)
+
+      :transaction
+      |> insert()
+      |> with_block(block)
+
+      last_week = Timex.shift(time, days: -8)
       old_block = insert(:block, timestamp: last_week)
-      insert(:transaction, block_hash: block.hash, index: 0)
-      insert(:transaction, block_hash: old_block.hash, index: 0)
+
+      :transaction
+      |> insert()
+      |> with_block(old_block)
 
       assert %Statistics{transaction_count: 1} = Statistics.fetch()
     end
@@ -97,8 +104,11 @@ defmodule Explorer.Chain.StatisticsTest do
     end
 
     test "returns the last five transactions with blocks" do
-      block = insert(:block)
-      Enum.map(0..5, &insert(:transaction, block_hash: block.hash, index: &1))
+      Enum.map(0..5, fn _ ->
+        :transaction
+        |> insert()
+        |> with_block()
+      end)
 
       statistics = Statistics.fetch()
 

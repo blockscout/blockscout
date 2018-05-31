@@ -62,6 +62,10 @@ defmodule Explorer.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      # benchmark optimizations
+      {:benchee, "~> 0.13.1", only: :test},
+      # CSV output for benchee
+      {:benchee_csv, "~> 0.8.0", only: :test},
       {:bypass, "~> 0.8", only: :test},
       {:credo, "0.9.2", only: [:dev, :test], runtime: false},
       {:crontab, "~> 1.1"},

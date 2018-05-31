@@ -23,8 +23,11 @@ defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
 
     test "returns internal transactions for the address", %{conn: conn} do
       address = insert(:address)
-      block = insert(:block)
-      transaction = insert(:transaction, block_hash: block.hash, index: 0)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
 
       from_internal_transaction =
         insert(:internal_transaction, transaction_hash: transaction.hash, from_address_hash: address.hash, index: 1)

@@ -3,7 +3,7 @@
     ".credo.exs",
     ".formatter.exs",
     "apps/*/mix.exs",
-    "apps/*/{config,lib,priv,test}/**/*.{ex,exs}",
+    "apps/*/{benchmarks,config,lib,priv,test}/**/*.{ex,exs}",
     "mix.exs",
     "{config}/**/*.{ex,exs}"
   ],

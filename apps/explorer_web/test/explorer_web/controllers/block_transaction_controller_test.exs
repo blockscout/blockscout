@@ -18,8 +18,10 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
 
     test "returns transactions for the block", %{conn: conn} do
       block = insert(:block)
-      transaction = insert(:transaction, block_hash: block.hash, index: 0)
-      insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
+
+      :transaction
+      |> insert()
+      |> with_block(block)
 
       conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block.number))
 
@@ -37,9 +39,9 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
       assert Enum.empty?(conn.assigns.page)
     end
 
-    test "does not return related transactions without a receipt", %{conn: conn} do
+    test "does not return related transactions without a block", %{conn: conn} do
       block = insert(:block)
-      insert(:transaction, block_hash: block.hash, index: 0)
+      insert(:transaction)
 
       conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block))
 
@@ -49,8 +51,10 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
 
     test "does not return related transactions without a to address", %{conn: conn} do
       block = insert(:block)
-      transaction = insert(:transaction, block_hash: block.hash, index: 0, to_address_hash: nil)
-      insert(:receipt, transaction_hash: transaction.hash, transaction_index: transaction.index)
+
+      :transaction
+      |> insert(to_address_hash: nil)
+      |> with_block(block)
 
       conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block))
 

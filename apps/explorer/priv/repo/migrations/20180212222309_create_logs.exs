@@ -17,7 +17,7 @@ defmodule Explorer.Repo.Migrations.CreateLogs do
 
       add(
         :transaction_hash,
-        references(:receipts, column: :transaction_hash, on_delete: :delete_all, type: :bytea),
+        references(:transactions, column: :hash, on_delete: :delete_all, type: :bytea),
         null: false
       )
     end

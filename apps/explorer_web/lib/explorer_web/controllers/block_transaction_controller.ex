@@ -15,8 +15,7 @@ defmodule ExplorerWeb.BlockTransactionController do
           necessity_by_association: %{
             block: :required,
             from_address: :required,
-            to_address: :required,
-            receipt: :required
+            to_address: :required
           },
           pagination: params
         )

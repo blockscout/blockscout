@@ -1,8 +1,6 @@
 defmodule ExplorerWeb.BlockControllerTest do
   use ExplorerWeb.ConnCase
 
-  alias Explorer.Chain.Block
-
   @locale "en"
 
   describe "GET show/2" do
@@ -27,9 +25,11 @@ defmodule ExplorerWeb.BlockControllerTest do
     end
 
     test "returns a block with two transactions", %{conn: conn} do
-      %Block{hash: hash} = insert(:block)
+      block = insert(:block)
 
-      Enum.map(0..1, fn index -> insert(:transaction, block_hash: hash, index: index) end)
+      2
+      |> insert_list(:transaction)
+      |> with_block(block)
 
       conn = get(conn, block_path(conn, :index, @locale))
 
