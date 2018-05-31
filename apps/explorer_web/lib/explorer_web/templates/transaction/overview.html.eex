@@ -1,6 +1,17 @@
 <section>
-  <h1><%= gettext "Transaction Details" %></h1>
-  <p data-test="transaction_detail_hash"><%= @transaction %></p>
+  <div class="row mb-3">
+    <div class="col-md-2 col-lg-1 order-last order-sm-first">
+      <div class="card mt-3 mt-sm-0">
+        <div class="card-body px-2 py-2">
+          <%= img_tag(transaction_qr_code_path(@conn, :index, @conn.assigns.locale, @transaction), alt: "qr_code", class: "qr-code") %>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-10 align-self-center">
+      <h1><%= gettext "Transaction Details" %></h1>
+      <p class="mb-0" data-test="transaction_detail_hash"><%= @transaction %></p>
+    </div>
+  </div>
 
   <div class="card mb-3">
     <div class="card-body">
