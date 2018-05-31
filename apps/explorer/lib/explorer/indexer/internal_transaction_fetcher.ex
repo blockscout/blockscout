@@ -52,9 +52,11 @@ defmodule Explorer.Indexer.InternalTransactionFetcher do
 
   @impl BufferedTask
   def init(initial, reducer) do
-    {:ok, final} = Chain.stream_transactions_with_unfetched_internal_transactions([:hash], initial, fn %Transaction{hash: hash}, acc ->
-      reducer.(Hash.to_string(hash), acc)
-    end)
+    {:ok, final} =
+      Chain.stream_transactions_with_unfetched_internal_transactions([:hash], initial, fn %Transaction{hash: hash},
+                                                                                          acc ->
+        reducer.(Hash.to_string(hash), acc)
+      end)
 
     final
   end

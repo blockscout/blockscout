@@ -1088,7 +1088,13 @@ defmodule Explorer.Chain do
       0
 
   """
-  def stream_unfetched_addresses(fields, initial, reducer) when is_function(reducer) do
+  @spec stream_unfetched_addresses(
+          fields :: [:fetched_balance | :balance_fetched_at | :hash | :contract_code | :inserted_at | :updated_at],
+          initial :: accumulator,
+          reducer :: (entry :: term(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_unfetched_addresses(fields, initial, reducer) when is_function(reducer, 2) do
     Repo.transaction(
       fn ->
         query = from(a in Address, where: is_nil(a.balance_fetched_at), select: ^fields)
@@ -1104,8 +1110,30 @@ defmodule Explorer.Chain do
   @doc """
   Returns a stream of all transactions with unfetched internal transactions.
   """
-  def stream_transactions_with_unfetched_internal_transactions(fields, initial, reducer)
-      when is_function(reducer) do
+  @spec stream_transactions_with_unfetched_internal_transactions(
+          fields :: [
+            :block_hash
+            | :internal_transactions_indexed_at
+            | :from_address_hash
+            | :gas
+            | :gas_price
+            | :hash
+            | :index
+            | :input
+            | :nonce
+            | :public_key
+            | :r
+            | :s
+            | :standard_v
+            | :to_address_hash
+            | :v
+            | :value
+          ],
+          initial :: accumulator,
+          reducer :: (entry :: term(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_transactions_with_unfetched_internal_transactions(fields, initial, reducer) when is_function(reducer, 2) do
     Repo.transaction(
       fn ->
         query = from(t in Transaction, where: is_nil(t.internal_transactions_indexed_at), select: ^fields)

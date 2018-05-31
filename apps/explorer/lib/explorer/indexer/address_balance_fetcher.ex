@@ -33,9 +33,10 @@ defmodule Explorer.Indexer.AddressBalanceFetcher do
 
   @impl BufferedTask
   def init(initial, reducer) do
-    {:ok, final} = Chain.stream_unfetched_addresses([:hash], initial, fn %Address{hash: hash}, acc ->
-      reducer.(Hash.to_string(hash), acc)
-    end)
+    {:ok, final} =
+      Chain.stream_unfetched_addresses([:hash], initial, fn %Address{hash: hash}, acc ->
+        reducer.(Hash.to_string(hash), acc)
+      end)
 
     final
   end
