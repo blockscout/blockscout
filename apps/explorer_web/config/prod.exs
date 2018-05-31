@@ -18,11 +18,6 @@ config :explorer_web, ExplorerWeb.Endpoint,
   force_ssl: [rewrite_on: [:x_forwarded_proto]],
   instrumenters: [NewRelixir.Instrumenters.Phoenix],
   load_from_system_env: true,
-  pubsub: [
-    adapter: Phoenix.PubSub.Redis,
-    url: System.get_env("REDIS_URL"),
-    node_name: System.get_env("DYNO")
-  ],
   secret_key_base: System.get_env("SECRET_KEY_BASE"),
   url: [
     scheme: "https",
