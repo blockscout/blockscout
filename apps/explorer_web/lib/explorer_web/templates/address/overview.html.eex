@@ -1,6 +1,17 @@
 <section>
-  <h1><%= address_title(@address) %></h1>
-  <p data-test="address_detail_hash"><%= @address %></p>
+  <div class="row mb-3">
+    <div class="col-md-2 col-lg-1 order-last order-sm-first">
+      <div class="card mt-3 mt-sm-0">
+        <div class="card-body px-2 py-2">
+          <%= img_tag(address_qr_code_path(@conn, :index, @conn.assigns.locale, @address), alt: "qr_code", class: "qr-code") %>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-10 align-self-center">
+      <h1><%= gettext "Address" %></h1>
+      <p class="mb-0" data-test="address_detail_hash"><%= @address %></p>
+    </div>
+  </div>
 
   <div class="card mb-3">
     <div class="card-body">
@@ -8,17 +19,6 @@
         <div class="col-sm-6">
           <table class="table table-font table-responsive-sm table-horizontal">
             <tbody>
-              <tr>
-                <th scpoe="row">
-                  <%= gettext "Overview" %>
-                </th>
-                <td>
-                  <!-- Button trigger modal -->
-                  <a href="#">
-                    <i class="fas fa-qrcode fa-lg" data-toggle="modal" data-target="#qrModal"></i>
-                  </a>
-                </td>
-              </tr>
               <tr>
                 <th scope="row">
                   <%= gettext "POA Balance" %>
@@ -50,30 +50,3 @@
     </div>
   </div>
 </section>
-
-<!-- Modal -->
-<div class="modal fade" id="qrModal" tabindex="-1" role="dialog" aria-labelledby="qrModalLabel" aria-hidden="true">
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 class="modal-title" id="qrModalLabel">Copy Address</h2>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <label class="sr-only" for="inlineFormInputGroup">Address</label>
-        <div class="input-group mb-3">
-          <input type="text" readonly class="form-control" id="inlineFormInputGroup" value="<%= @address %>">
-          <div class="input-group-append">
-            <button class="btn btn-primary" data-clipboard-text="<%= @address %>">Copy</button>
-          </div>
-        </div>
-        <%= img_tag(address_qr_code_path(@conn, :index, @conn.assigns.locale, @address), alt: "qr_code", class: "qr-code") %>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
-      </div>
-    </div>
-  </div>
-</div>

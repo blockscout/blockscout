@@ -1,4 +1,7 @@
 .qr-code {
   display: block;
-  margin: auto;
+  margin-right: auto;
+  margin-left: auto;
+  width: 100%;
+  max-width: 60px;
 }
