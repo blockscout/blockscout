@@ -11,7 +11,7 @@ defmodule Explorer.Repo.Migrations.CreateLogs do
       add(:third_topic, :string, null: true)
       add(:fourth_topic, :string, null: true)
 
-      timestamps(null: false)
+      timestamps(null: false, type: :utc_datetime)
 
       add(:address_hash, references(:addresses, column: :hash, on_delete: :delete_all, type: :bytea), null: true)
 

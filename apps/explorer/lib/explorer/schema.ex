@@ -8,8 +8,8 @@ defmodule Explorer.Schema do
       import Ecto.{Changeset, Query}
 
       @timestamps_opts [
-        type: Timex.Ecto.DateTime,
-        autogenerate: {Timex.Ecto.DateTime, :autogenerate, []}
+        type: :utc_datetime,
+        usec: true
       ]
     end
   end

@@ -34,7 +34,7 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
       add(:v, :integer, null: false)
       add(:value, :numeric, precision: 100, null: false)
 
-      timestamps(null: false)
+      timestamps(null: false, type: :utc_datetime)
 
       # `null` when a pending transaction
       add(:block_hash, references(:blocks, column: :hash, on_delete: :delete_all, type: :bytea), null: true)

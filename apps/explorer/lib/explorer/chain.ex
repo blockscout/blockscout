@@ -52,7 +52,7 @@ defmodule Explorer.Chain do
   @typep pagination_option :: {:pagination, pagination}
   @typep params_option :: {:params, map()}
   @typep timeout_option :: {:timeout, timeout}
-  @typep timestamps :: %{inserted_at: %Ecto.DateTime{}, updated_at: %Ecto.DateTime{}}
+  @typep timestamps :: %{inserted_at: DateTime.t(), updated_at: DateTime.t()}
   @typep timestamps_option :: {:timestamps, timestamps}
   @typep addresses_option :: {:adddresses, [params_option | timeout_option]}
   @typep blocks_option :: {:blocks, [params_option | timeout_option]}
@@ -2012,7 +2012,7 @@ defmodule Explorer.Chain do
 
   @spec timestamps() :: timestamps
   defp timestamps do
-    now = Ecto.DateTime.utc()
+    now = DateTime.utc_now()
     %{inserted_at: now, updated_at: now}
   end
 

@@ -139,7 +139,7 @@ defmodule Explorer.Chain.Transaction do
     field(:gas_price, Wei)
     field(:gas_used, :decimal)
     field(:index, :integer)
-    field(:internal_transactions_indexed_at, Timex.Ecto.DateTime)
+    field(:internal_transactions_indexed_at, :utc_datetime)
     field(:input, Data)
     field(:nonce, :integer)
     field(:public_key, Data)
