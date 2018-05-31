@@ -36,7 +36,7 @@ defmodule Explorer.Chain.Address do
   @primary_key {:hash, Hash.Truncated, autogenerate: false}
   schema "addresses" do
     field(:fetched_balance, Wei)
-    field(:balance_fetched_at, Timex.Ecto.DateTime)
+    field(:balance_fetched_at, :utc_datetime)
     field(:contract_code, Data)
 
     timestamps()

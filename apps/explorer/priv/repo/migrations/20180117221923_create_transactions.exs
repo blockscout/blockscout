@@ -18,6 +18,10 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
       add(:index, :integer, null: true)
 
       add(:input, :bytea, null: false)
+
+      # `null` when `internal_transactions` has never been fetched
+      add(:internal_transactions_indexed_at, :utc_datetime, null: true)
+
       add(:nonce, :integer, null: false)
       add(:public_key, :bytea, null: false)
       add(:r, :numeric, precision: 100, null: false)
@@ -30,7 +34,7 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
       add(:v, :integer, null: false)
       add(:value, :numeric, precision: 100, null: false)
 
-      timestamps(null: false)
+      timestamps(null: false, type: :utc_datetime)
 
       # `null` when a pending transaction
       add(:block_hash, references(:blocks, column: :hash, on_delete: :delete_all, type: :bytea), null: true)

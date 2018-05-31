@@ -4,7 +4,7 @@ defmodule Explorer.Indexer.AddressBalanceFetcherTest do
   use Explorer.DataCase, async: false
 
   alias Explorer.Chain.Address
-  alias Explorer.Indexer.AddressBalanceFetcher
+  alias Explorer.Indexer.{AddressBalanceFetcher, AddressBalanceFetcherCase}
 
   @hash %Explorer.Chain.Hash{
     byte_count: 20,
@@ -24,7 +24,7 @@ defmodule Explorer.Indexer.AddressBalanceFetcherTest do
       assert unfetched_address.fetched_balance == nil
       assert unfetched_address.balance_fetched_at == nil
 
-      start_address_fetcher()
+      AddressBalanceFetcherCase.start_supervised!()
 
       fetched_address =
         wait(fn ->
@@ -37,7 +37,7 @@ defmodule Explorer.Indexer.AddressBalanceFetcherTest do
     test "fetches unfetched addresses when less than max batch size" do
       insert(:address, hash: @hash)
 
-      start_address_fetcher(max_batch_size: 2)
+      AddressBalanceFetcherCase.start_supervised!(max_batch_size: 2)
 
       fetched_address =
         wait(fn ->
@@ -50,7 +50,7 @@ defmodule Explorer.Indexer.AddressBalanceFetcherTest do
 
   describe "async_fetch_balances/1" do
     test "fetches balances for address_hashes" do
-      start_address_fetcher()
+      AddressBalanceFetcherCase.start_supervised!()
 
       assert :ok = AddressBalanceFetcher.async_fetch_balances([@hash])
 
@@ -61,16 +61,6 @@ defmodule Explorer.Indexer.AddressBalanceFetcherTest do
 
       refute address.fetched_balance == nil
     end
-  end
-
-  defp start_address_fetcher(options \\ []) when is_list(options) do
-    start_supervised!(
-      {AddressBalanceFetcher,
-       Keyword.merge(
-         [debug_logs: false, fetch_interval: 1, max_batch_size: 1, max_concurrency: 1],
-         options
-       )}
-    )
   end
 
   defp wait(producer) do

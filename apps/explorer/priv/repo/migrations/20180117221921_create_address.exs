@@ -8,7 +8,7 @@ defmodule Explorer.Repo.Migrations.CreateAddress do
       add(:hash, :bytea, null: false, primary_key: true)
       add(:contract_code, :bytea, null: true)
 
-      timestamps(null: false)
+      timestamps(null: false, type: :utc_datetime)
     end
   end
 end

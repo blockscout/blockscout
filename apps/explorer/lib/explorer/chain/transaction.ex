@@ -88,6 +88,7 @@ defmodule Explorer.Chain.Transaction do
    * `input`- data sent along with the transaction
    * `internal_transactions` - transactions (value transfers) created while executing contract used for this
      transaction
+   * `internal_transactions_indexed_at` - when `internal_transactions` were fetched by `Explorer.Indexer`.
    * `logs` - events that occurred while mining the `transaction`.
    * `nonce` - the number of transaction made by the sender prior to this one
    * `public_key` - public key of the signer of the transaction
@@ -116,6 +117,7 @@ defmodule Explorer.Chain.Transaction do
           index: non_neg_integer() | nil,
           input: Data.t(),
           internal_transactions: %Ecto.Association.NotLoaded{} | [InternalTransaction.t()],
+          internal_transactions_indexed_at: DateTime.t(),
           logs: %Ecto.Association.NotLoaded{} | [Log.t()],
           nonce: non_neg_integer(),
           public_key: public_key(),
@@ -137,6 +139,7 @@ defmodule Explorer.Chain.Transaction do
     field(:gas_price, Wei)
     field(:gas_used, :decimal)
     field(:index, :integer)
+    field(:internal_transactions_indexed_at, :utc_datetime)
     field(:input, Data)
     field(:nonce, :integer)
     field(:public_key, Data)

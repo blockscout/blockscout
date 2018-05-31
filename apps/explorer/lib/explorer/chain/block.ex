@@ -66,7 +66,7 @@ defmodule Explorer.Chain.Block do
     field(:nonce, :integer)
     field(:number, :integer)
     field(:size, :integer)
-    field(:timestamp, Timex.Ecto.DateTime)
+    field(:timestamp, :utc_datetime)
     field(:total_difficulty, :decimal)
 
     timestamps()

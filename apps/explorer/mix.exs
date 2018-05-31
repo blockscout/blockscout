@@ -11,7 +11,7 @@ defmodule Explorer.Mixfile do
       deps_path: "../../deps",
       dialyzer: [
         plt_add_deps: :transitive,
-        plt_add_apps: [:mix],
+        plt_add_apps: ~w(ex_unit mix)a,
         ignore_warnings: "../../.dialyzer-ignore"
       ],
       elixir: "~> 1.6",
