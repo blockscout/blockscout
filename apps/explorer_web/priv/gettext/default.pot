@@ -179,7 +179,7 @@ msgstr ""
 msgid "Overview"
 msgstr ""
 
-#: lib/explorer_web/views/transaction_view.ex:109
+#: lib/explorer_web/views/transaction_view.ex:116
 msgid "Success"
 msgstr ""
 
@@ -241,9 +241,9 @@ msgstr ""
 #: lib/explorer_web/templates/transaction/overview.html.eex:83
 #: lib/explorer_web/templates/transaction/overview.html.eex:99
 #: lib/explorer_web/views/transaction_view.ex:18
-#: lib/explorer_web/views/transaction_view.ex:65
 #: lib/explorer_web/views/transaction_view.ex:72
-#: lib/explorer_web/views/transaction_view.ex:108
+#: lib/explorer_web/views/transaction_view.ex:79
+#: lib/explorer_web/views/transaction_view.ex:115
 msgid "Pending"
 msgstr ""
 
@@ -306,11 +306,11 @@ msgstr ""
 msgid "Next Page"
 msgstr ""
 
-#: lib/explorer_web/views/transaction_view.ex:106
+#: lib/explorer_web/views/transaction_view.ex:113
 msgid "Failed"
 msgstr ""
 
-#: lib/explorer_web/views/transaction_view.ex:107
+#: lib/explorer_web/views/transaction_view.ex:114
 msgid "Out of Gas"
 msgstr ""
 
