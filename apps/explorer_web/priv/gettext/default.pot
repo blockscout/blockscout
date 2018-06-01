@@ -153,7 +153,6 @@ msgstr ""
 msgid "%{count} transactions in this block"
 msgstr ""
 
-#: lib/explorer_web/templates/address/overview.html.eex:11
 #: lib/explorer_web/templates/transaction_log/index.html.eex:29
 #: lib/explorer_web/views/address_view.ex:17
 msgid "Address"
@@ -500,7 +499,7 @@ msgstr ""
 msgid "Contract Address"
 msgstr ""
 
-#: lib/explorer_web/templates/address_contract/index.html.eex:38
+#: lib/explorer_web/templates/address_contract/index.html.eex:39
 msgid "Contract bytecode"
 msgstr ""
 
@@ -508,10 +507,18 @@ msgstr ""
 msgid "Contract Source Code"
 msgstr ""
 
-#: lib/explorer_web/templates/address_contract/index.html.eex:46
+#: lib/explorer_web/templates/address_contract/index.html.eex:44
 msgid "Verify and Publish"
 msgstr ""
 
 #: lib/explorer_web/templates/address_contract/index.html.eex:27
 msgid "Code"
+msgstr ""
+
+#: lib/explorer_web/views/address_contract_view.ex:12
+msgid "false"
+msgstr ""
+
+#: lib/explorer_web/views/address_contract_view.ex:11
+msgid "true"
 msgstr ""
