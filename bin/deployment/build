@@ -4,6 +4,7 @@ set -e
 
 cd /opt/app || exit 1
 
+export HOME=/home/ec2-user
 export PATH=/opt/elixir/bin:$PATH
 export MIX_ENV=prod
 
