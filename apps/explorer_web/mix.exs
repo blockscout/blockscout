@@ -96,7 +96,10 @@ defmodule ExplorerWeb.Mixfile do
       {:timex_ecto, "~> 3.2.1"},
       {:wallaby, "~> 0.20", only: [:test], runtime: false},
       {:qrcode, "~> 0.1.0"},
-      {:bypass, "~> 0.8", only: :test}
+      {:bypass, "~> 0.8", only: :test},
+      # Waiting for the Pretty Print to be implemented at the Jason lib
+      # https://github.com/michalmuskala/jason/issues/15
+      {:poison, "~> 3.1"}
     ]
   end
 

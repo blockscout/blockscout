@@ -35,8 +35,6 @@
     </div>
 
     <div class="card-body">
-      <h2 class="card-title"><%= gettext "Contract bytecode" %></h2>
-
       <%= if !smart_contract_verified?(@address) do %>
         <p>
           <%= link(
@@ -48,7 +46,39 @@
         </p>
       <% end %>
 
-      <pre class="pre-wrap p-2 bg-light mb-0">
+      <%= if smart_contract_verified?(@address) do %>
+        <table class="table">
+          <tr>
+            <th>Contract name:</th>
+            <td><%= @address.smart_contract.name %></td>
+          </tr>
+          <tr>
+            <th>Optimization enabled:</th>
+            <td><%= format_optimization(@address.smart_contract.optimization) %></td>
+          </tr>
+          <tr>
+            <th>Compiler version:</th>
+            <td><%= @address.smart_contract.compiler_version %></td>
+          </tr>
+        </table>
+
+        <h4>Contract source code</h4>
+        <pre class="p-2 bg-light mb-4">
+          <code>
+            <%= text_to_html(@address.smart_contract.contract_source_code, insert_brs: false) %>
+          </code>
+        </pre>
+
+        <h4>Contract ABI</h4>
+        <pre class="p-2 bg-light mb-4">
+          <code>
+            <%= format_smart_contract_abi(@address.smart_contract.abi) %>
+          </code>
+        </pre>
+      <% end %>
+
+      <h4>Contract creation code</h4>
+      <pre class="pre-wrap p-2 bg-light mb-4">
         <code><%= @address.contract_code %></code>
       </pre>
     </div>
