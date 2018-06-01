@@ -9,6 +9,10 @@ export MIX_ENV=prod
 
 source /etc/environment
 
+export DATABASE_URL
+export POOL_SIZE
+export ECTO_USE_SSL
+
 mix do ecto.create, ecto.migrate
 
 exit 0
