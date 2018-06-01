@@ -32,6 +32,13 @@ defmodule ExplorerWeb.TransactionView do
     end
   end
 
+  def qr_code(%Transaction{hash: hash}) do
+    hash
+    |> to_string()
+    |> QRCode.to_png()
+    |> Base.encode64()
+  end
+
   defp fee_to_currency({fee_type, fee}, denomination: denomination) do
     {fee_type, format_wei_value(Wei.from(fee, :wei), denomination)}
   end

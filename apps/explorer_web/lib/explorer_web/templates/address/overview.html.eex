@@ -3,7 +3,7 @@
     <div class="col-md-2 col-lg-1 order-last order-sm-first">
       <div class="card mt-3 mt-sm-0">
         <div class="card-body px-2 py-2">
-          <%= img_tag(address_qr_code_path(@conn, :index, @conn.assigns.locale, @address), alt: "qr_code", class: "qr-code") %>
+          <img src="data:image/png;base64, <%= qr_code(@address) %>" class="qr-code" alt="qr_code" title="<%= @address %>" />
         </div>
       </div>
     </div>

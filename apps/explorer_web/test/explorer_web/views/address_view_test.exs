@@ -23,4 +23,11 @@ defmodule ExplorerWeb.AddressViewTest do
       assert "$0.000005 USD" == AddressView.formatted_usd(address, token)
     end
   end
+
+  describe "qr_code/1" do
+    test "it returns an encoded value" do
+      address = build(:address)
+      assert {:ok, _} = Base.decode64(AddressView.qr_code(address))
+    end
+  end
 end
