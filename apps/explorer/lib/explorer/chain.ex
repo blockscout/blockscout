@@ -1639,13 +1639,11 @@ defmodule Explorer.Chain do
       {:ok, hash} ->
         from(
           transaction in query,
-          inner_join: block in assoc(transaction, :block),
           join: hash_transaction in Transaction,
           on: hash_transaction.hash == ^hash,
-          inner_join: hash_block in assoc(hash_transaction, :block),
           where:
-            block.number > hash_block.number or
-              (block.number == hash_block.number and transaction.index > hash_transaction.index)
+            transaction.block_number > hash_transaction.block_number or
+              (transaction.block_number == hash_transaction.block_number and transaction.index > hash_transaction.index)
         )
 
       :error ->
