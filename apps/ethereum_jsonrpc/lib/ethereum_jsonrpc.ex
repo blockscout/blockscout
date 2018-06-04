@@ -81,17 +81,8 @@ defmodule EthereumJSONRPC do
   Fetches address balances by address hashes.
   """
   def fetch_balances_by_hash(address_hashes) do
-    batched_requests =
-      for hash <- address_hashes do
-        %{
-          "id" => hash,
-          "jsonrpc" => "2.0",
-          "method" => "eth_getBalance",
-          "params" => [hash, "latest"]
-        }
-      end
-
-    batched_requests
+    address_hashes
+    |> get_balance_requests()
     |> json_rpc(config(:url))
     |> handle_balances()
   end
@@ -113,17 +104,8 @@ defmodule EthereumJSONRPC do
   Transaction data is included for each block.
   """
   def fetch_blocks_by_hash(block_hashes) do
-    batched_requests =
-      for block_hash <- block_hashes do
-        %{
-          "id" => block_hash,
-          "jsonrpc" => "2.0",
-          "method" => "eth_getBlockByHash",
-          "params" => [block_hash, true]
-        }
-      end
-
-    batched_requests
+    block_hashes
+    |> get_block_by_hash_requests()
     |> json_rpc(config(:url))
     |> handle_get_block()
     |> case do
@@ -137,7 +119,7 @@ defmodule EthereumJSONRPC do
   """
   def fetch_blocks_by_range(block_start, block_end) do
     block_start
-    |> build_batch_get_block_by_number(block_end)
+    |> get_block_by_number_requests(block_end)
     |> json_rpc(config(:url))
     |> handle_get_block()
   end
@@ -199,14 +181,73 @@ defmodule EthereumJSONRPC do
     |> Timex.from_unix()
   end
 
-  defp build_batch_get_block_by_number(block_start, block_end) do
+  defp get_balance_requests(address_hashes) do
+    for address_hash <- address_hashes do
+      get_balance_request(%{id: address_hash, hash: address_hash})
+    end
+  end
+
+  defp get_balance_request(%{id: id, hash: hash}) do
+    request(%{id: id, method: "eth_getBalance", params: [hash, "latest"]})
+  end
+
+  defp get_block_by_hash_requests(block_hashes) do
+    for block_hash <- block_hashes do
+      get_block_by_hash_request(%{id: block_hash, hash: block_hash, transactions: :full})
+    end
+  end
+
+  defp get_block_by_hash_request(%{id: id} = options) do
+    request(%{id: id, method: "eth_getBlockByHash", params: get_block_by_hash_params(options)})
+  end
+
+  defp get_block_by_hash_params(%{hash: hash} = options) do
+    [hash, get_block_transactions(options)]
+  end
+
+  defp get_block_by_number_requests(block_start, block_end) do
     for current <- block_start..block_end do
-      %{
-        "id" => current,
-        "jsonrpc" => "2.0",
-        "method" => "eth_getBlockByNumber",
-        "params" => [int_to_hash_string(current), true]
-      }
+      get_block_by_number_request(%{id: current, quantity: current, transactions: :full})
+    end
+  end
+
+  defp get_block_by_number_request(%{id: id} = options) do
+    request(%{id: id, method: "eth_getBlockByNumber", params: get_block_by_number_params(options)})
+  end
+
+  defp request(%{id: id, method: method, params: params}) do
+    %{
+      "id" => id,
+      "jsonrpc" => "2.0",
+      "method" => method,
+      "params" => params
+    }
+  end
+
+  defp get_block_by_number_params(options) do
+    [get_block_by_number_subject(options), get_block_transactions(options)]
+  end
+
+  defp get_block_by_number_subject(options) do
+    case {Map.fetch(options, :quantity), Map.fetch(options, :tag)} do
+      {{:ok, quantity}, :error} ->
+        int_to_hash_string(quantity)
+
+      {:error, {:ok, tag}} ->
+        tag
+
+      {{:ok, _}, {:ok, _}} ->
+        raise ArgumentError, "Only one of :quantity or :tag can be passed to get_block_by_number_request"
+
+      {:error, :error} ->
+        raise ArgumentError, "One of :quantity or :tag MUST be passed to get_block_by_number_request"
+    end
+  end
+
+  defp get_block_transactions(%{transactions: transactions}) do
+    case transactions do
+      :full -> true
+      :hashes -> false
     end
   end
 
