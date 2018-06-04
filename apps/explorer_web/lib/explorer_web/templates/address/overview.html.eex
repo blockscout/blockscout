@@ -1,6 +1,17 @@
 <section>
-  <h1><%= address_title(@address) %></h1>
-  <p data-test="address_detail_hash"><%= @address %></p>
+  <div class="row mb-3">
+    <div class="col-md-2 col-lg-1 order-last order-sm-first">
+      <div class="card mt-3 mt-sm-0">
+        <div class="card-body px-2 py-2">
+          <img src="data:image/png;base64, <%= qr_code(@address) %>" class="qr-code" alt="qr_code" title="<%= @address %>" />
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-10 align-self-center">
+      <h1><%= gettext "Address" %></h1>
+      <p class="mb-0" data-test="address_detail_hash"><%= @address %></p>
+    </div>
+  </div>
 
   <div class="card mb-3">
     <div class="card-body">
@@ -10,10 +21,17 @@
             <tbody>
               <tr>
                 <th scope="row">
-                  <%= gettext "Balance" %>
+                  <%= gettext "Ether" %> <%= gettext "Balance" %>
                 </th>
                 <td data-test="address_balance">
-                  <%= balance(@address) %> </br>
+                  <%= balance(@address) %>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  <%= gettext "USD" %> <%= gettext "Balance" %>
+                </th>
+                <td>
                   <%= formatted_usd(@address, @exchange_rate) %>
                 </td>
               </tr>

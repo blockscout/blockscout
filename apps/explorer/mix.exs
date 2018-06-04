@@ -85,7 +85,7 @@ defmodule Explorer.Mixfile do
       {:postgrex, ">= 0.0.0"},
       {:scrivener_ecto, "~> 1.0"},
       {:scrivener_html, "~> 1.7"},
-      {:sobelow, ">= 0.0.0", only: [:dev, :test], runtime: false},
+      {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
       {:timex, "~> 3.1.24"},
       {:timex_ecto, "~> 3.2.1"}
     ]

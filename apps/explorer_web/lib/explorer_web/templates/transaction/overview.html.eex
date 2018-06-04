@@ -1,6 +1,17 @@
 <section>
-  <h1><%= gettext "Transaction Details" %></h1>
-  <p data-test="transaction_detail_hash"><%= @transaction %></p>
+  <div class="row mb-3">
+    <div class="col-md-2 col-lg-1 order-last order-sm-first">
+      <div class="card mt-3 mt-sm-0">
+        <div class="card-body px-2 py-2">
+          <img src="data:image/png;base64, <%= qr_code(@transaction) %>" class="qr-code" alt="qr_code" title="<%= @transaction %>" />
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-10 align-self-center">
+      <h1><%= gettext "Transaction Details" %></h1>
+      <p class="mb-0" data-test="transaction_detail_hash"><%= @transaction %></p>
+    </div>
+  </div>
 
   <div class="card mb-3">
     <div class="card-body">
@@ -43,10 +54,17 @@
               </tr>
               <tr>
                 <th scope="row">
-                  <%= gettext "Value" %>
+                  <%= gettext "Ether" %> <%= gettext "Value" %>
                 </th>
                 <td>
                   <div><%= value(@transaction) %> </div>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  <%= gettext "USD" %> <%= gettext "Value" %>
+                </th>
+                <td>
                   <div><%= formatted_usd_value(@transaction, @exchange_rate) %></div>
                 </td>
               </tr>
@@ -133,10 +151,17 @@
               </tr>
               <tr>
                 <th scope="row">
-                  <%= gettext "TX Fee" %>
+                  <%= gettext "Ether" %> <%= gettext "TX Fee" %>
                 </th>
                 <td>
                   <div><%= formatted_fee(@transaction, denomination: :ether) %></div>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  <%= gettext "USD" %> <%= gettext "TX Fee" %>
+                </th>
+                <td>
                   <div><%= formatted_fee(@transaction, exchange_rate: @exchange_rate) %></div>
                 </td>
               </tr>

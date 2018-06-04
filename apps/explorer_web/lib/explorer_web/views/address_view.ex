@@ -44,4 +44,11 @@ defmodule ExplorerWeb.AddressView do
   def hash(%Address{hash: hash}) do
     to_string(hash)
   end
+
+  def qr_code(%Address{hash: hash}) do
+    hash
+    |> to_string()
+    |> QRCode.to_png()
+    |> Base.encode64()
+  end
 end

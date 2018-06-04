@@ -83,4 +83,11 @@ defmodule ExplorerWeb.TransactionViewTest do
       assert TransactionView.formatted_status(transaction) == "Success"
     end
   end
+
+  describe "qr_code/1" do
+    test "it returns an encoded value" do
+      transaction = build(:transaction)
+      assert {:ok, _} = Base.decode64(TransactionView.qr_code(transaction))
+    end
+  end
 end
