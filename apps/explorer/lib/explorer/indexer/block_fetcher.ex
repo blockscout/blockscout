@@ -74,7 +74,12 @@ defmodule Explorer.Indexer.BlockFetcher do
       receipts_concurrency: Keyword.get(opts, :receipts_concurrency, @receipts_concurrency)
     }
 
-    {:ok, schedule_next_catchup_index(state)}
+    scheduled_state =
+      state
+      |> schedule_next_catchup_index()
+      |> schedule_next_realtime_fetch()
+
+    {:ok, scheduled_state}
   end
 
   @impl GenServer
@@ -100,8 +105,8 @@ defmodule Explorer.Indexer.BlockFetcher do
   end
 
   def handle_info({:DOWN, _ref, :process, pid, :normal}, %{genesis_task: pid} = state) do
-    Logger.info(fn -> "Finished index from genesis. Transitioning to realtime index." end)
-    {:noreply, schedule_next_realtime_fetch(%{state | genesis_task: nil})}
+    Logger.info(fn -> "Finished index from genesis. Transitioning to only realtime index." end)
+    {:noreply, %{state | genesis_task: nil}}
   end
 
   def handle_info({:DOWN, _ref, :process, pid, _reason}, %{genesis_task: pid} = state) do
@@ -222,7 +227,8 @@ defmodule Explorer.Indexer.BlockFetcher do
   end
 
   defp realtime_task(%{} = state) do
-    {:ok, seq} = Sequence.start_link([], Indexer.next_block_number(), 2)
+    {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest")
+    {:ok, seq} = Sequence.start_link([], latest_block_number, 2)
     stream_import(state, seq, max_concurrency: 1)
   end
 
