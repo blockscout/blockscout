@@ -112,19 +112,21 @@
       </div>
     </div>
 
-    <div class="address__pagination">
-      <%= pagination_links(
-        @conn,
-        @page,
-        ["en", @conn.params["address_id"]],
-        distance: 1,
-        filter: @conn.params["filter"],
-        first: true,
-        next: Phoenix.HTML.raw("&rsaquo;"),
-        path: &address_internal_transaction_path/5,
-        previous: Phoenix.HTML.raw("&lsaquo;"),
-        view_style: :bulma
-      ) %>
-    </div>
+    <%= if Enum.count(@page) > 0 do %>
+      <div class="address__pagination">
+        <%= pagination_links(
+          @conn,
+          @page,
+          ["en", @conn.params["address_id"]],
+          distance: 1,
+          filter: @conn.params["filter"],
+          first: true,
+          next: Phoenix.HTML.raw("&rsaquo;"),
+          path: &address_internal_transaction_path/5,
+          previous: Phoenix.HTML.raw("&lsaquo;"),
+          view_style: :bulma
+        ) %>
+      </div>
+    <% end %>
   </section>
 </section>

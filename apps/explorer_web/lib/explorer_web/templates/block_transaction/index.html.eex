@@ -129,67 +129,74 @@
         </ul>
       </div>
       <div class="card-body">
-        <table class="table table-responsive-sm table-font">
-          <thead>
-            <tr>
-              <th>
-                <%= gettext "Status" %>
-              </th>
-              <th><%= gettext "Hash" %></th>
-              <th><%= gettext "Block" %></th>
-              <th><%= gettext "Age" %></th>
-              <th><%= gettext "From" %></th>
-              <th></th>
-              <th><%= gettext "To" %></th>
-              <th><%= gettext "Value" %></th>
-            </tr>
-          </thead>
-          <tbody>
-            <%= for transaction <- @page do %>
+        <%= if Enum.count(@page) > 0 do %>
+          <table class="table table-responsive-sm table-font">
+            <thead>
               <tr>
-                <td>
-                  <div class="transaction__dot transaction__dot--<%= status(transaction) %>"></div>
-                </td>
-                <td>
-                  <%= render ExplorerWeb.TransactionView, "_link.html", conn: @conn, transaction: transaction %>
-                </td>
-                <td>
-                  <%= link(
-                        transaction.block,
-                        to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
-                      ) %>
-                </td>
-                <td>
-                  <%= transaction.block.timestamp |> Timex.from_now %>
-                </td>
-                <td class="address-cell">
-                  <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
-                </td>
-                <td class="u-text-center"><i class="fas fa-arrow-circle-right"></i></td>
-                <td>
-                    <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
-                </td>
-                <td>
-                  <%= ExplorerWeb.TransactionView.value(transaction) %>
-                </td>
+                <th>
+                  <%= gettext "Status" %>
+                </th>
+                <th><%= gettext "Hash" %></th>
+                <th><%= gettext "Block" %></th>
+                <th><%= gettext "Age" %></th>
+                <th><%= gettext "From" %></th>
+                <th></th>
+                <th><%= gettext "To" %></th>
+                <th><%= gettext "Value" %></th>
               </tr>
-            <% end %>
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              <%= for transaction <- @page do %>
+                <tr>
+                  <td>
+                    <div class="transaction__dot transaction__dot--<%= status(transaction) %>"></div>
+                  </td>
+                  <td>
+                    <%= render ExplorerWeb.TransactionView, "_link.html", conn: @conn, transaction: transaction %>
+                  </td>
+                  <td>
+                    <%= link(
+                          transaction.block,
+                          to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
+                        ) %>
+                  </td>
+                  <td>
+                    <%= transaction.block.timestamp |> Timex.from_now %>
+                  </td>
+                  <td class="address-cell">
+                    <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
+                  </td>
+                  <td class="u-text-center"><i class="fas fa-arrow-circle-right"></i></td>
+                  <td>
+                      <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
+                  </td>
+                  <td>
+                    <%= ExplorerWeb.TransactionView.value(transaction) %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% else %>
+          <p><%= gettext "There are no Transactions" %></p>
+        <% end %>
       </div>
     </div>
 
-    <div class="blocks__pagination">
-      <%= pagination_links(
-            @conn,
-            @page,
-            ["en", @conn.params["block_id"]],
-            distance: 1,
-            first: true,
-            next: Phoenix.HTML.raw("&rsaquo;"),
-            path: &block_transaction_path/5,
-            previous: Phoenix.HTML.raw("&lsaquo;"),
-            view_style: :bulma
-          ) %></div>
+    <%= if Enum.count(@page) > 0 do %>
+      <div class="blocks__pagination">
+        <%= pagination_links(
+          @conn,
+          @page,
+          ["en", @conn.params["block_id"]],
+          distance: 1,
+          first: true,
+          next: Phoenix.HTML.raw("&rsaquo;"),
+          path: &block_transaction_path/5,
+          previous: Phoenix.HTML.raw("&lsaquo;"),
+          view_style: :bulma
+        ) %>
+      </div>
+    <% end %>
   </section>
 </section>
