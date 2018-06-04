@@ -62,20 +62,6 @@ defmodule EthereumJSONRPC do
   @type timestamp :: String.t()
 
   @doc """
-  Lists changes for a given filter subscription.
-  """
-  def check_for_updates(filter_id) do
-    request = %{
-      "id" => filter_id,
-      "jsonrpc" => "2.0",
-      "method" => "eth_getFilterChanges",
-      "params" => [filter_id]
-    }
-
-    json_rpc(request, config(:url))
-  end
-
-  @doc """
   Fetches configuration for this module under `key`
 
   Configuration can be set a compile time using `config`
@@ -188,22 +174,6 @@ defmodule EthereumJSONRPC do
       {:error, %HTTPoison.Error{reason: reason}} ->
         {:error, reason}
     end
-  end
-
-  @doc """
-  Creates a filter subscription that can be polled for retreiving new blocks.
-  """
-  def listen_for_new_blocks do
-    id = DateTime.utc_now() |> DateTime.to_unix()
-
-    request = %{
-      "id" => id,
-      "jsonrpc" => "2.0",
-      "method" => "eth_newBlockFilter",
-      "params" => []
-    }
-
-    json_rpc(request, config(:url))
   end
 
   @doc """
