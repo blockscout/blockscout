@@ -139,7 +139,7 @@ defmodule EthereumJSONRPC do
 
     batched_requests
     |> json_rpc(config(:url))
-    |> handle_get_block_by_number()
+    |> handle_get_block()
     |> case do
       {:ok, _next, results} -> {:ok, results}
       {:error, reason} -> {:error, reason}
@@ -153,7 +153,7 @@ defmodule EthereumJSONRPC do
     block_start
     |> build_batch_get_block_by_number(block_end)
     |> json_rpc(config(:url))
-    |> handle_get_block_by_number()
+    |> handle_get_block()
   end
 
   @doc """
@@ -260,7 +260,7 @@ defmodule EthereumJSONRPC do
       raise("bad jason")
   end
 
-  defp handle_get_block_by_number({:ok, results}) do
+  defp handle_get_block({:ok, results}) do
     {blocks, next} =
       Enum.reduce(results, {[], :more}, fn
         %{"result" => nil}, {blocks, _} -> {blocks, :end_of_chain}
@@ -279,7 +279,7 @@ defmodule EthereumJSONRPC do
      }}
   end
 
-  defp handle_get_block_by_number({:error, reason}) do
+  defp handle_get_block({:error, reason}) do
     {:error, reason}
   end
 
