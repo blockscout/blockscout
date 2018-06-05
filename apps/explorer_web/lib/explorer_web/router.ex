@@ -26,6 +26,12 @@ defmodule ExplorerWeb.Router do
     plug(SetLocale, gettext: ExplorerWeb.Gettext, default_locale: "en")
   end
 
+  scope "/api/v1", ExplorerWeb.API.V1, as: :api_v1 do
+    pipe_through(:api)
+
+    get("/supply", SupplyController, :supply)
+  end
+
   scope "/api", ExplorerWeb.API.RPC do
     pipe_through(:api)
 

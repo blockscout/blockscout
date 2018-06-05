@@ -4,8 +4,8 @@ defmodule Explorer.ChainTest do
   import Explorer.Factory
 
   alias Explorer.{Chain, Repo, Factory}
-
   alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Transaction, Wei, SmartContract}
+  alias Explorer.Chain.Supply.ProofOfAuthority
 
   doctest Explorer.Chain
 
@@ -1023,5 +1023,17 @@ defmodule Explorer.ChainTest do
 
       assert address.contract_code != nil
     end
+  end
+
+  test "total_supply/0" do
+    height = 2_000_000
+    insert(:block, number: height)
+    expected = ProofOfAuthority.initial_supply() + height
+
+    assert Chain.total_supply() == expected
+  end
+
+  test "circulating_supply/0" do
+    assert Chain.circulating_supply() == ProofOfAuthority.circulating()
   end
 end

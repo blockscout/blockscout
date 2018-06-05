@@ -2320,4 +2320,24 @@ defmodule Explorer.Chain do
         ) > 1
     )
   end
+
+  @doc """
+  The current total number of coins minted minus verifiably burned coins.
+  """
+  @spec total_supply :: non_neg_integer()
+  def total_supply do
+    supply_module().total()
+  end
+
+  @doc """
+  The current number coins in the market for trading.
+  """
+  @spec circulating_supply :: non_neg_integer()
+  def circulating_supply do
+    supply_module().circulating()
+  end
+
+  defp supply_module do
+    Application.get_env(:explorer, :supply, Explorer.Chain.Supply.ProofOfAuthority)
+  end
 end
