@@ -57,23 +57,20 @@ defmodule EthereumJSONRPC do
   @type quantity :: String.t()
 
   @typedoc """
+  A logic block tag that can be used in place of a block number.
+
+  | Tag          | Description                    |
+  |--------------|--------------------------------|
+  | `"earliest"` | The first block in the chain   |
+  | `"latest"`   | The latest collated block.     |
+  | `"pending"`  | The next block to be collated. |
+  """
+  @type tag :: String.t()
+
+  @typedoc """
   Unix timestamp encoded as a hexadecimal number in a `String.t`
   """
   @type timestamp :: String.t()
-
-  @doc """
-  Lists changes for a given filter subscription.
-  """
-  def check_for_updates(filter_id) do
-    request = %{
-      "id" => filter_id,
-      "jsonrpc" => "2.0",
-      "method" => "eth_getFilterChanges",
-      "params" => [filter_id]
-    }
-
-    json_rpc(request, config(:url))
-  end
 
   @doc """
   Fetches configuration for this module under `key`
@@ -95,17 +92,8 @@ defmodule EthereumJSONRPC do
   Fetches address balances by address hashes.
   """
   def fetch_balances_by_hash(address_hashes) do
-    batched_requests =
-      for hash <- address_hashes do
-        %{
-          "id" => hash,
-          "jsonrpc" => "2.0",
-          "method" => "eth_getBalance",
-          "params" => [hash, "latest"]
-        }
-      end
-
-    batched_requests
+    address_hashes
+    |> get_balance_requests()
     |> json_rpc(config(:url))
     |> handle_balances()
   end
@@ -127,19 +115,10 @@ defmodule EthereumJSONRPC do
   Transaction data is included for each block.
   """
   def fetch_blocks_by_hash(block_hashes) do
-    batched_requests =
-      for block_hash <- block_hashes do
-        %{
-          "id" => block_hash,
-          "jsonrpc" => "2.0",
-          "method" => "eth_getBlockByHash",
-          "params" => [block_hash, true]
-        }
-      end
-
-    batched_requests
+    block_hashes
+    |> get_block_by_hash_requests()
     |> json_rpc(config(:url))
-    |> handle_get_block_by_number()
+    |> handle_get_blocks()
     |> case do
       {:ok, _next, results} -> {:ok, results}
       {:error, reason} -> {:error, reason}
@@ -149,11 +128,34 @@ defmodule EthereumJSONRPC do
   @doc """
   Fetches blocks by block number range.
   """
-  def fetch_blocks_by_range(block_start, block_end) do
-    block_start
-    |> build_batch_get_block_by_number(block_end)
+  def fetch_blocks_by_range(_first.._last = range) do
+    range
+    |> get_block_by_number_requests()
     |> json_rpc(config(:url))
-    |> handle_get_block_by_number()
+    |> handle_get_blocks()
+  end
+
+  @doc """
+  Fetches block number by `t:tag/0`.
+
+  The `"earliest"` tag is the earlist block number, which is `0`.
+
+      iex> EthereumJSONRPC.fetch_block_number_by_tag("earliest")
+      {:ok, 0}
+
+  ## Returns
+
+   * `{:ok, number}` - the block number for the given `tag`.
+   * `{:error, :invalid_tag}` - When `tag` is not a valid `t:tag/0`.
+   * `{:error, reason}` - other JSONRPC error.
+
+  """
+  @spec fetch_block_number_by_tag(tag()) :: {:ok, non_neg_integer()} | {:error, reason :: :invalid_tag | term()}
+  def fetch_block_number_by_tag(tag) when tag in ~w(earliest latest pending) do
+    tag
+    |> get_block_by_tag_request()
+    |> json_rpc(config(:url))
+    |> handle_get_block_by_tag()
   end
 
   @doc """
@@ -191,22 +193,6 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
-  Creates a filter subscription that can be polled for retreiving new blocks.
-  """
-  def listen_for_new_blocks do
-    id = DateTime.utc_now() |> DateTime.to_unix()
-
-    request = %{
-      "id" => id,
-      "jsonrpc" => "2.0",
-      "method" => "eth_newBlockFilter",
-      "params" => []
-    }
-
-    json_rpc(request, config(:url))
-  end
-
-  @doc """
   Converts `t:nonce/0` to `t:non_neg_integer/0`
   """
   def nonce_to_integer(nonce) do
@@ -229,14 +215,78 @@ defmodule EthereumJSONRPC do
     |> Timex.from_unix()
   end
 
-  defp build_batch_get_block_by_number(block_start, block_end) do
-    for current <- block_start..block_end do
-      %{
-        "id" => current,
-        "jsonrpc" => "2.0",
-        "method" => "eth_getBlockByNumber",
-        "params" => [int_to_hash_string(current), true]
-      }
+  defp get_balance_requests(address_hashes) do
+    for address_hash <- address_hashes do
+      get_balance_request(%{id: address_hash, hash: address_hash})
+    end
+  end
+
+  defp get_balance_request(%{id: id, hash: hash}) do
+    request(%{id: id, method: "eth_getBalance", params: [hash, "latest"]})
+  end
+
+  defp get_block_by_hash_requests(block_hashes) do
+    for block_hash <- block_hashes do
+      get_block_by_hash_request(%{id: block_hash, hash: block_hash, transactions: :full})
+    end
+  end
+
+  defp get_block_by_hash_request(%{id: id} = options) do
+    request(%{id: id, method: "eth_getBlockByHash", params: get_block_by_hash_params(options)})
+  end
+
+  defp get_block_by_hash_params(%{hash: hash} = options) do
+    [hash, get_block_transactions(options)]
+  end
+
+  defp get_block_by_number_requests(range) do
+    for current <- range do
+      get_block_by_number_request(%{id: current, quantity: current, transactions: :full})
+    end
+  end
+
+  defp get_block_by_number_request(%{id: id} = options) do
+    request(%{id: id, method: "eth_getBlockByNumber", params: get_block_by_number_params(options)})
+  end
+
+  defp get_block_by_tag_request(tag) do
+    # eth_getBlockByNumber accepts either a number OR a tag
+    get_block_by_number_request(%{id: tag, tag: tag, transactions: :hashes})
+  end
+
+  defp request(%{id: id, method: method, params: params}) do
+    %{
+      "id" => id,
+      "jsonrpc" => "2.0",
+      "method" => method,
+      "params" => params
+    }
+  end
+
+  defp get_block_by_number_params(options) do
+    [get_block_by_number_subject(options), get_block_transactions(options)]
+  end
+
+  defp get_block_by_number_subject(options) do
+    case {Map.fetch(options, :quantity), Map.fetch(options, :tag)} do
+      {{:ok, quantity}, :error} ->
+        int_to_hash_string(quantity)
+
+      {:error, {:ok, tag}} ->
+        tag
+
+      {{:ok, _}, {:ok, _}} ->
+        raise ArgumentError, "Only one of :quantity or :tag can be passed to get_block_by_number_request"
+
+      {:error, :error} ->
+        raise ArgumentError, "One of :quantity or :tag MUST be passed to get_block_by_number_request"
+    end
+  end
+
+  defp get_block_transactions(%{transactions: transactions}) do
+    case transactions do
+      :full -> true
+      :hashes -> false
     end
   end
 
@@ -260,7 +310,7 @@ defmodule EthereumJSONRPC do
       raise("bad jason")
   end
 
-  defp handle_get_block_by_number({:ok, results}) do
+  defp handle_get_blocks({:ok, results}) do
     {blocks, next} =
       Enum.reduce(results, {[], :more}, fn
         %{"result" => nil}, {blocks, _} -> {blocks, :end_of_chain}
@@ -279,9 +329,14 @@ defmodule EthereumJSONRPC do
      }}
   end
 
-  defp handle_get_block_by_number({:error, reason}) do
-    {:error, reason}
+  defp handle_get_blocks({:error, _} = error), do: error
+
+  defp handle_get_block_by_tag({:ok, %{"number" => quantity}}) do
+    {:ok, quantity_to_integer(quantity)}
   end
+
+  defp handle_get_block_by_tag({:error, %{"code" => -32602}}), do: {:error, :invalid_tag}
+  defp handle_get_block_by_tag({:error, _} = error), do: error
 
   defp handle_response(resp, 200) do
     case resp do

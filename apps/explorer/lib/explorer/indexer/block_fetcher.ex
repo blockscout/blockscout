@@ -30,6 +30,9 @@ defmodule Explorer.Indexer.BlockFetcher do
   @receipts_batch_size 250
   @receipts_concurrency 10
 
+  @doc false
+  def default_blocks_batch_size, do: @blocks_batch_size
+
   @doc """
   Starts the server.
 
@@ -68,13 +71,19 @@ defmodule Explorer.Indexer.BlockFetcher do
       genesis_task: nil,
       realtime_task: nil,
       realtime_interval: (opts[:block_rate] || @block_rate) * 2,
+      starting_block_number: nil,
       blocks_batch_size: Keyword.get(opts, :blocks_batch_size, @blocks_batch_size),
       blocks_concurrency: Keyword.get(opts, :blocks_concurrency, @blocks_concurrency),
       receipts_batch_size: Keyword.get(opts, :receipts_batch_size, @receipts_batch_size),
       receipts_concurrency: Keyword.get(opts, :receipts_concurrency, @receipts_concurrency)
     }
 
-    {:ok, schedule_next_catchup_index(state)}
+    scheduled_state =
+      state
+      |> schedule_next_catchup_index()
+      |> schedule_next_realtime_fetch()
+
+    {:ok, scheduled_state}
   end
 
   @impl GenServer
@@ -100,8 +109,8 @@ defmodule Explorer.Indexer.BlockFetcher do
   end
 
   def handle_info({:DOWN, _ref, :process, pid, :normal}, %{genesis_task: pid} = state) do
-    Logger.info(fn -> "Finished index from genesis. Transitioning to realtime index." end)
-    {:noreply, schedule_next_realtime_fetch(%{state | genesis_task: nil})}
+    Logger.info(fn -> "Finished index from genesis. Transitioning to only realtime index." end)
+    {:noreply, %{state | genesis_task: nil}}
   end
 
   def handle_info({:DOWN, _ref, :process, pid, _reason}, %{genesis_task: pid} = state) do
@@ -134,12 +143,18 @@ defmodule Explorer.Indexer.BlockFetcher do
     {:noreply, state}
   end
 
-  defp cap_seq(seq, :end_of_chain, {_block_start, _block_end}) do
-    :ok = Sequence.cap(seq)
-  end
+  defp cap_seq(seq, next, range) do
+    case next do
+      :more ->
+        debug(fn ->
+          first_block_number..last_block_number = range
+          "got blocks #{first_block_number} - #{last_block_number}"
+        end)
 
-  defp cap_seq(_seq, :more, {block_start, block_end}) do
-    debug(fn -> "got blocks #{block_start} - #{block_end}" end)
+      :end_of_chain ->
+        Sequence.cap(seq)
+    end
+
     :ok
   end
 
@@ -165,12 +180,13 @@ defmodule Explorer.Indexer.BlockFetcher do
   end
 
   defp genesis_task(%{} = state) do
-    {count, missing_ranges} = missing_block_numbers(state)
-    current_block = Indexer.next_block_number()
+    {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest")
+    missing_ranges = missing_block_number_ranges(state, latest_block_number..0)
+    count = Enum.count(missing_ranges)
 
-    debug(fn -> "#{count} missed block ranges between genesis and #{current_block}" end)
+    debug(fn -> "#{count} missed block ranges between #{latest_block_number} and genesis" end)
 
-    {:ok, seq} = Sequence.start_link(missing_ranges, current_block, state.blocks_batch_size)
+    {:ok, seq} = Sequence.start_link(missing_ranges, latest_block_number, -1 * state.blocks_batch_size)
     stream_import(state, seq, max_concurrency: state.blocks_concurrency)
   end
 
@@ -197,32 +213,35 @@ defmodule Explorer.Indexer.BlockFetcher do
     InternalTransactionFetcher.async_fetch(transaction_hashes, 10_000)
   end
 
-  defp missing_block_numbers(%{blocks_batch_size: blocks_batch_size}) do
-    {count, missing_ranges} = Chain.missing_block_numbers()
+  defp missing_block_number_ranges(%{blocks_batch_size: blocks_batch_size}, range) do
+    range
+    |> Chain.missing_block_number_ranges()
+    |> chunk_ranges(blocks_batch_size)
+  end
 
-    chunked_ranges =
-      Enum.flat_map(missing_ranges, fn
-        {start, ending} when ending - start <= blocks_batch_size ->
-          [{start, ending}]
+  defp chunk_ranges(ranges, size) do
+    Enum.flat_map(ranges, fn
+      first..last = range when last - first <= size ->
+        [range]
 
-        {start, ending} ->
-          start
-          |> Stream.iterate(&(&1 + blocks_batch_size))
-          |> Enum.reduce_while([], fn
-            chunk_start, acc when chunk_start + blocks_batch_size >= ending ->
-              {:halt, [{chunk_start, ending} | acc]}
+      first..last ->
+        first
+        |> Stream.iterate(&(&1 + size))
+        |> Enum.reduce_while([], fn
+          chunk_first, acc when chunk_first + size >= last ->
+            {:halt, [chunk_first..last | acc]}
 
-            chunk_start, acc ->
-              {:cont, [{chunk_start, chunk_start + blocks_batch_size - 1} | acc]}
-          end)
-          |> Enum.reverse()
-      end)
-
-    {count, chunked_ranges}
+          chunk_first, acc ->
+            chunk_last = chunk_first + size - 1
+            {:cont, [chunk_first..chunk_last | acc]}
+        end)
+        |> Enum.reverse()
+    end)
   end
 
   defp realtime_task(%{} = state) do
-    {:ok, seq} = Sequence.start_link([], Indexer.next_block_number(), 2)
+    {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest")
+    {:ok, seq} = Sequence.start_link([], latest_block_number, 2)
     stream_import(state, seq, max_concurrency: 1)
   end
 
@@ -239,8 +258,8 @@ defmodule Explorer.Indexer.BlockFetcher do
   # Run at state.blocks_concurrency max_concurrency when called by `stream_import/3`
   # Only public for testing
   @doc false
-  def import_range({block_start, block_end} = range, %{} = state, seq) do
-    with {:blocks, {:ok, next, result}} <- {:blocks, EthereumJSONRPC.fetch_blocks_by_range(block_start, block_end)},
+  def import_range(range, %{} = state, seq) do
+    with {:blocks, {:ok, next, result}} <- {:blocks, EthereumJSONRPC.fetch_blocks_by_range(range)},
          %{blocks: blocks, transactions: transactions_without_receipts} = result,
          cap_seq(seq, next, range),
          transaction_hashes = Transactions.params_to_hashes(transactions_without_receipts),
@@ -266,7 +285,8 @@ defmodule Explorer.Indexer.BlockFetcher do
     else
       {step, {:error, reason}} ->
         debug(fn ->
-          "failed to fetch #{step} for blocks #{block_start} - #{block_end}: #{inspect(reason)}. Retrying block range."
+          first..last = range
+          "failed to fetch #{step} for blocks #{first} - #{last}: #{inspect(reason)}. Retrying block range."
         end)
 
         :ok = Sequence.inject_range(seq, range)

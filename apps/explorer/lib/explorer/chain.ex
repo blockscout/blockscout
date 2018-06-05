@@ -1189,50 +1189,90 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Calculates the overall missing number of blocks and the ranges of missing blocks.
+  Calculates the ranges of missing blocks in `range`.
 
-  `missing_block_numbers/0` does not take into account block numbers that have appeared on-chain after the
-  `max_block_number/0`; it only uses the missing blocks in the database between `0` and `max_block_number/0`.
+  When there are no blocks, the entire range is missing.
 
-  When there are no `t:Explorer.Chain.Block.t/0`, there can be no missing blocks.
-
-      iex> Explorer.Chain.missing_block_numbers()
-      {0, []}
+      iex> Explorer.Chain.missing_block_number_ranges(0..5)
+      [0..5]
 
   If the block numbers from `0` to `max_block_number/0` are contiguous, then no block numbers are missing
 
       iex> insert(:block, number: 0)
       iex> insert(:block, number: 1)
-      iex> Explorer.Chain.missing_block_numbers()
-      {0, []}
+      iex> Explorer.Chain.missing_block_number_ranges(0..1)
+      []
 
-  If there are gaps between `0` and `max_block_number/0`, then the missing numbers are compacted into ranges.  Single
-  missing numbers become ranges with the single number as the start and end.
+  If there are gaps between the `first` and `last` of `range`, then the missing numbers are compacted into ranges.
+  Single missing numbers become ranges with the single number as the start and end.
 
       iex> insert(:block, number: 0)
       iex> insert(:block, number: 2)
       iex> insert(:block, number: 5)
-      iex> Explorer.Chain.missing_block_numbers()
-      {3, [{1, 1}, {3, 4}]}
+      iex> Explorer.Chain.missing_block_number_ranges(0..5)
+      [1..1, 3..4]
+
+  Flipping the order of `first` and `last` in the `range` flips the order that the missing ranges are returned.  This
+  allows `missing_block_numbers` to be used to generate the sequence down or up from a starting block number.
+
+      iex> insert(:block, number: 0)
+      iex> insert(:block, number: 2)
+      iex> insert(:block, number: 5)
+      iex> Explorer.Chain.missing_block_number_ranges(5..0)
+      [4..3, 1..1]
 
   """
-  def missing_block_numbers do
-    {:ok, {_, missing_count, missing_ranges}} =
-      Repo.transaction(fn ->
-        query = from(b in Block, select: b.number, order_by: [asc: b.number])
+  @spec missing_block_number_ranges(Range.t()) :: [Range.t()]
+  def missing_block_number_ranges(range)
 
-        query
-        |> Repo.stream(max_rows: 1000, timeout: :infinity)
-        |> Enum.reduce({-1, 0, []}, fn
-          num, {prev, missing_count, acc} when prev + 1 == num ->
-            {num, missing_count, acc}
+  def missing_block_number_ranges(range_start..range_end) do
+    {step, first, last, direction} =
+      if range_start <= range_end do
+        {1, :minimum, :maximum, :asc}
+      else
+        {-1, :maximum, :minimum, :desc}
+      end
 
-          num, {prev, missing_count, acc} ->
-            {num, missing_count + (num - prev - 1), [{prev + 1, num - 1} | acc]}
-        end)
-      end)
+    query =
+      from(
+        b in Block,
+        right_join:
+          missing_block_number_range in fragment(
+            # adapted from https://www.xaprb.com/blog/2006/03/22/find-contiguous-ranges-with-sql/
+            """
+            WITH missing_blocks AS
+                 (SELECT number
+                  FROM generate_series(? :: bigint, ? :: bigint, ? :: bigint) AS number
+                  EXCEPT
+                  SELECT blocks.number
+                  FROM blocks)
+            SELECT no_previous.number AS minimum,
+                   (SELECT MIN(no_next.number)
+                    FROM missing_blocks AS no_next
+                    LEFT OUTER JOIN missing_blocks AS next
+                    ON no_next.number = next.number - 1
+                    WHERE next.number IS NULL AND
+                          no_next.number >= no_previous.number) AS maximum
+            FROM missing_blocks as no_previous
+            LEFT OUTER JOIN missing_blocks AS previous
+            ON previous.number = no_previous.number - 1
+            WHERE previous.number IS NULL
+            """,
+            ^range_start,
+            ^range_end,
+            ^step
+          ),
+        select: %Range{
+          first: field(missing_block_number_range, ^first),
+          last: field(missing_block_number_range, ^last)
+        },
+        order_by: [{^direction, field(missing_block_number_range, ^first)}],
+        # needed because the join makes a cartesian product with all block rows, but we need to use Block to make
+        # Ecto work.
+        distinct: true
+      )
 
-    {missing_count, Enum.reverse(missing_ranges)}
+    Repo.all(query, timeout: :infinity)
   end
 
   @doc """
