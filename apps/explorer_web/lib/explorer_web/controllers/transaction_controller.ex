@@ -22,9 +22,7 @@ defmodule ExplorerWeb.TransactionController do
       Keyword.merge(
         [
           necessity_by_association: %{
-            block: :required,
-            from_address: :optional,
-            to_address: :optional
+            block: :required
           }
         ],
         options

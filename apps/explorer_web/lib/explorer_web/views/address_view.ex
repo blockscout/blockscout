@@ -2,6 +2,7 @@ defmodule ExplorerWeb.AddressView do
   use ExplorerWeb, :view
 
   alias Explorer.Chain.{Address, Wei}
+  alias Explorer.Chain.Hash
   alias Explorer.ExchangeRates.Token
   alias ExplorerWeb.ExchangeRates.USD
 
@@ -41,7 +42,7 @@ defmodule ExplorerWeb.AddressView do
     end
   end
 
-  def hash(%Address{hash: hash}) do
+  def hash(%Hash{} = hash) do
     to_string(hash)
   end
 

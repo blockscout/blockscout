@@ -103,11 +103,11 @@
                 </td>
                 <td><%= transaction.block.timestamp |> Timex.from_now %></td>
                 <td class="address-cell">
-                  <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
+                  <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address_hash: transaction.from_address_hash %>
                 </td>
                 <td class="u-text-center"><i class="fas fa-arrow-circle-right"></i></td>
                 <td>
-                  <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
+                  <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address_hash: transaction.to_address_hash %>
                 </td>
                 <td><%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %></td>
                 <td><%= ExplorerWeb.TransactionView.formatted_fee(transaction, denomination: :ether) %></td>

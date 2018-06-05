@@ -96,10 +96,10 @@
                   </td>
                   <td><%= ExplorerWeb.BlockView.age(internal_transaction.transaction.block) %></td>
                   <td>
-                    <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: internal_transaction.from_address %>
+                    <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address_hash: internal_transaction.from_address_hash %>
                   </td>
                   <td>
-                    <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: internal_transaction.to_address %>
+                    <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address_hash: internal_transaction.to_address_hash %>
                   </td>
                   <td><%= ExplorerWeb.TransactionView.value(internal_transaction, include_label: false) %></td>
                 </tr>
