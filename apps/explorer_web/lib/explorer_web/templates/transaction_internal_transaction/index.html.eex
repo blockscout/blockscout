@@ -55,18 +55,20 @@
       </div>
     </div>
 
-    <div class="address__pagination">
-      <%= pagination_links(
-        @conn,
-        @page,
-        ["en", @conn.params["transaction_id"]],
-        distance: 1,
-        first: true,
-        next: Phoenix.HTML.raw("&rsaquo;"),
-        path: &transaction_internal_transaction_path/5,
-        previous: Phoenix.HTML.raw("&lsaquo;"),
-        view_style: :bulma
-      ) %>
-    </div>
+    <%= if Enum.count(@page) > 0 do %>
+      <div class="address__pagination">
+        <%= pagination_links(
+          @conn,
+          @page,
+          ["en", @conn.params["transaction_id"]],
+          distance: 1,
+          first: true,
+          next: Phoenix.HTML.raw("&rsaquo;"),
+          path: &transaction_internal_transaction_path/5,
+          previous: Phoenix.HTML.raw("&lsaquo;"),
+          view_style: :bulma
+        ) %>
+      </div>
+    <% end %>
   </section>
 </section>
