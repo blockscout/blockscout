@@ -37,7 +37,13 @@ defmodule Explorer.Indexer.BlockFetcherTest do
   @first_full_block_number 37
 
   describe "start_link/1" do
-    test "starts fetching blocks from Genesis" do
+    test "starts fetching blocks from latest and goes down" do
+      {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest")
+
+      default_blocks_batch_size = BlockFetcher.default_blocks_batch_size()
+
+      assert latest_block_number > default_blocks_batch_size
+
       assert Repo.aggregate(Block, :count, :hash) == 0
 
       start_supervised!({Task.Supervisor, name: Explorer.Indexer.TaskSupervisor})
@@ -46,10 +52,18 @@ defmodule Explorer.Indexer.BlockFetcherTest do
       start_supervised!(BlockFetcher)
 
       wait(fn ->
-        Repo.one!(from(block in Block, where: block.number == @first_full_block_number))
+        Repo.one!(from(block in Block, where: block.number == ^latest_block_number))
       end)
 
-      assert Repo.aggregate(Block, :count, :hash) >= @first_full_block_number
+      assert Repo.aggregate(Block, :count, :hash) >= 1
+
+      previous_batch_block_number = latest_block_number - default_blocks_batch_size
+
+      wait(fn ->
+        Repo.one!(from(block in Block, where: block.number == ^previous_batch_block_number))
+      end)
+
+      assert Repo.aggregate(Block, :count, :hash) >= default_blocks_batch_size
     end
   end
 
@@ -138,7 +152,7 @@ defmodule Explorer.Indexer.BlockFetcherTest do
                 ],
                 logs: [],
                 transactions: []
-              }} = BlockFetcher.import_range({0, 0}, state, sequence)
+              }} = BlockFetcher.import_range(0..0, state, sequence)
 
       wait_for_tasks(InternalTransactionFetcher)
       wait_for_tasks(AddressBalanceFetcher)
@@ -191,7 +205,7 @@ defmodule Explorer.Indexer.BlockFetcherTest do
                         101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
                   }
                 ]
-              }} = BlockFetcher.import_range({@first_full_block_number, @first_full_block_number}, state, sequence)
+              }} = BlockFetcher.import_range(@first_full_block_number..@first_full_block_number, state, sequence)
 
       wait_for_tasks(InternalTransactionFetcher)
       wait_for_tasks(AddressBalanceFetcher)
@@ -267,6 +281,17 @@ defmodule Explorer.Indexer.BlockFetcherTest do
     producer.()
   rescue
     Ecto.NoResultsError ->
+      Process.sleep(100)
+      wait(producer)
+  catch
+    :exit,
+    {:timeout,
+     {GenServer, :call,
+      [
+        _,
+        {:checkout, _, _, _},
+        _
+      ]}} ->
       Process.sleep(100)
       wait(producer)
   end

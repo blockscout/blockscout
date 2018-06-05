@@ -128,9 +128,9 @@ defmodule EthereumJSONRPC do
   @doc """
   Fetches blocks by block number range.
   """
-  def fetch_blocks_by_range(block_start, block_end) do
-    block_start
-    |> get_block_by_number_requests(block_end)
+  def fetch_blocks_by_range(_first.._last = range) do
+    range
+    |> get_block_by_number_requests()
     |> json_rpc(config(:url))
     |> handle_get_blocks()
   end
@@ -239,8 +239,8 @@ defmodule EthereumJSONRPC do
     [hash, get_block_transactions(options)]
   end
 
-  defp get_block_by_number_requests(block_start, block_end) do
-    for current <- block_start..block_end do
+  defp get_block_by_number_requests(range) do
+    for current <- range do
       get_block_by_number_request(%{id: current, quantity: current, transactions: :full})
     end
   end

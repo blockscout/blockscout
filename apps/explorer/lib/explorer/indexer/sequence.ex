@@ -5,8 +5,6 @@ defmodule Explorer.Indexer.Sequence do
 
   defstruct ~w(current mode queue step)a
 
-  @type range :: {pos_integer(), pos_integer()}
-
   @doc """
   Builds an enumerable stream using a sequencer agent.
   """
@@ -37,8 +35,8 @@ defmodule Explorer.Indexer.Sequence do
   @doc """
   Adds a range of block numbers to the sequence.
   """
-  @spec inject_range(pid(), range()) :: :ok
-  def inject_range(sequencer, {_first, _last} = range) when is_pid(sequencer) do
+  @spec inject_range(pid(), Range.t()) :: :ok
+  def inject_range(sequencer, _first.._last = range) when is_pid(sequencer) do
     Agent.update(sequencer, fn state ->
       %__MODULE__{state | queue: :queue.in(range, state.queue)}
     end)
@@ -47,26 +45,15 @@ defmodule Explorer.Indexer.Sequence do
   @doc """
   Pops the next block range from the sequence.
   """
-  @spec pop(pid()) :: range() | :halt
+  @spec pop(pid()) :: Range.t() | :halt
   def pop(sequencer) when is_pid(sequencer) do
-    Agent.get_and_update(sequencer, fn %__MODULE__{current: current, step: step} = state ->
-      case {state.mode, :queue.out(state.queue)} do
-        {_, {{:value, {starting, ending}}, new_queue}} ->
-          {{starting, ending}, %__MODULE__{state | queue: new_queue}}
-
-        {:infinite, {:empty, new_queue}} ->
-          {{current, current + step - 1}, %__MODULE__{state | current: current + step, queue: new_queue}}
-
-        {:finite, {:empty, new_queue}} ->
-          {:halt, %__MODULE__{state | queue: new_queue}}
-      end
-    end)
+    Agent.get_and_update(sequencer, &pop_state/1)
   end
 
   @doc """
   Stars a process for managing a block sequence.
   """
-  @spec start_link([range()], pos_integer(), pos_integer()) :: Agent.on_start()
+  @spec start_link([Range.t()], pos_integer(), neg_integer() | pos_integer()) :: Agent.on_start()
   def start_link(initial_ranges, range_start, step) do
     Agent.start_link(fn ->
       %__MODULE__{
@@ -77,4 +64,27 @@ defmodule Explorer.Indexer.Sequence do
       }
     end)
   end
+
+  defp pop_state(%__MODULE__{current: current, step: step} = state) do
+    case {state.mode, :queue.out(state.queue)} do
+      {_, {{:value, range}, new_queue}} ->
+        {range, %__MODULE__{state | queue: new_queue}}
+
+      {:infinite, {:empty, new_queue}} ->
+        case current + step do
+          negative when negative < 0 ->
+            {current..0, %__MODULE__{state | current: 0, mode: :finite, queue: new_queue}}
+
+          new_current ->
+            last = new_current - sign(step)
+            {current..last, %__MODULE__{state | current: new_current, queue: new_queue}}
+        end
+
+      {:finite, {:empty, new_queue}} ->
+        {:halt, %__MODULE__{state | queue: new_queue}}
+    end
+  end
+
+  defp sign(integer) when integer < 0, do: -1
+  defp sign(_), do: 1
 end
