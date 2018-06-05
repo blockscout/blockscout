@@ -3,7 +3,8 @@ defmodule Explorer.Chain do
   The chain context.
   """
 
-  import Ecto.Query, only: [from: 2, join: 4, or_where: 3, order_by: 2, order_by: 3, preload: 2, where: 2, where: 3]
+  import Ecto.Query,
+    only: [from: 2, join: 4, limit: 2, or_where: 3, order_by: 2, order_by: 3, preload: 2, where: 2, where: 3]
 
   alias Ecto.{Changeset, Multi}
 
@@ -19,7 +20,7 @@ defmodule Explorer.Chain do
   }
 
   alias Explorer.Chain.Block.Reward
-  alias Explorer.Repo
+  alias Explorer.{PagingOptions, Repo}
 
   @typedoc """
   The name of an association on the `t:Ecto.Schema.t/0`
@@ -45,11 +46,11 @@ defmodule Explorer.Chain do
   """
   @type pagination :: map()
 
-  @typep after_hash_option :: {:after_hash, Hash.t()}
   @typep direction_option :: {:direction, direction}
   @typep inserted_after_option :: {:inserted_after, DateTime.t()}
   @typep necessity_by_association_option :: {:necessity_by_association, necessity_by_association}
   @typep pagination_option :: {:pagination, pagination}
+  @typep paging_options :: PagingOptions.t()
   @typep params_option :: {:params, map()}
   @typep timeout_option :: {:timeout, timeout}
   @typep timestamps :: %{inserted_at: DateTime.t(), updated_at: DateTime.t()}
@@ -1261,80 +1262,40 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Returns the list of collated transactions that occurred recently (10).
+  Returns the paged list of collated transactions that occurred recently from newest to oldest using `block_number`
+  and `index`.
 
-      iex> 2 |> insert_list(:transaction) |> with_block()
-      iex> insert(:transaction) # unvalidated transaction
-      iex> 8 |> insert_list(:transaction) |> with_block()
-      iex> recent_collated_transactions = Explorer.Chain.recent_collated_transactions()
+      iex> newest_first_transactions = 50 |> insert_list(:transaction) |> with_block() |> Enum.reverse()
+      iex> oldest_seen = Enum.at(newest_first_transactions, 9)
+      iex> paging_options = %Explorer.PagingOptions{page_size: 10, key: {oldest_seen.block_number, oldest_seen.index}}
+      iex> recent_collated_transactions = Explorer.Chain.recent_collated_transactions(paging_options: paging_options)
       iex> length(recent_collated_transactions)
       10
-      iex> Enum.all?(recent_collated_transactions, fn %Explorer.Chain.Transaction{block_hash: block_hash} ->
-      ...>   !is_nil(block_hash)
-      ...> end)
+      iex> hd(recent_collated_transactions).hash == Enum.at(newest_first_transactions, 10).hash
       true
-
-  A `t:Explorer.Chain.Transaction.t/0` `hash` can be supplied to the `:after_hash` option, then only transactions in
-  after the transaction (with a greater index) in the same block or in a later block (with a greater number) will be
-  returned.  This can be used to generate paging for collated transaction.
-
-      iex> first_block = insert(:block, number: 1)
-      iex> first_transaction_in_first_block = :transaction |> insert() |> with_block(first_block)
-      iex> second_transaction_in_first_block = :transaction |> insert() |> with_block(first_block)
-      iex> second_block = insert(:block, number: 2)
-      iex> first_transaction_in_second_block = :transaction |> insert() |> with_block(second_block)
-      iex> after_first_transaciton_in_first_block = Explorer.Chain.recent_collated_transactions(
-      ...>   after_hash: first_transaction_in_first_block.hash
-      ...> )
-      iex> length(after_first_transaciton_in_first_block)
-      2
-      iex> after_second_transaciton_in_first_block = Explorer.Chain.recent_collated_transactions(
-      ...>   after_hash: second_transaction_in_first_block.hash
-      ...> )
-      iex> length(after_second_transaciton_in_first_block)
-      1
-      iex> after_first_transaciton_in_second_block = Explorer.Chain.recent_collated_transactions(
-      ...>   after_hash: first_transaction_in_second_block.hash
-      ...> )
-      iex> length(after_first_transaciton_in_second_block)
-      0
-
-  When there are no collated transactions, an empty list is returned.
-
-     iex> insert(:transaction)
-     iex> Explorer.Chain.recent_collated_transactions()
-     []
-
-  Using an unvalidated transaction's hash for `:after_hash` will also yield an empty list.
-
-     iex> %Explorer.Chain.Transaction{hash: hash} = insert(:transaction)
-     iex> insert(:transaction)
-     iex> Explorer.Chain.recent_collated_transactions(after_hash: hash)
-     []
 
   ## Options
 
     * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
       then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
+    * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
+      `:key` (a tuple of the lowest/oldest {block_number, index}) and. Results will be the transactions older than
+      the block number and index that are passed.
 
   """
-  @spec recent_collated_transactions([after_hash_option | necessity_by_association_option]) :: [
+  @spec recent_collated_transactions([paging_options | necessity_by_association_option]) :: [
           Transaction.t()
         ]
   def recent_collated_transactions(options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, %PagingOptions{page_size: 50})
 
-    query =
-      from(
-        transaction in Transaction,
-        where: not is_nil(transaction.block_number) and not is_nil(transaction.index),
-        order_by: [desc: transaction.block_number, desc: transaction.index],
-        limit: 10
-      )
-
-    query
-    |> after_hash(options)
+    Transaction
+    |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
+    |> page_transaction(paging_options)
+    |> limit(^paging_options.page_size)
+    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
     |> join_associations(necessity_by_association)
     |> Repo.all()
   end
@@ -1634,23 +1595,6 @@ defmodule Explorer.Chain do
     |> Repo.paginate(pagination)
   end
 
-  defp after_hash(query, options) do
-    case Keyword.fetch(options, :after_hash) do
-      {:ok, hash} ->
-        from(
-          transaction in query,
-          join: hash_transaction in Transaction,
-          on: hash_transaction.hash == ^hash,
-          where:
-            transaction.block_number > hash_transaction.block_number or
-              (transaction.block_number == hash_transaction.block_number and transaction.index > hash_transaction.index)
-        )
-
-      :error ->
-        query
-    end
-  end
-
   @spec changes_list(params :: map, [{:for, module}]) :: {:ok, changes :: map} | {:error, [Changeset.t()]}
   defp changes_list(params, named_arguments) when is_list(named_arguments) do
     ecto_schema_module = Keyword.fetch!(named_arguments, :for)
@@ -1909,6 +1853,19 @@ defmodule Explorer.Chain do
     Enum.reduce(necessity_by_association, query, fn {association, join}, acc_query ->
       join_association(acc_query, association, join)
     end)
+  end
+
+  defp page_transaction(query, nil), do: query
+
+  defp page_transaction(query, %PagingOptions{key: nil}), do: query
+
+  defp page_transaction(query, %PagingOptions{key: {block_number, index}}) do
+    query
+    |> where(
+      [transaction],
+      transaction.block_number < ^block_number or
+        (transaction.block_number == ^block_number and transaction.index < ^index)
+    )
   end
 
   defp reverse_chronologically(query) do

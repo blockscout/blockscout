@@ -53,6 +53,11 @@ defmodule Explorer.Chain.Transaction do
   @type standard_v :: 0..3
 
   @typedoc """
+    The index of the transaction in its block.
+  """
+  @type transaction_index :: non_neg_integer()
+
+  @typedoc """
   `t:standard_v/0` + `27`
 
   | `v`  | X      | Y    |
@@ -114,7 +119,7 @@ defmodule Explorer.Chain.Transaction do
           gas_price: wei_per_gas,
           gas_used: Gas.t() | nil,
           hash: Hash.t(),
-          index: non_neg_integer() | nil,
+          index: transaction_index | nil,
           input: Data.t(),
           internal_transactions: %Ecto.Association.NotLoaded{} | [InternalTransaction.t()],
           internal_transactions_indexed_at: DateTime.t(),

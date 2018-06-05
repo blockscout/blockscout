@@ -1,14 +1,15 @@
 defmodule ExplorerWeb.TransactionController do
   use ExplorerWeb, :controller
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, PagingOptions}
 
   def index(conn, params) do
-    with %{"last_seen_collated_hash" => last_seen_collated_hash_string} <- params,
-         {:ok, last_seen_collated_hash} <- Chain.string_to_transaction_hash(last_seen_collated_hash_string) do
-      do_index(conn, after_hash: last_seen_collated_hash)
-    else
-      _ -> do_index(conn)
+    case params do
+      %{"block_number" => block_number, "index" => index} ->
+        do_index(conn, paging_options: %PagingOptions{key: {block_number, index}, page_size: 50})
+
+      _ ->
+        do_index(conn)
     end
   end
 
@@ -16,7 +17,7 @@ defmodule ExplorerWeb.TransactionController do
     redirect(conn, to: transaction_internal_transaction_path(conn, :index, locale, id))
   end
 
-  defp do_index(conn, options \\ []) when is_list(options) do
+  defp do_index(conn, options \\ [paging_options: %PagingOptions{page_size: 50}]) when is_list(options) do
     full_options =
       Keyword.merge(
         [
@@ -30,21 +31,21 @@ defmodule ExplorerWeb.TransactionController do
       )
 
     transactions = Chain.recent_collated_transactions(full_options)
-    last_seen_collated_hash = last_seen_collated_hash(transactions)
     transaction_count = Chain.transaction_count()
 
     render(
       conn,
       "index.html",
-      last_seen_collated_hash: last_seen_collated_hash,
+      earliest: earliest(transactions),
       transaction_count: transaction_count,
       transactions: transactions
     )
   end
 
-  defp last_seen_collated_hash([]), do: nil
+  defp earliest([]), do: nil
 
-  defp last_seen_collated_hash(transactions) do
-    List.last(transactions).hash
+  defp earliest(transactions) do
+    last = List.last(transactions)
+    %{block_number: last.block_number, index: last.index}
   end
 end

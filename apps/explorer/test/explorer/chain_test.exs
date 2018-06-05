@@ -861,4 +861,15 @@ defmodule Explorer.ChainTest do
       assert block_reward.reward == Chain.block_reward(block)
     end
   end
+
+  describe "recent_collated_transactions/1" do
+    test "with no collated transactions it returns an empty list" do
+      assert [] == Explorer.Chain.recent_collated_transactions()
+    end
+
+    test "it excludes pending transactions" do
+      insert(:transaction)
+      assert [] == Explorer.Chain.recent_collated_transactions()
+    end
+  end
 end
