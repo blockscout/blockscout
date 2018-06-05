@@ -50,7 +50,7 @@ defmodule Explorer.Chain do
   @typep inserted_after_option :: {:inserted_after, DateTime.t()}
   @typep necessity_by_association_option :: {:necessity_by_association, necessity_by_association}
   @typep pagination_option :: {:pagination, pagination}
-  @typep paging_options :: PagingOptions.t()
+  @typep paging_options :: {:paging_options, PagingOptions.t()}
   @typep params_option :: {:params, map()}
   @typep timeout_option :: {:timeout, timeout}
   @typep timestamps :: %{inserted_at: DateTime.t(), updated_at: DateTime.t()}

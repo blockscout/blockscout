@@ -53,7 +53,7 @@ defmodule Explorer.Chain.Transaction do
   @type standard_v :: 0..3
 
   @typedoc """
-    The index of the transaction in its block.
+  The index of the transaction in its block.
   """
   @type transaction_index :: non_neg_integer()
 

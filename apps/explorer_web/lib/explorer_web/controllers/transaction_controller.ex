@@ -3,27 +3,34 @@ defmodule ExplorerWeb.TransactionController do
 
   alias Explorer.{Chain, PagingOptions}
 
-  def index(conn, params) do
-    case params do
-      %{"block_number" => block_number, "index" => index} ->
-        do_index(conn, paging_options: %PagingOptions{key: {block_number, index}, page_size: 50})
+  @default_paging_options %PagingOptions{page_size: 50}
 
+  def index(conn, %{"block_number" => block_number_string, "index" => index_string}) do
+    with {block_number, ""} <- Integer.parse(block_number_string),
+         {index, ""} <- Integer.parse(index_string) do
+      do_index(conn, paging_options: %{@default_paging_options | key: {block_number, index}})
+    else
       _ ->
-        do_index(conn)
+        unprocessable_entity(conn)
     end
+  end
+
+  def index(conn, _params) do
+    do_index(conn)
   end
 
   def show(conn, %{"id" => id, "locale" => locale}) do
     redirect(conn, to: transaction_internal_transaction_path(conn, :index, locale, id))
   end
 
-  defp do_index(conn, options \\ [paging_options: %PagingOptions{page_size: 50}]) when is_list(options) do
+  defp do_index(conn, options \\ []) when is_list(options) do
     full_options =
       Keyword.merge(
         [
           necessity_by_association: %{
             block: :required
-          }
+          },
+          paging_options: @default_paging_options
         ],
         options
       )

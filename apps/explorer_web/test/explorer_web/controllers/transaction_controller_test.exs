@@ -51,7 +51,11 @@ defmodule ExplorerWeb.TransactionControllerTest do
         |> insert()
         |> with_block()
 
-      conn = get(conn, "/en/transactions", %{"block_number" => block_number, "index" => index})
+      conn =
+        get(conn, "/en/transactions", %{
+          "block_number" => Integer.to_string(block_number),
+          "index" => Integer.to_string(index)
+        })
 
       actual_hashes =
         conn.assigns.transactions
@@ -59,6 +63,16 @@ defmodule ExplorerWeb.TransactionControllerTest do
         |> Enum.reverse()
 
       assert second_page_hashes == actual_hashes
+    end
+
+    test "guards against bad block_number input", %{conn: conn} do
+      conn = get(conn, "/en/transactions", %{"block_number" => "foo", "index" => "2"})
+      assert html_response(conn, 422)
+    end
+
+    test "guards against bad index input", %{conn: conn} do
+      conn = get(conn, "/en/transactions", %{"block_number" => "2", "index" => "bar"})
+      assert html_response(conn, 422)
     end
 
     test "sends back the number of transactions", %{conn: conn} do
