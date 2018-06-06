@@ -95,6 +95,7 @@ defmodule Explorer.Factory do
 
     cumulative_gas_used = collated_params[:cumulative_gas_used] || Enum.random(21_000..100_000)
     gas_used = collated_params[:gas_used] || Enum.random(21_000..100_000)
+    internal_transactions_indexed_at = collated_params[:internal_transactions_indexed_at]
     status = collated_params[:status] || Enum.random(0..1)
 
     transaction
@@ -104,6 +105,7 @@ defmodule Explorer.Factory do
       cumulative_gas_used: cumulative_gas_used,
       gas_used: gas_used,
       index: next_transaction_index,
+      internal_transactions_indexed_at: internal_transactions_indexed_at,
       status: status
     })
     |> Repo.update!()

@@ -1109,7 +1109,34 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Returns a stream of all transactions with unfetched internal transactions.
+  Returns a stream of all collated transactions with unfetched internal transactions.
+
+  Only transactions that have been collated into a block are returned; pending transactions not in a block are filtered
+  out.
+
+      iex> pending = insert(:transaction)
+      iex> unfetched_collated =
+      ...>   :transaction |>
+      ...>   insert() |>
+      ...>   with_block()
+      iex> fetched_collated =
+      ...>   :transaction |>
+      ...>   insert() |>
+      ...>   with_block(internal_transactions_indexed_at: DateTime.utc_now())
+      iex> {:ok, hash_set} = Explorer.Chain.stream_transactions_with_unfetched_internal_transactions(
+      ...>   [:hash],
+      ...>   MapSet.new(),
+      ...>   fn %Explorer.Chain.Transaction{hash: hash}, acc ->
+      ...>     MapSet.put(acc, hash)
+      ...>   end
+      ...> )
+      iex> pending.hash in hash_set
+      false
+      iex> unfetched_collated.hash in hash_set
+      true
+      iex> fetched_collated.hash in hash_set
+      false
+
   """
   @spec stream_transactions_with_unfetched_internal_transactions(
           fields :: [
@@ -1137,7 +1164,13 @@ defmodule Explorer.Chain do
   def stream_transactions_with_unfetched_internal_transactions(fields, initial, reducer) when is_function(reducer, 2) do
     Repo.transaction(
       fn ->
-        query = from(t in Transaction, where: is_nil(t.internal_transactions_indexed_at), select: ^fields)
+        query =
+          from(
+            t in Transaction,
+            # exclude pending transactions
+            where: not is_nil(t.block_hash) and is_nil(t.internal_transactions_indexed_at),
+            select: ^fields
+          )
 
         query
         |> Repo.stream(timeout: :infinity)
