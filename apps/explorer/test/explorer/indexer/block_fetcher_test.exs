@@ -51,7 +51,7 @@ defmodule Explorer.Indexer.BlockFetcherTest do
       InternalTransactionFetcherCase.start_supervised!()
       start_supervised!(BlockFetcher)
 
-      wait(fn ->
+      wait_for_results(fn ->
         Repo.one!(from(block in Block, where: block.number == ^latest_block_number))
       end)
 
@@ -59,7 +59,7 @@ defmodule Explorer.Indexer.BlockFetcherTest do
 
       previous_batch_block_number = latest_block_number - default_blocks_batch_size
 
-      wait(fn ->
+      wait_for_results(fn ->
         Repo.one!(from(block in Block, where: block.number == ^previous_batch_block_number))
       end)
 
@@ -275,24 +275,5 @@ defmodule Explorer.Indexer.BlockFetcherTest do
       counts = Explorer.BufferedTask.debug_count(buffered_task)
       counts.buffer == 0 and counts.tasks == 0
     end)
-  end
-
-  defp wait(producer) do
-    producer.()
-  rescue
-    Ecto.NoResultsError ->
-      Process.sleep(100)
-      wait(producer)
-  catch
-    :exit,
-    {:timeout,
-     {GenServer, :call,
-      [
-        _,
-        {:checkout, _, _, _},
-        _
-      ]}} ->
-      Process.sleep(100)
-      wait(producer)
   end
 end

@@ -6,6 +6,7 @@ defmodule EthereumJSONRPC.Parity do
   import EthereumJSONRPC, only: [config: 1, json_rpc: 2, request: 1]
 
   alias EthereumJSONRPC.Parity.Traces
+  alias EthereumJSONRPC.{Transaction, Transactions}
 
   @doc """
   Fetches the `t:Explorer.Chain.InternalTransaction.changeset/2` params from the Parity trace URL.
@@ -43,6 +44,27 @@ defmodule EthereumJSONRPC.Parity do
         |> Traces.elixir_to_params()
 
       {:ok, internal_transactions_params}
+    end
+  end
+
+  @doc """
+  Fetches the pending transactions from the Parity node.
+
+  *NOTE*: The pending transactions are local to the node that is contacted and may not be consistent across nodes based
+  on the transactions that each node has seen and how each node prioritizes collating transactions into the next block.
+  """
+  @spec fetch_pending_transactions() :: {:ok, [Transaction.params()]} | {:error, reason :: term}
+  def fetch_pending_transactions do
+    with {:ok, transactions} <-
+           %{id: 1, method: "parity_pendingTransactions", params: []}
+           |> request()
+           |> json_rpc(config(:url)) do
+      transactions_params =
+        transactions
+        |> Transactions.to_elixir()
+        |> Transactions.elixir_to_params()
+
+      {:ok, transactions_params}
     end
   end
 

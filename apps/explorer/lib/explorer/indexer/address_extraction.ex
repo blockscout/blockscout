@@ -43,6 +43,11 @@ defmodule Explorer.Indexer.AddressExtraction do
       }
   """
 
+  @transactions_address_maps [
+    %{from: :from_address_hash, to: :hash},
+    %{from: :to_address_hash, to: :hash}
+  ]
+
   @entity_to_address_map %{
     blocks: [%{from: :miner_hash, to: :hash}],
     internal_transactions: [
@@ -53,10 +58,7 @@ defmodule Explorer.Indexer.AddressExtraction do
         %{from: :created_contract_code, to: :contract_code}
       ]
     ],
-    transactions: [
-      %{from: :from_address_hash, to: :hash},
-      %{from: :to_address_hash, to: :hash}
-    ],
+    transactions: @transactions_address_maps,
     logs: [%{from: :address_hash, to: :hash}]
   }
 
@@ -64,6 +66,22 @@ defmodule Explorer.Indexer.AddressExtraction do
   Parameters for `Explorer.Chain.Address.changeset/2`.
   """
   @type params :: %{required(:hash) => String.t(), optional(:contract_code) => String.t()}
+
+  @doc """
+  Extracts the `from_address_hash` and `to_address_hash` from all the `transactions_params`.
+  """
+  @spec transactions_params_to_addresses_params([
+          %{
+            required(:from_address_hash) => String.t(),
+            optional(:to_address_hash) => String.t()
+          }
+        ]) :: [params]
+  def transactions_params_to_addresses_params(transactions_params) do
+    transactions_params
+    |> extract_addresses_from_collection(@transactions_address_maps)
+    |> List.flatten()
+    |> merge_addresses()
+  end
 
   @doc """
   Extract addresses from block, internal transaction, transaction, and log parameters.
