@@ -60,6 +60,40 @@ defmodule Explorer.Indexer.AddressExtraction do
     logs: [%{from: :address_hash, to: :hash}]
   }
 
+  @typedoc """
+  Parameters for `Explorer.Chain.Address.changeset/2`.
+  """
+  @type params :: %{required(:hash) => String.t(), optional(:contract_code) => String.t()}
+
+  @doc """
+  Extract addresses from block, internal transaction, transaction, and log parameters.
+  """
+  @spec extract_addresses(%{
+          optional(:blocks) => [
+            %{
+              required(:miner_hash) => String.t()
+            }
+          ],
+          optional(:internal_transactions) => [
+            %{
+              required(:from_address_hash) => String.t(),
+              optional(:to_address_hash) => String.t(),
+              optional(:created_contract_address_hash) => String.t(),
+              optional(:created_contract_code) => String.t()
+            }
+          ],
+          optional(:transactions) => [
+            %{
+              required(:from_address_hash) => String.t(),
+              optional(:to_address_hash) => String.t()
+            }
+          ],
+          optional(:logs) => [
+            %{
+              required(:address_hash) => String.t()
+            }
+          ]
+        }) :: [params]
   def extract_addresses(fetched_data) do
     addresses =
       for {entity_key, entity_fields} <- @entity_to_address_map,
