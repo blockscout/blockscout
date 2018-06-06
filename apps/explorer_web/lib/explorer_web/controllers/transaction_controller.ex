@@ -28,7 +28,9 @@ defmodule ExplorerWeb.TransactionController do
       Keyword.merge(
         [
           necessity_by_association: %{
-            block: :required
+            block: :required,
+            from_address: :optional,
+            to_address: :optional
           },
           paging_options: @default_paging_options
         ],

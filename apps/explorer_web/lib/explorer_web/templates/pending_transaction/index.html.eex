@@ -50,10 +50,10 @@
               </td>
               <td><%= last_seen(transaction) %></td>
               <td>
-                <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address_hash: transaction.from_address_hash %>
+                <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
               </td>
               <td>
-                <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address_hash: transaction.to_address_hash %>
+                <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
               </td>
               <td>
               <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %>

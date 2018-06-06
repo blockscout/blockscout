@@ -38,10 +38,10 @@
                 <tr>
                   <td><%= internal_transaction.call_type %></td>
                   <td>
-                    <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address_hash: internal_transaction.from_address_hash %>
+                    <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: internal_transaction.from_address %>
                   </td>
                   <td>
-                    <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address_hash: internal_transaction.to_address_hash %>
+                    <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: internal_transaction.to_address %>
                   </td>
                   <td><%= ExplorerWeb.TransactionView.value(internal_transaction, include_label: false) %></td>
                   <td><%= ExplorerWeb.TransactionView.gas(internal_transaction) %></td>
