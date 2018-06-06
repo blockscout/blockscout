@@ -1,7 +1,8 @@
 defmodule ExplorerWeb.AddressView do
   use ExplorerWeb, :view
 
-  alias Explorer.Chain.{Address, Wei}
+  alias Explorer.Chain.{Address, Wei, SmartContract}
+
   alias Explorer.ExchangeRates.Token
   alias ExplorerWeb.ExchangeRates.USD
 
@@ -51,4 +52,7 @@ defmodule ExplorerWeb.AddressView do
     |> QRCode.to_png()
     |> Base.encode64()
   end
+
+  def smart_contract_verified?(%Address{smart_contract: %SmartContract{}}), do: true
+  def smart_contract_verified?(%Address{smart_contract: nil}), do: false
 end

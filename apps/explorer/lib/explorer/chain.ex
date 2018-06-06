@@ -491,6 +491,7 @@ defmodule Explorer.Chain do
     query =
       from(
         address in Address,
+        preload: [:smart_contract],
         where: address.hash == ^hash
       )
 
