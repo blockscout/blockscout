@@ -3,7 +3,7 @@ defmodule EthereumJSONRPC.Parity do
   Ethereum JSONRPC methods that are only supported by [Parity](https://wiki.parity.io/).
   """
 
-  import EthereumJSONRPC, only: [config: 1, json_rpc: 2]
+  import EthereumJSONRPC, only: [config: 1, json_rpc: 2, request: 1]
 
   alias EthereumJSONRPC.Parity.Traces
 
@@ -34,7 +34,7 @@ defmodule EthereumJSONRPC.Parity do
   def fetch_internal_transactions(transaction_hashes) when is_list(transaction_hashes) do
     with {:ok, responses} <-
            transaction_hashes
-           |> Enum.map(&transaction_hash_to_internal_transaction_json/1)
+           |> Enum.map(&transaction_hash_to_internal_transaction_request/1)
            |> json_rpc(config(:trace_url)) do
       internal_transactions_params =
         responses
@@ -58,12 +58,7 @@ defmodule EthereumJSONRPC.Parity do
     Enum.flat_map(responses, &response_to_trace/1)
   end
 
-  defp transaction_hash_to_internal_transaction_json(transaction_hash) do
-    %{
-      "id" => transaction_hash,
-      "jsonrpc" => "2.0",
-      "method" => "trace_replayTransaction",
-      "params" => [transaction_hash, ["trace"]]
-    }
+  defp transaction_hash_to_internal_transaction_request(transaction_hash) do
+    request(%{id: transaction_hash, method: "trace_replayTransaction", params: [transaction_hash, ["trace"]]})
   end
 end
