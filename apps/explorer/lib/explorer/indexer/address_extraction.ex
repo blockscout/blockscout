@@ -1,4 +1,4 @@
-defmodule Explorer.Indexer.BlockFetcher.AddressExtraction do
+defmodule Explorer.Indexer.AddressExtraction do
   @moduledoc """
   Extract Addresses from data fetched from the Blockchain and structured as Blocks, InternalTransactions,
   Transactions and Logs.

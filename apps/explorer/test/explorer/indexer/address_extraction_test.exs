@@ -1,7 +1,7 @@
-defmodule Explorer.Indexer.BlockFetcher.AddressExtractionTest do
+defmodule Explorer.Indexer.AddressExtractionTest do
   use Explorer.DataCase, async: true
 
-  alias Explorer.Indexer.BlockFetcher.AddressExtraction
+  alias Explorer.Indexer.AddressExtraction
 
   describe "extract_addresses/1" do
     test "returns all hashes entities data in a list" do

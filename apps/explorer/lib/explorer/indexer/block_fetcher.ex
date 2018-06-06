@@ -12,8 +12,7 @@ defmodule Explorer.Indexer.BlockFetcher do
   alias EthereumJSONRPC
   alias EthereumJSONRPC.Transactions
   alias Explorer.{BufferedTask, Chain, Indexer}
-  alias Explorer.Indexer.BlockFetcher.AddressExtraction
-  alias Explorer.Indexer.{AddressBalanceFetcher, InternalTransactionFetcher, Sequence}
+  alias Explorer.Indexer.{AddressBalanceFetcher, AddressExtraction, InternalTransactionFetcher, Sequence}
 
   # dialyzer thinks that Logger.debug functions always have no_local_return
   @dialyzer {:nowarn_function, import_range: 3}

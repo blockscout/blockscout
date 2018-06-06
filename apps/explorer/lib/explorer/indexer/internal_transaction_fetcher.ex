@@ -6,8 +6,7 @@ defmodule Explorer.Indexer.InternalTransactionFetcher do
   """
 
   alias Explorer.{BufferedTask, Chain, Indexer}
-  alias Explorer.Indexer.BlockFetcher.AddressExtraction
-  alias Explorer.Indexer.AddressBalanceFetcher
+  alias Explorer.Indexer.{AddressBalanceFetcher, AddressExtraction}
   alias Explorer.Chain.{Hash, Transaction}
 
   @behaviour BufferedTask
