@@ -56,7 +56,7 @@ defmodule Explorer.Chain do
   @typep timeout_option :: {:timeout, timeout}
   @typep timestamps :: %{inserted_at: DateTime.t(), updated_at: DateTime.t()}
   @typep timestamps_option :: {:timestamps, timestamps}
-  @typep addresses_option :: {:adddresses, [params_option | timeout_option]}
+  @typep addresses_option :: {:addresses, [params_option | timeout_option]}
   @typep blocks_option :: {:blocks, [params_option | timeout_option]}
   @typep internal_transactions_option :: {:internal_transactions, [params_option | timeout_option]}
   @typep logs_option :: {:logs, [params_option | timeout_option]}
