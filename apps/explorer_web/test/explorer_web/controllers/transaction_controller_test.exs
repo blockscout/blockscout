@@ -1,10 +1,11 @@
 defmodule ExplorerWeb.TransactionControllerTest do
   use ExplorerWeb.ConnCase
+  alias Explorer.Chain.Transaction
 
   import ExplorerWeb.Router.Helpers, only: [transaction_path: 4, transaction_internal_transaction_path: 4]
 
   describe "GET index/2" do
-    test "returns a transaction with a receipt", %{conn: conn} do
+    test "returns a collated transactions", %{conn: conn} do
       transaction =
         :transaction
         |> insert()
@@ -22,43 +23,61 @@ defmodule ExplorerWeb.TransactionControllerTest do
 
       conn = get(conn, "/en/transactions")
 
-      assert length(conn.assigns.transactions) == 1
+      assert conn.assigns.transaction_count == 1
     end
 
-    test "returns no pending transactions", %{conn: conn} do
+    test "excludes pending transactions", %{conn: conn} do
+      %Transaction{hash: hash} =
+        :transaction
+        |> insert()
+        |> with_block()
+
       insert(:transaction)
 
       conn = get(conn, "/en/transactions")
 
-      assert conn.assigns.transactions == []
+      assert [%Transaction{hash: ^hash}] = conn.assigns.transactions
     end
 
-    test "only returns transactions that have a receipt", %{conn: conn} do
-      insert(:transaction)
+    test "returns next page of results based on last seen transaction", %{conn: conn} do
+      second_page_hashes =
+        50
+        |> insert_list(:transaction)
+        |> with_block()
+        |> Enum.map(& &1.hash)
 
-      conn = get(conn, "/en/transactions")
-
-      assert length(conn.assigns.transactions) == 0
-    end
-
-    test "paginates transactions using the last seen transaction", %{conn: conn} do
-      transaction =
+      %Transaction{block_number: block_number, index: index} =
         :transaction
         |> insert()
         |> with_block()
 
       conn =
-        get(
-          conn,
-          "/en/transactions",
-          last_seen_collated_hash: to_string(transaction.hash)
-        )
+        get(conn, "/en/transactions", %{
+          "block_number" => Integer.to_string(block_number),
+          "index" => Integer.to_string(index)
+        })
 
-      assert conn.assigns.transactions == []
+      actual_hashes =
+        conn.assigns.transactions
+        |> Enum.map(& &1.hash)
+        |> Enum.reverse()
+
+      assert second_page_hashes == actual_hashes
+    end
+
+    test "guards against bad block_number input", %{conn: conn} do
+      conn = get(conn, "/en/transactions", %{"block_number" => "foo", "index" => "2"})
+      assert html_response(conn, 422)
+    end
+
+    test "guards against bad index input", %{conn: conn} do
+      conn = get(conn, "/en/transactions", %{"block_number" => "2", "index" => "bar"})
+      assert html_response(conn, 422)
     end
 
     test "sends back the number of transactions", %{conn: conn} do
       insert(:transaction)
+      |> with_block()
 
       conn = get(conn, "/en/transactions")
 

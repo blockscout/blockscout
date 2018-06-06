@@ -155,7 +155,7 @@ msgstr ""
 
 #: lib/explorer_web/templates/address/overview.html.eex:11
 #: lib/explorer_web/templates/transaction_log/index.html.eex:29
-#: lib/explorer_web/views/address_view.ex:17
+#: lib/explorer_web/views/address_view.ex:18
 msgid "Address"
 msgstr ""
 
@@ -302,7 +302,6 @@ msgid "TPM"
 msgstr ""
 
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:69
-#: lib/explorer_web/templates/transaction/index.html.eex:78
 msgid "Next Page"
 msgstr ""
 
@@ -497,7 +496,7 @@ msgstr ""
 msgid "Contract"
 msgstr ""
 
-#: lib/explorer_web/views/address_view.ex:15
+#: lib/explorer_web/views/address_view.ex:16
 msgid "Contract Address"
 msgstr ""
 
@@ -507,4 +506,8 @@ msgstr ""
 
 #: lib/explorer_web/templates/block_transaction/index.html.eex:181
 msgid "There are no Transactions"
+msgstr ""
+
+#: lib/explorer_web/templates/transaction/index.html.eex:78
+msgid "Older"
 msgstr ""

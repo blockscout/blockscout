@@ -21,7 +21,7 @@
           <td><%= block.transactions |> Enum.count %></td>
           <td><%= block.gas_used |> Cldr.Number.to_string! %></td>
           <td>
-            <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: block.miner %>
+            <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address_hash: block.miner_hash %>
           </td>
         </tr>
         <% end %>

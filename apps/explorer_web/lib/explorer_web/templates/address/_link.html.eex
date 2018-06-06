@@ -1,14 +1,14 @@
 <div class="address-link">
-<%= if @address do %>
-  <%= link to: address_path(@conn, :show, @conn.assigns.locale, @address),
+<%= if @address_hash do %>
+  <%= link to: address_path(@conn, :show, @conn.assigns.locale, @address_hash),
       "data-toggle": "tooltip",
       "data-placement": "top",
       class: "address-link__font",
-      title: @address do %>
+      title: @address_hash do %>
         <i class="address-link__type fas fa-address-card"></i>
-    <%= @address |> hash |> String.slice(0..3) %><i class="fas fa-ellipsis-v address-link__seperator"></i><%= @address |> hash |> String.slice(-4..-1) %>
+    <%= @address_hash |> hash() |> String.slice(0..3) %><i class="fas fa-ellipsis-v address-link__seperator"></i><%= @address_hash |> hash() |> String.slice(-4..-1) %>
 <% end %>
-<button class="address-link__copy-button" data-clipboard-text="<%= @address %>" aria-label="copy address">
+<button class="address-link__copy-button" data-clipboard-text="<%= @address_hash %>" aria-label="copy address">
   <i class="fa fa-copy"></i>
 </button>
 <% end %>

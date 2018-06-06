@@ -5,6 +5,10 @@ defmodule ExplorerWeb.ErrorView do
     "Page not found"
   end
 
+  def render("422.html", _assigns) do
+    "Unprocessable entity"
+  end
+
   def render("500.html", _assigns) do
     "Internal server error"
   end

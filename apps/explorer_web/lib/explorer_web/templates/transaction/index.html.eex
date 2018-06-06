@@ -50,19 +50,19 @@
               </td>
               <td>
                 <%= link(
-                      transaction.block,
+                      transaction.block_number,
                       class: "transactions__link",
                       to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
                     ) %>
               </td>
               <td>
-                <%= transaction.block.timestamp |> Timex.from_now %>
+                <%= transaction.block.timestamp %>
               </td>
               <td>
-                <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
+                <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address_hash: transaction.from_address_hash %>
               </td>
               <td>
-                <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
+                <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address_hash: transaction.to_address_hash %>
               </td>
               <td>
                 <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %>
@@ -73,16 +73,16 @@
       </table>
     </div>
   </div>
-  <%= if @last_seen_collated_hash do %>
+  <%= if @earliest do %>
     <%= link(
-          gettext("Next Page"),
-          class: "button button--secondary button--sm u-float-right mt-3",
-          to: transaction_path(
-            @conn,
-            :index,
-            @conn.assigns.locale,
-            %{"last_seen_collated_hash" => to_string(@last_seen_collated_hash)}
-          )
-        ) %>
+      gettext("Older"),
+      class: "button button--secondary button--sm u-float-right mt-3",
+      to: transaction_path(
+        @conn,
+        :index,
+        @conn.assigns.locale,
+        %{"block_number" => @earliest.block_number, "index" => @earliest.index}
+      )
+    ) %>
   <% end %>
 </section>
