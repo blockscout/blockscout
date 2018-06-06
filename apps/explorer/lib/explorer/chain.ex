@@ -6,6 +6,7 @@ defmodule Explorer.Chain do
   import Ecto.Query,
     only: [from: 2, join: 4, limit: 2, or_where: 3, order_by: 2, order_by: 3, preload: 2, where: 2, where: 3]
 
+  alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi}
 
   alias Explorer.Chain.{
@@ -1495,41 +1496,30 @@ defmodule Explorer.Chain do
   @doc """
   Count of `t:Explorer.Chain.Transaction.t/0`.
 
-  With no options or an explicit `pending: nil`, both collated and pending transactions will be counted.
+  With :all both collated and pending transactions will be counted using estimates from table statistics.
 
       iex> insert(:transaction)
       iex> :transaction |> insert() |> with_block()
-      iex> Explorer.Chain.transaction_count()
-      2
-      iex> Explorer.Chain.transaction_count(pending: nil)
-      2
+      iex> Explorer.Chain.transaction_count(:pending)
+      1
 
-  To count only collated transactions, pass `pending: false`.
+  ## Arguments
 
-      iex> 2 |> insert_list(:transaction)
-      iex> 3 |> insert_list(:transaction) |> with_block()
-      iex> Explorer.Chain.transaction_count(pending: false)
-      3
-
-  To count only pending transactions, pass `pending: true`.
-
-      iex> 2 |> insert_list(:transaction)
-      iex> 3 |> insert_list(:transaction) |> with_block()
-      iex> Explorer.Chain.transaction_count(pending: true)
-      2
-
-  ## Options
-
-    * `:pending`
-      * `nil` - count all transactions
-      * `true` - only count pending transactions
-      * `false` - only count collated transactions
+    * `:all` - returns an estimated count of all collated and pending transactions using table statistics
+    * `:pending` - returns a count of all pending transactions
 
   """
-  @spec transaction_count([{:pending, boolean()}]) :: non_neg_integer()
-  def transaction_count(options \\ []) when is_list(options) do
+  @spec transaction_count(:all | :pending) :: non_neg_integer()
+  def transaction_count(:all) do
+    %Postgrex.Result{rows: [[rows]]} =
+      SQL.query!(Repo, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='transactions'")
+
+    rows
+  end
+
+  def transaction_count(:pending) do
     Transaction
-    |> where_pending(options)
+    |> where([transaction], is_nil(transaction.block_hash))
     |> Repo.aggregate(:count, :hash)
   end
 
@@ -2041,21 +2031,6 @@ defmodule Explorer.Chain do
     Enum.reduce(address_fields, query, fn field, query ->
       or_where(query, [t], field(t, ^field) == ^address_hash)
     end)
-  end
-
-  defp where_pending(query, options) when is_list(options) do
-    pending = Keyword.get(options, :pending)
-
-    case pending do
-      false ->
-        from(transaction in query, where: not is_nil(transaction.block_hash))
-
-      true ->
-        from(transaction in query, where: is_nil(transaction.block_hash))
-
-      nil ->
-        query
-    end
   end
 
   defp where_transaction_has_multiple_internal_transactions(query) do

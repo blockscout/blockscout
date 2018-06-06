@@ -36,7 +36,7 @@ defmodule ExplorerWeb.TransactionController do
       )
 
     transactions = Chain.recent_collated_transactions(full_options)
-    transaction_count = Chain.transaction_count()
+    transaction_count = Chain.transaction_count(:all)
 
     render(
       conn,

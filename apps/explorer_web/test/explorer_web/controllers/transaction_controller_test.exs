@@ -23,7 +23,7 @@ defmodule ExplorerWeb.TransactionControllerTest do
 
       conn = get(conn, "/en/transactions")
 
-      assert conn.assigns.transaction_count == 1
+      assert is_integer(conn.assigns.transaction_count)
     end
 
     test "excludes pending transactions", %{conn: conn} do
