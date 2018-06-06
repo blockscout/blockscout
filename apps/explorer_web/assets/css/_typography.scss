@@ -41,12 +41,12 @@ p {
 
 a {
   text-decoration: none;
-  color: $gray-800;
-  font-size: 12px;
+  color: $primary;
+  font-size: 13px;
 
   &:hover,
   &:focus {
-    text-decoration: none;
+    text-decoration: underline;
   }
 }
 .monospace {
