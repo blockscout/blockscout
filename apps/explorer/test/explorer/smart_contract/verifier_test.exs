@@ -64,8 +64,7 @@ defmodule Explorer.SmartContract.VerifierTest do
       address_hash = "0x0f95fa9bc0383e699325f2658d04e8d96d87b90c"
 
       params = %{
-        "contract_source_code" =>
-          "pragma solidity ^0.4.24; contract SimpleStorage { ",
+        "contract_source_code" => "pragma solidity ^0.4.24; contract SimpleStorage { ",
         "compiler" => "0.4.24",
         "name" => "SimpleStorage",
         "optimization" => false

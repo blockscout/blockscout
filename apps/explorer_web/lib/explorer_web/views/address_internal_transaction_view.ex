@@ -1,7 +1,7 @@
 defmodule ExplorerWeb.AddressInternalTransactionView do
   use ExplorerWeb, :view
 
-  import ExplorerWeb.AddressView, only: [contract?: 1]
+  import ExplorerWeb.AddressView, only: [contract?: 1, smart_contract_verified?: 1]
 
   def format_current_filter(filter) do
     case filter do

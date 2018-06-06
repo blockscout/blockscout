@@ -24,10 +24,14 @@
           <%= if contract?(@address) do %>
             <li class="nav-item">
               <%= link(
-                    gettext("Code"),
-                    class: "nav-link",
-                    to: address_contract_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
-                  ) %>
+                  to: address_contract_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"]),
+                  class: "nav-link") do %>
+                <%= gettext("Code") %>
+
+                <%= if smart_contract_verified?(@address) do %>
+                  <i class="far fa-check-circle"></i>
+                <% end %>
+              <% end %>
             </li>
           <% end %>
         </ul>
