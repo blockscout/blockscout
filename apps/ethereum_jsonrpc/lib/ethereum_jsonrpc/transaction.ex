@@ -132,6 +132,57 @@ defmodule EthereumJSONRPC.Transaction do
 
   @doc """
   Decodes the stringly typed numerical fields to `t:non_neg_integer/0`.
+
+  Pending transactions have a `nil` `"blockHash"`, `"blockNumber"`, and `"transactionIndex"` because those fields are
+  related to the block the transaction is collated in.
+
+    iex> EthereumJSONRPC.Transaction.to_elixir(
+    ...>   %{
+    ...>     "blockHash" => nil,
+    ...>     "blockNumber" => nil,
+    ...>     "chainId" => "0x4d",
+    ...>     "condition" => nil,
+    ...>     "creates" => nil,
+    ...>     "from" => "0x40aa34fb35ef0804a41c2b4be7d3e3d65c7f6d5c",
+    ...>     "gas" => "0xcf08",
+    ...>     "gasPrice" => "0x0",
+    ...>     "hash" => "0x6b80a90c958fb5791a070929379ed6eb7a33ecdf9f9cafcada2f6803b3f25ec3",
+    ...>     "input" => "0x",
+    ...>     "nonce" => "0x77",
+    ...>     "publicKey" => "0xd0bf6fb4ce4ada1ddfb754b98cd89dc61c3ff143a260cf1712517af2af602b699aab554a2532051e5ba205eb41068c3423f23acde87313211750a8cbf862170e",
+    ...>     "r" => "0x3cfc2a34c2e4e09913934a5ade1055206e39b1e34fabcfcc820f6f70c740944c",
+    ...>     "raw" => "0xf868778082cf08948e854802d695269a6f1f3fcabb2111d2f5a0e6f9880de0b6b3a76400008081bea03cfc2a34c2e4e09913934a5ade1055206e39b1e34fabcfcc820f6f70c740944ca014cf6f15b5855f9b68eb58c95f76603a54b2ca612f921bb8d424de11bf085390",
+    ...>     "s" => "0x14cf6f15b5855f9b68eb58c95f76603a54b2ca612f921bb8d424de11bf085390",
+    ...>     "standardV" => "0x1",
+    ...>     "to" => "0x8e854802d695269a6f1f3fcabb2111d2f5a0e6f9",
+    ...>     "transactionIndex" => nil,
+    ...>     "v" => "0xbe",
+    ...>     "value" => "0xde0b6b3a7640000"
+    ...>   }
+    ...> )
+    %{
+      "blockHash" => nil,
+      "blockNumber" => nil,
+      "chainId" => 77,
+      "condition" => nil,
+      "creates" => nil,
+      "from" => "0x40aa34fb35ef0804a41c2b4be7d3e3d65c7f6d5c",
+      "gas" => 53000,
+      "gasPrice" => 0,
+      "hash" => "0x6b80a90c958fb5791a070929379ed6eb7a33ecdf9f9cafcada2f6803b3f25ec3",
+      "input" => "0x",
+      "nonce" => 119,
+      "publicKey" => "0xd0bf6fb4ce4ada1ddfb754b98cd89dc61c3ff143a260cf1712517af2af602b699aab554a2532051e5ba205eb41068c3423f23acde87313211750a8cbf862170e",
+      "r" => 27584307671108667307432650922507113611469948945973084068788107666229588694092,
+      "raw" => "0xf868778082cf08948e854802d695269a6f1f3fcabb2111d2f5a0e6f9880de0b6b3a76400008081bea03cfc2a34c2e4e09913934a5ade1055206e39b1e34fabcfcc820f6f70c740944ca014cf6f15b5855f9b68eb58c95f76603a54b2ca612f921bb8d424de11bf085390",
+      "s" => 9412760993194218539611435541875082818858943210434840876051960418568625476496,
+      "standardV" => 1,
+      "to" => "0x8e854802d695269a6f1f3fcabb2111d2f5a0e6f9",
+      "transactionIndex" => nil,
+      "v" => 190,
+      "value" => 1000000000000000000
+    }
+
   """
   def to_elixir(transaction) when is_map(transaction) do
     Enum.into(transaction, %{}, &entry_to_elixir/1)
@@ -144,9 +195,19 @@ defmodule EthereumJSONRPC.Transaction do
        when key in ~w(blockHash condition creates from hash input jsonrpc publicKey raw to),
        do: {key, value}
 
-  defp entry_to_elixir({key, quantity})
-       when key in ~w(blockNumber gas gasPrice nonce r s standardV transactionIndex v value) do
+  defp entry_to_elixir({key, quantity}) when key in ~w(gas gasPrice nonce r s standardV v value) and quantity != nil do
     {key, quantity_to_integer(quantity)}
+  end
+
+  # quantity or nil for pending
+  defp entry_to_elixir({key, quantity_or_nil}) when key in ~w(blockNumber transactionIndex) do
+    elixir =
+      case quantity_or_nil do
+        nil -> nil
+        quantity -> quantity_to_integer(quantity)
+      end
+
+    {key, elixir}
   end
 
   # chainId is *sometimes* nil
