@@ -1947,11 +1947,13 @@ defmodule Explorer.Chain do
        when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
     case ecto_schema_module_to_changes_list do
       %{Address => addresses_changes} ->
+        timestamps = Keyword.fetch!(options, :timestamps)
+
         Multi.run(multi, :addresses, fn _ ->
           insert_addresses(
             addresses_changes,
             timeout: options[:addresses][:timeout] || @insert_addresses_timeout,
-            timestamps: Keyword.fetch!(options, :timestamps)
+            timestamps: timestamps
           )
         end)
 
@@ -1964,11 +1966,13 @@ defmodule Explorer.Chain do
        when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
     case ecto_schema_module_to_changes_list do
       %{Block => blocks_changes} ->
+        timestamps = Keyword.fetch!(options, :timestamps)
+
         Multi.run(multi, :blocks, fn _ ->
           insert_blocks(
             blocks_changes,
             timeout: options[:blocks][:timeout] || @insert_blocks_timeout,
-            timestamps: Keyword.fetch!(options, :timestamps)
+            timestamps: timestamps
           )
         end)
 
@@ -1981,11 +1985,13 @@ defmodule Explorer.Chain do
        when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
     case ecto_schema_module_to_changes_list do
       %{Transaction => transactions_changes} ->
+        timestamps = Keyword.fetch!(options, :timestamps)
+
         Multi.run(multi, :transactions, fn _ ->
           insert_transactions(
             transactions_changes,
             timeout: options[:transations][:timeout] || @insert_transactions_timeout,
-            timestamps: Keyword.fetch!(options, :timestamps)
+            timestamps: timestamps
           )
         end)
 
@@ -1998,11 +2004,13 @@ defmodule Explorer.Chain do
        when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
     case ecto_schema_module_to_changes_list do
       %{InternalTransaction => internal_transactions_changes} ->
+        timestamps = Keyword.fetch!(options, :timestamps)
+
         Multi.run(multi, :internal_transactions, fn _ ->
           insert_internal_transactions(
             internal_transactions_changes,
             timeout: options[:internal_transactions][:timeout] || @insert_internal_transactions_timeout,
-            timestamps: Keyword.fetch!(options, :timestamps)
+            timestamps: timestamps
           )
         end)
 
@@ -2015,11 +2023,13 @@ defmodule Explorer.Chain do
        when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
     case ecto_schema_module_to_changes_list do
       %{Log => logs_changes} ->
+        timestamps = Keyword.fetch!(options, :timestamps)
+
         Multi.run(multi, :logs, fn _ ->
           insert_logs(
             logs_changes,
             timeout: options[:logs][:timeout] || @insert_logs_timeout,
-            timestamps: Keyword.fetch!(options, :timestamps)
+            timestamps: timestamps
           )
         end)
 
