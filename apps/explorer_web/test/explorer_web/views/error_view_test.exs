@@ -8,6 +8,10 @@ defmodule ExplorerWeb.ErrorViewTest do
     assert render_to_string(ExplorerWeb.ErrorView, "404.html", []) == "Page not found"
   end
 
+  test "renders 422.html" do
+    assert render_to_string(ExplorerWeb.ErrorView, "422.html", []) == "Unprocessable entity"
+  end
+
   test "render 500.html" do
     assert render_to_string(ExplorerWeb.ErrorView, "500.html", []) == "Internal server error"
   end

@@ -1855,8 +1855,6 @@ defmodule Explorer.Chain do
     end)
   end
 
-  defp page_transaction(query, nil), do: query
-
   defp page_transaction(query, %PagingOptions{key: nil}), do: query
 
   defp page_transaction(query, %PagingOptions{key: {block_number, index}}) do

@@ -6,7 +6,7 @@ defmodule ExplorerWeb.ErrorView do
   end
 
   def render("422.html", _assigns) do
-    "Unprocessible entity"
+    "Unprocessable entity"
   end
 
   def render("500.html", _assigns) do
