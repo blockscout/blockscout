@@ -4,7 +4,7 @@ defmodule Explorer.Indexer do
   """
   require Logger
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, Indexer}
 
   @doc """
   The maximum `t:Explorer.Chain.Block.t/0` `number` that was indexed
@@ -77,6 +77,16 @@ defmodule Explorer.Indexer do
   """
   def disable_debug_logs do
     Application.put_env(:explorer, :indexer, Keyword.put(config(), :debug_logs, false))
+  end
+
+  @doc """
+  Starts a child task of `Indexer.TaskSupervisor` and monitors it, instead of linking to it.
+  """
+  @spec start_monitor((() -> term())) :: {:ok, pid, reference}
+  def start_monitor(task_function) when is_function(task_function, 0) do
+    {:ok, pid} = Task.Supervisor.start_child(Indexer.TaskSupervisor, task_function)
+    ref = Process.monitor(pid)
+    {:ok, pid, ref}
   end
 
   defp debug_logs_enabled? do
