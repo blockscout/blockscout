@@ -279,7 +279,7 @@ defmodule Explorer.Indexer.BlockFetcher do
         blocks: [params: blocks],
         logs: [params: logs],
         receipts: [params: receipts],
-        transactions: [params: transactions_with_receipts]
+        transactions: [on_conflict: :replace_all, params: transactions_with_receipts]
       )
     else
       {step, {:error, reason}} ->
