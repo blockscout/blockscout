@@ -5,3 +5,7 @@
     word-break: break-all;
   }
 }
+
+.pre-scrollable-shorty {
+  max-height: $pre-scrollable-max-height / 7;
+}
