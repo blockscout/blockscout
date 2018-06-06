@@ -52,7 +52,7 @@ defmodule Explorer.Chain do
   @typep on_conflict_option :: {:on_conflict, :nothing | :replace_all}
   @typep pagination_option :: {:pagination, pagination}
   @typep paging_options :: {:paging_options, PagingOptions.t()}
-  @typep params_option :: {:params, map()}
+  @typep params_option :: {:params, [map()]}
   @typep timeout_option :: {:timeout, timeout}
   @typep timestamps :: %{inserted_at: DateTime.t(), updated_at: DateTime.t()}
   @typep timestamps_option :: {:timestamps, timestamps}
