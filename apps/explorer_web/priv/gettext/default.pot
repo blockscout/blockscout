@@ -155,7 +155,7 @@ msgstr ""
 
 #: lib/explorer_web/templates/address/overview.html.eex:11
 #: lib/explorer_web/templates/transaction_log/index.html.eex:29
-#: lib/explorer_web/views/address_view.ex:18
+#: lib/explorer_web/views/address_view.ex:17
 msgid "Address"
 msgstr ""
 
@@ -496,7 +496,7 @@ msgstr ""
 msgid "Contract"
 msgstr ""
 
-#: lib/explorer_web/views/address_view.ex:16
+#: lib/explorer_web/views/address_view.ex:15
 msgid "Contract Address"
 msgstr ""
 
