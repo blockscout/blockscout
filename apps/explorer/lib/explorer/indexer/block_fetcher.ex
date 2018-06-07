@@ -12,8 +12,7 @@ defmodule Explorer.Indexer.BlockFetcher do
   alias EthereumJSONRPC
   alias EthereumJSONRPC.Transactions
   alias Explorer.{BufferedTask, Chain, Indexer}
-  alias Explorer.Indexer.BlockFetcher.AddressExtraction
-  alias Explorer.Indexer.{AddressBalanceFetcher, InternalTransactionFetcher, Sequence}
+  alias Explorer.Indexer.{AddressBalanceFetcher, AddressExtraction, InternalTransactionFetcher, Sequence}
 
   # dialyzer thinks that Logger.debug functions always have no_local_return
   @dialyzer {:nowarn_function, import_range: 3}
@@ -88,13 +87,13 @@ defmodule Explorer.Indexer.BlockFetcher do
 
   @impl GenServer
   def handle_info(:catchup_index, %{} = state) do
-    {:ok, genesis_task, _ref} = monitor_task(fn -> genesis_task(state) end)
+    {:ok, genesis_task, _ref} = Indexer.start_monitor(fn -> genesis_task(state) end)
 
     {:noreply, %{state | genesis_task: genesis_task}}
   end
 
   def handle_info(:realtime_index, %{} = state) do
-    {:ok, realtime_task, _ref} = monitor_task(fn -> realtime_task(state) end)
+    {:ok, realtime_task, _ref} = Indexer.start_monitor(fn -> realtime_task(state) end)
 
     {:noreply, %{state | realtime_task: realtime_task}}
   end
@@ -280,7 +279,7 @@ defmodule Explorer.Indexer.BlockFetcher do
         blocks: [params: blocks],
         logs: [params: logs],
         receipts: [params: receipts],
-        transactions: [params: transactions_with_receipts]
+        transactions: [on_conflict: :replace_all, params: transactions_with_receipts]
       )
     else
       {step, {:error, reason}} ->
@@ -315,11 +314,5 @@ defmodule Explorer.Indexer.BlockFetcher do
   defp schedule_next_realtime_fetch(state) do
     Process.send_after(self(), :realtime_index, state.realtime_interval)
     state
-  end
-
-  defp monitor_task(task_func) do
-    {:ok, pid} = Task.Supervisor.start_child(Indexer.TaskSupervisor, task_func)
-    ref = Process.monitor(pid)
-    {:ok, pid, ref}
   end
 end

@@ -207,6 +207,19 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
+  A request payload for a JSONRPC.
+  """
+  @spec request(%{id: term, method: String.t(), params: list()}) :: %{String.t() => term}
+  def request(%{id: id, method: method, params: params}) do
+    %{
+      "id" => id,
+      "jsonrpc" => "2.0",
+      "method" => method,
+      "params" => params
+    }
+  end
+
+  @doc """
   Converts `t:timestamp/0` to `t:DateTime.t/0`
   """
   def timestamp_to_datetime(timestamp) do
@@ -252,15 +265,6 @@ defmodule EthereumJSONRPC do
   defp get_block_by_tag_request(tag) do
     # eth_getBlockByNumber accepts either a number OR a tag
     get_block_by_number_request(%{id: tag, tag: tag, transactions: :hashes})
-  end
-
-  defp request(%{id: id, method: method, params: params}) do
-    %{
-      "id" => id,
-      "jsonrpc" => "2.0",
-      "method" => method,
-      "params" => params
-    }
   end
 
   defp get_block_by_number_params(options) do

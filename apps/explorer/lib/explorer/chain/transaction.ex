@@ -7,8 +7,8 @@ defmodule Explorer.Chain.Transaction do
   alias Explorer.Chain.{Address, Block, Data, Gas, Hash, InternalTransaction, Log, Wei}
   alias Explorer.Chain.Transaction.Status
 
-  @optional_attrs ~w(block_hash block_number cumulative_gas_used from_address_hash gas_used index status
-                     to_address_hash)a
+  @optional_attrs ~w(block_hash block_number cumulative_gas_used from_address_hash gas_used index
+                     internal_transactions_indexed_at status to_address_hash)a
   @required_attrs ~w(gas gas_price hash input nonce public_key r s standard_v v value)a
 
   @typedoc """

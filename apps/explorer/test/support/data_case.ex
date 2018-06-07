@@ -39,4 +39,23 @@ defmodule Explorer.DataCase do
 
     :ok
   end
+
+  def wait_for_results(producer) do
+    producer.()
+  rescue
+    Ecto.NoResultsError ->
+      Process.sleep(100)
+      wait_for_results(producer)
+  catch
+    :exit,
+    {:timeout,
+     {GenServer, :call,
+      [
+        _,
+        {:checkout, _, _, _},
+        _
+      ]}} ->
+      Process.sleep(100)
+      wait_for_results(producer)
+  end
 end

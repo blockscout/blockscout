@@ -5,7 +5,7 @@ defmodule Explorer.Indexer.Supervisor do
 
   use Supervisor
 
-  alias Explorer.Indexer.{AddressBalanceFetcher, BlockFetcher, InternalTransactionFetcher}
+  alias Explorer.Indexer.{AddressBalanceFetcher, BlockFetcher, InternalTransactionFetcher, PendingTransactionFetcher}
 
   def start_link(opts) do
     Supervisor.start_link(__MODULE__, opts, name: __MODULE__)
@@ -16,6 +16,7 @@ defmodule Explorer.Indexer.Supervisor do
     children = [
       {Task.Supervisor, name: Explorer.Indexer.TaskSupervisor},
       {AddressBalanceFetcher, name: AddressBalanceFetcher},
+      {PendingTransactionFetcher, name: PendingTransactionFetcher},
       {InternalTransactionFetcher, name: InternalTransactionFetcher},
       {BlockFetcher, []}
     ]

@@ -49,18 +49,19 @@ defmodule Explorer.Chain do
   @typep direction_option :: {:direction, direction}
   @typep inserted_after_option :: {:inserted_after, DateTime.t()}
   @typep necessity_by_association_option :: {:necessity_by_association, necessity_by_association}
+  @typep on_conflict_option :: {:on_conflict, :nothing | :replace_all}
   @typep pagination_option :: {:pagination, pagination}
   @typep paging_options :: {:paging_options, PagingOptions.t()}
-  @typep params_option :: {:params, map()}
+  @typep params_option :: {:params, [map()]}
   @typep timeout_option :: {:timeout, timeout}
   @typep timestamps :: %{inserted_at: DateTime.t(), updated_at: DateTime.t()}
   @typep timestamps_option :: {:timestamps, timestamps}
-  @typep addresses_option :: {:adddresses, [params_option | timeout_option]}
+  @typep addresses_option :: {:addresses, [params_option | timeout_option]}
   @typep blocks_option :: {:blocks, [params_option | timeout_option]}
   @typep internal_transactions_option :: {:internal_transactions, [params_option | timeout_option]}
   @typep logs_option :: {:logs, [params_option | timeout_option]}
   @typep receipts_option :: {:receipts, [params_option | timeout_option]}
-  @typep transactions_option :: {:transactions, [params_option | timeout_option]}
+  @typep transactions_option :: {:transactions, [on_conflict_option | params_option | timeout_option]}
 
   @doc """
   `t:Explorer.Chain.InternalTransaction/0`s from `address`.
@@ -650,6 +651,7 @@ defmodule Explorer.Chain do
       ...>     ],
       ...>   ],
       ...>   transactions: [
+      ...>     on_conflict: :replace_all,
       ...>     params: [
       ...>       %{
       ...>         block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
@@ -874,6 +876,13 @@ defmodule Explorer.Chain do
     * `:timeout` - the timeout for the whole `c:Ecto.Repo.transaction/0` call.  Defaults to `#{@transaction_timeout}`
       milliseconds.
     * `:transactions`
+      * `:on_conflict` - Whether to do `:nothing` or `:replace_all` columns when there is a pre-existing transaction
+        with the same hash.
+
+        *NOTE*: Because the repository transaction for a pending `Explorer.Chain.Transaction`s could `COMMIT` after the
+        repository transaction for that same transaction being collated into a block, writers, it is recomended to use
+        `:nothing` for pending transactions and `:replace_all` for collated transactions, so that collated transactions
+        win.
       * `:params` - `list` of params for `Explorer.Chain.Transaction.changeset/2`.
       * `:timeout` - the timeout for inserting all transactions found in the params lists across all
         types. Defaults to `#{@insert_transactions_timeout}` milliseconds.
@@ -1109,7 +1118,34 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Returns a stream of all transactions with unfetched internal transactions.
+  Returns a stream of all collated transactions with unfetched internal transactions.
+
+  Only transactions that have been collated into a block are returned; pending transactions not in a block are filtered
+  out.
+
+      iex> pending = insert(:transaction)
+      iex> unfetched_collated =
+      ...>   :transaction |>
+      ...>   insert() |>
+      ...>   with_block()
+      iex> fetched_collated =
+      ...>   :transaction |>
+      ...>   insert() |>
+      ...>   with_block(internal_transactions_indexed_at: DateTime.utc_now())
+      iex> {:ok, hash_set} = Explorer.Chain.stream_transactions_with_unfetched_internal_transactions(
+      ...>   [:hash],
+      ...>   MapSet.new(),
+      ...>   fn %Explorer.Chain.Transaction{hash: hash}, acc ->
+      ...>     MapSet.put(acc, hash)
+      ...>   end
+      ...> )
+      iex> pending.hash in hash_set
+      false
+      iex> unfetched_collated.hash in hash_set
+      true
+      iex> fetched_collated.hash in hash_set
+      false
+
   """
   @spec stream_transactions_with_unfetched_internal_transactions(
           fields :: [
@@ -1137,7 +1173,13 @@ defmodule Explorer.Chain do
   def stream_transactions_with_unfetched_internal_transactions(fields, initial, reducer) when is_function(reducer, 2) do
     Repo.transaction(
       fn ->
-        query = from(t in Transaction, where: is_nil(t.internal_transactions_indexed_at), select: ^fields)
+        query =
+          from(
+            t in Transaction,
+            # exclude pending transactions
+            where: not is_nil(t.block_hash) and is_nil(t.internal_transactions_indexed_at),
+            select: ^fields
+          )
 
         query
         |> Repo.stream(timeout: :infinity)
@@ -1845,12 +1887,13 @@ defmodule Explorer.Chain do
     {:ok, inserted}
   end
 
-  @spec insert_transactions([map()], [timeout_option | timestamps_option]) ::
+  @spec insert_transactions([map()], [on_conflict_option | timeout_option | timestamps_option]) ::
           {:ok, [Hash.t()]} | {:error, [Changeset.t()]}
   defp insert_transactions(changes_list, named_arguments)
        when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
     timeout = Keyword.fetch!(named_arguments, :timeout)
+    on_conflict = Keyword.fetch!(named_arguments, :on_conflict)
 
     # order so that row ShareLocks are grabbed in a consistent order
     ordered_changes_list = Enum.sort_by(changes_list, & &1.hash)
@@ -1859,7 +1902,7 @@ defmodule Explorer.Chain do
       insert_changes_list(
         ordered_changes_list,
         conflict_target: :hash,
-        on_conflict: :replace_all,
+        on_conflict: on_conflict,
         for: Transaction,
         returning: [:hash],
         timeout: timeout,
@@ -1914,11 +1957,13 @@ defmodule Explorer.Chain do
        when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
     case ecto_schema_module_to_changes_list do
       %{Address => addresses_changes} ->
+        timestamps = Keyword.fetch!(options, :timestamps)
+
         Multi.run(multi, :addresses, fn _ ->
           insert_addresses(
             addresses_changes,
             timeout: options[:addresses][:timeout] || @insert_addresses_timeout,
-            timestamps: Keyword.fetch!(options, :timestamps)
+            timestamps: timestamps
           )
         end)
 
@@ -1931,11 +1976,13 @@ defmodule Explorer.Chain do
        when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
     case ecto_schema_module_to_changes_list do
       %{Block => blocks_changes} ->
+        timestamps = Keyword.fetch!(options, :timestamps)
+
         Multi.run(multi, :blocks, fn _ ->
           insert_blocks(
             blocks_changes,
             timeout: options[:blocks][:timeout] || @insert_blocks_timeout,
-            timestamps: Keyword.fetch!(options, :timestamps)
+            timestamps: timestamps
           )
         end)
 
@@ -1948,11 +1995,17 @@ defmodule Explorer.Chain do
        when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
     case ecto_schema_module_to_changes_list do
       %{Transaction => transactions_changes} ->
+        # check required options as early as possible
+        transactions_options = Keyword.fetch!(options, :transactions)
+        on_conflict = Keyword.fetch!(transactions_options, :on_conflict)
+        timestamps = Keyword.fetch!(options, :timestamps)
+
         Multi.run(multi, :transactions, fn _ ->
           insert_transactions(
             transactions_changes,
-            timeout: options[:transations][:timeout] || @insert_transactions_timeout,
-            timestamps: Keyword.fetch!(options, :timestamps)
+            on_conflict: on_conflict,
+            timeout: transactions_options[:timeout] || @insert_transactions_timeout,
+            timestamps: timestamps
           )
         end)
 
@@ -1965,11 +2018,13 @@ defmodule Explorer.Chain do
        when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
     case ecto_schema_module_to_changes_list do
       %{InternalTransaction => internal_transactions_changes} ->
+        timestamps = Keyword.fetch!(options, :timestamps)
+
         Multi.run(multi, :internal_transactions, fn _ ->
           insert_internal_transactions(
             internal_transactions_changes,
             timeout: options[:internal_transactions][:timeout] || @insert_internal_transactions_timeout,
-            timestamps: Keyword.fetch!(options, :timestamps)
+            timestamps: timestamps
           )
         end)
 
@@ -1982,11 +2037,13 @@ defmodule Explorer.Chain do
        when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
     case ecto_schema_module_to_changes_list do
       %{Log => logs_changes} ->
+        timestamps = Keyword.fetch!(options, :timestamps)
+
         Multi.run(multi, :logs, fn _ ->
           insert_logs(
             logs_changes,
             timeout: options[:logs][:timeout] || @insert_logs_timeout,
-            timestamps: Keyword.fetch!(options, :timestamps)
+            timestamps: timestamps
           )
         end)
 
