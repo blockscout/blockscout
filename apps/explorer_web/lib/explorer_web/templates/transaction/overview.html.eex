@@ -85,19 +85,21 @@
                   <%= gettext "To" %>
                 </th>
                 <td>
-                  <%= if @transaction.to_address do %>
-                    <%= link(
-                          @transaction.to_address,
-                          class: "transaction__link",
-                          to: address_path(@conn, :show, @conn.assigns.locale, @transaction.to_address)
-                        ) %>
-                  <% else %>
-                    [Contract <%= link(
-                      @transaction.created_contract_address_hash,
-                      class: "transaction__link",
-                      "data-test": "created_contract_address_hash",
-                      to: address_path(@conn, :show, @conn.assigns.locale, @transaction.created_contract_address_hash)
-                    ) %> Created]
+                  <%= cond do %>
+                    <% @transaction.to_address_hash != nil -> %>
+                      <%= link(
+                            @transaction.to_address,
+                            class: "transaction__link",
+                            to: address_path(@conn, :show, @conn.assigns.locale, @transaction.to_address)
+                          ) %>
+                    <% @transaction.created_contract_address_hash != nil -> %>
+                      [Contract <%= link(
+                        @transaction.created_contract_address_hash,
+                        class: "transaction__link",
+                        "data-test": "created_contract_address_hash",
+                        to: address_path(@conn, :show, @conn.assigns.locale, @transaction.created_contract_address_hash)
+                      ) %> Created]
+                    <% true -> %>
                   <% end %>
                 </td>
               </tr>

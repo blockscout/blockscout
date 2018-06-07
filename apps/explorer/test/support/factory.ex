@@ -161,7 +161,7 @@ defmodule Explorer.Factory do
 
     transaction =
       :transaction
-      |> insert()
+      |> insert(to_address: nil, to_address_hash: nil)
       |> with_block()
 
     %InternalTransaction{

@@ -1412,6 +1412,10 @@ defmodule Explorer.Chain do
     paging_options = Keyword.get(options, :paging_options, %PagingOptions{page_size: 50})
 
     Transaction
+    |> load_contract_creation()
+    |> select_merge([_, internal_transaction], %{
+      created_contract_address_hash: internal_transaction.created_contract_address_hash
+    })
     |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
     |> page_transaction(paging_options)
     |> limit(^paging_options.page_size)

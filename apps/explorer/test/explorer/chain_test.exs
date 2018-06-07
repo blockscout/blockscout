@@ -887,5 +887,11 @@ defmodule Explorer.ChainTest do
       insert(:transaction)
       assert [] == Explorer.Chain.recent_collated_transactions()
     end
+
+    test "it has contract_creation_address_hash added" do
+      %InternalTransaction{created_contract_address_hash: hash} = insert(:internal_transaction_create, index: 0)
+
+      assert [%Transaction{created_contract_address_hash: ^hash}] = Explorer.Chain.recent_collated_transactions()
+    end
   end
 end
