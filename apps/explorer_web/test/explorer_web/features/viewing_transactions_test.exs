@@ -106,6 +106,15 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
       |> assert_has(TransactionPage.detail_hash(transaction))
     end
 
+    test "can see a contract creation address in to_address", %{session: session} do
+      transaction = insert(:transaction, to_address_hash: nil)
+      internal_transaction = insert(:internal_transaction_create, transaction_hash: transaction.hash, index: 0)
+
+      session
+      |> TransactionPage.visit_page(transaction)
+      |> assert_has(TransactionPage.contract_creation_address_hash(internal_transaction))
+    end
+
     test "can view a transaction's logs", %{session: session, transaction: transaction} do
       session
       |> TransactionPage.visit_page(transaction)

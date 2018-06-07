@@ -583,8 +583,21 @@ defmodule Explorer.Chain do
     |> join_associations(necessity_by_association)
     |> Repo.one()
     |> case do
-      nil -> {:error, :not_found}
-      transaction -> {:ok, transaction}
+      nil ->
+        {:error, :not_found}
+
+      transaction = %Transaction{to_address: nil} ->
+        internal_transaction =
+          InternalTransaction
+          |> join(:inner, [internal_transaction], transaction in assoc(internal_transaction, :transaction))
+          |> where([_, transaction], transaction.hash == ^hash)
+          |> where([internal_transaction], internal_transaction.type == ^:create)
+          |> Repo.one!()
+
+        {:ok, %{transaction | created_contract_address_hash: internal_transaction.created_contract_address_hash}}
+
+      transaction ->
+        {:ok, transaction}
     end
   end
 
