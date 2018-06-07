@@ -9,7 +9,6 @@ hooks:
       timeout: 300
   AfterInstall:
     - location: bin/deployment/build
-      runas: ec2-user
   ApplicationStart:
     - location: bin/deployment/migrate
       runas: ec2-user
