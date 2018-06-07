@@ -3,7 +3,7 @@
     Transactions
   </h1>
   <p>
-    <%= gettext("Showing %{count} Pending Transactions", count: @transaction_count) %>
+    <%= gettext("Showing %{count} Pending Transactions", count: @pending_transaction_count) %>
   </p>
 
   <div class="card">

@@ -6,6 +6,7 @@ defmodule Explorer.Chain do
   import Ecto.Query,
     only: [from: 2, join: 4, limit: 2, or_where: 3, order_by: 2, order_by: 3, preload: 2, where: 2, where: 3]
 
+  alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi}
 
   alias Explorer.Chain.{
@@ -1344,6 +1345,24 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Count of pending `t:Explorer.Chain.Transaction.t/0`.
+
+  A count of all pending transactions.
+
+      iex> insert(:transaction)
+      iex> :transaction |> insert() |> with_block()
+      iex> Explorer.Chain.pending_transaction_count()
+      1
+
+  """
+  @spec pending_transaction_count() :: non_neg_integer()
+  def pending_transaction_count do
+    Transaction
+    |> where([transaction], is_nil(transaction.block_hash))
+    |> Repo.aggregate(:count, :hash)
+  end
+
+  @doc """
   Returns the paged list of collated transactions that occurred recently from newest to oldest using `block_number`
   and `index`.
 
@@ -1535,44 +1554,16 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Count of `t:Explorer.Chain.Transaction.t/0`.
+  Estimated count of `t:Explorer.Chain.Transaction.t/0`.
 
-  With no options or an explicit `pending: nil`, both collated and pending transactions will be counted.
-
-      iex> insert(:transaction)
-      iex> :transaction |> insert() |> with_block()
-      iex> Explorer.Chain.transaction_count()
-      2
-      iex> Explorer.Chain.transaction_count(pending: nil)
-      2
-
-  To count only collated transactions, pass `pending: false`.
-
-      iex> 2 |> insert_list(:transaction)
-      iex> 3 |> insert_list(:transaction) |> with_block()
-      iex> Explorer.Chain.transaction_count(pending: false)
-      3
-
-  To count only pending transactions, pass `pending: true`.
-
-      iex> 2 |> insert_list(:transaction)
-      iex> 3 |> insert_list(:transaction) |> with_block()
-      iex> Explorer.Chain.transaction_count(pending: true)
-      2
-
-  ## Options
-
-    * `:pending`
-      * `nil` - count all transactions
-      * `true` - only count pending transactions
-      * `false` - only count collated transactions
-
+  Estimated count of both collated and pending transactions using the transactions table statistics.
   """
-  @spec transaction_count([{:pending, boolean()}]) :: non_neg_integer()
-  def transaction_count(options \\ []) when is_list(options) do
-    Transaction
-    |> where_pending(options)
-    |> Repo.aggregate(:count, :hash)
+  @spec transaction_estimated_count() :: non_neg_integer()
+  def transaction_estimated_count do
+    %Postgrex.Result{rows: [[rows]]} =
+      SQL.query!(Repo, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='transactions'")
+
+    rows
   end
 
   @doc """
@@ -2098,21 +2089,6 @@ defmodule Explorer.Chain do
     Enum.reduce(address_fields, query, fn field, query ->
       or_where(query, [t], field(t, ^field) == ^address_hash)
     end)
-  end
-
-  defp where_pending(query, options) when is_list(options) do
-    pending = Keyword.get(options, :pending)
-
-    case pending do
-      false ->
-        from(transaction in query, where: not is_nil(transaction.block_hash))
-
-      true ->
-        from(transaction in query, where: is_nil(transaction.block_hash))
-
-      nil ->
-        query
-    end
   end
 
   defp where_transaction_has_multiple_internal_transactions(query) do
