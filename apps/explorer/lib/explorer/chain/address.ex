@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Address do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Data, Hash, Wei}
+  alias Explorer.Chain.{Data, Hash, Wei, SmartContract}
 
   @optional_attrs ~w(contract_code)a
   @required_attrs ~w(hash)a
@@ -38,6 +38,8 @@ defmodule Explorer.Chain.Address do
     field(:fetched_balance, Wei)
     field(:balance_fetched_at, :utc_datetime)
     field(:contract_code, Data)
+
+    has_one(:smart_contract, SmartContract)
 
     timestamps()
   end

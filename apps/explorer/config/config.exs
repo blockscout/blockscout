@@ -5,6 +5,8 @@
 # is restricted to this project.
 use Mix.Config
 
+config :ecto, json_library: Jason
+
 config :explorer, :indexer,
   block_rate: 5_000,
   debug_logs: !!System.get_env("DEBUG_INDEXER")
@@ -25,6 +27,9 @@ config :explorer, Explorer.Indexer.Supervisor, enabled: true
 config :explorer, Explorer.Market.History.Cataloger, enabled: true
 
 config :explorer, Explorer.Repo, migration_timestamps: [type: :utc_datetime]
+
+config :explorer,
+  solc_bin_api_url: "https://solc-bin.ethereum.org"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

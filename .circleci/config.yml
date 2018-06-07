@@ -21,14 +21,14 @@ jobs:
 
       - restore_cache:
           keys:
-            - v2-mix-deps-get-{{ checksum "mix.lock" }}
-            - v2-mix-deps-get-{{ checksum "mix.exs" }}
-            - v2-mix-deps-get
+            - v3-mix-deps-get-{{ checksum "mix.lock" }}
+            - v3-mix-deps-get-{{ checksum "mix.exs" }}
+            - v3-mix-deps-get
 
       - run: mix deps.get
 
       - save_cache:
-          key: v2-mix-deps-get-{{ checksum "mix.lock" }}
+          key: v3-mix-deps-get-{{ checksum "mix.lock" }}
           paths: "deps"
       - save_cache:
           key: mix-deps-get-{{ checksum "mix.exs" }}
@@ -39,22 +39,22 @@ jobs:
 
       - restore_cache:
           keys:
-            - v2-npm-install-{{ .Branch }}-{{ checksum "apps/explorer_web/assets/package-lock.json" }}
-            - v2-npm-install-{{ .Branch }}
-            - v2-npm-install
+            - v3-npm-install-{{ .Branch }}-{{ checksum "apps/explorer_web/assets/package-lock.json" }}
+            - v3-npm-install-{{ .Branch }}
+            - v3-npm-install
 
       - run:
           command: npm install
           working_directory: "apps/explorer_web/assets"
 
       - save_cache:
-          key: v2-npm-install-{{ .Branch }}-{{ checksum "apps/explorer_web/assets/package-lock.json" }}
+          key: v3-npm-install-{{ .Branch }}-{{ checksum "apps/explorer_web/assets/package-lock.json" }}
           paths: "apps/explorer_web/assets/node_modules"
       - save_cache:
-          key: v2-npm-install-{{ .Branch }}
+          key: v3-npm-install-{{ .Branch }}
           paths: "apps/explorer_web/assets/node_modules"
       - save_cache:
-          key: v2-npm-install
+          key: v3-npm-install
           paths: "apps/explorer_web/assets/node_modules"
 
       - run:
@@ -66,22 +66,22 @@ jobs:
 
       - restore_cache:
           keys:
-             - v2-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-             - v2-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-             - v2-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+             - v3-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+             - v3-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+             - v3-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
 
       - run: mix compile
 
       - save_cache:
-          key: v2-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+          key: v3-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
           paths:
             - _build
       - save_cache:
-          key: v2-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+          key: v3-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
           paths:
             - _build
       - save_cache:
-          key: v2-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+          key: v3-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
           paths:
             - _build
 
@@ -112,10 +112,11 @@ jobs:
             - mix.exs
             - mix.lock
             - appspec.yml
+
   check_formatted:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.6.4
+      - image: circleci/elixir:1.6.5
         environment:
           MIX_ENV: test
 
@@ -177,9 +178,9 @@ jobs:
 
       - restore_cache:
           keys:
-            - v2-mix-dailyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-            - v2-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-            - v2-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+            - v3-mix-dailyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+            - v3-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+            - v3-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
 
       - run:
           name: Unpack PLT cache
@@ -199,7 +200,7 @@ jobs:
             cp ~/.mix/dialyxir*.plt plts/
 
       - save_cache:
-          key: v2-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+          key: v3-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
           paths:
             - plts
       - save_cache:
@@ -309,6 +310,14 @@ jobs:
       - run:
           name: Wait for DB
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
+
+      - run:
+          name: Install 'solc'
+          command: |
+            echo 'deb http://ppa.launchpad.net/ethereum/ethereum/ubuntu trusty main' | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+            sudo apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 923F6CA9
+            sudo apt-get update
+            sudo apt-get install solc
 
       - run: mix coveralls.circle --umbrella
 

@@ -73,5 +73,5 @@
   "tzdata": {:hex, :tzdata, "0.5.16", "13424d3afc76c68ff607f2df966c0ab4f3258859bbe3c979c9ed1606135e7352", [:mix], [{:hackney, "~> 1.0", [hex: :hackney, repo: "hexpm", optional: false]}], "hexpm"},
   "unicode_util_compat": {:hex, :unicode_util_compat, "0.3.1", "a1f612a7b512638634a603c8f401892afbf99b8ce93a45041f8aaca99cadb85e", [:rebar3], [], "hexpm"},
   "uuid": {:hex, :uuid, "1.1.8", "e22fc04499de0de3ed1116b770c7737779f226ceefa0badb3592e64d5cfb4eb9", [:mix], [], "hexpm"},
-  "wallaby": {:hex, :wallaby, "0.20.0", "cc6663555ff7b05afbebb2a8b461d18a5b321658b9017f7bc77d494b7063266a", [:mix], [{:httpoison, "~> 0.12", [hex: :httpoison, repo: "hexpm", optional: false]}, {:poison, ">= 1.4.0", [hex: :poison, repo: "hexpm", optional: false]}, {:poolboy, "~> 1.5", [hex: :poolboy, repo: "hexpm", optional: false]}], "hexpm"},
+  "wallaby": {:hex, :wallaby, "0.20.0", "cc6663555ff7b05afbebb2a8b461d18a5b321658b9017f7bc77d494b7063266a", [:mix], [{:httpoison, "~> 0.12", [hex: :httpoison, optional: false]}, {:poison, ">= 1.4.0", [hex: :poison, optional: false]}, {:poolboy, "~> 1.5", [hex: :poolboy, optional: false]}]},
 }
