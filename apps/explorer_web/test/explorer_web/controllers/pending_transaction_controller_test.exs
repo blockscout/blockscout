@@ -45,7 +45,7 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
       conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
 
       assert html_response(conn, 200)
-      assert 1 == conn.assigns.transaction_count
+      assert 1 == conn.assigns.pending_transaction_count
     end
 
     test "paginates transactions using the last seen transaction", %{conn: conn} do

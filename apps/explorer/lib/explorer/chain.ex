@@ -1303,6 +1303,24 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Count of pending `t:Explorer.Chain.Transaction.t/0`.
+
+  A count of all pending transactions.
+
+      iex> insert(:transaction)
+      iex> :transaction |> insert() |> with_block()
+      iex> Explorer.Chain.pending_transaction_count()
+      1
+
+  """
+  @spec pending_transaction_count() :: non_neg_integer()
+  def pending_transaction_count do
+    Transaction
+    |> where([transaction], is_nil(transaction.block_hash))
+    |> Repo.aggregate(:count, :hash)
+  end
+
+  @doc """
   Returns the paged list of collated transactions that occurred recently from newest to oldest using `block_number`
   and `index`.
 
@@ -1494,33 +1512,16 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Count of `t:Explorer.Chain.Transaction.t/0`.
+  Estimated count of `t:Explorer.Chain.Transaction.t/0`.
 
-  With :all both collated and pending transactions will be counted using estimates from table statistics.
-
-      iex> insert(:transaction)
-      iex> :transaction |> insert() |> with_block()
-      iex> Explorer.Chain.transaction_count(:pending)
-      1
-
-  ## Arguments
-
-    * `:all` - returns an estimated count of all collated and pending transactions using table statistics
-    * `:pending` - returns a count of all pending transactions
-
+  Estimated count of both collated and pending transactions using the transactions table statistics.
   """
-  @spec transaction_count(:all | :pending) :: non_neg_integer()
-  def transaction_count(:all) do
+  @spec transaction_estimated_count() :: non_neg_integer()
+  def transaction_estimated_count do
     %Postgrex.Result{rows: [[rows]]} =
       SQL.query!(Repo, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='transactions'")
 
     rows
-  end
-
-  def transaction_count(:pending) do
-    Transaction
-    |> where([transaction], is_nil(transaction.block_hash))
-    |> Repo.aggregate(:count, :hash)
   end
 
   @doc """
