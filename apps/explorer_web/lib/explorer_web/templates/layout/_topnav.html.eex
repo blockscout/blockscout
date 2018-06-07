@@ -16,13 +16,13 @@
         <% end %>
       </li>
       <li calss="nav-item">
-        <%= link to: block_path(@conn, :index, Gettext.get_locale), class: "nav-link" do %>
+        <%= link to: block_path(@conn, :index, Gettext.get_locale), class: "nav-link topnav-nav-link" do %>
           <img src="<%= static_path(@conn, "/images/block.svg") %>" />
           <%= gettext("Blocks") %>
         <% end %>
       </li>
       <li calss="nav-item dropdown">
-        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <a class="topnav-nav-link nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           <img src="<%= static_path(@conn, "/images/transaction.svg") %>" />
           <%= gettext("Transactions") %>
         </a>

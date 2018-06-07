@@ -180,7 +180,7 @@
                 <td title="<%= @transaction.input %>">
                   <div class="card bg-light">
                     <div class="card-body">
-                      <pre class="pre-scrollable pre-wrap mb-0">
+                      <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0">
                         <code>
                           <%= @transaction.input %>
                         </code>
