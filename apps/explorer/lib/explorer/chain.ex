@@ -1685,6 +1685,10 @@ defmodule Explorer.Chain do
     pagination = Keyword.get(named_arguments, :pagination, %{})
 
     Transaction
+    |> load_contract_creation()
+    |> select_merge([_, internal_transaction], %{
+      created_contract_address_hash: internal_transaction.created_contract_address_hash
+    })
     |> join_associations(necessity_by_association)
     |> reverse_chronologically()
     |> where_address_fields_match(address_hash, direction)

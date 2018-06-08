@@ -21,8 +21,9 @@ defmodule ExplorerWeb.ViewingAddressesTest do
 
     {:ok,
      %{
-       transactions: %{from_lincoln: from_lincoln, from_taft: from_taft},
-       addresses: %{lincoln: lincoln, taft: taft}
+       addresses: %{lincoln: lincoln, taft: taft},
+       block: block,
+       transactions: %{from_lincoln: from_lincoln, from_taft: from_taft}
      }}
   end
 
@@ -77,6 +78,31 @@ defmodule ExplorerWeb.ViewingAddressesTest do
       |> AddressPage.apply_filter("To")
       |> refute_has(AddressPage.transaction(transactions.from_lincoln))
       |> assert_has(AddressPage.transaction(transactions.from_taft))
+    end
+
+    test "contract creation is shown for to_address on list page", %{
+      addresses: addresses,
+      block: block,
+      session: session
+    } do
+      lincoln_hash = addresses.lincoln.hash
+
+      from_lincoln =
+        :transaction
+        |> insert(from_address_hash: lincoln_hash, to_address_hash: nil)
+        |> with_block(block)
+
+      internal_transaction =
+        insert(
+          :internal_transaction_create,
+          transaction_hash: from_lincoln.hash,
+          from_address_hash: lincoln_hash,
+          index: 0
+        )
+
+      session
+      |> AddressPage.visit_page(addresses.lincoln)
+      |> assert_has(AddressPage.contract_creation(internal_transaction))
     end
   end
 
