@@ -2,6 +2,7 @@
   border: 1px solid $border-color;
   white-space: nowrap;
   display: inline-block;
+  padding-left: 3px;
 
   &__font {
     font-family: $font-family-monospace;
