@@ -75,6 +75,14 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
       |> assert_has(HomePage.transactions(count: 5))
     end
 
+    test "contract creation is shown for to_address on home page", %{session: session} do
+      internal_transaction = insert(:internal_transaction_create, index: 0)
+
+      session
+      |> HomePage.visit_page()
+      |> assert_has(HomePage.contract_creation(internal_transaction))
+    end
+
     test "viewing the default transactions tab", %{session: session, transaction: transaction, pending: pending} do
       session
       |> TransactionListPage.visit_page()
@@ -89,7 +97,7 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
       |> assert_has(TransactionListPage.transaction(pending))
     end
 
-    test "contract creation is shown for to_address", %{session: session} do
+    test "contract creation is shown for to_address on list page", %{session: session} do
       internal_transaction = insert(:internal_transaction_create, index: 0)
 
       session

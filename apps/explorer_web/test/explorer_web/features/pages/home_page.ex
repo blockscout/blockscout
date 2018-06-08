@@ -5,8 +5,14 @@ defmodule ExplorerWeb.HomePage do
 
   import Wallaby.Query, only: [css: 1, css: 2]
 
+  alias Explorer.Chain.InternalTransaction
+
   def blocks(count: count) do
     css("[data-test='chain_block']", count: count)
+  end
+
+  def contract_creation(%InternalTransaction{created_contract_address_hash: hash}) do
+    css("[data-address-hash='#{hash}']", text: "Contract Creation")
   end
 
   def search(session, text) do
@@ -15,11 +21,11 @@ defmodule ExplorerWeb.HomePage do
     |> send_keys([:enter])
   end
 
-  def visit_page(session) do
-    visit(session, "/")
-  end
-
   def transactions(count: count) do
     css("[data-test='chain_transaction']", count: count)
+  end
+
+  def visit_page(session) do
+    visit(session, "/")
   end
 end

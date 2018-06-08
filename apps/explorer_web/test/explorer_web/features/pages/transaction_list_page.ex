@@ -16,7 +16,7 @@ defmodule ExplorerWeb.TransactionListPage do
   end
 
   def contract_creation(%InternalTransaction{created_contract_address_hash: hash}) do
-    css("[data-address-hash='#{hash}']", text: "Contract Created")
+    css("[data-address-hash='#{hash}']", text: "Contract Creation")
   end
 
   def transaction(%Transaction{hash: transaction_hash}) do
