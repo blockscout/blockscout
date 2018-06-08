@@ -7,10 +7,8 @@
     title: @address do %>
       <%= if contract?(@address) do %>
         <i class="address-link__type fas fa-file"></i>
-      <% else %>
-        <i class="address-link__type fas fa-address-card"></i>
       <% end %>
-    <%= @address |> hash() |> String.slice(0..3) %><i class="fas fa-ellipsis-v address-link__seperator"></i><%= @address |> hash() |> String.slice(-4..-1) %>
+    <%= @address |> hash() |> String.slice(0..5) %><i class="fas fa-ellipsis-v address-link__seperator"></i><%= @address |> hash() |> String.slice(-6..-1) %>
 <% end %>
 <button class="address-link__copy-button" data-clipboard-text="<%= @address %>" aria-label="copy address">
   <i class="fa fa-copy"></i>
