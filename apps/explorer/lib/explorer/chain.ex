@@ -330,15 +330,14 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     pagination = Keyword.get(options, :pagination, %{})
 
-    query =
-      from(
-        transaction in Transaction,
-        inner_join: block in assoc(transaction, :block),
-        where: block.hash == ^block_hash,
-        order_by: [desc: transaction.inserted_at, desc: transaction.hash]
-      )
-
-    query
+    Transaction
+    |> load_contract_creation()
+    |> select_merge([_, internal_transaction], %{
+      created_contract_address_hash: internal_transaction.created_contract_address_hash
+    })
+    |> join(:inner, [transaction], block in assoc(transaction, :block))
+    |> where([_, _, block], block.hash == ^block_hash)
+    |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
     |> join_associations(necessity_by_association)
     |> Repo.paginate(pagination)
   end
