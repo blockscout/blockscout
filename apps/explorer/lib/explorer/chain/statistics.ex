@@ -115,9 +115,14 @@ defmodule Explorer.Chain.Statistics do
       )
 
     transactions =
-      [paging_options: %PagingOptions{page_size: 5}]
-      |> Chain.recent_collated_transactions()
-      |> Repo.preload([:block])
+      Chain.recent_collated_transactions(
+        necessity_by_association: %{
+          block: :required,
+          from_address: :required,
+          to_address: :optional
+        },
+        paging_options: %PagingOptions{page_size: 5}
+      )
 
     %__MODULE__{
       average_time: query_duration(@average_time_query),
