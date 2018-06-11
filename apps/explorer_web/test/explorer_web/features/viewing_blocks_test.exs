@@ -20,12 +20,26 @@ defmodule ExplorerWeb.ViewingBlocksTest do
     {:ok, block: block}
   end
 
-  test "search for blocks", %{session: session} do
+  test "viewing blocks on the home page", %{session: session} do
+    session
+    |> HomePage.visit_page()
+    |> assert_has(HomePage.blocks(count: 5))
+  end
+
+  test "search for blocks from home page", %{session: session} do
     block = insert(:block, number: 42)
 
     session
     |> HomePage.visit_page()
     |> HomePage.search(to_string(block.number))
+    |> assert_has(BlockPage.detail_number(block))
+  end
+
+  test "show block detail page", %{session: session} do
+    block = insert(:block, number: 42)
+
+    session
+    |> BlockPage.visit_page(block)
     |> assert_has(BlockPage.detail_number(block))
   end
 
@@ -42,12 +56,6 @@ defmodule ExplorerWeb.ViewingBlocksTest do
     session
     |> BlockPage.visit_page(block)
     |> assert_has(BlockPage.contract_creation(internal_transaction))
-  end
-
-  test "viewing blocks on the home page", %{session: session} do
-    session
-    |> HomePage.visit_page()
-    |> assert_has(HomePage.blocks(count: 5))
   end
 
   test "viewing the blocks index page", %{block: block, session: session} do
