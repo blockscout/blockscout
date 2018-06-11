@@ -47,6 +47,7 @@ Configure your local CCMenu with the following url: [`https://circleci.com/gh/po
 #### Prerequisites
 
   * PhantomJS (for wallaby)
+  * `Solidity` - http://solidity.readthedocs.io/en/v0.4.24/installing-solidity.html
 
 #### Running the tests
 
