@@ -93,12 +93,12 @@
                             to: address_path(@conn, :show, @conn.assigns.locale, @transaction.to_address)
                           ) %>
                     <% @transaction.created_contract_address_hash != nil -> %>
-                      [Contract <%= link(
+                      <i class="fas fa-plus-square"></i> Contract <%= link(
                         @transaction.created_contract_address_hash,
                         class: "transaction__link",
                         "data-test": "created_contract_address_hash",
                         to: address_path(@conn, :show, @conn.assigns.locale, @transaction.created_contract_address_hash)
-                      ) %> Created]
+                      ) %> Created
                     <% true -> %>
                   <% end %>
                 </td>
