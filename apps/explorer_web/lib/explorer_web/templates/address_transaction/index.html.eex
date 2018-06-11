@@ -93,7 +93,7 @@
             </tr>
           </thead>
           <tbody>
-            <%= for transaction <- @page do %>
+            <%= for transaction <- @transactions do %>
               <tr>
                 <td><div class="transaction__dot transaction__dot--<%= status(transaction) %>"></div></td>
                 <td>
@@ -134,20 +134,18 @@
         </table>
       </div>
     </div>
-
-    <div class="address__pagination">
-      <%= pagination_links(
-            @conn,
-            @page,
-            ["en", @conn.params["address_id"]],
-            distance: 1,
-            filter: @conn.params["filter"],
-            first: true,
-            next: Phoenix.HTML.raw("&rsaquo;"),
-            path: &address_transaction_path/5,
-            previous: Phoenix.HTML.raw("&lsaquo;"),
-            view_style: :bulma
-          ) %>
-    </div>
+    <%= if @earliest do %>
+      <%= link(
+        gettext("Older"),
+        class: "button button--secondary button--sm u-float-right mt-3",
+        to: address_transaction_path(
+          @conn,
+          :index,
+          @conn.assigns.locale,
+          @address,
+          %{"block_number" => @earliest.block_number, "index" => @earliest.index}
+        )
+      ) %>
+    <% end %>
   </section>
 </section>

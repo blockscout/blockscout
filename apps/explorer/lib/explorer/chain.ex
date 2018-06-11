@@ -60,7 +60,6 @@ defmodule Explorer.Chain do
   """
   @type pagination :: map()
 
-  @typep direction_option :: {:direction, direction}
   @typep inserted_after_option :: {:inserted_after, DateTime.t()}
   @typep necessity_by_association_option :: {:necessity_by_association, necessity_by_association}
   @typep on_conflict_option :: {:on_conflict, :nothing | :replace_all}
@@ -135,19 +134,15 @@ defmodule Explorer.Chain do
 
   ## Options
 
-    * `:direction` - if specified, will filter transactions by address type. If `:to` is specified, only transactions
-      where the "to" address matches will be returned. Likewise, if `:from` is specified, only transactions where the
-      "from" address matches will be returned. If `:direction` is omitted, transactions either to or from the address
-      will be returned.
     * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association, then the
       `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
-    * `:pagination` - pagination params to pass to scrivener.
+    * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
+      `:key` (a tuple of the lowest/oldest {block_number, index}) and. Results will be the transactions older than
+      the block number and index that are passed.
 
   """
-  @spec address_to_transactions(Address.t(), [
-          direction_option | necessity_by_association_option | pagination_option
-        ]) :: %Scrivener.Page{entries: [Transaction.t()]}
+  @spec address_to_transactions(Address.t(), [paging_options | necessity_by_association_option]) :: Transaction.t()
   def address_to_transactions(%Address{hash: hash}, options \\ []) when is_list(options) do
     address_hash_to_transactions(hash, options)
   end
@@ -2197,22 +2192,24 @@ defmodule Explorer.Chain do
 
   defp address_hash_to_transactions(
          %Hash{byte_count: unquote(Hash.Truncated.byte_count())} = address_hash,
-         named_arguments
+         options
        )
-       when is_list(named_arguments) do
-    direction = Keyword.get(named_arguments, :direction)
-    necessity_by_association = Keyword.get(named_arguments, :necessity_by_association, %{})
-    pagination = Keyword.get(named_arguments, :pagination, %{})
+       when is_list(options) do
+    direction = Keyword.get(options, :direction)
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, %PagingOptions{page_size: 50})
 
     Transaction
     |> load_contract_creation()
     |> select_merge([_, internal_transaction], %{
       created_contract_address_hash: internal_transaction.created_contract_address_hash
     })
-    |> join_associations(necessity_by_association)
-    |> reverse_chronologically()
     |> where_address_fields_match(address_hash, direction)
-    |> Repo.paginate(pagination)
+    |> page_transaction(paging_options)
+    |> limit(^paging_options.page_size)
+    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
+    |> join_associations(necessity_by_association)
+    |> Repo.all()
   end
 
   @spec changes_list(params :: map, [{:for, module} | {:with, :atom}]) ::
@@ -2537,10 +2534,6 @@ defmodule Explorer.Chain do
       transaction.block_number < ^block_number or
         (transaction.block_number == ^block_number and transaction.index < ^index)
     )
-  end
-
-  defp reverse_chronologically(query) do
-    from(q in query, order_by: [desc: q.inserted_at, desc: q.hash])
   end
 
   defp run_addresses(multi, ecto_schema_module_to_changes_list, options)

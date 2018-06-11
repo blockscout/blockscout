@@ -3,8 +3,8 @@ defmodule Explorer.ChainTest do
 
   import Explorer.Factory
 
-  alias Explorer.{Chain, Repo, Factory}
-  alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Transaction, Wei, SmartContract}
+  alias Explorer.{Chain, Factory, PagingOptions, Repo}
+  alias Explorer.Chain.{Address, Block, InternalTransaction, Log, SmartContract, Transaction, Wei}
   alias Explorer.Chain.Supply.ProofOfAuthority
 
   doctest Explorer.Chain
@@ -30,106 +30,70 @@ defmodule Explorer.ChainTest do
 
       assert Repo.aggregate(Transaction, :count, :hash) == 0
 
-      assert %Scrivener.Page{
-               entries: [],
-               page_number: 1,
-               total_entries: 0
-             } = Chain.address_to_transactions(address)
+      assert [] == Chain.address_to_transactions(address)
     end
 
     test "with from transactions" do
-      %Transaction{from_address_hash: from_address_hash, hash: transaction_hash} = insert(:transaction)
-      address = Repo.get!(Address, from_address_hash)
+      address = insert(:address)
+      transaction = insert(:transaction, from_address_hash: address.hash)
 
-      assert %Scrivener.Page{
-               entries: [%Transaction{hash: ^transaction_hash}],
-               page_number: 1,
-               total_entries: 1
-             } = Chain.address_to_transactions(address, direction: :from)
+      assert [transaction] == Chain.address_to_transactions(address, direction: :from)
     end
 
     test "with to transactions" do
-      %Transaction{to_address_hash: to_address_hash, hash: transaction_hash} = insert(:transaction)
-      address = Repo.get!(Address, to_address_hash)
+      address = insert(:address)
+      transaction = insert(:transaction, to_address_hash: address.hash)
 
-      assert %Scrivener.Page{
-               entries: [%Transaction{hash: ^transaction_hash}],
-               page_number: 1,
-               total_entries: 1
-             } = Chain.address_to_transactions(address, direction: :to)
+      assert [transaction] == Chain.address_to_transactions(address, direction: :to)
     end
 
     test "with to and from transactions and direction: :from" do
-      %Transaction{from_address: address, hash: from_transaction_hash} =
-        :transaction
-        |> insert()
-        |> Repo.preload(:from_address)
-
-      insert(:transaction, to_address: address)
+      address = insert(:address)
+      transaction = insert(:transaction, from_address_hash: address.hash)
+      insert(:transaction, to_address_hash: address.hash)
 
       # only contains "from" transaction
-      assert %Scrivener.Page{
-               entries: [%Transaction{hash: ^from_transaction_hash}],
-               page_number: 1,
-               total_entries: 1
-             } = Chain.address_to_transactions(address, direction: :from)
+      assert [transaction] == Chain.address_to_transactions(address, direction: :from)
     end
 
     test "with to and from transactions and direction: :to" do
-      %Transaction{from_address: address} =
-        :transaction
-        |> insert()
-        |> Repo.preload(:from_address)
-
-      %Transaction{hash: to_transaction_hash} = insert(:transaction, to_address: address)
+      address = insert(:address)
+      transaction = insert(:transaction, to_address_hash: address.hash)
+      insert(:transaction, from_address_hash: address.hash)
 
       # only contains "to" transaction
-      assert %Scrivener.Page{
-               entries: [%Transaction{hash: ^to_transaction_hash}],
-               page_number: 1,
-               total_entries: 1
-             } = Chain.address_to_transactions(address, direction: :to)
+      assert [transaction] == Chain.address_to_transactions(address, direction: :to)
     end
 
     test "with to and from transactions and no :direction option" do
-      %Transaction{from_address: address, hash: from_transaction_hash} =
-        :transaction
-        |> insert()
-        |> Repo.preload(:from_address)
+      address = insert(:address)
+      transaction1 = insert(:transaction, to_address_hash: address.hash)
+      transaction2 = insert(:transaction, from_address_hash: address.hash)
 
-      %Transaction{hash: to_transaction_hash} = insert(:transaction, to_address: address)
-
-      assert %Scrivener.Page{
-               entries: [
-                 %Transaction{hash: ^to_transaction_hash},
-                 %Transaction{hash: ^from_transaction_hash}
-               ],
-               page_number: 1,
-               total_entries: 2
-             } = Chain.address_to_transactions(address)
+      assert [transaction1, transaction2] == Chain.address_to_transactions(address)
     end
 
     test "with transactions can be paginated" do
       address = insert(:address)
-      transactions = insert_list(2, :transaction, to_address: address)
 
-      [%Transaction{hash: oldest_transaction_hash}, %Transaction{hash: newest_transaction_hash}] = transactions
+      second_page_hashes =
+        50
+        |> insert_list(:transaction, from_address_hash: address.hash)
+        |> with_block()
+        |> Enum.map(& &1.hash)
 
-      assert %Scrivener.Page{
-               entries: [%Transaction{hash: ^newest_transaction_hash}],
-               page_number: 1,
-               page_size: 1,
-               total_entries: 2,
-               total_pages: 2
-             } = Chain.address_to_transactions(address, pagination: %{page_size: 1})
+      %Transaction{block_number: block_number, index: index} =
+        :transaction
+        |> insert(from_address_hash: address.hash)
+        |> with_block()
 
-      assert %Scrivener.Page{
-               entries: [%Transaction{hash: ^oldest_transaction_hash}],
-               page_number: 2,
-               page_size: 1,
-               total_entries: 2,
-               total_pages: 2
-             } = Chain.address_to_transactions(address, pagination: %{page: 2, page_size: 1})
+      assert second_page_hashes ==
+               address
+               |> Chain.address_to_transactions(
+                 paging_options: %PagingOptions{key: {block_number, index}, page_size: 50}
+               )
+               |> Enum.map(& &1.hash)
+               |> Enum.reverse()
     end
   end
 

@@ -3,13 +3,14 @@ defmodule ExplorerWeb.AddressTransactionControllerTest do
 
   import ExplorerWeb.Router.Helpers, only: [address_transaction_path: 4]
 
+  alias Explorer.Chain.Transaction
   alias Explorer.ExchangeRates.Token
 
   describe "GET index/2" do
     test "with invalid address hash", %{conn: conn} do
       conn = get(conn, address_transaction_path(conn, :index, :en, "invalid_address"))
 
-      assert html_response(conn, 404)
+      assert html_response(conn, 422)
     end
 
     test "with valid address hash without address", %{conn: conn} do
@@ -36,8 +37,8 @@ defmodule ExplorerWeb.AddressTransactionControllerTest do
       conn = get(conn, address_transaction_path(conn, :index, :en, address))
 
       actual_transaction_hashes =
-        conn.assigns.page
-        |> Enum.map(fn transaction -> transaction.hash end)
+        conn.assigns.transactions
+        |> Enum.map(& &1.hash)
 
       assert html_response(conn, 200)
       assert Enum.member?(actual_transaction_hashes, from_transaction.hash)
@@ -53,9 +54,9 @@ defmodule ExplorerWeb.AddressTransactionControllerTest do
 
       assert html_response(conn, 200)
       assert conn.status == 200
-      assert Enum.empty?(conn.assigns.page)
+      assert Enum.empty?(conn.assigns.transactions)
       assert conn.status == 200
-      assert Enum.empty?(conn.assigns.page)
+      assert Enum.empty?(conn.assigns.transactions)
     end
 
     test "includes USD exchange rate value for address in assigns", %{conn: conn} do
@@ -64,6 +65,34 @@ defmodule ExplorerWeb.AddressTransactionControllerTest do
       conn = get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
 
       assert %Token{} = conn.assigns.exchange_rate
+    end
+
+    test "returns next page of results based on last seen transaction", %{conn: conn} do
+      address = insert(:address)
+
+      second_page_hashes =
+        50
+        |> insert_list(:transaction, from_address_hash: address.hash)
+        |> with_block()
+        |> Enum.map(& &1.hash)
+
+      %Transaction{block_number: block_number, index: index} =
+        :transaction
+        |> insert(from_address_hash: address.hash)
+        |> with_block()
+
+      conn =
+        get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address.hash), %{
+          "block_number" => Integer.to_string(block_number),
+          "index" => Integer.to_string(index)
+        })
+
+      actual_hashes =
+        conn.assigns.transactions
+        |> Enum.map(& &1.hash)
+        |> Enum.reverse()
+
+      assert second_page_hashes == actual_hashes
     end
   end
 end
