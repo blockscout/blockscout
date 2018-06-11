@@ -405,7 +405,7 @@ defmodule Explorer.ChainTest do
                  transaction: %Transaction{}
                }
                | _
-             ] = Map.get(Chain.address_to_internal_transactions(address), :entries, [])
+             ] = Chain.address_to_internal_transactions(address)
 
       assert [
                %InternalTransaction{
@@ -415,17 +415,13 @@ defmodule Explorer.ChainTest do
                }
                | _
              ] =
-               Map.get(
-                 Chain.address_to_internal_transactions(
-                   address,
-                   necessity_by_association: %{
-                     from_address: :optional,
-                     to_address: :optional,
-                     transaction: :optional
-                   }
-                 ),
-                 :entries,
-                 []
+               Chain.address_to_internal_transactions(
+                 address,
+                 necessity_by_association: %{
+                   from_address: :optional,
+                   to_address: :optional,
+                   transaction: :optional
+                 }
                )
     end
 
@@ -520,7 +516,6 @@ defmodule Explorer.ChainTest do
       result =
         address
         |> Chain.address_to_internal_transactions()
-        |> Map.get(:entries, [])
         |> Enum.map(& &1.id)
 
       assert [second_pending, first_pending, sixth, fifth, fourth, third, second, first] == result
