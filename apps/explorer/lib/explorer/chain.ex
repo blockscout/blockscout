@@ -4,7 +4,19 @@ defmodule Explorer.Chain do
   """
 
   import Ecto.Query,
-    only: [from: 2, join: 4, limit: 2, or_where: 3, order_by: 2, order_by: 3, preload: 2, where: 2, where: 3]
+    only: [
+      from: 2,
+      join: 4,
+      join: 5,
+      limit: 2,
+      or_where: 3,
+      order_by: 2,
+      order_by: 3,
+      preload: 2,
+      select_merge: 3,
+      where: 2,
+      where: 3
+    ]
 
   alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi}
@@ -580,21 +592,15 @@ defmodule Explorer.Chain do
 
     Transaction
     |> where(hash: ^hash)
+    |> load_contract_creation()
+    |> select_merge([_, internal_transaction], %{
+      created_contract_address_hash: internal_transaction.created_contract_address_hash
+    })
     |> join_associations(necessity_by_association)
     |> Repo.one()
     |> case do
       nil ->
         {:error, :not_found}
-
-      transaction = %Transaction{to_address: nil} ->
-        internal_transaction =
-          InternalTransaction
-          |> join(:inner, [internal_transaction], transaction in assoc(internal_transaction, :transaction))
-          |> where([_, transaction], transaction.hash == ^hash)
-          |> where([internal_transaction], internal_transaction.type == ^:create)
-          |> Repo.one!()
-
-        {:ok, %{transaction | created_contract_address_hash: internal_transaction.created_contract_address_hash}}
 
       transaction ->
         {:ok, transaction}
@@ -1706,6 +1712,18 @@ defmodule Explorer.Chain do
     {status, Enum.reverse(acc)}
   end
 
+  defp ecto_schema_module_to_changes_list_to_multi(ecto_schema_module_to_changes_list, options) when is_list(options) do
+    timestamps = timestamps()
+    full_options = Keyword.put(options, :timestamps, timestamps)
+
+    Multi.new()
+    |> run_addresses(ecto_schema_module_to_changes_list, full_options)
+    |> run_blocks(ecto_schema_module_to_changes_list, full_options)
+    |> run_transactions(ecto_schema_module_to_changes_list, full_options)
+    |> run_internal_transactions(ecto_schema_module_to_changes_list, full_options)
+    |> run_logs(ecto_schema_module_to_changes_list, full_options)
+  end
+
   defp ecto_schema_module_to_params_list_to_ecto_schema_module_to_changes_list(ecto_schema_module_to_params_list) do
     ecto_schema_module_to_params_list
     |> Stream.map(fn {ecto_schema_module, params} ->
@@ -1812,18 +1830,6 @@ defmodule Explorer.Chain do
 
   defp import_transaction(multi, options) when is_list(options) do
     Repo.transaction(multi, timeout: Keyword.get(options, :timeout, @transaction_timeout))
-  end
-
-  defp ecto_schema_module_to_changes_list_to_multi(ecto_schema_module_to_changes_list, options) when is_list(options) do
-    timestamps = timestamps()
-    full_options = Keyword.put(options, :timestamps, timestamps)
-
-    Multi.new()
-    |> run_addresses(ecto_schema_module_to_changes_list, full_options)
-    |> run_blocks(ecto_schema_module_to_changes_list, full_options)
-    |> run_transactions(ecto_schema_module_to_changes_list, full_options)
-    |> run_internal_transactions(ecto_schema_module_to_changes_list, full_options)
-    |> run_logs(ecto_schema_module_to_changes_list, full_options)
   end
 
   @spec insert_internal_transactions([map()], [timestamps_option]) ::
@@ -1940,6 +1946,16 @@ defmodule Explorer.Chain do
     Enum.reduce(necessity_by_association, query, fn {association, join}, acc_query ->
       join_association(acc_query, association, join)
     end)
+  end
+
+  defp load_contract_creation(query) do
+    query
+    |> join(
+      :left,
+      [transaction],
+      internal_transaction in assoc(transaction, :internal_transactions),
+      internal_transaction.type == ^:create
+    )
   end
 
   defp page_transaction(query, %PagingOptions{key: nil}), do: query
