@@ -3,7 +3,8 @@ defmodule ExplorerWeb.TransactionController do
 
   alias Explorer.{Chain, PagingOptions}
 
-  @default_paging_options %PagingOptions{page_size: 50}
+  @page_size 50
+  @default_paging_options %PagingOptions{page_size: @page_size + 1}
 
   def index(conn, %{"block_number" => block_number_string, "index" => index_string}) do
     with {block_number, ""} <- Integer.parse(block_number_string),
@@ -37,21 +38,24 @@ defmodule ExplorerWeb.TransactionController do
         options
       )
 
-    transactions = Chain.recent_collated_transactions(full_options)
+    transactions_plus_one = Chain.recent_collated_transactions(full_options)
+
+    {next_page, transactions} = List.pop_at(transactions_plus_one, @page_size)
+
     transaction_estimated_count = Chain.transaction_estimated_count()
 
     render(
       conn,
       "index.html",
-      earliest: earliest(transactions),
+      next_page_params: next_page_params(next_page, transactions),
       transaction_estimated_count: transaction_estimated_count,
       transactions: transactions
     )
   end
 
-  defp earliest([]), do: nil
+  defp next_page_params(nil, _transactions), do: nil
 
-  defp earliest(transactions) do
+  defp next_page_params(_, transactions) do
     last = List.last(transactions)
     %{block_number: last.block_number, index: last.index}
   end

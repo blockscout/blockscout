@@ -65,6 +65,30 @@ defmodule ExplorerWeb.TransactionControllerTest do
       assert second_page_hashes == actual_hashes
     end
 
+    test "next_page_params exist if not on last page", %{conn: conn} do
+      address = insert(:address)
+
+      60
+      |> insert_list(:transaction, from_address_hash: address.hash)
+      |> with_block()
+
+      conn = get(conn, "/en/transactions")
+
+      assert conn.assigns.next_page_params
+    end
+
+    test "next_page_params are empty if on last page", %{conn: conn} do
+      address = insert(:address)
+
+      :transaction
+      |> insert(from_address_hash: address.hash)
+      |> with_block()
+
+      conn = get(conn, "/en/transactions")
+
+      refute conn.assigns.next_page_params
+    end
+
     test "guards against bad block_number input", %{conn: conn} do
       conn = get(conn, "/en/transactions", %{"block_number" => "foo", "index" => "2"})
       assert html_response(conn, 422)
