@@ -73,15 +73,11 @@
                   <%= gettext "From" %>
                 </th>
                 <td>
-                  <%= if @transaction.from_address do %>
-                    <%= link(
-                          @transaction.from_address,
-                          class: "transaction__link",
-                          to: address_path(@conn, :show, @conn.assigns.locale, @transaction.from_address)
-                        ) %>
-                  <% else %>
-                    <%= gettext "Pending" %>
-                  <% end %>
+                  <%= link(
+                        @transaction.from_address,
+                        class: "transaction__link",
+                        to: address_path(@conn, :show, @conn.assigns.locale, @transaction.from_address)
+                      ) %>
                 </td>
               </tr>
               <tr>
@@ -89,14 +85,21 @@
                   <%= gettext "To" %>
                 </th>
                 <td>
-                  <%= if @transaction.to_address do %>
-                    <%= link(
-                          @transaction.to_address,
-                          class: "transaction__link",
-                          to: address_path(@conn, :show, @conn.assigns.locale, @transaction.to_address)
-                        ) %>
-                  <% else %>
-                    <%= gettext "Pending" %>
+                  <%= cond do %>
+                    <% @transaction.to_address_hash != nil -> %>
+                      <%= link(
+                            @transaction.to_address,
+                            class: "transaction__link",
+                            to: address_path(@conn, :show, @conn.assigns.locale, @transaction.to_address)
+                          ) %>
+                    <% @transaction.created_contract_address_hash != nil -> %>
+                      <i class="fas fa-plus-square"></i> Contract <%= link(
+                        @transaction.created_contract_address_hash,
+                        class: "transaction__link",
+                        "data-test": "created_contract_address_hash",
+                        to: address_path(@conn, :show, @conn.assigns.locale, @transaction.created_contract_address_hash)
+                      ) %> Created
+                    <% true -> %>
                   <% end %>
                 </td>
               </tr>

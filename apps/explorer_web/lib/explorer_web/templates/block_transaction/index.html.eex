@@ -168,7 +168,20 @@
                   </td>
                   <td class="u-text-center"><i class="fas fa-arrow-circle-right"></i></td>
                   <td>
-                      <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
+                    <%= cond do %>
+                      <% transaction.to_address_hash != nil -> %>
+                        <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
+                      <% transaction.created_contract_address_hash != nil -> %>
+                        <i class="fas fa-plus-square"></i>
+                        <%= link(
+                          "Contract Creation",
+                          class: "transaction__link",
+                          "data-address-hash": transaction.created_contract_address_hash,
+                          to: address_path(@conn, :show, @conn.assigns.locale, transaction.created_contract_address_hash),
+                          title: transaction.created_contract_address_hash
+                        ) %>
+                      <% true -> %>
+                    <% end %>
                   </td>
                   <td>
                     <%= ExplorerWeb.TransactionView.value(transaction) %>

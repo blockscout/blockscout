@@ -331,6 +331,22 @@ defmodule Explorer.ChainTest do
                  necessity_by_association: %{block: :optional}
                )
     end
+
+    test "created_contract_address_hash populated when existing" do
+      %Transaction{hash: hash_with_block} =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      %InternalTransaction{created_contract_address_hash: contract_hash} =
+        insert(:internal_transaction_create, transaction_hash: hash_with_block, index: 0)
+
+      assert {:ok, %Transaction{hash: ^hash_with_block, created_contract_address_hash: ^contract_hash}} =
+               Chain.hash_to_transaction(
+                 hash_with_block,
+                 necessity_by_association: %{block: :required}
+               )
+    end
   end
 
   describe "list_blocks/2" do
@@ -546,7 +562,7 @@ defmodule Explorer.ChainTest do
         |> insert(to_address_hash: address.hash)
         |> with_block()
 
-      insert(:internal_transaction_call, index: 0, to_address_hash: address.hash, transaction_hash: transaction.hash)
+      insert(:internal_transaction, index: 0, to_address_hash: address.hash, transaction_hash: transaction.hash)
 
       assert Enum.empty?(Chain.address_to_internal_transactions(address))
     end
@@ -638,7 +654,7 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      insert(:internal_transaction_call, transaction_hash: hash, index: 0)
+      insert(:internal_transaction, transaction_hash: hash, index: 0)
 
       result = Chain.transaction_hash_to_internal_transactions(hash)
 
@@ -871,6 +887,12 @@ defmodule Explorer.ChainTest do
     test "it excludes pending transactions" do
       insert(:transaction)
       assert [] == Explorer.Chain.recent_collated_transactions()
+    end
+
+    test "it has contract_creation_address_hash added" do
+      %InternalTransaction{created_contract_address_hash: hash} = insert(:internal_transaction_create, index: 0)
+
+      assert [%Transaction{created_contract_address_hash: ^hash}] = Explorer.Chain.recent_collated_transactions()
     end
   end
 

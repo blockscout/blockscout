@@ -28,6 +28,8 @@ defmodule Explorer.Chain.InternalTransaction do
   """
   @type t :: %__MODULE__{
           call_type: CallType.t() | nil,
+          created_contract_address: %Ecto.Association.NotLoaded{} | Address.t(),
+          created_contract_address_hash: Explorer.Chain.Hash.t(),
           created_contract_code: Data.t() | nil,
           error: String.t(),
           from_address: %Ecto.Association.NotLoaded{} | Address.t(),

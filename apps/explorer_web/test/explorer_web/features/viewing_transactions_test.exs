@@ -75,6 +75,14 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
       |> assert_has(HomePage.transactions(count: 5))
     end
 
+    test "contract creation is shown for to_address on home page", %{session: session} do
+      internal_transaction = insert(:internal_transaction_create, index: 0)
+
+      session
+      |> HomePage.visit_page()
+      |> assert_has(HomePage.contract_creation(internal_transaction))
+    end
+
     test "viewing the default transactions tab", %{session: session, transaction: transaction, pending: pending} do
       session
       |> TransactionListPage.visit_page()
@@ -87,8 +95,14 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
       |> TransactionListPage.visit_page()
       |> TransactionListPage.click_pending()
       |> assert_has(TransactionListPage.transaction(pending))
+    end
 
-      # |> click(css(".transactions__link", text: to_string(pending.hash)))
+    test "contract creation is shown for to_address on list page", %{session: session} do
+      internal_transaction = insert(:internal_transaction_create, index: 0)
+
+      session
+      |> TransactionListPage.visit_page()
+      |> assert_has(TransactionListPage.contract_creation(internal_transaction))
     end
   end
 
@@ -104,6 +118,14 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
       session
       |> TransactionPage.visit_page(transaction)
       |> assert_has(TransactionPage.detail_hash(transaction))
+    end
+
+    test "can see a contract creation address in to_address", %{session: session} do
+      internal_transaction = insert(:internal_transaction_create, index: 0)
+
+      session
+      |> TransactionPage.visit_page(internal_transaction.transaction_hash)
+      |> assert_has(TransactionPage.contract_creation_address_hash(internal_transaction))
     end
 
     test "can view a transaction's logs", %{session: session, transaction: transaction} do

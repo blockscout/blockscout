@@ -131,23 +131,52 @@ defmodule Explorer.Factory do
     data
   end
 
-  def internal_transaction_factory do
-    type = internal_transaction_type()
+  def internal_transaction_factory() do
+    gas = Enum.random(21_000..100_000)
+    gas_used = Enum.random(0..gas)
 
-    internal_transaction_factory(type)
+    transaction =
+      :transaction
+      |> insert()
+      |> with_block()
+
+    %InternalTransaction{
+      from_address_hash: insert(:address).hash,
+      to_address_hash: insert(:address).hash,
+      call_type: :delegatecall,
+      gas: gas,
+      gas_used: gas_used,
+      output: %Data{bytes: <<1>>},
+      # caller MUST suppy `index`
+      trace_address: [],
+      transaction_hash: transaction.hash,
+      type: :call,
+      value: sequence("internal_transaction_value", &Decimal.new(&1))
+    }
   end
 
-  def internal_transaction_create_factory do
-    internal_transaction_factory(:create)
-  end
+  def internal_transaction_create_factory() do
+    gas = Enum.random(21_000..100_000)
+    gas_used = Enum.random(0..gas)
 
-  def internal_transaction_call_factory do
-    internal_transaction_factory(:call)
-  end
+    transaction =
+      :transaction
+      |> insert(to_address: nil, to_address_hash: nil)
+      |> with_block()
 
-  # TODO add reward and suicide
-  def internal_transaction_type do
-    Enum.random(~w(call create)a)
+    %InternalTransaction{
+      created_contract_code: data(:internal_transaction_created_contract_code),
+      created_contract_address_hash: insert(:address).hash,
+      from_address_hash: insert(:address).hash,
+      gas: gas,
+      gas_used: gas_used,
+      # caller MUST suppy `index`
+      init: data(:internal_transaction_init),
+      trace_address: [],
+      transaction_hash: transaction.hash,
+      type: :create,
+      value: sequence("internal_transaction_value", &Decimal.new(&1))
+    }
   end
 
   def log_factory do
@@ -250,54 +279,6 @@ defmodule Explorer.Factory do
         where: transaction.block_hash == ^block_hash
       )
     )
-  end
-
-  defp internal_transaction_factory(:call = type) do
-    gas = Enum.random(21_000..100_000)
-    gas_used = Enum.random(0..gas)
-
-    transaction =
-      :transaction
-      |> insert()
-      |> with_block()
-
-    %InternalTransaction{
-      from_address_hash: insert(:address).hash,
-      to_address_hash: insert(:address).hash,
-      call_type: :delegatecall,
-      gas: gas,
-      gas_used: gas_used,
-      output: %Data{bytes: <<1>>},
-      # caller MUST suppy `index`
-      trace_address: [],
-      transaction_hash: transaction.hash,
-      type: type,
-      value: sequence("internal_transaction_value", &Decimal.new(&1))
-    }
-  end
-
-  defp internal_transaction_factory(:create = type) do
-    gas = Enum.random(21_000..100_000)
-    gas_used = Enum.random(0..gas)
-
-    transaction =
-      :transaction
-      |> insert()
-      |> with_block()
-
-    %InternalTransaction{
-      created_contract_code: data(:internal_transaction_created_contract_code),
-      created_contract_address_hash: insert(:address).hash,
-      from_address_hash: insert(:address).hash,
-      gas: gas,
-      gas_used: gas_used,
-      # caller MUST suppy `index`
-      init: data(:internal_transaction_init),
-      trace_address: [],
-      transaction_hash: transaction.hash,
-      type: type,
-      value: sequence("internal_transaction_value", &Decimal.new(&1))
-    }
   end
 
   defp price do

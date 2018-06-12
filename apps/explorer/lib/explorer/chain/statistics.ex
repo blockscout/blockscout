@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Statistics do
   import Ecto.Query
 
   alias Ecto.Adapters.SQL
-  alias Explorer.{Chain, Repo}
+  alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.{Block, Transaction}
   alias Timex.Duration
 
@@ -115,12 +115,13 @@ defmodule Explorer.Chain.Statistics do
       )
 
     transactions =
-      from(
-        transaction in Transaction,
-        join: block in assoc(transaction, :block),
-        order_by: [desc: block.number],
-        preload: [:from_address, :to_address, block: block],
-        limit: 5
+      Chain.recent_collated_transactions(
+        necessity_by_association: %{
+          block: :required,
+          from_address: :required,
+          to_address: :optional
+        },
+        paging_options: %PagingOptions{page_size: 5}
       )
 
     %__MODULE__{
@@ -130,7 +131,7 @@ defmodule Explorer.Chain.Statistics do
       lag: query_duration(@lag_query),
       transaction_count: query_value(@transaction_count_query),
       transaction_velocity: query_value(@transaction_velocity_query),
-      transactions: Repo.all(transactions)
+      transactions: transactions
     }
     |> put_max_numbered_block()
   end

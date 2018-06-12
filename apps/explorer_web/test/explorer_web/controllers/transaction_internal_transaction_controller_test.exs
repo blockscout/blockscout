@@ -58,5 +58,22 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
 
       assert %Token{} = conn.assigns.exchange_rate
     end
+
+    test "with no to_address_hash overview contains contract create address", %{conn: conn} do
+      internal_transaction = insert(:internal_transaction_create, index: 0)
+
+      conn =
+        get(
+          conn,
+          transaction_internal_transaction_path(
+            ExplorerWeb.Endpoint,
+            :index,
+            :en,
+            internal_transaction.transaction_hash
+          )
+        )
+
+      refute is_nil(conn.assigns.transaction.created_contract_address_hash)
+    end
   end
 end

@@ -3,7 +3,7 @@ defmodule ExplorerWeb.AddressPage do
 
   use Wallaby.DSL
   import Wallaby.Query, only: [css: 1, css: 2]
-  alias Explorer.Chain.{Address, Hash, Transaction}
+  alias Explorer.Chain.{Address, InternalTransaction, Hash, Transaction}
 
   def apply_filter(session, direction) do
     session
@@ -17,6 +17,10 @@ defmodule ExplorerWeb.AddressPage do
 
   def click_internal_transactions(session) do
     click(session, css("[data-test='internal_transactions_tab_link']"))
+  end
+
+  def contract_creation(%InternalTransaction{created_contract_address_hash: hash}) do
+    css("[data-address-hash='#{hash}']", text: "Contract Creation")
   end
 
   def detail_hash(%Address{hash: address_hash}) do

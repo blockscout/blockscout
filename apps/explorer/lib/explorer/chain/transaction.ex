@@ -154,6 +154,7 @@ defmodule Explorer.Chain.Transaction do
     field(:status, Status)
     field(:v, :integer)
     field(:value, Wei)
+    field(:created_contract_address_hash, Hash.Truncated, virtual: true)
 
     timestamps()
 
