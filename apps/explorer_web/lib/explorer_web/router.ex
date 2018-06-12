@@ -11,9 +11,9 @@ defmodule ExplorerWeb.Router do
       "content-security-policy" => "\
         default-src 'self';\
         script-src 'self' 'unsafe-inline' 'unsafe-eval';\
-        style-src 'self' 'unsafe-inline' 'unsafe-eval';\
+        style-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com;\
         img-src 'self' 'unsafe-inline' 'unsafe-eval' data:;\
-        font-src 'self' 'unsafe-inline' 'unsafe-eval' data:;\
+        font-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.gstatic.com data:;\
       "
     })
   end
