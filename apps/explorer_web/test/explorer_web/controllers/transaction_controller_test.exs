@@ -89,16 +89,6 @@ defmodule ExplorerWeb.TransactionControllerTest do
       refute conn.assigns.next_page_params
     end
 
-    test "guards against bad block_number input", %{conn: conn} do
-      conn = get(conn, "/en/transactions", %{"block_number" => "foo", "index" => "2"})
-      assert html_response(conn, 422)
-    end
-
-    test "guards against bad index input", %{conn: conn} do
-      conn = get(conn, "/en/transactions", %{"block_number" => "2", "index" => "bar"})
-      assert html_response(conn, 422)
-    end
-
     test "sends back the number of transactions", %{conn: conn} do
       insert(:transaction)
       |> with_block()

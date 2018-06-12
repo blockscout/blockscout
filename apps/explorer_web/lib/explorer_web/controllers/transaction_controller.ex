@@ -6,25 +6,7 @@ defmodule ExplorerWeb.TransactionController do
   @page_size 50
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
 
-  def index(conn, %{"block_number" => block_number_string, "index" => index_string}) do
-    with {block_number, ""} <- Integer.parse(block_number_string),
-         {index, ""} <- Integer.parse(index_string) do
-      do_index(conn, paging_options: %{@default_paging_options | key: {block_number, index}})
-    else
-      _ ->
-        unprocessable_entity(conn)
-    end
-  end
-
-  def index(conn, _params) do
-    do_index(conn)
-  end
-
-  def show(conn, %{"id" => id, "locale" => locale}) do
-    redirect(conn, to: transaction_internal_transaction_path(conn, :index, locale, id))
-  end
-
-  defp do_index(conn, options \\ []) when is_list(options) do
+  def index(conn, params) do
     full_options =
       Keyword.merge(
         [
@@ -32,10 +14,9 @@ defmodule ExplorerWeb.TransactionController do
             block: :required,
             from_address: :optional,
             to_address: :optional
-          },
-          paging_options: @default_paging_options
+          }
         ],
-        options
+        paging_options(params)
       )
 
     transactions_plus_one = Chain.recent_collated_transactions(full_options)
@@ -53,10 +34,25 @@ defmodule ExplorerWeb.TransactionController do
     )
   end
 
+  def show(conn, %{"id" => id, "locale" => locale}) do
+    redirect(conn, to: transaction_internal_transaction_path(conn, :index, locale, id))
+  end
+
   defp next_page_params(nil, _transactions), do: nil
 
   defp next_page_params(_, transactions) do
     last = List.last(transactions)
     %{block_number: last.block_number, index: last.index}
+  end
+
+  defp paging_options(params) do
+    with %{"block_number" => block_number_string, "index" => index_string} <- params,
+         {block_number, ""} <- Integer.parse(block_number_string),
+         {index, ""} <- Integer.parse(index_string) do
+      [paging_options: %{@default_paging_options | key: {block_number, index}}]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
   end
 end

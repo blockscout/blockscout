@@ -13,33 +13,19 @@ defmodule ExplorerWeb.AddressTransactionController do
   @page_size 50
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
 
-  def index(conn, %{"block_number" => block_number_string, "index" => index_string} = params) do
-    with {block_number, ""} <- Integer.parse(block_number_string),
-         {index, ""} <- Integer.parse(index_string) do
-      do_index(conn, Map.put(params, :paging_options, %{@default_paging_options | key: {block_number, index}}))
-    else
-      _ ->
-        unprocessable_entity(conn)
-    end
-  end
-
-  def index(conn, params), do: do_index(conn, params)
-
-  def do_index(conn, %{"address_id" => address_hash_string} = params) do
+  def index(conn, %{"address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash) do
       full_options =
-        Keyword.merge(
-          [
-            necessity_by_association: %{
-              block: :required,
-              from_address: :optional,
-              to_address: :optional
-            },
-            paging_options: @default_paging_options
-          ],
-          current_filter(params)
-        )
+        [
+          necessity_by_association: %{
+            block: :required,
+            from_address: :optional,
+            to_address: :optional
+          }
+        ]
+        |> Keyword.merge(paging_options(params))
+        |> Keyword.merge(current_filter(params))
 
       transactions_plus_one = Chain.address_to_transactions(address, full_options)
 
@@ -89,5 +75,16 @@ defmodule ExplorerWeb.AddressTransactionController do
   defp next_page_params(_, transactions) do
     last = List.last(transactions)
     %{block_number: last.block_number, index: last.index}
+  end
+
+  defp paging_options(params) do
+    with %{"block_number" => block_number_string, "index" => index_string} <- params,
+         {block_number, ""} <- Integer.parse(block_number_string),
+         {index, ""} <- Integer.parse(index_string) do
+      [paging_options: %{@default_paging_options | key: {block_number, index}}]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
   end
 end
