@@ -84,6 +84,43 @@ defmodule EthereumJSONRPC do
   @type timestamp :: String.t()
 
   @doc """
+  Execute smart contract functions.
+
+  Receives a list of smart contract functions to execute. Each function is
+  represented by a map. The contract_address key is the address of the smart
+  contract being queried, the data key indicates which function should be
+  executed, as well as what are their arguments, and the id key is the id that
+  is going to be sent with the JSON-RPC call.
+
+  ## Examples
+
+  Execute the "sum" function that receives two arguments (20 and 22) and returns their sum (42):
+  iex> EthereumJSONRPC.execute_contract_functions([{
+  ...> "0x7e50612682b8ee2a8bb94774d50d6c2955726526",
+  ...> "0xcad0899b00000000000000000000000000000000000000000000000000000000000000140000000000000000000000000000000000000000000000000000000000000016",
+  ...> "sum"
+  ...> }])
+  {:ok,
+    [
+      %{
+        "id" => "sum",
+        "jsonrpc" => "2.0",
+        "result" => "0x000000000000000000000000000000000000000000000000000000000000002a"
+      }
+    ]}
+  """
+  def execute_contract_functions(addresses_and_data) do
+    addresses_and_data
+    |> Enum.map(&build_eth_call_payload/1)
+    |> json_rpc(config(:url))
+  end
+
+  defp build_eth_call_payload({address_hash, data, id}) do
+    params = [%{to: address_hash, data: data}]
+    request(%{id: id, method: "eth_call", params: params})
+  end
+
+  @doc """
   Fetches balance for each address `hash` at the `block_number`
   """
   @spec fetch_balances(
