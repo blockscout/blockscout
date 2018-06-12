@@ -77,7 +77,7 @@ defmodule ExplorerWeb.Mixfile do
       # HTML CSS selectors for Phoenix controller tests
       {:floki, "~> 0.20.1", only: :test},
       {:flow, "~> 0.12"},
-      {:gettext, "~> 0.11"},
+      {:gettext, "~> 0.14.1"},
       {:httpoison, "~> 1.0", override: true},
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       {:math, "~> 0.3.0"},
