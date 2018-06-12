@@ -10,7 +10,8 @@ defmodule ExplorerWeb.AddressInternalTransactionController do
   alias Explorer.{Chain, Market, PagingOptions}
   alias Explorer.ExchangeRates.Token
 
-  @default_paging_options %PagingOptions{page_size: 50}
+  @page_size 50
+  @default_paging_options %PagingOptions{page_size: @page_size + 1}
 
   def index(
         conn,
@@ -50,13 +51,15 @@ defmodule ExplorerWeb.AddressInternalTransactionController do
           current_filter(params)
         )
 
-      internal_transactions = Chain.address_to_internal_transactions(address, full_options)
+      internal_transactions_plus_one = Chain.address_to_internal_transactions(address, full_options)
+
+      {next_page, internal_transactions} = List.pop_at(internal_transactions_plus_one, @page_size)
 
       render(
         conn,
         "index.html",
         address: address,
-        earliest: earliest(internal_transactions),
+        next_page_params: next_page_params(next_page, internal_transactions),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
         internal_transactions: internal_transactions,
@@ -69,14 +72,6 @@ defmodule ExplorerWeb.AddressInternalTransactionController do
       {:error, :not_found} ->
         not_found(conn)
     end
-  end
-
-  defp earliest([]), do: nil
-
-  defp earliest(internal_transactions) do
-    last = List.last(internal_transactions)
-    {:ok, last_transaction} = Chain.hash_to_transaction(last.transaction_hash)
-    %{block_number: last_transaction.block_number, transaction_index: last_transaction.index, index: last.index}
   end
 
   defp current_filter(%{paging_options: paging_options} = params) do
@@ -97,5 +92,13 @@ defmodule ExplorerWeb.AddressInternalTransactionController do
       "from" -> [direction: :from]
       _ -> []
     end
+  end
+
+  defp next_page_params(nil, _transactions), do: nil
+
+  defp next_page_params(_, internal_transactions) do
+    last = List.last(internal_transactions)
+    {:ok, last_transaction} = Chain.hash_to_transaction(last.transaction_hash)
+    %{block_number: last_transaction.block_number, transaction_index: last_transaction.index, index: last.index}
   end
 end

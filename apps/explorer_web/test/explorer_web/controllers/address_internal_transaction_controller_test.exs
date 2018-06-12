@@ -131,5 +131,51 @@ defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
 
       assert second_page_hashes == actual_hashes
     end
+
+    test "next_page_params exist if not on last page", %{conn: conn} do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      1..60
+      |> Enum.map(fn index ->
+        insert(
+          :internal_transaction,
+          transaction_hash: transaction.hash,
+          from_address_hash: address.hash,
+          index: index
+        )
+      end)
+
+      conn = get(conn, address_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
+
+      assert conn.assigns.next_page_params
+    end
+
+    test "next_page_params are empty if on last page", %{conn: conn} do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      1..2
+      |> Enum.map(fn index ->
+        insert(
+          :internal_transaction,
+          transaction_hash: transaction.hash,
+          from_address_hash: address.hash,
+          index: index
+        )
+      end)
+
+      conn = get(conn, address_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
+
+      refute conn.assigns.next_page_params
+    end
   end
 end

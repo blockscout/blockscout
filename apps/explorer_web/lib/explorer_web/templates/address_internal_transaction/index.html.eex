@@ -115,7 +115,7 @@
         <% end %>
       </div>
     </div>
-    <%= if @earliest do %>
+    <%= if @next_page_params do %>
       <%= link(
         gettext("Older"),
         class: "button button--secondary button--sm u-float-right mt-3",
@@ -124,7 +124,7 @@
           :index,
           @conn.assigns.locale,
           @address,
-          %{"block_number" => @earliest.block_number, "transaction_index" => @earliest.transaction_index, "index" => @earliest.index}
+          @next_page_params
         )
       ) %>
     <% end %>
