@@ -94,5 +94,38 @@ defmodule ExplorerWeb.AddressTransactionControllerTest do
 
       assert second_page_hashes == actual_hashes
     end
+
+    test "next_page_params exist if not on last page", %{conn: conn} do
+      address = insert(:address)
+
+      60
+      |> insert_list(:transaction, from_address_hash: address.hash)
+      |> with_block()
+
+      conn = get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
+
+      assert conn.assigns.next_page_params
+    end
+
+    test "next_page_params are empty if on last page", %{conn: conn} do
+      address = insert(:address)
+
+      :transaction
+      |> insert(from_address_hash: address.hash)
+      |> with_block()
+
+      %Transaction{block_number: block_number, index: index} =
+        :transaction
+        |> insert(from_address_hash: address.hash)
+        |> with_block()
+
+      conn =
+        get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address.hash), %{
+          "block_number" => Integer.to_string(block_number),
+          "index" => Integer.to_string(index)
+        })
+
+      refute conn.assigns.next_page_params
+    end
   end
 end

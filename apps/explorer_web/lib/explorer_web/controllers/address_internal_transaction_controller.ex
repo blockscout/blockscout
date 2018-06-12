@@ -12,11 +12,21 @@ defmodule ExplorerWeb.AddressInternalTransactionController do
 
   @default_paging_options %PagingOptions{page_size: 50}
 
-  def index(conn, %{"block_number" => block_number_string, "transaction_index" => transaction_index_string, "index" => index_string} = params) do
+  def index(
+        conn,
+        %{
+          "block_number" => block_number_string,
+          "transaction_index" => transaction_index_string,
+          "index" => index_string
+        } = params
+      ) do
     with {block_number, ""} <- Integer.parse(block_number_string),
          {transaction_index, ""} <- Integer.parse(transaction_index_string),
          {index, ""} <- Integer.parse(index_string) do
-      do_index(conn, Map.put(params, :paging_options, %{@default_paging_options | key: {block_number, transaction_index, index}}))
+      do_index(
+        conn,
+        Map.put(params, :paging_options, %{@default_paging_options | key: {block_number, transaction_index, index}})
+      )
     else
       _ ->
         unprocessable_entity(conn)

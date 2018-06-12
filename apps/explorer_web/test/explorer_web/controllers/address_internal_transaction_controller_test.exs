@@ -77,18 +77,39 @@ defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
 
       transaction_1_hashes =
         1..20
-        |> Enum.map(fn index -> insert(:internal_transaction, transaction_hash: transaction_1.hash, from_address_hash: address.hash, index: index) end)
-        |> Enum.map(& "#{&1.transaction_hash}.#{&1.index}")
+        |> Enum.map(fn index ->
+          insert(
+            :internal_transaction,
+            transaction_hash: transaction_1.hash,
+            from_address_hash: address.hash,
+            index: index
+          )
+        end)
+        |> Enum.map(&"#{&1.transaction_hash}.#{&1.index}")
 
       transaction_2_hashes =
         1..20
-        |> Enum.map(fn index -> insert(:internal_transaction, transaction_hash: transaction_2.hash, from_address_hash: address.hash, index: index) end)
-        |> Enum.map(& "#{&1.transaction_hash}.#{&1.index}")
+        |> Enum.map(fn index ->
+          insert(
+            :internal_transaction,
+            transaction_hash: transaction_2.hash,
+            from_address_hash: address.hash,
+            index: index
+          )
+        end)
+        |> Enum.map(&"#{&1.transaction_hash}.#{&1.index}")
 
       transaction_3_hashes =
         1..10
-        |> Enum.map(fn index -> insert(:internal_transaction, transaction_hash: transaction_3.hash, from_address_hash: address.hash, index: index) end)
-        |> Enum.map(& "#{&1.transaction_hash}.#{&1.index}")
+        |> Enum.map(fn index ->
+          insert(
+            :internal_transaction,
+            transaction_hash: transaction_3.hash,
+            from_address_hash: address.hash,
+            index: index
+          )
+        end)
+        |> Enum.map(&"#{&1.transaction_hash}.#{&1.index}")
 
       second_page_hashes = transaction_1_hashes ++ transaction_2_hashes ++ transaction_3_hashes
 
@@ -105,7 +126,7 @@ defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
 
       actual_hashes =
         conn.assigns.internal_transactions
-        |> Enum.map(& "#{&1.transaction_hash}.#{&1.index}")
+        |> Enum.map(&"#{&1.transaction_hash}.#{&1.index}")
         |> Enum.reverse()
 
       assert second_page_hashes == actual_hashes

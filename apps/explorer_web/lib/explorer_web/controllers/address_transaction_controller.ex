@@ -10,7 +10,8 @@ defmodule ExplorerWeb.AddressTransactionController do
   alias Explorer.{Chain, Market, PagingOptions}
   alias Explorer.ExchangeRates.Token
 
-  @default_paging_options %PagingOptions{page_size: 50}
+  @page_size 50
+  @default_paging_options %PagingOptions{page_size: @page_size + 1}
 
   def index(conn, %{"block_number" => block_number_string, "index" => index_string} = params) do
     with {block_number, ""} <- Integer.parse(block_number_string),
@@ -40,13 +41,15 @@ defmodule ExplorerWeb.AddressTransactionController do
           current_filter(params)
         )
 
-      transactions = Chain.address_to_transactions(address, full_options)
+      transactions_plus_one = Chain.address_to_transactions(address, full_options)
+
+      {next_page, transactions} = List.pop_at(transactions_plus_one, @page_size)
 
       render(
         conn,
         "index.html",
         address: address,
-        earliest: earliest(transactions),
+        next_page_params: next_page_params(next_page, transactions),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
         transactions: transactions,
@@ -59,13 +62,6 @@ defmodule ExplorerWeb.AddressTransactionController do
       {:error, :not_found} ->
         not_found(conn)
     end
-  end
-
-  defp earliest([]), do: nil
-
-  defp earliest(transactions) do
-    last = List.last(transactions)
-    %{block_number: last.block_number, index: last.index}
   end
 
   defp current_filter(%{paging_options: paging_options} = params) do
@@ -86,5 +82,12 @@ defmodule ExplorerWeb.AddressTransactionController do
       "from" -> [direction: :from]
       _ -> []
     end
+  end
+
+  defp next_page_params(nil, _transactions), do: nil
+
+  defp next_page_params(_, transactions) do
+    last = List.last(transactions)
+    %{block_number: last.block_number, index: last.index}
   end
 end
