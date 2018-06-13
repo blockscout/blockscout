@@ -2119,29 +2119,31 @@ defmodule Explorer.Chain do
     * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
       then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
-    * `:pagination` - pagination params to pass to scrivener.
+    * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
+      `:key` (a tuple of the lowest/oldest {index}) and. Results will be the internal transactions older than
+      the index that is passed.
 
   """
-  @spec transaction_hash_to_internal_transactions(Hash.Full.t()) :: %Scrivener.Page{
-          entries: [InternalTransaction.t()]
-        }
-  @spec transaction_hash_to_internal_transactions(Hash.Full.t(), [
-          necessity_by_association_option | pagination_option
-        ]) :: %Scrivener.Page{entries: [InternalTransaction.t()]}
-  def transaction_hash_to_internal_transactions(
-        %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash,
+
+  @spec transaction_to_internal_transactions(Transaction.t(), [paging_options | necessity_by_association_option]) :: [
+          InternalTransaction.t()
+        ]
+  def transaction_to_internal_transactions(
+        %Transaction{hash: %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash},
         options \\ []
       )
       when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    pagination = Keyword.get(options, :pagination, %{})
+    paging_options = Keyword.get(options, :paging_options, %PagingOptions{page_size: 50})
 
     InternalTransaction
     |> for_parent_transaction(hash)
     |> join_associations(necessity_by_association)
     |> where_transaction_has_multiple_internal_transactions()
+    |> page_internal_transaction(paging_options)
+    |> limit(^paging_options.page_size)
     |> order_by(:index)
-    |> Repo.paginate(pagination)
+    |> Repo.all()
   end
 
   @doc """
@@ -2547,6 +2549,11 @@ defmodule Explorer.Chain do
         (transaction.block_number == ^block_number and transaction.index == ^transaction_index and
            internal_transaction.index < ^index)
     )
+  end
+
+  defp page_internal_transaction(query, %PagingOptions{key: {index}}) do
+    query
+    |> where([internal_transaction], internal_transaction.index < ^index)
   end
 
   defp page_transaction(query, %PagingOptions{key: nil}), do: query

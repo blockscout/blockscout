@@ -3,6 +3,7 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
 
   import ExplorerWeb.Router.Helpers, only: [transaction_internal_transaction_path: 4]
 
+  alias Explorer.Chain.InternalTransaction
   alias Explorer.ExchangeRates.Token
 
   describe "GET index/3" do
@@ -43,7 +44,7 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
       conn = get(conn, path)
 
       actual_internal_transaction_ids =
-        conn.assigns.page
+        conn.assigns.internal_transactions
         |> Enum.map(fn it -> it.id end)
 
       assert html_response(conn, 200)
@@ -79,6 +80,69 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
         )
 
       refute is_nil(conn.assigns.transaction.created_contract_address_hash)
+    end
+
+    test "returns next page of results based on last seen internal transaction", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      second_page_indexes =
+        1..50
+        |> Enum.map(fn index -> insert(:internal_transaction, transaction_hash: transaction.hash, index: index) end)
+        |> Enum.map(& &1.index)
+
+      %InternalTransaction{index: index} = insert(:internal_transaction, transaction_hash: transaction.hash, index: 51)
+
+      conn =
+        get(conn, transaction_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, transaction.hash), %{
+          "index" => Integer.to_string(index)
+        })
+
+      actual_indexes = Enum.map(conn.assigns.internal_transactions, & &1.index)
+
+      assert second_page_indexes == actual_indexes
+    end
+
+    test "next_page_params exist if not on last page", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      1..60
+      |> Enum.map(fn index ->
+        insert(
+          :internal_transaction,
+          transaction_hash: transaction.hash,
+          index: index
+        )
+      end)
+
+      conn = get(conn, transaction_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, transaction.hash))
+
+      assert conn.assigns.next_page_params
+    end
+
+    test "next_page_params are empty if on last page", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      1..2
+      |> Enum.map(fn index ->
+        insert(
+          :internal_transaction,
+          transaction_hash: transaction.hash,
+          index: index
+        )
+      end)
+
+      conn = get(conn, transaction_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, transaction.hash))
+
+      refute conn.assigns.next_page_params
     end
   end
 end
