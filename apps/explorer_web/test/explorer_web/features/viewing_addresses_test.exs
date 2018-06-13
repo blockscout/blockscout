@@ -11,12 +11,12 @@ defmodule ExplorerWeb.ViewingAddressesTest do
 
     from_taft =
       :transaction
-      |> insert(from_address_hash: taft.hash, to_address_hash: lincoln.hash)
+      |> insert(from_address: taft, to_address: lincoln)
       |> with_block(block)
 
     from_lincoln =
       :transaction
-      |> insert(from_address_hash: lincoln.hash, to_address_hash: taft.hash)
+      |> insert(from_address: lincoln, to_address: taft)
       |> with_block(block)
 
     {:ok,
@@ -85,18 +85,18 @@ defmodule ExplorerWeb.ViewingAddressesTest do
       block: block,
       session: session
     } do
-      lincoln_hash = addresses.lincoln.hash
+      lincoln = addresses.lincoln
 
       from_lincoln =
         :transaction
-        |> insert(from_address_hash: lincoln_hash, to_address_hash: nil)
+        |> insert(from_address: lincoln, to_address: nil)
         |> with_block(block)
 
       internal_transaction =
         insert(
           :internal_transaction_create,
-          transaction_hash: from_lincoln.hash,
-          from_address_hash: lincoln_hash,
+          transaction: from_lincoln,
+          from_address: lincoln,
           index: 0
         )
 
@@ -108,10 +108,10 @@ defmodule ExplorerWeb.ViewingAddressesTest do
 
   describe "viewing internal transactions" do
     setup %{addresses: addresses, transactions: transactions} do
-      address_hash = addresses.lincoln.hash
-      transaction_hash = transactions.from_lincoln.hash
-      insert(:internal_transaction, transaction_hash: transaction_hash, to_address_hash: address_hash, index: 0)
-      insert(:internal_transaction, transaction_hash: transaction_hash, from_address_hash: address_hash, index: 1)
+      address = addresses.lincoln
+      transaction = transactions.from_lincoln
+      insert(:internal_transaction, transaction: transaction, to_address: address, index: 0)
+      insert(:internal_transaction, transaction: transaction, from_address: address, index: 1)
       :ok
     end
 
@@ -140,7 +140,7 @@ defmodule ExplorerWeb.ViewingAddressesTest do
   end
 
   test "viewing transaction count", %{addresses: addresses, session: session} do
-    insert_list(1000, :transaction, to_address_hash: addresses.lincoln.hash)
+    insert_list(1000, :transaction, to_address: addresses.lincoln)
 
     session
     |> AddressPage.visit_page(addresses.lincoln)

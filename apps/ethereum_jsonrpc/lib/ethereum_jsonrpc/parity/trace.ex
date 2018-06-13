@@ -18,6 +18,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
       ...>       "init" => "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
       ...>       "value" => 0
       ...>     },
+      ...>     "blockNumber" => 34,
       ...>     "index" => 0,
       ...>     "result" => %{
       ...>       "address" => "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb4",
@@ -31,6 +32,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
       ...>   }
       ...> )
       %{
+        block_number: 34,
         created_contract_address_hash: "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb4",
         created_contract_code: "0x606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
         from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
@@ -54,6 +56,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
       ...>       "init" => "0x4bb278f3",
       ...>       "value" => 0
       ...>     },
+      ...>     "blockNumber" => 35,
       ...>     "error" => "Bad instruction",
       ...>     "index" => 0,
       ...>     "subtraces" => 0,
@@ -63,6 +66,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
       ...>   }
       ...> )
       %{
+        block_number: 35,
         error: "Bad instruction",
         from_address_hash: "0x78a42d3705fb3c26a4b54737a784bf064f0815fb",
         gas: 3946728,
@@ -86,6 +90,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
       ...>       "to" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
       ...>       "value" => 0
       ...>     },
+      ...>     "blockNumber" => 35,
       ...>     "index" => 0,
       ...>     "result" => %{
       ...>       "gasUsed" => 27770,
@@ -98,6 +103,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
       ...>   }
       ...> )
       %{
+        block_number: 35,
         call_type: "call",
         from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
         gas: 4677320,
@@ -123,6 +129,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
      ...>       "to" => "0xfdca0da4158740a93693441b35809b5bb463e527",
      ...>       "value" => 10000000000000000
      ...>     },
+     ...>     "blockNumber" => 35,
      ...>     "error" => "Reverted",
      ...>     "index" => 0,
      ...>     "subtraces" => 7,
@@ -132,6 +139,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
      ...>   }
      ...> )
      %{
+       block_number: 35,
        call_type: "call",
        error: "Reverted",
        from_address_hash: "0xc9266e6fdf5182dc47d27e0dc32bdff9e4cd2e32",
@@ -160,6 +168,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
       ...>       "balance" => 0,
       ...>       "refundAddress" => "0x59e2e9ecf133649b1a7efc731162ff09d29ca5a5"
       ...>     },
+      ...>     "blockNumber" => 35,
       ...>     "index" => 1,
       ...>     "result" => nil,
       ...>     "subtraces" => 0,
@@ -169,6 +178,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
       ...>   }
       ...> )
       %{
+        block_number: 35,
         from_address_hash: "0xa7542d78b9a0be6147536887e0065f16182d294b",
         index: 1,
         to_address_hash: "0x59e2e9ecf133649b1a7efc731162ff09d29ca5a5",
@@ -189,12 +199,14 @@ defmodule EthereumJSONRPC.Parity.Trace do
         "to" => to_address_hash,
         "value" => value
       },
+      "blockNumber" => block_number,
       "index" => index,
       "traceAddress" => trace_address,
       "transactionHash" => transaction_hash
     } = elixir
 
     %{
+      block_number: block_number,
       call_type: call_type,
       from_address_hash: from_address_hash,
       gas: gas,
@@ -211,12 +223,14 @@ defmodule EthereumJSONRPC.Parity.Trace do
   def elixir_to_params(%{"type" => "create" = type} = elixir) do
     %{
       "action" => %{"from" => from_address_hash, "gas" => gas, "init" => init, "value" => value},
+      "blockNumber" => block_number,
       "index" => index,
       "traceAddress" => trace_address,
       "transactionHash" => transaction_hash
     } = elixir
 
     %{
+      block_number: block_number,
       from_address_hash: from_address_hash,
       gas: gas,
       index: index,
@@ -232,12 +246,14 @@ defmodule EthereumJSONRPC.Parity.Trace do
   def elixir_to_params(%{"type" => "suicide" = type} = elixir) do
     %{
       "action" => %{"address" => from_address_hash, "balance" => value, "refundAddress" => to_address_hash},
+      "blockNumber" => block_number,
       "index" => index,
       "traceAddress" => trace_address,
       "transactionHash" => transaction_hash
     } = elixir
 
     %{
+      block_number: block_number,
       from_address_hash: from_address_hash,
       index: index,
       to_address_hash: to_address_hash,
@@ -259,6 +275,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
       ...>       "init" => "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
       ...>       "value" => "0x0"
       ...>     },
+      ...>     "blockNumber" => 1,
       ...>     "index" => 0,
       ...>     "result" => %{
       ...>       "address" => "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb4",
@@ -278,6 +295,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
           "init" => "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
           "value" => 0
         },
+        "blockNumber" => 1,
         "index" => 0,
         "result" => %{
           "address" => "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb4",
@@ -290,8 +308,8 @@ defmodule EthereumJSONRPC.Parity.Trace do
         "type" => "create"
       }
 
-  The caller must put `"index"` and `"transactionHash"` into the incoming map, as Parity itself does not include that
-  information, but it is needed to locate the trace in history fully.
+  The caller must put `"blockNumber"`, `"index"`, and `"transactionHash"` into the incoming map, as Parity itself does
+  not include that information, but it is needed to locate the trace in history and update addresses fully.
 
       iex> EthereumJSONRPC.Parity.Trace.to_elixir(
       ...>   %{
@@ -311,7 +329,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
       ...>     "type" => "create"
       ...>   }
       ...> )
-      ** (ArgumentError) Caller must `Map.put/2` `"index"` and `"transactionHash"` in trace
+      ** (ArgumentError) Caller must `Map.put/2` `"blockNumber"`, `"index"`, and `"transactionHash"` in trace
 
   `"suicide"` `"type"` traces are different in that they have a `nil` `"result"`.  This is because the `"result"` key
   is used to indicate success from Parity.
@@ -323,6 +341,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
       ...>       "balance" => "0x0",
       ...>       "refundAddress" => "0x59e2e9ecf133649b1a7efc731162ff09d29ca5a5"
       ...>     },
+      ...>     "blockNumber" => 1,
       ...>     "index" => 1,
       ...>     "result" => nil,
       ...>     "subtraces" => 0,
@@ -337,6 +356,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
           "balance" => 0,
           "refundAddress" => "0x59e2e9ecf133649b1a7efc731162ff09d29ca5a5"
         },
+        "blockNumber" => 1,
         "index" => 1,
         "result" => nil,
         "subtraces" => 0,
@@ -357,6 +377,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
       ...>       "to" => "0xfdca0da4158740a93693441b35809b5bb463e527",
       ...>       "value" => "0x2386f26fc10000"
       ...>     },
+      ...>     "blockNumber" => 1,
       ...>     "error" => "Reverted",
       ...>     "index" => 0,
       ...>     "subtraces" => 7,
@@ -374,6 +395,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
           "to" => "0xfdca0da4158740a93693441b35809b5bb463e527",
           "value" => 10000000000000000
         },
+        "blockNumber" => 1,
         "error" => "Reverted",
         "index" => 0,
         "subtraces" => 7,
@@ -384,12 +406,12 @@ defmodule EthereumJSONRPC.Parity.Trace do
 
   """
 
-  def to_elixir(%{"index" => _, "transactionHash" => _} = trace) when is_map(trace) do
+  def to_elixir(%{"blockNumber" => _, "index" => _, "transactionHash" => _} = trace) when is_map(trace) do
     Enum.into(trace, %{}, &entry_to_elixir/1)
   end
 
   def to_elixir(_) do
-    raise ArgumentError, ~S|Caller must `Map.put/2` `"index"` and `"transactionHash"` in trace|
+    raise ArgumentError, ~S|Caller must `Map.put/2` `"blockNumber"`, `"index"`, and `"transactionHash"` in trace|
   end
 
   # subtraces is an actual integer in JSON and not hex-encoded
@@ -399,6 +421,8 @@ defmodule EthereumJSONRPC.Parity.Trace do
   defp entry_to_elixir({"action" = key, action}) do
     {key, Action.to_elixir(action)}
   end
+
+  defp entry_to_elixir({"blockNumber", block_number} = entry) when is_integer(block_number), do: entry
 
   defp entry_to_elixir({"error", reason} = entry) when is_binary(reason), do: entry
 

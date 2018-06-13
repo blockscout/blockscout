@@ -33,20 +33,20 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
         nonce: 99045,
         inserted_at: Timex.parse!("1970-01-01T00:00:18-00:00", "{ISO:Extended}"),
         updated_at: Timex.parse!("1980-01-01T00:00:18-00:00", "{ISO:Extended}"),
-        from_address_hash: taft.hash,
-        to_address_hash: lincoln.hash
+        from_address: taft,
+        to_address: lincoln
       )
       |> with_block(block, gas_used: Decimal.new(1_230_000_000_000_123_000), status: :ok)
 
-    insert(:log, address_hash: lincoln.hash, index: 0, transaction_hash: transaction.hash)
+    insert(:log, address: lincoln, index: 0, transaction: transaction)
 
     # From Lincoln to Taft.
     txn_from_lincoln =
       :transaction
-      |> insert(from_address_hash: lincoln.hash, to_address_hash: taft.hash)
+      |> insert(from_address: lincoln, to_address: taft)
       |> with_block(block)
 
-    internal = insert(:internal_transaction, index: 0, transaction_hash: transaction.hash)
+    internal = insert(:internal_transaction, index: 0, transaction: transaction)
 
     {:ok,
      %{
@@ -76,7 +76,12 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
     end
 
     test "contract creation is shown for to_address on home page", %{session: session} do
-      internal_transaction = insert(:internal_transaction_create, index: 0)
+      transaction =
+        :transaction
+        |> insert(to_address: nil)
+        |> with_block()
+
+      internal_transaction = insert(:internal_transaction_create, transaction: transaction, index: 0)
 
       session
       |> HomePage.visit_page()
@@ -98,7 +103,12 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
     end
 
     test "contract creation is shown for to_address on list page", %{session: session} do
-      internal_transaction = insert(:internal_transaction_create, index: 0)
+      transaction =
+        :transaction
+        |> insert(to_address: nil)
+        |> with_block()
+
+      internal_transaction = insert(:internal_transaction_create, transaction: transaction, index: 0)
 
       session
       |> TransactionListPage.visit_page()
@@ -121,10 +131,15 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
     end
 
     test "can see a contract creation address in to_address", %{session: session} do
-      internal_transaction = insert(:internal_transaction_create, index: 0)
+      transaction =
+        :transaction
+        |> insert(to_address: nil)
+        |> with_block()
+
+      internal_transaction = insert(:internal_transaction_create, transaction: transaction, index: 0)
 
       session
-      |> TransactionPage.visit_page(internal_transaction.transaction_hash)
+      |> TransactionPage.visit_page(transaction.hash)
       |> assert_has(TransactionPage.contract_creation_address_hash(internal_transaction))
     end
 

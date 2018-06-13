@@ -10,10 +10,9 @@ defmodule Explorer.Indexer.PendingTransactionFetcher do
   require Logger
 
   import EthereumJSONRPC.Parity, only: [fetch_pending_transactions: 0]
-  import Explorer.Indexer.AddressExtraction, only: [transactions_params_to_addresses_params: 1]
 
   alias Explorer.{Chain, Indexer}
-  alias Explorer.Indexer.PendingTransactionFetcher
+  alias Explorer.Indexer.{AddressExtraction, PendingTransactionFetcher}
 
   # milliseconds
   @default_interval 1_000
@@ -87,7 +86,8 @@ defmodule Explorer.Indexer.PendingTransactionFetcher do
 
   defp task(%PendingTransactionFetcher{} = _state) do
     {:ok, transactions_params} = fetch_pending_transactions()
-    addresses_params = transactions_params_to_addresses_params(transactions_params)
+
+    addresses_params = AddressExtraction.extract_addresses(%{transactions: transactions_params}, pending: true)
 
     # There's no need to queue up fetching the address balance since theses are pending transactions and cannot have
     # affected the address balance yet since address balance is a balance at a give block and these transactions are

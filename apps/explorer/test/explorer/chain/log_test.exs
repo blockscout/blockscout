@@ -8,9 +8,9 @@ defmodule Explorer.Chain.LogTest do
 
   describe "changeset/2" do
     test "accepts valid attributes" do
-      params = params_for(:log)
-      changeset = Log.changeset(%Log{}, params)
-      assert changeset.valid?
+      params = params_for(:log, address_hash: build(:address).hash, transaction_hash: build(:transaction).hash)
+
+      assert %Changeset{valid?: true} = Log.changeset(%Log{}, params)
     end
 
     test "rejects missing attributes" do
@@ -20,9 +20,15 @@ defmodule Explorer.Chain.LogTest do
     end
 
     test "accepts optional attributes" do
-      params = Map.put(params_for(:log), :first_topic, "ham")
+      params =
+        params_for(
+          :log,
+          address_hash: build(:address).hash,
+          first_topic: "ham",
+          transaction_hash: build(:transaction).hash
+        )
 
-      assert %Changeset{valid?: true} = Log.changeset(%Log{}, params)
+      assert %Changeset{changes: %{first_topic: "ham"}, valid?: true} = Log.changeset(%Log{}, params)
     end
 
     test "assigns optional attributes" do

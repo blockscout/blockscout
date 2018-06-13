@@ -5,7 +5,8 @@ defmodule Explorer.Chain.Address do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Data, Hash, Wei, SmartContract}
+  alias Ecto.Changeset
+  alias Explorer.Chain.{Block, Data, Hash, Wei, SmartContract}
 
   @optional_attrs ~w(contract_code)a
   @required_attrs ~w(hash)a
@@ -18,7 +19,8 @@ defmodule Explorer.Chain.Address do
 
   @typedoc """
    * `fetched_balance` - The last fetched balance from Parity
-   * `balance_fetched_at` - the last time `balance` was fetched
+   * `fetched_balance_block_number` - the `t:Explorer.Chain.Block.t/0` `t:Explorer.Chain.Block.block_number/0` for
+     which `fetched_balance` was fetched
    * `hash` - the hash of the address's public key
    * `contract_code` - the code of the contract when an Address is a contract
    * `inserted_at` - when this address was inserted
@@ -26,7 +28,7 @@ defmodule Explorer.Chain.Address do
   """
   @type t :: %__MODULE__{
           fetched_balance: Wei.t(),
-          balance_fetched_at: DateTime.t(),
+          fetched_balance_block_number: Block.block_number(),
           hash: Hash.Truncated.t(),
           contract_code: Data.t() | nil,
           inserted_at: DateTime.t(),
@@ -36,7 +38,7 @@ defmodule Explorer.Chain.Address do
   @primary_key {:hash, Hash.Truncated, autogenerate: false}
   schema "addresses" do
     field(:fetched_balance, Wei)
-    field(:balance_fetched_at, :utc_datetime)
+    field(:fetched_balance_block_number, :integer)
     field(:contract_code, Data)
 
     has_one(:smart_contract, SmartContract)
@@ -44,16 +46,24 @@ defmodule Explorer.Chain.Address do
     timestamps()
   end
 
+  @balance_changeset_required_attrs @required_attrs ++ ~w(fetched_balance fetched_balance_block_number)a
+
   def balance_changeset(%__MODULE__{} = address, attrs) do
     address
-    |> cast(attrs, [:fetched_balance])
-    |> validate_required([:fetched_balance])
-    |> put_change(:balance_fetched_at, Timex.now())
+    |> cast(attrs, @balance_changeset_required_attrs)
+    |> validate_required(@balance_changeset_required_attrs)
+    |> changeset()
   end
 
   def changeset(%__MODULE__{} = address, attrs) do
     address
     |> cast(attrs, @allowed_attrs)
+    |> validate_required(@required_attrs)
+    |> unique_constraint(:hash)
+  end
+
+  defp changeset(%Changeset{data: %__MODULE__{}} = changeset) do
+    changeset
     |> validate_required(@required_attrs)
     |> unique_constraint(:hash)
   end

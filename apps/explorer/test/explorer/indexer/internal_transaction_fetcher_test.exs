@@ -30,13 +30,15 @@ defmodule Explorer.Indexer.InternalTransactionFetcherTest do
     end
 
     test "buffers collated transactions with unfetched internal transactions" do
+      block = insert(:block)
+
       collated_unfetched_transaction =
         :transaction
         |> insert()
-        |> with_block()
+        |> with_block(block)
 
       assert InternalTransactionFetcher.init([], fn hash_string, acc -> [hash_string | acc] end) == [
-               to_string(collated_unfetched_transaction.hash)
+               %{block_number: block.number, hash_data: to_string(collated_unfetched_transaction.hash)}
              ]
     end
 

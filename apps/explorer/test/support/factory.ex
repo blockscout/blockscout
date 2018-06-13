@@ -44,7 +44,7 @@ defmodule Explorer.Factory do
       hash: block_hash(),
       parent_hash: block_hash(),
       nonce: sequence("block_nonce", & &1),
-      miner_hash: insert(:address).hash,
+      miner: build(:address),
       difficulty: Enum.random(1..100_000),
       total_difficulty: Enum.random(1..100_000),
       size: Enum.random(1..100_000),
@@ -135,21 +135,17 @@ defmodule Explorer.Factory do
     gas = Enum.random(21_000..100_000)
     gas_used = Enum.random(0..gas)
 
-    transaction =
-      :transaction
-      |> insert()
-      |> with_block()
-
     %InternalTransaction{
-      from_address_hash: insert(:address).hash,
-      to_address_hash: insert(:address).hash,
+      from_address: build(:address),
+      to_address: build(:address),
       call_type: :delegatecall,
       gas: gas,
       gas_used: gas_used,
       output: %Data{bytes: <<1>>},
       # caller MUST suppy `index`
       trace_address: [],
-      transaction_hash: transaction.hash,
+      # caller MUST supply `transaction` because it can't be built lazily to allow overrides without creating an extra
+      # transaction
       type: :call,
       value: sequence("internal_transaction_value", &Decimal.new(&1))
     }
@@ -159,21 +155,17 @@ defmodule Explorer.Factory do
     gas = Enum.random(21_000..100_000)
     gas_used = Enum.random(0..gas)
 
-    transaction =
-      :transaction
-      |> insert(to_address: nil, to_address_hash: nil)
-      |> with_block()
-
     %InternalTransaction{
       created_contract_code: data(:internal_transaction_created_contract_code),
-      created_contract_address_hash: insert(:address).hash,
-      from_address_hash: insert(:address).hash,
+      created_contract_address: build(:address),
+      from_address: build(:address),
       gas: gas,
       gas_used: gas_used,
       # caller MUST suppy `index`
       init: data(:internal_transaction_init),
       trace_address: [],
-      transaction_hash: transaction.hash,
+      # caller MUST supply `transaction` because it can't be built lazily to allow overrides without creating an extra
+      # transaction
       type: :create,
       value: sequence("internal_transaction_value", &Decimal.new(&1))
     }
@@ -181,14 +173,14 @@ defmodule Explorer.Factory do
 
   def log_factory do
     %Log{
-      address_hash: insert(:address).hash,
+      address: build(:address),
       data: data(:log_data),
       first_topic: nil,
       fourth_topic: nil,
       index: 0,
       second_topic: nil,
       third_topic: nil,
-      transaction_hash: insert(:transaction).hash,
+      transaction: build(:transaction),
       type: sequence("0x")
     }
   end
@@ -228,7 +220,7 @@ defmodule Explorer.Factory do
 
   def transaction_factory do
     %Transaction{
-      from_address_hash: insert(:address).hash,
+      from_address: build(:address),
       gas: Enum.random(21_000..100_000),
       gas_price: Enum.random(10..99) * 1_000_000_00,
       hash: transaction_hash(),
@@ -238,7 +230,7 @@ defmodule Explorer.Factory do
       r: sequence(:transaction_r, & &1),
       s: sequence(:transaction_s, & &1),
       standard_v: Enum.random(0..3),
-      to_address_hash: insert(:address).hash,
+      to_address: build(:address),
       v: Enum.random(27..30),
       value: Enum.random(1..100_000)
     }

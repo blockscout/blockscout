@@ -541,3 +541,7 @@ msgstr "No"
 #: lib/explorer_web/views/address_contract_view.ex:8
 msgid "true"
 msgstr "Yes"
+
+#: lib/explorer_web/templates/address/overview.html.eex:48
+msgid "Last Updated In Block"
+msgstr ""

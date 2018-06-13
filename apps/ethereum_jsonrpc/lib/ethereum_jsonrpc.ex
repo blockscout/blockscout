@@ -18,6 +18,7 @@ defmodule EthereumJSONRPC do
 
   require Logger
 
+  alias Explorer.Chain.Block
   alias EthereumJSONRPC.{Blocks, Parity, Receipts, Transactions}
 
   @typedoc """
@@ -89,25 +90,30 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
-  Fetches address balances by address hashes.
+  Fetches balance for each address `hash` at the `block_number`
   """
-  def fetch_balances_by_hash(address_hashes) do
-    address_hashes
-    |> get_balance_requests()
-    |> json_rpc(config(:url))
-    |> handle_balances()
+  @spec fetch_balances([%{required(:block_quantity) => quantity, required(:hash_data) => data()}]) ::
+          {:ok,
+           [
+             %{
+               required(:fetched_balance) => non_neg_integer(),
+               required(:fetched_balance_block_number) => Block.block_number(),
+               required(:hash) => quantity
+             }
+           ]}
+          | {:error, reason :: term}
+  def fetch_balances(params_list) when is_list(params_list) do
+    id_to_params = id_to_params(params_list)
+
+    with {:ok, responses} <-
+           id_to_params
+           |> get_balance_requests()
+           |> json_rpc(config(:trace_url)) do
+      addresses_params = get_balance_responses_to_addresses_params(responses, id_to_params)
+
+      {:ok, addresses_params}
+    end
   end
-
-  defp handle_balances({:ok, results}) do
-    native_results =
-      for response <- results, into: %{} do
-        {response["id"], hexadecimal_to_integer(response["result"])}
-      end
-
-    {:ok, native_results}
-  end
-
-  defp handle_balances({:error, _reason} = err), do: err
 
   @doc """
   Fetches blocks by block hashes.
@@ -161,12 +167,21 @@ defmodule EthereumJSONRPC do
   @doc """
   Fetches internal transactions from client-specific API.
   """
-  def fetch_internal_transactions(hashes) when is_list(hashes) do
-    Parity.fetch_internal_transactions(hashes)
+  def fetch_internal_transactions(params_list) when is_list(params_list) do
+    Parity.fetch_internal_transactions(params_list)
   end
 
   def fetch_transaction_receipts(hashes) when is_list(hashes) do
     Receipts.fetch(hashes)
+  end
+
+  @doc """
+  Assigns an id to each set of params in `params_list` for batch request-response correlation
+  """
+  def id_to_params(params_list) do
+    params_list
+    |> Stream.with_index()
+    |> Enum.into(%{}, fn {params, id} -> {id, params} end)
   end
 
   @doc """
@@ -195,15 +210,25 @@ defmodule EthereumJSONRPC do
   @doc """
   Converts `t:nonce/0` to `t:non_neg_integer/0`
   """
+  @spec nonce_to_integer(nonce) :: non_neg_integer()
   def nonce_to_integer(nonce) do
-    hexadecimal_to_integer(nonce)
+    quantity_to_integer(nonce)
   end
 
   @doc """
   Converts `t:quantity/0` to `t:non_neg_integer/0`.
   """
-  def quantity_to_integer(quantity) do
-    hexadecimal_to_integer(quantity)
+  @spec quantity_to_integer(quantity) :: non_neg_integer()
+  def quantity_to_integer("0x" <> hexadecimal_digits) do
+    String.to_integer(hexadecimal_digits, 16)
+  end
+
+  @doc """
+  Converts `t:non_neg_integer/0` to `t:quantity/0`
+  """
+  @spec integer_to_quantity(non_neg_integer) :: quantity
+  def integer_to_quantity(integer) when is_integer(integer) and integer >= 0 do
+    "0x" <> Integer.to_string(integer, 16)
   end
 
   @doc """
@@ -224,18 +249,34 @@ defmodule EthereumJSONRPC do
   """
   def timestamp_to_datetime(timestamp) do
     timestamp
-    |> hexadecimal_to_integer()
+    |> quantity_to_integer()
     |> Timex.from_unix()
   end
 
-  defp get_balance_requests(address_hashes) do
-    for address_hash <- address_hashes do
-      get_balance_request(%{id: address_hash, hash: address_hash})
-    end
+  defp get_balance_requests(id_to_params) when is_map(id_to_params) do
+    Enum.map(id_to_params, fn {id, %{block_quantity: block_quantity, hash_data: hash_data}} ->
+      get_balance_request(%{id: id, block_quantity: block_quantity, hash_data: hash_data})
+    end)
   end
 
-  defp get_balance_request(%{id: id, hash: hash}) do
-    request(%{id: id, method: "eth_getBalance", params: [hash, "latest"]})
+  defp get_balance_request(%{id: id, block_quantity: block_quantity, hash_data: hash_data}) do
+    request(%{id: id, method: "eth_getBalance", params: [hash_data, block_quantity]})
+  end
+
+  defp get_balance_responses_to_addresses_params(responses, id_to_params)
+       when is_list(responses) and is_map(id_to_params) do
+    Enum.map(responses, &get_balance_response_to_address_params(&1, id_to_params))
+  end
+
+  defp get_balance_response_to_address_params(%{"id" => id, "result" => fetched_balance_quantity}, id_to_params)
+       when is_map(id_to_params) do
+    %{block_quantity: block_quantity, hash_data: hash_data} = Map.fetch!(id_to_params, id)
+
+    %{
+      fetched_balance: quantity_to_integer(fetched_balance_quantity),
+      fetched_balance_block_number: quantity_to_integer(block_quantity),
+      hash: hash_data
+    }
   end
 
   defp get_block_by_hash_requests(block_hashes) do
@@ -273,8 +314,8 @@ defmodule EthereumJSONRPC do
 
   defp get_block_by_number_subject(options) do
     case {Map.fetch(options, :quantity), Map.fetch(options, :tag)} do
-      {{:ok, quantity}, :error} ->
-        int_to_hash_string(quantity)
+      {{:ok, integer}, :error} when is_integer(integer) ->
+        integer_to_quantity(integer)
 
       {:error, {:ok, tag}} ->
         tag
@@ -353,10 +394,4 @@ defmodule EthereumJSONRPC do
   defp handle_response(resp, _status) do
     {:error, resp}
   end
-
-  defp hexadecimal_to_integer("0x" <> hexadecimal_digits) do
-    String.to_integer(hexadecimal_digits, 16)
-  end
-
-  defp int_to_hash_string(number), do: "0x" <> Integer.to_string(number, 16)
 end
