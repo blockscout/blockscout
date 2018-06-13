@@ -2019,7 +2019,9 @@ defmodule Explorer.Chain do
     {:ok, internal_transactions} =
       insert_changes_list(
         ordered_changes_list,
+        conflict_target: [:transaction_hash, :index],
         for: InternalTransaction,
+        on_conflict: :replace_all,
         returning: [:index, :transaction_hash],
         timestamps: timestamps
       )
