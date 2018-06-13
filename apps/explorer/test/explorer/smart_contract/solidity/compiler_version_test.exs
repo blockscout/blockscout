@@ -24,7 +24,7 @@ defmodule Explorer.SmartContract.Solidity.CompilerVersionTest do
       end)
 
       assert {:ok, versions} = CompilerVersion.fetch_versions()
-      assert Enum.any?(versions, fn item -> item == {"0.4.9", "0.4.9"} end) == true
+      assert Enum.any?(versions, fn item -> item == {"0.4.9", "v0.4.9+commit.364da425"} end) == true
     end
 
     test "returns error when list of versions is not available", %{bypass: bypass} do

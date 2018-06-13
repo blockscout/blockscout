@@ -30,9 +30,15 @@ defmodule Explorer.SmartContract.Solidity.CompilerVersion do
 
     releases
     |> Map.to_list()
-    |> Enum.map(fn {key, _value} -> {key, key} end)
+    |> Enum.map(fn {key, value} -> {key, extract_version(value)} end)
     |> Enum.sort()
     |> Enum.reverse()
+  end
+
+  defp extract_version(version) do
+    version
+    |> String.replace_prefix("soljson-", "")
+    |> String.replace_suffix(".js", "")
   end
 
   defp decode_json(json) do
