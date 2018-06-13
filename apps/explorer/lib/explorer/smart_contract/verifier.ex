@@ -19,7 +19,7 @@ defmodule Explorer.SmartContract.Verifier do
         "name" => name,
         "contract_source_code" => contract_source_code,
         "optimization" => optimization,
-        "compiler" => compiler_version
+        "compiler_version" => compiler_version
       }) do
 
     solc_output = CodeCompiler.run(name, compiler_version, contract_source_code, optimization)

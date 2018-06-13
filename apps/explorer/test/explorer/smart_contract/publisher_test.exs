@@ -38,7 +38,7 @@ defmodule Explorer.SmartContract.PublisherTest do
 
       invalid_attrs = %{
         "contract_source_code" => "",
-        "compiler" => "",
+        "compiler_version" => "",
         "name" => "",
         "optimization" => ""
       }

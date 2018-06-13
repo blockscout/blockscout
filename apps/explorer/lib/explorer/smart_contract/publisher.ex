@@ -14,7 +14,7 @@ defmodule Explorer.SmartContract.Publisher do
       Explorer.SmartContract.Publisher.publish(
         "0x0f95fa9bc0383e699325f2658d04e8d96d87b90c",
         %{
-          "compiler" => "0.4.24",
+          "compiler_version" => "0.4.24",
           "contract_source_code" => "pragma solidity ^0.4.24; contract SimpleStorage { uint storedData; function set(uint x) public { storedData = x; } function get() public constant returns (uint) { return storedData; } }",
           "name" => "SimpleStorage",
           "optimization" => false
@@ -55,7 +55,7 @@ defmodule Explorer.SmartContract.Publisher do
     %{
       address_hash: address_hash,
       name: params["name"],
-      compiler_version: params["compiler"],
+      compiler_version: params["compiler_version"],
       optimization: params["optimization"],
       contract_source_code: params["contract_source_code"],
       abi: abi
