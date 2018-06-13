@@ -4,8 +4,8 @@
     <p>
       <%= gettext(
             "Showing #%{start_block} to #%{end_block}",
-            start_block: List.first(@blocks.entries).number,
-            end_block: List.last(@blocks.entries).number
+            start_block: List.first(@blocks).number,
+            end_block: List.last(@blocks).number
           ) %>
     </p>
   </div>
@@ -55,17 +55,16 @@
       </table>
     </div>
   </div>
-  <div class="blocks__pagination">
-    <%= pagination_links(
-          @conn,
-          @blocks,
-          ["en"],
-          distance: 1,
-          first: true,
-          next: Phoenix.HTML.raw("&rsaquo;"),
-          path: &block_path/4,
-          previous: Phoenix.HTML.raw("&lsaquo;"),
-          view_style: :bulma
-        ) %>
-  </div>
+  <%= if @next_page_params do %>
+    <%= link(
+      gettext("Older"),
+      class: "button button--secondary button--sm u-float-right mt-3",
+      to: block_path(
+        @conn,
+        :index,
+        @conn.assigns.locale,
+        @next_page_params
+      )
+    ) %>
+  <% end %>
 </section>

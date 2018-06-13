@@ -307,44 +307,28 @@ defmodule Explorer.ChainTest do
 
   describe "list_blocks/2" do
     test "without blocks" do
-      assert %Scrivener.Page{
-               entries: [],
-               page_number: 1,
-               total_entries: 0,
-               total_pages: 1
-             } = Chain.list_blocks()
+      assert [] = Chain.list_blocks()
     end
 
     test "with blocks" do
       %Block{hash: hash} = insert(:block)
 
-      assert %Scrivener.Page{
-               entries: [%Block{hash: ^hash}],
-               page_number: 1,
-               total_entries: 1
-             } = Chain.list_blocks()
+      assert [%Block{hash: ^hash}] = Chain.list_blocks()
     end
 
     test "with blocks can be paginated" do
-      blocks = insert_list(2, :block)
+      second_page_block_ids =
+        50
+        |> insert_list(:block)
+        |> Enum.map(& &1.number)
 
-      [%Block{number: lesser_block_number}, %Block{number: greater_block_number}] = blocks
+      block = insert(:block)
 
-      assert %Scrivener.Page{
-               entries: [%Block{number: ^greater_block_number}],
-               page_number: 1,
-               page_size: 1,
-               total_entries: 2,
-               total_pages: 2
-             } = Chain.list_blocks(pagination: %{page_size: 1})
-
-      assert %Scrivener.Page{
-               entries: [%Block{number: ^lesser_block_number}],
-               page_number: 2,
-               page_size: 1,
-               total_entries: 2,
-               total_pages: 2
-             } = Chain.list_blocks(pagination: %{page: 2, page_size: 1})
+      assert second_page_block_ids ==
+               [paging_options: %PagingOptions{key: {block.number}, page_size: 50}]
+               |> Chain.list_blocks()
+               |> Enum.map(& &1.number)
+               |> Enum.reverse()
     end
   end
 

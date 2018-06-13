@@ -1330,20 +1330,22 @@ defmodule Explorer.Chain do
     * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
         `:required`, and the `t:Explorer.Chain.Block.t/0` has no associated record for that association, then the
         `t:Explorer.Chain.Block.t/0` will not be included in the page `entries`.
-    * `:pagination` - pagination params to pass to scrivener.
+    * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
+      `:key` (a tuple of the lowest/oldest {block_number}) and. Results will be the internal
+      transactions older than the block number that are passed.
 
   """
-  @spec list_blocks([necessity_by_association_option | pagination_option]) :: %Scrivener.Page{
-          entries: [Block.t()]
-        }
+  @spec list_blocks([paging_options | necessity_by_association_option]) :: [Block.t()]
   def list_blocks(options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    pagination = Keyword.get(options, :pagination, %{})
+    paging_options = Keyword.get(options, :paging_options, %PagingOptions{page_size: 50})
 
     Block
     |> join_associations(necessity_by_association)
+    |> page_blocks(paging_options)
+    |> limit(^paging_options.page_size)
     |> order_by(desc: :number)
-    |> Repo.paginate(pagination)
+    |> Repo.all()
   end
 
   @doc """
@@ -2525,6 +2527,13 @@ defmodule Explorer.Chain do
       internal_transaction in assoc(transaction, :internal_transactions),
       internal_transaction.type == ^:create
     )
+  end
+
+  defp page_blocks(query, %PagingOptions{key: nil}), do: query
+
+  defp page_blocks(query, %PagingOptions{key: {block_number}}) do
+    query
+    |> where([block], block.number < ^block_number)
   end
 
   defp page_internal_transaction(query, %PagingOptions{key: nil}), do: query
