@@ -114,16 +114,7 @@ defmodule ExplorerWeb.AddressTransactionControllerTest do
       |> insert(from_address_hash: address.hash)
       |> with_block()
 
-      %Transaction{block_number: block_number, index: index} =
-        :transaction
-        |> insert(from_address_hash: address.hash)
-        |> with_block()
-
-      conn =
-        get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address.hash), %{
-          "block_number" => Integer.to_string(block_number),
-          "index" => Integer.to_string(index)
-        })
+      conn = get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
 
       refute conn.assigns.next_page_params
     end

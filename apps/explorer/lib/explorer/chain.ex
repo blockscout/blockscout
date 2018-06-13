@@ -419,22 +419,21 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Finds all `t:Explorer.Chain.Transaction.t/0` in the `t:Explorer.Chain.Block.t/0`.
+  Finds all `t:Explorer.Chain.Transaction.t/0`s in the `t:Explorer.Chain.Block.t/0`.
 
   ## Options
 
     * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association, then the
       `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
-    * `:pagination` - pagination params to pass to scrivener.
+    * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
+      `:key` (a tuple of the lowest/oldest {index}) and. Results will be the transactions older than
+      the index that are passed.
   """
-  @spec block_to_transactions(Block.t()) :: %Scrivener.Page{entries: [Transaction.t()]}
-  @spec block_to_transactions(Block.t(), [necessity_by_association_option | pagination_option]) :: %Scrivener.Page{
-          entries: [Transaction.t()]
-        }
+  @spec block_to_transactions(Block.t(), [paging_options | necessity_by_association_option]) :: [Transaction.t()]
   def block_to_transactions(%Block{hash: block_hash}, options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    pagination = Keyword.get(options, :pagination, %{})
+    paging_options = Keyword.get(options, :paging_options, %PagingOptions{page_size: 50})
 
     Transaction
     |> load_contract_creation()
@@ -443,9 +442,11 @@ defmodule Explorer.Chain do
     })
     |> join(:inner, [transaction], block in assoc(transaction, :block))
     |> where([_, _, block], block.hash == ^block_hash)
-    |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
+    |> page_transaction(paging_options)
+    |> limit(^paging_options.page_size)
+    |> order_by([transaction], desc: transaction.index)
     |> join_associations(necessity_by_association)
-    |> Repo.paginate(pagination)
+    |> Repo.all()
   end
 
   @doc """
@@ -2548,6 +2549,11 @@ defmodule Explorer.Chain do
       transaction.block_number < ^block_number or
         (transaction.block_number == ^block_number and transaction.index < ^index)
     )
+  end
+
+  defp page_transaction(query, %PagingOptions{key: {index}}) do
+    query
+    |> where([transaction], transaction.index < ^index)
   end
 
   defp run_addresses(multi, ecto_schema_module_to_changes_list, options)

@@ -122,11 +122,7 @@ defmodule Explorer.ChainTest do
 
       assert Repo.aggregate(Transaction, :count, :hash) == 0
 
-      assert %Scrivener.Page{
-               entries: [],
-               page_number: 1,
-               total_entries: 0
-             } = Chain.block_to_transactions(block)
+      assert [] = Chain.block_to_transactions(block)
     end
 
     test "with transactions" do
@@ -135,40 +131,28 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      assert %Scrivener.Page{
-               entries: [%Transaction{hash: ^transaction_hash}],
-               page_number: 1,
-               total_entries: 1
-             } = Chain.block_to_transactions(block)
+      assert [%Transaction{hash: ^transaction_hash}] = Chain.block_to_transactions(block)
     end
 
     test "with transactions can be paginated" do
       block = insert(:block)
 
-      transactions =
-        Enum.map(0..1, fn _ ->
-          :transaction
-          |> insert()
-          |> with_block(block)
-        end)
+      second_page_hashes =
+        50
+        |> insert_list(:transaction)
+        |> with_block(block)
+        |> Enum.map(& &1.hash)
 
-      [%Transaction{hash: first_transaction_hash}, %Transaction{hash: second_transaction_hash}] = transactions
+      %Transaction{block_number: block_number, index: index} =
+        :transaction
+        |> insert()
+        |> with_block(block)
 
-      assert %Scrivener.Page{
-               entries: [%Transaction{hash: ^second_transaction_hash}],
-               page_number: 1,
-               page_size: 1,
-               total_entries: 2,
-               total_pages: 2
-             } = Chain.block_to_transactions(block, pagination: %{page_size: 1})
-
-      assert %Scrivener.Page{
-               entries: [%Transaction{hash: ^first_transaction_hash}],
-               page_number: 2,
-               page_size: 1,
-               total_entries: 2,
-               total_pages: 2
-             } = Chain.block_to_transactions(block, pagination: %{page: 2, page_size: 1})
+      assert second_page_hashes ==
+               block
+               |> Chain.block_to_transactions(paging_options: %PagingOptions{key: {block_number, index}, page_size: 50})
+               |> Enum.map(& &1.hash)
+               |> Enum.reverse()
     end
   end
 

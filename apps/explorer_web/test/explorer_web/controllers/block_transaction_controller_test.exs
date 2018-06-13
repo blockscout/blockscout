@@ -25,7 +25,7 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
       conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block.number))
 
       assert html_response(conn, 200)
-      assert 2 == Enum.count(conn.assigns.page)
+      assert 2 == Enum.count(conn.assigns.transactions)
     end
 
     test "does not return unrelated transactions", %{conn: conn} do
@@ -35,7 +35,7 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
       conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block))
 
       assert html_response(conn, 200)
-      assert Enum.empty?(conn.assigns.page)
+      assert Enum.empty?(conn.assigns.transactions)
     end
 
     test "does not return related transactions without a block", %{conn: conn} do
@@ -45,7 +45,31 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
       conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block))
 
       assert html_response(conn, 200)
-      assert Enum.empty?(conn.assigns.page)
+      assert Enum.empty?(conn.assigns.transactions)
+    end
+
+    test "next_page_params exist if not on last page", %{conn: conn} do
+      block = insert(:block)
+
+      60
+      |> insert_list(:transaction)
+      |> with_block(block)
+
+      conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block))
+
+      assert conn.assigns.next_page_params
+    end
+
+    test "next_page_params are empty if on last page", %{conn: conn} do
+      block = insert(:block)
+
+      :transaction
+      |> insert()
+      |> with_block(block)
+
+      conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block))
+
+      refute conn.assigns.next_page_params
     end
   end
 end

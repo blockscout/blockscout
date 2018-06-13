@@ -129,7 +129,7 @@
         </ul>
       </div>
       <div class="card-body">
-        <%= if Enum.count(@page) > 0 do %>
+        <%= if Enum.count(@transactions) > 0 do %>
           <table class="table table-responsive-sm table-font">
             <thead>
               <tr>
@@ -146,7 +146,7 @@
               </tr>
             </thead>
             <tbody>
-              <%= for transaction <- @page do %>
+              <%= for transaction <- @transactions do %>
                 <tr>
                   <td>
                     <div class="transaction__dot transaction__dot--<%= status(transaction) %>"></div>
@@ -195,21 +195,17 @@
         <% end %>
       </div>
     </div>
-
-    <%= if Enum.count(@page) > 0 do %>
-      <div class="blocks__pagination">
-        <%= pagination_links(
+    <%= if @next_page_params do %>
+      <%= link(
+        gettext("Older"),
+        class: "button button--secondary button--sm u-float-right mt-3",
+        to: transaction_path(
           @conn,
-          @page,
-          ["en", @conn.params["block_id"]],
-          distance: 1,
-          first: true,
-          next: Phoenix.HTML.raw("&rsaquo;"),
-          path: &block_transaction_path/5,
-          previous: Phoenix.HTML.raw("&lsaquo;"),
-          view_style: :bulma
-        ) %>
-      </div>
+          :index,
+          @conn.assigns.locale,
+          @next_page_params
+        )
+      ) %>
     <% end %>
   </section>
 </section>
