@@ -115,7 +115,6 @@ jobs:
             - mix.exs
             - mix.lock
             - appspec.yml
-
   check_formatted:
     docker:
       # Ensure .tool-versions matches
@@ -313,14 +312,6 @@ jobs:
       - run:
           name: Wait for DB
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
-
-      - run:
-          name: Install 'solc'
-          command: |
-            echo 'deb http://ppa.launchpad.net/ethereum/ethereum/ubuntu trusty main' | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
-            sudo apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 923F6CA9
-            sudo apt-get update
-            sudo apt-get install solc
 
       - run: mix coveralls.circle --umbrella
 
