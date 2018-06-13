@@ -96,8 +96,9 @@ defmodule Explorer.Chain do
       transactions older than the block number, transaction index, and index that are passed.
 
   """
-  @spec address_to_internal_transactions(Address.t(), [paging_options | necessity_by_association_option]) ::
+  @spec address_to_internal_transactions(Address.t(), [paging_options | necessity_by_association_option]) :: [
           InternalTransaction.t()
+        ]
   def address_to_internal_transactions(%Address{hash: hash}, options \\ []) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     direction = Keyword.get(options, :direction)
@@ -148,7 +149,7 @@ defmodule Explorer.Chain do
       the block number and index that are passed.
 
   """
-  @spec address_to_transactions(Address.t(), [paging_options | necessity_by_association_option]) :: Transaction.t()
+  @spec address_to_transactions(Address.t(), [paging_options | necessity_by_association_option]) :: [Transaction.t()]
   def address_to_transactions(
         %Address{hash: %Hash{byte_count: unquote(Hash.Truncated.byte_count())} = address_hash},
         options \\ []
@@ -1924,9 +1925,7 @@ defmodule Explorer.Chain do
       the block number and index that are passed.
 
   """
-  @spec recent_collated_transactions([paging_options | necessity_by_association_option]) :: [
-          Transaction.t()
-        ]
+  @spec recent_collated_transactions([paging_options | necessity_by_association_option]) :: [Transaction.t()]
   def recent_collated_transactions(options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, %PagingOptions{page_size: 50})

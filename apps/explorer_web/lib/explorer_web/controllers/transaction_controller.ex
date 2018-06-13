@@ -21,7 +21,7 @@ defmodule ExplorerWeb.TransactionController do
 
     transactions_plus_one = Chain.recent_collated_transactions(full_options)
 
-    {next_page, transactions} = List.pop_at(transactions_plus_one, @page_size)
+    {transactions, next_page} = Enum.split(transactions_plus_one, @page_size)
 
     transaction_estimated_count = Chain.transaction_estimated_count()
 
@@ -38,7 +38,7 @@ defmodule ExplorerWeb.TransactionController do
     redirect(conn, to: transaction_internal_transaction_path(conn, :index, locale, id))
   end
 
-  defp next_page_params(nil, _transactions), do: nil
+  defp next_page_params([], _transactions), do: nil
 
   defp next_page_params(_, transactions) do
     last = List.last(transactions)

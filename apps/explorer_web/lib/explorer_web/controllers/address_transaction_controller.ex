@@ -29,7 +29,7 @@ defmodule ExplorerWeb.AddressTransactionController do
 
       transactions_plus_one = Chain.address_to_transactions(address, full_options)
 
-      {next_page, transactions} = List.pop_at(transactions_plus_one, @page_size)
+      {transactions, next_page} = Enum.split(transactions_plus_one, @page_size)
 
       render(
         conn,
@@ -70,7 +70,7 @@ defmodule ExplorerWeb.AddressTransactionController do
     end
   end
 
-  defp next_page_params(nil, _transactions), do: nil
+  defp next_page_params([], _transactions), do: nil
 
   defp next_page_params(_, transactions) do
     last = List.last(transactions)
