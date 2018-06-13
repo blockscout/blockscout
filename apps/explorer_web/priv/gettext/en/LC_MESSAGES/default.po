@@ -516,6 +516,8 @@ msgstr ""
 msgid "There are no Transactions"
 msgstr ""
 
+#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:116
+#: lib/explorer_web/templates/address_transaction/index.html.eex:135
 #: lib/explorer_web/templates/transaction/index.html.eex:90
 msgid "Older"
 msgstr ""
