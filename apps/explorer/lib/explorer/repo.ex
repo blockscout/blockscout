@@ -2,6 +2,8 @@ defmodule Explorer.Repo do
   use Ecto.Repo, otp_app: :explorer
   use Scrivener, page_size: 10
 
+  require Logger
+
   @doc """
   Dynamically loads the repository url from the
   DATABASE_URL environment variable.
@@ -21,7 +23,36 @@ defmodule Explorer.Repo do
     elements
     |> Enum.chunk_every(1000)
     |> Enum.reduce({0, []}, fn chunk, {total_count, acc} ->
-      {count, inserted} = insert_all(kind, chunk, opts)
+      {count, inserted} =
+        try do
+          insert_all(kind, chunk, opts)
+        rescue
+          exception ->
+            Logger.error(fn ->
+              [
+                "Could not insert all of chunk into ",
+                to_string(kind),
+                " using options because of error.\n",
+                "\n",
+                "Chunk:\n",
+                "\n",
+                inspect(chunk),
+                "\n",
+                "\n",
+                "Options:\n",
+                "\n",
+                inspect(opts),
+                "\n",
+                "\n",
+                "Exception:\n",
+                "\n",
+                Exception.format(:error, exception)
+              ]
+            end)
+
+            # reraise to kill caller
+            raise exception
+        end
 
       if returning do
         {count + total_count, acc ++ inserted}
