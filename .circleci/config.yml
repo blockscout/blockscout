@@ -42,6 +42,20 @@ jobs:
 
       - run:
           command: npm install
+          working_directory: "apps/explorer"
+
+      - save_cache:
+          key: v3-npm-install-{{ .Branch }}-{{ checksum "apps/explorer/package-lock.json" }}
+          paths: "apps/explorer/node_modules"
+      - save_cache:
+          key: v3-npm-install-{{ .Branch }}
+          paths: "apps/explorer/node_modules"
+      - save_cache:
+          key: v3-npm-install
+          paths: "apps/explorer/node_modules"
+
+      - run:
+          command: npm install
           working_directory: "apps/explorer_web/assets"
 
       - save_cache:

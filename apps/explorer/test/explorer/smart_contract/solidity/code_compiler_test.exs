@@ -28,18 +28,12 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
 
       response = CodeCompiler.run(name, code, optimization)
 
-      assert %{
-               "contracts" => %{
-                 ^name => %{
-                   ^name => %{
-                     "abi" => _,
-                     "evm" => %{
-                       "bytecode" => %{"object" => _}
-                     }
-                   }
-                 }
-               }
-             } = response
+      assert {:ok,
+              %{
+                "abi" => _,
+                "bytecode" => _,
+                "name" => _
+              }} = response
     end
   end
 

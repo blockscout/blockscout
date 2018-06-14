@@ -26,7 +26,9 @@ To get POA Explorer up and running locally:
   * Set up some default configuration with: `cp apps/explorer_web/config/dev.secret.exs.example apps/explorer_web/config/dev.secret.exs`
   * Install dependencies with `mix do deps.get, local.rebar, deps.compile, compile`
   * Create and migrate your database with `mix ecto.create && mix ecto.migrate`
-  * Install Node.js dependencies with `cd apps/explorer_web/assets && npm install; cd -`
+  * Install Node.js dependencies with:
+    * `cd apps/explorer_web/assets && npm install; cd -`
+    * `cd apps/explorer && npm install; cd -`
   * Start Phoenix with `mix phx.server`
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
@@ -60,7 +62,6 @@ Configure your local CCMenu with the following url: [`https://circleci.com/gh/po
 #### Prerequisites
 
   * PhantomJS (for wallaby)
-  * `Solidity` - http://solidity.readthedocs.io/en/v0.4.24/installing-solidity.html
 
 #### Running the tests
 

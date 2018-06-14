@@ -19,24 +19,23 @@ defmodule Explorer.SmartContract.Verifier do
         "optimization" => optimization
       }) do
     solc_output = CodeCompiler.run(name, contract_source_code, optimization)
+    compare_bytecodes(solc_output, address_hash)
+  end
 
-    case solc_output do
-      %{
-        "contracts" => %{
-          ^name => %{
-            ^name => %{
-              "abi" => abi,
-              "evm" => %{
-                "bytecode" => %{"object" => bytecode}
-              }
-            }
-          }
-        }
-      } ->
-        compare_bytecodes(address_hash, abi, bytecode)
+  defp compare_bytecodes(compilation_error = {:error, _}, _), do: compilation_error
 
-      _ ->
-        {:error, :compilation}
+  defp compare_bytecodes({:ok, %{"abi" => abi, "bytecode" => bytecode}}, address_hash) do
+    generated_bytecode = extract_bytecode(bytecode)
+
+    "0x" <> blockchain_bytecode =
+      address_hash
+      |> Chain.smart_contract_bytecode()
+      |> extract_bytecode
+
+    if generated_bytecode == blockchain_bytecode do
+      {:ok, %{abi: abi}}
+    else
+      {:error, :generated_bytecode}
     end
   end
 
@@ -55,20 +54,5 @@ defmodule Explorer.SmartContract.Verifier do
       |> String.split_at(-64)
 
     bytecode
-  end
-
-  defp compare_bytecodes(address_hash, abi, bytecode) do
-    generated_bytecode = extract_bytecode(bytecode)
-
-    "0x" <> blockchain_bytecode =
-      address_hash
-      |> Chain.smart_contract_bytecode()
-      |> extract_bytecode
-
-    if generated_bytecode == blockchain_bytecode do
-      {:ok, %{abi: abi}}
-    else
-      {:error, :generated_bytecode}
-    end
   end
 end
