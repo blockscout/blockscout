@@ -89,19 +89,9 @@ defmodule ExplorerWeb.TransactionControllerTest do
       refute conn.assigns.next_page_params
     end
 
-    test "sends back the number of transactions", %{conn: conn} do
-      insert(:transaction)
-      |> with_block()
-
-      conn = get(conn, "/en/transactions")
-
-      refute conn.assigns.transaction_estimated_count == nil
-    end
-
     test "works when there are no transactions", %{conn: conn} do
       conn = get(conn, "/en/transactions")
 
-      assert conn.assigns.transaction_estimated_count == 0
       assert conn.assigns.transactions == []
     end
   end
