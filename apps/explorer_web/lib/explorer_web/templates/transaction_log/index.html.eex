@@ -68,5 +68,18 @@
         <% end %>
       </div>
     </div>
+    <%= if @next_page_params do %>
+      <%= link(
+        gettext("Newer"),
+        class: "button button--secondary button--sm u-float-right mt-3",
+        to: transaction_log_path(
+          @conn,
+          :index,
+          @conn.assigns.locale,
+          @transaction,
+          @next_page_params
+        )
+      ) %>
+    <% end %>
   </section>
 </section>
