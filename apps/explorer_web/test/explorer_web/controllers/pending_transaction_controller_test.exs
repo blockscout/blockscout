@@ -1,5 +1,6 @@
 defmodule ExplorerWeb.PendingTransactionControllerTest do
   use ExplorerWeb.ConnCase
+  alias Explorer.Chain.{Hash, Transaction}
 
   import ExplorerWeb.Router.Helpers, only: [pending_transaction_path: 3]
 
@@ -48,27 +49,49 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
       assert 1 == conn.assigns.pending_transaction_count
     end
 
-    test "paginates transactions using the last seen transaction", %{conn: conn} do
-      {:ok, first_inserted_at, 0} = DateTime.from_iso8601("2015-01-23T23:50:07Z")
-      insert(:transaction, inserted_at: first_inserted_at)
-      {:ok, second_inserted_at, 0} = DateTime.from_iso8601("2016-01-23T23:50:07Z")
-      insert(:transaction, inserted_at: second_inserted_at)
-
-      conn =
-        get(
-          conn,
-          pending_transaction_path(ExplorerWeb.Endpoint, :index, :en),
-          last_seen_pending_inserted_at: Timex.format!(first_inserted_at, "{ISO:Extended:Z}")
-        )
-
-      assert html_response(conn, 200)
-      assert 1 == Enum.count(conn.assigns.transactions)
-    end
-
     test "works when there are no transactions", %{conn: conn} do
       conn = get(conn, pending_transaction_path(conn, :index, :en))
 
       assert html_response(conn, 200)
+    end
+
+    test "returns next page of results based on last seen pending transaction", %{conn: conn} do
+      second_page_hashes =
+        50
+        |> insert_list(:transaction)
+        |> Enum.map(& &1.hash)
+
+      %Transaction{inserted_at: inserted_at, hash: hash} = insert(:transaction)
+
+      conn =
+        get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en), %{
+          "inserted_at" => DateTime.to_iso8601(inserted_at),
+          "hash" => Hash.to_string(hash)
+        })
+
+      actual_hashes =
+        conn.assigns.transactions
+        |> Enum.map(& &1.hash)
+        |> Enum.reverse()
+
+      assert second_page_hashes == actual_hashes
+    end
+
+    test "next_page_params exist if not on last page", %{conn: conn} do
+      60
+      |> insert_list(:transaction)
+
+      conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
+
+      assert conn.assigns.next_page_params
+    end
+
+    test "next_page_params are empty if on last page", %{conn: conn} do
+      insert(:transaction)
+
+      conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
+
+      refute conn.assigns.next_page_params
     end
   end
 end

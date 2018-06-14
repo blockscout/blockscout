@@ -55,15 +55,8 @@ defmodule Explorer.Chain do
   """
   @type necessity_by_association :: %{association => necessity}
 
-  @typedoc """
-  Pagination params used by `scrivener`
-  """
-  @type pagination :: map()
-
-  @typep inserted_after_option :: {:inserted_after, DateTime.t()}
   @typep necessity_by_association_option :: {:necessity_by_association, necessity_by_association}
   @typep on_conflict_option :: {:on_conflict, :nothing | :replace_all}
-  @typep pagination_option :: {:pagination, pagination}
   @typep paging_options :: {:paging_options, PagingOptions.t()}
   @typep params_option :: {:params, [map()]}
   @typep timeout_option :: {:timeout, timeout}
@@ -1947,12 +1940,12 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Return the list of pending transactions that occurred recently (10).
+  Return the list of pending transactions that occurred recently (8).
 
       iex> 2 |> insert_list(:transaction)
       iex> :transaction |> insert() |> with_block()
       iex> 8 |> insert_list(:transaction)
-      iex> %Scrivener.Page{entries: recent_pending_transactions} = Explorer.Chain.recent_pending_transactions()
+      iex> recent_pending_transactions = Explorer.Chain.recent_pending_transactions()
       iex> length(recent_pending_transactions)
       10
       iex> Enum.all?(recent_pending_transactions, fn %Explorer.Chain.Transaction{block_hash: block_hash} ->
@@ -1960,69 +1953,28 @@ defmodule Explorer.Chain do
       ...> end)
       true
 
-  A `t:Explorer.Chain.Transaction.t/0` `inserted_at` can be supplied to the `:inserted_after` option, then only pending
-  transactions inserted after that transaction will be returned.  This can be used to generate paging for pending
-  transactions.
-
-      iex> {:ok, first_inserted_at, 0} = DateTime.from_iso8601("2015-01-23T23:50:07Z")
-      iex> insert(:transaction, inserted_at: first_inserted_at)
-      iex> {:ok, second_inserted_at, 0} = DateTime.from_iso8601("2016-01-23T23:50:07Z")
-      iex> insert(:transaction, inserted_at: second_inserted_at)
-      iex> %Scrivener.Page{entries: after_first_transaction} = Explorer.Chain.recent_pending_transactions(
-      ...>   inserted_after: first_inserted_at
-      ...> )
-      iex> length(after_first_transaction)
-      1
-      iex> %Scrivener.Page{entries: after_second_transaction} = Explorer.Chain.recent_pending_transactions(
-      ...>   inserted_after: second_inserted_at
-      ...> )
-      iex> length(after_second_transaction)
-      0
-
-  When there are no pending transaction and a collated transaction's inserted_at is used, an empty list is returned
-
-      iex> {:ok, first_inserted_at, 0} = DateTime.from_iso8601("2015-01-23T23:50:07Z")
-      iex> :transaction |> insert(inserted_at: first_inserted_at) |> with_block()
-      iex> {:ok, second_inserted_at, 0} = DateTime.from_iso8601("2016-01-23T23:50:07Z")
-      iex> :transaction |> insert(inserted_at: second_inserted_at) |> with_block()
-      iex> %Scrivener.Page{entries: entries} = Explorer.Chain.recent_pending_transactions(
-      ...>   after_inserted_at: first_inserted_at
-      ...> )
-      iex> entries
-      []
-
   ## Options
 
     * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
       then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
-    * `:pagination` - pagination params to pass to scrivener.
+    * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
+      `:key` (a tuple of the lowest/oldest {inserted_at, hash}) and. Results will be the transactions older than
+      the inserted_at and hash that are passed.
 
   """
-  @spec recent_pending_transactions([inserted_after_option | necessity_by_association_option]) :: %Scrivener.Page{
-          entries: [Transaction.t()]
-        }
+  @spec recent_pending_transactions([paging_options | necessity_by_association_option]) :: [Transaction.t()]
   def recent_pending_transactions(options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    pagination = Keyword.get(options, :pagination, %{})
+    paging_options = Keyword.get(options, :paging_options, %PagingOptions{page_size: 50})
 
-    query =
-      from(
-        transaction in Transaction,
-        where: is_nil(transaction.block_hash),
-        order_by: [
-          desc: transaction.inserted_at,
-          # arbitary tie-breaker when inserted at is the same.  hash is random distribution, but using it keeps order
-          # consistent at least
-          desc: transaction.hash
-        ],
-        limit: 10
-      )
-
-    query
-    |> inserted_after(options)
+    Transaction
+    |> where([transaction], is_nil(transaction.block_hash))
+    |> page_pending_transaction(paging_options)
+    |> limit(^paging_options.page_size)
+    |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
     |> join_associations(necessity_by_association)
-    |> Repo.paginate(pagination)
+    |> Repo.all()
   end
 
   @doc """
@@ -2154,14 +2106,28 @@ defmodule Explorer.Chain do
     * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.Log.t/0` has no associated record for that association, then the
       `t:Explorer.Chain.Log.t/0` will not be included in the page `entries`.
-    * `:pagination` - pagination params to pass to scrivener.
+    * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
+      `:key` (a tuple of the lowest/oldest {index}) and. Results will be the transactions older than
+      the index that are passed.
 
   """
-  @spec transaction_to_logs(Transaction.t(), [
-          necessity_by_association_option | pagination_option
-        ]) :: %Scrivener.Page{entries: [Log.t()]}
-  def transaction_to_logs(%Transaction{hash: hash}, options \\ []) when is_list(options) do
-    transaction_hash_to_logs(hash, options)
+  @spec transaction_to_logs(Transaction.t(), [paging_options | necessity_by_association_option]) :: [Log.t()]
+  def transaction_to_logs(
+        %Transaction{hash: %Hash{byte_count: unquote(Hash.Full.byte_count())} = transaction_hash},
+        options \\ []
+      )
+      when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, %PagingOptions{page_size: 50})
+
+    Log
+    |> join(:inner, [log], transaction in assoc(log, :transaction))
+    |> where([_, transaction], transaction.hash == ^transaction_hash)
+    |> page_logs(paging_options)
+    |> limit(^paging_options.page_size)
+    |> order_by([log], asc: log.index)
+    |> join_associations(necessity_by_association)
+    |> Repo.all()
   end
 
   @doc """
@@ -2495,16 +2461,6 @@ defmodule Explorer.Chain do
     {:ok, for(transaction <- transactions, do: transaction.hash)}
   end
 
-  defp inserted_after(query, options) do
-    case Keyword.fetch(options, :inserted_after) do
-      {:ok, inserted_after} ->
-        from(transaction in query, where: ^inserted_after < transaction.inserted_at)
-
-      :error ->
-        query
-    end
-  end
-
   defp join_association(query, association, necessity) when is_atom(association) do
     case necessity do
       :optional ->
@@ -2554,6 +2510,23 @@ defmodule Explorer.Chain do
   defp page_internal_transaction(query, %PagingOptions{key: {index}}) do
     query
     |> where([internal_transaction], internal_transaction.index < ^index)
+  end
+
+  defp page_logs(query, %PagingOptions{key: nil}), do: query
+
+  defp page_logs(query, %PagingOptions{key: {index}}) do
+    query
+    |> where([log], log.index < ^index)
+  end
+
+  defp page_pending_transaction(query, %PagingOptions{key: nil}), do: query
+
+  defp page_pending_transaction(query, %PagingOptions{key: {inserted_at, hash}}) do
+    query
+    |> where(
+      [transaction],
+      transaction.inserted_at < ^inserted_at or (transaction.inserted_at == ^inserted_at and transaction.hash < ^hash)
+    )
   end
 
   defp page_transaction(query, %PagingOptions{key: nil}), do: query
@@ -2683,27 +2656,6 @@ defmodule Explorer.Chain do
   defp timestamps do
     now = DateTime.utc_now()
     %{inserted_at: now, updated_at: now}
-  end
-
-  defp transaction_hash_to_logs(
-         %Hash{byte_count: unquote(Hash.Full.byte_count())} = transaction_hash,
-         options
-       )
-       when is_list(options) do
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    pagination = Keyword.get(options, :pagination, %{})
-
-    query =
-      from(
-        log in Log,
-        join: transaction in assoc(log, :transaction),
-        where: transaction.hash == ^transaction_hash,
-        order_by: [asc: :index]
-      )
-
-    query
-    |> join_associations(necessity_by_association)
-    |> Repo.paginate(pagination)
   end
 
   defp where_address_fields_match(query, address_hash, direction \\ nil) do

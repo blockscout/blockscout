@@ -64,19 +64,16 @@
       </table>
     </div>
   </div>
-  <%= if @last_seen_pending_inserted_at do %>
+  <%= if @next_page_params do %>
     <%= link(
-          gettext("Next Page"),
-          class: "button button--secondary button--sm u-float-right mt-3",
-          to: pending_transaction_path(
-            @conn,
-            :index,
-            @conn.assigns.locale,
-            %{
-               "last_seen_inserted_at" =>
-                 Timex.format!(@last_seen_pending_inserted_at, "{ISO:Extended:Z}")
-            }
-          )
-        ) %>
+      gettext("Older"),
+      class: "button button--secondary button--sm u-float-right mt-3",
+      to: pending_transaction_path(
+        @conn,
+        :index,
+        @conn.assigns.locale,
+        @next_page_params
+      )
+    ) %>
   <% end %>
 </section>

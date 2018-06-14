@@ -524,6 +524,33 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "pending_transactions/0" do
+    test "without transactions" do
+      assert [] = Chain.recent_pending_transactions()
+    end
+
+    test "with transactions" do
+      %Transaction{hash: hash} = insert(:transaction)
+
+      assert [%Transaction{hash: ^hash}] = Chain.recent_pending_transactions()
+    end
+
+    test "with transactions can be paginated" do
+      second_page_hashes =
+        50
+        |> insert_list(:transaction)
+        |> Enum.map(& &1.hash)
+
+      %Transaction{inserted_at: inserted_at, hash: hash} = insert(:transaction)
+
+      assert second_page_hashes ==
+               [paging_options: %PagingOptions{key: {inserted_at, hash}, page_size: 50}]
+               |> Chain.recent_pending_transactions()
+               |> Enum.map(& &1.hash)
+               |> Enum.reverse()
+    end
+  end
+
   describe "transaction_to_internal_transactions/1" do
     test "with transaction without internal transactions" do
       transaction = insert(:transaction)
@@ -623,12 +650,7 @@ defmodule Explorer.ChainTest do
     test "without logs" do
       transaction = insert(:transaction)
 
-      assert %Scrivener.Page{
-               entries: [],
-               page_number: 1,
-               total_entries: 0,
-               total_pages: 1
-             } = Chain.transaction_to_logs(transaction)
+      assert [] = Chain.transaction_to_logs(transaction)
     end
 
     test "with logs" do
@@ -639,12 +661,7 @@ defmodule Explorer.ChainTest do
 
       %Log{id: id} = insert(:log, transaction: transaction)
 
-      assert %Scrivener.Page{
-               entries: [%Log{id: ^id}],
-               page_number: 1,
-               total_entries: 1,
-               total_pages: 1
-             } = Chain.transaction_to_logs(transaction)
+      assert [%Log{id: ^id}] = Chain.transaction_to_logs(transaction)
     end
 
     test "with logs can be paginated" do
@@ -653,25 +670,17 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      logs = Enum.map(0..1, &insert(:log, index: &1, transaction: transaction))
+      second_page_indexes =
+        1..50
+        |> Enum.map(fn index -> insert(:log, transaction_hash: transaction.hash, index: index) end)
+        |> Enum.map(& &1.index)
 
-      [%Log{id: first_log_id}, %Log{id: second_log_id}] = logs
+      log = insert(:log, transaction_hash: transaction.hash, index: 51)
 
-      assert %Scrivener.Page{
-               entries: [%Log{id: ^first_log_id}],
-               page_number: 1,
-               page_size: 1,
-               total_entries: 2,
-               total_pages: 2
-             } = Chain.transaction_to_logs(transaction, pagination: %{page_size: 1})
-
-      assert %Scrivener.Page{
-               entries: [%Log{id: ^second_log_id}],
-               page_number: 2,
-               page_size: 1,
-               total_entries: 2,
-               total_pages: 2
-             } = Chain.transaction_to_logs(transaction, pagination: %{page: 2, page_size: 1})
+      assert second_page_indexes ==
+               transaction
+               |> Chain.transaction_to_logs(paging_options: %PagingOptions{key: {log.index}, page_size: 50})
+               |> Enum.map(& &1.index)
     end
 
     test "with logs necessity_by_association loads associations" do
@@ -682,17 +691,7 @@ defmodule Explorer.ChainTest do
 
       insert(:log, transaction: transaction)
 
-      assert %Scrivener.Page{
-               entries: [
-                 %Log{
-                   address: %Address{},
-                   transaction: %Transaction{}
-                 }
-               ],
-               page_number: 1,
-               total_entries: 1,
-               total_pages: 1
-             } =
+      assert [%Log{address: %Address{}, transaction: %Transaction{}}] =
                Chain.transaction_to_logs(
                  transaction,
                  necessity_by_association: %{
@@ -701,17 +700,12 @@ defmodule Explorer.ChainTest do
                  }
                )
 
-      assert %Scrivener.Page{
-               entries: [
-                 %Log{
-                   address: %Ecto.Association.NotLoaded{},
-                   transaction: %Ecto.Association.NotLoaded{}
-                 }
-               ],
-               page_number: 1,
-               total_entries: 1,
-               total_pages: 1
-             } = Chain.transaction_to_logs(transaction)
+      assert [
+               %Log{
+                 address: %Ecto.Association.NotLoaded{},
+                 transaction: %Ecto.Association.NotLoaded{}
+               }
+             ] = Chain.transaction_to_logs(transaction)
     end
   end
 
