@@ -122,7 +122,7 @@ defmodule Explorer.BufferedTaskTest do
 
     BufferedTask.buffer(buffer, [:boom])
     assert_receive {:run, {0, :boom}}
-    assert_receive {:run, {1, :boom}}
+    assert_receive {:run, {1, :boom}}, 200
     refute_receive _
   end
 
