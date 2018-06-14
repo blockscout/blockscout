@@ -91,7 +91,7 @@
               <tgroup>
                 <tr data-test="internal_transaction">
                   <td>
-                    <%= render ExplorerWeb.TransactionView, "_link.html", conn: @conn, transaction: internal_transaction.transaction %>
+                    <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction: internal_transaction.transaction %>
                   </td>
                   <td>
                     <%= link(internal_transaction.transaction.block,
@@ -100,7 +100,7 @@
                   </td>
                   <td data-from-now="<%= internal_transaction.transaction.block.timestamp %>"></td>
                   <td>
-                    <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: internal_transaction.from_address %>
+                    <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: internal_transaction.from_address %>
                   </td>
                   <td>
                     <%= if ExplorerWeb.InternalTransactionView.create?(internal_transaction) do %>
@@ -113,7 +113,7 @@
                         title: internal_transaction.created_contract_address_hash
                       ) %>
                     <% else %>
-                      <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: internal_transaction.to_address %>
+                      <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: internal_transaction.to_address %>
                     <% end %>
                   </td>
                   <td><%= ExplorerWeb.TransactionView.value(internal_transaction, include_label: false) %></td>

@@ -146,4 +146,21 @@ defmodule ExplorerWeb.ViewingAddressesTest do
     |> AddressPage.visit_page(addresses.lincoln)
     |> assert_text(AddressPage.transaction_count(), "1,002")
   end
+
+  test "viewing new transactions via live update", %{addresses: addresses, session: session} do
+    session = session
+    |> AddressPage.visit_page(addresses.lincoln)
+    |> assert_has(AddressPage.balance())
+
+    transaction =
+      :transaction
+      |> insert(from_address_hash: addresses.lincoln.hash)
+      |> with_block()
+      |> Repo.preload([:block, :from_address, :to_address])
+
+    ExplorerWeb.Endpoint.broadcast!("addresses:#{addresses.lincoln.hash}", "transaction", %{transaction: transaction})
+
+    session
+    |> assert_has(AddressPage.transaction(transaction))
+  end
 end

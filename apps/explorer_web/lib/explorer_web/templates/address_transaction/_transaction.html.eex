@@ -1,0 +1,35 @@
+<tr>
+  <td><div class="transaction__dot transaction__dot--<%= status(@transaction) %>"></div></td>
+  <td>
+    <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction: @transaction %>
+  </td>
+  <td>
+    <%= link(
+          @transaction.block,
+          to: block_path(ExplorerWeb.Endpoint, :show, @locale, @transaction.block)
+        ) %>
+  </td>
+  <td><%= @transaction.block.timestamp |> Timex.from_now %></td>
+  <td class="address-cell">
+    <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: @transaction.from_address %>
+  </td>
+  <td class="u-text-center"><i class="fas fa-arrow-circle-right"></i></td>
+  <td>
+    <%= cond do %>
+      <% @transaction.to_address_hash != nil -> %>
+        <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: @transaction.to_address %>
+      <% @transaction.created_contract_address_hash != nil -> %>
+        <i class="fas fa-plus-square"></i>
+        <%= link(
+          "Contract Creation",
+          class: "transaction__link",
+          "data-address-hash": @transaction.created_contract_address_hash,
+          to: address_path(ExplorerWeb.Endpoint, :show, @locale, @transaction.created_contract_address_hash),
+          title: @transaction.created_contract_address_hash
+        ) %>
+      <% true -> %>
+    <% end %>
+  </td>
+  <td><%= ExplorerWeb.TransactionView.value(@transaction, include_label: false) %></td>
+  <td><%= ExplorerWeb.TransactionView.formatted_fee(@transaction, denomination: :ether) %></td>
+</tr>

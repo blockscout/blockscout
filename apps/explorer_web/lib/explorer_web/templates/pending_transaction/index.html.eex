@@ -46,14 +46,14 @@
                 <div class="transaction__dot transaction__dot--pending"></div>
               </td>
               <td>
-              <%= render ExplorerWeb.TransactionView, "_link.html", conn: @conn, transaction: transaction %>
+              <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction: transaction %>
               </td>
               <td data-from-now="<%= transaction.updated_at %>"></td>
               <td>
-                <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
+                <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.from_address %>
               </td>
               <td>
-                <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
+                <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.to_address %>
               </td>
               <td>
               <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %>

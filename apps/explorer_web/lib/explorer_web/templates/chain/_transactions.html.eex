@@ -14,15 +14,15 @@
         <%= for transaction <- @chain.transactions do %>
         <tr data-test="chain_transaction">
           <td>
-            <%= render ExplorerWeb.TransactionView, "_link.html", conn: @conn, transaction: transaction %>
+            <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction: transaction %>
           </td>
           <td>
-            <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
+            <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.from_address %>
           </td>
           <td>
             <%= cond do %>
               <% transaction.to_address_hash != nil -> %>
-                <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.to_address %>
+                <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.to_address %>
               <% transaction.created_contract_address_hash != nil -> %>
                 <i class="fas fa-plus-square"></i>
                 <%= link(
