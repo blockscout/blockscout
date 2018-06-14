@@ -1,6 +1,5 @@
 defmodule Explorer.Repo do
   use Ecto.Repo, otp_app: :explorer
-  use Scrivener, page_size: 10
 
   require Logger
 

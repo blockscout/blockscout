@@ -48,7 +48,6 @@ defmodule ExplorerWeb.Mixfile do
 
   defp extra_applications,
     do: [
-      :scrivener_html,
       :ex_cldr,
       :timex,
       :timex_ecto,
@@ -88,7 +87,6 @@ defmodule ExplorerWeb.Mixfile do
       {:phoenix_live_reload, "~> 1.0", only: [:dev]},
       {:phoenix_pubsub, "~> 1.0"},
       {:postgrex, ">= 0.0.0"},
-      {:scrivener_html, "~> 1.7"},
       # Waiting on https://github.com/smeevil/set_locale/pull/9
       {:set_locale, github: "minifast/set_locale", branch: "master"},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
