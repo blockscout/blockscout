@@ -2164,6 +2164,16 @@ defmodule Explorer.Chain do
     |> Repo.insert()
   end
 
+  def find_smart_contract(address) do
+    query =
+      from(
+        smart_contract in SmartContract,
+        where: smart_contract.address_hash == ^address
+      )
+
+    Repo.one(query)
+  end
+
   @spec changes_list(params :: map, [{:for, module} | {:with, :atom}]) ::
           {:ok, changes :: map} | {:error, [Changeset.t()]}
   defp changes_list(params, options) when is_list(options) do

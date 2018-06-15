@@ -986,4 +986,12 @@ defmodule Explorer.ChainTest do
   test "circulating_supply/0" do
     assert Chain.circulating_supply() == ProofOfAuthority.circulating()
   end
+
+  describe "find_smart_contract/1" do
+    test "fetches a smart contract" do
+      smart_contract = insert(:smart_contract)
+
+      assert ^smart_contract = Chain.find_smart_contract(smart_contract.address_hash)
+    end
+  end
 end
