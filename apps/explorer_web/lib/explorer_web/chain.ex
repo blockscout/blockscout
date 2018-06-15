@@ -13,6 +13,10 @@ defmodule ExplorerWeb.Chain do
     ]
 
   alias Explorer.Chain.{Address, Block, Transaction}
+  alias Explorer.PagingOptions
+
+  @page_size 50
+  @default_paging_options %PagingOptions{page_size: @page_size + 1}
 
   @spec from_param(String.t()) :: {:ok, Address.t() | Block.t() | Transaction.t()} | {:error, :not_found}
   def from_param(param)
@@ -54,4 +58,61 @@ defmodule ExplorerWeb.Chain do
       :error -> {:error, :not_found}
     end
   end
+
+  def paging_options(
+        %{
+          "block_number" => block_number_string,
+          "transaction_index" => transaction_index_string,
+          "index" => index_string
+        }
+      ) do
+    with {block_number, ""} <- Integer.parse(block_number_string),
+         {transaction_index, ""} <- Integer.parse(transaction_index_string),
+         {index, ""} <- Integer.parse(index_string) do
+      [paging_options: %{@default_paging_options | key: {block_number, transaction_index, index}}]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
+  def paging_options(%{"block_number" => block_number_string, "index" => index_string}) do
+    with {block_number, ""} <- Integer.parse(block_number_string),
+         {index, ""} <- Integer.parse(index_string) do
+      [paging_options: %{@default_paging_options | key: {block_number, index}}]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
+  def paging_options(%{"block_number" => block_number_string}) do
+    with {block_number, ""} <- Integer.parse(block_number_string) do
+      [paging_options: %{@default_paging_options | key: {block_number}}]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
+  def paging_options(%{"index" => index_string}) do
+    with {index, ""} <- Integer.parse(index_string) do
+      [paging_options: %{@default_paging_options | key: {index}}]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
+  def paging_options(%{"inserted_at" => inserted_at_string, "hash" => hash_string}) do
+    with {:ok, inserted_at, _} <- DateTime.from_iso8601(inserted_at_string),
+         {:ok, hash} <- string_to_transaction_hash(hash_string) do
+      [paging_options: %{@default_paging_options | key: {inserted_at, hash}}]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
+  def paging_options(_params), do: [paging_options: @default_paging_options]
 end

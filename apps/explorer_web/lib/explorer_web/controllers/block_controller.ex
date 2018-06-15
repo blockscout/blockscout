@@ -1,10 +1,11 @@
 defmodule ExplorerWeb.BlockController do
   use ExplorerWeb, :controller
 
-  alias Explorer.{Chain, PagingOptions}
+  import ExplorerWeb.Chain, only: [paging_options: 1]
+
+  alias Explorer.Chain
 
   @page_size 50
-  @default_paging_options %PagingOptions{page_size: @page_size + 1}
 
   def index(conn, params) do
     full_options =
@@ -33,15 +34,5 @@ defmodule ExplorerWeb.BlockController do
   defp next_page_params(_, blocks) do
     last = List.last(blocks)
     %{block_number: last.number}
-  end
-
-  defp paging_options(params) do
-    with %{"block_number" => block_number_string} <- params,
-         {block_number, ""} <- Integer.parse(block_number_string) do
-      [paging_options: %{@default_paging_options | key: {block_number}}]
-    else
-      _ ->
-        [paging_options: @default_paging_options]
-    end
   end
 end

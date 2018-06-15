@@ -1,11 +1,12 @@
 defmodule ExplorerWeb.TransactionInternalTransactionController do
   use ExplorerWeb, :controller
 
-  alias Explorer.{Chain, Market, PagingOptions}
+  import ExplorerWeb.Chain, only: [paging_options: 1]
+
+  alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
 
   @page_size 50
-  @default_paging_options %PagingOptions{page_size: @page_size + 1}
 
   def index(conn, %{"transaction_id" => hash_string} = params) do
     with {:ok, hash} <- Chain.string_to_transaction_hash(hash_string),
@@ -63,15 +64,5 @@ defmodule ExplorerWeb.TransactionInternalTransactionController do
   defp next_page_params(_, internal_transactions) do
     last = List.last(internal_transactions)
     %{index: last.index}
-  end
-
-  defp paging_options(params) do
-    with %{"index" => index_string} <- params,
-         {index, ""} <- Integer.parse(index_string) do
-      [paging_options: %{@default_paging_options | key: {index}}]
-    else
-      _ ->
-        [paging_options: @default_paging_options]
-    end
   end
 end
