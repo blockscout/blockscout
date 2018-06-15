@@ -9,7 +9,6 @@ defmodule Explorer.Chain do
       join: 4,
       join: 5,
       limit: 2,
-      or_where: 3,
       order_by: 2,
       order_by: 3,
       preload: 2,
@@ -157,9 +156,9 @@ defmodule Explorer.Chain do
     |> select_merge([_, internal_transaction], %{
       created_contract_address_hash: internal_transaction.created_contract_address_hash
     })
-    |> where_address_fields_match(address_hash, direction)
     |> page_transaction(paging_options)
     |> limit(^paging_options.page_size)
+    |> where_address_fields_match(address_hash, direction)
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
     |> join_associations(necessity_by_association)
     |> Repo.all()
@@ -2658,17 +2657,21 @@ defmodule Explorer.Chain do
     %{inserted_at: now, updated_at: now}
   end
 
-  defp where_address_fields_match(query, address_hash, direction \\ nil) do
-    address_fields =
-      case direction do
-        :to -> [:to_address_hash]
-        :from -> [:from_address_hash]
-        nil -> [:to_address_hash, :from_address_hash]
-      end
+  defp where_address_fields_match(query, address_hash) do
+    where_address_fields_match(query, address_hash, nil)
+  end
 
-    Enum.reduce(address_fields, query, fn field, query ->
-      or_where(query, [t], field(t, ^field) == ^address_hash)
-    end)
+  defp where_address_fields_match(query, address_hash, :to) do
+    where(query, [t], field(t, ^:to_address_hash) == ^address_hash)
+  end
+
+  defp where_address_fields_match(query, address_hash, :from) do
+    where(query, [t], field(t, ^:from_address_hash) == ^address_hash)
+  end
+
+  defp where_address_fields_match(query, address_hash, nil) do
+    query
+    |> where([t], field(t, ^:to_address_hash) == ^address_hash or field(t, ^:from_address_hash) == ^address_hash)
   end
 
   defp where_transaction_has_multiple_internal_transactions(query) do
