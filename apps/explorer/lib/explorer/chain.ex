@@ -149,17 +149,11 @@ defmodule Explorer.Chain do
       when is_list(options) do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    paging_options = Keyword.get(options, :paging_options, %PagingOptions{page_size: 50})
 
-    Transaction
-    |> load_contract_creation()
-    |> select_merge([_, internal_transaction], %{
-      created_contract_address_hash: internal_transaction.created_contract_address_hash
-    })
-    |> page_transaction(paging_options)
-    |> limit(^paging_options.page_size)
+    options
+    |> Keyword.get(:paging_options, %PagingOptions{page_size: 50})
+    |> fetch_transactions()
     |> where_address_fields_match(address_hash, direction)
-    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
     |> join_associations(necessity_by_association)
     |> Repo.all()
   end
@@ -425,18 +419,12 @@ defmodule Explorer.Chain do
   @spec block_to_transactions(Block.t(), [paging_options | necessity_by_association_option]) :: [Transaction.t()]
   def block_to_transactions(%Block{hash: block_hash}, options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    paging_options = Keyword.get(options, :paging_options, %PagingOptions{page_size: 50})
 
-    Transaction
-    |> load_contract_creation()
-    |> select_merge([_, internal_transaction], %{
-      created_contract_address_hash: internal_transaction.created_contract_address_hash
-    })
+    options
+    |> Keyword.get(:paging_options, %PagingOptions{page_size: 50})
+    |> fetch_transactions()
     |> join(:inner, [transaction], block in assoc(transaction, :block))
     |> where([_, _, block], block.hash == ^block_hash)
-    |> page_transaction(paging_options)
-    |> limit(^paging_options.page_size)
-    |> order_by([transaction], desc: transaction.index)
     |> join_associations(necessity_by_association)
     |> Repo.all()
   end
@@ -690,12 +678,8 @@ defmodule Explorer.Chain do
       when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    Transaction
+    fetch_transactions()
     |> where(hash: ^hash)
-    |> load_contract_creation()
-    |> select_merge([_, internal_transaction], %{
-      created_contract_address_hash: internal_transaction.created_contract_address_hash
-    })
     |> join_associations(necessity_by_association)
     |> Repo.one()
     |> case do
@@ -1923,16 +1907,11 @@ defmodule Explorer.Chain do
   @spec recent_collated_transactions([paging_options | necessity_by_association_option]) :: [Transaction.t()]
   def recent_collated_transactions(options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    paging_options = Keyword.get(options, :paging_options, %PagingOptions{page_size: 50})
 
-    Transaction
-    |> load_contract_creation()
-    |> select_merge([_, internal_transaction], %{
-      created_contract_address_hash: internal_transaction.created_contract_address_hash
-    })
+    options
+    |> Keyword.get(:paging_options, %PagingOptions{page_size: 50})
+    |> fetch_transactions()
     |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
-    |> page_transaction(paging_options)
-    |> limit(^paging_options.page_size)
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
     |> join_associations(necessity_by_association)
     |> Repo.all()
@@ -1968,9 +1947,9 @@ defmodule Explorer.Chain do
     paging_options = Keyword.get(options, :paging_options, %PagingOptions{page_size: 50})
 
     Transaction
-    |> where([transaction], is_nil(transaction.block_hash))
     |> page_pending_transaction(paging_options)
     |> limit(^paging_options.page_size)
+    |> where([transaction], is_nil(transaction.block_hash))
     |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
     |> join_associations(necessity_by_association)
     |> Repo.all()
@@ -2242,6 +2221,16 @@ defmodule Explorer.Chain do
     end)
   end
 
+  defp fetch_transactions(paging_options \\ nil) do
+    Transaction
+    |> load_contract_creation()
+    |> select_merge([_, internal_transaction], %{
+      created_contract_address_hash: internal_transaction.created_contract_address_hash
+    })
+    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
+    |> handle_paging_options(paging_options)
+  end
+
   defp for_parent_transaction(query, %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash) do
     from(
       child in query,
@@ -2458,6 +2447,14 @@ defmodule Explorer.Chain do
       )
 
     {:ok, for(transaction <- transactions, do: transaction.hash)}
+  end
+
+  defp handle_paging_options(query, nil), do: query
+
+  defp handle_paging_options(query, paging_options) do
+    query
+    |> page_transaction(paging_options)
+    |> limit(^paging_options.page_size)
   end
 
   defp join_association(query, association, necessity) when is_atom(association) do
