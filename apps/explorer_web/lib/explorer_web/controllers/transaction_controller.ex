@@ -1,11 +1,9 @@
 defmodule ExplorerWeb.TransactionController do
   use ExplorerWeb, :controller
 
-  import ExplorerWeb.Chain, only: [paging_options: 1]
+  import ExplorerWeb.Chain, only: [paging_options: 1, next_page_params: 2, split_list_by_page: 1]
 
   alias Explorer.Chain
-
-  @page_size 50
 
   def index(conn, params) do
     full_options =
@@ -22,7 +20,7 @@ defmodule ExplorerWeb.TransactionController do
 
     transactions_plus_one = Chain.recent_collated_transactions(full_options)
 
-    {transactions, next_page} = Enum.split(transactions_plus_one, @page_size)
+    {transactions, next_page} = split_list_by_page(transactions_plus_one)
 
     transaction_estimated_count = Chain.transaction_estimated_count()
 
@@ -37,12 +35,5 @@ defmodule ExplorerWeb.TransactionController do
 
   def show(conn, %{"id" => id, "locale" => locale}) do
     redirect(conn, to: transaction_internal_transaction_path(conn, :index, locale, id))
-  end
-
-  defp next_page_params([], _transactions), do: nil
-
-  defp next_page_params(_, transactions) do
-    last = List.last(transactions)
-    %{block_number: last.block_number, index: last.index}
   end
 end

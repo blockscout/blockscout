@@ -100,7 +100,10 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
           "index" => Integer.to_string(index)
         })
 
-      actual_indexes = Enum.map(conn.assigns.internal_transactions, & &1.index)
+      actual_indexes =
+        conn.assigns.internal_transactions
+        |> Enum.map(& &1.index)
+        |> Enum.reverse()
 
       assert second_page_indexes == actual_indexes
     end

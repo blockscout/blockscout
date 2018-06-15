@@ -1,12 +1,10 @@
 defmodule ExplorerWeb.TransactionLogController do
   use ExplorerWeb, :controller
 
-  import ExplorerWeb.Chain, only: [paging_options: 1]
+  import ExplorerWeb.Chain, only: [paging_options: 1, next_page_params: 2, split_list_by_page: 1]
 
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
-
-  @page_size 50
 
   def index(conn, %{"transaction_id" => transaction_hash_string} = params) do
     with {:ok, transaction_hash} <- Chain.string_to_transaction_hash(transaction_hash_string),
@@ -31,7 +29,7 @@ defmodule ExplorerWeb.TransactionLogController do
 
       logs_plus_one = Chain.transaction_to_logs(transaction, full_options)
 
-      {logs, next_page} = Enum.split(logs_plus_one, @page_size)
+      {logs, next_page} = split_list_by_page(logs_plus_one)
 
       render(
         conn,
@@ -56,12 +54,5 @@ defmodule ExplorerWeb.TransactionLogController do
       {:ok, number} -> number
       {:error, :not_found} -> 0
     end
-  end
-
-  defp next_page_params([], _logs), do: nil
-
-  defp next_page_params(_, logs) do
-    last = List.last(logs)
-    %{index: last.index}
   end
 end

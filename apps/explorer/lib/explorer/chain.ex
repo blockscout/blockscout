@@ -35,6 +35,8 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.Block.Reward
   alias Explorer.{PagingOptions, Repo}
 
+  @default_paging_options %PagingOptions{page_size: 50}
+
   @typedoc """
   The name of an association on the `t:Ecto.Schema.t/0`
   """
@@ -151,7 +153,7 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     options
-    |> Keyword.get(:paging_options, %PagingOptions{page_size: 50})
+    |> Keyword.get(:paging_options, @default_paging_options)
     |> fetch_transactions()
     |> where_address_fields_match(address_hash, direction)
     |> join_associations(necessity_by_association)
@@ -421,7 +423,7 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     options
-    |> Keyword.get(:paging_options, %PagingOptions{page_size: 50})
+    |> Keyword.get(:paging_options, @default_paging_options)
     |> fetch_transactions()
     |> join(:inner, [transaction], block in assoc(transaction, :block))
     |> where([_, _, block], block.hash == ^block_hash)
@@ -1909,7 +1911,7 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     options
-    |> Keyword.get(:paging_options, %PagingOptions{page_size: 50})
+    |> Keyword.get(:paging_options, @default_paging_options)
     |> fetch_transactions()
     |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
@@ -2072,7 +2074,7 @@ defmodule Explorer.Chain do
     |> where_transaction_has_multiple_internal_transactions()
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
-    |> order_by(:index)
+    |> order_by([internal_transaction], desc: internal_transaction.index)
     |> Repo.all()
   end
 
@@ -2512,7 +2514,7 @@ defmodule Explorer.Chain do
 
   defp page_logs(query, %PagingOptions{key: {index}}) do
     query
-    |> where([log], log.index < ^index)
+    |> where([log], log.index > ^index)
   end
 
   defp page_pending_transaction(query, %PagingOptions{key: nil}), do: query

@@ -1,11 +1,9 @@
 defmodule ExplorerWeb.PendingTransactionController do
   use ExplorerWeb, :controller
 
-  import ExplorerWeb.Chain, only: [paging_options: 1]
+  import ExplorerWeb.Chain, only: [paging_options: 1, next_page_params: 2, split_list_by_page: 1]
 
   alias Explorer.Chain
-
-  @page_size 50
 
   def index(conn, params) do
     full_options =
@@ -21,7 +19,7 @@ defmodule ExplorerWeb.PendingTransactionController do
 
     transactions_plus_one = Chain.recent_pending_transactions(full_options)
 
-    {transactions, next_page} = Enum.split(transactions_plus_one, @page_size)
+    {transactions, next_page} = split_list_by_page(transactions_plus_one)
 
     pending_transaction_count = Chain.pending_transaction_count()
 
@@ -32,12 +30,5 @@ defmodule ExplorerWeb.PendingTransactionController do
       pending_transaction_count: pending_transaction_count,
       transactions: transactions
     )
-  end
-
-  defp next_page_params([], _transactions), do: nil
-
-  defp next_page_params(_, transactions) do
-    last = List.last(transactions)
-    %{inserted_at: DateTime.to_iso8601(last.inserted_at), hash: last.hash}
   end
 end

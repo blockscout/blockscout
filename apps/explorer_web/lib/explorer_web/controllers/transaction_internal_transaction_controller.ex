@@ -1,12 +1,10 @@
 defmodule ExplorerWeb.TransactionInternalTransactionController do
   use ExplorerWeb, :controller
 
-  import ExplorerWeb.Chain, only: [paging_options: 1]
+  import ExplorerWeb.Chain, only: [paging_options: 1, next_page_params: 2, split_list_by_page: 1]
 
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
-
-  @page_size 50
 
   def index(conn, %{"transaction_id" => hash_string} = params) do
     with {:ok, hash} <- Chain.string_to_transaction_hash(hash_string),
@@ -30,7 +28,7 @@ defmodule ExplorerWeb.TransactionInternalTransactionController do
 
       internal_transactions_plus_one = Chain.transaction_to_internal_transactions(transaction, full_options)
 
-      {internal_transactions, next_page} = Enum.split(internal_transactions_plus_one, @page_size)
+      {internal_transactions, next_page} = split_list_by_page(internal_transactions_plus_one)
 
       max_block_number = max_block_number()
 
@@ -57,12 +55,5 @@ defmodule ExplorerWeb.TransactionInternalTransactionController do
       {:ok, number} -> number
       {:error, :not_found} -> 0
     end
-  end
-
-  defp next_page_params([], _internal_transactions), do: nil
-
-  defp next_page_params(_, internal_transactions) do
-    last = List.last(internal_transactions)
-    %{index: last.index}
   end
 end

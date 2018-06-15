@@ -6,12 +6,10 @@ defmodule ExplorerWeb.AddressTransactionController do
   use ExplorerWeb, :controller
 
   import ExplorerWeb.AddressController, only: [transaction_count: 1]
-  import ExplorerWeb.Chain, only: [paging_options: 1]
+  import ExplorerWeb.Chain, only: [paging_options: 1, next_page_params: 2, split_list_by_page: 1]
 
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
-
-  @page_size 50
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
@@ -29,7 +27,7 @@ defmodule ExplorerWeb.AddressTransactionController do
 
       transactions_plus_one = Chain.address_to_transactions(address, full_options)
 
-      {transactions, next_page} = Enum.split(transactions_plus_one, @page_size)
+      {transactions, next_page} = split_list_by_page(transactions_plus_one)
 
       render(
         conn,
@@ -68,12 +66,5 @@ defmodule ExplorerWeb.AddressTransactionController do
       "from" -> [direction: :from]
       _ -> []
     end
-  end
-
-  defp next_page_params([], _transactions), do: nil
-
-  defp next_page_params(_, transactions) do
-    last = List.last(transactions)
-    %{block_number: last.block_number, index: last.index}
   end
 end
