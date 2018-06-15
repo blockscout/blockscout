@@ -15,7 +15,8 @@ defmodule Explorer.Factory do
     Hash,
     InternalTransaction,
     Log,
-    Transaction
+    Transaction,
+    SmartContract
   }
 
   alias Explorer.Market.MarketHistory
@@ -273,6 +274,37 @@ defmodule Explorer.Factory do
 
   def transaction_input do
     data(:transaction_input)
+  end
+
+  def smart_contract_factory() do
+    %SmartContract{
+      address_hash: insert(:address).hash,
+      compiler_version: "0.4.24",
+      name: "SimpleStorage",
+      contract_source_code:
+        "pragma solidity ^0.4.24; contract SimpleStorage {uint storedData; function set(uint x) public {storedData = x; } function get() public constant returns (uint) {return storedData; } }",
+      optimization: false,
+      abi: [
+        %{
+          "constant" => false,
+          "inputs" => [%{"name" => "x", "type" => "uint256"}],
+          "name" => "set",
+          "outputs" => [],
+          "payable" => false,
+          "stateMutability" => "nonpayable",
+          "type" => "function"
+        },
+        %{
+          "constant" => true,
+          "inputs" => [],
+          "name" => "get",
+          "outputs" => [%{"name" => "", "type" => "uint256"}],
+          "payable" => false,
+          "stateMutability" => "view",
+          "type" => "function"
+        }
+      ]
+    }
   end
 
   defmacrop left + right do
