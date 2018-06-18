@@ -70,9 +70,4 @@ To translate new strings, run `cd apps/explorer_web; mix gettext.extract --merge
 
 ## Contributing
 
-1. Fork it ( https://github.com/poanetwork/poa-explorer/fork )
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Write tests that cover your work
-4. Commit your changes (`git commit -am 'Add some feature'`)
-5. Push to the branch (`git push origin my-new-feature`)
-6. Create a new Pull Request
+See [CONTRIBUTING.md](CONTRIBUTING.md)
