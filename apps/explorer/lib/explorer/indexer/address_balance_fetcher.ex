@@ -3,8 +3,10 @@ defmodule Explorer.Indexer.AddressBalanceFetcher do
   Fetches `t:Explorer.Chain.Address.t/0` `fetched_balance`.
   """
 
+  import EthereumJSONRPC, only: [integer_to_quantity: 1]
+
   alias Explorer.{BufferedTask, Chain}
-  alias Explorer.Chain.{Hash, Address}
+  alias Explorer.Chain.{Block, Hash}
   alias Explorer.Indexer
 
   @behaviour BufferedTask
@@ -18,11 +20,14 @@ defmodule Explorer.Indexer.AddressBalanceFetcher do
   ]
 
   @doc """
-  Asynchronously fetches balances from list of `t:Explorer.Chain.Hash.t/0`.
+  Asynchronously fetches balances for each address `hash` at the `block_number`.
   """
-  def async_fetch_balances(address_hashes) do
-    string_hashes = for hash <- address_hashes, do: Hash.to_string(hash)
-    BufferedTask.buffer(__MODULE__, string_hashes)
+  @spec async_fetch_balances([%{required(:block_number) => Block.block_number(), required(:hash) => Hash.Truncated.t()}]) ::
+          :ok
+  def async_fetch_balances(address_fields) when is_list(address_fields) do
+    params_list = Enum.map(address_fields, &address_fields_to_params/1)
+
+    BufferedTask.buffer(__MODULE__, params_list)
   end
 
   @doc false
@@ -34,24 +39,31 @@ defmodule Explorer.Indexer.AddressBalanceFetcher do
   @impl BufferedTask
   def init(initial, reducer) do
     {:ok, final} =
-      Chain.stream_unfetched_addresses([:hash], initial, fn %Address{hash: hash}, acc ->
-        reducer.(Hash.to_string(hash), acc)
+      Chain.stream_unfetched_addresses(initial, fn address_fields, acc ->
+        address_fields
+        |> address_fields_to_params()
+        |> reducer.(acc)
       end)
 
     final
   end
 
   @impl BufferedTask
-  def run(string_hashes, _retries) do
-    Indexer.debug(fn -> "fetching #{length(string_hashes)} balances" end)
+  def run(params_list, _retries) do
+    Indexer.debug(fn -> "fetching #{length(params_list)} balances" end)
 
-    case EthereumJSONRPC.fetch_balances_by_hash(string_hashes) do
-      {:ok, results} ->
-        :ok = Chain.update_balances(results)
+    case EthereumJSONRPC.fetch_balances(params_list) do
+      {:ok, addresses_params} ->
+        {:ok, _} = Chain.update_balances(addresses_params)
+        :ok
 
       {:error, reason} ->
-        Indexer.debug(fn -> "failed to fetch #{length(string_hashes)} balances, #{inspect(reason)}" end)
+        Indexer.debug(fn -> "failed to fetch #{length(params_list)} balances, #{inspect(reason)}" end)
         :retry
     end
+  end
+
+  defp address_fields_to_params(%{block_number: block_number, hash: hash}) when is_integer(block_number) do
+    %{block_quantity: integer_to_quantity(block_number), hash_data: to_string(hash)}
   end
 end

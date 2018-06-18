@@ -43,6 +43,14 @@
                   <%= Cldr.Number.to_string!(@transaction_count) %>
                 </td>
               </tr>
+              <tr>
+                <td>
+                  <%= gettext "Last Updated In Block" %>
+                </td>
+                <td>
+                  <%= balance_block_number(@address) %>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>

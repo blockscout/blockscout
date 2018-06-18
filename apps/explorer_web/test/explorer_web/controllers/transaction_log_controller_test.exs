@@ -29,7 +29,7 @@ defmodule ExplorerWeb.TransactionLogControllerTest do
         |> with_block()
 
       address = insert(:address)
-      insert(:log, address_hash: address.hash, transaction_hash: transaction.hash)
+      insert(:log, address: address, transaction: transaction)
 
       conn = get(conn, transaction_log_path(conn, :index, :en, transaction))
 

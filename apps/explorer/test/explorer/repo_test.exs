@@ -11,7 +11,16 @@ defmodule Explorer.RepoTest do
   describe "safe_insert_all/3" do
     test "inserting duplicate rows in one chunk is logged before re-raising exception" do
       transaction = insert(:transaction)
-      params = params_for(:internal_transaction, transaction_hash: transaction.hash, index: 0)
+
+      params =
+        params_for(
+          :internal_transaction,
+          from_address_hash: insert(:address).hash,
+          to_address_hash: insert(:address).hash,
+          transaction_hash: transaction.hash,
+          index: 0
+        )
+
       %Changeset{valid?: true, changes: changes} = InternalTransaction.changeset(%InternalTransaction{}, params)
       at = DateTime.utc_now()
       timestamped_changes = Map.merge(changes, %{inserted_at: at, updated_at: at})

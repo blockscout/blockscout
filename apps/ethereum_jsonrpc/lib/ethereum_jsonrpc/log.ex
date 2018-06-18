@@ -39,6 +39,7 @@ defmodule EthereumJSONRPC.Log do
       ...> )
       %{
         address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+        block_number: 37,
         data: "0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
         first_topic: "0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22",
         fourth_topic: nil,
@@ -52,6 +53,7 @@ defmodule EthereumJSONRPC.Log do
   """
   def elixir_to_params(%{
         "address" => address_hash,
+        "blockNumber" => block_number,
         "data" => data,
         "logIndex" => index,
         "topics" => topics,
@@ -60,6 +62,7 @@ defmodule EthereumJSONRPC.Log do
       }) do
     %{
       address_hash: address_hash,
+      block_number: block_number,
       data: data,
       index: index,
       transaction_hash: transaction_hash,

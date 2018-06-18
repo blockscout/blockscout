@@ -4,7 +4,7 @@ defmodule Explorer.Indexer.BlockFetcherTest do
 
   import ExUnit.CaptureLog
 
-  alias Explorer.Chain.{Address, Block, Log, Transaction}
+  alias Explorer.Chain.{Address, Block, Log, Transaction, Wei}
   alias Explorer.Indexer
 
   alias Explorer.Indexer.{
@@ -79,8 +79,8 @@ defmodule Explorer.Indexer.BlockFetcherTest do
           |> insert()
           |> with_block(block)
 
-        insert(:log, transaction_hash: transaction.hash)
-        insert(:internal_transaction, transaction_hash: transaction.hash, index: 0)
+        insert(:log, transaction: transaction)
+        insert(:internal_transaction, transaction: transaction, index: 0)
       end)
 
       :ok
@@ -92,6 +92,9 @@ defmodule Explorer.Indexer.BlockFetcherTest do
       start_supervised!({Task.Supervisor, name: Explorer.Indexer.TaskSupervisor})
       AddressBalanceFetcherCase.start_supervised!()
       InternalTransactionFetcherCase.start_supervised!()
+
+      wait_for_tasks(InternalTransactionFetcher)
+      wait_for_tasks(AddressBalanceFetcher)
 
       refute capture_log_at_level(:debug, fn ->
                Indexer.disable_debug_logs()
@@ -105,6 +108,9 @@ defmodule Explorer.Indexer.BlockFetcherTest do
       AddressBalanceFetcherCase.start_supervised!()
       InternalTransactionFetcherCase.start_supervised!()
 
+      wait_for_tasks(InternalTransactionFetcher)
+      wait_for_tasks(AddressBalanceFetcher)
+
       log =
         capture_log_at_level(:debug, fn ->
           Indexer.enable_debug_logs()
@@ -112,10 +118,10 @@ defmodule Explorer.Indexer.BlockFetcherTest do
         end)
 
       assert log =~ @heading
-      assert log =~ "blocks: 4"
+      assert log =~ "blocks: 1"
       assert log =~ "internal transactions: 3"
       assert log =~ "logs: 3"
-      assert log =~ "addresses: 31"
+      assert log =~ "addresses: 16"
     end
   end
 
@@ -140,7 +146,7 @@ defmodule Explorer.Indexer.BlockFetcherTest do
                   %Explorer.Chain.Hash{
                     byte_count: 20,
                     bytes: <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>
-                  }
+                  } = address_hash
                 ],
                 blocks: [
                   %Explorer.Chain.Hash{
@@ -159,6 +165,11 @@ defmodule Explorer.Indexer.BlockFetcherTest do
 
       assert Repo.aggregate(Block, :count, :hash) == 1
       assert Repo.aggregate(Address, :count, :hash) == 1
+
+      address = Repo.get!(Address, address_hash)
+
+      assert address.fetched_balance == %Wei{value: Decimal.new(0)}
+      assert address.fetched_balance_block_number == 0
     end
 
     test "can import range with all synchronous imported schemas", %{state: state} do
@@ -171,12 +182,12 @@ defmodule Explorer.Indexer.BlockFetcherTest do
                     byte_count: 20,
                     bytes:
                       <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179, 223, 65, 91>>
-                  },
+                  } = first_address_hash,
                   %Explorer.Chain.Hash{
                     byte_count: 20,
                     bytes:
                       <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132, 89, 192, 16, 79, 223, 94, 152, 122, 202>>
-                  }
+                  } = second_address_hash
                 ],
                 blocks: [
                   %Explorer.Chain.Hash{
@@ -214,6 +225,16 @@ defmodule Explorer.Indexer.BlockFetcherTest do
       assert Repo.aggregate(Address, :count, :hash) == 2
       assert Repo.aggregate(Log, :count, :id) == 1
       assert Repo.aggregate(Transaction, :count, :hash) == 1
+
+      first_address = Repo.get!(Address, first_address_hash)
+
+      assert first_address.fetched_balance == %Wei{value: Decimal.new(1)}
+      assert first_address.fetched_balance_block_number == @first_full_block_number
+
+      second_address = Repo.get!(Address, second_address_hash)
+
+      assert second_address.fetched_balance == %Wei{value: Decimal.new(252_460_837_000_000_000_000_000_000)}
+      assert second_address.fetched_balance_block_number == @first_full_block_number
     end
   end
 

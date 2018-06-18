@@ -12,7 +12,7 @@ defmodule Explorer.Indexer.AddressExtraction do
 
   ## Attributes
 
-  *@entity_to_address_map*
+  *@entity_to_extract_format_list*
 
   Defines a rule of where any attributes should be collected `:from` the input and how it should be
   mapped `:to` as a new attribute.
@@ -20,7 +20,11 @@ defmodule Explorer.Indexer.AddressExtraction do
   For example:
 
       %{
-        blocks: [%{from: :miner_hash, to: :hash}],
+        blocks: [
+          [
+            %{from: :block_number, to: :fetched_balance_block_number},
+            %{from: :miner_hash, to: :hash}
+          ],
         # ...
       }
 
@@ -36,6 +40,7 @@ defmodule Explorer.Indexer.AddressExtraction do
         internal_transactions: [
           ...,
           [
+            %{from: :block_number, to: :fetched_balance_block_number},
             %{from: :created_contract_address_hash, to: :hash},
             %{from: :created_contract_code, to: :contract_code}
           ]
@@ -43,57 +48,265 @@ defmodule Explorer.Indexer.AddressExtraction do
       }
   """
 
-  @transactions_address_maps [
-    %{from: :from_address_hash, to: :hash},
-    %{from: :to_address_hash, to: :hash}
-  ]
-
   @entity_to_address_map %{
-    blocks: [%{from: :miner_hash, to: :hash}],
-    internal_transactions: [
-      %{from: :from_address_hash, to: :hash},
-      %{from: :to_address_hash, to: :hash},
+    blocks: [
       [
+        %{from: :number, to: :fetched_balance_block_number},
+        %{from: :miner_hash, to: :hash}
+      ]
+    ],
+    internal_transactions: [
+      [
+        %{from: :block_number, to: :fetched_balance_block_number},
+        %{from: :from_address_hash, to: :hash}
+      ],
+      [
+        %{from: :block_number, to: :fetched_balance_block_number},
+        %{from: :to_address_hash, to: :hash}
+      ],
+      [
+        %{from: :block_number, to: :fetched_balance_block_number},
         %{from: :created_contract_address_hash, to: :hash},
         %{from: :created_contract_code, to: :contract_code}
       ]
     ],
-    transactions: @transactions_address_maps,
-    logs: [%{from: :address_hash, to: :hash}]
+    transactions: [
+      [
+        %{from: :block_number, to: :fetched_balance_block_number},
+        %{from: :from_address_hash, to: :hash}
+      ],
+      [
+        %{from: :block_number, to: :fetched_balance_block_number},
+        %{from: :to_address_hash, to: :hash}
+      ]
+    ],
+    logs: [
+      [
+        %{from: :block_number, to: :fetched_balance_block_number},
+        %{from: :address_hash, to: :hash}
+      ]
+    ]
   }
 
   @typedoc """
   Parameters for `Explorer.Chain.Address.changeset/2`.
   """
-  @type params :: %{required(:hash) => String.t(), optional(:contract_code) => String.t()}
+  @type params :: %{
+          required(:hash) => String.t(),
+          required(:fetched_balance_block_number) => non_neg_integer(),
+          optional(:contract_code) => String.t()
+        }
 
-  @doc """
-  Extracts the `from_address_hash` and `to_address_hash` from all the `transactions_params`.
-  """
-  @spec transactions_params_to_addresses_params([
-          %{
-            required(:from_address_hash) => String.t(),
-            optional(:to_address_hash) => String.t()
-          }
-        ]) :: [params]
-  def transactions_params_to_addresses_params(transactions_params) do
-    transactions_params
-    |> extract_addresses_from_collection(@transactions_address_maps)
-    |> List.flatten()
-    |> merge_addresses()
-  end
+  defstruct pending: false
 
   @doc """
   Extract addresses from block, internal transaction, transaction, and log parameters.
+
+  Blocks have their `miner_hash` extracted.
+
+      iex> Explorer.Indexer.AddressExtraction.extract_addresses(
+      ...>   %{
+      ...>     blocks: [
+      ...>       %{
+      ...>         miner_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>         number: 34
+      ...>       }
+      ...>     ]
+      ...>   }
+      ...> )
+      [
+        %{
+          fetched_balance_block_number: 34,
+          hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
+        }
+      ]
+
+  Internal transactions can have their `from_address_hash`, `to_address_hash` and/or `created_contract_address_hash`
+  extracted.
+
+      iex> Explorer.Indexer.AddressExtraction.extract_addresses(
+      ...>   %{
+      ...>     internal_transactions: [
+      ...>       %{
+      ...>         block_number: 1,
+      ...>         from_address_hash: "0x0000000000000000000000000000000000000001"
+      ...>       },
+      ...>       %{
+      ...>         block_number: 2,
+      ...>         to_address_hash: "0x0000000000000000000000000000000000000002"
+      ...>       },
+      ...>       %{
+      ...>         block_number: 3,
+      ...>         created_contract_address_hash: "0x0000000000000000000000000000000000000003",
+      ...>         created_contract_code: "0x"
+      ...>       }
+      ...>     ]
+      ...>   }
+      ...> )
+      [
+        %{
+          fetched_balance_block_number: 1,
+          hash: "0x0000000000000000000000000000000000000001"
+        },
+        %{
+          fetched_balance_block_number: 2,
+          hash: "0x0000000000000000000000000000000000000002"
+        },
+        %{
+          contract_code: "0x",
+          fetched_balance_block_number: 3,
+          hash: "0x0000000000000000000000000000000000000003"
+        }
+      ]
+
+  Transactions can have their `from_address_hash` and/or `to_address_hash` extracted.
+
+      iex> Explorer.Indexer.AddressExtraction.extract_addresses(
+      ...>   %{
+      ...>     transactions: [
+      ...>       %{
+      ...>         block_number: 1,
+      ...>         from_address_hash: "0x0000000000000000000000000000000000000001",
+      ...>         to_address_hash: "0x0000000000000000000000000000000000000002"
+      ...>       },
+      ...>       %{
+      ...>         block_number: 2,
+      ...>         from_address_hash: "0x0000000000000000000000000000000000000003"
+      ...>       }
+      ...>     ]
+      ...>   }
+      ...> )
+      [
+        %{
+          fetched_balance_block_number: 1,
+          hash: "0x0000000000000000000000000000000000000001"
+        },
+        %{
+          fetched_balance_block_number: 1,
+          hash: "0x0000000000000000000000000000000000000002"
+        },
+        %{
+          fetched_balance_block_number: 2,
+          hash: "0x0000000000000000000000000000000000000003"
+        }
+      ]
+
+  Logs can have their `address_hash` extracted.
+
+      iex> Explorer.Indexer.AddressExtraction.extract_addresses(
+      ...>   %{
+      ...>     logs: [
+      ...>       %{
+      ...>         address_hash: "0x0000000000000000000000000000000000000001",
+      ...>         block_number: 1
+      ...>       }
+      ...>     ]
+      ...>   }
+      ...> )
+      [
+        %{
+          fetched_balance_block_number: 1,
+          hash: "0x0000000000000000000000000000000000000001"
+        }
+      ]
+
+  When the same address is mentioned multiple times, the greatest `block_number` is used
+
+      iex> Explorer.Indexer.AddressExtraction.extract_addresses(
+      ...>   %{
+      ...>     blocks: [
+      ...>       %{
+      ...>         miner_hash: "0x0000000000000000000000000000000000000001",
+      ...>         number: 7
+      ...>       },
+      ...>       %{
+      ...>         miner_hash: "0x0000000000000000000000000000000000000001",
+      ...>         number: 6
+      ...>       }
+      ...>     ],
+      ...>     internal_transactions: [
+      ...>       %{
+      ...>         block_number: 5,
+      ...>         from_address_hash: "0x0000000000000000000000000000000000000001"
+      ...>       },
+      ...>       %{
+      ...>         block_number: 4,
+      ...>         to_address_hash: "0x0000000000000000000000000000000000000001"
+      ...>       }
+      ...>     ],
+      ...>     transactions: [
+      ...>       %{
+      ...>         block_number: 3,
+      ...>         to_address_hash: "0x0000000000000000000000000000000000000001"
+      ...>       },
+      ...>       %{
+      ...>         block_number: 2,
+      ...>         from_address_hash: "0x0000000000000000000000000000000000000001"
+      ...>       }
+      ...>     ],
+      ...>     logs: [
+      ...>       %{
+      ...>         address_hash: "0x0000000000000000000000000000000000000001",
+      ...>         block_number: 1
+      ...>       }
+      ...>     ]
+      ...>   }
+      ...> )
+      [
+        %{
+          fetched_balance_block_number: 7,
+          hash: "0x0000000000000000000000000000000000000001"
+        }
+      ]
+
+  When a contract is created and then used in internal transactions and transaction in the same fetched data, the
+  `created_contract_code` is merged with the greatest `block_number`
+
+      iex> Explorer.Indexer.AddressExtraction.extract_addresses(
+      ...>   %{
+      ...>     internal_transactions: [
+      ...>       %{
+      ...>         block_number: 1,
+      ...>         created_contract_code: "0x",
+      ...>         created_contract_address_hash: "0x0000000000000000000000000000000000000001"
+      ...>       }
+      ...>     ],
+      ...>     transactions: [
+      ...>       %{
+      ...>         block_number: 2,
+      ...>         from_address_hash: "0x0000000000000000000000000000000000000001"
+      ...>       },
+      ...>       %{
+      ...>         block_number: 3,
+      ...>         to_address_hash: "0x0000000000000000000000000000000000000001"
+      ...>       }
+      ...>     ]
+      ...>   }
+      ...> )
+      [
+        %{
+          contract_code: "0x",
+          fetched_balance_block_number: 3,
+          hash: "0x0000000000000000000000000000000000000001"
+        }
+      ]
+
+  All data must have some way of extracting the `fetched_balance_block_number` or an `ArgumentError` will be raised when
+  none of the supported extract formats matches the params.
+
+  A contract's code is immutable: the same address cannot be bound to different code.  As such, different code will
+  cause an error as something has gone terribly wrong with the chain if different code is written to the same address.
   """
   @spec extract_addresses(%{
           optional(:blocks) => [
             %{
-              required(:miner_hash) => String.t()
+              required(:miner_hash) => String.t(),
+              required(:number) => non_neg_integer()
             }
           ],
           optional(:internal_transactions) => [
             %{
+              required(:block_number) => non_neg_integer(),
               required(:from_address_hash) => String.t(),
               optional(:to_address_hash) => String.t(),
               optional(:created_contract_address_hash) => String.t(),
@@ -102,49 +315,52 @@ defmodule Explorer.Indexer.AddressExtraction do
           ],
           optional(:transactions) => [
             %{
+              required(:block_number) => non_neg_integer(),
               required(:from_address_hash) => String.t(),
               optional(:to_address_hash) => String.t()
             }
           ],
           optional(:logs) => [
             %{
-              required(:address_hash) => String.t()
+              required(:address_hash) => String.t(),
+              required(:block_number) => non_neg_integer()
             }
           ]
         }) :: [params]
-  def extract_addresses(fetched_data) do
+  def extract_addresses(fetched_data, options \\ []) when is_map(fetched_data) and is_list(options) do
+    state = struct!(__MODULE__, options)
+
     addresses =
       for {entity_key, entity_fields} <- @entity_to_address_map,
           (entity_items = Map.get(fetched_data, entity_key)) != nil,
-          do: extract_addresses_from_collection(entity_items, entity_fields)
+          do: extract_addresses_from_collection(entity_items, entity_fields, state)
 
     addresses
     |> List.flatten()
     |> merge_addresses()
   end
 
-  def extract_addresses_from_collection(items, fields),
-    do: Enum.flat_map(items, &extract_addresses_from_item(&1, fields))
+  def extract_addresses_from_collection(items, fields, state),
+    do: Enum.flat_map(items, &extract_addresses_from_item(&1, fields, state))
 
-  def extract_addresses_from_item(item, fields), do: Enum.map(fields, &extract_address(&1, item))
+  def extract_addresses_from_item(item, fields, state), do: Enum.flat_map(fields, &extract_fields(&1, item, state))
 
-  defp extract_address(attrs, item) when is_list(attrs) do
-    Enum.reduce(attrs, %{}, fn field, acc ->
-      address = extract_address(field, item)
-
-      if is_list(address) do
-        address
-      else
-        Map.merge(address, acc)
+  defp extract_fields(fields, item, state) when is_list(fields) do
+    Enum.reduce_while(fields, [%{}], fn field, [acc] ->
+      case extract_field(field, item, state) do
+        {:ok, extracted} -> {:cont, [Map.merge(acc, extracted)]}
+        :error -> {:halt, []}
       end
     end)
   end
 
-  defp extract_address(%{from: from_attribute, to: to_attribute}, item) do
-    if value = Map.get(item, from_attribute) do
-      %{to_attribute => value}
-    else
-      []
+  defp extract_field(%{from: from_attribute, to: to_attribute}, item, %__MODULE__{pending: pending}) do
+    case Map.fetch(item, from_attribute) do
+      {:ok, value} when not is_nil(value) or (to_attribute == :fetched_balance_block_number and pending) ->
+        {:ok, %{to_attribute => value}}
+
+      _ ->
+        :error
     end
   end
 
@@ -152,9 +368,22 @@ defmodule Explorer.Indexer.AddressExtraction do
     addresses
     |> Enum.group_by(fn address -> address.hash end)
     |> Enum.map(fn {_, similar_addresses} ->
-      Enum.reduce(similar_addresses, %{}, fn address, acc ->
+      similar_addresses
+      |> normalize_block_number()
+      |> Enum.reduce(%{}, fn address, acc ->
         Map.merge(acc, address)
       end)
+    end)
+  end
+
+  def normalize_block_number(addresses) do
+    max_block_number =
+      addresses
+      |> Enum.max_by(fn %{fetched_balance_block_number: num} -> num end)
+      |> Map.get(:fetched_balance_block_number)
+
+    Enum.map(addresses, fn item ->
+      Map.merge(item, %{fetched_balance_block_number: max_block_number})
     end)
   end
 end

@@ -30,10 +30,9 @@ defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
         |> with_block()
 
       from_internal_transaction =
-        insert(:internal_transaction, transaction_hash: transaction.hash, from_address_hash: address.hash, index: 1)
+        insert(:internal_transaction, transaction: transaction, from_address: address, index: 1)
 
-      to_internal_transaction =
-        insert(:internal_transaction, transaction_hash: transaction.hash, to_address_hash: address.hash, index: 2)
+      to_internal_transaction = insert(:internal_transaction, transaction: transaction, to_address: address, index: 2)
 
       path = address_internal_transaction_path(conn, :index, :en, address)
       conn = get(conn, path)

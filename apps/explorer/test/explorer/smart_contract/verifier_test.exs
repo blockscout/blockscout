@@ -15,10 +15,16 @@ defmodule Explorer.SmartContract.VerifierTest do
 
       created_contract_address = insert(:address, hash: address_hash, contract_code: smart_contract_bytecode)
 
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
       insert(
-        :internal_transaction,
+        :internal_transaction_create,
+        transaction: transaction,
         index: 0,
-        created_contract_address_hash: created_contract_address.hash,
+        created_contract_address: created_contract_address,
         created_contract_code: smart_contract_bytecode
       )
 
@@ -42,10 +48,16 @@ defmodule Explorer.SmartContract.VerifierTest do
 
       created_contract_address = insert(:address, hash: address_hash, contract_code: wrong_smart_contract_bytecode)
 
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
       insert(
-        :internal_transaction,
+        :internal_transaction_create,
+        transaction: transaction,
         index: 0,
-        created_contract_address_hash: created_contract_address.hash,
+        created_contract_address: created_contract_address,
         created_contract_code: wrong_smart_contract_bytecode
       )
 

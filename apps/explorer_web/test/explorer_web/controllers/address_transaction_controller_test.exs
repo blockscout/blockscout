@@ -25,12 +25,12 @@ defmodule ExplorerWeb.AddressTransactionControllerTest do
 
       from_transaction =
         :transaction
-        |> insert(from_address_hash: address.hash)
+        |> insert(from_address: address)
         |> with_block(block)
 
       to_transaction =
         :transaction
-        |> insert(to_address_hash: address.hash)
+        |> insert(to_address: address)
         |> with_block(block)
 
       conn = get(conn, address_transaction_path(conn, :index, :en, address))
@@ -47,7 +47,7 @@ defmodule ExplorerWeb.AddressTransactionControllerTest do
     test "does not return related transactions without a block", %{conn: conn} do
       address = insert(:address)
 
-      insert(:transaction, from_address_hash: address.hash, to_address_hash: address.hash)
+      insert(:transaction, from_address: address, to_address: address)
 
       conn = get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address))
 

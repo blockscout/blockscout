@@ -19,13 +19,20 @@ defmodule ExplorerWeb.AddressView do
     end
   end
 
-  def balance(%Address{fetched_balance: nil}), do: ""
-
   @doc """
   Returns a formatted address balance and includes the unit.
   """
+
+  def balance(%Address{fetched_balance: nil}), do: ""
+
   def balance(%Address{fetched_balance: balance}) do
     format_wei_value(balance, :ether)
+  end
+
+  def balance_block_number(%Address{fetched_balance_block_number: nil}), do: ""
+
+  def balance_block_number(%Address{fetched_balance_block_number: fetched_balance_block_number}) do
+    to_string(fetched_balance_block_number)
   end
 
   def formatted_usd(%Address{fetched_balance: nil}, _), do: nil

@@ -60,7 +60,12 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
     end
 
     test "with no to_address_hash overview contains contract create address", %{conn: conn} do
-      internal_transaction = insert(:internal_transaction_create, index: 0)
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      internal_transaction = insert(:internal_transaction_create, transaction: transaction, index: 0)
 
       conn =
         get(

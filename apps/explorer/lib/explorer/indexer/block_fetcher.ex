@@ -190,8 +190,18 @@ defmodule Explorer.Indexer.BlockFetcher do
   end
 
   defp insert(seq, range, options) when is_list(options) do
-    with {:ok, results} <- Chain.import_blocks(options) do
-      async_import_remaining_block_data(results)
+    {address_hash_to_fetched_balance_block_number, import_options} =
+      pop_address_hash_to_fetched_balance_block_number(options)
+
+    transaction_hash_to_block_number = get_transaction_hash_to_block_number(import_options)
+
+    with {:ok, results} <- Chain.import_blocks(import_options) do
+      async_import_remaining_block_data(
+        results,
+        address_hash_to_fetched_balance_block_number: address_hash_to_fetched_balance_block_number,
+        transaction_hash_to_block_number: transaction_hash_to_block_number
+      )
+
       {:ok, results}
     else
       {:error, step, failed_value, _changes_so_far} = error ->
@@ -205,11 +215,52 @@ defmodule Explorer.Indexer.BlockFetcher do
     end
   end
 
-  defp async_import_remaining_block_data(results) do
-    %{transactions: transaction_hashes, addresses: address_hashes} = results
+  # `fetched_balance_block_number` is needed for the `AddressBalanceFetcher`, but should not be used for
+  # `import_blocks` because the balance is not known yet.
+  defp pop_address_hash_to_fetched_balance_block_number(options) do
+    {address_hash_fetched_balance_block_number_pairs, import_options} =
+      get_and_update_in(options, [:addresses, :params, Access.all()], &pop_hash_fetched_balance_block_number/1)
 
-    AddressBalanceFetcher.async_fetch_balances(address_hashes)
-    InternalTransactionFetcher.async_fetch(transaction_hashes, 10_000)
+    address_hash_to_fetched_balance_block_number = Map.new(address_hash_fetched_balance_block_number_pairs)
+    {address_hash_to_fetched_balance_block_number, import_options}
+  end
+
+  defp get_transaction_hash_to_block_number(options) do
+    options
+    |> get_in([:transactions, :params, Access.all()])
+    |> Enum.into(%{}, fn %{block_number: block_number, hash: hash} ->
+      {hash, block_number}
+    end)
+  end
+
+  defp pop_hash_fetched_balance_block_number(
+         %{
+           fetched_balance_block_number: fetched_balance_block_number,
+           hash: hash
+         } = address_params
+       ) do
+    {{hash, fetched_balance_block_number}, Map.delete(address_params, :fetched_balance_block_number)}
+  end
+
+  defp async_import_remaining_block_data(results, named_arguments) when is_map(results) and is_list(named_arguments) do
+    %{transactions: transaction_hashes, addresses: address_hashes} = results
+    address_hash_to_block_number = Keyword.fetch!(named_arguments, :address_hash_to_fetched_balance_block_number)
+
+    address_hashes
+    |> Enum.map(fn address_hash ->
+      block_number = Map.fetch!(address_hash_to_block_number, to_string(address_hash))
+      %{block_number: block_number, hash: address_hash}
+    end)
+    |> AddressBalanceFetcher.async_fetch_balances()
+
+    transaction_hash_to_block_number = Keyword.fetch!(named_arguments, :transaction_hash_to_block_number)
+
+    transaction_hashes
+    |> Enum.map(fn transaction_hash ->
+      block_number = Map.fetch!(transaction_hash_to_block_number, to_string(transaction_hash))
+      %{block_number: block_number, hash: transaction_hash}
+    end)
+    |> InternalTransactionFetcher.async_fetch(10_000)
   end
 
   defp missing_block_number_ranges(%{blocks_batch_size: blocks_batch_size}, range) do
