@@ -21,7 +21,7 @@
       <% @transaction.created_contract_address_hash != nil -> %>
         <i class="fas fa-plus-square"></i>
         <%= link(
-          "Contract Creation",
+          gettext("Contract Creation"),
           class: "transaction__link",
           "data-address-hash": @transaction.created_contract_address_hash,
           to: address_path(ExplorerWeb.Endpoint, :show, @locale, @transaction.created_contract_address_hash),
