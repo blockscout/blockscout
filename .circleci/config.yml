@@ -3,7 +3,7 @@ jobs:
   build:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.6.4-node-browsers
+      - image: circleci/elixir:1.6.5-node-browsers
         environment:
           MIX_ENV: test
           # match POSTGRES_PASSWORD for postgres image below
@@ -130,7 +130,7 @@ jobs:
   credo:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.6.4
+      - image: circleci/elixir:1.6.5
         environment:
           MIX_ENV: test
 
@@ -164,7 +164,7 @@ jobs:
   dialyzer:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.6.4
+      - image: circleci/elixir:1.6.5
         environment:
           MIX_ENV: test
 
@@ -234,7 +234,7 @@ jobs:
   gettext:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.6.4
+      - image: circleci/elixir:1.6.5
         environment:
           MIX_ENV: test
 
@@ -258,7 +258,7 @@ jobs:
   sobelow:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.6.4
+      - image: circleci/elixir:1.6.5
         environment:
           MIX_ENV: test
 
@@ -282,7 +282,7 @@ jobs:
   test:
     docker:
       # Ensure .tool-versions matches
-      - image: circleci/elixir:1.6.4-node-browsers
+      - image: circleci/elixir:1.6.5-node-browsers
         environment:
           MIX_ENV: test
           # match POSTGRES_PASSWORD for postgres image below
