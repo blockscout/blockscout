@@ -1939,7 +1939,16 @@ defmodule Explorer.Chain do
     insert_changes_list(
       ordered_changes_list,
       conflict_target: :hash,
-      on_conflict: [set: [balance_fetched_at: nil]],
+      on_conflict:
+        from(
+          address in Address,
+          update: [
+            set: [
+              balance_fetched_at: nil,
+              contract_code: fragment("COALESCE(?, EXCLUDED.contract_code)", address.contract_code)
+            ]
+          ]
+        ),
       for: Address,
       timeout: timeout,
       timestamps: timestamps
