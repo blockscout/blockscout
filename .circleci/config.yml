@@ -21,14 +21,14 @@ jobs:
 
       - restore_cache:
           keys:
-            - v3-mix-deps-get-{{ checksum "mix.lock" }}
-            - v3-mix-deps-get-{{ checksum "mix.exs" }}
-            - v3-mix-deps-get
+            - v4-mix-deps-get-{{ checksum "mix.lock" }}
+            - v4-mix-deps-get-{{ checksum "mix.exs" }}
+            - v4-mix-deps-get
 
       - run: mix deps.get
 
       - save_cache:
-          key: v3-mix-deps-get-{{ checksum "mix.lock" }}
+          key: v4-mix-deps-get-{{ checksum "mix.lock" }}
           paths: "deps"
       - save_cache:
           key: mix-deps-get-{{ checksum "mix.exs" }}
@@ -39,22 +39,22 @@ jobs:
 
       - restore_cache:
           keys:
-            - v3-npm-install-{{ .Branch }}-{{ checksum "apps/explorer_web/assets/package-lock.json" }}
-            - v3-npm-install-{{ .Branch }}
-            - v3-npm-install
+            - v4-npm-install-{{ .Branch }}-{{ checksum "apps/explorer_web/assets/package-lock.json" }}
+            - v4-npm-install-{{ .Branch }}
+            - v4-npm-install
 
       - run:
           command: npm install
           working_directory: "apps/explorer_web/assets"
 
       - save_cache:
-          key: v3-npm-install-{{ .Branch }}-{{ checksum "apps/explorer_web/assets/package-lock.json" }}
+          key: v4-npm-install-{{ .Branch }}-{{ checksum "apps/explorer_web/assets/package-lock.json" }}
           paths: "apps/explorer_web/assets/node_modules"
       - save_cache:
-          key: v3-npm-install-{{ .Branch }}
+          key: v4-npm-install-{{ .Branch }}
           paths: "apps/explorer_web/assets/node_modules"
       - save_cache:
-          key: v3-npm-install
+          key: v4-npm-install
           paths: "apps/explorer_web/assets/node_modules"
 
       - run:
@@ -66,22 +66,22 @@ jobs:
 
       - restore_cache:
           keys:
-             - v3-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-             - v3-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-             - v3-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+             - v4-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+             - v4-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+             - v4-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
 
       - run: mix compile
 
       - save_cache:
-          key: v3-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+          key: v4-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
           paths:
             - _build
       - save_cache:
-          key: v3-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+          key: v4-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
           paths:
             - _build
       - save_cache:
-          key: v3-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+          key: v4-mix-compile-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
           paths:
             - _build
 
@@ -178,9 +178,9 @@ jobs:
 
       - restore_cache:
           keys:
-            - v3-mix-dailyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
-            - v3-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
-            - v3-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+            - v4-mix-dailyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+            - v4-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+            - v4-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
 
       - run:
           name: Unpack PLT cache
@@ -200,15 +200,15 @@ jobs:
             cp ~/.mix/dialyxir*.plt plts/
 
       - save_cache:
-          key: v3-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
+          key: v4-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.lock" }}
           paths:
             - plts
       - save_cache:
-          key: v1-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
+          key: v4-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}-{{ checksum "mix.exs" }}
           paths:
             - plts
       - save_cache:
-          key: v1-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
+          key: v4-mix-dialyzer-{{ checksum "OTP_VERSION.lock" }}-{{ checksum "ELIXIR_VERSION.lock" }}
           paths:
             - plts
 
