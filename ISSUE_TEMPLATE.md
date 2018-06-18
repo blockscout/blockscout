@@ -7,7 +7,7 @@
 
 ### Steps to reproduce
 
-*Tell us how to reproduce this issue.*
+*Tell us how to reproduce this issue.  ❤️ if you can push up a branch to your fork with a regression test we can run to reproduce locally.*
 
 ### Expected behaviour
 
