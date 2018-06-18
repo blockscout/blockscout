@@ -1,10 +1,9 @@
 ### Subject of the issue
 Describe your issue here.
 
-### Your environment
-* version of Erlang/OTP
-* version of Elixir
-* which operating system
+### Environment
+* Elixir & Erlang/OTP versions (`elixir -version`):
+* Operating System:
 
 ### Steps to reproduce
 Tell us how to reproduce this issue.
