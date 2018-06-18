@@ -14,6 +14,8 @@ defmodule Explorer.DataCase do
 
   use ExUnit.CaseTemplate
 
+  alias Ecto.Changeset
+
   using do
     quote do
       use ExVCR.Mock, adapter: ExVCR.Adapter.Hackney
@@ -57,5 +59,16 @@ defmodule Explorer.DataCase do
       ]}} ->
       Process.sleep(100)
       wait_for_results(producer)
+  end
+
+  @doc """
+  Converts a changeset to a map of fields with lists of formatted error messages.
+  """
+  def changeset_errors(%Changeset{} = changeset) do
+    Changeset.traverse_errors(changeset, fn {error_message, opts} ->
+      Enum.reduce(opts, error_message, fn {key, value}, error_message ->
+        String.replace(error_message, "%{#{key}}", to_string(value))
+      end)
+    end)
   end
 end

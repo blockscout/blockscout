@@ -62,11 +62,13 @@ defmodule Explorer.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:bcrypt_elixir, "~> 1.0"},
       # benchmark optimizations
       {:benchee, "~> 0.13.1", only: :test},
       # CSV output for benchee
       {:benchee_csv, "~> 0.8.0", only: :test},
       {:bypass, "~> 0.8", only: :test},
+      {:comeonin, "~> 4.0"},
       {:credo, "0.9.2", only: [:dev, :test], runtime: false},
       {:crontab, "~> 1.1"},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
