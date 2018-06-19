@@ -72,13 +72,13 @@ defmodule ExplorerWeb.AddressTransactionControllerTest do
 
       second_page_hashes =
         50
-        |> insert_list(:transaction, from_address_hash: address.hash)
+        |> insert_list(:transaction, from_address: address)
         |> with_block()
         |> Enum.map(& &1.hash)
 
       %Transaction{block_number: block_number, index: index} =
         :transaction
-        |> insert(from_address_hash: address.hash)
+        |> insert(from_address: address)
         |> with_block()
 
       conn =
@@ -99,7 +99,7 @@ defmodule ExplorerWeb.AddressTransactionControllerTest do
       address = insert(:address)
 
       60
-      |> insert_list(:transaction, from_address_hash: address.hash)
+      |> insert_list(:transaction, from_address: address)
       |> with_block()
 
       conn = get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
@@ -111,7 +111,7 @@ defmodule ExplorerWeb.AddressTransactionControllerTest do
       address = insert(:address)
 
       :transaction
-      |> insert(from_address_hash: address.hash)
+      |> insert(from_address: address)
       |> with_block()
 
       conn = get(conn, address_transaction_path(ExplorerWeb.Endpoint, :index, :en, address.hash))

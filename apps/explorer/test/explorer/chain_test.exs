@@ -35,42 +35,48 @@ defmodule Explorer.ChainTest do
 
     test "with from transactions" do
       address = insert(:address)
-      transaction = insert(:transaction, from_address_hash: address.hash)
+      transaction = :transaction |> insert(from_address: address) |> with_block()
 
-      assert [transaction] == Chain.address_to_transactions(address, direction: :from)
+      assert [transaction] ==
+               Chain.address_to_transactions(address, direction: :from) |> Repo.preload([:block, :to_address, :from_address])
     end
 
     test "with to transactions" do
       address = insert(:address)
-      transaction = insert(:transaction, to_address_hash: address.hash)
+      transaction = :transaction |> insert(to_address: address) |> with_block()
 
-      assert [transaction] == Chain.address_to_transactions(address, direction: :to)
+      assert [transaction] ==
+               Chain.address_to_transactions(address, direction: :to) |> Repo.preload([:block, :to_address, :from_address])
     end
 
     test "with to and from transactions and direction: :from" do
       address = insert(:address)
-      transaction = insert(:transaction, from_address_hash: address.hash)
-      insert(:transaction, to_address_hash: address.hash)
+      transaction = :transaction |> insert(from_address: address) |> with_block()
+      :transaction |> insert(to_address: address) |> with_block()
 
       # only contains "from" transaction
-      assert [transaction] == Chain.address_to_transactions(address, direction: :from)
+      assert [transaction] ==
+               Chain.address_to_transactions(address, direction: :from) |> Repo.preload([:block, :to_address, :from_address])
     end
 
     test "with to and from transactions and direction: :to" do
       address = insert(:address)
-      transaction = insert(:transaction, to_address_hash: address.hash)
-      insert(:transaction, from_address_hash: address.hash)
+      transaction = :transaction |> insert(to_address: address) |> with_block()
+      :transaction |> insert(from_address: address) |> with_block()
 
       # only contains "to" transaction
-      assert [transaction] == Chain.address_to_transactions(address, direction: :to)
+      assert [transaction] ==
+               Chain.address_to_transactions(address, direction: :to) |> Repo.preload([:block, :to_address, :from_address])
     end
 
     test "with to and from transactions and no :direction option" do
       address = insert(:address)
-      transaction1 = insert(:transaction, to_address_hash: address.hash)
-      transaction2 = insert(:transaction, from_address_hash: address.hash)
+      block = insert(:block)
+      transaction1 = :transaction |> insert(to_address: address) |> with_block(block)
+      transaction2 = :transaction |> insert(from_address: address) |> with_block(block)
 
-      assert [transaction1, transaction2] == Chain.address_to_transactions(address)
+      assert [transaction2, transaction1] ==
+               Chain.address_to_transactions(address) |> Repo.preload([:block, :to_address, :from_address])
     end
 
     test "with transactions can be paginated" do
@@ -78,13 +84,13 @@ defmodule Explorer.ChainTest do
 
       second_page_hashes =
         50
-        |> insert_list(:transaction, from_address_hash: address.hash)
+        |> insert_list(:transaction, from_address: address)
         |> with_block()
         |> Enum.map(& &1.hash)
 
       %Transaction{block_number: block_number, index: index} =
         :transaction
-        |> insert(from_address_hash: address.hash)
+        |> insert(from_address: address)
         |> with_block()
 
       assert second_page_hashes ==
@@ -289,13 +295,14 @@ defmodule Explorer.ChainTest do
     end
 
     test "created_contract_address_hash populated when existing" do
-      %Transaction{hash: hash_with_block} =
+      transaction =
+        %Transaction{hash: hash_with_block} =
         :transaction
         |> insert()
         |> with_block()
 
       %InternalTransaction{created_contract_address_hash: contract_hash} =
-        insert(:internal_transaction_create, transaction_hash: hash_with_block, index: 0)
+        insert(:internal_transaction_create, transaction: transaction, index: 0)
 
       assert {:ok, %Transaction{hash: ^hash_with_block, created_contract_address_hash: ^contract_hash}} =
                Chain.hash_to_transaction(
@@ -560,8 +567,8 @@ defmodule Explorer.ChainTest do
 
     test "with transaction with internal transactions returns all internal transactions for a given transaction hash" do
       transaction = insert(:transaction)
-      first = insert(:internal_transaction, transaction_hash: transaction.hash, index: 0)
-      second = insert(:internal_transaction, transaction_hash: transaction.hash, index: 1)
+      first = insert(:internal_transaction, transaction: transaction, index: 0)
+      second = insert(:internal_transaction, transaction: transaction, index: 1)
 
       results =
         transaction
@@ -575,7 +582,7 @@ defmodule Explorer.ChainTest do
 
     test "with transaction with internal transactions loads associations with in necessity_by_association" do
       transaction = insert(:transaction)
-      insert(:internal_transaction_create, transaction_hash: transaction.hash, index: 0)
+      insert(:internal_transaction_create, transaction: transaction, index: 0)
 
       assert [
                %InternalTransaction{
@@ -608,7 +615,7 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      insert(:internal_transaction, transaction_hash: transaction.hash, index: 0)
+      insert(:internal_transaction, transaction: transaction, index: 0)
 
       result = Chain.transaction_to_internal_transactions(transaction)
 
@@ -621,7 +628,7 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      expected = insert(:internal_transaction_create, index: 0, transaction_hash: transaction.hash)
+      expected = insert(:internal_transaction_create, index: 0, transaction: transaction)
 
       actual = Enum.at(Chain.transaction_to_internal_transactions(transaction), 0)
 
@@ -634,8 +641,8 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      %InternalTransaction{id: first_id} = insert(:internal_transaction, transaction_hash: transaction.hash, index: 0)
-      %InternalTransaction{id: second_id} = insert(:internal_transaction, transaction_hash: transaction.hash, index: 1)
+      %InternalTransaction{id: first_id} = insert(:internal_transaction, transaction: transaction, index: 0)
+      %InternalTransaction{id: second_id} = insert(:internal_transaction, transaction: transaction, index: 1)
 
       result =
         transaction
@@ -670,11 +677,11 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      log = insert(:log, transaction_hash: transaction.hash, index: 1)
+      log = insert(:log, transaction: transaction, index: 1)
 
       second_page_indexes =
         2..51
-        |> Enum.map(fn index -> insert(:log, transaction_hash: transaction.hash, index: index) end)
+        |> Enum.map(fn index -> insert(:log, transaction: transaction, index: index) end)
         |> Enum.map(& &1.index)
 
       assert second_page_indexes ==

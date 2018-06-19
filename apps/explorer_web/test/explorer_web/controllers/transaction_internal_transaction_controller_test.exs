@@ -36,8 +36,8 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
 
     test "includes internal transactions for the transaction", %{conn: conn} do
       transaction = insert(:transaction)
-      expected_internal_transaction = insert(:internal_transaction, transaction_hash: transaction.hash, index: 0)
-      insert(:internal_transaction, transaction_hash: transaction.hash, index: 1)
+      expected_internal_transaction = insert(:internal_transaction, transaction: transaction, index: 0)
+      insert(:internal_transaction, transaction: transaction, index: 1)
 
       path = transaction_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, transaction.hash)
 
@@ -90,10 +90,10 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
 
       second_page_indexes =
         1..50
-        |> Enum.map(fn index -> insert(:internal_transaction, transaction_hash: transaction.hash, index: index) end)
+        |> Enum.map(fn index -> insert(:internal_transaction, transaction: transaction, index: index) end)
         |> Enum.map(& &1.index)
 
-      %InternalTransaction{index: index} = insert(:internal_transaction, transaction_hash: transaction.hash, index: 51)
+      %InternalTransaction{index: index} = insert(:internal_transaction, transaction: transaction, index: 51)
 
       conn =
         get(conn, transaction_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, transaction.hash), %{
@@ -118,7 +118,7 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
       |> Enum.map(fn index ->
         insert(
           :internal_transaction,
-          transaction_hash: transaction.hash,
+          transaction: transaction,
           index: index
         )
       end)
@@ -138,7 +138,7 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
       |> Enum.map(fn index ->
         insert(
           :internal_transaction,
-          transaction_hash: transaction.hash,
+          transaction: transaction,
           index: index
         )
       end)

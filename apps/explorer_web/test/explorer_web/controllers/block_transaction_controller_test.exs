@@ -20,7 +20,7 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
       block = insert(:block)
 
       :transaction |> insert() |> with_block(block)
-      :transaction |> insert(to_address_hash: nil) |> with_block(block)
+      :transaction |> insert(to_address: nil) |> with_block(block)
 
       conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block.number))
 

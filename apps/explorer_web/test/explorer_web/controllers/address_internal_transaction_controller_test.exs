@@ -80,8 +80,8 @@ defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
         |> Enum.map(fn index ->
           insert(
             :internal_transaction,
-            transaction_hash: transaction_1.hash,
-            from_address_hash: address.hash,
+            transaction: transaction_1,
+            from_address: address,
             index: index
           )
         end)
@@ -92,8 +92,8 @@ defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
         |> Enum.map(fn index ->
           insert(
             :internal_transaction,
-            transaction_hash: transaction_2.hash,
-            from_address_hash: address.hash,
+            transaction: transaction_2,
+            from_address: address,
             index: index
           )
         end)
@@ -104,8 +104,8 @@ defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
         |> Enum.map(fn index ->
           insert(
             :internal_transaction,
-            transaction_hash: transaction_3.hash,
-            from_address_hash: address.hash,
+            transaction: transaction_3,
+            from_address: address,
             index: index
           )
         end)
@@ -115,7 +115,7 @@ defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
 
       %InternalTransaction{index: index} =
         :internal_transaction
-        |> insert(transaction_hash: transaction_3.hash, from_address_hash: address.hash, index: 11)
+        |> insert(transaction: transaction_3, from_address: address, index: 11)
 
       conn =
         get(conn, address_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, address.hash), %{
@@ -144,8 +144,8 @@ defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
       |> Enum.map(fn index ->
         insert(
           :internal_transaction,
-          transaction_hash: transaction.hash,
-          from_address_hash: address.hash,
+          transaction: transaction,
+          from_address: address,
           index: index
         )
       end)
@@ -167,8 +167,8 @@ defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
       |> Enum.map(fn index ->
         insert(
           :internal_transaction,
-          transaction_hash: transaction.hash,
-          from_address_hash: address.hash,
+          transaction: transaction,
+          from_address: address,
           index: index
         )
       end)

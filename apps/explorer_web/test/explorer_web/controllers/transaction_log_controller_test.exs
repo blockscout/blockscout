@@ -53,11 +53,11 @@ defmodule ExplorerWeb.TransactionLogControllerTest do
         |> insert()
         |> with_block()
 
-      log = insert(:log, transaction_hash: transaction.hash, index: 1)
+      log = insert(:log, transaction: transaction, index: 1)
 
       second_page_indexes =
         2..51
-        |> Enum.map(fn index -> insert(:log, transaction_hash: transaction.hash, index: index) end)
+        |> Enum.map(fn index -> insert(:log, transaction: transaction, index: index) end)
         |> Enum.map(& &1.index)
 
       conn =
@@ -77,7 +77,7 @@ defmodule ExplorerWeb.TransactionLogControllerTest do
         |> with_block()
 
       1..60
-      |> Enum.map(fn index -> insert(:log, transaction_hash: transaction.hash, index: index) end)
+      |> Enum.map(fn index -> insert(:log, transaction: transaction, index: index) end)
 
       conn = get(conn, transaction_log_path(conn, :index, :en, transaction))
 

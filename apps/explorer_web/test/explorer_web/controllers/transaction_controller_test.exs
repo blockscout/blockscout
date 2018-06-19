@@ -69,7 +69,7 @@ defmodule ExplorerWeb.TransactionControllerTest do
       address = insert(:address)
 
       60
-      |> insert_list(:transaction, from_address_hash: address.hash)
+      |> insert_list(:transaction, from_address: address)
       |> with_block()
 
       conn = get(conn, "/en/transactions")
@@ -81,7 +81,7 @@ defmodule ExplorerWeb.TransactionControllerTest do
       address = insert(:address)
 
       :transaction
-      |> insert(from_address_hash: address.hash)
+      |> insert(from_address: address)
       |> with_block()
 
       conn = get(conn, "/en/transactions")
