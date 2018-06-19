@@ -148,13 +148,14 @@ defmodule ExplorerWeb.ViewingAddressesTest do
   end
 
   test "viewing new transactions via live update", %{addresses: addresses, session: session} do
-    session = session
-    |> AddressPage.visit_page(addresses.lincoln)
-    |> assert_has(AddressPage.balance())
+    session =
+      session
+      |> AddressPage.visit_page(addresses.lincoln)
+      |> assert_has(AddressPage.balance())
 
     transaction =
       :transaction
-      |> insert(from_address_hash: addresses.lincoln.hash)
+      |> insert(from_address: addresses.lincoln)
       |> with_block()
       |> Repo.preload([:block, :from_address, :to_address])
 
