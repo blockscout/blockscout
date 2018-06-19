@@ -1,6 +1,6 @@
 defmodule ExplorerWeb.TransactionControllerTest do
   use ExplorerWeb.ConnCase
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{Block, Transaction}
 
   import ExplorerWeb.Router.Helpers, only: [transaction_path: 4, transaction_internal_transaction_path: 4]
 
@@ -65,29 +65,34 @@ defmodule ExplorerWeb.TransactionControllerTest do
       assert second_page_hashes == actual_hashes
     end
 
-    test "guards against bad block_number input", %{conn: conn} do
-      conn = get(conn, "/en/transactions", %{"block_number" => "foo", "index" => "2"})
-      assert html_response(conn, 422)
+    test "next_page_params exist if not on last page", %{conn: conn} do
+      address = insert(:address)
+      block = %Block{number: number} = insert(:block)
+
+      60
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(block)
+
+      conn = get(conn, "/en/transactions")
+
+      assert %{block_number: ^number, index: 10} = conn.assigns.next_page_params
     end
 
-    test "guards against bad index input", %{conn: conn} do
-      conn = get(conn, "/en/transactions", %{"block_number" => "2", "index" => "bar"})
-      assert html_response(conn, 422)
-    end
+    test "next_page_params are empty if on last page", %{conn: conn} do
+      address = insert(:address)
 
-    test "sends back the number of transactions", %{conn: conn} do
-      insert(:transaction)
+      :transaction
+      |> insert(from_address: address)
       |> with_block()
 
       conn = get(conn, "/en/transactions")
 
-      refute conn.assigns.transaction_estimated_count == nil
+      refute conn.assigns.next_page_params
     end
 
     test "works when there are no transactions", %{conn: conn} do
       conn = get(conn, "/en/transactions")
 
-      assert conn.assigns.transaction_estimated_count == 0
       assert conn.assigns.transactions == []
     end
   end

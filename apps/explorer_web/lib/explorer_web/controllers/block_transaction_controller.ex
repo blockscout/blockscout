@@ -1,7 +1,8 @@
 defmodule ExplorerWeb.BlockTransactionController do
   use ExplorerWeb, :controller
 
-  import ExplorerWeb.Chain, only: [param_to_block_number: 1]
+  import ExplorerWeb.Chain,
+    only: [paging_options: 1, param_to_block_number: 1, next_page_params: 2, split_list_by_page: 1]
 
   alias Explorer.Chain
 
@@ -9,18 +10,30 @@ defmodule ExplorerWeb.BlockTransactionController do
     with {:ok, block_number} <- param_to_block_number(formatted_block_number),
          {:ok, block} <- Chain.number_to_block(block_number, necessity_by_association: %{miner: :required}),
          block_transaction_count <- Chain.block_to_transaction_count(block) do
-      page =
-        Chain.block_to_transactions(
-          block,
-          necessity_by_association: %{
-            block: :required,
-            from_address: :required,
-            to_address: :optional
-          },
-          pagination: params
+      full_options =
+        Keyword.merge(
+          [
+            necessity_by_association: %{
+              block: :required,
+              from_address: :required,
+              to_address: :optional
+            }
+          ],
+          paging_options(params)
         )
 
-      render(conn, "index.html", block: block, block_transaction_count: block_transaction_count, page: page)
+      transactions_plus_one = Chain.block_to_transactions(block, full_options)
+
+      {transactions, next_page} = split_list_by_page(transactions_plus_one)
+
+      render(
+        conn,
+        "index.html",
+        block: block,
+        block_transaction_count: block_transaction_count,
+        next_page_params: next_page_params(next_page, transactions),
+        transactions: transactions
+      )
     else
       {:error, :invalid} ->
         not_found(conn)

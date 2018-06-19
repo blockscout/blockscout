@@ -1,35 +1,34 @@
 defmodule ExplorerWeb.PendingTransactionController do
   use ExplorerWeb, :controller
 
+  import ExplorerWeb.Chain, only: [paging_options: 1, next_page_params: 2, split_list_by_page: 1]
+
   alias Explorer.Chain
 
   def index(conn, params) do
-    with %{"last_seen_pending_inserted_at" => last_seen_pending_inserted_at_string} <- params,
-         {:ok, last_seen_pending_inserted_at} = Timex.parse(last_seen_pending_inserted_at_string, "{ISO:Extended:Z}") do
-      do_index(conn, inserted_after: last_seen_pending_inserted_at)
-    else
-      _ -> do_index(conn)
-    end
-  end
+    full_options =
+      Keyword.merge(
+        [
+          necessity_by_association: %{
+            from_address: :optional,
+            to_address: :optional
+          }
+        ],
+        paging_options(params)
+      )
 
-  defp do_index(conn, options \\ []) when is_list(options) do
-    full_options = Keyword.merge([necessity_by_association: %{from_address: :optional, to_address: :optional}], options)
-    transactions = Chain.recent_pending_transactions(full_options)
-    last_seen_pending_inserted_at = last_seen_pending_inserted_at(transactions.entries)
+    transactions_plus_one = Chain.recent_pending_transactions(full_options)
+
+    {transactions, next_page} = split_list_by_page(transactions_plus_one)
+
     pending_transaction_count = Chain.pending_transaction_count()
 
     render(
       conn,
       "index.html",
-      last_seen_pending_inserted_at: last_seen_pending_inserted_at,
+      next_page_params: next_page_params(next_page, transactions),
       pending_transaction_count: pending_transaction_count,
       transactions: transactions
     )
-  end
-
-  defp last_seen_pending_inserted_at([]), do: nil
-
-  defp last_seen_pending_inserted_at(transactions) do
-    List.last(transactions).inserted_at
   end
 end

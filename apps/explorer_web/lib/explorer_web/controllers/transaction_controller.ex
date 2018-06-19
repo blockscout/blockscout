@@ -1,29 +1,11 @@
 defmodule ExplorerWeb.TransactionController do
   use ExplorerWeb, :controller
 
-  alias Explorer.{Chain, PagingOptions}
+  import ExplorerWeb.Chain, only: [paging_options: 1, next_page_params: 2, split_list_by_page: 1]
 
-  @default_paging_options %PagingOptions{page_size: 50}
+  alias Explorer.Chain
 
-  def index(conn, %{"block_number" => block_number_string, "index" => index_string}) do
-    with {block_number, ""} <- Integer.parse(block_number_string),
-         {index, ""} <- Integer.parse(index_string) do
-      do_index(conn, paging_options: %{@default_paging_options | key: {block_number, index}})
-    else
-      _ ->
-        unprocessable_entity(conn)
-    end
-  end
-
-  def index(conn, _params) do
-    do_index(conn)
-  end
-
-  def show(conn, %{"id" => id, "locale" => locale}) do
-    redirect(conn, to: transaction_internal_transaction_path(conn, :index, locale, id))
-  end
-
-  defp do_index(conn, options \\ []) when is_list(options) do
+  def index(conn, params) do
     full_options =
       Keyword.merge(
         [
@@ -31,28 +13,27 @@ defmodule ExplorerWeb.TransactionController do
             block: :required,
             from_address: :optional,
             to_address: :optional
-          },
-          paging_options: @default_paging_options
+          }
         ],
-        options
+        paging_options(params)
       )
 
-    transactions = Chain.recent_collated_transactions(full_options)
+    transactions_plus_one = Chain.recent_collated_transactions(full_options)
+
+    {transactions, next_page} = split_list_by_page(transactions_plus_one)
+
     transaction_estimated_count = Chain.transaction_estimated_count()
 
     render(
       conn,
       "index.html",
-      earliest: earliest(transactions),
+      next_page_params: next_page_params(next_page, transactions),
       transaction_estimated_count: transaction_estimated_count,
       transactions: transactions
     )
   end
 
-  defp earliest([]), do: nil
-
-  defp earliest(transactions) do
-    last = List.last(transactions)
-    %{block_number: last.block_number, index: last.index}
+  def show(conn, %{"id" => id, "locale" => locale}) do
+    redirect(conn, to: transaction_internal_transaction_path(conn, :index, locale, id))
   end
 end

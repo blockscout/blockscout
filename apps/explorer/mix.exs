@@ -52,7 +52,6 @@ defmodule Explorer.Mixfile do
       :logger,
       :mix,
       :runtime_tools,
-      :scrivener_ecto,
       :timex,
       :timex_ecto
     ]
@@ -85,8 +84,6 @@ defmodule Explorer.Mixfile do
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:mox, "~> 0.3.2", only: [:test]},
       {:postgrex, ">= 0.0.0"},
-      {:scrivener_ecto, "~> 1.0"},
-      {:scrivener_html, "~> 1.7"},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
       {:timex, "~> 3.1.24"},
       {:timex_ecto, "~> 3.2.1"}

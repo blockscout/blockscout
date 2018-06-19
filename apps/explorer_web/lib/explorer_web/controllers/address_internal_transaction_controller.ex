@@ -6,6 +6,7 @@ defmodule ExplorerWeb.AddressInternalTransactionController do
   use ExplorerWeb, :controller
 
   import ExplorerWeb.AddressController, only: [transaction_count: 1]
+  import ExplorerWeb.Chain, only: [paging_options: 1, next_page_params: 2, split_list_by_page: 1]
 
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
@@ -13,27 +14,28 @@ defmodule ExplorerWeb.AddressInternalTransactionController do
   def index(conn, %{"address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash) do
-      options = [
-        necessity_by_association: %{
-          from_address: :optional,
-          to_address: :optional
-        },
-        pagination: params
-      ]
+      full_options =
+        [
+          necessity_by_association: %{
+            from_address: :optional,
+            to_address: :optional
+          }
+        ]
+        |> Keyword.merge(paging_options(params))
+        |> Keyword.merge(current_filter(params))
 
-      page =
-        Chain.address_to_internal_transactions(
-          address,
-          Keyword.merge(options, current_filter(params))
-        )
+      internal_transactions_plus_one = Chain.address_to_internal_transactions(address, full_options)
+
+      {internal_transactions, next_page} = split_list_by_page(internal_transactions_plus_one)
 
       render(
         conn,
         "index.html",
         address: address,
+        next_page_params: next_page_params(next_page, internal_transactions),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
-        page: page,
+        internal_transactions: internal_transactions,
         transaction_count: transaction_count(address)
       )
     else
@@ -42,6 +44,16 @@ defmodule ExplorerWeb.AddressInternalTransactionController do
 
       {:error, :not_found} ->
         not_found(conn)
+    end
+  end
+
+  defp current_filter(%{paging_options: paging_options} = params) do
+    params
+    |> Map.get("filter")
+    |> case do
+      "to" -> [direction: :to, paging_options: paging_options]
+      "from" -> [direction: :from, paging_options: paging_options]
+      _ -> [paging_options: paging_options]
     end
   end
 

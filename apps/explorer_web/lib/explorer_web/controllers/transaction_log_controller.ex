@@ -1,6 +1,8 @@
 defmodule ExplorerWeb.TransactionLogController do
   use ExplorerWeb, :controller
 
+  import ExplorerWeb.Chain, only: [paging_options: 1, next_page_params: 2, split_list_by_page: 1]
+
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
 
@@ -15,18 +17,26 @@ defmodule ExplorerWeb.TransactionLogController do
                to_address: :required
              }
            ) do
-      logs =
-        Chain.transaction_to_logs(
-          transaction,
-          necessity_by_association: %{address: :optional},
-          pagination: params
+      full_options =
+        Keyword.merge(
+          [
+            necessity_by_association: %{
+              address: :optional
+            }
+          ],
+          paging_options(params)
         )
+
+      logs_plus_one = Chain.transaction_to_logs(transaction, full_options)
+
+      {logs, next_page} = split_list_by_page(logs_plus_one)
 
       render(
         conn,
         "index.html",
         logs: logs,
         max_block_number: max_block_number(),
+        next_page_params: next_page_params(next_page, logs),
         transaction: transaction,
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
       )

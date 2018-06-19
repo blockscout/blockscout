@@ -33,7 +33,7 @@ defmodule ExplorerWeb.TransactionLogControllerTest do
 
       conn = get(conn, transaction_log_path(conn, :index, :en, transaction))
 
-      first_log = List.first(conn.assigns.logs.entries)
+      first_log = List.first(conn.assigns.logs)
 
       assert first_log.transaction_hash == transaction.hash
     end
@@ -44,7 +44,55 @@ defmodule ExplorerWeb.TransactionLogControllerTest do
 
       conn = get(conn, path)
 
-      assert Enum.count(conn.assigns.logs.entries) == 0
+      assert Enum.count(conn.assigns.logs) == 0
+    end
+
+    test "returns next page of results based on last seen transaction log", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      log = insert(:log, transaction: transaction, index: 1)
+
+      second_page_indexes =
+        2..51
+        |> Enum.map(fn index -> insert(:log, transaction: transaction, index: index) end)
+        |> Enum.map(& &1.index)
+
+      conn =
+        get(conn, transaction_log_path(conn, :index, :en, transaction), %{
+          "index" => Integer.to_string(log.index)
+        })
+
+      actual_indexes = Enum.map(conn.assigns.logs, & &1.index)
+
+      assert second_page_indexes == actual_indexes
+    end
+
+    test "next_page_params exist if not on last page", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      1..60
+      |> Enum.map(fn index -> insert(:log, transaction: transaction, index: index) end)
+
+      conn = get(conn, transaction_log_path(conn, :index, :en, transaction))
+
+      assert %{index: 50} = conn.assigns.next_page_params
+    end
+
+    test "next_page_params are empty if on last page", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      conn = get(conn, transaction_log_path(conn, :index, :en, transaction))
+
+      refute conn.assigns.next_page_params
     end
   end
 

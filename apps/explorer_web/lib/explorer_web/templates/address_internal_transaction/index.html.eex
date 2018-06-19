@@ -38,7 +38,7 @@
       </div>
       <div class="card-body">
 
-        <%= if Enum.count(@page) > 0 do %>
+        <%= if Enum.count(@internal_transactions) > 0 do %>
           <div class="dropdown u-float-right u-push-sm">
             <button data-test="filter_dropdown" class="button button--secondary button--xsmall dropdown-toggle" type="button"
               id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -87,7 +87,7 @@
               <th><%= gettext "To" %></th>
               <th><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
             </thead>
-            <%= for internal_transaction <- @page do %>
+            <%= for internal_transaction <- @internal_transactions do %>
               <tgroup>
                 <tr data-test="internal_transaction">
                   <td>
@@ -115,22 +115,18 @@
         <% end %>
       </div>
     </div>
-
-    <%= if Enum.count(@page) > 0 do %>
-      <div class="address__pagination">
-        <%= pagination_links(
+    <%= if @next_page_params do %>
+      <%= link(
+        gettext("Older"),
+        class: "button button--secondary button--sm u-float-right mt-3",
+        to: address_internal_transaction_path(
           @conn,
-          @page,
-          ["en", @conn.params["address_id"]],
-          distance: 1,
-          filter: @conn.params["filter"],
-          first: true,
-          next: Phoenix.HTML.raw("&rsaquo;"),
-          path: &address_internal_transaction_path/5,
-          previous: Phoenix.HTML.raw("&lsaquo;"),
-          view_style: :bulma
-        ) %>
-      </div>
+          :index,
+          @conn.assigns.locale,
+          @address,
+          @next_page_params
+        )
+      ) %>
     <% end %>
   </section>
 </section>

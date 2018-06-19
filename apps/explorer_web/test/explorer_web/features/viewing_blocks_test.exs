@@ -48,10 +48,10 @@ defmodule ExplorerWeb.ViewingBlocksTest do
 
     transaction =
       :transaction
-      |> insert(to_address: nil, to_address_hash: nil)
+      |> insert(to_address: nil, to_address: nil)
       |> with_block(block)
 
-    internal_transaction = insert(:internal_transaction_create, transaction_hash: transaction.hash, index: 0)
+    internal_transaction = insert(:internal_transaction_create, transaction: transaction, index: 0)
 
     session
     |> BlockPage.visit_page(block)

@@ -1,6 +1,8 @@
 defmodule ExplorerWeb.TransactionInternalTransactionController do
   use ExplorerWeb, :controller
 
+  import ExplorerWeb.Chain, only: [paging_options: 1, next_page_params: 2, split_list_by_page: 1]
+
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
 
@@ -15,15 +17,20 @@ defmodule ExplorerWeb.TransactionInternalTransactionController do
                to_address: :optional
              }
            ) do
-      page =
-        Chain.transaction_hash_to_internal_transactions(
-          transaction.hash,
-          necessity_by_association: %{
-            from_address: :required,
-            to_address: :optional
-          },
-          pagination: params
+      full_options =
+        Keyword.merge(
+          [
+            necessity_by_association: %{
+              from_address: :required,
+              to_address: :optional
+            }
+          ],
+          paging_options(params)
         )
+
+      internal_transactions_plus_one = Chain.transaction_to_internal_transactions(transaction, full_options)
+
+      {internal_transactions, next_page} = split_list_by_page(internal_transactions_plus_one)
 
       max_block_number = max_block_number()
 
@@ -31,8 +38,9 @@ defmodule ExplorerWeb.TransactionInternalTransactionController do
         conn,
         "index.html",
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+        internal_transactions: internal_transactions,
         max_block_number: max_block_number,
-        page: page,
+        next_page_params: next_page_params(next_page, internal_transactions),
         transaction: transaction
       )
     else

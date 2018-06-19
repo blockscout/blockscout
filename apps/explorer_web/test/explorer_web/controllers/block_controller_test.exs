@@ -1,5 +1,6 @@
 defmodule ExplorerWeb.BlockControllerTest do
   use ExplorerWeb.ConnCase
+  alias Explorer.Chain.Block
 
   @locale "en"
 
@@ -33,7 +34,47 @@ defmodule ExplorerWeb.BlockControllerTest do
 
       conn = get(conn, block_path(conn, :index, @locale))
 
-      assert conn.assigns.blocks.entries |> Enum.count() == 1
+      assert conn.assigns.blocks |> Enum.count() == 1
+    end
+
+    test "returns next page of results based on last seen block", %{conn: conn} do
+      second_page_block_ids =
+        50
+        |> insert_list(:block)
+        |> Enum.map(& &1.number)
+
+      block = insert(:block)
+
+      conn =
+        get(conn, block_path(conn, :index, @locale), %{
+          "block_number" => Integer.to_string(block.number)
+        })
+
+      actual_block_ids =
+        conn.assigns.blocks
+        |> Enum.map(& &1.number)
+        |> Enum.reverse()
+
+      assert second_page_block_ids == actual_block_ids
+    end
+
+    test "next_page_params exist if not on last page", %{conn: conn} do
+      %Block{number: number} =
+        60
+        |> insert_list(:block)
+        |> Enum.fetch!(10)
+
+      conn = get(conn, block_path(conn, :index, @locale))
+
+      assert %{block_number: ^number} = conn.assigns.next_page_params
+    end
+
+    test "next_page_params are empty if on last page", %{conn: conn} do
+      insert(:block)
+
+      conn = get(conn, block_path(conn, :index, @locale))
+
+      refute conn.assigns.next_page_params
     end
   end
 end

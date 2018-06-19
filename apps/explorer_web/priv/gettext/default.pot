@@ -504,7 +504,13 @@ msgstr ""
 msgid "There are no Transactions"
 msgstr ""
 
+#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:120
+#: lib/explorer_web/templates/address_transaction/index.html.eex:139
+#: lib/explorer_web/templates/block/index.html.eex:60
+#: lib/explorer_web/templates/block_transaction/index.html.eex:200
+#: lib/explorer_web/templates/pending_transaction/index.html.eex:69
 #: lib/explorer_web/templates/transaction/index.html.eex:90
+#: lib/explorer_web/templates/transaction_internal_transaction/index.html.eex:60
 msgid "Older"
 msgstr ""
 
@@ -532,4 +538,9 @@ msgstr ""
 
 #: lib/explorer_web/templates/address/overview.html.eex:48
 msgid "Last Updated In Block"
+msgstr ""
+
+#, elixir-format
+#: lib/explorer_web/templates/transaction_log/index.html.eex:73
+msgid "Newer"
 msgstr ""
