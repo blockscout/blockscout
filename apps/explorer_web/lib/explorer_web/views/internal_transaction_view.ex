@@ -4,6 +4,6 @@ defmodule ExplorerWeb.InternalTransactionView do
 
   alias Explorer.Chain.InternalTransaction
 
-  def contract?(%InternalTransaction{type: :create}), do: true
-  def contract?(_), do: false
+  def create?(%InternalTransaction{type: :create}), do: true
+  def create?(_), do: false
 end

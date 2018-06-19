@@ -41,7 +41,7 @@
                     <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: internal_transaction.from_address %>
                   </td>
                   <td>
-                    <%= if ExplorerWeb.InternalTransactionView.contract?(internal_transaction) do %>
+                    <%= if ExplorerWeb.InternalTransactionView.create?(internal_transaction) do %>
                       <i class="fas fa-plus-square"></i>
                       <%= link(
                         gettext("Contract Creation"),
