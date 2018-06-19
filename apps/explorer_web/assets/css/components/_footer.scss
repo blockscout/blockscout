@@ -1,16 +1,50 @@
+$footer-height: 50px;
+$footer-padding: 1rem;
+$social-link-size: 2rem;
+$social-link-padding: $footer-padding / 2;
+$footer-text-color: rgba($white, 0.7);
+
 .footer {
+  position: relative;
   font-size: 12px;
   display: block;
   bottom: 0;
-  background: $gray-100;
-  color:$gray-600;
+  background: $primary;
+  color: $footer-text-color;
   text-align: center;
-  margin-top: 15px;
-  padding: 14px;
-  height: 50px;
+  margin-top: $footer-padding;
+  padding: $footer-padding;
+  height: $footer-height;
 
 
   @media (max-width: 768px) {
     width: 100%;
+  }
+}
+
+.footer .social-links {
+  position :absolute;
+  top: 0;
+  right: $footer-padding;
+  height: $footer-height;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  & > a {
+    width: $social-link-size;
+    height: $social-link-size;
+    margin: 0 $social-link-padding;
+    padding: $social-link-padding;
+    text-align: center;
+    color: $footer-text-color;
+    background-color: rgba($white, 0.25);
+    border-radius: 50%;
+    transition: all 0.1s ease;
+
+    &:hover {
+      background-color: $white;
+      color: $primary;
+    }
   }
 }
