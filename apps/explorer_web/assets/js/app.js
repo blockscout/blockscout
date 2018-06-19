@@ -18,16 +18,11 @@ import 'bootstrap'
 // Local files can be imported directly using relative
 // paths "./socket" or full ones "web/static/js/socket".
 
-<<<<<<< HEAD
-// import socket from "./socket"
-=======
-import './socket'
-import './lib/sidebar'
-import './lib/market_history_chart'
->>>>>>> Prepend broadcasted transaction to address transactions list
 import './lib/card_flip'
 import './lib/clipboard_buttons'
 import './lib/from_now'
 import './lib/market_history_chart'
 import './lib/sidebar'
 import './lib/tooltip'
+
+import './pages/address'

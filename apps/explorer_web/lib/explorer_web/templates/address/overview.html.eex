@@ -1,4 +1,5 @@
 <script>
+  window.page = 'address'
   window.addressHash = '<%= @address %>'
 </script>
 
