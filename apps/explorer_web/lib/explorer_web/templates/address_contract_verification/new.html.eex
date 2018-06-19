@@ -32,7 +32,7 @@
 
         <div class="form-group">
           <%= label f, :compiler_version, "Compiler" %>
-          <%= select f, :compiler_version, @compiler_versions, class: "form-control", selected: "0.4.24" %>
+          <%= select f, :compiler_version, @compiler_versions, class: "form-control", selected: "latest" %>
           <%= error_tag f, :compiler_version %>
         </div>
 

@@ -21,7 +21,6 @@ defmodule Explorer.SmartContract.Verifier do
         "optimization" => optimization,
         "compiler_version" => compiler_version
       }) do
-
     solc_output = CodeCompiler.run(name, compiler_version, contract_source_code, optimization)
 
     compare_bytecodes(solc_output, address_hash)

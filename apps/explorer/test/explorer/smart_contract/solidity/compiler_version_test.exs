@@ -24,7 +24,19 @@ defmodule Explorer.SmartContract.Solidity.CompilerVersionTest do
       end)
 
       assert {:ok, versions} = CompilerVersion.fetch_versions()
-      assert Enum.any?(versions, fn item -> item == {"0.4.9", "v0.4.9+commit.364da425"} end) == true
+      assert Enum.any?(versions, fn item -> item == "v0.4.9+commit.364da425" end) == true
+    end
+
+    test "always returns 'latest' in the first item", %{bypass: bypass} do
+      Bypass.expect(bypass, fn conn ->
+        assert "GET" == conn.method
+        assert "/bin/list.json" == conn.request_path
+
+        Conn.resp(conn, 200, solc_bin_versions())
+      end)
+
+      assert {:ok, versions} = CompilerVersion.fetch_versions()
+      assert List.first(versions) == "latest"
     end
 
     test "returns error when list of versions is not available", %{bypass: bypass} do

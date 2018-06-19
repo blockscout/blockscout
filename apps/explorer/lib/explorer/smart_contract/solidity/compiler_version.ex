@@ -23,22 +23,23 @@ defmodule Explorer.SmartContract.Solidity.CompilerVersion do
   end
 
   defp format_data(json) do
-    {:ok, releases} =
+    versions =
       json
       |> Jason.decode!()
-      |> Map.fetch("releases")
+      |> Map.fetch!("builds")
+      |> format_versions()
+      |> Enum.reverse()
 
-    releases
-    |> Map.to_list()
-    |> Enum.map(fn {key, value} -> {key, extract_version(value)} end)
-    |> Enum.sort()
-    |> Enum.reverse()
+    ["latest" | versions]
   end
 
-  defp extract_version(version) do
-    version
-    |> String.replace_prefix("soljson-", "")
-    |> String.replace_suffix(".js", "")
+  defp format_versions(builds) do
+    Enum.map(builds, fn build ->
+      build
+      |> Map.fetch!("path")
+      |> String.replace_prefix("soljson-", "")
+      |> String.replace_suffix(".js", "")
+    end)
   end
 
   defp decode_json(json) do
