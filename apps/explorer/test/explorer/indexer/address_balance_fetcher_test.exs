@@ -86,8 +86,27 @@ defmodule Explorer.Indexer.AddressBalanceFetcherTest do
 
       fetched_address = Repo.one!(from(address in Address, where: address.hash == ^hash_data))
 
-      assert fetched_address.fetched_balance == %Explorer.Chain.Wei{value: Decimal.new(252460802000000000000000000)}
+      assert fetched_address.fetched_balance == %Explorer.Chain.Wei{
+               value: Decimal.new(252_460_802_000_000_000_000_000_000)
+             }
+
       assert fetched_address.fetched_balance_block_number == 2
+    end
+
+    test "duplicate address hashes only retry max block_quantity" do
+      hash_data = "0x000000000000000000000000000000000"
+
+      assert AddressBalanceFetcher.run(
+               [%{block_quantity: "0x1", hash_data: hash_data}, %{block_quantity: "0x2", hash_data: hash_data}],
+               0
+             ) ==
+               {:retry,
+                [
+                  %{
+                    block_quantity: "0x2",
+                    hash_data: "0x000000000000000000000000000000000"
+                  }
+                ]}
     end
   end
 
