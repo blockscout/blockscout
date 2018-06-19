@@ -41,7 +41,18 @@
                     <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: internal_transaction.from_address %>
                   </td>
                   <td>
-                    <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: internal_transaction.to_address %>
+                    <%= if ExplorerWeb.InternalTransactionView.create?(internal_transaction) do %>
+                      <i class="fas fa-plus-square"></i>
+                      <%= link(
+                        gettext("Contract Creation"),
+                        class: "transaction__link",
+                        "data-address-hash": internal_transaction.created_contract_address_hash,
+                        to: address_path(ExplorerWeb.Endpoint, :show, @locale, internal_transaction.created_contract_address_hash),
+                        title: internal_transaction.created_contract_address_hash
+                      ) %>
+                    <% else %>
+                      <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: internal_transaction.to_address %>
+                    <% end %>
                   </td>
                   <td><%= ExplorerWeb.TransactionView.value(internal_transaction, include_label: false) %></td>
                   <td><%= ExplorerWeb.TransactionView.gas(internal_transaction) %></td>
