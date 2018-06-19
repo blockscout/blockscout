@@ -11,14 +11,16 @@ defmodule ExplorerWeb.BlockTransactionController do
          {:ok, block} <- Chain.number_to_block(block_number, necessity_by_association: %{miner: :required}),
          block_transaction_count <- Chain.block_to_transaction_count(block) do
       full_options =
-        [
-          necessity_by_association: %{
-            block: :required,
-            from_address: :required,
-            to_address: :optional
-          }
-        ]
-        |> Keyword.merge(paging_options(params))
+        Keyword.merge(
+          [
+            necessity_by_association: %{
+              block: :required,
+              from_address: :required,
+              to_address: :optional
+            }
+          ],
+          paging_options(params)
+        )
 
       transactions_plus_one = Chain.block_to_transactions(block, full_options)
 

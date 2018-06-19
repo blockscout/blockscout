@@ -2476,8 +2476,8 @@ defmodule Explorer.Chain do
   end
 
   defp load_contract_creation(query) do
-    query
-    |> join(
+    join(
+      query,
       :left,
       [transaction],
       internal_transaction in assoc(transaction, :internal_transactions),
@@ -2488,15 +2488,14 @@ defmodule Explorer.Chain do
   defp page_blocks(query, %PagingOptions{key: nil}), do: query
 
   defp page_blocks(query, %PagingOptions{key: {block_number}}) do
-    query
-    |> where([block], block.number < ^block_number)
+    where(query, [block], block.number < ^block_number)
   end
 
   defp page_internal_transaction(query, %PagingOptions{key: nil}), do: query
 
   defp page_internal_transaction(query, %PagingOptions{key: {block_number, transaction_index, index}}) do
-    query
-    |> where(
+    where(
+      query,
       [internal_transaction, transaction],
       transaction.block_number < ^block_number or
         (transaction.block_number == ^block_number and transaction.index < ^transaction_index) or
@@ -2506,22 +2505,20 @@ defmodule Explorer.Chain do
   end
 
   defp page_internal_transaction(query, %PagingOptions{key: {index}}) do
-    query
-    |> where([internal_transaction], internal_transaction.index < ^index)
+    where(query, [internal_transaction], internal_transaction.index < ^index)
   end
 
   defp page_logs(query, %PagingOptions{key: nil}), do: query
 
   defp page_logs(query, %PagingOptions{key: {index}}) do
-    query
-    |> where([log], log.index > ^index)
+    where(query, [log], log.index > ^index)
   end
 
   defp page_pending_transaction(query, %PagingOptions{key: nil}), do: query
 
   defp page_pending_transaction(query, %PagingOptions{key: {inserted_at, hash}}) do
-    query
-    |> where(
+    where(
+      query,
       [transaction],
       transaction.inserted_at < ^inserted_at or (transaction.inserted_at == ^inserted_at and transaction.hash < ^hash)
     )
@@ -2530,8 +2527,8 @@ defmodule Explorer.Chain do
   defp page_transaction(query, %PagingOptions{key: nil}), do: query
 
   defp page_transaction(query, %PagingOptions{key: {block_number, index}}) do
-    query
-    |> where(
+    where(
+      query,
       [transaction],
       transaction.block_number < ^block_number or
         (transaction.block_number == ^block_number and transaction.index < ^index)
@@ -2539,8 +2536,7 @@ defmodule Explorer.Chain do
   end
 
   defp page_transaction(query, %PagingOptions{key: {index}}) do
-    query
-    |> where([transaction], transaction.index < ^index)
+    where(query, [transaction], transaction.index < ^index)
   end
 
   defp run_addresses(multi, ecto_schema_module_to_changes_list, options)
@@ -2669,8 +2665,7 @@ defmodule Explorer.Chain do
   end
 
   defp where_address_fields_match(query, address_hash, nil) do
-    query
-    |> where([t], field(t, ^:to_address_hash) == ^address_hash or field(t, ^:from_address_hash) == ^address_hash)
+    where(query, [t], field(t, ^:to_address_hash) == ^address_hash or field(t, ^:from_address_hash) == ^address_hash)
   end
 
   defp where_transaction_has_multiple_internal_transactions(query) do

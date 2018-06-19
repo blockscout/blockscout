@@ -18,13 +18,15 @@ defmodule ExplorerWeb.TransactionInternalTransactionController do
              }
            ) do
       full_options =
-        [
-          necessity_by_association: %{
-            from_address: :required,
-            to_address: :optional
-          }
-        ]
-        |> Keyword.merge(paging_options(params))
+        Keyword.merge(
+          [
+            necessity_by_association: %{
+              from_address: :required,
+              to_address: :optional
+            }
+          ],
+          paging_options(params)
+        )
 
       internal_transactions_plus_one = Chain.transaction_to_internal_transactions(transaction, full_options)
 

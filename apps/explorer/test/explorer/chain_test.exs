@@ -38,7 +38,8 @@ defmodule Explorer.ChainTest do
       transaction = :transaction |> insert(from_address: address) |> with_block()
 
       assert [transaction] ==
-               Chain.address_to_transactions(address, direction: :from) |> Repo.preload([:block, :to_address, :from_address])
+               Chain.address_to_transactions(address, direction: :from)
+               |> Repo.preload([:block, :to_address, :from_address])
     end
 
     test "with to transactions" do
@@ -46,7 +47,8 @@ defmodule Explorer.ChainTest do
       transaction = :transaction |> insert(to_address: address) |> with_block()
 
       assert [transaction] ==
-               Chain.address_to_transactions(address, direction: :to) |> Repo.preload([:block, :to_address, :from_address])
+               Chain.address_to_transactions(address, direction: :to)
+               |> Repo.preload([:block, :to_address, :from_address])
     end
 
     test "with to and from transactions and direction: :from" do
@@ -56,7 +58,8 @@ defmodule Explorer.ChainTest do
 
       # only contains "from" transaction
       assert [transaction] ==
-               Chain.address_to_transactions(address, direction: :from) |> Repo.preload([:block, :to_address, :from_address])
+               Chain.address_to_transactions(address, direction: :from)
+               |> Repo.preload([:block, :to_address, :from_address])
     end
 
     test "with to and from transactions and direction: :to" do
@@ -66,7 +69,8 @@ defmodule Explorer.ChainTest do
 
       # only contains "to" transaction
       assert [transaction] ==
-               Chain.address_to_transactions(address, direction: :to) |> Repo.preload([:block, :to_address, :from_address])
+               Chain.address_to_transactions(address, direction: :to)
+               |> Repo.preload([:block, :to_address, :from_address])
     end
 
     test "with to and from transactions and no :direction option" do
@@ -122,7 +126,7 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "block_to_transactions/1" do
+  describe "block_to_transactions/2" do
     test "without transactions" do
       block = insert(:block)
 
