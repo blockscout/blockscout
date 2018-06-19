@@ -1,0 +1,25 @@
+.navbar-logo {
+  height: 36px;
+}
+
+@media (min-width: 992px) {
+  .navbar-expand-lg .navbar-nav .nav-link {
+    padding-left: 1.75rem;
+    padding-right: 1.75rem;
+  }
+}
+
+.navbar .form-control {
+  background: transparent;
+  width: 40%;
+  font-size: 11px;
+
+}
+
+.navbar .input-group-text {
+  background: none;
+}
+
+.fa-search {
+  color: $white;
+}

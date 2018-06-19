@@ -14,7 +14,7 @@
       <%= render ExplorerWeb.LayoutView, "_sidebar.html", assigns %>
       <!-- Page Content Holder -->
       <div id="content">
-        <div class="content-header">
+        <div>
           <nav>
             <button type="button" id="sidebarCollapse" class="navbar-btn">
                 <span></span>
@@ -22,7 +22,6 @@
                 <span></span>
             </button>
           </nav>
-          <%= render ExplorerWeb.LayoutView, "_ribbon.html", assigns %>
           <%= render ExplorerWeb.LayoutView, "_topnav.html", assigns %>
         </div>
         <div class="content-container">
