@@ -5,6 +5,8 @@ defmodule Explorer.Indexer.InternalTransactionFetcher do
   See `async_fetch/1` for details on configuring limits.
   """
 
+  require Logger
+
   alias Explorer.{BufferedTask, Chain, Indexer}
   alias Explorer.Indexer.{AddressBalanceFetcher, AddressExtraction}
   alias Explorer.Chain.{Block, Hash}
@@ -72,9 +74,11 @@ defmodule Explorer.Indexer.InternalTransactionFetcher do
 
   @impl BufferedTask
   def run(transactions_params, _retries) do
-    Indexer.debug(fn -> "fetching internal transactions for #{length(transactions_params)} transactions" end)
+    unique_transactions_params = unique_transactions_params(transactions_params)
 
-    case EthereumJSONRPC.fetch_internal_transactions(transactions_params) do
+    Indexer.debug(fn -> "fetching internal transactions for #{length(unique_transactions_params)} transactions" end)
+
+    case EthereumJSONRPC.fetch_internal_transactions(unique_transactions_params) do
       {:ok, internal_transactions_params} ->
         addresses_params = AddressExtraction.extract_addresses(%{internal_transactions: internal_transactions_params})
 
@@ -83,7 +87,7 @@ defmodule Explorer.Indexer.InternalTransactionFetcher do
             {hash, block_number}
           end)
 
-        transaction_hashes = Enum.map(transactions_params, &Map.fetch!(&1, :hash_data))
+        transaction_hashes = Enum.map(unique_transactions_params, &Map.fetch!(&1, :hash_data))
 
         with {:ok, %{addresses: address_hashes}} <-
                Chain.import_internal_transactions(
@@ -110,7 +114,8 @@ defmodule Explorer.Indexer.InternalTransactionFetcher do
               ]
             end)
 
-            :retry
+            # re-queue the de-duped transactions_params
+            {:retry, unique_transactions_params}
         end
 
       {:error, reason} ->
@@ -118,7 +123,47 @@ defmodule Explorer.Indexer.InternalTransactionFetcher do
           "failed to fetch internal transactions for #{length(transactions_params)} transactions: #{inspect(reason)}"
         end)
 
-        :retry
+        # re-queue the de-duped transactions_params
+        {:retry, unique_transactions_params}
     end
+  end
+
+  # Protection and improved reporting for https://github.com/poanetwork/poa-explorer/issues/289
+  defp unique_transactions_params(transactions_params) do
+    transaactions_params_by_hash_data = Enum.group_by(transactions_params, fn %{hash_data: hash_data} -> hash_data end)
+
+    if map_size(transaactions_params_by_hash_data) < length(transactions_params) do
+      {unique_transactions_params, duplicate_transactions_params} =
+        transaactions_params_by_hash_data
+        |> Map.values()
+        |> uniques_and_duplicates()
+
+      Logger.error(fn ->
+        duplicate_transactions_params
+        |> Stream.with_index()
+        |> Enum.reduce(
+          ["Duplicate transaction params being used to fetch internal transactions:\n"],
+          fn {transaction_params, index}, acc ->
+            [acc, "  ", to_string(index + 1), ". ", inspect(transaction_params), "\n"]
+          end
+        )
+      end)
+
+      unique_transactions_params
+    else
+      transactions_params
+    end
+  end
+
+  defp uniques_and_duplicates(groups) do
+    Enum.reduce(groups, {[], []}, fn group, {acc_uniques, acc_duplicates} ->
+      case group do
+        [unique] ->
+          {[unique | acc_uniques], acc_duplicates}
+
+        [unique | _] = duplicates ->
+          {[unique | acc_uniques], duplicates ++ acc_duplicates}
+      end
+    end)
   end
 end
