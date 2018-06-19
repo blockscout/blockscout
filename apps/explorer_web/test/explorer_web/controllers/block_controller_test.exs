@@ -1,5 +1,6 @@
 defmodule ExplorerWeb.BlockControllerTest do
   use ExplorerWeb.ConnCase
+  alias Explorer.Chain.Block
 
   @locale "en"
 
@@ -58,11 +59,14 @@ defmodule ExplorerWeb.BlockControllerTest do
     end
 
     test "next_page_params exist if not on last page", %{conn: conn} do
-      insert_list(60, :block)
+      %Block{number: number} =
+        60
+        |> insert_list(:block)
+        |> Enum.fetch!(10)
 
       conn = get(conn, block_path(conn, :index, @locale))
 
-      assert conn.assigns.next_page_params
+      assert %{block_number: ^number} = conn.assigns.next_page_params
     end
 
     test "next_page_params are empty if on last page", %{conn: conn} do

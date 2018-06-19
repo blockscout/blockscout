@@ -1,6 +1,6 @@
 defmodule ExplorerWeb.TransactionControllerTest do
   use ExplorerWeb.ConnCase
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{Block, Transaction}
 
   import ExplorerWeb.Router.Helpers, only: [transaction_path: 4, transaction_internal_transaction_path: 4]
 
@@ -67,14 +67,15 @@ defmodule ExplorerWeb.TransactionControllerTest do
 
     test "next_page_params exist if not on last page", %{conn: conn} do
       address = insert(:address)
+      block = %Block{number: number} = insert(:block)
 
       60
       |> insert_list(:transaction, from_address: address)
-      |> with_block()
+      |> with_block(block)
 
       conn = get(conn, "/en/transactions")
 
-      assert conn.assigns.next_page_params
+      assert %{block_number: ^number, index: 10} = conn.assigns.next_page_params
     end
 
     test "next_page_params are empty if on last page", %{conn: conn} do

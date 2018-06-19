@@ -3,7 +3,7 @@ defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
 
   import ExplorerWeb.Router.Helpers, only: [address_internal_transaction_path: 4]
 
-  alias Explorer.Chain.InternalTransaction
+  alias Explorer.Chain.{Block, InternalTransaction, Transaction}
   alias Explorer.ExchangeRates.Token
 
   describe "GET index/3" do
@@ -134,11 +134,13 @@ defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
 
     test "next_page_params exist if not on last page", %{conn: conn} do
       address = insert(:address)
+      block = %Block{number: number} = insert(:block)
 
       transaction =
+        %Transaction{index: transaction_index} =
         :transaction
         |> insert()
-        |> with_block()
+        |> with_block(block)
 
       1..60
       |> Enum.map(fn index ->
@@ -152,7 +154,7 @@ defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
 
       conn = get(conn, address_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
 
-      assert conn.assigns.next_page_params
+      assert %{block_number: ^number, index: 11, transaction_index: ^transaction_index} = conn.assigns.next_page_params
     end
 
     test "next_page_params are empty if on last page", %{conn: conn} do

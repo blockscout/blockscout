@@ -1,6 +1,7 @@
 defmodule ExplorerWeb.BlockTransactionControllerTest do
   use ExplorerWeb.ConnCase
 
+  alias Explorer.Chain.Block
   import ExplorerWeb.Router.Helpers, only: [block_transaction_path: 4]
 
   describe "GET index/2" do
@@ -49,7 +50,7 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
     end
 
     test "next_page_params exist if not on last page", %{conn: conn} do
-      block = insert(:block)
+      block = %Block{number: number} = insert(:block)
 
       60
       |> insert_list(:transaction)
@@ -57,7 +58,7 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
 
       conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block))
 
-      assert conn.assigns.next_page_params
+      assert %{block_number: ^number, index: 10} = conn.assigns.next_page_params
     end
 
     test "next_page_params are empty if on last page", %{conn: conn} do

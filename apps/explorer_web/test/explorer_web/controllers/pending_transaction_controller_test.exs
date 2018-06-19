@@ -78,12 +78,16 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
     end
 
     test "next_page_params exist if not on last page", %{conn: conn} do
-      60
-      |> insert_list(:transaction)
+      %Transaction{inserted_at: inserted_at, hash: hash} =
+        60
+        |> insert_list(:transaction)
+        |> Enum.fetch!(10)
+
+      converted_date = DateTime.to_iso8601(inserted_at)
 
       conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
 
-      assert conn.assigns.next_page_params
+      assert %{inserted_at: ^converted_date, hash: ^hash} = conn.assigns.next_page_params
     end
 
     test "next_page_params are empty if on last page", %{conn: conn} do
