@@ -50,20 +50,31 @@ defmodule Explorer.Indexer.AddressBalanceFetcher do
 
   @impl BufferedTask
   def run(params_list, _retries) do
-    Indexer.debug(fn -> "fetching #{length(params_list)} balances" end)
+    latest_params_list = latest_params_list(params_list)
 
-    case EthereumJSONRPC.fetch_balances(params_list) do
+    Indexer.debug(fn -> "fetching #{length(latest_params_list)} balances" end)
+
+    case EthereumJSONRPC.fetch_balances(latest_params_list) do
       {:ok, addresses_params} ->
         {:ok, _} = Chain.update_balances(addresses_params)
         :ok
 
       {:error, reason} ->
-        Indexer.debug(fn -> "failed to fetch #{length(params_list)} balances, #{inspect(reason)}" end)
-        :retry
+        Indexer.debug(fn -> "failed to fetch #{length(latest_params_list)} balances, #{inspect(reason)}" end)
+        {:retry, latest_params_list}
     end
   end
 
   defp address_fields_to_params(%{block_number: block_number, hash: hash}) when is_integer(block_number) do
     %{block_quantity: integer_to_quantity(block_number), hash_data: to_string(hash)}
+  end
+
+  # when there are duplicate `hash`, favors max `block_number` to mimic `on_conflict` in
+  # `Explorer.Chain.insert_addresses` to fix https://github.com/poanetwork/poa-explorer/issues/309
+  defp latest_params_list(params_list) do
+    params_list
+    |> Enum.group_by(fn %{hash_data: hash_data} -> hash_data end)
+    |> Map.values()
+    |> Enum.map(&Enum.max_by(&1, fn %{block_quantity: block_quantity} -> block_quantity end))
   end
 end
