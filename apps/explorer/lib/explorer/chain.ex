@@ -86,8 +86,8 @@ defmodule Explorer.Chain do
       `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
       then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the page `entries`.
     * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
-      `:key` (a tuple of the lowest/oldest {block_number, transaction_index, index}) and. Results will be the internal
-      transactions older than the block number, transaction index, and index that are passed.
+      `:key` (a tuple of the lowest/oldest `{block_number, transaction_index, index}`) and. Results will be the internal
+      transactions older than the `block_number`, `transaction index`, and `index` that are passed.
 
   """
   @spec address_to_internal_transactions(Address.t(), [paging_options | necessity_by_association_option]) :: [
@@ -96,7 +96,7 @@ defmodule Explorer.Chain do
   def address_to_internal_transactions(%Address{hash: hash}, options \\ []) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     direction = Keyword.get(options, :direction)
-    paging_options = Keyword.get(options, :paging_options, %PagingOptions{page_size: 50})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     InternalTransaction
     |> join(
@@ -139,8 +139,8 @@ defmodule Explorer.Chain do
       `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association, then the
       `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
     * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
-      `:key` (a tuple of the lowest/oldest {block_number, index}) and. Results will be the transactions older than
-      the block number and index that are passed.
+      `:key` (a tuple of the lowest/oldest `{block_number, index}`) and. Results will be the transactions older than
+      the `block_number` and `index` that are passed.
 
   """
   @spec address_to_transactions(Address.t(), [paging_options | necessity_by_association_option]) :: [Transaction.t()]
@@ -415,8 +415,8 @@ defmodule Explorer.Chain do
       `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association, then the
       `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
     * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
-      `:key` (a tuple of the lowest/oldest {index}) and. Results will be the transactions older than
-      the index that are passed.
+      `:key` (a tuple of the lowest/oldest `{index}`) and. Results will be the transactions older than
+      the `index` that are passed.
   """
   @spec block_to_transactions(Block.t(), [paging_options | necessity_by_association_option]) :: [Transaction.t()]
   def block_to_transactions(%Block{hash: block_hash}, options \\ []) when is_list(options) do
@@ -1309,14 +1309,14 @@ defmodule Explorer.Chain do
         `:required`, and the `t:Explorer.Chain.Block.t/0` has no associated record for that association, then the
         `t:Explorer.Chain.Block.t/0` will not be included in the page `entries`.
     * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
-      `:key` (a tuple of the lowest/oldest {block_number}) and. Results will be the internal
-      transactions older than the block number that are passed.
+      `:key` (a tuple of the lowest/oldest `{block_number}`) and. Results will be the internal
+      transactions older than the `block_number` that are passed.
 
   """
   @spec list_blocks([paging_options | necessity_by_association_option]) :: [Block.t()]
   def list_blocks(options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    paging_options = Keyword.get(options, :paging_options, %PagingOptions{page_size: 50})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     Block
     |> join_associations(necessity_by_association)
@@ -1902,8 +1902,8 @@ defmodule Explorer.Chain do
       `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
       then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
     * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
-      `:key` (a tuple of the lowest/oldest {block_number, index}) and. Results will be the transactions older than
-      the block number and index that are passed.
+      `:key` (a tuple of the lowest/oldest `{block_number, index}`) and. Results will be the transactions older than
+      the `block_number` and `index` that are passed.
 
   """
   @spec recent_collated_transactions([paging_options | necessity_by_association_option]) :: [Transaction.t()]
@@ -1920,7 +1920,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Return the list of pending transactions that occurred recently (8).
+  Return the list of pending transactions that occurred recently.
 
       iex> 2 |> insert_list(:transaction)
       iex> :transaction |> insert() |> with_block()
@@ -1938,15 +1938,15 @@ defmodule Explorer.Chain do
     * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
       `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
       then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
-    * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
-      `:key` (a tuple of the lowest/oldest {inserted_at, hash}) and. Results will be the transactions older than
-      the inserted_at and hash that are passed.
+    * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` (defaults to
+      `#{@default_paging_options.page_size}`) and `:key` (a tuple of the lowest/oldest `{inserted_at, hash}`) and.
+      Results will be the transactions older than the `inserted_at` and `hash` that are passed.
 
   """
   @spec recent_pending_transactions([paging_options | necessity_by_association_option]) :: [Transaction.t()]
   def recent_pending_transactions(options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    paging_options = Keyword.get(options, :paging_options, %PagingOptions{page_size: 50})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     Transaction
     |> page_pending_transaction(paging_options)
@@ -2052,8 +2052,8 @@ defmodule Explorer.Chain do
       `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
       then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
     * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
-      `:key` (a tuple of the lowest/oldest {index}) and. Results will be the internal transactions older than
-      the index that is passed.
+      `:key` (a tuple of the lowest/oldest `{index}`) and. Results will be the internal transactions older than
+      the `index` that is passed.
 
   """
 
@@ -2066,7 +2066,7 @@ defmodule Explorer.Chain do
       )
       when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    paging_options = Keyword.get(options, :paging_options, %PagingOptions{page_size: 50})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     InternalTransaction
     |> for_parent_transaction(hash)
@@ -2087,8 +2087,8 @@ defmodule Explorer.Chain do
       `:required`, and the `t:Explorer.Chain.Log.t/0` has no associated record for that association, then the
       `t:Explorer.Chain.Log.t/0` will not be included in the page `entries`.
     * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
-      `:key` (a tuple of the lowest/oldest {index}) and. Results will be the transactions older than
-      the index that are passed.
+      `:key` (a tuple of the lowest/oldest `{index}`) and. Results will be the transactions older than
+      the `index` that are passed.
 
   """
   @spec transaction_to_logs(Transaction.t(), [paging_options | necessity_by_association_option]) :: [Log.t()]
@@ -2098,7 +2098,7 @@ defmodule Explorer.Chain do
       )
       when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    paging_options = Keyword.get(options, :paging_options, %PagingOptions{page_size: 50})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     Log
     |> join(:inner, [log], transaction in assoc(log, :transaction))
