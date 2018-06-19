@@ -109,9 +109,7 @@ defmodule EthereumJSONRPC do
            id_to_params
            |> get_balance_requests()
            |> json_rpc(config(:trace_url)) do
-      addresses_params = get_balance_responses_to_addresses_params(responses, id_to_params)
-
-      {:ok, addresses_params}
+      get_balance_responses_to_addresses_params(responses, id_to_params)
     end
   end
 
@@ -265,18 +263,48 @@ defmodule EthereumJSONRPC do
 
   defp get_balance_responses_to_addresses_params(responses, id_to_params)
        when is_list(responses) and is_map(id_to_params) do
-    Enum.map(responses, &get_balance_response_to_address_params(&1, id_to_params))
+    {status, reversed} =
+      responses
+      |> Enum.map(&get_balance_response_to_address_params(&1, id_to_params))
+      |> Enum.reduce(
+        {:ok, []},
+        fn
+          {:ok, address_params}, {:ok, address_params_list} ->
+            {:ok, [address_params | address_params_list]}
+
+          {:ok, _}, {:error, _} = acc_error ->
+            acc_error
+
+          {:error, reason}, {:ok, _} ->
+            {:error, [reason]}
+
+          {:error, reason}, {:error, acc_reason} ->
+            {:error, [reason | acc_reason]}
+        end
+      )
+
+    {status, Enum.reverse(reversed)}
   end
 
   defp get_balance_response_to_address_params(%{"id" => id, "result" => fetched_balance_quantity}, id_to_params)
        when is_map(id_to_params) do
     %{block_quantity: block_quantity, hash_data: hash_data} = Map.fetch!(id_to_params, id)
 
-    %{
-      fetched_balance: quantity_to_integer(fetched_balance_quantity),
-      fetched_balance_block_number: quantity_to_integer(block_quantity),
-      hash: hash_data
-    }
+    {:ok,
+     %{
+       fetched_balance: quantity_to_integer(fetched_balance_quantity),
+       fetched_balance_block_number: quantity_to_integer(block_quantity),
+       hash: hash_data
+     }}
+  end
+
+  defp get_balance_response_to_address_params(%{"id" => id, "error" => error}, id_to_params)
+       when is_map(id_to_params) do
+    %{block_quantity: block_quantity, hash_data: hash_data} = Map.fetch!(id_to_params, id)
+
+    annotated_error = Map.merge(error, %{"blockNumber" => block_quantity, "hash" => hash_data})
+
+    {:error, annotated_error}
   end
 
   defp get_block_by_hash_requests(block_hashes) do
