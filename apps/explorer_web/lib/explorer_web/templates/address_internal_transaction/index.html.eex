@@ -37,7 +37,6 @@
         </ul>
       </div>
       <div class="card-body">
-
         <%= if Enum.count(@internal_transactions) > 0 do %>
           <div class="dropdown u-float-right u-push-sm">
             <button data-test="filter_dropdown" class="button button--secondary button--xsmall dropdown-toggle" type="button"

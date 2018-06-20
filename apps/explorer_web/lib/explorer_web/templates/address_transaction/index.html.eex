@@ -37,44 +37,45 @@
         </ul>
       </div>
       <div class="card-body">
-        <div class="dropdown u-float-right u-push-sm">
-          <button data-test="filter_dropdown" class="button button--secondary button--xsmall dropdown-toggle" type="button"
-                  id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            Filter: <%= format_current_filter(@filter) %>
-          </button>
-          <div class="dropdown-menu dropdown-menu-right filter" aria-labelledby="dropdownMenu2">
-            <%= link(
-                  gettext("All"),
-                  to: address_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"]),
-                  class: "address__link address__link--active dropdown-item",
-                  "data-test": "filter_option"
-                ) %>
-            <%= link(
-                  gettext("To"),
-                  to: address_transaction_path(
-                    @conn,
-                    :index,
-                    @conn.assigns.locale,
-                    @conn.params["address_id"],
-                    filter: "to"
-                  ),
-                  class: "address__link address__link--active dropdown-item",
-                  "data-test": "filter_option"
-                ) %>
-            <%= link(
-                  gettext("From"),
-                  to: address_transaction_path(
-                    @conn,
-                    :index,
-                    @conn.assigns.locale,
-                    @conn.params["address_id"],
-                    filter: "from"
-                  ),
-                  class: "address__link address__link--active dropdown-item",
-                  "data-test": "filter_option"
-                ) %>
+        <%= if Enum.count(@transactions) > 0 do %>
+          <div class="dropdown u-float-right u-push-sm">
+            <button data-test="filter_dropdown" class="button button--secondary button--xsmall dropdown-toggle" type="button"
+                    id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Filter: <%= format_current_filter(@filter) %>
+            </button>
+            <div class="dropdown-menu dropdown-menu-right filter" aria-labelledby="dropdownMenu2">
+              <%= link(
+                    gettext("All"),
+                    to: address_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"]),
+                    class: "address__link address__link--active dropdown-item",
+                    "data-test": "filter_option"
+                  ) %>
+              <%= link(
+                    gettext("To"),
+                    to: address_transaction_path(
+                      @conn,
+                      :index,
+                      @conn.assigns.locale,
+                      @conn.params["address_id"],
+                      filter: "to"
+                    ),
+                    class: "address__link address__link--active dropdown-item",
+                    "data-test": "filter_option"
+                  ) %>
+              <%= link(
+                    gettext("From"),
+                    to: address_transaction_path(
+                      @conn,
+                      :index,
+                      @conn.assigns.locale,
+                      @conn.params["address_id"],
+                      filter: "from"
+                    ),
+                    class: "address__link address__link--active dropdown-item",
+                    "data-test": "filter_option"
+                  ) %>
+            </div>
           </div>
-        </div>
 
         <table class="table table-responsive-sm table-font">
           <thead>
@@ -132,6 +133,9 @@
             <% end %>
           </tbody>
         </table>
+        <% else %>
+          <p><%= gettext "There are no Transactions" %></p>
+        <% end %>
       </div>
     </div>
     <%= if @next_page_params do %>

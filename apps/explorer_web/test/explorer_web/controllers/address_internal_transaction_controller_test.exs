@@ -179,5 +179,28 @@ defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
 
       refute conn.assigns.next_page_params
     end
+
+    test "returns parent transaction for a contract address", %{conn: conn} do
+      address = insert(:address, contract_code: data(:address_contract_code))
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert(to_address: nil)
+        |> with_block(block)
+
+      internal_transaction =
+        insert(
+          :internal_transaction_create,
+          index: 0,
+          created_contract_address: address,
+          to_address: nil,
+          transaction: transaction
+        )
+
+      conn = get(conn, address_internal_transaction_path(conn, :index, :en, address))
+
+      assert internal_transaction.id == hd(conn.assigns.internal_transactions).id
+    end
   end
 end
