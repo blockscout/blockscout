@@ -4,16 +4,14 @@ $social-link-size: 2rem;
 $footer-text-color: rgba($white, 0.7);
 
 .footer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-size: 12px;
   background: $primary;
   color: $footer-text-color;
   text-align: center;
   margin-top: $footer-padding;
   padding: $footer-padding;
-  height: $footer-height;
+  position: relative;
+  line-height: $social-link-size;
 
 
   @media (max-width: 768px) {
@@ -22,10 +20,7 @@ $footer-text-color: rgba($white, 0.7);
 }
 
 .footer .social-links {
-  position: absolute;
-  top: 0;
-  right: $footer-padding;
-  height: $footer-height;
+  float: right;
   display: flex;
   flex-direction: row;
   align-items: center;

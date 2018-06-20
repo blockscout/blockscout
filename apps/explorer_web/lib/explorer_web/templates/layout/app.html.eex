@@ -17,6 +17,7 @@
         <%= render @view_module, @view_template, assigns %>
       </main>
       <%= render ExplorerWeb.LayoutView, "_footer.html", assigns %>
-      <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
+    </div>
+    <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
   </body>
 </html>
