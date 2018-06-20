@@ -10,7 +10,7 @@
         <div class="d-flex flex-column justify-content-center align-items-center">
           <%= render ExplorerWeb.IconsView, "_hourglass_icon.html", assigns %>
           <div> <%= gettext("Last Block") %></div>
-          <div> <%= @chain.timestamp |> Timex.from_now() %></div>
+          <div data-from-now="<%= @chain.timestamp %>"></div>
         </div>
         <div class="d-flex flex-column justify-content-center align-items-center">
           <div class="stroke"> <%= render ExplorerWeb.IconsView, "_guage_icon.html", assigns %> </div>

@@ -14,7 +14,7 @@
                     <%= gettext "Timestamp" %>
                   </th>
                   <td>
-                    <%= age(@block) %> (<%= formatted_timestamp(@block) %>)
+                    <span data-from-now="<%= @block.timestamp %>"></span> (<%= formatted_timestamp(@block) %>)
                   </td>
                 </tr>
                 <tr>
@@ -160,9 +160,7 @@
                           to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
                         ) %>
                   </td>
-                  <td>
-                    <%= transaction.block.timestamp |> Timex.from_now %>
-                  </td>
+                  <td data-from-now="<%= transaction.block.timestamp %>"></td>
                   <td class="address-cell">
                     <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
                   </td>

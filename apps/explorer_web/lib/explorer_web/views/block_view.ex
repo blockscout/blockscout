@@ -7,10 +7,6 @@ defmodule ExplorerWeb.BlockView do
 
   @dialyzer :no_match
 
-  def age(%Block{timestamp: timestamp}) do
-    Timex.from_now(timestamp)
-  end
-
   def average_gas_price(%Block{transactions: transactions}) do
     average =
       transactions

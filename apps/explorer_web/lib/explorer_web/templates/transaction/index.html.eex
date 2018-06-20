@@ -55,9 +55,7 @@
                       to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
                     ) %>
               </td>
-              <td>
-                <%= transaction.block.timestamp %>
-              </td>
+              <td data-from-now="<%= transaction.block.timestamp %>"></td>
               <td>
                 <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
               </td>

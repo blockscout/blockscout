@@ -48,8 +48,12 @@
                 <th scope="row">
                   <%= gettext "Age" %>
                 </th>
-                <td title="<%= formatted_timestamp(@transaction) %>">
-                  <%= formatted_age(@transaction) %>
+                <td>
+                  <%= if block do %>
+                    <span data-from-now="<%= @transaction.block.timestamp %>"></span> (<%= formatted_timestamp(@transaction.block) %>)
+                  <% else %>
+                    <%= gettext "Pending" %>
+                  <% end %>
                 </td>
               </tr>
               <tr>
@@ -121,19 +125,13 @@
                 <th scope="row">
                   <%= gettext "First Seen" %>
                 </th>
-                <% first_seen = first_seen(@transaction) %>
-                <td title="<%= first_seen %>">
-                  <%= first_seen %>
-                </td>
+                <td data-from-now="<%= @transaction.inserted_at %>"></td>
               </tr>
               <tr>
                 <th scope="row">
                   <%= gettext "Last Seen" %>
                 </th>
-                <% last_seen = last_seen(@transaction) %>
-                <td title="<%= last_seen %>">
-                  <%= last_seen %>
-                </td>
+                <td data-from-now="<%= @transaction.updated_at %>"></td>
               </tr>
               <tr>
                 <th scope="row">

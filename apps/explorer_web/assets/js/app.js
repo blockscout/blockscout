@@ -19,8 +19,9 @@ import 'bootstrap'
 // paths "./socket" or full ones "web/static/js/socket".
 
 // import socket from "./socket"
-import './lib/sidebar'
-import './lib/market_history_chart'
 import './lib/card_flip'
-import './lib/tooltip'
 import './lib/clipboard_buttons'
+import './lib/from_now'
+import './lib/market_history_chart'
+import './lib/sidebar'
+import './lib/tooltip'

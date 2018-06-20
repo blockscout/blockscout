@@ -100,7 +100,7 @@ defmodule Explorer.Chain.Statistics do
             lag: %Duration{seconds: 0, megaseconds: 0, microseconds: 0},
             number: -1,
             skipped_blocks: 0,
-            timestamp: :calendar.universal_time(),
+            timestamp: nil,
             transaction_count: 0,
             transaction_velocity: 0,
             transactions: []

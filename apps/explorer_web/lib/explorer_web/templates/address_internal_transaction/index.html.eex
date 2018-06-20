@@ -97,7 +97,7 @@
                       to: block_path(@conn, :show, @conn.assigns.locale, internal_transaction.transaction.block)
                       ) %>
                   </td>
-                  <td><%= ExplorerWeb.BlockView.age(internal_transaction.transaction.block) %></td>
+                  <td data-from-now="<%= internal_transaction.transaction.block.timestamp %>"></td>
                   <td>
                     <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: internal_transaction.from_address %>
                   </td>

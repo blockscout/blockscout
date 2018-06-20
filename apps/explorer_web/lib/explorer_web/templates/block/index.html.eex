@@ -34,7 +34,7 @@
                       "data-block-number": to_string(block.number)
                     ) %>
               </td>
-              <td><%= block.timestamp |> Timex.from_now  %></td>
+              <td data-from-now="<%= block.timestamp %>"></td>
               <td>
                 <%= gettext("%{count} transactions", count: block.transactions |> Enum.count) %>
               </td>
