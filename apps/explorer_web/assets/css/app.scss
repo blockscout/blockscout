@@ -1,4 +1,3 @@
-@import "explorer/all";
 
 /* Phoenix flash messages */
 .alert:empty { display: none; }
@@ -29,8 +28,10 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "node_modules/bootstrap/scss/utilities/sizing";
 @import "node_modules/bootstrap/scss/utilities/display";
 @import "node_modules/bootstrap/scss/utilities/flex";
+@import "node_modules/bootstrap/scss/utilities/float";
 @import "node_modules/bootstrap/scss/utilities/text";
 @import "node_modules/bootstrap/scss/utilities/background";
+@import "node_modules/bootstrap/scss/utilities/position";
 
 // Bootstrap Components
 @import "node_modules/bootstrap/scss/dropdown";
@@ -42,18 +43,13 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "node_modules/bootstrap/scss/forms";
 
 //Custom theme
-@import "theme/theme_ribbon";
 @import "theme/fonts";
 
 // Custom SCSS
-@import "content";
-@import "utilities";
 @import "typography";
 @import "tooltip";
 @import "code";
 @import "components/panels";
-@import "components/header";
-@import "components/sidebar";
 @import "components/nav_tabs";
 @import "components/chain";
 @import "components/dot";

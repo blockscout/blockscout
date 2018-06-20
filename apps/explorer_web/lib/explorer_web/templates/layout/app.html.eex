@@ -9,30 +9,14 @@
   </head>
 
   <body>
-    <div class="content-wrapper">
-      <!-- Sidebar Holder -->
-      <%= render ExplorerWeb.LayoutView, "_sidebar.html", assigns %>
-      <!-- Page Content Holder -->
-      <div id="content">
-        <div>
-          <nav>
-            <button type="button" id="sidebarCollapse" class="navbar-btn">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-          </nav>
-          <%= render ExplorerWeb.LayoutView, "_topnav.html", assigns %>
-        </div>
-        <div class="content-container">
-          <main>
-            <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
-            <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
-            <%= render @view_module, @view_template, assigns %>
-          </main>
-        </div>
-        <%= render ExplorerWeb.LayoutView, "_footer.html", assigns %>
-      </div>
+    <div>
+      <%= render ExplorerWeb.LayoutView, "_topnav.html", assigns %>
+      <main class="mt-3">
+        <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
+        <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
+        <%= render @view_module, @view_template, assigns %>
+      </main>
+      <%= render ExplorerWeb.LayoutView, "_footer.html", assigns %>
       <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
   </body>
 </html>
