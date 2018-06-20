@@ -4,6 +4,9 @@ defmodule Explorer.Chain.Statistics.ServerTest do
   alias Explorer.Chain.Statistics
   alias Explorer.Chain.Statistics.Server
 
+  # shutdown: "owner exited with: shutdown" error from polluting logs when tests are successful
+  @moduletag :capture_log
+
   describe "child_spec/1" do
     test "it defines a child_spec/1 that works with supervisors" do
       assert {:ok, _} = start_supervised(Server)

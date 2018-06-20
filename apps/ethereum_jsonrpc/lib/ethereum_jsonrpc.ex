@@ -192,13 +192,16 @@ defmodule EthereumJSONRPC do
     * Handled response
     * `{:error, reason}` if POST failes
   """
+  def json_rpc(payload, url) when is_list(payload) do
+    chunked_json_rpc(url, [payload], config(:http), [])
+  end
+
   def json_rpc(payload, url) do
     json = encode_json(payload)
-    headers = [{"Content-Type", "application/json"}]
 
-    case HTTPoison.post(url, json, headers, config(:http)) do
+    case post(url, json, config(:http)) do
       {:ok, %HTTPoison.Response{body: body, status_code: code}} ->
-        body |> decode_json(payload, url) |> handle_response(code)
+        body |> decode_json(code, json, url) |> handle_response(code)
 
       {:error, %HTTPoison.Error{reason: reason}} ->
         {:error, reason}
@@ -249,6 +252,50 @@ defmodule EthereumJSONRPC do
     timestamp
     |> quantity_to_integer()
     |> Timex.from_unix()
+  end
+
+  defp chunked_json_rpc(_url, [], _options, decoded_response_bodies) when is_list(decoded_response_bodies) do
+    list =
+      decoded_response_bodies
+      |> Enum.reverse()
+      |> List.flatten()
+
+    {:ok, list}
+  end
+
+  defp chunked_json_rpc(url, [batch | tail] = chunks, options, decoded_response_bodies)
+       when is_list(batch) and is_list(tail) and is_list(decoded_response_bodies) do
+    json = encode_json(batch)
+
+    case post(url, json, options) do
+      {:ok, %HTTPoison.Response{status_code: 413} = response} ->
+        rechunk_json_rpc(url, chunks, options, response, decoded_response_bodies)
+
+      {:ok, %HTTPoison.Response{body: body, status_code: status_code}} ->
+        decoded_body = decode_json(body, status_code, json, url)
+        chunked_json_rpc(url, tail, options, [decoded_body | decoded_response_bodies])
+
+      {:error, %HTTPoison.Error{reason: reason}} ->
+        {:error, reason}
+    end
+  end
+
+  defp rechunk_json_rpc(url, [batch | tail], options, response, decoded_response_bodies) do
+    case length(batch) do
+      # it can't be made any smaller
+      1 ->
+        Logger.error(fn ->
+          "413 Request Entity Too Large returned from single request batch.  Cannot shrink batch further."
+        end)
+
+        {:error, response}
+
+      batch_size ->
+        split_size = div(batch_size, 2)
+        {first_chunk, second_chunk} = Enum.split(batch, split_size)
+        new_chunks = [first_chunk, second_chunk | tail]
+        chunked_json_rpc(url, new_chunks, options, decoded_response_bodies)
+    end
   end
 
   defp get_balance_requests(id_to_params) when is_map(id_to_params) do
@@ -365,20 +412,23 @@ defmodule EthereumJSONRPC do
 
   defp encode_json(data), do: Jason.encode_to_iodata!(data)
 
-  defp decode_json(body, posted_payload, url) do
-    Jason.decode!(body)
+  defp decode_json(response_body, response_status_code, request_body, request_url) do
+    Jason.decode!(response_body)
   rescue
     Jason.DecodeError ->
-      Logger.error("""
-      failed to decode json payload:
+      Logger.error(fn ->
+        """
+        failed to decode json payload:
 
-          url: #{inspect(url)}
+            request url: #{inspect(request_url)}
 
-          body: #{inspect(body)}
+            request body: #{inspect(request_body)}
 
-          posted payload: #{inspect(posted_payload)}
+            response status code: #{inspect(response_status_code)}
 
-      """)
+            response body: #{inspect(response_body)}
+        """
+      end)
 
       raise("bad jason")
   end
@@ -413,7 +463,6 @@ defmodule EthereumJSONRPC do
 
   defp handle_response(resp, 200) do
     case resp do
-      [%{} | _] = batch_resp -> {:ok, batch_resp}
       %{"error" => error} -> {:error, error}
       %{"result" => result} -> {:ok, result}
     end
@@ -421,5 +470,9 @@ defmodule EthereumJSONRPC do
 
   defp handle_response(resp, _status) do
     {:error, resp}
+  end
+
+  defp post(url, json, options) do
+    HTTPoison.post(url, json, [{"Content-Type", "application/json"}], options)
   end
 end
