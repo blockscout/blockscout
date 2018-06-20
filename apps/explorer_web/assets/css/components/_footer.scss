@@ -1,14 +1,14 @@
-$footer-height: 50px;
-$footer-padding: 1rem;
+$footer-height: 4rem;
+$footer-padding: 1em;
 $social-link-size: 2rem;
-$social-link-padding: $footer-padding / 2;
 $footer-text-color: rgba($white, 0.7);
 
 .footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: relative;
   font-size: 12px;
-  display: block;
-  bottom: 0;
   background: $primary;
   color: $footer-text-color;
   text-align: center;
@@ -23,7 +23,7 @@ $footer-text-color: rgba($white, 0.7);
 }
 
 .footer .social-links {
-  position :absolute;
+  position: absolute;
   top: 0;
   right: $footer-padding;
   height: $footer-height;
@@ -32,11 +32,12 @@ $footer-text-color: rgba($white, 0.7);
   align-items: center;
 
   & > a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: $social-link-size;
     height: $social-link-size;
-    margin: 0 $social-link-padding;
-    padding: $social-link-padding;
-    text-align: center;
+    margin: 0 $footer-padding;
     color: $footer-text-color;
     background-color: rgba($white, 0.25);
     border-radius: 50%;
