@@ -1,3 +1,9 @@
-main {
-  min-height: calc(100vh - 9.9rem);
+.layout-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+
+  main {
+    flex-grow: 1;
+  }
 }

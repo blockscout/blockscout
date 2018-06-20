@@ -9,7 +9,7 @@
   </head>
 
   <body>
-    <div>
+    <div class="layout-container">
       <%= render ExplorerWeb.LayoutView, "_topnav.html", assigns %>
       <main class="mt-3">
         <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
