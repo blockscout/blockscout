@@ -19,8 +19,13 @@ $footer-text-color: rgba($white, 0.7);
   }
 }
 
+.footer-body {
+  position: relative;
+}
+
 .footer .social-links {
-  float: right;
+  position: absolute;
+  right: 0;
   display: flex;
   flex-direction: row;
   align-items: center;
