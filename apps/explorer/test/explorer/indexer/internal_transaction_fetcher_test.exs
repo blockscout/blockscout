@@ -1,8 +1,12 @@
 defmodule Explorer.Indexer.InternalTransactionFetcherTest do
   use Explorer.DataCase, async: false
 
+  import ExUnit.CaptureLog
+
   alias Explorer.Chain.Transaction
   alias Explorer.Indexer.{AddressBalanceFetcherCase, InternalTransactionFetcher, PendingTransactionFetcher}
+
+  @moduletag :capture_log
 
   test "does not try to fetch pending transactions from Explorer.Indexer.PendingTransactionFetcher" do
     start_supervised!({Task.Supervisor, name: Explorer.Indexer.TaskSupervisor})
@@ -48,6 +52,51 @@ defmodule Explorer.Indexer.InternalTransactionFetcherTest do
       |> with_block(internal_transactions_indexed_at: DateTime.utc_now())
 
       assert InternalTransactionFetcher.init([], fn hash_string, acc -> [hash_string | acc] end) == []
+    end
+  end
+
+  describe "run/2" do
+    test "duplicate transaction hashes are logged" do
+      start_supervised!({Task.Supervisor, name: Explorer.Indexer.TaskSupervisor})
+      AddressBalanceFetcherCase.start_supervised!()
+
+      insert(:transaction, hash: "0x03cd5899a63b6f6222afda8705d059fd5a7d126bcabe962fb654d9736e6bcafa")
+
+      log =
+        capture_log(fn ->
+          InternalTransactionFetcher.run(
+            [
+              %{block_number: 1, hash_data: "0x03cd5899a63b6f6222afda8705d059fd5a7d126bcabe962fb654d9736e6bcafa"},
+              %{block_number: 1, hash_data: "0x03cd5899a63b6f6222afda8705d059fd5a7d126bcabe962fb654d9736e6bcafa"}
+            ],
+            0
+          )
+        end)
+
+      assert log =~
+               """
+               Duplicate transaction params being used to fetch internal transactions:
+                 1. %{block_number: 1, hash_data: \"0x03cd5899a63b6f6222afda8705d059fd5a7d126bcabe962fb654d9736e6bcafa\"}
+                 2. %{block_number: 1, hash_data: \"0x03cd5899a63b6f6222afda8705d059fd5a7d126bcabe962fb654d9736e6bcafa\"}
+               """
+    end
+
+    test "duplicate transaction hashes only retry uniques" do
+      start_supervised!({Task.Supervisor, name: Explorer.Indexer.TaskSupervisor})
+      AddressBalanceFetcherCase.start_supervised!()
+
+      # not a real transaction hash, so that it fails
+      insert(:transaction, hash: "0x0000000000000000000000000000000000000000000000000000000000000001")
+
+      assert InternalTransactionFetcher.run(
+               [
+                 %{block_number: 1, hash_data: "0x0000000000000000000000000000000000000000000000000000000000000001"},
+                 %{block_number: 1, hash_data: "0x0000000000000000000000000000000000000000000000000000000000000001"}
+               ],
+               0
+             ) ==
+               {:retry,
+                [%{block_number: 1, hash_data: "0x0000000000000000000000000000000000000000000000000000000000000001"}]}
     end
   end
 end

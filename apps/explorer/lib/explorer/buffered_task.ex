@@ -113,6 +113,7 @@ defmodule Explorer.BufferedTask do
 
    * `:ok` - run was successful
    * `:retry` - run should be retried after it failed
+   * `{:retry, new_entries :: list}` - run should be retried with `new_entries`
 
   """
   @callback run(entries, retries :: pos_integer) :: :ok | :retry
@@ -208,6 +209,10 @@ defmodule Explorer.BufferedTask do
     {:noreply, drop_task_and_retry(state, ref)}
   end
 
+  def handle_info({ref, {:performed, {:retry, retryable_entries}}}, state) do
+    {:noreply, drop_task_and_retry(state, ref, retryable_entries)}
+  end
+
   def handle_info({ref, :ok}, %{init_task: ref} = state) do
     {:noreply, state}
   end
@@ -243,12 +248,12 @@ defmodule Explorer.BufferedTask do
     spawn_next_batch(%{state | tasks: Map.delete(state.tasks, ref)})
   end
 
-  defp drop_task_and_retry(state, ref) do
+  defp drop_task_and_retry(state, ref, new_batch \\ nil) do
     {batch, retries} = Map.fetch!(state.tasks, ref)
 
     state
     |> drop_task(ref)
-    |> queue_in_state(batch, retries + 1)
+    |> queue_in_state(new_batch || batch, retries + 1)
   end
 
   defp buffer_entries(state, []), do: state
