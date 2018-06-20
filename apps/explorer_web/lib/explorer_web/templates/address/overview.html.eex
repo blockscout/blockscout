@@ -44,9 +44,9 @@
                 </td>
               </tr>
               <tr>
-                <td>
+                <th scope="row">
                   <%= gettext "Last Updated In Block" %>
-                </td>
+                </th>
                 <td>
                   <%= balance_block_number(@address) %>
                 </td>
