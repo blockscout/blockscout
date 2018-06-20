@@ -1,6 +1,6 @@
 # POA Explorer [![CircleCI](https://circleci.com/gh/poanetwork/poa-explorer.svg?style=svg&circle-token=f8823a3d0090407c11f87028c73015a331dbf604)](https://circleci.com/gh/poanetwork/poa-explorer) [![Coverage Status](https://coveralls.io/repos/github/poanetwork/poa-explorer/badge.svg?branch=master)](https://coveralls.io/github/poanetwork/poa-explorer?branch=master)
 
-POA Explorer provides a comprehensive, easy-to-use interface for users to view, confirm, and inspect transactions on **all EVM** (Ethereum Virtual Machine) blockchains. This includes the Ethereum main and test networks as well as **Ethereum forks and sidechains**. 
+POA Explorer provides a comprehensive, easy-to-use interface for users to view, confirm, and inspect transactions on **all EVM** (Ethereum Virtual Machine) blockchains. This includes the Ethereum main and test networks as well as **Ethereum forks and sidechains**.
 
 Following is an overview of the project and instructions for [getting started](#getting-started).
 
@@ -11,7 +11,7 @@ POA Explorer is an Elixir application that allows users to search transactions, 
 Currently available block explorers (i.e. Etherscan and Etherchain) are closed systems which are not independently verifiable.  As Ethereum sidechains continue to proliferate in both private and public settings, transparent tools are needed to analyze and validate transactions.
 
 The first release will include a block explorer for the POA core and Sokol test networks. Additional networks will be added in upcoming versions.
- 
+
 
 ### Features
 
@@ -21,11 +21,11 @@ Development is ongoing. Please see the [project timeline](https://github.com/poa
 
 - [x] **Real time transaction tracking**: Transactions are updated in real time - no page refresh required. Infinite scrolling is also enabled.
 
-- [x] **Smart contract interaction**: Users can read and verify Solidity smart contracts and access pre-existing contracts to fast-track development. Support for Vyper, LLL, and Web Assembly contracts is in progress.  
+- [x] **Smart contract interaction**: Users can read and verify Solidity smart contracts and access pre-existing contracts to fast-track development. Support for Vyper, LLL, and Web Assembly contracts is in progress.
 
-- [x] **ERC20 token support**: Version 1 will support ERC20 token ecosystem. Future releases will support additional token types including ERC223, ERC721, and ERC1155. 
+- [x] **ERC20 token support**: Version 1 will support ERC20 token ecosystem. Future releases will support additional token types including ERC223, ERC721, and ERC1155.
 
-- [x] **User customization**: Users can easily deploy on a network and customize the Bootstrap interface. 
+- [x] **User customization**: Users can easily deploy on a network and customize the Bootstrap interface.
 
 - [x] **Ethereum sidechain networks**: Version 1 supports the POA main network and Sokol test network. Future iterations will support Ethereum mainnet, Ethereum testnets, forks like Ethereum Classic, sidechains, and private EVM networks.
 
@@ -41,38 +41,42 @@ The [development stack page](https://github.com/poanetwork/poa-explorer/wiki/Dev
 * [Elixir 1.6+](https://elixir-lang.org/)
 * [Postgres 10.0](https://www.postgresql.org/)
 * [Node.js 9.10+](https://nodejs.org/en/)
+* [Automake](https://www.gnu.org/software/automake/)
+  * For Mac OSX users: `brew install automake`
+* [Libtool](https://www.gnu.org/software/libtool/)
+  * For Mac OSX users: `brew install libtool`
 * GitHub for code storage
 
 ### Setup Instructions
 
-  1. Fork and clone repository.  
-  [`https://github.com/poanetwork/poa-explorer/fork`](https://github.com/poanetwork/poa-explorer/fork)  
+  1. Fork and clone repository.
+  [`https://github.com/poanetwork/poa-explorer/fork`](https://github.com/poanetwork/poa-explorer/fork)
 
-  2. Set up default configurations.  
-`cp apps/explorer/config/dev.secret.exs.example apps/explorer/config/dev.secret.exs`  
+  2. Set up default configurations.
+`cp apps/explorer/config/dev.secret.exs.example apps/explorer/config/dev.secret.exs`
 `cp apps/explorer_web/config/dev.secret.exs.example apps/explorer_web/config/dev.secret.exs`
 
-  3. Install dependencies.  
+  3. Install dependencies.
 `mix do deps.get, local.rebar, deps.compile, compile`
 
-  4. Create and migrate database.  
+  4. Create and migrate database.
   `mix ecto.create && mix ecto.migrate`
 
-  5. Install Node.js dependencies.  
+  5. Install Node.js dependencies.
   `cd apps/explorer_web/assets && npm install; cd -`
   `cd apps/explorer && npm install; cd -`
 
-  6. Start Phoenix Server.  
-  `mix phx.server`   
+  6. Start Phoenix Server.
+  `mix phx.server`
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
 _Additional runtime options:_
 
-*  Run Phoenix Server with IEx (Interactive Elixer)  
+*  Run Phoenix Server with IEx (Interactive Elixer)
 `iex -S mix phx.server`
 
-*  Run Phoenix Server with real time indexer  
+*  Run Phoenix Server with real time indexer
 `DEBUG_INDEXER=1 iex -S mix phx.server`
 
 
@@ -104,26 +108,26 @@ To monitor build status, configure your local [CCMenu](http://ccmenu.org/) with 
 
 #### Running the tests
 
-  1. Build the assets.  
+  1. Build the assets.
   `cd apps/explorer_web/assets && npm run build; cd -`
-  
-  2. Format the Elixir code.  
+
+  2. Format the Elixir code.
   `mix format`
-  
-  3. Run the test suite with coverage for whole umbrella project.  
+
+  3. Run the test suite with coverage for whole umbrella project.
   `mix coveralls.html --umbrella`
-  
-  4. Lint the Elixir code.  
+
+  4. Lint the Elixir code.
   `mix credo --strict`
-  
-  5. Run the dialyzer.  
+
+  5. Run the dialyzer.
   `mix dialyzer --halt-exit-status`
-  
-  6. Check the Elixir code for vulnerabilities.  
-  `cd apps/explorer && mix sobelow --config; cd -`  
+
+  6. Check the Elixir code for vulnerabilities.
+  `cd apps/explorer && mix sobelow --config; cd -`
   `cd apps/explorer_web && mix sobelow --config; cd -`
 
-  7. Lint the JavaScript code.  
+  7. Lint the JavaScript code.
   `cd apps/explorer_web/assets && npm run eslint; cd -`
 
 
