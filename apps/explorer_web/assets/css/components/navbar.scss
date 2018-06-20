@@ -9,6 +9,10 @@
   }
 }
 
+.navbar .nav-link {
+  color: $white;
+}
+
 .navbar .form-control {
   background: transparent;
   width: auto;
@@ -33,4 +37,41 @@
 
 .fa-search {
   color: $white;
+}
+
+.topnav-nav-link {
+  position: relative;
+  color: $white;
+
+  &:before {
+    content: "";
+    position: absolute;
+    display: block;
+    bottom: -0.25rem;
+    left: 50%;
+    width: 0.25rem;
+    height: 0.25rem;
+    background-color: $white;
+    opacity: 0;
+    transform: translateX(-50%);
+    transition: bottom 0.2s ease-in, opacity 0.2s ease, width 0.2s 0.3s ease-in-out;
+  }
+
+  &:hover {
+    color: $white;
+
+    &:before {
+      bottom: 0.25rem;
+      width: 100%;
+      opacity: 1;
+    }
+  }
+
+  &:active {
+
+    &:before {
+      width: 80%;
+      transition: width 0.1s ease;
+    }
+  }
 }
