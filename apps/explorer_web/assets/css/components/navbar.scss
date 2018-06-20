@@ -2,7 +2,7 @@
   height: 36px;
 }
 
-@media (min-width: 992px) {
+@include media-breakpoint-up(md) {
   .navbar-expand-lg .navbar-nav .nav-link {
     padding-left: 1.25rem;
     padding-right: 1.25rem;
@@ -11,10 +11,19 @@
 
 .navbar .form-control {
   background: transparent;
-  width: calc(43ch + #{$input-padding-x * 2});
+  width: auto;
   font-size: 12px;
   border-left: none;
   color: $white;
+
+  &:focus {
+    border-color: $input-border-color;
+    box-shadow: none;
+  }
+
+  @include media-breakpoint-up(xl) {
+    width: calc(43ch + #{$input-padding-x * 2});
+  }
 }
 
 .navbar .input-group-text {
