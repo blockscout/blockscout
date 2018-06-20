@@ -1,4 +1,4 @@
-<footer class="footer">
+<footer class="footer fixed-bottom">
   <%= gettext "Copyright %{year} POA", year: 2018 %>
 
   <div class="social-links">
