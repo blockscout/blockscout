@@ -30,6 +30,7 @@ msgstr ""
 #: lib/explorer_web/templates/block/index.html.eex:20
 #: lib/explorer_web/templates/block_transaction/index.html.eex:88
 #: lib/explorer_web/templates/transaction/overview.html.eex:173
+#: lib/explorer_web/templates/transaction_internal_transaction/index.html.eex:34
 msgid "Gas Used"
 msgstr ""
 
@@ -84,7 +85,6 @@ msgstr ""
 #: lib/explorer_web/templates/block/index.html.eex:21
 #: lib/explorer_web/templates/block_transaction/index.html.eex:96
 #: lib/explorer_web/templates/transaction/overview.html.eex:140
-#: lib/explorer_web/templates/transaction_internal_transaction/index.html.eex:34
 msgid "Gas Limit"
 msgstr ""
 
@@ -132,7 +132,6 @@ msgstr ""
 #: lib/explorer_web/templates/block/index.html.eex:20
 #: lib/explorer_web/templates/block/index.html.eex:21
 #: lib/explorer_web/templates/chain/_blocks.html.eex:10
-#: lib/explorer_web/templates/transaction_internal_transaction/index.html.eex:34
 msgid "Gas"
 msgstr ""
 

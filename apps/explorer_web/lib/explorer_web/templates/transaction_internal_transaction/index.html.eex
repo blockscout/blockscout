@@ -31,7 +31,7 @@
               <th><%= gettext "From" %></th>
               <th><%= gettext "To" %></th>
               <th><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
-              <th><%= gettext "Gas Limit" %> (<%= gettext "Gas" %>)</th>
+              <th><%= gettext "Gas Used" %></th>
             </thead>
             <%= for internal_transaction <- @internal_transactions do %>
               <tgroup>
