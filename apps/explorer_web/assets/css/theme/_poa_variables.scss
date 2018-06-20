@@ -707,7 +707,7 @@ $card-columns-margin:               $card-spacer-y !default;
 
 // Tooltips
 
-$tooltip-font-size:                 $font-size-sm !default;
+$tooltip-font-size:                 ($font-size-sm * 0.875) !default;
 $tooltip-max-width:                 70ch !default;
 $tooltip-color:                     $white !default;
 $tooltip-bg:                        darken($secondary, 25%) !default;

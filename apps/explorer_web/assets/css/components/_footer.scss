@@ -45,6 +45,7 @@ $footer-text-color: rgba($white, 0.7);
     &:hover {
       background-color: $white;
       color: $primary;
+      text-decoration: none;
     }
   }
 }
