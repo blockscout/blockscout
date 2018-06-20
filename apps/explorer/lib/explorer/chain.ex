@@ -125,7 +125,7 @@ defmodule Explorer.Chain do
   """
   @spec address_to_transaction_count(Address.t()) :: non_neg_integer()
   def address_to_transaction_count(%Address{hash: hash}) do
-    Transaction
+    fetch_transactions()
     |> where_address_fields_match(hash)
     |> Repo.aggregate(:count, :hash)
   end
@@ -2657,15 +2657,29 @@ defmodule Explorer.Chain do
   end
 
   defp where_address_fields_match(query, address_hash, :to) do
-    where(query, [t], field(t, ^:to_address_hash) == ^address_hash)
+    where(query, [t], t.to_address_hash == ^address_hash)
   end
 
   defp where_address_fields_match(query, address_hash, :from) do
-    where(query, [t], field(t, ^:from_address_hash) == ^address_hash)
+    where(query, [t], t.from_address_hash == ^address_hash)
   end
 
-  defp where_address_fields_match(query, address_hash, nil) do
-    where(query, [t], field(t, ^:to_address_hash) == ^address_hash or field(t, ^:from_address_hash) == ^address_hash)
+  defp where_address_fields_match(%Ecto.Query{from: {_table, InternalTransaction}} = query, address_hash, nil) do
+    where(
+      query,
+      [it],
+      it.to_address_hash == ^address_hash or it.from_address_hash == ^address_hash or
+        it.created_contract_address_hash == ^address_hash
+    )
+  end
+
+  defp where_address_fields_match(%Ecto.Query{from: {_table, Transaction}} = query, address_hash, nil) do
+    where(
+      query,
+      [t, it],
+      t.to_address_hash == ^address_hash or t.from_address_hash == ^address_hash or
+        it.created_contract_address_hash == ^address_hash
+    )
   end
 
   defp where_transaction_has_multiple_internal_transactions(query) do
