@@ -1,0 +1,78 @@
+.navbar-logo {
+  height: 36px;
+}
+
+@include media-breakpoint-up(md) {
+  .navbar-expand-lg .navbar-nav .nav-link {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+}
+
+.navbar .nav-link {
+  color: $white;
+}
+
+.navbar .form-control {
+  background: transparent;
+  width: auto;
+  font-size: 12px;
+  border-left: none;
+  color: $white;
+
+  &:focus {
+    border-color: $input-border-color;
+    box-shadow: none;
+  }
+
+  @include media-breakpoint-up(xl) {
+    width: calc(43ch + #{$input-padding-x * 2});
+  }
+}
+
+.navbar .input-group-text {
+  background: none;
+  border-right: none;
+}
+
+.fa-search {
+  color: $white;
+}
+
+.topnav-nav-link {
+  position: relative;
+  color: $white;
+
+  &:before {
+    content: "";
+    position: absolute;
+    display: block;
+    bottom: -0.25rem;
+    left: 50%;
+    width: 0.25rem;
+    height: 0.25rem;
+    background-color: $white;
+    opacity: 0;
+    transform: translateX(-50%);
+    transition: bottom 0.2s ease-in, opacity 0.2s ease, width 0.2s 0.3s ease-in-out, height 0.3s 0.1s ease-in-out;
+  }
+
+  &:hover {
+    color: $white;
+
+    &:before {
+      bottom: 0.25rem;
+      width: 100%;
+      height: 0.1rem;
+      opacity: 1;
+    }
+  }
+
+  &:active {
+
+    &:before {
+      width: 80%;
+      transition: width 0.1s ease;
+    }
+  }
+}

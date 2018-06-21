@@ -1,4 +1,3 @@
-@import "explorer/all";
 
 /* Phoenix flash messages */
 .alert:empty { display: none; }
@@ -29,30 +28,29 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "node_modules/bootstrap/scss/utilities/sizing";
 @import "node_modules/bootstrap/scss/utilities/display";
 @import "node_modules/bootstrap/scss/utilities/flex";
+@import "node_modules/bootstrap/scss/utilities/float";
 @import "node_modules/bootstrap/scss/utilities/text";
 @import "node_modules/bootstrap/scss/utilities/background";
+@import "node_modules/bootstrap/scss/utilities/position";
 
 // Bootstrap Components
 @import "node_modules/bootstrap/scss/dropdown";
 @import "node_modules/bootstrap/scss/transitions";
 @import "node_modules/bootstrap/scss/tables";
 @import "node_modules/bootstrap/scss/nav";
+@import "node_modules/bootstrap/scss/navbar";
 @import "node_modules/bootstrap/scss/card";
 @import "node_modules/bootstrap/scss/forms";
+@import "node_modules/bootstrap/scss/tooltip";
 
 //Custom theme
-@import "theme/theme_ribbon";
 @import "theme/fonts";
 
 // Custom SCSS
-@import "content";
-@import "utilities";
 @import "typography";
 @import "tooltip";
 @import "code";
 @import "components/panels";
-@import "components/header";
-@import "components/sidebar";
 @import "components/nav_tabs";
 @import "components/chain";
 @import "components/dot";
@@ -63,6 +61,9 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/button";
 @import "components/table";
 @import "components/qr-code";
+@import "components/navbar";
+@import "layout";
+
 
 :export {
   primary: $primary;

@@ -1,6 +1,6 @@
 <div class="card">
   <div class="card-body">
-    <%= link(gettext("View All"), to: transaction_path(@conn, :index, Gettext.get_locale), class: "button button--secondary button--xsmall u-float-right") %>
+    <%= link(gettext("View All"), to: transaction_path(@conn, :index, Gettext.get_locale), class: "button button--secondary button--xsmall float-right") %>
     <h2 class="card-title"><%= gettext "Transactions" %></h2>
     <table class="table table-font table-responsive-lg">
       <thead>

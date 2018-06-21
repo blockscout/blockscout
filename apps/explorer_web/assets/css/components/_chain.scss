@@ -1,5 +1,4 @@
 .chain {
-  @extend %paper;
   justify-conntent: space-around;
   align-items: flex-start;
   padding: explorer-size(0) 0;
@@ -61,7 +60,7 @@
   }
 }
 
-@media (min-width: $explorer-breakpoint-md) {
+@include media-breakpoint-up(md) {
 
   .container__stats {
     color: $gray-500;
