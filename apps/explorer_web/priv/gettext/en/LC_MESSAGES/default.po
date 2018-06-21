@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Language: en\n"
 
-#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:84
+#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:85
 #: lib/explorer_web/templates/address_transaction/index.html.eex:88
 #: lib/explorer_web/templates/block/index.html.eex:18
 #: lib/explorer_web/templates/block_transaction/index.html.eex:141
@@ -21,7 +21,7 @@ msgstr ""
 msgid "Age"
 msgstr "Age"
 
-#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:83
+#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:84
 #: lib/explorer_web/templates/address_transaction/index.html.eex:87
 #: lib/explorer_web/templates/block_transaction/index.html.eex:140
 #: lib/explorer_web/templates/chain/show.html.eex:7
@@ -30,12 +30,11 @@ msgid "Block"
 msgstr "Block"
 
 #: lib/explorer_web/templates/chain/_blocks.html.eex:4
-#: lib/explorer_web/templates/layout/_sidebar.html.eex:30
-#: lib/explorer_web/templates/layout/_topnav.html.eex:21
+#: lib/explorer_web/templates/layout/_topnav.html.eex:13
 msgid "Blocks"
 msgstr "Blocks"
 
-#: lib/explorer_web/templates/layout/_footer.html.eex:2
+#: lib/explorer_web/templates/layout/_footer.html.eex:18
 msgid "Copyright %{year} POA"
 msgstr "%{year} POA Network Ltd. All rights reserved"
 
@@ -69,12 +68,11 @@ msgstr "POA Network Explorer"
 #: lib/explorer_web/templates/block/index.html.eex:19
 #: lib/explorer_web/templates/block_transaction/index.html.eex:124
 #: lib/explorer_web/templates/chain/_transactions.html.eex:4
-#: lib/explorer_web/templates/layout/_sidebar.html.eex:36
-#: lib/explorer_web/templates/layout/_topnav.html.eex:27
+#: lib/explorer_web/templates/layout/_topnav.html.eex:18
 msgid "Transactions"
 msgstr "Transactions"
 
-#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:87
+#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:88
 #: lib/explorer_web/templates/address_transaction/index.html.eex:92
 #: lib/explorer_web/templates/block_transaction/index.html.eex:145
 #: lib/explorer_web/templates/chain/_transactions.html.eex:10
@@ -169,8 +167,8 @@ msgstr "%{count} transactions in this block"
 msgid "Address"
 msgstr "Address"
 
-#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:66
-#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:85
+#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:67
+#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:86
 #: lib/explorer_web/templates/address_transaction/index.html.eex:66
 #: lib/explorer_web/templates/address_transaction/index.html.eex:89
 #: lib/explorer_web/templates/block_transaction/index.html.eex:142
@@ -193,8 +191,8 @@ msgstr "Overview"
 msgid "Success"
 msgstr "Success"
 
-#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:54
-#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:86
+#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:55
+#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:87
 #: lib/explorer_web/templates/address_transaction/index.html.eex:54
 #: lib/explorer_web/templates/address_transaction/index.html.eex:91
 #: lib/explorer_web/templates/block_transaction/index.html.eex:144
@@ -244,8 +242,6 @@ msgstr "Showing #%{start_block} to #%{end_block}"
 msgid "Showing %{count} Transactions"
 msgstr "Showing %{count} Transactions"
 
-#: lib/explorer_web/templates/layout/_sidebar.html.eex:41
-#: lib/explorer_web/templates/layout/_topnav.html.eex:31
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:21
 #: lib/explorer_web/templates/transaction/index.html.eex:21
 #: lib/explorer_web/views/transaction_view.ex:18
@@ -337,7 +333,7 @@ msgid "Showing #%{number}"
 msgstr ""
 
 #: lib/explorer_web/templates/address/overview.html.eex:24
-#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:87
+#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:88
 #: lib/explorer_web/templates/address_transaction/index.html.eex:92
 #: lib/explorer_web/templates/chain/_transactions.html.eex:10
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:39
@@ -366,7 +362,7 @@ msgstr ""
 msgid "Search by address, transaction hash, or block number"
 msgstr ""
 
-#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:124
+#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:125
 #: lib/explorer_web/templates/transaction_internal_transaction/index.html.eex:64
 msgid "There are no Internal Transactions"
 msgstr ""
@@ -395,7 +391,7 @@ msgstr ""
 msgid "Wei"
 msgstr ""
 
-#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:48
+#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:49
 #: lib/explorer_web/templates/address_transaction/index.html.eex:48
 #: lib/explorer_web/views/address_internal_transaction_view.ex:10
 #: lib/explorer_web/views/address_transaction_view.ex:12
@@ -406,8 +402,6 @@ msgstr ""
 msgid "Fee"
 msgstr ""
 
-#: lib/explorer_web/templates/layout/_sidebar.html.eex:40
-#: lib/explorer_web/templates/layout/_topnav.html.eex:30
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:14
 #: lib/explorer_web/templates/transaction/index.html.eex:14
 msgid "Validated"
@@ -417,7 +411,7 @@ msgstr ""
 msgid "Block Details"
 msgstr ""
 
-#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:82
+#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:83
 msgid "Parent Tx Hash"
 msgstr ""
 
@@ -472,7 +466,7 @@ msgstr ""
 msgid "TXNs"
 msgstr ""
 
-#: lib/explorer_web/templates/layout/_topnav.html.eex:40
+#: lib/explorer_web/templates/layout/_topnav.html.eex:29
 msgid "Tokens"
 msgstr ""
 
@@ -516,7 +510,7 @@ msgstr ""
 msgid "There are no Transactions"
 msgstr ""
 
-#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:130
+#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:131
 #: lib/explorer_web/templates/address_transaction/index.html.eex:143
 #: lib/explorer_web/templates/block/index.html.eex:60
 #: lib/explorer_web/templates/block_transaction/index.html.eex:200
@@ -558,7 +552,12 @@ msgid "Newer"
 msgstr ""
 
 #, elixir-format
-#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:108
+#: lib/explorer_web/templates/address_internal_transaction/index.html.eex:109
 #: lib/explorer_web/templates/transaction_internal_transaction/index.html.eex:47
 msgid "Contract Creation"
+msgstr ""
+
+#, elixir-format
+#: lib/explorer_web/templates/layout/_topnav.html.eex:23
+msgid "Smart Contracts"
 msgstr ""
