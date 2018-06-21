@@ -549,3 +549,18 @@ msgstr ""
 #: lib/explorer_web/templates/layout/_topnav.html.eex:23
 msgid "Smart Contracts"
 msgstr ""
+
+#, elixir-format
+#: lib/explorer_web/templates/layout/_topnav.html.eex:46
+msgid "Mainnet"
+msgstr ""
+
+#, elixir-format
+#: lib/explorer_web/templates/layout/_topnav.html.eex:50
+msgid "POA Core"
+msgstr ""
+
+#, elixir-format
+#: lib/explorer_web/templates/layout/_topnav.html.eex:49
+msgid "POA Sokol"
+msgstr ""
