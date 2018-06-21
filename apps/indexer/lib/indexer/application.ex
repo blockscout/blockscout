@@ -1,26 +1,24 @@
-defmodule Explorer.Indexer.Supervisor do
+defmodule Indexer.Application do
   @moduledoc """
-  Supervising the fetchers for the `Explorer.Indexer`
+  This is the `Application` module for `Indexer`.
   """
 
-  use Supervisor
+  use Application
 
-  alias Explorer.Indexer.{AddressBalanceFetcher, BlockFetcher, InternalTransactionFetcher, PendingTransactionFetcher}
+  alias Indexer.{AddressBalanceFetcher, BlockFetcher, InternalTransactionFetcher, PendingTransactionFetcher}
 
-  def start_link(opts) do
-    Supervisor.start_link(__MODULE__, opts, name: __MODULE__)
-  end
-
-  @impl Supervisor
-  def init(_opts) do
+  @impl Application
+  def start(_type, _args) do
     children = [
-      {Task.Supervisor, name: Explorer.Indexer.TaskSupervisor},
+      {Task.Supervisor, name: Indexer.TaskSupervisor},
       {AddressBalanceFetcher, name: AddressBalanceFetcher},
       {PendingTransactionFetcher, name: PendingTransactionFetcher},
       {InternalTransactionFetcher, name: InternalTransactionFetcher},
       {BlockFetcher, []}
     ]
 
-    Supervisor.init(children, strategy: :one_for_one)
+    opts = [strategy: :one_for_one, name: Indexer.Supervisor]
+
+    Supervisor.start_link(children, opts)
   end
 end

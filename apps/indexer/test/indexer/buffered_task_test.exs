@@ -1,7 +1,7 @@
-defmodule Explorer.BufferedTaskTest do
+defmodule Indexer.BufferedTaskTest do
   use ExUnit.Case, async: true
 
-  alias Explorer.BufferedTask
+  alias Indexer.BufferedTask
 
   @max_batch_size 2
 

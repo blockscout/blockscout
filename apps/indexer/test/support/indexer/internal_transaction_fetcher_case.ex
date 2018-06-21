@@ -1,5 +1,5 @@
-defmodule Explorer.Indexer.InternalTransactionFetcherCase do
-  alias Explorer.Indexer.InternalTransactionFetcher
+defmodule Indexer.InternalTransactionFetcherCase do
+  alias Indexer.InternalTransactionFetcher
 
   def start_supervised!(options \\ []) when is_list(options) do
     options

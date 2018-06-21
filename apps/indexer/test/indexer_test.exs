@@ -1,7 +1,5 @@
-defmodule Explorer.IndexerTest do
+defmodule IndexerTest do
   use Explorer.DataCase, async: true
-
-  alias Explorer.Indexer
 
   import Explorer.Factory
 

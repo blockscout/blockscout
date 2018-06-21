@@ -3,12 +3,15 @@ junit_folder = Mix.Project.build_path() <> "/junit/#{Mix.Project.config()[:app]}
 File.mkdir_p!(junit_folder)
 :ok = Application.put_env(:junit_formatter, :report_dir, junit_folder)
 
-ExUnit.configure(formatters: [JUnitFormatter, ExUnit.CLIFormatter])
-ExUnit.start()
+# Counter `test --no-start`.  `--no-start` is needed for `:indexer` compatibility
+{:ok, _} = Application.ensure_all_started(:explorer_web)
 
 {:ok, _} = Application.ensure_all_started(:wallaby)
 Application.put_env(:wallaby, :base_url, ExplorerWeb.Endpoint.url())
 
 {:ok, _} = Application.ensure_all_started(:ex_machina)
+
+ExUnit.configure(formatters: [JUnitFormatter, ExUnit.CLIFormatter])
+ExUnit.start()
 
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :manual)

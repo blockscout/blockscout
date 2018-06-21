@@ -25,7 +25,6 @@ defmodule Explorer.Application do
     [
       configure(Explorer.Chain.Statistics.Server),
       configure(Explorer.ExchangeRates),
-      configure(Explorer.Indexer.Supervisor),
       configure(Explorer.Market.History.Cataloger)
     ]
     |> List.flatten()

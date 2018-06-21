@@ -1,4 +1,4 @@
-defmodule Explorer.Indexer.BlockFetcher do
+defmodule Indexer.BlockFetcher do
   @moduledoc """
   Fetches and indexes block ranges from gensis to realtime.
   """
@@ -7,12 +7,12 @@ defmodule Explorer.Indexer.BlockFetcher do
 
   require Logger
 
-  import Explorer.Indexer, only: [debug: 1]
+  import Indexer, only: [debug: 1]
 
   alias EthereumJSONRPC
   alias EthereumJSONRPC.Transactions
-  alias Explorer.{BufferedTask, Chain, Indexer}
-  alias Explorer.Indexer.{AddressBalanceFetcher, AddressExtraction, InternalTransactionFetcher, Sequence}
+  alias Explorer.Chain
+  alias Indexer.{AddressBalanceFetcher, AddressExtraction, BufferedTask, InternalTransactionFetcher, Sequence}
 
   # dialyzer thinks that Logger.debug functions always have no_local_return
   @dialyzer {:nowarn_function, import_range: 3}
@@ -63,7 +63,11 @@ defmodule Explorer.Indexer.BlockFetcher do
 
   @impl GenServer
   def init(opts) do
-    opts = Keyword.merge(Application.fetch_env!(:explorer, :indexer), opts)
+    opts =
+      :indexer
+      |> Application.get_all_env()
+      |> Keyword.merge(opts)
+
     :timer.send_interval(15_000, self(), :debug_count)
 
     state = %{

@@ -1,16 +1,16 @@
-defmodule Explorer.Indexer.BlockFetcherTest do
+defmodule Indexer.BlockFetcherTest do
   # `async: false` due to use of named GenServer
   use Explorer.DataCase, async: false
 
   import ExUnit.CaptureLog
 
   alias Explorer.Chain.{Address, Block, Log, Transaction, Wei}
-  alias Explorer.Indexer
 
-  alias Explorer.Indexer.{
+  alias Indexer.{
     AddressBalanceFetcher,
     AddressBalanceFetcherCase,
     BlockFetcher,
+    BufferedTask,
     InternalTransactionFetcher,
     InternalTransactionFetcherCase,
     Sequence
@@ -46,7 +46,7 @@ defmodule Explorer.Indexer.BlockFetcherTest do
 
       assert Repo.aggregate(Block, :count, :hash) == 0
 
-      start_supervised!({Task.Supervisor, name: Explorer.Indexer.TaskSupervisor})
+      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
       AddressBalanceFetcherCase.start_supervised!()
       InternalTransactionFetcherCase.start_supervised!()
       start_supervised!(BlockFetcher)
@@ -89,7 +89,7 @@ defmodule Explorer.Indexer.BlockFetcherTest do
     @tag :capture_log
     @heading "persisted counts"
     test "without debug_logs", %{state: state} do
-      start_supervised!({Task.Supervisor, name: Explorer.Indexer.TaskSupervisor})
+      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
       AddressBalanceFetcherCase.start_supervised!()
       InternalTransactionFetcherCase.start_supervised!()
 
@@ -104,7 +104,7 @@ defmodule Explorer.Indexer.BlockFetcherTest do
 
     @tag :capture_log
     test "with debug_logs", %{state: state} do
-      start_supervised!({Task.Supervisor, name: Explorer.Indexer.TaskSupervisor})
+      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
       AddressBalanceFetcherCase.start_supervised!()
       InternalTransactionFetcherCase.start_supervised!()
 
@@ -129,7 +129,7 @@ defmodule Explorer.Indexer.BlockFetcherTest do
     setup :state
 
     setup do
-      start_supervised!({Task.Supervisor, name: Explorer.Indexer.TaskSupervisor})
+      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
       AddressBalanceFetcherCase.start_supervised!()
       InternalTransactionFetcherCase.start_supervised!()
       {:ok, state} = BlockFetcher.init([])
@@ -293,7 +293,7 @@ defmodule Explorer.Indexer.BlockFetcherTest do
 
   defp wait_for_tasks(buffered_task) do
     wait_until(5000, fn ->
-      counts = Explorer.BufferedTask.debug_count(buffered_task)
+      counts = BufferedTask.debug_count(buffered_task)
       counts.buffer == 0 and counts.tasks == 0
     end)
   end

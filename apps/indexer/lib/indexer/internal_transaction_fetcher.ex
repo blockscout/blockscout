@@ -1,4 +1,4 @@
-defmodule Explorer.Indexer.InternalTransactionFetcher do
+defmodule Indexer.InternalTransactionFetcher do
   @moduledoc """
   Fetches and indexes `t:Explorer.Chain.InternalTransaction.t/0`.
 
@@ -7,8 +7,8 @@ defmodule Explorer.Indexer.InternalTransactionFetcher do
 
   require Logger
 
-  alias Explorer.{BufferedTask, Chain, Indexer}
-  alias Explorer.Indexer.{AddressBalanceFetcher, AddressExtraction}
+  alias Explorer.Chain
+  alias Indexer.{AddressBalanceFetcher, AddressExtraction, BufferedTask}
   alias Explorer.Chain.{Block, Hash}
 
   @behaviour BufferedTask
@@ -20,7 +20,7 @@ defmodule Explorer.Indexer.InternalTransactionFetcher do
     max_concurrency: @max_concurrency,
     max_batch_size: @max_batch_size,
     init_chunk_size: 5000,
-    task_supervisor: Explorer.Indexer.TaskSupervisor
+    task_supervisor: Indexer.TaskSupervisor
   ]
 
   @doc """

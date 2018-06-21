@@ -1,4 +1,4 @@
-defmodule Explorer.Indexer.Sequence do
+defmodule Indexer.Sequence do
   @moduledoc false
 
   use Agent

@@ -1,15 +1,15 @@
-defmodule Explorer.Indexer.InternalTransactionFetcherTest do
+defmodule Indexer.InternalTransactionFetcherTest do
   use Explorer.DataCase, async: false
 
   import ExUnit.CaptureLog
 
   alias Explorer.Chain.Transaction
-  alias Explorer.Indexer.{AddressBalanceFetcherCase, InternalTransactionFetcher, PendingTransactionFetcher}
+  alias Indexer.{AddressBalanceFetcherCase, InternalTransactionFetcher, PendingTransactionFetcher}
 
   @moduletag :capture_log
 
-  test "does not try to fetch pending transactions from Explorer.Indexer.PendingTransactionFetcher" do
-    start_supervised!({Task.Supervisor, name: Explorer.Indexer.TaskSupervisor})
+  test "does not try to fetch pending transactions from Indexer.PendingTransactionFetcher" do
+    start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
     AddressBalanceFetcherCase.start_supervised!()
     start_supervised!(PendingTransactionFetcher)
 
@@ -57,7 +57,7 @@ defmodule Explorer.Indexer.InternalTransactionFetcherTest do
 
   describe "run/2" do
     test "duplicate transaction hashes are logged" do
-      start_supervised!({Task.Supervisor, name: Explorer.Indexer.TaskSupervisor})
+      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
       AddressBalanceFetcherCase.start_supervised!()
 
       insert(:transaction, hash: "0x03cd5899a63b6f6222afda8705d059fd5a7d126bcabe962fb654d9736e6bcafa")
@@ -82,7 +82,7 @@ defmodule Explorer.Indexer.InternalTransactionFetcherTest do
     end
 
     test "duplicate transaction hashes only retry uniques" do
-      start_supervised!({Task.Supervisor, name: Explorer.Indexer.TaskSupervisor})
+      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
       AddressBalanceFetcherCase.start_supervised!()
 
       # not a real transaction hash, so that it fails

@@ -3,6 +3,7 @@ defmodule Indexer.MixProject do
 
   def project do
     [
+      aliases: aliases(),
       app: :indexer,
       version: "0.1.0",
       build_path: "../../_build",
@@ -10,6 +11,7 @@ defmodule Indexer.MixProject do
       deps_path: "../../deps",
       lockfile: "../../mix.lock",
       elixir: "~> 1.6",
+      elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps()
     ]
@@ -23,12 +25,25 @@ defmodule Indexer.MixProject do
     ]
   end
 
+  defp aliases do
+    [
+      # so that the supervision tree does not start, which would begin indexing, and so that the various fetchers can
+      # be started with `ExUnit`'s `start_supervised` for unit testing.
+      test: "test --no-start"
+    ]
+  end
+
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      # {:dep_from_hexpm, "~> 0.3.0"},
-      # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
-      # {:sibling_app_in_umbrella, in_umbrella: true},
+      # JSONRPC access to Parity for `Explorer.Indexer`
+      {:ethereum_jsonrpc, in_umbrella: true},
+      # Importing to database
+      {:explorer, in_umbrella: true}
     ]
   end
+
+  # Specifies which paths to compile per environment.
+  defp elixirc_paths(:test), do: ["test/support" | elixirc_paths(:dev)]
+  defp elixirc_paths(_), do: ["lib"]
 end
