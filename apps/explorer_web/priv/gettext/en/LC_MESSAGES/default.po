@@ -576,3 +576,23 @@ msgstr ""
 #: lib/explorer_web/templates/layout/_topnav.html.eex:49
 msgid "POA Sokol"
 msgstr ""
+
+#, elixir-format
+#: lib/explorer_web/templates/layout/_footer.html.eex:4
+msgid "Facebook"
+msgstr ""
+
+#, elixir-format
+#: lib/explorer_web/templates/layout/_footer.html.eex:7
+msgid "Instagram"
+msgstr ""
+
+#, elixir-format
+#: lib/explorer_web/templates/layout/_footer.html.eex:13
+msgid "Telegram"
+msgstr ""
+
+#, elixir-format
+#: lib/explorer_web/templates/layout/_footer.html.eex:10
+msgid "Twitter"
+msgstr ""
