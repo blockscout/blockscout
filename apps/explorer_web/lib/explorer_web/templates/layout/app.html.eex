@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><%= gettext "POA Network Explorer" %></title>
     <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
+    <script>
+     window.locale = '<%= @conn.assigns.locale %>'
+    </script>
   </head>
 
   <body>

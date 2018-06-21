@@ -1,6 +1,8 @@
 import $ from 'jquery'
 import moment from 'moment'
 
+moment.locale(window.locale)
+
 moment.relativeTimeThreshold('M', 12)
 moment.relativeTimeThreshold('d', 30)
 moment.relativeTimeThreshold('h', 24)
