@@ -38,6 +38,22 @@ defmodule ExplorerWeb.TransactionLogControllerTest do
       assert first_log.transaction_hash == transaction.hash
     end
 
+    test "returns logs for the transaction with nil to_address", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert(to_address: nil)
+        |> with_block()
+
+      address = insert(:address)
+      insert(:log, address: address, transaction: transaction)
+
+      conn = get(conn, transaction_log_path(conn, :index, :en, transaction))
+
+      first_log = List.first(conn.assigns.logs)
+
+      assert first_log.transaction_hash == transaction.hash
+    end
+
     test "assigns no logs when there are none", %{conn: conn} do
       transaction = insert(:transaction)
       path = transaction_log_path(conn, :index, :en, transaction)
