@@ -43,11 +43,11 @@
       <ul class="navbar-nav">
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            Mainnet
+            <%= gettext("Mainnet") %>
           </a>
           <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-            <a class="dropdown-item" href="https://explorer-sokol.poanetwork/">POA Sokol</a>
-            <a class="dropdown-item" href="https://explorer-core.poanetwork/">POA Core</a>
+            <a class="dropdown-item" href="https://explorer-sokol.poanetwork/"><%= gettext("POA Sokol") %></a>
+            <a class="dropdown-item" href="https://explorer-core.poanetwork/"><%= gettext("POA Core") %></a>
           </div>
         </li>
       </ul>
