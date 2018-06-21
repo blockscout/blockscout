@@ -53,10 +53,6 @@ defmodule ExplorerWeb.TransactionView do
     {fee_type, formatted}
   end
 
-  def first_seen(%Transaction{inserted_at: inserted_at}) do
-    Timex.from_now(inserted_at)
-  end
-
   def format_gas_limit(gas) do
     Number.to_string!(gas)
   end
@@ -67,19 +63,7 @@ defmodule ExplorerWeb.TransactionView do
     format_usd_value(USD.from(value, token))
   end
 
-  def formatted_age(%Transaction{block: block}) do
-    case block do
-      nil -> gettext("Pending")
-      _ -> "#{BlockView.age(block)} (#{BlockView.formatted_timestamp(block)})"
-    end
-  end
-
-  def formatted_timestamp(%Transaction{block: block}) do
-    case block do
-      nil -> gettext("Pending")
-      _ -> BlockView.formatted_timestamp(block)
-    end
-  end
+  defdelegate formatted_timestamp(block), to: BlockView
 
   defguardp is_transaction_type(mod) when mod in [InternalTransaction, Transaction]
 
@@ -96,10 +80,6 @@ defmodule ExplorerWeb.TransactionView do
 
   def hash(%Transaction{hash: hash}) do
     to_string(hash)
-  end
-
-  def last_seen(%Transaction{updated_at: updated_at}) do
-    Timex.from_now(updated_at)
   end
 
   def status(transaction) do

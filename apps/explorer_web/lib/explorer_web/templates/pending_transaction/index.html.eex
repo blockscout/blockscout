@@ -48,7 +48,7 @@
               <td>
               <%= render ExplorerWeb.TransactionView, "_link.html", conn: @conn, transaction: transaction %>
               </td>
-              <td><%= last_seen(transaction) %></td>
+              <td data-from-now="<%= transaction.updated_at %>"></td>
               <td>
                 <%= render ExplorerWeb.AddressView, "_link.html", conn: @conn, address: transaction.from_address %>
               </td>
