@@ -14,7 +14,7 @@ defmodule ExplorerWeb.TransactionLogController do
              necessity_by_association: %{
                block: :optional,
                from_address: :required,
-               to_address: :required
+               to_address: :optional
              }
            ) do
       full_options =
