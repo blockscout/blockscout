@@ -17,7 +17,7 @@
     <div class="card-body">
       <div class="row">
         <div class="col-sm-6">
-          <table class="table table-font table-responsive-sm table-horizontal">
+          <table class="table table-font table-responsive-sm table-horizontal" data-selector='overview'>
             <%= render "_values.html", address: @address, exchange_rate: @exchange_rate, transaction_count: @transaction_count %>
           </table>
         </div>

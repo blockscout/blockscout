@@ -4,10 +4,10 @@ defmodule ExplorerWeb.AddressChannel do
   """
   use ExplorerWeb, :channel
 
-  alias ExplorerWeb.AddressTransactionView
+  alias ExplorerWeb.{AddressTransactionView, AddressView}
   alias Phoenix.View
 
-  intercept(["transaction"])
+  intercept(["overview", "transaction"])
 
   def join("addresses:" <> _address_hash, _params, socket) do
     {:ok, %{}, socket}
@@ -30,6 +30,23 @@ defmodule ExplorerWeb.AddressChannel do
       transaction_html: rendered
     })
 
+    {:noreply, socket}
+  end
+
+  def handle_out("overview", %{address: address, exchange_rate: exchange_rate, transaction_count: transaction_count}, socket) do
+    Gettext.put_locale(ExplorerWeb.Gettext, socket.assigns.locale)
+
+    rendered =
+      View.render_to_string(
+        AddressView,
+        "_values.html",
+        locale: socket.assigns.locale,
+        address: address,
+        exchange_rate: exchange_rate,
+        transaction_count: transaction_count
+      )
+
+    push(socket, "overview", %{overview: rendered})
     {:noreply, socket}
   end
 end

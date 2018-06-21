@@ -18,6 +18,13 @@ router.when('/addresses/:addressHash').then(({ addressHash, blockNumber, filter 
     $channelBatching.hide()
   })
 
+  const $overview = $('[data-selector="overview"]')
+  if ($overview) {
+    channel.on('overview', (msg) => {
+      $overview.empty().append(msg.overview)
+    })
+  }
+
   if (!blockNumber) {
     const $emptyTransactionsList = $('[data-selector="empty-transactions-list"]')
     if ($emptyTransactionsList.length) {
