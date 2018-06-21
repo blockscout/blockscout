@@ -1,4 +1,4 @@
-<tr>
+<tr class="fade-in">
   <td><div class="transaction__dot transaction__dot--<%= status(@transaction) %>"></div></td>
   <td>
     <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction: @transaction %>
