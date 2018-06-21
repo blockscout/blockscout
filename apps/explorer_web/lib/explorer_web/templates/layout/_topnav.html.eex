@@ -31,15 +31,15 @@
           <!-- Does not go to where it should go please commented out before pushing to master  -->
         </li>
       </ul>
-      <form class="form-inline my-2 my-lg-0">
+      <%= form_for @conn, chain_path(@conn, :search, Gettext.get_locale), [class: "form-inline my-2 my-lg-0", method: :get, enforce_utf8: false], fn f -> %>
         <div class="input-group">
           <div class="input-group-prepend">
             <span class="input-group-text" id="search-icon"><i class="fas fa-search"></i></span>
           </div>
-          <input class="form-control mr-sm-2 ml-auto" type="search" placeholder="Height, Hash, Address or Transactions" aria-describedby="search-icon" aria-label="Search">
+          <%= search_input f, :q, class: 'form-control mr-sm-2 ml-auto', placeholder: gettext("Search by address, transaction hash, or block number"), "aria-describedby": "search-icon", "aria-label": "Search", "data-test": "search_input" %>
         </div>
         <button class="btn btn-outline-success my-2 my-sm-0 sr-only" type="submit">Search</button>
-      </form>
+      <% end %>
       <ul class="navbar-nav">
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
