@@ -100,7 +100,7 @@
           </tbody>
         </table>
         <% else %>
-          <p><%= gettext "There are no Transactions" %></p>
+          <p data-selector="empty-transactions-list"><%= gettext "There are no Transactions" %></p>
         <% end %>
       </div>
     </div>
