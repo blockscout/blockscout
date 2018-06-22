@@ -93,7 +93,7 @@ defmodule Explorer.Chain.Transaction do
    * `input`- data sent along with the transaction
    * `internal_transactions` - transactions (value transfers) created while executing contract used for this
      transaction
-   * `internal_transactions_indexed_at` - when `internal_transactions` were fetched by `Explorer.Indexer`.
+   * `internal_transactions_indexed_at` - when `internal_transactions` were fetched by `Indexer`.
    * `logs` - events that occurred while mining the `transaction`.
    * `nonce` - the number of transaction made by the sender prior to this one
    * `public_key` - public key of the signer of the transaction

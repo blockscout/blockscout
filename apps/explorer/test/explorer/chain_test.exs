@@ -4,10 +4,22 @@ defmodule Explorer.ChainTest do
   import Explorer.Factory
 
   alias Explorer.{Chain, Factory, PagingOptions, Repo}
-  alias Explorer.Chain.{Address, Block, InternalTransaction, Log, SmartContract, Transaction, Wei}
+
+  alias Explorer.Chain.{
+    Address,
+    Block,
+    Data,
+    Hash,
+    InternalTransaction,
+    Log,
+    Transaction,
+    SmartContract,
+    Wei
+  }
+
   alias Explorer.Chain.Supply.ProofOfAuthority
 
-  doctest Explorer.Chain
+  doctest Explorer.Chain, exclude: [import_blocks: 1]
 
   describe "address_to_transaction_count/1" do
     test "without transactions" do
@@ -992,6 +1004,355 @@ defmodule Explorer.ChainTest do
       smart_contract = insert(:smart_contract)
 
       assert ^smart_contract = Chain.find_smart_contract(smart_contract.address_hash)
+    end
+  end
+
+  test "subscribe_to_events/1" do
+    assert :ok == Chain.subscribe_to_events(:logs)
+    current_pid = self()
+    assert [{^current_pid, _}] = Registry.lookup(Registry.ChainEvents, :logs)
+  end
+
+  describe "import_blocks" do
+    @import_data [
+      blocks: [
+        params: [
+          %{
+            difficulty: 340_282_366_920_938_463_463_374_607_431_768_211_454,
+            gas_limit: 6_946_336,
+            gas_used: 50450,
+            hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+            miner_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+            nonce: 0,
+            number: 37,
+            parent_hash: "0xc37bbad7057945d1bf128c1ff009fb1ad632110bf6a000aac025a80f7766b66e",
+            size: 719,
+            timestamp: Timex.parse!("2017-12-15T21:06:30.000000Z", "{ISO:Extended:Z}"),
+            total_difficulty: 12_590_447_576_074_723_148_144_860_474_975_121_280_509
+          }
+        ]
+      ],
+      internal_transactions: [
+        params: [
+          %{
+            call_type: "call",
+            from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+            gas: 4_677_320,
+            gas_used: 27770,
+            index: 0,
+            output: "0x",
+            to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+            trace_address: [],
+            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+            type: "call",
+            value: 0
+          }
+        ]
+      ],
+      logs: [
+        params: [
+          %{
+            address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+            data: "0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
+            first_topic: "0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22",
+            fourth_topic: nil,
+            index: 0,
+            second_topic: nil,
+            third_topic: nil,
+            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+            type: "mined"
+          }
+        ]
+      ],
+      transactions: [
+        on_conflict: :replace_all,
+        params: [
+          %{
+            block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+            block_number: 37,
+            cumulative_gas_used: 50450,
+            from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+            gas: 4_700_000,
+            gas_price: 100_000_000_000,
+            gas_used: 50450,
+            hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+            index: 0,
+            input: "0x10855269000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
+            nonce: 4,
+            public_key:
+              "0xe5d196ad4ceada719d9e592f7166d0c75700f6eab2e3c3de34ba751ea786527cb3f6eb96ad9fdfdb9989ff572df50f1c42ef800af9c5207a38b929aff969b5c9",
+            r: 0xA7F8F45CCE375BB7AF8750416E1B03E0473F93C256DA2285D1134FC97A700E01,
+            s: 0x1F87A076F13824F4BE8963E3DFFD7300DAE64D5F23C9A062AF0C6EAD347C135F,
+            standard_v: 1,
+            status: :ok,
+            to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+            v: 0xBE,
+            value: 0
+          }
+        ]
+      ],
+      addresses: [
+        params: [
+          %{hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"},
+          %{hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"}
+        ]
+      ]
+    ]
+
+    test "with data" do
+      difficulty = Decimal.new(340_282_366_920_938_463_463_374_607_431_768_211_454)
+      total_difficulty = Decimal.new(12_590_447_576_074_723_148_144_860_474_975_121_280_509)
+
+      assert {:ok,
+              %{
+                addresses: [
+                  %Hash{
+                    byte_count: 20,
+                    bytes:
+                      <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179, 223, 65, 91>>
+                  },
+                  %Hash{
+                    byte_count: 20,
+                    bytes:
+                      <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132, 89, 192, 16, 79, 223, 94, 152, 122, 202>>
+                  }
+                ],
+                blocks: [
+                  %Block{
+                    difficulty: ^difficulty,
+                    gas_limit: 6_946_336,
+                    gas_used: 50450,
+                    hash: %Hash{
+                      byte_count: 32,
+                      bytes:
+                        <<246, 180, 184, 200, 141, 243, 235, 210, 82, 236, 71, 99, 40, 51, 77, 192, 38, 207, 102, 96,
+                          106, 132, 251, 118, 155, 61, 60, 188, 204, 132, 113, 189>>
+                    },
+                    miner_hash: %Hash{
+                      byte_count: 20,
+                      bytes:
+                        <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132, 89, 192, 16, 79, 223, 94, 152, 122,
+                          202>>
+                    },
+                    nonce: 0,
+                    number: 37,
+                    parent_hash: %Hash{
+                      byte_count: 32,
+                      bytes:
+                        <<195, 123, 186, 215, 5, 121, 69, 209, 191, 18, 140, 31, 240, 9, 251, 26, 214, 50, 17, 11, 246,
+                          160, 0, 170, 192, 37, 168, 15, 119, 102, 182, 110>>
+                    },
+                    size: 719,
+                    timestamp: %DateTime{
+                      year: 2017,
+                      month: 12,
+                      day: 15,
+                      hour: 21,
+                      minute: 6,
+                      second: 30,
+                      microsecond: {0, 6},
+                      std_offset: 0,
+                      utc_offset: 0,
+                      time_zone: "Etc/UTC",
+                      zone_abbr: "UTC"
+                    },
+                    total_difficulty: ^total_difficulty,
+                    inserted_at: %{},
+                    updated_at: %{}
+                  }
+                ],
+                internal_transactions: [
+                  %{
+                    index: 0,
+                    transaction_hash: %Hash{
+                      byte_count: 32,
+                      bytes:
+                        <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57,
+                          101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
+                    }
+                  }
+                ],
+                logs: [
+                  %Log{
+                    address_hash: %Hash{
+                      byte_count: 20,
+                      bytes:
+                        <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179, 223, 65,
+                          91>>
+                    },
+                    data: %Data{
+                      bytes:
+                        <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 134, 45, 103, 203, 7, 115, 238, 63, 140, 231, 234, 137,
+                          179, 40, 255, 234, 134, 26, 179, 239>>
+                    },
+                    first_topic: "0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22",
+                    fourth_topic: nil,
+                    index: 0,
+                    second_topic: nil,
+                    third_topic: nil,
+                    transaction_hash: %Hash{
+                      byte_count: 32,
+                      bytes:
+                        <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57,
+                          101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
+                    },
+                    type: "mined",
+                    inserted_at: %{},
+                    updated_at: %{}
+                  }
+                ],
+                transactions: [
+                  %Hash{
+                    byte_count: 32,
+                    bytes:
+                      <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57,
+                        101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
+                  }
+                ]
+              }} = Chain.import_blocks(@import_data)
+    end
+
+    test "with empty list" do
+      assert {:ok, %{}} == Chain.import_blocks([])
+    end
+
+    test "publishes data to subscribers on insert" do
+      Chain.subscribe_to_events(:logs)
+      Chain.import_blocks(@import_data)
+      assert_received {:chain_event, :logs, [%Log{}]}
+    end
+
+    test "with invalid data" do
+      invalid_transaction =
+        @import_data
+        |> Keyword.get(:internal_transactions)
+        |> Keyword.get(:params)
+        |> Enum.at(0)
+        |> Map.delete(:call_type)
+
+      invalid_import_data = put_in(@import_data, [:internal_transactions, :params], [invalid_transaction])
+
+      assert {:error, [changeset]} = Chain.import_blocks(invalid_import_data)
+      assert changeset_errors(changeset)[:call_type] == ["can't be blank"]
+    end
+  end
+
+  describe "uncataloged_token_transfers/0" do
+    test "returns token transfer logs that aren't cataloged" do
+      log = insert(:token_transfer_log)
+      insert(:token_transfer)
+      assert [result] = Chain.uncataloged_token_transfers()
+      assert result.log.id == log.id
+      assert result.token == nil
+    end
+
+    test "preload token information if already avaiable" do
+      token = insert(:token)
+      transaction = insert(:transaction, to_address: token.contract_address)
+
+      log =
+        :token_transfer_log
+        |> build()
+        |> token_transfer_log_with_transaction(transaction)
+        |> insert()
+
+      assert [result] = Chain.uncataloged_token_transfers()
+      assert result.log.id == log.id
+      assert result.token.id == token.id
+    end
+  end
+
+  describe "token_by_hash/1" do
+    test "with valid hash" do
+      token = insert(:token)
+      assert {:ok, result} = Chain.token_by_hash(token.contract_address.hash)
+      assert result.id == token.id
+    end
+
+    test "with hash that doesn't exist" do
+      token = build(:token)
+      assert {:error, :not_found} = Chain.token_by_hash(token.contract_address.hash)
+    end
+  end
+
+  describe "import_token/1" do
+    test "with valid params" do
+      contract_address = insert(:address)
+      owner_address = insert(:address)
+
+      params = %{
+        name: "Validated Token",
+        symbol: "VT",
+        total_supply: 1_000_000,
+        decimals: 18,
+        owner_address_hash: Hash.to_string(owner_address.hash),
+        contract_address_hash: Hash.to_string(contract_address.hash)
+      }
+
+      assert {:ok, _} = Chain.import_token(params)
+    end
+
+    test "with invalid params" do
+      params = %{
+        name: "Validated Token",
+        symbol: "VT",
+        total_supply: 1_000_000,
+        decimals: 18,
+        owner_address_hash: "0x1",
+        contract_address_hash: "0x2"
+      }
+
+      assert {:error, _} = Chain.import_token(params)
+    end
+  end
+
+  describe "import_token_transfer/1" do
+    test "with valid params" do
+      token = insert(:token)
+      to_address = insert(:address)
+      transaction = insert(:transaction, to_address: token.contract_address)
+
+      log =
+        :token_transfer_log
+        |> build()
+        |> token_transfer_log_with_transaction(transaction)
+        |> token_transfer_log_with_to_address(to_address)
+        |> insert()
+
+      params = %{
+        amount: 10,
+        to_address_hash: to_address.hash,
+        from_address_hash: log.transaction.from_address_hash,
+        token_id: token.id,
+        transaction_hash: transaction.hash,
+        log_id: log.id
+      }
+
+      assert {:ok, _} = Chain.import_token_transfer(params)
+    end
+
+    test "with invalid params" do
+      token = insert(:token)
+      to_address = insert(:address)
+      transaction = insert(:transaction, to_address: token.contract_address)
+
+      log =
+        :token_transfer_log
+        |> build()
+        |> token_transfer_log_with_transaction(transaction)
+        |> token_transfer_log_with_to_address(to_address)
+        |> insert()
+
+      params = %{
+        amount: 10,
+        to_address_hash: to_address.hash,
+        from_address_hash: "0x2",
+        token_id: token.id,
+        transaction_hash: transaction.hash,
+        log_id: log.id
+      }
+
+      assert {:error, _} = Chain.import_token_transfer(params)
     end
   end
 end

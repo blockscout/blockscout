@@ -239,12 +239,7 @@ defmodule Indexer.AddressExtractionTest do
 
       data = %{field_1: "hash1", field_2: "hash2", field_2_code: "code"}
 
-      response =
-        AddressExtraction.extract_addresses_from_item(
-          data,
-          fields_map,
-          %AddressExtraction{pending: false}
-        )
+      response = AddressExtraction.extract_addresses_from_item(data, fields_map, %AddressExtraction{pending: false})
 
       assert response == [
                %{hash: "hash1"},

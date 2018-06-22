@@ -5,7 +5,13 @@ defmodule Indexer.Application do
 
   use Application
 
-  alias Indexer.{AddressBalanceFetcher, BlockFetcher, InternalTransactionFetcher, PendingTransactionFetcher}
+  alias Indexer.{
+    AddressBalanceFetcher,
+    BlockFetcher,
+    InternalTransactionFetcher,
+    PendingTransactionFetcher,
+    TokenTransfers
+  }
 
   @impl Application
   def start(_type, _args) do
@@ -14,7 +20,8 @@ defmodule Indexer.Application do
       {AddressBalanceFetcher, name: AddressBalanceFetcher},
       {PendingTransactionFetcher, name: PendingTransactionFetcher},
       {InternalTransactionFetcher, name: InternalTransactionFetcher},
-      {BlockFetcher, []}
+      {BlockFetcher, []},
+      {TokenTransfers, []}
     ]
 
     opts = [strategy: :one_for_one, name: Indexer.Supervisor]
