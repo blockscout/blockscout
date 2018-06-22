@@ -47,12 +47,12 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "theme/fonts";
 
 // Custom SCSS
+@import "layout";
 @import "typography";
 @import "tooltip";
 @import "code";
 @import "components/panels";
 @import "components/nav_tabs";
-@import "components/chain";
 @import "components/dot";
 @import "components/pagination";
 @import "components/address_link";
@@ -63,7 +63,8 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/qr-code";
 @import "components/navbar";
 @import "components/animations";
-@import "layout";
+@import "components/card";
+@import "components/tile";
 
 
 :export {

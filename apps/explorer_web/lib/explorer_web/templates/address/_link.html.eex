@@ -1,4 +1,4 @@
-<div class="address-link">
+<div class="address-link text-truncate" data-toggle="tooltip" data-placement="top" title="<%= @address %>">
   <%= if @address do %>
     <%= link to: address_path(ExplorerWeb.Endpoint, :show, @locale, @address),
     "data-toggle": "tooltip",
@@ -8,10 +8,7 @@
       <%= if contract?(@address) do %>
         <i class="address-link__type fas fa-file"></i>
       <% end %>
-    <%= @address |> hash() |> String.slice(0..5) %><i class="fas fa-ellipsis-v address-link__seperator"></i><%= @address |> hash() |> String.slice(-6..-1) %>
-<% end %>
-<button class="address-link__copy-button" data-clipboard-text="<%= @address %>" aria-label="copy address">
-  <i class="fa fa-copy"></i>
-</button>
-<% end %>
+      <%= @address %>
+    <% end %>
+  <% end %>
 </div>
