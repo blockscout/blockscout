@@ -8,6 +8,8 @@ defmodule EthereumJSONRPC.Parity do
   alias EthereumJSONRPC.Parity.Traces
   alias EthereumJSONRPC.{Transaction, Transactions}
 
+  @behaviour EthereumJSONRPC.Variant
+
   @doc """
   Fetches the `t:Explorer.Chain.InternalTransaction.changeset/2` params from the Parity trace URL.
   """

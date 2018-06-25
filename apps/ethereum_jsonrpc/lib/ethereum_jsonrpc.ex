@@ -19,7 +19,7 @@ defmodule EthereumJSONRPC do
   require Logger
 
   alias Explorer.Chain.Block
-  alias EthereumJSONRPC.{Blocks, Parity, Receipts, Transactions}
+  alias EthereumJSONRPC.{Blocks, Receipts, Transactions}
 
   @typedoc """
   Truncated 20-byte [KECCAK-256](https://en.wikipedia.org/wiki/SHA-3) hash encoded as a hexadecimal number in a
@@ -166,7 +166,7 @@ defmodule EthereumJSONRPC do
   Fetches internal transactions from client-specific API.
   """
   def fetch_internal_transactions(params_list) when is_list(params_list) do
-    Parity.fetch_internal_transactions(params_list)
+    config(:variant).fetch_internal_transactions(params_list)
   end
 
   def fetch_transaction_receipts(hashes) when is_list(hashes) do
