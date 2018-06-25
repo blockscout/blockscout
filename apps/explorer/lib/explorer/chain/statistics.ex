@@ -27,13 +27,6 @@ defmodule Explorer.Chain.Statistics do
       WHERE blocks.timestamp > NOW() - interval '1 day'
   """
 
-  @skipped_blocks_query """
-    SELECT COUNT(missing_number)
-      FROM generate_series(0, $1, 1) AS missing_number
-      LEFT JOIN blocks ON missing_number = blocks.number
-      WHERE blocks.hash IS NULL
-  """
-
   @lag_query """
     SELECT coalesce(avg(lag), interval '0 seconds')
     FROM (
@@ -74,7 +67,6 @@ defmodule Explorer.Chain.Statistics do
      (`t:Explorer.Chain.Block.t/0` `timestamp`) and when it was inserted into the databasse
      (`t:Explorer.Chain.Block.t/0` `inserted_at`)
    * `number` - the latest `t:Explorer.Chain.Block.t/0` `number`
-   * `skipped_blocks` - the number of blocks that were mined/validated, but do not exist as
      `t:Explorer.Chain.Block.t/0`
    * `timestamp` - when the last `t:Explorer.Chain.Block.t/0` was mined/validated
    * `transaction_count` - the number of transactions confirmed in blocks that were mined/validated in the last day
@@ -87,7 +79,6 @@ defmodule Explorer.Chain.Statistics do
           blocks: [Block.t()],
           lag: Duration.t(),
           number: Block.block_number(),
-          skipped_blocks: non_neg_integer(),
           timestamp: :calendar.datetime(),
           transaction_count: non_neg_integer(),
           transaction_velocity: transactions_per_minute(),
@@ -99,7 +90,6 @@ defmodule Explorer.Chain.Statistics do
             blocks: [],
             lag: %Duration{seconds: 0, megaseconds: 0, microseconds: 0},
             number: -1,
-            skipped_blocks: 0,
             timestamp: nil,
             transaction_count: 0,
             transaction_velocity: 0,
@@ -142,7 +132,6 @@ defmodule Explorer.Chain.Statistics do
         %__MODULE__{
           state
           | number: number,
-            skipped_blocks: query_value(@skipped_blocks_query, [number]),
             timestamp: timestamp
         }
 

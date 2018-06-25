@@ -60,15 +60,6 @@ defmodule Explorer.Chain.StatisticsTest do
       assert %Statistics{transaction_count: 1} = Statistics.fetch()
     end
 
-    test "returns the number of skipped blocks" do
-      insert(:block, %{number: 0})
-      insert(:block, %{number: 2})
-
-      statistics = Statistics.fetch()
-
-      assert statistics.skipped_blocks == 1
-    end
-
     test "returns the lag between validation and insertion time" do
       validation_time = DateTime.utc_now()
       inserted_at = validation_time |> Timex.shift(seconds: 5)
