@@ -101,10 +101,10 @@ defmodule EthereumJSONRPC do
   ## Examples
 
   Execute the "sum" function that receives two arguments (20 and 22) and returns their sum (42):
-  iex> EthereumJSONRPC.execute_contract_functions([{
-  ...> "0x7e50612682b8ee2a8bb94774d50d6c2955726526",
-  ...> "0xcad0899b00000000000000000000000000000000000000000000000000000000000000140000000000000000000000000000000000000000000000000000000000000016",
-  ...> "sum"
+  iex> EthereumJSONRPC.execute_contract_functions([%{
+  ...> contract_address: "0x7e50612682b8ee2a8bb94774d50d6c2955726526",
+  ...> data: "0xcad0899b00000000000000000000000000000000000000000000000000000000000000140000000000000000000000000000000000000000000000000000000000000016",
+  ...> id: "sum"
   ...> }])
   {:ok,
     [
@@ -115,14 +115,14 @@ defmodule EthereumJSONRPC do
       }
     ]}
   """
-  def execute_contract_functions(addresses_and_data) do
-    addresses_and_data
+  def execute_contract_functions(functions) do
+    functions
     |> Enum.map(&build_eth_call_payload/1)
     |> json_rpc(config(:url))
   end
 
-  defp build_eth_call_payload({address_hash, data, id}) do
-    params = [%{to: address_hash, data: data}]
+  defp build_eth_call_payload(%{contract_address: address, data: data, id: id}) do
+    params = [%{to: address, data: data}]
     request(%{id: id, method: "eth_call", params: params})
   end
 
