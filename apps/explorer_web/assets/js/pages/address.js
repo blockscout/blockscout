@@ -3,6 +3,22 @@ import humps from 'humps'
 import socket from '../socket'
 import router from '../router'
 
+function batch(func) {
+  let timeout
+  let batch = []
+  return function(...args) {
+    const context = this
+    batch.push(args)
+    let later = function() {
+      timeout = null
+      func.apply(context, [batch])
+      batch = []
+    }
+    clearTimeout(timeout)
+    timeout = setTimeout(later, 1000)
+  }
+}
+
 router.when('/addresses/:addressHash').then(({ addressHash, blockNumber, filter }) => {
   const channel = socket.channel(`addresses:${addressHash}`, {})
   const $channelDisconnected = $('[data-selector="channel-disconnected-message"]')
@@ -23,26 +39,23 @@ router.when('/addresses/:addressHash').then(({ addressHash, blockNumber, filter 
 
     const $transactionsList = $('[data-selector="transactions-list"]')
     if ($transactionsList.length) {
-      channel.on('transaction', (msg) => {
+      channel.on('transaction', batch((argsArray) => {
         if ($channelDisconnected.is(':visible')) {
           return
         }
 
-        const {
-          toAddressHash,
-          fromAddressHash,
-          transactionHtml
-        } = humps.camelizeKeys(msg)
+        let msgs = humps.camelizeKeys(argsArray).map(args=>args[0])
 
-        if (filter === 'to' && toAddressHash !== addressHash) {
-          return
+        if (filter === 'to') {
+          msgs = msgs.filter(({toAddressHash})=>toAddressHash===addressHash)
         }
-        if (filter === 'from' && fromAddressHash !== addressHash) {
-          return
+        if (filter === 'from') {
+          msgs = msgs.filter(({fromAddressHash})=>fromAddressHash===addressHash)
         }
 
-        $transactionsList.prepend(transactionHtml)
-      })
+        const transactionsHtml = msgs.map(({transactionHtml})=>transactionHtml).join('')
+        $transactionsList.prepend(transactionsHtml)
+      }))
     }
   }
 })
