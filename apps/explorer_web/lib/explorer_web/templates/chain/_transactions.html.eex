@@ -36,9 +36,8 @@
           </div>
           <div class="col-md-2 d-flex flex-column justify-content-end text-right">
             <span data-from-now="<%= transaction.block.timestamp %>"></span>
-            Block #
             <%= link(
-              transaction.block,
+              gettext("Block #") <> "#{transaction.block.number}",
               to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
             ) %>
           </div>
