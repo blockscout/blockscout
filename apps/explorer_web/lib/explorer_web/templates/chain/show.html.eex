@@ -1,5 +1,54 @@
-<section class="container-fluid">
+<div class="dashboard-banner">
+  <div class="dashboard-banner-chart">
+    <canvas data-chart="marketHistoryChart" data-current_exchange_rate ='<%= @exchange_rate.usd_value %>' data-available_supply='<%= @exchange_rate.available_supply %>' data-market_history_data='<%=raw encode_market_history_data(@market_history_data) %>' width="400" height="80"></canvas>
+  </div>
+  <div class="dashboard-banner-chart-legend">
+    <div class="dashboard-banner-chart-legend-item">
+      <span class="dashboard-banner-chart-legend-label">
+        Price
+      </span>
+      <span class="dashboard-banner-chart-legend-value">
+        $0.0498 USD
+      </span>
+    </div>
+    <div class="dashboard-banner-chart-legend-item">
+      <span class="dashboard-banner-chart-legend-label">
+        Market cap
+      </span>
+      <span class="dashboard-banner-chart-legend-value">
+        $100,350,800 USD
+      </span>
+    </div>
+  </div>
+  <div class="dashboard-banner-network-stats">
+    <div class="dashboard-banner-network-stats-item">
+      <span class="dashboard-banner-network-stats-label">
+        Block time
+      </span>
+      <span class="dashboard-banner-network-stats-value">
+        69.2105s
+      </span>
+    </div>
+    <div class="dashboard-banner-network-stats-item">
+      <span class="dashboard-banner-network-stats-label">
+        Total transactions
+      </span>
+      <span class="dashboard-banner-network-stats-value">
+        12,106,123
+      </span>
+    </div>
+    <div class="dashboard-banner-network-stats-item">
+      <span class="dashboard-banner-network-stats-label">
+        Wallet addresses
+      </span>
+      <span class="dashboard-banner-network-stats-value">
+        1,400,500
+      </span>
+    </div>
+  </div>
+</div>
 
+<section class="container-fluid">
   <%= render ExplorerWeb.ChainView, "_blocks.html", assigns %>
   <%= render ExplorerWeb.ChainView, "_transactions.html", assigns %>
 
@@ -31,7 +80,7 @@
 
     <div class="container__graph card">
       <div class="card-body">
-        <canvas data-chart="marketHistoryChart" data-current_exchange_rate ='<%= @exchange_rate.usd_value %>' data-available_supply='<%= @exchange_rate.available_supply %>' data-market_history_data='<%=raw encode_market_history_data(@market_history_data) %>' width="300" height="100"></canvas>
+
         <div class="d-flex justify-content-sm-around mt-2 text-muted">
           <div>
             <div class="graph__squares graph__squares--price"></div>
@@ -53,7 +102,7 @@
   </div>
 
   <div class="row my-4">
-  
+
 
   </div>
 </section>

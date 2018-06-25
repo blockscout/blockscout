@@ -44,7 +44,7 @@
             </div>
           </div>
         </div>
-      <%= else %>
+      <% else %>
         <div class="tile tile-type-transaction">
           <div class="row">
             <div class="col-md-2 d-flex align-items-center justify-content-center tile-label">

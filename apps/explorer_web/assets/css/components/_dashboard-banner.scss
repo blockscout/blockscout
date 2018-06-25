@@ -1,0 +1,76 @@
+.dashboard-banner {
+  display: grid;
+  grid-template-rows: 2rem auto;
+  grid-template-columns: 1fr 2fr;
+  grid-template-areas:
+    "chart ."
+    "chart stats"
+    "legend stats";
+  margin-top: -1rem;
+  margin-bottom: 2rem;
+  background-color: $white;
+  box-shadow: 0 5px 40px -5px rgba($black, 0.25);
+}
+
+.dashboard-banner-chart {
+  grid-area: chart;
+  // 15px padding matches the Bootstarp conatiner padding.
+  padding: 1rem 1rem 1rem 15px;
+  max-height: 100px;
+  box-shadow: -15px 0 40px -5px rgba($black, 0.25);
+}
+
+.dashboard-banner-chart-legend {
+  grid-area: legend;
+  display: flex;
+  // 15px padding matches the Bootstarp conatiner padding.
+  padding: 1rem 15px;
+
+  &-item {
+    padding-left: 0.5rem;
+    flex-grow: 1;
+
+    &:first-of-type {
+      border-left: 4px solid $secondary;
+    }
+
+    &:last-of-type {
+      border-left: 4px solid $primary;
+    }
+  }
+
+  &-label {
+    display: block;
+    color: $text-muted;
+  }
+
+  &-value {
+    display: block;
+  }
+}
+
+.dashboard-banner-network-stats {
+  grid-area: stats;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  // 15px padding matches the Bootstarp conatiner padding.
+  padding-right: 15px;
+  background-color: $primary;
+  box-shadow: -5px -5px 40px -5px rgba($black, 0.25);
+
+  &-item {
+    padding-left: 1rem;
+    color: $white;
+    border-left: 4px solid rgba($white, 0.6);
+  }
+
+  &-label {
+    display: block;
+  }
+
+  &-value {
+    display: block;
+    font-size: 1.5rem;
+  }
+}
