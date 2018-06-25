@@ -28,11 +28,19 @@ defmodule ExplorerUmbrella.Mixfile do
 
   ## Private Functions
 
-  defp aliases(:dev) do
+  defp aliases(env) do
+    [
+      # to match behavior of `mix test` in `apps/indexer`, which needs to not start applications for `indexer` to
+      # prevent its supervision tree from starting, which is undesirable in test
+      test: "test --no-start"
+    ] ++ env_aliases(env)
+  end
+
+  defp env_aliases(:dev) do
     []
   end
 
-  defp aliases(_env) do
+  defp env_aliases(_env) do
     [
       compile: "compile --warnings-as-errors"
     ]

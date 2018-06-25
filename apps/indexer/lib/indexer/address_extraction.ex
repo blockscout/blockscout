@@ -1,4 +1,4 @@
-defmodule Explorer.Indexer.AddressExtraction do
+defmodule Indexer.AddressExtraction do
   @moduledoc """
   Extract Addresses from data fetched from the Blockchain and structured as Blocks, InternalTransactions,
   Transactions and Logs.
@@ -104,7 +104,7 @@ defmodule Explorer.Indexer.AddressExtraction do
 
   Blocks have their `miner_hash` extracted.
 
-      iex> Explorer.Indexer.AddressExtraction.extract_addresses(
+      iex> Indexer.AddressExtraction.extract_addresses(
       ...>   %{
       ...>     blocks: [
       ...>       %{
@@ -124,7 +124,7 @@ defmodule Explorer.Indexer.AddressExtraction do
   Internal transactions can have their `from_address_hash`, `to_address_hash` and/or `created_contract_address_hash`
   extracted.
 
-      iex> Explorer.Indexer.AddressExtraction.extract_addresses(
+      iex> Indexer.AddressExtraction.extract_addresses(
       ...>   %{
       ...>     internal_transactions: [
       ...>       %{
@@ -161,7 +161,7 @@ defmodule Explorer.Indexer.AddressExtraction do
 
   Transactions can have their `from_address_hash` and/or `to_address_hash` extracted.
 
-      iex> Explorer.Indexer.AddressExtraction.extract_addresses(
+      iex> Indexer.AddressExtraction.extract_addresses(
       ...>   %{
       ...>     transactions: [
       ...>       %{
@@ -193,7 +193,7 @@ defmodule Explorer.Indexer.AddressExtraction do
 
   Logs can have their `address_hash` extracted.
 
-      iex> Explorer.Indexer.AddressExtraction.extract_addresses(
+      iex> Indexer.AddressExtraction.extract_addresses(
       ...>   %{
       ...>     logs: [
       ...>       %{
@@ -212,7 +212,7 @@ defmodule Explorer.Indexer.AddressExtraction do
 
   When the same address is mentioned multiple times, the greatest `block_number` is used
 
-      iex> Explorer.Indexer.AddressExtraction.extract_addresses(
+      iex> Indexer.AddressExtraction.extract_addresses(
       ...>   %{
       ...>     blocks: [
       ...>       %{
@@ -262,7 +262,7 @@ defmodule Explorer.Indexer.AddressExtraction do
   When a contract is created and then used in internal transactions and transaction in the same fetched data, the
   `created_contract_code` is merged with the greatest `block_number`
 
-      iex> Explorer.Indexer.AddressExtraction.extract_addresses(
+      iex> Indexer.AddressExtraction.extract_addresses(
       ...>   %{
       ...>     internal_transactions: [
       ...>       %{

@@ -38,7 +38,11 @@ defmodule EthereumJsonrpc.MixProject do
   end
 
   defp aliases(env) do
-    env_aliases(env)
+    [
+      # to match behavior of `mix test` from project root, which needs to not start applications for `indexer` to
+      # prevent its supervision tree from starting, which is undesirable in test
+      test: "test --no-start"
+    ] ++ env_aliases(env)
   end
 
   defp env_aliases(:dev), do: []

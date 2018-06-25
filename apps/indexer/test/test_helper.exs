@@ -3,12 +3,15 @@ junit_folder = Mix.Project.build_path() <> "/junit/#{Mix.Project.config()[:app]}
 File.mkdir_p!(junit_folder)
 :ok = Application.put_env(:junit_formatter, :report_dir, junit_folder)
 
-# Counter `test --no-start`.  `--no-start` is needed for `:indexer` compatibility
-{:ok, _} = Application.ensure_all_started(:explorer_web)
+# start all dependencies, but not Indexer itself as we need to unit test the supervision tree without and don't want the
+# genesis task scanning in the background
+Application.load(:indexer)
 
-{:ok, _} = Application.ensure_all_started(:wallaby)
-Application.put_env(:wallaby, :base_url, ExplorerWeb.Endpoint.url())
+for application <- Application.spec(:indexer, :applications) do
+  Application.ensure_all_started(application)
+end
 
+# no declared in :applications since it is test-only
 {:ok, _} = Application.ensure_all_started(:ex_machina)
 
 ExUnit.configure(formatters: [JUnitFormatter, ExUnit.CLIFormatter])

@@ -1,4 +1,4 @@
-defmodule Explorer.Indexer.PendingTransactionFetcher do
+defmodule Indexer.PendingTransactionFetcher do
   @moduledoc """
   Fetches pending transactions and imports them.
 
@@ -11,8 +11,8 @@ defmodule Explorer.Indexer.PendingTransactionFetcher do
 
   import EthereumJSONRPC.Parity, only: [fetch_pending_transactions: 0]
 
-  alias Explorer.{Chain, Indexer}
-  alias Explorer.Indexer.{AddressExtraction, PendingTransactionFetcher}
+  alias Explorer.Chain
+  alias Indexer.{AddressExtraction, PendingTransactionFetcher}
 
   # milliseconds
   @default_interval 1_000
@@ -46,8 +46,8 @@ defmodule Explorer.Indexer.PendingTransactionFetcher do
   @impl GenServer
   def init(opts) do
     opts =
-      :explorer
-      |> Application.fetch_env!(:indexer)
+      :indexer
+      |> Application.get_all_env()
       |> Keyword.merge(opts)
 
     state =

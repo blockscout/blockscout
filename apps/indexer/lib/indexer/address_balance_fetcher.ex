@@ -1,13 +1,13 @@
-defmodule Explorer.Indexer.AddressBalanceFetcher do
+defmodule Indexer.AddressBalanceFetcher do
   @moduledoc """
   Fetches `t:Explorer.Chain.Address.t/0` `fetched_balance`.
   """
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
-  alias Explorer.{BufferedTask, Chain}
+  alias Explorer.Chain
   alias Explorer.Chain.{Block, Hash}
-  alias Explorer.Indexer
+  alias Indexer.BufferedTask
 
   @behaviour BufferedTask
 
@@ -16,7 +16,7 @@ defmodule Explorer.Indexer.AddressBalanceFetcher do
     max_batch_size: 500,
     max_concurrency: 4,
     init_chunk_size: 1000,
-    task_supervisor: Explorer.Indexer.TaskSupervisor
+    task_supervisor: Indexer.TaskSupervisor
   ]
 
   @doc """

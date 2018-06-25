@@ -1,10 +1,10 @@
-defmodule Explorer.Indexer.AddressBalanceFetcherTest do
+defmodule Indexer.AddressBalanceFetcherTest do
   # MUST be `async: false` so that {:shared, pid} is set for connection to allow AddressBalanceFetcher's self-send to have
   # connection allowed immediately.
   use Explorer.DataCase, async: false
 
   alias Explorer.Chain.{Address, Hash, Wei}
-  alias Explorer.Indexer.{AddressBalanceFetcher, AddressBalanceFetcherCase}
+  alias Indexer.{AddressBalanceFetcher, AddressBalanceFetcherCase}
 
   @block_number 2_932_838
   @hash %Explorer.Chain.Hash{
@@ -13,7 +13,7 @@ defmodule Explorer.Indexer.AddressBalanceFetcherTest do
   }
 
   setup do
-    start_supervised!({Task.Supervisor, name: Explorer.Indexer.TaskSupervisor})
+    start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
 
     :ok
   end

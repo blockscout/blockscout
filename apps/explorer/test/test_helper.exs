@@ -3,6 +3,9 @@ junit_folder = Mix.Project.build_path() <> "/junit/#{Mix.Project.config()[:app]}
 File.mkdir_p!(junit_folder)
 :ok = Application.put_env(:junit_formatter, :report_dir, junit_folder)
 
+# Counter `test --no-start`.  `--no-start` is needed for `:indexer` compatibility
+{:ok, _} = Application.ensure_all_started(:explorer)
+
 ExUnit.configure(formatters: [JUnitFormatter, ExUnit.CLIFormatter])
 ExUnit.start()
 

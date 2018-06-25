@@ -1,13 +1,13 @@
-defmodule Explorer.Indexer.AddressExtractionTest do
+defmodule Indexer.AddressExtractionTest do
   use Explorer.DataCase, async: true
 
-  alias Explorer.Indexer.AddressExtraction
+  alias Indexer.AddressExtraction
 
   doctest AddressExtraction
 
   describe "extract_addresses/1" do
     test "blocks without a `miner_hash` aren't extracted" do
-      assert Explorer.Indexer.AddressExtraction.extract_addresses(%{
+      assert Indexer.AddressExtraction.extract_addresses(%{
                blocks: [
                  %{
                    number: 34
@@ -17,7 +17,7 @@ defmodule Explorer.Indexer.AddressExtractionTest do
     end
 
     test "blocks without a `number` aren't extracted" do
-      assert Explorer.Indexer.AddressExtraction.extract_addresses(%{
+      assert Indexer.AddressExtraction.extract_addresses(%{
                blocks: [
                  %{
                    miner_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
@@ -27,7 +27,7 @@ defmodule Explorer.Indexer.AddressExtractionTest do
     end
 
     test "internal_transactions with a `from_address_hash` without a `block_number` aren't extracted" do
-      assert Explorer.Indexer.AddressExtraction.extract_addresses(%{
+      assert Indexer.AddressExtraction.extract_addresses(%{
                internal_transactions: [
                  %{
                    from_address_hash: "0x0000000000000000000000000000000000000001"
@@ -37,7 +37,7 @@ defmodule Explorer.Indexer.AddressExtractionTest do
     end
 
     test "internal_transactions with a `to_address_hash` without a `block_number` aren't extracted" do
-      assert Explorer.Indexer.AddressExtraction.extract_addresses(%{
+      assert Indexer.AddressExtraction.extract_addresses(%{
                internal_transactions: [
                  %{
                    to_address_hash: "0x0000000000000000000000000000000000000002"
@@ -48,7 +48,7 @@ defmodule Explorer.Indexer.AddressExtractionTest do
 
     test "internal_transactions with a `created_contract_address_hash` and `created_contract_code` " <>
            "without a `block_number` aren't extracted" do
-      assert Explorer.Indexer.AddressExtraction.extract_addresses(%{
+      assert Indexer.AddressExtraction.extract_addresses(%{
                internal_transactions: [
                  %{
                    created_contract_address_hash: "0x0000000000000000000000000000000000000003",
@@ -59,7 +59,7 @@ defmodule Explorer.Indexer.AddressExtractionTest do
     end
 
     test "differing contract code is ignored" do
-      assert Explorer.Indexer.AddressExtraction.extract_addresses(%{
+      assert Indexer.AddressExtraction.extract_addresses(%{
                internal_transactions: [
                  %{
                    block_number: 1,

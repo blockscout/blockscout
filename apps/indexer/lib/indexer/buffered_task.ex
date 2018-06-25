@@ -1,4 +1,4 @@
-defmodule Explorer.BufferedTask do
+defmodule Indexer.BufferedTask do
   @moduledoc """
   Provides a behaviour for batched task running with retries.
 
@@ -166,7 +166,7 @@ defmodule Explorer.BufferedTask do
            ]}
         ) :: {:ok, pid()} | {:error, {:already_started, pid()}}
   def start_link({module, base_opts}) do
-    default_opts = Application.fetch_env!(:explorer, :indexer)
+    default_opts = Application.get_all_env(:indexer)
     opts = Keyword.merge(default_opts, base_opts)
 
     GenServer.start_link(__MODULE__, {module, opts}, name: opts[:name])

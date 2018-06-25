@@ -112,7 +112,13 @@ defmodule ExplorerWeb.Mixfile do
       compile: "compile --warnings-as-errors",
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate", "test"]
+      test: [
+        "ecto.create --quiet",
+        "ecto.migrate",
+        # to match behavior of `mix test` from project root, which needs to not start applications for `indexer` to
+        # prevent its supervision tree from starting, which is undesirable in test
+        "test --no-start"
+      ]
     ]
   end
 

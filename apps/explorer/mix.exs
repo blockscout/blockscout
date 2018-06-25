@@ -75,8 +75,6 @@ defmodule Explorer.Mixfile do
       # Code coverage
       {:excoveralls, "~> 0.8.1", only: [:test]},
       {:exvcr, "~> 0.10", only: :test},
-      # JSONRPC access to Parity for `Explorer.Indexer`
-      {:ethereum_jsonrpc, in_umbrella: true},
       {:httpoison, "~> 1.0", override: true},
       {:jason, "~> 1.0"},
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
@@ -100,7 +98,7 @@ defmodule Explorer.Mixfile do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate", "test"]
+      test: ["ecto.create --quiet", "ecto.migrate", "test --no-start"]
     ] ++ env_aliases(env)
   end
 

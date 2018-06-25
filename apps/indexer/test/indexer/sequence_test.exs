@@ -1,7 +1,7 @@
-defmodule Explorer.Indexer.SequenceTest do
+defmodule Indexer.SequenceTest do
   use ExUnit.Case
 
-  alias Explorer.Indexer.Sequence
+  alias Indexer.Sequence
 
   test "start_link" do
     {:ok, pid} = Sequence.start_link([1..4], 5, 1)
