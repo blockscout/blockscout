@@ -1,16 +1,15 @@
 import $ from 'jquery'
-import URI from 'urijs'
 import humps from 'humps'
 import socket from '../socket'
+import router from '../router'
 
-if (window.page === 'address') {
-  const channel = socket.channel(`addresses:${window.addressHash}`, {})
+router.when('/addresses/:addressHash').then(({ addressHash, blockNumber, filter }) => {
+  const channel = socket.channel(`addresses:${addressHash}`, {})
   channel.join()
-    .receive('ok', resp => { console.log('Joined successfully', `addresses:${window.addressHash}`, resp) })
-    .receive('error', resp => { console.log('Unable to join', `addresses:${window.addressHash}`, resp) })
+    .receive('ok', resp => { console.log('Joined successfully', `addresses:${addressHash}`, resp) })
+    .receive('error', resp => { console.log('Unable to join', `addresses:${addressHash}`, resp) })
 
-  const currentLocation = URI(window.location)
-  if(!currentLocation.hasQuery('block_number')) {
+  if (!blockNumber) {
     const $emptyTransactionsList = $('[data-selector="empty-transactions-list"]')
     if ($emptyTransactionsList) {
       channel.on('transaction', () => {
@@ -27,15 +26,15 @@ if (window.page === 'address') {
           transactionHtml
         } = humps.camelizeKeys(msg)
 
-        if(currentLocation.query(true).filter === 'to' && toAddressHash !== window.addressHash) {
-          return;
+        if (filter === 'to' && toAddressHash !== addressHash) {
+          return
         }
-        if(currentLocation.query(true).filter === 'from' && fromAddressHash !== window.addressHash) {
-          return;
+        if (filter === 'from' && fromAddressHash !== addressHash) {
+          return
         }
 
         $transactionsList.prepend(transactionHtml)
       })
     }
   }
-}
+})
