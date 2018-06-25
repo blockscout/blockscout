@@ -50,25 +50,55 @@ defmodule EthereumJSONRPC.Log do
         type: "mined"
       }
 
+  Geth does not supply a `"type"`
+
+      iex> EthereumJSONRPC.Log.elixir_to_params(
+      ...>   %{
+      ...>     "address" => "0xda8b3276cde6d768a44b9dac659faa339a41ac55",
+      ...>     "blockHash" => "0x0b89f7f894f5d8ba941e16b61490e999a0fcaaf92dfcc70aee2ac5ddb5f243e1",
+      ...>     "blockNumber" => 4448,
+      ...>     "data" => "0x290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563",
+      ...>     "logIndex" => 0,
+      ...>     "removed" => false,
+      ...>     "topics" => ["0xadc1e8a294f8415511303acc4a8c0c5906c7eb0bf2a71043d7f4b03b46a39130",
+      ...>       "0x000000000000000000000000c15bf627accd3b054075c7880425f903106be72a",
+      ...>       "0x000000000000000000000000a59eb37750f9c8f2e11aac6700e62ef89187e4ed"],
+      ...>     "transactionHash" => "0xf9b663b4e9b1fdc94eb27b5cfba04eb03d2f7b3fa0b24eb2e1af34f823f2b89e",
+      ...>     "transactionIndex" => 0
+      ...>   }
+      ...> )
+      %{
+        address_hash: "0xda8b3276cde6d768a44b9dac659faa339a41ac55",
+        block_number: 4448,
+        data: "0x290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563",
+        first_topic: "0xadc1e8a294f8415511303acc4a8c0c5906c7eb0bf2a71043d7f4b03b46a39130",
+        fourth_topic: nil,
+        index: 0,
+        second_topic: "0x000000000000000000000000c15bf627accd3b054075c7880425f903106be72a",
+        third_topic: "0x000000000000000000000000a59eb37750f9c8f2e11aac6700e62ef89187e4ed",
+        transaction_hash: "0xf9b663b4e9b1fdc94eb27b5cfba04eb03d2f7b3fa0b24eb2e1af34f823f2b89e"
+      }
+
   """
-  def elixir_to_params(%{
-        "address" => address_hash,
-        "blockNumber" => block_number,
-        "data" => data,
-        "logIndex" => index,
-        "topics" => topics,
-        "transactionHash" => transaction_hash,
-        "type" => type
-      }) do
+  def elixir_to_params(
+        %{
+          "address" => address_hash,
+          "blockNumber" => block_number,
+          "data" => data,
+          "logIndex" => index,
+          "topics" => topics,
+          "transactionHash" => transaction_hash
+        } = elixir
+      ) do
     %{
       address_hash: address_hash,
       block_number: block_number,
       data: data,
       index: index,
-      transaction_hash: transaction_hash,
-      type: type
+      transaction_hash: transaction_hash
     }
     |> put_topics(topics)
+    |> put_type(elixir)
   end
 
   @doc """
@@ -101,6 +131,37 @@ defmodule EthereumJSONRPC.Log do
         "type" => "mined"
       }
 
+  Geth and Parity >= 1.11.4 includes a `"removed"` key
+
+      iex> EthereumJSONRPC.Log.to_elixir(
+      ...>   %{
+      ...>     "address" => "0xda8b3276cde6d768a44b9dac659faa339a41ac55",
+      ...>     "blockHash" => "0x0b89f7f894f5d8ba941e16b61490e999a0fcaaf92dfcc70aee2ac5ddb5f243e1",
+      ...>     "blockNumber" => "0x1160",
+      ...>     "data" => "0x290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563",
+      ...>     "logIndex" => "0x0",
+      ...>     "removed" => false,
+      ...>     "topics" => ["0xadc1e8a294f8415511303acc4a8c0c5906c7eb0bf2a71043d7f4b03b46a39130",
+      ...>      "0x000000000000000000000000c15bf627accd3b054075c7880425f903106be72a",
+      ...>      "0x000000000000000000000000a59eb37750f9c8f2e11aac6700e62ef89187e4ed"],
+      ...>     "transactionHash" => "0xf9b663b4e9b1fdc94eb27b5cfba04eb03d2f7b3fa0b24eb2e1af34f823f2b89e",
+      ...>     "transactionIndex" => "0x0"
+      ...>   }
+      ...> )
+      %{
+        "address" => "0xda8b3276cde6d768a44b9dac659faa339a41ac55",
+        "blockHash" => "0x0b89f7f894f5d8ba941e16b61490e999a0fcaaf92dfcc70aee2ac5ddb5f243e1",
+        "blockNumber" => 4448,
+        "data" => "0x290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e563",
+        "logIndex" => 0,
+        "removed" => false,
+        "topics" => ["0xadc1e8a294f8415511303acc4a8c0c5906c7eb0bf2a71043d7f4b03b46a39130",
+         "0x000000000000000000000000c15bf627accd3b054075c7880425f903106be72a",
+         "0x000000000000000000000000a59eb37750f9c8f2e11aac6700e62ef89187e4ed"],
+        "transactionHash" => "0xf9b663b4e9b1fdc94eb27b5cfba04eb03d2f7b3fa0b24eb2e1af34f823f2b89e",
+        "transactionIndex" => 0
+      }
+
   """
   def to_elixir(log) when is_map(log) do
     Enum.into(log, %{}, &entry_to_elixir/1)
@@ -120,4 +181,10 @@ defmodule EthereumJSONRPC.Log do
     |> Map.put(:third_topic, Enum.at(topics, 2))
     |> Map.put(:fourth_topic, Enum.at(topics, 3))
   end
+
+  defp put_type(params, %{"type" => type}) do
+    Map.put(params, :type, type)
+  end
+
+  defp put_type(params, _), do: params
 end

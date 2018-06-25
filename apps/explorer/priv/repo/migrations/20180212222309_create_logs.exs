@@ -5,7 +5,10 @@ defmodule Explorer.Repo.Migrations.CreateLogs do
     create table(:logs) do
       add(:data, :bytea, null: false)
       add(:index, :integer, null: false)
-      add(:type, :string, null: false)
+
+      # Parity supplies it; Geth does not.
+      add(:type, :string, null: true)
+
       add(:first_topic, :string, null: true)
       add(:second_topic, :string, null: true)
       add(:third_topic, :string, null: true)

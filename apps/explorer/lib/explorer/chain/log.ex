@@ -5,8 +5,8 @@ defmodule Explorer.Chain.Log do
 
   alias Explorer.Chain.{Address, Data, Hash, Transaction}
 
-  @required_attrs ~w(address_hash data index transaction_hash type)a
-  @optional_attrs ~w(first_topic second_topic third_topic fourth_topic)a
+  @required_attrs ~w(address_hash data index transaction_hash)a
+  @optional_attrs ~w(first_topic second_topic third_topic fourth_topic type)a
 
   @typedoc """
    * `address` - address of contract that generate the event
@@ -19,7 +19,7 @@ defmodule Explorer.Chain.Log do
    * `transaction` - transaction for which `log` is
    * `transaction_hash` - foreign key for `transaction`.
    * `third_topic` - `topics[2]`
-   * `type` - type of event
+   * `type` - type of event.  *Parity-only*
   """
   @type t :: %__MODULE__{
           address: %Ecto.Association.NotLoaded{} | Address.t(),
@@ -32,7 +32,7 @@ defmodule Explorer.Chain.Log do
           transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
           transaction_hash: Hash.Full.t(),
           third_topic: String.t(),
-          type: String.t()
+          type: String.t() | nil
         }
 
   schema "logs" do
