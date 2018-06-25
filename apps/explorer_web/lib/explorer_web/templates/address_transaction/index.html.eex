@@ -37,6 +37,9 @@
         </ul>
       </div>
       <div class="card-body">
+        <div data-selector="channel-disconnected-message" style="display:none;">
+          <%= gettext "channel disconnected" %>
+        </div>
         <%= if Enum.count(@transactions) > 0 do %>
           <div class="dropdown float-right u-push-sm">
             <button data-test="filter_dropdown" class="button button--secondary button--xsmall dropdown-toggle" type="button"
