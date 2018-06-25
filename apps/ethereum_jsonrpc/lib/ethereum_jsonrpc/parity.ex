@@ -3,7 +3,7 @@ defmodule EthereumJSONRPC.Parity do
   Ethereum JSONRPC methods that are only supported by [Parity](https://wiki.parity.io/).
   """
 
-  import EthereumJSONRPC, only: [config: 1, id_to_params: 1, json_rpc: 2, request: 1]
+  import EthereumJSONRPC, only: [id_to_params: 1, method_to_url: 1, json_rpc: 2, request: 1]
 
   alias EthereumJSONRPC.Parity.Traces
   alias EthereumJSONRPC.{Transaction, Transactions}
@@ -19,7 +19,7 @@ defmodule EthereumJSONRPC.Parity do
     with {:ok, responses} <-
            id_to_params
            |> trace_replay_transaction_requests()
-           |> json_rpc(config(:trace_url)) do
+           |> json_rpc(method_to_url(:trace_replayTransaction)) do
       trace_replay_transaction_responses_to_internal_transactions_params(responses, id_to_params)
     end
   end
@@ -35,7 +35,7 @@ defmodule EthereumJSONRPC.Parity do
     with {:ok, transactions} <-
            %{id: 1, method: "parity_pendingTransactions", params: []}
            |> request()
-           |> json_rpc(config(:url)) do
+           |> json_rpc(method_to_url(:parity_pendingTransactions)) do
       transactions_params =
         transactions
         |> Transactions.to_elixir()

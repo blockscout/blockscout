@@ -90,6 +90,27 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
+  Fetches the configured url for the specific `method` or the fallback `url`
+
+  Configuration for a specific `method` can be set in `method_to_url` `config`
+
+      config :ethereum_jsonrpc,
+        method_to_url: [
+          eth_getBalance: "method_to_url"
+        ]
+
+  The fallback 'url' MUST we set if not all methods have a url set.
+
+      config :ethereum_jsonrpc,
+        url:
+  """
+  def method_to_url(method) when is_atom(method) do
+    :ethereum_jsonrpc
+    |> Application.get_env(:method_to_url, [])
+    |> Keyword.get_lazy(method, fn -> config(:url) end)
+  end
+
+  @doc """
   Fetches balance for each address `hash` at the `block_number`
   """
   @spec fetch_balances([%{required(:block_quantity) => quantity, required(:hash_data) => data()}]) ::
@@ -108,7 +129,7 @@ defmodule EthereumJSONRPC do
     with {:ok, responses} <-
            id_to_params
            |> get_balance_requests()
-           |> json_rpc(config(:trace_url)) do
+           |> json_rpc(method_to_url(:eth_getBalance)) do
       get_balance_responses_to_addresses_params(responses, id_to_params)
     end
   end
@@ -121,7 +142,7 @@ defmodule EthereumJSONRPC do
   def fetch_blocks_by_hash(block_hashes) do
     block_hashes
     |> get_block_by_hash_requests()
-    |> json_rpc(config(:url))
+    |> json_rpc(method_to_url(:eth_getBlockByHash))
     |> handle_get_blocks()
     |> case do
       {:ok, _next, results} -> {:ok, results}
@@ -135,7 +156,7 @@ defmodule EthereumJSONRPC do
   def fetch_blocks_by_range(_first.._last = range) do
     range
     |> get_block_by_number_requests()
-    |> json_rpc(config(:url))
+    |> json_rpc(method_to_url(:eth_getBlockByNumber))
     |> handle_get_blocks()
   end
 
@@ -158,7 +179,7 @@ defmodule EthereumJSONRPC do
   def fetch_block_number_by_tag(tag) when tag in ~w(earliest latest pending) do
     tag
     |> get_block_by_tag_request()
-    |> json_rpc(config(:url))
+    |> json_rpc(method_to_url(:eth_getBlockByNumber))
     |> handle_get_block_by_tag()
   end
 
