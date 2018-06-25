@@ -15,16 +15,16 @@ router.when('/addresses/:addressHash').then(({ addressHash, blockNumber, filter 
 
   if (!blockNumber) {
     const $emptyTransactionsList = $('[data-selector="empty-transactions-list"]')
-    if ($emptyTransactionsList) {
+    if ($emptyTransactionsList.length) {
       channel.on('transaction', () => {
         window.location.reload()
       })
     }
 
     const $transactionsList = $('[data-selector="transactions-list"]')
-    if ($transactionsList) {
+    if ($transactionsList.length) {
       channel.on('transaction', (msg) => {
-        if($channelDisconnected.is(':visible')) {
+        if ($channelDisconnected.is(':visible')) {
           return
         }
 

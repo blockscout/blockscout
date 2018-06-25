@@ -25,10 +25,11 @@ defmodule ExplorerWeb.AddressChannel do
       )
 
     push(socket, "transaction", %{
-      to_address_hash: transaction.to_address_hash,
-      from_address_hash: transaction.from_address_hash,
+      to_address_hash: to_string(transaction.to_address_hash),
+      from_address_hash: to_string(transaction.from_address_hash),
       transaction_html: rendered
     })
+
     {:noreply, socket}
   end
 end
