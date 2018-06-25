@@ -13,6 +13,41 @@
     margin-top: 1rem;
   }
 
+  &-type {
+
+    &-transaction {
+      border-left: 4px solid $blue;
+
+      .tile-label {
+        color: $blue;
+      }
+    }
+
+    &-contract {
+      border-left: 4px solid $green;
+
+      .tile-label {
+        color: $green;
+      }
+    }
+
+    &-contract-creation {
+      border-left: 4px solid $pink;
+
+      .tile-label {
+        color: $pink;
+      }
+    }
+
+    &-token {
+      border-left: 4px solid $orange;
+
+      .tile-label {
+        color: $orange;
+      }
+    }
+  }
+
   .tile-title {
     font-size: 14px;
     font-weight: 600;
