@@ -41,7 +41,7 @@ p {
 
 a {
   text-decoration: none;
-  color: $primary;
+  color: lighten($primary, 25%);
 
   &:hover,
   &:focus {

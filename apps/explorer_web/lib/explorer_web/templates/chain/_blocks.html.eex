@@ -8,21 +8,22 @@
 
       <%= for block <- @chain.blocks do %>
         <div class="col-sm-3">
-          <div class="tile">
-            <%= link(block, to: block_path(@conn, :show, @conn.assigns.locale, block), class: "tile-title") %>
-            <span data-from-now="<%= block.timestamp %>"> </span>
-            <span class="text-truncate">
-              Validate by
-              <%= link to: address_path(ExplorerWeb.Endpoint, :show, @locale, block.miner),
-                "data-toggle": "tooltip",
-                "data-placement": "top",
-                title: block.miner do %>
+          <div class="tile d-flex flex-column">
+              <%= link(block, to: block_path(@conn, :show, @conn.assigns.locale, block), class: "tile-title") %>
+              <div>
+                <%= block.transactions |> Enum.count %> Transactions
+                <span class="ml-2" data-from-now="<%= block.timestamp %>"> </span>
+              </div>
+              <span class="text-truncate">
+                Validate by
+                <%= link to: address_path(ExplorerWeb.Endpoint, :show, @locale, block.miner),
+                  "data-toggle": "tooltip",
+                  "data-placement": "top",
+                  title: block.miner do %>
+                  <%= block.miner %>
+                <% end %>
+              </span>
 
-                <%= block.miner %>
-
-              <% end %>
-
-            </span>
           </div>
         </div>
       <% end %>

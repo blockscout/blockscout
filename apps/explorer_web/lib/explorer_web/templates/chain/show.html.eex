@@ -1,6 +1,7 @@
 <section class="container-fluid">
 
   <%= render ExplorerWeb.ChainView, "_blocks.html", assigns %>
+  <%= render ExplorerWeb.ChainView, "_transactions.html", assigns %>
 
   <div class="d-flex flex-md-row flex-column">
     <div class="container__stats card mr-sm-4 mb-4 mb-sm-0">
@@ -52,11 +53,7 @@
   </div>
 
   <div class="row my-4">
-    <div class="col-md-6 mb-4 mb-md-0">
+  
 
-    </div>
-    <div class="col-md-6">
-      <%= render ExplorerWeb.ChainView, "_transactions.html", assigns %>
-    </div>
   </div>
 </section>

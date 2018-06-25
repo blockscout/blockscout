@@ -1,45 +1,45 @@
 <div class="card">
   <div class="card-body">
-    <%= link(gettext("View All"), to: transaction_path(@conn, :index, Gettext.get_locale), class: "button button--secondary button--xsmall float-right") %>
+    <%= link(gettext("View All Transactions →"), to: transaction_path(@conn, :index, Gettext.get_locale), class: "button button--secondary button--xsmall float-right") %>
     <h2 class="card-title"><%= gettext "Transactions" %></h2>
-    <table class="table table-font table-responsive-lg">
-      <thead>
-        <th><%= gettext "TX Hash" %></th>
-        <th><%= gettext "From" %></th>
-        <th><%= gettext "To" %></th>
-        <th><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
-        <th><%= gettext "Age" %></th>
-      </thead>
-      <tbody>
-        <%= for transaction <- @chain.transactions do %>
-        <tr data-test="chain_transaction">
-          <td>
-            <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction: transaction %>
-          </td>
-          <td>
-            <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.from_address %>
-          </td>
-          <td>
-            <%= cond do %>
-              <% transaction.to_address_hash != nil -> %>
-                <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.to_address %>
-              <% transaction.created_contract_address_hash != nil -> %>
-                <i class="fas fa-plus-square"></i>
-                <%= link(
-                  "Contract Creation",
-                  class: "transaction__link",
-                  "data-address-hash": transaction.created_contract_address_hash,
-                  to: address_path(@conn, :show, @conn.assigns.locale, transaction.created_contract_address_hash),
-                  title: transaction.created_contract_address_hash
-                ) %>
-              <% true -> %>
-            <% end %>
-          </td>
-          <td><%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> </td>
-          <td data-from-now="<%= transaction.block.timestamp %>"></td>
-        </tr>
-        <% end %>
-      </tbody>
-    </table>
+    <%= for transaction <- @chain.transactions do %>
+      <div class="tile">
+        <div class="row">
+          <div class="col-md-2 d-flex align-items-center justify-content-center">
+            Contract Creation
+          </div>
+          <div class="col-md-8">
+            <%= link(transaction.hash ,
+                to: transaction_path(ExplorerWeb.Endpoint, :show, @locale, transaction),
+                "class": "tile-title",
+                "data-test": "transaction_hash",
+                "data-transaction-hash": transaction.hash) %>
+            <div>
+              <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.from_address %>
+              &rarr;
+              <%= cond do %>
+                <% transaction.to_address_hash != nil -> %>
+                  <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.to_address %>
+                <% transaction.created_contract_address_hash != nil -> %>
+                  <i class="fas fa-plus-square"></i>
+                  <%= link(
+                    "Contract Creation",
+                    class: "transaction__link",
+                    "data-address-hash": transaction.created_contract_address_hash,
+                    to: address_path(@conn, :show, @conn.assigns.locale, transaction.created_contract_address_hash),
+                    title: transaction.created_contract_address_hash
+                  ) %>
+                <% true -> %>
+              <% end %>
+            </div>
+            <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %>
+          </div>
+          <div class="col-md-2 d-flex flex-column justify-content-end text-right">
+            <span data-from-now="<%= transaction.block.timestamp %>"></span>
+            <span>Block #12345</span>
+          </div>
+        </div>
+      </div>
+    <% end %>
   </div>
 </div>

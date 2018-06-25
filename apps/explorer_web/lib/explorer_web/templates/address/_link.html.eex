@@ -1,14 +1,8 @@
-<div class="address-link text-truncate" data-toggle="tooltip" data-placement="top" title="<%= @address %>">
-  <%= if @address do %>
-    <%= link to: address_path(ExplorerWeb.Endpoint, :show, @locale, @address),
-    "data-toggle": "tooltip",
-    "data-placement": "top",
-    class: "address-link__font",
-    title: @address do %>
-      <%= if contract?(@address) do %>
-        <i class="address-link__type fas fa-file"></i>
-      <% end %>
-      <%= @address %>
+<%= if @address do %>
+  <%= link to: address_path(ExplorerWeb.Endpoint, :show, @locale, @address) do %>
+    <%= if contract?(@address) do %>
+      <i class="address-link__type fas fa-file"></i>
     <% end %>
+    <%= @address %>
   <% end %>
-</div>
+<% end %>
