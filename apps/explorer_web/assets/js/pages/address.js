@@ -4,6 +4,8 @@ import socket from '../socket'
 import router from '../router'
 import { batchChannel } from '../utils'
 
+const BATCH_THRESHOLD = 10
+
 router.when('/addresses/:addressHash').then(({ addressHash, blockNumber, filter }) => {
   const channel = socket.channel(`addresses:${addressHash}`, {})
   const $channelDisconnected = $('[data-selector="channel-disconnected-message"]')
@@ -33,24 +35,22 @@ router.when('/addresses/:addressHash').then(({ addressHash, blockNumber, filter 
           return
         }
 
-        if (msgs.length > 10 || batchCountAccumulator > 0) {
+        if (msgs.length > BATCH_THRESHOLD || batchCountAccumulator > 0) {
           $channelBatching.show()
           batchCountAccumulator += msgs.length
           $channelBatchingCount[0].innerHTML = batchCountAccumulator
-          return
+        } else {
+          const transactionsHtml = humps.camelizeKeys(msgs)
+            .filter(({toAddressHash, fromAddressHash}) => (
+              !filter ||
+              (filter === 'to' && toAddressHash === addressHash) ||
+              (filter === 'from' && fromAddressHash === addressHash)
+            ))
+            .map(({transactionHtml}) => transactionHtml)
+            .reverse()
+            .join('')
+          $transactionsList.prepend(transactionsHtml)
         }
-
-        msgs = humps.camelizeKeys(msgs)
-
-        if (filter === 'to') {
-          msgs = msgs.filter(({toAddressHash}) => toAddressHash === addressHash)
-        }
-        if (filter === 'from') {
-          msgs = msgs.filter(({fromAddressHash}) => fromAddressHash === addressHash)
-        }
-
-        const transactionsHtml = msgs.map(({transactionHtml}) => transactionHtml).join('')
-        $transactionsList.prepend(transactionsHtml)
       }))
     }
   }
