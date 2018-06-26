@@ -18,20 +18,13 @@
               <div>
                 <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.from_address %>
                 &rarr;
-                <%= cond do %>
-                  <% transaction.to_address_hash != nil -> %>
-                    <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.to_address %>
-                  <% transaction.created_contract_address_hash != nil -> %>
-                    <i class="fas fa-plus-square"></i>
-                    <%= link(
-                      "Contract Creation",
-                      class: "transaction__link",
-                      "data-address-hash": transaction.created_contract_address_hash,
-                      to: address_path(@conn, :show, @conn.assigns.locale, transaction.created_contract_address_hash),
-                      title: transaction.created_contract_address_hash
-                    ) %>
-                  <% true -> %>
-                <% end %>
+                  <%= link(
+                  transaction.created_contract_address_hash,
+                    class: "tile-label",
+                    "data-address-hash": transaction.created_contract_address_hash,
+                    to: address_path(@conn, :show, @conn.assigns.locale, transaction.created_contract_address_hash),
+                    title: transaction.created_contract_address_hash
+                  ) %>
               </div>
               <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> POA
             </div>
@@ -59,20 +52,7 @@
               <div>
                 <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.from_address %>
                 &rarr;
-                <%= cond do %>
-                  <% transaction.to_address_hash != nil -> %>
-                    <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.to_address %>
-                  <% transaction.created_contract_address_hash != nil -> %>
-                    <i class="fas fa-plus-square"></i>
-                    <%= link(
-                      "Contract Creation",
-                      class: "transaction__link",
-                      "data-address-hash": transaction.created_contract_address_hash,
-                      to: address_path(@conn, :show, @conn.assigns.locale, transaction.created_contract_address_hash),
-                      title: transaction.created_contract_address_hash
-                    ) %>
-                  <% true -> %>
-                <% end %>
+                <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.to_address %>
               </div>
               <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> POA
             </div>
