@@ -7,11 +7,13 @@ import { batchChannel } from '../utils'
 router.when('/addresses/:addressHash').then(({ addressHash, blockNumber, filter }) => {
   const channel = socket.channel(`addresses:${addressHash}`, {})
   const $channelDisconnected = $('[data-selector="channel-disconnected-message"]')
+  const $channelBatching = $('[data-selector="channel-batching-message"]')
   channel.join()
     .receive('ok', resp => { console.log('Joined successfully', `addresses:${addressHash}`, resp) })
     .receive('error', resp => { console.log('Unable to join', `addresses:${addressHash}`, resp) })
   channel.onError(() => {
     $channelDisconnected.show()
+    $channelBatching.hide()
   })
 
   if (!blockNumber) {
@@ -23,9 +25,18 @@ router.when('/addresses/:addressHash').then(({ addressHash, blockNumber, filter 
     }
 
     const $transactionsList = $('[data-selector="transactions-list"]')
+    const $channelBatchingCount = $('[data-selector="channel-batching-count"]')
+    let batchCountAccumulator = 0
     if ($transactionsList.length) {
       channel.on('transaction', batchChannel((msgs) => {
         if ($channelDisconnected.is(':visible')) {
+          return
+        }
+
+        if (msgs.length > 10 || batchCountAccumulator > 0) {
+          $channelBatching.show()
+          batchCountAccumulator += msgs.length
+          $channelBatchingCount[0].innerHTML = batchCountAccumulator
           return
         }
 

@@ -37,6 +37,9 @@
         </ul>
       </div>
       <div class="card-body">
+        <div data-selector="channel-batching-message" style="display:none;">
+          <span data-selector="channel-batching-count"></span> <%= gettext "more messages have come in" %>
+        </div>
         <div data-selector="channel-disconnected-message" style="display:none;">
           <%= gettext "channel disconnected" %>
         </div>
