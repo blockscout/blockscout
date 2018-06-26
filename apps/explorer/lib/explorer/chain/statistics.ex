@@ -13,10 +13,9 @@ defmodule Explorer.Chain.Statistics do
   @average_time_query """
     SELECT coalesce(avg(difference), interval '0 seconds')
     FROM (
-      SELECT timestamp - lag(timestamp) over (order by timestamp) as difference
-      FROM blocks
-      ORDER BY number DESC
-      LIMIT 100
+      SELECT b.timestamp - lag(b.timestamp) over (order by b.timestamp) as difference
+      FROM (SELECT * FROM blocks ORDER BY number DESC LIMIT 101) b
+      LIMIT 100 OFFSET 1
     ) t
   """
 
