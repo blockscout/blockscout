@@ -36,8 +36,10 @@ defmodule ExplorerWeb.Chain do
     end
   end
 
-  def next_page_params([], _list), do: nil
-  def next_page_params(_, list), do: set_page_params(List.last(list))
+  def next_page_params([], _list, _params), do: nil
+  def next_page_params(_, list, params) do
+    Map.merge(params, paging_params(List.last(list)))
+  end
 
   def paging_options(%{
         "block_number" => block_number_string,
@@ -111,25 +113,25 @@ defmodule ExplorerWeb.Chain do
     end
   end
 
-  defp set_page_params(%Block{number: number}) do
-    %{block_number: number}
+  defp paging_params(%Block{number: number}) do
+    %{"block_number" => number}
   end
 
-  defp set_page_params(%InternalTransaction{index: index, transaction_hash: transaction_hash}) do
+  defp paging_params(%InternalTransaction{index: index, transaction_hash: transaction_hash}) do
     {:ok, %Transaction{block_number: block_number, index: transaction_index}} = hash_to_transaction(transaction_hash)
-    %{block_number: block_number, transaction_index: transaction_index, index: index}
+    %{"block_number" => block_number, "transaction_index" => transaction_index, "index" => index}
   end
 
-  defp set_page_params(%Log{index: index}) do
-    %{index: index}
+  defp paging_params(%Log{index: index}) do
+    %{"index" => index}
   end
 
-  defp set_page_params(%Transaction{block_number: nil, inserted_at: inserted_at, hash: hash}) do
-    %{inserted_at: DateTime.to_iso8601(inserted_at), hash: hash}
+  defp paging_params(%Transaction{block_number: nil, inserted_at: inserted_at, hash: hash}) do
+    %{"inserted_at" => DateTime.to_iso8601(inserted_at), "hash" => hash}
   end
 
-  defp set_page_params(%Transaction{block_number: block_number, index: index}) do
-    %{block_number: block_number, index: index}
+  defp paging_params(%Transaction{block_number: block_number, index: index}) do
+    %{"block_number" => block_number, "index" => index}
   end
 
   defp transaction_from_param(param) do
