@@ -42,6 +42,20 @@ jobs:
 
       - run:
           command: npm install
+          working_directory: "apps/explorer"
+
+      - save_cache:
+          key: v3-npm-install-{{ .Branch }}-{{ checksum "apps/explorer/package-lock.json" }}
+          paths: "apps/explorer/node_modules"
+      - save_cache:
+          key: v3-npm-install-{{ .Branch }}
+          paths: "apps/explorer/node_modules"
+      - save_cache:
+          key: v3-npm-install
+          paths: "apps/explorer/node_modules"
+
+      - run:
+          command: npm install
           working_directory: "apps/explorer_web/assets"
 
       - save_cache:
@@ -101,7 +115,6 @@ jobs:
             - mix.exs
             - mix.lock
             - appspec.yml
-
   check_formatted:
     docker:
       # Ensure .tool-versions matches
@@ -299,14 +312,6 @@ jobs:
       - run:
           name: Wait for DB
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
-
-      - run:
-          name: Install 'solc'
-          command: |
-            echo 'deb http://ppa.launchpad.net/ethereum/ethereum/ubuntu trusty main' | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
-            sudo apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 923F6CA9
-            sudo apt-get update
-            sudo apt-get install solc
 
       - run: mix coveralls.circle --umbrella
 

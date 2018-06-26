@@ -29,6 +29,38 @@ defmodule Explorer.Factory do
     }
   end
 
+  def contract_address_factory do
+    %Address{
+      hash: address_hash(),
+      contract_code: Map.fetch!(contract_code_info(), :bytecode)
+    }
+  end
+
+  def contract_code_info do
+    %{
+      bytecode:
+        "0x6080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a72305820f65a3adc1cfb055013d1dc37d0fe98676e2a5963677fa7541a10386d163446680029",
+      name: "SimpleStorage",
+      source_code: """
+      pragma solidity ^0.4.24;
+
+      contract SimpleStorage {
+          uint storedData;
+
+          function set(uint x) public {
+              storedData = x;
+          }
+
+          function get() public constant returns (uint) {
+              return storedData;
+          }
+      }
+      """,
+      version: "v0.4.24+commit.e67f0147",
+      optimized: false
+    }
+  end
+
   def address_hash do
     {:ok, address_hash} =
       "address_hash"

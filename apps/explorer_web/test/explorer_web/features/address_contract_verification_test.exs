@@ -4,6 +4,7 @@ defmodule ExplorerWeb.AddressContractVerificationTest do
   import Wallaby.Query
 
   alias Plug.Conn
+  alias Explorer.Factory
 
   setup do
     bypass = Bypass.open()
@@ -16,51 +17,19 @@ defmodule ExplorerWeb.AddressContractVerificationTest do
   test "users validates smart contract", %{session: session, bypass: bypass} do
     Bypass.expect(bypass, fn conn -> Conn.resp(conn, 200, solc_bin_versions()) end)
 
-    address_hash = "0x0f95fa9bc0383e699325f2658d04e8d96d87b90c"
+    %{name: name, source_code: source_code, bytecode: bytecode, version: version} = Factory.contract_code_info()
 
-    smart_contract_bytecode =
-      "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582040d82a7379b1ee1632ad4d8a239954fd940277b25628ead95259a85c5eddb2120029"
-
-    created_contract_address = insert(:address, hash: address_hash, contract_code: smart_contract_bytecode)
-
-    transaction =
-      :transaction
-      |> insert()
-      |> with_block()
-
-    insert(
-      :internal_transaction,
-      transaction: transaction,
-      index: 0,
-      created_contract_address: created_contract_address,
-      created_contract_code: smart_contract_bytecode
-    )
-
-    code = """
-    pragma solidity ^0.4.24;
-
-    contract SimpleStorage {
-        uint storedData;
-
-        function set(uint x) public {
-            storedData = x;
-        }
-
-        function get() public constant returns (uint) {
-            return storedData;
-        }
-    }
-    """
+    contract_address = insert(:contract_address, contract_code: bytecode)
 
     session
-    |> visit("/en/addresses/#{address_hash}/contract_verifications/new")
-    |> fill_in(text_field("Contract Name"), with: "SimpleStorage")
-    |> click(option("0.4.24"))
+    |> visit("/en/addresses/#{contract_address.hash}/contract_verifications/new")
+    |> fill_in(text_field("Contract Name"), with: name)
+    |> click(option(version))
     |> click(radio_button("No"))
-    |> fill_in(text_field("Enter the Solidity Contract Code below"), with: code)
+    |> fill_in(text_field("Enter the Solidity Contract Code below"), with: source_code)
     |> click(button("Verify and publish"))
 
-    assert current_path(session) =~ ~r/\/en\/addresses\/#{address_hash}\/contracts/
+    assert current_path(session) =~ ~r/\/en\/addresses\/#{contract_address.hash}\/contracts/
   end
 
   test "with invalid data shows error messages", %{session: session, bypass: bypass} do

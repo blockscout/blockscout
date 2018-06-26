@@ -3,6 +3,8 @@ defmodule Explorer.SmartContract.Solidity.CompilerVersion do
   Adapter for fetching compiler versions from https://solc-bin.ethereum.org/bin/list.json.
   """
 
+  @unsupported_versions ~w(0.1.1 0.1.2)
+
   @doc """
   Fetches a list of compilers from the Ethereum Solidity API.
   """
@@ -23,16 +25,30 @@ defmodule Explorer.SmartContract.Solidity.CompilerVersion do
   end
 
   defp format_data(json) do
-    {:ok, releases} =
+    versions =
       json
       |> Jason.decode!()
-      |> Map.fetch("releases")
+      |> Map.fetch!("builds")
+      |> remove_unsupported_versions()
+      |> format_versions()
+      |> Enum.reverse()
 
-    releases
-    |> Map.to_list()
-    |> Enum.map(fn {key, _value} -> {key, key} end)
-    |> Enum.sort()
-    |> Enum.reverse()
+    ["latest" | versions]
+  end
+
+  defp remove_unsupported_versions(builds) do
+    Enum.reject(builds, fn %{"version" => version} ->
+      Enum.member?(@unsupported_versions, version)
+    end)
+  end
+
+  defp format_versions(builds) do
+    Enum.map(builds, fn build ->
+      build
+      |> Map.fetch!("path")
+      |> String.replace_prefix("soljson-", "")
+      |> String.replace_suffix(".js", "")
+    end)
   end
 
   defp decode_json(json) do
