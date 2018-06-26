@@ -2,22 +2,7 @@ import $ from 'jquery'
 import humps from 'humps'
 import socket from '../socket'
 import router from '../router'
-
-function batch(func) {
-  let timeout
-  let batch = []
-  return function(...args) {
-    const context = this
-    batch.push(args)
-    let later = function() {
-      timeout = null
-      func.apply(context, [batch])
-      batch = []
-    }
-    clearTimeout(timeout)
-    timeout = setTimeout(later, 1000)
-  }
-}
+import { batchChannel } from '../utils'
 
 router.when('/addresses/:addressHash').then(({ addressHash, blockNumber, filter }) => {
   const channel = socket.channel(`addresses:${addressHash}`, {})
@@ -39,12 +24,12 @@ router.when('/addresses/:addressHash').then(({ addressHash, blockNumber, filter 
 
     const $transactionsList = $('[data-selector="transactions-list"]')
     if ($transactionsList.length) {
-      channel.on('transaction', batch((argsArray) => {
+      channel.on('transaction', batchChannel((msgs) => {
         if ($channelDisconnected.is(':visible')) {
           return
         }
 
-        let msgs = humps.camelizeKeys(argsArray).map(args=>args[0])
+        msgs = humps.camelizeKeys(msgs)
 
         if (filter === 'to') {
           msgs = msgs.filter(({toAddressHash})=>toAddressHash===addressHash)
