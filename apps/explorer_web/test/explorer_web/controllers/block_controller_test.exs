@@ -66,7 +66,7 @@ defmodule ExplorerWeb.BlockControllerTest do
 
       conn = get(conn, block_path(conn, :index, @locale))
 
-      assert %{block_number: ^number} = conn.assigns.next_page_params
+      assert %{"block_number" => ^number} = conn.assigns.next_page_params
     end
 
     test "next_page_params are empty if on last page", %{conn: conn} do

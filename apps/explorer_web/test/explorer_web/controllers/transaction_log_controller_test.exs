@@ -97,7 +97,7 @@ defmodule ExplorerWeb.TransactionLogControllerTest do
 
       conn = get(conn, transaction_log_path(conn, :index, :en, transaction))
 
-      assert %{index: 50} = conn.assigns.next_page_params
+      assert %{"index" => 50} = conn.assigns.next_page_params
     end
 
     test "next_page_params are empty if on last page", %{conn: conn} do

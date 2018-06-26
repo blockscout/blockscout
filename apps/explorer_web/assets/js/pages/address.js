@@ -43,13 +43,13 @@ router.when('/addresses/:addressHash').then(({ addressHash, blockNumber, filter 
         msgs = humps.camelizeKeys(msgs)
 
         if (filter === 'to') {
-          msgs = msgs.filter(({toAddressHash})=>toAddressHash===addressHash)
+          msgs = msgs.filter(({toAddressHash}) => toAddressHash === addressHash)
         }
         if (filter === 'from') {
-          msgs = msgs.filter(({fromAddressHash})=>fromAddressHash===addressHash)
+          msgs = msgs.filter(({fromAddressHash}) => fromAddressHash === addressHash)
         }
 
-        const transactionsHtml = msgs.map(({transactionHtml})=>transactionHtml).join('')
+        const transactionsHtml = msgs.map(({transactionHtml}) => transactionHtml).join('')
         $transactionsList.prepend(transactionsHtml)
       }))
     }

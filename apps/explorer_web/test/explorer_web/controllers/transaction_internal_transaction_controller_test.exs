@@ -128,7 +128,8 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
 
       conn = get(conn, transaction_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, transaction.hash))
 
-      assert %{block_number: ^number, index: 11, transaction_index: ^transaction_index} = conn.assigns.next_page_params
+      assert %{"block_number" => ^number, "index" => 11, "transaction_index" => ^transaction_index} =
+               conn.assigns.next_page_params
     end
 
     test "next_page_params are empty if on last page", %{conn: conn} do
