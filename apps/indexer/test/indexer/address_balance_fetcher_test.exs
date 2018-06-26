@@ -6,23 +6,37 @@ defmodule Indexer.AddressBalanceFetcherTest do
   alias Explorer.Chain.{Address, Hash, Wei}
   alias Indexer.{AddressBalanceFetcher, AddressBalanceFetcherCase}
 
-  @block_number 2_932_838
-  @hash %Explorer.Chain.Hash{
-    byte_count: 20,
-    bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179, 223, 65, 91>>
-  }
-
   setup do
     start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
 
-    :ok
+    %{variant: EthereumJSONRPC.config(:variant)}
   end
 
   describe "init/1" do
-    test "fetches unfetched Block miner balance" do
-      {:ok, miner_hash} = Hash.Address.cast("0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca")
+    test "fetches unfetched Block miner balance", %{variant: variant} do
+      %{block_number: block_number, fetched_balance: fetched_balance, miner_hash_data: miner_hash_data} =
+        case variant do
+          EthereumJSONRPC.Geth ->
+            %{
+              block_number: 201_480,
+              fetched_balance: 6_301_752_965_671_077_173,
+              miner_hash_data: "0xe6a7a1d47ff21b6321162aea7c6cb457d5476bca"
+            }
+
+          EthereumJSONRPC.Parity ->
+            %{
+              block_number: 34,
+              fetched_balance: 252_460_834_000_000_000_000_000_000,
+              miner_hash_data: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
+            }
+
+          _ ->
+            raise ArgumentError, "Unsupported variant (#{variant})"
+        end
+
+      {:ok, miner_hash} = Hash.Address.cast(miner_hash_data)
       miner = insert(:address, hash: miner_hash)
-      block = insert(:block, miner: miner, number: 34)
+      block = insert(:block, miner: miner, number: block_number)
 
       assert miner.fetched_balance == nil
       assert miner.fetched_balance_block_number == nil
@@ -36,14 +50,34 @@ defmodule Indexer.AddressBalanceFetcherTest do
           )
         end)
 
-      assert fetched_address.fetched_balance == %Wei{value: Decimal.new(252_460_834_000_000_000_000_000_000)}
+      assert fetched_address.fetched_balance == %Wei{value: Decimal.new(fetched_balance)}
       assert fetched_address.fetched_balance_block_number == block.number
     end
 
-    test "fetches unfetched addresses when less than max batch size" do
-      {:ok, miner_hash} = Hash.Address.cast("0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca")
+    test "fetches unfetched addresses when less than max batch size", %{variant: variant} do
+      %{block_number: block_number, fetched_balance: fetched_balance, miner_hash_data: miner_hash_data} =
+        case variant do
+          EthereumJSONRPC.Geth ->
+            %{
+              block_number: 201_480,
+              fetched_balance: 6_301_752_965_671_077_173,
+              miner_hash_data: "0xe6a7a1d47ff21b6321162aea7c6cb457d5476bca"
+            }
+
+          EthereumJSONRPC.Parity ->
+            %{
+              block_number: 34,
+              fetched_balance: 252_460_834_000_000_000_000_000_000,
+              miner_hash_data: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
+            }
+
+          _ ->
+            raise ArgumentError, "Unsupported variant (#{variant})"
+        end
+
+      {:ok, miner_hash} = Hash.Address.cast(miner_hash_data)
       miner = insert(:address, hash: miner_hash)
-      block = insert(:block, miner: miner, number: 34)
+      block = insert(:block, miner: miner, number: block_number)
 
       AddressBalanceFetcherCase.start_supervised!(max_batch_size: 2)
 
@@ -54,30 +88,73 @@ defmodule Indexer.AddressBalanceFetcherTest do
           )
         end)
 
-      assert fetched_address.fetched_balance == %Wei{value: Decimal.new(252_460_834_000_000_000_000_000_000)}
+      assert fetched_address.fetched_balance == %Wei{value: Decimal.new(fetched_balance)}
       assert fetched_address.fetched_balance_block_number == block.number
     end
   end
 
   describe "async_fetch_balances/1" do
-    test "fetches balances for address_hashes" do
+    test "fetches balances for address_hashes", %{variant: variant} do
       AddressBalanceFetcherCase.start_supervised!()
 
-      assert :ok = AddressBalanceFetcher.async_fetch_balances([%{block_number: @block_number, hash: @hash}])
+      %{block_number: block_number, fetched_balance: fetched_balance, hash: hash} =
+        case variant do
+          EthereumJSONRPC.Geth ->
+            %{
+              block_number: 201_480,
+              fetched_balance: 6_301_752_965_671_077_173,
+              hash: %Explorer.Chain.Hash{
+                byte_count: 20,
+                bytes: <<230, 167, 161, 212, 127, 242, 27, 99, 33, 22, 42, 234, 124, 108, 180, 87, 213, 71, 107, 202>>
+              }
+            }
+
+          EthereumJSONRPC.Parity ->
+            %{
+              block_number: 34,
+              fetched_balance: 252_460_834_000_000_000_000_000_000,
+              hash: %Explorer.Chain.Hash{
+                byte_count: 20,
+                bytes:
+                  <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132, 89, 192, 16, 79, 223, 94, 152, 122, 202>>
+              }
+            }
+
+          _ ->
+            raise ArgumentError, "Unsupported variant (#{variant})"
+        end
+
+      assert :ok = AddressBalanceFetcher.async_fetch_balances([%{block_number: block_number, hash: hash}])
 
       address =
         wait(fn ->
-          Repo.get!(Address, @hash)
+          Repo.get!(Address, hash)
         end)
 
-      assert address.fetched_balance == %Wei{value: Decimal.new(1)}
-      assert address.fetched_balance_block_number == @block_number
+      assert address.fetched_balance == %Wei{value: Decimal.new(fetched_balance)}
+      assert address.fetched_balance_block_number == block_number
     end
   end
 
   describe "run/2" do
-    test "duplicate address hashes the max block_quantity" do
-      hash_data = "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
+    test "duplicate address hashes the max block_quantity", %{variant: variant} do
+      %{fetched_balance: fetched_balance, hash_data: hash_data} =
+        case variant do
+          EthereumJSONRPC.Geth ->
+            %{
+              fetched_balance: 5_000_000_000_000_000_000,
+              hash_data: "0x05a56e2d52c817161883f50c441c3228cfe54d9f"
+            }
+
+          EthereumJSONRPC.Parity ->
+            %{
+              fetched_balance: 252_460_802_000_000_000_000_000_000,
+              hash_data: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
+            }
+
+          _ ->
+            raise ArgumentError, "Unsupported variant (#{variant})"
+        end
 
       assert AddressBalanceFetcher.run(
                [%{block_quantity: "0x1", hash_data: hash_data}, %{block_quantity: "0x2", hash_data: hash_data}],
@@ -87,7 +164,7 @@ defmodule Indexer.AddressBalanceFetcherTest do
       fetched_address = Repo.one!(from(address in Address, where: address.hash == ^hash_data))
 
       assert fetched_address.fetched_balance == %Explorer.Chain.Wei{
-               value: Decimal.new(252_460_802_000_000_000_000_000_000)
+               value: Decimal.new(fetched_balance)
              }
 
       assert fetched_address.fetched_balance_block_number == 2

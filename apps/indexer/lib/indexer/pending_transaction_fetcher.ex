@@ -9,7 +9,7 @@ defmodule Indexer.PendingTransactionFetcher do
 
   require Logger
 
-  import EthereumJSONRPC.Parity, only: [fetch_pending_transactions: 0]
+  import EthereumJSONRPC, only: [fetch_pending_transactions: 0]
 
   alias Explorer.Chain
   alias Indexer.{AddressExtraction, PendingTransactionFetcher}
@@ -85,17 +85,21 @@ defmodule Indexer.PendingTransactionFetcher do
   end
 
   defp task(%PendingTransactionFetcher{} = _state) do
-    {:ok, transactions_params} = fetch_pending_transactions()
+    case fetch_pending_transactions() do
+      {:ok, transactions_params} ->
+        addresses_params = AddressExtraction.extract_addresses(%{transactions: transactions_params}, pending: true)
 
-    addresses_params = AddressExtraction.extract_addresses(%{transactions: transactions_params}, pending: true)
+        # There's no need to queue up fetching the address balance since theses are pending transactions and cannot have
+        # affected the address balance yet since address balance is a balance at a give block and these transactions are
+        # blockless.
+        {:ok, _} =
+          Chain.import_blocks(
+            addresses: [params: addresses_params],
+            transactions: [on_conflict: :nothing, params: transactions_params]
+          )
 
-    # There's no need to queue up fetching the address balance since theses are pending transactions and cannot have
-    # affected the address balance yet since address balance is a balance at a give block and these transactions are
-    # blockless.
-    {:ok, _} =
-      Chain.import_blocks(
-        addresses: [params: addresses_params],
-        transactions: [on_conflict: :nothing, params: transactions_params]
-      )
+      :ignore ->
+        :ok
+    end
   end
 end

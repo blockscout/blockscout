@@ -163,11 +163,6 @@ defmodule EthereumJSONRPC do
   @doc """
   Fetches block number by `t:tag/0`.
 
-  The `"earliest"` tag is the earlist block number, which is `0`.
-
-      iex> EthereumJSONRPC.fetch_block_number_by_tag("earliest")
-      {:ok, 0}
-
   ## Returns
 
    * `{:ok, number}` - the block number for the given `tag`.
@@ -184,10 +179,17 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
-  Fetches internal transactions from client-specific API.
+  Fetches internal transactions from variant API.
   """
   def fetch_internal_transactions(params_list) when is_list(params_list) do
     config(:variant).fetch_internal_transactions(params_list)
+  end
+
+  @doc """
+  Fetches pending transactions from variant API.
+  """
+  def fetch_pending_transactions do
+    config(:variant).fetch_pending_transactions()
   end
 
   @spec fetch_transaction_receipts([
@@ -224,8 +226,13 @@ defmodule EthereumJSONRPC do
     json = encode_json(payload)
 
     case post(url, json, config(:http)) do
-      {:ok, %HTTPoison.Response{body: body, status_code: code}} ->
-        body |> decode_json(code, json, url) |> handle_response(code)
+      {:ok, %HTTPoison.Response{body: body, status_code: status_code}} ->
+        [
+          request: [url: url, body: json],
+          response: [status_code: status_code, body: body]
+        ]
+        |> decode_json()
+        |> handle_response(status_code)
 
       {:error, %HTTPoison.Error{reason: reason}} ->
         {:error, reason}
@@ -296,7 +303,7 @@ defmodule EthereumJSONRPC do
         rechunk_json_rpc(url, chunks, options, response, decoded_response_bodies)
 
       {:ok, %HTTPoison.Response{body: body, status_code: status_code}} ->
-        decoded_body = decode_json(body, status_code, json, url)
+        decoded_body = decode_json(request: [url: url, body: json], response: [status_code: status_code, body: body])
         chunked_json_rpc(url, tail, options, [decoded_body | decoded_response_bodies])
 
       {:error, %HTTPoison.Error{reason: reason}} ->
@@ -404,7 +411,7 @@ defmodule EthereumJSONRPC do
 
   defp get_block_by_tag_request(tag) do
     # eth_getBlockByNumber accepts either a number OR a tag
-    get_block_by_number_request(%{id: tag, tag: tag, transactions: :hashes})
+    get_block_by_number_request(%{id: 1, tag: tag, transactions: :hashes})
   end
 
   defp get_block_by_number_params(options) do
@@ -436,29 +443,18 @@ defmodule EthereumJSONRPC do
 
   defp encode_json(data), do: Jason.encode_to_iodata!(data)
 
-  defp decode_json(response_body, response_status_code, request_body, request_url) do
-    Jason.decode!(response_body)
-  rescue
-    Jason.DecodeError ->
-      Logger.error(fn ->
-        """
-        failed to decode json payload:
+  defp decode_json(named_arguments) when is_list(named_arguments) do
+    response_body =
+      named_arguments
+      |> Keyword.fetch!(:response)
+      |> Keyword.fetch!(:body)
 
-            request:
-
-              url: #{inspect(request_url)}
-
-              body: #{inspect(request_body)}
-
-            response:
-
-              status code: #{inspect(response_status_code)}
-
-              body: #{inspect(response_body)}
-        """
-      end)
-
-      raise("bad jason")
+    try do
+      Jason.decode!(response_body)
+    rescue
+      Jason.DecodeError ->
+        raise EthereumJSONRPC.DecodeError, named_arguments
+    end
   end
 
   defp handle_get_blocks({:ok, results}) do

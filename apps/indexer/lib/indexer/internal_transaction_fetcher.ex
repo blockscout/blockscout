@@ -125,6 +125,9 @@ defmodule Indexer.InternalTransactionFetcher do
 
         # re-queue the de-duped transactions_params
         {:retry, unique_transactions_params}
+
+      :ignore ->
+        :ok
     end
   end
 
