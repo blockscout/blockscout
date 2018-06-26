@@ -42,24 +42,6 @@ defmodule Explorer.Chain.StatisticsTest do
              } = Statistics.fetch()
     end
 
-    test "returns the count of transactions from blocks in the last day" do
-      time = DateTime.utc_now()
-      block = insert(:block, timestamp: time)
-
-      :transaction
-      |> insert()
-      |> with_block(block)
-
-      last_week = Timex.shift(time, days: -8)
-      old_block = insert(:block, timestamp: last_week)
-
-      :transaction
-      |> insert()
-      |> with_block(old_block)
-
-      assert %Statistics{transaction_count: 1} = Statistics.fetch()
-    end
-
     test "returns the lag between validation and insertion time" do
       validation_time = DateTime.utc_now()
       inserted_at = validation_time |> Timex.shift(seconds: 5)
