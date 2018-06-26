@@ -30,7 +30,7 @@ defmodule Explorer.Chain.Statistics do
   """
 
   @block_velocity_query """
-    SELECT count(blocks.hash)
+    SELECT count(blocks.inserted_at)
       FROM blocks
       WHERE blocks.inserted_at > NOW() - interval '1 minute'
   """
