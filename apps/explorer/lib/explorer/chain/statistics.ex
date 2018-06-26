@@ -36,7 +36,7 @@ defmodule Explorer.Chain.Statistics do
   """
 
   @transaction_velocity_query """
-    SELECT count(transactions.hash)
+    SELECT count(transactions.inserted_at)
       FROM transactions
       WHERE transactions.inserted_at > NOW() - interval '1 minute'
   """
