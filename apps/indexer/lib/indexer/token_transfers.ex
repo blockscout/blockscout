@@ -1,4 +1,4 @@
-defmodule Explorer.Indexer.TokenTransfers do
+defmodule Indexer.TokenTransfers do
   @moduledoc """
   Process that inspects Log records for token transfers.
   """

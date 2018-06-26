@@ -24,7 +24,7 @@ defmodule Explorer.Indexer.TokenTransfers.Queue do
       {{:value, item}, next_queue} ->
         {:ok, {next_queue, item}}
 
-      {:empty, queue} ->
+      {:empty, _queue} ->
         {:error, :empty}
     end
   end
