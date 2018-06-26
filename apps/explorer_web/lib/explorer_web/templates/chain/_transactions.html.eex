@@ -3,68 +3,97 @@
     <%= link(gettext("View All Transactions →"), to: transaction_path(@conn, :index, Gettext.get_locale), class: "button button--secondary button--xsmall float-right") %>
     <h2 class="card-title"><%= gettext "Transactions" %></h2>
     <%= for transaction <- @chain.transactions do %>
-      <%= if transaction.created_contract_address_hash do %>
-        <div class="tile tile-type-contract-creation">
-          <div class="row">
-            <div class="col-md-2 d-flex align-items-center justify-content-center tile-label">
-              <%= gettext("Contract Creation") %>
+      <%= cond do %>
+        <%= transaction.created_contract_address_hash != nil -> %>
+          <div class="tile tile-type-contract-creation">
+            <div class="row">
+              <div class="col-md-2 d-flex align-items-center justify-content-center tile-label">
+                <%= gettext("Contract Creation") %>
+              </div>
+              <div class="col-md-8">
+                <%= link(transaction.hash ,
+                    to: transaction_path(ExplorerWeb.Endpoint, :show, @locale, transaction),
+                    "class": "tile-title",
+                    "data-test": "transaction_hash",
+                    "data-transaction-hash": transaction.hash) %>
+                <div>
+                  <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.from_address %>
+                  &rarr;
+                    <%= link(
+                    transaction.created_contract_address_hash,
+                      class: "tile-label",
+                      "data-address-hash": transaction.created_contract_address_hash,
+                      to: address_path(@conn, :show, @conn.assigns.locale, transaction.created_contract_address_hash),
+                      title: transaction.created_contract_address_hash
+                    ) %>
+                </div>
+                <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> POA
+              </div>
+              <div class="col-md-2 d-flex flex-column justify-content-end text-right">
+                <span data-from-now="<%= transaction.block.timestamp %>"></span>
+                <%= link(
+                  gettext("Block #") <> "#{transaction.block.number}",
+                  to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
+                ) %>
+              </div>
             </div>
-            <div class="col-md-8">
-              <%= link(transaction.hash ,
-                  to: transaction_path(ExplorerWeb.Endpoint, :show, @locale, transaction),
-                  "class": "tile-title",
-                  "data-test": "transaction_hash",
-                  "data-transaction-hash": transaction.hash) %>
-              <div>
-                <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.from_address %>
-                &rarr;
+          </div>
+        <% contract?(transaction.from_address) || contract?(transaction.to_address) -> %>
+          <div class="tile tile-type-transaction">
+            <div class="row">
+              <div class="col-md-2 d-flex align-items-center justify-content-center tile-label">
+                <%= gettext("Transaction") %>
+              </div>
+              <div class="col-md-8">
+                <%= link(transaction.hash ,
+                    to: transaction_path(ExplorerWeb.Endpoint, :show, @locale, transaction),
+                    "class": "tile-title",
+                    "data-test": "transaction_hash",
+                    "data-transaction-hash": transaction.hash) %>
+                <div>
+                  <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.from_address %>
+                  &rarr;
+                  <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.to_address %>
+                </div>
+                <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> POA
+              </div>
+              <div class="col-md-2 d-flex flex-column justify-content-end text-right">
+                <span data-from-now="<%= transaction.block.timestamp %>"></span>
+                <%= link(
+                  gettext("Block #") <> "#{transaction.block.number}",
+                  to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
+                ) %>
+              </div>
+            </div>
+          </div>
+          <% true -> %>
+            <div class="tile tile-type-transaction">
+              <div class="row">
+                <div class="col-md-2 d-flex align-items-center justify-content-center tile-label">
+                  <%= gettext("Transaction") %>
+                </div>
+                <div class="col-md-8">
+                  <%= link(transaction.hash ,
+                      to: transaction_path(ExplorerWeb.Endpoint, :show, @locale, transaction),
+                      "class": "tile-title",
+                      "data-test": "transaction_hash",
+                      "data-transaction-hash": transaction.hash) %>
+                  <div>
+                    <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.from_address %>
+                    &rarr;
+                    <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.to_address %>
+                  </div>
+                  <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> POA
+                </div>
+                <div class="col-md-2 d-flex flex-column justify-content-end text-right">
+                  <span data-from-now="<%= transaction.block.timestamp %>"></span>
                   <%= link(
-                  transaction.created_contract_address_hash,
-                    class: "tile-label",
-                    "data-address-hash": transaction.created_contract_address_hash,
-                    to: address_path(@conn, :show, @conn.assigns.locale, transaction.created_contract_address_hash),
-                    title: transaction.created_contract_address_hash
+                    gettext("Block #") <> "#{transaction.block.number}",
+                    to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
                   ) %>
+                </div>
               </div>
-              <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> POA
             </div>
-            <div class="col-md-2 d-flex flex-column justify-content-end text-right">
-              <span data-from-now="<%= transaction.block.timestamp %>"></span>
-              <%= link(
-                gettext("Block #") <> "#{transaction.block.number}",
-                to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
-              ) %>
-            </div>
-          </div>
-        </div>
-      <% else %>
-        <div class="tile tile-type-transaction">
-          <div class="row">
-            <div class="col-md-2 d-flex align-items-center justify-content-center tile-label">
-              <%= gettext("Transaction") %>
-            </div>
-            <div class="col-md-8">
-              <%= link(transaction.hash ,
-                  to: transaction_path(ExplorerWeb.Endpoint, :show, @locale, transaction),
-                  "class": "tile-title",
-                  "data-test": "transaction_hash",
-                  "data-transaction-hash": transaction.hash) %>
-              <div>
-                <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.from_address %>
-                &rarr;
-                <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.to_address %>
-              </div>
-              <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> POA
-            </div>
-            <div class="col-md-2 d-flex flex-column justify-content-end text-right">
-              <span data-from-now="<%= transaction.block.timestamp %>"></span>
-              <%= link(
-                gettext("Block #") <> "#{transaction.block.number}",
-                to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
-              ) %>
-            </div>
-          </div>
-        </div>
       <% end %>
     <% end %>
   </div>

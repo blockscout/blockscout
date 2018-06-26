@@ -41,7 +41,7 @@ function createMarketHistoryChart (ctx) {
         yAxisID: 'marketCap',
         data: currentMarketHistoryData.map(({ date, closingPrice }) => ({x: date, y: closingPrice * availableSupply})),
         fill: false,
-        pointRadius: 0.5,
+        pointRadius: 0,
         backgroundColor: sassVariables.secondary,
         borderColor: sassVariables.secondary,
         lineTension: 0
@@ -53,19 +53,28 @@ function createMarketHistoryChart (ctx) {
       },
       scales: {
         xAxes: [{
+          gridLines: {
+            display: false
+          },
           type: 'time',
           time: {
             unit: 'week',
             displayFormats: {
               week: 'MMM D'
             }
+          },
+          ticks: {
+            callback: (value, index, values) => value,
           }
         }],
         yAxes: [{
           id: 'price',
+          gridLines: {
+            display: false
+          },
           ticks: {
             beginAtZero: true,
-            callback: (value, index, values) => formatPrice(value),
+            callback: (value, index, values) => "",
             maxTicksLimit: 6
           }
         }, {
@@ -75,27 +84,14 @@ function createMarketHistoryChart (ctx) {
             display: false
           },
           ticks: {
-            callback: (value, index, values) => formatMarketCap(value),
+            callback: (value, index, values) => "",
             maxTicksLimit: 6,
             drawOnChartArea: false
           }
         }]
       },
       tooltips: {
-        mode: 'index',
-        intersect: false,
-        callbacks: {
-          label: ({datasetIndex, yLabel}, {datasets}) => {
-            const label = datasets[datasetIndex].label
-            if (datasets[datasetIndex].label === 'Price') {
-              return `${label}: ${formatPrice(yLabel)}`
-            } else if (datasets[datasetIndex].label === 'Market Cap') {
-              return `${label}: ${formatMarketCap(yLabel)}`
-            } else {
-              return yLabel
-            }
-          }
-        }
+        enabled: false
       }
     }
   })

@@ -1,30 +1,57 @@
+.dashboard-container {
+  position: relative;
+  background-color: $white;
+  box-shadow: 0 5px 40px -5px rgba($black, 0.25);
+
+  &:before {
+    content: "";
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 68px;
+    background-color: $white;
+    box-shadow: 0 0 40px -5px rgba($black, 0.25);
+  }
+
+  &:after {
+    content: "";
+    display: block;
+    position: absolute;
+    top: 3rem;
+    right: 0;
+    bottom: 0;
+    left: 70%;
+    background-color: $primary;
+  }
+}
+
 .dashboard-banner {
+  position: relative;
   display: grid;
-  grid-template-rows: 2rem auto;
-  grid-template-columns: 1fr 2fr;
+  grid-template-rows: 3rem 2fr 1fr;
+  grid-template-columns: 1fr 3fr;
   grid-template-areas:
     "chart ."
     "chart stats"
     "legend stats";
   margin-top: -1rem;
-  margin-bottom: 2rem;
-  background-color: $white;
-  box-shadow: 0 5px 40px -5px rgba($black, 0.25);
+  margin-bottom: 4rem;
+  z-index: 10;
 }
 
 .dashboard-banner-chart {
   grid-area: chart;
   // 15px padding matches the Bootstarp conatiner padding.
-  padding: 1rem 1rem 1rem 15px;
-  max-height: 100px;
-  box-shadow: -15px 0 40px -5px rgba($black, 0.25);
+  padding: 1rem 1rem 1rem 0;
 }
 
 .dashboard-banner-chart-legend {
   grid-area: legend;
   display: flex;
   // 15px padding matches the Bootstarp conatiner padding.
-  padding: 1rem 15px;
+  padding: 1rem 1rem;
 
   &-item {
     padding-left: 0.5rem;
@@ -57,7 +84,6 @@
   // 15px padding matches the Bootstarp conatiner padding.
   padding-right: 15px;
   background-color: $primary;
-  box-shadow: -5px -5px 40px -5px rgba($black, 0.25);
 
   &-item {
     padding-left: 1rem;
@@ -72,5 +98,6 @@
   &-value {
     display: block;
     font-size: 1.5rem;
+    font-weight: 200;
   }
 }
