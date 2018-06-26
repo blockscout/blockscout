@@ -10,7 +10,6 @@ defmodule Indexer.BlockFetcher do
   import Indexer, only: [debug: 1]
 
   alias EthereumJSONRPC
-  alias EthereumJSONRPC.Transactions
   alias Explorer.Chain
   alias Indexer.{AddressBalanceFetcher, AddressExtraction, BufferedTask, InternalTransactionFetcher, Sequence}
 
@@ -163,11 +162,11 @@ defmodule Indexer.BlockFetcher do
 
   defp fetch_transaction_receipts(_state, []), do: {:ok, %{logs: [], receipts: []}}
 
-  defp fetch_transaction_receipts(%{} = state, hashes) do
-    debug(fn -> "fetching #{length(hashes)} transaction receipts" end)
+  defp fetch_transaction_receipts(%{} = state, transaction_params) do
+    debug(fn -> "fetching #{length(transaction_params)} transaction receipts" end)
     stream_opts = [max_concurrency: state.receipts_concurrency, timeout: :infinity]
 
-    hashes
+    transaction_params
     |> Enum.chunk_every(state.receipts_batch_size)
     |> Task.async_stream(&EthereumJSONRPC.fetch_transaction_receipts(&1), stream_opts)
     |> Enum.reduce_while({:ok, %{logs: [], receipts: []}}, fn
@@ -316,8 +315,8 @@ defmodule Indexer.BlockFetcher do
     with {:blocks, {:ok, next, result}} <- {:blocks, EthereumJSONRPC.fetch_blocks_by_range(range)},
          %{blocks: blocks, transactions: transactions_without_receipts} = result,
          cap_seq(seq, next, range),
-         transaction_hashes = Transactions.params_to_hashes(transactions_without_receipts),
-         {:receipts, {:ok, receipt_params}} <- {:receipts, fetch_transaction_receipts(state, transaction_hashes)},
+         {:receipts, {:ok, receipt_params}} <-
+           {:receipts, fetch_transaction_receipts(state, transactions_without_receipts)},
          %{logs: logs, receipts: receipts} = receipt_params,
          transactions_with_receipts = put_receipts(transactions_without_receipts, receipts) do
       addresses =

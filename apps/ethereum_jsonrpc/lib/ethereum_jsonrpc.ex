@@ -190,8 +190,11 @@ defmodule EthereumJSONRPC do
     config(:variant).fetch_internal_transactions(params_list)
   end
 
-  def fetch_transaction_receipts(hashes) when is_list(hashes) do
-    Receipts.fetch(hashes)
+  @spec fetch_transaction_receipts([
+          %{required(:gas) => non_neg_integer(), required(:hash) => hash, optional(atom) => any}
+        ]) :: {:ok, %{logs: list(), receipts: list()}} | {:error, reason :: term}
+  def fetch_transaction_receipts(transactions_params) when is_list(transactions_params) do
+    Receipts.fetch(transactions_params)
   end
 
   @doc """
