@@ -13,25 +13,10 @@ defmodule Explorer.Chain.Statistics do
   @average_time_query """
     SELECT coalesce(avg(difference), interval '0 seconds')
     FROM (
-      SELECT timestamp - lag(timestamp) over (order by timestamp) as difference
-      FROM blocks
-      ORDER BY number DESC
-      LIMIT 100
+      SELECT b.timestamp - lag(b.timestamp) over (order by b.timestamp) as difference
+      FROM (SELECT * FROM blocks ORDER BY number DESC LIMIT 101) b
+      LIMIT 100 OFFSET 1
     ) t
-  """
-
-  @transaction_count_query """
-    SELECT count(transactions.hash)
-      FROM transactions
-      JOIN blocks ON blocks.hash = transactions.block_hash
-      WHERE blocks.timestamp > NOW() - interval '1 day'
-  """
-
-  @skipped_blocks_query """
-    SELECT COUNT(missing_number)
-      FROM generate_series(0, $1, 1) AS missing_number
-      LEFT JOIN blocks ON missing_number = blocks.number
-      WHERE blocks.hash IS NULL
   """
 
   @lag_query """
@@ -74,10 +59,8 @@ defmodule Explorer.Chain.Statistics do
      (`t:Explorer.Chain.Block.t/0` `timestamp`) and when it was inserted into the databasse
      (`t:Explorer.Chain.Block.t/0` `inserted_at`)
    * `number` - the latest `t:Explorer.Chain.Block.t/0` `number`
-   * `skipped_blocks` - the number of blocks that were mined/validated, but do not exist as
      `t:Explorer.Chain.Block.t/0`
    * `timestamp` - when the last `t:Explorer.Chain.Block.t/0` was mined/validated
-   * `transaction_count` - the number of transactions confirmed in blocks that were mined/validated in the last day
    * `transaction_velocity` - the number of `t:Explorer.Chain.Block.t/0` mined/validated in the last minute
    * `transactions` - the last <= 5 `t:Explorer.Chain.Transaction.t/0`
   """
@@ -87,9 +70,7 @@ defmodule Explorer.Chain.Statistics do
           blocks: [Block.t()],
           lag: Duration.t(),
           number: Block.block_number(),
-          skipped_blocks: non_neg_integer(),
           timestamp: :calendar.datetime(),
-          transaction_count: non_neg_integer(),
           transaction_velocity: transactions_per_minute(),
           transactions: [Transaction.t()]
         }
@@ -99,9 +80,7 @@ defmodule Explorer.Chain.Statistics do
             blocks: [],
             lag: %Duration{seconds: 0, megaseconds: 0, microseconds: 0},
             number: -1,
-            skipped_blocks: 0,
             timestamp: nil,
-            transaction_count: 0,
             transaction_velocity: 0,
             transactions: []
 
@@ -129,7 +108,6 @@ defmodule Explorer.Chain.Statistics do
       block_velocity: query_value(@block_velocity_query),
       blocks: Repo.all(blocks),
       lag: query_duration(@lag_query),
-      transaction_count: query_value(@transaction_count_query),
       transaction_velocity: query_value(@transaction_velocity_query),
       transactions: transactions
     }
@@ -142,7 +120,6 @@ defmodule Explorer.Chain.Statistics do
         %__MODULE__{
           state
           | number: number,
-            skipped_blocks: query_value(@skipped_blocks_query, [number]),
             timestamp: timestamp
         }
 

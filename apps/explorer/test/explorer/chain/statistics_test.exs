@@ -27,11 +27,14 @@ defmodule Explorer.Chain.StatisticsTest do
       assert Timex.diff(statistics.timestamp, time, :seconds) == 0
     end
 
-    test "returns the average time between blocks" do
+    test "returns the average time between blocks for the last 100 blocks" do
       time = DateTime.utc_now()
-      next_time = Timex.shift(time, seconds: 5)
-      insert(:block, timestamp: time)
-      insert(:block, timestamp: next_time)
+
+      insert(:block, timestamp: Timex.shift(time, seconds: -1000))
+
+      for x <- 100..0 do
+        insert(:block, timestamp: Timex.shift(time, seconds: -5 * x))
+      end
 
       assert %Statistics{
                average_time: %Duration{
@@ -40,33 +43,6 @@ defmodule Explorer.Chain.StatisticsTest do
                  microseconds: 0
                }
              } = Statistics.fetch()
-    end
-
-    test "returns the count of transactions from blocks in the last day" do
-      time = DateTime.utc_now()
-      block = insert(:block, timestamp: time)
-
-      :transaction
-      |> insert()
-      |> with_block(block)
-
-      last_week = Timex.shift(time, days: -8)
-      old_block = insert(:block, timestamp: last_week)
-
-      :transaction
-      |> insert()
-      |> with_block(old_block)
-
-      assert %Statistics{transaction_count: 1} = Statistics.fetch()
-    end
-
-    test "returns the number of skipped blocks" do
-      insert(:block, %{number: 0})
-      insert(:block, %{number: 2})
-
-      statistics = Statistics.fetch()
-
-      assert statistics.skipped_blocks == 1
     end
 
     test "returns the lag between validation and insertion time" do
