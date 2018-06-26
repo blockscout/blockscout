@@ -53,16 +53,6 @@ defmodule Explorer.Chain.StatisticsTest do
       assert %Statistics{lag: %Duration{seconds: 5, megaseconds: 0, microseconds: 0}} = Statistics.fetch()
     end
 
-    test "returns the number of blocks inserted in the last minute" do
-      old_inserted_at = Timex.shift(DateTime.utc_now(), days: -1)
-      insert(:block, inserted_at: old_inserted_at)
-      insert(:block)
-
-      statistics = Statistics.fetch()
-
-      assert statistics.block_velocity == 1
-    end
-
     test "returns the number of transactions inserted in the last minute" do
       old_inserted_at = Timex.shift(DateTime.utc_now(), days: -1)
       insert(:transaction, inserted_at: old_inserted_at)
