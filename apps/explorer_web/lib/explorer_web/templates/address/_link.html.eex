@@ -1,7 +1,7 @@
 <%= if @address do %>
   <%= link to: address_path(ExplorerWeb.Endpoint, :show, @locale, @address) do %>
     <%= if contract?(@address) do %>
-      <i class="address-link__type fas fa-file"></i>
+      
     <% end %>
     <%= @address %>
   <% end %>

@@ -38,11 +38,11 @@
               </div>
             </div>
           </div>
-        <% contract?(transaction.from_address) || contract?(transaction.to_address) -> %>
-          <div class="tile tile-type-transaction">
+        <% ExplorerWeb.AddressView.contract?(transaction.from_address) || ExplorerWeb.AddressView.contract?(transaction.to_address) -> %>
+          <div class="tile tile-type-contract">
             <div class="row">
               <div class="col-md-2 d-flex align-items-center justify-content-center tile-label">
-                <%= gettext("Transaction") %>
+                <%= gettext("Contract") %>
               </div>
               <div class="col-md-8">
                 <%= link(transaction.hash ,
