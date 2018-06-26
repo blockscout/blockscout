@@ -45,14 +45,6 @@ defmodule Explorer.Chain.StatisticsTest do
              } = Statistics.fetch()
     end
 
-    test "returns the lag between validation and insertion time" do
-      validation_time = DateTime.utc_now()
-      inserted_at = validation_time |> Timex.shift(seconds: 5)
-      insert(:block, timestamp: validation_time, inserted_at: inserted_at)
-
-      assert %Statistics{lag: %Duration{seconds: 5, megaseconds: 0, microseconds: 0}} = Statistics.fetch()
-    end
-
     test "returns the number of transactions inserted in the last minute" do
       old_inserted_at = Timex.shift(DateTime.utc_now(), days: -1)
       insert(:transaction, inserted_at: old_inserted_at)

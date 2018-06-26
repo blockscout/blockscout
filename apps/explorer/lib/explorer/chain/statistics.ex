@@ -19,16 +19,6 @@ defmodule Explorer.Chain.Statistics do
     ) t
   """
 
-  @lag_query """
-    SELECT coalesce(avg(lag), interval '0 seconds')
-    FROM (
-      SELECT inserted_at - timestamp AS lag
-      FROM blocks
-      WHERE blocks.inserted_at > NOW() - interval '1 hour'
-        AND blocks.timestamp > NOW() - interval '1 hour'
-    ) t
-  """
-
   @transaction_velocity_query """
     SELECT count(transactions.inserted_at)
       FROM transactions
@@ -48,7 +38,6 @@ defmodule Explorer.Chain.Statistics do
   @typedoc """
    * `average_time` - the average time it took to mine/validate the last <= 100 `t:Explorer.Chain.Block.t/0`
    * `blocks` - the last <= 5 `t:Explorer.Chain.Block.t/0`
-   * `lag` - the average time over the last hour between when the block was mined/validated
      (`t:Explorer.Chain.Block.t/0` `timestamp`) and when it was inserted into the databasse
      (`t:Explorer.Chain.Block.t/0` `inserted_at`)
    * `number` - the latest `t:Explorer.Chain.Block.t/0` `number`
@@ -60,7 +49,6 @@ defmodule Explorer.Chain.Statistics do
   @type t :: %__MODULE__{
           average_time: Duration.t(),
           blocks: [Block.t()],
-          lag: Duration.t(),
           number: Block.block_number(),
           timestamp: :calendar.datetime(),
           transaction_velocity: transactions_per_minute(),
@@ -69,7 +57,6 @@ defmodule Explorer.Chain.Statistics do
 
   defstruct average_time: %Duration{seconds: 0, megaseconds: 0, microseconds: 0},
             blocks: [],
-            lag: %Duration{seconds: 0, megaseconds: 0, microseconds: 0},
             number: -1,
             timestamp: nil,
             transaction_velocity: 0,
@@ -97,7 +84,6 @@ defmodule Explorer.Chain.Statistics do
     %__MODULE__{
       average_time: query_duration(@average_time_query),
       blocks: Repo.all(blocks),
-      lag: query_duration(@lag_query),
       transaction_velocity: query_value(@transaction_velocity_query),
       transactions: transactions
     }
