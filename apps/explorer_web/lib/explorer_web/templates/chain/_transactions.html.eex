@@ -3,34 +3,30 @@
     <%= link(gettext("View All Transactions →"), to: transaction_path(@conn, :index, Gettext.get_locale), class: "button button--secondary button--xsmall float-right") %>
     <h2 class="card-title"><%= gettext "Transactions" %></h2>
     <%= for transaction <- @chain.transactions do %>
-      <div class="tile <%= ExplorerWeb.TransactionView.tile_class(transaction) %>">
-        <div class="row">
-          <div class="col-md-2 d-flex align-items-center justify-content-center tile-label">
-            <%= ExplorerWeb.TransactionView.transaction_display_type(transaction) %>
-          </div>
-          <div class="col-md-8">
-            <%= link(transaction.hash ,
-                to: transaction_path(ExplorerWeb.Endpoint, :show, @locale, transaction),
-                "class": "tile-title",
-                "data-test": "transaction_hash",
-                "data-transaction-hash": transaction.hash) %>
-            <div>
-              <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.from_address %>
-              &rarr;
-              <%= render ExplorerWeb.AddressView, "_link.html", Keyword.merge(ExplorerWeb.TransactionView.display_to_address(transaction), locale: @locale) %>
-            </div>
-            <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> POA
-          </div>
-          <div class="col-md-2 d-flex flex-column justify-content-end text-right">
-            <span data-from-now="<%= transaction.block.timestamp %>"></span>
-            <%= link(
-              gettext("Block #") <> "#{transaction.block.number}",
-              to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
-            ) %>
-          </div>
+    <div class="tile <%= ExplorerWeb.TransactionView.tile_class(transaction) %>">
+      <div class="row">
+        <div class="col-md-2 d-flex align-items-center justify-content-start justify-content-lg-center  tile-label">
+          <%= ExplorerWeb.TransactionView.transaction_display_type(transaction) %>
+        </div>
+        <div class="col-md-7 col-lg-8 d-flex flex-column">
+          <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction: transaction %>
+          <span>
+            <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.from_address %>
+            &rarr;
+            <%= render ExplorerWeb.AddressView, "_link.html", Keyword.merge(ExplorerWeb.TransactionView.display_to_address(transaction), locale: @locale) %>
+          </span>
+          <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> POA
+        </div>
+        <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column justify-content-start justify-content-md-end text-md-right">
+          <span data-from-now="<%= transaction.block.timestamp %>"></span>
+          <%= link(
+            gettext("Block #") <> "#{transaction.block.number}",
+            to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
+          ) %>
         </div>
       </div>
-
+    </div>
     <% end %>
+
   </div>
 </div>

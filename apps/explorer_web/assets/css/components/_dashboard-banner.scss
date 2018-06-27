@@ -26,7 +26,8 @@
     background-color: $primary;
 
     @media (max-width: 992px) {
-      left: 90%;
+      top: 2rem;
+      left: 80%;
     }
   }
 }
@@ -43,6 +44,11 @@
   margin-top: -1rem;
   margin-bottom: 3rem;
   z-index: 10;
+
+  @media (max-width: 992px) {
+    grid-template-rows: 2rem auto;
+    grid-template-columns: auto;
+  }
 }
 
 .dashboard-banner-chart {
@@ -89,6 +95,12 @@
   padding-right: 15px;
   background-color: $primary;
 
+  @media (max-width: 992px) {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0.5rem 2rem;
+  }
+
   &-item {
     padding-left: 1rem;
     color: $white;
@@ -97,11 +109,16 @@
 
   &-label {
     display: block;
+    white-space: nowrap;
   }
 
   &-value {
     display: block;
     font-size: 1.5rem;
     font-weight: 200;
+
+    @media (max-width: 992px) {
+      font-size: 1.25rem;
+    }
   }
 }

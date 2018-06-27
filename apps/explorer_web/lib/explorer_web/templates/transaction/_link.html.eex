@@ -1,4 +1,5 @@
-<%= link(@transaction |> hash ,
+<%= link(@transaction.hash ,
     to: transaction_path(ExplorerWeb.Endpoint, :show, @locale, @transaction),
     "data-test": "transaction_hash",
-    "data-transaction-hash": @transaction.hash) %>
+    "data-transaction-hash": @transaction.hash,
+    "class": "tile-title text-truncate") %>
