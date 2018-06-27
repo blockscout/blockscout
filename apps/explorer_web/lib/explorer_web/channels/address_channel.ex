@@ -33,7 +33,11 @@ defmodule ExplorerWeb.AddressChannel do
     {:noreply, socket}
   end
 
-  def handle_out("overview", %{address: address, exchange_rate: exchange_rate, transaction_count: transaction_count}, socket) do
+  def handle_out(
+        "overview",
+        %{address: address, exchange_rate: exchange_rate, transaction_count: transaction_count},
+        socket
+      ) do
     Gettext.put_locale(ExplorerWeb.Gettext, socket.assigns.locale)
 
     rendered =
