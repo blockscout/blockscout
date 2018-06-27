@@ -1,64 +1,105 @@
 import $ from 'jquery'
 import humps from 'humps'
+import numeral from 'numeral'
+import 'numeral/locales'
 import socket from '../socket'
 import router from '../router'
-import { batchChannel } from '../utils'
+import { batchChannel, initRedux } from '../utils'
 
 const BATCH_THRESHOLD = 10
 
-router.when('/addresses/:addressHash').then(({ addressHash, blockNumber, filter }) => {
-  const channel = socket.channel(`addresses:${addressHash}`, {})
-  const $channelDisconnected = $('[data-selector="channel-disconnected-message"]')
-  const $channelBatching = $('[data-selector="channel-batching-message"]')
-  channel.join()
-    .receive('ok', resp => { console.log('Joined successfully', `addresses:${addressHash}`, resp) })
-    .receive('error', resp => { console.log('Unable to join', `addresses:${addressHash}`, resp) })
-  channel.onError(() => {
-    $channelDisconnected.show()
-    $channelBatching.hide()
-  })
+const initialState = {
+  addressHash: null,
+  filter: null,
+  beyondPageOne: null,
+  channelDisconnected: false,
+  overview: null,
+  newTransactions: [],
+  batchCountAccumulator: 0
+}
 
-  const $overview = $('[data-selector="overview"]')
-  if ($overview) {
-    channel.on('overview', (msg) => {
-      $overview.empty().append(msg.overview)
-    })
-  }
-
-  if (!blockNumber) {
-    const $emptyTransactionsList = $('[data-selector="empty-transactions-list"]')
-    if ($emptyTransactionsList.length) {
-      channel.on('transaction', () => {
-        window.location.reload()
+export function reducer (state = initialState, action) {
+  switch (action.type) {
+    case 'PAGE_LOAD': {
+      return Object.assign({}, state, {
+        addressHash: action.params.addressHash,
+        filter: action.params.filter,
+        beyondPageOne: !!action.params.blockNumber
       })
     }
+    case 'CHANNEL_DISCONNECTED': {
+      if (state.beyondPageOne) return state
 
+      return Object.assign({}, state, {
+        channelDisconnected: true,
+        batchCountAccumulator: 0
+      })
+    }
+    case 'RECEIVED_UPDATED_OVERVIEW': {
+      return Object.assign({}, state, {
+        overview: action.msg.overview
+      })
+    }
+    case 'RECEIVED_NEW_TRANSACTION_BATCH': {
+      if (state.channelDisconnected || state.beyondPageOne) return state
+
+      const incomingTransactions = humps.camelizeKeys(action.msgs)
+        .filter(({toAddressHash, fromAddressHash}) => (
+          !state.filter ||
+          (state.filter === 'to' && toAddressHash === state.addressHash) ||
+          (state.filter === 'from' && fromAddressHash === state.addressHash)
+        ))
+
+      if (!state.batchCountAccumulator && action.msgs.length < BATCH_THRESHOLD) {
+        return Object.assign({}, state, {
+          newTransactions: [
+            ...state.newTransactions,
+            ...incomingTransactions.map(({transactionHtml}) => transactionHtml)
+          ]
+        })
+      } else {
+        return Object.assign({}, state, {
+          batchCountAccumulator: state.batchCountAccumulator + action.msgs.length
+        })
+      }
+    }
+    default:
+      return state
+  }
+}
+
+router.when('/addresses/:addressHash').then((params) => initRedux(reducer, {
+  main (store) {
+    const { addressHash, blockNumber, locale } = params
+    const channel = socket.channel(`addresses:${addressHash}`, {})
+    numeral.locale(locale)
+    store.dispatch({ type: 'PAGE_LOAD', params })
+    channel.join()
+      .receive('ok', resp => { console.log('Joined successfully', `addresses:${addressHash}`, resp) })
+      .receive('error', resp => { console.log('Unable to join', `addresses:${addressHash}`, resp) })
+    channel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
+    channel.on('overview', (msg) => store.dispatch({ type: 'RECEIVED_UPDATED_OVERVIEW', msg }))
+    if (!blockNumber) channel.on('transaction', batchChannel((msgs) => store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION_BATCH', msgs })))
+  },
+  render (state, oldState) {
+    const $channelDisconnected = $('[data-selector="channel-disconnected-message"]')
+    const $overview = $('[data-selector="overview"]')
+    const $emptyTransactionsList = $('[data-selector="empty-transactions-list"]')
     const $transactionsList = $('[data-selector="transactions-list"]')
+    const $channelBatching = $('[data-selector="channel-batching-message"]')
     const $channelBatchingCount = $('[data-selector="channel-batching-count"]')
-    let batchCountAccumulator = 0
-    if ($transactionsList.length) {
-      channel.on('transaction', batchChannel((msgs) => {
-        if ($channelDisconnected.is(':visible')) {
-          return
-        }
 
-        if (msgs.length > BATCH_THRESHOLD || batchCountAccumulator > 0) {
-          $channelBatching.show()
-          batchCountAccumulator += msgs.length
-          $channelBatchingCount[0].innerHTML = batchCountAccumulator
-        } else {
-          const transactionsHtml = humps.camelizeKeys(msgs)
-            .filter(({toAddressHash, fromAddressHash}) => (
-              !filter ||
-              (filter === 'to' && toAddressHash === addressHash) ||
-              (filter === 'from' && fromAddressHash === addressHash)
-            ))
-            .map(({transactionHtml}) => transactionHtml)
-            .reverse()
-            .join('')
-          $transactionsList.prepend(transactionsHtml)
-        }
-      }))
+    if ($emptyTransactionsList.length && state.newTransactions.length) window.location.reload()
+    if (state.channelDisconnected) $channelDisconnected.show()
+    if (oldState.overview !== state.overview) $overview.empty().append(state.overview)
+    if (state.batchCountAccumulator) {
+      $channelBatching.show()
+      $channelBatchingCount[0].innerHTML = numeral(state.batchCountAccumulator).format()
+    } else {
+      $channelBatching.hide()
+    }
+    if (oldState.newTransactions !== state.newTransactions && $transactionsList.length) {
+      $transactionsList.prepend(state.newTransactions.slice(oldState.newTransactions.length).reverse().join(''))
     }
   }
-})
+}))
