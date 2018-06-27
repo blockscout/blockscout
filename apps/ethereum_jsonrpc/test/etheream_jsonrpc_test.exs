@@ -1,6 +1,8 @@
 defmodule EthereumJSONRPCTest do
   use ExUnit.Case, async: true
 
+  import EthereumJSONRPC.Case
+
   @moduletag :capture_log
 
   setup do
@@ -61,7 +63,7 @@ defmodule EthereumJSONRPCTest do
       end
     end
 
-    test "with a mix of valid and invalid hash_data returns {:error, reasons}", %{variant: variant} do
+    test "with a mix of valid and invalid hash_data returns {:error, reasons}" do
       assert {:error, reasons} =
                EthereumJSONRPC.fetch_balances([
                  # start with :ok
@@ -92,69 +94,41 @@ defmodule EthereumJSONRPCTest do
                ])
 
       assert is_list(reasons)
-      assert length(reasons) == 2
-
-      reason_by_hash_by_block_number =
-        Enum.reduce(reasons, %{}, fn %{"blockNumber" => block_number, "hash" => hash} = reason, acc ->
-          put_in(acc, [Access.key(hash, %{}), Access.key(block_number)], reason)
-        end)
-
-      case variant do
-        EthereumJSONRPC.Geth ->
-          assert reason_by_hash_by_block_number["0x3"]["0x2"] == %{
-                   "blockNumber" => "0x2",
-                   "code" => -32602,
-                   "hash" => "0x3",
-                   "message" =>
-                     "invalid argument 0: json: cannot unmarshal hex string of odd length into Go value of type common.Address"
-                 }
-
-          assert reason_by_hash_by_block_number["0x5"]["0x4"] == %{
-                   "blockNumber" => "0x4",
-                   "code" => -32602,
-                   "hash" => "0x5",
-                   "message" =>
-                     "invalid argument 0: json: cannot unmarshal hex string of odd length into Go value of type common.Address"
-                 }
-
-        EthereumJSONRPC.Parity ->
-          assert reason_by_hash_by_block_number["0x3"]["0x2"] == %{
-                   "blockNumber" => "0x2",
-                   "code" => -32602,
-                   "hash" => "0x3",
-                   "message" =>
-                     "Invalid params: invalid length 1, expected a 0x-prefixed, padded, hex-encoded hash with length 40."
-                 }
-
-          assert reason_by_hash_by_block_number["0x5"]["0x4"] == %{
-                   "blockNumber" => "0x4",
-                   "code" => -32602,
-                   "hash" => "0x5",
-                   "message" =>
-                     "Invalid params: invalid length 1, expected a 0x-prefixed, padded, hex-encoded hash with length 40."
-                 }
-
-        _ ->
-          raise ArgumentError, "Unsupported variant (#{variant})"
-      end
+      assert length(reasons) > 1
     end
   end
 
   describe "fetch_block_number_by_tag/1" do
+    @tag capture_log: false
     test "with earliest" do
-      assert {:ok, 0} = EthereumJSONRPC.fetch_block_number_by_tag("earliest")
+      log_bad_gateway(
+        fn -> EthereumJSONRPC.fetch_block_number_by_tag("earliest") end,
+        fn result ->
+          assert {:ok, 0} = result
+        end
+      )
     end
 
+    @tag capture_log: false
     test "with latest" do
-      assert {:ok, number} = EthereumJSONRPC.fetch_block_number_by_tag("latest")
-
-      assert number > 0
+      log_bad_gateway(
+        fn -> EthereumJSONRPC.fetch_block_number_by_tag("latest") end,
+        fn result ->
+          assert {:ok, number} = result
+          assert number > 0
+        end
+      )
     end
 
+    @tag capture_log: false
     test "with pending" do
-      assert {:ok, number} = EthereumJSONRPC.fetch_block_number_by_tag("pending")
-
-      assert number > 0
+      log_bad_gateway(
+        fn -> EthereumJSONRPC.fetch_block_number_by_tag("pending") end,
+        fn result ->
+          assert {:ok, number} = result
+          assert number > 0
+        end
+      )
     end
   end
 
@@ -172,17 +146,22 @@ defmodule EthereumJSONRPCTest do
 
       url = EthereumJSONRPC.config(:url)
 
-      assert {:ok, responses} = EthereumJSONRPC.json_rpc(payload, url)
-      assert Enum.count(responses) == Enum.count(block_numbers)
+      log_bad_gateway(
+        fn -> EthereumJSONRPC.json_rpc(payload, url) end,
+        fn result ->
+          assert {:ok, responses} = result
+          assert Enum.count(responses) == Enum.count(block_numbers)
 
-      block_number_set = MapSet.new(block_numbers)
+          block_number_set = MapSet.new(block_numbers)
 
-      response_block_number_set =
-        Enum.into(responses, MapSet.new(), fn %{"result" => %{"number" => quantity}} ->
-          EthereumJSONRPC.quantity_to_integer(quantity)
-        end)
+          response_block_number_set =
+            Enum.into(responses, MapSet.new(), fn %{"result" => %{"number" => quantity}} ->
+              EthereumJSONRPC.quantity_to_integer(quantity)
+            end)
 
-      assert MapSet.equal?(response_block_number_set, block_number_set)
+          assert MapSet.equal?(response_block_number_set, block_number_set)
+        end
+      )
     end
   end
 

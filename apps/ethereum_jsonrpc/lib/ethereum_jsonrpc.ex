@@ -227,12 +227,13 @@ defmodule EthereumJSONRPC do
 
     case post(url, json, config(:http)) do
       {:ok, %HTTPoison.Response{body: body, status_code: status_code}} ->
-        [
-          request: [url: url, body: json],
-          response: [status_code: status_code, body: body]
-        ]
-        |> decode_json()
-        |> handle_response(status_code)
+        with {:ok, json} <-
+               decode_json(
+                 request: [url: url, body: json],
+                 response: [status_code: status_code, body: body]
+               ) do
+          handle_response(json, status_code)
+        end
 
       {:error, %HTTPoison.Error{reason: reason}} ->
         {:error, reason}
@@ -303,8 +304,10 @@ defmodule EthereumJSONRPC do
         rechunk_json_rpc(url, chunks, options, response, decoded_response_bodies)
 
       {:ok, %HTTPoison.Response{body: body, status_code: status_code}} ->
-        decoded_body = decode_json(request: [url: url, body: json], response: [status_code: status_code, body: body])
-        chunked_json_rpc(url, tail, options, [decoded_body | decoded_response_bodies])
+        with {:ok, decoded_body} <-
+               decode_json(request: [url: url, body: json], response: [status_code: status_code, body: body]) do
+          chunked_json_rpc(url, tail, options, [decoded_body | decoded_response_bodies])
+        end
 
       {:error, %HTTPoison.Error{reason: reason}} ->
         {:error, reason}
@@ -444,16 +447,23 @@ defmodule EthereumJSONRPC do
   defp encode_json(data), do: Jason.encode_to_iodata!(data)
 
   defp decode_json(named_arguments) when is_list(named_arguments) do
-    response_body =
-      named_arguments
-      |> Keyword.fetch!(:response)
-      |> Keyword.fetch!(:body)
+    response = Keyword.fetch!(named_arguments, :response)
+    response_body = Keyword.fetch!(response, :body)
 
-    try do
-      Jason.decode!(response_body)
-    rescue
-      Jason.DecodeError ->
-        raise EthereumJSONRPC.DecodeError, named_arguments
+    with {:error, _} <- Jason.decode(response_body) do
+      case Keyword.fetch!(response, :status_code) do
+        # CloudFlare protected server return HTML errors for 502, so the JSON decode will fail
+        502 ->
+          request_url =
+            named_arguments
+            |> Keyword.fetch!(:request)
+            |> Keyword.fetch!(:url)
+
+          {:error, {:bad_gateway, request_url}}
+
+        _ ->
+          raise EthereumJSONRPC.DecodeError, named_arguments
+      end
     end
   end
 

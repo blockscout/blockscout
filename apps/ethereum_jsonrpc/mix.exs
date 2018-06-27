@@ -15,6 +15,7 @@ defmodule EthereumJsonrpc.MixProject do
         ignore_warnings: "../../.dialyzer-ignore"
       ],
       elixir: "~> 1.6",
+      elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       preferred_cli_env: [
         coveralls: :test,
@@ -44,6 +45,10 @@ defmodule EthereumJsonrpc.MixProject do
       test: "test --no-start"
     ] ++ env_aliases(env)
   end
+
+  # Specifies which paths to compile per environment.
+  defp elixirc_paths(:test), do: ["test/support" | elixirc_paths(:dev)]
+  defp elixirc_paths(_), do: ["lib"]
 
   defp env_aliases(:dev), do: []
 

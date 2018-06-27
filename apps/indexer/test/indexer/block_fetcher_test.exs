@@ -3,6 +3,7 @@ defmodule Indexer.BlockFetcherTest do
   use Explorer.DataCase, async: false
 
   import ExUnit.CaptureLog
+  import EthereumJSONRPC.Case
 
   alias Explorer.Chain.{Address, Block, Log, Transaction, Wei}
 
@@ -178,24 +179,29 @@ defmodule Indexer.BlockFetcherTest do
             raise ArgumenrError, "Unsupported variant (#{variant})"
         end
 
-      assert {:ok,
-              %{
-                addresses: [^address_hash],
-                blocks: [^block_hash],
-                logs: [],
-                transactions: []
-              }} = BlockFetcher.import_range(0..0, state, sequence)
+      log_bad_gateway(
+        fn -> BlockFetcher.import_range(0..0, state, sequence) end,
+        fn result ->
+          assert {:ok,
+                  %{
+                    addresses: [^address_hash],
+                    blocks: [^block_hash],
+                    logs: [],
+                    transactions: []
+                  }} = result
 
-      wait_for_tasks(InternalTransactionFetcher)
-      wait_for_tasks(AddressBalanceFetcher)
+          wait_for_tasks(InternalTransactionFetcher)
+          wait_for_tasks(AddressBalanceFetcher)
 
-      assert Repo.aggregate(Block, :count, :hash) == 1
-      assert Repo.aggregate(Address, :count, :hash) == 1
+          assert Repo.aggregate(Block, :count, :hash) == 1
+          assert Repo.aggregate(Address, :count, :hash) == 1
 
-      address = Repo.get!(Address, address_hash)
+          address = Repo.get!(Address, address_hash)
 
-      assert address.fetched_balance == %Wei{value: Decimal.new(0)}
-      assert address.fetched_balance_block_number == 0
+          assert address.fetched_balance == %Wei{value: Decimal.new(0)}
+          assert address.fetched_balance_block_number == 0
+        end
+      )
     end
 
     test "can import range with all synchronous imported schemas", %{state: state, variant: variant} do
