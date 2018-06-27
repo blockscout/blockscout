@@ -7,6 +7,10 @@ defmodule ExplorerWeb.TransactionPage do
 
   alias Explorer.Chain.{InternalTransaction, Transaction, Hash}
 
+  def block_confirmations() do
+    css("[data-selector='block_confirmations']")
+  end
+
   def click_logs(session) do
     click(session, css("[data-test='transaction_logs_link']"))
   end

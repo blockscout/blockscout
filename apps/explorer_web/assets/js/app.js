@@ -25,3 +25,4 @@ import './lib/reload_button'
 import './lib/tooltip'
 
 import './pages/address'
+import './pages/transaction'

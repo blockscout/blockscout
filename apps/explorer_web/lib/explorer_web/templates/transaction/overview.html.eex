@@ -41,7 +41,9 @@
                           to: block_path(@conn, :show, @conn.assigns.locale, block)
                         ) %>
                   <% end %>
-                  (<%= gettext "%{confirmations} block confirmations", confirmations: confirmations(@transaction, max_block_number: @max_block_number) %>)
+                  <span data-selector="block_confirmations">
+                    <%= render "_confirmations.html", max_block_number: @max_block_number, transaction: @transaction %>
+                  </span>
                 </td>
               </tr>
               <tr>

@@ -1,0 +1,1 @@
+(<%= gettext "%{confirmations} block confirmations", confirmations: confirmations(@transaction, max_block_number: @max_block_number) %>)
