@@ -1,4 +1,4 @@
-.dashboard-container {
+.dashboard-banner-container {
   position: relative;
   background-color: $white;
   box-shadow: 0 5px 40px -5px rgba($black, 0.25);
@@ -24,6 +24,10 @@
     bottom: 0;
     left: 70%;
     background-color: $primary;
+
+    @media (max-width: 992px) {
+      left: 90%;
+    }
   }
 }
 
@@ -31,7 +35,7 @@
   position: relative;
   display: grid;
   grid-template-rows: 3rem 2fr 1fr;
-  grid-template-columns: 1fr 3fr;
+  grid-template-columns: 1fr 4fr;
   grid-template-areas:
     "chart ."
     "chart stats"

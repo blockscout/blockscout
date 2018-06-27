@@ -1,8 +1,13 @@
 <%= if @address do %>
-  <%= link to: address_path(ExplorerWeb.Endpoint, :show, @locale, @address) do %>
+  <%= link to: address_path(ExplorerWeb.Endpoint, :show, @locale, @address), "data-address-hash": @address do %>
     <%= if contract?(@address) do %>
-      
+      <span class="tile-label"><%= @address %></span>
+    <% else %>
+      <%= @address %>
     <% end %>
-    <%= @address %>
+  <% end %>
+<% else %>
+  <%= link to: address_path(ExplorerWeb.Endpoint, :show, @locale, @address_hash), "data-address-hash": @address_hash do %>
+    <span class="tile-label"><%= @address_hash %></span>
   <% end %>
 <% end %>

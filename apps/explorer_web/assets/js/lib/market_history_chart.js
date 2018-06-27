@@ -62,9 +62,6 @@ function createMarketHistoryChart (ctx) {
             displayFormats: {
               week: 'MMM D'
             }
-          },
-          ticks: {
-            callback: (value, index, values) => value,
           }
         }],
         yAxes: [{
@@ -91,7 +88,20 @@ function createMarketHistoryChart (ctx) {
         }]
       },
       tooltips: {
-        enabled: false
+        mode: 'index',
+        intersect: false,
+        callbacks: {
+          label: ({datasetIndex, yLabel}, {datasets}) => {
+            const label = datasets[datasetIndex].label
+            if (datasets[datasetIndex].label === 'Price') {
+              return `${label}: ${formatPrice(yLabel)}`
+            } else if (datasets[datasetIndex].label === 'Market Cap') {
+              return `${label}: ${formatMarketCap(yLabel)}`
+            } else {
+              return yLabel
+            }
+          }
+        }
       }
     }
   })

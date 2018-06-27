@@ -5,8 +5,39 @@ defmodule ExplorerWeb.TransactionView do
   alias Explorer.Chain
   alias Explorer.Chain.{InternalTransaction, Transaction, Wei}
   alias Explorer.ExchangeRates.Token
-  alias ExplorerWeb.BlockView
+  alias ExplorerWeb.{AddressView, BlockView}
   alias ExplorerWeb.ExchangeRates.USD
+
+  import ExplorerWeb.Gettext
+
+  def contract_creation?(%Transaction{created_contract_address_hash: nil}), do: false
+  def contract_creation?(_), do: true
+
+  def contract?(%Transaction{from_address: from_address, to_address: to_address}) do
+    AddressView.contract?(from_address) || AddressView.contract?(to_address)
+  end
+
+  def tile_class(%Transaction{} = transaction) do
+    cond do
+      contract_creation?(transaction) -> "tile-type-contract-creation"
+      contract?(transaction) -> "tile-type-contract"
+      true -> "tile-type-transaction"
+    end
+  end
+
+  def transaction_display_type(%Transaction{} = transaction) do
+    cond do
+      contract_creation?(transaction) -> gettext("Contract Creation")
+      contract?(transaction) -> gettext("Contract")
+      true -> gettext("Transaction")
+    end
+  end
+
+  # This is the address to be shown in the to field
+  def display_to_address(%Transaction{to_address_hash: nil, created_contract_address_hash: address_hash}),
+    do: [address: nil, address_hash: address_hash]
+
+  def display_to_address(%Transaction{to_address: address}), do: [address: address]
 
   def confirmations(%Transaction{block: block}, named_arguments) when is_list(named_arguments) do
     case block do

@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-lg bg-primary">
+<nav class="navbar navbar-dark navbar-expand-lg bg-primary">
   <div class="container">
     <%= link to: chain_path(@conn, :show), class: "navbar-brand", "data-test": "header_logo" do %>
       <img class="navbar-logo" src="<%= static_path(@conn, "/images/poa_logo.svg") %>" />

@@ -13,6 +13,10 @@
     margin-top: 1rem;
   }
 
+  @media (max-width: 767.98px) {
+    margin-bottom: 1rem;
+  }
+
   &-type {
 
     &-transaction {
