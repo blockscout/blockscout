@@ -137,6 +137,7 @@ defmodule Indexer.AddressBalanceFetcherTest do
   end
 
   describe "run/2" do
+    @tag capture_log: true
     test "duplicate address hashes the max block_quantity", %{variant: variant} do
       %{fetched_balance: fetched_balance, hash_data: hash_data} =
         case variant do
@@ -156,18 +157,24 @@ defmodule Indexer.AddressBalanceFetcherTest do
             raise ArgumentError, "Unsupported variant (#{variant})"
         end
 
-      assert AddressBalanceFetcher.run(
-               [%{block_quantity: "0x1", hash_data: hash_data}, %{block_quantity: "0x2", hash_data: hash_data}],
-               0
-             ) == :ok
+      case AddressBalanceFetcher.run(
+             [%{block_quantity: "0x1", hash_data: hash_data}, %{block_quantity: "0x2", hash_data: hash_data}],
+             0
+           ) do
+        :ok ->
+          fetched_address = Repo.one!(from(address in Address, where: address.hash == ^hash_data))
 
-      fetched_address = Repo.one!(from(address in Address, where: address.hash == ^hash_data))
+          assert fetched_address.fetched_balance == %Explorer.Chain.Wei{
+                   value: Decimal.new(fetched_balance)
+                 }
 
-      assert fetched_address.fetched_balance == %Explorer.Chain.Wei{
-               value: Decimal.new(fetched_balance)
-             }
+          assert fetched_address.fetched_balance_block_number == 2
 
-      assert fetched_address.fetched_balance_block_number == 2
+        other ->
+          # not all nodes behind the `https://mainnet.infura.io` pool are fully-synced.  Node that aren't fully-synced
+          # won't have historical address balances.
+          assert {:retry, [%{block_quantity: "0x2", hash_data: ^hash_data}]} = other
+      end
     end
 
     test "duplicate address hashes only retry max block_quantity" do
