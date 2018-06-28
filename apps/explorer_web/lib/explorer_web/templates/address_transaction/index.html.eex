@@ -1,4 +1,4 @@
-<section class="container-fluid">
+<section class="container">
 
   <%= render ExplorerWeb.AddressView, "overview.html", assigns %>
 
@@ -86,28 +86,48 @@
           </div>
         </div>
         <%= if Enum.count(@transactions) > 0 do %>
-          <table class="table table-responsive table-font">
-            <thead>
-              <tr>
-                <th class="transactions__column-header transactions__column-header--status">
-                  <span class="transactions__column-title transactions__column-title--status"><%= gettext "Status" %></span>
-                </th>
-                <th><%= gettext "Hash" %></th>
-                <th><%= gettext "Block" %></th>
-                <th><%= gettext "Age" %></th>
-                <th><%= gettext "From" %></th>
-                <th></th>
-                <th><%= gettext "To" %></th>
-                <th><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
-                <th><%= gettext "Fee" %></th>
-              </tr>
-            </thead>
-            <tbody data-selector='transactions-list'>
-              <%= for transaction <- @transactions do %>
-                <%= render "_transaction.html", locale: @locale, transaction: transaction %>
-              <% end %>
-            </tbody>
-          </table>
+          <div class="dropdown float-right u-push-sm">
+            <button data-test="filter_dropdown" class="button button--secondary button--xsmall dropdown-toggle" type="button"
+                    id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Filter: <%= format_current_filter(@filter) %>
+            </button>
+            <div class="dropdown-menu dropdown-menu-right filter" aria-labelledby="dropdownMenu2">
+              <%= link(
+                    gettext("All"),
+                    to: address_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"]),
+                    class: "address__link address__link--active dropdown-item",
+                    "data-test": "filter_option"
+                  ) %>
+              <%= link(
+                    gettext("To"),
+                    to: address_transaction_path(
+                      @conn,
+                      :index,
+                      @conn.assigns.locale,
+                      @conn.params["address_id"],
+                      filter: "to"
+                    ),
+                    class: "address__link address__link--active dropdown-item",
+                    "data-test": "filter_option"
+                  ) %>
+              <%= link(
+                    gettext("From"),
+                    to: address_transaction_path(
+                      @conn,
+                      :index,
+                      @conn.assigns.locale,
+                      @conn.params["address_id"],
+                      filter: "from"
+                    ),
+                    class: "address__link address__link--active dropdown-item",
+                    "data-test": "filter_option"
+                  ) %>
+            </div>
+          </div>
+          <h2 class="card-title"><%= gettext "Transactions" %></h2>
+          <%= for transaction <- @transactions do %>
+            <%= render "_transaction.html", locale: @locale, transaction: transaction %>
+          <% end %>
         <% else %>
           <p data-selector="empty-transactions-list"><%= gettext "There are no Transactions" %></p>
         <% end %>
