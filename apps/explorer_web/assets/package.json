@@ -51,6 +51,6 @@
     "sass-loader": "^7.0.1",
     "style-loader": "^0.21.0",
     "webpack": "^4.6.0",
-    "webpack-cli": "^2.1.2"
+    "webpack-cli": "^3.0.8"
   }
 }
