@@ -3,8 +3,8 @@
     <%= link(gettext("View All Transactions →"), to: transaction_path(@conn, :index, Gettext.get_locale), class: "button button--secondary button--xsmall float-right") %>
     <h2 class="card-title"><%= gettext "Transactions" %></h2>
     <%= for transaction <- @chain.transactions do %>
-    <div class="tile <%= ExplorerWeb.TransactionView.tile_class(transaction) %>">
-      <div class="row">
+    <div class="tile tile-type-<%= ExplorerWeb.TransactionView.type_suffix(transaction) %>" data-test="<%= ExplorerWeb.TransactionView.type_suffix(transaction) %>">
+      <div class="row" data-test="chain_transaction">
         <div class="col-md-2 d-flex align-items-center justify-content-start justify-content-lg-center  tile-label">
           <%= ExplorerWeb.TransactionView.transaction_display_type(transaction) %>
         </div>

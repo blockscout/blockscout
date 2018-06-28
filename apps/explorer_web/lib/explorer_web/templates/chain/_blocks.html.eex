@@ -8,7 +8,7 @@
 
       <%= for block <- @chain.blocks do %>
         <div class="col-sm-3">
-          <div class="tile d-flex flex-column">
+          <div class="tile d-flex flex-column" data-test="chain_block">
             <%= link(block, to: block_path(@conn, :show, @conn.assigns.locale, block), class: "tile-title") %>
             <div>
               <%= block.transactions |> Enum.count %> Transactions

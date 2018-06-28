@@ -12,7 +12,7 @@ defmodule ExplorerWeb.HomePage do
   end
 
   def contract_creation(%InternalTransaction{created_contract_address_hash: hash}) do
-    css("[data-address-hash='#{hash}']", text: "Contract Creation")
+    css("[data-test='contract-creation'] [data-address-hash='#{hash}']")
   end
 
   def search(session, text) do
