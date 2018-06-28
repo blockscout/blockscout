@@ -44,4 +44,71 @@ defmodule ExplorerWeb.AddressViewTest do
       assert {:ok, _} = Base.decode64(AddressView.qr_code(address))
     end
   end
+
+  describe "smart_contract_verified?/1" do
+    test "returns true when smart contract is verified" do
+      smart_contract = insert(:smart_contract)
+      address = insert(:address, smart_contract: smart_contract)
+
+      assert AddressView.smart_contract_verified?(address)
+    end
+
+    test "returns false when smart contract is not verified" do
+      address = insert(:address, smart_contract: nil)
+
+      refute AddressView.smart_contract_verified?(address)
+    end
+  end
+
+  describe "smart_contract_with_read_only_functions?/1" do
+    test "returns true when abi has read only functions" do
+      smart_contract =
+        insert(
+          :smart_contract,
+          abi: [
+            %{
+              "constant" => true,
+              "inputs" => [],
+              "name" => "get",
+              "outputs" => [%{"name" => "", "type" => "uint256"}],
+              "payable" => false,
+              "stateMutability" => "view",
+              "type" => "function"
+            }
+          ]
+        )
+
+      address = insert(:address, smart_contract: smart_contract)
+
+      assert AddressView.smart_contract_with_read_only_functions?(address)
+    end
+
+    test "returns false when there is no read only functions" do
+      smart_contract =
+        insert(
+          :smart_contract,
+          abi: [
+            %{
+              "constant" => false,
+              "inputs" => [%{"name" => "x", "type" => "uint256"}],
+              "name" => "set",
+              "outputs" => [],
+              "payable" => false,
+              "stateMutability" => "nonpayable",
+              "type" => "function"
+            }
+          ]
+        )
+
+      address = insert(:address, smart_contract: smart_contract)
+
+      refute AddressView.smart_contract_with_read_only_functions?(address)
+    end
+
+    test "returns false when smart contract is not verified" do
+      address = insert(:address, smart_contract: nil)
+
+      refute AddressView.smart_contract_with_read_only_functions?(address)
+    end
+  end
 end

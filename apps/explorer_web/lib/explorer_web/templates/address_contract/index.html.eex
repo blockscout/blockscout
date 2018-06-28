@@ -31,6 +31,14 @@
             <% end %>
           <% end %>
         </li>
+        <%= if smart_contract_with_read_only_functions?(@address) do %>
+          <li class="nav-item">
+            <%= link(
+                gettext("Read Contract"),
+                to: address_read_contract_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"]),
+                class: "nav-link")%>
+          </li>
+        <% end %>
       </ul>
     </div>
 
