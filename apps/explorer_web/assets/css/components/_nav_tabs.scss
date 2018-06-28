@@ -1,8 +1,21 @@
 .nav-tabs {
-  border-bottom: none;
 
   .nav-link {
-    border-color: $border-color $border-color $border-color;
-    margin-right: 5px;
+    padding: 1.25rem 3rem;
+    color: $text-muted;
+    font-size: 14px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+
+    &.active {
+      color: $white;
+      background-color: $primary;
+      border-color: $primary;
+    }
+
+    &:hover {
+      border-color: transparent;
+
+      }
   }
 }

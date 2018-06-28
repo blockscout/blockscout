@@ -4,3 +4,11 @@
   border-radius: 0;
   margin-bottom: 3rem;
 }
+
+.card-header {
+  background-color: $white;
+}
+
+.card-header-tabs {
+  margin: (-$card-spacer-y) (-$card-spacer-x);
+}
