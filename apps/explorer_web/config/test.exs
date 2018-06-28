@@ -10,4 +10,4 @@ config :explorer_web, ExplorerWeb.Endpoint,
   server: true
 
 # Configure wallaby
-config :wallaby, screenshot_on_failure: true
+config :wallaby, screenshot_on_failure: true, js_errors: false

@@ -1,0 +1,7 @@
+<span>
+  [ <%= @function_name %> method Response ] <br />
+
+  <%= for item <- @outputs do %>
+    <i class="fa fa-angle-double-right"></i> <%= item["type"] %> : <%= item["value"] %>
+  <% end %>
+</span>

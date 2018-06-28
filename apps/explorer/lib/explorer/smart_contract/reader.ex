@@ -65,25 +65,25 @@ defmodule Explorer.SmartContract.Reader do
 
     $ Explorer.SmartContract.Reader.read_only_functions("0x798465571ae21a184a272f044f991ad1d5f87a3f")
     => [
-      %{
-        "constant" => true,
-        "inputs" => [],
-        "name" => "get",
-        "outputs" => [%{"name" => "", "type" => "uint256", "value" => 0}],
-        "payable" => false,
-        "stateMutability" => "view",
-        "type" => "function"
-      },
-      %{
-        "constant" => true,
-        "inputs" => [%{"name" => "x", "type" => "uint256"}],
-        "name" => "with_arguments",
-        "outputs" => [%{"name" => "", "type" => "bool", "value" => ""}],
-        "payable" => false,
-        "stateMutability" => "view",
-        "type" => "function"
-      }
-    ]
+        %{
+          "constant" => true,
+          "inputs" => [],
+          "name" => "get",
+          "outputs" => [%{"name" => "", "type" => "uint256", "value" => 0}],
+          "payable" => false,
+          "stateMutability" => "view",
+          "type" => "function"
+        },
+        %{
+          "constant" => true,
+          "inputs" => [%{"name" => "x", "type" => "uint256"}],
+          "name" => "with_arguments",
+          "outputs" => [%{"name" => "", "type" => "bool", "value" => ""}],
+          "payable" => false,
+          "stateMutability" => "view",
+          "type" => "function"
+        }
+      ]
   """
   @spec read_only_functions(%Explorer.Chain.Hash{}) :: [%{}]
   def read_only_functions(contract_address_hash) do
@@ -140,7 +140,7 @@ defmodule Explorer.SmartContract.Reader do
 
   defp fetch_from_blockchain(contract_address_hash, %{name: name, args: args, outputs: outputs}) do
     contract_address_hash
-    |> query_contract(%{name => args})
+    |> query_contract(%{name => normalize_args(args)})
     |> link_outputs_and_values(outputs, name)
   end
 
