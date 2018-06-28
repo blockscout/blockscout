@@ -22,6 +22,27 @@ defmodule Explorer.ChainTest do
 
       assert Chain.address_to_transaction_count(address) == 2
     end
+
+    test "with transactions and contract creation address" do
+      %Transaction{from_address: address} = insert(:transaction) |> Repo.preload(:from_address)
+      insert(:transaction, to_address: address)
+
+      insert(
+        :internal_transaction_create,
+        created_contract_address: address,
+        index: 0,
+        transaction: insert(:transaction)
+      )
+
+      assert Chain.address_to_transaction_count(address) == 3
+    end
+
+    test "doesn't double count addresses when to_address = from_address" do
+      %Transaction{from_address: address} = insert(:transaction) |> Repo.preload(:from_address)
+      insert(:transaction, to_address: address, from_address: address)
+
+      assert Chain.address_to_transaction_count(address) == 2
+    end
   end
 
   describe "address_to_transactions/2" do
