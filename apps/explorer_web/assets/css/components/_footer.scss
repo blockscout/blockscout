@@ -30,6 +30,12 @@ $footer-text-color: rgba($white, 0.7);
   flex-direction: row;
   align-items: center;
 
+  @media (max-width: 768px) {
+    position: static;
+    justify-content: center;
+    margin-bottom: 5px;
+  }
+
   & > a {
     display: flex;
     align-items: center;

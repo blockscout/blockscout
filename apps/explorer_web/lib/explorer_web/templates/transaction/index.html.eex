@@ -27,60 +27,62 @@
       </ul>
     </div>
     <div class="card-body">
-      <table class="table table-responsive-sm table-font">
-        <thead>
-          <tr>
-            <th><%= gettext "Status" %></th>
-            <th><%= gettext "Hash" %></th>
-            <th><%= gettext "Block" %></th>
-            <th><%= gettext "Age" %></th>
-            <th><%= gettext "From" %></th>
-            <th><%= gettext "To" %></th>
-            <th><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <%= for transaction <- @transactions do %>
+      <div class="table-responsive">
+        <table class="table table-font">
+          <thead>
             <tr>
-              <td>
-                <div class="transaction__dot transaction__dot--<%= status(transaction) %>"></div>
-              </td>
-              <td>
-                <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction: transaction %>
-              </td>
-              <td>
-                <%= link(
-                      transaction.block_number,
-                      class: "transactions__link",
-                      to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
-                    ) %>
-              </td>
-              <td data-from-now="<%= transaction.block.timestamp %>"></td>
-              <td>
-                <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.from_address %>
-              </td>
-              <td>
-                <%= cond do %>
-                  <% transaction.to_address_hash != nil -> %>
-                    <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.to_address %>
-                  <% transaction.created_contract_address_hash != nil -> %>
-                    <%= link(
-                      "Contract Creation",
-                      class: "transaction__link",
-                      "data-address-hash": transaction.created_contract_address_hash,
-                      to: address_path(@conn, :show, @conn.assigns.locale, transaction.created_contract_address_hash),
-                      title: transaction.created_contract_address_hash
-                    ) %>
-                  <% true -> %>
-                <% end %>
-              </td>
-              <td>
-                <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %>
-              </td>
+              <th><%= gettext "Status" %></th>
+              <th><%= gettext "Hash" %></th>
+              <th><%= gettext "Block" %></th>
+              <th><%= gettext "Age" %></th>
+              <th><%= gettext "From" %></th>
+              <th><%= gettext "To" %></th>
+              <th><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
             </tr>
-          <% end %>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <%= for transaction <- @transactions do %>
+              <tr>
+                <td>
+                  <div class="transaction__dot transaction__dot--<%= status(transaction) %>"></div>
+                </td>
+                <td>
+                  <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction: transaction %>
+                </td>
+                <td>
+                  <%= link(
+                        transaction.block_number,
+                        class: "transactions__link",
+                        to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
+                      ) %>
+                </td>
+                <td data-from-now="<%= transaction.block.timestamp %>"></td>
+                <td>
+                  <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.from_address %>
+                </td>
+                <td>
+                  <%= cond do %>
+                    <% transaction.to_address_hash != nil -> %>
+                      <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.to_address %>
+                    <% transaction.created_contract_address_hash != nil -> %>
+                      <%= link(
+                        "Contract Creation",
+                        class: "transaction__link",
+                        "data-address-hash": transaction.created_contract_address_hash,
+                        to: address_path(@conn, :show, @conn.assigns.locale, transaction.created_contract_address_hash),
+                        title: transaction.created_contract_address_hash
+                      ) %>
+                    <% true -> %>
+                  <% end %>
+                </td>
+                <td>
+                  <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
   <%= if @next_page_params do %>
