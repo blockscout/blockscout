@@ -4,20 +4,36 @@ defmodule EthereumJSONRPC.ReceiptsTest do
   alias EthereumJSONRPC.Receipts
 
   setup do
-    %{variant: EthereumJSONRPC.config(:variant)}
+    {variant, url} =
+      case System.get_env("ETHEREUM_JSONRPC_VARIANT") || "parity" do
+        "geth" ->
+          {EthereumJSONRPC.Geth, "https://mainnet.infura.io/8lTvJTKmHPCHazkneJsY"}
+
+        "parity" ->
+          {EthereumJSONRPC.Parity, "https://sokol-trace.poa.network"}
+
+        variant_name ->
+          raise ArgumentError, "Unsupported variant name (#{variant_name})"
+      end
+
+    %{
+      json_rpc_named_arguments: [
+        transport: EthereumJSONRPC.HTTP,
+        transport_options: [
+          http: EthereumJSONRPC.HTTP.HTTPoison,
+          url: url,
+          http_options: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :ethereum_jsonrpc]]
+        ],
+        variant: variant
+      ]
+    }
   end
 
   doctest Receipts
 
-  # These are integration tests that depend on the sokol chain being used.  sokol can be used with the following config
-  #
-  #     config :explorer, EthereumJSONRPC,
-  #       trace_url: "https://sokol-trace.poa.network",
-  #       url: "https://sokol.poa.network"
-  #
-  describe "fetch/1" do
-    test "with receipts and logs", %{variant: variant} do
-      case variant do
+  describe "fetch/2" do
+    test "with receipts and logs", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      case Keyword.fetch!(json_rpc_named_arguments, :variant) do
         EthereumJSONRPC.Geth ->
           assert {:ok,
                   %{
@@ -32,12 +48,15 @@ defmodule EthereumJSONRPC.ReceiptsTest do
                       }
                     ]
                   }} =
-                   Receipts.fetch([
-                     %{
-                       gas: 90000,
-                       hash: "0x360fb62cc817093e5624468735803ea39cad719e5c68ca322bae6ba4f520756f"
-                     }
-                   ])
+                   Receipts.fetch(
+                     [
+                       %{
+                         gas: 90000,
+                         hash: "0x360fb62cc817093e5624468735803ea39cad719e5c68ca322bae6ba4f520756f"
+                       }
+                     ],
+                     json_rpc_named_arguments
+                   )
 
         EthereumJSONRPC.Parity ->
           assert {:ok,
@@ -65,14 +84,17 @@ defmodule EthereumJSONRPC.ReceiptsTest do
                       }
                     ]
                   }} =
-                   Receipts.fetch([
-                     %{
-                       gas: 50451,
-                       hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5"
-                     }
-                   ])
+                   Receipts.fetch(
+                     [
+                       %{
+                         gas: 50451,
+                         hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5"
+                       }
+                     ],
+                     json_rpc_named_arguments
+                   )
 
-        _ ->
+        variant ->
           raise ArgumentError, "Unsupported variant (#{variant})"
       end
     end

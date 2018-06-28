@@ -16,10 +16,8 @@ defmodule EthereumJSONRPC do
   directly to the HTTP library (`HTTPoison`), which forwards the options down to `:hackney`.
   """
 
-  require Logger
-
   alias Explorer.Chain.Block
-  alias EthereumJSONRPC.{Blocks, Receipts, Transactions}
+  alias EthereumJSONRPC.{Blocks, Receipts, Transactions, Transport, Variant}
 
   @typedoc """
   Truncated 20-byte [KECCAK-256](https://en.wikipedia.org/wiki/SHA-3) hash encoded as a hexadecimal number in a
@@ -41,6 +39,18 @@ defmodule EthereumJSONRPC do
 
   """
   @type hash :: String.t()
+
+  @typedoc """
+  Named arguments to `json_rpc/2`.
+
+   * `:transport` - the `t:EthereumJSONRPC.Transport.t/0` callback module
+   * `:transport_options` - options passed to `c:EthereumJSONRPC.Transport.json_rpc/2`
+   * `:variant` - the `t:EthereumJSONRPC.Variant.t/0` callback module
+
+  """
+  @type json_rpc_named_arguments :: [
+          {:transport, Transport.t()} | {:transport_options, Transport.options()} | {:variant, Variant.t()}
+        ]
 
   @typedoc """
   8 byte [KECCAK-256](https://en.wikipedia.org/wiki/SHA-3) hash of the proof-of-work.
@@ -74,46 +84,12 @@ defmodule EthereumJSONRPC do
   @type timestamp :: String.t()
 
   @doc """
-  Fetches configuration for this module under `key`
-
-  Configuration can be set a compile time using `config`
-
-      config :ethereume_jsonrpc, key, value
-
-  Configuration can be set a runtime using `Application.put_env/3`
-
-      Application.put_env(:ethereume_jsonrpc, key, value)
-
-  """
-  def config(key) do
-    Application.fetch_env!(:ethereum_jsonrpc, key)
-  end
-
-  @doc """
-  Fetches the configured url for the specific `method` or the fallback `url`
-
-  Configuration for a specific `method` can be set in `method_to_url` `config`
-
-      config :ethereum_jsonrpc,
-        method_to_url: [
-          eth_getBalance: "method_to_url"
-        ]
-
-  The fallback 'url' MUST we set if not all methods have a url set.
-
-      config :ethereum_jsonrpc,
-        url:
-  """
-  def method_to_url(method) when is_atom(method) do
-    :ethereum_jsonrpc
-    |> Application.get_env(:method_to_url, [])
-    |> Keyword.get_lazy(method, fn -> config(:url) end)
-  end
-
-  @doc """
   Fetches balance for each address `hash` at the `block_number`
   """
-  @spec fetch_balances([%{required(:block_quantity) => quantity, required(:hash_data) => data()}]) ::
+  @spec fetch_balances(
+          [%{required(:block_quantity) => quantity, required(:hash_data) => data()}],
+          json_rpc_named_arguments
+        ) ::
           {:ok,
            [
              %{
@@ -123,13 +99,14 @@ defmodule EthereumJSONRPC do
              }
            ]}
           | {:error, reason :: term}
-  def fetch_balances(params_list) when is_list(params_list) do
+  def fetch_balances(params_list, json_rpc_named_arguments)
+      when is_list(params_list) and is_list(json_rpc_named_arguments) do
     id_to_params = id_to_params(params_list)
 
     with {:ok, responses} <-
            id_to_params
            |> get_balance_requests()
-           |> json_rpc(method_to_url(:eth_getBalance)) do
+           |> json_rpc(json_rpc_named_arguments) do
       get_balance_responses_to_addresses_params(responses, id_to_params)
     end
   end
@@ -139,10 +116,10 @@ defmodule EthereumJSONRPC do
 
   Transaction data is included for each block.
   """
-  def fetch_blocks_by_hash(block_hashes) do
+  def fetch_blocks_by_hash(block_hashes, json_rpc_named_arguments) do
     block_hashes
     |> get_block_by_hash_requests()
-    |> json_rpc(method_to_url(:eth_getBlockByHash))
+    |> json_rpc(json_rpc_named_arguments)
     |> handle_get_blocks()
     |> case do
       {:ok, _next, results} -> {:ok, results}
@@ -153,10 +130,10 @@ defmodule EthereumJSONRPC do
   @doc """
   Fetches blocks by block number range.
   """
-  def fetch_blocks_by_range(_first.._last = range) do
+  def fetch_blocks_by_range(_first.._last = range, json_rpc_named_arguments) do
     range
     |> get_block_by_number_requests()
-    |> json_rpc(method_to_url(:eth_getBlockByNumber))
+    |> json_rpc(json_rpc_named_arguments)
     |> handle_get_blocks()
   end
 
@@ -170,33 +147,40 @@ defmodule EthereumJSONRPC do
    * `{:error, reason}` - other JSONRPC error.
 
   """
-  @spec fetch_block_number_by_tag(tag()) :: {:ok, non_neg_integer()} | {:error, reason :: :invalid_tag | term()}
-  def fetch_block_number_by_tag(tag) when tag in ~w(earliest latest pending) do
+  @spec fetch_block_number_by_tag(tag(), json_rpc_named_arguments) ::
+          {:ok, non_neg_integer()} | {:error, reason :: :invalid_tag | term()}
+  def fetch_block_number_by_tag(tag, json_rpc_named_arguments) when tag in ~w(earliest latest pending) do
     tag
     |> get_block_by_tag_request()
-    |> json_rpc(method_to_url(:eth_getBlockByNumber))
+    |> json_rpc(json_rpc_named_arguments)
     |> handle_get_block_by_tag()
   end
 
   @doc """
   Fetches internal transactions from variant API.
   """
-  def fetch_internal_transactions(params_list) when is_list(params_list) do
-    config(:variant).fetch_internal_transactions(params_list)
+  def fetch_internal_transactions(params_list, json_rpc_named_arguments) when is_list(params_list) do
+    Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_internal_transactions(
+      params_list,
+      json_rpc_named_arguments
+    )
   end
 
   @doc """
   Fetches pending transactions from variant API.
   """
-  def fetch_pending_transactions do
-    config(:variant).fetch_pending_transactions()
+  def fetch_pending_transactions(json_rpc_named_arguments) do
+    Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_pending_transactions(json_rpc_named_arguments)
   end
 
-  @spec fetch_transaction_receipts([
-          %{required(:gas) => non_neg_integer(), required(:hash) => hash, optional(atom) => any}
-        ]) :: {:ok, %{logs: list(), receipts: list()}} | {:error, reason :: term}
-  def fetch_transaction_receipts(transactions_params) when is_list(transactions_params) do
-    Receipts.fetch(transactions_params)
+  @spec fetch_transaction_receipts(
+          [
+            %{required(:gas) => non_neg_integer(), required(:hash) => hash, optional(atom) => any}
+          ],
+          json_rpc_named_arguments
+        ) :: {:ok, %{logs: list(), receipts: list()}} | {:error, reason :: term}
+  def fetch_transaction_receipts(transactions_params, json_rpc_named_arguments) when is_list(transactions_params) do
+    Receipts.fetch(transactions_params, json_rpc_named_arguments)
   end
 
   @doc """
@@ -218,26 +202,15 @@ defmodule EthereumJSONRPC do
     * Handled response
     * `{:error, reason}` if POST failes
   """
-  def json_rpc(payload, url) when is_list(payload) do
-    chunked_json_rpc(url, [payload], config(:http), [])
-  end
+  @spec json_rpc(Transport.request(), json_rpc_named_arguments) ::
+          {:ok, Transport.result()} | {:error, reason :: term()}
+  @spec json_rpc(Transport.batch_request(), json_rpc_named_arguments) ::
+          {:ok, Transport.batch_response()} | {:error, reason :: term()}
+  def json_rpc(request, named_arguments) when (is_map(request) or is_list(request)) and is_list(named_arguments) do
+    transport = Keyword.fetch!(named_arguments, :transport)
+    transport_options = Keyword.fetch!(named_arguments, :transport_options)
 
-  def json_rpc(payload, url) do
-    json = encode_json(payload)
-
-    case post(url, json, config(:http)) do
-      {:ok, %HTTPoison.Response{body: body, status_code: status_code}} ->
-        with {:ok, json} <-
-               decode_json(
-                 request: [url: url, body: json],
-                 response: [status_code: status_code, body: body]
-               ) do
-          handle_response(json, status_code)
-        end
-
-      {:error, %HTTPoison.Error{reason: reason}} ->
-        {:error, reason}
-    end
+    transport.json_rpc(request, transport_options)
   end
 
   @doc """
@@ -267,14 +240,10 @@ defmodule EthereumJSONRPC do
   @doc """
   A request payload for a JSONRPC.
   """
-  @spec request(%{id: term, method: String.t(), params: list()}) :: %{String.t() => term}
-  def request(%{id: id, method: method, params: params}) do
-    %{
-      "id" => id,
-      "jsonrpc" => "2.0",
-      "method" => method,
-      "params" => params
-    }
+  @spec request(%{id: non_neg_integer(), method: String.t(), params: list()}) :: Transport.request()
+  def request(%{id: id, method: method, params: params} = map)
+      when is_integer(id) and is_binary(method) and is_list(params) do
+    Map.put(map, :jsonrpc, "2.0")
   end
 
   @doc """
@@ -284,52 +253,6 @@ defmodule EthereumJSONRPC do
     timestamp
     |> quantity_to_integer()
     |> Timex.from_unix()
-  end
-
-  defp chunked_json_rpc(_url, [], _options, decoded_response_bodies) when is_list(decoded_response_bodies) do
-    list =
-      decoded_response_bodies
-      |> Enum.reverse()
-      |> List.flatten()
-
-    {:ok, list}
-  end
-
-  defp chunked_json_rpc(url, [batch | tail] = chunks, options, decoded_response_bodies)
-       when is_list(batch) and is_list(tail) and is_list(decoded_response_bodies) do
-    json = encode_json(batch)
-
-    case post(url, json, options) do
-      {:ok, %HTTPoison.Response{status_code: 413} = response} ->
-        rechunk_json_rpc(url, chunks, options, response, decoded_response_bodies)
-
-      {:ok, %HTTPoison.Response{body: body, status_code: status_code}} ->
-        with {:ok, decoded_body} <-
-               decode_json(request: [url: url, body: json], response: [status_code: status_code, body: body]) do
-          chunked_json_rpc(url, tail, options, [decoded_body | decoded_response_bodies])
-        end
-
-      {:error, %HTTPoison.Error{reason: reason}} ->
-        {:error, reason}
-    end
-  end
-
-  defp rechunk_json_rpc(url, [batch | tail], options, response, decoded_response_bodies) do
-    case length(batch) do
-      # it can't be made any smaller
-      1 ->
-        Logger.error(fn ->
-          "413 Request Entity Too Large returned from single request batch.  Cannot shrink batch further."
-        end)
-
-        {:error, response}
-
-      batch_size ->
-        split_size = div(batch_size, 2)
-        {first_chunk, second_chunk} = Enum.split(batch, split_size)
-        new_chunks = [first_chunk, second_chunk | tail]
-        chunked_json_rpc(url, new_chunks, options, decoded_response_bodies)
-    end
   end
 
   defp get_balance_requests(id_to_params) when is_map(id_to_params) do
@@ -414,7 +337,7 @@ defmodule EthereumJSONRPC do
 
   defp get_block_by_tag_request(tag) do
     # eth_getBlockByNumber accepts either a number OR a tag
-    get_block_by_number_request(%{id: 1, tag: tag, transactions: :hashes})
+    get_block_by_number_request(%{id: 0, tag: tag, transactions: :hashes})
   end
 
   defp get_block_by_number_params(options) do
@@ -441,29 +364,6 @@ defmodule EthereumJSONRPC do
     case transactions do
       :full -> true
       :hashes -> false
-    end
-  end
-
-  defp encode_json(data), do: Jason.encode_to_iodata!(data)
-
-  defp decode_json(named_arguments) when is_list(named_arguments) do
-    response = Keyword.fetch!(named_arguments, :response)
-    response_body = Keyword.fetch!(response, :body)
-
-    with {:error, _} <- Jason.decode(response_body) do
-      case Keyword.fetch!(response, :status_code) do
-        # CloudFlare protected server return HTML errors for 502, so the JSON decode will fail
-        502 ->
-          request_url =
-            named_arguments
-            |> Keyword.fetch!(:request)
-            |> Keyword.fetch!(:url)
-
-          {:error, {:bad_gateway, request_url}}
-
-        _ ->
-          raise EthereumJSONRPC.DecodeError, named_arguments
-      end
     end
   end
 
@@ -494,19 +394,4 @@ defmodule EthereumJSONRPC do
 
   defp handle_get_block_by_tag({:error, %{"code" => -32602}}), do: {:error, :invalid_tag}
   defp handle_get_block_by_tag({:error, _} = error), do: error
-
-  defp handle_response(resp, 200) do
-    case resp do
-      %{"error" => error} -> {:error, error}
-      %{"result" => result} -> {:ok, result}
-    end
-  end
-
-  defp handle_response(resp, _status) do
-    {:error, resp}
-  end
-
-  defp post(url, json, options) do
-    HTTPoison.post(url, json, [{"Content-Type", "application/json"}], options)
-  end
 end

@@ -9,10 +9,12 @@ defmodule Indexer.Application do
 
   @impl Application
   def start(_type, _args) do
+    json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
+
     children = [
       {Task.Supervisor, name: Indexer.TaskSupervisor},
-      {AddressBalanceFetcher, name: AddressBalanceFetcher},
-      {PendingTransactionFetcher, name: PendingTransactionFetcher},
+      {AddressBalanceFetcher, name: AddressBalanceFetcher, json_rpc_named_arguments: json_rpc_named_arguments},
+      {PendingTransactionFetcher, name: PendingTransactionFetcher, json_rpc_named_arguments: json_rpc_named_arguments},
       {InternalTransactionFetcher, name: InternalTransactionFetcher},
       {BlockFetcher, []}
     ]

@@ -32,12 +32,24 @@ defmodule Indexer.AddressBalanceFetcher do
 
   @doc false
   def child_spec(provided_opts) do
-    opts = Keyword.merge(@defaults, provided_opts)
+    {state, mergable_opts} = Keyword.pop(provided_opts, :json_rpc_named_arguments)
+
+    unless state do
+      raise ArgumentError,
+            ":json_rpc_named_arguments must be provided to `#{__MODULE__}.child_spec " <>
+              "to allow for json_rpc calls when running."
+    end
+
+    opts =
+      @defaults
+      |> Keyword.merge(mergable_opts)
+      |> Keyword.put(:state, state)
+
     Supervisor.child_spec({BufferedTask, {__MODULE__, opts}}, id: __MODULE__)
   end
 
   @impl BufferedTask
-  def init(initial, reducer) do
+  def init(initial, reducer, _) do
     {:ok, final} =
       Chain.stream_unfetched_addresses(initial, fn address_fields, acc ->
         address_fields
@@ -49,12 +61,12 @@ defmodule Indexer.AddressBalanceFetcher do
   end
 
   @impl BufferedTask
-  def run(params_list, _retries) do
+  def run(params_list, _retries, json_rpc_named_arguments) do
     latest_params_list = latest_params_list(params_list)
 
     Indexer.debug(fn -> "fetching #{length(latest_params_list)} balances" end)
 
-    case EthereumJSONRPC.fetch_balances(latest_params_list) do
+    case EthereumJSONRPC.fetch_balances(latest_params_list, json_rpc_named_arguments) do
       {:ok, addresses_params} ->
         {:ok, _} = Chain.update_balances(addresses_params)
         :ok

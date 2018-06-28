@@ -245,7 +245,11 @@ defmodule EthereumJSONRPC.Parity.Trace do
 
   def elixir_to_params(%{"type" => "suicide" = type} = elixir) do
     %{
-      "action" => %{"address" => from_address_hash, "balance" => value, "refundAddress" => to_address_hash},
+      "action" => %{
+        "address" => from_address_hash,
+        "balance" => value,
+        "refundAddress" => to_address_hash
+      },
       "blockNumber" => block_number,
       "index" => index,
       "traceAddress" => trace_address,
@@ -406,23 +410,28 @@ defmodule EthereumJSONRPC.Parity.Trace do
 
   """
 
-  def to_elixir(%{"blockNumber" => _, "index" => _, "transactionHash" => _} = trace) when is_map(trace) do
+  def to_elixir(%{"blockNumber" => _, "index" => _, "transactionHash" => _} = trace)
+      when is_map(trace) do
     Enum.into(trace, %{}, &entry_to_elixir/1)
   end
 
   def to_elixir(_) do
-    raise ArgumentError, ~S|Caller must `Map.put/2` `"blockNumber"`, `"index"`, and `"transactionHash"` in trace|
+    raise ArgumentError,
+          ~S|Caller must `Map.put/2` `"blockNumber"`, `"index"`, and `"transactionHash"` in trace|
   end
 
   # subtraces is an actual integer in JSON and not hex-encoded
   # traceAddress is a list of actual integers, not a list of hex-encoded
-  defp entry_to_elixir({key, _} = entry) when key in ~w(subtraces traceAddress transactionHash type output), do: entry
+  defp entry_to_elixir({key, _} = entry)
+       when key in ~w(subtraces traceAddress transactionHash type output),
+       do: entry
 
   defp entry_to_elixir({"action" = key, action}) do
     {key, Action.to_elixir(action)}
   end
 
-  defp entry_to_elixir({"blockNumber", block_number} = entry) when is_integer(block_number), do: entry
+  defp entry_to_elixir({"blockNumber", block_number} = entry) when is_integer(block_number),
+    do: entry
 
   defp entry_to_elixir({"error", reason} = entry) when is_binary(reason), do: entry
 
@@ -432,7 +441,9 @@ defmodule EthereumJSONRPC.Parity.Trace do
     {key, Result.to_elixir(result)}
   end
 
-  defp put_call_error_or_result(params, %{"result" => %{"gasUsed" => gas_used, "output" => output}}) do
+  defp put_call_error_or_result(params, %{
+         "result" => %{"gasUsed" => gas_used, "output" => output}
+       }) do
     Map.merge(params, %{gas_used: gas_used, output: output})
   end
 
@@ -441,7 +452,11 @@ defmodule EthereumJSONRPC.Parity.Trace do
   end
 
   defp put_create_error_or_result(params, %{
-         "result" => %{"address" => created_contract_address_hash, "code" => code, "gasUsed" => gas_used}
+         "result" => %{
+           "address" => created_contract_address_hash,
+           "code" => code,
+           "gasUsed" => gas_used
+         }
        }) do
     Map.merge(params, %{
       created_contract_code: code,

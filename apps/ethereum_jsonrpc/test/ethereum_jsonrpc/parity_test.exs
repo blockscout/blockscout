@@ -1,15 +1,36 @@
 defmodule EthereumJSONRPC.ParityTest do
   use ExUnit.Case, async: true
 
+  @moduletag :no_geth
+
+  setup do
+    %{
+      json_rpc_named_arguments: [
+        transport: EthereumJSONRPC.HTTP,
+        transport_options: [
+          http: EthereumJSONRPC.HTTP.HTTPoison,
+          url: "https://sokol-trace.poa.network",
+          http_options: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :ethereum_jsonrpc]]
+        ]
+      ]
+    }
+  end
+
+  doctest EthereumJSONRPC.Parity
+
   describe "fetch_internal_transactions/1" do
-    @tag :no_geth
-    test "with all valid transaction_params returns {:ok, transactions_params}" do
-      assert EthereumJSONRPC.Parity.fetch_internal_transactions([
-               %{
-                 block_number: 1,
-                 hash_data: "0x0fa6f723216dba694337f9bb37d8870725655bdf2573526a39454685659e39b1"
-               }
-             ]) == {
+    test "with all valid transaction_params returns {:ok, transactions_params}", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      assert EthereumJSONRPC.Parity.fetch_internal_transactions(
+               [
+                 %{
+                   block_number: 1,
+                   hash_data: "0x0fa6f723216dba694337f9bb37d8870725655bdf2573526a39454685659e39b1"
+                 }
+               ],
+               json_rpc_named_arguments
+             ) == {
                :ok,
                [
                  %{
@@ -32,14 +53,18 @@ defmodule EthereumJSONRPC.ParityTest do
              }
     end
 
-    @tag :no_geth
-    test "with all invalid transaction_params returns {:error, reasons}" do
-      assert EthereumJSONRPC.Parity.fetch_internal_transactions([
-               %{
-                 block_number: 1,
-                 hash_data: "0x0000000000000000000000000000000000000000000000000000000000000001"
-               }
-             ]) ==
+    test "with all invalid transaction_params returns {:error, reasons}", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      assert EthereumJSONRPC.Parity.fetch_internal_transactions(
+               [
+                 %{
+                   block_number: 1,
+                   hash_data: "0x0000000000000000000000000000000000000000000000000000000000000001"
+                 }
+               ],
+               json_rpc_named_arguments
+             ) ==
                {:error,
                 [
                   %{
@@ -53,35 +78,39 @@ defmodule EthereumJSONRPC.ParityTest do
                 ]}
     end
 
-    @tag :no_geth
-    test "with a mix of valid and invalid transaction_params returns {:error, reasons}" do
-      assert EthereumJSONRPC.Parity.fetch_internal_transactions([
-               # start with :ok
-               %{
-                 block_number: 1,
-                 hash_data: "0x0fa6f723216dba694337f9bb37d8870725655bdf2573526a39454685659e39b1"
-               },
-               # :ok, :ok clause
-               %{
-                 block_number: 34,
-                 hash_data: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6"
-               },
-               # :ok, :error clause
-               %{
-                 block_number: 1,
-                 hash_data: "0x0000000000000000000000000000000000000000000000000000000000000001"
-               },
-               # :error, :ok clause
-               %{
-                 block_number: 35,
-                 hash_data: "0x6b80a90c958fb5791a070929379ed6eb7a33ecdf9f9cafcada2f6803b3f25ec3"
-               },
-               # :error, :error clause
-               %{
-                 block_number: 2,
-                 hash_data: "0x0000000000000000000000000000000000000000000000000000000000000002"
-               }
-             ]) ==
+    test "with a mix of valid and invalid transaction_params returns {:error, reasons}", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      assert EthereumJSONRPC.Parity.fetch_internal_transactions(
+               [
+                 # start with :ok
+                 %{
+                   block_number: 1,
+                   hash_data: "0x0fa6f723216dba694337f9bb37d8870725655bdf2573526a39454685659e39b1"
+                 },
+                 # :ok, :ok clause
+                 %{
+                   block_number: 34,
+                   hash_data: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6"
+                 },
+                 # :ok, :error clause
+                 %{
+                   block_number: 1,
+                   hash_data: "0x0000000000000000000000000000000000000000000000000000000000000001"
+                 },
+                 # :error, :ok clause
+                 %{
+                   block_number: 35,
+                   hash_data: "0x6b80a90c958fb5791a070929379ed6eb7a33ecdf9f9cafcada2f6803b3f25ec3"
+                 },
+                 # :error, :error clause
+                 %{
+                   block_number: 2,
+                   hash_data: "0x0000000000000000000000000000000000000000000000000000000000000002"
+                 }
+               ],
+               json_rpc_named_arguments
+             ) ==
                {:error,
                 [
                   %{

@@ -38,12 +38,34 @@ defmodule Indexer.BlockFetcherTest do
   @first_full_block_number 37
 
   setup do
-    %{variant: EthereumJSONRPC.config(:variant)}
+    {variant, url} =
+      case System.get_env("ETHEREUM_JSONRPC_VARIANT") || "parity" do
+        "geth" ->
+          {EthereumJSONRPC.Geth, "https://mainnet.infura.io/8lTvJTKmHPCHazkneJsY"}
+
+        "parity" ->
+          {EthereumJSONRPC.Parity, "https://sokol-trace.poa.network"}
+
+        variant_name ->
+          raise ArgumentError, "Unsupported variant name (#{variant_name})"
+      end
+
+    %{
+      json_rpc_named_arguments: [
+        transport: EthereumJSONRPC.HTTP,
+        transport_options: [
+          http: EthereumJSONRPC.HTTP.HTTPoison,
+          url: url,
+          http_options: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :ethereum_jsonrpc]]
+        ],
+        variant: variant
+      ]
+    }
   end
 
   describe "start_link/1" do
-    test "starts fetching blocks from latest and goes down" do
-      {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest")
+    test "starts fetching blocks from latest and goes down", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
 
       default_blocks_batch_size = BlockFetcher.default_blocks_batch_size()
 
@@ -52,8 +74,8 @@ defmodule Indexer.BlockFetcherTest do
       assert Repo.aggregate(Block, :count, :hash) == 0
 
       start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-      AddressBalanceFetcherCase.start_supervised!()
-      InternalTransactionFetcherCase.start_supervised!()
+      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       start_supervised!(BlockFetcher)
 
       wait_for_results(fn ->
@@ -93,10 +115,10 @@ defmodule Indexer.BlockFetcherTest do
 
     @tag :capture_log
     @heading "persisted counts"
-    test "without debug_logs", %{state: state} do
+    test "without debug_logs", %{json_rpc_named_arguments: json_rpc_named_arguments, state: state} do
       start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-      AddressBalanceFetcherCase.start_supervised!()
-      InternalTransactionFetcherCase.start_supervised!()
+      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       wait_for_tasks(InternalTransactionFetcher)
       wait_for_tasks(AddressBalanceFetcher)
@@ -108,10 +130,10 @@ defmodule Indexer.BlockFetcherTest do
     end
 
     @tag :capture_log
-    test "with debug_logs", %{state: state} do
+    test "with debug_logs", %{json_rpc_named_arguments: json_rpc_named_arguments, state: state} do
       start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-      AddressBalanceFetcherCase.start_supervised!()
-      InternalTransactionFetcherCase.start_supervised!()
+      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       wait_for_tasks(InternalTransactionFetcher)
       wait_for_tasks(AddressBalanceFetcher)
@@ -133,20 +155,23 @@ defmodule Indexer.BlockFetcherTest do
   describe "import_range/3" do
     setup :state
 
-    setup do
+    setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
       start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-      AddressBalanceFetcherCase.start_supervised!()
-      InternalTransactionFetcherCase.start_supervised!()
+      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       {:ok, state} = BlockFetcher.init([])
 
       %{state: state}
     end
 
-    test "with single element range that is valid imports one block", %{state: state, variant: variant} do
+    test "with single element range that is valid imports one block", %{
+      json_rpc_named_arguments: json_rpc_named_arguments,
+      state: state
+    } do
       {:ok, sequence} = Sequence.start_link(first: 0, step: 1)
 
       %{address_hash: address_hash, block_hash: block_hash} =
-        case variant do
+        case Keyword.fetch!(json_rpc_named_arguments, :variant) do
           EthereumJSONRPC.Geth ->
             %{
               address_hash: %Explorer.Chain.Hash{
@@ -175,7 +200,7 @@ defmodule Indexer.BlockFetcherTest do
               }
             }
 
-          _ ->
+          variant ->
             raise ArgumenrError, "Unsupported variant (#{variant})"
         end
 
@@ -204,10 +229,13 @@ defmodule Indexer.BlockFetcherTest do
       )
     end
 
-    test "can import range with all synchronous imported schemas", %{state: state, variant: variant} do
+    test "can import range with all synchronous imported schemas", %{
+      json_rpc_named_arguments: json_rpc_named_arguments,
+      state: state
+    } do
       {:ok, sequence} = Sequence.start_link(first: 0, step: 1)
 
-      case variant do
+      case Keyword.fetch!(json_rpc_named_arguments, :variant) do
         EthereumJSONRPC.Geth ->
           block_number = 48230
 
@@ -364,7 +392,7 @@ defmodule Indexer.BlockFetcherTest do
           assert second_address.fetched_balance == %Wei{value: Decimal.new(252_460_837_000_000_000_000_000_000)}
           assert second_address.fetched_balance_block_number == @first_full_block_number
 
-        _ ->
+        variant ->
           raise ArgumentError, "Unsupport variant (#{variant})"
       end
     end

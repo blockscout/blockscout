@@ -3,7 +3,7 @@ defmodule EthereumJSONRPC.Parity do
   Ethereum JSONRPC methods that are only supported by [Parity](https://wiki.parity.io/).
   """
 
-  import EthereumJSONRPC, only: [id_to_params: 1, method_to_url: 1, json_rpc: 2, request: 1]
+  import EthereumJSONRPC, only: [id_to_params: 1, json_rpc: 2, request: 1]
 
   alias EthereumJSONRPC.Parity.Traces
   alias EthereumJSONRPC.{Transaction, Transactions}
@@ -14,13 +14,13 @@ defmodule EthereumJSONRPC.Parity do
   Fetches the `t:Explorer.Chain.InternalTransaction.changeset/2` params from the Parity trace URL.
   """
   @impl EthereumJSONRPC.Variant
-  def fetch_internal_transactions(transactions_params) when is_list(transactions_params) do
+  def fetch_internal_transactions(transactions_params, json_rpc_named_arguments) when is_list(transactions_params) do
     id_to_params = id_to_params(transactions_params)
 
     with {:ok, responses} <-
            id_to_params
            |> trace_replay_transaction_requests()
-           |> json_rpc(method_to_url(:trace_replayTransaction)) do
+           |> json_rpc(json_rpc_named_arguments) do
       trace_replay_transaction_responses_to_internal_transactions_params(responses, id_to_params)
     end
   end
@@ -32,12 +32,13 @@ defmodule EthereumJSONRPC.Parity do
   on the transactions that each node has seen and how each node prioritizes collating transactions into the next block.
   """
   @impl EthereumJSONRPC.Variant
-  @spec fetch_pending_transactions() :: {:ok, [Transaction.params()]} | {:error, reason :: term}
-  def fetch_pending_transactions do
+  @spec fetch_pending_transactions(EthereumJSONRPC.json_rpc_named_arguments()) ::
+          {:ok, [Transaction.params()]} | {:error, reason :: term}
+  def fetch_pending_transactions(json_rpc_named_arguments) do
     with {:ok, transactions} <-
            %{id: 1, method: "parity_pendingTransactions", params: []}
            |> request()
-           |> json_rpc(method_to_url(:parity_pendingTransactions)) do
+           |> json_rpc(json_rpc_named_arguments) do
       transactions_params =
         transactions
         |> Transactions.to_elixir()

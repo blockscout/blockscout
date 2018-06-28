@@ -44,7 +44,9 @@ defmodule EthereumJSONRPC.Parity.Trace.Action do
     Enum.into(action, %{}, &entry_to_elixir/1)
   end
 
-  defp entry_to_elixir({key, _} = entry) when key in ~w(address callType from init input refundAddress to), do: entry
+  defp entry_to_elixir({key, _} = entry)
+       when key in ~w(address callType from init input refundAddress to),
+       do: entry
 
   defp entry_to_elixir({key, quantity}) when key in ~w(balance gas value) do
     {key, quantity_to_integer(quantity)}

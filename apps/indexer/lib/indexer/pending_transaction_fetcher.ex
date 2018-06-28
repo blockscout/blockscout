@@ -9,7 +9,7 @@ defmodule Indexer.PendingTransactionFetcher do
 
   require Logger
 
-  import EthereumJSONRPC, only: [fetch_pending_transactions: 0]
+  import EthereumJSONRPC, only: [fetch_pending_transactions: 1]
 
   alias Explorer.Chain
   alias Indexer.{AddressExtraction, PendingTransactionFetcher}
@@ -18,6 +18,7 @@ defmodule Indexer.PendingTransactionFetcher do
   @default_interval 1_000
 
   defstruct interval: @default_interval,
+            json_rpc_named_arguments: [],
             task_ref: nil,
             task_pid: nil
 
@@ -35,6 +36,8 @@ defmodule Indexer.PendingTransactionFetcher do
     * `:pending_transaction_interval` - the millisecond time between checking for pending transactions.  Defaults to
       `#{@default_interval}` milliseconds.
     * `:spawn_opt` - if present, its value is passed as options to the underlying process as in `Process.spawn/4`
+    * `:json_rpc_named_arguments` - `t:EthereumJSONRPC.json_rpc_named_arguments/0` passed to
+      `EthereumJSONRPC.json_rpc/2`.
     * `:timeout` - if present, the server is allowed to spend the given number of milliseconds initializing or it will
       be terminated and the start function will return `{:error, :timeout}`
 
@@ -51,7 +54,10 @@ defmodule Indexer.PendingTransactionFetcher do
       |> Keyword.merge(opts)
 
     state =
-      %PendingTransactionFetcher{interval: opts[:pending_transaction_interval] || @default_interval}
+      %PendingTransactionFetcher{
+        json_rpc_named_arguments: Keyword.fetch!(opts, :json_rpc_named_arguments),
+        interval: opts[:pending_transaction_interval] || @default_interval
+      }
       |> schedule_fetch()
 
     {:ok, state}
@@ -84,8 +90,8 @@ defmodule Indexer.PendingTransactionFetcher do
     state
   end
 
-  defp task(%PendingTransactionFetcher{} = _state) do
-    case fetch_pending_transactions() do
+  defp task(%PendingTransactionFetcher{json_rpc_named_arguments: json_rpc_named_arguments} = _state) do
+    case fetch_pending_transactions(json_rpc_named_arguments) do
       {:ok, transactions_params} ->
         addresses_params = AddressExtraction.extract_addresses(%{transactions: transactions_params}, pending: true)
 

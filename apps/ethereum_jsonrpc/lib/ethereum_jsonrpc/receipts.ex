@@ -5,7 +5,7 @@ defmodule EthereumJSONRPC.Receipts do
   requests.
   """
 
-  import EthereumJSONRPC, only: [config: 1, json_rpc: 2]
+  import EthereumJSONRPC, only: [json_rpc: 2, request: 1]
 
   alias EthereumJSONRPC.{Logs, Receipt}
 
@@ -111,14 +111,17 @@ defmodule EthereumJSONRPC.Receipts do
     Enum.map(elixir, &Receipt.elixir_to_params/1)
   end
 
-  @spec fetch([
-          %{
-            required(:gas) => non_neg_integer(),
-            required(:hash) => EthereumJSONRPC.hash(),
-            optional(atom) => any
-          }
-        ]) :: {:ok, %{logs: list(), receipts: list()}} | {:error, reason :: term}
-  def fetch(transactions_params) when is_list(transactions_params) do
+  @spec fetch(
+          [
+            %{
+              required(:gas) => non_neg_integer(),
+              required(:hash) => EthereumJSONRPC.hash(),
+              optional(atom) => any
+            }
+          ],
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: {:ok, %{logs: list(), receipts: list()}} | {:error, reason :: term()}
+  def fetch(transactions_params, json_rpc_named_arguments) when is_list(transactions_params) do
     {requests, id_to_transaction_params} =
       transactions_params
       |> Stream.with_index()
@@ -129,23 +132,17 @@ defmodule EthereumJSONRPC.Receipts do
         {requests, id_to_transaction_params}
       end)
 
-    requests
-    |> json_rpc(config(:url))
-    |> case do
-      {:ok, responses} ->
-        elixir_receipts =
-          responses
-          |> responses_to_receipts(id_to_transaction_params)
-          |> to_elixir()
+    with {:ok, responses} <- json_rpc(requests, json_rpc_named_arguments) do
+      elixir_receipts =
+        responses
+        |> responses_to_receipts(id_to_transaction_params)
+        |> to_elixir()
 
-        elixir_logs = elixir_to_logs(elixir_receipts)
-        receipts = elixir_to_params(elixir_receipts)
-        logs = Logs.elixir_to_params(elixir_logs)
+      elixir_logs = elixir_to_logs(elixir_receipts)
+      receipts = elixir_to_params(elixir_receipts)
+      logs = Logs.elixir_to_params(elixir_logs)
 
-        {:ok, %{logs: logs, receipts: receipts}}
-
-      {:error, _reason} = err ->
-        err
+      {:ok, %{logs: logs, receipts: receipts}}
     end
   end
 
@@ -216,12 +213,11 @@ defmodule EthereumJSONRPC.Receipts do
   end
 
   defp request(id, transaction_hash) when is_integer(id) and is_binary(transaction_hash) do
-    %{
-      "id" => id,
-      "jsonrpc" => "2.0",
-      "method" => "eth_getTransactionReceipt",
-      "params" => [transaction_hash]
-    }
+    request(%{
+      id: id,
+      method: "eth_getTransactionReceipt",
+      params: [transaction_hash]
+    })
   end
 
   defp response_to_receipt(%{"result" => nil}, _), do: %{}
