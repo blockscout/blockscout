@@ -1,5 +1,5 @@
 <section>
-  <div class="row mb-3">
+  <!-- <div class="row mb-3">
     <div class="col-md-2 col-lg-1 order-last order-sm-first">
       <div class="card mt-3 mt-sm-0">
         <div class="card-body px-2 py-2">
@@ -7,19 +7,57 @@
         </div>
       </div>
     </div>
-    <div class="col-sm-10 align-self-center">
-      <h1><%= address_title(@address) %></h1>
-      <p class="mb-0" data-test="address_detail_hash"><%= @address %></p>
-    </div>
-  </div>
+  </div> -->
 
-  <div class="card mb-3">
-    <div class="card-body">
-      <div class="row">
-        <div class="col-sm-6">
-          <table class="table table-font table-responsive-sm table-horizontal" data-selector='overview'>
-            <%= render "_values.html", address: @address, exchange_rate: @exchange_rate, transaction_count: @transaction_count %>
-          </table>
+  <div class="row" data-selector='overview'>
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <div class="card-links">
+            <a href="" target="_blank" data-toggle="tooltip" data-placement="top" title="<%= gettext("Copy Address") %>">
+              <i class="fas fa-clone"></i>
+            </a>
+            <a href="" target="_blank" data-toggle="tooltip" data-placement="top" title="<%= gettext("QR Code") %>">
+              <i class="fas fa-qrcode"></i>
+            </a>
+            <a href="" target="_blank" data-toggle="tooltip" data-placement="top" title="<%= gettext("Info") %>">
+              <i class="fas fa-info"></i>
+            </a>
+          </div>
+          <h1 class="mb-4"><%= address_title(@address) %></h1>
+          <p class="mb-0" data-test="address_detail_hash"><%= @address %></p>
+          <div class="d-flex flex-row justify-content-start card-muted">
+            <span class="mr-4" data-test="transaction_count"><%= Cldr.Number.to_string!(@transaction_count) %> <%= gettext "Transactions" %></span>
+            <span class="mr-4">0 Mined</span>
+            <span class="">0 Uncles</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card card-balance">
+        <div class="card-body">
+          <h1 class="mb-4">Balance</h1>
+          <span></span>
+          <div class="text-right">
+            <div><%= balance(@address) %></div>
+            <span><%= formatted_usd(@address, @exchange_rate) %></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card">
+        <div class="card-body">
+          <div class="card-links">
+            <a href="" data-toggle="tooltip" data-placement="top" title="<%= gettext("Info") %>">
+              <i class="fas fa-list"></i>
+            </a>
+          </div>
+          <h1 class="mb-4">Token Holdings</h1>
+          <div class="text-right">
+            <%= formatted_usd(@address, @exchange_rate) %>
+          </div>
         </div>
       </div>
     </div>
