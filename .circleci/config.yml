@@ -257,6 +257,21 @@ jobs:
 
       - store_artifacts:
           path: apps/explorer_web/priv/gettext
+  jest:
+    docker:
+      # Ensure .tool-versions matches
+      - image: circleci/node:9.10.1
+
+    working_directory: ~/app
+
+    steps:
+      - attach_workspace:
+          at: .
+
+      - run:
+          name: Jest
+          command: ./node_modules/.bin/jest
+          working_directory: apps/explorer_web/assets
   sobelow:
     docker:
       # Ensure .tool-versions matches
@@ -339,6 +354,7 @@ workflows:
             - check_formatted
             - credo
             - eslint
+            - jest
             - sobelow
             - test
       - dialyzer:
@@ -348,6 +364,9 @@ workflows:
           requires:
             - build
       - gettext:
+          requires:
+            - build
+      - jest:
           requires:
             - build
       - sobelow:

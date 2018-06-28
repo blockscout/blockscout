@@ -2,7 +2,7 @@ import Path from 'path-parser'
 import URI from 'urijs'
 import humps from 'humps'
 
-const { locale } = Path.createPath('/:locale').partialTest(window.location.pathname)
+const { locale } = Path.createPath('/:locale').partialTest(window.location.pathname) || { locale: 'en' }
 
 export default {
   locale,

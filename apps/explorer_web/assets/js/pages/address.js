@@ -8,7 +8,7 @@ import { batchChannel, initRedux } from '../utils'
 
 const BATCH_THRESHOLD = 10
 
-const initialState = {
+export const initialState = {
   addressHash: null,
   filter: null,
   beyondPageOne: null,

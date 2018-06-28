@@ -126,6 +126,9 @@ To monitor build status, configure your local [CCMenu](http://ccmenu.org/) with 
   7. Lint the JavaScript code.  
   `cd apps/explorer_web/assets && npm run eslint; cd -`
 
+  8. Test the JavaScript code.  
+  `cd apps/explorer_web/assets && npm run test; cd -`
+
 
 ### API Documentation
 
