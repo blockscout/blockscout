@@ -1,4 +1,4 @@
-<section class="container-fluid">
+<section class="container">
 
   <%= render ExplorerWeb.AddressView, "overview.html", assigns %>
 
