@@ -76,49 +76,11 @@
           </div>
         </div>
         <%= if Enum.count(@internal_transactions) > 0 do %>
-          <table class="table table-responsive-sm table-font">
-            <thead>
-              <th><%= gettext "Parent Tx Hash" %></th>
-              <th><%= gettext "Block" %></th>
-              <th><%= gettext "Age" %></th>
-              <th><%= gettext "From" %></th>
-              <th><%= gettext "To" %></th>
-              <th><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
-            </thead>
-            <%= for internal_transaction <- @internal_transactions do %>
-              <tgroup>
-                <tr data-test="internal_transaction">
-                  <td>
-                    <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: internal_transaction.transaction_hash %>
-                  </td>
-                  <td>
-                    <%= link(internal_transaction.transaction.block,
-                      to: block_path(@conn, :show, @conn.assigns.locale, internal_transaction.transaction.block)
-                      ) %>
-                  </td>
-                  <td data-from-now="<%= internal_transaction.transaction.block.timestamp %>"></td>
-                  <td>
-                    <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(internal_transaction.from_address), address_hash: internal_transaction.from_address_hash %>
-                  </td>
-                  <td>
-                    <%= if ExplorerWeb.InternalTransactionView.create?(internal_transaction) do %>
-                      <i class="fas fa-plus-square"></i>
-                      <%= link(
-                        gettext("Contract Creation"),
-                        class: "transaction__link",
-                        "data-address-hash": internal_transaction.created_contract_address_hash,
-                        to: address_path(ExplorerWeb.Endpoint, :show, @locale, internal_transaction.created_contract_address_hash),
-                        title: internal_transaction.created_contract_address_hash
-                      ) %>
-                    <% else %>
-                      <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(internal_transaction.to_address), address_hash: internal_transaction.to_address_hash %>
-                    <% end %>
-                  </td>
-                  <td><%= ExplorerWeb.TransactionView.value(internal_transaction, include_label: false) %></td>
-                </tr>
-              </tgroup>
-            <% end %>
-          </table>
+          <h2 class="card-title"><%= gettext "Internal Transactions" %></h2>
+
+          <%= for internal_transaction <- @internal_transactions do %>
+            <%= render "_transaction.html", locale: @locale, internal_transaction: internal_transaction %>
+          <% end %>
         <% else %>
           <p><%= gettext "There are no Internal Transactions" %></p>
         <% end %>

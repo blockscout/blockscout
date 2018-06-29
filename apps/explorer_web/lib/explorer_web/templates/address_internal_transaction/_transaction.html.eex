@@ -1,0 +1,24 @@
+<div class="tile <%= ExplorerWeb.TransactionView.tile_class(@transaction) %> fade-in">
+  <div class="row">
+    <div class="col-md-2 d-flex align-items-center justify-content-start justify-content-lg-center  tile-label">
+      <%= ExplorerWeb.TransactionView.transaction_display_type(@internal_transaction) %>
+    </div>
+    <div class="col-md-7 col-lg-8 d-flex flex-column">
+      <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction: @internal_transaction %>
+      <span>
+        <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: @internal_transaction.from_address %>
+        &rarr;
+        <%= render ExplorerWeb.AddressView, "_link.html", Keyword.merge(ExplorerWeb.TransactionView.display_to_address(@internal_transaction), locale: @locale) %>
+      </span>
+      <%= ExplorerWeb.TransactionView.value(@internal_transaction, include_label: false) %> POA
+    </div>
+    <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column justify-content-start justify-content-md-end align-items-end text-md-right">
+      <span class="badge badge-success tile-badge">IN</span>
+      <span class="mr-2 mr-sm-0" data-from-now="<%= @internal_transaction.block.timestamp %>"></span>
+      <%= link(
+        gettext("Block #") <> "#{@internal_transaction.block.number}",
+        to: block_path(ExplorerWeb.Endpoint, :show, @locale, @internal_transaction.block)
+      ) %>
+    </div>
+  </div>
+</div>

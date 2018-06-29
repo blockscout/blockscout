@@ -14,16 +14,11 @@
                 <i class="fas fa-qrcode"></i>
               </button>
             </span>
-            <button type="button" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Info") %>" aria-label="Info">
-              <i class="fas fa-info"></i>
-            </button>
           </div>
           <h1 class="card-title"><%= address_title(@address) %> Details </h1>
           <h3 class="" data-test="address_detail_hash"><%= @address %></h3>
           <div class="d-flex flex-row justify-content-start text-muted">
             <span class="mr-4" data-test="transaction_count"><%= Cldr.Number.to_string!(@transaction_count) %> <%= gettext "Transactions" %></span>
-            <span class="mr-4">0 Mined</span>
-            <span class="">0 Uncles</span>
           </div>
         </div>
       </div>
@@ -43,11 +38,6 @@
     <div class="col-md-3">
       <div class="card">
         <div class="card-body">
-          <div class="icon-links float-right">
-            <a href="" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("List") %>">
-              <i class="fas fa-list"></i>
-            </a>
-          </div>
           <h1 class="card-title">Token Holdings</h1>
           <div class="text-right mb-4">
             <h3><%= formatted_usd(@address, @exchange_rate) %></h3>
