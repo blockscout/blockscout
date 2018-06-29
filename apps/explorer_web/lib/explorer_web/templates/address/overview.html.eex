@@ -1,14 +1,4 @@
 <section>
-  <!-- <div class="row mb-3">
-    <div class="col-md-2 col-lg-1 order-last order-sm-first">
-      <div class="card mt-3 mt-sm-0">
-        <div class="card-body px-2 py-2">
-          <img src="data:image/png;base64, <%= qr_code(@address) %>" class="qr-code" alt="qr_code" title="<%= @address %>" />
-        </div>
-      </div>
-    </div>
-  </div> -->
-
   <div class="row" data-selector='overview'>
     <div class="col-md-6">
       <div class="card">
