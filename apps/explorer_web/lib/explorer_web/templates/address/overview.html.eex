@@ -13,14 +13,14 @@
     <div class="col-md-6">
       <div class="card">
         <div class="card-body">
-          <div class="card-links">
-            <a href="" target="_blank" data-toggle="tooltip" data-placement="top" title="<%= gettext("Copy Address") %>">
+          <div class="icon-links float-right">
+            <a href="" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Copy Address") %>">
               <i class="fas fa-clone"></i>
             </a>
-            <a href="" target="_blank" data-toggle="tooltip" data-placement="top" title="<%= gettext("QR Code") %>">
+            <a href="" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("QR Code") %>">
               <i class="fas fa-qrcode"></i>
             </a>
-            <a href="" target="_blank" data-toggle="tooltip" data-placement="top" title="<%= gettext("Info") %>">
+            <a href="" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Info") %>">
               <i class="fas fa-info"></i>
             </a>
           </div>
@@ -49,8 +49,8 @@
     <div class="col-md-3">
       <div class="card">
         <div class="card-body">
-          <div class="card-links">
-            <a href="" data-toggle="tooltip" data-placement="top" title="<%= gettext("Info") %>">
+          <div class="icon-links float-right">
+            <a href="" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("List") %>">
               <i class="fas fa-list"></i>
             </a>
           </div>

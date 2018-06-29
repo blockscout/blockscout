@@ -1,5 +1,3 @@
-$card-link-size: 2rem;
-
 .card {
   border-color: transparent;
   box-shadow: 0 5px 40px -5px rgba($black, 0.25);
@@ -18,32 +16,4 @@ $card-link-size: 2rem;
 .card-title {
   line-height: 2.2rem;
   margin-bottom: 1rem;
-}
-
-.card-links {
-  position: absolute;
-  right: 0;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  margin-right: 1rem;
-
-  & > a {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: $card-link-size;
-    height: $card-link-size;
-    margin: 0 .25rem;
-    color: $text-muted;
-    background-color: $gray-200;
-    border-radius: 50%;
-    transition: all 0.1s ease;
-
-    &:hover {
-      background-color: $gray-600;
-      color: $primary;
-      text-decoration: none;
-    }
-  }
 }
