@@ -280,6 +280,10 @@ defmodule EthereumJSONRPC do
     end
   end
 
+  defp chunked_json_rpc(url, tail, options, decoded_response_bodies) do
+    chunked_json_rpc(url, [tail], options, decoded_response_bodies)
+  end
+
   defp rechunk_json_rpc(url, [batch | tail], options, response, decoded_response_bodies) do
     case length(batch) do
       # it can't be made any smaller
