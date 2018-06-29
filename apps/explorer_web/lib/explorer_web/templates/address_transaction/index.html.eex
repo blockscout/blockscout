@@ -129,7 +129,9 @@
             <%= render "_transaction.html", locale: @locale, transaction: transaction %>
           <% end %>
         <% else %>
-          <p data-selector="empty-transactions-list"><%= gettext "There are no Transactions" %></p>
+          <div class="tile tile-muted text-center">
+            <span data-selector="empty-transactions-list"><%= gettext "There are no Internal Transactions" %></span>
+          </div>
         <% end %>
       </div>
     </div>

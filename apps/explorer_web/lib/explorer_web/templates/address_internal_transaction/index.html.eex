@@ -82,7 +82,9 @@
             <%= render "_transaction.html", locale: @locale, internal_transaction: internal_transaction %>
           <% end %>
         <% else %>
-          <p><%= gettext "There are no Internal Transactions" %></p>
+          <div class="tile tile-muted text-center">
+            <span><%= gettext "There are no Internal Transactions" %></span>
+          </div>
         <% end %>
       </div>
     </div>

@@ -68,3 +68,10 @@
   line-height: 1.25rem;
   text-align: center;
 }
+
+.tile-muted {
+  border-left: 1px solid $border-color;
+  background-color: $gray-100;
+  color: $text-muted;
+  box-shadow: none;
+}
