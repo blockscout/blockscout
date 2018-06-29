@@ -7,6 +7,7 @@ config :explorer, Explorer.Repo,
   hostname: "localhost",
   loggers: [],
   pool_size: 20,
-  pool_timeout: 60_000
+  pool_timeout: 60_000,
+  timeout: 80_000
 
 import_config "dev.secret.exs"
