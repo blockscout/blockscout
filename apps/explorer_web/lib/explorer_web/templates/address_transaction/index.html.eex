@@ -126,7 +126,7 @@
           </div>
           <h2 class="card-title"><%= gettext "Transactions" %></h2>
           <%= for transaction <- @transactions do %>
-            <%= render "_transaction.html", locale: @locale, transaction: transaction %>
+            <%= render "_transaction.html", locale: @locale, address: @address, transaction: transaction %>
           <% end %>
         <% else %>
           <div class="tile tile-muted text-center">
