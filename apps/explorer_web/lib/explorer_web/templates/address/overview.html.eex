@@ -24,9 +24,9 @@
               <i class="fas fa-info"></i>
             </a>
           </div>
-          <h1 class="mb-4"><%= address_title(@address) %></h1>
-          <p class="mb-0" data-test="address_detail_hash"><%= @address %></p>
-          <div class="d-flex flex-row justify-content-start card-muted">
+          <h1 class="card-title"><%= address_title(@address) %> Details </h1>
+          <h3 class="" data-test="address_detail_hash"><%= @address %></h3>
+          <div class="d-flex flex-row justify-content-start text-muted">
             <span class="mr-4" data-test="transaction_count"><%= Cldr.Number.to_string!(@transaction_count) %> <%= gettext "Transactions" %></span>
             <span class="mr-4">0 Mined</span>
             <span class="">0 Uncles</span>
@@ -35,13 +35,13 @@
       </div>
     </div>
     <div class="col-md-3">
-      <div class="card card-balance">
+      <div class="card bg-primary">
         <div class="card-body">
-          <h1 class="mb-4">Balance</h1>
+          <h1 class="card-title text-white">Balance</h1>
           <span></span>
           <div class="text-right">
-            <div><%= balance(@address) %></div>
-            <span><%= formatted_usd(@address, @exchange_rate) %></span>
+            <h3 class="text-white"><%= balance(@address) %></h3>
+            <span class="text-light"><%= formatted_usd(@address, @exchange_rate) %></span>
           </div>
         </div>
       </div>
@@ -54,9 +54,9 @@
               <i class="fas fa-list"></i>
             </a>
           </div>
-          <h1 class="mb-4">Token Holdings</h1>
-          <div class="text-right">
-            <%= formatted_usd(@address, @exchange_rate) %>
+          <h1 class="card-title">Token Holdings</h1>
+          <div class="text-right mb-4">
+            <h3><%= formatted_usd(@address, @exchange_rate) %></h3>
           </div>
         </div>
       </div>
