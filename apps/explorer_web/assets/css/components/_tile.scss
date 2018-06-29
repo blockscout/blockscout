@@ -50,6 +50,14 @@
         color: $orange;
       }
     }
+
+    &-internal-transaction {
+      border-left: 4px solid $teal;
+
+      .tile-label {
+        color: $teal;
+      }
+    }
   }
 
   .tile-title {
