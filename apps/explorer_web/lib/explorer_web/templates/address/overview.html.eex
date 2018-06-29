@@ -14,15 +14,17 @@
       <div class="card">
         <div class="card-body">
           <div class="icon-links float-right">
-            <button type="button" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Copy Address") %>">
-              <i class="fas fa-clone"></i>
-            </button>
+            <span data-clipboard-text="<%= @address %>">
+              <button type="button" class="icon-link" id="button" data-toggle="tooltip" data-placement="top" title="<%= gettext("Copy Address") %>" aria-label="Copy Address">
+                <i class="fas fa-clone"></i>
+              </button>
+            </span>
             <span data-toggle="modal" data-target="#qrModal">
-              <button type="button" class="icon-link"  data-toggle="tooltip" data-placement="top" title="<%= gettext("QR Code") %>">
+              <button type="button" class="icon-link"  data-toggle="tooltip" data-placement="top" title="<%= gettext("QR Code") %>" aria-label="Show QR Code">
                 <i class="fas fa-qrcode"></i>
               </button>
             </span>
-            <button type="button" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Info") %>">
+            <button type="button" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Info") %>" aria-label="Info">
               <i class="fas fa-info"></i>
             </button>
           </div>
