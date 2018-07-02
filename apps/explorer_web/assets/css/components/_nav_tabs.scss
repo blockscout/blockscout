@@ -7,6 +7,10 @@
     border-top-left-radius: 0;
     border-top-right-radius: 0;
 
+    &:hover {
+      color: $primary;
+    }
+
     &.active {
       color: $white;
       background-color: $primary;
@@ -15,7 +19,13 @@
 
     &:hover {
       border-color: transparent;
-
-      }
+    }
   }
+}
+
+
+.nav-tabs .nav-item.show .nav-link {
+  color: $white;
+  background-color: darken($primary, 10%);
+  border-color: darken($primary, 10%);
 }
