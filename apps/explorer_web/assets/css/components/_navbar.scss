@@ -14,6 +14,10 @@
   }
 }
 
+.navbar .nav-item {
+  font-size: 14px;
+}
+
 .navbar .nav-link {
   color: $white;
 }
@@ -52,23 +56,21 @@
     content: "";
     position: absolute;
     display: block;
-    bottom: -0.25rem;
+    bottom: 0;
     left: 50%;
-    width: 0.25rem;
-    height: 0.25rem;
+    width: 100%;
+    height: 0.2rem;
     background-color: $white;
     opacity: 0;
-    transform: translateX(-50%);
-    transition: bottom 0.2s ease-in, opacity 0.2s ease, width 0.2s 0.3s ease-in-out, height 0.3s 0.1s ease-in-out;
+    transform: translateX(-50%) translateY(-0.5rem);
+    transition: all 0.3s ease;
   }
 
   &:hover {
     color: $white;
 
     &:before {
-      bottom: 0.25rem;
-      width: 100%;
-      height: 0.1rem;
+      transform: translateX(-50%) translateY(-0.25rem);
       opacity: 1;
     }
   }
@@ -76,8 +78,8 @@
   &:active {
 
     &:before {
-      width: 80%;
-      transition: width 0.1s ease;
+      transition: all 0.1s ease-out;
+      transform: translateX(-50%) translateY(-0.5rem);
     }
   }
 }
