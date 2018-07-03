@@ -15,8 +15,10 @@ defmodule Explorer.Factory do
     Hash,
     InternalTransaction,
     Log,
-    Transaction,
-    SmartContract
+    SmartContract,
+    Token,
+    TokenTransfer,
+    Transaction
   }
 
   alias Explorer.Market.MarketHistory
@@ -218,6 +220,71 @@ defmodule Explorer.Factory do
     }
   end
 
+  def token_factory do
+    %Token{
+      name: "Infinite Token",
+      symbol: "IT",
+      total_supply: 1_000_000_000,
+      decimals: 18,
+      owner_address: build(:address),
+      contract_address: build(:address)
+    }
+  end
+
+  def token_transfer_log_factory do
+    token_contract_address = build(:address)
+    to_address = build(:address)
+    from_address = build(:address)
+
+    transaction = build(:transaction, to_address: token_contract_address, from_address: from_address)
+
+    log_params = %{
+      first_topic: TokenTransfer.constant(),
+      second_topic: zero_padded_address_hash_string(from_address.hash),
+      third_topic: zero_padded_address_hash_string(to_address.hash),
+      data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+      transaction: transaction
+    }
+
+    build(:log, log_params)
+  end
+
+  def token_transfer_log_with_transaction(%Log{} = log, %Transaction{} = transaction) do
+    params = %{
+      second_topic: zero_padded_address_hash_string(transaction.from_address.hash),
+      transaction: transaction
+    }
+
+    struct!(log, params)
+  end
+
+  def token_transfer_log_with_to_address(%Log{} = log, %Address{} = to_address) do
+    %Log{log | third_topic: zero_padded_address_hash_string(to_address.hash)}
+  end
+
+  def token_transfer_factory do
+    log = insert(:token_transfer_log)
+    to_address_hash = address_hash_from_zero_padded_hash_string(log.third_topic)
+
+    # `to_address` is only the only thing that isn't created from the token_transfer_log_factory
+
+    insert(:address, hash: to_address_hash)
+
+    from_address_hash = address_hash_from_zero_padded_hash_string(log.second_topic)
+
+    %TokenTransfer{
+      amount: Decimal.new(1),
+      from_address: nil,
+      from_address_hash: from_address_hash,
+      to_address: nil,
+      to_address_hash: to_address_hash,
+      transaction: nil,
+      transaction_hash: log.transaction.hash,
+      token: build(:token, contract_address_hash: log.transaction.to_address.hash, contract_address: nil),
+      log: log
+    }
+  end
+
   def public_key do
     data(:public_key)
   end
@@ -342,5 +409,15 @@ defmodule Explorer.Factory do
     |> Enum.random()
     |> Decimal.new()
     |> Decimal.div(Decimal.new(100))
+  end
+
+  defp zero_padded_address_hash_string(%Explorer.Chain.Hash{byte_count: 20} = hash) do
+    "0x" <> hash_string = Explorer.Chain.Hash.to_string(hash)
+    "0x000000000000000000000000" <> hash_string
+  end
+
+  defp address_hash_from_zero_padded_hash_string("0x000000000000000000000000" <> hash_string) do
+    {:ok, hash} = Explorer.Chain.Hash.cast(Explorer.Chain.Hash.Truncated, "0x" <> hash_string)
+    hash
   end
 end

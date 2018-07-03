@@ -11,7 +11,8 @@ defmodule Explorer.Application do
     base_children = [
       Explorer.Repo,
       Supervisor.child_spec({Task.Supervisor, name: Explorer.MarketTaskSupervisor}, id: Explorer.MarketTaskSupervisor),
-      Supervisor.child_spec({Task.Supervisor, name: Explorer.TaskSupervisor}, id: Explorer.TaskSupervisor)
+      Supervisor.child_spec({Task.Supervisor, name: Explorer.TaskSupervisor}, id: Explorer.TaskSupervisor),
+      {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents}
     ]
 
     children = base_children ++ configurable_children()
