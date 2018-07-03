@@ -30,10 +30,10 @@ defmodule ExplorerWeb.TransactionView do
     |> Chain.fee(:wei)
     |> fee_to_currency(opts)
     |> case do
-         {_, nil} -> nil
-         {:actual, value} -> value
-         {:maximum, value} -> "<= " <> value
-       end
+      {_, nil} -> nil
+      {:actual, value} -> value
+      {:maximum, value} -> "<= " <> value
+    end
   end
 
   def gas_used(%Transaction{gas_used: nil}), do: gettext("Pending")
@@ -69,11 +69,11 @@ defmodule ExplorerWeb.TransactionView do
     transaction
     |> Chain.transaction_to_status()
     |> case do
-         :failed -> gettext("Failed")
-         :out_of_gas -> gettext("Out of Gas")
-         :pending -> gettext("Pending")
-         :success -> gettext("Success")
-       end
+      :failed -> gettext("Failed")
+      :out_of_gas -> gettext("Out of Gas")
+      :pending -> gettext("Pending")
+      :success -> gettext("Success")
+    end
   end
 
   def formatted_usd_value(%Transaction{value: nil}, _token), do: nil

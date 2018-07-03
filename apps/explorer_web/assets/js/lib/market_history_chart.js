@@ -71,7 +71,7 @@ function createMarketHistoryChart (ctx) {
           },
           ticks: {
             beginAtZero: true,
-            callback: (value, index, values) => "",
+            callback: (value, index, values) => '',
             maxTicksLimit: 6
           }
         }, {
@@ -81,7 +81,7 @@ function createMarketHistoryChart (ctx) {
             display: false
           },
           ticks: {
-            callback: (value, index, values) => "",
+            callback: (value, index, values) => '',
             maxTicksLimit: 6,
             drawOnChartArea: false
           }
