@@ -37,11 +37,11 @@ We use [Terraform](https://www.terraform.io/intro/getting-started/install.html) 
 
 The [development stack page](https://github.com/poanetwork/poa-explorer/wiki/Development-Stack) contains more information about these frameworks.
 
-* [Erlang/OTP 20.2+](https://github.com/erlang/otp)
-* [Elixir 1.6+](https://elixir-lang.org/)
-* [Postgres 10.0](https://www.postgresql.org/)
-* [Node.js 10.5+](https://nodejs.org/en/)
-* [Solidity](http://solidity.readthedocs.io/en/v0.4.24/installing-solidity.html)
+* [Erlang/OTP 20.3.2](https://github.com/erlang/otp)
+* [Elixir 1.6.5](https://elixir-lang.org/)
+* [Postgres 10.3](https://www.postgresql.org/)
+* [Node.js 10.5.0](https://nodejs.org/en/)
+* [Solidity 0.4.24](http://solidity.readthedocs.io/en/v0.4.24/installing-solidity.html)
 * GitHub for code storage
 
 ### Setup Instructions
