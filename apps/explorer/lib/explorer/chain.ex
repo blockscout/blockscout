@@ -125,9 +125,29 @@ defmodule Explorer.Chain do
   """
   @spec address_to_transaction_count(Address.t()) :: non_neg_integer()
   def address_to_transaction_count(%Address{hash: hash}) do
-    fetch_transactions()
-    |> where_address_fields_match(hash)
-    |> Repo.aggregate(:count, :hash)
+    {:ok, %{rows: [[result]]}} =
+      SQL.query(
+        Repo,
+        """
+          SELECT COUNT(hash) from
+          (
+            SELECT t0."hash" address
+            FROM "transactions" AS t0
+            LEFT OUTER JOIN "internal_transactions" AS i1 ON (i1."transaction_hash" = t0."hash") AND (i1."type" = 'create')
+            WHERE (i1."created_contract_address_hash" = $1)
+
+            UNION
+
+            SELECT t0."hash" address
+            FROM "transactions" AS t0
+            WHERE (t0."to_address_hash" = $1)
+            OR (t0."from_address_hash" = $1)
+          ) AS hash
+        """,
+        [hash.bytes]
+      )
+
+    result
   end
 
   @doc """
@@ -2650,10 +2670,6 @@ defmodule Explorer.Chain do
   defp timestamps do
     now = DateTime.utc_now()
     %{inserted_at: now, updated_at: now}
-  end
-
-  defp where_address_fields_match(query, address_hash) do
-    where_address_fields_match(query, address_hash, nil)
   end
 
   defp where_address_fields_match(query, address_hash, :to) do
