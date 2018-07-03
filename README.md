@@ -41,7 +41,6 @@ The [development stack page](https://github.com/poanetwork/poa-explorer/wiki/Dev
 * [Elixir 1.6.5](https://elixir-lang.org/)
 * [Postgres 10.3](https://www.postgresql.org/)
 * [Node.js 10.5.0](https://nodejs.org/en/)
-* [Solidity 0.4.24](http://solidity.readthedocs.io/en/v0.4.24/installing-solidity.html)
 * GitHub for code storage
 
 ### Setup Instructions
