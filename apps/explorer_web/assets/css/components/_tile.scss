@@ -22,7 +22,7 @@
     &-transaction {
       border-left: 4px solid $blue;
 
-      .tile-label {
+      .tile-label, .tile-text-highlight {
         color: $blue;
       }
     }
@@ -30,7 +30,7 @@
     &-contract {
       border-left: 4px solid $green;
 
-      .tile-label {
+      .tile-label, .tile-text-highlight {
         color: $green;
       }
     }
@@ -38,7 +38,7 @@
     &-contract-creation {
       border-left: 4px solid $pink;
 
-      .tile-label {
+      .tile-label, .tile-text-highlight {
         color: $pink;
       }
     }
@@ -46,7 +46,7 @@
     &-token {
       border-left: 4px solid $orange;
 
-      .tile-label {
+      .tile-label, .tile-text-highlight {
         color: $orange;
       }
     }
@@ -54,7 +54,7 @@
     &-internal-transaction {
       border-left: 4px solid $teal;
 
-      .tile-label {
+      .tile-label, .tile-text-highlight {
         color: $teal;
       }
     }

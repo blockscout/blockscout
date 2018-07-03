@@ -116,7 +116,7 @@
           <% end %>
         <% else %>
           <div class="tile tile-muted text-center">
-            <span><%= gettext "There are no Internal Transactions" %></span>
+            <span><%= gettext "There are no internal transactions for this address." %></span>
           </div>
         <% end %>
       </div>

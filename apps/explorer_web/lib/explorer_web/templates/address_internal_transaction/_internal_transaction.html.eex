@@ -1,4 +1,4 @@
-<div class="tile tile-type-internal-transaction fade-in">
+<div class="tile tile-type-internal-transaction fade-in" data-test="internal_transaction">
   <div class="row">
     <div class="col-md-2 d-flex align-items-center justify-content-start justify-content-lg-center  tile-label">
       <%=  gettext("Internal Transaction") %>
@@ -8,7 +8,7 @@
       <span>
         <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: @internal_transaction.from_address %>
         &rarr;
-        <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: @internal_transaction.to_address %>
+        <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: @internal_transaction.to_address, address_hash: nil %>
       </span>
       <%= ExplorerWeb.TransactionView.value(@internal_transaction, include_label: false) %> POA
     </div>

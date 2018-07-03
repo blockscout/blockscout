@@ -1,4 +1,4 @@
-<div class="tile <%= ExplorerWeb.TransactionView.tile_class(@transaction) %> fade-in">
+<div class="tile tile-type-<%= ExplorerWeb.TransactionView.type_suffix(@transaction) %> fade-in">
   <div class="row">
     <div class="col-md-2 d-flex align-items-center justify-content-start justify-content-lg-center  tile-label">
       <%= ExplorerWeb.TransactionView.transaction_display_type(@transaction) %>

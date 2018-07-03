@@ -1,11 +1,18 @@
-<%= if @address_hash do %>
-  <%= link to: address_path(ExplorerWeb.Endpoint, :show, @locale, @address_hash), "data-address-hash": @address_hash do %>
-    <%= if @contract do %>
-      <span class="tile-text-highlight d-none d-md-none d-lg-inline"><%= @address_hash %></span>
-      <span class="tile-text-highlight d-md-block d-lg-none "><%= @address_hash |> to_string() |> String.slice(0..5) %>&ndash;<%= @address_hash |> to_string() |> String.slice(-6..-1) %></span>
-    <% else %>
-      <span class="d-none d-md-none d-lg-inline"> <%= @address_hash %></span>
-      <span class="d-lg-none"><%= @address_hash |> to_string() |> String.slice(0..5) %>&ndash;<%= @address_hash |> to_string() |> String.slice(-6..-1) %></span>
+<%= cond do %>
+  <% @address -> %>
+  <%= link to: address_path(ExplorerWeb.Endpoint, :show, @locale, @address), "data-address-hash": @address do %>
+      <%= if contract?(@address) do %>
+        <span class="tile-text-highlight d-none d-md-none d-lg-inline"><%= @address %></span>
+        <span class="tile-text-highlight d-md-block d-lg-none "><%= @address |> hash() |> String.slice(0..5) %>&ndash;<%= @address |> hash() |> String.slice(-6..-1) %></span>
+      <% else %>
+        <span class="d-none d-md-none d-lg-inline"> <%= @address %></span>
+        <span class="d-lg-none"><%= @address |> hash() |> String.slice(0..5) %>&ndash;<%= @address |> hash() |> String.slice(-6..-1) %></span>
+      <% end %>
     <% end %>
-  <% end %>
+  <% @address_hash -> %>
+    <%= link to: address_path(ExplorerWeb.Endpoint, :show, @locale, @address_hash), "data-address-hash": @address_hash do %>
+      <span class="tile-text-highlight d-none d-md-none d-lg-inline"><%= @address_hash %></span>
+      <span class="tile-text-highlight d-lg-none"><%= @address_hash |> to_string() |> String.slice(0..5) %>&ndash;<%= @address_hash |> to_string() |> String.slice(-6..-1) %></span>
+    <% end %>
+  <% true -> %>
 <% end %>

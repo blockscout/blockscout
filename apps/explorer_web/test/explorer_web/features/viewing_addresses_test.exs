@@ -2,14 +2,15 @@ defmodule ExplorerWeb.ViewingAddressesTest do
   use ExplorerWeb.FeatureCase, async: true
 
   alias Explorer.Chain
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, Wei}
   alias Explorer.ExchangeRates.Token
   alias ExplorerWeb.{AddressPage, HomePage}
 
   setup do
     block = insert(:block)
 
-    lincoln = insert(:address)
+    {:ok, balance} = Wei.cast(5)
+    lincoln = insert(:address, fetched_balance: balance)
     taft = insert(:address)
 
     from_taft =
@@ -162,7 +163,10 @@ defmodule ExplorerWeb.ViewingAddressesTest do
       |> with_block()
       |> Repo.preload([:block, :from_address, :to_address])
 
-    ExplorerWeb.Endpoint.broadcast!("addresses:#{addresses.lincoln.hash}", "transaction", %{transaction: transaction})
+    ExplorerWeb.Endpoint.broadcast!("addresses:#{addresses.lincoln.hash}", "transaction", %{
+      address: addresses.lincoln,
+      transaction: transaction
+    })
 
     assert_has(session, AddressPage.transaction(transaction))
   end

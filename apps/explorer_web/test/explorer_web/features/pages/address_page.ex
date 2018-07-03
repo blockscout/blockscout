@@ -20,7 +20,7 @@ defmodule ExplorerWeb.AddressPage do
   end
 
   def contract_creation(%InternalTransaction{created_contract_address_hash: hash}) do
-    css("[data-address-hash='#{hash}']", text: "Contract Creation")
+    css("[data-address-hash='#{hash}']", text: to_string(hash))
   end
 
   def detail_hash(%Address{hash: address_hash}) do
