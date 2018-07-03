@@ -1,7 +1,7 @@
 defmodule ExplorerWeb.TransactionLogController do
   use ExplorerWeb, :controller
 
-  import ExplorerWeb.Chain, only: [paging_options: 1, next_page_params: 2, split_list_by_page: 1]
+  import ExplorerWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
@@ -36,7 +36,7 @@ defmodule ExplorerWeb.TransactionLogController do
         "index.html",
         logs: logs,
         max_block_number: max_block_number(),
-        next_page_params: next_page_params(next_page, logs),
+        next_page_params: next_page_params(next_page, logs, params),
         transaction: transaction,
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
       )

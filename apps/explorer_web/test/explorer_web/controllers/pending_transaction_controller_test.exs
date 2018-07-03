@@ -87,7 +87,7 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
 
       conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
 
-      assert %{inserted_at: ^converted_date, hash: ^hash} = conn.assigns.next_page_params
+      assert %{"inserted_at" => ^converted_date, "hash" => ^hash} = conn.assigns.next_page_params
     end
 
     test "next_page_params are empty if on last page", %{conn: conn} do

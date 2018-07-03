@@ -9,6 +9,7 @@ defmodule ExplorerWeb.Router do
 
     plug(:put_secure_browser_headers, %{
       "content-security-policy" => "\
+        connect-src 'self' ws://localhost:*;\
         default-src 'self';\
         script-src 'self' 'unsafe-inline' 'unsafe-eval';\
         style-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com;\

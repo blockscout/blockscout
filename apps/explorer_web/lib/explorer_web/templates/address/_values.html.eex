@@ -1,0 +1,34 @@
+<tbody>
+  <tr>
+    <th scope="row">
+      <%= gettext "Ether" %> <%= gettext "Balance" %>
+    </th>
+    <td data-test="address_balance">
+      <%= balance(@address) %>
+    </td>
+  </tr>
+  <tr>
+    <th scope="row">
+      <%= gettext "USD" %> <%= gettext "Balance" %>
+    </th>
+    <td>
+      <%= formatted_usd(@address, @exchange_rate) %>
+    </td>
+  </tr>
+  <tr>
+    <th scope="row">
+      <%= gettext "Number of Transactions" %>
+    </th>
+    <td data-test="transaction_count">
+      <%= Cldr.Number.to_string!(@transaction_count) %>
+    </td>
+  </tr>
+  <tr>
+    <th scope="row">
+      <%= gettext "Last Updated In Block" %>
+    </th>
+    <td>
+      <%= balance_block_number(@address) %>
+    </td>
+  </tr>
+</tbody>

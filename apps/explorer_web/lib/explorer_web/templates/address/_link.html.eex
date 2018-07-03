@@ -1,6 +1,6 @@
 <div class="address-link">
   <%= if @address do %>
-    <%= link to: address_path(@conn, :show, @conn.assigns.locale, @address),
+    <%= link to: address_path(ExplorerWeb.Endpoint, :show, @locale, @address),
     "data-toggle": "tooltip",
     "data-placement": "top",
     class: "address-link__font",

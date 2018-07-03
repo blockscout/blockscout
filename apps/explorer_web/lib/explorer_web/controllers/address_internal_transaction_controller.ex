@@ -6,7 +6,7 @@ defmodule ExplorerWeb.AddressInternalTransactionController do
   use ExplorerWeb, :controller
 
   import ExplorerWeb.AddressController, only: [transaction_count: 1]
-  import ExplorerWeb.Chain, only: [paging_options: 1, next_page_params: 2, split_list_by_page: 1]
+  import ExplorerWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
@@ -32,7 +32,7 @@ defmodule ExplorerWeb.AddressInternalTransactionController do
         conn,
         "index.html",
         address: address,
-        next_page_params: next_page_params(next_page, internal_transactions),
+        next_page_params: next_page_params(next_page, internal_transactions, params),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
         internal_transactions: internal_transactions,

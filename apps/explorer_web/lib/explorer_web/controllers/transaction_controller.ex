@@ -1,7 +1,7 @@
 defmodule ExplorerWeb.TransactionController do
   use ExplorerWeb, :controller
 
-  import ExplorerWeb.Chain, only: [paging_options: 1, next_page_params: 2, split_list_by_page: 1]
+  import ExplorerWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias Explorer.Chain
 
@@ -27,7 +27,7 @@ defmodule ExplorerWeb.TransactionController do
     render(
       conn,
       "index.html",
-      next_page_params: next_page_params(next_page, transactions),
+      next_page_params: next_page_params(next_page, transactions, params),
       transaction_estimated_count: transaction_estimated_count,
       transactions: transactions
     )

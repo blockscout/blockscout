@@ -58,7 +58,7 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
 
       conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block))
 
-      assert %{block_number: ^number, index: 10} = conn.assigns.next_page_params
+      assert %{"block_number" => ^number, "index" => 10} = conn.assigns.next_page_params
     end
 
     test "next_page_params are empty if on last page", %{conn: conn} do
