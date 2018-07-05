@@ -10,7 +10,7 @@
             Price
           </span>
           <span class="dashboard-banner-chart-legend-value">
-            $0.0498 USD
+            <%= format_exchange_rate(@exchange_rate) %>
           </span>
         </div>
         <div class="dashboard-banner-chart-legend-item">
@@ -18,7 +18,7 @@
             Market cap
           </span>
           <span class="dashboard-banner-chart-legend-value">
-            $100,350,800 USD
+            <%= format_market_cap(@exchange_rate) %>
           </span>
         </div>
       </div>
@@ -28,7 +28,7 @@
             Block time
           </span>
           <span class="dashboard-banner-network-stats-value">
-            69.2105s
+            <%= @chain.average_time |> Timex.format_duration(:humanized) %>
           </span>
         </div>
         <div class="dashboard-banner-network-stats-item">
