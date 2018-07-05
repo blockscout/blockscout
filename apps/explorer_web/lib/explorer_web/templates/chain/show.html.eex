@@ -7,7 +7,7 @@
       <div class="dashboard-banner-chart-legend">
         <div class="dashboard-banner-chart-legend-item">
           <span class="dashboard-banner-chart-legend-label">
-            Price
+            <%= gettext "Price" %>
           </span>
           <span class="dashboard-banner-chart-legend-value">
             <%= format_exchange_rate(@exchange_rate) %>
@@ -15,7 +15,7 @@
         </div>
         <div class="dashboard-banner-chart-legend-item">
           <span class="dashboard-banner-chart-legend-label">
-            Market cap
+            <%= gettext "Market Cap" %>
           </span>
           <span class="dashboard-banner-chart-legend-value">
             <%= format_market_cap(@exchange_rate) %>
@@ -25,7 +25,7 @@
       <div class="dashboard-banner-network-stats">
         <div class="dashboard-banner-network-stats-item">
           <span class="dashboard-banner-network-stats-label">
-            Block time
+            <%= gettext "Average block time" %>
           </span>
           <span class="dashboard-banner-network-stats-value">
             <%= @chain.average_time |> Timex.format_duration(:humanized) %>
@@ -33,7 +33,7 @@
         </div>
         <div class="dashboard-banner-network-stats-item">
           <span class="dashboard-banner-network-stats-label">
-            Total transactions
+            <%= gettext "Total transactions" %>
           </span>
           <span class="dashboard-banner-network-stats-value">
             12,106,123
@@ -41,7 +41,7 @@
         </div>
         <div class="dashboard-banner-network-stats-item">
           <span class="dashboard-banner-network-stats-label">
-            Wallet addresses
+            <%= gettext "Wallet addresses" %>
           </span>
           <span class="dashboard-banner-network-stats-value">
             1,400,500
