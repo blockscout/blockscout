@@ -8,9 +8,6 @@ defmodule ExplorerWeb.AddressView do
 
   @dialyzer :no_match
 
-  def contract?(%Address{contract_code: nil}), do: false
-  def contract?(%Address{contract_code: _}), do: true
-
   def address_title(%Address{} = address) do
     if contract?(address) do
       gettext("Contract Address")
@@ -22,7 +19,6 @@ defmodule ExplorerWeb.AddressView do
   @doc """
   Returns a formatted address balance and includes the unit.
   """
-
   def balance(%Address{fetched_balance: nil}), do: ""
 
   def balance(%Address{fetched_balance: balance}) do
@@ -34,6 +30,10 @@ defmodule ExplorerWeb.AddressView do
   def balance_block_number(%Address{fetched_balance_block_number: fetched_balance_block_number}) do
     to_string(fetched_balance_block_number)
   end
+
+  def contract?(%Address{contract_code: nil}), do: false
+
+  def contract?(%Address{contract_code: _}), do: true
 
   def formatted_usd(%Address{fetched_balance: nil}, _), do: nil
 

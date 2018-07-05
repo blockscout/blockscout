@@ -5,8 +5,12 @@ defmodule ExplorerWeb.TransactionView do
   alias Explorer.Chain
   alias Explorer.Chain.{InternalTransaction, Transaction, Wei}
   alias Explorer.ExchangeRates.Token
-  alias ExplorerWeb.BlockView
+  alias ExplorerWeb.{AddressView, BlockView}
   alias ExplorerWeb.ExchangeRates.USD
+
+  import ExplorerWeb.Gettext
+
+  defguardp is_transaction_type(mod) when mod in [InternalTransaction, Transaction]
 
   def confirmations(%Transaction{block: block}, named_arguments) when is_list(named_arguments) do
     case block do
@@ -15,11 +19,11 @@ defmodule ExplorerWeb.TransactionView do
     end
   end
 
-  def gas_used(%Transaction{gas_used: nil}), do: gettext("Pending")
+  # This is the address to be shown in the to field
+  def display_to_address(%Transaction{to_address_hash: nil, created_contract_address_hash: address_hash}),
+    do: [address: nil, address_hash: address_hash]
 
-  def gas_used(%Transaction{gas_used: gas_used}) do
-    Number.to_string!(gas_used)
-  end
+  def display_to_address(%Transaction{to_address: address}), do: [address: address]
 
   def formatted_fee(%Transaction{} = transaction, opts) do
     transaction
@@ -32,6 +36,24 @@ defmodule ExplorerWeb.TransactionView do
     end
   end
 
+  def gas_used(%Transaction{gas_used: nil}), do: gettext("Pending")
+
+  def gas_used(%Transaction{gas_used: gas_used}) do
+    Number.to_string!(gas_used)
+  end
+
+  def involves_contract?(%Transaction{from_address: from_address, to_address: to_address}) do
+    AddressView.contract?(from_address) || AddressView.contract?(to_address)
+  end
+
+  def involves_contract_creation?(%Transaction{created_contract_address_hash: nil}), do: false
+
+  def involves_contract_creation?(_), do: true
+
+  def contract_creation?(%Transaction{created_contract_address_hash: nil}), do: false
+
+  def contract_creation?(_), do: true
+
   def qr_code(%Transaction{hash: hash}) do
     hash
     |> to_string()
@@ -39,22 +61,19 @@ defmodule ExplorerWeb.TransactionView do
     |> Base.encode64()
   end
 
-  defp fee_to_currency({fee_type, fee}, denomination: denomination) do
-    {fee_type, format_wei_value(Wei.from(fee, :wei), denomination)}
-  end
-
-  defp fee_to_currency({fee_type, fee}, exchange_rate: %Token{} = exchange_rate) do
-    formatted =
-      fee
-      |> Wei.from(:wei)
-      |> USD.from(exchange_rate)
-      |> format_usd_value()
-
-    {fee_type, formatted}
-  end
-
   def format_gas_limit(gas) do
     Number.to_string!(gas)
+  end
+
+  def formatted_status(transaction) do
+    transaction
+    |> Chain.transaction_to_status()
+    |> case do
+      :failed -> gettext("Failed")
+      :out_of_gas -> gettext("Out of Gas")
+      :pending -> gettext("Pending")
+      :success -> gettext("Success")
+    end
   end
 
   def formatted_usd_value(%Transaction{value: nil}, _token), do: nil
@@ -64,8 +83,6 @@ defmodule ExplorerWeb.TransactionView do
   end
 
   defdelegate formatted_timestamp(block), to: BlockView
-
-  defguardp is_transaction_type(mod) when mod in [InternalTransaction, Transaction]
 
   def gas(%type{gas: gas}) when is_transaction_type(type) do
     Cldr.Number.to_string!(gas)
@@ -86,14 +103,19 @@ defmodule ExplorerWeb.TransactionView do
     Chain.transaction_to_status(transaction)
   end
 
-  def formatted_status(transaction) do
-    transaction
-    |> Chain.transaction_to_status()
-    |> case do
-      :failed -> gettext("Failed")
-      :out_of_gas -> gettext("Out of Gas")
-      :pending -> gettext("Pending")
-      :success -> gettext("Success")
+  def type_suffix(%Transaction{} = transaction) do
+    cond do
+      involves_contract_creation?(transaction) -> "contract-creation"
+      involves_contract?(transaction) -> "contract"
+      true -> "transaction"
+    end
+  end
+
+  def transaction_display_type(%Transaction{} = transaction) do
+    cond do
+      involves_contract_creation?(transaction) -> gettext("Contract Creation")
+      involves_contract?(transaction) -> gettext("Contract")
+      true -> gettext("Transaction")
     end
   end
 
@@ -107,5 +129,19 @@ defmodule ExplorerWeb.TransactionView do
   def value(%mod{value: value}, opts \\ []) when is_transaction_type(mod) do
     include_label? = Keyword.get(opts, :include_label, true)
     format_wei_value(value, :ether, include_unit_label: include_label?)
+  end
+
+  defp fee_to_currency({fee_type, fee}, denomination: denomination) do
+    {fee_type, format_wei_value(Wei.from(fee, :wei), denomination)}
+  end
+
+  defp fee_to_currency({fee_type, fee}, exchange_rate: %Token{} = exchange_rate) do
+    formatted =
+      fee
+      |> Wei.from(:wei)
+      |> USD.from(exchange_rate)
+      |> format_usd_value()
+
+    {fee_type, formatted}
   end
 end

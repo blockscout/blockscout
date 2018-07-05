@@ -1,59 +1,57 @@
-<section class="container-fluid">
-  <div class="d-flex flex-md-row flex-column">
-    <div class="container__stats card mr-sm-4 mb-4 mb-sm-0">
-      <div class="card-body d-flex flex-md-column justify-content-around">
-        <div class="d-flex flex-column justify-content-center align-items-center">
-          <%= render ExplorerWeb.IconsView, "_block_icon.html", assigns %>
-          <div><%= gettext("Block") %></div>
-          <div> #<%= @chain.number %></div>
-        </div>
-        <div class="d-flex flex-column justify-content-center align-items-center">
-          <%= render ExplorerWeb.IconsView, "_hourglass_icon.html", assigns %>
-          <div> <%= gettext("Last Block") %></div>
-          <div data-from-now="<%= @chain.timestamp %>"></div>
-        </div>
-        <div class="d-flex flex-column justify-content-center align-items-center">
-          <div class="stroke"> <%= render ExplorerWeb.IconsView, "_guage_icon.html", assigns %> </div>
-          <div><%= gettext("Avg Block Time") %></div>
-          <%= @chain.average_time |> Timex.format_duration(:humanized) %>
-        </div>
-        <div class="d-flex flex-column justify-content-center align-items-center">
-          <%= render ExplorerWeb.IconsView, "_transaction_icon.html", assigns %>
-          <div> <%= gettext("TPM") %></div>
-          <div> <%= @chain.transaction_velocity |> Cldr.Number.to_string! %></div>
-        </div>
+<div class="dashboard-banner-container d-none d-md-block">
+  <div class="container">
+    <div class="dashboard-banner">
+      <div class="dashboard-banner-chart">
+        <canvas data-chart="marketHistoryChart" data-current_exchange_rate ='<%= @exchange_rate.usd_value %>' data-available_supply='<%= @exchange_rate.available_supply %>' data-market_history_data='<%=raw encode_market_history_data(@market_history_data) %>' width="350" height="152"></canvas>
       </div>
-    </div>
-
-    <div class="container__graph card">
-      <div class="card-body">
-        <canvas data-chart="marketHistoryChart" data-current_exchange_rate ='<%= @exchange_rate.usd_value %>' data-available_supply='<%= @exchange_rate.available_supply %>' data-market_history_data='<%=raw encode_market_history_data(@market_history_data) %>' width="300" height="100"></canvas>
-        <div class="d-flex justify-content-sm-around mt-2 text-muted">
-          <div>
-            <div class="graph__squares graph__squares--price"></div>
-            <%= gettext "Price" %> </br>
+      <div class="dashboard-banner-chart-legend">
+        <div class="dashboard-banner-chart-legend-item">
+          <span class="dashboard-banner-chart-legend-label">
+            <%= gettext "Price" %>
+          </span>
+          <span class="dashboard-banner-chart-legend-value">
             <%= format_exchange_rate(@exchange_rate) %>
-          </div>
-          <div class="mx-2">
-            <div class="graph__squares graph__squares--mcap"></div>
-            <%= gettext "Market Cap" %> </br>
+          </span>
+        </div>
+        <div class="dashboard-banner-chart-legend-item">
+          <span class="dashboard-banner-chart-legend-label">
+            <%= gettext "Market Cap" %>
+          </span>
+          <span class="dashboard-banner-chart-legend-value">
             <%= format_market_cap(@exchange_rate) %>
-          </div>
-          <div>
-            <%= gettext "24h Volume" %> </br>
-            <%= format_volume_24h(@exchange_rate) %>
-          </div>
+          </span>
+        </div>
+      </div>
+      <div class="dashboard-banner-network-stats">
+        <div class="dashboard-banner-network-stats-item">
+          <span class="dashboard-banner-network-stats-label">
+            <%= gettext "Average block time" %>
+          </span>
+          <span class="dashboard-banner-network-stats-value">
+            <%= @chain.average_time |> Timex.format_duration(:humanized) %>
+          </span>
+        </div>
+        <div class="dashboard-banner-network-stats-item">
+          <span class="dashboard-banner-network-stats-label">
+            <%= gettext "Total transactions" %>
+          </span>
+          <span class="dashboard-banner-network-stats-value">
+            <%= @transaction_estimated_count |> Cldr.Number.to_string!(format: "#,###") %>
+          </span>
+        </div>
+        <div class="dashboard-banner-network-stats-item">
+          <span class="dashboard-banner-network-stats-label">
+            <%= gettext "Wallet addresses" %>
+          </span>
+          <span class="dashboard-banner-network-stats-value">
+            <%= @address_estimated_count |> Cldr.Number.to_string!(format: "#,###") %>
+          </span>
         </div>
       </div>
     </div>
   </div>
-
-  <div class="row my-4">
-    <div class="col-md-6 mb-4 mb-md-0">
-      <%= render ExplorerWeb.ChainView, "_blocks.html", assigns %>
-    </div>
-    <div class="col-md-6">
-      <%= render ExplorerWeb.ChainView, "_transactions.html", assigns %>
-    </div>
-  </div>
+</div>
+<section class="container">
+  <%= render ExplorerWeb.ChainView, "_blocks.html", assigns %>
+  <%= render ExplorerWeb.ChainView, "_transactions.html", assigns %>
 </section>

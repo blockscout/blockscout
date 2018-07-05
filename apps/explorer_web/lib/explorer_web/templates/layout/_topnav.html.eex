@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-lg bg-primary">
+<nav class="navbar navbar-dark navbar-expand-lg bg-primary">
   <div class="container">
     <%= link to: chain_path(@conn, :show), class: "navbar-brand", "data-test": "header_logo" do %>
       <img class="navbar-logo" src="<%= static_path(@conn, "/images/poa_logo.svg") %>" />
@@ -17,19 +17,7 @@
           <%= link to: transaction_path(@conn, :index, Gettext.get_locale), class: "nav-link topnav-nav-link" do %>
             <%= gettext("Transactions") %>
           <% end %>
-        </li>
-        <li class="nav-item">
-          <%= link to: transaction_path(@conn, :index, Gettext.get_locale), class: "nav-link topnav-nav-link" do %>
-            <%= gettext("Smart Contracts") %>
-          <% end %>
-            <!-- Does not go to where it should go please commented out before pushing to master  -->
-        </li>
-        <li class="nav-item">
-          <%= link to: transaction_path(@conn, :index, Gettext.get_locale), class: "nav-link topnav-nav-link" do %>
-            <%= gettext("Tokens") %>
-          <% end %>
-          <!-- Does not go to where it should go please commented out before pushing to master  -->
-        </li>
+        </li>  
       </ul>
       <%= form_for @conn, chain_path(@conn, :search, Gettext.get_locale), [class: "form-inline my-2 my-lg-0", method: :get, enforce_utf8: false], fn f -> %>
         <div class="input-group">

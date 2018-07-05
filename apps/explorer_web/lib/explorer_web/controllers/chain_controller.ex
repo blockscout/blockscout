@@ -7,12 +7,17 @@ defmodule ExplorerWeb.ChainController do
   alias ExplorerWeb.Chain
 
   def show(conn, _params) do
+    transaction_estimated_count = Explorer.Chain.transaction_estimated_count()
+    address_estimated_count = Explorer.Chain.address_estimated_count()
+
     render(
       conn,
       "show.html",
+      address_estimated_count: address_estimated_count,
       chain: Statistics.fetch(),
+      exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
       market_history_data: Market.fetch_recent_history(30),
-      exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
+      transaction_estimated_count: transaction_estimated_count
     )
   end
 

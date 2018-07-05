@@ -54,11 +54,11 @@ defmodule Explorer.Chain.StatisticsTest do
     end
 
     test "returns the last five blocks" do
-      insert_list(6, :block)
+      insert_list(5, :block)
 
       statistics = Statistics.fetch()
 
-      assert statistics.blocks |> Enum.count() == 5
+      assert statistics.blocks |> Enum.count() == 4
     end
 
     test "returns the last five transactions with blocks" do

@@ -68,7 +68,7 @@ defmodule Explorer.Chain.Statistics do
         block in Block,
         order_by: [desc: block.number],
         preload: [:miner, :transactions],
-        limit: 5
+        limit: 4
       )
 
     transactions =

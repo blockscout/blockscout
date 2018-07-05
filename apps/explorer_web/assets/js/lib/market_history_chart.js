@@ -41,7 +41,7 @@ function createMarketHistoryChart (ctx) {
         yAxisID: 'marketCap',
         data: currentMarketHistoryData.map(({ date, closingPrice }) => ({x: date, y: closingPrice * availableSupply})),
         fill: false,
-        pointRadius: 0.5,
+        pointRadius: 0,
         backgroundColor: sassVariables.secondary,
         borderColor: sassVariables.secondary,
         lineTension: 0
@@ -53,9 +53,14 @@ function createMarketHistoryChart (ctx) {
       },
       scales: {
         xAxes: [{
+          gridLines: {
+            display: false,
+            drawBorder: false
+          },
           type: 'time',
           time: {
-            unit: 'week',
+            unit: 'day',
+            stepSize: 14,
             displayFormats: {
               week: 'MMM D'
             }
@@ -63,19 +68,24 @@ function createMarketHistoryChart (ctx) {
         }],
         yAxes: [{
           id: 'price',
+          gridLines: {
+            display: false,
+            drawBorder: false
+          },
           ticks: {
             beginAtZero: true,
             callback: (value, index, values) => formatPrice(value),
-            maxTicksLimit: 6
+            maxTicksLimit: 4
           }
         }, {
           id: 'marketCap',
           position: 'right',
           gridLines: {
-            display: false
+            display: false,
+            drawBorder: false
           },
           ticks: {
-            callback: (value, index, values) => formatMarketCap(value),
+            callback: (value, index, values) => '',
             maxTicksLimit: 6,
             drawOnChartArea: false
           }

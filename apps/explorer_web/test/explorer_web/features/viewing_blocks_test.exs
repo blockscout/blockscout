@@ -23,7 +23,7 @@ defmodule ExplorerWeb.ViewingBlocksTest do
   test "viewing blocks on the home page", %{session: session} do
     session
     |> HomePage.visit_page()
-    |> assert_has(HomePage.blocks(count: 5))
+    |> assert_has(HomePage.blocks(count: 4))
   end
 
   test "search for blocks from home page", %{session: session} do

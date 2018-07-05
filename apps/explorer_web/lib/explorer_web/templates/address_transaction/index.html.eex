@@ -86,7 +86,7 @@
           </div>
         </div>
         <%= if Enum.count(@transactions) > 0 do %>
-          <table class="table table-responsive-sm table-font">
+          <table class="table table-responsive table-font">
             <thead>
               <tr>
                 <th class="transactions__column-header transactions__column-header--status">

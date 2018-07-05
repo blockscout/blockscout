@@ -1,8 +1,5 @@
-<%= link(@transaction |> hash |> String.slice(2..7),
+<%= link(@transaction.hash ,
     to: transaction_path(ExplorerWeb.Endpoint, :show, @locale, @transaction),
-    "data-toggle": "tooltip",
-    "data-placement": "top",
     "data-test": "transaction_hash",
     "data-transaction-hash": @transaction.hash,
-    class: "monospace",
-    title: @transaction) %>
+    "class": "tile-title text-truncate") %>
