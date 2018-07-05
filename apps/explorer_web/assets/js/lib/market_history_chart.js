@@ -54,7 +54,8 @@ function createMarketHistoryChart (ctx) {
       scales: {
         xAxes: [{
           gridLines: {
-            display: false
+            display: false,
+            drawBorder: false
           },
           type: 'time',
           time: {
@@ -62,23 +63,28 @@ function createMarketHistoryChart (ctx) {
             displayFormats: {
               week: 'MMM D'
             }
+          },
+          ticks: {
+            min: 4
           }
         }],
         yAxes: [{
           id: 'price',
           gridLines: {
-            display: false
+            display: false,
+            drawBorder: false
           },
           ticks: {
             beginAtZero: true,
-            callback: (value, index, values) => '',
-            maxTicksLimit: 6
+            callback: (value, index, values) => formatPrice(value),
+            maxTicksLimit: 4
           }
         }, {
           id: 'marketCap',
           position: 'right',
           gridLines: {
-            display: false
+            display: false,
+            drawBorder: false
           },
           ticks: {
             callback: (value, index, values) => '',
