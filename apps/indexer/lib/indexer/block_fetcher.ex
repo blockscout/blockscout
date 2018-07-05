@@ -294,7 +294,7 @@ defmodule Indexer.BlockFetcher do
   end
 
   defp realtime_task(%{} = state) do
-    {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest")
+    {:ok, latest_block_number} = Chain.max_block_number()
     {:ok, seq} = Sequence.start_link([], latest_block_number, 2)
     stream_import(state, seq, max_concurrency: 1)
   end
