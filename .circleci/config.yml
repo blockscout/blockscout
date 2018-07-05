@@ -228,7 +228,7 @@ jobs:
 
       - run:
           name: ESLint
-          command: ./node_modules/.bin/eslint --format=junit --output-file="test/eslint/junit.xml" js/**/*.js
+          command: ./node_modules/.bin/eslint --format=junit --output-file="test/eslint/junit.xml" js/**
           working_directory: apps/explorer_web/assets
 
       - store_test_results:
