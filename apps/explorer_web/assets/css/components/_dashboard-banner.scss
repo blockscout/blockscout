@@ -95,7 +95,7 @@
   // 15px padding matches the Bootstarp conatiner padding.
   padding-right: 15px;
   background-color: $primary;
-  box-shadow: -15px 0 40px -5px rgba($black, 0.15);
+  box-shadow: -10px 0 15px 0 rgba($black, 0.14);
 
   @media (max-width: 992px) {
     flex-direction: column;
