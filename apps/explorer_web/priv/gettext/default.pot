@@ -401,11 +401,11 @@ msgstr ""
 msgid "Avg Block Time"
 msgstr ""
 
-#: lib/explorer_web/templates/chain/show.html.eex:39
+#: lib/explorer_web/templates/chain/show.html.eex:18
 msgid "Market Cap"
 msgstr ""
 
-#: lib/explorer_web/templates/chain/show.html.eex:34
+#: lib/explorer_web/templates/chain/show.html.eex:10
 msgid "Price"
 msgstr ""
 
@@ -595,4 +595,19 @@ msgstr ""
 #, elixir-format
 #: lib/explorer_web/templates/chain/_transactions.html.eex:3
 msgid "View All Transactions →"
+msgstr ""
+
+#, elixir-format
+#: lib/explorer_web/templates/chain/show.html.eex:28
+msgid "Average block time"
+msgstr ""
+
+#, elixir-format
+#: lib/explorer_web/templates/chain/show.html.eex:36
+msgid "Total transactions"
+msgstr ""
+
+#, elixir-format
+#: lib/explorer_web/templates/chain/show.html.eex:44
+msgid "Wallet addresses"
 msgstr ""
