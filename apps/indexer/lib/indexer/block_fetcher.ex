@@ -73,7 +73,7 @@ defmodule Indexer.BlockFetcher do
     state = %{
       genesis_task: nil,
       realtime_task: nil,
-      realtime_interval: (opts[:block_rate] || @block_rate) * 2,
+      realtime_interval: opts[:block_rate] || @block_rate,
       starting_block_number: nil,
       blocks_batch_size: Keyword.get(opts, :blocks_batch_size, @blocks_batch_size),
       blocks_concurrency: Keyword.get(opts, :blocks_concurrency, @blocks_concurrency),
