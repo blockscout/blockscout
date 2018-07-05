@@ -36,7 +36,7 @@
             <%= gettext "Total transactions" %>
           </span>
           <span class="dashboard-banner-network-stats-value">
-            12,106,123
+            <%= @transaction_estimated_count |> Cldr.Number.to_string!(format: "#,###") %>
           </span>
         </div>
         <div class="dashboard-banner-network-stats-item">
@@ -44,7 +44,7 @@
             <%= gettext "Wallet addresses" %>
           </span>
           <span class="dashboard-banner-network-stats-value">
-            1,400,500
+            <%= @address_estimated_count |> Cldr.Number.to_string!(format: "#,###") %>
           </span>
         </div>
       </div>

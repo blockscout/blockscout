@@ -71,6 +71,19 @@ defmodule Explorer.Chain do
   @typep transactions_option :: {:transactions, [on_conflict_option | params_option | timeout_option]}
 
   @doc """
+  Estimated count of `t:Explorer.Chain.Address.t/0`.
+
+  Estimated count of addresses
+  """
+  @spec address_estimated_count() :: non_neg_integer()
+  def address_estimated_count do
+    %Postgrex.Result{rows: [[rows]]} =
+      SQL.query!(Repo, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='addresses'")
+
+    rows
+  end
+
+  @doc """
   `t:Explorer.Chain.InternalTransaction/0`s from `address`.
 
   This function excludes any internal transactions in the results where the internal transaction has no siblings within
