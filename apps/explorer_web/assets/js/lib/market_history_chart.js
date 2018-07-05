@@ -59,13 +59,11 @@ function createMarketHistoryChart (ctx) {
           },
           type: 'time',
           time: {
-            unit: 'week',
+            unit: 'day',
+            stepSize: 14,
             displayFormats: {
               week: 'MMM D'
             }
-          },
-          ticks: {
-            min: 4
           }
         }],
         yAxes: [{
