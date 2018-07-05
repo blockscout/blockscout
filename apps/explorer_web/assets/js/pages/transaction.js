@@ -32,7 +32,7 @@ router.when('/transactions/:transactionHash').then((params) => initRedux(reducer
   render (state, oldState) {
     const $blockConfirmations = $('[data-selector="block_confirmations"]')
     if (oldState.confirmations !== state.confirmations) {
-      $blockConfirmations.empty().append(numeral(msg.confirmations).format())
+      $blockConfirmations.empty().append(numeral(state.confirmations).format())
     }
   }
 }))

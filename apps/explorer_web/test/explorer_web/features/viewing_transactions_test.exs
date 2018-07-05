@@ -162,15 +162,11 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
     end
 
     test "block confirmations via live update", %{session: session, transaction: transaction} do
-      session
-      |> TransactionPage.visit_page(transaction)
+      TransactionPage.visit_page(session, transaction)
 
-      ExplorerWeb.Endpoint.broadcast!("transactions:#{transaction.hash}", "confirmations", %{
-        max_block_number: transaction.block_number + 3,
-        transaction: transaction
-      })
-
-      assert_text(session, TransactionPage.block_confirmations(), "(3 block confirmations)")
+      assert_text(session, TransactionPage.block_confirmations(), "0")
+      ExplorerWeb.Endpoint.broadcast!("transactions:#{transaction.hash}", "confirmations", %{confirmations: 10})
+      assert_text(session, TransactionPage.block_confirmations(), "10")
     end
   end
 end
