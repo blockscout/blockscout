@@ -48,6 +48,63 @@ defmodule ExplorerWeb.ViewingAddressesTest do
     |> assert_text(AddressPage.balance(), "0.0000000000000005 POA")
   end
 
+  describe "viewing contract creator" do
+    test "see the contract creator and transaction links", %{session: session} do
+      address = insert(:address)
+      transaction = insert(:transaction, from_address: address)
+      contract = insert(:address, contract_code: Explorer.Factory.data("contract_code"))
+
+      internal_transaction =
+        insert(
+          :internal_transaction_create,
+          index: 0,
+          transaction: transaction,
+          from_address: address,
+          created_contract_address: contract
+        )
+
+      address_hash = ExplorerWeb.AddressView.trimmed_hash(address.hash)
+      transaction_hash = ExplorerWeb.AddressView.trimmed_hash(transaction.hash)
+
+      session
+      |> AddressPage.visit_page(internal_transaction.created_contract_address)
+      |> assert_text(AddressPage.contract_creator(), "#{address_hash} at #{transaction_hash}")
+    end
+
+    test "see the contract creator and transaction links even when the creator is another contract", %{session: session} do
+      lincoln = insert(:address)
+      contract = insert(:address, contract_code: Explorer.Factory.data("contract_code"))
+      transaction = insert(:transaction)
+      another_contract = insert(:address, contract_code: Explorer.Factory.data("contract_code"))
+
+      insert(
+        :internal_transaction,
+        index: 0,
+        transaction: transaction,
+        from_address: lincoln,
+        to_address: contract,
+        created_contract_address: contract,
+        type: :call
+      )
+
+      internal_transaction =
+        insert(
+          :internal_transaction_create,
+          index: 1,
+          transaction: transaction,
+          from_address: contract,
+          created_contract_address: another_contract
+        )
+
+      contract_hash = ExplorerWeb.AddressView.trimmed_hash(contract.hash)
+      transaction_hash = ExplorerWeb.AddressView.trimmed_hash(transaction.hash)
+
+      session
+      |> AddressPage.visit_page(internal_transaction.created_contract_address)
+      |> assert_text(AddressPage.contract_creator(), "#{contract_hash} at #{transaction_hash}")
+    end
+  end
+
   describe "viewing transactions" do
     test "sees all addresses transactions by default", %{
       addresses: addresses,
