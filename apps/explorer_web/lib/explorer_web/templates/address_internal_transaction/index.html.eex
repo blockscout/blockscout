@@ -108,9 +108,8 @@
             ) %>
           </div>
         </div>
+        <h2 class="card-title"><%= gettext "Internal Transactions" %></h2>
         <%= if Enum.count(@internal_transactions) > 0 do %>
-          <h2 class="card-title"><%= gettext "Internal Transactions" %></h2>
-
           <%= for internal_transaction <- @internal_transactions do %>
             <%= render "_internal_transaction.html", locale: @locale, address: @address, internal_transaction: internal_transaction %>
           <% end %>
