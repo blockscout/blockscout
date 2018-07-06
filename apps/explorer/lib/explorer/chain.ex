@@ -7,7 +7,6 @@ defmodule Explorer.Chain do
     only: [
       from: 2,
       join: 4,
-      join: 5,
       limit: 2,
       order_by: 2,
       order_by: 3,
@@ -459,7 +458,7 @@ defmodule Explorer.Chain do
     |> Keyword.get(:paging_options, @default_paging_options)
     |> fetch_transactions()
     |> join(:inner, [transaction], block in assoc(transaction, :block))
-    |> where([_, _, block], block.hash == ^block_hash)
+    |> where([_, block], block.hash == ^block_hash)
     |> join_associations(necessity_by_association)
     |> Repo.all()
   end
@@ -2258,9 +2257,20 @@ defmodule Explorer.Chain do
 
   defp fetch_transactions(paging_options \\ nil) do
     Transaction
-    |> load_contract_creation()
-    |> select_merge([_, internal_transaction], %{
-      created_contract_address_hash: internal_transaction.created_contract_address_hash
+    |> select_merge([transaction], %{
+      created_contract_address_hash:
+        type(
+          fragment(
+            ~s[
+              (SELECT i."created_contract_address_hash"
+              FROM "internal_transactions" AS i
+              WHERE (i."transaction_hash" = ?) AND (i."type" = 'create')
+              LIMIT 1)
+              ],
+            transaction.hash
+          ),
+          Explorer.Chain.Hash.Truncated
+        )
     })
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
     |> handle_paging_options(paging_options)
@@ -2508,16 +2518,6 @@ defmodule Explorer.Chain do
     end)
   end
 
-  defp load_contract_creation(query) do
-    join(
-      query,
-      :left,
-      [transaction],
-      internal_transaction in assoc(transaction, :internal_transactions),
-      internal_transaction.type == ^:create
-    )
-  end
-
   defp page_blocks(query, %PagingOptions{key: nil}), do: query
 
   defp page_blocks(query, %PagingOptions{key: {block_number}}) do
@@ -2705,9 +2705,17 @@ defmodule Explorer.Chain do
   defp where_address_fields_match(%Ecto.Query{from: {_table, Transaction}} = query, address_hash, nil) do
     where(
       query,
-      [t, it],
+      [t],
       t.to_address_hash == ^address_hash or t.from_address_hash == ^address_hash or
-        it.created_contract_address_hash == ^address_hash
+        ^address_hash.bytes in fragment(
+          ~s[
+            (SELECT i."created_contract_address_hash"
+            FROM "internal_transactions" AS i
+            WHERE (i."transaction_hash" = ?) AND (i."type" = 'create')
+            LIMIT 1)
+          ],
+          t.hash
+        )
     )
   end
 

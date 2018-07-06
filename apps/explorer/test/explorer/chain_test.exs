@@ -335,6 +335,22 @@ defmodule Explorer.ChainTest do
                  necessity_by_association: %{block: :required}
                )
     end
+
+    test "transaction with multiple create internal transactions is returned" do
+      transaction =
+        %Transaction{hash: hash_with_block} =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:internal_transaction, transaction: transaction, index: 0)
+
+      Enum.each(1..3, fn index ->
+        insert(:internal_transaction_create, transaction: transaction, index: index)
+      end)
+
+      assert {:ok, %Transaction{hash: ^hash_with_block}} = Chain.hash_to_transaction(hash_with_block)
+    end
   end
 
   describe "list_blocks/2" do
