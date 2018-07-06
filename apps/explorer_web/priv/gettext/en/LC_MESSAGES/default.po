@@ -15,7 +15,7 @@ msgstr ""
 #: lib/explorer_web/templates/block/index.html.eex:18
 #: lib/explorer_web/templates/block_transaction/index.html.eex:141
 #: lib/explorer_web/templates/transaction/index.html.eex:37
-#: lib/explorer_web/templates/transaction/overview.html.eex:49
+#: lib/explorer_web/templates/transaction/overview.html.eex:51
 msgid "Age"
 msgstr "Age"
 
@@ -37,7 +37,7 @@ msgstr "%{year} POA Network Ltd. All rights reserved"
 
 #: lib/explorer_web/templates/block/index.html.eex:20
 #: lib/explorer_web/templates/block_transaction/index.html.eex:88
-#: lib/explorer_web/templates/transaction/overview.html.eex:171
+#: lib/explorer_web/templates/transaction/overview.html.eex:173
 #: lib/explorer_web/templates/transaction_internal_transaction/index.html.eex:34
 msgid "Gas Used"
 msgstr "Gas Used"
@@ -73,8 +73,8 @@ msgstr "Transactions"
 #: lib/explorer_web/templates/block_transaction/index.html.eex:145
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:39
 #: lib/explorer_web/templates/transaction/index.html.eex:40
-#: lib/explorer_web/templates/transaction/overview.html.eex:61
-#: lib/explorer_web/templates/transaction/overview.html.eex:69
+#: lib/explorer_web/templates/transaction/overview.html.eex:63
+#: lib/explorer_web/templates/transaction/overview.html.eex:71
 #: lib/explorer_web/templates/transaction_internal_transaction/index.html.eex:33
 msgid "Value"
 msgstr "Value"
@@ -89,7 +89,7 @@ msgstr "Difficulty"
 
 #: lib/explorer_web/templates/block/index.html.eex:21
 #: lib/explorer_web/templates/block_transaction/index.html.eex:96
-#: lib/explorer_web/templates/transaction/overview.html.eex:138
+#: lib/explorer_web/templates/transaction/overview.html.eex:140
 msgid "Gas Limit"
 msgstr "Gas Limit"
 
@@ -98,7 +98,7 @@ msgid "Miner"
 msgstr "Validator"
 
 #: lib/explorer_web/templates/block_transaction/index.html.eex:104
-#: lib/explorer_web/templates/transaction/overview.html.eex:112
+#: lib/explorer_web/templates/transaction/overview.html.eex:114
 msgid "Nonce"
 msgstr "Nonce"
 
@@ -140,11 +140,11 @@ msgid "Gas"
 msgstr "Gas"
 
 #: lib/explorer_web/templates/block/index.html.eex:22
-#: lib/explorer_web/templates/transaction/overview.html.eex:146
+#: lib/explorer_web/templates/transaction/overview.html.eex:148
 msgid "Gas Price"
 msgstr "Gas Price"
 
-#: lib/explorer_web/templates/transaction/overview.html.eex:179
+#: lib/explorer_web/templates/transaction/overview.html.eex:181
 msgid "Input"
 msgstr "Input"
 
@@ -168,7 +168,7 @@ msgstr "Address"
 #: lib/explorer_web/templates/block_transaction/index.html.eex:142
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:37
 #: lib/explorer_web/templates/transaction/index.html.eex:38
-#: lib/explorer_web/templates/transaction/overview.html.eex:77
+#: lib/explorer_web/templates/transaction/overview.html.eex:79
 #: lib/explorer_web/templates/transaction_internal_transaction/index.html.eex:31
 #: lib/explorer_web/views/address_internal_transaction_view.ex:9
 #: lib/explorer_web/views/address_transaction_view.ex:11
@@ -191,7 +191,7 @@ msgstr "Success"
 #: lib/explorer_web/templates/block_transaction/index.html.eex:144
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:38
 #: lib/explorer_web/templates/transaction/index.html.eex:39
-#: lib/explorer_web/templates/transaction/overview.html.eex:89
+#: lib/explorer_web/templates/transaction/overview.html.eex:91
 #: lib/explorer_web/templates/transaction_internal_transaction/index.html.eex:32
 #: lib/explorer_web/views/address_internal_transaction_view.ex:8
 #: lib/explorer_web/views/address_transaction_view.ex:10
@@ -236,18 +236,18 @@ msgstr "Showing %{count} Transactions"
 
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:21
 #: lib/explorer_web/templates/transaction/index.html.eex:21
-#: lib/explorer_web/templates/transaction/overview.html.eex:55
+#: lib/explorer_web/templates/transaction/overview.html.eex:57
 #: lib/explorer_web/views/transaction_view.ex:39
 #: lib/explorer_web/views/transaction_view.ex:74
 msgid "Pending"
 msgstr "Pending"
 
-#: lib/explorer_web/templates/transaction/overview.html.eex:126
+#: lib/explorer_web/templates/transaction/overview.html.eex:128
 msgid "First Seen"
 msgstr ""
 
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:36
-#: lib/explorer_web/templates/transaction/overview.html.eex:132
+#: lib/explorer_web/templates/transaction/overview.html.eex:134
 msgid "Last Seen"
 msgstr ""
 
@@ -328,8 +328,8 @@ msgstr ""
 #: lib/explorer_web/templates/address_transaction/index.html.eex:101
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:39
 #: lib/explorer_web/templates/transaction/index.html.eex:40
-#: lib/explorer_web/templates/transaction/overview.html.eex:61
-#: lib/explorer_web/templates/transaction/overview.html.eex:155
+#: lib/explorer_web/templates/transaction/overview.html.eex:63
+#: lib/explorer_web/templates/transaction/overview.html.eex:157
 #: lib/explorer_web/templates/transaction_internal_transaction/index.html.eex:33
 #: lib/explorer_web/views/wei_helpers.ex:71
 msgid "Ether"
@@ -422,8 +422,8 @@ msgid "Price"
 msgstr ""
 
 #: lib/explorer_web/templates/address/_values.html.eex:12
-#: lib/explorer_web/templates/transaction/overview.html.eex:69
-#: lib/explorer_web/templates/transaction/overview.html.eex:163
+#: lib/explorer_web/templates/transaction/overview.html.eex:71
+#: lib/explorer_web/templates/transaction/overview.html.eex:165
 #: lib/explorer_web/views/currency_helpers.ex:32
 msgid "USD"
 msgstr ""
@@ -478,8 +478,8 @@ msgstr ""
 msgid "View All"
 msgstr ""
 
-#: lib/explorer_web/templates/transaction/overview.html.eex:155
-#: lib/explorer_web/templates/transaction/overview.html.eex:163
+#: lib/explorer_web/templates/transaction/overview.html.eex:157
+#: lib/explorer_web/templates/transaction/overview.html.eex:165
 msgid "TX Fee"
 msgstr ""
 
@@ -622,4 +622,9 @@ msgstr ""
 #, elixir-format
 #: lib/explorer_web/templates/chain/show.html.eex:44
 msgid "Wallet addresses"
+msgstr ""
+
+#, elixir-format
+#: lib/explorer_web/templates/transaction/overview.html.eex:46
+msgid "block confirmations"
 msgstr ""

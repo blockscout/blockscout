@@ -160,5 +160,13 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
       |> TransactionLogsPage.click_address(lincoln)
       |> assert_has(AddressPage.detail_hash(lincoln))
     end
+
+    test "block confirmations via live update", %{session: session, transaction: transaction} do
+      TransactionPage.visit_page(session, transaction)
+
+      assert_text(session, TransactionPage.block_confirmations(), "0")
+      ExplorerWeb.Endpoint.broadcast!("transactions:#{transaction.hash}", "confirmations", %{confirmations: 10})
+      assert_text(session, TransactionPage.block_confirmations(), "10")
+    end
   end
 end
