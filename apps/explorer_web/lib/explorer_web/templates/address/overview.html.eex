@@ -1,6 +1,6 @@
 <section>
   <div class="row" data-selector='overview'>
-    <div class="col-md-12 col-lg-6">
+    <div class="col-md-12 col-lg-8">
       <div class="card">
         <div class="card-body">
           <div class="icon-links float-right">
@@ -23,7 +23,7 @@
         </div>
       </div>
     </div>
-    <div class="col-md-6 col-lg-3">
+    <div class="col-md-6 col-lg-4">
       <div class="card bg-primary">
         <div class="card-body">
           <h2 class="card-title text-white">Balance</h2>
@@ -31,16 +31,6 @@
           <div class="text-right">
             <h3 class="text-white" data-test="address_balance"><%= balance(@address) %></h3>
             <span class="text-light"><%= formatted_usd(@address, @exchange_rate) %></span>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-6 col-lg-3">
-      <div class="card">
-        <div class="card-body">
-          <h2 class="card-title">Token Holdings</h2>
-          <div class="text-right mb-4">
-            <h3><%= formatted_usd(@address, @exchange_rate) %></h3>
           </div>
         </div>
       </div>
