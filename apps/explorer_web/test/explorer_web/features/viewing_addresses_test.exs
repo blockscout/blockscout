@@ -197,4 +197,30 @@ defmodule ExplorerWeb.ViewingAddressesTest do
 
     assert_text(session, AddressPage.balance(), "0.0000000000000001 POA")
   end
+
+  test "contract creation is shown for to_address on list page", %{
+    addresses: addresses,
+    block: block,
+    session: session
+  } do
+    lincoln = addresses.lincoln
+
+    from_lincoln =
+      :transaction
+      |> insert(from_address: lincoln, to_address: nil)
+      |> with_block(block)
+
+    internal_transaction =
+      insert(
+        :internal_transaction_create,
+        transaction: from_lincoln,
+        from_address: lincoln,
+        index: 0
+      )
+
+    session
+    |> AddressPage.visit_page(addresses.lincoln)
+    |> AddressPage.click_internal_transactions()
+    |> assert_has(AddressPage.contract_creation(internal_transaction))
+  end
 end

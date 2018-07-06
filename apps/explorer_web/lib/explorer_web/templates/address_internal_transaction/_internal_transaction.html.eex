@@ -8,7 +8,7 @@
       <span>
         <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: @internal_transaction.from_address %>
         &rarr;
-        <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: @internal_transaction.to_address, address_hash: nil %>
+        <%= render ExplorerWeb.AddressView, "_link.html", Keyword.merge(ExplorerWeb.InternalTransactionView.display_to_address(@internal_transaction), locale: @locale) %>
       </span>
       <%= ExplorerWeb.TransactionView.value(@internal_transaction, include_label: false) %> POA
     </div>
