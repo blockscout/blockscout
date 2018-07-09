@@ -23,18 +23,17 @@ defmodule Explorer.ChainTest do
       assert Chain.address_to_transaction_count(address) == 2
     end
 
-    test "with transactions and contract creation address" do
-      %Transaction{from_address: address} = insert(:transaction) |> Repo.preload(:from_address)
-      insert(:transaction, to_address: address)
+    test "with contract creation transactions the contract address is counted" do
+      address = insert(:address)
 
       insert(
         :internal_transaction_create,
         created_contract_address: address,
         index: 0,
-        transaction: insert(:transaction)
+        transaction: insert(:transaction, to_address: nil)
       )
 
-      assert Chain.address_to_transaction_count(address) == 3
+      assert Chain.address_to_transaction_count(address) == 1
     end
 
     test "doesn't double count addresses when to_address = from_address" do
@@ -42,6 +41,19 @@ defmodule Explorer.ChainTest do
       insert(:transaction, to_address: address, from_address: address)
 
       assert Chain.address_to_transaction_count(address) == 2
+    end
+
+    test "does not count non-contract-creation parent transactions" do
+      transaction_with_to_address =
+        %Transaction{} =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      %InternalTransaction{created_contract_address: address} =
+        insert(:internal_transaction_create, transaction: transaction_with_to_address, index: 0)
+
+      assert Chain.address_to_transaction_count(address) == 0
     end
   end
 
@@ -102,6 +114,19 @@ defmodule Explorer.ChainTest do
 
       assert [transaction2, transaction1] ==
                Chain.address_to_transactions(address) |> Repo.preload([:block, :to_address, :from_address])
+    end
+
+    test "does not include non-contract-creation parent transactions" do
+      transaction =
+        %Transaction{} =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      %InternalTransaction{created_contract_address: address} =
+        insert(:internal_transaction_create, transaction: transaction, index: 0)
+
+      assert [] == Chain.address_to_transactions(address)
     end
 
     test "with transactions can be paginated" do

@@ -146,7 +146,7 @@ defmodule Explorer.Chain do
             SELECT t0."hash" address
             FROM "transactions" AS t0
             LEFT OUTER JOIN "internal_transactions" AS i1 ON (i1."transaction_hash" = t0."hash") AND (i1."type" = 'create')
-            WHERE (i1."created_contract_address_hash" = $1)
+            WHERE (i1."created_contract_address_hash" = $1 AND t0."to_address_hash" IS NULL)
 
             UNION
 
@@ -2707,15 +2707,16 @@ defmodule Explorer.Chain do
       query,
       [t],
       t.to_address_hash == ^address_hash or t.from_address_hash == ^address_hash or
-        ^address_hash.bytes in fragment(
-          ~s[
+        (is_nil(t.to_address_hash) and
+           ^address_hash.bytes in fragment(
+             ~s[
             (SELECT i."created_contract_address_hash"
             FROM "internal_transactions" AS i
             WHERE (i."transaction_hash" = ?) AND (i."type" = 'create')
             LIMIT 1)
           ],
-          t.hash
-        )
+             t.hash
+           ))
     )
   end
 
