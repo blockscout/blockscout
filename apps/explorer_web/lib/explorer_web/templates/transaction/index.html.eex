@@ -1,5 +1,25 @@
-<section class="container-fluid">
+<section class="container">
   <div class="card">
+    <div class="card-header">
+      <ul class="nav nav-tabs card-header-tabs d-none d-md-inline-flex">
+        <li class="nav-item">
+          <%= link(
+                gettext("Validated"),
+                class: "nav-link active",
+                to: transaction_path(@conn, :index, @conn.assigns.locale)
+              ) %>
+        </li>
+        <li class="nav-item">
+          <%= link(
+                gettext("Pending"),
+                class: "nav-link",
+                "data-test": "pending_transactions_link",
+                to: pending_transaction_path(@conn, :index, @conn.assigns.locale)
+              ) %>
+        </li>
+      </ul>
+
+    </div>
     <div class="card-body">
       <h2 class="card-title mb-0"><%= gettext "Transactions" %></h2>
       <p><%= gettext("Showing %{count} Validated Transactions", count: Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###")) %></p>

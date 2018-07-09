@@ -1,14 +1,7 @@
-<section class="container-fluid">
-  <h1>
-    Transactions
-  </h1>
-  <p>
-    <%= gettext("Showing %{count} Pending Transactions", count: @pending_transaction_count) %>
-  </p>
-
+<section class="container">
   <div class="card">
     <div class="card-header">
-      <ul class="nav nav-tabs card-header-tabs">
+      <ul class="nav nav-tabs card-header-tabs d-none d-md-inline-flex">
         <li class="nav-item">
           <%= link(
                 gettext("Validated"),
@@ -20,64 +13,51 @@
           <%= link(
                 gettext("Pending"),
                 class: "nav-link active",
+                "data-test": "pending_transactions_link",
                 to: pending_transaction_path(@conn, :index, @conn.assigns.locale)
               ) %>
         </li>
       </ul>
+
     </div>
     <div class="card-body">
-      <table class="table table-responsive-sm table-font">
-        <thead>
-          <tr>
-            <th>
-              <%= gettext "Status" %>
-            </th>
-            <th><%= gettext "Hash" %></th>
-            <th><%= gettext "Last Seen" %></th>
-            <th><%= gettext "From" %></th>
-            <th><%= gettext "To" %></th>
-            <th><%= gettext "Value" %> (<%= gettext "Ether" %>)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <%= for transaction <- @transactions do %>
-            <tr data-transaction-hash="<%= transaction.hash %>">
-              <td>
-                <div class="transaction__dot transaction__dot--pending"></div>
-              </td>
-              <td>
-              <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: transaction.hash %>
-              </td>
-              <td data-from-now="<%= transaction.updated_at %>"></td>
-              <td>
-                <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(transaction.from_address), address_hash: transaction.from_address_hash %>
-              </td>
-              <td>
-                <%= if transaction.to_address_hash != nil do %>
-                  <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(transaction.to_address), address_hash: transaction.to_address_hash %>
-                <% else %>
-                  <%= gettext "Contract Creation" %>
-                <% end %>
-              </td>
-              <td>
-              <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
+      <h2 class="card-title mb-0"><%= gettext "Transactions" %></h2>
+      <p><%= gettext("Showing %{count} Pending Transactions", count: @pending_transaction_count) %></p>
+
+      <%= for transaction <- @transactions do %>
+      <div class="tile tile-type-<%= ExplorerWeb.TransactionView.type_suffix(transaction) %>" data-test="<%= ExplorerWeb.TransactionView.type_suffix(transaction) %>" data-transaction-hash="<%= transaction.hash %>">
+        <div class="row" data-test="chain_transaction">
+          <div class="col-md-2 d-flex align-items-center justify-content-start justify-content-lg-center  tile-label">
+            <%= ExplorerWeb.TransactionView.transaction_display_type(transaction) %>
+          </div>
+          <div class="col-md-7 col-lg-8 d-flex flex-column">
+            <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: transaction.hash %>
+            <span>
+              <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(transaction.from_address), address_hash: transaction.from_address_hash %>
+              &rarr;
+              <%= render ExplorerWeb.AddressView, "_link.html", address_hash: ExplorerWeb.TransactionView.to_address_hash(transaction), locale: @locale, contract: ExplorerWeb.AddressView.contract?(transaction.to_address) %>
+            </span>
+            <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> POA
+          </div>
+          <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column justify-content-start justify-content-md-end text-md-right">
+
+          </div>
+        </div>
+      </div>
+      <% end %>
+      <%= if @next_page_params do %>
+        <%= link(
+          gettext("Older"),
+          class: "button button--secondary button--sm float-right mt-3",
+          to: pending_transaction_path(
+            @conn,
+            :index,
+            @conn.assigns.locale,
+            @next_page_params
+          )
+        ) %>
+      <% end %>
     </div>
+
   </div>
-  <%= if @next_page_params do %>
-    <%= link(
-      gettext("Older"),
-      class: "button button--secondary button--sm float-right mt-3",
-      to: pending_transaction_path(
-        @conn,
-        :index,
-        @conn.assigns.locale,
-        @next_page_params
-      )
-    ) %>
-  <% end %>
 </section>
