@@ -40,6 +40,12 @@ defmodule EthereumJSONRPC.HTTP do
     {:ok, list}
   end
 
+  # JSONRPC 2.0 standard says that an empty batch (`[]`) returns an empty response (`""`), but an empty response isn't
+  # valid JSON, so instead act like it returns an empty list (`[]`)
+  defp chunked_json_rpc([[] | tail], options, decoded_response_bodies) do
+    chunked_json_rpc(tail, options, decoded_response_bodies)
+  end
+
   defp chunked_json_rpc([[%{method: method} | _] = batch | tail] = chunks, options, decoded_response_bodies)
        when is_list(tail) and is_list(decoded_response_bodies) do
     http = Keyword.fetch!(options, :http)
