@@ -36,6 +36,7 @@ defmodule EthereumJSONRPC.HTTP do
       decoded_response_bodies
       |> Enum.reverse()
       |> List.flatten()
+      |> Enum.map(&standardize_response/1)
 
     {:ok, list}
   end
@@ -112,13 +113,43 @@ defmodule EthereumJSONRPC.HTTP do
 
   defp handle_response(resp, 200) do
     case resp do
-      %{"error" => error} -> {:error, error}
+      %{"error" => error} -> {:error, standardize_error(error)}
       %{"result" => result} -> {:ok, result}
     end
   end
 
   defp handle_response(resp, _status) do
     {:error, resp}
+  end
+
+  # restrict response to only those fields supported by the JSON-RPC 2.0 standard, which means that level of keys is
+  # validated, so we can indicate that with switch to atom keys.
+  defp standardize_response(%{"jsonrpc" => "2.0" = jsonrpc, "id" => id} = unstandardized) when is_integer(id) do
+    standardized = %{jsonrpc: jsonrpc, id: id}
+
+    case unstandardized do
+      %{"result" => _, "error" => _} ->
+        raise ArgumentError,
+              "result and error keys are mutually exclusive in JSONRPC 2.0 response objects, but got #{unstandardized}"
+
+      %{"result" => result} ->
+        Map.put(standardized, :result, result)
+
+      %{"error" => error} ->
+        Map.put(standardized, :error, standardize_error(error))
+    end
+  end
+
+  # restrict error to only those fields supported by the JSON-RPC 2.0 standard, which means that level of keys is
+  # validated, so we can indicate that with switch to atom keys.
+  defp standardize_error(%{"code" => code, "message" => message} = unstandardized)
+       when is_integer(code) and is_binary(message) do
+    standardized = %{code: code, message: message}
+
+    case Map.fetch(unstandardized, "data") do
+      {:ok, data} -> Map.put(standardized, :data, data)
+      :error -> standardized
+    end
   end
 
   defp url(options, method) when is_list(options) and is_binary(method) do

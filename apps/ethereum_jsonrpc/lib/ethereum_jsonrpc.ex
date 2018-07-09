@@ -290,7 +290,7 @@ defmodule EthereumJSONRPC do
     {status, Enum.reverse(reversed)}
   end
 
-  defp get_balance_response_to_address_params(%{"id" => id, "result" => fetched_balance_quantity}, id_to_params)
+  defp get_balance_response_to_address_params(%{id: id, result: fetched_balance_quantity}, id_to_params)
        when is_map(id_to_params) do
     %{block_quantity: block_quantity, hash_data: hash_data} = Map.fetch!(id_to_params, id)
 
@@ -302,11 +302,11 @@ defmodule EthereumJSONRPC do
      }}
   end
 
-  defp get_balance_response_to_address_params(%{"id" => id, "error" => error}, id_to_params)
+  defp get_balance_response_to_address_params(%{id: id, error: error}, id_to_params)
        when is_map(id_to_params) do
     %{block_quantity: block_quantity, hash_data: hash_data} = Map.fetch!(id_to_params, id)
 
-    annotated_error = Map.merge(error, %{"blockNumber" => block_quantity, "hash" => hash_data})
+    annotated_error = Map.put(error, :data, %{"blockNumber" => block_quantity, "hash" => hash_data})
 
     {:error, annotated_error}
   end
@@ -370,8 +370,8 @@ defmodule EthereumJSONRPC do
   defp handle_get_blocks({:ok, results}) do
     {blocks, next} =
       Enum.reduce(results, {[], :more}, fn
-        %{"result" => nil}, {blocks, _} -> {blocks, :end_of_chain}
-        %{"result" => %{} = block}, {blocks, next} -> {[block | blocks], next}
+        %{result: nil}, {blocks, _} -> {blocks, :end_of_chain}
+        %{result: %{} = block}, {blocks, next} -> {[block | blocks], next}
       end)
 
     elixir_blocks = Blocks.to_elixir(blocks)

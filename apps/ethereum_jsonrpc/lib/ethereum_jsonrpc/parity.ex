@@ -95,7 +95,7 @@ defmodule EthereumJSONRPC.Parity do
     end
   end
 
-  defp trace_replay_transaction_response_to_traces(%{"id" => id, "result" => %{"trace" => traces}}, id_to_params)
+  defp trace_replay_transaction_response_to_traces(%{id: id, result: %{"trace" => traces}}, id_to_params)
        when is_list(traces) and is_map(id_to_params) do
     %{block_number: block_number, hash_data: transaction_hash} = Map.fetch!(id_to_params, id)
 
@@ -109,11 +109,11 @@ defmodule EthereumJSONRPC.Parity do
     {:ok, annotated_traces}
   end
 
-  defp trace_replay_transaction_response_to_traces(%{"id" => id, "error" => error}, id_to_params)
+  defp trace_replay_transaction_response_to_traces(%{id: id, error: error}, id_to_params)
        when is_map(id_to_params) do
     %{block_number: block_number, hash_data: transaction_hash} = Map.fetch!(id_to_params, id)
 
-    annotated_error = Map.merge(error, %{"blockNumber" => block_number, "transactionHash" => transaction_hash})
+    annotated_error = Map.put(error, :data, %{"blockNumber" => block_number, "transactionHash" => transaction_hash})
 
     {:error, annotated_error}
   end

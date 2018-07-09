@@ -220,9 +220,9 @@ defmodule EthereumJSONRPC.Receipts do
     })
   end
 
-  defp response_to_receipt(%{"result" => nil}, _), do: %{}
+  defp response_to_receipt(%{result: nil}, _), do: %{}
 
-  defp response_to_receipt(%{"id" => id, "result" => receipt}, id_to_transaction_params) do
+  defp response_to_receipt(%{id: id, result: receipt}, id_to_transaction_params) do
     gas =
       id_to_transaction_params
       |> Map.fetch!(id)

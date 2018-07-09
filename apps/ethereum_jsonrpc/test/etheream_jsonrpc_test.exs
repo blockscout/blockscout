@@ -72,10 +72,9 @@ defmodule EthereumJSONRPCTest do
       [reason] = reasons
 
       assert %{
-               "blockNumber" => "0x1",
-               "code" => -32602,
-               "hash" => "0x0",
-               "message" => message
+               code: -32602,
+               data: %{"blockNumber" => "0x1", "hash" => "0x0"},
+               message: message
              } = reason
 
       case Keyword.fetch!(json_rpc_named_arguments, :variant) do

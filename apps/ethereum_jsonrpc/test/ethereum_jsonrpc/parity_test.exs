@@ -68,12 +68,13 @@ defmodule EthereumJSONRPC.ParityTest do
                {:error,
                 [
                   %{
-                    "blockNumber" => 1,
-                    "code" => -32603,
-                    "data" => "TransactionNotFound",
-                    "message" =>
-                      "Internal error occurred: {}, this should not be the case with eth_call, most likely a bug.",
-                    "transactionHash" => "0x0000000000000000000000000000000000000000000000000000000000000001"
+                    :code => -32603,
+                    :data => %{
+                      "blockNumber" => 1,
+                      "transactionHash" => "0x0000000000000000000000000000000000000000000000000000000000000001"
+                    },
+                    :message =>
+                      "Internal error occurred: {}, this should not be the case with eth_call, most likely a bug."
                   }
                 ]}
     end
@@ -114,28 +115,31 @@ defmodule EthereumJSONRPC.ParityTest do
                {:error,
                 [
                   %{
-                    "blockNumber" => 1,
-                    "code" => -32603,
-                    "data" => "TransactionNotFound",
-                    "message" =>
-                      "Internal error occurred: {}, this should not be the case with eth_call, most likely a bug.",
-                    "transactionHash" => "0x0000000000000000000000000000000000000000000000000000000000000001"
+                    :code => -32603,
+                    :data => %{
+                      "blockNumber" => 1,
+                      "transactionHash" => "0x0000000000000000000000000000000000000000000000000000000000000001"
+                    },
+                    :message =>
+                      "Internal error occurred: {}, this should not be the case with eth_call, most likely a bug."
                   },
                   %{
-                    "blockNumber" => 35,
-                    "code" => -32603,
-                    "data" => "TransactionNotFound",
-                    "message" =>
-                      "Internal error occurred: {}, this should not be the case with eth_call, most likely a bug.",
-                    "transactionHash" => "0x6b80a90c958fb5791a070929379ed6eb7a33ecdf9f9cafcada2f6803b3f25ec3"
+                    :code => -32603,
+                    :data => %{
+                      "blockNumber" => 35,
+                      "transactionHash" => "0x6b80a90c958fb5791a070929379ed6eb7a33ecdf9f9cafcada2f6803b3f25ec3"
+                    },
+                    :message =>
+                      "Internal error occurred: {}, this should not be the case with eth_call, most likely a bug."
                   },
                   %{
-                    "blockNumber" => 2,
-                    "code" => -32603,
-                    "data" => "TransactionNotFound",
-                    "message" =>
-                      "Internal error occurred: {}, this should not be the case with eth_call, most likely a bug.",
-                    "transactionHash" => "0x0000000000000000000000000000000000000000000000000000000000000002"
+                    :code => -32603,
+                    :data => %{
+                      "blockNumber" => 2,
+                      "transactionHash" => "0x0000000000000000000000000000000000000000000000000000000000000002"
+                    },
+                    :message =>
+                      "Internal error occurred: {}, this should not be the case with eth_call, most likely a bug."
                   }
                 ]}
     end
