@@ -162,13 +162,13 @@
                   </td>
                   <td data-from-now="<%= transaction.block.timestamp %>"></td>
                   <td class="address-cell">
-                    <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.from_address %>
+                    <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address_hash: transaction.from_address_hash %>
                   </td>
                   <td class="u-text-center"><i class="fas fa-arrow-circle-right"></i></td>
                   <td>
                     <%= cond do %>
                       <% transaction.to_address_hash != nil -> %>
-                        <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.to_address %>
+                        <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address_hash: transaction.to_address_hash %>
                       <% transaction.created_contract_address_hash != nil -> %>
                         <i class="fas fa-plus-square"></i>
                         <%= link(

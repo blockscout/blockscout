@@ -3,7 +3,7 @@ defmodule ExplorerWeb.TransactionView do
 
   alias Cldr.Number
   alias Explorer.Chain
-  alias Explorer.Chain.{InternalTransaction, Transaction, Wei}
+  alias Explorer.Chain.{Address, InternalTransaction, Transaction, Wei}
   alias Explorer.ExchangeRates.Token
   alias ExplorerWeb.{AddressView, BlockView}
   alias ExplorerWeb.ExchangeRates.USD
@@ -23,7 +23,7 @@ defmodule ExplorerWeb.TransactionView do
   def display_to_address(%Transaction{to_address_hash: nil, created_contract_address_hash: address_hash}),
     do: [address: nil, address_hash: address_hash]
 
-  def display_to_address(%Transaction{to_address: address}), do: [address: address]
+  def display_to_address(%Transaction{to_address: %Address{hash: address_hash}}), do: [address_hash: address_hash]
 
   def formatted_fee(%Transaction{} = transaction, opts) do
     transaction
@@ -46,13 +46,9 @@ defmodule ExplorerWeb.TransactionView do
     AddressView.contract?(from_address) || AddressView.contract?(to_address)
   end
 
-  def involves_contract_creation?(%Transaction{created_contract_address_hash: nil}), do: false
+  def contract_creation?(%Transaction{to_address: nil}), do: true
 
-  def involves_contract_creation?(_), do: true
-
-  def contract_creation?(%Transaction{created_contract_address_hash: nil}), do: false
-
-  def contract_creation?(_), do: true
+  def contract_creation?(_), do: false
 
   def qr_code(%Transaction{hash: hash}) do
     hash
@@ -105,7 +101,7 @@ defmodule ExplorerWeb.TransactionView do
 
   def type_suffix(%Transaction{} = transaction) do
     cond do
-      involves_contract_creation?(transaction) -> "contract-creation"
+      contract_creation?(transaction) -> "contract-creation"
       involves_contract?(transaction) -> "contract"
       true -> "transaction"
     end
@@ -113,7 +109,7 @@ defmodule ExplorerWeb.TransactionView do
 
   def transaction_display_type(%Transaction{} = transaction) do
     cond do
-      involves_contract_creation?(transaction) -> gettext("Contract Creation")
+      contract_creation?(transaction) -> gettext("Contract Creation")
       involves_contract?(transaction) -> gettext("Contract")
       true -> gettext("Transaction")
     end

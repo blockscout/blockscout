@@ -50,10 +50,10 @@
               </td>
               <td data-from-now="<%= transaction.updated_at %>"></td>
               <td>
-                <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.from_address %>
+                <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address_hash: transaction.from_address_hash %>
               </td>
               <td>
-                <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.to_address %>
+                <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address_hash: transaction.to_address_hash %>
               </td>
               <td>
               <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %>
