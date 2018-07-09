@@ -14,6 +14,8 @@ end
 # no declared in :applications since it is test-only
 {:ok, _} = Application.ensure_all_started(:ex_machina)
 
+Mox.defmock(EthereumJSONRPC.Mox, for: EthereumJSONRPC.Transport)
+
 ExUnit.configure(formatters: [JUnitFormatter, ExUnit.CLIFormatter])
 ExUnit.start()
 

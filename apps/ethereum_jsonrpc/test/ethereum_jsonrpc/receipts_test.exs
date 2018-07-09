@@ -1,102 +1,134 @@
 defmodule EthereumJSONRPC.ReceiptsTest do
   use ExUnit.Case, async: true
+  use EthereumJSONRPC.Case
+
+  import EthereumJSONRPC, only: [integer_to_quantity: 1]
+  import Mox
 
   alias EthereumJSONRPC.Receipts
 
-  setup do
-    {variant, url} =
-      case System.get_env("ETHEREUM_JSONRPC_VARIANT") || "parity" do
-        "geth" ->
-          {EthereumJSONRPC.Geth, "https://mainnet.infura.io/8lTvJTKmHPCHazkneJsY"}
-
-        "parity" ->
-          {EthereumJSONRPC.Parity, "https://sokol-trace.poa.network"}
-
-        variant_name ->
-          raise ArgumentError, "Unsupported variant name (#{variant_name})"
-      end
-
-    %{
-      json_rpc_named_arguments: [
-        transport: EthereumJSONRPC.HTTP,
-        transport_options: [
-          http: EthereumJSONRPC.HTTP.HTTPoison,
-          url: url,
-          http_options: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :ethereum_jsonrpc]]
-        ],
-        variant: variant
-      ]
-    }
-  end
+  setup :verify_on_exit!
 
   doctest Receipts
 
   describe "fetch/2" do
     test "with receipts and logs", %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      case Keyword.fetch!(json_rpc_named_arguments, :variant) do
-        EthereumJSONRPC.Geth ->
-          assert {:ok,
-                  %{
-                    logs: [],
-                    receipts: [
-                      %{
-                        cumulative_gas_used: 1_238_877,
-                        gas_used: 21000,
-                        status: :ok,
-                        transaction_hash: "0x360fb62cc817093e5624468735803ea39cad719e5c68ca322bae6ba4f520756f",
-                        transaction_index: 57
-                      }
-                    ]
-                  }} =
-                   Receipts.fetch(
-                     [
-                       %{
-                         gas: 90000,
-                         hash: "0x360fb62cc817093e5624468735803ea39cad719e5c68ca322bae6ba4f520756f"
-                       }
-                     ],
-                     json_rpc_named_arguments
-                   )
+      %{
+        cumulative_gas_used: cumulative_gas_used,
+        gas_used: gas_used,
+        address_hash: address_hash,
+        block_number: block_number,
+        data: data,
+        index: index,
+        first_topic: first_topic,
+        status: status,
+        type: type,
+        transaction_hash: transaction_hash,
+        transaction_index: transaction_index
+      } =
+        case Keyword.fetch!(json_rpc_named_arguments, :variant) do
+          EthereumJSONRPC.Geth ->
+            %{
+              cumulative_gas_used: 884_322,
+              address_hash: "0x1e2fbe6be9eb39fc894d38be976111f332172d83",
+              block_number: 3_560_000,
+              data:
+                "0x00000000000000000000000033066f6a8adf2d4f5db193524b6fbae062ec0d110000000000000000000000000000000000000000000000000000000000001030",
+              index: 12,
+              first_topic: "0xf6db2bace4ac8277384553ad9603d045220a91fb2448ab6130d7a6f044f9a8cf",
+              gas_used: 106_025,
+              status: :error,
+              type: nil,
+              transaction_hash: "0xd3efddbbeb6ad8d8bb3f6b8c8fb6165567e9dd868013146bdbeb60953c82822a",
+              transaction_index: 17
+            }
 
-        EthereumJSONRPC.Parity ->
-          assert {:ok,
-                  %{
-                    logs: [
-                      %{
-                        address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
-                        data: "0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
-                        first_topic: "0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22",
-                        fourth_topic: nil,
-                        index: 0,
-                        second_topic: nil,
-                        third_topic: nil,
-                        transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-                        type: "mined"
-                      }
-                    ],
-                    receipts: [
-                      %{
-                        cumulative_gas_used: 50450,
-                        gas_used: 50450,
-                        status: :ok,
-                        transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-                        transaction_index: 0
-                      }
-                    ]
-                  }} =
-                   Receipts.fetch(
-                     [
-                       %{
-                         gas: 50451,
-                         hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5"
-                       }
-                     ],
-                     json_rpc_named_arguments
-                   )
+          EthereumJSONRPC.Parity ->
+            %{
+              cumulative_gas_used: 50450,
+              gas_used: 50450,
+              address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+              block_number: 37,
+              data: "0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
+              index: 0,
+              first_topic: "0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22",
+              status: :ok,
+              type: "mined",
+              transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+              transaction_index: 0
+            }
+        end
 
-        variant ->
-          raise ArgumentError, "Unsupported variant (#{variant})"
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        native_status =
+          case status do
+            :ok -> "0x1"
+            :error -> "0x0"
+          end
+
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
+          {:ok,
+           [
+             %{
+               id: 0,
+               result: %{
+                 "cumulativeGasUsed" => integer_to_quantity(cumulative_gas_used),
+                 "gasUsed" => integer_to_quantity(gas_used),
+                 "logs" => [
+                   %{
+                     "address" => address_hash,
+                     "blockNumber" => integer_to_quantity(block_number),
+                     "data" => data,
+                     "logIndex" => integer_to_quantity(index),
+                     "topics" => [first_topic],
+                     "transactionHash" => transaction_hash,
+                     "type" => type
+                   }
+                 ],
+                 "status" => native_status,
+                 "transactionHash" => transaction_hash,
+                 "transactionIndex" => integer_to_quantity(transaction_index)
+               }
+             }
+           ]}
+        end)
       end
+
+      assert {:ok,
+              %{
+                logs: [
+                  %{
+                    address_hash: ^address_hash,
+                    block_number: ^block_number,
+                    data: ^data,
+                    first_topic: ^first_topic,
+                    fourth_topic: nil,
+                    index: ^index,
+                    second_topic: nil,
+                    third_topic: nil,
+                    transaction_hash: ^transaction_hash
+                  }
+                  | _
+                ],
+                receipts: [
+                  %{
+                    cumulative_gas_used: ^cumulative_gas_used,
+                    gas_used: ^gas_used,
+                    status: ^status,
+                    transaction_hash: ^transaction_hash,
+                    transaction_index: ^transaction_index
+                  }
+                ]
+              }} =
+               Receipts.fetch(
+                 [
+                   %{
+                     gas: 9000,
+                     hash: transaction_hash
+                   }
+                 ],
+                 json_rpc_named_arguments
+               )
     end
   end
 end

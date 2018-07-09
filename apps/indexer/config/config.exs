@@ -6,8 +6,6 @@ config :indexer,
   debug_logs: !!System.get_env("DEBUG_INDEXER"),
   ecto_repos: [Explorer.Repo]
 
-variant = System.get_env("ETHEREUM_JSONRPC_VARIANT") || "parity"
-
-# Import variant specific config. This must remain at the bottom
+# Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
-import_config "#{variant}.exs"
+import_config "#{Mix.env()}.exs"

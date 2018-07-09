@@ -39,7 +39,9 @@ defmodule Indexer.MixProject do
       # JSONRPC access to Parity for `Explorer.Indexer`
       {:ethereum_jsonrpc, in_umbrella: true},
       # Importing to database
-      {:explorer, in_umbrella: true}
+      {:explorer, in_umbrella: true},
+      # Mocking `EthereumJSONRPC.Transport`, so we avoid hitting real chains for local testing
+      {:mox, "~> 0.3.2", only: [:test]}
     ]
   end
 

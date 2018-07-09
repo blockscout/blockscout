@@ -8,6 +8,6 @@ config :indexer,
       http: EthereumJSONRPC.HTTP.HTTPoison,
       url: "https://mainnet.infura.io/8lTvJTKmHPCHazkneJsY",
       http_options: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :ethereum_jsonrpc]]
-    ]
-  ],
-  variant: EthereumJSONRPC.Geth
+    ],
+    variant: EthereumJSONRPC.Geth
+  ]
