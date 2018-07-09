@@ -53,7 +53,11 @@
                 <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address_hash: transaction.from_address_hash %>
               </td>
               <td>
-                <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address_hash: transaction.to_address_hash %>
+                <%= if transaction.to_address_hash != nil do %>
+                  <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address_hash: transaction.to_address_hash %>
+                <% else %>
+                  <%= gettext "Contract Creation" %>
+                <% end %>
               </td>
               <td>
               <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %>
