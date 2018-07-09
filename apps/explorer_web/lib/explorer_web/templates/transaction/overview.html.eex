@@ -105,6 +105,8 @@
                         "data-test": "created_contract_address_hash",
                         to: address_path(@conn, :show, @conn.assigns.locale, @transaction.created_contract_address_hash)
                       ) %> Created
+                    <% @transaction.to_address_hash == nil -> %>
+                      <%= gettext "Contract Creation" %>
                     <% true -> %>
                   <% end %>
                 </td>
