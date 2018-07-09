@@ -46,7 +46,7 @@
                 <div class="transaction__dot transaction__dot--pending"></div>
               </td>
               <td>
-              <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction: transaction %>
+              <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: transaction.hash %>
               </td>
               <td data-from-now="<%= transaction.updated_at %>"></td>
               <td>

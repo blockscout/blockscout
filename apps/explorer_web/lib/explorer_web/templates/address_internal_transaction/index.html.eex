@@ -89,7 +89,7 @@
               <tgroup>
                 <tr data-test="internal_transaction">
                   <td>
-                    <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction: internal_transaction.transaction %>
+                    <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: internal_transaction.transaction_hash %>
                   </td>
                   <td>
                     <%= link(internal_transaction.transaction.block,
