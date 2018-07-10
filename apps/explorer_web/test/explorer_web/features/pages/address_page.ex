@@ -40,7 +40,7 @@ defmodule ExplorerWeb.AddressPage do
   end
 
   def transaction(transaction_hash) do
-    css("[data-test='transaction_hash'][data-transaction-hash='#{transaction_hash}']")
+    css("[data-transaction-hash='#{transaction_hash}']")
   end
 
   def transaction_count do

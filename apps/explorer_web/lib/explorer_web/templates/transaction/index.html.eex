@@ -42,7 +42,7 @@
           </thead>
           <tbody>
             <%= for transaction <- @transactions do %>
-              <tr>
+              <tr data-transaction-hash="<%= transaction.hash %>">
                 <td>
                   <div class="transaction__dot transaction__dot--<%= status(transaction) %>"></div>
                 </td>

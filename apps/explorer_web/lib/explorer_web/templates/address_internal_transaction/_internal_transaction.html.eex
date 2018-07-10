@@ -1,5 +1,5 @@
 <div class="tile tile-type-internal-transaction fade-in" data-test="internal_transaction">
-  <div class="row">
+  <div class="row" data-test="transaction_hash" data-transaction-hash="<%= @internal_transaction.transaction_hash %>">
     <div class="col-md-2 d-flex align-items-center justify-content-start justify-content-lg-center  tile-label">
       <%=  gettext("Internal Transaction") %>
     </div>
