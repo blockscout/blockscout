@@ -188,7 +188,9 @@ defmodule Indexer.BlockFetcher do
 
     debug(fn -> "#{count} missed block ranges between #{latest_block_number} and genesis" end)
 
-    {:ok, seq} = Sequence.start_link(missing_ranges, latest_block_number, -1 * state.blocks_batch_size)
+    {:ok, seq} =
+      Sequence.start_link(prefix: missing_ranges, first: latest_block_number, step: -1 * state.blocks_batch_size)
+
     stream_import(state, seq, max_concurrency: state.blocks_concurrency)
   end
 
@@ -294,7 +296,7 @@ defmodule Indexer.BlockFetcher do
 
   defp realtime_task(%{} = state) do
     {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest")
-    {:ok, seq} = Sequence.start_link([], latest_block_number, 2)
+    {:ok, seq} = Sequence.start_link(first: latest_block_number, step: 2)
     stream_import(state, seq, max_concurrency: 1)
   end
 
