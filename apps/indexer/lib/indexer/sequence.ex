@@ -97,6 +97,8 @@ defmodule Indexer.Sequence do
   @impl GenServer
   @spec init(options) :: {:ok, t}
   def init(named_arguments) when is_list(named_arguments) do
+    Process.flag(:trap_exit, true)
+
     {:ok,
      %__MODULE__{
        queue:

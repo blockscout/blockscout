@@ -26,7 +26,8 @@ defmodule Indexer.SequenceTest do
 
       sequence_ref = Process.monitor(sequence_pid)
 
-      assert_receive {:DOWN, ^sequence_ref, :process, ^sequence_pid, :normal}
+      # noproc when the sequence has already died by the time monitor is called
+      assert_receive {:DOWN, ^sequence_ref, :process, ^sequence_pid, status} when status in [:normal, :noproc]
     end
   end
 
