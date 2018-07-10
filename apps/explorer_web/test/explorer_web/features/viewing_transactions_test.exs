@@ -19,6 +19,7 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
     |> with_block()
 
     pending = insert(:transaction, block_hash: nil, gas: 5891, index: nil)
+    pending_contract = insert(:transaction, to_address: nil, block_hash: nil, gas: 5891, index: nil)
 
     lincoln = insert(:address)
     taft = insert(:address)
@@ -51,6 +52,7 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
     {:ok,
      %{
        pending: pending,
+       pending_contract: pending_contract,
        internal: internal,
        lincoln: lincoln,
        taft: taft,
@@ -95,11 +97,12 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
       |> refute_has(TransactionListPage.transaction(pending))
     end
 
-    test "viewing the pending tab", %{pending: pending, session: session} do
+    test "viewing the pending tab", %{pending: pending, pending_contract: pending_contract, session: session} do
       session
       |> TransactionListPage.visit_page()
       |> TransactionListPage.click_pending()
       |> assert_has(TransactionListPage.transaction(pending))
+      |> assert_has(TransactionListPage.transaction(pending_contract))
     end
 
     test "contract creation is shown for to_address on list page", %{session: session} do

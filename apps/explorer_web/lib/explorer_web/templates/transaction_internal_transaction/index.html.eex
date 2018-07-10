@@ -38,7 +38,7 @@
                 <tr>
                   <td><%= internal_transaction.type %></td>
                   <td>
-                    <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: internal_transaction.from_address %>
+                    <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(internal_transaction.from_address), address_hash: internal_transaction.from_address_hash %>
                   </td>
                   <td>
                     <%= if ExplorerWeb.InternalTransactionView.create?(internal_transaction) do %>
@@ -51,7 +51,7 @@
                         title: internal_transaction.created_contract_address_hash
                       ) %>
                     <% else %>
-                      <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: internal_transaction.to_address %>
+                      <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(internal_transaction.to_address), address_hash: internal_transaction.to_address_hash %>
                     <% end %>
                   </td>
                   <td><%= ExplorerWeb.TransactionView.value(internal_transaction, include_label: false) %></td>

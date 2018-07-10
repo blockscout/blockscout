@@ -46,14 +46,18 @@
                 <div class="transaction__dot transaction__dot--pending"></div>
               </td>
               <td>
-              <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction: transaction %>
+              <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: transaction.hash %>
               </td>
               <td data-from-now="<%= transaction.updated_at %>"></td>
               <td>
-                <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.from_address %>
+                <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(transaction.from_address), address_hash: transaction.from_address_hash %>
               </td>
               <td>
-                <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address: transaction.to_address %>
+                <%= if transaction.to_address_hash != nil do %>
+                  <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(transaction.to_address), address_hash: transaction.to_address_hash %>
+                <% else %>
+                  <%= gettext "Contract Creation" %>
+                <% end %>
               </td>
               <td>
               <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %>
