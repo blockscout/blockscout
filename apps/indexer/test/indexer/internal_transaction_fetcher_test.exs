@@ -7,24 +7,23 @@ defmodule Indexer.InternalTransactionFetcherTest do
 
   @moduletag :capture_log
 
-  if EthereumJSONRPC.config(:variant) != EthereumJSONRPC.Geth do
-    test "does not try to fetch pending transactions from Indexer.PendingTransactionFetcher" do
-      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-      AddressBalanceFetcherCase.start_supervised!()
-      start_supervised!(Indexer.PendingTransactionFetcher)
+  @tag :no_geth
+  test "does not try to fetch pending transactions from Indexer.PendingTransactionFetcher" do
+    start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
+    AddressBalanceFetcherCase.start_supervised!()
+    start_supervised!(Indexer.PendingTransactionFetcher)
 
-      wait_for_results(fn ->
-        Repo.one!(from(transaction in Explorer.Chain.Transaction, where: is_nil(transaction.block_hash), limit: 1))
-      end)
+    wait_for_results(fn ->
+      Repo.one!(from(transaction in Explorer.Chain.Transaction, where: is_nil(transaction.block_hash), limit: 1))
+    end)
 
-      :transaction
-      |> insert(hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6")
-      |> with_block()
+    :transaction
+    |> insert(hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6")
+    |> with_block()
 
-      hash_strings = InternalTransactionFetcher.init([], fn hash_string, acc -> [hash_string | acc] end)
+    hash_strings = InternalTransactionFetcher.init([], fn hash_string, acc -> [hash_string | acc] end)
 
-      assert :ok = InternalTransactionFetcher.run(hash_strings, 0)
-    end
+    assert :ok = InternalTransactionFetcher.run(hash_strings, 0)
   end
 
   describe "init/2" do
@@ -82,24 +81,23 @@ defmodule Indexer.InternalTransactionFetcherTest do
                """
     end
 
-    if EthereumJSONRPC.config(:variant) != EthereumJSONRPC.Geth do
-      test "duplicate transaction hashes only retry uniques" do
-        start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-        AddressBalanceFetcherCase.start_supervised!()
+    @tag :no_geth
+    test "duplicate transaction hashes only retry uniques" do
+      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
+      AddressBalanceFetcherCase.start_supervised!()
 
-        # not a real transaction hash, so that it fails
-        insert(:transaction, hash: "0x0000000000000000000000000000000000000000000000000000000000000001")
+      # not a real transaction hash, so that it fails
+      insert(:transaction, hash: "0x0000000000000000000000000000000000000000000000000000000000000001")
 
-        assert InternalTransactionFetcher.run(
-                 [
-                   %{block_number: 1, hash_data: "0x0000000000000000000000000000000000000000000000000000000000000001"},
-                   %{block_number: 1, hash_data: "0x0000000000000000000000000000000000000000000000000000000000000001"}
-                 ],
-                 0
-               ) ==
-                 {:retry,
-                  [%{block_number: 1, hash_data: "0x0000000000000000000000000000000000000000000000000000000000000001"}]}
-      end
+      assert InternalTransactionFetcher.run(
+               [
+                 %{block_number: 1, hash_data: "0x0000000000000000000000000000000000000000000000000000000000000001"},
+                 %{block_number: 1, hash_data: "0x0000000000000000000000000000000000000000000000000000000000000001"}
+               ],
+               0
+             ) ==
+               {:retry,
+                [%{block_number: 1, hash_data: "0x0000000000000000000000000000000000000000000000000000000000000001"}]}
     end
   end
 end
