@@ -2263,7 +2263,7 @@ defmodule Explorer.Chain do
               ],
             transaction.hash
           ),
-          Explorer.Chain.Hash.Truncated
+          Explorer.Chain.Hash.Address
         )
     })
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
