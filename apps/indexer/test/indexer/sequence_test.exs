@@ -3,15 +3,31 @@ defmodule Indexer.SequenceTest do
 
   alias Indexer.Sequence
 
-  test "start_link" do
-    {:ok, pid} = Sequence.start_link([1..4], 5, 1)
+  describe "start_link/1" do
+    test "sets state" do
+      {:ok, pid} = Sequence.start_link([1..4], 5, 1)
 
-    assert state(pid) == %Sequence{
-             current: 5,
-             mode: :infinite,
-             queue: {[1..4], []},
-             step: 1
-           }
+      assert state(pid) == %Sequence{
+               current: 5,
+               mode: :infinite,
+               queue: {[1..4], []},
+               step: 1
+             }
+    end
+
+    # Regression test for https://github.com/poanetwork/poa-explorer/issues/387
+    test "ensures Sequence shuts down when parent process dies" do
+      parent = self()
+
+      {child_pid, child_ref} = spawn_monitor(fn -> send(parent, Sequence.start_link([], 1, 1)) end)
+
+      assert_receive {:DOWN, ^child_ref, :process, ^child_pid, :normal}
+      assert_receive {:ok, sequence_pid} when is_pid(sequence_pid)
+
+      sequence_ref = Process.monitor(sequence_pid)
+
+      assert_receive {:DOWN, ^sequence_ref, :process, ^sequence_pid, :normal}
+    end
   end
 
   test "inject_range" do
