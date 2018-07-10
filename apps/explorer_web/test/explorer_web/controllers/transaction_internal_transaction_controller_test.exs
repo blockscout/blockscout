@@ -88,12 +88,12 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
         |> insert()
         |> with_block()
 
+      %InternalTransaction{index: index} = insert(:internal_transaction, transaction: transaction, index: 0)
+
       second_page_indexes =
         1..50
         |> Enum.map(fn index -> insert(:internal_transaction, transaction: transaction, index: index) end)
         |> Enum.map(& &1.index)
-
-      %InternalTransaction{index: index} = insert(:internal_transaction, transaction: transaction, index: 51)
 
       conn =
         get(conn, transaction_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, transaction.hash), %{
@@ -103,7 +103,6 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
       actual_indexes =
         conn.assigns.internal_transactions
         |> Enum.map(& &1.index)
-        |> Enum.reverse()
 
       assert second_page_indexes == actual_indexes
     end
@@ -128,7 +127,7 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
 
       conn = get(conn, transaction_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, transaction.hash))
 
-      assert %{"block_number" => ^number, "index" => 11, "transaction_index" => ^transaction_index} =
+      assert %{"block_number" => ^number, "index" => 50, "transaction_index" => ^transaction_index} =
                conn.assigns.next_page_params
     end
 

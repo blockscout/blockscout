@@ -701,7 +701,7 @@ defmodule Explorer.ChainTest do
       assert actual.id == expected.id
     end
 
-    test "returns the internal transactions in descending index order" do
+    test "returns the internal transactions in ascending index order" do
       transaction =
         :transaction
         |> insert()
@@ -715,7 +715,7 @@ defmodule Explorer.ChainTest do
         |> Chain.transaction_to_internal_transactions()
         |> Enum.map(& &1.id)
 
-      assert [second_id, first_id] == result
+      assert [first_id, second_id] == result
     end
   end
 

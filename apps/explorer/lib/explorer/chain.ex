@@ -2106,7 +2106,7 @@ defmodule Explorer.Chain do
     |> where_transaction_has_multiple_internal_transactions()
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
-    |> order_by([internal_transaction], desc: internal_transaction.index)
+    |> order_by([internal_transaction], asc: internal_transaction.index)
     |> Repo.all()
   end
 
@@ -2538,7 +2538,7 @@ defmodule Explorer.Chain do
   end
 
   defp page_internal_transaction(query, %PagingOptions{key: {index}}) do
-    where(query, [internal_transaction], internal_transaction.index < ^index)
+    where(query, [internal_transaction], internal_transaction.index > ^index)
   end
 
   defp page_logs(query, %PagingOptions{key: nil}), do: query
