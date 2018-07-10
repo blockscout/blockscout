@@ -108,15 +108,28 @@ defmodule ExplorerWeb.ViewingAddressesTest do
       |> AddressPage.visit_page(addresses.lincoln)
       |> assert_has(AddressPage.contract_creation(internal_transaction))
     end
+
+    test "only addresses not matching the page are links", %{
+      addresses: addresses,
+      session: session,
+      transactions: transactions
+    } do
+      session
+      |> AddressPage.visit_page(addresses.lincoln)
+      |> assert_has(AddressPage.transaction_address_link(transactions.from_lincoln, :to))
+    end
   end
 
   describe "viewing internal transactions" do
     setup %{addresses: addresses, transactions: transactions} do
       address = addresses.lincoln
       transaction = transactions.from_lincoln
-      insert(:internal_transaction, transaction: transaction, to_address: address, index: 0)
+
+      internal_transaction_lincoln_to_address =
+        insert(:internal_transaction, transaction: transaction, to_address: address, index: 0)
+
       insert(:internal_transaction, transaction: transaction, from_address: address, index: 1)
-      :ok
+      {:ok, %{internal_transaction_lincoln_to_address: internal_transaction_lincoln_to_address}}
     end
 
     test "can see internal transactions for an address", %{addresses: addresses, session: session} do
@@ -140,6 +153,17 @@ defmodule ExplorerWeb.ViewingAddressesTest do
       |> AddressPage.click_internal_transactions()
       |> AddressPage.apply_filter("To")
       |> assert_has(AddressPage.internal_transactions(count: 1))
+    end
+
+    test "only addresses not matching the page are links", %{
+      addresses: addresses,
+      internal_transaction_lincoln_to_address: internal_transaction,
+      session: session
+    } do
+      session
+      |> AddressPage.visit_page(addresses.lincoln)
+      |> AddressPage.click_internal_transactions()
+      |> assert_has(AddressPage.internal_transaction_address_link(internal_transaction, :from))
     end
   end
 

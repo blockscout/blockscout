@@ -20,15 +20,9 @@ defmodule ExplorerWeb.TransactionView do
   end
 
   # This is the address to be shown in the to field
-  def display_to_address(transaction, opts \\ [])
+  def to_address_hash(%Transaction{to_address_hash: nil, created_contract_address_hash: address_hash}), do: address_hash
 
-  def display_to_address(%Transaction{to_address_hash: nil, created_contract_address_hash: address_hash}, opts) do
-    Keyword.merge(opts, address_hash: address_hash)
-  end
-
-  def display_to_address(%Transaction{to_address: %Address{hash: address_hash}}, opts) do
-    Keyword.merge(opts, address_hash: address_hash)
-  end
+  def to_address_hash(%Transaction{to_address: %Address{hash: address_hash}}), do: address_hash
 
   def formatted_fee(%Transaction{} = transaction, opts) do
     transaction

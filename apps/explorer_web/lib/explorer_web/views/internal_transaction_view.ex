@@ -8,13 +8,7 @@ defmodule ExplorerWeb.InternalTransactionView do
   def create?(_), do: false
 
   # This is the address to be shown in the to field
-  def display_to_address(internal_transaction, opt \\ [])
+  def to_address_hash(%InternalTransaction{to_address_hash: nil, created_contract_address_hash: hash}), do: hash
 
-  def display_to_address(%InternalTransaction{to_address_hash: nil, created_contract_address_hash: hash}, opts) do
-    Keyword.merge(opts, address_hash: hash)
-  end
-
-  def display_to_address(%InternalTransaction{to_address_hash: hash}, opts) do
-    Keyword.merge(opts, address_hash: hash)
-  end
+  def to_address_hash(%InternalTransaction{to_address_hash: hash}), do: hash
 end

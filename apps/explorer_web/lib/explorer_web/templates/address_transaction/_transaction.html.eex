@@ -6,9 +6,17 @@
     <div class="col-md-7 col-lg-8 d-flex flex-column">
       <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: @transaction.hash %>
       <span>
-        <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(@transaction.from_address), address_hash: @transaction.from_address_hash %>
+        <%= if @address.hash == @transaction.from_address_hash do %>
+          <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: @transaction.from_address_hash %>
+        <% else %>
+          <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(@transaction.from_address), address_hash: @transaction.from_address_hash %>
+        <% end %>
         &rarr;
-        <%= render ExplorerWeb.AddressView, "_link.html", Keyword.merge(ExplorerWeb.TransactionView.display_to_address(@transaction), locale: @locale, contract: ExplorerWeb.AddressView.contract?(@transaction.to_address)) %>
+        <%= if @address.hash == ExplorerWeb.TransactionView.to_address_hash(@transaction) do %>
+          <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: ExplorerWeb.TransactionView.to_address_hash(@transaction) %>
+        <% else %>
+          <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(@transaction.to_address), address_hash: ExplorerWeb.TransactionView.to_address_hash(@transaction) %>
+        <% end %>
       </span>
       <%= ExplorerWeb.TransactionView.value(@transaction, include_label: false) %> POA
     </div>

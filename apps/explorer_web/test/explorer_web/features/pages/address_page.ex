@@ -31,6 +31,14 @@ defmodule ExplorerWeb.AddressPage do
     css("[data-test='internal_transaction']", count: count)
   end
 
+  def internal_transaction_address_link(%InternalTransaction{id: id, to_address_hash: address_hash}, :to) do
+    css("[data-internal-transaction-id='#{id}'] [data-address-hash='#{address_hash}'][data-test='address_hash_link']")
+  end
+
+  def internal_transaction_address_link(%InternalTransaction{id: id, from_address_hash: address_hash}, :from) do
+    css("[data-internal-transaction-id='#{id}'] [data-address-hash='#{address_hash}'][data-test='address_hash_link']")
+  end
+
   def transaction(%Transaction{hash: transaction_hash}), do: transaction(transaction_hash)
 
   def transaction(%Hash{} = hash) do
@@ -41,6 +49,14 @@ defmodule ExplorerWeb.AddressPage do
 
   def transaction(transaction_hash) do
     css("[data-transaction-hash='#{transaction_hash}']")
+  end
+
+  def transaction_address_link(%Transaction{hash: hash, to_address_hash: address_hash}, :to) do
+    css("[data-transaction-hash='#{hash}'] [data-address-hash='#{address_hash}'][data-test='address_hash_link']")
+  end
+
+  def transaction_address_link(%Transaction{hash: hash, from_address_hash: address_hash}, :from) do
+    css("[data-transaction-hash='#{hash}'] [data-address-hash='#{address_hash}'][data-test='address_hash_link']")
   end
 
   def transaction_count do

@@ -13,7 +13,7 @@
           <span>
             <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(transaction.from_address), address_hash: transaction.from_address_hash %>
             &rarr;
-            <%= render ExplorerWeb.AddressView, "_link.html", ExplorerWeb.TransactionView.display_to_address(transaction, locale: @locale, contract: ExplorerWeb.AddressView.contract?(transaction.to_address)) %>
+            <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(transaction.to_address), address_hash: ExplorerWeb.TransactionView.to_address_hash(transaction) %>
           </span>
           <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> POA
         </div>
