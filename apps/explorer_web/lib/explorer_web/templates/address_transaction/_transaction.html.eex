@@ -14,7 +14,7 @@
     </div>
     <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column justify-content-start justify-content-md-end align-items-end text-md-right">
       <%= if @address.hash == @transaction.from_address_hash do %>
-        <span class="badge badge-danger tile-badge mr-2 mr-md-0">OUT</span>
+        <span class="badge badge-warning tile-badge  mr-2 mr-md-0">OUT</span>
       <% else %>
         <span class="badge badge-success tile-badge mr-2 mr-md-0">IN</span>
       <% end %>
