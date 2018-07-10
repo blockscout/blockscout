@@ -494,7 +494,6 @@ msgstr ""
 #: lib/explorer_web/templates/block_transaction/index.html.eex:198
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:73
 #: lib/explorer_web/templates/transaction/index.html.eex:90
-#: lib/explorer_web/templates/transaction_internal_transaction/index.html.eex:71
 msgid "Older"
 msgstr ""
 
@@ -525,6 +524,7 @@ msgid "Last Updated In Block"
 msgstr ""
 
 #, elixir-format
+#: lib/explorer_web/templates/transaction_internal_transaction/index.html.eex:71
 #: lib/explorer_web/templates/transaction_log/index.html.eex:73
 msgid "Newer"
 msgstr ""

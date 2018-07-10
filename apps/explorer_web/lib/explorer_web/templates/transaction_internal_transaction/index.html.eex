@@ -68,7 +68,7 @@
 
     <%= if @next_page_params do %>
       <%= link(
-        gettext("Older"),
+        gettext("Newer"),
         class: "button button--secondary button--sm u-float-right mt-3",
         to: transaction_internal_transaction_path(
           @conn,

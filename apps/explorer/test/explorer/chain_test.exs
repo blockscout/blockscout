@@ -23,18 +23,17 @@ defmodule Explorer.ChainTest do
       assert Chain.address_to_transaction_count(address) == 2
     end
 
-    test "with transactions and contract creation address" do
-      %Transaction{from_address: address} = insert(:transaction) |> Repo.preload(:from_address)
-      insert(:transaction, to_address: address)
+    test "with contract creation transactions the contract address is counted" do
+      address = insert(:address)
 
       insert(
         :internal_transaction_create,
         created_contract_address: address,
         index: 0,
-        transaction: insert(:transaction)
+        transaction: insert(:transaction, to_address: nil)
       )
 
-      assert Chain.address_to_transaction_count(address) == 3
+      assert Chain.address_to_transaction_count(address) == 1
     end
 
     test "doesn't double count addresses when to_address = from_address" do
@@ -42,6 +41,19 @@ defmodule Explorer.ChainTest do
       insert(:transaction, to_address: address, from_address: address)
 
       assert Chain.address_to_transaction_count(address) == 2
+    end
+
+    test "does not count non-contract-creation parent transactions" do
+      transaction_with_to_address =
+        %Transaction{} =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      %InternalTransaction{created_contract_address: address} =
+        insert(:internal_transaction_create, transaction: transaction_with_to_address, index: 0)
+
+      assert Chain.address_to_transaction_count(address) == 0
     end
   end
 
@@ -102,6 +114,19 @@ defmodule Explorer.ChainTest do
 
       assert [transaction2, transaction1] ==
                Chain.address_to_transactions(address) |> Repo.preload([:block, :to_address, :from_address])
+    end
+
+    test "does not include non-contract-creation parent transactions" do
+      transaction =
+        %Transaction{} =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      %InternalTransaction{created_contract_address: address} =
+        insert(:internal_transaction_create, transaction: transaction, index: 0)
+
+      assert [] == Chain.address_to_transactions(address)
     end
 
     test "with transactions can be paginated" do
@@ -334,6 +359,22 @@ defmodule Explorer.ChainTest do
                  hash_with_block,
                  necessity_by_association: %{block: :required}
                )
+    end
+
+    test "transaction with multiple create internal transactions is returned" do
+      transaction =
+        %Transaction{hash: hash_with_block} =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:internal_transaction, transaction: transaction, index: 0)
+
+      Enum.each(1..3, fn index ->
+        insert(:internal_transaction_create, transaction: transaction, index: index)
+      end)
+
+      assert {:ok, %Transaction{hash: ^hash_with_block}} = Chain.hash_to_transaction(hash_with_block)
     end
   end
 
@@ -660,7 +701,7 @@ defmodule Explorer.ChainTest do
       assert actual.id == expected.id
     end
 
-    test "returns the internal transactions in descending index order" do
+    test "returns the internal transactions in ascending index order" do
       transaction =
         :transaction
         |> insert()
@@ -674,7 +715,7 @@ defmodule Explorer.ChainTest do
         |> Chain.transaction_to_internal_transactions()
         |> Enum.map(& &1.id)
 
-      assert [second_id, first_id] == result
+      assert [first_id, second_id] == result
     end
   end
 
