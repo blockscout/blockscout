@@ -35,6 +35,8 @@ defmodule ExplorerWeb.AddressView do
 
   def contract?(%Address{contract_code: _}), do: true
 
+  def contract?(_), do: false
+
   def formatted_usd(%Address{fetched_balance: nil}, _), do: nil
 
   def formatted_usd(%Address{fetched_balance: balance}, %Token{} = exchange_rate) do

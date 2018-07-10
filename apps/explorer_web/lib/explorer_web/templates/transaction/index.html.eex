@@ -58,12 +58,12 @@
                 </td>
                 <td data-from-now="<%= transaction.block.timestamp %>"></td>
                 <td>
-                  <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address_hash: transaction.from_address_hash %>
+                  <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(transaction.from_address), address_hash: transaction.from_address_hash %>
                 </td>
                 <td>
                   <%= cond do %>
                     <% transaction.to_address_hash != nil -> %>
-                      <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address_hash: transaction.to_address_hash %>
+                      <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(transaction.to_address), address_hash: transaction.to_address_hash %>
                     <% transaction.created_contract_address_hash != nil -> %>
                       <%= link(
                         "Contract Creation",
