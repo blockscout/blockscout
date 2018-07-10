@@ -143,7 +143,7 @@ defmodule Indexer.BlockFetcherTest do
     end
 
     test "with single element range that is valid imports one block", %{state: state, variant: variant} do
-      {:ok, sequence} = Sequence.start_link([], 0, 1)
+      {:ok, sequence} = Sequence.start_link(first: 0, step: 1)
 
       %{address_hash: address_hash, block_hash: block_hash} =
         case variant do
@@ -205,7 +205,7 @@ defmodule Indexer.BlockFetcherTest do
     end
 
     test "can import range with all synchronous imported schemas", %{state: state, variant: variant} do
-      {:ok, sequence} = Sequence.start_link([], 0, 1)
+      {:ok, sequence} = Sequence.start_link(first: 0, step: 1)
 
       case variant do
         EthereumJSONRPC.Geth ->
