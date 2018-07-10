@@ -29,13 +29,13 @@ defmodule Explorer.Chain.Address do
   @type t :: %__MODULE__{
           fetched_balance: Wei.t(),
           fetched_balance_block_number: Block.block_number(),
-          hash: Hash.Truncated.t(),
+          hash: Hash.Address.t(),
           contract_code: Data.t() | nil,
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
         }
 
-  @primary_key {:hash, Hash.Truncated, autogenerate: false}
+  @primary_key {:hash, Hash.Address, autogenerate: false}
   schema "addresses" do
     field(:fetched_balance, Wei)
     field(:fetched_balance_block_number, :integer)

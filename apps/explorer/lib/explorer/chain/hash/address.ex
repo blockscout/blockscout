@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Hash.Truncated do
+defmodule Explorer.Chain.Hash.Address do
   @moduledoc """
   The address (40 (hex) characters / 160 bits / 20 bytes) is derived from the public key (128 (hex) characters /
   512 bits / 64 bytes) which is derived from the private key (64 (hex) characters / 256 bits / 32 bytes).
@@ -24,7 +24,7 @@ defmodule Explorer.Chain.Hash.Truncated do
 
   If the `term` is already in `t:t/0`, then it is returned
 
-      iex> Explorer.Chain.Hash.Truncated.cast(
+      iex> Explorer.Chain.Hash.Address.cast(
       ...>   %Explorer.Chain.Hash{
       ...>     byte_count: 20,
       ...>     bytes: <<0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed :: big-integer-size(20)-unit(8)>>
@@ -40,7 +40,7 @@ defmodule Explorer.Chain.Hash.Truncated do
 
   If the `term` is an `non_neg_integer`, then it is converted to `t:t/0`
 
-      iex> Explorer.Chain.Hash.Truncated.cast(0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed)
+      iex> Explorer.Chain.Hash.Address.cast(0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed)
       {
         :ok,
         %Explorer.Chain.Hash{
@@ -51,12 +51,12 @@ defmodule Explorer.Chain.Hash.Truncated do
 
   If the `non_neg_integer` is too large, then `:error` is returned.
 
-      iex> Explorer.Chain.Hash.Truncated.cast(0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b)
+      iex> Explorer.Chain.Hash.Address.cast(0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b)
       :error
 
   If the `term` is a `String.t` that starts with `0x`, then is converted to an integer and then to `t:t/0`.
 
-      iex> Explorer.Chain.Hash.Truncated.cast("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed")
+      iex> Explorer.Chain.Hash.Address.cast("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed")
       {
         :ok,
         %Explorer.Chain.Hash{
@@ -68,7 +68,7 @@ defmodule Explorer.Chain.Hash.Truncated do
   While `non_neg_integers` don't have to be the correct width (because zero padding it difficult with numbers),
   `String.t` format must always have #{@hexadecimal_digit_count} digits after the `0x` base prefix.
 
-      iex> Explorer.Chain.Hash.Truncated.cast("0x0")
+      iex> Explorer.Chain.Hash.Address.cast("0x0")
       :error
 
   """
@@ -83,7 +83,7 @@ defmodule Explorer.Chain.Hash.Truncated do
 
   If the field from the struct is `t:t/0`, then it succeeds
 
-      iex> Explorer.Chain.Hash.Truncated.dump(
+      iex> Explorer.Chain.Hash.Address.dump(
       ...>   %Explorer.Chain.Hash{
       ...>     byte_count: 20,
       ...>     bytes: <<0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed :: big-integer-size(20)-unit(8)>>
@@ -93,7 +93,7 @@ defmodule Explorer.Chain.Hash.Truncated do
 
   If the field from the struct is an incorrect format such as `t:Explorer.Chain.Hash.t/0`, `:error` is returned
 
-      iex> Explorer.Chain.Hash.Truncated.dump(
+      iex> Explorer.Chain.Hash.Address.dump(
       ...>   %Explorer.Chain.Hash{
       ...>     byte_count: 32,
       ...>     bytes: <<0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b ::
@@ -114,7 +114,7 @@ defmodule Explorer.Chain.Hash.Truncated do
 
   If the binary hash is the correct format, it is returned.
 
-      iex> Explorer.Chain.Hash.Truncated.load(
+      iex> Explorer.Chain.Hash.Address.load(
       ...>   <<0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed :: big-integer-size(20)-unit(8)>>
       ...> )
       {
@@ -127,7 +127,7 @@ defmodule Explorer.Chain.Hash.Truncated do
 
   If the binary hash is an incorrect format, such as if an `Explorer.Chain.Hash` field is loaded, `:error` is returned.
 
-      iex> Explorer.Chain.Hash.Truncated.load(
+      iex> Explorer.Chain.Hash.Address.load(
       ...>   <<0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b :: big-integer-size(32)-unit(8)>>
       ...> )
       :error

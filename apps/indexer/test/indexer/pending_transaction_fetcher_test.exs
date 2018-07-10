@@ -2,12 +2,13 @@ defmodule Indexer.PendingTransactionFetcherTest do
   # `async: false` due to use of named GenServer
   use Explorer.DataCase, async: false
 
-  alias Explorer.Chain.Transaction
-  alias Indexer.PendingTransactionFetcher
-
   describe "start_link/1" do
+    @tag :no_geth
     # this test may fail if Sokol so low volume that the pending transactions are empty for too long
     test "starts fetching pending transactions" do
+      alias Explorer.Chain.Transaction
+      alias Indexer.PendingTransactionFetcher
+
       assert Repo.aggregate(Transaction, :count, :hash) == 0
 
       start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})

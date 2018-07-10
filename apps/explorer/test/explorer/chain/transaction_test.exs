@@ -16,10 +16,8 @@ defmodule Explorer.Chain.TransactionTest do
                  gas_price: 10000,
                  input: "0x5c8eff12",
                  nonce: "31337",
-                 public_key: "0xb39af9cb",
                  r: 0x9,
                  s: 0x10,
-                 standard_v: 0x1,
                  transaction_index: "0x12",
                  v: 27
                })

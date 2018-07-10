@@ -178,7 +178,7 @@ defmodule Explorer.Chain do
   """
   @spec address_to_transactions(Address.t(), [paging_options | necessity_by_association_option]) :: [Transaction.t()]
   def address_to_transactions(
-        %Address{hash: %Hash{byte_count: unquote(Hash.Truncated.byte_count())} = address_hash},
+        %Address{hash: %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash},
         options \\ []
       )
       when is_list(options) do
@@ -356,7 +356,7 @@ defmodule Explorer.Chain do
           [
             [{:addresses, [timeout_option]}] | timeout_option
           ]
-        ) :: {:ok, [Hash.Truncated.t()]} | {:error, [Changeset.t()]}
+        ) :: {:ok, [Hash.Address.t()]} | {:error, [Changeset.t()]}
   def update_balances(addresses_params, options \\ []) when is_list(options) do
     with {:ok, changes_list} <- changes_list(addresses_params, for: Address, with: :balance_changeset) do
       timestamps = timestamps()
@@ -504,12 +504,12 @@ defmodule Explorer.Chain do
       ...>   %{hash: "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0"}
       ...> )
       ...> errors
-      [hash: {"is invalid", [type: Explorer.Chain.Hash.Truncated, validation: :cast]}]
+      [hash: {"is invalid", [type: Explorer.Chain.Hash.Address, validation: :cast]}]
       iex> {:error, %Ecto.Changeset{errors: errors}} = Explorer.Chain.create_address(
       ...>   %{hash: "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0ba"}
       ...> )
       ...> errors
-      [hash: {"is invalid", [type: Explorer.Chain.Hash.Truncated, validation: :cast]}]
+      [hash: {"is invalid", [type: Explorer.Chain.Hash.Address, validation: :cast]}]
 
   """
   @spec create_address(map()) :: {:ok, Address.t()} | {:error, Ecto.Changeset.t()}
@@ -618,8 +618,8 @@ defmodule Explorer.Chain do
       {:error, :not_found}
 
   """
-  @spec hash_to_address(Hash.Truncated.t()) :: {:ok, Address.t()} | {:error, :not_found}
-  def hash_to_address(%Hash{byte_count: unquote(Hash.Truncated.byte_count())} = hash) do
+  @spec hash_to_address(Hash.Address.t()) :: {:ok, Address.t()} | {:error, :not_found}
+  def hash_to_address(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash) do
     query =
       from(
         address in Address,
@@ -635,7 +635,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  def find_contract_address(%Hash{byte_count: unquote(Hash.Truncated.byte_count())} = hash) do
+  def find_contract_address(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash) do
     query =
       from(
         address in Address,
@@ -804,10 +804,8 @@ defmodule Explorer.Chain do
       ...>         index: 0,
       ...>         input: "0x10855269000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
       ...>         nonce: 4,
-      ...>         public_key: "0xe5d196ad4ceada719d9e592f7166d0c75700f6eab2e3c3de34ba751ea786527cb3f6eb96ad9fdfdb9989ff572df50f1c42ef800af9c5207a38b929aff969b5c9",
       ...>         r: 0xa7f8f45cce375bb7af8750416e1b03e0473f93c256da2285d1134fc97a700e01,
       ...>         s: 0x1f87a076f13824f4be8963e3dffd7300dae64d5f23c9a062af0c6ead347c135f,
-      ...>         standard_v: 1,
       ...>         status: :ok,
       ...>         to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
       ...>         v: 0xbe,
@@ -965,10 +963,8 @@ defmodule Explorer.Chain do
       ...>         index: 0,
       ...>         input: "0x10855269000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
       ...>         nonce: 4,
-      ...>         public_key: "0xe5d196ad4ceada719d9e592f7166d0c75700f6eab2e3c3de34ba751ea786527cb3f6eb96ad9fdfdb9989ff572df50f1c42ef800af9c5207a38b929aff969b5c9",
       ...>         r: 0xa7f8f45cce375bb7af8750416e1b03e0473f93c256da2285d1134fc97a700e01,
       ...>         s: 0x1f87a076f13824f4be8963e3dffd7300dae64d5f23c9a062af0c6ead347c135f,
-      ...>         standard_v: 1,
       ...>         to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
       ...>         v: 0xbe,
       ...>         value: 0
@@ -1182,7 +1178,7 @@ defmodule Explorer.Chain do
         ]) ::
           {:ok,
            %{
-             optional(:addresses) => [Hash.Truncated.t()],
+             optional(:addresses) => [Hash.Address.t()],
              optional(:blocks) => [Hash.Full.t()],
              optional(:internal_transactions) => [
                %{required(:index) => non_neg_integer(), required(:transaction_hash) => Hash.Full.t()}
@@ -1233,7 +1229,7 @@ defmodule Explorer.Chain do
         ]) ::
           {:ok,
            %{
-             optional(:addresses) => [Hash.Truncated.t()],
+             optional(:addresses) => [Hash.Address.t()],
              optional(:internal_transactions) => [
                %{required(:index) => non_neg_integer(), required(:transaction_hash) => Hash.Full.t()}
              ]
@@ -1634,7 +1630,7 @@ defmodule Explorer.Chain do
   @spec stream_unfetched_addresses(
           initial :: accumulator,
           reducer ::
-            (entry :: %{block_number: Block.block_number(), hash: Hash.Truncated.t()}, accumulator -> accumulator)
+            (entry :: %{block_number: Block.block_number(), hash: Hash.Address.t()}, accumulator -> accumulator)
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_unfetched_addresses(initial, reducer) when is_function(reducer, 2) do
@@ -1713,10 +1709,8 @@ defmodule Explorer.Chain do
             | :index
             | :input
             | :nonce
-            | :public_key
             | :r
             | :s
-            | :standard_v
             | :to_address_hash
             | :v
             | :value
@@ -1991,7 +1985,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  The `string` must start with `0x`, then is converted to an integer and then to `t:Explorer.Chain.Hash.Truncated.t/0`.
+  The `string` must start with `0x`, then is converted to an integer and then to `t:Explorer.Chain.Hash.Address.t/0`.
 
       iex> Explorer.Chain.string_to_address_hash("0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed")
       {
@@ -2008,9 +2002,9 @@ defmodule Explorer.Chain do
       :error
 
   """
-  @spec string_to_address_hash(String.t()) :: {:ok, Hash.Truncated.t()} | :error
+  @spec string_to_address_hash(String.t()) :: {:ok, Hash.Address.t()} | :error
   def string_to_address_hash(string) when is_binary(string) do
-    Hash.Truncated.cast(string)
+    Hash.Address.cast(string)
   end
 
   @doc """
@@ -2274,8 +2268,7 @@ defmodule Explorer.Chain do
     )
   end
 
-  @spec insert_addresses([%{hash: Hash.Truncated.t()}], [timeout_option | timestamps_option]) ::
-          {:ok, [Hash.Truncated.t()]}
+  @spec insert_addresses([%{hash: Hash.Address.t()}], [timeout_option | timestamps_option]) :: {:ok, [Hash.Address.t()]}
   defp insert_addresses(changes_list, named_arguments)
        when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)

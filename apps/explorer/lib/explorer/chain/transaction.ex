@@ -9,12 +9,7 @@ defmodule Explorer.Chain.Transaction do
 
   @optional_attrs ~w(block_hash block_number cumulative_gas_used from_address_hash gas_used index
                      internal_transactions_indexed_at status to_address_hash)a
-  @required_attrs ~w(gas gas_price hash input nonce public_key r s standard_v v value)a
-
-  @typedoc """
-  The full public key of the signer of the transaction.
-  """
-  @type public_key :: Data.t()
+  @required_attrs ~w(gas gas_price hash input nonce r s v value)a
 
   @typedoc """
   X coordinate module n in
@@ -29,28 +24,6 @@ defmodule Explorer.Chain.Transaction do
   (EDCSA)
   """
   @type s :: Decimal.t()
-
-  @typedoc """
-  For message signatures, we use a trick called public key recovery. The fact is that if you have the full R point
-  (not just its X coordinate) and `t:s/0`, and a message, you can compute for which public key this would be a valid
-  signature. What this allows is to 'verify' a message with an address, without needing to know the full key (we just to
-  public key recovery on the signature, and then hash the recovered key and compare it with the address).
-
-  However, this means we need the full R coordinates. There can be up to 4 different points with a given
-  "X coordinate modulo n". (2 because each X coordinate has two possible Y coordinates, and 2 because r+n may still be a
-  valid X coordinate). That number between 0 and 3 is standard_v.
-
-  | `standard_v`  | X      | Y    |
-  |---------------|--------|------|
-  | `0`           | lower  | even |
-  | `1`           | lower  | odd  |
-  | `2`           | higher | even |
-  | `3`           | higher | odd  |
-
-  **Note: that `2` and `3` are exceedingly rarely, and will in practice only ever be seen in specifically generated
-  examples.**
-  """
-  @type standard_v :: 0..3
 
   @typedoc """
   The index of the transaction in its block.
@@ -96,12 +69,10 @@ defmodule Explorer.Chain.Transaction do
    * `internal_transactions_indexed_at` - when `internal_transactions` were fetched by `Explorer.Indexer`.
    * `logs` - events that occurred while mining the `transaction`.
    * `nonce` - the number of transaction made by the sender prior to this one
-   * `public_key` - public key of the signer of the transaction
    * `r` - the R field of the signature. The (r, s) is the normal output of an ECDSA signature, where r is computed as
        the X coordinate of a point R, modulo the curve order n.
    * `s` - The S field of the signature.  The (r, s) is the normal output of an ECDSA signature, where r is computed as
        the X coordinate of a point R, modulo the curve order n.
-   * `standard_v` - The standardized V field of the signature
    * `status` - whether the transaction was successfully mined or failed.  `nil` when transaction is pending.
    * `to_address` - sink of `value`
    * `to_address_hash` - `to_address` foreign key
@@ -114,7 +85,7 @@ defmodule Explorer.Chain.Transaction do
           block_number: Block.block_number() | nil,
           cumulative_gas_used: Gas.t() | nil,
           from_address: %Ecto.Association.NotLoaded{} | Address.t(),
-          from_address_hash: Hash.Truncated.t(),
+          from_address_hash: Hash.Address.t(),
           gas: Gas.t(),
           gas_price: wei_per_gas,
           gas_used: Gas.t() | nil,
@@ -125,13 +96,11 @@ defmodule Explorer.Chain.Transaction do
           internal_transactions_indexed_at: DateTime.t(),
           logs: %Ecto.Association.NotLoaded{} | [Log.t()],
           nonce: non_neg_integer(),
-          public_key: public_key(),
           r: r(),
           s: s(),
-          standard_v: standard_v(),
           status: Status.t() | nil,
           to_address: %Ecto.Association.NotLoaded{} | Address.t(),
-          to_address_hash: Hash.Truncated.t(),
+          to_address_hash: Hash.Address.t(),
           v: v(),
           value: Wei.t()
         }
@@ -147,14 +116,12 @@ defmodule Explorer.Chain.Transaction do
     field(:internal_transactions_indexed_at, :utc_datetime)
     field(:input, Data)
     field(:nonce, :integer)
-    field(:public_key, Data)
     field(:r, :decimal)
     field(:s, :decimal)
-    field(:standard_v, :integer)
     field(:status, Status)
     field(:v, :integer)
     field(:value, Wei)
-    field(:created_contract_address_hash, Hash.Truncated, virtual: true)
+    field(:created_contract_address_hash, Hash.Address, virtual: true)
 
     timestamps()
 
@@ -165,7 +132,7 @@ defmodule Explorer.Chain.Transaction do
       Address,
       foreign_key: :from_address_hash,
       references: :hash,
-      type: Hash.Truncated
+      type: Hash.Address
     )
 
     has_many(:internal_transactions, InternalTransaction, foreign_key: :transaction_hash)
@@ -176,7 +143,7 @@ defmodule Explorer.Chain.Transaction do
       Address,
       foreign_key: :to_address_hash,
       references: :hash,
-      type: Hash.Truncated
+      type: Hash.Address
     )
   end
 
@@ -191,10 +158,8 @@ defmodule Explorer.Chain.Transaction do
       ...>     hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
       ...>     input: "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
       ...>     nonce: 0,
-      ...>     public_key: "0xe5d196ad4ceada719d9e592f7166d0c75700f6eab2e3c3de34ba751ea786527cb3f6eb96ad9fdfdb9989ff572df50f1c42ef800af9c5207a38b929aff969b5c9",
       ...>     r: 0xAD3733DF250C87556335FFE46C23E34DBAFFDE93097EF92F52C88632A40F0C75,
       ...>     s: 0x72caddc0371451a58de2ca6ab64e0f586ccdb9465ff54e1c82564940e89291e3,
-      ...>     standard_v: 0x0,
       ...>     v: 0x8d,
       ...>     value: 0
       ...>   }
@@ -217,10 +182,8 @@ defmodule Explorer.Chain.Transaction do
       ...>     index: 0,
       ...>     input: "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
       ...>     nonce: 0,
-      ...>     public_key: "0xe5d196ad4ceada719d9e592f7166d0c75700f6eab2e3c3de34ba751ea786527cb3f6eb96ad9fdfdb9989ff572df50f1c42ef800af9c5207a38b929aff969b5c9",
       ...>     r: 0xAD3733DF250C87556335FFE46C23E34DBAFFDE93097EF92F52C88632A40F0C75,
       ...>     s: 0x72caddc0371451a58de2ca6ab64e0f586ccdb9465ff54e1c82564940e89291e3,
-      ...>     standard_v: 0x0,
       ...>     status: :ok,
       ...>     v: 0x8d,
       ...>     value: 0
@@ -254,10 +217,8 @@ defmodule Explorer.Chain.Transaction do
       ...>     index: 0,
       ...>     input: "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
       ...>     nonce: 0,
-      ...>     public_key: "0xe5d196ad4ceada719d9e592f7166d0c75700f6eab2e3c3de34ba751ea786527cb3f6eb96ad9fdfdb9989ff572df50f1c42ef800af9c5207a38b929aff969b5c9",
       ...>     r: 0xAD3733DF250C87556335FFE46C23E34DBAFFDE93097EF92F52C88632A40F0C75,
       ...>     s: 0x72caddc0371451a58de2ca6ab64e0f586ccdb9465ff54e1c82564940e89291e3,
-      ...>     standard_v: 0x0,
       ...>     status: :ok,
       ...>     v: 0x8d,
       ...>     value: 0
@@ -278,10 +239,8 @@ defmodule Explorer.Chain.Transaction do
       ...>     hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
       ...>     input: "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
       ...>     nonce: 0,
-      ...>     public_key: "0xe5d196ad4ceada719d9e592f7166d0c75700f6eab2e3c3de34ba751ea786527cb3f6eb96ad9fdfdb9989ff572df50f1c42ef800af9c5207a38b929aff969b5c9",
       ...>     r: 0xAD3733DF250C87556335FFE46C23E34DBAFFDE93097EF92F52C88632A40F0C75,
       ...>     s: 0x72caddc0371451a58de2ca6ab64e0f586ccdb9465ff54e1c82564940e89291e3,
-      ...>     standard_v: 0x0,
       ...>     v: 0x8d,
       ...>     value: 0
       ...>   }
@@ -305,7 +264,6 @@ defmodule Explorer.Chain.Transaction do
     |> cast(attrs, @required_attrs ++ @optional_attrs)
     |> validate_required(@required_attrs)
     |> validate_collated_or_pending()
-    |> validate_number(:standard_v, greater_than_or_equal_to: 0, less_than_or_equal_to: 3)
     |> check_pending()
     |> check_collated()
     |> foreign_key_constraint(:block_hash)

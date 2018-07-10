@@ -111,15 +111,31 @@ defmodule EthereumJSONRPC.Receipts do
     Enum.map(elixir, &Receipt.elixir_to_params/1)
   end
 
-  def fetch(hashes) when is_list(hashes) do
-    hashes
-    |> Enum.map(&hash_to_json/1)
+  @spec fetch([
+          %{
+            required(:gas) => non_neg_integer(),
+            required(:hash) => EthereumJSONRPC.hash(),
+            optional(atom) => any
+          }
+        ]) :: {:ok, %{logs: list(), receipts: list()}} | {:error, reason :: term}
+  def fetch(transactions_params) when is_list(transactions_params) do
+    {requests, id_to_transaction_params} =
+      transactions_params
+      |> Stream.with_index()
+      |> Enum.reduce({[], %{}}, fn {%{hash: transaction_hash} = transaction_params, id},
+                                   {acc_requests, acc_id_to_transaction_params} ->
+        requests = [request(id, transaction_hash) | acc_requests]
+        id_to_transaction_params = Map.put(acc_id_to_transaction_params, id, transaction_params)
+        {requests, id_to_transaction_params}
+      end)
+
+    requests
     |> json_rpc(config(:url))
     |> case do
       {:ok, responses} ->
         elixir_receipts =
           responses
-          |> responses_to_receipts()
+          |> responses_to_receipts(id_to_transaction_params)
           |> to_elixir()
 
         elixir_logs = elixir_to_logs(elixir_receipts)
@@ -199,18 +215,29 @@ defmodule EthereumJSONRPC.Receipts do
     Enum.map(receipts, &Receipt.to_elixir/1)
   end
 
-  defp hash_to_json(hash) do
+  defp request(id, transaction_hash) when is_integer(id) and is_binary(transaction_hash) do
     %{
-      "id" => hash,
+      "id" => id,
       "jsonrpc" => "2.0",
       "method" => "eth_getTransactionReceipt",
-      "params" => [hash]
+      "params" => [transaction_hash]
     }
   end
 
-  defp response_to_receipt(%{"result" => receipt}), do: receipt
+  defp response_to_receipt(%{"result" => nil}, _), do: %{}
 
-  defp responses_to_receipts(responses) when is_list(responses) do
-    Enum.map(responses, &response_to_receipt/1)
+  defp response_to_receipt(%{"id" => id, "result" => receipt}, id_to_transaction_params) do
+    gas =
+      id_to_transaction_params
+      |> Map.fetch!(id)
+      |> Map.fetch!(:gas)
+
+    # gas from the transaction is needed for pre-Byzantium derived status
+    Map.put(receipt, "gas", gas)
+  end
+
+  defp responses_to_receipts(responses, id_to_transaction_params)
+       when is_list(responses) and is_map(id_to_transaction_params) do
+    Enum.map(responses, &response_to_receipt(&1, id_to_transaction_params))
   end
 end

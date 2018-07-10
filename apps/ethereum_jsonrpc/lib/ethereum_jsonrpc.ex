@@ -19,7 +19,7 @@ defmodule EthereumJSONRPC do
   require Logger
 
   alias Explorer.Chain.Block
-  alias EthereumJSONRPC.{Blocks, Parity, Receipts, Transactions}
+  alias EthereumJSONRPC.{Blocks, Receipts, Transactions}
 
   @typedoc """
   Truncated 20-byte [KECCAK-256](https://en.wikipedia.org/wiki/SHA-3) hash encoded as a hexadecimal number in a
@@ -90,6 +90,27 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
+  Fetches the configured url for the specific `method` or the fallback `url`
+
+  Configuration for a specific `method` can be set in `method_to_url` `config`
+
+      config :ethereum_jsonrpc,
+        method_to_url: [
+          eth_getBalance: "method_to_url"
+        ]
+
+  The fallback 'url' MUST we set if not all methods have a url set.
+
+      config :ethereum_jsonrpc,
+        url:
+  """
+  def method_to_url(method) when is_atom(method) do
+    :ethereum_jsonrpc
+    |> Application.get_env(:method_to_url, [])
+    |> Keyword.get_lazy(method, fn -> config(:url) end)
+  end
+
+  @doc """
   Fetches balance for each address `hash` at the `block_number`
   """
   @spec fetch_balances([%{required(:block_quantity) => quantity, required(:hash_data) => data()}]) ::
@@ -108,7 +129,7 @@ defmodule EthereumJSONRPC do
     with {:ok, responses} <-
            id_to_params
            |> get_balance_requests()
-           |> json_rpc(config(:trace_url)) do
+           |> json_rpc(method_to_url(:eth_getBalance)) do
       get_balance_responses_to_addresses_params(responses, id_to_params)
     end
   end
@@ -121,7 +142,7 @@ defmodule EthereumJSONRPC do
   def fetch_blocks_by_hash(block_hashes) do
     block_hashes
     |> get_block_by_hash_requests()
-    |> json_rpc(config(:url))
+    |> json_rpc(method_to_url(:eth_getBlockByHash))
     |> handle_get_blocks()
     |> case do
       {:ok, _next, results} -> {:ok, results}
@@ -135,17 +156,12 @@ defmodule EthereumJSONRPC do
   def fetch_blocks_by_range(_first.._last = range) do
     range
     |> get_block_by_number_requests()
-    |> json_rpc(config(:url))
+    |> json_rpc(method_to_url(:eth_getBlockByNumber))
     |> handle_get_blocks()
   end
 
   @doc """
   Fetches block number by `t:tag/0`.
-
-  The `"earliest"` tag is the earlist block number, which is `0`.
-
-      iex> EthereumJSONRPC.fetch_block_number_by_tag("earliest")
-      {:ok, 0}
 
   ## Returns
 
@@ -158,19 +174,29 @@ defmodule EthereumJSONRPC do
   def fetch_block_number_by_tag(tag) when tag in ~w(earliest latest pending) do
     tag
     |> get_block_by_tag_request()
-    |> json_rpc(config(:url))
+    |> json_rpc(method_to_url(:eth_getBlockByNumber))
     |> handle_get_block_by_tag()
   end
 
   @doc """
-  Fetches internal transactions from client-specific API.
+  Fetches internal transactions from variant API.
   """
   def fetch_internal_transactions(params_list) when is_list(params_list) do
-    Parity.fetch_internal_transactions(params_list)
+    config(:variant).fetch_internal_transactions(params_list)
   end
 
-  def fetch_transaction_receipts(hashes) when is_list(hashes) do
-    Receipts.fetch(hashes)
+  @doc """
+  Fetches pending transactions from variant API.
+  """
+  def fetch_pending_transactions do
+    config(:variant).fetch_pending_transactions()
+  end
+
+  @spec fetch_transaction_receipts([
+          %{required(:gas) => non_neg_integer(), required(:hash) => hash, optional(atom) => any}
+        ]) :: {:ok, %{logs: list(), receipts: list()}} | {:error, reason :: term}
+  def fetch_transaction_receipts(transactions_params) when is_list(transactions_params) do
+    Receipts.fetch(transactions_params)
   end
 
   @doc """
@@ -200,8 +226,14 @@ defmodule EthereumJSONRPC do
     json = encode_json(payload)
 
     case post(url, json, config(:http)) do
-      {:ok, %HTTPoison.Response{body: body, status_code: code}} ->
-        body |> decode_json(code, json, url) |> handle_response(code)
+      {:ok, %HTTPoison.Response{body: body, status_code: status_code}} ->
+        with {:ok, json} <-
+               decode_json(
+                 request: [url: url, body: json],
+                 response: [status_code: status_code, body: body]
+               ) do
+          handle_response(json, status_code)
+        end
 
       {:error, %HTTPoison.Error{reason: reason}} ->
         {:error, reason}
@@ -272,8 +304,10 @@ defmodule EthereumJSONRPC do
         rechunk_json_rpc(url, chunks, options, response, decoded_response_bodies)
 
       {:ok, %HTTPoison.Response{body: body, status_code: status_code}} ->
-        decoded_body = decode_json(body, status_code, json, url)
-        chunked_json_rpc(url, tail, options, [decoded_body | decoded_response_bodies])
+        with {:ok, decoded_body} <-
+               decode_json(request: [url: url, body: json], response: [status_code: status_code, body: body]) do
+          chunked_json_rpc(url, tail, options, [decoded_body | decoded_response_bodies])
+        end
 
       {:error, %HTTPoison.Error{reason: reason}} ->
         {:error, reason}
@@ -380,7 +414,7 @@ defmodule EthereumJSONRPC do
 
   defp get_block_by_tag_request(tag) do
     # eth_getBlockByNumber accepts either a number OR a tag
-    get_block_by_number_request(%{id: tag, tag: tag, transactions: :hashes})
+    get_block_by_number_request(%{id: 1, tag: tag, transactions: :hashes})
   end
 
   defp get_block_by_number_params(options) do
@@ -412,25 +446,25 @@ defmodule EthereumJSONRPC do
 
   defp encode_json(data), do: Jason.encode_to_iodata!(data)
 
-  defp decode_json(response_body, response_status_code, request_body, request_url) do
-    Jason.decode!(response_body)
-  rescue
-    Jason.DecodeError ->
-      Logger.error(fn ->
-        """
-        failed to decode json payload:
+  defp decode_json(named_arguments) when is_list(named_arguments) do
+    response = Keyword.fetch!(named_arguments, :response)
+    response_body = Keyword.fetch!(response, :body)
 
-            request url: #{inspect(request_url)}
+    with {:error, _} <- Jason.decode(response_body) do
+      case Keyword.fetch!(response, :status_code) do
+        # CloudFlare protected server return HTML errors for 502, so the JSON decode will fail
+        502 ->
+          request_url =
+            named_arguments
+            |> Keyword.fetch!(:request)
+            |> Keyword.fetch!(:url)
 
-            request body: #{inspect(request_body)}
+          {:error, {:bad_gateway, request_url}}
 
-            response status code: #{inspect(response_status_code)}
-
-            response body: #{inspect(response_body)}
-        """
-      end)
-
-      raise("bad jason")
+        _ ->
+          raise EthereumJSONRPC.DecodeError, named_arguments
+      end
+    end
   end
 
   defp handle_get_blocks({:ok, results}) do

@@ -32,7 +32,7 @@ defmodule Explorer.Chain.SmartContract do
       Address,
       foreign_key: :address_hash,
       references: :hash,
-      type: Hash.Truncated
+      type: Hash.Address
     )
 
     timestamps()

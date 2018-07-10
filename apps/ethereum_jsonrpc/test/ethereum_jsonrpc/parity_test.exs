@@ -1,9 +1,8 @@
 defmodule EthereumJSONRPC.ParityTest do
   use ExUnit.Case, async: true
 
-  doctest EthereumJSONRPC.Parity
-
   describe "fetch_internal_transactions/1" do
+    @tag :no_geth
     test "with all valid transaction_params returns {:ok, transactions_params}" do
       assert EthereumJSONRPC.Parity.fetch_internal_transactions([
                %{
@@ -33,6 +32,7 @@ defmodule EthereumJSONRPC.ParityTest do
              }
     end
 
+    @tag :no_geth
     test "with all invalid transaction_params returns {:error, reasons}" do
       assert EthereumJSONRPC.Parity.fetch_internal_transactions([
                %{
@@ -53,6 +53,7 @@ defmodule EthereumJSONRPC.ParityTest do
                 ]}
     end
 
+    @tag :no_geth
     test "with a mix of valid and invalid transaction_params returns {:error, reasons}" do
       assert EthereumJSONRPC.Parity.fetch_internal_transactions([
                # start with :ok

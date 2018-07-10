@@ -3,18 +3,18 @@ defmodule Indexer.InternalTransactionFetcherTest do
 
   import ExUnit.CaptureLog
 
-  alias Explorer.Chain.Transaction
-  alias Indexer.{AddressBalanceFetcherCase, InternalTransactionFetcher, PendingTransactionFetcher}
+  alias Indexer.{AddressBalanceFetcherCase, InternalTransactionFetcher}
 
   @moduletag :capture_log
 
+  @tag :no_geth
   test "does not try to fetch pending transactions from Indexer.PendingTransactionFetcher" do
     start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
     AddressBalanceFetcherCase.start_supervised!()
-    start_supervised!(PendingTransactionFetcher)
+    start_supervised!(Indexer.PendingTransactionFetcher)
 
     wait_for_results(fn ->
-      Repo.one!(from(transaction in Transaction, where: is_nil(transaction.block_hash), limit: 1))
+      Repo.one!(from(transaction in Explorer.Chain.Transaction, where: is_nil(transaction.block_hash), limit: 1))
     end)
 
     :transaction
@@ -81,6 +81,7 @@ defmodule Indexer.InternalTransactionFetcherTest do
                """
     end
 
+    @tag :no_geth
     test "duplicate transaction hashes only retry uniques" do
       start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
       AddressBalanceFetcherCase.start_supervised!()

@@ -81,7 +81,7 @@ defmodule Explorer.Chain.Data do
       {:ok, %Explorer.Chain.Data{bytes: <<>>}}
 
   Hashes can be represented as `Explorer.Chain.Data`, but it is better to use `Explorer.Chain.Hash.Full` or
-  `Explorer.Chain.Hash.Truncated`.
+  `Explorer.Chain.Hash.Address`.
 
       iex> Explorer.Chain.Data.cast("0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b")
       {
