@@ -9,5 +9,5 @@
     <% end %>
   <% end %>
 <% else %>
-  <%= gettext("Contract Address Pending") %>
+  <%= gettext("Contract Creation") %>
 <% end %>
