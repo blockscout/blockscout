@@ -8,4 +8,6 @@
       <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: @address_hash %>
     <% end %>
   <% end %>
+<% else %>
+  Contract Address Pending
 <% end %>
