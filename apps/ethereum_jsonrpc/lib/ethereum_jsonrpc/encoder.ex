@@ -83,12 +83,17 @@ defmodule EthereumJSONRPC.Encoder do
   end
 
   def decode_result({%{"id" => id, "result" => result}, function_selector}) do
+    types_list = format_list_types(function_selector.returns)
+
     decoded_result =
       result
       |> String.slice(2..-1)
       |> Base.decode16!(case: :lower)
-      |> TypeDecoder.decode_raw(List.wrap(function_selector.returns))
+      |> TypeDecoder.decode_raw(types_list)
 
     {id, decoded_result}
   end
+
+  defp format_list_types(:string), do: [{:array, :string, 1}]
+  defp format_list_types(return_types), do: List.wrap(return_types)
 end
