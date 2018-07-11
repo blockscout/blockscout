@@ -180,5 +180,15 @@ defmodule EthereumJSONRPC.EncoderTest do
       assert Encoder.decode_result({result, selector}) ==
                {"sum", ["-32602 => Invalid params: Invalid hex: Invalid character 'x' at position 134."]}
     end
+
+    test "correclty decodes string types" do
+      result =
+        "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000441494f4e00000000000000000000000000000000000000000000000000000000"
+
+      selector = %ABI.FunctionSelector{function: "name", types: [], returns: :string}
+
+      assert Encoder.decode_result({%{"id" => "storedName", "result" => result}, selector}) ==
+               {"storedName", [["AION"]]}
+    end
   end
 end
