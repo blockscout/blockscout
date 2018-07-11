@@ -1,11 +1,11 @@
 <%= if @address_hash do %>
-  <%= link to: address_path(ExplorerWeb.Endpoint, :show, @locale, @address_hash), "data-address-hash": @address_hash do %>
+  <%= link to: address_path(ExplorerWeb.Endpoint, :show, @locale, @address_hash), "data-address-hash": @address_hash, "data-test": "address_hash_link" do %>
     <%= if @contract do %>
-      <span class="tile-text-highlight d-none d-md-none d-lg-inline"><%= @address_hash %></span>
-      <span class="tile-text-highlight d-md-block d-lg-none "><%= @address_hash |> to_string() |> String.slice(0..5) %>&ndash;<%= @address_hash |> to_string() |> String.slice(-6..-1) %></span>
+      <span class="tile-text-highlight">
+        <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: @address_hash %>
+      </span>
     <% else %>
-      <span class="d-none d-md-none d-lg-inline"> <%= @address_hash %></span>
-      <span class="d-lg-none"><%= @address_hash |> to_string() |> String.slice(0..5) %>&ndash;<%= @address_hash |> to_string() |> String.slice(-6..-1) %></span>
+      <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: @address_hash %>
     <% end %>
   <% end %>
 <% end %>

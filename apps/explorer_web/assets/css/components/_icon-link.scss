@@ -1,0 +1,39 @@
+.icon-links {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  .icon-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    margin: 0 .25rem;
+    color: $text-muted;
+    background-color: $gray-200;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.1s ease;
+
+    &:hover {
+      background-color: $primary;
+      color: $white;
+      text-decoration: none;
+    }
+  }
+
+  &.icon-links-primary {
+
+    .icon-link {
+      color: $footer-text-color;
+      background-color: rgba($white, 0.25);
+
+      &:hover {
+        background-color: $white;
+        color: $primary;
+      }
+    }
+  }
+}

@@ -39,10 +39,10 @@ $indigo:  #5b33a1 !default;
 $purple:  #9987fc !default;
 $pink:    #e83e8c !default;
 $red:     #dc3545 !default;
-$orange:  #fd7e14 !default;
+$orange:  #ef9a60 !default;
 $yellow:  #ffc107 !default;
 $green:   #20b760 !default;
-$teal:            !default;
+$teal:    #009097 !default;
 $cyan:    #90e1d8 !default;
 
 $colors: () !default;
@@ -68,7 +68,7 @@ $success:       $green !default;
 $info:          $cyan !default;
 $warning:       $orange !default;
 $danger:        $red !default;
-$light:         $gray-100 !default;
+$light:         $gray-400 !default;
 $dark:          $gray-800 !default;
 
 $theme-colors: () !default;
@@ -208,7 +208,7 @@ $line-height-sm:              1.5 !default;
 $border-width:                1px !default;
 $border-color:                $gray-300 !default;
 
-$border-radius:               .25rem !default;
+$border-radius:               .1rem !default;
 $border-radius-lg:            .3rem !default;
 $border-radius-sm:            .2rem !default;
 

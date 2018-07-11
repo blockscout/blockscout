@@ -1,16 +1,16 @@
 <footer class="footer">
   <div class="footer-body container">
-    <div class="social-links">
-      <a href="https://www.facebook.com/PoaNetwork/" target="_blank" data-toggle="tooltip" data-placement="top" title="<%= gettext("Facebook") %>">
+    <div class="icon-links icon-links-primary">
+      <a href="https://www.facebook.com/PoaNetwork/" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Facebook") %>">
         <i class="fab fa-facebook-f"></i>
       </a>
-      <a href="https://www.instagram.com/PoaNetwork/" target="_blank" data-toggle="tooltip" data-placement="top" title="<%= gettext("Instagram") %>">
+      <a href="https://www.instagram.com/PoaNetwork/" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Instagram") %>">
         <i class="fab fa-instagram"></i>
       </a>
-      <a href="https://www.twitter.com/PoaNetwork/" target="_blank" data-toggle="tooltip" data-placement="top" title="<%= gettext("Twitter") %>">
+      <a href="https://www.twitter.com/PoaNetwork/" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Twitter") %>">
         <i class="fab fa-twitter"></i>
       </a>
-      <a href="https://www.twitter.com/PoaNetwork/" target="_blank" data-toggle="tooltip" data-placement="top" title="<%= gettext("Telegram") %>">
+      <a href="https://www.twitter.com/PoaNetwork/" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Telegram") %>">
         <i class="fab fa-telegram-plane"></i>
       </a>
     </div>

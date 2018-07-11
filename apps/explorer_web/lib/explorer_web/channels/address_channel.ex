@@ -13,7 +13,7 @@ defmodule ExplorerWeb.AddressChannel do
     {:ok, %{}, socket}
   end
 
-  def handle_out("transaction", %{transaction: transaction}, socket) do
+  def handle_out("transaction", %{address: address, transaction: transaction}, socket) do
     Gettext.put_locale(ExplorerWeb.Gettext, socket.assigns.locale)
 
     rendered =
@@ -21,6 +21,7 @@ defmodule ExplorerWeb.AddressChannel do
         AddressTransactionView,
         "_transaction.html",
         locale: socket.assigns.locale,
+        address: address,
         transaction: transaction
       )
 

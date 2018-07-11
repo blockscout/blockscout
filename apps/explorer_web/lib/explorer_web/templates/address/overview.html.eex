@@ -1,27 +1,60 @@
 <section>
-  <div class="row mb-3">
-    <div class="col-md-2 col-lg-1 order-last order-sm-first">
-      <div class="card mt-3 mt-sm-0">
-        <div class="card-body px-2 py-2">
-          <img src="data:image/png;base64, <%= qr_code(@address) %>" class="qr-code" alt="qr_code" title="<%= @address %>" />
+  <div class="row" data-selector='overview'>
+    <div class="col-md-12 col-lg-8">
+      <div class="card">
+        <div class="card-body">
+          <div class="icon-links float-right">
+            <span data-clipboard-text="<%= @address %>">
+              <button type="button" class="icon-link" id="button" data-toggle="tooltip" data-placement="top" title="<%= gettext("Copy Address") %>" aria-label="Copy Address">
+                <i class="fas fa-clone"></i>
+              </button>
+            </span>
+            <span data-toggle="modal" data-target="#qrModal">
+              <button type="button" class="icon-link"  data-toggle="tooltip" data-placement="top" title="<%= gettext("QR Code") %>" aria-label="Show QR Code">
+                <i class="fas fa-qrcode"></i>
+              </button>
+            </span>
+          </div>
+          <h1 class="card-title"><%= address_title(@address) %> Details </h1>
+          <h3 class="" data-test="address_detail_hash"><%= @address %></h3>
+          <div class="d-flex flex-row justify-content-start text-muted">
+            <span class="mr-4" data-test="transaction_count"><%= Cldr.Number.to_string!(@transaction_count) %> <%= gettext "Transactions" %></span>
+          </div>
         </div>
       </div>
     </div>
-    <div class="col-sm-10 align-self-center">
-      <h1><%= address_title(@address) %></h1>
-      <p class="mb-0" data-test="address_detail_hash"><%= @address %></p>
-    </div>
-  </div>
-
-  <div class="card mb-3">
-    <div class="card-body">
-      <div class="row">
-        <div class="col-sm-6">
-          <table class="table table-font table-responsive-sm table-horizontal" data-selector='overview'>
-            <%= render "_values.html", address: @address, exchange_rate: @exchange_rate, transaction_count: @transaction_count %>
-          </table>
+    <div class="col-md-6 col-lg-4">
+      <div class="card bg-primary">
+        <div class="card-body">
+          <h2 class="card-title text-white">Balance</h2>
+          <span></span>
+          <div class="text-right">
+            <h3 class="text-white" data-test="address_balance"><%= balance(@address) %></h3>
+            <span class="text-light"><%= formatted_usd(@address, @exchange_rate) %></span>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </section>
+
+
+<!-- Modal -->
+<div class="modal fade" id="qrModal" tabindex="-1" role="dialog" aria-labelledby="qrModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-sm" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="qrModalLabel">QR Code</h2>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <img src="data:image/png;base64, <%= qr_code(@address) %>" class="qr-code" alt="qr_code" title="<%= @address %>" />
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

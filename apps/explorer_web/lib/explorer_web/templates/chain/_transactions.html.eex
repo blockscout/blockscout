@@ -3,7 +3,7 @@
     <%= link(gettext("View All Transactions →"), to: transaction_path(@conn, :index, Gettext.get_locale), class: "button button--secondary button--xsmall float-right") %>
     <h2 class="card-title"><%= gettext "Transactions" %></h2>
     <%= for transaction <- @chain.transactions do %>
-    <div class="tile tile-type-<%= ExplorerWeb.TransactionView.type_suffix(transaction) %>" data-test="<%= ExplorerWeb.TransactionView.type_suffix(transaction) %>">
+    <div class="tile tile-type-<%= ExplorerWeb.TransactionView.type_suffix(transaction) %>" data-test="<%= ExplorerWeb.TransactionView.type_suffix(transaction) %>" data-transaction-hash="<%= transaction.hash %>">
       <div class="row" data-test="chain_transaction">
         <div class="col-md-2 d-flex align-items-center justify-content-start justify-content-lg-center  tile-label">
           <%= ExplorerWeb.TransactionView.transaction_display_type(transaction) %>
@@ -13,7 +13,7 @@
           <span>
             <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(transaction.from_address), address_hash: transaction.from_address_hash %>
             &rarr;
-            <%= render ExplorerWeb.AddressView, "_link.html", ExplorerWeb.TransactionView.display_to_address(transaction, locale: @locale, contract: ExplorerWeb.AddressView.contract?(transaction.to_address)) %>
+            <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(transaction.to_address), address_hash: ExplorerWeb.TransactionView.to_address_hash(transaction) %>
           </span>
           <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> POA
         </div>

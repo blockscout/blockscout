@@ -8,7 +8,7 @@ defmodule ExplorerWeb.TransactionListPage do
   alias Explorer.Chain.{InternalTransaction, Transaction}
 
   def click_transaction(session, %Transaction{hash: transaction_hash}) do
-    click(session, css("[data-test='transaction_hash'][data-transaction-hash='#{transaction_hash}']"))
+    click(session, css("[data-transaction-hash='#{transaction_hash}'] [data-test='transaction_hash_link']"))
   end
 
   def click_pending(session) do
@@ -20,7 +20,7 @@ defmodule ExplorerWeb.TransactionListPage do
   end
 
   def transaction(%Transaction{hash: transaction_hash}) do
-    css("[data-test='transaction_hash'][data-transaction-hash='#{transaction_hash}']")
+    css("[data-transaction-hash='#{transaction_hash}']")
   end
 
   def visit_page(session) do

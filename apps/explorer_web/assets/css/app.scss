@@ -42,6 +42,8 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "node_modules/bootstrap/scss/card";
 @import "node_modules/bootstrap/scss/forms";
 @import "node_modules/bootstrap/scss/tooltip";
+@import "node_modules/bootstrap/scss/badge";
+@import "node_modules/bootstrap/scss/alert";
 
 //Custom theme
 @import "theme/fonts";
@@ -66,6 +68,8 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/card";
 @import "components/tile";
 @import "components/dashboard-banner";
+@import "components/icon-link";
+@import "components/badge";
 
 
 :export {

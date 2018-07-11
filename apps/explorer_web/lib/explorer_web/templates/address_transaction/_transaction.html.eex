@@ -1,35 +1,36 @@
-<tr class="fade-in">
-  <td><div class="transaction__dot transaction__dot--<%= status(@transaction) %>"></div></td>
-  <td>
-    <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: @transaction.hash %>
-  </td>
-  <td>
-    <%= link(
-          @transaction.block,
-          to: block_path(ExplorerWeb.Endpoint, :show, @locale, @transaction.block)
-        ) %>
-  </td>
-  <td data-from-now="<%= @transaction.block.timestamp %>"></td>
-  <td class="address-cell">
-    <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(@transaction.from_address), address_hash: @transaction.from_address_hash %>
-  </td>
-  <td class="u-text-center"><i class="fas fa-arrow-circle-right"></i></td>
-  <td>
-    <%= cond do %>
-      <% @transaction.to_address_hash != nil -> %>
-        <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(@transaction.to_address), address_hash: @transaction.to_address_hash %>
-      <% @transaction.created_contract_address_hash != nil -> %>
-        <i class="fas fa-plus-square"></i>
-        <%= link(
-          gettext("Contract Creation"),
-          class: "transaction__link",
-          "data-address-hash": @transaction.created_contract_address_hash,
-          to: address_path(ExplorerWeb.Endpoint, :show, @locale, @transaction.created_contract_address_hash),
-          title: @transaction.created_contract_address_hash
-        ) %>
-      <% true -> %>
-    <% end %>
-  </td>
-  <td><%= ExplorerWeb.TransactionView.value(@transaction, include_label: false) %></td>
-  <td><%= ExplorerWeb.TransactionView.formatted_fee(@transaction, denomination: :ether) %></td>
-</tr>
+<div class="tile tile-type-<%= ExplorerWeb.TransactionView.type_suffix(@transaction) %> fade-in" data-transaction-hash="<%= @transaction.hash %>">
+  <div class="row">
+    <div class="col-md-2 d-flex align-items-center justify-content-start justify-content-lg-center  tile-label">
+      <%= ExplorerWeb.TransactionView.transaction_display_type(@transaction) %>
+    </div>
+    <div class="col-md-7 col-lg-8 d-flex flex-column">
+      <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: @transaction.hash %>
+      <span>
+        <%= if @address.hash == @transaction.from_address_hash do %>
+          <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: @transaction.from_address_hash %>
+        <% else %>
+          <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(@transaction.from_address), address_hash: @transaction.from_address_hash %>
+        <% end %>
+        &rarr;
+        <%= if @address.hash == ExplorerWeb.TransactionView.to_address_hash(@transaction) do %>
+          <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: ExplorerWeb.TransactionView.to_address_hash(@transaction) %>
+        <% else %>
+          <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(@transaction.to_address), address_hash: ExplorerWeb.TransactionView.to_address_hash(@transaction) %>
+        <% end %>
+      </span>
+      <%= ExplorerWeb.TransactionView.value(@transaction, include_label: false) %> POA
+    </div>
+    <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column justify-content-start justify-content-md-end align-items-end text-md-right">
+      <%= if @address.hash == @transaction.from_address_hash do %>
+        <span class="badge badge-warning tile-badge  mr-2 mr-md-0">OUT</span>
+      <% else %>
+        <span class="badge badge-success tile-badge mr-2 mr-md-0">IN</span>
+      <% end %>
+      <span class="mr-2 mr-sm-0" data-from-now="<%= @transaction.block.timestamp %>"></span>
+      <%= link(
+        gettext("Block #") <> "#{@transaction.block.number}",
+        to: block_path(ExplorerWeb.Endpoint, :show, @locale, @transaction.block)
+      ) %>
+    </div>
+  </div>
+</div>

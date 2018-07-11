@@ -2,14 +2,15 @@ defmodule ExplorerWeb.ViewingAddressesTest do
   use ExplorerWeb.FeatureCase, async: true
 
   alias Explorer.Chain
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, Wei}
   alias Explorer.ExchangeRates.Token
   alias ExplorerWeb.{AddressPage, HomePage}
 
   setup do
     block = insert(:block)
 
-    lincoln = insert(:address)
+    {:ok, balance} = Wei.cast(5)
+    lincoln = insert(:address, fetched_balance: balance)
     taft = insert(:address)
 
     from_taft =
@@ -107,15 +108,28 @@ defmodule ExplorerWeb.ViewingAddressesTest do
       |> AddressPage.visit_page(addresses.lincoln)
       |> assert_has(AddressPage.contract_creation(internal_transaction))
     end
+
+    test "only addresses not matching the page are links", %{
+      addresses: addresses,
+      session: session,
+      transactions: transactions
+    } do
+      session
+      |> AddressPage.visit_page(addresses.lincoln)
+      |> assert_has(AddressPage.transaction_address_link(transactions.from_lincoln, :to))
+    end
   end
 
   describe "viewing internal transactions" do
     setup %{addresses: addresses, transactions: transactions} do
       address = addresses.lincoln
       transaction = transactions.from_lincoln
-      insert(:internal_transaction, transaction: transaction, to_address: address, index: 0)
+
+      internal_transaction_lincoln_to_address =
+        insert(:internal_transaction, transaction: transaction, to_address: address, index: 0)
+
       insert(:internal_transaction, transaction: transaction, from_address: address, index: 1)
-      :ok
+      {:ok, %{internal_transaction_lincoln_to_address: internal_transaction_lincoln_to_address}}
     end
 
     test "can see internal transactions for an address", %{addresses: addresses, session: session} do
@@ -140,6 +154,17 @@ defmodule ExplorerWeb.ViewingAddressesTest do
       |> AddressPage.apply_filter("To")
       |> assert_has(AddressPage.internal_transactions(count: 1))
     end
+
+    test "only addresses not matching the page are links", %{
+      addresses: addresses,
+      internal_transaction_lincoln_to_address: internal_transaction,
+      session: session
+    } do
+      session
+      |> AddressPage.visit_page(addresses.lincoln)
+      |> AddressPage.click_internal_transactions()
+      |> assert_has(AddressPage.internal_transaction_address_link(internal_transaction, :from))
+    end
   end
 
   test "viewing transaction count", %{addresses: addresses, session: session} do
@@ -162,7 +187,10 @@ defmodule ExplorerWeb.ViewingAddressesTest do
       |> with_block()
       |> Repo.preload([:block, :from_address, :to_address])
 
-    ExplorerWeb.Endpoint.broadcast!("addresses:#{addresses.lincoln.hash}", "transaction", %{transaction: transaction})
+    ExplorerWeb.Endpoint.broadcast!("addresses:#{addresses.lincoln.hash}", "transaction", %{
+      address: addresses.lincoln,
+      transaction: transaction
+    })
 
     assert_has(session, AddressPage.transaction(transaction))
   end
@@ -192,5 +220,31 @@ defmodule ExplorerWeb.ViewingAddressesTest do
     })
 
     assert_text(session, AddressPage.balance(), "0.0000000000000001 POA")
+  end
+
+  test "contract creation is shown for to_address on list page", %{
+    addresses: addresses,
+    block: block,
+    session: session
+  } do
+    lincoln = addresses.lincoln
+
+    from_lincoln =
+      :transaction
+      |> insert(from_address: lincoln, to_address: nil)
+      |> with_block(block)
+
+    internal_transaction =
+      insert(
+        :internal_transaction_create,
+        transaction: from_lincoln,
+        from_address: lincoln,
+        index: 0
+      )
+
+    session
+    |> AddressPage.visit_page(addresses.lincoln)
+    |> AddressPage.click_internal_transactions()
+    |> assert_has(AddressPage.contract_creation(internal_transaction))
   end
 end

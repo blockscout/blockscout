@@ -7,7 +7,7 @@
   border-left: 4px solid $primary;
   border-radius: 2px;
   padding: 1rem;
-  box-shadow: 0 2px 5px rgba($black, 0.15);
+  box-shadow: 0 1px 5px rgba($black, 0.15);
 
   & + & {
     margin-top: 1rem;
@@ -22,7 +22,7 @@
     &-transaction {
       border-left: 4px solid $blue;
 
-      .tile-label {
+      .tile-label, .tile-text-highlight {
         color: $blue;
       }
     }
@@ -30,7 +30,7 @@
     &-contract {
       border-left: 4px solid $green;
 
-      .tile-label {
+      .tile-label, .tile-text-highlight {
         color: $green;
       }
     }
@@ -38,7 +38,7 @@
     &-contract-creation {
       border-left: 4px solid $pink;
 
-      .tile-label {
+      .tile-label, .tile-text-highlight {
         color: $pink;
       }
     }
@@ -46,8 +46,16 @@
     &-token {
       border-left: 4px solid $orange;
 
-      .tile-label {
+      .tile-label, .tile-text-highlight {
         color: $orange;
+      }
+    }
+
+    &-internal-transaction {
+      border-left: 4px solid $teal;
+
+      .tile-label, .tile-text-highlight {
+        color: $teal;
       }
     }
   }
@@ -59,4 +67,19 @@
     margin-bottom: 0;
     display: block;
   }
+}
+
+.tile-badge {
+  margin-bottom: 0.1rem;
+  padding: 0;
+  width: 2.5rem;
+  line-height: 1.25rem;
+  text-align: center;
+}
+
+.tile-muted {
+  border-left: 1px solid $border-color;
+  background-color: $gray-100;
+  color: $text-muted;
+  box-shadow: none;
 }

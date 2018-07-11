@@ -1,0 +1,31 @@
+<div class="tile tile-type-internal-transaction fade-in" data-test="internal_transaction" data-internal-transaction-id="<%= @internal_transaction.id %>">
+  <div class="row">
+    <div class="col-md-2 d-flex align-items-center justify-content-start justify-content-lg-center  tile-label">
+      <%=  gettext("Internal Transaction") %>
+    </div>
+    <div class="col-md-7 col-lg-8 d-flex flex-column">
+      <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: @internal_transaction.transaction_hash %>
+      <span>
+        <%= if @address.hash == @internal_transaction.from_address_hash do %>
+          <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: @internal_transaction.from_address_hash %>
+        <% else %>
+          <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(@internal_transaction.from_address), address_hash: @internal_transaction.from_address_hash %>
+        <% end %>
+        &rarr;
+        <%= if @address.hash == ExplorerWeb.InternalTransactionView.to_address_hash(@internal_transaction) do %>
+          <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: ExplorerWeb.InternalTransactionView.to_address_hash(@internal_transaction) %>
+        <% else %>
+          <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(@internal_transaction.to_address), address_hash: ExplorerWeb.InternalTransactionView.to_address_hash(@internal_transaction) %>
+        <% end %>
+      </span>
+      <%= ExplorerWeb.TransactionView.value(@internal_transaction, include_label: false) %> POA
+    </div>
+    <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column align-items-end justify-content-center text-md-right">
+      <%= if @address.hash == @internal_transaction.from_address_hash do %>
+        <span class="badge badge-danger tile-badge">OUT</span>
+      <% else %>
+        <span class="badge badge-success tile-badge">IN</span>
+      <% end %>
+    </div>
+  </div>
+</div>

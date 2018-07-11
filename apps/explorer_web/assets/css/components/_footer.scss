@@ -23,35 +23,13 @@ $footer-text-color: rgba($white, 0.7);
   position: relative;
 }
 
-.footer .social-links {
+.footer .icon-links {
   position: absolute;
   right: 0;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
 
   @media (max-width: 768px) {
     position: static;
     justify-content: center;
     margin-bottom: 5px;
-  }
-
-  & > a {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: $social-link-size;
-    height: $social-link-size;
-    margin: 0 $footer-padding;
-    color: $footer-text-color;
-    background-color: rgba($white, 0.25);
-    border-radius: 50%;
-    transition: all 0.1s ease;
-
-    &:hover {
-      background-color: $white;
-      color: $primary;
-      text-decoration: none;
-    }
   }
 }

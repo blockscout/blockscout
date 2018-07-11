@@ -4,3 +4,20 @@
   border-radius: 0;
   margin-bottom: 3rem;
 }
+
+.card-header {
+  background-color: $white;
+
+  &-tabs {
+    margin: (-$card-spacer-y) (-$card-spacer-x);
+  }
+}
+
+.card-title {
+  line-height: 2.2rem;
+  margin-bottom: 2rem;
+}
+
+.card-body {
+  padding: 2.25rem 1.25rem;
+}
