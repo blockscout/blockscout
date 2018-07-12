@@ -35,7 +35,7 @@ defmodule ExplorerWeb.AddressView do
 
   def contract?(%Address{contract_code: _}), do: true
 
-  def contract?(_), do: true
+  def contract?(nil), do: true
 
   def formatted_usd(%Address{fetched_balance: nil}, _), do: nil
 
