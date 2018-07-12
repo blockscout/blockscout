@@ -74,7 +74,7 @@ defmodule EthereumJsonrpc.MixProject do
       # Convert unix timestamps in JSONRPC to DateTimes
       {:timex, "~> 3.1.24"},
       # Encode/decode function names and arguments
-      {:abi, "~> 0.1.8"}
+      {:ex_abi, "~> 0.1.13"}
     ]
   end
 end
