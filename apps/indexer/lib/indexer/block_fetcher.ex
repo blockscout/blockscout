@@ -281,28 +281,31 @@ defmodule Indexer.BlockFetcher do
 
   defp chunk_range(range, size) do
     count = Enum.count(range)
+    chunk_range(range, count, size)
+  end
 
-    if count <= size do
-      [range]
-    else
-      first..last = range
+  defp chunk_range(range, count, size) when count <= size do
+    [range]
+  end
 
-      first
-      |> Stream.iterate(&(&1 + size))
-      |> Enum.reduce_while([], fn chunk_first, acc ->
-        next_chunk_first = chunk_first + size
-        full_chunk_last = next_chunk_first - 1
+  defp chunk_range(range, _, size) do
+    first..last = range
 
-        {action, chunk_last} = if full_chunk_last >= last do
-          {:halt, last}
-        else
-          {:cont, full_chunk_last}
-        end
+    first
+    |> Stream.iterate(&(&1 + size))
+    |> Enum.reduce_while([], fn chunk_first, acc ->
+      next_chunk_first = chunk_first + size
+      full_chunk_last = next_chunk_first - 1
 
-        {action, [chunk_first..chunk_last | acc]}
-      end)
-      |> Enum.reverse()
-    end
+      {action, chunk_last} = if full_chunk_last >= last do
+        {:halt, last}
+      else
+        {:cont, full_chunk_last}
+      end
+
+      {action, [chunk_first..chunk_last | acc]}
+    end)
+    |> Enum.reverse()
   end
 
   defp realtime_task(%{json_rpc_named_arguments: json_rpc_named_arguments} = state) do
