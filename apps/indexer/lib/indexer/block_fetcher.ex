@@ -274,7 +274,8 @@ defmodule Indexer.BlockFetcher do
     |> chunk_ranges(blocks_batch_size)
   end
 
-  defp chunk_ranges(ranges, size) do
+  @doc false
+  def chunk_ranges(ranges, size) do
     Enum.flat_map(ranges, fn
       first..last = range when last - first <= size ->
         [range]
