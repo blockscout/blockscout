@@ -35,7 +35,11 @@
             <span>
               <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(transaction.from_address), address_hash: transaction.from_address_hash %>
               &rarr;
-              <%= render ExplorerWeb.AddressView, "_link.html", address_hash: ExplorerWeb.TransactionView.to_address_hash(transaction), locale: @locale, contract: ExplorerWeb.AddressView.contract?(transaction.to_address) %>
+              <%= if transaction.to_address_hash do %>
+                <%= render ExplorerWeb.AddressView, "_link.html", address_hash: transaction.to_address_hash, locale: @locale, contract: ExplorerWeb.AddressView.contract?(transaction.to_address) %>
+              <% else %>
+                <%= gettext("Contract Address Pending") %>
+              <% end %>
             </span>
             <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> POA
           </div>

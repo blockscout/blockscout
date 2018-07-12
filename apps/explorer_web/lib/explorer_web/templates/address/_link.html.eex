@@ -8,6 +8,4 @@
       <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: @address_hash %>
     <% end %>
   <% end %>
-<% else %>
-  <%= gettext("Contract Creation") %>
 <% end %>
