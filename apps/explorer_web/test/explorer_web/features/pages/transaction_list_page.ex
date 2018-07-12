@@ -5,7 +5,7 @@ defmodule ExplorerWeb.TransactionListPage do
 
   import Wallaby.Query, only: [css: 1, css: 2]
 
-  alias Explorer.Chain.{Transaction, Transaction}
+  alias Explorer.Chain.Transaction
 
   def click_transaction(session, %Transaction{hash: transaction_hash}) do
     click(session, css("[data-transaction-hash='#{transaction_hash}'] [data-test='transaction_hash_link']"))
