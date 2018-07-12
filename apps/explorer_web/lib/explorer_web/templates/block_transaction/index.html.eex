@@ -148,7 +148,7 @@
             <tbody>
               <%= for transaction <- @transactions do %>
                 <tr data-transaction-hash="<%= transaction.hash %>">
-                  <td>
+                  <td data-test="transaction_status">
                     <div class="transaction__dot transaction__dot--<%= status(transaction) %>"></div>
                   </td>
                   <td>

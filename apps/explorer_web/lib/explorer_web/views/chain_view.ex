@@ -3,6 +3,7 @@ defmodule ExplorerWeb.ChainView do
 
   alias Explorer.ExchangeRates.Token
   alias ExplorerWeb.ExchangeRates.USD
+  alias ExplorerWeb.TransactionView
 
   def encode_market_history_data(market_history_data) do
     market_history_data
@@ -31,4 +32,6 @@ defmodule ExplorerWeb.ChainView do
     |> USD.from()
     |> format_usd_value()
   end
+
+  defdelegate status(transaction), to: TransactionView
 end

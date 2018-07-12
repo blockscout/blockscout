@@ -94,6 +94,7 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
       session
       |> TransactionListPage.visit_page()
       |> assert_has(TransactionListPage.transaction(transaction))
+      |> assert_has(TransactionListPage.transaction_status(transaction))
       |> refute_has(TransactionListPage.transaction(pending))
     end
 
@@ -103,6 +104,7 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
       |> TransactionListPage.click_pending()
       |> assert_has(TransactionListPage.transaction(pending))
       |> assert_has(TransactionListPage.transaction(pending_contract))
+      |> assert_has(TransactionListPage.transaction_status(pending_contract))
     end
 
     test "contract creation is shown for to_address on list page", %{session: session} do

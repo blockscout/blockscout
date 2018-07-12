@@ -115,6 +115,7 @@ defmodule ExplorerWeb.ViewingAddressesTest do
       |> AddressPage.visit_page(addresses.lincoln)
       |> assert_has(AddressPage.transaction(transactions.from_taft))
       |> assert_has(AddressPage.transaction(transactions.from_lincoln))
+      |> assert_has(AddressPage.transaction_status(transactions.from_lincoln))
     end
 
     test "can filter to only see transactions from an address", %{
