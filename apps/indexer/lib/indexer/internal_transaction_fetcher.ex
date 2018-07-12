@@ -48,12 +48,24 @@ defmodule Indexer.InternalTransactionFetcher do
 
   @doc false
   def child_spec(provided_opts) do
-    opts = Keyword.merge(@defaults, provided_opts)
+    {state, mergable_opts} = Keyword.pop(provided_opts, :json_rpc_named_arguments)
+
+    unless state do
+      raise ArgumentError,
+            ":json_rpc_named_arguments must be provided to `#{__MODULE__}.child_spec " <>
+              "to allow for json_rpc calls when running."
+    end
+
+    opts =
+      @defaults
+      |> Keyword.merge(mergable_opts)
+      |> Keyword.put(:state, state)
+
     Supervisor.child_spec({BufferedTask, {__MODULE__, opts}}, id: __MODULE__)
   end
 
   @impl BufferedTask
-  def init(initial, reducer) do
+  def init(initial, reducer, _) do
     {:ok, final} =
       Chain.stream_transactions_with_unfetched_internal_transactions(
         [:block_number, :hash],
@@ -73,12 +85,12 @@ defmodule Indexer.InternalTransactionFetcher do
   end
 
   @impl BufferedTask
-  def run(transactions_params, _retries) do
+  def run(transactions_params, _retries, json_rpc_named_arguments) do
     unique_transactions_params = unique_transactions_params(transactions_params)
 
     Indexer.debug(fn -> "fetching internal transactions for #{length(unique_transactions_params)} transactions" end)
 
-    case EthereumJSONRPC.fetch_internal_transactions(unique_transactions_params) do
+    case EthereumJSONRPC.fetch_internal_transactions(unique_transactions_params, json_rpc_named_arguments) do
       {:ok, internal_transactions_params} ->
         addresses_params = AddressExtraction.extract_addresses(%{internal_transactions: internal_transactions_params})
 

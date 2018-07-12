@@ -11,6 +11,7 @@ defmodule Indexer.BufferedTaskTest do
     start_supervised(
       {BufferedTask,
        {callback_module,
+        state: nil,
         task_supervisor: BufferedTaskSup,
         flush_interval: 50,
         max_batch_size: @max_batch_size,
@@ -24,11 +25,11 @@ defmodule Indexer.BufferedTaskTest do
 
     def initial_collection, do: for(i <- 1..11, do: "#{i}")
 
-    def init(initial, reducer) do
+    def init(initial, reducer, _state) do
       Enum.reduce(initial_collection(), initial, fn item, acc -> reducer.(item, acc) end)
     end
 
-    def run(batch, 0) do
+    def run(batch, 0, _state) do
       send(__MODULE__, {:run, batch})
       :ok
     end
@@ -37,11 +38,11 @@ defmodule Indexer.BufferedTaskTest do
   defmodule EmptyTask do
     @behaviour BufferedTask
 
-    def init(initial, _reducer) do
+    def init(initial, _reducer, _state) do
       initial
     end
 
-    def run(batch, 0) do
+    def run(batch, 0, _state) do
       send(__MODULE__, {:run, batch})
       :ok
     end
@@ -50,31 +51,31 @@ defmodule Indexer.BufferedTaskTest do
   defmodule RetryableTask do
     @behaviour BufferedTask
 
-    def init(initial, _reducer) do
+    def init(initial, _reducer, _state) do
       initial
     end
 
-    def run([:boom], 0) do
+    def run([:boom], 0, _state) do
       send(__MODULE__, {:run, {0, :boom}})
       raise "boom"
     end
 
-    def run([:boom], 1) do
+    def run([:boom], 1, _state) do
       send(__MODULE__, {:run, {1, :boom}})
       :ok
     end
 
-    def run([{:sleep, time}], _) do
+    def run([{:sleep, time}], _, _state) do
       :timer.sleep(time)
       :ok
     end
 
-    def run(batch, retries) when retries < 2 do
+    def run(batch, retries, _state) when retries < 2 do
       send(__MODULE__, {:run, {retries, batch}})
       :retry
     end
 
-    def run(batch, retries) do
+    def run(batch, retries, _state) do
       send(__MODULE__, {:final_run, {retries, batch}})
       :ok
     end

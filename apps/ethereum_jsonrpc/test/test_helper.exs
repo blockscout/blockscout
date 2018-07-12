@@ -6,5 +6,9 @@ File.mkdir_p!(junit_folder)
 # Counter `test --no-start`.  `--no-start` is needed for `:indexer` compatibility
 {:ok, _} = Application.ensure_all_started(:ethereum_jsonrpc)
 
+Mox.defmock(EthereumJSONRPC.Mox, for: EthereumJSONRPC.Transport)
+# for when we need to simulate HTTP-specific stuff like 413 Request Entity Too Large
+Mox.defmock(EthereumJSONRPC.HTTP.Mox, for: EthereumJSONRPC.HTTP)
+
 ExUnit.configure(formatters: [JUnitFormatter, ExUnit.CLIFormatter])
 ExUnit.start()

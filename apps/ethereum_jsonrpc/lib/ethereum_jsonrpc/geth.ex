@@ -8,27 +8,17 @@ defmodule EthereumJSONRPC.Geth do
   @doc """
   Internal transaction fetching is not supported currently for Geth.
 
-  To signal to the caller that fetching is not supported, `:ignore` is returned
-
-      iex> EthereumJSONRPC.Geth.fetch_internal_transactions([
-      ...>   "0x2ec382949ba0b22443aa4cb38267b1fb5e68e188109ac11f7a82f67571a0adf3"
-      ...> ])
-      :ignore
-
+  To signal to the caller that fetching is not supported, `:ignore` is returned.
   """
   @impl EthereumJSONRPC.Variant
-  def fetch_internal_transactions(transaction_params) when is_list(transaction_params),
+  def fetch_internal_transactions(transaction_params, _json_rpc_named_arguments) when is_list(transaction_params),
     do: :ignore
 
   @doc """
   Pending transaction fetching is not supported currently for Geth.
 
-  To signal to the caller that fetching is not supported, `:ignore` is returned
-
-      iex> EthereumJSONRPC.Geth.fetch_pending_transactions()
-      :ignore
-
+  To signal to the caller that fetching is not supported, `:ignore` is returned.
   """
   @impl EthereumJSONRPC.Variant
-  def fetch_pending_transactions, do: :ignore
+  def fetch_pending_transactions(_json_rpc_named_arguments), do: :ignore
 end

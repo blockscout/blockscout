@@ -50,6 +50,31 @@ defmodule Indexer.BufferedTask do
 
   require Logger
 
+  alias Indexer.BufferedTask
+
+  @enforce_keys [
+    :pid,
+    :callback_module,
+    :callback_module_state,
+    :task_supervisor,
+    :flush_interval,
+    :max_batch_size,
+    :init_chunk_size
+  ]
+  defstruct pid: nil,
+            init_task: nil,
+            flush_timer: nil,
+            callback_module: nil,
+            callback_module_state: nil,
+            task_supervisor: nil,
+            flush_interval: nil,
+            max_batch_size: nil,
+            max_concurrency: nil,
+            init_chunk_size: nil,
+            current_buffer: [],
+            buffer: :queue.new(),
+            tasks: %{}
+
   @typedoc """
   Entry passed to `t:reducer/2` in `c:init/2` and grouped together into a list as `t:entries/0` passed to `c:run/2`.
   """
@@ -78,21 +103,28 @@ defmodule Indexer.BufferedTask do
   """
   @type reducer :: (entry, accumulator -> accumulator)
 
+  @typedoc """
+  Callback module controlled state.  Can be used to store extra information needed for each `run/2`
+  """
+  @type state :: term()
+
   @doc """
   Populates a task's buffer on boot with an initial set of entries.
 
   For example, the following callback would buffer all unfetched account balances on startup:
 
-      def init(initial, reducer) do
-        Chain.stream_unfetched_addresses([:hash], initial, fn %{hash: hash}, acc ->
+      def init(initial, reducer, state) do
+        final = Chain.stream_unfetched_addresses([:hash], initial, fn %{hash: hash}, acc ->
           reducer.(Hash.to_string(hash), acc)
         end)
+
+        {final, state}
       end
 
   The `init/2` operation may be long-running as it is run in a separate process and allows concurrent calls to
   `Explorer.BufferedTask.buffer/2` for on-demand entries.
   """
-  @callback init(initial, reducer) :: accumulator
+  @callback init(initial, reducer, state) :: accumulator
 
   @doc """
   Invoked as concurrency becomes available with a list of batched entries to be processed.
@@ -116,7 +148,7 @@ defmodule Indexer.BufferedTask do
    * `{:retry, new_entries :: list}` - run should be retried with `new_entries`
 
   """
-  @callback run(entries, retries :: pos_integer) :: :ok | :retry
+  @callback run(entries, retries :: pos_integer, state) :: :ok | :retry | {:retry, new_entries :: list}
 
   @doc """
   Buffers list of entries for future async execution.
@@ -163,6 +195,7 @@ defmodule Indexer.BufferedTask do
              | {:max_concurrency, pos_integer()}
              | {:name, GenServer.name()}
              | {:task_supervisor, GenServer.name()}
+             | {:state, state}
            ]}
         ) :: {:ok, pid()} | {:error, {:already_started, pid()}}
   def start_link({module, base_opts}) do
@@ -175,19 +208,15 @@ defmodule Indexer.BufferedTask do
   def init({callback_module, opts}) do
     send(self(), :initial_stream)
 
-    state = %{
+    state = %BufferedTask{
       pid: self(),
-      init_task: nil,
-      flush_timer: nil,
       callback_module: callback_module,
+      callback_module_state: Keyword.fetch!(opts, :state),
       task_supervisor: Keyword.fetch!(opts, :task_supervisor),
       flush_interval: Keyword.fetch!(opts, :flush_interval),
       max_batch_size: Keyword.fetch!(opts, :max_batch_size),
       max_concurrency: Keyword.fetch!(opts, :max_concurrency),
-      init_chunk_size: Keyword.fetch!(opts, :init_chunk_size),
-      current_buffer: [],
-      buffer: :queue.new(),
-      tasks: %{}
+      init_chunk_size: Keyword.fetch!(opts, :init_chunk_size)
     }
 
     {:ok, state}
@@ -217,7 +246,7 @@ defmodule Indexer.BufferedTask do
     {:noreply, state}
   end
 
-  def handle_info({:DOWN, ref, :process, _pid, :normal}, %{init_task: ref} = state) do
+  def handle_info({:DOWN, ref, :process, _pid, :normal}, %BufferedTask{init_task: ref} = state) do
     {:noreply, %{state | init_task: :complete}}
   end
 
@@ -245,7 +274,7 @@ defmodule Indexer.BufferedTask do
   end
 
   defp drop_task(state, ref) do
-    spawn_next_batch(%{state | tasks: Map.delete(state.tasks, ref)})
+    spawn_next_batch(%BufferedTask{state | tasks: Map.delete(state.tasks, ref)})
   end
 
   defp drop_task_and_retry(state, ref, new_batch \\ nil) do
@@ -262,7 +291,7 @@ defmodule Indexer.BufferedTask do
     %{state | current_buffer: [entries | state.current_buffer]}
   end
 
-  defp queue_in_state(%{} = state, batch, retries) do
+  defp queue_in_state(%BufferedTask{} = state, batch, retries) do
     %{state | buffer: queue_in_queue(state.buffer, batch, retries)}
   end
 
@@ -270,25 +299,30 @@ defmodule Indexer.BufferedTask do
     :queue.in({batch, retries}, queue)
   end
 
-  defp do_initial_stream(%{init_chunk_size: init_chunk_size} = state) do
+  defp do_initial_stream(
+         %BufferedTask{callback_module_state: callback_module_state, init_chunk_size: init_chunk_size} = state
+       ) do
     task =
       Task.Supervisor.async(state.task_supervisor, fn ->
         {0, []}
-        |> state.callback_module.init(fn
-          entry, {len, acc} when len + 1 >= init_chunk_size ->
-            [entry | acc]
-            |> chunk_into_queue(state)
-            |> async_perform(state.pid)
+        |> state.callback_module.init(
+          fn
+            entry, {len, acc} when len + 1 >= init_chunk_size ->
+              [entry | acc]
+              |> chunk_into_queue(state)
+              |> async_perform(state.pid)
 
-            {0, []}
+              {0, []}
 
-          entry, {len, acc} ->
-            {len + 1, [entry | acc]}
-        end)
+            entry, {len, acc} ->
+              {len + 1, [entry | acc]}
+          end,
+          callback_module_state
+        )
         |> catchup_remaining(state)
       end)
 
-    schedule_next_buffer_flush(%{state | init_task: task.ref})
+    schedule_next_buffer_flush(%BufferedTask{state | init_task: task.ref})
   end
 
   defp catchup_remaining({0, []}, _state), do: :ok
@@ -330,7 +364,7 @@ defmodule Indexer.BufferedTask do
 
       task =
         Task.Supervisor.async_nolink(state.task_supervisor, fn ->
-          {:performed, state.callback_module.run(batch, retries)}
+          {:performed, state.callback_module.run(batch, retries, state.callback_module_state)}
         end)
 
       %{state | tasks: Map.put(state.tasks, task.ref, {batch, retries}), buffer: new_queue}
@@ -339,11 +373,11 @@ defmodule Indexer.BufferedTask do
     end
   end
 
-  defp flush(%{current_buffer: []} = state) do
+  defp flush(%BufferedTask{current_buffer: []} = state) do
     state |> spawn_next_batch() |> schedule_next_buffer_flush()
   end
 
-  defp flush(%{current_buffer: current} = state) do
+  defp flush(%BufferedTask{current_buffer: current} = state) do
     current
     |> List.flatten()
     |> Enum.chunk_every(state.max_batch_size)

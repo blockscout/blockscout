@@ -1,19 +1,35 @@
 defmodule Indexer.AddressBalanceFetcherTest do
   # MUST be `async: false` so that {:shared, pid} is set for connection to allow AddressBalanceFetcher's self-send to have
   # connection allowed immediately.
-  use Explorer.DataCase, async: false
+  use EthereumJSONRPC.Case, async: false
+  use Explorer.DataCase
+
+  import EthereumJSONRPC, only: [integer_to_quantity: 1]
+  import Mox
 
   alias Explorer.Chain.{Address, Hash, Wei}
   alias Indexer.{AddressBalanceFetcher, AddressBalanceFetcherCase}
 
+  @moduletag :capture_log
+
+  # MUST use global mode because we aren't guaranteed to get `start_supervised`'s pid back fast enough to `allow` it to
+  # use expectations and stubs from test's pid.
+  setup :set_mox_global
+
+  setup :verify_on_exit!
+
   setup do
     start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
 
-    %{variant: EthereumJSONRPC.config(:variant)}
+    :ok
   end
 
   describe "init/1" do
-    test "fetches unfetched Block miner balance", %{variant: variant} do
+    test "fetches unfetched Block miner balance", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
+
       %{block_number: block_number, fetched_balance: fetched_balance, miner_hash_data: miner_hash_data} =
         case variant do
           EthereumJSONRPC.Geth ->
@@ -30,9 +46,19 @@ defmodule Indexer.AddressBalanceFetcherTest do
               miner_hash_data: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
             }
 
-          _ ->
+          variant ->
             raise ArgumentError, "Unsupported variant (#{variant})"
         end
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        block_quantity = integer_to_quantity(block_number)
+
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, fn [%{id: id, method: "eth_getBalance", params: [^miner_hash_data, ^block_quantity]}],
+                                _options ->
+          {:ok, [%{id: id, result: integer_to_quantity(fetched_balance)}]}
+        end)
+      end
 
       {:ok, miner_hash} = Hash.Address.cast(miner_hash_data)
       miner = insert(:address, hash: miner_hash)
@@ -41,7 +67,7 @@ defmodule Indexer.AddressBalanceFetcherTest do
       assert miner.fetched_balance == nil
       assert miner.fetched_balance_block_number == nil
 
-      AddressBalanceFetcherCase.start_supervised!()
+      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       fetched_address =
         wait(fn ->
@@ -54,7 +80,11 @@ defmodule Indexer.AddressBalanceFetcherTest do
       assert fetched_address.fetched_balance_block_number == block.number
     end
 
-    test "fetches unfetched addresses when less than max batch size", %{variant: variant} do
+    test "fetches unfetched addresses when less than max batch size", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
+
       %{block_number: block_number, fetched_balance: fetched_balance, miner_hash_data: miner_hash_data} =
         case variant do
           EthereumJSONRPC.Geth ->
@@ -71,15 +101,25 @@ defmodule Indexer.AddressBalanceFetcherTest do
               miner_hash_data: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
             }
 
-          _ ->
+          variant ->
             raise ArgumentError, "Unsupported variant (#{variant})"
         end
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        block_quantity = integer_to_quantity(block_number)
+
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, fn [%{id: id, method: "eth_getBalance", params: [^miner_hash_data, ^block_quantity]}],
+                                _options ->
+          {:ok, [%{id: id, result: integer_to_quantity(fetched_balance)}]}
+        end)
+      end
 
       {:ok, miner_hash} = Hash.Address.cast(miner_hash_data)
       miner = insert(:address, hash: miner_hash)
       block = insert(:block, miner: miner, number: block_number)
 
-      AddressBalanceFetcherCase.start_supervised!(max_batch_size: 2)
+      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments, max_batch_size: 2)
 
       fetched_address =
         wait(fn ->
@@ -94,8 +134,8 @@ defmodule Indexer.AddressBalanceFetcherTest do
   end
 
   describe "async_fetch_balances/1" do
-    test "fetches balances for address_hashes", %{variant: variant} do
-      AddressBalanceFetcherCase.start_supervised!()
+    test "fetches balances for address_hashes", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
 
       %{block_number: block_number, fetched_balance: fetched_balance, hash: hash} =
         case variant do
@@ -120,9 +160,22 @@ defmodule Indexer.AddressBalanceFetcherTest do
               }
             }
 
-          _ ->
+          variant ->
             raise ArgumentError, "Unsupported variant (#{variant})"
         end
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        block_quantity = integer_to_quantity(block_number)
+        hash_data = to_string(hash)
+
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, fn [%{id: id, method: "eth_getBalance", params: [^hash_data, ^block_quantity]}],
+                                _options ->
+          {:ok, [%{id: id, result: integer_to_quantity(fetched_balance)}]}
+        end)
+      end
+
+      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       assert :ok = AddressBalanceFetcher.async_fetch_balances([%{block_number: block_number, hash: hash}])
 
@@ -137,10 +190,11 @@ defmodule Indexer.AddressBalanceFetcherTest do
   end
 
   describe "run/2" do
-    @tag capture_log: true
-    test "duplicate address hashes the max block_quantity", %{variant: variant} do
+    test "duplicate address hashes the max block_quantity", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
       %{fetched_balance: fetched_balance, hash_data: hash_data} =
-        case variant do
+        case Keyword.fetch!(json_rpc_named_arguments, :variant) do
           EthereumJSONRPC.Geth ->
             %{
               fetched_balance: 5_000_000_000_000_000_000,
@@ -153,13 +207,21 @@ defmodule Indexer.AddressBalanceFetcherTest do
               hash_data: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
             }
 
-          _ ->
+          variant ->
             raise ArgumentError, "Unsupported variant (#{variant})"
         end
 
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, fn [%{id: id, method: "eth_getBalance", params: [^hash_data, "0x2"]}], _options ->
+          {:ok, [%{id: id, result: integer_to_quantity(fetched_balance)}]}
+        end)
+      end
+
       case AddressBalanceFetcher.run(
              [%{block_quantity: "0x1", hash_data: hash_data}, %{block_quantity: "0x2", hash_data: hash_data}],
-             0
+             0,
+             json_rpc_named_arguments
            ) do
         :ok ->
           fetched_address = Repo.one!(from(address in Address, where: address.hash == ^hash_data))
@@ -177,12 +239,20 @@ defmodule Indexer.AddressBalanceFetcherTest do
       end
     end
 
-    test "duplicate address hashes only retry max block_quantity" do
+    test "duplicate address hashes only retry max block_quantity", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       hash_data = "0x000000000000000000000000000000000"
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, fn [%{id: id, method: "eth_getBalance", params: [^hash_data, "0x2"]}], _options ->
+          {:ok, [%{id: id, error: %{code: 404, message: "Not Found"}}]}
+        end)
+      end
 
       assert AddressBalanceFetcher.run(
                [%{block_quantity: "0x1", hash_data: hash_data}, %{block_quantity: "0x2", hash_data: hash_data}],
-               0
+               0,
+               json_rpc_named_arguments
              ) ==
                {:retry,
                 [

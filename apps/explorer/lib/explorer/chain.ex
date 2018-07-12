@@ -2190,8 +2190,7 @@ defmodule Explorer.Chain do
     |> Repo.insert()
   end
 
-  @spec changes_list(params :: map, [{:for, module} | {:with, :atom}]) ::
-          {:ok, changes :: map} | {:error, [Changeset.t()]}
+  @spec changes_list(params :: [map], [{:for, module} | {:with, atom}]) :: {:ok, [map]} | {:error, [Changeset.t()]}
   defp changes_list(params, options) when is_list(options) do
     ecto_schema_module = Keyword.fetch!(options, :for)
     changeset_function_name = Keyword.get(options, :with, :changeset)
@@ -2395,7 +2394,7 @@ defmodule Explorer.Chain do
     Repo.transaction(multi, timeout: Keyword.get(options, :timeout, @transaction_timeout))
   end
 
-  @spec insert_internal_transactions([map()], [timestamps_option]) ::
+  @spec insert_internal_transactions([map], [timeout_option | timestamps_option]) ::
           {:ok, [%{index: non_neg_integer, transaction_hash: Hash.t()}]}
           | {:error, [Changeset.t()]}
   defp insert_internal_transactions(changes_list, named_arguments)

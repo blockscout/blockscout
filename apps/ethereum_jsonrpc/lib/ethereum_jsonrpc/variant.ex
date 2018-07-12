@@ -6,6 +6,11 @@ defmodule EthereumJSONRPC.Variant do
 
   alias EthereumJSONRPC.Transaction
 
+  @typedoc """
+  A module that implements the `EthereumJSONRPC.Variant` behaviour callbacks.
+  """
+  @type t :: module
+
   @type internal_transaction_params :: map()
 
   @doc """
@@ -18,7 +23,7 @@ defmodule EthereumJSONRPC.Variant do
        internal transactions
    * `:ignore` - the variant does not support fetching internal transactions.
   """
-  @callback fetch_internal_transactions([Transaction.params()]) ::
+  @callback fetch_internal_transactions([Transaction.params()], EthereumJSONRPC.json_rpc_named_arguments()) ::
               {:ok, [internal_transaction_params]} | {:error, reason :: term} | :ignore
 
   @doc """
@@ -31,5 +36,6 @@ defmodule EthereumJSONRPC.Variant do
    * `{:error, reason}` - there was one or more errors with `reason` in fetching the pending transactions
    * `:ignore` - the variant does not support fetching pending transactions.
   """
-  @callback fetch_pending_transactions() :: {:ok, [Transaction.params()]} | {:error, reason :: term} | :ignore
+  @callback fetch_pending_transactions(EthereumJSONRPC.json_rpc_named_arguments()) ::
+              {:ok, [Transaction.params()]} | {:error, reason :: term} | :ignore
 end
