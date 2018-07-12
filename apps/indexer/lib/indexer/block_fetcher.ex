@@ -288,15 +288,18 @@ defmodule Indexer.BlockFetcher do
     [range]
   end
 
-  defp chunk_range(first..last, _, size) when first < last do
+  defp chunk_range(first..last = range, _, size) do
+    sign = sign(range)
+    step = sign * size
+
     first
-    |> Stream.iterate(&(&1 + size))
+    |> Stream.iterate(&(&1 + step))
     |> Enum.reduce_while([], fn chunk_first, acc ->
-      next_chunk_first = chunk_first + size
-      full_chunk_last = next_chunk_first - 1
+      next_chunk_first = chunk_first + step
+      full_chunk_last = next_chunk_first - sign
 
       {action, chunk_last} =
-        if full_chunk_last >= last do
+        if (sign > 0 and full_chunk_last >= last) or (sign < 0 and full_chunk_last <= last) do
           {:halt, last}
         else
           {:cont, full_chunk_last}
@@ -307,24 +310,8 @@ defmodule Indexer.BlockFetcher do
     |> Enum.reverse()
   end
 
-  defp chunk_range(first..last, _, size) when last < first do
-    first
-    |> Stream.iterate(&(&1 - size))
-    |> Enum.reduce_while([], fn chunk_first, acc ->
-      next_chunk_first = chunk_first - size
-      full_chunk_last = next_chunk_first + 1
-
-      {action, chunk_last} =
-        if full_chunk_last <= last do
-          {:halt, last}
-        else
-          {:cont, full_chunk_last}
-        end
-
-      {action, [chunk_first..chunk_last | acc]}
-    end)
-    |> Enum.reverse()
-  end
+  defp sign(first..last) when first <= last, do: 1
+  defp sign(_first.._last), do: -1
 
   defp realtime_task(%{json_rpc_named_arguments: json_rpc_named_arguments} = state) do
     {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
