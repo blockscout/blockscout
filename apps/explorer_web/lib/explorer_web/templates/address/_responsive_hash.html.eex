@@ -1,4 +1,4 @@
-<span class="<%= if @contract do %>contract-address<% else %>account-address<% end %>">
+<span class="<%= if @contract do %>contract-address<% end %>">
   <span class="d-none d-md-none d-lg-inline"><%= @address_hash %></span>
   <span class="d-md-block d-lg-none "><%= @address_hash |> to_string() |> String.slice(0..5) %>&ndash;<%= @address_hash |> to_string() |> String.slice(-6..-1) %></span>
 </span>

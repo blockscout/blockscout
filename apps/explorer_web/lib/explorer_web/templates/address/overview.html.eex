@@ -16,7 +16,7 @@
             </span>
           </div>
           <h1 class="card-title"><%= address_title(@address) %> Details </h1>
-          <h3 class="<%= if ExplorerWeb.AddressView.contract?(@address) do %>contract-address<% else %>account-address<% end %>" data-test="address_detail_hash"><%= @address %></h3>
+          <h3 class="<%= if ExplorerWeb.AddressView.contract?(@address) do %>contract-address<% end %>" data-test="address_detail_hash"><%= @address %></h3>
           <div class="d-flex flex-row justify-content-start text-muted">
             <span class="mr-4" data-test="transaction_count"><%= Cldr.Number.to_string!(@transaction_count) %> <%= gettext "Transactions" %></span>
           </div>
