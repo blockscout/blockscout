@@ -39,7 +39,8 @@ defmodule ExplorerWeb.Router do
     alias ExplorerWeb.API.RPC
 
     forward("/", RPCTranslator, %{
-      "block" => RPC.BlockController
+      "block" => RPC.BlockController,
+      "account" => RPC.AddressController
     })
   end
 
