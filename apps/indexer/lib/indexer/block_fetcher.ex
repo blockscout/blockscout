@@ -289,7 +289,12 @@ defmodule Indexer.BlockFetcher do
   end
 
   defp chunk_range(first..last = range, _, size) do
-    sign = sign(range)
+    {sign, comparator} = if first < last do
+      {1, &Kernel.>=/2}
+    else
+      {-1, &Kernel.<=/2}
+    end
+
     step = sign * size
 
     first
@@ -299,7 +304,7 @@ defmodule Indexer.BlockFetcher do
       full_chunk_last = next_chunk_first - sign
 
       {action, chunk_last} =
-        if (sign > 0 and full_chunk_last >= last) or (sign < 0 and full_chunk_last <= last) do
+        if comparator.(full_chunk_last, last) do
           {:halt, last}
         else
           {:cont, full_chunk_last}
@@ -309,9 +314,6 @@ defmodule Indexer.BlockFetcher do
     end)
     |> Enum.reverse()
   end
-
-  defp sign(first..last) when first <= last, do: 1
-  defp sign(_first.._last), do: -1
 
   defp realtime_task(%{json_rpc_named_arguments: json_rpc_named_arguments} = state) do
     {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
