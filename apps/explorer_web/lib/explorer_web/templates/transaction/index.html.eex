@@ -27,7 +27,7 @@
       <%= for transaction <- @transactions do %>
       <div class="tile tile-type-<%= ExplorerWeb.TransactionView.type_suffix(transaction) %>" data-test="<%= ExplorerWeb.TransactionView.type_suffix(transaction) %>" data-transaction-hash="<%= transaction.hash %>">
         <div class="row" data-test="chain_transaction">
-          <div class="col-md-2 d-flex align-items-center justify-content-start justify-content-lg-center  tile-label">
+          <div class="col-md-2 d-flex align-items-center justify-content-start justify-content-lg-center  tile-label" data-test="transaction_type">
             <%= ExplorerWeb.TransactionView.transaction_display_type(transaction) %>
           </div>
           <div class="col-md-7 col-lg-8 d-flex flex-column">
