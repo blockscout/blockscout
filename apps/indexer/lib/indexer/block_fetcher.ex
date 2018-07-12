@@ -288,20 +288,38 @@ defmodule Indexer.BlockFetcher do
     [range]
   end
 
-  defp chunk_range(range, _, size) do
-    first..last = range
-
+  defp chunk_range(first..last, _, size) when first < last do
     first
     |> Stream.iterate(&(&1 + size))
     |> Enum.reduce_while([], fn chunk_first, acc ->
       next_chunk_first = chunk_first + size
       full_chunk_last = next_chunk_first - 1
 
-      {action, chunk_last} = if full_chunk_last >= last do
-        {:halt, last}
-      else
-        {:cont, full_chunk_last}
-      end
+      {action, chunk_last} =
+        if full_chunk_last >= last do
+          {:halt, last}
+        else
+          {:cont, full_chunk_last}
+        end
+
+      {action, [chunk_first..chunk_last | acc]}
+    end)
+    |> Enum.reverse()
+  end
+
+  defp chunk_range(first..last, _, size) when last < first do
+    first
+    |> Stream.iterate(&(&1 - size))
+    |> Enum.reduce_while([], fn chunk_first, acc ->
+      next_chunk_first = chunk_first - size
+      full_chunk_last = next_chunk_first + 1
+
+      {action, chunk_last} =
+        if full_chunk_last <= last do
+          {:halt, last}
+        else
+          {:cont, full_chunk_last}
+        end
 
       {action, [chunk_first..chunk_last | acc]}
     end)
