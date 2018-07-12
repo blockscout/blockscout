@@ -109,7 +109,7 @@ defmodule ExplorerWeb.TransactionView do
   def transaction_display_type(%Transaction{} = transaction) do
     cond do
       contract_creation?(transaction) -> gettext("Contract Creation")
-      involves_contract?(transaction) -> gettext("Contract")
+      involves_contract?(transaction) -> gettext("Contract Call")
       true -> gettext("Transaction")
     end
   end
