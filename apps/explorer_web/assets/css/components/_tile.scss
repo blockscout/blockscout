@@ -30,8 +30,13 @@
     &-contract {
       border-left: 4px solid $green;
 
-      .tile-label, .tile-text-highlight {
+      .tile-label {
         color: $green;
+      }
+
+      .tile-text-highlight {
+        text-decoration: underline;
+        text-decoration-style: dashed;
       }
     }
 
