@@ -1,11 +1,5 @@
 <%= if @address_hash do %>
   <%= link to: address_path(ExplorerWeb.Endpoint, :show, @locale, @address_hash), "data-address-hash": @address_hash, "data-test": "address_hash_link" do %>
-    <%= if @contract do %>
-      <span class="tile-text-highlight">
-        <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: @address_hash %>
-      </span>
-    <% else %>
-      <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: @address_hash %>
-    <% end %>
+    <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: @address_hash, contract: @contract %>
   <% end %>
 <% end %>

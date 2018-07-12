@@ -7,15 +7,15 @@
       <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: @internal_transaction.transaction_hash %>
       <span>
         <%= if @address.hash == @internal_transaction.from_address_hash do %>
-          <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: @internal_transaction.from_address_hash %>
+          <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: @internal_transaction.from_address_hash, contract: ExplorerWeb.AddressView.contract?(@internal_transaction.from_address) %>
         <% else %>
-          <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(@internal_transaction.from_address), address_hash: @internal_transaction.from_address_hash %>
+          <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address_hash: @internal_transaction.from_address_hash, contract: ExplorerWeb.AddressView.contract?(@internal_transaction.from_address) %>
         <% end %>
         &rarr;
         <%= if @address.hash == ExplorerWeb.InternalTransactionView.to_address_hash(@internal_transaction) do %>
-          <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: ExplorerWeb.InternalTransactionView.to_address_hash(@internal_transaction) %>
+          <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: ExplorerWeb.InternalTransactionView.to_address_hash(@internal_transaction), contract: ExplorerWeb.AddressView.contract?(@internal_transaction.to_address) %>
         <% else %>
-          <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, contract: ExplorerWeb.AddressView.contract?(@internal_transaction.to_address), address_hash: ExplorerWeb.InternalTransactionView.to_address_hash(@internal_transaction) %>
+          <%= render ExplorerWeb.AddressView, "_link.html", locale: @locale, address_hash: ExplorerWeb.InternalTransactionView.to_address_hash(@internal_transaction), contract: ExplorerWeb.AddressView.contract?(@internal_transaction.to_address) %>
         <% end %>
       </span>
       <%= ExplorerWeb.TransactionView.value(@internal_transaction, include_label: false) %> POA
