@@ -276,22 +276,30 @@ defmodule Indexer.BlockFetcher do
 
   @doc false
   def chunk_ranges(ranges, size) do
-    Enum.flat_map(ranges, fn
-      first..last = range when last - first <= size ->
-        [range]
+    Enum.flat_map(ranges, fn range ->
+      count = Enum.count(range)
 
-      first..last ->
+      if count <= size do
+        [range]
+      else
+        first..last = range
+
         first
         |> Stream.iterate(&(&1 + size))
-        |> Enum.reduce_while([], fn
-          chunk_first, acc when chunk_first + size >= last ->
-            {:halt, [chunk_first..last | acc]}
+        |> Enum.reduce_while([], fn chunk_first, acc ->
+          next_chunk_first = chunk_first + size
+          full_chunk_last = next_chunk_first - 1
 
-          chunk_first, acc ->
-            chunk_last = chunk_first + size - 1
-            {:cont, [chunk_first..chunk_last | acc]}
+          {action, chunk_last} = if full_chunk_last >= last do
+            {:halt, last}
+          else
+            {:cont, full_chunk_last}
+          end
+
+          {action, [chunk_first..chunk_last | acc]}
         end)
         |> Enum.reverse()
+      end
     end)
   end
 
