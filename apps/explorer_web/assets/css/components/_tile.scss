@@ -43,8 +43,13 @@
     &-contract-creation {
       border-left: 4px solid $pink;
 
-      .tile-label, .tile-text-highlight {
+      .tile-label {
         color: $pink;
+      }
+
+      .tile-text-highlight {
+        text-decoration: underline;
+        text-decoration-style: dashed;
       }
     }
 
