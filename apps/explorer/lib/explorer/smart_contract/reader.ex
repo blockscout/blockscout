@@ -18,11 +18,25 @@ defmodule Explorer.SmartContract.Reader do
   Note that for this example to work the database must be up to date with the
   information available in the blockchain.
 
-  Explorer.SmartContract.Reader.query_contract(
-    "0x7e50612682b8ee2a8bb94774d50d6c2955726526",
+  ```
+  $ Explorer.SmartContract.Reader.query_contract(
+    %Explorer.Chain.Hash{
+      byte_count: 20,
+      bytes: <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>
+    },
     %{"sum" => [20, 22]}
   )
   # => %{"sum" => [42]}
+
+  $ Explorer.SmartContract.Reader.query_contract(
+    %Explorer.Chain.Hash{
+      byte_count: 20,
+      bytes: <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>
+    },
+    %{"sum" => [1, "abc"]}
+  )
+  # => %{"sum" => ["Data overflow encoding int, data `abc` cannot fit in 256 bits"]}
+  ```
   """
   @spec query_contract(%Explorer.Chain.Hash{}, %{String.t() => [term()]}) :: map()
   def query_contract(address_hash, functions) do
@@ -33,13 +47,26 @@ defmodule Explorer.SmartContract.Reader do
       |> Chain.address_hash_to_smart_contract()
       |> Map.get(:abi)
 
-    blockchain_result =
-      abi
-      |> Encoder.encode_abi(functions)
-      |> Enum.map(&setup_call_payload(&1, contract_address))
-      |> EthereumJSONRPC.execute_contract_functions()
+    try do
+      blockchain_result =
+        abi
+        |> Encoder.encode_abi(functions)
+        |> Enum.map(&setup_call_payload(&1, contract_address))
+        |> EthereumJSONRPC.execute_contract_functions()
 
-    Encoder.decode_abi_results(blockchain_result, abi, functions)
+      Encoder.decode_abi_results(blockchain_result, abi, functions)
+    rescue
+      error ->
+        format_error(functions, error.message)
+    end
+  end
+
+  defp format_error(functions, message) do
+    functions
+    |> Enum.map(fn {function_name, _args} ->
+      %{function_name => [message]}
+    end)
+    |> List.first()
   end
 
   @doc """

@@ -1,5 +1,5 @@
 defmodule Explorer.SmartContract.ReaderTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
   use Explorer.DataCase
 
   doctest Explorer.SmartContract.Reader
@@ -38,6 +38,34 @@ defmodule Explorer.SmartContract.ReaderTest do
         |> Map.get(:address_hash)
 
       assert Reader.query_contract(hash, %{"get" => []}) == %{"get" => [0]}
+    end
+
+    test "won't raise error when there is a problem with the params to consult the blockchain" do
+      smart_contract =
+        insert(
+          :smart_contract,
+          abi: [
+            %{
+              "constant" => true,
+              "inputs" => [
+                %{"name" => "a", "type" => "int256"},
+                %{"name" => "b", "type" => "int256"},
+                %{"name" => "c", "type" => "int256"},
+                %{"name" => "d", "type" => "int256"}
+              ],
+              "name" => "sum",
+              "outputs" => [%{"name" => "", "type" => "int256"}],
+              "payable" => false,
+              "stateMutability" => "pure",
+              "type" => "function"
+            }
+          ]
+        )
+
+      wrong_args = %{"sum" => [1, 1, 1, "abc"]}
+
+      assert %{"sum" => ["Data overflow encoding int, data `abc` cannot fit in 256 bits"]} =
+               Reader.query_contract(smart_contract.address_hash, wrong_args)
     end
   end
 
