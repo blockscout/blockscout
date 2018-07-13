@@ -59,7 +59,7 @@ The [development stack page](https://github.com/poanetwork/poa-explorer/wiki/Dev
   `mix ecto.create && mix ecto.migrate`
 
   5. Install Node.js dependencies.  
-  `cd apps/explorer_web/assets && npm install; cd -`
+  `cd apps/explorer_web/assets && npm install; cd -`  
   `cd apps/explorer && npm install; cd -`
 
   6. Start Phoenix Server.  
