@@ -4,7 +4,7 @@ defmodule ExplorerWeb.TransactionChannel do
   """
   use ExplorerWeb, :channel
 
-  def join("transactions:" <> _transaction_hash, _params, socket) do
+  def join("transactions:confirmations", _params, socket) do
     {:ok, %{}, socket}
   end
 end

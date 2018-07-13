@@ -469,7 +469,7 @@ defmodule Indexer.BlockFetcherTest do
           assert {:ok,
                   %{
                     addresses: [^address_hash],
-                    blocks: [^block_hash],
+                    blocks: [%Block{hash: ^block_hash}],
                     logs: [],
                     transactions: []
                   }} = result
@@ -777,15 +777,17 @@ defmodule Indexer.BlockFetcherTest do
                       } = second_address_hash
                     ],
                     blocks: [
-                      %Explorer.Chain.Hash{
-                        byte_count: 32,
-                        bytes:
-                          <<246, 180, 184, 200, 141, 243, 235, 210, 82, 236, 71, 99, 40, 51, 77, 192, 38, 207, 102, 96,
-                            106, 132, 251, 118, 155, 61, 60, 188, 204, 132, 113, 189>>
+                      %Block{
+                        hash: %Explorer.Chain.Hash{
+                          byte_count: 32,
+                          bytes:
+                            <<246, 180, 184, 200, 141, 243, 235, 210, 82, 236, 71, 99, 40, 51, 77, 192, 38, 207, 102,
+                              96, 106, 132, 251, 118, 155, 61, 60, 188, 204, 132, 113, 189>>
+                        }
                       }
                     ],
                     logs: [
-                      %{
+                      %Log{
                         index: 0,
                         transaction_hash: %Explorer.Chain.Hash{
                           byte_count: 32,
