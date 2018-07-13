@@ -1,7 +1,7 @@
 defmodule ExplorerWeb.AddressView do
   use ExplorerWeb, :view
 
-  alias Explorer.Chain.{Address, Wei, SmartContract}
+  alias Explorer.Chain.{Address, Hash, SmartContract, Wei}
 
   alias Explorer.ExchangeRates.Token
   alias ExplorerWeb.ExchangeRates.USD
@@ -63,5 +63,13 @@ defmodule ExplorerWeb.AddressView do
   end
 
   def smart_contract_verified?(%Address{smart_contract: %SmartContract{}}), do: true
+
   def smart_contract_verified?(%Address{smart_contract: nil}), do: false
+
+  def trimmed_hash(%Hash{} = hash) do
+    string_hash = to_string(hash)
+    "#{String.slice(string_hash, 0..5)}–#{String.slice(string_hash, -6..-1)}"
+  end
+
+  def trimmed_hash(_), do: ""
 end
