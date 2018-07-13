@@ -15,7 +15,8 @@ defmodule Indexer.Application do
       {Task.Supervisor, name: Indexer.TaskSupervisor},
       {AddressBalanceFetcher, name: AddressBalanceFetcher, json_rpc_named_arguments: json_rpc_named_arguments},
       {PendingTransactionFetcher, name: PendingTransactionFetcher, json_rpc_named_arguments: json_rpc_named_arguments},
-      {InternalTransactionFetcher, name: InternalTransactionFetcher},
+      {InternalTransactionFetcher,
+       name: InternalTransactionFetcher, json_rpc_named_arguments: json_rpc_named_arguments},
       {BlockFetcher, []}
     ]
 
