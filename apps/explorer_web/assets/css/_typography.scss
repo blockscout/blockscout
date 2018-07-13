@@ -50,3 +50,8 @@ a {
 .monospace {
   font-family: $font-family-monospace;
 }
+
+.contract-address {
+  text-decoration: underline;
+  text-decoration-style: dashed;
+}

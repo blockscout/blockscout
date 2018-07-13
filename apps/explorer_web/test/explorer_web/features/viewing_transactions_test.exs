@@ -111,11 +111,11 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
         |> insert(to_address: nil)
         |> with_block()
 
-      internal_transaction = insert(:internal_transaction_create, transaction: transaction, index: 0)
+      insert(:internal_transaction_create, transaction: transaction, index: 0)
 
       session
       |> TransactionListPage.visit_page()
-      |> assert_has(TransactionListPage.contract_creation(internal_transaction))
+      |> assert_has(TransactionListPage.contract_creation(transaction))
     end
   end
 
