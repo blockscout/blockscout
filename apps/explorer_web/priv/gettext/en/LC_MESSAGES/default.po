@@ -482,8 +482,8 @@ msgstr ""
 #: lib/explorer_web/templates/address_transaction/index.html.eex:138
 #: lib/explorer_web/templates/block/index.html.eex:60
 #: lib/explorer_web/templates/block_transaction/index.html.eex:198
-#: lib/explorer_web/templates/pending_transaction/index.html.eex:52
-#: lib/explorer_web/templates/transaction/index.html.eex:55
+#: lib/explorer_web/templates/pending_transaction/index.html.eex:57
+#: lib/explorer_web/templates/transaction/index.html.eex:60
 msgid "Older"
 msgstr ""
 
@@ -564,9 +564,9 @@ msgid "Twitter"
 msgstr ""
 
 #, elixir-format
-#: lib/explorer_web/templates/address_transaction/_transaction.html.eex:31
-#: lib/explorer_web/templates/chain/_transactions.html.eex:23
-#: lib/explorer_web/templates/transaction/index.html.eex:46
+#: lib/explorer_web/templates/address_transaction/_transaction.html.eex:36
+#: lib/explorer_web/templates/chain/_transactions.html.eex:28
+#: lib/explorer_web/templates/transaction/index.html.eex:51
 msgid "Block #"
 msgstr ""
 
@@ -637,7 +637,7 @@ msgid "There are no transactions for this address."
 msgstr ""
 
 #, elixir-format
-#: lib/explorer_web/templates/pending_transaction/index.html.eex:42
+#: lib/explorer_web/templates/pending_transaction/index.html.eex:47
 msgid "Contract Address Pending"
 msgstr ""
 
