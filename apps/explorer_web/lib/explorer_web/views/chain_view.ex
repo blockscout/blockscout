@@ -33,5 +33,6 @@ defmodule ExplorerWeb.ChainView do
     |> format_usd_value()
   end
 
+  defdelegate formatted_status(transaction), to: TransactionView
   defdelegate status(transaction), to: TransactionView
 end

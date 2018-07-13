@@ -29,7 +29,7 @@
           <div class="row" data-test="chain_transaction">
             <div class="col-md-2 d-flex align-items-center justify-content-start justify-content-lg-center  tile-label">
               <div class="col-md-1" data-test="transaction_status">
-                <div class="transaction__dot transaction__dot--<%= status(transaction) %>"></div>
+                <div class="transaction__dot transaction__dot--<%= status(transaction) %>" data-toggle="tooltip" title="<%= formatted_status(transaction) %>"></div>
               </div>
               <div class="col-md-11">
                 <%= ExplorerWeb.TransactionView.transaction_display_type(transaction) %>
