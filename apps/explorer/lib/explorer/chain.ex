@@ -634,6 +634,23 @@ defmodule Explorer.Chain do
     end
   end
 
+  @doc """
+  Converts list of `t:Explorer.Chain.Address.t/0` `hash` to the `t:Explorer.Chain.Address.t/0` with that `hash`.
+
+  Returns `[%Explorer.Chain.Address{}]}` if found
+
+  """
+  @spec hashes_to_addresses([Hash.Address.t()]) :: [Address.t()]
+  def hashes_to_addresses(hashes) when is_list(hashes) do
+    query =
+      from(
+        address in Address,
+        where: address.hash in ^hashes
+      )
+
+    Repo.all(query)
+  end
+
   def find_contract_address(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash) do
     query =
       from(

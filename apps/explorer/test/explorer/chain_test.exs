@@ -316,6 +316,32 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "hashes_to_addresses/1" do
+    test "with existing addresses" do
+      address1_attrs = %{hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"}
+      address2_attrs = %{hash: "0x6aaeb6053f3e94c9b9a09f33669435e7ef1beaed"}
+      address1 = insert(:address, address1_attrs)
+      address2 = insert(:address, address2_attrs)
+      hashes = [address1.hash, address2.hash]
+
+      [found_address1, found_address2] = Explorer.Chain.hashes_to_addresses(hashes)
+
+      %Explorer.Chain.Address{hash: found_hash1} = found_address1
+      %Explorer.Chain.Address{hash: found_hash2} = found_address2
+
+      assert found_hash1 == address1.hash
+      assert found_hash2 == address2.hash
+    end
+
+    test "with nonexistent addresses" do
+      hash1 = "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"
+      hash2 = "0x6aaeb6053f3e94c9b9a09f33669435e7ef1beaed"
+      hashes = [hash1, hash2]
+
+      assert Explorer.Chain.hashes_to_addresses(hashes) == []
+    end
+  end
+
   describe "hash_to_transaction/2" do
     test "with transaction with block required without block returns {:error, :not_found}" do
       %Transaction{hash: hash_with_block} =
