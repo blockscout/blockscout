@@ -4,11 +4,11 @@ defmodule ExplorerWeb.API.RPC.AddressController do
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Wei}
 
-  def balance(conn, params) do
+  def balance(conn, params, template \\ :balance) do
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hashes}} <- to_address_hashes(address_param) do
       addresses = hashes_to_addresses(address_hashes)
-      render(conn, :balance, %{addresses: addresses})
+      render(conn, template, %{addresses: addresses})
     else
       {:address_param, :error} ->
         conn
@@ -20,6 +20,10 @@ defmodule ExplorerWeb.API.RPC.AddressController do
         |> put_status(400)
         |> render(:error, error: "Invalid address hash")
     end
+  end
+
+  def balancemulti(conn, params) do
+    balance(conn, params, :balancemulti)
   end
 
   defp fetch_address(params) do
