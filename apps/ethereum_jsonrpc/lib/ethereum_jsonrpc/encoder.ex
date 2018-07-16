@@ -45,10 +45,21 @@ defmodule EthereumJSONRPC.Encoder do
   def encode_function_call({function_selector, args}) do
     encoded_args =
       function_selector
-      |> ABI.encode(args)
+      |> ABI.encode(parse_args(args))
       |> Base.encode16(case: :lower)
 
     {function_selector.function, "0x" <> encoded_args}
+  end
+
+  defp parse_args(args) do
+    args
+    |> Enum.map(fn
+      <<"0x", hexadecimal_digits::binary>> ->
+        Base.decode16!(hexadecimal_digits, case: :mixed)
+
+      item ->
+        item
+    end)
   end
 
   @doc """

@@ -26,6 +26,20 @@ defmodule EthereumJSONRPC.EncoderTest do
       assert Encoder.encode_function_call({function_selector, [10]}) ==
                {"get", "0x9507d39a000000000000000000000000000000000000000000000000000000000000000a"}
     end
+
+    test "generates the correct encoding with addresses arguments" do
+      function_selector = %ABI.FunctionSelector{
+        function: "tokens",
+        returns: {:uint, 256},
+        types: [:address, :address]
+      }
+
+      args = ["0xdab1c67232f92b7707f49c08047b96a4db7a9fc6", "0x6937cb25eb54bc013b9c13c47ab38eb63edd1493"]
+
+      assert Encoder.encode_function_call({function_selector, args}) ==
+               {"tokens",
+                "0x508493bc000000000000000000000000dab1c67232f92b7707f49c08047b96a4db7a9fc60000000000000000000000006937cb25eb54bc013b9c13c47ab38eb63edd1493"}
+    end
   end
 
   describe "get_selectors/2" do
