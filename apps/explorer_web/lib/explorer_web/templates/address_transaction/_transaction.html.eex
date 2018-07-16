@@ -1,4 +1,4 @@
-<div class="tile tile-type-<%= ExplorerWeb.TransactionView.type_suffix(@transaction) %> fade-in" data-transaction-hash="<%= @transaction.hash %>">
+<div class="tile tile-type-<%= ExplorerWeb.TransactionView.type_suffix(@transaction) %> fade-in  tile-status--<%= status(@transaction) %>" data-transaction-hash="<%= @transaction.hash %>">
   <div class="row">
     <div class="pl-5 col-md-2 d-flex flex-column align-items-left justify-content-start justify-content-lg-center tile-label">
       <%= ExplorerWeb.TransactionView.transaction_display_type(@transaction) %>
