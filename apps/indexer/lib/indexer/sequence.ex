@@ -20,9 +20,9 @@ defmodule Indexer.Sequence do
   The first number in the sequence to start at once the `t:prefix/0` ranges and any `t:Range.t/0`s injected with
   `inject_range/2` are all consumed.
   """
-  @type first :: pos_integer()
+  @type first :: non_neg_integer()
 
-  @typep first_named_argument :: {:first, pos_integer()}
+  @typep first_named_argument :: {:first, first}
 
   @type mode :: :infinite | :finite
 
