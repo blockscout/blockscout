@@ -16,6 +16,9 @@ defmodule Explorer.Chain do
       where: 3
     ]
 
+  import Explorer.Chain.Transaction,
+    only: [exists_token_transfer_with_matching_address_hash_fragment: 2]
+
   alias Ecto.Adapters.SQL
 
   alias Explorer.Chain.{
@@ -182,6 +185,7 @@ defmodule Explorer.Chain do
     options
     |> Keyword.get(:paging_options, @default_paging_options)
     |> fetch_transactions()
+    |> preload(token_transfers: :token)
     |> where_address_fields_match(address_hash, direction)
     |> join_associations(necessity_by_association)
     |> Repo.all()
@@ -1671,7 +1675,7 @@ defmodule Explorer.Chain do
             LIMIT 1)
           ],
              t.hash
-           ))
+           )) or exists_token_transfer_with_matching_address_hash_fragment(t.hash, ^address_hash.bytes)
     )
   end
 

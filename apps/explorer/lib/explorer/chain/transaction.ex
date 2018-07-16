@@ -4,7 +4,19 @@ defmodule Explorer.Chain.Transaction do
   use Explorer.Schema
 
   alias Ecto.Changeset
-  alias Explorer.Chain.{Address, Block, Data, Gas, Hash, InternalTransaction, Log, Wei}
+
+  alias Explorer.Chain.{
+    Address,
+    Block,
+    Data,
+    Gas,
+    Hash,
+    InternalTransaction,
+    Log,
+    TokenTransfer,
+    Wei
+  }
+
   alias Explorer.Chain.Transaction.Status
 
   @optional_attrs ~w(block_hash block_number cumulative_gas_used gas_used index internal_transactions_indexed_at status
@@ -137,6 +149,7 @@ defmodule Explorer.Chain.Transaction do
 
     has_many(:internal_transactions, InternalTransaction, foreign_key: :transaction_hash)
     has_many(:logs, Log, foreign_key: :transaction_hash)
+    has_many(:token_transfers, TokenTransfer, foreign_key: :transaction_hash)
 
     belongs_to(
       :to_address,
@@ -327,6 +340,22 @@ defmodule Explorer.Chain.Transaction do
     case Changeset.get_field(changeset, field) do
       nil -> Changeset.add_error(changeset, field, @collated_message)
       _ -> changeset
+    end
+  end
+
+  defmacro exists_token_transfer_with_matching_address_hash_fragment(transaction_hash, bytes) do
+    quote do
+      fragment(
+        """
+        EXISTS (
+          SELECT 1
+          FROM "token_transfers" AS tt
+          WHERE tt."transaction_hash" = ? AND tt."to_address_hash" = ?
+        )
+        """,
+        unquote(transaction_hash),
+        unquote(bytes)
+      )
     end
   end
 end

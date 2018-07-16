@@ -237,6 +237,7 @@ defmodule ExplorerWeb.ViewingAddressesTest do
       2
       |> insert_list(:transaction, from_address: addresses.lincoln)
       |> with_block()
+      |> Repo.preload([:block, :from_address, :to_address])
 
     session
     |> AddressPage.visit_page(addresses.lincoln)
@@ -331,5 +332,89 @@ defmodule ExplorerWeb.ViewingAddressesTest do
     |> AddressPage.visit_page(addresses.lincoln)
     |> AddressPage.click_internal_transactions()
     |> assert_has(AddressPage.contract_creation(internal_transaction))
+  end
+
+  describe "viewing token transfers" do
+    test "contributor can see all token transfers that he sent", %{
+      addresses: addresses,
+      block: block,
+      session: session
+    } do
+      lincoln = addresses.lincoln
+      taft = addresses.taft
+
+      contract_token_address =
+        insert(
+          :address,
+          contract_code: Explorer.Factory.data("contract_code")
+        )
+
+      insert(:token, contract_address: contract_token_address)
+
+      transaction =
+        :transaction
+        |> insert(from_address: lincoln, to_address: contract_token_address)
+        |> with_block(block)
+
+      insert(
+        :token_transfer,
+        from_address: lincoln,
+        to_address: taft,
+        transaction: transaction,
+        token_contract_address: contract_token_address
+      )
+
+      session
+      |> AddressPage.visit_page(lincoln)
+      |> assert_has(AddressPage.token_transfers(count: 1))
+      |> assert_has(AddressPage.token_transfer(lincoln.hash, count: 1))
+      |> assert_has(AddressPage.token_transfer(taft.hash, count: 1))
+    end
+
+    test "contributor can see only token transfers related to him", %{
+      addresses: addresses,
+      block: block,
+      session: session
+    } do
+      lincoln = addresses.lincoln
+      taft = addresses.taft
+      morty = build(:address)
+
+      contract_token_address =
+        insert(
+          :address,
+          contract_code: Explorer.Factory.data("contract_code")
+        )
+
+      insert(:token, contract_address: contract_token_address)
+
+      transaction =
+        :transaction
+        |> insert(from_address: lincoln, to_address: contract_token_address)
+        |> with_block(block)
+
+      insert(
+        :token_transfer,
+        from_address: lincoln,
+        to_address: taft,
+        transaction: transaction,
+        token_contract_address: contract_token_address
+      )
+
+      insert(
+        :token_transfer,
+        from_address: lincoln,
+        to_address: morty,
+        transaction: transaction,
+        token_contract_address: contract_token_address
+      )
+
+      session
+      |> AddressPage.visit_page(morty)
+      |> assert_has(AddressPage.token_transfers(count: 1))
+      |> assert_has(AddressPage.token_transfer(lincoln.hash, count: 1))
+      |> assert_has(AddressPage.token_transfer(morty.hash, count: 1))
+      |> refute_has(AddressPage.token_transfer(taft.hash, count: 1))
+    end
   end
 end

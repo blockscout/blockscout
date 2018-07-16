@@ -76,4 +76,12 @@ defmodule ExplorerWeb.AddressPage do
   def visit_page(session, address_hash) do
     visit(session, "/en/addresses/#{address_hash}")
   end
+
+  def token_transfers(count: count) do
+    css("[data-test='token_transfer']", count: count)
+  end
+
+  def token_transfer(address_hash, count: count) do
+    css("[data-test='token_transfer_address_hash']", count: count, text: to_string(address_hash))
+  end
 end

@@ -48,5 +48,31 @@
       </span>
       <span> <%= ExplorerWeb.TransactionView.formatted_fee(@transaction, denomination: :ether) %> <%= gettext "Fee" %></span>
     </div>
+
+    <%= if ExplorerWeb.TransactionView.involves_token_transfers?(@transaction) do %>
+      <div class="offset-md-2 col-md-10">
+        <hr class="mt-3 mb-3 w-100" />
+        <p class="tile-title"><%= gettext "Transfers" %></p>
+      </div>
+    <% end %>
+
+    <%= for token_transfer <- @transaction.token_transfers do %>
+      <div class="offset-md-2 col-sm-7 col-lg-8 d-flex flex-column">
+        <span data-test="token_transfer">
+          <span data-test="token_transfer_address_hash">
+            <%= ExplorerWeb.AddressView.display_address_hash(@address, token_transfer.from_address, @locale) %>
+          </span>
+          &rarr;
+          <span data-test="token_transfer_address_hash">
+            <%= ExplorerWeb.AddressView.display_address_hash(@address, token_transfer.to_address, @locale) %>
+          </span>
+        </span>
+      </div>
+      <div class="col-sm-3 col-lg-2 d-flex flex-row flex-sm-column align-items-end">
+        <span class="tile-title">
+          <%= token_transfer.amount %> <%= token_transfer.token.symbol %>
+        </span>
+      </div>
+    <% end %>
   </div>
 </div>

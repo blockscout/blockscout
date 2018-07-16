@@ -78,4 +78,22 @@ defmodule ExplorerWeb.AddressView do
   end
 
   def smart_contract_with_read_only_functions?(%Address{smart_contract: nil}), do: false
+
+  def display_address_hash(current_address, another_address, locale) do
+    if current_address.hash == another_address.hash do
+      render(
+        "_responsive_hash.html",
+        address_hash: current_address.hash,
+        contract: contract?(current_address),
+        locale: locale
+      )
+    else
+      render(
+        "_link.html",
+        address_hash: another_address.hash,
+        contract: contract?(another_address),
+        locale: locale
+      )
+    end
+  end
 end
