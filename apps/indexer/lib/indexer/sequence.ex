@@ -96,20 +96,19 @@ defmodule Indexer.Sequence do
 
   @impl GenServer
   @spec init(options) :: {:ok, t}
-  def init(named_arguments) when is_list(named_arguments) do
+  def init(options) when is_list(options) do
     Process.flag(:trap_exit, true)
-    step = Keyword.fetch!(named_arguments, :step)
 
-    initial_queue = :queue.new()
-    prefix = Keyword.get(named_arguments, :prefix, [])
-    queue = queue_chunked_ranges(initial_queue, step, prefix)
+    case validate_options(options) do
+      {:ok, %{prefix: prefix, first: first, step: step}} ->
+        initial_queue = :queue.new()
+        queue = queue_chunked_ranges(initial_queue, step, prefix)
 
-    {:ok,
-     %__MODULE__{
-       queue: queue,
-       current: Keyword.fetch!(named_arguments, :first),
-       step: step
-     }}
+        {:ok, %__MODULE__{queue: queue, current: first, step: step}}
+
+      {:error, reason} ->
+        {:stop, reason}
+    end
   end
 
   @impl GenServer
@@ -202,4 +201,29 @@ defmodule Indexer.Sequence do
 
   @spec sign(non_neg_integer()) :: 1
   defp sign(_), do: 1
+
+  defp validate_options(options) do
+    step = Keyword.fetch!(options, :step)
+    prefix = Keyword.get(options, :prefix, [])
+    first = Keyword.fetch!(options, :first)
+
+    validated_options = %{prefix: prefix, first: first, step: step}
+
+    if step < 0 do
+      minimum_in_prefix =
+        prefix
+        |> Stream.map(&Enum.min/1)
+        |> Enum.min(fn -> first end)
+
+      if first > minimum_in_prefix do
+        {:error,
+         ":first (#{first}) is greater than the minimum in `:prefix` (#{minimum_in_prefix}), " <>
+           "which will cause retraversal."}
+      else
+        {:ok, validated_options}
+      end
+    else
+      {:ok, validated_options}
+    end
+  end
 end

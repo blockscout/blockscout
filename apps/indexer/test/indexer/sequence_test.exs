@@ -29,6 +29,11 @@ defmodule Indexer.SequenceTest do
       # noproc when the sequence has already died by the time monitor is called
       assert_receive {:DOWN, ^sequence_ref, :process, ^sequence_pid, status} when status in [:normal, :noproc]
     end
+
+    test "with negative :step with :first greater than minimum in :prefix returns error" do
+      assert {:error, ":first (1) is greater than the minimum in `:prefix` (0), which will cause retraversal."} =
+               Sequence.start_link(prefix: [1..0], first: 1, step: -1)
+    end
   end
 
   test "inject_range" do

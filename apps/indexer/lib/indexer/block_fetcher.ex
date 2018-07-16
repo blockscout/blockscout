@@ -189,7 +189,7 @@ defmodule Indexer.BlockFetcher do
     debug(fn -> "#{count} missed block ranges between #{latest_block_number} and genesis" end)
 
     {:ok, seq} =
-      Sequence.start_link(prefix: missing_ranges, first: latest_block_number, step: -1 * state.blocks_batch_size)
+      Sequence.start_link(prefix: missing_ranges, first: 0, step: -1 * state.blocks_batch_size)
 
     stream_import(state, seq, max_concurrency: state.blocks_concurrency)
   end
