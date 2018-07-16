@@ -40,14 +40,19 @@
                 &rarr;
                 <%= render ExplorerWeb.AddressView, "_link.html", address_hash: ExplorerWeb.TransactionView.to_address_hash(transaction), contract: ExplorerWeb.AddressView.contract?(transaction.to_address), locale: @locale %>
               </span>
-              <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> POA
+              <span>
+                <span data-from-now="<%= transaction.block.timestamp %>"></span>
+                <span class="ml-1">
+                  <%= link(
+                    gettext("Block #") <> "#{transaction.block.number}",
+                    to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
+                  ) %>
+                </span>
+              </span>
             </div>
-            <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column justify-content-start justify-content-md-end text-md-right">
-              <span class="mr-2 mr-sm-0" data-from-now="<%= transaction.block.timestamp %>"></span>
-              <%= link(
-                gettext("Block #") <> "#{transaction.block.number}",
-                to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
-              ) %>
+            <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column justify-content-start text-md-right">
+              <span class="tile-title"><%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> POA</span>
+              <span> <%= ExplorerWeb.TransactionView.formatted_fee(transaction, denomination: :ether) %> <%= gettext "Fee" %></span>
             </div>
           </div>
         </div>
