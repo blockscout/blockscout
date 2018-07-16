@@ -188,7 +188,7 @@ defmodule Indexer.BlockFetcher do
 
     debug(fn -> "#{count} missed block ranges between #{latest_block_number} and genesis" end)
 
-    {:ok, seq} = Sequence.start_link(prefix: missing_ranges, first: 0, step: -1 * state.blocks_batch_size)
+    {:ok, seq} = Sequence.start_link(ranges: missing_ranges, step: -1 * state.blocks_batch_size)
     Sequence.cap(seq)
 
     stream_import(state, seq, max_concurrency: state.blocks_concurrency)
@@ -214,7 +214,7 @@ defmodule Indexer.BlockFetcher do
           "failed to insert blocks during #{step} #{inspect(range)}: #{inspect(failed_value)}. Retrying"
         end)
 
-        :ok = Sequence.inject_range(seq, range)
+        :ok = Sequence.queue(seq, range)
 
         error
     end
@@ -319,7 +319,7 @@ defmodule Indexer.BlockFetcher do
           "failed to fetch #{step} for blocks #{first} - #{last}: #{inspect(reason)}. Retrying block range."
         end)
 
-        :ok = Sequence.inject_range(seq, range)
+        :ok = Sequence.queue(seq, range)
 
         {:error, step, reason}
     end

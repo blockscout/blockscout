@@ -4,15 +4,59 @@ defmodule Indexer.SequenceTest do
   alias Indexer.Sequence
 
   describe "start_link/1" do
-    test "sets state" do
-      {:ok, pid} = Sequence.start_link(prefix: [1..4], first: 5, step: 1)
+    test "without :ranges with :first with positive step pops infinitely" do
+      {:ok, ascending} = Sequence.start_link(first: 5, step: 1)
+
+      assert Sequence.pop(ascending) == 5..5
+      assert Sequence.pop(ascending) == 6..6
+    end
+
+    test "without :ranges with :first pop with negative step pops past 0" do
+      {:ok, descending} = Sequence.start_link(first: 1, step: -1)
+
+      assert Sequence.pop(descending) == 1..1
+      assert Sequence.pop(descending) == 0..0
+      assert Sequence.pop(descending) == -1..-1
+    end
+
+    test "without :ranges without :first returns error" do
+      {child_pid, child_ref} =
+        spawn_monitor(fn ->
+          Sequence.start_link(step: -1)
+          Process.sleep(5_000)
+        end)
+
+      assert_receive {:DOWN, ^child_ref, :process, ^child_pid, "either :ranges or :first must be set"}
+    end
+
+    test "with ranges without :first" do
+      {:ok, pid} = Sequence.start_link(ranges: [1..4], step: 1)
 
       assert Sequence.pop(pid) == 1..1
       assert Sequence.pop(pid) == 2..2
       assert Sequence.pop(pid) == 3..3
       assert Sequence.pop(pid) == 4..4
-      # infinite sequence takes over
-      assert Sequence.pop(pid) == 5..5
+      assert Sequence.pop(pid) == :halt
+    end
+
+    test "with :ranges with :first returns error" do
+      {child_pid, child_ref} =
+        spawn_monitor(fn ->
+          Sequence.start_link(ranges: [1..0], first: 1, step: -1)
+          Process.sleep(5_000)
+        end)
+
+      assert_receive {:DOWN, ^child_ref, :process, ^child_pid,
+                      ":ranges and :first cannot be set at the same time" <>
+                        " as :ranges is for :finite mode while :first is for :infinite mode"}
+    end
+
+    test "with 0 first with negative step does not return 0 twice" do
+      {:ok, pid} = Sequence.start_link(ranges: [1..0], step: -1)
+
+      assert Sequence.pop(pid) == 1..1
+      assert Sequence.pop(pid) == 0..0
+      assert Sequence.pop(pid) == :halt
     end
 
     # Regression test for https://github.com/poanetwork/poa-explorer/issues/387
@@ -29,61 +73,69 @@ defmodule Indexer.SequenceTest do
       # noproc when the sequence has already died by the time monitor is called
       assert_receive {:DOWN, ^sequence_ref, :process, ^sequence_pid, status} when status in [:normal, :noproc]
     end
-
-    test "with negative :step with :first greater than minimum in :prefix returns error" do
-      assert {:error, ":first (1) is greater than the minimum in `:prefix` (0), which will cause retraversal."} =
-               Sequence.start_link(prefix: [1..0], first: 1, step: -1)
-    end
   end
 
-  test "inject_range" do
-    {:ok, pid} = Sequence.start_link(prefix: [1..2], first: 5, step: 1)
+  describe "queue/2" do
+    test "with finite mode range is chunked" do
+      {:ok, pid} = Sequence.start_link(ranges: [1..0], step: -1)
 
-    assert :ok = Sequence.inject_range(pid, 3..4)
+      assert Sequence.pop(pid) == 1..1
+      assert Sequence.pop(pid) == 0..0
 
-    assert Sequence.pop(pid) == 1..1
-    assert Sequence.pop(pid) == 2..2
-    assert Sequence.pop(pid) == 3..3
-    assert Sequence.pop(pid) == 4..4
-    # infinite sequence takes over
-    assert Sequence.pop(pid) == 5..5
+      assert Sequence.queue(pid, 1..0) == :ok
+
+      assert Sequence.pop(pid) == 1..1
+      assert Sequence.pop(pid) == 0..0
+      assert Sequence.pop(pid) == :halt
+      assert Sequence.pop(pid) == :halt
+    end
+
+    test "with infinite mode range is chunked and is returned prior to calculated ranges" do
+      {:ok, pid} = Sequence.start_link(first: 5, step: 1)
+
+      assert :ok = Sequence.queue(pid, 3..4)
+
+      assert Sequence.pop(pid) == 3..3
+      assert Sequence.pop(pid) == 4..4
+      # infinite sequence takes over
+      assert Sequence.pop(pid) == 5..5
+      assert Sequence.pop(pid) == 6..6
+    end
   end
 
   describe "cap/1" do
     test "returns previous mode" do
-      {:ok, pid} = Sequence.start_link(prefix: [1..2], first: 5, step: 1)
+      {:ok, pid} = Sequence.start_link(first: 5, step: 1)
 
       assert Sequence.cap(pid) == :infinite
       assert Sequence.cap(pid) == :finite
     end
 
     test "disables infinite mode that uses first and step" do
-      {:ok, late_capped} = Sequence.start_link(prefix: [1..2], first: 5, step: 1)
+      {:ok, late_capped} = Sequence.start_link(first: 5, step: 1)
 
-      assert Sequence.pop(late_capped) == 1..1
-      assert Sequence.pop(late_capped) == 2..2
       assert Sequence.pop(late_capped) == 5..5
+      assert Sequence.pop(late_capped) == 6..6
+      assert Sequence.queue(late_capped, 5..5) == :ok
       assert Sequence.cap(late_capped) == :infinite
+      assert Sequence.pop(late_capped) == 5..5
       assert Sequence.pop(late_capped) == :halt
 
-      {:ok, immediately_capped} = Sequence.start_link(prefix: [1..2], first: 5, step: 1)
+      {:ok, immediately_capped} = Sequence.start_link(first: 5, step: 1)
 
       assert Sequence.cap(immediately_capped) == :infinite
-      assert Sequence.pop(immediately_capped) == 1..1
-      assert Sequence.pop(immediately_capped) == 2..2
       assert Sequence.pop(immediately_capped) == :halt
     end
   end
 
   describe "pop" do
-    test "with a non-empty queue in finite and infinite modes" do
-      {:ok, pid} = Sequence.start_link(prefix: [1..4, 6..9], first: 99, step: 5)
+    test "with a non-empty queue in finite mode" do
+      {:ok, pid} = Sequence.start_link(ranges: [1..4, 6..9], step: 5)
 
-      assert 1..4 == Sequence.pop(pid)
-
-      assert :infinite = Sequence.cap(pid)
-
-      assert 6..9 == Sequence.pop(pid)
+      assert Sequence.pop(pid) == 1..4
+      assert Sequence.pop(pid) == 6..9
+      assert Sequence.pop(pid) == :halt
+      assert Sequence.pop(pid) == :halt
     end
 
     test "with an empty queue in infinite mode returns range from next step from current" do
@@ -92,11 +144,11 @@ defmodule Indexer.SequenceTest do
       assert 5..9 == Sequence.pop(pid)
     end
 
-    test "with an empty queue in infinite mode with negative step does not go past 0" do
+    test "with an empty queue in infinite mode with negative step goes past 0" do
       {:ok, pid} = Sequence.start_link(first: 4, step: -5)
 
       assert Sequence.pop(pid) == 4..0
-      assert Sequence.pop(pid) == :halt
+      assert Sequence.pop(pid) == -1..-5
     end
 
     test "with an empty queue in finite mode halts immediately" do
