@@ -3,9 +3,8 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
 
   use ExplorerWeb.FeatureCase, async: true
 
-  alias Explorer.Chain
   alias Explorer.Chain.Wei
-  alias ExplorerWeb.{AddressPage, HomePage, TransactionListPage, TransactionLogsPage, TransactionPage}
+  alias ExplorerWeb.{AddressPage, HomePage, Notifier,TransactionListPage, TransactionLogsPage, TransactionPage}
 
   setup do
     block =
@@ -123,91 +122,6 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
   end
 
   describe "viewing a transaction page" do
-    @import_data [
-      blocks: [
-        params: [
-          %{
-            difficulty: 340_282_366_920_938_463_463_374_607_431_768_211_454,
-            gas_limit: 6_946_336,
-            gas_used: 50450,
-            hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
-            miner_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
-            nonce: 0,
-            number: 565,
-            parent_hash: "0xc37bbad7057945d1bf128c1ff009fb1ad632110bf6a000aac025a80f7766b66e",
-            size: 719,
-            timestamp: Timex.parse!("2017-12-15T21:06:30.000000Z", "{ISO:Extended:Z}"),
-            total_difficulty: 12_590_447_576_074_723_148_144_860_474_975_121_280_509
-          }
-        ]
-      ],
-      internal_transactions: [
-        params: [
-          %{
-            call_type: "call",
-            from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
-            gas: 4_677_320,
-            gas_used: 27770,
-            index: 0,
-            output: "0x",
-            to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
-            trace_address: [],
-            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-            type: "call",
-            value: 0
-          }
-        ]
-      ],
-      logs: [
-        params: [
-          %{
-            address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
-            data: "0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
-            first_topic: "0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22",
-            fourth_topic: nil,
-            index: 0,
-            second_topic: nil,
-            third_topic: nil,
-            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-            type: "mined"
-          }
-        ]
-      ],
-      transactions: [
-        on_conflict: :replace_all,
-        params: [
-          %{
-            block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
-            block_number: 37,
-            cumulative_gas_used: 50450,
-            from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
-            gas: 4_700_000,
-            gas_price: 100_000_000_000,
-            gas_used: 50450,
-            hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-            index: 0,
-            input: "0x10855269000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
-            nonce: 4,
-            public_key:
-              "0xe5d196ad4ceada719d9e592f7166d0c75700f6eab2e3c3de34ba751ea786527cb3f6eb96ad9fdfdb9989ff572df50f1c42ef800af9c5207a38b929aff969b5c9",
-            r: 0xA7F8F45CCE375BB7AF8750416E1B03E0473F93C256DA2285D1134FC97A700E01,
-            s: 0x1F87A076F13824F4BE8963E3DFFD7300DAE64D5F23C9A062AF0C6EAD347C135F,
-            standard_v: 1,
-            status: :ok,
-            to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
-            v: 0xBE,
-            value: 0
-          }
-        ]
-      ],
-      addresses: [
-        params: [
-          %{hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"},
-          %{hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"}
-        ]
-      ]
-    ]
-
     test "can navigate to transaction show from list page", %{session: session, transaction: transaction} do
       session
       |> TransactionListPage.visit_page()
@@ -253,11 +167,13 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
     end
 
     test "block confirmations via live update", %{session: session, transaction: transaction} do
+      blocks = [insert(:block, number: transaction.block_number + 10)]
+
       TransactionPage.visit_page(session, transaction)
 
       assert_text(session, TransactionPage.block_confirmations(), "0")
 
-      Chain.import_blocks(@import_data)
+      Notifier.handle_event({:chain_event, :blocks, blocks})
       assert_text(session, TransactionPage.block_confirmations(), "10")
     end
   end

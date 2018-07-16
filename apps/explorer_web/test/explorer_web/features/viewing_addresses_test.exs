@@ -4,7 +4,7 @@ defmodule ExplorerWeb.ViewingAddressesTest do
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Wei}
   alias Explorer.ExchangeRates.Token
-  alias ExplorerWeb.{AddressPage, HomePage}
+  alias ExplorerWeb.{AddressPage, HomePage, Notifier}
 
   setup do
     block = insert(:block)
@@ -234,21 +234,17 @@ defmodule ExplorerWeb.ViewingAddressesTest do
   end
 
   test "viewing new transactions via live update", %{addresses: addresses, session: session} do
+    transaction =
+      :transaction
+      |> insert(from_address: addresses.lincoln)
+      |> with_block()
+
     session =
       session
       |> AddressPage.visit_page(addresses.lincoln)
       |> assert_has(AddressPage.balance())
 
-    transaction =
-      :transaction
-      |> insert(from_address: addresses.lincoln)
-      |> with_block()
-      |> Repo.preload([:block, :from_address, :to_address])
-
-    ExplorerWeb.Endpoint.broadcast!("addresses:#{addresses.lincoln.hash}", "transaction", %{
-      address: addresses.lincoln,
-      transaction: transaction
-    })
+    Notifier.handle_event({:chain_event, :transactions, [transaction.hash]})
 
     assert_has(session, AddressPage.transaction(transaction))
   end
