@@ -1,8 +1,10 @@
 <div class="tile tile-type-<%= ExplorerWeb.TransactionView.type_suffix(@transaction) %> fade-in  tile-status--<%= status(@transaction) %>" data-transaction-hash="<%= @transaction.hash %>">
   <div class="row">
-    <div class="pl-5 col-md-2 d-flex flex-column align-items-left justify-content-start justify-content-lg-center tile-label">
-      <%= ExplorerWeb.TransactionView.transaction_display_type(@transaction) %>
-      <div data-test="transaction_status" class="text-muted"><%= formatted_status(@transaction) %></div>
+    <div class="pl-5 col-md-2 d-flex flex-column align-items-left justify-content-start justify-content-lg-center">
+      <span class="tile-label">
+        <%= ExplorerWeb.TransactionView.transaction_display_type(@transaction) %>
+      </span>
+      <div class="tile-status-label" data-test="transaction_status"><%= formatted_status(@transaction) %></div>
     </div>
     <div class="col-md-7 col-lg-8 d-flex flex-column">
       <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: @transaction.hash %>

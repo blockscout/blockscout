@@ -22,7 +22,7 @@
     &-transaction {
       border-left: 4px solid $blue;
 
-      .tile-label, .tile-text-highlight {
+      .tile-label {
         color: $blue;
       }
     }
@@ -51,7 +51,7 @@
     &-token {
       border-left: 4px solid $orange;
 
-      .tile-label, .tile-text-highlight {
+      .tile-label {
         color: $orange;
       }
     }
@@ -59,7 +59,7 @@
     &-internal-transaction {
       border-left: 4px solid $teal;
 
-      .tile-label, .tile-text-highlight {
+      .tile-label {
         color: $teal;
       }
     }
@@ -67,10 +67,22 @@
 
   &-status {
     &--failed {
-      border: 1px solid lighten($danger, 10%);
+      border-top: 1px solid lighten($danger, 10%);
+      border-right: 1px solid lighten($danger, 10%);
+      border-bottom: 1px solid lighten($danger, 10%);
+
+      .tile-status-label {
+        color: $danger;
+      }
     }
     &--out_of_gas {
-      border: 1px solid lighten($warning, 10%);
+      border-top: 1px solid lighten($warning, 10%);
+      border-right: 1px solid lighten($warning, 10%);
+      border-bottom: 1px solid lighten($warning, 10%);
+
+      .tile-status-label {
+        color: $warning;
+      }
     }
   }
 
