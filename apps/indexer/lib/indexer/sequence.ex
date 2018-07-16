@@ -98,15 +98,17 @@ defmodule Indexer.Sequence do
   @spec init(options) :: {:ok, t}
   def init(named_arguments) when is_list(named_arguments) do
     Process.flag(:trap_exit, true)
+    step = Keyword.fetch!(named_arguments, :step)
+
+    initial_queue = :queue.new()
+    prefix = Keyword.get(named_arguments, :prefix, [])
+    queue = queue_chunked_ranges(initial_queue, step, prefix)
 
     {:ok,
      %__MODULE__{
-       queue:
-         named_arguments
-         |> Keyword.get(:prefix, [])
-         |> :queue.from_list(),
+       queue: queue,
        current: Keyword.fetch!(named_arguments, :first),
-       step: Keyword.fetch!(named_arguments, :step)
+       step: step
      }}
   end
 
@@ -118,8 +120,8 @@ defmodule Indexer.Sequence do
   end
 
   @spec handle_call({:inject_range, Range.t()}, GenServer.from(), t()) :: {:reply, mode(), t()}
-  def handle_call({:inject_range, _first.._last = range}, _from, %__MODULE__{queue: queue} = state) do
-    {:reply, :ok, %__MODULE__{state | queue: :queue.in(range, queue)}}
+  def handle_call({:inject_range, _first.._last = range}, _from, %__MODULE__{queue: queue, step: step} = state) do
+    {:reply, :ok, %__MODULE__{state | queue: queue_chunked_range(queue, step, range)}}
   end
 
   @spec handle_call(:pop, GenServer.from(), t()) :: {:reply, Range.t() | :halt, t()}
@@ -144,6 +146,55 @@ defmodule Indexer.Sequence do
       end
 
     {:reply, reply, new_state}
+  end
+
+  defp queue_chunked_range(queue, step, _.._ = range) when is_integer(step) do
+    queue_chunked_ranges(queue, step, [range])
+  end
+
+  defp queue_chunked_ranges(queue, step, ranges) when is_integer(step) and is_list(ranges) do
+    reduce_chunked_ranges(ranges, abs(step), queue, &:queue.in/2)
+  end
+
+  defp reduce_chunked_ranges(ranges, size, initial, reducer)
+       when is_list(ranges) and is_integer(size) and size > 0 and is_function(reducer, 2) do
+    Enum.reduce(ranges, initial, &reduce_chunked_range(&1, size, &2, reducer))
+  end
+
+  defp reduce_chunked_range(_.._ = range, size, initial, reducer) do
+    count = Enum.count(range)
+    reduce_chunked_range(range, count, size, initial, reducer)
+  end
+
+  defp reduce_chunked_range(_.._ = range, count, size, initial, reducer) when count <= size do
+    reducer.(range, initial)
+  end
+
+  defp reduce_chunked_range(first..last = range, _, size, initial, reducer) do
+    {sign, comparator} =
+      if first < last do
+        {1, &Kernel.>=/2}
+      else
+        {-1, &Kernel.<=/2}
+      end
+
+    step = sign * size
+
+    first
+    |> Stream.iterate(&(&1 + step))
+    |> Enum.reduce_while(initial, fn chunk_first, acc ->
+      next_chunk_first = chunk_first + step
+      full_chunk_last = next_chunk_first - sign
+
+      {action, chunk_last} =
+        if comparator.(full_chunk_last, last) do
+          {:halt, last}
+        else
+          {:cont, full_chunk_last}
+        end
+
+      {action, reducer.(chunk_first..chunk_last, acc)}
+    end)
   end
 
   @spec sign(neg_integer()) :: -1

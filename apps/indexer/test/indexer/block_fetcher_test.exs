@@ -829,68 +829,6 @@ defmodule Indexer.BlockFetcherTest do
     end
   end
 
-  describe "chunk_ranges/2" do
-    test "with first < last in one chunk" do
-      range = 0..1
-      size = 2
-
-      assert Enum.count(range) <= size
-      assert BlockFetcher.chunk_ranges([range], size) == [range]
-    end
-
-    test "with first < last with filled last chunk" do
-      range = 0..1
-      size = 1
-
-      assert Enum.count(range) > size
-      assert rem(Enum.count(range), size) == 0
-      assert BlockFetcher.chunk_ranges([range], size) == [0..0, 1..1]
-    end
-
-    test "with first < last with unfilled last chunk" do
-      range = 0..2
-      size = 2
-
-      assert Enum.count(range) > size
-      refute rem(Enum.count(range), size) == 0
-      assert BlockFetcher.chunk_ranges([range], size) == [0..1, 2..2]
-    end
-
-    test "with first == last" do
-      range = 0..0
-      size = 1
-
-      assert Enum.count(range) == size
-      assert BlockFetcher.chunk_ranges([range], size) == [range]
-    end
-
-    test "with first > last in one chunk" do
-      range = 1..0
-      size = 2
-
-      assert Enum.count(range) <= size
-      assert BlockFetcher.chunk_ranges([range], size) == [range]
-    end
-
-    test "with first > last with filled last chunk" do
-      range = 1..0
-      size = 1
-
-      assert Enum.count(range) > size
-      assert rem(Enum.count(range), size) == 0
-      assert BlockFetcher.chunk_ranges([range], size) == [1..1, 0..0]
-    end
-
-    test "with first > last with unfilled last chunk" do
-      range = 2..0
-      size = 2
-
-      assert Enum.count(range) > size
-      refute rem(Enum.count(range), size) == 0
-      assert BlockFetcher.chunk_ranges([range], size) == [2..1, 0..0]
-    end
-  end
-
   defp capture_log_at_level(level, block) do
     logger_level_transaction(fn ->
       Logger.configure(level: level)

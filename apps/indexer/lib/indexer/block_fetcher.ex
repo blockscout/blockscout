@@ -183,7 +183,7 @@ defmodule Indexer.BlockFetcher do
 
   defp genesis_task(%{json_rpc_named_arguments: json_rpc_named_arguments} = state) do
     {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
-    missing_ranges = missing_block_number_ranges(state, latest_block_number..0)
+    missing_ranges = Chain.missing_block_number_ranges(latest_block_number..0)
     count = Enum.count(missing_ranges)
 
     debug(fn -> "#{count} missed block ranges between #{latest_block_number} and genesis" end)
@@ -266,53 +266,6 @@ defmodule Indexer.BlockFetcher do
       %{block_number: block_number, hash: transaction_hash}
     end)
     |> InternalTransactionFetcher.async_fetch(10_000)
-  end
-
-  defp missing_block_number_ranges(%{blocks_batch_size: blocks_batch_size}, range) do
-    range
-    |> Chain.missing_block_number_ranges()
-    |> chunk_ranges(blocks_batch_size)
-  end
-
-  @doc false
-  def chunk_ranges(ranges, size) do
-    Enum.flat_map(ranges, &chunk_range(&1, size))
-  end
-
-  defp chunk_range(range, size) do
-    count = Enum.count(range)
-    chunk_range(range, count, size)
-  end
-
-  defp chunk_range(range, count, size) when count <= size do
-    [range]
-  end
-
-  defp chunk_range(first..last = range, _, size) do
-    {sign, comparator} = if first < last do
-      {1, &Kernel.>=/2}
-    else
-      {-1, &Kernel.<=/2}
-    end
-
-    step = sign * size
-
-    first
-    |> Stream.iterate(&(&1 + step))
-    |> Enum.reduce_while([], fn chunk_first, acc ->
-      next_chunk_first = chunk_first + step
-      full_chunk_last = next_chunk_first - sign
-
-      {action, chunk_last} =
-        if comparator.(full_chunk_last, last) do
-          {:halt, last}
-        else
-          {:cont, full_chunk_last}
-        end
-
-      {action, [chunk_first..chunk_last | acc]}
-    end)
-    |> Enum.reverse()
   end
 
   defp realtime_task(%{json_rpc_named_arguments: json_rpc_named_arguments} = state) do
