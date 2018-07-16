@@ -645,3 +645,13 @@ msgstr ""
 #: lib/explorer_web/views/transaction_view.ex:112
 msgid "Contract Call"
 msgstr ""
+
+#, elixir-format
+#: lib/explorer_web/templates/address/overview.html.eex:25
+msgid "Contract created by"
+msgstr ""
+
+#, elixir-format
+#: lib/explorer_web/templates/address/overview.html.eex:36
+msgid "at"
+msgstr ""

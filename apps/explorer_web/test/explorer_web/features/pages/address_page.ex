@@ -15,6 +15,10 @@ defmodule ExplorerWeb.AddressPage do
     css("[data-test='address_balance']")
   end
 
+  def contract_creator do
+    css("[data-test='address_contract_creator']")
+  end
+
   def click_internal_transactions(session) do
     click(session, css("[data-test='internal_transactions_tab_link']"))
   end

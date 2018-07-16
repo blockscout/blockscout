@@ -19,6 +19,35 @@
           <h3 class="<%= if ExplorerWeb.AddressView.contract?(@address) do %>contract-address<% end %>" data-test="address_detail_hash"><%= @address %></h3>
           <div class="d-flex flex-row justify-content-start text-muted">
             <span class="mr-4" data-test="transaction_count"><%= Cldr.Number.to_string!(@transaction_count) %> <%= gettext "Transactions" %></span>
+
+            <%= if contract?(@address) do %>
+              <span class="mr-4" data-test="address_contract_creator">
+                <%= gettext "Contract created by" %>
+                <%= link(
+                      trimmed_hash(@address.contracts_creation_internal_transaction.from_address_hash),
+                      to: address_path(
+                        ExplorerWeb.Endpoint,
+                        :show,
+                        @locale,
+                        @address.contracts_creation_internal_transaction.from_address_hash
+                      )
+                    ) %>
+
+                <%= gettext "at" %>
+
+                <%= link(
+                      trimmed_hash(@address.contracts_creation_internal_transaction.transaction_hash),
+                      to: transaction_path(
+                        ExplorerWeb.Endpoint,
+                        :show,
+                        @locale,
+                        @address.contracts_creation_internal_transaction.transaction_hash
+                      ),
+                      "data-test": "transaction_hash_link",
+                      "class": "tile-title"
+                    ) %>
+              </span>
+            <% end %>
           </div>
         </div>
       </div>
@@ -37,7 +66,6 @@
     </div>
   </div>
 </section>
-
 
 <!-- Modal -->
 <div class="modal fade" id="qrModal" tabindex="-1" role="dialog" aria-labelledby="qrModalLabel" aria-hidden="true">

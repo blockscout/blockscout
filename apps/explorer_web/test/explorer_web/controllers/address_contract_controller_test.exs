@@ -24,7 +24,7 @@ defmodule ExplorerWeb.AddressContractControllerTest do
       assert html_response(conn, 404)
     end
 
-    test "returns not found when the address doesn't have a contract", %{conn: conn} do
+    test "returns not found when the address isn't a contract", %{conn: conn} do
       address = insert(:address)
 
       conn = get(conn, address_contract_path(ExplorerWeb.Endpoint, :index, :en, address))
@@ -32,13 +32,22 @@ defmodule ExplorerWeb.AddressContractControllerTest do
       assert html_response(conn, 404)
     end
 
-    test "suscefully renders the page", %{conn: conn} do
+    test "successfully renders the page when the address is a contract", %{conn: conn} do
       address = insert(:address, contract_code: Factory.data("contract_code"), smart_contract: nil)
+
+      transaction = insert(:transaction, from_address: address)
+
+      insert(
+        :internal_transaction_create,
+        index: 0,
+        transaction: transaction,
+        created_contract_address: address
+      )
 
       conn = get(conn, address_contract_path(ExplorerWeb.Endpoint, :index, :en, address))
 
       assert html_response(conn, 200)
-      assert address == conn.assigns.address
+      assert address.hash == conn.assigns.address.hash
       assert %Token{} = conn.assigns.exchange_rate
       assert conn.assigns.transaction_count
     end

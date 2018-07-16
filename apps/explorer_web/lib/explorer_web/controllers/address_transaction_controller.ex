@@ -26,7 +26,6 @@ defmodule ExplorerWeb.AddressTransactionController do
         |> Keyword.merge(current_filter(params))
 
       transactions_plus_one = Chain.address_to_transactions(address, full_options)
-
       {transactions, next_page} = split_list_by_page(transactions_plus_one)
 
       render(

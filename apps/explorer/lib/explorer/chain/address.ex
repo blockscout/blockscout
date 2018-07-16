@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Address do
   use Explorer.Schema
 
   alias Ecto.Changeset
-  alias Explorer.Chain.{Block, Data, Hash, Wei, SmartContract}
+  alias Explorer.Chain.{Block, Data, Hash, Wei, SmartContract, InternalTransaction}
 
   @optional_attrs ~w(contract_code)a
   @required_attrs ~w(hash)a
@@ -42,6 +42,12 @@ defmodule Explorer.Chain.Address do
     field(:contract_code, Data)
 
     has_one(:smart_contract, SmartContract)
+
+    has_one(
+      :contracts_creation_internal_transaction,
+      InternalTransaction,
+      foreign_key: :created_contract_address_hash
+    )
 
     timestamps()
   end
