@@ -27,10 +27,12 @@
       <%= for transaction <- @transactions do %>
         <div class="tile tile-type-<%= ExplorerWeb.TransactionView.type_suffix(transaction) %>" data-test="<%= ExplorerWeb.TransactionView.type_suffix(transaction) %>" data-transaction-hash="<%= transaction.hash %>">
           <div class="row" data-test="chain_transaction">
-            <div class="col-md-2 d-flex align-items-center justify-content-start justify-content-lg-center  tile-label">
-              <%= ExplorerWeb.TransactionView.transaction_display_type(transaction) %>
+            <div class="col-md-2 d-flex flex-column align-items-left justify-content-start justify-content-lg-center tile-label">
+              <div class="ml-4">
+                <span data-test="transaction_type"> <%= ExplorerWeb.TransactionView.transaction_display_type(transaction) %></span>
+                <div data-test="transaction_status" class="text-muted"><%= ExplorerWeb.TransactionView.formatted_status(transaction) %></div>
+              </div>
             </div>
-
             <div class="col-md-7 col-lg-8 d-flex flex-column">
               <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: transaction.hash %>
               <span>
@@ -42,7 +44,7 @@
                   <%= gettext("Contract Address Pending") %>
                 <% end %>
               </span>
-              <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> POA
+              <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> <%= gettext "Ether" %>
             </div>
           </div>
         </div>

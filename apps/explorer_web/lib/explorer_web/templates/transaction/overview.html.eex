@@ -24,8 +24,8 @@
                   <%= gettext "Transaction Status" %>
                 </th>
                 <td>
-                  <%= formatted_status(@transaction) %>
-                  <div class="transaction__dot transaction__dot--<%= status(@transaction) %>"></div>
+                  <%= ExplorerWeb.TransactionView.formatted_status(@transaction) %>
+                  <div class="transaction__dot transaction__dot--<%= ExplorerWeb.TransactionView.status(@transaction) %>"></div>
                 </td>
               </tr>
               <tr>

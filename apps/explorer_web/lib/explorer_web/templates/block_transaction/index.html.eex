@@ -148,8 +148,8 @@
             <tbody>
               <%= for transaction <- @transactions do %>
                 <tr data-transaction-hash="<%= transaction.hash %>">
-                  <td>
-                    <div class="transaction__dot transaction__dot--<%= status(transaction) %>"></div>
+                  <td data-test="transaction_status">
+                    <div class="transaction__dot transaction__dot--<%= ExplorerWeb.TransactionView.status(transaction) %>" data-toggle="tooltip" title="<%= ExplorerWeb.TransactionView.formatted_status(transaction) %>"></div>
                   </td>
                   <td>
                     <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: transaction.hash %>

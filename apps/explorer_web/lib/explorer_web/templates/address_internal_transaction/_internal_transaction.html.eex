@@ -18,14 +18,16 @@
           <%= render ExplorerWeb.AddressView, "_link.html", address_hash: ExplorerWeb.InternalTransactionView.to_address_hash(@internal_transaction), contract: ExplorerWeb.AddressView.contract?(@internal_transaction.to_address), locale: @locale %>
         <% end %>
       </span>
-      <%= ExplorerWeb.TransactionView.value(@internal_transaction, include_label: false) %> POA
-    </div>
-    <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column align-items-end justify-content-center text-md-right">
       <%= if @address.hash == @internal_transaction.from_address_hash do %>
-        <span class="badge badge-danger tile-badge">OUT</span>
+        <span class="badge badge-danger tile-badge"><%= gettext "OUT" %></span>
       <% else %>
-        <span class="badge badge-success tile-badge">IN</span>
+        <span class="badge badge-success tile-badge"><%= gettext "IN" %></span>
       <% end %>
+    </div>
+    <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column justify-content-start text-md-right">
+      <span class="tile-title">
+        <%= ExplorerWeb.TransactionView.value(@internal_transaction, include_label: false) %> <%= gettext "Ether" %>
+      </span>
     </div>
   </div>
 </div>

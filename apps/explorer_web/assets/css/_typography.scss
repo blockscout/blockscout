@@ -52,6 +52,6 @@ a {
 }
 
 .contract-address {
-  text-decoration: underline;
-  text-decoration-style: dashed;
+  border-bottom: 1px dashed currentColor;
+  display: inline-block;
 }

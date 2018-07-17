@@ -43,6 +43,21 @@ defmodule ExplorerWeb.ViewingBlocksTest do
     |> assert_has(BlockPage.detail_number(block))
   end
 
+  test "block detail page has transactions", %{session: session} do
+    block = insert(:block, number: 42)
+
+    transaction =
+      :transaction
+      |> insert()
+      |> with_block(block)
+
+    session
+    |> BlockPage.visit_page(block)
+    |> assert_has(BlockPage.detail_number(block))
+    |> assert_has(BlockPage.transaction(transaction))
+    |> assert_has(BlockPage.transaction_status(transaction))
+  end
+
   test "contract creation is shown for to_address in transaction list", %{session: session} do
     block = insert(:block, number: 42)
 

@@ -5,7 +5,7 @@ defmodule ExplorerWeb.HomePage do
 
   import Wallaby.Query, only: [css: 1, css: 2]
 
-  alias Explorer.Chain.InternalTransaction
+  alias Explorer.Chain.{InternalTransaction, Transaction}
 
   def blocks(count: count) do
     css("[data-test='chain_block']", count: count)
@@ -23,6 +23,10 @@ defmodule ExplorerWeb.HomePage do
 
   def transactions(count: count) do
     css("[data-test='chain_transaction']", count: count)
+  end
+
+  def transaction_status(%Transaction{hash: transaction_hash}) do
+    css("[data-transaction-hash='#{transaction_hash}'] [data-test='transaction_status']")
   end
 
   def visit_page(session) do
