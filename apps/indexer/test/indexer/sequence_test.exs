@@ -18,7 +18,8 @@ defmodule Indexer.SequenceTest do
           Process.sleep(5_000)
         end)
 
-      assert_receive {:DOWN, ^child_ref, :process, ^child_pid, ":step must be a positive integer for infinite sequences"}
+      assert_receive {:DOWN, ^child_ref, :process, ^child_pid,
+                      ":step must be a positive integer for infinite sequences"}
     end
 
     test "without :ranges without :first returns error" do
@@ -75,6 +76,36 @@ defmodule Indexer.SequenceTest do
       # noproc when the sequence has already died by the time monitor is called
       assert_receive {:DOWN, ^sequence_ref, :process, ^sequence_pid, status} when status in [:normal, :noproc]
     end
+
+    test "with :ranges in direction opposite of :step returns errors for all ranges in wrong direction" do
+      parent = self()
+
+      {child_pid, child_ref} =
+        spawn_monitor(fn ->
+          send(
+            parent,
+            Sequence.start_link(
+              ranges: [
+                # ok, ok
+                7..6,
+                # ok, error
+                4..5,
+                # error, ok
+                3..2,
+                # error, error
+                0..1
+              ],
+              step: -1
+            )
+          )
+        end)
+
+      assert_receive {:DOWN, ^child_ref, :process, ^child_pid,
+                      [
+                        "Range (0..1) direction is opposite step (-1) direction",
+                        "Range (4..5) direction is opposite step (-1) direction"
+                      ]}
+    end
   end
 
   describe "queue/2" do
@@ -90,6 +121,16 @@ defmodule Indexer.SequenceTest do
       assert Sequence.pop(pid) == 0..0
       assert Sequence.pop(pid) == :halt
       assert Sequence.pop(pid) == :halt
+    end
+
+    test "with finite mode with range in wrong direction returns error" do
+      {:ok, ascending} = Sequence.start_link(first: 0, step: 1)
+
+      assert Sequence.queue(ascending, 1..0) == {:error, "Range (1..0) direction is opposite step (1) direction"}
+
+      {:ok, descending} = Sequence.start_link(ranges: [1..0], step: -1)
+
+      assert Sequence.queue(descending, 0..1) == {:error, "Range (0..1) direction is opposite step (-1) direction"}
     end
 
     test "with infinite mode range is chunked and is returned prior to calculated ranges" do

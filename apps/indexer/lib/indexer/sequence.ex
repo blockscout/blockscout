@@ -107,13 +107,11 @@ defmodule Indexer.Sequence do
   def init(options) when is_list(options) do
     Process.flag(:trap_exit, true)
 
-    case validate_options(options) do
-      {:ok, %{ranges: ranges, first: first, step: step}} ->
-        initial_queue = :queue.new()
-        queue = queue_chunked_ranges(initial_queue, step, ranges)
-
-        {:ok, %__MODULE__{queue: queue, current: first, step: step}}
-
+    with {:ok, %{ranges: ranges, first: first, step: step}} <- validate_options(options),
+         initial_queue = :queue.new(),
+         {:ok, queue} <- queue_chunked_ranges(initial_queue, step, ranges) do
+      {:ok, %__MODULE__{queue: queue, current: first, step: step}}
+    else
       {:error, reason} ->
         {:stop, reason}
     end
@@ -134,9 +132,15 @@ defmodule Indexer.Sequence do
     {:reply, mode, %__MODULE__{state | current: nil}}
   end
 
-  @spec handle_call({:queue, Range.t()}, GenServer.from(), t()) :: {:reply, :ok, t()}
+  @spec handle_call({:queue, Range.t()}, GenServer.from(), t()) :: {:reply, :ok | {:error, String.t()}, t()}
   def handle_call({:queue, _first.._last = range}, _from, %__MODULE__{queue: queue, step: step} = state) do
-    {:reply, :ok, %__MODULE__{state | queue: queue_chunked_range(queue, step, range)}}
+    case queue_chunked_range(queue, step, range) do
+      {:ok, updated_queue} ->
+        {:reply, :ok, %__MODULE__{state | queue: updated_queue}}
+
+      {:error, _} = error ->
+        {:reply, error, state}
+    end
   end
 
   @spec handle_call(:pop, GenServer.from(), t()) :: {:reply, Range.t() | :halt, t()}
@@ -160,53 +164,80 @@ defmodule Indexer.Sequence do
     {:reply, reply, new_state}
   end
 
+  @spec queue_chunked_range(:queue.queue(Range.t()), step, Range.t()) ::
+          {:ok, :queue.queue(Range.t())} | {:error, reason :: String.t()}
   defp queue_chunked_range(queue, step, _.._ = range) when is_integer(step) do
-    queue_chunked_ranges(queue, step, [range])
+    with {:error, [reason]} <- queue_chunked_ranges(queue, step, [range]) do
+      {:error, reason}
+    end
   end
 
+  @spec queue_chunked_range(:queue.queue(Range.t()), step, [Range.t()]) ::
+          {:ok, :queue.queue(Range.t())} | {:error, reasons :: [String.t()]}
   defp queue_chunked_ranges(queue, step, ranges) when is_integer(step) and is_list(ranges) do
-    reduce_chunked_ranges(ranges, abs(step), queue, &:queue.in/2)
+    reduce_chunked_ranges(ranges, step, queue, &:queue.in/2)
   end
 
-  defp reduce_chunked_ranges(ranges, size, initial, reducer)
-       when is_list(ranges) and is_integer(size) and size > 0 and is_function(reducer, 2) do
-    Enum.reduce(ranges, initial, &reduce_chunked_range(&1, size, &2, reducer))
+  defp reduce_chunked_ranges(ranges, step, initial, reducer)
+       when is_list(ranges) and is_integer(step) and step != 0 and is_function(reducer, 2) do
+    Enum.reduce(ranges, {:ok, initial}, fn
+      range, {:ok, acc} ->
+        case reduce_chunked_range(range, step, acc, reducer) do
+          {:ok, _} = ok ->
+            ok
+
+          {:error, reason} ->
+            {:error, [reason]}
+        end
+
+      range, {:error, acc_reasons} = acc ->
+        case reduce_chunked_range(range, step, initial, reducer) do
+          {:ok, _} -> acc
+          {:error, reason} -> {:error, [reason | acc_reasons]}
+        end
+    end)
   end
 
-  defp reduce_chunked_range(_.._ = range, size, initial, reducer) do
+  defp reduce_chunked_range(_.._ = range, step, initial, reducer) do
     count = Enum.count(range)
-    reduce_chunked_range(range, count, size, initial, reducer)
+    reduce_chunked_range(range, count, step, initial, reducer)
   end
 
-  defp reduce_chunked_range(_.._ = range, count, size, initial, reducer) when count <= size do
-    reducer.(range, initial)
+  defp reduce_chunked_range(first..last = range, _count, step, _initial, _reducer)
+       when (step < 0 and first < last) or (0 < step and last < first) do
+    {:error, "Range (#{inspect(range)}) direction is opposite step (#{step}) direction"}
   end
 
-  defp reduce_chunked_range(first..last = range, _, size, initial, reducer) do
+  defp reduce_chunked_range(_.._ = range, count, step, initial, reducer) when count <= abs(step) do
+    {:ok, reducer.(range, initial)}
+  end
+
+  defp reduce_chunked_range(first..last = range, _, step, initial, reducer) do
     {sign, comparator} =
-      if first < last do
+      if step > 0 do
         {1, &Kernel.>=/2}
       else
         {-1, &Kernel.<=/2}
       end
 
-    step = sign * size
+    final =
+      first
+      |> Stream.iterate(&(&1 + step))
+      |> Enum.reduce_while(initial, fn chunk_first, acc ->
+        next_chunk_first = chunk_first + step
+        full_chunk_last = next_chunk_first - sign
 
-    first
-    |> Stream.iterate(&(&1 + step))
-    |> Enum.reduce_while(initial, fn chunk_first, acc ->
-      next_chunk_first = chunk_first + step
-      full_chunk_last = next_chunk_first - sign
+        {action, chunk_last} =
+          if comparator.(full_chunk_last, last) do
+            {:halt, last}
+          else
+            {:cont, full_chunk_last}
+          end
 
-      {action, chunk_last} =
-        if comparator.(full_chunk_last, last) do
-          {:halt, last}
-        else
-          {:cont, full_chunk_last}
-        end
+        {action, reducer.(chunk_first..chunk_last, acc)}
+      end)
 
-      {action, reducer.(chunk_first..chunk_last, acc)}
-    end)
+    {:ok, final}
   end
 
   defp validate_options(options) do
