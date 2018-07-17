@@ -305,6 +305,11 @@ msgid "Showing #%{number}"
 msgstr ""
 
 #: lib/explorer_web/templates/address/_values.html.eex:4
+#: lib/explorer_web/templates/address_internal_transaction/_internal_transaction.html.eex:28
+#: lib/explorer_web/templates/address_transaction/_transaction.html.eex:44
+#: lib/explorer_web/templates/chain/_transactions.html.eex:33
+#: lib/explorer_web/templates/pending_transaction/index.html.eex:47
+#: lib/explorer_web/templates/transaction/index.html.eex:54
 #: lib/explorer_web/templates/transaction/overview.html.eex:63
 #: lib/explorer_web/templates/transaction/overview.html.eex:159
 #: lib/explorer_web/templates/transaction_internal_transaction/index.html.eex:33
@@ -367,7 +372,7 @@ msgstr ""
 msgid "All"
 msgstr ""
 
-#: lib/explorer_web/templates/address_transaction/_transaction.html.eex:44
+#: lib/explorer_web/templates/address_transaction/_transaction.html.eex:46
 #: lib/explorer_web/templates/chain/_transactions.html.eex:35
 #: lib/explorer_web/templates/transaction/index.html.eex:55
 msgid "Fee"
@@ -566,7 +571,7 @@ msgid "Twitter"
 msgstr ""
 
 #, elixir-format
-#: lib/explorer_web/templates/address_transaction/_transaction.html.eex:34
+#: lib/explorer_web/templates/address_transaction/_transaction.html.eex:36
 #: lib/explorer_web/templates/chain/_transactions.html.eex:25
 #: lib/explorer_web/templates/transaction/index.html.eex:47
 msgid "Block #"
