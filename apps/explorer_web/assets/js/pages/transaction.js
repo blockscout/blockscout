@@ -42,7 +42,7 @@ router.when('/transactions/:transactionHash').then((params) => initRedux(reducer
     channel.on('update', (msg) => store.dispatch({ type: 'RECEIVED_UPDATED_CONFIRMATIONS', msg }))
   },
   render (state, oldState) {
-    const $blockConfirmations = $('[data-selector="block_confirmations"]')
+    const $blockConfirmations = $('[data-selector="block-confirmations"]')
     if (oldState.confirmations !== state.confirmations) {
       $blockConfirmations.empty().append(numeral(state.confirmations).format())
     }
