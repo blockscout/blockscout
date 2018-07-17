@@ -3,6 +3,4 @@ defmodule ExplorerWeb.PendingTransactionView do
 
   @dialyzer :no_match
 
-  alias ExplorerWeb.TransactionView
-
 end
