@@ -152,7 +152,7 @@ defmodule Indexer.Sequence do
         {_, {:empty, new_queue}} ->
           case current + step do
             new_current ->
-              last = new_current - sign(step)
+              last = new_current - 1
               {current..last, %__MODULE__{state | current: new_current, queue: new_queue}}
           end
       end
@@ -209,18 +209,18 @@ defmodule Indexer.Sequence do
     end)
   end
 
-  @spec sign(neg_integer()) :: -1
-  defp sign(integer) when integer < 0, do: -1
-
-  @spec sign(non_neg_integer()) :: 1
-  defp sign(_), do: 1
-
   defp validate_options(options) do
     step = Keyword.fetch!(options, :step)
 
     case {Keyword.fetch(options, :ranges), Keyword.fetch(options, :first)} do
       {:error, {:ok, first}} ->
-        {:ok, %{ranges: [], first: first, step: step}}
+        case step do
+          pos_integer when is_integer(pos_integer) and pos_integer > 0 ->
+            {:ok, %{ranges: [], first: first, step: step}}
+
+          _ ->
+            {:error, ":step must be a positive integer for infinite sequences"}
+        end
 
       {{:ok, ranges}, :error} ->
         {:ok, %{ranges: ranges, first: nil, step: step}}

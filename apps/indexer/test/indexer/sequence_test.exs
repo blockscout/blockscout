@@ -11,12 +11,14 @@ defmodule Indexer.SequenceTest do
       assert Sequence.pop(ascending) == 6..6
     end
 
-    test "without :ranges with :first pop with negative step pops past 0" do
-      {:ok, descending} = Sequence.start_link(first: 1, step: -1)
+    test "without :ranges with :first with negative :step is error" do
+      {child_pid, child_ref} =
+        spawn_monitor(fn ->
+          Sequence.start_link(first: 1, step: -1)
+          Process.sleep(5_000)
+        end)
 
-      assert Sequence.pop(descending) == 1..1
-      assert Sequence.pop(descending) == 0..0
-      assert Sequence.pop(descending) == -1..-1
+      assert_receive {:DOWN, ^child_ref, :process, ^child_pid, ":step must be a positive integer for infinite sequences"}
     end
 
     test "without :ranges without :first returns error" do
@@ -142,13 +144,6 @@ defmodule Indexer.SequenceTest do
       {:ok, pid} = Sequence.start_link(first: 5, step: 5)
 
       assert 5..9 == Sequence.pop(pid)
-    end
-
-    test "with an empty queue in infinite mode with negative step goes past 0" do
-      {:ok, pid} = Sequence.start_link(first: 4, step: -5)
-
-      assert Sequence.pop(pid) == 4..0
-      assert Sequence.pop(pid) == -1..-5
     end
 
     test "with an empty queue in finite mode halts immediately" do
