@@ -31,5 +31,4 @@ defmodule ExplorerWeb.ChainView do
     |> USD.from()
     |> format_usd_value()
   end
-
 end

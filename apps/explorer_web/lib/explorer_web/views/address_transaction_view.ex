@@ -10,5 +10,4 @@ defmodule ExplorerWeb.AddressTransactionView do
       _ -> gettext("All")
     end
   end
-
 end
