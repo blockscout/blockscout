@@ -4,7 +4,7 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
   use ExplorerWeb.FeatureCase, async: true
 
   alias Explorer.Chain.Wei
-  alias ExplorerWeb.{AddressPage, HomePage, Notifier,TransactionListPage, TransactionLogsPage, TransactionPage}
+  alias ExplorerWeb.{AddressPage, HomePage, Notifier, TransactionListPage, TransactionLogsPage, TransactionPage}
 
   setup do
     block =

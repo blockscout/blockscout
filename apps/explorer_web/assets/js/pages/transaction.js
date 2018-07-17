@@ -1,4 +1,5 @@
 import $ from 'jquery'
+import humps from 'humps'
 import numeral from 'numeral'
 import 'numeral/locales'
 import socket from '../socket'
@@ -18,9 +19,9 @@ export function reducer (state = initialState, action) {
       })
     }
     case 'RECEIVED_UPDATED_CONFIRMATIONS': {
-      if ((action.msg.block_number - state.blockNumber) > state.confirmations) {
+      if ((action.msg.blockNumber - state.blockNumber) > state.confirmations) {
         return Object.assign({}, state, {
-          confirmations: action.msg.block_number - state.blockNumber
+          confirmations: action.msg.blockNumber - state.blockNumber
         })
       } else return state
     }
@@ -29,9 +30,8 @@ export function reducer (state = initialState, action) {
   }
 }
 
-router.when('/transactions/:transactionHash').then((params) => initRedux(reducer, {
+router.when('/transactions/:transactionHash').then(({ locale }) => initRedux(reducer, {
   main (store) {
-    const { transactionHash, locale } = params
     const channel = socket.channel(`transactions:confirmations`, {})
     const $transactionBlockNumber = $('[data-selector="block-number"]')
     numeral.locale(locale)
@@ -39,7 +39,7 @@ router.when('/transactions/:transactionHash').then((params) => initRedux(reducer
     channel.join()
       .receive('ok', resp => { console.log('Joined successfully', `transactions:confirmations`, resp) })
       .receive('error', resp => { console.log('Unable to join', `transactions:confirmations`, resp) })
-    channel.on('update', (msg) => store.dispatch({ type: 'RECEIVED_UPDATED_CONFIRMATIONS', msg }))
+    channel.on('update', (msg) => store.dispatch({ type: 'RECEIVED_UPDATED_CONFIRMATIONS', msg: humps.camelizeKeys(msg) }))
   },
   render (state, oldState) {
     const $blockConfirmations = $('[data-selector="block-confirmations"]')

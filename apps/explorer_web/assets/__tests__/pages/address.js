@@ -74,17 +74,17 @@ test('CHANNEL_DISCONNECTED', () => {
   expect(output.batchCountAccumulator).toBe(0)
 })
 
-test('RECEIVED_UPDATED_OVERVIEW', () => {
+test('RECEIVED_UPDATED_BALANCE', () => {
   const state = initialState
   const action = {
-    type: 'RECEIVED_UPDATED_OVERVIEW',
+    type: 'RECEIVED_UPDATED_BALANCE',
     msg: {
-      overview: 'hello world'
+      balance: 'hello world'
     }
   }
   const output = reducer(state, action)
 
-  expect(output.overview).toBe('hello world')
+  expect(output.balance).toBe('hello world')
 })
 
 describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {

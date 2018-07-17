@@ -14,6 +14,7 @@ defmodule ExplorerWeb.EventHandler do
   def init([]) do
     Chain.subscribe_to_events(:blocks)
     Chain.subscribe_to_events(:transactions)
+    Chain.subscribe_to_events(:balance_updates)
     {:ok, []}
   end
 

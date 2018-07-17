@@ -15,7 +15,7 @@ export const initialState = {
   channelDisconnected: false,
   filter: null,
   newTransactions: [],
-  overview: null,
+  balance: null,
   transactionCount: null
 }
 
@@ -37,9 +37,9 @@ export function reducer (state = initialState, action) {
         batchCountAccumulator: 0
       })
     }
-    case 'RECEIVED_UPDATED_OVERVIEW': {
+    case 'RECEIVED_UPDATED_BALANCE': {
       return Object.assign({}, state, {
-        overview: action.msg.overview
+        balance: action.msg.balance
       })
     }
     case 'RECEIVED_NEW_TRANSACTION_BATCH': {
@@ -53,7 +53,6 @@ export function reducer (state = initialState, action) {
         ))
 
       if (!state.batchCountAccumulator && action.msgs.length < BATCH_THRESHOLD) {
-        console.log(state.transactionCount + action.msgs.length);
         return Object.assign({}, state, {
           newTransactions: [
             ...state.newTransactions,
@@ -88,7 +87,7 @@ router.when('/addresses/:addressHash').then((params) => initRedux(reducer, {
       .receive('ok', resp => { console.log('Joined successfully', `addresses:${addressHash}`, resp) })
       .receive('error', resp => { console.log('Unable to join', `addresses:${addressHash}`, resp) })
     channel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
-    channel.on('overview', (msg) => store.dispatch({ type: 'RECEIVED_UPDATED_OVERVIEW', msg }))
+    channel.on('balance', (msg) => store.dispatch({ type: 'RECEIVED_UPDATED_BALANCE', msg }))
     if (!blockNumber) channel.on('transaction', batchChannel((msgs) => store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION_BATCH', msgs })))
   },
   render (state, oldState) {
@@ -96,13 +95,13 @@ router.when('/addresses/:addressHash').then((params) => initRedux(reducer, {
     const $channelBatchingCount = $('[data-selector="channel-batching-count"]')
     const $channelDisconnected = $('[data-selector="channel-disconnected-message"]')
     const $emptyTransactionsList = $('[data-selector="empty-transactions-list"]')
-    const $overview = $('[data-selector="overview"]')
+    const $balance = $('[data-selector="balance"]')
     const $transactionCount = $('[data-selector="transaction-count"]')
     const $transactionsList = $('[data-selector="transactions-list"]')
 
     if ($emptyTransactionsList.length && state.newTransactions.length) window.location.reload()
     if (state.channelDisconnected) $channelDisconnected.show()
-    if (oldState.overview !== state.overview) $overview.empty().append(state.overview)
+    if (oldState.balance !== state.balance) $balance.empty().append(state.balance)
     if (oldState.transactionCount !== state.transactionCount) $transactionCount.empty().append(numeral(state.transactionCount).format())
     if (state.batchCountAccumulator) {
       $channelBatching.show()

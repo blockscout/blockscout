@@ -362,10 +362,11 @@ defmodule Explorer.Chain do
           ]
         ) :: {:ok, [Hash.Address.t()]} | {:error, [Changeset.t()]}
   def update_balances(addresses_params, options \\ []) when is_list(options) do
-    with {:ok, changes_list} <- changes_list(addresses_params, for: Address, with: :balance_changeset) do
-      timestamps = timestamps()
-
-      insert_addresses(changes_list, timeout: options[:timeout] || @transaction_timeout, timestamps: timestamps)
+    with {:ok, changes_list} <- changes_list(addresses_params, for: Address, with: :balance_changeset),
+         {:ok, address_hashes} <-
+           insert_addresses(changes_list, timeout: options[:timeout] || @transaction_timeout, timestamps: timestamps()) do
+      broadcast_events([{:balance_updates, address_hashes}])
+      {:ok, address_hashes}
     end
   end
 
@@ -1734,7 +1735,7 @@ defmodule Explorer.Chain do
   :ok
   """
   @spec subscribe_to_events(chain_event()) :: :ok
-  def subscribe_to_events(event_type) when event_type in ~w(blocks logs transactions)a do
+  def subscribe_to_events(event_type) when event_type in ~w(balance_updates blocks logs transactions)a do
     Registry.register(Registry.ChainEvents, event_type, [])
     :ok
   end
@@ -1893,7 +1894,7 @@ defmodule Explorer.Chain do
   end
 
   defp broadcast_events(data) do
-    for {event_type, event_data} <- data, event_type in ~w(blocks logs transactions)a do
+    for {event_type, event_data} <- data, event_type in ~w(balance_updates blocks logs transactions)a do
       broadcast_event_data(event_type, event_data)
     end
   end
