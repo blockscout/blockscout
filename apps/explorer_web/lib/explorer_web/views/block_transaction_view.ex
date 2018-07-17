@@ -3,7 +3,5 @@ defmodule ExplorerWeb.BlockTransactionView do
 
   alias ExplorerWeb.{BlockView, TransactionView}
 
-  defdelegate formatted_status(transaction), to: TransactionView
   defdelegate formatted_timestamp(block), to: BlockView
-  defdelegate status(transacton), to: TransactionView
 end

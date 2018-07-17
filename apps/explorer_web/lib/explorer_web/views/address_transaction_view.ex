@@ -13,6 +13,4 @@ defmodule ExplorerWeb.AddressTransactionView do
     end
   end
 
-  defdelegate formatted_status(transaction), to: TransactionView
-  defdelegate status(transaction), to: TransactionView
 end

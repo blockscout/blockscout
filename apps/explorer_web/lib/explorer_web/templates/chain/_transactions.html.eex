@@ -3,12 +3,12 @@
     <%= link(gettext("View All Transactions →"), to: transaction_path(@conn, :index, Gettext.get_locale), class: "button button--secondary button--xsmall float-right") %>
     <h2 class="card-title"><%= gettext "Transactions" %></h2>
     <%= for transaction <- @chain.transactions do %>
-    <div class="tile tile-type-<%= ExplorerWeb.TransactionView.type_suffix(transaction) %> tile-status--<%= status(transaction) %>" data-test="<%= ExplorerWeb.TransactionView.type_suffix(transaction) %>" data-transaction-hash="<%= transaction.hash %>">
+    <div class="tile tile-type-<%= ExplorerWeb.TransactionView.type_suffix(transaction) %> tile-status--<%= ExplorerWeb.TransactionView.status(transaction) %>" data-test="<%= ExplorerWeb.TransactionView.type_suffix(transaction) %>" data-transaction-hash="<%= transaction.hash %>">
       <div class="row" data-test="chain_transaction">
         <div class="col-md-2 d-flex flex-column align-items-left justify-content-start justify-content-lg-center">
           <div class="ml-4">
             <span class="tile-label" data-test="transaction_type"> <%= ExplorerWeb.TransactionView.transaction_display_type(transaction) %></span>
-            <div class="tile-status-label" data-test="transaction_status"><%= formatted_status(transaction) %></div>
+            <div class="tile-status-label" data-test="transaction_status"><%= ExplorerWeb.TransactionView.formatted_status(transaction) %></div>
           </div>
         </div>
         <div class="col-md-7 col-lg-8 d-flex flex-column">
@@ -22,7 +22,7 @@
             <span class="ml-1" data-from-now="<%= transaction.block.timestamp %>"></span>
             <span class="ml-1">
               <%= link(
-                gettext("Block #") <> "#{transaction.block.number}",
+                gettext("Block #%{number}", number: to_string(transaction.block.number)),
                 to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
               ) %>
             </span>

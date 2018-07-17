@@ -5,6 +5,4 @@ defmodule ExplorerWeb.PendingTransactionView do
 
   alias ExplorerWeb.TransactionView
 
-  defdelegate formatted_status(transaction), to: TransactionView
-  defdelegate status(transaction), to: TransactionView
 end

@@ -30,7 +30,7 @@
             <div class="col-md-2 d-flex flex-column align-items-left justify-content-start justify-content-lg-center tile-label">
               <div class="ml-4">
                 <span data-test="transaction_type"> <%= ExplorerWeb.TransactionView.transaction_display_type(transaction) %></span>
-                <div data-test="transaction_status" class="text-muted"><%= formatted_status(transaction) %></div>
+                <div data-test="transaction_status" class="text-muted"><%= ExplorerWeb.TransactionView.formatted_status(transaction) %></div>
               </div>
             </div>
             <div class="col-md-7 col-lg-8 d-flex flex-column">
