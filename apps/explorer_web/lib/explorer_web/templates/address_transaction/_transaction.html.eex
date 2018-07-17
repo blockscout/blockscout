@@ -4,7 +4,9 @@
       <span class="tile-label">
         <%= ExplorerWeb.TransactionView.transaction_display_type(@transaction) %>
       </span>
-      <div class="tile-status-label" data-test="transaction_status"><%= formatted_status(@transaction) %></div>
+      <div class="tile-status-label" data-test="transaction_status">
+        <%= formatted_status(@transaction) %>
+      </div>
     </div>
     <div class="col-md-7 col-lg-8 d-flex flex-column">
       <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: @transaction.hash %>
@@ -39,7 +41,7 @@
     </div>
     <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column justify-content-start align-items-end text-md-right">
       <span class="tile-title">
-        <%= ExplorerWeb.TransactionView.value(@transaction, include_label: false) %> POA
+        <%= ExplorerWeb.TransactionView.value(@transaction, include_label: false) %> <%= gettext "Ether" %>
       </span>
       <span class="mr-2 mr-sm-0 text-muted"> <%= ExplorerWeb.TransactionView.formatted_fee(@transaction, denomination: :ether) %> <%= gettext "Fee" %></span>
     </div>

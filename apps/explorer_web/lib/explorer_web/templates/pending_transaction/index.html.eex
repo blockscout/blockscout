@@ -44,7 +44,7 @@
                   <%= gettext("Contract Address Pending") %>
                 <% end %>
               </span>
-              <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> POA
+              <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> <%= gettext "Ether" %>
             </div>
           </div>
         </div>
