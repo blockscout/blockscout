@@ -183,13 +183,13 @@ defmodule Indexer.BlockFetcher do
 
   defp genesis_task(%{json_rpc_named_arguments: json_rpc_named_arguments} = state) do
     {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
-    missing_ranges = missing_block_number_ranges(state, latest_block_number..0)
+    missing_ranges = Chain.missing_block_number_ranges(latest_block_number..0)
     count = Enum.count(missing_ranges)
 
     debug(fn -> "#{count} missed block ranges between #{latest_block_number} and genesis" end)
 
-    {:ok, seq} =
-      Sequence.start_link(prefix: missing_ranges, first: latest_block_number, step: -1 * state.blocks_batch_size)
+    {:ok, seq} = Sequence.start_link(ranges: missing_ranges, step: -1 * state.blocks_batch_size)
+    Sequence.cap(seq)
 
     stream_import(state, seq, max_concurrency: state.blocks_concurrency)
   end
@@ -214,7 +214,7 @@ defmodule Indexer.BlockFetcher do
           "failed to insert blocks during #{step} #{inspect(range)}: #{inspect(failed_value)}. Retrying"
         end)
 
-        :ok = Sequence.inject_range(seq, range)
+        :ok = Sequence.queue(seq, range)
 
         error
     end
@@ -268,32 +268,6 @@ defmodule Indexer.BlockFetcher do
     |> InternalTransactionFetcher.async_fetch(10_000)
   end
 
-  defp missing_block_number_ranges(%{blocks_batch_size: blocks_batch_size}, range) do
-    range
-    |> Chain.missing_block_number_ranges()
-    |> chunk_ranges(blocks_batch_size)
-  end
-
-  defp chunk_ranges(ranges, size) do
-    Enum.flat_map(ranges, fn
-      first..last = range when last - first <= size ->
-        [range]
-
-      first..last ->
-        first
-        |> Stream.iterate(&(&1 + size))
-        |> Enum.reduce_while([], fn
-          chunk_first, acc when chunk_first + size >= last ->
-            {:halt, [chunk_first..last | acc]}
-
-          chunk_first, acc ->
-            chunk_last = chunk_first + size - 1
-            {:cont, [chunk_first..chunk_last | acc]}
-        end)
-        |> Enum.reverse()
-    end)
-  end
-
   defp realtime_task(%{json_rpc_named_arguments: json_rpc_named_arguments} = state) do
     {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
     {:ok, seq} = Sequence.start_link(first: latest_block_number, step: 2)
@@ -345,7 +319,7 @@ defmodule Indexer.BlockFetcher do
           "failed to fetch #{step} for blocks #{first} - #{last}: #{inspect(reason)}. Retrying block range."
         end)
 
-        :ok = Sequence.inject_range(seq, range)
+        :ok = Sequence.queue(seq, range)
 
         {:error, step, reason}
     end

@@ -4,15 +4,62 @@ defmodule Indexer.SequenceTest do
   alias Indexer.Sequence
 
   describe "start_link/1" do
-    test "sets state" do
-      {:ok, pid} = Sequence.start_link(prefix: [1..4], first: 5, step: 1)
+    test "without :ranges with :first with positive step pops infinitely" do
+      {:ok, ascending} = Sequence.start_link(first: 5, step: 1)
 
-      assert state(pid) == %Sequence{
-               current: 5,
-               mode: :infinite,
-               queue: {[1..4], []},
-               step: 1
-             }
+      assert Sequence.pop(ascending) == 5..5
+      assert Sequence.pop(ascending) == 6..6
+    end
+
+    test "without :ranges with :first with negative :step is error" do
+      {child_pid, child_ref} =
+        spawn_monitor(fn ->
+          Sequence.start_link(first: 1, step: -1)
+          Process.sleep(5_000)
+        end)
+
+      assert_receive {:DOWN, ^child_ref, :process, ^child_pid,
+                      ":step must be a positive integer for infinite sequences"}
+    end
+
+    test "without :ranges without :first returns error" do
+      {child_pid, child_ref} =
+        spawn_monitor(fn ->
+          Sequence.start_link(step: -1)
+          Process.sleep(5_000)
+        end)
+
+      assert_receive {:DOWN, ^child_ref, :process, ^child_pid, "either :ranges or :first must be set"}
+    end
+
+    test "with ranges without :first" do
+      {:ok, pid} = Sequence.start_link(ranges: [1..4], step: 1)
+
+      assert Sequence.pop(pid) == 1..1
+      assert Sequence.pop(pid) == 2..2
+      assert Sequence.pop(pid) == 3..3
+      assert Sequence.pop(pid) == 4..4
+      assert Sequence.pop(pid) == :halt
+    end
+
+    test "with :ranges with :first returns error" do
+      {child_pid, child_ref} =
+        spawn_monitor(fn ->
+          Sequence.start_link(ranges: [1..0], first: 1, step: -1)
+          Process.sleep(5_000)
+        end)
+
+      assert_receive {:DOWN, ^child_ref, :process, ^child_pid,
+                      ":ranges and :first cannot be set at the same time" <>
+                        " as :ranges is for :finite mode while :first is for :infinite mode"}
+    end
+
+    test "with 0 first with negative step does not return 0 twice" do
+      {:ok, pid} = Sequence.start_link(ranges: [1..0], step: -1)
+
+      assert Sequence.pop(pid) == 1..1
+      assert Sequence.pop(pid) == 0..0
+      assert Sequence.pop(pid) == :halt
     end
 
     # Regression test for https://github.com/poanetwork/poa-explorer/issues/387
@@ -29,96 +76,122 @@ defmodule Indexer.SequenceTest do
       # noproc when the sequence has already died by the time monitor is called
       assert_receive {:DOWN, ^sequence_ref, :process, ^sequence_pid, status} when status in [:normal, :noproc]
     end
+
+    test "with :ranges in direction opposite of :step returns errors for all ranges in wrong direction" do
+      parent = self()
+
+      {child_pid, child_ref} =
+        spawn_monitor(fn ->
+          send(
+            parent,
+            Sequence.start_link(
+              ranges: [
+                # ok, ok
+                7..6,
+                # ok, error
+                4..5,
+                # error, ok
+                3..2,
+                # error, error
+                0..1
+              ],
+              step: -1
+            )
+          )
+        end)
+
+      assert_receive {:DOWN, ^child_ref, :process, ^child_pid,
+                      [
+                        "Range (0..1) direction is opposite step (-1) direction",
+                        "Range (4..5) direction is opposite step (-1) direction"
+                      ]}
+    end
   end
 
-  test "inject_range" do
-    {:ok, pid} = Sequence.start_link(prefix: [1..2], first: 5, step: 1)
+  describe "queue/2" do
+    test "with finite mode range is chunked" do
+      {:ok, pid} = Sequence.start_link(ranges: [1..0], step: -1)
 
-    assert :ok = Sequence.inject_range(pid, 3..4)
+      assert Sequence.pop(pid) == 1..1
+      assert Sequence.pop(pid) == 0..0
 
-    assert state(pid) == %Sequence{
-             current: 5,
-             mode: :infinite,
-             queue: {[3..4], [1..2]},
-             step: 1
-           }
+      assert Sequence.queue(pid, 1..0) == :ok
+
+      assert Sequence.pop(pid) == 1..1
+      assert Sequence.pop(pid) == 0..0
+      assert Sequence.pop(pid) == :halt
+      assert Sequence.pop(pid) == :halt
+    end
+
+    test "with finite mode with range in wrong direction returns error" do
+      {:ok, ascending} = Sequence.start_link(first: 0, step: 1)
+
+      assert Sequence.queue(ascending, 1..0) == {:error, "Range (1..0) direction is opposite step (1) direction"}
+
+      {:ok, descending} = Sequence.start_link(ranges: [1..0], step: -1)
+
+      assert Sequence.queue(descending, 0..1) == {:error, "Range (0..1) direction is opposite step (-1) direction"}
+    end
+
+    test "with infinite mode range is chunked and is returned prior to calculated ranges" do
+      {:ok, pid} = Sequence.start_link(first: 5, step: 1)
+
+      assert :ok = Sequence.queue(pid, 3..4)
+
+      assert Sequence.pop(pid) == 3..3
+      assert Sequence.pop(pid) == 4..4
+      # infinite sequence takes over
+      assert Sequence.pop(pid) == 5..5
+      assert Sequence.pop(pid) == 6..6
+    end
   end
 
-  test "cap" do
-    {:ok, pid} = Sequence.start_link(prefix: [1..2], first: 5, step: 1)
+  describe "cap/1" do
+    test "returns previous mode" do
+      {:ok, pid} = Sequence.start_link(first: 5, step: 1)
 
-    assert :infinite = Sequence.cap(pid)
-    assert state(pid).mode == :finite
-    assert :finite = Sequence.cap(pid)
+      assert Sequence.cap(pid) == :infinite
+      assert Sequence.cap(pid) == :finite
+    end
+
+    test "disables infinite mode that uses first and step" do
+      {:ok, late_capped} = Sequence.start_link(first: 5, step: 1)
+
+      assert Sequence.pop(late_capped) == 5..5
+      assert Sequence.pop(late_capped) == 6..6
+      assert Sequence.queue(late_capped, 5..5) == :ok
+      assert Sequence.cap(late_capped) == :infinite
+      assert Sequence.pop(late_capped) == 5..5
+      assert Sequence.pop(late_capped) == :halt
+
+      {:ok, immediately_capped} = Sequence.start_link(first: 5, step: 1)
+
+      assert Sequence.cap(immediately_capped) == :infinite
+      assert Sequence.pop(immediately_capped) == :halt
+    end
   end
 
   describe "pop" do
-    test "with a non-empty queue in finite and infinite modes" do
-      {:ok, pid} = Sequence.start_link(prefix: [1..4, 6..9], first: 99, step: 5)
+    test "with a non-empty queue in finite mode" do
+      {:ok, pid} = Sequence.start_link(ranges: [1..4, 6..9], step: 5)
 
-      assert 1..4 == Sequence.pop(pid)
-
-      assert state(pid) == %Sequence{
-               current: 99,
-               mode: :infinite,
-               queue: {[], [6..9]},
-               step: 5
-             }
-
-      :infinite = Sequence.cap(pid)
-
-      assert 6..9 == Sequence.pop(pid)
-
-      assert state(pid) == %Sequence{
-               current: 99,
-               mode: :finite,
-               queue: {[], []},
-               step: 5
-             }
+      assert Sequence.pop(pid) == 1..4
+      assert Sequence.pop(pid) == 6..9
+      assert Sequence.pop(pid) == :halt
+      assert Sequence.pop(pid) == :halt
     end
 
-    test "with an empty queue in infinite mode" do
+    test "with an empty queue in infinite mode returns range from next step from current" do
       {:ok, pid} = Sequence.start_link(first: 5, step: 5)
 
       assert 5..9 == Sequence.pop(pid)
-
-      assert state(pid) == %Sequence{
-               current: 10,
-               mode: :infinite,
-               queue: {[], []},
-               step: 5
-             }
     end
 
-    test "with an empty queue in infinit mode with negative step" do
-      {:ok, pid} = Sequence.start_link(first: 4, step: -5)
-
-      assert 4..0 == Sequence.pop(pid)
-
-      assert state(pid) == %Sequence{
-               current: 0,
-               mode: :finite,
-               queue: {[], []},
-               step: -5
-             }
-    end
-
-    test "with an empty queue in finite mode" do
+    test "with an empty queue in finite mode halts immediately" do
       {:ok, pid} = Sequence.start_link(first: 5, step: 5)
       :infinite = Sequence.cap(pid)
 
-      assert :halt == Sequence.pop(pid)
-
-      assert state(pid) == %Sequence{
-               current: 5,
-               mode: :finite,
-               queue: {[], []},
-               step: 5
-             }
+      assert Sequence.pop(pid) == :halt
     end
-  end
-
-  defp state(sequence) do
-    :sys.get_state(sequence)
   end
 end
