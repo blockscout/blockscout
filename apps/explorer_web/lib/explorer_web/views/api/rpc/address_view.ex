@@ -8,7 +8,11 @@ defmodule ExplorerWeb.API.RPC.AddressView do
     RPCView.render("show.json", data: ether_balance)
   end
 
-  def render("balance.json", %{addresses: addresses}) do
+  def render("balance.json", assigns) do
+    render("balancemulti.json", assigns)
+  end
+
+  def render("balancemulti.json", %{addresses: addresses}) do
     data =
       Enum.map(addresses, fn address ->
         %{
