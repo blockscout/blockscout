@@ -1,0 +1,126 @@
+<section class="container">
+  <section>
+    <div class="row">
+      <div class="col-md-12 col-lg-8">
+        <div class="card">
+          <div class="card-body">
+            <h1 class="card-title"><%= gettext("Token Details") %></h1>
+
+            <h3>0x95426f2bc716022fcf1def006dbc4bb81f5b5164</h3>
+
+            <div class="d-flex flex-row justify-content-start text-muted">
+              <span class="mr-4">10 <%= gettext "addresses" %></span>
+              <span class="mr-4">10 <%= gettext "Transfers" %></span>
+              <span class="mr-4">10 <%= gettext "decimals" %></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-4">
+        <div class="card">
+          <div class="card-body">
+            <h2 class="card-title">Total Suply</h2>
+
+            <span></span>
+
+            <div class="text-right">
+              <h3 class="text-uppercase">12345661223123456612231234 symbol</h3>
+              <br />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="card">
+      <div class="card-header">
+
+        <!-- DESKTOP TAB NAV -->
+        <ul class="nav nav-tabs card-header-tabs d-none d-md-inline-flex">
+          <li class="nav-item">
+            <%= link(
+                  gettext("Token Transfers"),
+                  class: "nav-link active",
+                  to: token_path(@conn, :show, @conn.assigns.locale, "1")
+                ) %>
+          </li>
+        </ul>
+
+
+        <!-- MOBILE DROPDOWN NAV -->
+        <ul class="nav nav-tabs card-header-tabs d-md-none">
+          <li class="nav-item dropdown flex-fill text-center">
+            <a class="nav-link active dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false"><%= gettext("Token Transfers") %></a>
+            <div class="dropdown-menu">
+              <%= link(
+                    gettext("Token Transfers"),
+                    class: "nav-link active",
+                    to: token_path(@conn, :show, @conn.assigns.locale, "1")
+                  ) %>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="card-body">
+        <%= if true do %>
+          <h2 class="card-title"><%= gettext "Token Transfers" %></h2>
+
+          <span>
+            <div class="tile tile tile-type-token fade-in">
+              <div class="row">
+                <div class="pl-5 col-md-2 d-flex flex-column align-items-left justify-content-start justify-content-lg-center">
+
+                  <span class="tile-label">Token Transfer</span>
+                </div>
+
+                <div class="col-md-7 col-lg-8 d-flex flex-column">
+                  <p class="tile-title text-truncate">0x95426f2bc716022fcf1def006dbc4bb81f5b5164</p>
+                  <span>
+                    <%= render ExplorerWeb.AddressView, "_link.html", address_hash: "0x95426f2bc716022fcf1def006dbc4bb81f5b5164", contract: false, locale: @locale %>
+
+                    &rarr;
+
+                      <%= render ExplorerWeb.AddressView, "_link.html", address_hash: "0x95426f2bc716022fcf1def006dbc4bb81f5b5164", contract: false, locale: @locale %>
+                  </span>
+
+                  <span>
+                    <span>N symbol</span>
+                  </span>
+                </div>
+
+                <div class="p-4 col-md-2 col-lg-2 d-flex flex-row flex-md-column justify-content-start align-items-end text-md-right">
+                    <span class="ml-1 mr-sm-0 text-muted" data-from-now="123"></span>
+
+                    <span class="ml-2">
+                      <%= link(
+                        gettext(
+                          "Block #%{number}",
+                          number: "12"
+                        ),
+                        class: "mr-2 mr-sm-0 text-muted",
+                        to: block_path(ExplorerWeb.Endpoint, :show, @locale, "12")
+                      ) %>
+                    </span>
+                </div>
+              </div>
+            </div>
+          </span>
+        <% else %>
+          <div class="tile tile-muted text-center">
+            <span data-selector="empty-transactions-list"><%= gettext "There are no transfers for this Token." %></span>
+          </div>
+        <% end %>
+
+        <%= link(
+          gettext("Next"),
+          class: "button button--secondary button--small float-right mt-4",
+          to: token_path(@conn, :show, @conn.assigns.locale, "1")
+        ) %>
+      </div>
+    </div>
+  </section>
+</section>
