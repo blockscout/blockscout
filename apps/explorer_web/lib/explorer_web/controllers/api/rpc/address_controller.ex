@@ -1,7 +1,7 @@
 defmodule ExplorerWeb.API.RPC.AddressController do
   use ExplorerWeb, :controller
 
-  alias Explorer.Chain
+  alias Explorer.{Etherscan, Chain}
   alias Explorer.Chain.{Address, Wei}
 
   def balance(conn, params, template \\ :balance) do
@@ -24,6 +24,27 @@ defmodule ExplorerWeb.API.RPC.AddressController do
 
   def balancemulti(conn, params) do
     balance(conn, params, :balancemulti)
+  end
+
+  def txlist(conn, params) do
+    with {:address_param, {:ok, address_param}} <- fetch_address(params),
+         {:format, {:ok, address_hash}} <- to_address_hash(address_param),
+         {:ok, transactions} <- list_transactions(address_hash) do
+      render(conn, :txlist, %{transactions: transactions})
+    else
+      {:address_param, :error} ->
+        conn
+        |> put_status(400)
+        |> render(:error, error: "Query parameter 'address' is required")
+
+      {:format, :error} ->
+        conn
+        |> put_status(400)
+        |> render(:error, error: "Invalid address format")
+
+      {:error, :not_found} ->
+        render(conn, :error, error: "No transactions found", data: [])
+    end
   end
 
   defp fetch_address(params) do
@@ -83,5 +104,16 @@ defmodule ExplorerWeb.API.RPC.AddressController do
         fetched_balance: %Wei{value: 0}
       }
     end)
+  end
+
+  defp to_address_hash(address_hash_string) do
+    {:format, Chain.string_to_address_hash(address_hash_string)}
+  end
+
+  defp list_transactions(address_hash) do
+    case Etherscan.list_transactions(address_hash) do
+      [] -> {:error, :not_found}
+      transactions -> {:ok, transactions}
+    end
   end
 end

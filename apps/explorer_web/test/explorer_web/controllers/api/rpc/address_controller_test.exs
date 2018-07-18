@@ -1,7 +1,8 @@
 defmodule ExplorerWeb.API.RPC.AddressControllerTest do
   use ExplorerWeb.ConnCase
 
-  alias Explorer.Chain.Wei
+  alias Explorer.Chain
+  alias Explorer.Chain.{Transaction, Wei}
 
   describe "balance" do
     test "with missing address hash", %{conn: conn} do
@@ -280,6 +281,202 @@ defmodule ExplorerWeb.API.RPC.AddressControllerTest do
                |> json_response(200)
 
       assert response["result"] == expected_result
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+  end
+
+  describe "txlist" do
+    test "with missing address hash", %{conn: conn} do
+      params = %{
+        "module" => "account",
+        "action" => "txlist"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(400)
+
+      assert response["message"] =~ "'address' is required"
+      assert response["status"] == "0"
+      assert Map.has_key?(response, "result")
+      refute response["result"]
+    end
+
+    test "with an invalid address hash", %{conn: conn} do
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "badhash"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(400)
+
+      assert response["message"] =~ "Invalid address format"
+      assert response["status"] == "0"
+      assert Map.has_key?(response, "result")
+      refute response["result"]
+    end
+
+    test "with an address that doesn't exist", %{conn: conn} do
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == []
+      assert response["status"] == "0"
+      assert response["message"] == "No transactions found"
+    end
+
+    test "with a valid address", %{conn: conn} do
+      address = insert(:address)
+
+      transaction =
+        %Transaction{block: block} =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block(status: :ok)
+
+      # ^ 'status: :ok' means `isError` in response should be '0'
+
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "#{address.hash}"
+      }
+
+      expected_result = [
+        %{
+          "blockNumber" => "#{transaction.block_number}",
+          "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
+          "hash" => "#{transaction.hash}",
+          "nonce" => "#{transaction.nonce}",
+          "blockHash" => "#{block.hash}",
+          "transactionIndex" => "#{transaction.index}",
+          "from" => "#{transaction.from_address_hash}",
+          "to" => "#{transaction.to_address_hash}",
+          "value" => "#{transaction.value.value}",
+          "gas" => "#{transaction.gas}",
+          "gasPrice" => "#{transaction.gas_price.value}",
+          "isError" => "0",
+          "txreceipt_status" => "1",
+          "input" => "#{transaction.input}",
+          "contractAddress" => "#{transaction.created_contract_address_hash}",
+          "cumulativeGasUsed" => "#{transaction.cumulative_gas_used}",
+          "gasUsed" => "#{transaction.gas_used}",
+          "confirmations" => "0"
+        }
+      ]
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == expected_result
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "includes correct confirmations value", %{conn: conn} do
+      insert(:block)
+      address = insert(:address)
+
+      transaction =
+        %Transaction{hash: hash} =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block()
+
+      insert(:block)
+
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "#{address.hash}"
+      }
+
+      {:ok, max_block_number} = Chain.max_block_number()
+      expected_confirmations = max_block_number - transaction.block_number
+
+      assert %{"result" => [returned_transaction]} =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert returned_transaction["confirmations"] == "#{expected_confirmations}"
+      assert returned_transaction["hash"] == "#{hash}"
+    end
+
+    test "returns '1' for 'isError' with failed transaction", %{conn: conn} do
+      address = insert(:address)
+
+      %Transaction{hash: hash} =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block(status: :error)
+
+      # ^ 'status: :error' means `isError` in response should be '1'
+
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "#{address.hash}"
+      }
+
+      assert %{"result" => [returned_transaction]} =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert returned_transaction["isError"] == "1"
+      assert returned_transaction["txreceipt_status"] == "0"
+      assert returned_transaction["hash"] == "#{hash}"
+    end
+
+    test "with address with multiple transactions", %{conn: conn} do
+      address1 = insert(:address)
+      address2 = insert(:address)
+
+      transactions =
+        3
+        |> insert_list(:transaction, from_address: address1)
+        |> with_block()
+
+      :transaction
+      |> insert(from_address: address2)
+      |> with_block()
+
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "#{address1.hash}"
+      }
+
+      expected_transaction_hashes = Enum.map(transactions, &"#{&1.hash}")
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert length(response["result"]) == 3
+
+      for returned_transaction <- response["result"] do
+        assert returned_transaction["hash"] in expected_transaction_hashes
+      end
+
       assert response["status"] == "1"
       assert response["message"] == "OK"
     end
