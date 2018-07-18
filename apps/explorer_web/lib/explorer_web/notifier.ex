@@ -46,7 +46,7 @@ defmodule ExplorerWeb.Notifier do
       transaction: transaction
     })
 
-    if transaction.to_address && transaction.to_address != transaction.from_address do
+    if transaction.to_address_hash && transaction.to_address_hash != transaction.from_address_hash do
       Endpoint.broadcast("addresses:#{transaction.to_address_hash}", "transaction", %{
         address: transaction.to_address,
         transaction: transaction
