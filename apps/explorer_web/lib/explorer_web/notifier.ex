@@ -4,6 +4,7 @@ defmodule ExplorerWeb.Notifier do
   """
 
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Address
   alias Explorer.ExchangeRates.Token
   alias ExplorerWeb.Endpoint
 
@@ -12,20 +13,18 @@ defmodule ExplorerWeb.Notifier do
     Endpoint.broadcast("transactions:confirmations", "update", %{block_number: max_numbered_block})
   end
 
-  def handle_event({:chain_event, :transactions, transactions}) do
-    transactions
+  def handle_event({:chain_event, :transactions, transaction_hashes}) do
+    transaction_hashes
     |> Enum.each(&broadcast_transaction/1)
   end
 
-  def handle_event({:chain_event, :balance_updates, address_hashes}) do
-    address_hashes
+  def handle_event({:chain_event, :balance_updates, addresses}) do
+    addresses
     |> Enum.each(&broadcast_balance/1)
   end
 
-  defp broadcast_balance(address_hash) do
-    {:ok, address} = Chain.hash_to_address(address_hash)
-
-    Endpoint.broadcast("addresses:#{address.hash}", "balance_update", %{
+  defp broadcast_balance(%Address{hash: address_hash} = address) do
+    Endpoint.broadcast("addresses:#{address_hash}", "balance_update", %{
       address: address,
       exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
     })

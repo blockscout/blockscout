@@ -269,7 +269,7 @@ defmodule ExplorerWeb.ViewingAddressesTest do
     |> AddressPage.visit_page(address)
     |> assert_text(AddressPage.balance(), "0.0000000000000005 POA")
 
-    {:ok, [^hash]} =
+    {:ok, [updated_address]} =
       Chain.update_balances([
         %{
           fetched_balance: 100,
@@ -278,9 +278,7 @@ defmodule ExplorerWeb.ViewingAddressesTest do
         }
       ])
 
-    {:ok, updated_address} = Chain.hash_to_address(hash)
-
-    Notifier.handle_event({:chain_event, :balance_updates, [updated_address.hash]})
+    Notifier.handle_event({:chain_event, :balance_updates, [updated_address]})
 
     assert_text(session, AddressPage.balance(), "0.0000000000000001 POA")
   end

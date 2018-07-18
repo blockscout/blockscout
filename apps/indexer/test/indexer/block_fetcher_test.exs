@@ -468,7 +468,7 @@ defmodule Indexer.BlockFetcherTest do
         fn result ->
           assert {:ok,
                   %{
-                    addresses: [^address_hash],
+                    addresses: [%Address{hash: ^address_hash}],
                     blocks: [%Block{hash: ^block_hash}],
                     logs: [],
                     transactions: []
@@ -763,18 +763,24 @@ defmodule Indexer.BlockFetcherTest do
           assert {:ok,
                   %{
                     addresses: [
-                      %Explorer.Chain.Hash{
-                        byte_count: 20,
-                        bytes:
-                          <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179, 223, 65,
-                            91>>
-                      } = first_address_hash,
-                      %Explorer.Chain.Hash{
-                        byte_count: 20,
-                        bytes:
-                          <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132, 89, 192, 16, 79, 223, 94, 152, 122,
-                            202>>
-                      } = second_address_hash
+                      %Address{
+                        hash:
+                          %Explorer.Chain.Hash{
+                            byte_count: 20,
+                            bytes:
+                              <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179, 223,
+                                65, 91>>
+                          } = first_address_hash
+                      },
+                      %Address{
+                        hash:
+                          %Explorer.Chain.Hash{
+                            byte_count: 20,
+                            bytes:
+                              <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132, 89, 192, 16, 79, 223, 94, 152,
+                                122, 202>>
+                          } = second_address_hash
+                      }
                     ],
                     blocks: [
                       %Block{

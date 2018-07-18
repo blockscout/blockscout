@@ -1191,10 +1191,10 @@ defmodule Explorer.ChainTest do
   end
 
   test "publishes update_balance data to subscribers on upsert" do
-    address = %Address{hash: address_hash} = insert(:address, fetched_balance: 3, fetched_balance_block_number: 3)
+    address = insert(:address, fetched_balance: 3, fetched_balance_block_number: 3)
     Chain.subscribe_to_events(:balance_updates)
     Chain.update_balances([Map.from_struct(address)])
 
-    assert_received {:chain_event, :balance_updates, [^address_hash]}
+    assert_received {:chain_event, :balance_updates, [^address]}
   end
 end

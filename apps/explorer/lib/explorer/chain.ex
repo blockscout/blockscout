@@ -224,7 +224,15 @@ defmodule Explorer.Chain do
   Updates `t:Explorer.Chain.Address.t/0` with `hash` of `address_hash` to have `fetched_balance` of `balance` in
   `t:map/0` `balances` of `address_hash` to `balance`.
 
-      iex> Explorer.Chain.update_balances(
+      iex> {:ok,
+      ...>  [
+      ...>    %Explorer.Chain.Address{hash: %Explorer.Chain.Hash{
+      ...>      byte_count: 20,
+      ...>      bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211,
+      ...>        165, 101, 32, 167, 106, 179, 223, 65, 91>>
+      ...>    }}
+      ...>  ]} =
+      ...> Explorer.Chain.update_balances(
       ...>   [
       ...>     %{
       ...>       fetched_balance: 100,
@@ -233,14 +241,6 @@ defmodule Explorer.Chain do
       ...>     }
       ...>   ]
       ...> )
-      {:ok,
-       [
-         %Explorer.Chain.Hash{
-           byte_count: 20,
-           bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211,
-             165, 101, 32, 167, 106, 179, 223, 65, 91>>
-         }
-       ]}
       iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x8bf38d4764929064f2d4d3a56520a76ab3df415b")
       iex> {:ok, address} = Explorer.Chain.hash_to_address(hash)
       iex> address.fetched_balance
@@ -263,7 +263,15 @@ defmodule Explorer.Chain do
       ...>   fetched_balance_block_number: 2,
       ...>   hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
       ...> )
-      iex> Explorer.Chain.update_balances(
+      iex> {:ok,
+      ...>  [
+      ...>    %Explorer.Chain.Address{hash: %Explorer.Chain.Hash{
+      ...>      byte_count: 20,
+      ...>      bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211,
+      ...>        165, 101, 32, 167, 106, 179, 223, 65, 91>>
+      ...>    }}
+      ...>  ]} =
+      ...> Explorer.Chain.update_balances(
       ...>   [
       ...>     %{
       ...>       fetched_balance: 3,
@@ -272,21 +280,21 @@ defmodule Explorer.Chain do
       ...>     }
       ...>   ]
       ...> )
-      {:ok,
-       [
-         %Explorer.Chain.Hash{
-           byte_count: 20,
-           bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211,
-             165, 101, 32, 167, 106, 179, 223, 65, 91>>
-         }
-       ]}
       iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x8bf38d4764929064f2d4d3a56520a76ab3df415b")
       iex> {:ok, unchanged_address} = Explorer.Chain.hash_to_address(hash)
       iex> unchanged_address.fetched_balance
       %Explorer.Chain.Wei{value: Decimal.new(2)}
       iex> unchanged_address.fetched_balance_block_number
       2
-      iex> Explorer.Chain.update_balances(
+      iex> {:ok,
+      ...>  [
+      ...>    %Explorer.Chain.Address{hash: %Explorer.Chain.Hash{
+      ...>      byte_count: 20,
+      ...>      bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211,
+      ...>        165, 101, 32, 167, 106, 179, 223, 65, 91>>
+      ...>    }}
+      ...>  ]} =
+      ...> Explorer.Chain.update_balances(
       ...>   [
       ...>     %{
       ...>       fetched_balance: 1,
@@ -295,14 +303,6 @@ defmodule Explorer.Chain do
       ...>     }
       ...>   ]
       ...> )
-      {:ok,
-        [
-          %Explorer.Chain.Hash{
-            byte_count: 20,
-            bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211,
-              165, 101, 32, 167, 106, 179, 223, 65, 91>>
-          }
-        ]}
       iex> {:ok, changed_address} = Explorer.Chain.hash_to_address(hash)
       iex> changed_address.fetched_balance
       %Explorer.Chain.Wei{value: Decimal.new(1)}
@@ -316,7 +316,15 @@ defmodule Explorer.Chain do
       nil
       iex> address.fetched_balance_block_number
       nil
-      iex> Explorer.Chain.update_balances(
+      iex> {:ok,
+      ...>  [
+      ...>    %Explorer.Chain.Address{hash: %Explorer.Chain.Hash{
+      ...>      byte_count: 20,
+      ...>      bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211,
+      ...>        165, 101, 32, 167, 106, 179, 223, 65, 91>>
+      ...>    }}
+      ...>  ]} =
+      ...> Explorer.Chain.update_balances(
       ...>   [
       ...>     %{
       ...>       fetched_balance: 3,
@@ -325,14 +333,6 @@ defmodule Explorer.Chain do
       ...>     }
       ...>   ]
       ...> )
-      {:ok,
-       [
-         %Explorer.Chain.Hash{
-           byte_count: 20,
-           bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211,
-             165, 101, 32, 167, 106, 179, 223, 65, 91>>
-         }
-       ]}
       iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x8bf38d4764929064f2d4d3a56520a76ab3df415b")
       iex> {:ok, address} = Explorer.Chain.hash_to_address(hash)
       iex> address.fetched_balance
@@ -363,10 +363,10 @@ defmodule Explorer.Chain do
         ) :: {:ok, [Hash.Address.t()]} | {:error, [Changeset.t()]}
   def update_balances(addresses_params, options \\ []) when is_list(options) do
     with {:ok, changes_list} <- changes_list(addresses_params, for: Address, with: :balance_changeset),
-         {:ok, address_hashes} <-
+         {:ok, addresses} <-
            insert_addresses(changes_list, timeout: options[:timeout] || @transaction_timeout, timestamps: timestamps()) do
-      broadcast_events([{:balance_updates, address_hashes}])
-      {:ok, address_hashes}
+      broadcast_events([{:balance_updates, addresses}])
+      {:ok, addresses}
     end
   end
 
@@ -755,10 +755,10 @@ defmodule Explorer.Chain do
 
   | Key                      | Value Type                                                                 | Value Description                                                                             |
   |--------------------------|----------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
-  | `:addresses`             | `[Explorer.Chain.Hash.t()]`                                                | List of `t:Explorer.Chain.Address.t/0` `hash`                                                 |
-  | `:blocks`                | `[Explorer.Chain.Block.t()]`                                               | List of `t:Explorer.Chain.Block.t/0`s                                                   |
+  | `:addresses`             | `[Explorer.Chain.Address.t()]`                                             | List of `t:Explorer.Chain.Address.t/0`s                                                       |
+  | `:blocks`                | `[Explorer.Chain.Block.t()]`                                               | List of `t:Explorer.Chain.Block.t/0`s                                                         |
   | `:internal_transactions` | `[%{index: non_neg_integer(), transaction_hash: Explorer.Chain.Hash.t()}]` | List of maps of the `t:Explorer.Chain.InternalTransaction.t/0` `index` and `transaction_hash` |
-  | `:logs`                  | `[Explorer.Chain.Log.t()]`                                                 | List of `t:Explorer.Chain.Log.t/0`s              |
+  | `:logs`                  | `[Explorer.Chain.Log.t()]`                                                 | List of `t:Explorer.Chain.Log.t/0`s                                                           |
   | `:transactions`          | `[Explorer.Chain.Hash.t()]`                                                | List of `t:Explorer.Chain.Transaction.t/0` `hash`                                             |
 
   A completely empty tree can be imported, but options must still be supplied.  It is a non-zero amount of time to
@@ -831,7 +831,7 @@ defmodule Explorer.Chain do
         ]) ::
           {:ok,
            %{
-             optional(:addresses) => [Hash.Address.t()],
+             optional(:addresses) => [Address.t()],
              optional(:blocks) => [Hash.Full.t()],
              optional(:internal_transactions) => [
                %{required(:index) => non_neg_integer(), required(:transaction_hash) => Hash.Full.t()}
@@ -2038,11 +2038,10 @@ defmodule Explorer.Chain do
           ]
         ),
       for: Address,
+      returning: true,
       timeout: timeout,
       timestamps: timestamps
     )
-
-    {:ok, for(changes <- ordered_changes_list, do: changes.hash)}
   end
 
   defp sort_address_changes_list(changes_list) do
@@ -2142,7 +2141,7 @@ defmodule Explorer.Chain do
     # order so that row ShareLocks are grabbed in a consistent order
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.index})
 
-    {:ok, logs} =
+    {:ok, _} =
       insert_changes_list(
         ordered_changes_list,
         conflict_target: [:transaction_hash, :index],
@@ -2152,8 +2151,6 @@ defmodule Explorer.Chain do
         timeout: timeout,
         timestamps: timestamps
       )
-
-    {:ok, logs}
   end
 
   defp insert_changes_list(changes_list, options) when is_list(changes_list) do
