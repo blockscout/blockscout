@@ -95,7 +95,7 @@ router.when('/addresses/:addressHash').then((params) => initRedux(reducer, {
     const $channelBatchingCount = $('[data-selector="channel-batching-count"]')
     const $channelDisconnected = $('[data-selector="channel-disconnected-message"]')
     const $emptyTransactionsList = $('[data-selector="empty-transactions-list"]')
-    const $balance = $('[data-selector="balance"]')
+    const $balance = $('[data-selector="balance-card"]')
     const $transactionCount = $('[data-selector="transaction-count"]')
     const $transactionsList = $('[data-selector="transactions-list"]')
 

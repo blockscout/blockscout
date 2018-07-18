@@ -52,7 +52,7 @@
         </div>
       </div>
     </div>
-    <div class="col-md-6 col-lg-4">
+    <div class="col-md-6 col-lg-4" data-selector='balance-card'>
       <%= render ExplorerWeb.AddressView, "_balance_card.html", address: @address, exchange_rate: @exchange_rate %>
     </div>
   </div>
