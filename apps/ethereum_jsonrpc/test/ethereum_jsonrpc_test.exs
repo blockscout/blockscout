@@ -36,9 +36,9 @@ defmodule EthereumJSONRPCTest do
                {:ok,
                 [
                   %{
-                    fetched_balance: expected_fetched_balance,
-                    fetched_balance_block_number: 1,
-                    hash: hash
+                    address_hash: hash,
+                    block_number: 1,
+                    value: expected_fetched_balance
                   }
                 ]}
     end

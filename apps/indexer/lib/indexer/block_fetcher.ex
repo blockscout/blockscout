@@ -11,7 +11,7 @@ defmodule Indexer.BlockFetcher do
 
   alias EthereumJSONRPC
   alias Explorer.Chain
-  alias Indexer.{AddressBalanceFetcher, AddressExtraction, InternalTransactionFetcher, Sequence}
+  alias Indexer.{BalanceFetcher, AddressExtraction, InternalTransactionFetcher, Sequence}
 
   # dialyzer thinks that Logger.debug functions always have no_local_return
   @dialyzer {:nowarn_function, import_range: 3}
@@ -194,7 +194,7 @@ defmodule Indexer.BlockFetcher do
     end
   end
 
-  # `fetched_balance_block_number` is needed for the `AddressBalanceFetcher`, but should not be used for
+  # `fetched_balance_block_number` is needed for the `BalanceFetcher`, but should not be used for
   # `import_blocks` because the balance is not known yet.
   defp pop_address_hash_to_fetched_balance_block_number(options) do
     {address_hash_fetched_balance_block_number_pairs, import_options} =
@@ -228,9 +228,9 @@ defmodule Indexer.BlockFetcher do
     address_hashes
     |> Enum.map(fn address_hash ->
       block_number = Map.fetch!(address_hash_to_block_number, to_string(address_hash))
-      %{block_number: block_number, hash: address_hash}
+      %{address_hash: address_hash, block_number: block_number}
     end)
-    |> AddressBalanceFetcher.async_fetch_balances()
+    |> BalanceFetcher.async_fetch_balances()
 
     transaction_hash_to_block_number = Keyword.fetch!(named_arguments, :transaction_hash_to_block_number)
 

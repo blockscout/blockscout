@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Address do
   alias Ecto.Changeset
   alias Explorer.Chain.{Block, Data, Hash, Wei, SmartContract, InternalTransaction}
 
-  @optional_attrs ~w(contract_code)a
+  @optional_attrs ~w(contract_code fetched_balance fetched_balance_block_number)a
   @required_attrs ~w(hash)a
   @allowed_attrs @optional_attrs ++ @required_attrs
 
@@ -56,7 +56,7 @@ defmodule Explorer.Chain.Address do
 
   def balance_changeset(%__MODULE__{} = address, attrs) do
     address
-    |> cast(attrs, @balance_changeset_required_attrs)
+    |> cast(attrs, @allowed_attrs)
     |> validate_required(@balance_changeset_required_attrs)
     |> changeset()
   end

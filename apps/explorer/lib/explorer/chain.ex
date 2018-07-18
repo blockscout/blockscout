@@ -21,6 +21,7 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.{
     Address,
+    Balance,
     Block,
     Data,
     Hash,
@@ -44,7 +45,7 @@ defmodule Explorer.Chain do
   @typedoc """
   Event type where data is broadcasted whenever data is inserted from chain indexing.
   """
-  @type chain_event :: :balance_updates | :blocks | :logs | :transactions
+  @type chain_event :: :addresses | :balances | :blocks | :logs | :transactions
 
   @type direction :: :from | :to
 
@@ -67,12 +68,14 @@ defmodule Explorer.Chain do
   @typep timeout_option :: {:timeout, timeout}
   @typep timestamps :: %{inserted_at: DateTime.t(), updated_at: DateTime.t()}
   @typep timestamps_option :: {:timestamps, timestamps}
-  @typep addresses_option :: {:addresses, [params_option | timeout_option]}
+  @typep addresses_option :: {:addresses, [params_option | timeout_option | with_option]}
+  @typep balances_option :: {:balances, [params_option | timeout_option]}
   @typep blocks_option :: {:blocks, [params_option | timeout_option]}
   @typep internal_transactions_option :: {:internal_transactions, [params_option | timeout_option]}
   @typep logs_option :: {:logs, [params_option | timeout_option]}
   @typep receipts_option :: {:receipts, [params_option | timeout_option]}
   @typep transactions_option :: {:transactions, [on_conflict_option | params_option | timeout_option]}
+  @typep with_option :: {:with, changeset_function_name :: atom}
 
   @doc """
   Estimated count of `t:Explorer.Chain.Address.t/0`.
@@ -214,161 +217,12 @@ defmodule Explorer.Chain do
 
   @transaction_timeout 120_000
   @insert_addresses_timeout 60_000
+  @insert_balances_timeout 60_000
   @insert_blocks_timeout 60_000
   @insert_internal_transactions_timeout 60_000
   @insert_logs_timeout 60_000
   @insert_transactions_timeout 60_000
   @update_transactions_timeout 60_000
-
-  @doc """
-  Updates `t:Explorer.Chain.Address.t/0` with `hash` of `address_hash` to have `fetched_balance` of `balance` in
-  `t:map/0` `balances` of `address_hash` to `balance`.
-
-      iex> {:ok,
-      ...>  [
-      ...>    %Explorer.Chain.Address{hash: %Explorer.Chain.Hash{
-      ...>      byte_count: 20,
-      ...>      bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211,
-      ...>        165, 101, 32, 167, 106, 179, 223, 65, 91>>
-      ...>    }}
-      ...>  ]} =
-      ...> Explorer.Chain.update_balances(
-      ...>   [
-      ...>     %{
-      ...>       fetched_balance: 100,
-      ...>       fetched_balance_block_number: 1,
-      ...>       hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
-      ...>     }
-      ...>   ]
-      ...> )
-      iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x8bf38d4764929064f2d4d3a56520a76ab3df415b")
-      iex> {:ok, address} = Explorer.Chain.hash_to_address(hash)
-      iex> address.fetched_balance
-      %Explorer.Chain.Wei{value: Decimal.new(100)}
-      iex> address.fetched_balance_block_number
-      1
-
-  There don't need to be any updates.
-
-      iex> Explorer.Chain.update_balances([])
-      {:ok, []}
-
-  Whichever `fetched_balance` is associated with the greater `fetched_balance_block_number` will win if there is a
-  conflict.  No matter whether the update has a conflict or not or wins, the hash is always returned due to how
-  `RETURNING` works for `ON CONFLICT` in PostgreSQL.
-
-      iex> insert(
-      ...>   :address,
-      ...>   fetched_balance: 2,
-      ...>   fetched_balance_block_number: 2,
-      ...>   hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
-      ...> )
-      iex> {:ok,
-      ...>  [
-      ...>    %Explorer.Chain.Address{hash: %Explorer.Chain.Hash{
-      ...>      byte_count: 20,
-      ...>      bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211,
-      ...>        165, 101, 32, 167, 106, 179, 223, 65, 91>>
-      ...>    }}
-      ...>  ]} =
-      ...> Explorer.Chain.update_balances(
-      ...>   [
-      ...>     %{
-      ...>       fetched_balance: 3,
-      ...>       fetched_balance_block_number: 1,
-      ...>       hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
-      ...>     }
-      ...>   ]
-      ...> )
-      iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x8bf38d4764929064f2d4d3a56520a76ab3df415b")
-      iex> {:ok, unchanged_address} = Explorer.Chain.hash_to_address(hash)
-      iex> unchanged_address.fetched_balance
-      %Explorer.Chain.Wei{value: Decimal.new(2)}
-      iex> unchanged_address.fetched_balance_block_number
-      2
-      iex> {:ok,
-      ...>  [
-      ...>    %Explorer.Chain.Address{hash: %Explorer.Chain.Hash{
-      ...>      byte_count: 20,
-      ...>      bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211,
-      ...>        165, 101, 32, 167, 106, 179, 223, 65, 91>>
-      ...>    }}
-      ...>  ]} =
-      ...> Explorer.Chain.update_balances(
-      ...>   [
-      ...>     %{
-      ...>       fetched_balance: 1,
-      ...>       fetched_balance_block_number: 3,
-      ...>       hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
-      ...>     }
-      ...>   ]
-      ...> )
-      iex> {:ok, changed_address} = Explorer.Chain.hash_to_address(hash)
-      iex> changed_address.fetched_balance
-      %Explorer.Chain.Wei{value: Decimal.new(1)}
-      iex> changed_address.fetched_balance_block_number
-      3
-
-  `t:Explorer.Chain.Address.t/0`s when first imported do not have a balance, in such a case, the balance updates win.
-
-      iex> address = insert(:address, hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b")
-      iex> address.fetched_balance
-      nil
-      iex> address.fetched_balance_block_number
-      nil
-      iex> {:ok,
-      ...>  [
-      ...>    %Explorer.Chain.Address{hash: %Explorer.Chain.Hash{
-      ...>      byte_count: 20,
-      ...>      bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211,
-      ...>        165, 101, 32, 167, 106, 179, 223, 65, 91>>
-      ...>    }}
-      ...>  ]} =
-      ...> Explorer.Chain.update_balances(
-      ...>   [
-      ...>     %{
-      ...>       fetched_balance: 3,
-      ...>       fetched_balance_block_number: 1,
-      ...>       hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
-      ...>     }
-      ...>   ]
-      ...> )
-      iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x8bf38d4764929064f2d4d3a56520a76ab3df415b")
-      iex> {:ok, address} = Explorer.Chain.hash_to_address(hash)
-      iex> address.fetched_balance
-      %Explorer.Chain.Wei{value: Decimal.new(3)}
-      iex> address.fetched_balance_block_number
-      1
-
-  ## Options
-
-   * `:addresses`
-      * `:timeout` - the timeout for upserting all addresses with the updated balances.  Defaults to
-        `#{@insert_addresses_timeout}`.
-   * `:timeout` - the timeout for the whole `c:Ecto.Repo.transaction/0` call.  Defaults to `#{@transaction_timeout}`
-      milliseconds.
-
-  """
-  @spec update_balances(
-          [
-            %{
-              required(:fetched_balance) => non_neg_integer(),
-              required(:fetched_balance_block_number) => Block.block_number(),
-              required(:hash) => String.t()
-            }
-          ],
-          [
-            [{:addresses, [timeout_option]}] | timeout_option
-          ]
-        ) :: {:ok, [Hash.Address.t()]} | {:error, [Changeset.t()]}
-  def update_balances(addresses_params, options \\ []) when is_list(options) do
-    with {:ok, changes_list} <- changes_list(addresses_params, for: Address, with: :balance_changeset),
-         {:ok, addresses} <-
-           insert_addresses(changes_list, timeout: options[:timeout] || @transaction_timeout, timestamps: timestamps()) do
-      broadcast_events([{:balance_updates, addresses}])
-      {:ok, addresses}
-    end
-  end
 
   @doc """
   The number of `t:Explorer.Chain.Block.t/0`.
@@ -753,13 +607,14 @@ defmodule Explorer.Chain do
 
   The import returns the unique key(s) for each type of record inserted.
 
-  | Key                      | Value Type                                                                 | Value Description                                                                             |
-  |--------------------------|----------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
-  | `:addresses`             | `[Explorer.Chain.Address.t()]`                                             | List of `t:Explorer.Chain.Address.t/0`s                                                       |
-  | `:blocks`                | `[Explorer.Chain.Block.t()]`                                               | List of `t:Explorer.Chain.Block.t/0`s                                                         |
-  | `:internal_transactions` | `[%{index: non_neg_integer(), transaction_hash: Explorer.Chain.Hash.t()}]` | List of maps of the `t:Explorer.Chain.InternalTransaction.t/0` `index` and `transaction_hash` |
-  | `:logs`                  | `[Explorer.Chain.Log.t()]`                                                 | List of `t:Explorer.Chain.Log.t/0`s                                                           |
-  | `:transactions`          | `[Explorer.Chain.Hash.t()]`                                                | List of `t:Explorer.Chain.Transaction.t/0` `hash`                                             |
+  | Key                      | Value Type                                                                                      | Value Description                                                                             |
+  |--------------------------|-------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
+  | `:addresses`             | `[Explorer.Chain.Address.t()]`                                                                  | List of `t:Explorer.Chain.Address.t/0`s                                                       |
+  | `:balances`              | `[%{address_hash: Explorer.Chain.Hash.t(), block_number: Explorer.Chain.Block.block_number()}]` | List of `t:Explorer.Chain.Address.t/0`s                                                       |
+  | `:blocks`                | `[Explorer.Chain.Block.t()]`                                                                    | List of `t:Explorer.Chain.Block.t/0`s                                                         |
+  | `:internal_transactions` | `[%{index: non_neg_integer(), transaction_hash: Explorer.Chain.Hash.t()}]`                      | List of maps of the `t:Explorer.Chain.InternalTransaction.t/0` `index` and `transaction_hash` |
+  | `:logs`                  | `[Explorer.Chain.Log.t()]`                                                                      | List of `t:Explorer.Chain.Log.t/0`s                                                           |
+  | `:transactions`          | `[Explorer.Chain.Hash.t()]`                                                                     | List of `t:Explorer.Chain.Transaction.t/0` `hash`                                             |
 
   A completely empty tree can be imported, but options must still be supplied.  It is a non-zero amount of time to
   process the empty options, so if there is nothing to import, you should avoid calling
@@ -796,6 +651,9 @@ defmodule Explorer.Chain do
     * `:addresses`
       * `:params` - `list` of params for `Explorer.Chain.Address.changeset/2`.
       * `:timeout` - the timeout for inserting all addresses.  Defaults to `#{@insert_addresses_timeout}` milliseconds.
+    * `:balances`
+      * `:params` - `list` of params for `Explorer.Chain.Balance.changeset/2`.
+      * `:timeout` - the timeout for inserting all balances.  Defaults to `#{@insert_balances_timeout}` milliseconds.
     * `:blocks`
       * `:params` - `list` of params for `Explorer.Chain.Block.changeset/2`.
       * `:timeout` - the timeout for inserting all blocks. Defaults to `#{@insert_blocks_timeout}` milliseconds.
@@ -822,6 +680,7 @@ defmodule Explorer.Chain do
   """
   @spec import_blocks([
           addresses_option
+          | balances_option
           | blocks_option
           | internal_transactions_option
           | logs_option
@@ -832,6 +691,9 @@ defmodule Explorer.Chain do
           {:ok,
            %{
              optional(:addresses) => [Address.t()],
+             optional(:balances) => [
+               %{required(:address_hash) => Hash.Address.t(), required(:block_number) => Block.block_number()}
+             ],
              optional(:blocks) => [Block.t()],
              optional(:internal_transactions) => [
                %{required(:index) => non_neg_integer(), required(:transaction_hash) => Hash.Full.t()}
@@ -844,10 +706,10 @@ defmodule Explorer.Chain do
           | {:error, step :: Ecto.Multi.name(), failed_value :: any(),
              changes_so_far :: %{optional(Ecto.Multi.name()) => any()}}
   def import_blocks(options) when is_list(options) do
-    ecto_schema_module_to_params_list = import_options_to_ecto_schema_module_to_params_list(options)
+    changes_list_arguments_list = import_options_to_changes_list_arguments_list(options)
 
     with {:ok, ecto_schema_module_to_changes_list} <-
-           ecto_schema_module_to_params_list_to_ecto_schema_module_to_changes_list(ecto_schema_module_to_params_list),
+           changes_list_arguments_list_to_ecto_schema_module_to_changes_list(changes_list_arguments_list),
          {:ok, data} <- insert_ecto_schema_module_to_changes_list(ecto_schema_module_to_changes_list, options) do
       broadcast_events(data)
       {:ok, data}
@@ -892,10 +754,10 @@ defmodule Explorer.Chain do
              changes_so_far :: %{optional(Ecto.Multi.name()) => any()}}
   def import_internal_transactions(options) when is_list(options) do
     {transactions_options, import_options} = Keyword.pop(options, :transactions)
-    ecto_schema_module_to_params_list = import_options_to_ecto_schema_module_to_params_list(import_options)
+    changes_list_options_list = import_options_to_changes_list_arguments_list(import_options)
 
     with {:ok, ecto_schema_module_to_changes_list} <-
-           ecto_schema_module_to_params_list_to_ecto_schema_module_to_changes_list(ecto_schema_module_to_params_list) do
+           changes_list_arguments_list_to_ecto_schema_module_to_changes_list(changes_list_options_list) do
       timestamps = timestamps()
 
       ecto_schema_module_to_changes_list
@@ -1009,9 +871,9 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Returns a stream of unfetched `t:Explorer.Chain.Address.t/0`.
+  Returns a stream of unfetched `t:Explorer.Chain.Balance.t/0`.
 
-  When there are addresses, the `reducer` is called for each `t:Explorer.Chain.Address.t/0` `hash` and the max
+  When there are addresses, the `reducer` is called for each `t:Explorer.Chain.Address.t/0` `hash` and all
   `t:Explorer.Chain.Block.t/0` `block_number` that address is mentioned.
 
   An `t:Explorer.Chain.Address.t/0` `hash` can be used as an `t:Explorer.Chain.Block.t/0` `miner_hash`.
@@ -1019,19 +881,19 @@ defmodule Explorer.Chain do
       iex> {:ok, miner_hash} = Explorer.Chain.string_to_address_hash("0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca")
       iex> miner = insert(:address, hash: miner_hash)
       iex> insert(:block, miner: miner, number: 34)
-      iex> {:ok, address_fields_list} = Explorer.Chain.stream_unfetched_addresses(
+      iex> {:ok, balance_fields_list} = Explorer.Chain.stream_unfetched_balances(
       ...>   [],
-      ...>   fn address_fields, acc -> [address_fields | acc] end
+      ...>   fn balance_fields, acc -> [balance_fields | acc] end
       ...> )
-      iex> address_fields_list
+      iex> balance_fields_list
       [
         %{
-          block_number: 34,
-          hash: %Explorer.Chain.Hash{
+          address_hash: %Explorer.Chain.Hash{
             byte_count: 20,
             bytes: <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132,
               89, 192, 16, 79, 223, 94, 152, 122, 202>>
-          }
+          },
+          block_number: 34
         }
       ]
 
@@ -1044,18 +906,18 @@ defmodule Explorer.Chain do
       iex> :transaction |>
       ...> insert(from_address: from_address) |>
       ...> with_block(block)
-      iex> {:ok, address_fields_list} = Explorer.Chain.stream_unfetched_addresses(
+      iex> {:ok, balance_fields_list} = Explorer.Chain.stream_unfetched_balances(
       ...>   [],
-      ...>   fn address_fields, acc -> [address_fields | acc] end
+      ...>   fn balance_fields, acc -> [balance_fields | acc] end
       ...> )
       iex> %{
-      ...>   block_number: 34,
-      ...>   hash: %Explorer.Chain.Hash{
-      ...>   byte_count: 20,
-      ...>   bytes: <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132,
-      ...>     89, 192, 16, 79, 223, 94, 152, 122, 202>>
-      ...>   }
-      ...> } in address_fields_list
+      ...>   address_hash: %Explorer.Chain.Hash{
+      ...>     byte_count: 20,
+      ...>     bytes: <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132,
+      ...>       89, 192, 16, 79, 223, 94, 152, 122, 202>>
+      ...>   },
+      ...>   block_number: 34
+      ...> } in balance_fields_list
       true
 
   An `t:Explorer.Chain.Address.t/0` `hash` can be used as an `t:Explorer.Chain.Transaction.t/0` `to_address_hash`.
@@ -1066,18 +928,18 @@ defmodule Explorer.Chain do
       iex> :transaction |>
       ...> insert(to_address: to_address) |>
       ...> with_block(block)
-      iex> {:ok, address_fields_list} = Explorer.Chain.stream_unfetched_addresses(
+      iex> {:ok, balance_fields_list} = Explorer.Chain.stream_unfetched_balances(
       ...>   [],
-      ...>   fn address_fields, acc -> [address_fields | acc] end
+      ...>   fn balance_fields, acc -> [balance_fields | acc] end
       ...> )
       iex> %{
-      ...>   block_number: 34,
-      ...>   hash: %Explorer.Chain.Hash{
+      ...>   address_hash: %Explorer.Chain.Hash{
       ...>     byte_count: 20,
       ...>     bytes: <<142, 133, 72, 2, 214, 149, 38, 154, 111, 31, 63, 202,
       ...>       187, 33, 17, 210, 245, 160, 230, 249>>
-      ...>   }
-      ...> } in address_fields_list
+      ...>   },
+      ...>   block_number: 34
+      ...> } in balance_fields_list
       true
 
   An `t:Explorer.Chain.Address.t/0` `hash` can be used as an `t:Explorer.Chain.Log.t/0` `address_hash`.
@@ -1090,18 +952,18 @@ defmodule Explorer.Chain do
       ...>   insert() |>
       ...>   with_block(block)
       ...> insert(:log, address: address, transaction: transaction)
-      iex> {:ok, address_fields_list} = Explorer.Chain.stream_unfetched_addresses(
+      iex> {:ok, balance_fields_list} = Explorer.Chain.stream_unfetched_balances(
       ...>   [],
-      ...>   fn address_fields, acc -> [address_fields | acc] end
+      ...>   fn balance_fields, acc -> [balance_fields | acc] end
       ...> )
       iex> %{
-      iex>   block_number: 37,
-      iex>   hash: %Explorer.Chain.Hash{
+      iex>   address_hash: %Explorer.Chain.Hash{
       iex>     byte_count: 20,
       iex>     bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211,
       iex>       165, 101, 32, 167, 106, 179, 223, 65, 91>>
-      iex>   }
-      iex> } in address_fields_list
+      iex>   },
+      iex>   block_number: 37
+      iex> } in balance_fields_list
       true
 
   An `t:Explorer.Chain.Address.t/0` `hash` can be used as an `t:Explorer.Chain.InternalTransaction.t/0`
@@ -1121,18 +983,18 @@ defmodule Explorer.Chain do
       ...>   index: 0,
       ...>   transaction: transaction
       ...> )
-      iex> {:ok, address_fields_list} = Explorer.Chain.stream_unfetched_addresses(
+      iex> {:ok, balance_fields_list} = Explorer.Chain.stream_unfetched_balances(
       ...>   [],
-      ...>   fn address_fields, acc -> [address_fields | acc] end
+      ...>   fn balance_fields, acc -> [balance_fields | acc] end
       ...> )
       iex> %{
-      ...>   block_number: 37,
-      ...>   hash: %Explorer.Chain.Hash{
+      ...>   address_hash: %Explorer.Chain.Hash{
       ...>     byte_count: 20,
       ...>     bytes: <<255, 200, 114, 57, 235, 2, 103, 188, 60, 162, 205, 81,
       ...>       209, 47, 191, 39, 142, 2, 204, 180>>
-      ...>   }
-      ...> } in address_fields_list
+      ...>   },
+      ...>   block_number: 37
+      ...> } in balance_fields_list
       true
 
   An `t:Explorer.Chain.Address.t/0` `hash` can be used as an `t:Explorer.Chain.InternalTransaction.t/0`
@@ -1152,18 +1014,18 @@ defmodule Explorer.Chain do
       ...>   index: 0,
       ...>   transaction: transaction
       ...> )
-      iex> {:ok, address_fields_list} = Explorer.Chain.stream_unfetched_addresses(
+      iex> {:ok, balance_fields_list} = Explorer.Chain.stream_unfetched_balances(
       ...>   [],
-      ...>   fn address_fields, acc -> [address_fields | acc] end
+      ...>   fn balance_fields, acc -> [balance_fields | acc] end
       ...> )
       iex> %{
-      ...>   block_number: 37,
-      ...>   hash: %Explorer.Chain.Hash{
+      ...>   address_hash: %Explorer.Chain.Hash{
       ...>     byte_count: 20,
       ...>     bytes: <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132,
       ...>       89, 192, 16, 79, 223, 94, 152, 122, 202>>
-      ...>   }
-      ...> } in address_fields_list
+      ...>   },
+      ...>   block_number: 37
+      ...> } in balance_fields_list
       true
 
   An `t:Explorer.Chain.Address.t/0` `hash` can be used as an `t:Explorer.Chain.InternalTransaction.t/0`
@@ -1183,95 +1045,35 @@ defmodule Explorer.Chain do
       ...>   to_address: to_address,
       ...>   transaction: transaction
       ...> )
-      iex> {:ok, address_fields_list} = Explorer.Chain.stream_unfetched_addresses(
+      iex> {:ok, balance_fields_list} = Explorer.Chain.stream_unfetched_balances(
       ...>   [],
-      ...>   fn address_fields, acc -> [address_fields | acc] end
+      ...>   fn balance_fields, acc -> [balance_fields | acc] end
       ...> )
       iex> %{
-      ...>   block_number: 38,
-      ...>   hash: %Explorer.Chain.Hash{
+      ...>   address_hash: %Explorer.Chain.Hash{
       ...>     byte_count: 20,
       ...>     bytes: <<253, 202, 13, 164, 21, 135, 64, 169, 54, 147, 68, 27,
       ...>       53, 128, 155, 91, 180, 99, 229, 39>>
-      ...>   }
-      ...> } in address_fields_list
+      ...>   },
+      ...>   block_number: 38
+      ...> } in balance_fields_list
       true
 
   Pending `t:Explorer.Chain.Transaction.t/0` `from_address_hash` and `to_address_hash` aren't returned because they
   don't have an associated block number.
 
       iex> insert(:transaction)
-      iex> {:ok, address_fields_list} = Explorer.Chain.stream_unfetched_addresses(
+      iex> {:ok, balance_fields_list} = Explorer.Chain.stream_unfetched_balances(
       ...>   [],
-      ...>   fn address_fields, acc -> [address_fields | acc] end
+      ...>   fn balance_fields, acc -> [balance_fields | acc] end
       ...> )
-      iex> address_fields_list
+      iex> balance_fields_list
       []
-
-  When an `t:Explorer.Chain.Address.t/0` `hash` is used multiple times, the max `t:Explorer.Chain.Block.t/0` `number`
-  will be returned.
-
-      iex> {:ok, miner_hash} = Explorer.Chain.string_to_address_hash("0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca")
-      iex> miner = insert(:address, hash: miner_hash)
-      iex> mined_block = insert(:block, miner: miner, number: 7)
-      iex> from_transaction_block = insert(:block, number: 6)
-      iex> :transaction |>
-      ...> insert(from_address: miner) |>
-      ...> with_block(from_transaction_block)
-      iex> to_transaction_block = insert(:block, number: 5)
-      iex> :transaction |>
-      ...> insert(to_address: miner) |>
-      ...> with_block(to_transaction_block)
-      iex> log_block = insert(:block, number: 4)
-      iex> log_transaction =
-      ...>   :transaction |>
-      ...>   insert() |>
-      ...>   with_block(log_block)
-      iex> insert(:log, address: miner, transaction: log_transaction)
-      iex> from_internal_transaction_block = insert(:block, number: 3)
-      iex> from_internal_transaction_transaction =
-      ...>   :transaction |>
-      ...>   insert() |>
-      ...>   with_block(from_internal_transaction_block)
-      iex> insert(
-      ...>   :internal_transaction_create,
-      ...>   from_address: miner,
-      ...>   index: 0,
-      ...>   transaction: from_internal_transaction_transaction
-      ...> )
-      iex> to_internal_transaction_block = insert(:block, number: 2)
-      iex> to_internal_transaction_transaction =
-      ...>   :transaction |>
-      ...>   insert() |>
-      ...>   with_block(to_internal_transaction_block)
-      iex> insert(
-      ...>   :internal_transaction_create,
-      ...>   index: 0,
-      ...>   to_address: miner,
-      ...>   transaction: to_internal_transaction_transaction
-      ...> )
-      iex> {:ok, hash_to_block_number} = Explorer.Chain.stream_unfetched_addresses(
-      ...>   %{},
-      ...>   fn %{block_number: block_number, hash: hash}, acc -> Map.put(acc, hash, block_number) end
-      ...> )
-      iex> hash_to_block_number[miner_hash]
-      7
-      iex> Enum.max(
-      ...>   [
-      ...>     mined_block.number,
-      ...>     from_transaction_block.number,
-      ...>     to_transaction_block.number,
-      ...>     log_block.number,
-      ...>     from_internal_transaction_block.number,
-      ...>     to_internal_transaction_block.number
-      ...>   ]
-      ...> )
-      7
 
   When there are no addresses, the `reducer` is never called and the `initial` is returned in an `:ok` tuple.
 
       iex> {:ok, pid} = Agent.start_link(fn -> 0 end)
-      iex> Explorer.Chain.stream_unfetched_addresses([], fn address_fields, acc ->
+      iex> Explorer.Chain.stream_unfetched_balances([], fn address_fields, acc ->
       ...>   Agent.update(pid, &(&1 + 1))
       ...>   [address_fields | acc]
       ...> end)
@@ -1279,14 +1081,16 @@ defmodule Explorer.Chain do
       iex> Agent.get(pid, & &1)
       0
 
+  When an `t:Explorer.Chain.Address.t/0` `hash` is used multiple times, all unique `t:Explorer.Chain.Block.t/0` `number`
+  will be returned.
   """
-  @spec stream_unfetched_addresses(
+  @spec stream_unfetched_balances(
           initial :: accumulator,
           reducer ::
-            (entry :: %{block_number: Block.block_number(), hash: Hash.Address.t()}, accumulator -> accumulator)
+            (entry :: %{address_hash: Hash.Address.t(), block_number: Block.block_number()}, accumulator -> accumulator)
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_unfetched_addresses(initial, reducer) when is_function(reducer, 2) do
+  def stream_unfetched_balances(initial, reducer) when is_function(reducer, 2) do
     Repo.transaction(
       fn ->
         query =
@@ -1307,10 +1111,11 @@ defmodule Explorer.Chain do
                 address.hash in [transaction.from_address_hash, transaction.to_address_hash],
             left_join: block in Block,
             on: block.hash == transaction.block_hash or block.miner_hash == address.hash,
-            where: is_nil(address.fetched_balance),
-            group_by: address.hash,
-            having: not is_nil(max(block.number)),
-            select: %{block_number: max(block.number), hash: address.hash}
+            left_join: balance in Balance,
+            on: balance.address_hash == address.hash and balance.block_number == block.number,
+            where: not is_nil(block.number) and is_nil(balance.address_hash) and is_nil(balance.block_number),
+            group_by: [address.hash, block.number],
+            select: %{address_hash: address.hash, block_number: block.number}
           )
 
         query
@@ -1733,7 +1538,7 @@ defmodule Explorer.Chain do
   :ok
   """
   @spec subscribe_to_events(chain_event()) :: :ok
-  def subscribe_to_events(event_type) when event_type in ~w(balance_updates blocks logs transactions)a do
+  def subscribe_to_events(event_type) when event_type in ~w(addresses balances blocks logs transactions)a do
     Registry.register(Registry.ChainEvents, event_type, [])
     :ok
   end
@@ -1892,7 +1697,7 @@ defmodule Explorer.Chain do
   end
 
   defp broadcast_events(data) do
-    for {event_type, event_data} <- data, event_type in ~w(balance_updates blocks logs transactions)a do
+    for {event_type, event_data} <- data, event_type in ~w(addresses balances blocks logs transactions)a do
       broadcast_event_data(event_type, event_data)
     end
   end
@@ -1929,16 +1734,18 @@ defmodule Explorer.Chain do
 
     Multi.new()
     |> run_addresses(ecto_schema_module_to_changes_list, full_options)
+    |> run_balances(ecto_schema_module_to_changes_list, full_options)
     |> run_blocks(ecto_schema_module_to_changes_list, full_options)
     |> run_transactions(ecto_schema_module_to_changes_list, full_options)
     |> run_internal_transactions(ecto_schema_module_to_changes_list, full_options)
     |> run_logs(ecto_schema_module_to_changes_list, full_options)
   end
 
-  defp ecto_schema_module_to_params_list_to_ecto_schema_module_to_changes_list(ecto_schema_module_to_params_list) do
-    ecto_schema_module_to_params_list
-    |> Stream.map(fn {ecto_schema_module, params} ->
-      {ecto_schema_module, changes_list(params, for: ecto_schema_module)}
+  defp changes_list_arguments_list_to_ecto_schema_module_to_changes_list(changes_list_arguments_list) do
+    changes_list_arguments_list
+    |> Stream.map(fn [params_list, options] ->
+      ecto_schema_module = Keyword.fetch!(options, :for)
+      {ecto_schema_module, changes_list(params_list, options)}
     end)
     |> Enum.reduce({:ok, %{}}, fn
       {ecto_schema_module, {:ok, changes_list}}, {:ok, ecto_schema_module_to_changes_list} ->
@@ -1984,7 +1791,8 @@ defmodule Explorer.Chain do
     )
   end
 
-  @spec insert_addresses([%{hash: Hash.Address.t()}], [timeout_option | timestamps_option]) :: {:ok, [Hash.Address.t()]}
+  @spec insert_addresses([%{hash: Hash.Address.t()}], [timeout_option | timestamps_option | with_option]) ::
+          {:ok, [Hash.Address.t()]}
   defp insert_addresses(changes_list, named_arguments)
        when is_list(changes_list) and is_list(named_arguments) do
     timestamps = Keyword.fetch!(named_arguments, :timestamps)
@@ -2048,22 +1856,79 @@ defmodule Explorer.Chain do
 
   @import_option_key_to_ecto_schema_module %{
     addresses: Address,
+    balances: Balance,
     blocks: Block,
     internal_transactions: InternalTransaction,
     logs: Log,
     transactions: Transaction
   }
 
-  defp import_options_to_ecto_schema_module_to_params_list(options) do
-    Enum.reduce(@import_option_key_to_ecto_schema_module, %{}, fn {option_key, ecto_schema_module}, acc ->
+  defp import_options_to_changes_list_arguments_list(options) do
+    Enum.flat_map(@import_option_key_to_ecto_schema_module, fn {option_key, ecto_schema_module} ->
       case Keyword.fetch(options, option_key) do
         {:ok, option_value} when is_list(option_value) ->
-          Map.put(acc, ecto_schema_module, Keyword.fetch!(option_value, :params))
+          [
+            [
+              Keyword.fetch!(option_value, :params),
+              [for: ecto_schema_module, with: Keyword.get(option_value, :with, :changeset)]
+            ]
+          ]
 
         :error ->
-          acc
+          []
       end
     end)
+  end
+
+  @spec insert_balances(
+          [
+            %{
+              required(:address_hash) => Hash.Address.t(),
+              required(:block_number) => Block.block_number(),
+              required(:value) => Wei.t()
+            }
+          ],
+          [timeout_option]
+        ) ::
+          {:ok, [%{required(:address_hash) => Hash.Address.t(), required(:block_number) => Block.block_number()}]}
+          | {:error, [Changeset.t()]}
+  defp insert_balances(changes_list, named_arguments) when is_list(changes_list) and is_list(named_arguments) do
+    timestamps = Keyword.fetch!(named_arguments, :timestamps)
+    timeout = Keyword.fetch!(named_arguments, :timeout)
+
+    # order so that row ShareLocks are grabbed in a consistent order
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.address_hash, &1.block_number})
+
+    {:ok, _} =
+      insert_changes_list(
+        ordered_changes_list,
+        conflict_target: [:address_hash, :block_number],
+        on_conflict:
+          from(
+            balance in Balance,
+            update: [
+              set: [
+                inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", balance.inserted_at),
+                updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", balance.updated_at),
+                value:
+                  fragment(
+                    """
+                    CASE WHEN EXCLUDED.updated_at > ? THEN EXCLUDED.value
+                         ELSE  ?
+                    END
+                    """,
+                    balance.updated_at,
+                    balance.value
+                  )
+              ]
+            ]
+          ),
+        for: Balance,
+        timeout: timeout,
+        timestamps: timestamps
+      )
+
+    {:ok, Enum.map(ordered_changes_list, &Map.take(&1, ~w(address_hash block_number)a))}
   end
 
   @spec insert_blocks([map()], [timeout_option | timestamps_option]) :: {:ok, [Block.t()]} | {:error, [Changeset.t()]}
@@ -2279,6 +2144,25 @@ defmodule Explorer.Chain do
           insert_addresses(
             addresses_changes,
             timeout: options[:addresses][:timeout] || @insert_addresses_timeout,
+            timestamps: timestamps
+          )
+        end)
+
+      _ ->
+        multi
+    end
+  end
+
+  defp run_balances(multi, ecto_schema_module_to_changes_list, options)
+       when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
+    case ecto_schema_module_to_changes_list do
+      %{Balance => balances_changes} ->
+        timestamps = Keyword.fetch!(options, :timestamps)
+
+        Multi.run(multi, :balances, fn _ ->
+          insert_balances(
+            balances_changes,
+            timeout: options[:balances][:timeout] || @insert_balances_timeout,
             timestamps: timestamps
           )
         end)

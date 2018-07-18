@@ -25,7 +25,7 @@ defmodule Indexer.BufferedTask do
   For example, the following callback would buffer all unfetched account balances on startup:
 
       def init(initial, reducer) do
-        Chain.stream_unfetched_addresses([:hash], initial, fn %{hash: hash}, acc ->
+        Chain.stream_unfetched_balances([:hash], initial, fn %{hash: hash}, acc ->
           reducer.(Hash.to_string(hash), acc)
         end)
       end
@@ -37,7 +37,7 @@ defmodule Indexer.BufferedTask do
 
       def run(string_hashes, _retries) do
         case EthereumJSONRPC.fetch_balances_by_hash(string_hashes) do
-          {:ok, results} -> :ok = Chain.update_balances(results)
+          {:ok, results} -> :ok = update_balances(results)
           {:error, _reason} -> :retry
         end
       end
@@ -114,7 +114,7 @@ defmodule Indexer.BufferedTask do
   For example, the following callback would buffer all unfetched account balances on startup:
 
       def init(initial, reducer, state) do
-        final = Chain.stream_unfetched_addresses([:hash], initial, fn %{hash: hash}, acc ->
+        final = Chain.stream_unfetched_balances([:hash], initial, fn %{hash: hash}, acc ->
           reducer.(Hash.to_string(hash), acc)
         end)
 
@@ -133,7 +133,7 @@ defmodule Indexer.BufferedTask do
 
       def run(string_hashes, _retries) do
         case EthereumJSONRPC.fetch_balances_by_hash(string_hashes) do
-          {:ok, results} -> :ok = Chain.update_balances(results)
+          {:ok, results} -> :ok = update_balances(results)
           {:error, _reason} -> :retry
         end
       end

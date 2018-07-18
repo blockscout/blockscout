@@ -10,7 +10,7 @@ defmodule Indexer.BlockFetcherTest do
   alias Explorer.Chain.{Address, Block, Log, Transaction, Wei}
 
   alias Indexer.{
-    AddressBalanceFetcher,
+    BalanceFetcher,
     AddressBalanceFetcherCase,
     BlockFetcher,
     BufferedTask,
@@ -416,7 +416,7 @@ defmodule Indexer.BlockFetcherTest do
                   }} = result
 
           wait_for_tasks(InternalTransactionFetcher)
-          wait_for_tasks(AddressBalanceFetcher)
+          wait_for_tasks(BalanceFetcher)
 
           assert Repo.aggregate(Block, :count, :hash) == 1
           assert Repo.aggregate(Address, :count, :hash) == 1
@@ -668,7 +668,7 @@ defmodule Indexer.BlockFetcherTest do
                   }} = BlockFetcher.import_range(block_number..block_number, state, sequence)
 
           wait_for_tasks(InternalTransactionFetcher)
-          wait_for_tasks(AddressBalanceFetcher)
+          wait_for_tasks(BalanceFetcher)
 
           assert Repo.aggregate(Block, :count, :hash) == 1
           assert Repo.aggregate(Address, :count, :hash) == 5
@@ -755,7 +755,7 @@ defmodule Indexer.BlockFetcherTest do
                   }} = BlockFetcher.import_range(block_number..block_number, state, sequence)
 
           wait_for_tasks(InternalTransactionFetcher)
-          wait_for_tasks(AddressBalanceFetcher)
+          wait_for_tasks(BalanceFetcher)
 
           assert Repo.aggregate(Block, :count, :hash) == 1
           assert Repo.aggregate(Address, :count, :hash) == 2

@@ -8,6 +8,12 @@ defmodule ExplorerWeb.Notifier do
   alias Explorer.ExchangeRates.Token
   alias ExplorerWeb.Endpoint
 
+  def handle_event({:chain_event, :addresses, addresses}) do
+    addresses
+    |> Stream.reject(fn %Address{fetched_balance: fetched_balance} -> is_nil(fetched_balance) end)
+    |> Enum.each(&broadcast_balance/1)
+  end
+
   def handle_event({:chain_event, :blocks, blocks}) do
     max_numbered_block = Enum.max_by(blocks, & &1.number).number
     Endpoint.broadcast("transactions:confirmations", "update", %{block_number: max_numbered_block})
@@ -15,10 +21,6 @@ defmodule ExplorerWeb.Notifier do
 
   def handle_event({:chain_event, :transactions, transaction_hashes}) do
     Enum.each(transaction_hashes, &broadcast_transaction/1)
-  end
-
-  def handle_event({:chain_event, :balance_updates, addresses}) do
-    Enum.each(addresses, &broadcast_balance/1)
   end
 
   defp broadcast_balance(%Address{hash: address_hash} = address) do
