@@ -1,0 +1,100 @@
+<section>
+  <div class="row">
+    <div class="col-md-8">
+      <!-- Block Details -->
+      <div class="card">
+        <div class="card-body">
+          <h1 class="card-title"> <%= gettext("Block Details") %> </h1>
+          <!-- Bolck Height -->
+          <h3 data-test="block_detail_number"> <%= gettext "Block Height #%{height}", height: @block.number %> </h3>
+          <div class="d-flex flex-row justify-content-start text-muted">
+            <!-- # of Transactions -->
+            <span class="mr-4"> <%= gettext "%{count} Transactions", count: @block_transaction_count %> </span>
+
+            <!-- # of Contracts -->
+            <span class="mr-4"> 10 Contracts </span>
+
+            <!-- Block Size -->
+            <span class="mr-4"> <%= Cldr.Unit.new(:byte, @block.size) |> Cldr.Unit.to_string! %> </span>
+
+            <!-- Block Age -->
+            <span class="mr-4" data-from-now="<%= @block.timestamp %>"></span>
+          </div>
+
+          <hr>
+
+          <!-- Block details description list -->
+
+          <!-- Block Hash -->
+          <dl class="row">
+            <dt class="col-sm-3 text-muted"> <%= gettext "Hash" %> </dt>
+            <dd class="col-sm-9"> <%= @block.hash %> </dd>
+          </dl>
+
+          <!-- Parent Hash -->
+          <dl class="row">
+            <dt class="col-sm-3 text-muted"> <%= gettext "Parent Hash" %> </dt>
+            <dd class="col-sm-9">
+              <%= link(
+                  @block.parent_hash,
+                  class: "block__link",
+                  to: block_path(@conn, :show, @conn.assigns.locale, @block.number - 1)
+                ) %>
+            </dd>
+          </dl>
+
+          <!-- Gas Used -->
+          <dl class="row">
+            <dt class="col-sm-3 text-muted"> <%= gettext "Gas Used" %> </dt>
+            <dd class="col-sm-9">
+              <%= @block.gas_used |> Cldr.Number.to_string! %> (<%= (@block.gas_used / @block.gas_limit) |> Cldr.Number.to_string!(format: "#.#%") %>)
+            </dd>
+          </dl>
+
+          <!-- Gas Limit -->
+          <dl class="row">
+            <dt class="col-sm-3 text-muted"> <%= gettext "Gas Limit" %> </dt>
+            <dd class="col-sm-9"> <%= @block.gas_limit |> Cldr.Number.to_string! %> </dd>
+          </dl>
+
+          <!-- Nonce -->
+          <dl class="row">
+            <dt class="col-sm-3 text-muted"> <%= gettext "Nonce" %> </dt>
+            <dd class="col-sm-9"> <%= @block.nonce %> </dd>
+          </dl>
+
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <!-- Validator -->
+      <div class="card bg-primary">
+        <div class="card-body">
+          <h2 class="card-title text-white"> <%= gettext "Miner" %> </h2>
+          <div class="text-right">
+            <!-- Validator's Name -->
+            <h3 class="text-white"> Lester McTester </h3>
+            <!-- Validator's address hash -->
+            <span class="text-light">
+              <%= link @block.miner, to: address_path(ExplorerWeb.Endpoint, :show, @locale, @block.miner) %>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Difficulty -->
+      <div class="card">
+        <div class="card-body">
+          <h2 class="card-title"> <%= gettext "Difficulty" %> </h2>
+          <div class="text-right">
+            <!-- Difficulty value -->
+            <h3> <%= @block.difficulty |> Cldr.Number.to_string! %> </h3>
+            <!-- Total Difficulty -->
+            <span class="text-muted"> <%= @block.total_difficulty |> Cldr.Number.to_string! %> </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,3 +1,9 @@
+<section class="container">
+
+  <%= render ExplorerWeb.BlockView, "overview.html", assigns %>
+
+</section>
+
 <section class="container-fluid">
   <section>
     <h1><%= gettext("Block Details") %></h1>
@@ -40,7 +46,6 @@
                   <td title="<%= @block.parent_hash %>">
                     <%= link(
                           @block.parent_hash,
-                          class: "block__link",
                           to: block_path(@conn, :show, @conn.assigns.locale, @block.number - 1)
                         ) %>
                   </td>

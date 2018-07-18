@@ -54,6 +54,7 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "typography";
 @import "tooltip";
 @import "code";
+@import "elements";
 @import "components/panels";
 @import "components/nav_tabs";
 @import "components/dot";
@@ -71,6 +72,7 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/dashboard-banner";
 @import "components/icon-link";
 @import "components/badge";
+@import "components/description-list";
 
 
 :export {
