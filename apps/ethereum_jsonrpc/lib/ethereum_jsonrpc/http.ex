@@ -56,7 +56,7 @@ defmodule EthereumJSONRPC.HTTP do
     json = encode_json(batch)
 
     case http.json_rpc(url, json, http_options) do
-      {:ok, %{status_code: 413} = response} ->
+      {:ok, %{status_code: status_code} = response} when status_code in [413, 504] ->
         rechunk_json_rpc(chunks, options, response, decoded_response_bodies)
 
       {:ok, %{body: body, status_code: status_code}} ->
