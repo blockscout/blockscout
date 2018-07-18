@@ -1,4 +1,8 @@
 defmodule ExplorerWeb.EventHandler do
+  @moduledoc """
+  Subscribing process for broadcast events from Chain context.
+  """
+
   use GenServer
   alias Explorer.Chain
   alias ExplorerWeb.Notifier
