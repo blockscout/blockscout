@@ -99,8 +99,8 @@ defmodule Explorer.Chain.Transaction do
           r: r(),
           s: s(),
           status: Status.t() | nil,
-          to_address: %Ecto.Association.NotLoaded{} | Address.t(),
-          to_address_hash: Hash.Address.t(),
+          to_address: %Ecto.Association.NotLoaded{} | Address.t() | nil,
+          to_address_hash: Hash.Address.t() | nil,
           v: v(),
           value: Wei.t()
         }
