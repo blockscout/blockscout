@@ -23,6 +23,13 @@ defmodule Explorer.Factory do
 
   @dialyzer {:nowarn_function, fields_for: 1}
 
+  def contract_address_factory do
+    %Address{
+      hash: address_hash(),
+      contract_code: Map.fetch!(contract_code_info(), :bytecode)
+    }
+  end
+
   def address_factory do
     %Address{
       hash: address_hash()
