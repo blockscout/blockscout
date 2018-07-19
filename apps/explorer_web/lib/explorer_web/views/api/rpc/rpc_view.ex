@@ -9,11 +9,11 @@ defmodule ExplorerWeb.API.RPC.RPCView do
     }
   end
 
-  def render("error.json", %{error: message}) do
+  def render("error.json", %{error: message} = assigns) do
     %{
       "status" => "0",
       "message" => message,
-      "result" => nil
+      "result" => Map.get(assigns, :data)
     }
   end
 end
