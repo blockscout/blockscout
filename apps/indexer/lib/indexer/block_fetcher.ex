@@ -11,7 +11,7 @@ defmodule Indexer.BlockFetcher do
 
   alias EthereumJSONRPC
   alias Explorer.Chain
-  alias Indexer.{AddressBalanceFetcher, AddressExtraction, BufferedTask, InternalTransactionFetcher, Sequence}
+  alias Indexer.{AddressBalanceFetcher, AddressExtraction, InternalTransactionFetcher, Sequence}
 
   # dialyzer thinks that Logger.debug functions always have no_local_return
   @dialyzer {:nowarn_function, import_range: 3}
@@ -66,8 +66,6 @@ defmodule Indexer.BlockFetcher do
       |> Application.get_all_env()
       |> Keyword.merge(opts)
 
-    :timer.send_interval(15_000, self(), :debug_count)
-
     state = %{
       json_rpc_named_arguments: Keyword.fetch!(opts, :json_rpc_named_arguments),
       genesis_task: nil,
@@ -119,30 +117,6 @@ defmodule Indexer.BlockFetcher do
     Logger.error(fn -> "gensis index stream exited. Restarting" end)
 
     {:noreply, schedule_next_catchup_index(%{state | genesis_task: nil})}
-  end
-
-  def handle_info(:debug_count, %{} = state) do
-    debug(fn ->
-      """
-
-      ================================
-      persisted counts
-      ================================
-        addresses: #{Chain.address_count()}
-        blocks: #{Chain.block_count()}
-        internal transactions: #{Chain.internal_transaction_count()}
-        logs: #{Chain.log_count()}
-        addresses: #{Chain.address_count()}
-
-      ================================
-      deferred fetches
-      ================================
-        address balances: #{inspect(BufferedTask.debug_count(AddressBalanceFetcher))}
-        internal transactions: #{inspect(BufferedTask.debug_count(InternalTransactionFetcher))}
-      """
-    end)
-
-    {:noreply, state}
   end
 
   defp cap_seq(seq, next, range) do
