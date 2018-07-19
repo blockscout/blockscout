@@ -4,6 +4,7 @@ defmodule ExplorerWeb.AddressContractVerificationTest do
   import Wallaby.Query
 
   alias Plug.Conn
+  alias Explorer.Chain.Address
   alias Explorer.Factory
 
   setup do
@@ -19,17 +20,26 @@ defmodule ExplorerWeb.AddressContractVerificationTest do
 
     %{name: name, source_code: source_code, bytecode: bytecode, version: version} = Factory.contract_code_info()
 
-    contract_address = insert(:contract_address, contract_code: bytecode)
+    transaction = :transaction |> insert() |> with_block()
+    address = %Address{hash: address_hash} = insert(:address, contract_code: bytecode)
+
+    insert(
+      :internal_transaction_create,
+      created_contract_address: address,
+      created_contract_code: bytecode,
+      index: 0,
+      transaction: transaction
+    )
 
     session
-    |> visit("/en/addresses/#{contract_address.hash}/contract_verifications/new")
+    |> visit("/en/addresses/#{address_hash}/contract_verifications/new")
     |> fill_in(text_field("Contract Name"), with: name)
     |> click(option(version))
     |> click(radio_button("No"))
     |> fill_in(text_field("Enter the Solidity Contract Code below"), with: source_code)
     |> click(button("Verify and publish"))
 
-    assert current_path(session) =~ ~r/\/en\/addresses\/#{contract_address.hash}\/contracts/
+    assert current_path(session) =~ ~r/\/en\/addresses\/#{address_hash}\/contracts/
   end
 
   test "with invalid data shows error messages", %{session: session, bypass: bypass} do

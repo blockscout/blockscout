@@ -29,13 +29,6 @@ defmodule Explorer.Factory do
     }
   end
 
-  def contract_address_factory do
-    %Address{
-      hash: address_hash(),
-      contract_code: Map.fetch!(contract_code_info(), :bytecode)
-    }
-  end
-
   def contract_code_info do
     %{
       bytecode:
@@ -187,9 +180,11 @@ defmodule Explorer.Factory do
     gas = Enum.random(21_000..100_000)
     gas_used = Enum.random(0..gas)
 
+    contract_code = Map.fetch!(contract_code_info(), :bytecode)
+
     %InternalTransaction{
-      created_contract_code: data(:internal_transaction_created_contract_code),
-      created_contract_address: build(:address),
+      created_contract_code: contract_code,
+      created_contract_address: build(:address, contract_code: contract_code),
       from_address: build(:address),
       gas: gas,
       gas_used: gas_used,
