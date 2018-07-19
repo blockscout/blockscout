@@ -82,18 +82,18 @@ defmodule EthereumJSONRPC.Encoder do
   end
 
   defp join_result_and_selector(result, selectors) do
-    {result, Enum.find(selectors, &(&1.function == result["id"]))}
+    {result, Enum.find(selectors, &(&1.function == result[:id]))}
   end
 
   @doc """
   Given a result from the blockchain, and the function selector, returns the result decoded.
   """
   @spec decode_result({map(), %ABI.FunctionSelector{}}) :: {String.t(), [String.t()]}
-  def decode_result({%{"error" => %{"code" => code, "message" => message}, "id" => id}, _selector}) do
+  def decode_result({%{error: %{code: code, message: message}, id: id}, _selector}) do
     {id, ["#{code} => #{message}"]}
   end
 
-  def decode_result({%{"id" => id, "result" => result}, function_selector}) do
+  def decode_result({%{id: id, result: result}, function_selector}) do
     types_list = format_list_types(function_selector.returns)
 
     decoded_result =

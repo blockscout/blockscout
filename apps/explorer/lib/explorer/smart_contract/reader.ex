@@ -40,6 +40,8 @@ defmodule Explorer.SmartContract.Reader do
   """
   @spec query_contract(%Explorer.Chain.Hash{}, %{String.t() => [term()]}) :: map()
   def query_contract(address_hash, functions) do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
     contract_address = Hash.to_string(address_hash)
 
     abi =
@@ -52,7 +54,7 @@ defmodule Explorer.SmartContract.Reader do
         abi
         |> Encoder.encode_abi(functions)
         |> Enum.map(&setup_call_payload(&1, contract_address))
-        |> EthereumJSONRPC.execute_contract_functions()
+        |> EthereumJSONRPC.execute_contract_functions(json_rpc_named_arguments)
 
       Encoder.decode_abi_results(blockchain_result, abi, functions)
     rescue

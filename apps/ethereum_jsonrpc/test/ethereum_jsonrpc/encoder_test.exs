@@ -92,25 +92,25 @@ defmodule EthereumJSONRPC.EncoderTest do
     end
   end
 
-  describe "decode_results/3" do
+  describe "decode_abi_results/3" do
     test "separates the selectors and map the results" do
       result =
         {:ok,
          [
            %{
-             "id" => "get1",
-             "jsonrpc" => "2.0",
-             "result" => "0x000000000000000000000000000000000000000000000000000000000000002a"
+             id: "get1",
+             jsonrpc: "2.0",
+             result: "0x000000000000000000000000000000000000000000000000000000000000002a"
            },
            %{
-             "id" => "get2",
-             "jsonrpc" => "2.0",
-             "result" => "0x000000000000000000000000000000000000000000000000000000000000002a"
+             id: "get2",
+             jsonrpc: "2.0",
+             result: "0x000000000000000000000000000000000000000000000000000000000000002a"
            },
            %{
-             "id" => "get3",
-             "jsonrpc" => "2.0",
-             "result" => "0x0000000000000000000000000000000000000000000000000000000000000020"
+             id: "get3",
+             jsonrpc: "2.0",
+             result: "0x0000000000000000000000000000000000000000000000000000000000000020"
            }
          ]}
 
@@ -161,9 +161,9 @@ defmodule EthereumJSONRPC.EncoderTest do
   describe "decode_result/1" do
     test "correclty decodes the blockchain result" do
       result = %{
-        "id" => "sum",
-        "jsonrpc" => "2.0",
-        "result" => "0x000000000000000000000000000000000000000000000000000000000000002a"
+        id: "sum",
+        jsonrpc: "2.0",
+        result: "0x000000000000000000000000000000000000000000000000000000000000002a"
       }
 
       selector = %ABI.FunctionSelector{
@@ -177,12 +177,12 @@ defmodule EthereumJSONRPC.EncoderTest do
 
     test "correclty handles the blockchain error response" do
       result = %{
-        "error" => %{
-          "code" => -32602,
-          "message" => "Invalid params: Invalid hex: Invalid character 'x' at position 134."
+        error: %{
+          code: -32602,
+          message: "Invalid params: Invalid hex: Invalid character 'x' at position 134."
         },
-        "id" => "sum",
-        "jsonrpc" => "2.0"
+        id: "sum",
+        jsonrpc: "2.0"
       }
 
       selector = %ABI.FunctionSelector{
@@ -201,8 +201,7 @@ defmodule EthereumJSONRPC.EncoderTest do
 
       selector = %ABI.FunctionSelector{function: "name", types: [], returns: :string}
 
-      assert Encoder.decode_result({%{"id" => "storedName", "result" => result}, selector}) ==
-               {"storedName", [["AION"]]}
+      assert Encoder.decode_result({%{id: "storedName", result: result}, selector}) == {"storedName", [["AION"]]}
     end
   end
 end

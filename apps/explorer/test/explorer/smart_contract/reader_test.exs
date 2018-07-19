@@ -1,41 +1,23 @@
 defmodule Explorer.SmartContract.ReaderTest do
-  use ExUnit.Case
+  use EthereumJSONRPC.Case
   use Explorer.DataCase
 
   doctest Explorer.SmartContract.Reader
 
   alias Explorer.SmartContract.Reader
 
-  alias Plug.Conn
+  import Mox
 
-  @ethereum_jsonrpc_original Application.get_env(:ethereum_jsonrpc, :url)
-
-  setup do
-    bypass = Bypass.open()
-
-    Application.put_env(:ethereum_jsonrpc, :url, "http://localhost:#{bypass.port}")
-
-    on_exit(fn ->
-      Application.put_env(:ethereum_jsonrpc, :url, @ethereum_jsonrpc_original)
-    end)
-
-    {:ok, bypass: bypass}
-  end
+  setup :verify_on_exit!
 
   describe "query_contract/2" do
-    test "correctly returns the results of the smart contract functions", %{bypass: bypass} do
-      Bypass.expect(bypass, fn conn ->
-        Conn.resp(
-          conn,
-          200,
-          ~s[{"jsonrpc":"2.0","result":"0x0000000000000000000000000000000000000000000000000000000000000000","id":"get"}]
-        )
-      end)
-
+    test "correctly returns the results of the smart contract functions" do
       hash =
         :smart_contract
         |> insert()
         |> Map.get(:address_hash)
+
+      blockchain_get_function_mock()
 
       assert Reader.query_contract(hash, %{"get" => []}) == %{"get" => [0]}
     end
@@ -83,7 +65,7 @@ defmodule Explorer.SmartContract.ReaderTest do
   end
 
   describe "read_only_functions/1" do
-    test "fetches the smart contract read only functions with the blockchain value", %{bypass: bypass} do
+    test "fetches the smart contract read only functions with the blockchain value" do
       smart_contract =
         insert(
           :smart_contract,
@@ -109,13 +91,7 @@ defmodule Explorer.SmartContract.ReaderTest do
           ]
         )
 
-      Bypass.expect(bypass, fn conn ->
-        Conn.resp(
-          conn,
-          200,
-          ~s[{"jsonrpc":"2.0","result":"0x0000000000000000000000000000000000000000000000000000000000000000","id":"get"}]
-        )
-      end)
+      blockchain_get_function_mock()
 
       response = Reader.read_only_functions(smart_contract.address_hash)
 
@@ -143,16 +119,10 @@ defmodule Explorer.SmartContract.ReaderTest do
   end
 
   describe "query_function/2" do
-    test "given the arguments, fetches the function value from the blockchain", %{bypass: bypass} do
+    test "given the arguments, fetches the function value from the blockchain" do
       smart_contract = insert(:smart_contract)
 
-      Bypass.expect(bypass, fn conn ->
-        Conn.resp(
-          conn,
-          200,
-          ~s[{"jsonrpc":"2.0","result":"0x0000000000000000000000000000000000000000000000000000000000000000","id":"get"}]
-        )
-      end)
+      blockchain_get_function_mock()
 
       assert [
                %{
@@ -215,5 +185,15 @@ defmodule Explorer.SmartContract.ReaderTest do
                }
              ] = Reader.link_outputs_and_values(blockchain_values, outputs, function_name)
     end
+  end
+
+  defp blockchain_get_function_mock() do
+    EthereumJSONRPC.Mox
+    |> expect(
+      :json_rpc,
+      fn [%{id: id, method: _, params: [%{data: _, to: _}]}], _options ->
+        {:ok, [%{id: id, jsonrpc: "2.0", result: "0x0000000000000000000000000000000000000000000000000000000000000000"}]}
+      end
+    )
   end
 end
