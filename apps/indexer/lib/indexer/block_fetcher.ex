@@ -71,7 +71,7 @@ defmodule Indexer.BlockFetcher do
       json_rpc_named_arguments: Keyword.fetch!(opts, :json_rpc_named_arguments),
       genesis_task: nil,
       realtime_task: nil,
-      realtime_interval: opts[:block_interval] || @block_interval,
+      realtime_interval: div(opts[:block_interval] || @block_interval, 2),
       starting_block_number: nil,
       blocks_batch_size: Keyword.get(opts, :blocks_batch_size, @blocks_batch_size),
       blocks_concurrency: Keyword.get(opts, :blocks_concurrency, @blocks_concurrency),
