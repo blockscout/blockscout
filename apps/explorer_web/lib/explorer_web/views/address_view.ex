@@ -72,4 +72,10 @@ defmodule ExplorerWeb.AddressView do
   end
 
   def trimmed_hash(_), do: ""
+
+  def smart_contract_with_read_only_functions?(%Address{smart_contract: %SmartContract{}} = address) do
+    Enum.any?(address.smart_contract.abi, & &1["constant"])
+  end
+
+  def smart_contract_with_read_only_functions?(%Address{smart_contract: nil}), do: false
 end

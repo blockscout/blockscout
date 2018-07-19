@@ -23,6 +23,7 @@ import './lib/from_now'
 import './lib/market_history_chart'
 import './lib/reload_button'
 import './lib/tooltip'
+import './lib/smart_contract/read_function'
 
 import './pages/address'
 import './pages/transaction'

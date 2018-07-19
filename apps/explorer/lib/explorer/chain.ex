@@ -2207,6 +2207,17 @@ defmodule Explorer.Chain do
     |> Repo.insert()
   end
 
+  @spec address_hash_to_smart_contract(%Explorer.Chain.Hash{}) :: %Explorer.Chain.SmartContract{}
+  def address_hash_to_smart_contract(%Explorer.Chain.Hash{} = address_hash) do
+    query =
+      from(
+        smart_contract in SmartContract,
+        where: smart_contract.address_hash == ^address_hash
+      )
+
+    Repo.one(query)
+  end
+
   @spec changes_list(params :: [map], [{:for, module} | {:with, atom}]) :: {:ok, [map]} | {:error, [Changeset.t()]}
   defp changes_list(params, options) when is_list(options) do
     ecto_schema_module = Keyword.fetch!(options, :for)

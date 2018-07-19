@@ -8,3 +8,9 @@ config :explorer, Explorer.Repo,
   ssl: String.equivalent?(System.get_env("ECTO_USE_SSL") || "true", "true"),
   prepare: :unnamed,
   timeout: 60_000
+
+variant = System.get_env("ETHEREUM_JSONRPC_VARIANT") || "parity"
+
+# Import variant specific config. This must remain at the bottom
+# of this file so it overrides the configuration defined above.
+import_config "prod/#{variant}.exs"
