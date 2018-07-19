@@ -480,5 +480,481 @@ defmodule ExplorerWeb.API.RPC.AddressControllerTest do
       assert response["status"] == "1"
       assert response["message"] == "OK"
     end
+
+    test "orders transactions by block, in ascending order", %{conn: conn} do
+      first_block = insert(:block)
+      second_block = insert(:block)
+      third_block = insert(:block)
+      address = insert(:address)
+
+      2
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(second_block)
+
+      2
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(third_block)
+
+      2
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(first_block)
+
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "#{address.hash}",
+        "sort" => "asc"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      block_numbers_order =
+        Enum.map(response["result"], fn transaction ->
+          String.to_integer(transaction["blockNumber"])
+        end)
+
+      assert block_numbers_order == Enum.sort(block_numbers_order, &(&1 <= &2))
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "orders transactions by block, in descending order", %{conn: conn} do
+      first_block = insert(:block)
+      second_block = insert(:block)
+      third_block = insert(:block)
+      address = insert(:address)
+
+      2
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(second_block)
+
+      2
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(third_block)
+
+      2
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(first_block)
+
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "#{address.hash}",
+        "sort" => "desc"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      block_numbers_order =
+        Enum.map(response["result"], fn transaction ->
+          String.to_integer(transaction["blockNumber"])
+        end)
+
+      assert block_numbers_order == Enum.sort(block_numbers_order, &(&1 >= &2))
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "ignores invalid sort option, defaults to ascending", %{conn: conn} do
+      first_block = insert(:block)
+      second_block = insert(:block)
+      third_block = insert(:block)
+      address = insert(:address)
+
+      2
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(second_block)
+
+      2
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(third_block)
+
+      2
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(first_block)
+
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "#{address.hash}",
+        "sort" => "invalidsortoption"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      block_numbers_order =
+        Enum.map(response["result"], fn transaction ->
+          String.to_integer(transaction["blockNumber"])
+        end)
+
+      assert block_numbers_order == Enum.sort(block_numbers_order, &(&1 <= &2))
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "with valid pagination params", %{conn: conn} do
+      # To get paginated results on this endpoint Etherscan's docs say:
+      #
+      # "(To get paginated results use page=<page number> and offset=<max
+      # records to return>)"
+
+      first_block = insert(:block)
+      second_block = insert(:block)
+      third_block = insert(:block)
+      address = insert(:address)
+
+      _second_block_transactions =
+        2
+        |> insert_list(:transaction, from_address: address)
+        |> with_block(second_block)
+
+      _third_block_transactions =
+        2
+        |> insert_list(:transaction, from_address: address)
+        |> with_block(third_block)
+
+      first_block_transactions =
+        2
+        |> insert_list(:transaction, from_address: address)
+        |> with_block(first_block)
+
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "#{address.hash}",
+        # page number
+        "page" => "1",
+        # page size
+        "offset" => "2"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      page1_hashes = Enum.map(response["result"], & &1["hash"])
+
+      assert length(response["result"]) == 2
+
+      for transaction <- first_block_transactions do
+        assert "#{transaction.hash}" in page1_hashes
+      end
+
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "ignores pagination params when invalid", %{conn: conn} do
+      first_block = insert(:block)
+      second_block = insert(:block)
+      third_block = insert(:block)
+      address = insert(:address)
+
+      _second_block_transactions =
+        2
+        |> insert_list(:transaction, from_address: address)
+        |> with_block(second_block)
+
+      _third_block_transactions =
+        2
+        |> insert_list(:transaction, from_address: address)
+        |> with_block(third_block)
+
+      _first_block_transactions =
+        2
+        |> insert_list(:transaction, from_address: address)
+        |> with_block(first_block)
+
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "#{address.hash}",
+        # page number
+        "page" => "invalidpage",
+        # page size
+        "offset" => "invalidoffset"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert length(response["result"]) == 6
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "ignores pagination params if page is less than 1", %{conn: conn} do
+      address = insert(:address)
+
+      6
+      |> insert_list(:transaction, from_address: address)
+      |> with_block()
+
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "#{address.hash}",
+        # page number
+        "page" => "0",
+        # page size
+        "offset" => "2"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert length(response["result"]) == 6
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "ignores pagination params if offset is less than 1", %{conn: conn} do
+      address = insert(:address)
+
+      6
+      |> insert_list(:transaction, from_address: address)
+      |> with_block()
+
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "#{address.hash}",
+        # page number
+        "page" => "1",
+        # page size
+        "offset" => "0"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert length(response["result"]) == 6
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "ignores pagination params if offset is over 10,000", %{conn: conn} do
+      address = insert(:address)
+
+      6
+      |> insert_list(:transaction, from_address: address)
+      |> with_block()
+
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "#{address.hash}",
+        # page number
+        "page" => "1",
+        # page size
+        "offset" => "10_500"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert length(response["result"]) == 6
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "with page number with no results", %{conn: conn} do
+      first_block = insert(:block)
+      second_block = insert(:block)
+      third_block = insert(:block)
+      address = insert(:address)
+
+      _second_block_transactions =
+        2
+        |> insert_list(:transaction, from_address: address)
+        |> with_block(second_block)
+
+      _third_block_transactions =
+        2
+        |> insert_list(:transaction, from_address: address)
+        |> with_block(third_block)
+
+      _first_block_transactions =
+        2
+        |> insert_list(:transaction, from_address: address)
+        |> with_block(first_block)
+
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "#{address.hash}",
+        # page number
+        "page" => "5",
+        # page size
+        "offset" => "2"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == []
+      assert response["status"] == "0"
+      assert response["message"] == "No transactions found"
+    end
+
+    test "with startblock and endblock params", %{conn: conn} do
+      blocks = [_, second_block, third_block, _] = insert_list(4, :block)
+      address = insert(:address)
+
+      for block <- blocks do
+        2
+        |> insert_list(:transaction, from_address: address)
+        |> with_block(block)
+      end
+
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "#{address.hash}",
+        "startblock" => "#{second_block.number}",
+        "endblock" => "#{third_block.number}"
+      }
+
+      expected_block_numbers = [
+        "#{second_block.number}",
+        "#{third_block.number}"
+      ]
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert length(response["result"]) == 4
+
+      for transaction <- response["result"] do
+        assert transaction["blockNumber"] in expected_block_numbers
+      end
+
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "with startblock but without endblock", %{conn: conn} do
+      blocks = [_, _, third_block, fourth_block] = insert_list(4, :block)
+      address = insert(:address)
+
+      for block <- blocks do
+        2
+        |> insert_list(:transaction, from_address: address)
+        |> with_block(block)
+      end
+
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "#{address.hash}",
+        "startblock" => "#{third_block.number}"
+      }
+
+      expected_block_numbers = [
+        "#{third_block.number}",
+        "#{fourth_block.number}"
+      ]
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert length(response["result"]) == 4
+
+      for transaction <- response["result"] do
+        assert transaction["blockNumber"] in expected_block_numbers
+      end
+
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "with endblock but without startblock", %{conn: conn} do
+      blocks = [first_block, second_block, _, _] = insert_list(4, :block)
+      address = insert(:address)
+
+      for block <- blocks do
+        2
+        |> insert_list(:transaction, from_address: address)
+        |> with_block(block)
+      end
+
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "#{address.hash}",
+        "endblock" => "#{second_block.number}"
+      }
+
+      expected_block_numbers = [
+        "#{first_block.number}",
+        "#{second_block.number}"
+      ]
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert length(response["result"]) == 4
+
+      for transaction <- response["result"] do
+        assert transaction["blockNumber"] in expected_block_numbers
+      end
+
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "ignores invalid startblock and endblock", %{conn: conn} do
+      blocks = [_, _, _, _] = insert_list(4, :block)
+      address = insert(:address)
+
+      for block <- blocks do
+        2
+        |> insert_list(:transaction, from_address: address)
+        |> with_block(block)
+      end
+
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "#{address.hash}",
+        "startblock" => "invalidstart",
+        "endblock" => "invalidend"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert length(response["result"]) == 8
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
   end
 end
