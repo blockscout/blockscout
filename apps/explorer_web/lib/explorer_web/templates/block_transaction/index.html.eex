@@ -2,128 +2,12 @@
 
   <%= render ExplorerWeb.BlockView, "overview.html", assigns %>
 
-</section>
-
-<section class="container-fluid">
-  <section>
-    <h1><%= gettext("Block Details") %></h1>
-    <p data-test="block_detail_number"><%= @block.number %></p>
-
-    <div class="card mb-3">
-      <div class="card-body">
-        <div class="row">
-          <div class="col-lg-6">
-            <table class="table table-font table-responsive-sm table-horizontal">
-              <tbody>
-                <tr>
-                  <th scope="row">
-                    <%= gettext "Timestamp" %>
-                  </th>
-                  <td>
-                    <span data-from-now="<%= @block.timestamp %>"></span> (<%= formatted_timestamp(@block) %>)
-                  </td>
-                </tr>
-                <tr>
-                  <th scope="row">
-                    <%= gettext "Transaction" %>
-                  </th>
-                  <td>
-                    <%= gettext "%{count} transactions in this block", count: @block_transaction_count %>
-                  </td>
-                </tr>
-                <tr>
-                  <th scope="row">
-                    <%= gettext "Hash" %>
-                  </th>
-                  <td title="<%= @block.hash %>">
-                    <%= @block.hash %>
-                  </td>
-                </tr>
-                <tr>
-                  <th scope="row">
-                    <%= gettext "Parent Hash" %>
-                  </th>
-                  <td title="<%= @block.parent_hash %>">
-                    <%= link(
-                          @block.parent_hash,
-                          to: block_path(@conn, :show, @conn.assigns.locale, @block.number - 1)
-                        ) %>
-                  </td>
-                </tr>
-                <tr>
-                  <th scope="row">
-                    <%= gettext "Miner" %>
-                  </th>
-                  <td title="<%= @block.miner %>">
-                    <%= @block.miner %>
-                  </td>
-                </tr>
-                <tr>
-                  <th scope="row">
-                    <%= gettext "Difficulty" %>
-                  </th>
-                  <td title="<%= @block.difficulty %>">
-                  <%= @block.difficulty |> Cldr.Number.to_string! %>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="col-lg-6">
-            <table class="table table-font table-responsive-sm table-horizontal">
-              <tbody>
-                <tr>
-                  <th scope="row">
-                    <%= gettext "Total Difficulty" %>
-                  </th>
-                  <td title="<%= @block.total_difficulty %>">
-                    <%= @block.total_difficulty |> Cldr.Number.to_string! %>
-                  </td>
-                </tr>
-                <tr>
-                  <th scope="row">
-                    <%= gettext "Size" %>
-                  </th>
-                  <td>
-                    <%= Cldr.Unit.new(:byte, @block.size) |> Cldr.Unit.to_string! %>
-                  </td>
-                </tr>
-                <tr>
-                  <th scope="row">
-                    <%= gettext "Gas Used" %>
-                  </th>
-                  <td>
-                    <%= @block.gas_used |> Cldr.Number.to_string! %> (<%= (@block.gas_used / @block.gas_limit) |> Cldr.Number.to_string!(format: "#.#%") %>)
-                  </td>
-                </tr>
-                <tr>
-                  <th scope="row">
-                    <%= gettext "Gas Limit" %>
-                  </th>
-                  <td>
-                    <%= @block.gas_limit |> Cldr.Number.to_string! %>
-                  </td>
-                </tr>
-                <tr>
-                  <th scope="Nonce">
-                    <%= gettext "Nonce" %>
-                  </th>
-                  <td>
-                    <%= @block.nonce %>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <section>
     <div class="card mb-3">
       <div class="card-header">
-        <ul class="nav nav-tabs card-header-tabs">
+
+        <!-- DESKTOP TAB NAV -->
+        <ul class="nav nav-tabs card-header-tabs d-none d-md-inline-flex">
           <li class="nav-item">
             <%= link(
                   gettext("Transactions"),
@@ -132,69 +16,33 @@
                 ) %>
           </li>
         </ul>
+
+        <!-- MOBILE DROPDOWN NAV -->
+        <ul class="nav nav-tabs card-header-tabs d-md-none">
+          <li class="nav-item dropdown flex-fill text-center">
+            <a class="nav-link active dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Transactions</a>
+            <div class="dropdown-menu">
+              <%= link(
+                    gettext("Transactions"),
+                    class: "dropdown-item",
+                    to: block_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["block_id"])
+                  ) %>
+            </div>
+          </li>
+        </ul>
       </div>
       <div class="card-body">
         <%= if Enum.count(@transactions) > 0 do %>
-          <table class="table table-responsive-sm table-font">
-            <thead>
-              <tr>
-                <th>
-                  <%= gettext "Status" %>
-                </th>
-                <th><%= gettext "Hash" %></th>
-                <th><%= gettext "Block" %></th>
-                <th><%= gettext "Age" %></th>
-                <th><%= gettext "From" %></th>
-                <th></th>
-                <th><%= gettext "To" %></th>
-                <th><%= gettext "Value" %></th>
-              </tr>
-            </thead>
-            <tbody>
-              <%= for transaction <- @transactions do %>
-                <tr data-transaction-hash="<%= transaction.hash %>">
-                  <td data-test="transaction_status">
-                    <div class="transaction__dot transaction__dot--<%= ExplorerWeb.TransactionView.status(transaction) %>" data-toggle="tooltip" title="<%= ExplorerWeb.TransactionView.formatted_status(transaction) %>"></div>
-                  </td>
-                  <td>
-                    <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: transaction.hash %>
-                  </td>
-                  <td>
-                    <%= link(
-                          transaction.block,
-                          to: block_path(@conn, :show, @conn.assigns.locale, transaction.block)
-                        ) %>
-                  </td>
-                  <td data-from-now="<%= transaction.block.timestamp %>"></td>
-                  <td class="address-cell">
-                    <%= render ExplorerWeb.AddressView, "_link.html", address_hash: transaction.from_address_hash, contract: ExplorerWeb.AddressView.contract?(transaction.from_address), locale: @locale %>
-                  </td>
-                  <td class="u-text-center"><i class="fas fa-arrow-circle-right"></i></td>
-                  <td>
-                    <%= cond do %>
-                      <% transaction.to_address_hash != nil -> %>
-                        <%= render ExplorerWeb.AddressView, "_link.html", address_hash: transaction.to_address_hash, contract: ExplorerWeb.AddressView.contract?(transaction.to_address), locale: @locale %>
-                      <% transaction.created_contract_address_hash != nil -> %>
-                        <i class="fas fa-plus-square"></i>
-                        <%= link(
-                          "Contract Creation",
-                          class: "transaction__link",
-                          "data-address-hash": transaction.created_contract_address_hash,
-                          to: address_path(@conn, :show, @conn.assigns.locale, transaction.created_contract_address_hash),
-                          title: transaction.created_contract_address_hash
-                        ) %>
-                      <% true -> %>
-                    <% end %>
-                  </td>
-                  <td>
-                    <%= ExplorerWeb.TransactionView.value(transaction) %>
-                  </td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
+          <h2 class="card-title"><%= gettext "Transactions" %></h2>
+          <span data-selector="transactions-list">
+            <%= for transaction <- @transactions do %>
+              <%= render "_transaction.html", locale: @locale, transaction: transaction %>
+            <% end %>
+          </span>
         <% else %>
-          <p><%= gettext "There are no Transactions" %></p>
+          <div class="tile tile-muted text-center">
+            <span data-selector="empty-transactions-list"><%= gettext "There are no transactions for this address." %></span>
+          </div>
         <% end %>
       </div>
     </div>
