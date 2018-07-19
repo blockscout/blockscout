@@ -3,8 +3,8 @@ defmodule ExplorerWeb.CSPHeader do
   Plug to set content-security-policy with websocket endpoints
   """
 
-  alias ExplorerWeb.Router.Helpers
   alias Phoenix.Controller
+  alias Plug.Conn
 
   def init(opts), do: opts
 
@@ -22,9 +22,7 @@ defmodule ExplorerWeb.CSPHeader do
   end
 
   defp websocket_endpoints(conn) do
-    endpoint = conn |> Helpers.url() |> URI.parse()
-    ws_endpoint = %{endpoint | scheme: "ws"} |> URI.to_string()
-    wss_endpoint = %{endpoint | scheme: "wss"} |> URI.to_string()
-    "#{ws_endpoint} #{wss_endpoint}"
+    host = Conn.get_req_header(conn, "host")
+    "ws://#{host} wss://#{host}"
   end
 end
