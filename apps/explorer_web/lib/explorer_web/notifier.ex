@@ -14,13 +14,11 @@ defmodule ExplorerWeb.Notifier do
   end
 
   def handle_event({:chain_event, :transactions, transaction_hashes}) do
-    transaction_hashes
-    |> Enum.each(&broadcast_transaction/1)
+    Enum.each(transaction_hashes, &broadcast_transaction/1)
   end
 
   def handle_event({:chain_event, :balance_updates, addresses}) do
-    addresses
-    |> Enum.each(&broadcast_balance/1)
+    Enum.each(addresses, &broadcast_balance/1)
   end
 
   defp broadcast_balance(%Address{hash: address_hash} = address) do

@@ -832,13 +832,11 @@ defmodule Explorer.Chain do
           {:ok,
            %{
              optional(:addresses) => [Address.t()],
-             optional(:blocks) => [Hash.Full.t()],
+             optional(:blocks) => [Block.t()],
              optional(:internal_transactions) => [
                %{required(:index) => non_neg_integer(), required(:transaction_hash) => Hash.Full.t()}
              ],
-             optional(:logs) => [
-               %{required(:index) => non_neg_integer(), required(:transaction_hash) => Hash.Full.t()}
-             ],
+             optional(:logs) => [Log.t()],
              optional(:receipts) => [Hash.Full.t()],
              optional(:transactions) => [Hash.Full.t()]
            }}
