@@ -23,7 +23,7 @@ defmodule Indexer.BlockFetcher do
   @blocks_concurrency 10
 
   # milliseconds
-  @block_rate 5_000
+  @block_interval 5_000
 
   @receipts_batch_size 250
   @receipts_concurrency 10
@@ -45,7 +45,8 @@ defmodule Indexer.BlockFetcher do
       Defaults to #{@blocks_concurrency}.  So upto `blocks_concurrency * block_batch_size` (defaults to
       `#{@blocks_concurrency * @blocks_batch_size}`) blocks can be requested from the JSONRPC at once over all
       connections.
-    * `:block_rate` - The millisecond rate new blocks are published at. Defaults to `#{@block_rate}` milliseconds.
+    * `:block_interval` - The number of milliseconds between new blocks being published. Defaults to
+        `#{@block_interval}` milliseconds.
     * `:receipts_batch_size` - The number of receipts to request in one call to the JSONRPC.  Defaults to
       `#{@receipts_batch_size}`.  Receipt requests also include the logs for when the transaction was collated into the
       block.  *These logs are not paginated.*
@@ -70,7 +71,7 @@ defmodule Indexer.BlockFetcher do
       json_rpc_named_arguments: Keyword.fetch!(opts, :json_rpc_named_arguments),
       genesis_task: nil,
       realtime_task: nil,
-      realtime_interval: opts[:block_rate] || @block_rate,
+      realtime_interval: opts[:block_interval] || @block_interval,
       starting_block_number: nil,
       blocks_batch_size: Keyword.get(opts, :blocks_batch_size, @blocks_batch_size),
       blocks_concurrency: Keyword.get(opts, :blocks_concurrency, @blocks_concurrency),
