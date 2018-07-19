@@ -8,7 +8,7 @@ defmodule ExplorerWeb.BlockPage do
   alias Explorer.Chain.{Block, InternalTransaction, Transaction}
 
   def contract_creation(%InternalTransaction{created_contract_address_hash: hash}) do
-    css("[data-address-hash='#{hash}']", text: "Contract Creation")
+    css("[data-address-hash='#{hash}']")
   end
 
   def detail_number(%Block{number: block_number}) do
