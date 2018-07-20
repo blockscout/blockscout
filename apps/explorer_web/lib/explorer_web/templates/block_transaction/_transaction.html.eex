@@ -11,27 +11,15 @@
     <div class="col-md-7 col-lg-8 d-flex flex-column">
       <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: @transaction.hash %>
       <span>
-        <%= if @address.hash == @transaction.from_address_hash do %>
-          <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: @transaction.from_address_hash, contract: ExplorerWeb.AddressView.contract?(@transaction.from_address) %>
-        <% else %>
-          <%= render ExplorerWeb.AddressView, "_link.html", address_hash: @transaction.from_address_hash, contract: ExplorerWeb.AddressView.contract?(@transaction.from_address), locale: @locale %>
-        <% end %>
+        <%= render ExplorerWeb.AddressView, "_link.html", address_hash: @transaction.from_address_hash, contract: ExplorerWeb.AddressView.contract?(@transaction.from_address), locale: @locale %>
 
         &rarr;
 
-        <%= if @address.hash == ExplorerWeb.TransactionView.to_address_hash(@transaction) do %>
-          <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: ExplorerWeb.TransactionView.to_address_hash(@transaction), contract: ExplorerWeb.AddressView.contract?(@transaction.to_address) %>
-        <% else %>
-          <%= render ExplorerWeb.AddressView, "_link.html", address_hash: ExplorerWeb.TransactionView.to_address_hash(@transaction), contract: ExplorerWeb.AddressView.contract?(@transaction.to_address), locale: @locale %>
-        <% end %>
+        <%= render ExplorerWeb.AddressView, "_link.html", address_hash: ExplorerWeb.TransactionView.to_address_hash(@transaction), contract: ExplorerWeb.AddressView.contract?(@transaction.to_address), locale: @locale %>
+
       </span>
       <span>
-        <%= if @address.hash == @transaction.from_address_hash do %>
-          <span class="badge badge-danger tile-badge"><%= gettext "OUT" %></span>
-        <% else %>
-          <span class="badge badge-success tile-badge"><%= gettext "IN" %></span>
-        <% end %>
-        <span class="ml-1" data-from-now="<%= @transaction.block.timestamp %>"></span>
+        <span data-from-now="<%= @transaction.block.timestamp %>"></span>
         <span class="ml-1">
           <%= link(
             gettext("Block #%{number}", number: to_string(@transaction.block.number)),

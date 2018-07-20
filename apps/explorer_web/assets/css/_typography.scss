@@ -46,6 +46,11 @@ a {
   &:focus {
     text-decoration: underline;
   }
+
+  .bg-primary &:hover,
+  .bg-primary &:focus {
+    color: $white;
+  }
 }
 .monospace {
   font-family: $font-family-monospace;
