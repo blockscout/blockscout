@@ -227,7 +227,7 @@ defmodule Explorer.Factory do
       data: data(:log_data),
       first_topic: nil,
       fourth_topic: nil,
-      index: 0,
+      index: Enum.random(1..1000),
       second_topic: nil,
       third_topic: nil,
       transaction: build(:transaction),
@@ -278,24 +278,22 @@ defmodule Explorer.Factory do
   end
 
   def token_transfer_factory do
-    log = insert(:token_transfer_log)
+    log = build(:token_transfer_log)
     to_address_hash = address_hash_from_zero_padded_hash_string(log.third_topic)
+    from_address_hash = address_hash_from_zero_padded_hash_string(log.second_topic)
 
     # `to_address` is only the only thing that isn't created from the token_transfer_log_factory
-
-    insert(:address, hash: to_address_hash)
-
-    from_address_hash = address_hash_from_zero_padded_hash_string(log.second_topic)
+    to_address = build(:address, hash: to_address_hash)
+    from_address = build(:address, hash: from_address_hash)
+    contract_code = Map.fetch!(contract_code_info(), :bytecode)
 
     %TokenTransfer{
       amount: Decimal.new(1),
-      from_address: nil,
-      from_address_hash: from_address_hash,
-      to_address: nil,
-      to_address_hash: to_address_hash,
-      transaction: nil,
-      transaction_hash: log.transaction.hash,
-      log_index: log.index
+      from_address: from_address,
+      to_address: to_address,
+      token_contract_address: build(:address, contract_code: contract_code),
+      transaction: log.transaction,
+      log_index: log.index,
     }
   end
 
@@ -425,7 +423,7 @@ defmodule Explorer.Factory do
   end
 
   defp address_hash_from_zero_padded_hash_string("0x000000000000000000000000" <> hash_string) do
-    {:ok, hash} = Explorer.Chain.Hash.cast(Explorer.Chain.Hash.Truncated, "0x" <> hash_string)
+    {:ok, hash} = Explorer.Chain.Hash.cast(Explorer.Chain.Hash.Address, "0x" <> hash_string)
     hash
   end
 end
