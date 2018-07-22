@@ -73,6 +73,8 @@ defmodule Explorer.Chain.TokenTransfer do
 
     belongs_to(:transaction, Transaction, foreign_key: :transaction_hash, references: :hash, type: Hash.Full)
 
+    has_one(:token, through: [:token_contract_address, :token])
+
     timestamps()
   end
 

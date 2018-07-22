@@ -293,7 +293,7 @@ defmodule Explorer.Factory do
       to_address: to_address,
       token_contract_address: build(:address, contract_code: contract_code),
       transaction: log.transaction,
-      log_index: log.index,
+      log_index: log.index
     }
   end
 
