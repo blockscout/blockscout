@@ -89,33 +89,33 @@ defmodule Indexer.BlockFetcher do
 
   @impl GenServer
   def handle_info(:catchup_index, %{} = state) do
-    {:ok, genesis_task, _ref} = Indexer.start_monitor(fn -> genesis_task(state) end)
+    genesis_task = Task.Supervisor.async_nolink(Indexer.TaskSupervisor, fn -> genesis_task(state) end)
 
     {:noreply, %{state | genesis_task: genesis_task}}
   end
 
   def handle_info(:realtime_index, %{} = state) do
-    {:ok, realtime_task, _ref} = Indexer.start_monitor(fn -> realtime_task(state) end)
+    realtime_task = Task.Supervisor.async_nolink(Indexer.TaskSupervisor, fn -> realtime_task(state) end)
 
     {:noreply, %{state | realtime_task: realtime_task}}
   end
 
-  def handle_info({:DOWN, _ref, :process, pid, :normal}, %{realtime_task: pid} = state) do
+  def handle_info({:DOWN, ref, :process, pid, :normal}, %{realtime_task: %Task{pid: pid, ref: ref}} = state) do
     {:noreply, schedule_next_realtime_fetch(%{state | realtime_task: nil})}
   end
 
-  def handle_info({:DOWN, _ref, :process, pid, _reason}, %{realtime_task: pid} = state) do
-    Logger.error(fn -> "realtime index stream exited. Restarting" end)
+  def handle_info({:DOWN, ref, :process, pid, reason}, %{realtime_task: %Task{pid: pid, ref: ref}} = state) do
+    Logger.error(fn -> "realtime index stream exited with reason (#{inspect(reason)}). Restarting" end)
     {:noreply, schedule_next_realtime_fetch(%{state | realtime_task: nil})}
   end
 
-  def handle_info({:DOWN, _ref, :process, pid, :normal}, %{genesis_task: pid} = state) do
+  def handle_info({:DOWN, ref, :process, pid, :normal}, %{genesis_task: %Task{pid: pid, ref: ref}} = state) do
     Logger.info(fn -> "Finished index from genesis. Transitioning to only realtime index." end)
     {:noreply, %{state | genesis_task: nil}}
   end
 
-  def handle_info({:DOWN, _ref, :process, pid, _reason}, %{genesis_task: pid} = state) do
-    Logger.error(fn -> "gensis index stream exited. Restarting" end)
+  def handle_info({:DOWN, ref, :process, pid, reason}, %{genesis_task: %Task{pid: pid, ref: ref}} = state) do
+    Logger.error(fn -> "gensis index stream exited with reason (#{inspect(reason)}). Restarting" end)
 
     {:noreply, schedule_next_catchup_index(%{state | genesis_task: nil})}
   end
