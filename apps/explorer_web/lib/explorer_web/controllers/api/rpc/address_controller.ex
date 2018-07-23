@@ -27,9 +27,11 @@ defmodule ExplorerWeb.API.RPC.AddressController do
   end
 
   def txlist(conn, params) do
+    options = optional_params(params)
+
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param),
-         {:ok, transactions} <- list_transactions(address_hash) do
+         {:ok, transactions} <- list_transactions(address_hash, options) do
       render(conn, :txlist, %{transactions: transactions})
     else
       {:address_param, :error} ->
@@ -110,8 +112,65 @@ defmodule ExplorerWeb.API.RPC.AddressController do
     {:format, Chain.string_to_address_hash(address_hash_string)}
   end
 
-  defp list_transactions(address_hash) do
-    case Etherscan.list_transactions(address_hash) do
+  defp optional_params(params) do
+    %{}
+    |> put_order_by_direction(params)
+    |> put_pagination_options(params)
+    |> put_start_block(params)
+    |> put_end_block(params)
+  end
+
+  defp put_order_by_direction(options, params) do
+    case params do
+      %{"sort" => sort} when sort in ["asc", "desc"] ->
+        order_by_direction = String.to_existing_atom(sort)
+        Map.put(options, :order_by_direction, order_by_direction)
+
+      _ ->
+        options
+    end
+  end
+
+  defp put_pagination_options(options, params) do
+    with %{"page" => page, "offset" => offset} <- params,
+         {page_number, ""} when page_number > 0 <- Integer.parse(page),
+         {page_size, ""} when page_size > 0 <- Integer.parse(offset),
+         :ok <- validate_max_page_size(page_size) do
+      options
+      |> Map.put(:page_number, page_number)
+      |> Map.put(:page_size, page_size)
+    else
+      _ ->
+        options
+    end
+  end
+
+  defp validate_max_page_size(page_size) do
+    if page_size <= Etherscan.page_size_max(), do: :ok, else: :error
+  end
+
+  defp put_start_block(options, params) do
+    with %{"startblock" => startblock_param} <- params,
+         {start_block, ""} <- Integer.parse(startblock_param) do
+      Map.put(options, :start_block, start_block)
+    else
+      _ ->
+        options
+    end
+  end
+
+  defp put_end_block(options, params) do
+    with %{"endblock" => endblock_param} <- params,
+         {end_block, ""} <- Integer.parse(endblock_param) do
+      Map.put(options, :end_block, end_block)
+    else
+      _ ->
+        options
+    end
+  end
+
+  defp list_transactions(address_hash, options) do
+    case Etherscan.list_transactions(address_hash, options) do
       [] -> {:error, :not_found}
       transactions -> {:ok, transactions}
     end
