@@ -1,0 +1,18 @@
+<div class="col-sm-3">
+  <div class="tile d-flex flex-column" data-test="chain_block">
+    <%= link(@block, to: block_path(ExplorerWeb.Endpoint, :show, @locale, @block), class: "tile-title") %>
+    <div>
+      <%= @block.transactions |> Enum.count %> Transactions
+      <span class="ml-2" data-from-now="<%= @block.timestamp %>"> </span>
+    </div>
+    <span class="text-truncate">
+      Validated by
+      <%= link to: address_path(ExplorerWeb.Endpoint, :show, @locale, @block.miner),
+        "data-toggle": "tooltip",
+        "data-placement": "top",
+        title: @block.miner do %>
+        <%= @block.miner %>
+      <% end %>
+    </span>
+  </div>
+</div>

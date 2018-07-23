@@ -52,6 +52,16 @@
   </div>
 </div>
 <section class="container">
-  <%= render ExplorerWeb.ChainView, "_blocks.html", assigns %>
+  <div class="card">
+    <div class="card-body">
+      <%= link(gettext("View All Blocks →"), to: block_path(@conn, :index, Gettext.get_locale), class: "button button--secondary button--xsmall float-right") %>
+      <h2 class="card-title"><%= gettext "Blocks" %></h2>
+      <div class="row">
+        <%= for block <- @chain.blocks do %>
+          <%= render ExplorerWeb.ChainView, "_block.html", locale: @locale, block: block %>
+        <% end %>
+      </div>
+    </div>
+  </div>
   <%= render ExplorerWeb.ChainView, "_transactions.html", assigns %>
 </section>
