@@ -415,4 +415,37 @@ defmodule Explorer.Chain.InternalTransaction do
       _ -> validate_disallowed(changeset, @create_success_fields, message: "can't be present for failed create")
     end
   end
+
+  @doc """
+  Adds to the given transaction's query a `where` with one of the conditions that the matched
+  function returns.
+
+  `where_address_fields_match(query, address_hash, :to)`
+  - returns a query considering that the given address_hash is equal to to_address_hash from
+    transactions' table.
+
+  `where_address_fields_match(query, address_hash, :from)`
+  - returns a query considering that the given address_hash is equal to from_address_hash from
+    transactions' table.
+
+  `where_address_fields_match(query, address_hash, nil)`
+  - returns a query considering that the given address_hash can be: to_address_hash,
+    from_address_hash, created_contract_address_hash from internal_transactions' table.
+  """
+  def where_address_fields_match(query, address_hash, :to) do
+    where(query, [t], t.to_address_hash == ^address_hash)
+  end
+
+  def where_address_fields_match(query, address_hash, :from) do
+    where(query, [t], t.from_address_hash == ^address_hash)
+  end
+
+  def where_address_fields_match(query, address_hash, nil) do
+    where(
+      query,
+      [it],
+      it.to_address_hash == ^address_hash or it.from_address_hash == ^address_hash or
+        it.created_contract_address_hash == ^address_hash
+    )
+  end
 end
