@@ -69,7 +69,7 @@ defmodule Indexer.BlockFetcher do
 
     state = %{
       json_rpc_named_arguments: Keyword.fetch!(opts, :json_rpc_named_arguments),
-      genesis_task: nil,
+      catchup_task: nil,
       realtime_tasks: [],
       realtime_interval: div(opts[:block_interval] || @block_interval, 2),
       blocks_batch_size: Keyword.get(opts, :blocks_batch_size, @blocks_batch_size),
@@ -85,9 +85,9 @@ defmodule Indexer.BlockFetcher do
 
   @impl GenServer
   def handle_info(:catchup_index, %{} = state) do
-    genesis_task = Task.Supervisor.async_nolink(Indexer.TaskSupervisor, fn -> genesis_task(state) end)
+    catchup_task = Task.Supervisor.async_nolink(Indexer.TaskSupervisor, fn -> catchup_task(state) end)
 
-    {:noreply, %{state | genesis_task: genesis_task}}
+    {:noreply, %{state | catchup_task: catchup_task}}
   end
 
   def handle_info(:realtime_index, %{realtime_tasks: realtime_tasks} = state) when is_list(realtime_tasks) do
@@ -96,16 +96,16 @@ defmodule Indexer.BlockFetcher do
     {:noreply, %{state | realtime_tasks: [realtime_task | realtime_tasks]}}
   end
 
-  def handle_info({:DOWN, ref, :process, pid, :normal}, %{genesis_task: %Task{pid: pid, ref: ref}} = state) do
+  def handle_info({:DOWN, ref, :process, pid, :normal}, %{catchup_task: %Task{pid: pid, ref: ref}} = state) do
     Logger.info(fn -> "Finished index down to genesis. Transitioning to only realtime index." end)
 
-    {:noreply, %{state | genesis_task: nil}}
+    {:noreply, %{state | catchup_task: nil}}
   end
 
-  def handle_info({:DOWN, ref, :process, pid, reason}, %{genesis_task: %Task{pid: pid, ref: ref}} = state) do
-    Logger.error(fn -> "genesis index stream exited with reason (#{inspect(reason)}). Restarting" end)
+  def handle_info({:DOWN, ref, :process, pid, reason}, %{catchup_task: %Task{pid: pid, ref: ref}} = state) do
+    Logger.error(fn -> "catchup index stream exited with reason (#{inspect(reason)}). Restarting" end)
 
-    {:noreply, schedule_next_catchup_index(%{state | genesis_task: nil})}
+    {:noreply, schedule_next_catchup_index(%{state | catchup_task: nil})}
   end
 
   def handle_info({:DOWN, ref, :process, pid, reason}, %{realtime_tasks: realtime_tasks} = state)
@@ -166,7 +166,7 @@ defmodule Indexer.BlockFetcher do
     end)
   end
 
-  defp genesis_task(%{json_rpc_named_arguments: json_rpc_named_arguments} = state) do
+  defp catchup_task(%{json_rpc_named_arguments: json_rpc_named_arguments} = state) do
     {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
     missing_ranges = Chain.missing_block_number_ranges(latest_block_number..0)
     count = Enum.count(missing_ranges)
