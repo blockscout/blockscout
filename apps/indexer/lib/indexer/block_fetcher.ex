@@ -72,7 +72,6 @@ defmodule Indexer.BlockFetcher do
       genesis_task: nil,
       realtime_tasks: [],
       realtime_interval: div(opts[:block_interval] || @block_interval, 2),
-      starting_block_number: nil,
       blocks_batch_size: Keyword.get(opts, :blocks_batch_size, @blocks_batch_size),
       blocks_concurrency: Keyword.get(opts, :blocks_concurrency, @blocks_concurrency),
       receipts_batch_size: Keyword.get(opts, :receipts_batch_size, @receipts_batch_size),
