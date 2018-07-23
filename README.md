@@ -52,19 +52,22 @@ The [development stack page](https://github.com/poanetwork/poa-explorer/wiki/Dev
   1. Fork and clone repository.
   [`https://github.com/poanetwork/poa-explorer/fork`](https://github.com/poanetwork/poa-explorer/fork)
 
-  2. Set up default configurations.
-`cp apps/explorer/config/dev.secret.exs.example apps/explorer/config/dev.secret.exs`
-`cp apps/explorer_web/config/dev.secret.exs.example apps/explorer_web/config/dev.secret.exs`
+  2. Set up default configurations.  
+  `cp apps/explorer/config/dev.secret.exs.example apps/explorer/config/dev.secret.exs`  
+  `cp apps/explorer_web/config/dev.secret.exs.example apps/explorer_web/config/dev.secret.exs`
 
-  3. Install dependencies.
-`mix do deps.get, local.rebar, deps.compile, compile`
+  Optional: Set up default configuration for testing.  
+  `cp apps/explorer/config/test.secret.exs.example apps/explorer/config/test.secret.exs`  
+  Example usage: Changing the default Postgres port from localhost:15432 if [Boxen](https://github.com/boxen/boxen) is installed.
 
-  4. Create and migrate database.
+  3. Install dependencies.  
+  `mix do deps.get, local.rebar, deps.compile, compile`
+
+  4. Create and migrate database.  
   `mix ecto.create && mix ecto.migrate`
 
-  5. Install Node.js dependencies.
-  `cd apps/explorer_web/assets && npm install; cd -`
-
+  5. Install Node.js dependencies.  
+  `cd apps/explorer_web/assets && npm install; cd -`  
   `cd apps/explorer && npm install; cd -`
 
   6. Start Phoenix Server.
@@ -109,29 +112,29 @@ To monitor build status, configure your local [CCMenu](http://ccmenu.org/) with 
 
 #### Running the tests
 
-  1. Build the assets.
+  1. Build the assets.  
   `cd apps/explorer_web/assets && npm run build; cd -`
 
-  2. Format the Elixir code.
+  2. Format the Elixir code.  
   `mix format`
 
-  3. Run the test suite with coverage for whole umbrella project.
+  3. Run the test suite with coverage for whole umbrella project.  
   `mix coveralls.html --umbrella`
 
-  4. Lint the Elixir code.
+  4. Lint the Elixir code.  
   `mix credo --strict`
 
-  5. Run the dialyzer.
+  5. Run the dialyzer.  
   `mix dialyzer --halt-exit-status`
 
-  6. Check the Elixir code for vulnerabilities.
-  `cd apps/explorer && mix sobelow --config; cd -`
+  6. Check the Elixir code for vulnerabilities.  
+  `cd apps/explorer && mix sobelow --config; cd -`  
   `cd apps/explorer_web && mix sobelow --config; cd -`
 
-  7. Lint the JavaScript code.
+  7. Lint the JavaScript code.  
   `cd apps/explorer_web/assets && npm run eslint; cd -`
 
-  8. Test the JavaScript code.
+  8. Test the JavaScript code.  
   `cd apps/explorer_web/assets && npm run test; cd -`
 
 
@@ -139,15 +142,19 @@ To monitor build status, configure your local [CCMenu](http://ccmenu.org/) with 
 
 To view Modules and API Reference documentation:
 
-1. `mix docs` generates documentation
-2. `open doc/index.html` to view
+1. Generate documentation.  
+`mix docs`
+2. View the generated docs.  
+`open doc/index.html`
 
 
 ## Internationalization
 
-The app is currently internationalized. It is only localized to U.S. English.
+The app is currently internationalized. It is only localized to U.S. English. To translate new strings.
 
-To translate new strings, run `cd apps/explorer_web; mix gettext.extract --merge` and edit the new strings in `apps/explorer_web/priv/gettext/en/LC_MESSAGES/default.po`.
+1. To setup translation file.  
+`cd apps/explorer_web; mix gettext.extract --merge; cd -`
+2. To edit the new strings, go to `apps/explorer_web/priv/gettext/en/LC_MESSAGES/default.po`.
 
 ## Acknowledgements
 
