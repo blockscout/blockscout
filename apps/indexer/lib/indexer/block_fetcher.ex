@@ -97,7 +97,7 @@ defmodule Indexer.BlockFetcher do
   end
 
   def handle_info({:DOWN, ref, :process, pid, :normal}, %{genesis_task: %Task{pid: pid, ref: ref}} = state) do
-    Logger.info(fn -> "Finished index from genesis. Transitioning to only realtime index." end)
+    Logger.info(fn -> "Finished index down to genesis. Transitioning to only realtime index." end)
 
     {:noreply, %{state | genesis_task: nil}}
   end
