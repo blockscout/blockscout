@@ -13,6 +13,7 @@ defmodule Indexer.BlockFetcherTest do
     BalanceFetcher,
     AddressBalanceFetcherCase,
     BlockFetcher,
+    BoundInterval,
     BufferedTask,
     InternalTransactionFetcher,
     InternalTransactionFetcherCase,
@@ -224,19 +225,145 @@ defmodule Indexer.BlockFetcherTest do
       InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       start_supervised!({BlockFetcher, json_rpc_named_arguments: json_rpc_named_arguments})
 
+      first_catchup_block_number = latest_block_number - 1
+
       wait_for_results(fn ->
-        Repo.one!(from(block in Block, where: block.number == ^latest_block_number))
+        Repo.one!(from(block in Block, where: block.number == ^first_catchup_block_number))
       end)
 
       assert Repo.aggregate(Block, :count, :hash) >= 1
 
-      previous_batch_block_number = latest_block_number - default_blocks_batch_size
+      previous_batch_block_number = first_catchup_block_number - default_blocks_batch_size
 
       wait_for_results(fn ->
         Repo.one!(from(block in Block, where: block.number == ^previous_batch_block_number))
       end)
 
       assert Repo.aggregate(Block, :count, :hash) >= default_blocks_batch_size
+    end
+  end
+
+  describe "handle_info(:catchup_index, state)" do
+    setup context do
+      # force to use `Mox`, so we can manipulate `lastest_block_number`
+      put_in(context.json_rpc_named_arguments[:transport], EthereumJSONRPC.Mox)
+    end
+
+    setup :state
+
+    test "increases catchup_bound_interval if no blocks missing", %{
+      json_rpc_named_arguments: json_rpc_named_arguments,
+      state: state
+    } do
+      insert(:block, number: 0)
+      insert(:block, number: 1)
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn %{method: "eth_getBlockByNumber", params: ["latest", false]}, _options ->
+        {:ok, %{"number" => "0x1"}}
+      end)
+
+      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
+      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      # from `setup :state`
+      assert_received :catchup_index
+
+      assert {:noreply, %BlockFetcher{catchup_task: %Task{pid: pid, ref: ref}} = catchup_index_state} =
+               BlockFetcher.handle_info(:catchup_index, state)
+
+      assert_receive {^ref, 0} = message
+
+      # DOWN is not flushed
+      assert {:messages, [{:DOWN, ^ref, :process, ^pid, :normal}]} = Process.info(self(), :messages)
+
+      assert {:noreply, message_state} = BlockFetcher.handle_info(message, catchup_index_state)
+
+      # DOWN is flushed
+      assert {:messages, []} = Process.info(self(), :messages)
+
+      assert message_state.catchup_bound_interval.current > catchup_index_state.catchup_bound_interval.current
+    end
+
+    test "decreases catchup_bound_interval if blocks missing", %{
+      json_rpc_named_arguments: json_rpc_named_arguments,
+      state: state
+    } do
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn %{method: "eth_getBlockByNumber", params: ["latest", false]}, _options ->
+        {:ok, %{"number" => "0x1"}}
+      end)
+      |> expect(:json_rpc, fn [%{id: id, method: "eth_getBlockByNumber", params: ["0x0", true]}], _options ->
+        {:ok,
+         [
+           %{
+             id: id,
+             jsonrpc: "2.0",
+             result: %{
+               "difficulty" => "0x0",
+               "gasLimit" => "0x0",
+               "gasUsed" => "0x0",
+               "hash" =>
+                 Explorer.Factory.block_hash()
+                 |> to_string(),
+               "miner" => "0xb2930b35844a230f00e51431acae96fe543a0347",
+               "number" => "0x0",
+               "parentHash" =>
+                 Explorer.Factory.block_hash()
+                 |> to_string(),
+               "size" => "0x0",
+               "timestamp" => "0x0",
+               "totalDifficulty" => "0x0",
+               "transactions" => []
+             }
+           }
+         ]}
+      end)
+      |> stub(:json_rpc, fn [
+                              %{
+                                id: id,
+                                method: "eth_getBalance",
+                                params: ["0xb2930b35844a230f00e51431acae96fe543a0347", "0x0"]
+                              }
+                            ],
+                            _options ->
+        {:ok, [%{id: id, jsonrpc: "2.0", result: "0x0"}]}
+      end)
+
+      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
+      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      # from `setup :state`
+      assert_received :catchup_index
+
+      assert {:noreply, %BlockFetcher{catchup_task: %Task{pid: pid, ref: ref}} = catchup_index_state} =
+               BlockFetcher.handle_info(:catchup_index, state)
+
+      # 2 blocks are missing, but latest is assumed to be handled by realtime_index, so only 1 is missing for
+      # catchup_index
+      assert_receive {^ref, 1} = message
+
+      # DOWN is not flushed
+      assert {:messages, [{:DOWN, ^ref, :process, ^pid, :normal}]} = Process.info(self(), :messages)
+
+      assert {:noreply, message_state} = BlockFetcher.handle_info(message, catchup_index_state)
+
+      # DOWN is flushed
+      assert {:messages, []} = Process.info(self(), :messages)
+
+      assert message_state.catchup_bound_interval.current == message_state.catchup_bound_interval.minimum
+
+      # When not at minimum it is decreased
+
+      above_minimum_state = update_in(catchup_index_state.catchup_bound_interval, &BoundInterval.increase/1)
+
+      assert above_minimum_state.catchup_bound_interval.current > message_state.catchup_bound_interval.minimum
+      assert {:noreply, above_minimum_message_state} = BlockFetcher.handle_info(message, above_minimum_state)
+
+      assert above_minimum_message_state.catchup_bound_interval.current <
+               above_minimum_state.catchup_bound_interval.current
     end
   end
 
