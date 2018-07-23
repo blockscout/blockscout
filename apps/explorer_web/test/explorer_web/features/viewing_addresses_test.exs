@@ -3,8 +3,7 @@ defmodule ExplorerWeb.ViewingAddressesTest do
 
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Wei}
-  alias Explorer.ExchangeRates.Token
-  alias ExplorerWeb.{AddressPage, HomePage}
+  alias ExplorerWeb.{AddressPage, HomePage, Notifier}
 
   setup do
     block = insert(:block)
@@ -234,33 +233,43 @@ defmodule ExplorerWeb.ViewingAddressesTest do
   end
 
   test "viewing new transactions via live update", %{addresses: addresses, session: session} do
-    session =
-      session
-      |> AddressPage.visit_page(addresses.lincoln)
-      |> assert_has(AddressPage.balance())
+    transaction =
+      :transaction
+      |> insert(from_address: addresses.lincoln)
+      |> with_block()
+
+    session
+    |> AddressPage.visit_page(addresses.lincoln)
+    |> assert_has(AddressPage.balance())
+
+    Notifier.handle_event({:chain_event, :transactions, [transaction.hash]})
+
+    assert_has(session, AddressPage.transaction(transaction))
+  end
+
+  test "transaction count live updates", %{addresses: addresses, session: session} do
+    session
+    |> AddressPage.visit_page(addresses.lincoln)
+    |> assert_text(AddressPage.transaction_count(), "2")
 
     transaction =
       :transaction
       |> insert(from_address: addresses.lincoln)
       |> with_block()
-      |> Repo.preload([:block, :from_address, :to_address])
 
-    ExplorerWeb.Endpoint.broadcast!("addresses:#{addresses.lincoln.hash}", "transaction", %{
-      address: addresses.lincoln,
-      transaction: transaction
-    })
+    Notifier.handle_event({:chain_event, :transactions, [transaction.hash]})
 
-    assert_has(session, AddressPage.transaction(transaction))
+    assert_text(session, AddressPage.transaction_count(), "3")
   end
 
-  test "viewing updated overview via live update", %{session: session} do
+  test "viewing updated balance via live update", %{session: session} do
     address = %Address{hash: hash} = insert(:address, fetched_balance: 500)
 
     session
     |> AddressPage.visit_page(address)
     |> assert_text(AddressPage.balance(), "0.0000000000000005 POA")
 
-    {:ok, [^hash]} =
+    {:ok, [updated_address]} =
       Chain.update_balances([
         %{
           fetched_balance: 100,
@@ -269,13 +278,7 @@ defmodule ExplorerWeb.ViewingAddressesTest do
         }
       ])
 
-    {:ok, updated_address} = Chain.hash_to_address(hash)
-
-    ExplorerWeb.Endpoint.broadcast!("addresses:#{hash}", "overview", %{
-      address: updated_address,
-      exchange_rate: %Token{},
-      transaction_count: 1
-    })
+    Notifier.handle_event({:chain_event, :balance_updates, [updated_address]})
 
     assert_text(session, AddressPage.balance(), "0.0000000000000001 POA")
   end

@@ -1,0 +1,10 @@
+<div class="card bg-primary">
+  <div class="card-body">
+    <h2 class="card-title text-white"><%= gettext "Balance" %></h2>
+    <span></span>
+    <div class="text-right">
+      <h3 class="text-white" data-test="address_balance"><%= balance(@address) %></h3>
+      <span class="text-light"><%= formatted_usd(@address, @exchange_rate) %></span>
+    </div>
+  </div>
+</div>

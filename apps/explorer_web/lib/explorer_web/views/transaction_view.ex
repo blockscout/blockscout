@@ -15,7 +15,7 @@ defmodule ExplorerWeb.TransactionView do
   def confirmations(%Transaction{block: block}, named_arguments) when is_list(named_arguments) do
     case block do
       nil -> 0
-      _ -> Chain.confirmations(block, named_arguments)
+      _ -> block |> Chain.confirmations(named_arguments) |> Cldr.Number.to_string!(format: "#,###")
     end
   end
 

@@ -64,7 +64,7 @@ defmodule ExplorerWeb.AddressPage do
   end
 
   def transaction_count do
-    css("[data-test='transaction_count']")
+    css("[data-selector='transaction-count']")
   end
 
   def transaction_status(%Transaction{hash: transaction_hash}) do

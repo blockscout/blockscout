@@ -8,7 +8,7 @@ defmodule ExplorerWeb.TransactionPage do
   alias Explorer.Chain.{InternalTransaction, Transaction, Hash}
 
   def block_confirmations() do
-    css("[data-selector='block_confirmations']")
+    css("[data-selector='block-confirmations']")
   end
 
   def click_logs(session) do

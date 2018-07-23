@@ -4,7 +4,7 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
   use ExplorerWeb.FeatureCase, async: true
 
   alias Explorer.Chain.Wei
-  alias ExplorerWeb.{AddressPage, HomePage, TransactionListPage, TransactionLogsPage, TransactionPage}
+  alias ExplorerWeb.{AddressPage, HomePage, Notifier, TransactionListPage, TransactionLogsPage, TransactionPage}
 
   setup do
     block =
@@ -167,10 +167,13 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
     end
 
     test "block confirmations via live update", %{session: session, transaction: transaction} do
+      blocks = [insert(:block, number: transaction.block_number + 10)]
+
       TransactionPage.visit_page(session, transaction)
 
       assert_text(session, TransactionPage.block_confirmations(), "0")
-      ExplorerWeb.Endpoint.broadcast!("transactions:#{transaction.hash}", "confirmations", %{confirmations: 10})
+
+      Notifier.handle_event({:chain_event, :blocks, blocks})
       assert_text(session, TransactionPage.block_confirmations(), "10")
     end
   end
