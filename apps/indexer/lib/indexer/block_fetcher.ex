@@ -70,7 +70,7 @@ defmodule Indexer.BlockFetcher do
     state = %{
       json_rpc_named_arguments: Keyword.fetch!(opts, :json_rpc_named_arguments),
       genesis_task: nil,
-      realtime_task: nil,
+      realtime_tasks: [],
       realtime_interval: div(opts[:block_interval] || @block_interval, 2),
       starting_block_number: nil,
       blocks_batch_size: Keyword.get(opts, :blocks_batch_size, @blocks_batch_size),
@@ -79,12 +79,9 @@ defmodule Indexer.BlockFetcher do
       receipts_concurrency: Keyword.get(opts, :receipts_concurrency, @receipts_concurrency)
     }
 
-    scheduled_state =
-      state
-      |> schedule_next_catchup_index()
-      |> schedule_next_realtime_fetch()
+    {:ok, _} = :timer.send_interval(state.realtime_interval, :realtime_index)
 
-    {:ok, scheduled_state}
+    {:ok, schedule_next_catchup_index(state)}
   end
 
   @impl GenServer
@@ -94,23 +91,15 @@ defmodule Indexer.BlockFetcher do
     {:noreply, %{state | genesis_task: genesis_task}}
   end
 
-  def handle_info(:realtime_index, %{} = state) do
+  def handle_info(:realtime_index, %{realtime_tasks: realtime_tasks} = state) when is_list(realtime_tasks) do
     realtime_task = Task.Supervisor.async_nolink(Indexer.TaskSupervisor, fn -> realtime_task(state) end)
 
-    {:noreply, %{state | realtime_task: realtime_task}}
-  end
-
-  def handle_info({:DOWN, ref, :process, pid, :normal}, %{realtime_task: %Task{pid: pid, ref: ref}} = state) do
-    {:noreply, schedule_next_realtime_fetch(%{state | realtime_task: nil})}
-  end
-
-  def handle_info({:DOWN, ref, :process, pid, reason}, %{realtime_task: %Task{pid: pid, ref: ref}} = state) do
-    Logger.error(fn -> "realtime index stream exited with reason (#{inspect(reason)}). Restarting" end)
-    {:noreply, schedule_next_realtime_fetch(%{state | realtime_task: nil})}
+    {:noreply, %{state | realtime_tasks: [realtime_task | realtime_tasks]}}
   end
 
   def handle_info({:DOWN, ref, :process, pid, :normal}, %{genesis_task: %Task{pid: pid, ref: ref}} = state) do
     Logger.info(fn -> "Finished index from genesis. Transitioning to only realtime index." end)
+
     {:noreply, %{state | genesis_task: nil}}
   end
 
@@ -118,6 +107,28 @@ defmodule Indexer.BlockFetcher do
     Logger.error(fn -> "genesis index stream exited with reason (#{inspect(reason)}). Restarting" end)
 
     {:noreply, schedule_next_catchup_index(%{state | genesis_task: nil})}
+  end
+
+  def handle_info({:DOWN, ref, :process, pid, reason}, %{realtime_tasks: realtime_tasks} = state)
+      when is_list(realtime_tasks) do
+    {down_realtime_tasks, running_realtime_tasks} =
+      Enum.split_with(realtime_tasks, fn
+        %Task{pid: ^pid, ref: ^ref} -> true
+        _ -> false
+      end)
+
+    case {Enum.empty?(down_realtime_tasks), reason} do
+      {true, :normal} ->
+        :ok
+
+      {true, reason} ->
+        Logger.error(fn -> "Realtime index stream exited with reason (#{inspect(reason)}). Restarting" end)
+
+      {_, reason} ->
+        Logger.error(fn -> "Unexpected pid (#{inspect(pid)}) exited with reason (#{inspect(reason)})." end)
+    end
+
+    {:noreply, %{state | realtime_tasks: running_realtime_tasks}}
   end
 
   defp cap_seq(seq, next, range) do
@@ -314,11 +325,6 @@ defmodule Indexer.BlockFetcher do
 
   defp schedule_next_catchup_index(state) do
     send(self(), :catchup_index)
-    state
-  end
-
-  defp schedule_next_realtime_fetch(state) do
-    Process.send_after(self(), :realtime_index, state.realtime_interval)
     state
   end
 end
