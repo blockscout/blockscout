@@ -3,7 +3,6 @@ defmodule Indexer.BlockFetcherTest do
   use EthereumJSONRPC.Case, async: false
   use Explorer.DataCase
 
-  import ExUnit.CaptureLog
   import Mox
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
   import EthereumJSONRPC.Case
@@ -238,64 +237,6 @@ defmodule Indexer.BlockFetcherTest do
       end)
 
       assert Repo.aggregate(Block, :count, :hash) >= default_blocks_batch_size
-    end
-  end
-
-  describe "handle_info(:debug_count, state)" do
-    setup :state
-
-    setup do
-      block = insert(:block)
-
-      Enum.map(0..2, fn _ ->
-        transaction =
-          :transaction
-          |> insert()
-          |> with_block(block)
-
-        insert(:log, transaction: transaction)
-        insert(:internal_transaction, transaction: transaction, index: 0)
-      end)
-
-      :ok
-    end
-
-    @tag :capture_log
-    @heading "persisted counts"
-    test "without debug_logs", %{json_rpc_named_arguments: json_rpc_named_arguments, state: state} do
-      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-
-      wait_for_tasks(InternalTransactionFetcher)
-      wait_for_tasks(AddressBalanceFetcher)
-
-      refute capture_log_at_level(:debug, fn ->
-               Indexer.disable_debug_logs()
-               BlockFetcher.handle_info(:debug_count, state)
-             end) =~ @heading
-    end
-
-    @tag :capture_log
-    test "with debug_logs", %{json_rpc_named_arguments: json_rpc_named_arguments, state: state} do
-      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-
-      wait_for_tasks(InternalTransactionFetcher)
-      wait_for_tasks(AddressBalanceFetcher)
-
-      log =
-        capture_log_at_level(:debug, fn ->
-          Indexer.enable_debug_logs()
-          BlockFetcher.handle_info(:debug_count, state)
-        end)
-
-      assert log =~ @heading
-      assert log =~ "blocks: 1"
-      assert log =~ "internal transactions: 3"
-      assert log =~ "logs: 3"
-      assert log =~ "addresses: 16"
     end
   end
 
@@ -835,31 +776,6 @@ defmodule Indexer.BlockFetcherTest do
           raise ArgumentError, "Unsupport variant (#{variant})"
       end
     end
-  end
-
-  defp capture_log_at_level(level, block) do
-    logger_level_transaction(fn ->
-      Logger.configure(level: level)
-
-      capture_log(fn ->
-        block.()
-        Process.sleep(10)
-      end)
-    end)
-  end
-
-  defp logger_level_transaction(block) do
-    level_before = Logger.level()
-
-    on_exit(fn ->
-      Logger.configure(level: level_before)
-    end)
-
-    return = block.()
-
-    Logger.configure(level: level_before)
-
-    return
   end
 
   defp state(%{json_rpc_named_arguments: json_rpc_named_arguments}) do
