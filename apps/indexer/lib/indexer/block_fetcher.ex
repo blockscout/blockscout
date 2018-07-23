@@ -115,7 +115,7 @@ defmodule Indexer.BlockFetcher do
   end
 
   def handle_info({:DOWN, ref, :process, pid, reason}, %{genesis_task: %Task{pid: pid, ref: ref}} = state) do
-    Logger.error(fn -> "gensis index stream exited with reason (#{inspect(reason)}). Restarting" end)
+    Logger.error(fn -> "genesis index stream exited with reason (#{inspect(reason)}). Restarting" end)
 
     {:noreply, schedule_next_catchup_index(%{state | genesis_task: nil})}
   end
