@@ -1,5 +1,5 @@
-<div class="col-sm-3">
-  <div class="tile d-flex flex-column" data-test="chain_block">
+<div class="col-sm-3" data-selector="chain-block" data-block-number="<%= @block.number %>">
+  <div class="tile d-flex flex-column">
     <%= link(@block, to: block_path(ExplorerWeb.Endpoint, :show, @locale, @block), class: "tile-title") %>
     <div>
       <%= @block.transactions |> Enum.count %> Transactions

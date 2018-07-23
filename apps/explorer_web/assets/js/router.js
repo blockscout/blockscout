@@ -6,9 +6,10 @@ const { locale } = Path.createPath('/:locale').partialTest(window.location.pathn
 
 export default {
   locale,
-  when (pattern) {
+  when (pattern, { exactPathMatch } = { exactPathMatch: false }) {
     return new Promise((resolve) => {
-      const match = Path.createPath(`/:locale${pattern}`).partialTest(window.location.pathname)
+      const path = Path.createPath(`/:locale${pattern}`)
+      const match = exactPathMatch ? path.test(window.location.pathname) : path.partialTest(window.location.pathname)
       if (match) {
         const routeParams = humps.camelizeKeys(match)
         const queryParams = humps.camelizeKeys(URI(window.location).query(true))

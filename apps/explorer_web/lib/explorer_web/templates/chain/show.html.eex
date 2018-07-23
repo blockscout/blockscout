@@ -56,7 +56,7 @@
     <div class="card-body">
       <%= link(gettext("View All Blocks →"), to: block_path(@conn, :index, Gettext.get_locale), class: "button button--secondary button--xsmall float-right") %>
       <h2 class="card-title"><%= gettext "Blocks" %></h2>
-      <div class="row">
+      <div class="row" data-selector="chain-block-list">
         <%= for block <- @chain.blocks do %>
           <%= render ExplorerWeb.ChainView, "_block.html", locale: @locale, block: block %>
         <% end %>
