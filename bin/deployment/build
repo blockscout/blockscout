@@ -16,6 +16,11 @@ mix deps.get
 
 mix compile
 
+# Install node dependencies
+pushd apps/explorer || exit 1
+npm install
+popd
+
 chown -R ec2-user:ec2-user /opt/app
 
 exit 0
