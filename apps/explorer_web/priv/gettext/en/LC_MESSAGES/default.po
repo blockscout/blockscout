@@ -24,7 +24,7 @@ msgstr "Block"
 msgid "Blocks"
 msgstr "Blocks"
 
-#: lib/explorer_web/templates/layout/_footer.html.eex:18
+#: lib/explorer_web/templates/layout/_footer.html.eex:15
 msgid "Copyright %{year} POA"
 msgstr "%{year} POA Network Ltd. All rights reserved"
 
@@ -550,22 +550,12 @@ msgid "POA Sokol"
 msgstr ""
 
 #, elixir-format
-#: lib/explorer_web/templates/layout/_footer.html.eex:4
-msgid "Facebook"
-msgstr ""
-
-#, elixir-format
-#: lib/explorer_web/templates/layout/_footer.html.eex:7
-msgid "Instagram"
-msgstr ""
-
-#, elixir-format
-#: lib/explorer_web/templates/layout/_footer.html.eex:13
+#: lib/explorer_web/templates/layout/_footer.html.eex:10
 msgid "Telegram"
 msgstr ""
 
 #, elixir-format
-#: lib/explorer_web/templates/layout/_footer.html.eex:10
+#: lib/explorer_web/templates/layout/_footer.html.eex:7
 msgid "Twitter"
 msgstr ""
 
@@ -710,4 +700,9 @@ msgstr ""
 #, elixir-format
 #: lib/explorer_web/templates/address/overview.html.eex:75
 msgid "Close"
+msgstr ""
+
+#, elixir-format
+#: lib/explorer_web/templates/layout/_footer.html.eex:4
+msgid "Github"
 msgstr ""
