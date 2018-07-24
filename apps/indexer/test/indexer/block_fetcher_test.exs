@@ -367,7 +367,7 @@ defmodule Indexer.BlockFetcherTest do
     end
   end
 
-  describe "import_range/3" do
+  describe "import_range/4" do
     setup :state
 
     setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
@@ -532,7 +532,7 @@ defmodule Indexer.BlockFetcherTest do
         end
 
       log_bad_gateway(
-        fn -> BlockFetcher.import_range(block_number..block_number, state, sequence) end,
+        fn -> BlockFetcher.import_range(block_number..block_number, state, sequence, :realtime_index) end,
         fn result ->
           assert {:ok,
                   %{
@@ -792,7 +792,7 @@ defmodule Indexer.BlockFetcherTest do
                             154, 143, 4, 28, 171, 95, 190, 255, 254, 174, 75, 182>>
                       }
                     ]
-                  }} = BlockFetcher.import_range(block_number..block_number, state, sequence)
+                  }} = BlockFetcher.import_range(block_number..block_number, state, sequence, :realtime_index)
 
           wait_for_tasks(InternalTransactionFetcher)
           wait_for_tasks(BalanceFetcher)
@@ -879,7 +879,7 @@ defmodule Indexer.BlockFetcherTest do
                             57, 101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
                       }
                     ]
-                  }} = BlockFetcher.import_range(block_number..block_number, state, sequence)
+                  }} = BlockFetcher.import_range(block_number..block_number, state, sequence, :realtime_index)
 
           wait_for_tasks(InternalTransactionFetcher)
           wait_for_tasks(BalanceFetcher)

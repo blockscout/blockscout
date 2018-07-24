@@ -71,6 +71,7 @@ defmodule Explorer.Chain do
   @typep addresses_option :: {:addresses, [params_option | timeout_option | with_option]}
   @typep balances_option :: {:balances, [params_option | timeout_option]}
   @typep blocks_option :: {:blocks, [params_option | timeout_option]}
+  @typep broadcast_option :: {:broadcast, Boolean}
   @typep internal_transactions_option :: {:internal_transactions, [params_option | timeout_option]}
   @typep logs_option :: {:logs, [params_option | timeout_option]}
   @typep receipts_option :: {:receipts, [params_option | timeout_option]}
@@ -612,6 +613,7 @@ defmodule Explorer.Chain do
   | `:addresses`             | `[Explorer.Chain.Address.t()]`                                                                  | List of `t:Explorer.Chain.Address.t/0`s                                                       |
   | `:balances`              | `[%{address_hash: Explorer.Chain.Hash.t(), block_number: Explorer.Chain.Block.block_number()}]` | List of `t:Explorer.Chain.Address.t/0`s                                                       |
   | `:blocks`                | `[Explorer.Chain.Block.t()]`                                                                    | List of `t:Explorer.Chain.Block.t/0`s                                                         |
+  | `:broacast`              | `Boolean`                                                                                       | Boolean of whether to broadcast                                                               |
   | `:internal_transactions` | `[%{index: non_neg_integer(), transaction_hash: Explorer.Chain.Hash.t()}]`                      | List of maps of the `t:Explorer.Chain.InternalTransaction.t/0` `index` and `transaction_hash` |
   | `:logs`                  | `[Explorer.Chain.Log.t()]`                                                                      | List of `t:Explorer.Chain.Log.t/0`s                                                           |
   | `:transactions`          | `[Explorer.Chain.Hash.t()]`                                                                     | List of `t:Explorer.Chain.Transaction.t/0` `hash`                                             |
@@ -657,6 +659,7 @@ defmodule Explorer.Chain do
     * `:blocks`
       * `:params` - `list` of params for `Explorer.Chain.Block.changeset/2`.
       * `:timeout` - the timeout for inserting all blocks. Defaults to `#{@insert_blocks_timeout}` milliseconds.
+    * `:broacast` - Boolean flag indicating whether or not to broadcast the event.
     * `:internal_transactions`
       * `:params` - `list` of params for `Explorer.Chain.InternalTransaction.changeset/2`.
       * `:timeout` - the timeout for inserting all internal transactions. Defaults to
@@ -682,6 +685,7 @@ defmodule Explorer.Chain do
           addresses_option
           | balances_option
           | blocks_option
+          | broadcast_option
           | internal_transactions_option
           | logs_option
           | receipts_option
@@ -695,6 +699,7 @@ defmodule Explorer.Chain do
                %{required(:address_hash) => Hash.Address.t(), required(:block_number) => Block.block_number()}
              ],
              optional(:blocks) => [Block.t()],
+             optional(:broadcast) => Boolean,
              optional(:internal_transactions) => [
                %{required(:index) => non_neg_integer(), required(:transaction_hash) => Hash.Full.t()}
              ],
@@ -706,12 +711,18 @@ defmodule Explorer.Chain do
           | {:error, step :: Ecto.Multi.name(), failed_value :: any(),
              changes_so_far :: %{optional(Ecto.Multi.name()) => any()}}
   def import_blocks(options) when is_list(options) do
+    broadcast =
+      case Keyword.fetch(options, :broadcast) do
+        {:ok, broadcast} -> broadcast
+        :error -> false
+      end
+
     changes_list_arguments_list = import_options_to_changes_list_arguments_list(options)
 
     with {:ok, ecto_schema_module_to_changes_list} <-
            changes_list_arguments_list_to_ecto_schema_module_to_changes_list(changes_list_arguments_list),
          {:ok, data} <- insert_ecto_schema_module_to_changes_list(ecto_schema_module_to_changes_list, options) do
-      broadcast_events(data)
+      if broadcast, do: broadcast_events(data)
       {:ok, data}
     end
   end
