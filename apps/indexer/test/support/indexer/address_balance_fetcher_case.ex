@@ -1,5 +1,5 @@
 defmodule Indexer.AddressBalanceFetcherCase do
-  alias Indexer.AddressBalanceFetcher
+  alias Indexer.BalanceFetcher
 
   def start_supervised!(options \\ []) when is_list(options) do
     options
@@ -8,9 +8,9 @@ defmodule Indexer.AddressBalanceFetcherCase do
       init_chunk_size: 1,
       max_batch_size: 1,
       max_concurrency: 1,
-      name: AddressBalanceFetcher
+      name: BalanceFetcher
     )
-    |> AddressBalanceFetcher.child_spec()
+    |> BalanceFetcher.child_spec()
     |> ExUnit.Callbacks.start_supervised!()
   end
 end

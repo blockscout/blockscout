@@ -5,7 +5,7 @@ defmodule Indexer.Application do
 
   use Application
 
-  alias Indexer.{AddressBalanceFetcher, BlockFetcher, InternalTransactionFetcher, PendingTransactionFetcher}
+  alias Indexer.{BalanceFetcher, BlockFetcher, InternalTransactionFetcher, PendingTransactionFetcher}
 
   @impl Application
   def start(_type, _args) do
@@ -13,7 +13,7 @@ defmodule Indexer.Application do
 
     children = [
       {Task.Supervisor, name: Indexer.TaskSupervisor},
-      {AddressBalanceFetcher, name: AddressBalanceFetcher, json_rpc_named_arguments: json_rpc_named_arguments},
+      {BalanceFetcher, name: BalanceFetcher, json_rpc_named_arguments: json_rpc_named_arguments},
       {PendingTransactionFetcher, name: PendingTransactionFetcher, json_rpc_named_arguments: json_rpc_named_arguments},
       {InternalTransactionFetcher,
        name: InternalTransactionFetcher, json_rpc_named_arguments: json_rpc_named_arguments},

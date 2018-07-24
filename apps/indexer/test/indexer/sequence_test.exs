@@ -104,7 +104,8 @@ defmodule Indexer.SequenceTest do
                       [
                         "Range (0..1) direction is opposite step (-1) direction",
                         "Range (4..5) direction is opposite step (-1) direction"
-                      ]}
+                      ]},
+                     200
     end
   end
 

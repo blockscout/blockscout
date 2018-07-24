@@ -269,16 +269,38 @@ defmodule ExplorerWeb.ViewingAddressesTest do
     |> AddressPage.visit_page(address)
     |> assert_text(AddressPage.balance(), "0.0000000000000005 POA")
 
-    {:ok, [updated_address]} =
-      Chain.update_balances([
-        %{
-          fetched_balance: 100,
-          fetched_balance_block_number: 1,
-          hash: hash
-        }
-      ])
+    fetched_balance = %Explorer.Chain.Wei{value: Decimal.new(100)}
 
-    Notifier.handle_event({:chain_event, :balance_updates, [updated_address]})
+    {:ok,
+     %{
+       addresses: [
+         %Address{hash: ^hash, fetched_balance: ^fetched_balance, fetched_balance_block_number: 2} = updated_address
+       ],
+       balances: [%{address_hash: ^hash}]
+     }} =
+      Chain.import_blocks(
+        addresses: [
+          params: [
+            %{
+              fetched_balance: 100,
+              fetched_balance_block_number: 2,
+              hash: hash
+            }
+          ],
+          with: :balance_changeset
+        ],
+        balances: [
+          params: [
+            %{
+              value: 100,
+              block_number: 2,
+              address_hash: hash
+            }
+          ]
+        ]
+      )
+
+    Notifier.handle_event({:chain_event, :addresses, [updated_address]})
 
     assert_text(session, AddressPage.balance(), "0.0000000000000001 POA")
   end

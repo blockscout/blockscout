@@ -1,14 +1,14 @@
 defmodule Indexer.AddressBalanceFetcherTest do
-  # MUST be `async: false` so that {:shared, pid} is set for connection to allow AddressBalanceFetcher's self-send to have
+  # MUST be `async: false` so that {:shared, pid} is set for connection to allow BalanceFetcher's self-send to have
   # connection allowed immediately.
   use EthereumJSONRPC.Case, async: false
   use Explorer.DataCase
 
-  import EthereumJSONRPC, only: [integer_to_quantity: 1]
+  import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
   import Mox
 
-  alias Explorer.Chain.{Address, Hash, Wei}
-  alias Indexer.{AddressBalanceFetcher, AddressBalanceFetcherCase}
+  alias Explorer.Chain.{Address, Balance, Hash, Wei}
+  alias Indexer.{BalanceFetcher, AddressBalanceFetcherCase}
 
   @moduletag :capture_log
 
@@ -177,7 +177,7 @@ defmodule Indexer.AddressBalanceFetcherTest do
 
       AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
-      assert :ok = AddressBalanceFetcher.async_fetch_balances([%{block_number: block_number, hash: hash}])
+      assert :ok = BalanceFetcher.async_fetch_balances([%{address_hash: hash, block_number: block_number}])
 
       address =
         wait(fn ->
@@ -190,20 +190,26 @@ defmodule Indexer.AddressBalanceFetcherTest do
   end
 
   describe "run/2" do
-    test "duplicate address hashes the max block_quantity", %{
+    test "duplicate address hashes uses all block_quantity", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
-      %{fetched_balance: fetched_balance, hash_data: hash_data} =
+      %{balance_by_block_number: expected_balance_by_block_number, hash_data: hash_data} =
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
           EthereumJSONRPC.Geth ->
             %{
-              fetched_balance: 5_000_000_000_000_000_000,
+              balance_by_block_number: %{
+                1 => 5_000_000_000_000_000_000,
+                2 => 5_000_000_000_000_000_000
+              },
               hash_data: "0x05a56e2d52c817161883f50c441c3228cfe54d9f"
             }
 
           EthereumJSONRPC.Parity ->
             %{
-              fetched_balance: 252_460_802_000_000_000_000_000_000,
+              balance_by_block_number: %{
+                1 => 252_460_801_000_000_000_000_000_000,
+                2 => 252_460_802_000_000_000_000_000_000
+              },
               hash_data: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
             }
 
@@ -211,53 +217,88 @@ defmodule Indexer.AddressBalanceFetcherTest do
             raise ArgumentError, "Unsupported variant (#{variant})"
         end
 
+      block_quantities =
+        expected_balance_by_block_number
+        |> Map.keys()
+        |> Enum.sort()
+        |> Enum.map(&integer_to_quantity/1)
+
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        expected_requests =
+          block_quantities
+          |> Stream.with_index()
+          |> Enum.map(fn {block_quantity, index} ->
+            %{id: index, jsonrpc: "2.0", method: "eth_getBalance", params: [hash_data, block_quantity]}
+          end)
+
         EthereumJSONRPC.Mox
-        |> expect(:json_rpc, fn [%{id: id, method: "eth_getBalance", params: [^hash_data, "0x2"]}], _options ->
-          {:ok, [%{id: id, result: integer_to_quantity(fetched_balance)}]}
+        |> expect(:json_rpc, fn ^expected_requests, _options ->
+          {:ok,
+           Enum.map(expected_requests, fn %{id: id, params: [_, block_quantity]} ->
+             %{
+               id: id,
+               result:
+                 expected_balance_by_block_number
+                 |> Map.fetch!(quantity_to_integer(block_quantity))
+                 |> integer_to_quantity()
+             }
+           end)}
         end)
       end
 
-      case AddressBalanceFetcher.run(
-             [%{block_quantity: "0x1", hash_data: hash_data}, %{block_quantity: "0x2", hash_data: hash_data}],
-             0,
-             json_rpc_named_arguments
-           ) do
+      params_list = Enum.map(block_quantities, &%{block_quantity: &1, hash_data: hash_data})
+
+      case BalanceFetcher.run(params_list, 0, json_rpc_named_arguments) do
         :ok ->
+          balances = Repo.all(from(balance in Balance, where: balance.address_hash == ^hash_data))
+
+          assert Enum.count(balances) == 2
+
+          balance_by_block_number =
+            Enum.into(balances, %{}, fn %Balance{block_number: block_number} = balance -> {block_number, balance} end)
+
+          Enum.each(expected_balance_by_block_number, fn {block_number, expected_balance} ->
+            expected_value = %Explorer.Chain.Wei{value: Decimal.new(expected_balance)}
+
+            assert %Balance{value: ^expected_value} = balance_by_block_number[block_number]
+          end)
+
           fetched_address = Repo.one!(from(address in Address, where: address.hash == ^hash_data))
 
-          assert fetched_address.fetched_balance == %Explorer.Chain.Wei{
-                   value: Decimal.new(fetched_balance)
-                 }
+          {expected_fetched_balance_block_number, expected_fetched_balance_value} =
+            Enum.max_by(expected_balance_by_block_number, fn {block_number, _} -> block_number end)
 
-          assert fetched_address.fetched_balance_block_number == 2
+          expected_fetched_balance = %Explorer.Chain.Wei{value: Decimal.new(expected_fetched_balance_value)}
+
+          assert fetched_address.fetched_balance == expected_fetched_balance
+          assert fetched_address.fetched_balance_block_number == expected_fetched_balance_block_number
 
         other ->
           # not all nodes behind the `https://mainnet.infura.io` pool are fully-synced.  Node that aren't fully-synced
           # won't have historical address balances.
-          assert {:retry, [%{block_quantity: "0x2", hash_data: ^hash_data}]} = other
+          assert {:retry, ^params_list} = other
       end
     end
 
-    test "duplicate address hashes only retry max block_quantity", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+    test "duplicate params retry unique params", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       hash_data = "0x000000000000000000000000000000000"
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         EthereumJSONRPC.Mox
-        |> expect(:json_rpc, fn [%{id: id, method: "eth_getBalance", params: [^hash_data, "0x2"]}], _options ->
+        |> expect(:json_rpc, fn [%{id: id, method: "eth_getBalance", params: [^hash_data, "0x1"]}], _options ->
           {:ok, [%{id: id, error: %{code: 404, message: "Not Found"}}]}
         end)
       end
 
-      assert AddressBalanceFetcher.run(
-               [%{block_quantity: "0x1", hash_data: hash_data}, %{block_quantity: "0x2", hash_data: hash_data}],
+      assert BalanceFetcher.run(
+               [%{block_quantity: "0x1", hash_data: hash_data}, %{block_quantity: "0x1", hash_data: hash_data}],
                0,
                json_rpc_named_arguments
              ) ==
                {:retry,
                 [
                   %{
-                    block_quantity: "0x2",
+                    block_quantity: "0x1",
                     hash_data: "0x000000000000000000000000000000000"
                   }
                 ]}

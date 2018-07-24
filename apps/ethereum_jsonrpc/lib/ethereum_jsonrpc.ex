@@ -139,9 +139,9 @@ defmodule EthereumJSONRPC do
           {:ok,
            [
              %{
-               required(:fetched_balance) => non_neg_integer(),
-               required(:fetched_balance_block_number) => Block.block_number(),
-               required(:hash) => quantity
+               required(:address_hash) => quantity,
+               required(:block_number) => Block.block_number(),
+               required(:value) => non_neg_integer()
              }
            ]}
           | {:error, reason :: term}
@@ -153,7 +153,7 @@ defmodule EthereumJSONRPC do
            id_to_params
            |> get_balance_requests()
            |> json_rpc(json_rpc_named_arguments) do
-      get_balance_responses_to_addresses_params(responses, id_to_params)
+      get_balance_responses_to_balances_params(responses, id_to_params)
     end
   end
 
@@ -311,11 +311,11 @@ defmodule EthereumJSONRPC do
     request(%{id: id, method: "eth_getBalance", params: [hash_data, block_quantity]})
   end
 
-  defp get_balance_responses_to_addresses_params(responses, id_to_params)
+  defp get_balance_responses_to_balances_params(responses, id_to_params)
        when is_list(responses) and is_map(id_to_params) do
     {status, reversed} =
       responses
-      |> Enum.map(&get_balance_response_to_address_params(&1, id_to_params))
+      |> Enum.map(&get_balance_responses_to_balance_params(&1, id_to_params))
       |> Enum.reduce(
         {:ok, []},
         fn
@@ -336,19 +336,19 @@ defmodule EthereumJSONRPC do
     {status, Enum.reverse(reversed)}
   end
 
-  defp get_balance_response_to_address_params(%{id: id, result: fetched_balance_quantity}, id_to_params)
+  defp get_balance_responses_to_balance_params(%{id: id, result: fetched_balance_quantity}, id_to_params)
        when is_map(id_to_params) do
     %{block_quantity: block_quantity, hash_data: hash_data} = Map.fetch!(id_to_params, id)
 
     {:ok,
      %{
-       fetched_balance: quantity_to_integer(fetched_balance_quantity),
-       fetched_balance_block_number: quantity_to_integer(block_quantity),
-       hash: hash_data
+       value: quantity_to_integer(fetched_balance_quantity),
+       block_number: quantity_to_integer(block_quantity),
+       address_hash: hash_data
      }}
   end
 
-  defp get_balance_response_to_address_params(%{id: id, error: error}, id_to_params)
+  defp get_balance_responses_to_balance_params(%{id: id, error: error}, id_to_params)
        when is_map(id_to_params) do
     %{block_quantity: block_quantity, hash_data: hash_data} = Map.fetch!(id_to_params, id)
 

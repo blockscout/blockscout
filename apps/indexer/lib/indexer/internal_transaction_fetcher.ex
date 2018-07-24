@@ -8,7 +8,7 @@ defmodule Indexer.InternalTransactionFetcher do
   require Logger
 
   alias Explorer.Chain
-  alias Indexer.{AddressBalanceFetcher, AddressExtraction, BufferedTask}
+  alias Indexer.{BalanceFetcher, AddressExtraction, BufferedTask}
   alias Explorer.Chain.{Block, Hash}
 
   @behaviour BufferedTask
@@ -110,9 +110,9 @@ defmodule Indexer.InternalTransactionFetcher do
           address_hashes
           |> Enum.map(fn address_hash ->
             block_number = Map.fetch!(address_hash_to_block_number, to_string(address_hash))
-            %{block_number: block_number, hash: address_hash}
+            %{address_hash: address_hash, block_number: block_number}
           end)
-          |> AddressBalanceFetcher.async_fetch_balances()
+          |> BalanceFetcher.async_fetch_balances()
         else
           {:error, step, reason, _changes_so_far} ->
             Indexer.debug(fn ->
