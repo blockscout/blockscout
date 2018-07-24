@@ -5,7 +5,7 @@ defmodule ExplorerWeb.TransactionPage do
 
   import Wallaby.Query, only: [css: 1, css: 2]
 
-  alias Explorer.Chain.{InternalTransaction, Transaction, Hash}
+  alias Explorer.Chain.{Transaction, Hash}
 
   def block_confirmations() do
     css("[data-selector='block-confirmations']")
@@ -13,10 +13,6 @@ defmodule ExplorerWeb.TransactionPage do
 
   def click_logs(session) do
     click(session, css("[data-test='transaction_logs_link']"))
-  end
-
-  def contract_creation_address_hash(%InternalTransaction{created_contract_address_hash: hash}) do
-    css("[data-test='created_contract_address_hash']", text: Hash.to_string(hash))
   end
 
   def detail_hash(%Transaction{hash: transaction_hash}) do
