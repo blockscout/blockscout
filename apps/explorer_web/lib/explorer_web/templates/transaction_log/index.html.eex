@@ -47,13 +47,13 @@
                     </div>
                   <% end %>
                   <%= unless is_nil(log.second_topic) do %>
-                    <div data-test="transaction_log" class="text-dark">
+                    <div class="text-dark">
                       <span class="">[1] </span>
                       <%= log.second_topic %>
                     </div>
                   <% end %>
                   <%= unless is_nil(log.third_topic) do %>
-                    <div data-test="transaction_log" class="text-dark">
+                    <div class="text-dark">
                       <span>[2]</span>
                       <%= log.third_topic %>
                     </div>
@@ -64,7 +64,7 @@
                 </dt>
                 <dd class="col-md-11">
                   <%= unless is_nil(log.data) do %>
-                    <div data-test="transaction_log"  class="text-dark">
+                    <div class="text-dark">
                       <%= log.data %>
                     </div>
                   <% end %>
