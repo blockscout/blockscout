@@ -31,26 +31,25 @@ defmodule ExplorerWeb.Notifier do
   end
 
   defp broadcast_transaction(transaction_hash) do
-    {:ok, transaction} =
-      Chain.hash_to_transaction(
-        transaction_hash,
-        necessity_by_association: %{
-          block: :required,
-          from_address: :optional,
-          to_address: :optional
-        }
-      )
+    case Chain.hash_to_transaction(
+           transaction_hash,
+           necessity_by_association: %{block: :required, from_address: :optional, to_address: :optional}
+         ) do
+      {:ok, transaction} ->
+        Endpoint.broadcast("addresses:#{transaction.from_address_hash}", "transaction", %{
+          address: transaction.from_address,
+          transaction: transaction
+        })
 
-    Endpoint.broadcast("addresses:#{transaction.from_address_hash}", "transaction", %{
-      address: transaction.from_address,
-      transaction: transaction
-    })
+        if transaction.to_address_hash && transaction.to_address_hash != transaction.from_address_hash do
+          Endpoint.broadcast("addresses:#{transaction.to_address_hash}", "transaction", %{
+            address: transaction.to_address,
+            transaction: transaction
+          })
+        end
 
-    if transaction.to_address_hash && transaction.to_address_hash != transaction.from_address_hash do
-      Endpoint.broadcast("addresses:#{transaction.to_address_hash}", "transaction", %{
-        address: transaction.to_address,
-        transaction: transaction
-      })
+      {:error, _} ->
+        nil
     end
   end
 end
