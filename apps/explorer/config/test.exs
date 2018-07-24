@@ -9,6 +9,8 @@ config :explorer, Explorer.Repo,
   database: "explorer_test",
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox,
+  # Default of `5_000` was too low for `BlockFetcher` test
+  pool_timeout: 10_000,
   ownership_timeout: 60_000
 
 config :explorer, Explorer.Chain.Statistics.Server, enabled: false
