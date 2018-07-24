@@ -10,15 +10,18 @@
           <span class="d-block mb-2">
             <%= render ExplorerWeb.AddressView, "_link.html", address_hash: @transaction.from_address_hash, contract: ExplorerWeb.AddressView.contract?(@transaction.from_address), locale: @locale %>
             <span class="text-muted">  &rarr; </span>
-            <%= render ExplorerWeb.AddressView, "_link.html", address_hash: ExplorerWeb.TransactionView.to_address_hash(@transaction), contract: ExplorerWeb.AddressView.contract?(@transaction.to_address), locale: @locale %>
+            <%= if @transaction.to_address_hash do %>
+              <%= render ExplorerWeb.AddressView, "_link.html", address_hash: @transaction.to_address_hash, contract: ExplorerWeb.AddressView.contract?(@transaction.to_address), locale: @locale %>
+            <% else %>
+              <%= gettext("Contract Address Pending") %>
+            <% end %>
           </span>
           <div class="d-flex flex-row justify-content-start text-muted">
+            <span class="mr-4 text-<%= ExplorerWeb.TransactionView.type_suffix(@transaction) %>"><%= ExplorerWeb.TransactionView.transaction_display_type(@transaction) %></span>
             <span class="mr-4"><%= ExplorerWeb.TransactionView.formatted_status(@transaction) %></span>
-            <span class="mr-4" data-from-now="<%= @transaction.block.timestamp %>">
+            <span class="mr-4">
               <%= if block do %>
-                <span data-from-now="<%= @transaction.block.timestamp %>"></span> (<%= formatted_timestamp(@transaction.block) %>)
-              <% else %>
-                <%= gettext "Pending" %>
+                <span data-from-now="<%= @transaction.block.timestamp %>"></span>
               <% end %>
             </span>
           </div>
@@ -33,11 +36,16 @@
                       class: "transaction__link",
                       to: block_path(@conn, :show, @conn.assigns.locale, block)
                     ) %>
+              <% else %>
+                <%= gettext "Pending" %>
               <% end %>
-              (<span data-selector="block-confirmations">
-                <%= confirmations(@transaction, max_block_number: @max_block_number) %>
-              </span> <%= gettext "block confirmations" %>)
             </dd>
+          </dl>
+          <dl class="row">
+            <dt class="col-sm-3 text-muted"> <%= gettext "Block Confirmations" %> </dt>
+            <dd class="col-sm-9">
+              <span data-selector="block-confirmations"><%= confirmations(@transaction, max_block_number: @max_block_number) %></span>
+          </dd>
           </dl>
           <!-- Nonce -->
           <dl class="row">

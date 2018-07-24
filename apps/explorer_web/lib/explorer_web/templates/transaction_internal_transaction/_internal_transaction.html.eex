@@ -6,23 +6,10 @@
     <div class="col-md-7 col-lg-8 d-flex flex-column">
       <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: @internal_transaction.transaction_hash %>
       <span>
-        <%= if @address.hash == @internal_transaction.from_address_hash do %>
-          <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: @internal_transaction.from_address_hash, contract: ExplorerWeb.AddressView.contract?(@internal_transaction.from_address) %>
-        <% else %>
-          <%= render ExplorerWeb.AddressView, "_link.html", address_hash: @internal_transaction.from_address_hash, contract: ExplorerWeb.AddressView.contract?(@internal_transaction.from_address), locale: @locale %>
-        <% end %>
+        <%= render ExplorerWeb.AddressView, "_link.html", address_hash: @internal_transaction.from_address_hash, contract: ExplorerWeb.AddressView.contract?(@internal_transaction.from_address), locale: @locale %>
         &rarr;
-        <%= if @address.hash == ExplorerWeb.InternalTransactionView.to_address_hash(@internal_transaction) do %>
-          <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: ExplorerWeb.InternalTransactionView.to_address_hash(@internal_transaction), contract: ExplorerWeb.AddressView.contract?(@internal_transaction.to_address) %>
-        <% else %>
-          <%= render ExplorerWeb.AddressView, "_link.html", address_hash: ExplorerWeb.InternalTransactionView.to_address_hash(@internal_transaction), contract: ExplorerWeb.AddressView.contract?(@internal_transaction.to_address), locale: @locale %>
-        <% end %>
+        <%= render ExplorerWeb.AddressView, "_link.html", address_hash: ExplorerWeb.InternalTransactionView.to_address_hash(@internal_transaction), contract: ExplorerWeb.AddressView.contract?(@internal_transaction.to_address), locale: @locale %>
       </span>
-      <%= if @address.hash == @internal_transaction.from_address_hash do %>
-        <span class="badge badge-danger tile-badge"><%= gettext "OUT" %></span>
-      <% else %>
-        <span class="badge badge-success tile-badge"><%= gettext "IN" %></span>
-      <% end %>
     </div>
     <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column justify-content-start text-md-right">
       <span class="tile-title">
