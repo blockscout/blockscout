@@ -1,6 +1,8 @@
 <section class="container">
   <div class="card">
     <div class="card-header">
+
+      <!-- DESKTOP TAB NAV -->
       <ul class="nav nav-tabs card-header-tabs d-none d-md-inline-flex">
         <li class="nav-item">
           <%= link(
@@ -18,6 +20,26 @@
               ) %>
         </li>
       </ul>
+
+      <!-- MOBILE DROPDOWN NAV -->
+      <ul class="nav nav-tabs card-header-tabs d-md-none">
+        <li class="nav-item dropdown flex-fill text-center">
+          <a class="nav-link active dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false"><%= gettext("Pending") %></a>
+          <div class="dropdown-menu">
+            <%= link(
+                  gettext("Validated"),
+                  class: "dropdown-item",
+                  to: transaction_path(@conn, :index, @conn.assigns.locale)
+                ) %>
+            <%= link(
+                  gettext("Pending"),
+                  class: "dropdown-item",
+                  "data-test": "pending_transactions_link",
+                  to: pending_transaction_path(@conn, :index, @conn.assigns.locale)
+                ) %>
+          </div>
+        </li>
+      </ul>
     </div>
 
     <div class="card-body">
@@ -26,14 +48,14 @@
 
       <%= for transaction <- @transactions do %>
         <div class="tile tile-type-<%= ExplorerWeb.TransactionView.type_suffix(transaction) %>" data-test="<%= ExplorerWeb.TransactionView.type_suffix(transaction) %>" data-transaction-hash="<%= transaction.hash %>">
-          <div class="row" data-test="chain_transaction">
-            <div class="col-md-2 d-flex flex-column align-items-left justify-content-start justify-content-lg-center tile-label">
-              <div class="ml-4">
-                <span data-test="transaction_type"> <%= ExplorerWeb.TransactionView.transaction_display_type(transaction) %></span>
-                <div data-test="transaction_status" class="text-muted"><%= ExplorerWeb.TransactionView.formatted_status(transaction) %></div>
+          <div class="row justify-content-end" data-test="chain_transaction">
+            <div class="col-md-3 col-lg-2 d-flex align-items-lg-center">
+              <div class="d-flex flex-md-column ml-md-4">
+                <span class="tile-label mr-1 mr-md-0" data-test="transaction_type"> <%= ExplorerWeb.TransactionView.transaction_display_type(transaction) %></span>
+                <div data-test="transaction_status"><%= ExplorerWeb.TransactionView.formatted_status(transaction) %></div>
               </div>
             </div>
-            <div class="col-md-7 col-lg-8 d-flex flex-column">
+            <div class="col-md-9 col-lg-7 d-flex flex-column">
               <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: transaction.hash %>
               <span>
                 <%= render ExplorerWeb.AddressView, "_link.html", address_hash: transaction.from_address_hash, contract: ExplorerWeb.AddressView.contract?(transaction.from_address), locale: @locale %>
@@ -44,7 +66,10 @@
                   <%= gettext("Contract Address Pending") %>
                 <% end %>
               </span>
-              <%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> <%= gettext "Ether" %>
+            </div>
+            <div class="col-md-9 col-lg-3 d-flex flex-column flex-md-row flex-lg-column justify-content-start text-lg-right mt-3 mt-lg-0">
+              <span class="tile-title mr-1 mr-lg-0"><%= ExplorerWeb.TransactionView.value(transaction, include_label: false) %> <%= gettext "Ether" %></span>
+              <span> <%= ExplorerWeb.TransactionView.formatted_fee(transaction, denomination: :ether) %> <%= gettext "Fee" %></span>
             </div>
           </div>
         </div>

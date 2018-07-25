@@ -1,9 +1,9 @@
 <div class="tile tile-type-internal-transaction fade-in" data-test="internal_transaction" data-internal-transaction-id="<%= @internal_transaction.id %>">
-  <div class="row">
-    <div class="col-md-2 d-flex align-items-center justify-content-start justify-content-lg-center  tile-label">
+  <div class="row justify-content-end">
+    <div class="col-md-3 col-lg-2 d-flex align-items-center justify-content-start justify-content-lg-center tile-label">
       <%=  gettext("Internal Transaction") %>
     </div>
-    <div class="col-md-7 col-lg-8 d-flex flex-column">
+    <div class="col-md-9 col-lg-7 d-flex flex-column text-nowrap">
       <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: @internal_transaction.transaction_hash %>
       <span>
         <%= if @address.hash == @internal_transaction.from_address_hash do %>
@@ -24,7 +24,7 @@
         <span class="badge badge-success tile-badge"><%= gettext "IN" %></span>
       <% end %>
     </div>
-    <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column justify-content-start text-md-right">
+    <div class="col-md-9 col-lg-3 d-flex flex-row flex-md-column justify-content-start text-lg-right mt-3 mt-lg-0">
       <span class="tile-title">
         <%= ExplorerWeb.TransactionView.value(@internal_transaction, include_label: false) %> <%= gettext "Ether" %>
       </span>
