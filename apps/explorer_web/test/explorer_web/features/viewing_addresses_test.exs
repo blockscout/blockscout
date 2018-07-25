@@ -280,7 +280,7 @@ defmodule ExplorerWeb.ViewingAddressesTest do
        ],
        balances: [%{address_hash: ^hash}]
      }} =
-      Chain.import_blocks(
+      Chain.import(
         addresses: [
           params: [
             %{

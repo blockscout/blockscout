@@ -621,19 +621,9 @@ defmodule Explorer.Chain do
 
   See `Explorer.Chain.Import.all/1` for options and returns.
   """
-  @spec import_blocks(Import.all_options()) :: Import.all_result()
-  def import_blocks(options) do
+  @spec import(Import.all_options()) :: Import.all_result()
+  def import(options) do
     Import.all(options)
-  end
-
-  @doc """
-  Bulk insert internal transactions and update `t:Explorer.Chain.Transaction.t/0` `internal_transactions_indexed_at`.
-
-  See `Explorer.Chain.Import.internal_transactions/1` for options and returns.
-  """
-  @spec import_internal_transactions(Import.internal_transactions_options()) :: Import.internal_transactions_result()
-  def import_internal_transactions(options) do
-    Import.internal_transactions(options)
   end
 
   @doc """

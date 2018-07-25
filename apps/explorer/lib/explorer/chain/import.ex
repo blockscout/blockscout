@@ -21,7 +21,7 @@ defmodule Explorer.Chain.Import do
   @typep timeout_option :: {:timeout, timeout}
   @typep timestamps :: %{inserted_at: DateTime.t(), updated_at: DateTime.t()}
   @typep timestamps_option :: {:timestamps, timestamps}
-  @typep transactions_option :: {:transactions, [on_conflict_option | params_option | timeout_option]}
+  @typep transactions_option :: {:transactions, [on_conflict_option | params_option | timeout_option | with_option]}
   @typep with_option :: {:with, changeset_function_name :: atom}
 
   @type all_options :: [
@@ -83,8 +83,6 @@ defmodule Explorer.Chain.Import do
   @insert_logs_timeout 60_000
   @insert_transactions_timeout 60_000
 
-  @update_transactions_timeout 60_000
-
   @doc """
   Bulk insert all data stored in the `Explorer`.
 
@@ -119,6 +117,7 @@ defmodule Explorer.Chain.Import do
     * `:addresses`
       * `:params` - `list` of params for `Explorer.Chain.Address.changeset/2`.
       * `:timeout` - the timeout for inserting all addresses.  Defaults to `#{@insert_addresses_timeout}` milliseconds.
+      * `:with` - the changeset function on `Explorer.Chain.Address` to use validate `:params`.
     * `:balances`
       * `:params` - `list` of params for `Explorer.Chain.Balance.changeset/2`.
       * `:timeout` - the timeout for inserting all balances.  Defaults to `#{@insert_balances_timeout}` milliseconds.
@@ -146,6 +145,7 @@ defmodule Explorer.Chain.Import do
       * `:params` - `list` of params for `Explorer.Chain.Transaction.changeset/2`.
       * `:timeout` - the timeout for inserting all transactions found in the params lists across all
         types. Defaults to `#{@insert_transactions_timeout}` milliseconds.
+      * `:with` - the changeset function on `Explorer.Chain.Transaction` to use validate `:params`.
   """
   @spec all(all_options()) :: all_result()
   def all(options) when is_list(options) do
@@ -162,56 +162,6 @@ defmodule Explorer.Chain.Import do
          {:ok, data} <- insert_ecto_schema_module_to_changes_list(ecto_schema_module_to_changes_list, options) do
       if broadcast, do: broadcast_events(data)
       {:ok, data}
-    end
-  end
-
-  @doc """
-  Bulk insert internal transactions for a list of transactions.
-
-  ## Options
-
-    * `:addresses`
-      * `:params` - `list` of params for `Explorer.Chain.Address.changeset/2`.
-      * `:timeout` - the timeout for inserting all addresses.  Defaults to `#{@insert_addresses_timeout}` milliseconds.
-    * `:internal_transactions`
-      * `:params` - `list` of params for `Explorer.Chain.InternalTransaction.changeset/2`.
-      * `:timeout` - the timeout for inserting all internal transactions. Defaults to
-        `#{@insert_internal_transactions_timeout}` milliseconds.
-    * `:transactions`
-      * `:hashes` - `list` of `t:Explorer.Chain.Transaction.t/0` `hash`es that should have their
-          `internal_transactions_indexed_at` updated.
-      * `:timeout` - the timeout for updating transactions with `:hashes`.  Defaults to
-        `#{@update_transactions_timeout}` milliseconds.
-    * `:timeout` - the timeout for the whole `c:Ecto.Repo.transaction/0` call.  Defaults to `#{@transaction_timeout}`
-      milliseconds.
-  """
-  @spec internal_transactions(internal_transactions_options()) :: internal_transactions_result
-  def internal_transactions(options) when is_list(options) do
-    {transactions_options, import_options} = Keyword.pop(options, :transactions)
-    changes_list_options_list = import_options_to_changes_list_arguments_list(import_options)
-
-    with {:ok, ecto_schema_module_to_changes_list} <-
-           changes_list_arguments_list_to_ecto_schema_module_to_changes_list(changes_list_options_list) do
-      timestamps = timestamps()
-
-      ecto_schema_module_to_changes_list
-      |> ecto_schema_module_to_changes_list_to_multi(Keyword.put(options, :timestamps, timestamps))
-      |> Multi.run(:transactions, fn _ ->
-        transaction_hashes = Keyword.get(transactions_options, :hashes)
-        transactions_count = length(transaction_hashes)
-
-        query =
-          from(
-            t in Transaction,
-            where: t.hash in ^transaction_hashes,
-            update: [set: [internal_transactions_indexed_at: ^timestamps.updated_at]]
-          )
-
-        {^transactions_count, result} = Repo.update_all(query, [])
-
-        {:ok, result}
-      end)
-      |> import_transaction(options)
     end
   end
 
@@ -384,10 +334,19 @@ defmodule Explorer.Chain.Import do
       %{InternalTransaction => internal_transactions_changes} ->
         timestamps = Keyword.fetch!(options, :timestamps)
 
-        Multi.run(multi, :internal_transactions, fn _ ->
+        multi
+        |> Multi.run(:internal_transactions, fn _ ->
           insert_internal_transactions(
             internal_transactions_changes,
             timeout: options[:internal_transactions][:timeout] || @insert_internal_transactions_timeout,
+            timestamps: timestamps
+          )
+        end)
+        |> Multi.run(:internal_transactions_indexed_at_transactions, fn %{internal_transactions: internal_transactions}
+                                                                        when is_list(internal_transactions) ->
+          update_transactions_internal_transactions_indexed_at(
+            internal_transactions,
+            timeout: options[:transactions][:timeout] || @insert_transactions_timeout,
             timestamps: timestamps
           )
         end)
@@ -641,6 +600,30 @@ defmodule Explorer.Chain.Import do
       )
 
     {:ok, inserted}
+  end
+
+  defp update_transactions_internal_transactions_indexed_at(internal_transactions, named_arguments)
+       when is_list(internal_transactions) and is_list(named_arguments) do
+    timeout = Keyword.fetch!(named_arguments, :timeout)
+    timestamps = Keyword.fetch!(named_arguments, :timestamps)
+
+    ordered_transaction_hashes =
+      internal_transactions
+      |> MapSet.new(& &1.transaction_hash)
+      |> Enum.sort()
+
+    query =
+      from(
+        t in Transaction,
+        where: t.hash in ^ordered_transaction_hashes,
+        update: [set: [internal_transactions_indexed_at: ^timestamps.updated_at]]
+      )
+
+    transaction_count = Enum.count(ordered_transaction_hashes)
+
+    {^transaction_count, result} = Repo.update_all(query, [], timeout: timeout)
+
+    {:ok, result}
   end
 
   defp timestamp_changes_list(changes_list, timestamps) when is_list(changes_list) do
