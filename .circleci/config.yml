@@ -332,8 +332,18 @@ jobs:
           name: Wait for DB
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
 
-      - run: mix coveralls.circle --exclude no_geth --parallel --umbrella
+      - run:
+          name: mix test --exclude no_geth
+          command: |
+            # Don't submit coverage report for forks, but let the build succeed
+            if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
+              mix coveralls.html --exclude no_geth --parallel --umbrella
+            else
+              mix coveralls.circle --exclude no_geth --parallel --umbrella
+            fi
 
+      - store_artifacts:
+          path: cover/excoveralls.html
       - store_test_results:
           path: _build/test/junit
   test_geth_mox:
@@ -370,8 +380,18 @@ jobs:
           name: Wait for DB
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
 
-      - run: mix coveralls.circle --exclude no_geth --parallel --umbrella
+      - run:
+          name: mix test --exclude no_geth
+          command: |
+            # Don't submit coverage report for forks, but let the build succeed
+            if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
+              mix coveralls.html --exclude no_geth --parallel --umbrella
+            else
+              mix coveralls.circle --exclude no_geth --parallel --umbrella
+            fi
 
+      - store_artifacts:
+          path: cover/excoveralls.html
       - store_test_results:
           path: _build/test/junit
   test_parity_http:
@@ -411,8 +431,18 @@ jobs:
           name: Wait for DB
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
 
-      - run: mix coveralls.circle --exclude no_parity --parallel --umbrella
+      - run:
+          name: mix test --exclude no_geth
+          command: |
+            # Don't submit coverage report for forks, but let the build succeed
+            if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
+              mix coveralls.html --exclude no_parity --parallel --umbrella
+            else
+              mix coveralls.circle --exclude no_parity --parallel --umbrella
+            fi
 
+      - store_artifacts:
+          path: cover/excoveralls.html
       - store_test_results:
           path: _build/test/junit
   test_parity_mox:
@@ -449,8 +479,18 @@ jobs:
           name: Wait for DB
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
 
-      - run: mix coveralls.circle --exclude no_parity --parallel --umbrella
+      - run:
+          name: mix test --exclude no_geth
+          command: |
+            # Don't submit coverage report for forks, but let the build succeed
+            if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
+              mix coveralls.html --exclude no_parity --parallel --umbrella
+            else
+              mix coveralls.circle --exclude no_parity --parallel --umbrella
+            fi
 
+      - store_artifacts:
+          path: cover/excoveralls.html
       - store_test_results:
           path: _build/test/junit
 workflows:
