@@ -36,6 +36,7 @@ defmodule Explorer.Chain.TokenTransfer do
   * `:to_address_hash` - Address hash foreign key
   * `:token_contract_address` - The `t:Explorer.Chain.Address.t/0` of the token's contract.
   * `:token_contract_address_hash` - Address hash foreign key
+  * `:token_id` - ID of the token (applicable to ERC-721 tokens)
   * `:transaction` - The `t:Explorer.Chain.Transaction.t/0` ledger
   * `:transaction_hash` - Transaction foreign key
   * `:log_index` - Index of the corresponding `t:Explorer.Chain.Log.t/0` in the transaction.
@@ -48,6 +49,7 @@ defmodule Explorer.Chain.TokenTransfer do
           to_address_hash: Hash.Address.t(),
           token_contract_address: %Ecto.Association.NotLoaded{} | Address.t(),
           token_contract_address_hash: Hash.Address.t(),
+          token_id: non_neg_integer() | nil,
           transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
           transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
           transaction_hash: Hash.Full.t(),
@@ -59,6 +61,7 @@ defmodule Explorer.Chain.TokenTransfer do
   schema "token_transfers" do
     field(:amount, :decimal)
     field(:log_index, :integer)
+    field(:token_id, :integer)
 
     belongs_to(:from_address, Address, foreign_key: :from_address_hash, references: :hash, type: Hash.Address)
     belongs_to(:to_address, Address, foreign_key: :to_address_hash, references: :hash, type: Hash.Address)
@@ -78,11 +81,14 @@ defmodule Explorer.Chain.TokenTransfer do
     timestamps()
   end
 
+  @required_attrs ~w(log_index from_address_hash to_address_hash token_contract_address_hash transaction_hash)a
+  @optional_attrs ~w(amount token_id)a
+
   @doc false
   def changeset(%TokenTransfer{} = struct, params \\ %{}) do
     struct
-    |> cast(params, ~w(amount log_index from_address_hash to_address_hash token_contract_address_hash transaction_hash))
-    |> validate_required(~w(log_index from_address_hash to_address_hash token_contract_address_hash))
+    |> cast(params, @required_attrs ++ @optional_attrs)
+    |> validate_required(@required_attrs)
     |> foreign_key_constraint(:from_address)
     |> foreign_key_constraint(:to_address)
     |> foreign_key_constraint(:token_contract_address)

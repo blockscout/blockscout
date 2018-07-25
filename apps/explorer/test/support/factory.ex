@@ -261,7 +261,9 @@ defmodule Explorer.Factory do
       symbol: "IT",
       total_supply: 1_000_000_000,
       decimals: 18,
-      contract_address: build(:address)
+      contract_address: build(:address),
+      type: "ERC-20",
+      cataloged: true
     }
   end
 

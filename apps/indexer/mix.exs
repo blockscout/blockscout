@@ -41,7 +41,7 @@ defmodule Indexer.MixProject do
       # Importing to database
       {:explorer, in_umbrella: true},
       # Mocking `EthereumJSONRPC.Transport`, so we avoid hitting real chains for local testing
-      {:mox, "~> 0.3.2", only: [:test]}
+      {:mox, "~> 0.4", only: [:test]}
     ]
   end
 

@@ -71,6 +71,9 @@ defmodule Explorer.Mixfile do
       {:credo, "0.9.2", only: [:dev, :test], runtime: false},
       {:crontab, "~> 1.1"},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
+      # Casting Ethereum-native types to Elixir-native types
+      {:ecto, "~> 2.2"},
+      # Data factory for testing
       {:ex_machina, "~> 2.1", only: [:test]},
       # Code coverage
       {:excoveralls, "~> 0.8.1", only: [:test]},
@@ -80,7 +83,7 @@ defmodule Explorer.Mixfile do
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       {:math, "~> 0.3.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
-      {:mox, "~> 0.3.2", only: [:test]},
+      {:mox, "~> 0.4", only: [:test]},
       {:postgrex, ">= 0.0.0"},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
       {:timex, "~> 3.1.24"},

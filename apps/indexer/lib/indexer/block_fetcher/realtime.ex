@@ -9,7 +9,13 @@ defmodule Indexer.BlockFetcher.Realtime do
   import Indexer.BlockFetcher, only: [stream_import: 1]
 
   alias Explorer.Chain
-  alias Indexer.{AddressExtraction, BlockFetcher, Sequence}
+
+  alias Indexer.{
+    AddressExtraction,
+    BlockFetcher,
+    Sequence,
+    TokenFetcher
+  }
 
   @behaviour BlockFetcher
 
@@ -70,13 +76,16 @@ defmodule Indexer.BlockFetcher.Realtime do
            balances(block_fetcher, %{
              address_hash_to_block_number: address_hash_to_block_number,
              address_params: internal_transactions_addresses_params
-           }) do
-      options
-      |> Map.drop(@import_options)
-      |> put_in([:addresses, :params], balances_addresses_params)
-      |> put_in([Access.key(:balances, %{}), :params], balances_params)
-      |> put_in([Access.key(:internal_transactions, %{}), :params], internal_transactions_params)
-      |> Chain.import()
+           }),
+         chain_import_options =
+           options
+           |> Map.drop(@import_options)
+           |> put_in([:addresses, :params], balances_addresses_params)
+           |> put_in([Access.key(:balances, %{}), :params], balances_params)
+           |> put_in([Access.key(:internal_transactions, %{}), :params], internal_transactions_params),
+         {:ok, results} = ok <- Chain.import(chain_import_options) do
+      async_import_remaining_block_data(results)
+      ok
     end
   end
 
@@ -183,5 +192,11 @@ defmodule Indexer.BlockFetcher.Realtime do
     end
 
     put_in(supervisor_state.realtime.task_by_ref, running_task_by_ref)
+  end
+
+  defp async_import_remaining_block_data(%{tokens: tokens}) do
+    tokens
+    |> Enum.map(& &1.contract_address_hash)
+    |> TokenFetcher.async_fetch()
   end
 end

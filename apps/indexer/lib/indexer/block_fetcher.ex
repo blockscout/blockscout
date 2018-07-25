@@ -8,7 +8,13 @@ defmodule Indexer.BlockFetcher do
   import Indexer, only: [debug: 1]
 
   alias Explorer.Chain.{Block, Import}
-  alias Indexer.{AddressExtraction, Sequence}
+
+  alias Indexer.{
+    AddressExtraction,
+    Sequence,
+    TokenTransfers
+  }
+
   alias Indexer.BlockFetcher.Receipts
 
   # dialyzer thinks that Logger.debug functions always have no_local_return
@@ -41,6 +47,8 @@ defmodule Indexer.BlockFetcher do
                 broadcast: boolean,
                 logs: Import.logs_options(),
                 receipts: Import.receipts_options(),
+                token_transfers: Import.token_transfers_options(),
+                tokens: Import.tokens_options(),
                 transactions: Import.transactions_options()
               }
             ) :: Import.all_result()
@@ -185,11 +193,13 @@ defmodule Indexer.BlockFetcher do
          cap_seq(seq, next, range),
          {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_without_receipts)},
          %{logs: logs, receipts: receipts} = receipt_params,
-         transactions_with_receipts = Receipts.put(transactions_without_receipts, receipts) do
+         transactions_with_receipts = Receipts.put(transactions_without_receipts, receipts),
+         %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.from_log_params(logs) do
       addresses =
         AddressExtraction.extract_addresses(%{
           blocks: blocks,
           logs: logs,
+          token_transfers: token_transfers,
           transactions: transactions_with_receipts
         })
 
@@ -201,6 +211,8 @@ defmodule Indexer.BlockFetcher do
           blocks: %{params: blocks},
           logs: %{params: logs},
           receipts: %{params: receipts},
+          token_transfers: %{params: token_transfers},
+          tokens: %{on_conflict: :nothing, params: tokens},
           transactions: %{params: transactions_with_receipts, on_conflict: :replace_all}
         }
       )

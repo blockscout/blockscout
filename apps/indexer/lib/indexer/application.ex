@@ -5,7 +5,13 @@ defmodule Indexer.Application do
 
   use Application
 
-  alias Indexer.{BalanceFetcher, BlockFetcher, InternalTransactionFetcher, PendingTransactionFetcher}
+  alias Indexer.{
+    BalanceFetcher,
+    BlockFetcher,
+    InternalTransactionFetcher,
+    PendingTransactionFetcher,
+    TokenFetcher
+  }
 
   @impl Application
   def start(_type, _args) do
@@ -25,6 +31,7 @@ defmodule Indexer.Application do
       {PendingTransactionFetcher, name: PendingTransactionFetcher, json_rpc_named_arguments: json_rpc_named_arguments},
       {InternalTransactionFetcher,
        name: InternalTransactionFetcher, json_rpc_named_arguments: json_rpc_named_arguments},
+      {TokenFetcher, name: TokenFetcher, json_rpc_named_arguments: json_rpc_named_arguments},
       {BlockFetcher.Supervisor, [block_fetcher_supervisor_named_arguments, [name: BlockFetcher.Supervisor]]}
     ]
 

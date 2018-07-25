@@ -7,7 +7,15 @@ defmodule Indexer.BlockFetcher.SupervisorTest do
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
   alias Explorer.Chain.Block
-  alias Indexer.{AddressBalanceFetcherCase, BlockFetcher, BoundInterval, InternalTransactionFetcherCase}
+
+  alias Indexer.{
+    AddressBalanceFetcherCase,
+    BlockFetcher,
+    BoundInterval,
+    InternalTransactionFetcherCase,
+    TokenFetcherCase
+  }
+
   alias Indexer.BlockFetcher.Catchup
 
   @moduletag capture_log: true
@@ -195,6 +203,7 @@ defmodule Indexer.BlockFetcher.SupervisorTest do
       start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
       AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       start_supervised!({BlockFetcher.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments], []]})
 
       first_catchup_block_number = latest_block_number - 1
@@ -238,7 +247,7 @@ defmodule Indexer.BlockFetcher.SupervisorTest do
       start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
       AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-
+      TokenFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       # from `setup :state`
       assert_received :catchup_index
 
@@ -307,7 +316,7 @@ defmodule Indexer.BlockFetcher.SupervisorTest do
       start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
       AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-
+      TokenFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       # from `setup :state`
       assert_received :catchup_index
 
@@ -317,7 +326,7 @@ defmodule Indexer.BlockFetcher.SupervisorTest do
 
       # 2 blocks are missing, but latest is assumed to be handled by realtime_index, so only 1 is missing for
       # catchup_index
-      assert_receive {^ref, %{first_block_number: 0, missing_block_count: 1}} = message
+      assert_receive {^ref, %{first_block_number: 0, missing_block_count: 1}} = message, 200
 
       # DOWN is not flushed
       assert {:messages, [{:DOWN, ^ref, :process, ^pid, :normal}]} = Process.info(self(), :messages)
