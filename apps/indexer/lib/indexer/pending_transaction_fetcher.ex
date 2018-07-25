@@ -19,8 +19,7 @@ defmodule Indexer.PendingTransactionFetcher do
 
   defstruct interval: @default_interval,
             json_rpc_named_arguments: [],
-            task_ref: nil,
-            task_pid: nil
+            task: nil
 
   @gen_server_options ~w(debug name spawn_opt timeout)a
 
@@ -65,29 +64,28 @@ defmodule Indexer.PendingTransactionFetcher do
 
   @impl GenServer
   def handle_info(:fetch, %PendingTransactionFetcher{} = state) do
-    {:ok, pid, ref} = Indexer.start_monitor(fn -> task(state) end)
-    {:noreply, %PendingTransactionFetcher{state | task_ref: ref, task_pid: pid}}
+    task = Task.Supervisor.async_nolink(Indexer.TaskSupervisor, fn -> task(state) end)
+    {:noreply, %PendingTransactionFetcher{state | task: task}}
   end
 
-  def handle_info({:DOWN, ref, :process, pid, reason}, %PendingTransactionFetcher{task_ref: ref, task_pid: pid} = state) do
-    case reason do
-      :normal ->
-        :ok
+  def handle_info({ref, _}, %PendingTransactionFetcher{task: %Task{ref: ref}} = state) do
+    Process.demonitor(ref, [:flush])
 
-      _ ->
-        Logger.error(fn -> "pending transaction fetcher task exited due to #{inspect(reason)}.  Rescheduling." end)
-    end
+    {:noreply, schedule_fetch(state)}
+  end
 
-    new_state =
-      %PendingTransactionFetcher{state | task_ref: nil, task_pid: nil}
-      |> schedule_fetch()
+  def handle_info(
+        {:DOWN, ref, :process, pid, reason},
+        %PendingTransactionFetcher{task: %Task{pid: pid, ref: ref}} = state
+      ) do
+    Logger.error(fn -> "pending transaction fetcher task exited due to #{inspect(reason)}.  Rescheduling." end)
 
-    {:noreply, new_state}
+    {:noreply, schedule_fetch(state)}
   end
 
   defp schedule_fetch(%PendingTransactionFetcher{interval: interval} = state) do
     Process.send_after(self(), :fetch, interval)
-    state
+    %PendingTransactionFetcher{state | task: nil}
   end
 
   defp task(%PendingTransactionFetcher{json_rpc_named_arguments: json_rpc_named_arguments} = _state) do

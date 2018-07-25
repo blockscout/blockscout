@@ -79,16 +79,6 @@ defmodule Indexer do
     Application.put_env(:indexer, :debug_logs, false)
   end
 
-  @doc """
-  Starts a child task of `Indexer.TaskSupervisor` and monitors it, instead of linking to it.
-  """
-  @spec start_monitor((() -> term())) :: {:ok, pid, reference}
-  def start_monitor(task_function) when is_function(task_function, 0) do
-    {:ok, pid} = Task.Supervisor.start_child(Indexer.TaskSupervisor, task_function)
-    ref = Process.monitor(pid)
-    {:ok, pid, ref}
-  end
-
   defp debug_logs_enabled? do
     Application.fetch_env!(:indexer, :debug_logs)
   end
