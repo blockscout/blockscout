@@ -28,6 +28,7 @@ defmodule Explorer.Chain do
     Log,
     SmartContract,
     Token,
+    TokenTransfer,
     Transaction,
     Wei
   }
@@ -1700,5 +1701,20 @@ defmodule Explorer.Chain do
       %Token{} = token ->
         {:ok, token}
     end
+  end
+
+  @spec fetch_token_transfers_from_token_hash(Hash.t(), [paging_options]) :: []
+  def fetch_token_transfers_from_token_hash(token_address_hash, options \\ []) do
+    TokenTransfer.fetch_token_transfers_from_token_hash(token_address_hash, options)
+  end
+
+  @spec count_token_transfers_from_token_hash(Hash.t()) :: non_neg_integer()
+  def count_token_transfers_from_token_hash(token_address_hash) do
+    TokenTransfer.count_token_transfers_from_token_hash(token_address_hash)
+  end
+
+  @spec count_addresses_in_token_transfers_from_token_hash(Hash.t()) :: non_neg_integer()
+  def count_addresses_in_token_transfers_from_token_hash(token_address_hash) do
+    TokenTransfer.count_addresses_in_token_transfers_from_token_hash(token_address_hash)
   end
 end

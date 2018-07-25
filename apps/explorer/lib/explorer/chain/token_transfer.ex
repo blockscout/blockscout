@@ -24,9 +24,13 @@ defmodule Explorer.Chain.TokenTransfer do
 
   use Ecto.Schema
 
-  import Ecto.Changeset
+  import Ecto.{Changeset, Query}
 
-  alias Explorer.Chain.{Address, Hash, Transaction, TokenTransfer}
+  alias Explorer.Chain.{Address, Block, Hash, Transaction, TokenTransfer}
+  alias Explorer.{PagingOptions, Repo}
+  alias Ecto.Adapters.SQL
+
+  @default_paging_options %PagingOptions{page_size: 50}
 
   @typedoc """
   * `:amount` - The token transferred amount
@@ -55,6 +59,8 @@ defmodule Explorer.Chain.TokenTransfer do
           transaction_hash: Hash.Full.t(),
           log_index: non_neg_integer()
         }
+
+  @typep paging_options :: {:paging_options, PagingOptions.t()}
 
   @constant "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 
@@ -100,4 +106,74 @@ defmodule Explorer.Chain.TokenTransfer do
   `first_topic` field.
   """
   def constant, do: @constant
+
+  @spec fetch_token_transfers_from_token_hash(Hash.t(), [paging_options]) :: []
+  def fetch_token_transfers_from_token_hash(token_address_hash, options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    query =
+      from(
+        tt in TokenTransfer,
+        join: t in Transaction,
+        on: tt.transaction_hash == t.hash,
+        join: b in Block,
+        on: t.block_hash == b.hash,
+        where: tt.token_contract_address_hash == ^token_address_hash,
+        preload: [{:transaction, :block}, :token, :from_address, :to_address],
+        order_by: [desc: b.timestamp]
+      )
+
+    query
+    |> page_token_transfer(paging_options)
+    |> limit(^paging_options.page_size)
+    |> Repo.all()
+  end
+
+  @spec count_token_transfers_from_token_hash(Hash.t()) :: non_neg_integer()
+  def count_token_transfers_from_token_hash(token_address_hash) do
+    query =
+      from(
+        tt in TokenTransfer,
+        where: tt.token_contract_address_hash == ^token_address_hash,
+        select: count(tt.id)
+      )
+
+    Repo.one(query)
+  end
+
+  @spec count_addresses_in_token_transfers_from_token_hash(Hash.t()) :: non_neg_integer()
+  def count_addresses_in_token_transfers_from_token_hash(token_address_hash) do
+    {:ok, %{rows: [[result]]}} =
+      SQL.query(
+        Repo,
+        """
+          select count(*) as "addresses"
+          from
+          (
+            select to_address_hash as "address_hash"
+            from token_transfers tt1
+            where tt1.token_contract_address_hash = $1
+
+            union
+
+            select from_address_hash as "address_hash"
+            from token_transfers tt2
+            where tt2.token_contract_address_hash = $1
+          ) as addresses_count
+        """,
+        [token_address_hash.bytes]
+      )
+
+    result
+  end
+
+  defp page_token_transfer(query, %PagingOptions{key: nil}), do: query
+
+  defp page_token_transfer(query, %PagingOptions{key: inserted_at}) do
+    where(
+      query,
+      [token_transfer],
+      token_transfer.inserted_at < ^inserted_at
+    )
+  end
 end
