@@ -12,7 +12,15 @@ config :explorer, Explorer.Repo,
 
 import_config "dev.secret.exs"
 
-variant = System.get_env("ETHEREUM_JSONRPC_VARIANT") || "parity"
+variant =
+  if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do
+    "parity"
+  else
+    System.get_env("ETHEREUM_JSONRPC_VARIANT")
+    |> String.split(".")
+    |> List.last()
+    |> String.downcase()
+  end
 
 # Import variant specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
