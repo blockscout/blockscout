@@ -26,16 +26,16 @@
           <!-- MOBILE DROPDOWN NAV -->
           <ul class="nav nav-tabs card-header-tabs d-md-none">
             <li class="nav-item dropdown flex-fill text-center">
-              <a class="nav-link active dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false"><% gettext("Internal Transactions") %></a>
+              <a class="nav-link active dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false"><%= gettext("Internal Transactions") %></a>
               <div class="dropdown-menu">
                 <%= link(
                       gettext("Internal Transactions"),
-                      class: "nav-link active",
+                      class: "dropdown-item",
                       to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction)
                     ) %>
                     <%= link(
                           gettext("Logs"),
-                          class: "nav-link",
+                          class: "dropdown-item",
                           to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction),
                           "data-test": "transaction_logs_link"
                     ) %>
