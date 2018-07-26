@@ -84,4 +84,8 @@ defmodule ExplorerWeb.AddressPage do
   def token_transfer(address_hash, count: count) do
     css("[data-test='token_transfer_address_hash']", count: count, text: to_string(address_hash))
   end
+
+  def transaction_type do
+    css("[data-test='transaction_type']")
+  end
 end

@@ -28,10 +28,16 @@
         <% end %>
       </span>
       <span>
-        <%= if @address.hash == @transaction.from_address_hash do %>
-          <span class="badge badge-danger tile-badge"><%= gettext "OUT" %></span>
-        <% else %>
-          <span class="badge badge-success tile-badge"><%= gettext "IN" %></span>
+        <%= if transaction_from_or_to_current_address?(@transaction, @address.hash) do %>
+          <%= if @transaction.from_address_hash == @address.hash do %>
+            <span data-test="transaction_type" class="badge badge-danger tile-badge">
+              <%= gettext "OUT" %>
+            </span>
+          <% else %>
+            <span data-test="transaction_type" class="badge badge-success tile-badge">
+              <%= gettext "IN" %>
+            </span>
+          <% end %>
         <% end %>
         <span class="ml-1" data-from-now="<%= @transaction.block.timestamp %>"></span>
         <span class="ml-1">
