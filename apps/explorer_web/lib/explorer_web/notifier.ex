@@ -20,7 +20,11 @@ defmodule ExplorerWeb.Notifier do
   end
 
   def handle_event({:chain_event, :transactions, transaction_hashes}) do
-    Enum.each(transaction_hashes, &broadcast_transaction/1)
+    transaction_hashes
+    |> Chain.hashes_to_transactions(
+      necessity_by_association: %{block: :required, from_address: :optional, to_address: :optional}
+    )
+    |> Enum.each(&broadcast_transaction/1)
   end
 
   defp broadcast_balance(%Address{hash: address_hash} = address) do
@@ -30,26 +34,17 @@ defmodule ExplorerWeb.Notifier do
     })
   end
 
-  defp broadcast_transaction(transaction_hash) do
-    case Chain.hash_to_transaction(
-           transaction_hash,
-           necessity_by_association: %{block: :required, from_address: :optional, to_address: :optional}
-         ) do
-      {:ok, transaction} ->
-        Endpoint.broadcast("addresses:#{transaction.from_address_hash}", "transaction", %{
-          address: transaction.from_address,
-          transaction: transaction
-        })
+  defp broadcast_transaction(transaction) do
+    Endpoint.broadcast("addresses:#{transaction.from_address_hash}", "transaction", %{
+      address: transaction.from_address,
+      transaction: transaction
+    })
 
-        if transaction.to_address_hash && transaction.to_address_hash != transaction.from_address_hash do
-          Endpoint.broadcast("addresses:#{transaction.to_address_hash}", "transaction", %{
-            address: transaction.to_address,
-            transaction: transaction
-          })
-        end
-
-      {:error, _} ->
-        nil
+    if transaction.to_address_hash && transaction.to_address_hash != transaction.from_address_hash do
+      Endpoint.broadcast("addresses:#{transaction.to_address_hash}", "transaction", %{
+        address: transaction.to_address,
+        transaction: transaction
+      })
     end
   end
 end

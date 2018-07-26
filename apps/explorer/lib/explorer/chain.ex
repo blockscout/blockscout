@@ -604,6 +604,44 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Converts list of `t:Explorer.Chain.Transaction.t/0` `hashes` to the list of `t:Explorer.Chain.Transaction.t/0`s for
+  those `hashes`.
+
+  Returns list of `%Explorer.Chain.Transaction{}`s if found
+
+      iex> [%Transaction{hash: hash1}, %Transaction{hash: hash2}] = insert_list(2, :transaction)
+      iex> [%Explorer.Chain.Transaction{hash: found_hash1}, %Explorer.Chain.Transaction{hash: found_hash2}] =
+      ...>   Explorer.Chain.hashes_to_transactions([hash1, hash2])
+      iex> found_hash1 == hash1
+      true
+      iex> found_hash2 == hash2
+      true
+
+  Returns `[]` if not found
+
+      iex> {:ok, hash} = Explorer.Chain.string_to_transaction_hash(
+      ...>   "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
+      ...> )
+      iex> Explorer.Chain.hashes_to_transactions([hash])
+      []
+
+  ## Options
+
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+      `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association, then the
+      `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
+  """
+  @spec hashes_to_transactions([Hash.Full.t()], [necessity_by_association_option]) :: [Transaction.t()] | []
+  def hashes_to_transactions(hashes, options \\ []) when is_list(hashes) and is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    fetch_transactions()
+    |> where([transaction], transaction.hash in ^hashes)
+    |> join_associations(necessity_by_association)
+    |> Repo.all()
+  end
+
+  @doc """
   Bulk insert blocks from a list of blocks.
 
   The import returns the unique key(s) for each type of record inserted.
