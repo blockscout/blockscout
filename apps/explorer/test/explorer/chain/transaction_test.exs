@@ -10,6 +10,7 @@ defmodule Explorer.Chain.TransactionTest do
     test "with valid attributes" do
       assert %Changeset{valid?: true} =
                Transaction.changeset(%Transaction{}, %{
+                 from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
                  hash: "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b",
                  value: 1,
                  gas: 21000,
@@ -29,7 +30,7 @@ defmodule Explorer.Chain.TransactionTest do
     end
 
     test "it creates a new to address" do
-      params = params_for(:transaction)
+      params = params_for(:transaction, from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca")
       to_address_params = %{hash: "sk8orDi3"}
       changeset_params = Map.merge(params, %{to_address: to_address_params})
 

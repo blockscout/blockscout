@@ -76,37 +76,6 @@ defmodule Indexer.SequenceTest do
       # noproc when the sequence has already died by the time monitor is called
       assert_receive {:DOWN, ^sequence_ref, :process, ^sequence_pid, status} when status in [:normal, :noproc]
     end
-
-    test "with :ranges in direction opposite of :step returns errors for all ranges in wrong direction" do
-      parent = self()
-
-      {child_pid, child_ref} =
-        spawn_monitor(fn ->
-          send(
-            parent,
-            Sequence.start_link(
-              ranges: [
-                # ok, ok
-                7..6,
-                # ok, error
-                4..5,
-                # error, ok
-                3..2,
-                # error, error
-                0..1
-              ],
-              step: -1
-            )
-          )
-        end)
-
-      assert_receive {:DOWN, ^child_ref, :process, ^child_pid,
-                      [
-                        "Range (0..1) direction is opposite step (-1) direction",
-                        "Range (4..5) direction is opposite step (-1) direction"
-                      ]},
-                     200
-    end
   end
 
   describe "queue/2" do

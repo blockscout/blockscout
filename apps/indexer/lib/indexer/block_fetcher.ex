@@ -280,7 +280,7 @@ defmodule Indexer.BlockFetcher do
 
     options_with_broadcast = Keyword.merge(import_options, broadcast: indexer_mode == :realtime_index)
 
-    with {:ok, results} <- Chain.import_blocks(options_with_broadcast) do
+    with {:ok, results} <- Chain.import(options_with_broadcast) do
       async_import_remaining_block_data(
         results,
         address_hash_to_fetched_balance_block_number: address_hash_to_fetched_balance_block_number,
@@ -300,8 +300,8 @@ defmodule Indexer.BlockFetcher do
     end
   end
 
-  # `fetched_balance_block_number` is needed for the `BalanceFetcher`, but should not be used for
-  # `import_blocks` because the balance is not known yet.
+  # `fetched_balance_block_number` is needed for the `BalanceFetcher`, but should not be used for `import` because the
+  # balance is not known yet.
   defp pop_address_hash_to_fetched_balance_block_number(options) do
     {address_hash_fetched_balance_block_number_pairs, import_options} =
       get_and_update_in(options, [:addresses, :params, Access.all()], &pop_hash_fetched_balance_block_number/1)

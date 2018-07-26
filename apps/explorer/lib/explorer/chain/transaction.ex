@@ -7,9 +7,9 @@ defmodule Explorer.Chain.Transaction do
   alias Explorer.Chain.{Address, Block, Data, Gas, Hash, InternalTransaction, Log, Wei}
   alias Explorer.Chain.Transaction.Status
 
-  @optional_attrs ~w(block_hash block_number cumulative_gas_used from_address_hash gas_used index
-                     internal_transactions_indexed_at status to_address_hash)a
-  @required_attrs ~w(gas gas_price hash input nonce r s v value)a
+  @optional_attrs ~w(block_hash block_number cumulative_gas_used gas_used index internal_transactions_indexed_at status
+                     to_address_hash)a
+  @required_attrs ~w(from_address_hash gas gas_price hash input nonce r s v value)a
 
   @typedoc """
   X coordinate module n in
@@ -153,6 +153,7 @@ defmodule Explorer.Chain.Transaction do
       iex> changeset = Explorer.Chain.Transaction.changeset(
       ...>   %Transaction{},
       ...>   %{
+      ...>     from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
       ...>     gas: 4700000,
       ...>     gas_price: 100000000000,
       ...>     hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
@@ -173,6 +174,7 @@ defmodule Explorer.Chain.Transaction do
       iex> changeset = Explorer.Chain.Transaction.changeset(
       ...>   %Transaction{},
       ...>   %{
+      ...>     from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
       ...>     block_number: 34,
       ...>     cumulative_gas_used: 0,
       ...>     gas: 4700000,
@@ -210,6 +212,7 @@ defmodule Explorer.Chain.Transaction do
       ...>     block_hash: "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47",
       ...>     block_number: 34,
       ...>     cumulative_gas_used: 0,
+      ...>     from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
       ...>     gas: 4700000,
       ...>     gas_price: 100000000000,
       ...>     gas_used: 4600000,

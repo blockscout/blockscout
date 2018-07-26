@@ -97,7 +97,7 @@ defmodule Indexer.PendingTransactionFetcher do
         # affected the address balance yet since address balance is a balance at a give block and these transactions are
         # blockless.
         {:ok, _} =
-          Chain.import_blocks(
+          Chain.import(
             addresses: [params: addresses_params],
             transactions: [on_conflict: :nothing, params: transactions_params]
           )
