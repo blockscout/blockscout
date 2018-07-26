@@ -3,15 +3,12 @@ defmodule Indexer.BlockFetcher do
   Fetches and indexes block ranges from gensis to realtime.
   """
 
-  use GenServer
-
   require Logger
 
   import Indexer, only: [debug: 1]
 
   alias Explorer.Chain
-  alias Indexer.{BalanceFetcher, AddressExtraction, BoundInterval, InternalTransactionFetcher, Sequence}
-  alias Indexer.BlockFetcher.{Catchup, Realtime}
+  alias Indexer.{AddressExtraction, BalanceFetcher, BoundInterval, InternalTransactionFetcher, Sequence}
 
   # dialyzer thinks that Logger.debug functions always have no_local_return
   @dialyzer {:nowarn_function, import_range: 4}
@@ -42,11 +39,12 @@ defmodule Indexer.BlockFetcher do
   def default_blocks_batch_size, do: @blocks_batch_size
 
   @doc """
-  Starts the server.
+  Required named arguments
 
-  ## Options
+    * `:json_rpc_named_arguments` - `t:EthereumJSONRPC.json_rpc_named_arguments/0` passed to
+        `EthereumJSONRPC.json_rpc/2`.
 
-  Default options are pulled from application config under the :indexer` keyspace. The follow options can be overridden:
+  The follow options can be overridden:
 
     * `:blocks_batch_size` - The number of blocks to request in one call to the JSONRPC.  Defaults to
       `#{@blocks_batch_size}`.  Block requests also include the transactions for those blocks.  *These transactions
@@ -66,8 +64,17 @@ defmodule Indexer.BlockFetcher do
       `#{@blocks_concurrency * @receipts_concurrency * @receipts_batch_size}`) receipts can be requested from the
       JSONRPC at once over all connections. *Each transaction only has one receipt.*
   """
-  def start_link(opts) do
-    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+  def new(named_arguments) when is_list(named_arguments) do
+    interval = div(named_arguments[:block_interval] || @block_interval, 2)
+
+    state = struct!(__MODULE__, Keyword.delete(named_arguments, :block_interval))
+
+    %__MODULE__{
+      state
+      | json_rpc_named_arguments: Keyword.fetch!(named_arguments, :json_rpc_named_arguments),
+        catchup_bound_interval: BoundInterval.within(interval..(interval * 10)),
+        realtime_interval: interval
+    }
   end
 
   def stream_import(%__MODULE__{} = state, seq, indexer_mode, task_opts) do
@@ -78,59 +85,6 @@ defmodule Indexer.BlockFetcher do
       Keyword.merge(task_opts, timeout: :infinity)
     )
     |> Stream.run()
-  end
-
-  @impl GenServer
-  def init(opts) do
-    opts =
-      :indexer
-      |> Application.get_all_env()
-      |> Keyword.merge(opts)
-
-    interval = div(opts[:block_interval] || @block_interval, 2)
-
-    state = %__MODULE__{
-      json_rpc_named_arguments: Keyword.fetch!(opts, :json_rpc_named_arguments),
-      catchup_bound_interval: BoundInterval.within(interval..(interval * 10)),
-      realtime_interval: interval,
-      blocks_batch_size: Keyword.get(opts, :blocks_batch_size, @blocks_batch_size),
-      blocks_concurrency: Keyword.get(opts, :blocks_concurrency, @blocks_concurrency),
-      receipts_batch_size: Keyword.get(opts, :receipts_batch_size, @receipts_batch_size),
-      receipts_concurrency: Keyword.get(opts, :receipts_concurrency, @receipts_concurrency)
-    }
-
-    send(self(), :catchup_index)
-    {:ok, _} = :timer.send_interval(state.realtime_interval, :realtime_index)
-
-    {:ok, state}
-  end
-
-  @impl GenServer
-  def handle_info(:catchup_index, %__MODULE__{} = state) do
-    {:noreply, Catchup.put(state)}
-  end
-
-  def handle_info({ref, _} = message, %__MODULE__{catchup_task: %Task{ref: ref}} = state) do
-    {:noreply, Catchup.handle_success(message, state)}
-  end
-
-  def handle_info(
-        {:DOWN, ref, :process, pid, _} = message,
-        %__MODULE__{catchup_task: %Task{pid: pid, ref: ref}} = state
-      ) do
-    {:noreply, Catchup.handle_failure(message, state)}
-  end
-
-  def handle_info(:realtime_index, %__MODULE__{} = state) do
-    {:noreply, Realtime.put(state)}
-  end
-
-  def handle_info({ref, :ok} = message, %__MODULE__{} = state) when is_reference(ref) do
-    {:noreply, Realtime.handle_success(message, state)}
-  end
-
-  def handle_info({:DOWN, _, :process, _, _} = message, %__MODULE__{} = state) do
-    {:noreply, Realtime.handle_failure(message, state)}
   end
 
   defp cap_seq(seq, next, range) do
