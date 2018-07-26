@@ -30,7 +30,6 @@ defmodule Indexer.BlockFetcher do
 
   defstruct json_rpc_named_arguments: [],
             catchup_task: nil,
-            catchup_block_number: nil,
             catchup_bound_interval: nil,
             realtime_task_by_ref: %{},
             realtime_interval: nil,

@@ -273,7 +273,7 @@ defmodule Indexer.BlockFetcherTest do
       assert {:noreply, %BlockFetcher{catchup_task: %Task{pid: pid, ref: ref}} = catchup_index_state} =
                BlockFetcher.handle_info(:catchup_index, state)
 
-      assert_receive {^ref, 0} = message
+      assert_receive {^ref, %{first_block_number: 0, missing_block_count: 0}} = message
 
       # DOWN is not flushed
       assert {:messages, [{:DOWN, ^ref, :process, ^pid, :normal}]} = Process.info(self(), :messages)
@@ -343,7 +343,7 @@ defmodule Indexer.BlockFetcherTest do
 
       # 2 blocks are missing, but latest is assumed to be handled by realtime_index, so only 1 is missing for
       # catchup_index
-      assert_receive {^ref, 1} = message
+      assert_receive {^ref, %{first_block_number: 0, missing_block_count: 1}} = message
 
       # DOWN is not flushed
       assert {:messages, [{:DOWN, ^ref, :process, ^pid, :normal}]} = Process.info(self(), :messages)

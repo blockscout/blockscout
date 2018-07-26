@@ -27,7 +27,7 @@ defmodule Indexer.BlockFetcher.Catchup do
     case latest_block_number do
       # let realtime indexer get the genesis block
       0 ->
-        0
+        %{first_block_number: 0, missing_block_count: 0}
 
       _ ->
         # realtime indexer gets the current latest block
@@ -54,14 +54,13 @@ defmodule Indexer.BlockFetcher.Catchup do
             stream_import(state, seq, :catchup_index, max_concurrency: state.blocks_concurrency)
         end
 
-        missing_block_count
+        %{first_block_number: first, missing_block_count: missing_block_count}
     end
   end
 
   def handle_success(
-        {ref, missing_block_count},
+        {ref, %{first_block_number: first_block_number, missing_block_count: missing_block_count}},
         %BlockFetcher{
-          catchup_block_number: catchup_block_number,
           catchup_bound_interval: catchup_bound_interval,
           catchup_task: %Task{ref: ref}
         } = state
@@ -70,12 +69,12 @@ defmodule Indexer.BlockFetcher.Catchup do
     new_catchup_bound_interval =
       case missing_block_count do
         0 ->
-          Logger.info("Index already caught up in #{catchup_block_number}-0")
+          Logger.info("Index already caught up in #{first_block_number}-0")
 
           BoundInterval.increase(catchup_bound_interval)
 
         _ ->
-          Logger.info("Index had to catch up #{missing_block_count} blocks in #{catchup_block_number}-0")
+          Logger.info("Index had to catch up #{missing_block_count} blocks in #{first_block_number}-0")
 
           BoundInterval.decrease(catchup_bound_interval)
       end
