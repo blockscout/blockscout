@@ -9,9 +9,9 @@ defmodule Indexer.BlockFetcher do
 
   import Indexer, only: [debug: 1]
 
-  alias EthereumJSONRPC
   alias Explorer.Chain
   alias Indexer.{BalanceFetcher, AddressExtraction, BoundInterval, InternalTransactionFetcher, Sequence}
+  alias Indexer.BlockFetcher.Catchup
 
   # dialyzer thinks that Logger.debug functions always have no_local_return
   @dialyzer {:nowarn_function, import_range: 4}
@@ -27,6 +27,17 @@ defmodule Indexer.BlockFetcher do
 
   @receipts_batch_size 250
   @receipts_concurrency 10
+
+  defstruct json_rpc_named_arguments: [],
+            catchup_task: nil,
+            catchup_block_number: nil,
+            catchup_bound_interval: nil,
+            realtime_task_by_ref: %{},
+            realtime_interval: nil,
+            blocks_batch_size: @blocks_batch_size,
+            blocks_concurrency: @blocks_concurrency,
+            receipts_batch_size: @receipts_batch_size,
+            receipts_concurrency: @receipts_concurrency
 
   @doc false
   def default_blocks_batch_size, do: @blocks_batch_size
@@ -60,16 +71,15 @@ defmodule Indexer.BlockFetcher do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-  defstruct json_rpc_named_arguments: [],
-            catchup_task: nil,
-            catchup_block_number: nil,
-            catchup_bound_interval: nil,
-            realtime_task_by_ref: %{},
-            realtime_interval: nil,
-            blocks_batch_size: @blocks_batch_size,
-            blocks_concurrency: @blocks_concurrency,
-            receipts_batch_size: @receipts_batch_size,
-            receipts_concurrency: @receipts_concurrency
+  def stream_import(%__MODULE__{} = state, seq, indexer_mode, task_opts) do
+    seq
+    |> Sequence.build_stream()
+    |> Task.async_stream(
+      &import_range(&1, state, seq, indexer_mode),
+      Keyword.merge(task_opts, timeout: :infinity)
+    )
+    |> Stream.run()
+  end
 
   @impl GenServer
   def init(opts) do
@@ -98,52 +108,18 @@ defmodule Indexer.BlockFetcher do
 
   @impl GenServer
   def handle_info(:catchup_index, %__MODULE__{} = state) do
-    catchup_task = Task.Supervisor.async_nolink(Indexer.TaskSupervisor, fn -> catchup_task(state) end)
+    {:noreply, Catchup.put(state)}
+  end
 
-    {:noreply, %{state | catchup_task: catchup_task}}
+  def handle_info({ref, _} = message, %__MODULE__{catchup_task: %Task{ref: ref}} = state) do
+    {:noreply, Catchup.handle_success(message, state)}
   end
 
   def handle_info(
-        {ref, missing_block_count},
-        %__MODULE__{
-          catchup_block_number: catchup_block_number,
-          catchup_bound_interval: catchup_bound_interval,
-          catchup_task: %Task{ref: ref}
-        } = state
-      )
-      when is_integer(missing_block_count) do
-    new_catchup_bound_interval =
-      case missing_block_count do
-        0 ->
-          Logger.info("Index already caught up in #{catchup_block_number}-0")
-
-          BoundInterval.increase(catchup_bound_interval)
-
-        _ ->
-          Logger.info("Index had to catch up #{missing_block_count} blocks in #{catchup_block_number}-0")
-
-          BoundInterval.decrease(catchup_bound_interval)
-      end
-
-    Process.demonitor(ref, [:flush])
-
-    interval = new_catchup_bound_interval.current
-
-    Logger.info(fn ->
-      "Checking if index needs to catch up in #{interval}ms"
-    end)
-
-    Process.send_after(self(), :catchup_index, interval)
-
-    {:noreply, %{state | catchup_bound_interval: new_catchup_bound_interval, catchup_task: nil}}
-  end
-
-  def handle_info({:DOWN, ref, :process, pid, reason}, %__MODULE__{catchup_task: %Task{pid: pid, ref: ref}} = state) do
-    Logger.error(fn -> "Catchup index stream exited with reason (#{inspect(reason)}). Restarting" end)
-
-    send(self(), :catchup_index)
-
-    {:noreply, %__MODULE__{state | catchup_task: nil}}
+        {:DOWN, ref, :process, pid, _} = message,
+        %__MODULE__{catchup_task: %Task{pid: pid, ref: ref}} = state
+      ) do
+    {:noreply, Catchup.handle_failure(message, state)}
   end
 
   def handle_info(:realtime_index, %__MODULE__{} = state) do
@@ -234,44 +210,6 @@ defmodule Indexer.BlockFetcher do
     end)
   end
 
-  # Returns number of missing blocks that had to be caught up
-  defp catchup_task(%__MODULE__{json_rpc_named_arguments: json_rpc_named_arguments} = state) do
-    {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
-
-    case latest_block_number do
-      # let realtime indexer get the genesis block
-      0 ->
-        0
-
-      _ ->
-        # realtime indexer gets the current latest block
-        first = latest_block_number - 1
-        last = 0
-        missing_ranges = Chain.missing_block_number_ranges(first..last)
-        range_count = Enum.count(missing_ranges)
-
-        missing_block_count =
-          missing_ranges
-          |> Stream.map(&Enum.count/1)
-          |> Enum.sum()
-
-        debug(fn -> "#{missing_block_count} missed blocks in #{range_count} ranges between #{first} and #{last}" end)
-
-        case missing_block_count do
-          0 ->
-            :ok
-
-          _ ->
-            {:ok, seq} = Sequence.start_link(ranges: missing_ranges, step: -1 * state.blocks_batch_size)
-            Sequence.cap(seq)
-
-            stream_import(state, seq, :catchup_index, max_concurrency: state.blocks_concurrency)
-        end
-
-        missing_block_count
-    end
-  end
-
   defp insert(seq, range, indexer_mode, options) when is_list(options) do
     {address_hash_to_fetched_balance_block_number, import_options} =
       pop_address_hash_to_fetched_balance_block_number(options)
@@ -352,16 +290,6 @@ defmodule Indexer.BlockFetcher do
     {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
     {:ok, seq} = Sequence.start_link(first: latest_block_number, step: 2)
     stream_import(state, seq, :realtime_index, max_concurrency: 1)
-  end
-
-  defp stream_import(%__MODULE__{} = state, seq, indexer_mode, task_opts) do
-    seq
-    |> Sequence.build_stream()
-    |> Task.async_stream(
-      &import_range(&1, state, seq, indexer_mode),
-      Keyword.merge(task_opts, timeout: :infinity)
-    )
-    |> Stream.run()
   end
 
   # Run at state.blocks_concurrency max_concurrency when called by `stream_import/3`
