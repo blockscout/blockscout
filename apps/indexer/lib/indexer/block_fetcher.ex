@@ -14,7 +14,7 @@ defmodule Indexer.BlockFetcher do
   alias Indexer.{BalanceFetcher, AddressExtraction, BoundInterval, InternalTransactionFetcher, Sequence}
 
   # dialyzer thinks that Logger.debug functions always have no_local_return
-  @dialyzer {:nowarn_function, import_range: 3}
+  @dialyzer {:nowarn_function, import_range: 4}
 
   # These are all the *default* values for options.
   # DO NOT use them directly in the code.  Get options from `state`.
@@ -265,20 +265,22 @@ defmodule Indexer.BlockFetcher do
             {:ok, seq} = Sequence.start_link(ranges: missing_ranges, step: -1 * state.blocks_batch_size)
             Sequence.cap(seq)
 
-            stream_import(state, seq, max_concurrency: state.blocks_concurrency)
+            stream_import(state, seq, :catchup_index, max_concurrency: state.blocks_concurrency)
         end
 
         missing_block_count
     end
   end
 
-  defp insert(seq, range, options) when is_list(options) do
+  defp insert(seq, range, indexer_mode, options) when is_list(options) do
     {address_hash_to_fetched_balance_block_number, import_options} =
       pop_address_hash_to_fetched_balance_block_number(options)
 
     transaction_hash_to_block_number = get_transaction_hash_to_block_number(import_options)
 
-    with {:ok, results} <- Chain.import_blocks(import_options) do
+    options_with_broadcast = Keyword.merge(import_options, broadcast: indexer_mode == :realtime_index)
+
+    with {:ok, results} <- Chain.import_blocks(options_with_broadcast) do
       async_import_remaining_block_data(
         results,
         address_hash_to_fetched_balance_block_number: address_hash_to_fetched_balance_block_number,
@@ -349,14 +351,14 @@ defmodule Indexer.BlockFetcher do
   defp realtime_task(%__MODULE__{json_rpc_named_arguments: json_rpc_named_arguments} = state) do
     {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
     {:ok, seq} = Sequence.start_link(first: latest_block_number, step: 2)
-    stream_import(state, seq, max_concurrency: 1)
+    stream_import(state, seq, :realtime_index, max_concurrency: 1)
   end
 
-  defp stream_import(%__MODULE__{} = state, seq, task_opts) do
+  defp stream_import(%__MODULE__{} = state, seq, indexer_mode, task_opts) do
     seq
     |> Sequence.build_stream()
     |> Task.async_stream(
-      &import_range(&1, state, seq),
+      &import_range(&1, state, seq, indexer_mode),
       Keyword.merge(task_opts, timeout: :infinity)
     )
     |> Stream.run()
@@ -365,7 +367,7 @@ defmodule Indexer.BlockFetcher do
   # Run at state.blocks_concurrency max_concurrency when called by `stream_import/3`
   # Only public for testing
   @doc false
-  def import_range(range, %__MODULE__{json_rpc_named_arguments: json_rpc_named_arguments} = state, seq) do
+  def import_range(range, %__MODULE__{json_rpc_named_arguments: json_rpc_named_arguments} = state, seq, indexer_mode) do
     with {:blocks, {:ok, next, result}} <-
            {:blocks, EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments)},
          %{blocks: blocks, transactions: transactions_without_receipts} = result,
@@ -384,6 +386,7 @@ defmodule Indexer.BlockFetcher do
       insert(
         seq,
         range,
+        indexer_mode,
         addresses: [params: addresses],
         blocks: [params: blocks],
         logs: [params: logs],

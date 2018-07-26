@@ -1459,6 +1459,7 @@ defmodule Explorer.ChainTest do
           }
         ]
       ],
+      broadcast: true,
       internal_transactions: [
         params: [
           %{
@@ -1542,6 +1543,14 @@ defmodule Explorer.ChainTest do
       Chain.subscribe_to_events(:logs)
       Chain.import_blocks(@import_data)
       assert_received {:chain_event, :logs, [%Log{}]}
+    end
+
+    test "does not broadcast if broadcast option is false" do
+      non_broadcast_data = Keyword.merge(@import_data, broadcast: false)
+
+      Chain.subscribe_to_events(:logs)
+      Chain.import_blocks(non_broadcast_data)
+      refute_received {:chain_event, :logs, [%Log{}]}
     end
   end
 end
