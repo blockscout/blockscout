@@ -1,4 +1,4 @@
-<div class="col-sm-3" data-selector="chain-block" data-block-number="<%= @block.number %>">
+<div class="col-sm-3 fade-up" data-selector="chain-block" data-block-number="<%= @block.number %>">
   <div class="tile d-flex flex-column">
     <%= link(@block, to: block_path(ExplorerWeb.Endpoint, :show, @locale, @block), class: "tile-title") %>
     <div>
