@@ -31,8 +31,6 @@ router.when('', { exactPathMatch: true }).then(() => initRedux(reducer, {
   main (store) {
     const blocksChannel = socket.channel(`blocks:new_block`)
     blocksChannel.join()
-      .receive('ok', resp => { console.log('Joined successfully', 'blocks:new_block', resp) })
-      .receive('error', resp => { console.log('Unable to join', 'blocks:new_block', resp) })
     blocksChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
     blocksChannel.on('new_block', msg => store.dispatch({ type: 'RECEIVED_NEW_BLOCK', msg }))
   },

@@ -83,8 +83,6 @@ router.when('/addresses/:addressHash').then((params) => initRedux(reducer, {
       transactionCount: $('[data-selector="transaction-count"]').text()
     })
     channel.join()
-      .receive('ok', resp => { console.log('Joined successfully', `addresses:${addressHash}`, resp) })
-      .receive('error', resp => { console.log('Unable to join', `addresses:${addressHash}`, resp) })
     channel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
     channel.on('balance', (msg) => store.dispatch({ type: 'RECEIVED_UPDATED_BALANCE', msg }))
     if (!blockNumber) channel.on('transaction', batchChannel((msgs) => store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION_BATCH', msgs })))
