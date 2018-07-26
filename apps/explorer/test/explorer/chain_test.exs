@@ -4,7 +4,7 @@ defmodule Explorer.ChainTest do
   import Explorer.Factory
 
   alias Explorer.{Chain, Factory, PagingOptions, Repo}
-  alias Explorer.Chain.{Address, Block, InternalTransaction, Log, SmartContract, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, Hash, InternalTransaction, Log, SmartContract, Transaction, Wei}
   alias Explorer.Chain.Supply.ProofOfAuthority
 
   doctest Explorer.Chain
@@ -401,6 +401,35 @@ defmodule Explorer.ChainTest do
       end)
 
       assert {:ok, %Transaction{hash: ^hash_with_block}} = Chain.hash_to_transaction(hash_with_block)
+    end
+  end
+
+  describe "hashes_to_transactions/2" do
+    test "with transaction with block required without block returns nil" do
+      [%Transaction{hash: hash_with_block1}, %Transaction{hash: hash_with_block2}] =
+        2
+        |> insert_list(:transaction)
+        |> with_block()
+
+      [%Transaction{hash: hash_without_index1}, %Transaction{hash: hash_without_index2}] = insert_list(2, :transaction)
+
+      assert [%Transaction{hash: ^hash_with_block2}, %Transaction{hash: ^hash_with_block1}] =
+               Chain.hashes_to_transactions(
+                 [hash_with_block1, hash_with_block2],
+                 necessity_by_association: %{block: :required}
+               )
+
+      assert [] =
+               Chain.hashes_to_transactions(
+                 [hash_without_index1, hash_without_index2],
+                 necessity_by_association: %{block: :required}
+               )
+
+      assert [%Transaction{hash: ^hash_without_index1}, %Transaction{hash: ^hash_without_index2}] =
+               Chain.hashes_to_transactions(
+                 [hash_without_index1, hash_without_index2],
+                 necessity_by_association: %{block: :optional}
+               )
     end
   end
 
@@ -1543,6 +1572,12 @@ defmodule Explorer.ChainTest do
       Chain.subscribe_to_events(:logs)
       Chain.import_blocks(@import_data)
       assert_received {:chain_event, :logs, [%Log{}]}
+    end
+
+    test "publishes transaction hashes data to subscribers on insert" do
+      Chain.subscribe_to_events(:transactions)
+      Chain.import_blocks(@import_data)
+      assert_received {:chain_event, :transactions, [%Hash{}]}
     end
 
     test "does not broadcast if broadcast option is false" do

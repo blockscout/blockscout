@@ -233,18 +233,20 @@ defmodule ExplorerWeb.ViewingAddressesTest do
   end
 
   test "viewing new transactions via live update", %{addresses: addresses, session: session} do
-    transaction =
-      :transaction
-      |> insert(from_address: addresses.lincoln)
+    [transaction1, transaction2] =
+      2
+      |> insert_list(:transaction, from_address: addresses.lincoln)
       |> with_block()
 
     session
     |> AddressPage.visit_page(addresses.lincoln)
     |> assert_has(AddressPage.balance())
 
-    Notifier.handle_event({:chain_event, :transactions, [transaction.hash]})
+    Notifier.handle_event({:chain_event, :transactions, [transaction1.hash, transaction2.hash]})
 
-    assert_has(session, AddressPage.transaction(transaction))
+    session
+    |> assert_has(AddressPage.transaction(transaction1))
+    |> assert_has(AddressPage.transaction(transaction2))
   end
 
   test "transaction count live updates", %{addresses: addresses, session: session} do
