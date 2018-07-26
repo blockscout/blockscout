@@ -60,3 +60,26 @@ a {
   border-bottom: 1px dashed currentColor;
   display: inline-block;
 }
+
+
+.text {
+    &-transaction {
+      color: $blue;
+    }
+
+    &-contract-call {
+      color: $green;
+    }
+
+    &-contract-creation {
+      color: $pink;
+    }
+
+    &-token {
+      color: $orange;
+    }
+
+    &-internal-transaction {
+      color: $teal;
+    }
+}
