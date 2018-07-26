@@ -76,7 +76,7 @@
       </div>
       <div class="col-sm-3 col-lg-2 d-flex flex-row flex-sm-column align-items-end">
         <span class="tile-title">
-          <%= token_transfer.amount %> <%= token_transfer.token.symbol %>
+          <%= formatted_token_amount(token_transfer.amount, token_transfer.token.decimals) %> <%= token_transfer.token.symbol %>
         </span>
       </div>
     <% end %>
