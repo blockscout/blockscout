@@ -157,9 +157,9 @@ defmodule Explorer.Chain.Import do
 
     changes_list_arguments_list = import_options_to_changes_list_arguments_list(options)
 
-    with {:ok, ecto_schema_module_to_changes_list} <-
-           changes_list_arguments_list_to_ecto_schema_module_to_changes_list(changes_list_arguments_list),
-         {:ok, data} <- insert_ecto_schema_module_to_changes_list(ecto_schema_module_to_changes_list, options) do
+    with {:ok, ecto_schema_module_to_changes_list_map} <-
+           changes_list_arguments_list_to_ecto_schema_module_to_changes_list_map(changes_list_arguments_list),
+         {:ok, data} <- insert_ecto_schema_module_to_changes_list_map(ecto_schema_module_to_changes_list_map, options) do
       if broadcast, do: broadcast_events(data)
       {:ok, data}
     end
@@ -179,15 +179,15 @@ defmodule Explorer.Chain.Import do
     end)
   end
 
-  defp changes_list_arguments_list_to_ecto_schema_module_to_changes_list(changes_list_arguments_list) do
+  defp changes_list_arguments_list_to_ecto_schema_module_to_changes_list_map(changes_list_arguments_list) do
     changes_list_arguments_list
     |> Stream.map(fn [params_list, options] ->
       ecto_schema_module = Keyword.fetch!(options, :for)
       {ecto_schema_module, changes_list(params_list, options)}
     end)
     |> Enum.reduce({:ok, %{}}, fn
-      {ecto_schema_module, {:ok, changes_list}}, {:ok, ecto_schema_module_to_changes_list} ->
-        {:ok, Map.put(ecto_schema_module_to_changes_list, ecto_schema_module, changes_list)}
+      {ecto_schema_module, {:ok, changes_list}}, {:ok, ecto_schema_module_to_changes_list_map} ->
+        {:ok, Map.put(ecto_schema_module_to_changes_list_map, ecto_schema_module, changes_list)}
 
       {_, {:ok, _}}, {:error, _} = error ->
         error
@@ -235,22 +235,23 @@ defmodule Explorer.Chain.Import do
     transactions: Transaction
   }
 
-  defp ecto_schema_module_to_changes_list_to_multi(ecto_schema_module_to_changes_list, options) when is_list(options) do
+  defp ecto_schema_module_to_changes_list_map_to_multi(ecto_schema_module_to_changes_list_map, options)
+       when is_list(options) do
     timestamps = timestamps()
     full_options = Keyword.put(options, :timestamps, timestamps)
 
     Multi.new()
-    |> run_addresses(ecto_schema_module_to_changes_list, full_options)
-    |> run_balances(ecto_schema_module_to_changes_list, full_options)
-    |> run_blocks(ecto_schema_module_to_changes_list, full_options)
-    |> run_transactions(ecto_schema_module_to_changes_list, full_options)
-    |> run_internal_transactions(ecto_schema_module_to_changes_list, full_options)
-    |> run_logs(ecto_schema_module_to_changes_list, full_options)
+    |> run_addresses(ecto_schema_module_to_changes_list_map, full_options)
+    |> run_balances(ecto_schema_module_to_changes_list_map, full_options)
+    |> run_blocks(ecto_schema_module_to_changes_list_map, full_options)
+    |> run_transactions(ecto_schema_module_to_changes_list_map, full_options)
+    |> run_internal_transactions(ecto_schema_module_to_changes_list_map, full_options)
+    |> run_logs(ecto_schema_module_to_changes_list_map, full_options)
   end
 
-  defp run_addresses(multi, ecto_schema_module_to_changes_list, options)
-       when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
-    case ecto_schema_module_to_changes_list do
+  defp run_addresses(multi, ecto_schema_module_to_changes_list_map, options)
+       when is_map(ecto_schema_module_to_changes_list_map) and is_list(options) do
+    case ecto_schema_module_to_changes_list_map do
       %{Address => addresses_changes} ->
         timestamps = Keyword.fetch!(options, :timestamps)
 
@@ -267,9 +268,9 @@ defmodule Explorer.Chain.Import do
     end
   end
 
-  defp run_balances(multi, ecto_schema_module_to_changes_list, options)
-       when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
-    case ecto_schema_module_to_changes_list do
+  defp run_balances(multi, ecto_schema_module_to_changes_list_map, options)
+       when is_map(ecto_schema_module_to_changes_list_map) and is_list(options) do
+    case ecto_schema_module_to_changes_list_map do
       %{Balance => balances_changes} ->
         timestamps = Keyword.fetch!(options, :timestamps)
 
@@ -286,9 +287,9 @@ defmodule Explorer.Chain.Import do
     end
   end
 
-  defp run_blocks(multi, ecto_schema_module_to_changes_list, options)
-       when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
-    case ecto_schema_module_to_changes_list do
+  defp run_blocks(multi, ecto_schema_module_to_changes_list_map, options)
+       when is_map(ecto_schema_module_to_changes_list_map) and is_list(options) do
+    case ecto_schema_module_to_changes_list_map do
       %{Block => blocks_changes} ->
         timestamps = Keyword.fetch!(options, :timestamps)
 
@@ -305,9 +306,9 @@ defmodule Explorer.Chain.Import do
     end
   end
 
-  defp run_transactions(multi, ecto_schema_module_to_changes_list, options)
-       when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
-    case ecto_schema_module_to_changes_list do
+  defp run_transactions(multi, ecto_schema_module_to_changes_list_map, options)
+       when is_map(ecto_schema_module_to_changes_list_map) and is_list(options) do
+    case ecto_schema_module_to_changes_list_map do
       %{Transaction => transactions_changes} ->
         # check required options as early as possible
         transactions_options = Keyword.fetch!(options, :transactions)
@@ -328,9 +329,9 @@ defmodule Explorer.Chain.Import do
     end
   end
 
-  defp run_internal_transactions(multi, ecto_schema_module_to_changes_list, options)
-       when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
-    case ecto_schema_module_to_changes_list do
+  defp run_internal_transactions(multi, ecto_schema_module_to_changes_list_map, options)
+       when is_map(ecto_schema_module_to_changes_list_map) and is_list(options) do
+    case ecto_schema_module_to_changes_list_map do
       %{InternalTransaction => internal_transactions_changes} ->
         timestamps = Keyword.fetch!(options, :timestamps)
 
@@ -356,9 +357,9 @@ defmodule Explorer.Chain.Import do
     end
   end
 
-  defp run_logs(multi, ecto_schema_module_to_changes_list, options)
-       when is_map(ecto_schema_module_to_changes_list) and is_list(options) do
-    case ecto_schema_module_to_changes_list do
+  defp run_logs(multi, ecto_schema_module_to_changes_list_map, options)
+       when is_map(ecto_schema_module_to_changes_list_map) and is_list(options) do
+    case ecto_schema_module_to_changes_list_map do
       %{Log => logs_changes} ->
         timestamps = Keyword.fetch!(options, :timestamps)
 
@@ -655,11 +656,11 @@ defmodule Explorer.Chain.Import do
     Repo.transaction(multi, timeout: Keyword.get(options, :timeout, @transaction_timeout))
   end
 
-  defp insert_ecto_schema_module_to_changes_list(ecto_schema_module_to_changes_list, options) do
+  defp insert_ecto_schema_module_to_changes_list_map(ecto_schema_module_to_changes_list_map, options) do
     timestamps = timestamps()
 
-    ecto_schema_module_to_changes_list
-    |> ecto_schema_module_to_changes_list_to_multi(Keyword.put(options, :timestamps, timestamps))
+    ecto_schema_module_to_changes_list_map
+    |> ecto_schema_module_to_changes_list_map_to_multi(Keyword.put(options, :timestamps, timestamps))
     |> import_transaction(options)
   end
 
