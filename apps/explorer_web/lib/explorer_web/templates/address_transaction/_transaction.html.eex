@@ -28,10 +28,16 @@
         <% end %>
       </span>
       <span>
-        <%= if @address.hash == @transaction.from_address_hash do %>
-          <span class="badge badge-danger tile-badge"><%= gettext "OUT" %></span>
-        <% else %>
-          <span class="badge badge-success tile-badge"><%= gettext "IN" %></span>
+        <%= if transaction_from_or_to_current_address?(@transaction, @address.hash) do %>
+          <%= if @transaction.from_address_hash == @address.hash do %>
+            <span data-test="transaction_type" class="badge badge-danger tile-badge">
+              <%= gettext "OUT" %>
+            </span>
+          <% else %>
+            <span data-test="transaction_type" class="badge badge-success tile-badge">
+              <%= gettext "IN" %>
+            </span>
+          <% end %>
         <% end %>
         <span class="ml-1" data-from-now="<%= @transaction.block.timestamp %>"></span>
         <span class="ml-1">
@@ -48,5 +54,31 @@
       </span>
       <span> <%= ExplorerWeb.TransactionView.formatted_fee(@transaction, denomination: :ether) %> <%= gettext "Fee" %></span>
     </div>
+
+    <%= if ExplorerWeb.TransactionView.involves_token_transfers?(@transaction) do %>
+      <div class="offset-md-2 col-md-10">
+        <hr class="mt-3 mb-3 w-100" />
+        <p class="tile-title"><%= gettext "Transfers" %></p>
+      </div>
+    <% end %>
+
+    <%= for token_transfer <- @transaction.token_transfers do %>
+      <div class="offset-md-2 col-sm-7 col-lg-8 d-flex flex-column">
+        <span data-test="token_transfer">
+          <span data-test="token_transfer_address_hash">
+            <%= ExplorerWeb.AddressView.display_address_hash(@address, token_transfer.from_address, @locale) %>
+          </span>
+          &rarr;
+          <span data-test="token_transfer_address_hash">
+            <%= ExplorerWeb.AddressView.display_address_hash(@address, token_transfer.to_address, @locale) %>
+          </span>
+        </span>
+      </div>
+      <div class="col-sm-3 col-lg-2 d-flex flex-row flex-sm-column align-items-end">
+        <span class="tile-title">
+          <%= formatted_token_amount(token_transfer.amount, token_transfer.token.decimals) %> <%= token_transfer.token.symbol %>
+        </span>
+      </div>
+    <% end %>
   </div>
 </div>

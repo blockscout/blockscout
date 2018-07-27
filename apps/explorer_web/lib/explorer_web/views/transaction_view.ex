@@ -45,6 +45,10 @@ defmodule ExplorerWeb.TransactionView do
     AddressView.contract?(from_address) || AddressView.contract?(to_address)
   end
 
+  def involves_token_transfers?(%Transaction{} = transaction) do
+    Ecto.assoc_loaded?(transaction.token_transfers) && Enum.any?(transaction.token_transfers)
+  end
+
   def contract_creation?(%Transaction{to_address: nil}), do: true
 
   def contract_creation?(_), do: false
@@ -100,6 +104,7 @@ defmodule ExplorerWeb.TransactionView do
 
   def type_suffix(%Transaction{} = transaction) do
     cond do
+      involves_token_transfers?(transaction) -> "token"
       contract_creation?(transaction) -> "contract-creation"
       involves_contract?(transaction) -> "contract-call"
       true -> "transaction"
@@ -108,6 +113,7 @@ defmodule ExplorerWeb.TransactionView do
 
   def transaction_display_type(%Transaction{} = transaction) do
     cond do
+      involves_token_transfers?(transaction) -> gettext("Token Transfer")
       contract_creation?(transaction) -> gettext("Contract Creation")
       involves_contract?(transaction) -> gettext("Contract Call")
       true -> gettext("Transaction")

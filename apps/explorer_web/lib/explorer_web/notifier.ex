@@ -24,7 +24,12 @@ defmodule ExplorerWeb.Notifier do
   def handle_event({:chain_event, :transactions, transaction_hashes}) do
     transaction_hashes
     |> Chain.hashes_to_transactions(
-      necessity_by_association: %{block: :required, from_address: :optional, to_address: :optional}
+      necessity_by_association: %{
+        block: :required,
+        from_address: :optional,
+        to_address: :optional,
+        token_transfers: :optional
+      }
     )
     |> Enum.each(&broadcast_transaction/1)
   end
