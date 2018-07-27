@@ -2,7 +2,7 @@
   <div class="tile d-flex flex-column">
     <%= link(@block, to: block_path(ExplorerWeb.Endpoint, :show, @locale, @block), class: "tile-title") %>
     <div>
-      <%= @block.transactions |> Enum.count %> Transactions
+      <%= Enum.count(@block.transactions) %> Transactions
       <span class="ml-2" data-from-now="<%= @block.timestamp %>"> </span>
     </div>
     <span class="text-truncate">
