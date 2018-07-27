@@ -1,70 +1,64 @@
-<section class="container-fluid">
-  <div>
-    <h1>Blocks</h1>
-    <p>
-      <%= gettext(
-            "Showing #%{start_block} to #%{end_block}",
-            start_block: List.first(@blocks).number,
-            end_block: List.last(@blocks).number
-          ) %>
-    </p>
-  </div>
+<section class="container">
   <div class="card">
     <div class="card-body">
-      <table class="table table-responsive-sm table-font">
-        <thead>
-          <tr>
-            <th><%= gettext "Height" %></th>
-            <th><%= gettext "Age" %></th>
-            <th><%= gettext "Transactions" %></th>
-            <th><%= gettext "Gas Used" %> (<%= gettext("Gas") %>)</th>
-            <th><%= gettext "Gas Limit" %> (<%= gettext("Gas") %>)</th>
-            <th><%= gettext "Gas Price" %></th>
-          </tr>
-        </thead>
-        <tbody>
-          <%= for block <- @blocks do %>
-            <tr>
-              <td>
-                <%= link(
-                      block,
-                      class: "blocks__link",
-                      to: block_path(@conn, :show, @conn.assigns.locale, block),
-                      "data-test": "block_number",
-                      "data-block-number": to_string(block.number)
-                    ) %>
-              </td>
-              <td data-from-now="<%= block.timestamp %>"></td>
-              <td>
-                <%= gettext("%{count} transactions", count: block.transactions |> Enum.count) %>
-              </td>
-              <td>
-                <%= block.gas_used |> Cldr.Number.to_string! %> (<%=
-                block.gas_used / block.gas_limit |> Cldr.Number.to_string!(format: "#.#%")
-                %>)
-              </td>
-              <td>
-                <%= block.gas_limit |> Cldr.Number.to_string! %>
-              </td>
-              <td>
-                <%= average_gas_price(block) %>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
+
+      <h1>Blocks</h1>
+      <p>
+        <%= gettext(
+              "Showing #%{start_block} to #%{end_block}",
+              start_block: List.first(@blocks).number,
+              end_block: List.last(@blocks).number
+            ) %>
+      </p>
+
+      <%= for block <- @blocks do %>
+        <div class="tile">
+          <div class="row">
+            <div class="col-md-6">
+              <!-- block height -->
+              <%= link(
+                    block,
+                    class: "tile-title",
+                    to: block_path(@conn, :show, @conn.assigns.locale, block),
+                    "data-test": "block_number",
+                    "data-block-number": to_string(block.number)
+                  ) %>
+              <div>
+                <!-- transactions -->
+                <span class="mr-2">
+                  <%= gettext("%{count} transactions", count: block.transactions |> Enum.count) %>
+                </span>
+                <!-- size -->
+                <span class="mr-2"> <%= Cldr.Unit.new(:byte, block.size) |> Cldr.Unit.to_string! %> </span>
+                <!-- age -->
+                <span data-from-now="<%= block.timestamp %>"></span>
+              </div>
+            </div>
+            <div class="col-md-6 text-right d-flex align-items-end justify-content-end">
+              <!-- validator -->
+              <%= gettext "Miner" %>
+              <span class="ml-2">
+                <%= link to: address_path(ExplorerWeb.Endpoint, :show, @locale, block.miner_hash) do %>
+                  <%= block.miner_hash %>
+                <% end %>
+              </span>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <%= if @next_page_params do %>
+        <%= link(
+          gettext("Older"),
+          class: "button button--secondary button--sm float-right mt-3",
+          to: block_path(
+            @conn,
+            :index,
+            @conn.assigns.locale,
+            @next_page_params
+          )
+        ) %>
+      <% end %>
     </div>
   </div>
-  <%= if @next_page_params do %>
-    <%= link(
-      gettext("Older"),
-      class: "button button--secondary button--sm u-float-right mt-3",
-      to: block_path(
-        @conn,
-        :index,
-        @conn.assigns.locale,
-        @next_page_params
-      )
-    ) %>
-  <% end %>
 </section>
