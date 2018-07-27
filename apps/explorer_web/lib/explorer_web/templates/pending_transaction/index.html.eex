@@ -57,7 +57,7 @@
             </div>
             <div class="col-md-9 col-lg-7 d-flex flex-column">
               <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: transaction.hash %>
-              <span>
+              <span class="text-nowrap">
                 <%= render ExplorerWeb.AddressView, "_link.html", address_hash: transaction.from_address_hash, contract: ExplorerWeb.AddressView.contract?(transaction.from_address), locale: @locale %>
                 &rarr;
                 <%= if transaction.to_address_hash do %>

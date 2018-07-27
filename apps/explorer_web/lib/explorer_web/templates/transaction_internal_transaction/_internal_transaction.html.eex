@@ -5,7 +5,7 @@
     </div>
     <div class="col-md-9 col-lg-10 d-flex flex-column text-nowrap">
       <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: @internal_transaction.transaction_hash %>
-      <span>
+      <span class="text-nowrap">
         <%= render ExplorerWeb.AddressView, "_link.html", address_hash: @internal_transaction.from_address_hash, contract: ExplorerWeb.AddressView.contract?(@internal_transaction.from_address), locale: @locale %>
         &rarr;
         <%= render ExplorerWeb.AddressView, "_link.html", address_hash: ExplorerWeb.InternalTransactionView.to_address_hash(@internal_transaction), contract: ExplorerWeb.AddressView.contract?(@internal_transaction.to_address), locale: @locale %>
