@@ -1,13 +1,13 @@
 defmodule ExplorerWeb.ViewingBlocksTest do
   use ExplorerWeb.FeatureCase, async: true
 
-  alias ExplorerWeb.{BlockListPage, BlockPage, HomePage}
+  alias ExplorerWeb.{BlockListPage, BlockPage, HomePage, Notifier}
 
   setup do
     timestamp = Timex.now() |> Timex.shift(hours: -1)
-    Enum.map(307..310, &insert(:block, number: &1, timestamp: timestamp, gas_used: 10))
+    [oldest_block | _] = Enum.map(308..310, &insert(:block, number: &1, timestamp: timestamp, gas_used: 10))
 
-    block =
+    newest_block =
       insert(:block, %{
         gas_limit: 5_030_101,
         gas_used: 1_010_101,
@@ -17,13 +17,28 @@ defmodule ExplorerWeb.ViewingBlocksTest do
         timestamp: timestamp
       })
 
-    {:ok, block: block}
+    {:ok, first_shown_block: newest_block, last_shown_block: oldest_block}
   end
 
   test "viewing blocks on the home page", %{session: session} do
     session
     |> HomePage.visit_page()
     |> assert_has(HomePage.blocks(count: 4))
+  end
+
+  test "viewing new blocks via live update on homepage", %{session: session, last_shown_block: last_shown_block} do
+    session
+    |> HomePage.visit_page()
+    |> assert_has(HomePage.blocks(count: 4))
+
+    block = insert(:block, number: 42)
+
+    Notifier.handle_event({:chain_event, :blocks, [block]})
+
+    session
+    |> assert_has(HomePage.blocks(count: 4))
+    |> assert_has(HomePage.block(block))
+    |> refute_has(HomePage.block(last_shown_block))
   end
 
   test "search for blocks from home page", %{session: session} do
@@ -73,7 +88,7 @@ defmodule ExplorerWeb.ViewingBlocksTest do
     |> assert_has(BlockPage.contract_creation(internal_transaction))
   end
 
-  test "viewing the blocks index page", %{block: block, session: session} do
+  test "viewing the blocks index page", %{first_shown_block: block, session: session} do
     session
     |> BlockListPage.visit_page()
     |> assert_has(BlockListPage.block(block))

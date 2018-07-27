@@ -37,8 +37,6 @@ router.when('/transactions/:transactionHash').then(({ locale }) => initRedux(red
     numeral.locale(locale)
     store.dispatch({ type: 'PAGE_LOAD', blockNumber: $transactionBlockNumber.text() })
     channel.join()
-      .receive('ok', resp => { console.log('Joined successfully', `transactions:confirmations`, resp) })
-      .receive('error', resp => { console.log('Unable to join', `transactions:confirmations`, resp) })
     channel.on('update', (msg) => store.dispatch({ type: 'RECEIVED_UPDATED_CONFIRMATIONS', msg: humps.camelizeKeys(msg) }))
   },
   render (state, oldState) {

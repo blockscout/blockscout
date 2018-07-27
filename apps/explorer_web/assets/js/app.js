@@ -26,4 +26,5 @@ import './lib/tooltip'
 import './lib/smart_contract/read_function'
 
 import './pages/address'
+import './pages/chain'
 import './pages/transaction'

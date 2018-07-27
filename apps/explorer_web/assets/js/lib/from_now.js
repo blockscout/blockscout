@@ -11,7 +11,7 @@ moment.relativeTimeThreshold('m', 60)
 moment.relativeTimeThreshold('s', 60)
 moment.relativeTimeThreshold('ss', 1)
 
-function updateAllAges () {
+export function updateAllAges () {
   $('[data-from-now]').each((i, el) => tryUpdateAge(el))
 }
 function tryUpdateAge (el) {

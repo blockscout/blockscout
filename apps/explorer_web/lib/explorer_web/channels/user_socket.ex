@@ -2,6 +2,7 @@ defmodule ExplorerWeb.UserSocket do
   use Phoenix.Socket
 
   channel("addresses:*", ExplorerWeb.AddressChannel)
+  channel("blocks:*", ExplorerWeb.BlockChannel)
   channel("transactions:*", ExplorerWeb.TransactionChannel)
 
   transport(:websocket, Phoenix.Transports.WebSocket, timeout: 45_000)
