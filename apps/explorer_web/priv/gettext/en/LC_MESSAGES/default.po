@@ -27,6 +27,7 @@ msgstr "Blocks"
 msgid "Copyright %{year} POA"
 msgstr "%{year} POA Network Ltd. All rights reserved"
 
+#: lib/explorer_web/templates/block/index.html.eex:51
 #: lib/explorer_web/templates/block/overview.html.eex:84
 msgid "Gas Used"
 msgstr "Gas Used"
@@ -73,11 +74,12 @@ msgstr "Block #%{number} Details"
 msgid "Difficulty"
 msgstr "Difficulty"
 
+#: lib/explorer_web/templates/block/index.html.eex:59
 #: lib/explorer_web/templates/block/overview.html.eex:92
 msgid "Gas Limit"
 msgstr "Gas Limit"
 
-#: lib/explorer_web/templates/block/index.html.eex:39
+#: lib/explorer_web/templates/block/index.html.eex:38
 #: lib/explorer_web/templates/block/overview.html.eex:70
 #: lib/explorer_web/templates/chain/_block.html.eex:9
 msgid "Miner"
@@ -479,7 +481,7 @@ msgstr ""
 
 #: lib/explorer_web/templates/address_internal_transaction/index.html.eex:133
 #: lib/explorer_web/templates/address_transaction/index.html.eex:146
-#: lib/explorer_web/templates/block/index.html.eex:52
+#: lib/explorer_web/templates/block/index.html.eex:67
 #: lib/explorer_web/templates/block_transaction/index.html.eex:51
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:79
 #: lib/explorer_web/templates/transaction/index.html.eex:84
