@@ -10,7 +10,7 @@
     </div>
     <div class="col-md-7 col-lg-8 d-flex flex-column">
       <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: @transaction.hash %>
-      <span>
+      <span class="text-nowrap">
         <%= render ExplorerWeb.AddressView, "_link.html", address_hash: @transaction.from_address_hash, contract: ExplorerWeb.AddressView.contract?(@transaction.from_address), locale: @locale %>
 
         &rarr;
