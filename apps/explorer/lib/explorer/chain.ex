@@ -7,6 +7,7 @@ defmodule Explorer.Chain do
     only: [
       from: 2,
       join: 4,
+      join: 5,
       limit: 2,
       order_by: 2,
       order_by: 3,
@@ -294,7 +295,7 @@ defmodule Explorer.Chain do
     |> Keyword.get(:paging_options, @default_paging_options)
     |> fetch_transactions()
     |> join(:inner, [transaction], block in assoc(transaction, :block))
-    |> where([_, block], block.hash == ^block_hash)
+    |> where([_, _, block], block.hash == ^block_hash)
     |> join_associations(necessity_by_association)
     |> Repo.all()
   end
@@ -586,7 +587,7 @@ defmodule Explorer.Chain do
 
       iex> [%Transaction{hash: hash1}, %Transaction{hash: hash2}] = insert_list(2, :transaction)
       iex> [%Explorer.Chain.Transaction{hash: found_hash1}, %Explorer.Chain.Transaction{hash: found_hash2}] =
-      ...>   Explorer.Chain.hashes_to_transactions([hash1, hash2])
+      ...>   [hash1, hash2] |> Explorer.Chain.hashes_to_transactions() |> Enum.sort_by(& &1.hash)
       iex> found_hash1 == hash1
       true
       iex> found_hash2 == hash2
@@ -1535,20 +1536,14 @@ defmodule Explorer.Chain do
 
   defp fetch_transactions(paging_options \\ nil) do
     Transaction
-    |> select_merge([transaction], %{
-      created_contract_address_hash:
-        type(
-          fragment(
-            ~s[
-              (SELECT i."created_contract_address_hash"
-              FROM "internal_transactions" AS i
-              WHERE (i."transaction_hash" = ?) AND (i."type" = 'create')
-              LIMIT 1)
-              ],
-            transaction.hash
-          ),
-          Explorer.Chain.Hash.Address
-        )
+    |> join(
+      :left,
+      [transaction],
+      internal_transaction in assoc(transaction, :internal_transactions),
+      internal_transaction.type == ^:create and is_nil(transaction.to_address_hash)
+    )
+    |> select_merge([_, internal_transaction], %{
+      created_contract_address_hash: internal_transaction.created_contract_address_hash
     })
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
     |> handle_paging_options(paging_options)

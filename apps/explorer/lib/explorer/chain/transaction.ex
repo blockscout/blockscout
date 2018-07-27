@@ -385,14 +385,18 @@ defmodule Explorer.Chain.Transaction do
     query
     |> join_token_tranfers()
     |> preload_token_transfers(address_hash)
-    |> where([t, tt], t.to_address_hash == ^address_hash or tt.to_address_hash == ^address_hash)
+    |> where(
+      [t, it, tt],
+      t.to_address_hash == ^address_hash or it.created_contract_address_hash == ^address_hash or
+        tt.to_address_hash == ^address_hash
+    )
   end
 
   def where_address_fields_match(query, address_hash, :from) do
     query
     |> join_token_tranfers()
     |> preload_token_transfers(address_hash)
-    |> where([t, tt], t.from_address_hash == ^address_hash or tt.from_address_hash == ^address_hash)
+    |> where([t, _, tt], t.from_address_hash == ^address_hash or tt.from_address_hash == ^address_hash)
   end
 
   def where_address_fields_match(query, address_hash, nil) do
@@ -400,8 +404,9 @@ defmodule Explorer.Chain.Transaction do
     |> join_token_tranfers()
     |> preload_token_transfers(address_hash)
     |> where(
-      [t, tt],
-      t.to_address_hash == ^address_hash or t.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash or
+      [t, it, tt],
+      t.to_address_hash == ^address_hash or t.from_address_hash == ^address_hash or
+        it.created_contract_address_hash == ^address_hash or tt.to_address_hash == ^address_hash or
         tt.from_address_hash == ^address_hash or
         (is_nil(t.to_address_hash) and
            exists_contract_creation_with_matching_address_hash_fragment(t.hash, ^address_hash.bytes))
