@@ -54,7 +54,7 @@
 <section class="container">
   <div class="card">
     <div class="card-body">
-      <%= link(gettext("View All Blocks →"), to: block_path(@conn, :index, Gettext.get_locale), class: "button button--secondary button--xsmall float-right") %>
+      <%= link(gettext("View All Blocks →"), to: block_path(ExplorerWeb.Endpoint, :index, Gettext.get_locale), class: "button button--secondary button--xsmall float-right") %>
       <h2 class="card-title"><%= gettext "Blocks" %></h2>
       <div class="row" data-selector="chain-block-list">
         <%= for block <- @chain.blocks do %>
@@ -63,5 +63,13 @@
       </div>
     </div>
   </div>
-  <%= render ExplorerWeb.ChainView, "_transactions.html", assigns %>
+  <div class="card">
+    <div class="card-body">
+      <%= link(gettext("View All Transactions →"), to: transaction_path(ExplorerWeb.Endpoint, :index, Gettext.get_locale), class: "button button--secondary button--xsmall float-right") %>
+      <h2 class="card-title"><%= gettext "Transactions" %></h2>
+      <%= for transaction <- @chain.transactions do %>
+        <%= render ExplorerWeb.ChainView, "_transaction.html", locale: @locale, transaction: transaction %>
+      <% end %>
+    </div>
+  </div>
 </section>
