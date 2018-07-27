@@ -29,6 +29,10 @@ defmodule ExplorerWeb.HomePage do
     css("[data-test='chain_transaction']", count: count)
   end
 
+  def transaction(%Transaction{hash: transaction_hash}) do
+    css("[data-transaction-hash='#{transaction_hash}']")
+  end
+
   def transaction_status(%Transaction{hash: transaction_hash}) do
     css("[data-transaction-hash='#{transaction_hash}'] [data-test='transaction_status']")
   end
