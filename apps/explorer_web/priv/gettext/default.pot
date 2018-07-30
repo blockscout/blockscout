@@ -137,7 +137,7 @@ msgstr ""
 #: lib/explorer_web/templates/address_internal_transaction/index.html.eex:106
 #: lib/explorer_web/templates/address_transaction/index.html.eex:117
 #: lib/explorer_web/views/address_internal_transaction_view.ex:10
-#: lib/explorer_web/views/address_transaction_view.ex:10
+#: lib/explorer_web/views/address_transaction_view.ex:12
 msgid "From"
 msgstr ""
 
@@ -153,7 +153,7 @@ msgstr ""
 #: lib/explorer_web/templates/address_internal_transaction/index.html.eex:94
 #: lib/explorer_web/templates/address_transaction/index.html.eex:105
 #: lib/explorer_web/views/address_internal_transaction_view.ex:9
-#: lib/explorer_web/views/address_transaction_view.ex:9
+#: lib/explorer_web/views/address_transaction_view.ex:11
 msgid "To"
 msgstr ""
 
@@ -284,7 +284,7 @@ msgstr ""
 
 #:
 #: lib/explorer_web/templates/address_internal_transaction/_internal_transaction.html.eex:29
-#: lib/explorer_web/templates/address_transaction/_transaction.html.eex:53
+#: lib/explorer_web/templates/address_transaction/_transaction.html.eex:60
 #: lib/explorer_web/templates/block_transaction/_transaction.html.eex:33
 #: lib/explorer_web/templates/chain/_transactions.html.eex:33
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:71
@@ -350,11 +350,11 @@ msgstr ""
 #: lib/explorer_web/templates/address_internal_transaction/index.html.eex:88
 #: lib/explorer_web/templates/address_transaction/index.html.eex:99
 #: lib/explorer_web/views/address_internal_transaction_view.ex:11
-#: lib/explorer_web/views/address_transaction_view.ex:11
+#: lib/explorer_web/views/address_transaction_view.ex:13
 msgid "All"
 msgstr ""
 
-#: lib/explorer_web/templates/address_transaction/_transaction.html.eex:55
+#: lib/explorer_web/templates/address_transaction/_transaction.html.eex:62
 #: lib/explorer_web/templates/block_transaction/_transaction.html.eex:35
 #: lib/explorer_web/templates/chain/_transactions.html.eex:35
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:72
@@ -627,7 +627,8 @@ msgid "at"
 msgstr ""
 
 #, elixir-format
-#: lib/explorer_web/templates/address_transaction/_transaction.html.eex:45
+#: lib/explorer_web/templates/address_transaction/_transaction.html.eex:49
+#: lib/explorer_web/templates/address_transaction/_transaction.html.eex:111
 #: lib/explorer_web/templates/block_transaction/_transaction.html.eex:25
 #: lib/explorer_web/templates/chain/_transactions.html.eex:25
 #: lib/explorer_web/templates/transaction/index.html.eex:69
@@ -637,14 +638,16 @@ msgstr ""
 #, elixir-format
 #:
 #: lib/explorer_web/templates/address_internal_transaction/_internal_transaction.html.eex:24
-#: lib/explorer_web/templates/address_transaction/_transaction.html.eex:38
+#: lib/explorer_web/templates/address_transaction/_transaction.html.eex:42
+#: lib/explorer_web/templates/address_transaction/_transaction.html.eex:103
 msgid "IN"
 msgstr ""
 
 #, elixir-format
 #:
 #: lib/explorer_web/templates/address_internal_transaction/_internal_transaction.html.eex:22
-#: lib/explorer_web/templates/address_transaction/_transaction.html.eex:34
+#: lib/explorer_web/templates/address_transaction/_transaction.html.eex:38
+#: lib/explorer_web/templates/address_transaction/_transaction.html.eex:98
 msgid "OUT"
 msgstr ""
 
@@ -717,7 +720,7 @@ msgid "Token Transfer"
 msgstr ""
 
 #, elixir-format
-#: lib/explorer_web/templates/address_transaction/_transaction.html.eex:61
+#: lib/explorer_web/templates/address_transaction/_transaction.html.eex:69
 msgid "Transfers"
 msgstr ""
 

@@ -1,5 +1,5 @@
 <div class="tile tile-type-<%= ExplorerWeb.TransactionView.type_suffix(@transaction) %> fade-in  tile-status--<%= ExplorerWeb.TransactionView.status(@transaction) %>" data-transaction-hash="<%= @transaction.hash %>">
-  <div class="row justify-content-end">
+  <div class="row">
     <div class="col-md-3 col-lg-2 d-flex align-items-lg-center">
       <div class="d-flex flex-md-column ml-md-4">
         <span class="tile-label mr-1 mr-md-0">
@@ -10,52 +10,60 @@
         </span>
       </div>
     </div>
+
     <div class="col-md-9 col-lg-7 d-flex flex-column">
       <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: @transaction.hash %>
-      <span class="text-nowrap">
-        <%= if @address.hash == @transaction.from_address_hash do %>
-          <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: @transaction.from_address_hash, contract: ExplorerWeb.AddressView.contract?(@transaction.from_address) %>
-        <% else %>
-          <%= render ExplorerWeb.AddressView, "_link.html", address_hash: @transaction.from_address_hash, contract: ExplorerWeb.AddressView.contract?(@transaction.from_address), locale: @locale %>
-        <% end %>
 
-        &rarr;
-
-        <%= if @address.hash == ExplorerWeb.TransactionView.to_address_hash(@transaction) do %>
-          <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: ExplorerWeb.TransactionView.to_address_hash(@transaction), contract: ExplorerWeb.AddressView.contract?(@transaction.to_address) %>
-        <% else %>
-          <%= render ExplorerWeb.AddressView, "_link.html", address_hash: ExplorerWeb.TransactionView.to_address_hash(@transaction), contract: ExplorerWeb.AddressView.contract?(@transaction.to_address), locale: @locale %>
-        <% end %>
-      </span>
-      <span>
-        <%= if transaction_from_or_to_current_address?(@transaction, @address.hash) do %>
-          <%= if @transaction.from_address_hash == @address.hash do %>
-            <span data-test="transaction_type" class="badge badge-danger tile-badge">
-              <%= gettext "OUT" %>
-            </span>
+      <%= if Enum.empty?(@transaction.token_transfers) || transfered_value?(@transaction.value) do %>
+        <span class="text-nowrap">
+          <%= if @address.hash == @transaction.from_address_hash do %>
+            <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: @transaction.from_address_hash, contract: ExplorerWeb.AddressView.contract?(@transaction.from_address) %>
           <% else %>
-            <span data-test="transaction_type" class="badge badge-success tile-badge">
-              <%= gettext "IN" %>
-            </span>
+            <%= render ExplorerWeb.AddressView, "_link.html", address_hash: @transaction.from_address_hash, contract: ExplorerWeb.AddressView.contract?(@transaction.from_address), locale: @locale %>
           <% end %>
-        <% end %>
-        <span class="ml-1" data-from-now="<%= @transaction.block.timestamp %>"></span>
-        <span class="ml-1">
-          <%= link(
-            gettext("Block #%{number}", number: to_string(@transaction.block.number)),
-            to: block_path(ExplorerWeb.Endpoint, :show, @locale, @transaction.block)
-          ) %>
+
+          &rarr;
+
+          <%= if @address.hash == ExplorerWeb.TransactionView.to_address_hash(@transaction) do %>
+            <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: ExplorerWeb.TransactionView.to_address_hash(@transaction), contract: ExplorerWeb.AddressView.contract?(@transaction.to_address) %>
+          <% else %>
+            <%= render ExplorerWeb.AddressView, "_link.html", address_hash: ExplorerWeb.TransactionView.to_address_hash(@transaction), contract: ExplorerWeb.AddressView.contract?(@transaction.to_address), locale: @locale %>
+          <% end %>
         </span>
-      </span>
-    </div>
-    <div class="col-md-9 col-lg-3 d-flex flex-column flex-md-row flex-lg-column justify-content-start text-lg-right mt-3 mt-lg-0">
-      <span class="tile-title mr-1 mr-lg-0">
-        <%= ExplorerWeb.TransactionView.value(@transaction, include_label: false) %> <%= gettext "Ether" %>
-      </span>
-      <span> <%= ExplorerWeb.TransactionView.formatted_fee(@transaction, denomination: :ether) %> <%= gettext "Fee" %></span>
+
+        <span>
+          <%= if @transaction.from_address_hash == @address.hash || @transaction.to_address_hash == @address.hash do %>
+            <%= if @transaction.from_address_hash == @address.hash do %>
+              <span data-test="transaction_type" class="mr-1 badge badge-danger tile-badge">
+                <%= gettext "OUT" %>
+              </span>
+            <% else %>
+              <span data-test="transaction_type" class="mr-1 badge badge-success tile-badge">
+                <%= gettext "IN" %>
+              </span>
+            <% end %>
+          <% end %>
+          <span data-from-now="<%= @transaction.block.timestamp %>"></span>
+          <span class="ml-1">
+            <%= link(
+              gettext("Block #%{number}", number: to_string(@transaction.block.number)),
+              to: block_path(ExplorerWeb.Endpoint, :show, @locale, @transaction.block)
+            ) %>
+          </span>
+        </span>
+      <% end %>
     </div>
 
-    <%= if ExplorerWeb.TransactionView.involves_token_transfers?(@transaction) do %>
+    <%= if Enum.empty?(@transaction.token_transfers) || transfered_value?(@transaction.value) do %>
+      <div class="col-md-9 col-lg-3 d-flex flex-column flex-md-row flex-lg-column justify-content-start text-lg-right mt-3 mt-lg-0">
+        <span class="tile-title mr-1 mr-lg-0">
+          <%= ExplorerWeb.TransactionView.value(@transaction, include_label: false) %> <%= gettext "Ether" %>
+        </span>
+        <span> <%= ExplorerWeb.TransactionView.formatted_fee(@transaction, denomination: :ether) %> <%= gettext "Fee" %></span>
+      </div>
+    <% end %>
+
+    <%= if ExplorerWeb.TransactionView.involves_token_transfers?(@transaction) && transfered_value?(@transaction.value) do %>
       <div class="offset-md-2 col-md-10">
         <hr class="mt-3 mb-3 w-100" />
         <p class="tile-title"><%= gettext "Transfers" %></p>
@@ -77,6 +85,33 @@
       <div class="col-sm-3 col-lg-2 d-flex flex-row flex-sm-column align-items-end">
         <span class="tile-title">
           <%= formatted_token_amount(token_transfer.amount, token_transfer.token.decimals) %> <%= token_transfer.token.symbol %>
+        </span>
+      </div>
+    <% end %>
+
+    <%= if Enum.any?(@transaction.token_transfers) && !transfered_value?(@transaction.value) do %>
+      <div class="mt-3 offset-md-2 col-sm-7 col-lg-8 d-flex flex-column">
+        <span>
+          <%= if !address_sending_and_receiving_tokens?(@transaction, @address.hash) do %>
+            <%= if address_sending_tokens?(@transaction, @address.hash) do %>
+              <span data-test="transaction_type" class="mr-1 badge badge-danger tile-badge">
+                <%= gettext "OUT" %>
+              </span>
+            <% else %>
+              <%= if address_receiving_tokens?(@transaction, @address.hash) do %>
+                <span data-test="transaction_type" class="mr-1 badge badge-success tile-badge">
+                  <%= gettext "IN" %>
+                </span>
+              <% end %>
+            <% end %>
+          <% end %>
+          <span data-from-now="<%= @transaction.block.timestamp %>"></span>
+          <span class="ml-1">
+            <%= link(
+              gettext("Block #%{number}", number: to_string(@transaction.block.number)),
+              to: block_path(ExplorerWeb.Endpoint, :show, @locale, @transaction.block)
+            ) %>
+          </span>
         </span>
       </div>
     <% end %>
