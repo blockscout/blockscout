@@ -8,10 +8,10 @@ defmodule Indexer.BlockFetcher do
   import Indexer, only: [debug: 1]
 
   alias Explorer.Chain
-  alias Indexer.{AddressExtraction, BalanceFetcher, BoundInterval, InternalTransactionFetcher, Sequence}
+  alias Indexer.{AddressExtraction, BalanceFetcher, InternalTransactionFetcher, Sequence}
 
   # dialyzer thinks that Logger.debug functions always have no_local_return
-  @dialyzer {:nowarn_function, import_range: 4}
+  @dialyzer {:nowarn_function, import_range: 2}
 
   # These are all the *default* values for options.
   # DO NOT use them directly in the code.  Get options from `state`.
@@ -19,21 +19,17 @@ defmodule Indexer.BlockFetcher do
   @blocks_batch_size 10
   @blocks_concurrency 10
 
-  # milliseconds
-  @block_interval 5_000
-
   @receipts_batch_size 250
   @receipts_concurrency 10
 
-  defstruct json_rpc_named_arguments: [],
-            catchup_task: nil,
-            catchup_bound_interval: nil,
-            realtime_task_by_ref: %{},
-            realtime_interval: nil,
+  @enforce_keys ~w(json_rpc_named_arguments)a
+  defstruct json_rpc_named_arguments: nil,
             blocks_batch_size: @blocks_batch_size,
             blocks_concurrency: @blocks_concurrency,
+            broadcast: nil,
             receipts_batch_size: @receipts_batch_size,
-            receipts_concurrency: @receipts_concurrency
+            receipts_concurrency: @receipts_concurrency,
+            sequence: nil
 
   @doc false
   def default_blocks_batch_size, do: @blocks_batch_size
@@ -53,8 +49,6 @@ defmodule Indexer.BlockFetcher do
       Defaults to #{@blocks_concurrency}.  So upto `blocks_concurrency * block_batch_size` (defaults to
       `#{@blocks_concurrency * @blocks_batch_size}`) blocks can be requested from the JSONRPC at once over all
       connections.
-    * `:block_interval` - The number of milliseconds between new blocks being published. Defaults to
-        `#{@block_interval}` milliseconds.
     * `:receipts_batch_size` - The number of receipts to request in one call to the JSONRPC.  Defaults to
       `#{@receipts_batch_size}`.  Receipt requests also include the logs for when the transaction was collated into the
       block.  *These logs are not paginated.*
@@ -65,24 +59,17 @@ defmodule Indexer.BlockFetcher do
       JSONRPC at once over all connections. *Each transaction only has one receipt.*
   """
   def new(named_arguments) when is_list(named_arguments) do
-    interval = div(named_arguments[:block_interval] || @block_interval, 2)
-
-    state = struct!(__MODULE__, Keyword.delete(named_arguments, :block_interval))
-
-    %__MODULE__{
-      state
-      | json_rpc_named_arguments: Keyword.fetch!(named_arguments, :json_rpc_named_arguments),
-        catchup_bound_interval: BoundInterval.within(interval..(interval * 10)),
-        realtime_interval: interval
-    }
+    struct!(__MODULE__, named_arguments)
   end
 
-  def stream_import(%__MODULE__{} = state, seq, indexer_mode, task_opts) do
-    seq
+  def stream_import(%__MODULE__{blocks_concurrency: blocks_concurrency, sequence: sequence} = state)
+      when is_pid(sequence) do
+    sequence
     |> Sequence.build_stream()
     |> Task.async_stream(
-      &import_range(&1, state, seq, indexer_mode),
-      Keyword.merge(task_opts, timeout: :infinity)
+      &import_range(state, &1),
+      max_concurrency: blocks_concurrency,
+      timeout: :infinity
     )
     |> Stream.run()
   end
@@ -126,13 +113,13 @@ defmodule Indexer.BlockFetcher do
     end)
   end
 
-  defp insert(seq, range, indexer_mode, options) when is_list(options) do
+  defp insert(%__MODULE__{broadcast: broadcast, sequence: sequence}, options) when is_list(options) do
     {address_hash_to_fetched_balance_block_number, import_options} =
       pop_address_hash_to_fetched_balance_block_number(options)
 
     transaction_hash_to_block_number = get_transaction_hash_to_block_number(import_options)
 
-    options_with_broadcast = Keyword.merge(import_options, broadcast: indexer_mode == :realtime_index)
+    options_with_broadcast = Keyword.merge(import_options, broadcast: broadcast)
 
     with {:ok, results} <- Chain.import(options_with_broadcast) do
       async_import_remaining_block_data(
@@ -144,11 +131,13 @@ defmodule Indexer.BlockFetcher do
       {:ok, results}
     else
       {:error, step, failed_value, _changes_so_far} = error ->
+        range = Keyword.fetch!(options, :range)
+
         debug(fn ->
           "failed to insert blocks during #{step} #{inspect(range)}: #{inspect(failed_value)}. Retrying"
         end)
 
-        :ok = Sequence.queue(seq, range)
+        :ok = Sequence.queue(sequence, range)
 
         error
     end
@@ -202,10 +191,10 @@ defmodule Indexer.BlockFetcher do
     |> InternalTransactionFetcher.async_fetch(10_000)
   end
 
-  # Run at state.blocks_concurrency max_concurrency when called by `stream_import/3`
+  # Run at state.blocks_concurrency max_concurrency when called by `stream_import/1`
   # Only public for testing
   @doc false
-  def import_range(range, %__MODULE__{json_rpc_named_arguments: json_rpc_named_arguments} = state, seq, indexer_mode) do
+  def import_range(%__MODULE__{json_rpc_named_arguments: json_rpc_named_arguments, sequence: seq} = state, range) do
     with {:blocks, {:ok, next, result}} <-
            {:blocks, EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments)},
          %{blocks: blocks, transactions: transactions_without_receipts} = result,
@@ -222,9 +211,8 @@ defmodule Indexer.BlockFetcher do
         })
 
       insert(
-        seq,
-        range,
-        indexer_mode,
+        state,
+        range: range,
         addresses: [params: addresses],
         blocks: [params: blocks],
         logs: [params: logs],

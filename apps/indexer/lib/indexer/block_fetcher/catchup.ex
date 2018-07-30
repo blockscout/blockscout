@@ -6,22 +6,44 @@ defmodule Indexer.BlockFetcher.Catchup do
   require Logger
 
   import Indexer, only: [debug: 1]
-  import Indexer.BlockFetcher, only: [stream_import: 4]
+  import Indexer.BlockFetcher, only: [stream_import: 1]
 
   alias Explorer.Chain
   alias Indexer.{BlockFetcher, BoundInterval, Sequence}
 
+  @enforce_keys ~w(block_fetcher bound_interval)a
+  defstruct ~w(block_fetcher bound_interval task)a
+
+  def new(%{block_fetcher: %BlockFetcher{} = common_block_fetcher, block_interval: block_interval}) do
+    block_fetcher = %BlockFetcher{common_block_fetcher | broadcast: true}
+    minimum_interval = div(block_interval, 2)
+
+    %__MODULE__{
+      block_fetcher: block_fetcher,
+      bound_interval: BoundInterval.within(minimum_interval..(minimum_interval * 10))
+    }
+  end
+
   @doc """
   Starts `task/1` and puts it in `t:Indexer.BlockFetcher.t/0`
   """
-  @spec put(%BlockFetcher{catchup_task: nil}) :: %BlockFetcher{catchup_task: Task.t()}
-  def put(%BlockFetcher{catchup_task: nil} = state) do
-    catchup_task = Task.Supervisor.async_nolink(Indexer.TaskSupervisor, __MODULE__, :task, [state])
-
-    %BlockFetcher{state | catchup_task: catchup_task}
+  @spec put(%BlockFetcher.Supervisor{catchup: %__MODULE__{task: nil}}) :: %BlockFetcher.Supervisor{
+          catchup: %__MODULE__{task: Task.t()}
+        }
+  def put(%BlockFetcher.Supervisor{catchup: %__MODULUE__{task: nil} = state} = supervisor_state) do
+    put_in(
+      supervisor_state.catchup.task,
+      Task.Supervisor.async_nolink(Indexer.TaskSupervisor, __MODULE__, :task, [state])
+    )
   end
 
-  def task(%BlockFetcher{json_rpc_named_arguments: json_rpc_named_arguments} = state) do
+  def task(
+        %__MODULE__{
+          block_fetcher:
+            %BlockFetcher{blocks_batch_size: blocks_batch_size, json_rpc_named_arguments: json_rpc_named_arguments} =
+              block_fetcher
+        } = state
+      ) do
     {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
 
     case latest_block_number do
@@ -48,10 +70,10 @@ defmodule Indexer.BlockFetcher.Catchup do
             :ok
 
           _ ->
-            {:ok, seq} = Sequence.start_link(ranges: missing_ranges, step: -1 * state.blocks_batch_size)
-            Sequence.cap(seq)
+            {:ok, sequence} = Sequence.start_link(ranges: missing_ranges, step: -1 * blocks_batch_size)
+            Sequence.cap(sequence)
 
-            stream_import(state, seq, :catchup_index, max_concurrency: state.blocks_concurrency)
+            stream_import(%BlockFetcher{block_fetcher | sequence: sequence})
         end
 
         %{first_block_number: first, missing_block_count: missing_block_count}
@@ -60,28 +82,30 @@ defmodule Indexer.BlockFetcher.Catchup do
 
   def handle_success(
         {ref, %{first_block_number: first_block_number, missing_block_count: missing_block_count}},
-        %BlockFetcher{
-          catchup_bound_interval: catchup_bound_interval,
-          catchup_task: %Task{ref: ref}
-        } = state
+        %BlockFetcher.Supervisor{
+          catchup: %__MODULE__{
+            bound_interval: bound_interval,
+            task: %Task{ref: ref}
+          }
+        } = supervisor_state
       )
       when is_integer(missing_block_count) do
-    new_catchup_bound_interval =
+    new_bound_interval =
       case missing_block_count do
         0 ->
           Logger.info("Index already caught up in #{first_block_number}-0")
 
-          BoundInterval.increase(catchup_bound_interval)
+          BoundInterval.increase(bound_interval)
 
         _ ->
           Logger.info("Index had to catch up #{missing_block_count} blocks in #{first_block_number}-0")
 
-          BoundInterval.decrease(catchup_bound_interval)
+          BoundInterval.decrease(bound_interval)
       end
 
     Process.demonitor(ref, [:flush])
 
-    interval = new_catchup_bound_interval.current
+    interval = new_bound_interval.current
 
     Logger.info(fn ->
       "Checking if index needs to catch up in #{interval}ms"
@@ -89,17 +113,19 @@ defmodule Indexer.BlockFetcher.Catchup do
 
     Process.send_after(self(), :catchup_index, interval)
 
-    %BlockFetcher{state | catchup_bound_interval: new_catchup_bound_interval, catchup_task: nil}
+    update_in(supervisor_state.catchup, fn state ->
+      %__MODULE__{state | bound_interval: new_bound_interval, task: nil}
+    end)
   end
 
   def handle_failure(
         {:DOWN, ref, :process, pid, reason},
-        %BlockFetcher{catchup_task: %Task{pid: pid, ref: ref}} = state
+        %BlockFetcher.Supervisor{catchup: %__MODULE__{task: %Task{pid: pid, ref: ref}}} = supervisor_state
       ) do
     Logger.error(fn -> "Catchup index stream exited with reason (#{inspect(reason)}). Restarting" end)
 
     send(self(), :catchup_index)
 
-    %BlockFetcher{state | catchup_task: nil}
+    put_in(supervisor_state.catchup.task, nil)
   end
 end
