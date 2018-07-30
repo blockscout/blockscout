@@ -25,7 +25,8 @@ defmodule ExplorerWeb.BlockChannel do
       )
 
     push(socket, "new_block", %{
-      homepage_block_html: rendered_homepage_block
+      homepage_block_html: rendered_homepage_block,
+      blockNumber: block.number
     })
 
     {:noreply, socket}

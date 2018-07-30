@@ -79,7 +79,10 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
       |> assert_has(HomePage.transactions(count: 5))
     end
 
-    test "viewing new transactions via live update on the homepage", %{session: session, last_shown_transaction: last_shown_transaction} do
+    test "viewing new transactions via live update on the homepage", %{
+      session: session,
+      last_shown_transaction: last_shown_transaction
+    } do
       session
       |> HomePage.visit_page()
       |> assert_has(HomePage.transactions(count: 5))
@@ -110,7 +113,11 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
       |> assert_has(HomePage.contract_creation(internal_transaction))
     end
 
-    test "viewing the default transactions tab", %{session: session, first_shown_transaction: transaction, pending: pending} do
+    test "viewing the default transactions tab", %{
+      session: session,
+      first_shown_transaction: transaction,
+      pending: pending
+    } do
       session
       |> TransactionListPage.visit_page()
       |> assert_has(TransactionListPage.transaction(transaction))

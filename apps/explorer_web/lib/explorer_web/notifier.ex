@@ -15,9 +15,6 @@ defmodule ExplorerWeb.Notifier do
   end
 
   def handle_event({:chain_event, :blocks, blocks}) do
-    max_numbered_block = Enum.max_by(blocks, & &1.number).number
-    Endpoint.broadcast("transactions:confirmations", "update", %{block_number: max_numbered_block})
-
     Enum.each(blocks, &broadcast_block/1)
   end
 
@@ -47,6 +44,10 @@ defmodule ExplorerWeb.Notifier do
   end
 
   defp broadcast_transaction(transaction) do
+    Endpoint.broadcast("transactions:new_transaction", "new_transaction", %{
+      transaction: transaction
+    })
+
     Endpoint.broadcast("addresses:#{transaction.from_address_hash}", "transaction", %{
       address: transaction.from_address,
       transaction: transaction

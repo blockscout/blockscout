@@ -1,9 +1,9 @@
 import { reducer, initialState } from '../../js/pages/transaction'
 
-test('RECEIVED_UPDATED_CONFIRMATIONS', () => {
+test('RECEIVED_NEW_BLOCK', () => {
   const state = { ...initialState, blockNumber: 1 }
   const action = {
-    type: 'RECEIVED_UPDATED_CONFIRMATIONS',
+    type: 'RECEIVED_NEW_BLOCK',
     msg: {
       blockNumber: 5
     }

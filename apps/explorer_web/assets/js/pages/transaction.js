@@ -18,7 +18,7 @@ export function reducer (state = initialState, action) {
         blockNumber: parseInt(action.blockNumber, 10)
       })
     }
-    case 'RECEIVED_UPDATED_CONFIRMATIONS': {
+    case 'RECEIVED_NEW_BLOCK': {
       if ((action.msg.blockNumber - state.blockNumber) > state.confirmations) {
         return Object.assign({}, state, {
           confirmations: action.msg.blockNumber - state.blockNumber
@@ -32,12 +32,12 @@ export function reducer (state = initialState, action) {
 
 router.when('/transactions/:transactionHash').then(({ locale }) => initRedux(reducer, {
   main (store) {
-    const channel = socket.channel(`transactions:confirmations`, {})
+    const blocksChannel = socket.channel(`blocks:new_block`, {})
     const $transactionBlockNumber = $('[data-selector="block-number"]')
     numeral.locale(locale)
     store.dispatch({ type: 'PAGE_LOAD', blockNumber: $transactionBlockNumber.text() })
-    channel.join()
-    channel.on('update', (msg) => store.dispatch({ type: 'RECEIVED_UPDATED_CONFIRMATIONS', msg: humps.camelizeKeys(msg) }))
+    blocksChannel.join()
+    blocksChannel.on('new_block', (msg) => store.dispatch({ type: 'RECEIVED_NEW_BLOCK', msg: humps.camelizeKeys(msg) }))
   },
   render (state, oldState) {
     const $blockConfirmations = $('[data-selector="block-confirmations"]')
