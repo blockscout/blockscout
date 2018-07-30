@@ -180,11 +180,36 @@ defmodule Explorer.Chain do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    options
-    |> Keyword.get(:paging_options, @default_paging_options)
-    |> fetch_transactions()
-    |> Transaction.where_address_fields_match(address_hash, direction)
+    Transaction
+    |> where([transaction], transaction.hash in fragment(
+        """
+          SELECT * from
+          (
+            SELECT t0."hash" address
+            FROM "transactions" AS t0
+            LEFT OUTER JOIN "internal_transactions" AS i1 ON (i1."transaction_hash" = t0."hash") AND (i1."type" = 'create')
+            WHERE (i1."created_contract_address_hash" = ? AND t0."to_address_hash" IS NULL)
+
+            UNION
+
+            SELECT t0."hash" address
+            FROM "transactions" AS t0
+            LEFT OUTER JOIN "token_transfers" AS t1 ON t1."transaction_hash" = t0."hash"
+            WHERE (t0."to_address_hash" = ?)
+            OR (t0."from_address_hash" = ?)
+            OR (t1."to_address_hash" = ?)
+            OR (t1."from_address_hash" = ?)
+          ) AS transaction_hash
+        """,
+        ^address_hash.bytes,
+        ^address_hash.bytes,
+        ^address_hash.bytes,
+        ^address_hash.bytes,
+        ^address_hash.bytes
+      ))
     |> join_associations(necessity_by_association)
+    |> preload([token_transfers: [:from_address, :to_address]])
+    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
     |> Repo.all()
   end
 
