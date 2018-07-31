@@ -20,7 +20,7 @@ defmodule ExplorerWeb.BlockView do
     "#{average} #{unit_text}"
   end
 
-  def formatted_gas_used(gas, format \\ []) do
+  def formatted_gas(gas, format \\ []) do
     Cldr.Number.to_string!(gas, format)
   end
 

@@ -46,17 +46,17 @@
             <div class="col-md-6 text-right d-flex flex-column align-items-end justify-content-end">
               <!-- Gas Used -->
               <div class="">
-                <%= formatted_gas_used(block.gas_used) %>
-                (<%= formatted_gas_used(block.gas_used / block.gas_limit, format: "#.#%") %>)
+                <%= formatted_gas(block.gas_used) %>
+                (<%= formatted_gas(block.gas_used / block.gas_limit, format: "#.#%") %>)
                 <%= gettext "Gas Used" %>
               </div>
               <div class="progress w-25">
-                <div class="progress-bar" role="progressbar" style="width: <%= formatted_gas_used(block.gas_used / block.gas_limit, format: "#.#%") %>;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar" role="progressbar" style="width: <%= formatted_gas(block.gas_used / block.gas_limit, format: "#.#%") %>;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
 
                 </div>
               </div>
               <!-- Gas Limit -->
-              <span> <%= block.gas_limit |> Cldr.Number.to_string! %> <%= gettext "Gas Limit" %> </span>
+              <span> <%= formatted_gas(block.gas_limit) %> <%= gettext "Gas Limit" %> </span>
             </div>
           </div>
         </div>
