@@ -23,8 +23,10 @@ defmodule EthereumJSONRPC.Variant do
        internal transactions
    * `:ignore` - the variant does not support fetching internal transactions.
   """
-  @callback fetch_internal_transactions([Transaction.params()], EthereumJSONRPC.json_rpc_named_arguments()) ::
-              {:ok, [internal_transaction_params]} | {:error, reason :: term} | :ignore
+  @callback fetch_internal_transactions(
+              [%{hash_data: EthereumJSONRPC.hash()}],
+              EthereumJSONRPC.json_rpc_named_arguments()
+            ) :: {:ok, [internal_transaction_params]} | {:error, reason :: term} | :ignore
 
   @doc """
   Fetch the `t:Explorer.Chain.Transaction.changeset/2` params for pending transactions from the variant of the Ethereum

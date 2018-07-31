@@ -51,7 +51,14 @@ defmodule Indexer.BlockFetcherTest do
       AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
-      %{block_fetcher: BlockFetcher.new(broadcast: false, json_rpc_named_arguments: json_rpc_named_arguments)}
+      %{
+        block_fetcher:
+          BlockFetcher.new(
+            broadcast: false,
+            callback_module: Indexer.BlockFetcher.Catchup,
+            json_rpc_named_arguments: json_rpc_named_arguments
+          )
+      }
     end
 
     test "with single element range that is valid imports one block", %{

@@ -1,14 +1,14 @@
 defmodule Indexer.BlockFetcher do
   @moduledoc """
-  Fetches and indexes block ranges from gensis to realtime.
+  Fetches and indexes block ranges.
   """
 
   require Logger
 
   import Indexer, only: [debug: 1]
 
-  alias Explorer.Chain
-  alias Indexer.{AddressExtraction, BalanceFetcher, InternalTransactionFetcher, Sequence}
+  alias Explorer.Chain.{Block, Import}
+  alias Indexer.{AddressExtraction, Sequence}
   alias Indexer.BlockFetcher.Receipts
 
   # dialyzer thinks that Logger.debug functions always have no_local_return
@@ -23,11 +23,34 @@ defmodule Indexer.BlockFetcher do
   @receipts_batch_size 250
   @receipts_concurrency 10
 
+  @type address_hash_to_fetched_balance_block_number :: %{String.t() => Block.block_number()}
+  @type transaction_hash_to_block_number :: %{String.t() => Block.block_number()}
+
+  @type t :: %__MODULE__{}
+
+  @doc """
+  Calculates the balances and internal transactions and imports those with the given data.
+  """
+  @callback import(
+              t,
+              %{
+                address_hash_to_fetched_balance_block_number: address_hash_to_fetched_balance_block_number,
+                transaction_hash_to_block_number_option: transaction_hash_to_block_number,
+                addresses: Import.addresses_options(),
+                blocks: Import.blocks_options(),
+                broadcast: boolean,
+                logs: Import.logs_options(),
+                receipts: Import.receipts_options(),
+                transactions: Import.transactions_options()
+              }
+            ) :: Import.all_result()
+
   @enforce_keys ~w(json_rpc_named_arguments)a
-  defstruct json_rpc_named_arguments: nil,
-            blocks_batch_size: @blocks_batch_size,
+  defstruct blocks_batch_size: @blocks_batch_size,
             blocks_concurrency: @blocks_concurrency,
             broadcast: nil,
+            callback_module: nil,
+            json_rpc_named_arguments: nil,
             receipts_batch_size: @receipts_batch_size,
             receipts_concurrency: @receipts_concurrency,
             sequence: nil
@@ -90,23 +113,28 @@ defmodule Indexer.BlockFetcher do
     :ok
   end
 
-  defp insert(%__MODULE__{broadcast: broadcast, sequence: sequence}, options) when is_map(options) do
+  defp insert(%__MODULE__{broadcast: broadcast, callback_module: callback_module, sequence: sequence} = state, options)
+       when is_map(options) do
     {address_hash_to_fetched_balance_block_number, import_options} =
       pop_address_hash_to_fetched_balance_block_number(options)
 
     transaction_hash_to_block_number = get_transaction_hash_to_block_number(import_options)
 
-    options_with_broadcast = Map.put(import_options, :broadcast, broadcast)
-
-    with {:ok, results} <- Chain.import(options_with_broadcast) do
-      async_import_remaining_block_data(
-        results,
-        address_hash_to_fetched_balance_block_number: address_hash_to_fetched_balance_block_number,
-        transaction_hash_to_block_number: transaction_hash_to_block_number
+    options_with_broadcast =
+      Map.merge(
+        import_options,
+        %{
+          address_hash_to_fetched_balance_block_number: address_hash_to_fetched_balance_block_number,
+          broadcast: broadcast,
+          transaction_hash_to_block_number: transaction_hash_to_block_number
+        }
       )
 
-      {:ok, results}
-    else
+    # use a `case` to ensure that `callback_module` `import` has correct return type
+    case callback_module.import(state, options_with_broadcast) do
+      {:ok, _} = ok ->
+        ok
+
       {:error, step, failed_value, _changes_so_far} = error ->
         %{range: range} = options
 
@@ -145,27 +173,6 @@ defmodule Indexer.BlockFetcher do
          } = address_params
        ) do
     {{hash, fetched_balance_block_number}, Map.delete(address_params, :fetched_balance_block_number)}
-  end
-
-  defp async_import_remaining_block_data(results, named_arguments) when is_map(results) and is_list(named_arguments) do
-    %{transactions: transaction_hashes, addresses: address_hashes} = results
-    address_hash_to_block_number = Keyword.fetch!(named_arguments, :address_hash_to_fetched_balance_block_number)
-
-    address_hashes
-    |> Enum.map(fn address_hash ->
-      block_number = Map.fetch!(address_hash_to_block_number, to_string(address_hash))
-      %{address_hash: address_hash, block_number: block_number}
-    end)
-    |> BalanceFetcher.async_fetch_balances()
-
-    transaction_hash_to_block_number = Keyword.fetch!(named_arguments, :transaction_hash_to_block_number)
-
-    transaction_hashes
-    |> Enum.map(fn transaction_hash ->
-      block_number = Map.fetch!(transaction_hash_to_block_number, to_string(transaction_hash))
-      %{block_number: block_number, hash: transaction_hash}
-    end)
-    |> InternalTransactionFetcher.async_fetch(10_000)
   end
 
   # Run at state.blocks_concurrency max_concurrency when called by `stream_import/1`

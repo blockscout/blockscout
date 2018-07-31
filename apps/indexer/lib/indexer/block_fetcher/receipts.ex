@@ -1,4 +1,8 @@
 defmodule Indexer.BlockFetcher.Receipts do
+  @moduledoc """
+  Fetches transaction receipts after the transactions have been fetched with the blocks in `Indexer.BlockFetcher`.
+  """
+
   import Indexer, only: [debug: 1]
 
   alias Indexer.BlockFetcher

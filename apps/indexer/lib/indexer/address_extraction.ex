@@ -49,6 +49,13 @@ defmodule Indexer.AddressExtraction do
   """
 
   @entity_to_address_map %{
+    balances: [
+      [
+        %{from: :address_hash, to: :hash},
+        %{from: :block_number, to: :fetched_balance_block_number},
+        %{from: :value, to: :fetched_balance}
+      ]
+    ],
     blocks: [
       [
         %{from: :number, to: :fetched_balance_block_number},
@@ -94,6 +101,7 @@ defmodule Indexer.AddressExtraction do
   @type params :: %{
           required(:hash) => String.t(),
           required(:fetched_balance_block_number) => non_neg_integer(),
+          optional(:fetched_balance) => non_neg_integer(),
           optional(:contract_code) => String.t()
         }
 
@@ -298,6 +306,13 @@ defmodule Indexer.AddressExtraction do
   cause an error as something has gone terribly wrong with the chain if different code is written to the same address.
   """
   @spec extract_addresses(%{
+          optional(:balances) => [
+            %{
+              required(:address_hash) => String.t(),
+              required(:block_number) => non_neg_integer(),
+              required(:value) => non_neg_integer()
+            }
+          ],
           optional(:blocks) => [
             %{
               required(:miner_hash) => String.t(),
@@ -345,6 +360,14 @@ defmodule Indexer.AddressExtraction do
 
   def extract_addresses_from_item(item, fields, state), do: Enum.flat_map(fields, &extract_fields(&1, item, state))
 
+  def merge_addresses(addresses) when is_list(addresses) do
+    addresses
+    |> Enum.group_by(fn address -> address.hash end)
+    |> Enum.map(fn {_, similar_addresses} ->
+      Enum.reduce(similar_addresses, &merge_addresses/2)
+    end)
+  end
+
   defp extract_fields(fields, item, state) when is_list(fields) do
     Enum.reduce_while(fields, [%{}], fn field, [acc] ->
       case extract_field(field, item, state) do
@@ -364,26 +387,54 @@ defmodule Indexer.AddressExtraction do
     end
   end
 
-  defp merge_addresses(addresses) do
-    addresses
-    |> Enum.group_by(fn address -> address.hash end)
-    |> Enum.map(fn {_, similar_addresses} ->
-      similar_addresses
-      |> normalize_block_number()
-      |> Enum.reduce(%{}, fn address, acc ->
-        Map.merge(acc, address)
-      end)
-    end)
+  # Ensure that when `:addresses` or `:balances` are present, their :fetched_balance will win
+  defp merge_addresses(%{hash: hash} = first, %{hash: hash} = second) do
+    case {first[:fetched_balance], second[:fetched_balance]} do
+      {nil, nil} ->
+        first
+        |> Map.merge(second)
+        |> Map.put(
+          :fetched_balance_block_number,
+          max_nil_last(Map.get(first, :fetched_balance_block_number), Map.get(second, :fetched_balance_block_number))
+        )
+
+      {nil, _} ->
+        # merge in `second` so its balance and block_number wins
+        Map.merge(first, second)
+
+      {_, nil} ->
+        # merge in `first` so its balance and block_number wins
+        Map.merge(second, first)
+
+      {_, _} ->
+        if greater_than_nil_last(
+             Map.get(first, :fetched_balance_block_number),
+             Map.get(second, :fetched_balance_block_number)
+           ) do
+          # merge in `first` so its block number wins
+          Map.merge(second, first)
+        else
+          # merge in `second` so its block number wins
+          Map.merge(first, second)
+        end
+    end
   end
 
-  def normalize_block_number(addresses) do
-    max_block_number =
-      addresses
-      |> Enum.max_by(fn %{fetched_balance_block_number: num} -> num end)
-      |> Map.get(:fetched_balance_block_number)
+  # `nil > 5 == true`, but we want numbers instead
+  defp greater_than_nil_last(nil, nil), do: false
+  defp greater_than_nil_last(nil, integer) when is_integer(integer), do: false
+  defp greater_than_nil_last(integer, nil) when is_integer(integer), do: true
 
-    Enum.map(addresses, fn item ->
-      Map.merge(item, %{fetched_balance_block_number: max_block_number})
-    end)
-  end
+  defp greater_than_nil_last(first_integer, second_integer)
+       when is_integer(first_integer) and is_integer(second_integer),
+       do: first_integer > second_integer
+
+  # max(nil, number) == nil, but we want numbers instead
+  defp max_nil_last(nil, nil), do: nil
+  defp max_nil_last(nil, integer) when is_integer(integer), do: integer
+  defp max_nil_last(integer, nil) when is_integer(integer), do: integer
+
+  defp max_nil_last(first_integer, second_integer)
+       when is_integer(first_integer) and is_integer(second_integer),
+       do: max(first_integer, second_integer)
 end

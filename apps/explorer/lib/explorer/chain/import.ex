@@ -12,41 +12,48 @@ defmodule Explorer.Chain.Import do
   @type changeset_function_name :: atom
   @type on_conflict :: :nothing | :replace_all
   @type params :: [map()]
+  @type addresses_options :: %{
+          required(:params) => params,
+          optional(:timeout) => timeout,
+          optional(:with) => changeset_function_name
+        }
+  @type balances_options :: %{
+          required(:params) => params,
+          optional(:timeout) => timeout
+        }
+  @type blocks_options :: %{
+          required(:params) => params,
+          optional(:timeout) => timeout
+        }
+  @type internal_transactions_options :: %{
+          required(:params) => params,
+          optional(:timeout) => timeout
+        }
+  @type logs_options :: %{
+          required(:params) => params,
+          optional(:timeout) => timeout
+        }
+  @type receipts_options :: %{
+          required(:params) => params,
+          optional(:timeout) => timeout
+        }
+  @type transactions_options :: %{
+          required(:params) => params,
+          optional(:with) => changeset_function_name,
+          optional(:on_conflict) => :nothing | :replace_all,
+          optional(:timeout) => timeout
+        }
 
   @type all_options :: %{
-          optional(:addresses) => %{
-            required(:params) => params,
-            optional(:timeout) => timeout,
-            optional(:with) => changeset_function_name
-          },
-          optional(:balances) => %{
-            required(:params) => params,
-            optional(:timeout) => timeout
-          },
-          optional(:blocks) => %{
-            required(:params) => params,
-            optional(:timeout) => timeout
-          },
+          optional(:addresses) => addresses_options,
+          optional(:balances) => balances_options,
+          optional(:blocks) => blocks_options,
           optional(:broadcast) => boolean,
-          optional(:internal_transactions) => %{
-            required(:params) => params,
-            optional(:timeout) => timeout
-          },
-          optional(:logs) => %{
-            required(:params) => params,
-            optional(:timeout) => timeout
-          },
-          optional(:receipts) => %{
-            required(:params) => params,
-            optional(:timeout) => timeout
-          },
+          optional(:internal_transactions) => internal_transactions_options,
+          optional(:logs) => logs_options,
+          optional(:receipts) => receipts_options,
           optional(:timeout) => timeout,
-          optional(:transactions) => %{
-            required(:params) => params,
-            optional(:with) => changeset_function_name,
-            optional(:on_conflict) => :nothing | :replace_all,
-            optional(:timeout) => timeout
-          }
+          optional(:transactions) => transactions_options
         }
   @type all_result ::
           {:ok,

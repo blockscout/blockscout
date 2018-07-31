@@ -75,7 +75,7 @@ defmodule Indexer.AddressExtractionTest do
              }) == [
                %{
                  fetched_balance_block_number: 2,
-                 contract_code: "0x2",
+                 contract_code: "0x1",
                  hash: "0x0000000000000000000000000000000000000001"
                }
              ]
