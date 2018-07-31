@@ -26,7 +26,7 @@
               <div>
                 <!-- transactions -->
                 <span class="mr-2">
-                  <%= gettext("%{count} transactions", count: block.transactions |> Enum.count) %>
+                  <%= ngettext("%{count} transaction", "%{count} transactions", Enum.count(block.transactions)) %>
                 </span>
                 <!-- size -->
                 <span class="mr-2"> <%= Cldr.Unit.new(:byte, block.size) |> Cldr.Unit.to_string! %> </span>
@@ -46,8 +46,8 @@
             <div class="col-md-6 text-right d-flex flex-column align-items-end justify-content-end">
               <!-- Gas Used -->
               <div class="">
-                <%= block.gas_used |> Cldr.Number.to_string! %>
-                (<%= (block.gas_used / block.gas_limit) |> Cldr.Number.to_string!(format: "#.#%") %>)
+                <%= formatted_gas_used(block.gas_used) %>
+                (<%= formatted_gas_used(block.gas_used / block.gas_limit, format: "#.#%") %>)
                 <%= gettext "Gas Used" %>
               </div>
               <div class="progress w-25">
