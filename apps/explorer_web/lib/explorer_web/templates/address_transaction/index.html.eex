@@ -81,7 +81,7 @@
       <div class="card-body">
         <div data-selector="channel-batching-message" style="display:none;">
           <div data-selector="reload-button" class="alert alert-info">
-            <a href="#" class="alert-link" data-selector="channel-batching-count"><%= gettext "More messages have come in" %></a>
+            <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>
           </div>
         </div>
         <div data-selector="channel-disconnected-message" style="display:none;">

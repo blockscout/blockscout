@@ -100,6 +100,23 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
       |> refute_has(HomePage.transaction(last_shown_transaction))
     end
 
+    test "count of non-loaded transactions on homepage live update when batch overflow", %{session: session} do
+      transaction_hashes =
+        30
+        |> insert_list(:transaction)
+        |> with_block()
+        |> Enum.map(& &1.hash)
+
+      session
+      |> HomePage.visit_page()
+      |> assert_has(HomePage.transactions(count: 5))
+
+      Notifier.handle_event({:chain_event, :transactions, transaction_hashes})
+
+      session
+      |> assert_has(AddressPage.non_loaded_transaction_count("30"))
+    end
+
     test "contract creation is shown for to_address on home page", %{session: session} do
       transaction =
         :transaction
