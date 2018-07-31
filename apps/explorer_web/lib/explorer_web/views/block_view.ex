@@ -20,6 +20,10 @@ defmodule ExplorerWeb.BlockView do
     "#{average} #{unit_text}"
   end
 
+  def formatted_gas(gas, format \\ []) do
+    Cldr.Number.to_string!(gas, format)
+  end
+
   def formatted_timestamp(%Block{timestamp: timestamp}) do
     Timex.format!(timestamp, "%b-%d-%Y %H:%M:%S %p %Z", :strftime)
   end
