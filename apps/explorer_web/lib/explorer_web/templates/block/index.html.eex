@@ -51,7 +51,7 @@
                 <%= gettext "Gas Used" %>
               </div>
               <div class="progress w-25">
-                <div class="progress-bar" role="progressbar" style="width: <%= (block.gas_used / block.gas_limit) |> Cldr.Number.to_string!(format: "#.#%") %>;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar" role="progressbar" style="width: %= formatted_gas_used(block.gas_used / block.gas_limit, format: "#.#%") %>;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
 
                 </div>
               </div>
