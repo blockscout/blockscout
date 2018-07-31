@@ -75,10 +75,10 @@ defmodule Indexer.BalanceFetcher do
         addresses_params = balances_params_to_address_params(balances_params)
 
         {:ok, _} =
-          Chain.import(
-            addresses: [params: addresses_params, with: :balance_changeset],
-            balances: [params: balances_params]
-          )
+          Chain.import(%{
+            addresses: %{params: addresses_params, with: :balance_changeset},
+            balances: %{params: balances_params}
+          })
 
         :ok
 

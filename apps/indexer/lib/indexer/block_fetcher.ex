@@ -90,13 +90,13 @@ defmodule Indexer.BlockFetcher do
     :ok
   end
 
-  defp insert(%__MODULE__{broadcast: broadcast, sequence: sequence}, options) when is_list(options) do
+  defp insert(%__MODULE__{broadcast: broadcast, sequence: sequence}, options) when is_map(options) do
     {address_hash_to_fetched_balance_block_number, import_options} =
       pop_address_hash_to_fetched_balance_block_number(options)
 
     transaction_hash_to_block_number = get_transaction_hash_to_block_number(import_options)
 
-    options_with_broadcast = Keyword.merge(import_options, broadcast: broadcast)
+    options_with_broadcast = Map.put(import_options, :broadcast, broadcast)
 
     with {:ok, results} <- Chain.import(options_with_broadcast) do
       async_import_remaining_block_data(
@@ -108,7 +108,7 @@ defmodule Indexer.BlockFetcher do
       {:ok, results}
     else
       {:error, step, failed_value, _changes_so_far} = error ->
-        range = Keyword.fetch!(options, :range)
+        %{range: range} = options
 
         debug(fn ->
           "failed to insert blocks during #{step} #{inspect(range)}: #{inspect(failed_value)}. Retrying"
@@ -188,12 +188,14 @@ defmodule Indexer.BlockFetcher do
 
       insert(
         state,
-        range: range,
-        addresses: [params: addresses],
-        blocks: [params: blocks],
-        logs: [params: logs],
-        receipts: [params: receipts],
-        transactions: [on_conflict: :replace_all, params: transactions_with_receipts]
+        %{
+          range: range,
+          addresses: %{params: addresses},
+          blocks: %{params: blocks},
+          logs: %{params: logs},
+          receipts: %{params: receipts},
+          transactions: %{params: transactions_with_receipts, on_conflict: :replace_all}
+        }
       )
     else
       {step, {:error, reason}} ->
