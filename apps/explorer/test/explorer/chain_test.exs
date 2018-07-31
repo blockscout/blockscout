@@ -188,8 +188,8 @@ defmodule Explorer.ChainTest do
       token_transfer = insert(:token_transfer, to_address: address, transaction: transaction)
       insert(:token_transfer, to_address: build(:address), transaction: transaction)
 
-      transaction = Chain.address_to_transactions(address) |> List.first()
-      assert transaction.token_transfers |> Enum.map(& &1.id) == [token_transfer.id]
+      assert [%Transaction{token_transfers: token_transfers}] = Chain.address_to_transactions(address)
+      assert Enum.map(token_transfers, & &1.id) == [token_transfer.id]
     end
 
     test "returns just the token transfers related to the given contract address" do
