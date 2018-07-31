@@ -11,7 +11,6 @@ defmodule Explorer.Chain do
       order_by: 2,
       order_by: 3,
       preload: 2,
-      select_merge: 3,
       where: 2,
       where: 3
     ]
@@ -1535,21 +1534,6 @@ defmodule Explorer.Chain do
 
   defp fetch_transactions(paging_options \\ nil) do
     Transaction
-    |> select_merge([transaction], %{
-      created_contract_address_hash:
-        type(
-          fragment(
-            ~s[
-              (SELECT i."created_contract_address_hash"
-              FROM "internal_transactions" AS i
-              WHERE (i."transaction_hash" = ?) AND (i."type" = 'create')
-              LIMIT 1)
-              ],
-            transaction.hash
-          ),
-          Explorer.Chain.Hash.Address
-        )
-    })
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
     |> handle_paging_options(paging_options)
   end

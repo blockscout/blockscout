@@ -19,7 +19,7 @@ defmodule Explorer.Chain.Transaction do
 
   alias Explorer.Chain.Transaction.Status
 
-  @optional_attrs ~w(block_hash block_number cumulative_gas_used gas_used index internal_transactions_indexed_at status
+  @optional_attrs ~w(block_hash block_number created_contract_address_hash cumulative_gas_used gas_used index internal_transactions_indexed_at status
                      to_address_hash)a
   @required_attrs ~w(from_address_hash gas gas_price hash input nonce r s v value)a
 
@@ -66,6 +66,9 @@ defmodule Explorer.Chain.Transaction do
    * `block` - the block in which this transaction was mined/validated.  `nil` when transaction is pending.
    * `block_hash` - `block` foreign key. `nil` when transaction is pending.
    * `block_number` - Denormalized `block` `number`. `nil` when transaction is pending.
+   * `created_contract_address` - belongs_to association to `address` corresponding to `created_contract_address_hash`.
+   * `created_contract_address_hash` - Denormalized `internal_transaction` `created_contract_address_hash`
+     populated only when `to_address_hash` is nil.
    * `cumulative_gas_used` - the cumulative gas used in `transaction`'s `t:Explorer.Chain.Block.t/0` before
      `transaction`'s `index`.  `nil` when transaction is pending.
    * `from_address` - the source of `value`
@@ -95,6 +98,8 @@ defmodule Explorer.Chain.Transaction do
           block: %Ecto.Association.NotLoaded{} | Block.t() | nil,
           block_hash: Hash.t() | nil,
           block_number: Block.block_number() | nil,
+          created_contract_address: %Ecto.Association.NotLoaded{} | Address.t() | nil,
+          created_contract_address_hash: Hash.Address.t() | nil,
           cumulative_gas_used: Gas.t() | nil,
           from_address: %Ecto.Association.NotLoaded{} | Address.t(),
           from_address_hash: Hash.Address.t(),
@@ -133,7 +138,6 @@ defmodule Explorer.Chain.Transaction do
     field(:status, Status)
     field(:v, :integer)
     field(:value, Wei)
-    field(:created_contract_address_hash, Hash.Address, virtual: true)
 
     timestamps()
 
@@ -155,6 +159,14 @@ defmodule Explorer.Chain.Transaction do
       :to_address,
       Address,
       foreign_key: :to_address_hash,
+      references: :hash,
+      type: Hash.Address
+    )
+
+    belongs_to(
+      :created_contract_address,
+      Address,
+      foreign_key: :created_contract_address_hash,
       references: :hash,
       type: Hash.Address
     )
@@ -343,22 +355,6 @@ defmodule Explorer.Chain.Transaction do
     end
   end
 
-  defmacrop exists_contract_creation_with_matching_address_hash_fragment(transaction_hash, bytes) do
-    quote do
-      fragment(
-        ~s[
-          EXISTS (
-          SELECT 1
-          FROM "internal_transactions" AS i
-          WHERE i."transaction_hash" = ? AND i."type" = 'create' AND i."created_contract_address_hash" = ?
-          )
-        ],
-        unquote(transaction_hash),
-        unquote(bytes)
-      )
-    end
-  end
-
   @doc """
   Adds to the given transaction's query a `where` with one of the conditions that the matched
   function returns.
@@ -369,11 +365,11 @@ defmodule Explorer.Chain.Transaction do
 
   `where_address_fields_match(query, address, :from)`
   - returns a query considering that the given address_hash is equal to from_address_hash from
-    transactions' table or is equal to from_address_hash from token transfers't table.
+    transactions' table or is equal to from_address_hash from token transfers' table.
 
   `where_address_fields_match(query, address, nil)`
   - returns a query considering that the given address_hash can be: to_address_hash,
-    from_address_hash, created_contract_address_hash from internal_transactions' table,
+    from_address_hash, created_contract_address_hash,
     to_address_hash or from_address_hash from token_transfers' table.
 
   ### Token transfers' preload
@@ -383,32 +379,35 @@ defmodule Explorer.Chain.Transaction do
   """
   def where_address_fields_match(query, address_hash, :to) do
     query
-    |> join_token_tranfers()
+    |> join_token_transfers()
     |> preload_token_transfers(address_hash)
-    |> where([t, tt], t.to_address_hash == ^address_hash or tt.to_address_hash == ^address_hash)
+    |> where(
+      [t, tt],
+      t.to_address_hash == ^address_hash or tt.to_address_hash == ^address_hash or
+        t.created_contract_address_hash == ^address_hash
+    )
   end
 
   def where_address_fields_match(query, address_hash, :from) do
     query
-    |> join_token_tranfers()
+    |> join_token_transfers()
     |> preload_token_transfers(address_hash)
     |> where([t, tt], t.from_address_hash == ^address_hash or tt.from_address_hash == ^address_hash)
   end
 
   def where_address_fields_match(query, address_hash, nil) do
     query
-    |> join_token_tranfers()
+    |> join_token_transfers()
     |> preload_token_transfers(address_hash)
     |> where(
       [t, tt],
-      t.to_address_hash == ^address_hash or t.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash or
-        tt.from_address_hash == ^address_hash or
-        (is_nil(t.to_address_hash) and
-           exists_contract_creation_with_matching_address_hash_fragment(t.hash, ^address_hash.bytes))
+      t.to_address_hash == ^address_hash or t.from_address_hash == ^address_hash or
+        t.created_contract_address_hash == ^address_hash or tt.to_address_hash == ^address_hash or
+        tt.from_address_hash == ^address_hash
     )
   end
 
-  defp join_token_tranfers(query) do
+  defp join_token_transfers(query) do
     join(query, :left, [t], tt in assoc(t, :token_transfers))
   end
 
