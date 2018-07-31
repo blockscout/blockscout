@@ -1,6 +1,6 @@
 <section>
   <div class="row">
-    <div class="col-md-8">
+    <div class="col-md-12 col-lg-8">
       <!-- Block Details -->
       <div class="card">
         <div class="card-body">
@@ -63,33 +63,38 @@
       </div>
     </div>
 
-    <div class="col-md-4">
+    <div class="col-md-12 col-lg-4">
+      <div class="row">
+        <div class="col-md-6 col-lg-12">
       <!-- Validator -->
-      <div class="card bg-primary">
-        <div class="card-body">
-          <h2 class="card-title text-white"> <%= gettext "Miner" %> </h2>
-          <div class="text-right">
-            <!-- Validator's Name -->
-            <!-- Until we can get the validator's name we are using the Validator's address hash -->
-            <h3 class="text-white text-truncate"> <%= link @block.miner, class: "text-white", to: address_path(ExplorerWeb.Endpoint, :show, @locale, @block.miner) %> </h3>
-            <!-- Validator's address hash -->
-            <span class="text-light text-truncate"> </span>
+          <div class="card bg-primary">
+            <div class="card-body">
+              <h2 class="card-title text-white"> <%= gettext "Miner" %> </h2>
+              <div class="text-right">
+                <!-- Validator's Name -->
+                <!-- Until we can get the validator's name we are using the Validator's address hash -->
+                <h3 class="text-white text-truncate"> <%= link @block.miner, class: "text-white", to: address_path(ExplorerWeb.Endpoint, :show, @locale, @block.miner) %> </h3>
+                <!-- Validator's address hash -->
+                <span class="text-light text-truncate"> </span>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-
+        <div class="col-md-6 col-lg-12">
       <!-- Gas -->
-      <div class="card">
-        <div class="card-body">
-          <h2 class="card-title"> <%= gettext "Gas Used" %> </h2>
-          <div class="text-right">
-            <!-- Gas Used -->
-            <h3>
-              <%= @block.gas_used |> Cldr.Number.to_string! %>
-              <span class="text-muted"> (<%= (@block.gas_used / @block.gas_limit) |> Cldr.Number.to_string!(format: "#.#%") %>) </span>
-            </h3>
-            <!-- Gas Limit -->
-            <span class="text-muted"> <%= @block.gas_limit |> Cldr.Number.to_string! %> <%= gettext "Gas Limit" %> </span>
+          <div class="card">
+            <div class="card-body">
+              <h2 class="card-title"> <%= gettext "Gas Used" %> </h2>
+              <div class="text-right">
+                <!-- Gas Used -->
+                <h3>
+                  <%= @block.gas_used |> Cldr.Number.to_string! %>
+                  <span class="text-muted"> (<%= (@block.gas_used / @block.gas_limit) |> Cldr.Number.to_string!(format: "#.#%") %>) </span>
+                </h3>
+                <!-- Gas Limit -->
+                <span class="text-muted"> <%= @block.gas_limit |> Cldr.Number.to_string! %> <%= gettext "Gas Limit" %> </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

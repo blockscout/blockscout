@@ -1,9 +1,9 @@
 <div class="tile tile-type-internal-transaction fade-in" data-test="internal_transaction" data-internal-transaction-id="<%= @internal_transaction.id %>">
-  <div class="row justify-content-end">
-    <div class="col-md-3 col-lg-2 d-flex align-items-center justify-content-start justify-content-lg-center tile-label">
+  <div class="row">
+    <div class="col-md-2 d-flex flex-column align-items-left justify-content-start justify-content-lg-center tile-label  mb-1 mb-md-0 pl-md-4">
       <%=  gettext("Internal Transaction") %>
     </div>
-    <div class="col-md-9 col-lg-7 d-flex flex-column text-nowrap">
+    <div class="col-md-8 col-lg-8 d-flex flex-column text-nowrap pr-2 pr-sm-2 pr-md-0">
       <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: @internal_transaction.transaction_hash %>
       <span class="text-nowrap">
         <%= if @address.hash == @internal_transaction.from_address_hash do %>
@@ -18,16 +18,16 @@
           <%= render ExplorerWeb.AddressView, "_link.html", address_hash: ExplorerWeb.InternalTransactionView.to_address_hash(@internal_transaction), contract: ExplorerWeb.AddressView.contract?(@internal_transaction.to_address), locale: @locale %>
         <% end %>
       </span>
+      <span class="tile-title text-truncate mt-3 mt-md-0">
+        <%= ExplorerWeb.TransactionView.value(@internal_transaction, include_label: false) %> <%= gettext "Ether" %>
+      </span>
+    </div>
+    <div class="col-md-2 d-flex flex-row flex-md-column justify-content-start align-items-end  mt-3 mt-md-0">
       <%= if @address.hash == @internal_transaction.from_address_hash do %>
         <span class="badge badge-danger tile-badge"><%= gettext "OUT" %></span>
       <% else %>
         <span class="badge badge-success tile-badge"><%= gettext "IN" %></span>
       <% end %>
-    </div>
-    <div class="col-md-9 col-lg-3 d-flex flex-row flex-md-column justify-content-start text-lg-right mt-3 mt-lg-0">
-      <span class="tile-title">
-        <%= ExplorerWeb.TransactionView.value(@internal_transaction, include_label: false) %> <%= gettext "Ether" %>
-      </span>
     </div>
   </div>
 </div>

@@ -1,8 +1,8 @@
 <% block = @transaction.block %>
 <section>
   <div class="row">
-    <div class="col-md-8">
-      <!-- Block Details -->
+    <div class="col-md-12 col-lg-8">
+      <!-- Transaction Details -->
       <div class="card">
         <div class="card-body">
           <h1 class="card-title"><%= gettext "Transaction Details" %> </h1>
@@ -74,36 +74,44 @@
         </div>
       </div>
     </div>
-    <!-- Value -->
-    <div class="col-md-4">
-      <div class="card bg-primary">
-        <div class="card-body">
-          <h2 class="card-title text-white"><%= gettext "Ether" %> <%= gettext "Value" %></h2>
-          <div class="text-right">
-            <h3 class="text-white"> <%= value(@transaction) %></h3>
-            <span class="text-light"> <%= formatted_usd_value(@transaction, @exchange_rate) %></span>
+
+    <div class="col-md-12 col-lg-4">
+      <div class="row">
+        <div class="col-md-6 col-lg-12">
+          <!-- Value -->
+          <div class="card bg-primary ">
+            <div class="card-body">
+              <h2 class="card-title text-white"><%= gettext "Ether" %> <%= gettext "Value" %></h2>
+              <div class="text-right">
+                <h3 class="text-white"> <%= value(@transaction) %></h3>
+                <span class="text-light"> <%= formatted_usd_value(@transaction, @exchange_rate) %></span>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-    <!-- Gas -->
-    <div class="card">
-      <div class="card-body">
-        <h2 class="card-title"> <%= gettext "Gas" %> </h2>
-        <div class="text-right">
-          <!-- Gas Used -->
-          <h3>
-            <span>
-              <%= gettext "Used" %>
-              <%= gas_used(@transaction) %> @
-              <%= gas_price(@transaction, :gwei) %>
-            </span>
-          </h3>
-          <!-- Gas Limit -->
-          <span class="text-muted">
-            <%= gettext "Limit" %>
-            <%= format_gas_limit(@transaction.gas) %>
-          </span>
+        <div class="col-md-6 col-lg-12">
+          <!-- Gas -->
+          <div class="card">
+            <div class="card-body">
+              <h2 class="card-title"> <%= gettext "Gas" %> </h2>
+              <div class="text-right">
+                <!-- Gas Used -->
+                <h3>
+                  <span>
+                    <%= gettext "Used" %>
+                    <%= gas_used(@transaction) %> @
+                    <%= gas_price(@transaction, :gwei) %>
+                  </span>
+                </h3>
+                <!-- Gas Limit -->
+                <span class="text-muted">
+                  <%= gettext "Limit" %>
+                  <%= format_gas_limit(@transaction.gas) %>
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

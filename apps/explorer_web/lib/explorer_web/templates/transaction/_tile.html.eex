@@ -1,31 +1,35 @@
 <div class="tile tile-type-<%= ExplorerWeb.TransactionView.type_suffix(@transaction) %> tile-status--<%= ExplorerWeb.TransactionView.status(@transaction) %> fade-up" data-test="<%= ExplorerWeb.TransactionView.type_suffix(@transaction) %>" data-transaction-hash="<%= @transaction.hash %>">
   <div class="row" data-test="chain_transaction">
-    <div class="pl-5 col-md-2 d-flex flex-column align-items-left justify-content-start justify-content-lg-center">
-      <span class="tile-label" data-test="transaction_type"> <%= ExplorerWeb.TransactionView.transaction_display_type(@transaction) %></span>
-      <div class="tile-status-label" data-test="transaction_status"><%= ExplorerWeb.TransactionView.formatted_status(@transaction) %></div>
+    <div class="col-md-2 d-flex flex-row flex-md-column align-items-left justify-content-start justify-content-lg-center mb-1 mb-md-0 pl-md-4">
+      <span class="tile-label" data-test="transaction_type">
+        <%= ExplorerWeb.TransactionView.transaction_display_type(@transaction) %>
+      </span>
+      <div class="tile-status-label ml-2 ml-md-0" data-test="transaction_status">
+        <%= ExplorerWeb.TransactionView.formatted_status(@transaction) %>
+      </div>
     </div>
-    <div class="col-md-7 col-lg-8 d-flex flex-column">
-        <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: @transaction.hash %>
+    <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0">
+      <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: @transaction.hash %>
       <span class="text-nowrap">
         <%= render ExplorerWeb.AddressView, "_link.html", address_hash: @transaction.from_address_hash, contract: ExplorerWeb.AddressView.contract?(@transaction.from_address), locale: @locale %>
         &rarr;
         <%= render ExplorerWeb.AddressView, "_link.html", address_hash: ExplorerWeb.TransactionView.to_address_hash(@transaction), contract: ExplorerWeb.AddressView.contract?(@transaction.to_address), locale: @locale %>
       </span>
-      <span>
-        <span data-from-now="<%= @transaction.block.timestamp %>"></span>
-        <span class="ml-1">
-          <%= link(
-            gettext("Block #%{number}", number: to_string(@transaction.block.number)),
-            to: block_path(ExplorerWeb.Endpoint, :show, @locale, @transaction.block)
-          ) %>
+      <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
+        <span class="tile-title">
+          <%= ExplorerWeb.TransactionView.value(@transaction, include_label: false) %> <%= gettext "Ether" %>
         </span>
+        <span class="ml-0 ml-md-1 text-nowrap"> <%= ExplorerWeb.TransactionView.formatted_fee(@transaction, denomination: :ether, include_label: false) %> <%= gettext "TX Fee" %></span>
       </span>
     </div>
-    <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column justify-content-start text-md-right">
-      <span class="tile-title">
-        <%= ExplorerWeb.TransactionView.value(@transaction, include_label: false) %> <%= gettext "Ether" %>
+    <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column justify-content-start text-md-right mt-3 mt-md-0">
+      <span class="mr-2 mr-md-0">
+        <%= link(
+          gettext("Block #%{number}", number: to_string(@transaction.block.number)),
+          to: block_path(ExplorerWeb.Endpoint, :show, @locale, @transaction.block)
+        ) %>
       </span>
-      <span><%= ExplorerWeb.TransactionView.formatted_fee(@transaction, denomination: :ether) %> <%= gettext "Fee" %></span>
+      <span data-from-now="<%= @transaction.block.timestamp %>"></span>
     </div>
   </div>
 </div>

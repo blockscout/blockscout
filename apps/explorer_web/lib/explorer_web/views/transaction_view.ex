@@ -132,10 +132,6 @@ defmodule ExplorerWeb.TransactionView do
     format_wei_value(value, :ether, include_unit_label: include_label?)
   end
 
-  defp fee_to_currency({fee_type, fee}, denomination: denomination) do
-    {fee_type, format_wei_value(Wei.from(fee, :wei), denomination)}
-  end
-
   defp fee_to_currency({fee_type, fee}, exchange_rate: %Token{} = exchange_rate) do
     formatted =
       fee
@@ -144,5 +140,11 @@ defmodule ExplorerWeb.TransactionView do
       |> format_usd_value()
 
     {fee_type, formatted}
+  end
+
+  defp fee_to_currency({fee_type, fee}, opts) do
+    denomination = Keyword.get(opts, :denomination)
+    include_label? = Keyword.get(opts, :include_label, true)
+    {fee_type, format_wei_value(Wei.from(fee, :wei), denomination, include_unit_label: include_label?)}
   end
 end
