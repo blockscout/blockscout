@@ -77,7 +77,7 @@
           </span>
         </span>
         <span class="tile-title">
-          <%= format_according_to_decimals(token_transfer.amount, token_transfer.token.decimals) %> <%= token_transfer.token.symbol %>
+          <%= token_transfer_amount(token_transfer) %> <%= token_symbol(token_transfer.token) %>
         </span>
       </div>
       <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column align-items-end">
