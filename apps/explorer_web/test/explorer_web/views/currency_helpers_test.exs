@@ -42,5 +42,12 @@ defmodule ExplorerWeb.CurrencyHelpersTest do
 
       assert CurrencyHelpers.format_according_to_decimals(amount, decimals) == "9.324876"
     end
+
+    test "formats the value considering thousands separators" do
+      amount = Decimal.new(1_000_450)
+      decimals = 2
+
+      assert CurrencyHelpers.format_according_to_decimals(amount, decimals) == "10,004.5"
+    end
   end
 end

@@ -55,12 +55,22 @@ defmodule ExplorerWeb.CurrencyHelpers do
   iex> format_according_to_decimals(Decimal.new(205000), 12)
   "0.000000205"
 
+  iex> format_according_to_decimals(Decimal.new(205000), 2)
+  "2,050"
   """
   @spec format_according_to_decimals(Decimal.t(), non_neg_integer()) :: String.t()
   def format_according_to_decimals(%Decimal{sign: sign, coef: coef, exp: exp}, decimals) do
     sign
     |> Decimal.new(coef, exp - decimals)
     |> Decimal.reduce()
-    |> Decimal.to_string(:normal)
+    |> thousands_separator()
+  end
+
+  defp thousands_separator(value) do
+    if Decimal.to_float(value) > 999 do
+      Cldr.Number.to_string!(value)
+    else
+      Decimal.to_string(value, :normal)
+    end
   end
 end
