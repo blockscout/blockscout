@@ -200,15 +200,21 @@ defmodule EthereumJSONRPCTest do
     test "with pending", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
-          {:ok, %{"number" => "0x2"}}
+          {:ok, nil}
         end)
       end
 
       log_bad_gateway(
         fn -> EthereumJSONRPC.fetch_block_number_by_tag("pending", json_rpc_named_arguments) end,
-        fn result ->
-          assert {:ok, number} = result
-          assert number > 0
+        fn
+          # Parity after https://github.com/paritytech/parity-ethereum/pull/8281 and anything spec-compliant
+          {:error, reason} ->
+            assert reason == :not_found
+
+          # Parity before https://github.com/paritytech/parity-ethereum/pull/8281
+          {:ok, number} ->
+            assert is_integer(number)
+            assert number > 0
         end
       )
     end

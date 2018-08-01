@@ -1,6 +1,8 @@
 defmodule ExplorerWeb.AddressTransactionView do
   use ExplorerWeb, :view
 
+  alias Explorer.Chain.{Transaction}
+
   import ExplorerWeb.AddressView,
     only: [contract?: 1, smart_contract_verified?: 1, smart_contract_with_read_only_functions?: 1]
 
@@ -12,14 +14,20 @@ defmodule ExplorerWeb.AddressTransactionView do
     end
   end
 
-  @doc """
-  Check if the given address is the to_address_hash or from_address_hash from the transaction.
+  def address_sending_and_receiving_tokens?(%Transaction{} = transaction, address_hash) do
+    address_receiving_tokens?(transaction, address_hash) && address_sending_tokens?(transaction, address_hash)
+  end
 
-  When the transaction has token transfers, the transaction is going to be shown even when the 
-  transaction is the to or from of the given address.
-  """
-  def transaction_from_or_to_current_address?(transaction, address_hash) do
-    transaction.from_address_hash == address_hash || transaction.to_address_hash == address_hash
+  def address_receiving_tokens?(%Transaction{token_transfers: token_transfers}, address_hash) do
+    Enum.any?(token_transfers, &(&1.to_address_hash == address_hash))
+  end
+
+  def address_sending_tokens?(%Transaction{token_transfers: token_transfers}, address_hash) do
+    Enum.any?(token_transfers, &(&1.from_address_hash == address_hash))
+  end
+
+  def transfered_value?(%Explorer.Chain.Wei{value: value}) do
+    Decimal.to_integer(value) != 0
   end
 
   @doc """

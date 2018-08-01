@@ -194,7 +194,7 @@ defmodule EthereumJSONRPC do
 
   """
   @spec fetch_block_number_by_tag(tag(), json_rpc_named_arguments) ::
-          {:ok, non_neg_integer()} | {:error, reason :: :invalid_tag | term()}
+          {:ok, non_neg_integer()} | {:error, reason :: :invalid_tag | :not_found | term()}
   def fetch_block_number_by_tag(tag, json_rpc_named_arguments) when tag in ~w(earliest latest pending) do
     tag
     |> get_block_by_tag_request()
@@ -437,6 +437,10 @@ defmodule EthereumJSONRPC do
   defp handle_get_block_by_tag({:ok, %{"number" => quantity}}) do
     {:ok, quantity_to_integer(quantity)}
   end
+
+  # https://github.com/paritytech/parity-ethereum/pull/8281 fixed
+  #   https://github.com/paritytech/parity-ethereum/issues/8028
+  defp handle_get_block_by_tag({:ok, nil}), do: {:error, :not_found}
 
   defp handle_get_block_by_tag({:error, %{"code" => -32602}}), do: {:error, :invalid_tag}
   defp handle_get_block_by_tag({:error, _} = error), do: error
