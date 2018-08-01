@@ -21,7 +21,7 @@ describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
     const action = {
       type: 'RECEIVED_NEW_TRANSACTION_BATCH',
       msgs: [{
-        homepageTransactionHtml: 'test'
+        transactionHtml: 'test'
       }]
     }
     const output = reducer(state, action)
@@ -34,27 +34,27 @@ describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
     const action = {
       type: 'RECEIVED_NEW_TRANSACTION_BATCH',
       msgs: [{
-        homepageTransactionHtml: 'test 1'
+        transactionHtml: 'test 1'
       },{
-        homepageTransactionHtml: 'test 2'
+        transactionHtml: 'test 2'
       },{
-        homepageTransactionHtml: 'test 3'
+        transactionHtml: 'test 3'
       },{
-        homepageTransactionHtml: 'test 4'
+        transactionHtml: 'test 4'
       },{
-        homepageTransactionHtml: 'test 5'
+        transactionHtml: 'test 5'
       },{
-        homepageTransactionHtml: 'test 6'
+        transactionHtml: 'test 6'
       },{
-        homepageTransactionHtml: 'test 7'
+        transactionHtml: 'test 7'
       },{
-        homepageTransactionHtml: 'test 8'
+        transactionHtml: 'test 8'
       },{
-        homepageTransactionHtml: 'test 9'
+        transactionHtml: 'test 9'
       },{
-        homepageTransactionHtml: 'test 10'
+        transactionHtml: 'test 10'
       },{
-        homepageTransactionHtml: 'test 11'
+        transactionHtml: 'test 11'
       }]
     }
     const output = reducer(state, action)
@@ -69,7 +69,7 @@ describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
     const action = {
       type: 'RECEIVED_NEW_TRANSACTION_BATCH',
       msgs: [{
-        homepageTransactionHtml: 'test 2'
+        transactionHtml: 'test 2'
       }]
     }
     const output = reducer(state, action)
@@ -85,7 +85,7 @@ describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
     const action = {
       type: 'RECEIVED_NEW_TRANSACTION_BATCH',
       msgs: [{
-        homepageTransactionHtml: 'test 12'
+        transactionHtml: 'test 12'
       }]
     }
     const output = reducer(state, action)
@@ -101,27 +101,27 @@ describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
     const action = {
       type: 'RECEIVED_NEW_TRANSACTION_BATCH',
       msgs: [{
-        homepageTransactionHtml: 'test 12'
+        transactionHtml: 'test 12'
       },{
-        homepageTransactionHtml: 'test 13'
+        transactionHtml: 'test 13'
       },{
-        homepageTransactionHtml: 'test 14'
+        transactionHtml: 'test 14'
       },{
-        homepageTransactionHtml: 'test 15'
+        transactionHtml: 'test 15'
       },{
-        homepageTransactionHtml: 'test 16'
+        transactionHtml: 'test 16'
       },{
-        homepageTransactionHtml: 'test 17'
+        transactionHtml: 'test 17'
       },{
-        homepageTransactionHtml: 'test 18'
+        transactionHtml: 'test 18'
       },{
-        homepageTransactionHtml: 'test 19'
+        transactionHtml: 'test 19'
       },{
-        homepageTransactionHtml: 'test 20'
+        transactionHtml: 'test 20'
       },{
-        homepageTransactionHtml: 'test 21'
+        transactionHtml: 'test 21'
       },{
-        homepageTransactionHtml: 'test 22'
+        transactionHtml: 'test 22'
       }]
     }
     const output = reducer(state, action)

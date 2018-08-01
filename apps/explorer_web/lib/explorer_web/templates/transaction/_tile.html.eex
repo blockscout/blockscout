@@ -1,10 +1,8 @@
 <div class="tile tile-type-<%= ExplorerWeb.TransactionView.type_suffix(@transaction) %> tile-status--<%= ExplorerWeb.TransactionView.status(@transaction) %>" data-test="<%= ExplorerWeb.TransactionView.type_suffix(@transaction) %>" data-transaction-hash="<%= @transaction.hash %>">
   <div class="row" data-test="chain_transaction">
-    <div class="col-md-2 d-flex flex-column align-items-left justify-content-start justify-content-lg-center">
-      <div class="ml-4">
-        <span class="tile-label" data-test="transaction_type"> <%= ExplorerWeb.TransactionView.transaction_display_type(@transaction) %></span>
-        <div class="tile-status-label" data-test="transaction_status"><%= ExplorerWeb.TransactionView.formatted_status(@transaction) %></div>
-      </div>
+    <div class="pl-5 col-md-2 d-flex flex-column align-items-left justify-content-start justify-content-lg-center">
+      <span class="tile-label" data-test="transaction_type"> <%= ExplorerWeb.TransactionView.transaction_display_type(@transaction) %></span>
+      <div class="tile-status-label" data-test="transaction_status"><%= ExplorerWeb.TransactionView.formatted_status(@transaction) %></div>
     </div>
     <div class="col-md-7 col-lg-8 d-flex flex-column">
         <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: @transaction.hash %>
@@ -14,7 +12,7 @@
         <%= render ExplorerWeb.AddressView, "_link.html", address_hash: ExplorerWeb.TransactionView.to_address_hash(@transaction), contract: ExplorerWeb.AddressView.contract?(@transaction.to_address), locale: @locale %>
       </span>
       <span>
-        <span class="ml-1" data-from-now="<%= @transaction.block.timestamp %>"></span>
+        <span data-from-now="<%= @transaction.block.timestamp %>"></span>
         <span class="ml-1">
           <%= link(
             gettext("Block #%{number}", number: to_string(@transaction.block.number)),

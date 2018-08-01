@@ -27,7 +27,7 @@ export function reducer (state = initialState, action) {
         return Object.assign({}, state, {
           newTransactions: [
             ...state.newTransactions,
-            ...action.msgs.map(({homepageTransactionHtml}) => homepageTransactionHtml)
+            ...action.msgs.map(({transactionHtml}) => transactionHtml)
           ]
         })
       } else {

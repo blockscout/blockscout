@@ -74,7 +74,7 @@
       <h2 class="card-title"><%= gettext "Transactions" %></h2>
       <span data-selector="transactions-list">
         <%= for transaction <- @chain.transactions do %>
-          <%= render ExplorerWeb.ChainView, "_transaction.html", locale: @locale, transaction: transaction %>
+          <%= render ExplorerWeb.TransactionView, "_tile.html", locale: @locale, transaction: transaction %>
         <% end %>
       </span>
     </div>
