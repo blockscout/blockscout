@@ -1,0 +1,48 @@
+<div class="tile">
+  <div class="row">
+    <div class="col-md-6">
+      <!-- block height -->
+      <%= link(
+            @block,
+            class: "tile-title",
+            to: block_path(ExplorerWeb.Endpoint, :show, @locale, @block),
+            "data-test": "block_number",
+            "data-block-number": to_string(@block.number)
+          ) %>
+      <div>
+        <!-- transactions -->
+        <span class="mr-2">
+          <%= ngettext("%{count} transaction", "%{count} transactions", Enum.count(@block.transactions)) %>
+        </span>
+        <!-- size -->
+        <span class="mr-2"> <%= Cldr.Unit.new(:byte, @block.size) |> Cldr.Unit.to_string! %> </span>
+        <!-- age -->
+        <span data-from-now="<%= @block.timestamp %>"></span>
+      </div>
+      <div class="">
+        <!-- validator -->
+        <%= gettext "Miner" %>
+        <span class="ml-2">
+          <%= link to: address_path(ExplorerWeb.Endpoint, :show, @locale, @block.miner_hash) do %>
+            <%= @block.miner_hash %>
+          <% end %>
+        </span>
+      </div>
+    </div>
+    <div class="col-md-6 text-right d-flex flex-column align-items-end justify-content-end">
+      <!-- Gas Used -->
+      <div class="">
+        <%= formatted_gas(@block.gas_used) %>
+        (<%= formatted_gas(@block.gas_used / @block.gas_limit, format: "#.#%") %>)
+        <%= gettext "Gas Used" %>
+      </div>
+      <div class="progress w-25">
+        <div class="progress-bar" role="progressbar" style="width: <%= formatted_gas(@block.gas_used / @block.gas_limit, format: "#.#%") %>;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
+
+        </div>
+      </div>
+      <!-- Gas Limit -->
+      <span> <%= formatted_gas(@block.gas_limit) %> <%= gettext "Gas Limit" %> </span>
+    </div>
+  </div>
+</div>

@@ -19,7 +19,7 @@ export function reducer (state = initialState, action) {
   switch (action.type) {
     case 'RECEIVED_NEW_BLOCK': {
       return Object.assign({}, state, {
-        newBlock: humps.camelizeKeys(action.msg).homepageBlockHtml
+        newBlock: action.msg.homepageBlockHtml
       })
     }
     case 'RECEIVED_NEW_TRANSACTION_BATCH': {
@@ -46,7 +46,7 @@ router.when('', { exactPathMatch: true }).then(({ locale }) => initRedux(reducer
     const blocksChannel = socket.channel(`blocks:new_block`)
     numeral.locale(locale)
     blocksChannel.join()
-    blocksChannel.on('new_block', msg => store.dispatch({ type: 'RECEIVED_NEW_BLOCK', msg }))
+    blocksChannel.on('new_block', msg => store.dispatch({ type: 'RECEIVED_NEW_BLOCK', msg: humps.camelizeKeys(msg) }))
 
     const transactionsChannel = socket.channel(`transactions:new_transaction`)
     transactionsChannel.join()
