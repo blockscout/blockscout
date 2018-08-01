@@ -2,7 +2,8 @@ defmodule BlockScoutWeb.TransactionControllerTest do
   use BlockScoutWeb.ConnCase
   alias Explorer.Chain.{Block, Transaction}
 
-  import BlockScoutWeb.Router.Helpers, only: [transaction_path: 4, transaction_internal_transaction_path: 4]
+  import BlockScoutWeb.Router.Helpers,
+    only: [transaction_path: 4, transaction_internal_transaction_path: 4, transaction_token_transfer_path: 4]
 
   describe "GET index/2" do
     test "returns a collated transactions", %{conn: conn} do
@@ -98,12 +99,24 @@ defmodule BlockScoutWeb.TransactionControllerTest do
   end
 
   describe "GET show/3" do
-    test "redirects to transactions/:transaction_id/internal_transactions", %{conn: conn} do
+    test "redirects to transactions/:transaction_id/token_transfers when there are token transfers", %{conn: conn} do
       locale = "en"
-      hash = "0x9"
-      conn = get(conn, transaction_path(BlockScoutWeb.Endpoint, :show, locale, hash))
+      transaction = insert(:transaction)
+      insert(:token_transfer, transaction: transaction)
+      conn = get(conn, transaction_path(BlockScoutWeb.Endpoint, :show, locale, transaction))
 
-      assert redirected_to(conn) =~ transaction_internal_transaction_path(BlockScoutWeb.Endpoint, :index, locale, hash)
+      assert redirected_to(conn) =~ transaction_token_transfer_path(BlockScoutWeb.Endpoint, :index, locale, transaction)
+    end
+
+    test "redirects to transactions/:transaction_id/internal_transactions when there are no token transfers", %{
+      conn: conn
+    } do
+      locale = "en"
+      transaction = insert(:transaction)
+      conn = get(conn, transaction_path(BlockScoutWeb.Endpoint, :show, locale, transaction))
+
+      assert redirected_to(conn) =~
+               transaction_internal_transaction_path(BlockScoutWeb.Endpoint, :index, locale, transaction)
     end
   end
 end

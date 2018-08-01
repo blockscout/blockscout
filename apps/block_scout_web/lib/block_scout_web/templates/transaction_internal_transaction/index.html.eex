@@ -19,7 +19,7 @@
               <%= link(
                     gettext("Internal Transactions"),
                     class: "nav-link active",
-                    to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction)
+                    to: transaction_internal_transaction_path(@conn, :index, @conn.assigns.locale, @transaction)
                   ) %>
             </li>
             <li class="nav-item">
@@ -48,7 +48,7 @@
                 <%= link(
                       gettext("Internal Transactions"),
                       class: "dropdown-item",
-                      to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction)
+                      to: transaction_internal_transaction_path(@conn, :index, @conn.assigns.locale, @transaction)
                     ) %>
                     <%= link(
                           gettext("Logs"),
