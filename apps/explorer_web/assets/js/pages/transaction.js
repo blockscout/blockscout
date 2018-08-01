@@ -11,7 +11,9 @@ const BATCH_THRESHOLD = 10
 
 export const initialState = {
   batchCountAccumulator: 0,
+  beyondPageOne: null,
   blockNumber: null,
+  channelDisconnected: false,
   confirmations: null,
   newTransactions: []
 }
@@ -20,7 +22,16 @@ export function reducer (state = initialState, action) {
   switch (action.type) {
     case 'PAGE_LOAD': {
       return Object.assign({}, state, {
+        beyondPageOne: !!action.index,
         blockNumber: parseInt(action.blockNumber, 10)
+      })
+    }
+    case 'CHANNEL_DISCONNECTED': {
+      if (state.beyondPageOne) return state
+
+      return Object.assign({}, state, {
+        channelDisconnected: true,
+        batchCountAccumulator: 0
       })
     }
     case 'RECEIVED_NEW_BLOCK': {
@@ -31,7 +42,8 @@ export function reducer (state = initialState, action) {
       } else return state
     }
     case 'RECEIVED_NEW_TRANSACTION_BATCH': {
-      debugger
+      if (state.channelDisconnected || state.beyondPageOne) return state
+
       if (!state.batchCountAccumulator && action.msgs.length < BATCH_THRESHOLD) {
         return Object.assign({}, state, {
           newTransactions: [
@@ -68,10 +80,14 @@ router.when('/transactions/:transactionHash').then(({ locale }) => initRedux(red
   }
 }))
 
-router.when('/transactions', { exactPathMatch: true }).then(({ locale }) => initRedux(reducer, {
+router.when('/transactions', { exactPathMatch: true }).then((params) => initRedux(reducer, {
   main (store) {
+    const { locale, index } = params
     const transactionsChannel = socket.channel(`transactions:new_transaction`)
+    numeral.locale(locale)
+    store.dispatch({ type: 'PAGE_LOAD', index })
     transactionsChannel.join()
+    transactionsChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
     transactionsChannel.on('new_transaction', batchChannel((msgs) =>
       store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION_BATCH', msgs: humps.camelizeKeys(msgs) }))
     )
@@ -79,8 +95,10 @@ router.when('/transactions', { exactPathMatch: true }).then(({ locale }) => init
   render (state, oldState) {
     const $channelBatching = $('[data-selector="channel-batching-message"]')
     const $channelBatchingCount = $('[data-selector="channel-batching-count"]')
+    const $channelDisconnected = $('[data-selector="channel-disconnected-message"]')
     const $transactionsList = $('[data-selector="transactions-list"]')
 
+    if (state.channelDisconnected) $channelDisconnected.show()
     if (state.batchCountAccumulator) {
       $channelBatching.show()
       $channelBatchingCount[0].innerHTML = numeral(state.batchCountAccumulator).format()

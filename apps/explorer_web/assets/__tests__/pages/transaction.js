@@ -127,4 +127,34 @@ describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
     expect(output.newTransactions).toEqual([])
     expect(output.batchCountAccumulator).toEqual(22)
   })
+  test('after disconnection', () => {
+    const state = Object.assign({}, initialState, {
+      channelDisconnected: true
+    })
+    const action = {
+      type: 'RECEIVED_NEW_TRANSACTION_BATCH',
+      msgs: [{
+        transactionHtml: 'test'
+      }]
+    }
+    const output = reducer(state, action)
+
+    expect(output.newTransactions).toEqual([])
+    expect(output.batchCountAccumulator).toEqual(0)
+  })
+  test('on page 2+', () => {
+    const state = Object.assign({}, initialState, {
+      beyondPageOne: true
+    })
+    const action = {
+      type: 'RECEIVED_NEW_TRANSACTION_BATCH',
+      msgs: [{
+        transactionHtml: 'test'
+      }]
+    }
+    const output = reducer(state, action)
+
+    expect(output.newTransactions).toEqual([])
+    expect(output.batchCountAccumulator).toEqual(0)
+  })
 })

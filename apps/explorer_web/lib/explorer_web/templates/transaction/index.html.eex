@@ -48,6 +48,11 @@
           <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>
         </div>
       </div>
+      <div data-selector="channel-disconnected-message" style="display:none;">
+        <div data-selector="reload-button" class="alert alert-danger">
+          <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer transactions" %></a>
+        </div>
+      </div>
       <h2 class="card-title mb-0"><%= gettext "Transactions" %></h2>
       <p><%= gettext("Showing %{count} Validated Transactions", count: Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###")) %></p>
       <span data-selector="transactions-list">
