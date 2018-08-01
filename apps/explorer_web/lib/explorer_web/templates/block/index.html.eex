@@ -3,13 +3,6 @@
     <div class="card-body">
 
       <h1>Blocks</h1>
-      <p>
-        <%= gettext(
-              "Showing #%{start_block} to #%{end_block}",
-              start_block: List.first(@blocks).number,
-              end_block: List.last(@blocks).number
-            ) %>
-      </p>
 
       <span data-selector="blocks-list">
         <%= for block <- @blocks do %>
