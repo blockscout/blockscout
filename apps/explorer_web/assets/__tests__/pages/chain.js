@@ -28,6 +28,7 @@ describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
 
     expect(output.newTransactions).toEqual(['test'])
     expect(output.batchCountAccumulator).toEqual(0)
+    expect(output.transactionCount).toEqual(1)
   })
   test('large batch of transactions', () => {
     const state = initialState
@@ -61,6 +62,7 @@ describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
 
     expect(output.newTransactions).toEqual([])
     expect(output.batchCountAccumulator).toEqual(11)
+    expect(output.transactionCount).toEqual(11)
   })
   test('single transaction after single transaction', () => {
     const state = Object.assign({}, initialState, {
