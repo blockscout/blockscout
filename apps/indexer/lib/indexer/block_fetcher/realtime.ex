@@ -115,8 +115,16 @@ defmodule Indexer.BlockFetcher.Realtime do
         }
       ) do
     balances_params =
-      Enum.map(address_params, fn %{hash: address_hash} when is_binary(address_hash) ->
-        block_number = Map.fetch!(address_hash_to_block_number, address_hash)
+      Enum.map(address_params, fn %{hash: address_hash} = address_params when is_binary(address_hash) ->
+        block_number =
+          case address_params do
+            %{fetched_balance_block_number: block_number} when is_integer(block_number) ->
+              block_number
+
+            _ ->
+              Map.fetch!(address_hash_to_block_number, address_hash)
+          end
+
         %{hash_data: address_hash, block_quantity: integer_to_quantity(block_number)}
       end)
 
