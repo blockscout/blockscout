@@ -54,7 +54,7 @@
         </div>
       </div>
       <h2 class="card-title mb-0"><%= gettext "Transactions" %></h2>
-      <p><%= gettext("Showing %{count} Validated Transactions", count: Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###")) %></p>
+      <p><%= gettext("Showing") %> <span data-selector="transaction-count"><%= Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###") %></span> <%= gettext("Validated Transactions") %></p>
       <span data-selector="transactions-list">
         <%= for transaction <- @transactions do %>
           <%= render ExplorerWeb.TransactionView, "_tile.html", locale: @locale, transaction: transaction %>

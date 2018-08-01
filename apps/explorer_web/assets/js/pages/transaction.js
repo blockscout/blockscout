@@ -15,7 +15,8 @@ export const initialState = {
   blockNumber: null,
   channelDisconnected: false,
   confirmations: null,
-  newTransactions: []
+  newTransactions: [],
+  transactionCount: null
 }
 
 export function reducer (state = initialState, action) {
@@ -23,7 +24,8 @@ export function reducer (state = initialState, action) {
     case 'PAGE_LOAD': {
       return Object.assign({}, state, {
         beyondPageOne: !!action.index,
-        blockNumber: parseInt(action.blockNumber, 10)
+        blockNumber: parseInt(action.blockNumber, 10),
+        transactionCount: numeral(action.transactionCount).value()
       })
     }
     case 'CHANNEL_DISCONNECTED': {
@@ -49,11 +51,13 @@ export function reducer (state = initialState, action) {
           newTransactions: [
             ...state.newTransactions,
             ...action.msgs.map(({transactionHtml}) => transactionHtml)
-          ]
+          ],
+          transactionCount: state.transactionCount + action.msgs.length
         })
       } else {
         return Object.assign({}, state, {
-          batchCountAccumulator: state.batchCountAccumulator + action.msgs.length
+          batchCountAccumulator: state.batchCountAccumulator + action.msgs.length,
+          transactionCount: state.transactionCount + action.msgs.length
         })
       }
     }
@@ -67,7 +71,10 @@ router.when('/transactions/:transactionHash').then(({ locale }) => initRedux(red
     const blocksChannel = socket.channel(`blocks:new_block`, {})
     const $transactionBlockNumber = $('[data-selector="block-number"]')
     numeral.locale(locale)
-    store.dispatch({ type: 'PAGE_LOAD', blockNumber: $transactionBlockNumber.text() })
+    store.dispatch({
+      type: 'PAGE_LOAD',
+      blockNumber: $transactionBlockNumber.text()
+    })
     blocksChannel.join()
     blocksChannel.on('new_block', (msg) => store.dispatch({ type: 'RECEIVED_NEW_BLOCK', msg: humps.camelizeKeys(msg) }))
   },
@@ -85,7 +92,11 @@ router.when('/transactions', { exactPathMatch: true }).then((params) => initRedu
     const { locale, index } = params
     const transactionsChannel = socket.channel(`transactions:new_transaction`)
     numeral.locale(locale)
-    store.dispatch({ type: 'PAGE_LOAD', index })
+    store.dispatch({
+      type: 'PAGE_LOAD',
+      transactionCount: $('[data-selector="transaction-count"]').text(),
+      index
+    })
     transactionsChannel.join()
     transactionsChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
     transactionsChannel.on('new_transaction', batchChannel((msgs) =>
@@ -97,8 +108,10 @@ router.when('/transactions', { exactPathMatch: true }).then((params) => initRedu
     const $channelBatchingCount = $('[data-selector="channel-batching-count"]')
     const $channelDisconnected = $('[data-selector="channel-disconnected-message"]')
     const $transactionsList = $('[data-selector="transactions-list"]')
+    const $transactionCount = $('[data-selector="transaction-count"]')
 
     if (state.channelDisconnected) $channelDisconnected.show()
+    if (oldState.transactionCount !== state.transactionCount) $transactionCount.empty().append(numeral(state.transactionCount).format())
     if (state.batchCountAccumulator) {
       $channelBatching.show()
       $channelBatchingCount[0].innerHTML = numeral(state.batchCountAccumulator).format()

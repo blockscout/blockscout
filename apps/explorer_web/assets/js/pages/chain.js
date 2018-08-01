@@ -12,11 +12,17 @@ const BATCH_THRESHOLD = 10
 export const initialState = {
   batchCountAccumulator: 0,
   newBlock: null,
-  newTransactions: []
+  newTransactions: [],
+  transactionCount: null
 }
 
 export function reducer (state = initialState, action) {
   switch (action.type) {
+    case 'PAGE_LOAD': {
+      return Object.assign({}, state, {
+        transactionCount: numeral(action.transactionCount).value()
+      })
+    }
     case 'RECEIVED_NEW_BLOCK': {
       return Object.assign({}, state, {
         newBlock: action.msg.homepageBlockHtml
@@ -28,11 +34,13 @@ export function reducer (state = initialState, action) {
           newTransactions: [
             ...state.newTransactions,
             ...action.msgs.map(({transactionHtml}) => transactionHtml)
-          ]
+          ],
+          transactionCount: state.transactionCount + action.msgs.length
         })
       } else {
         return Object.assign({}, state, {
-          batchCountAccumulator: state.batchCountAccumulator + action.msgs.length
+          batchCountAccumulator: state.batchCountAccumulator + action.msgs.length,
+          transactionCount: state.transactionCount + action.msgs.length
         })
       }
     }
@@ -45,6 +53,10 @@ router.when('', { exactPathMatch: true }).then(({ locale }) => initRedux(reducer
   main (store) {
     const blocksChannel = socket.channel(`blocks:new_block`)
     numeral.locale(locale)
+    store.dispatch({
+      type: 'PAGE_LOAD',
+      transactionCount: $('[data-selector="transaction-count"]').text()
+    })
     blocksChannel.join()
     blocksChannel.on('new_block', msg => store.dispatch({ type: 'RECEIVED_NEW_BLOCK', msg: humps.camelizeKeys(msg) }))
 
@@ -59,12 +71,14 @@ router.when('', { exactPathMatch: true }).then(({ locale }) => initRedux(reducer
     const $channelBatching = $('[data-selector="channel-batching-message"]')
     const $channelBatchingCount = $('[data-selector="channel-batching-count"]')
     const $transactionsList = $('[data-selector="transactions-list"]')
+    const $transactionCount = $('[data-selector="transaction-count"]')
 
     if (oldState.newBlock !== state.newBlock) {
       $blockList.children().last().remove()
       $blockList.prepend(state.newBlock)
       updateAllAges()
     }
+    if (oldState.transactionCount !== state.transactionCount) $transactionCount.empty().append(numeral(state.transactionCount).format())
     if (state.batchCountAccumulator) {
       $channelBatching.show()
       $channelBatchingCount[0].innerHTML = numeral(state.batchCountAccumulator).format()

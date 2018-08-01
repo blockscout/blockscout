@@ -35,8 +35,8 @@
           <span class="dashboard-banner-network-stats-label">
             <%= gettext "Total transactions" %>
           </span>
-          <span class="dashboard-banner-network-stats-value">
-            <%= @transaction_estimated_count |> Cldr.Number.to_string!(format: "#,###") %>
+          <span class="dashboard-banner-network-stats-value" data-selector="transaction-count">
+            <%= Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###") %>
           </span>
         </div>
         <div class="dashboard-banner-network-stats-item">
