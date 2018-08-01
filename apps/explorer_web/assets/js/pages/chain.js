@@ -11,7 +11,6 @@ const BATCH_THRESHOLD = 10
 
 export const initialState = {
   batchCountAccumulator: 0,
-  channelDisconnected: false,
   newBlock: null,
   newTransactions: []
 }

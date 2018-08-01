@@ -4,7 +4,7 @@ defmodule ExplorerWeb.TransactionChannel do
   """
   use ExplorerWeb, :channel
 
-  alias ExplorerWeb.ChainView
+  alias ExplorerWeb.{ChainView, TransactionView}
   alias Phoenix.View
 
   intercept(["new_transaction"])
@@ -24,8 +24,17 @@ defmodule ExplorerWeb.TransactionChannel do
         transaction: transaction
       )
 
+    rendered_transaction =
+      View.render_to_string(
+        TransactionView,
+        "_transaction.html",
+        locale: socket.assigns.locale,
+        transaction: transaction
+      )
+
     push(socket, "new_transaction", %{
-      homepage_transaction_html: rendered_homepage_transaction
+      homepage_transaction_html: rendered_homepage_transaction,
+      transaction_html: rendered_transaction
     })
 
     {:noreply, socket}
