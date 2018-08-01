@@ -29,7 +29,7 @@ defmodule BlockScoutWeb.TokenHelpersTest do
       token = build(:token, type: "ERC-721", decimals: nil)
       token_transfer = build(:token_transfer, token: token, amount: nil, token_id: 1)
 
-      assert TokenHelpers.token_transfer_amount(token_transfer) == "TokenID [1]"
+      assert TokenHelpers.token_transfer_amount(token_transfer) == "ERC-721 TokenID [1]"
     end
 
     test "returns nothing for unknow token's type" do

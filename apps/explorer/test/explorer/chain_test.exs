@@ -11,6 +11,7 @@ defmodule Explorer.ChainTest do
     InternalTransaction,
     Log,
     Token,
+    TokenTransfer,
     Transaction,
     SmartContract,
     Wei
@@ -930,6 +931,50 @@ defmodule Explorer.ChainTest do
                  transaction: %Ecto.Association.NotLoaded{}
                }
              ] = Chain.transaction_to_logs(transaction)
+    end
+  end
+
+  describe "transaction_to_token_transfers/2" do
+    test "without token transfers" do
+      transaction = insert(:transaction)
+
+      assert [] = Chain.transaction_to_token_transfers(transaction)
+    end
+
+    test "with token transfers" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      %TokenTransfer{id: id} = insert(:token_transfer, transaction: transaction)
+
+      assert [%TokenTransfer{id: ^id}] = Chain.transaction_to_token_transfers(transaction)
+    end
+
+    test "token transfers necessity_by_association loads associations" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer, transaction: transaction)
+
+      assert [%TokenTransfer{token: %Token{}, transaction: %Transaction{}}] =
+               Chain.transaction_to_token_transfers(
+                 transaction,
+                 necessity_by_association: %{
+                   token: :optional,
+                   transaction: :optional
+                 }
+               )
+
+      assert [
+               %TokenTransfer{
+                 token: %Ecto.Association.NotLoaded{},
+                 transaction: %Ecto.Association.NotLoaded{}
+               }
+             ] = Chain.transaction_to_token_transfers(transaction)
     end
   end
 
