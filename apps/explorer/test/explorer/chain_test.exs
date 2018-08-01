@@ -1589,4 +1589,19 @@ defmodule Explorer.ChainTest do
     %Token{contract_address_hash: uncatalog_address} = insert(:token, cataloged: false)
     assert Chain.stream_uncataloged_token_contract_address_hashes([], &[&1 | &2]) == {:ok, [uncatalog_address]}
   end
+
+  describe "transaction_has_token_transfers?/1" do
+    test "returns true if transaction has token transfers" do
+      transaction = insert(:transaction)
+      insert(:token_transfer, transaction: transaction)
+
+      assert Chain.transaction_has_token_transfers?(transaction.hash) == true
+    end
+
+    test "returns false if transaction has no token transfers" do
+      transaction = insert(:transaction)
+
+      assert Chain.transaction_has_token_transfers?(transaction.hash) == false
+    end
+  end
 end
