@@ -587,9 +587,9 @@ defmodule Explorer.Chain do
       iex> [%Transaction{hash: hash1}, %Transaction{hash: hash2}] = insert_list(2, :transaction)
       iex> [%Explorer.Chain.Transaction{hash: found_hash1}, %Explorer.Chain.Transaction{hash: found_hash2}] =
       ...>   Explorer.Chain.hashes_to_transactions([hash1, hash2])
-      iex> found_hash1 == hash1
+      iex> found_hash1 in [hash1, hash2]
       true
-      iex> found_hash2 == hash2
+      iex> found_hash2 in [hash1, hash2]
       true
 
   Returns `[]` if not found

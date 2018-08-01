@@ -529,11 +529,9 @@ defmodule Explorer.ChainTest do
                  necessity_by_association: %{block: :required}
                )
 
-      assert [%Transaction{hash: ^hash_without_index1}, %Transaction{hash: ^hash_without_index2}] =
-               Chain.hashes_to_transactions(
-                 [hash_without_index1, hash_without_index2],
-                 necessity_by_association: %{block: :optional}
-               )
+      assert [hash_without_index1, hash_without_index2]
+             |> Chain.hashes_to_transactions(necessity_by_association: %{block: :optional})
+             |> Enum.all?(&(&1.hash in [hash_without_index1, hash_without_index2]))
     end
   end
 
