@@ -3,7 +3,7 @@
   100% {opacity: 1;}
 }
 
-@keyframes fade-up {
+@keyframes fade-up-blocks-homepage {
   0% {
     flex-basis: 0%;
     width: 0%;
@@ -23,13 +23,36 @@
   }
 }
 
+@keyframes fade-up {
+  0% {
+    height: 0;
+    opacity: 0;
+  }
+  25% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  50% {
+    height: 98px;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .fade-in {
   animation: fade-in 1s ease-out forwards;
 }
 
-
-.fade-up {
+.fade-up-blocks-homepage {
   will-change: transform, opacity, width;
   max-height: 98px;
-  animation: fade-up 0.55s cubic-bezier(0.455, 0.03, 0.515, 0.955);
+  animation: fade-up-blocks-homepage 0.6s cubic-bezier(0.455, 0.03, 0.515, 0.955);
+}
+
+.fade-up {
+  will-change: transform, opacity, height;
+  max-height: 98px;
+  animation: fade-up 0.6s cubic-bezier(0.455, 0.03, 0.515, 0.955);
 }
