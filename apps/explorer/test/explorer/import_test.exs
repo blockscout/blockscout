@@ -19,16 +19,16 @@ defmodule Explorer.Chain.ImportTest do
       transaction_string_hash = "0x0705ea0a5b997d9aafd5c531e016d9aabe3297a28c0bd4ef005fe6ea329d301b"
       insert(:transaction, from_address: from_address, hash: transaction_string_hash)
 
-      options = [
-        addresses: [
+      options = %{
+        addresses: %{
           params: [
             %{
               contract_code: smart_contract_bytecode,
               hash: address_hash
             }
           ]
-        ],
-        internal_transactions: [
+        },
+        internal_transactions: %{
           params: [
             %{
               created_contract_address_hash: address_hash,
@@ -45,8 +45,8 @@ defmodule Explorer.Chain.ImportTest do
               value: 0
             }
           ]
-        ]
-      ]
+        }
+      }
 
       assert {:ok, _} = Import.all(options)
 
@@ -60,14 +60,14 @@ defmodule Explorer.Chain.ImportTest do
       to_address_hash = "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
       transaction_hash = "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6"
 
-      options = [
-        addresses: [
+      options = %{
+        addresses: %{
           params: [
             %{hash: from_address_hash},
             %{hash: to_address_hash}
           ]
-        ],
-        transactions: [
+        },
+        transactions: %{
           params: [
             %{
               from_address_hash: from_address_hash,
@@ -83,8 +83,8 @@ defmodule Explorer.Chain.ImportTest do
             }
           ],
           on_conflict: :replace_all
-        ],
-        internal_transactions: [
+        },
+        internal_transactions: %{
           params: [
             %{
               block_number: 35,
@@ -101,8 +101,8 @@ defmodule Explorer.Chain.ImportTest do
               value: 0
             }
           ]
-        ]
-      ]
+        }
+      }
 
       refute Enum.any?(options[:transactions][:params], &Map.has_key?(&1, :internal_transactions_indexed_at))
 

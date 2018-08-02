@@ -281,8 +281,8 @@ defmodule ExplorerWeb.ViewingAddressesTest do
        ],
        balances: [%{address_hash: ^hash}]
      }} =
-      Chain.import(
-        addresses: [
+      Chain.import(%{
+        addresses: %{
           params: [
             %{
               fetched_balance: 100,
@@ -291,8 +291,8 @@ defmodule ExplorerWeb.ViewingAddressesTest do
             }
           ],
           with: :balance_changeset
-        ],
-        balances: [
+        },
+        balances: %{
           params: [
             %{
               value: 100,
@@ -300,8 +300,8 @@ defmodule ExplorerWeb.ViewingAddressesTest do
               address_hash: hash
             }
           ]
-        ]
-      )
+        }
+      })
 
     Notifier.handle_event({:chain_event, :addresses, [updated_address]})
 

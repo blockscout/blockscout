@@ -75,10 +75,10 @@ defmodule Indexer.BalanceFetcher do
         addresses_params = balances_params_to_address_params(balances_params)
 
         {:ok, _} =
-          Chain.import(
-            addresses: [params: addresses_params, with: :balance_changeset],
-            balances: [params: balances_params]
-          )
+          Chain.import(%{
+            addresses: %{params: addresses_params, with: :balance_changeset},
+            balances: %{params: balances_params}
+          })
 
         :ok
 
@@ -95,7 +95,7 @@ defmodule Indexer.BalanceFetcher do
 
   # We want to record all historical balances for an address, but have the address itself have balance from the
   # `Balance` with the greatest block_number for that address.
-  defp balances_params_to_address_params(balances_params) do
+  def balances_params_to_address_params(balances_params) do
     balances_params
     |> Enum.group_by(fn %{address_hash: address_hash} -> address_hash end)
     |> Map.values()

@@ -1520,8 +1520,8 @@ defmodule Explorer.ChainTest do
   end
 
   describe "import" do
-    @import_data [
-      blocks: [
+    @import_data %{
+      blocks: %{
         params: [
           %{
             difficulty: 340_282_366_920_938_463_463_374_607_431_768_211_454,
@@ -1537,9 +1537,9 @@ defmodule Explorer.ChainTest do
             total_difficulty: 12_590_447_576_074_723_148_144_860_474_975_121_280_509
           }
         ]
-      ],
+      },
       broadcast: true,
-      internal_transactions: [
+      internal_transactions: %{
         params: [
           %{
             call_type: "call",
@@ -1555,8 +1555,8 @@ defmodule Explorer.ChainTest do
             value: 0
           }
         ]
-      ],
-      logs: [
+      },
+      logs: %{
         params: [
           %{
             address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
@@ -1570,8 +1570,8 @@ defmodule Explorer.ChainTest do
             type: "mined"
           }
         ]
-      ],
-      transactions: [
+      },
+      transactions: %{
         on_conflict: :replace_all,
         params: [
           %{
@@ -1597,14 +1597,14 @@ defmodule Explorer.ChainTest do
             value: 0
           }
         ]
-      ],
-      addresses: [
+      },
+      addresses: %{
         params: [
           %{hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"},
           %{hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"}
         ]
-      ]
-    ]
+      }
+    }
 
     test "publishes addresses with updated fetched_balance data to subscribers on insert" do
       Chain.subscribe_to_events(:addresses)
@@ -1631,7 +1631,7 @@ defmodule Explorer.ChainTest do
     end
 
     test "does not broadcast if broadcast option is false" do
-      non_broadcast_data = Keyword.merge(@import_data, broadcast: false)
+      non_broadcast_data = Map.put(@import_data, :broadcast, false)
 
       Chain.subscribe_to_events(:logs)
       Chain.import(non_broadcast_data)

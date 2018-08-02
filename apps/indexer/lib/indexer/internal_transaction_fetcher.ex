@@ -100,10 +100,10 @@ defmodule Indexer.InternalTransactionFetcher do
           end)
 
         with {:ok, %{addresses: address_hashes}} <-
-               Chain.import(
-                 addresses: [params: addresses_params],
-                 internal_transactions: [params: internal_transactions_params]
-               ) do
+               Chain.import(%{
+                 addresses: %{params: addresses_params},
+                 internal_transactions: %{params: internal_transactions_params}
+               }) do
           address_hashes
           |> Enum.map(fn address_hash ->
             block_number = Map.fetch!(address_hash_to_block_number, to_string(address_hash))

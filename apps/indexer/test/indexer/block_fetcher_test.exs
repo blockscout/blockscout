@@ -13,7 +13,6 @@ defmodule Indexer.BlockFetcherTest do
     BalanceFetcher,
     AddressBalanceFetcherCase,
     BlockFetcher,
-    BoundInterval,
     BufferedTask,
     InternalTransactionFetcher,
     InternalTransactionFetcherCase,
@@ -46,342 +45,24 @@ defmodule Indexer.BlockFetcherTest do
   #  ON blocks.hash = transactions.block_hash) as blocks
   @first_full_block_number 37
 
-  describe "start_link/1" do
-    test "starts fetching blocks from latest and goes down", %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
-        case Keyword.fetch!(json_rpc_named_arguments, :variant) do
-          EthereumJSONRPC.Parity ->
-            block_number = 3_416_888
-            block_quantity = integer_to_quantity(block_number)
-
-            EthereumJSONRPC.Mox
-            |> stub(:json_rpc, fn
-              # latest block number to seed starting block number for genesis and realtime tasks
-              %{method: "eth_getBlockByNumber", params: ["latest", false]}, _options ->
-                {:ok,
-                 %{
-                   "author" => "0xe2ac1c6843a33f81ae4935e5ef1277a392990381",
-                   "difficulty" => "0xfffffffffffffffffffffffffffffffe",
-                   "extraData" => "0xd583010a068650617269747986312e32362e32826c69",
-                   "gasLimit" => "0x7a1200",
-                   "gasUsed" => "0x0",
-                   "hash" => "0x627baabf5a17c0cfc547b6903ac5e19eaa91f30d9141be1034e3768f6adbc94e",
-                   "logsBloom" =>
-                     "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-                   "miner" => "0xe2ac1c6843a33f81ae4935e5ef1277a392990381",
-                   "number" => block_quantity,
-                   "parentHash" => "0x006edcaa1e6fde822908783bc4ef1ad3675532d542fce53537557391cfe34c3c",
-                   "receiptsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-                   "sealFields" => [
-                     "0x841240b30d",
-                     "0xb84158bc4fa5891934bc94c5dca0301867ce4f35925ef46ea187496162668210bba61b4cda09d7e0dca2f1dd041fad498ced6697aeef72656927f52c55b630f2591c01"
-                   ],
-                   "sha3Uncles" => "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
-                   "signature" =>
-                     "58bc4fa5891934bc94c5dca0301867ce4f35925ef46ea187496162668210bba61b4cda09d7e0dca2f1dd041fad498ced6697aeef72656927f52c55b630f2591c01",
-                   "size" => "0x243",
-                   "stateRoot" => "0x9a8111062667f7b162851a1cbbe8aece5ff12e761b3dcee93b787fcc12548cf7",
-                   "step" => "306230029",
-                   "timestamp" => "0x5b437f41",
-                   "totalDifficulty" => "0x342337ffffffffffffffffffffffffed8d29bb",
-                   "transactions" => [],
-                   "transactionsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-                   "uncles" => []
-                 }}
-
-              [%{method: "eth_getBlockByNumber", params: [_, true]} | _] = requests, _options ->
-                {:ok,
-                 Enum.map(requests, fn %{id: id, params: [block_quantity, true]} ->
-                   %{
-                     id: id,
-                     jsonrpc: "2.0",
-                     result: %{
-                       "author" => "0xe2ac1c6843a33f81ae4935e5ef1277a392990381",
-                       "difficulty" => "0xfffffffffffffffffffffffffffffffe",
-                       "extraData" => "0xd583010a068650617269747986312e32362e32826c69",
-                       "gasLimit" => "0x7a1200",
-                       "gasUsed" => "0x0",
-                       "hash" =>
-                         Explorer.Factory.block_hash()
-                         |> to_string(),
-                       "logsBloom" =>
-                         "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-                       "miner" => "0xe2ac1c6843a33f81ae4935e5ef1277a392990381",
-                       "number" => block_quantity,
-                       "parentHash" =>
-                         Explorer.Factory.block_hash()
-                         |> to_string(),
-                       "receiptsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-                       "sealFields" => [
-                         "0x841240b30d",
-                         "0xb84158bc4fa5891934bc94c5dca0301867ce4f35925ef46ea187496162668210bba61b4cda09d7e0dca2f1dd041fad498ced6697aeef72656927f52c55b630f2591c01"
-                       ],
-                       "sha3Uncles" => "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
-                       "signature" =>
-                         "58bc4fa5891934bc94c5dca0301867ce4f35925ef46ea187496162668210bba61b4cda09d7e0dca2f1dd041fad498ced6697aeef72656927f52c55b630f2591c01",
-                       "size" => "0x243",
-                       "stateRoot" => "0x9a8111062667f7b162851a1cbbe8aece5ff12e761b3dcee93b787fcc12548cf7",
-                       "step" => "306230029",
-                       "timestamp" => "0x5b437f41",
-                       "totalDifficulty" => "0x342337ffffffffffffffffffffffffed8d29bb",
-                       "transactions" => [],
-                       "transactionsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-                       "uncles" => []
-                     }
-                   }
-                 end)}
-
-              [%{method: "eth_getBalance"} | _] = requests, _options ->
-                {:ok, Enum.map(requests, fn %{id: id} -> %{id: id, jsonrpc: "2.0", result: "0x0"} end)}
-            end)
-
-          EthereumJSONRPC.Geth ->
-            block_number = 5_950_901
-            block_quantity = integer_to_quantity(block_number)
-
-            EthereumJSONRPC.Mox
-            |> stub(:json_rpc, fn
-              %{method: "eth_getBlockByNumber", params: ["latest", false]}, _options ->
-                {:ok,
-                 %{
-                   "difficulty" => "0xc2550dc5bfc5d",
-                   "extraData" => "0x65746865726d696e652d657538",
-                   "gasLimit" => "0x7a121d",
-                   "gasUsed" => "0x6cc04b",
-                   "hash" => "0x71f484056fec687fd469989426c94c469ff08a28eae9a1865359d64557bb99f6",
-                   "logsBloom" =>
-                     "0x900840000041000850020000002800020800840900200210041006005028810880231200c1a0800001003a00011813005102000020800207080210000020014c00888640001040300c180008000084001000010018010040001118181400a06000280428024010081100015008080814141000644404040a8021101010040001001022000000000880420004008000180004000a01002080890010000a0601001a0000410244421002c0000100920100020004000020c10402004080008000203001000200c4001a000002000c0000000100200410090bc52e080900108230000110010082120200000004e01002000500001009e14001002051000040830080",
-                   "miner" => "0xea674fdde714fd979de3edf0f56aa9716b898ec8",
-                   "mixHash" => "0x555275cd0ab4c3b2fe3936843ee25bb67da05ef7dcf17216bc0e382d21d139a0",
-                   "nonce" => "0xa49e42a024600113",
-                   "number" => block_quantity,
-                   "parentHash" => "0xb4357733c59cc6f785542d072a205f4e195f7198f544ea5e01c1b90ef0f914a5",
-                   "receiptsRoot" => "0x17baf8de366fecc1be494bff245be6357ac60a5fe786099dba89983778c8421e",
-                   "sha3Uncles" => "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
-                   "size" => "0x6c7b",
-                   "stateRoot" => "0x79345c692a0bf363e95c37750336c534309b3f3fe8b59712ac1527118070f488",
-                   "timestamp" => "0x5b475377",
-                   "totalDifficulty" => "0x120258e22c69502fc88",
-                   "transactions" => ["0xa4b58d1d1473f4891d9ff91f624dba73611bf1f6e9a60d3ca2dcfc75d2ab185c"],
-                   "transactionsRoot" => "0x5972b7988f667d7e86679322641117e503ea2c1bc5a27822a8a8120fe53f2c8b",
-                   "uncles" => []
-                 }}
-
-              [%{method: "eth_getBlockByNumber", params: [_, true]} | _] = requests, _options ->
-                {:ok,
-                 Enum.map(requests, fn %{id: id, params: [block_quantity, true]} ->
-                   %{
-                     id: id,
-                     jsonrpc: "2.0",
-                     result: %{
-                       "difficulty" => "0xc22479024e55f",
-                       "extraData" => "0x73656f3130",
-                       "gasLimit" => "0x7a121d",
-                       "gasUsed" => "0x7a0527",
-                       "hash" =>
-                         Explorer.Factory.block_hash()
-                         |> to_string(),
-                       "logsBloom" =>
-                         "0x006a044c050a6759208088200009808898246808402123144ac15801c09a2672990130000042500000cc6090b063f195352095a88018194112101a02640000a0109c03c40568440b853a800a60044408604bb49d1d604c802008000884520208496608a520992e0f4b41a94188088920c1995107db4696c03839a911500084001009884100605084c4542953b08101103080254c34c802a00042a62f811340400d22080d000c0e39927ca481800c8024048425462000150850500205a224810041904023a80c00dc01040203000086020111210403081096822008c12500a2060a54834800400851210122c481a04a24b5284e9900a08110c180011001c03100",
-                       "miner" => "0xb2930b35844a230f00e51431acae96fe543a0347",
-                       "mixHash" => "0x5e07a58028d2cee7ddbefe245e6d7b5232d997b66cc906b18ad9ad51535ced24",
-                       "nonce" => "0x3d88ebe8031aadf6",
-                       "number" => block_quantity,
-                       "parentHash" =>
-                         Explorer.Factory.block_hash()
-                         |> to_string(),
-                       "receiptsRoot" => "0x5294a8b56be40c0c198aa443664e801bb926d49878f96151849f3ddd0cb5e76d",
-                       "sha3Uncles" => "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
-                       "size" => "0x4796",
-                       "stateRoot" => "0x3755d4b5c9ae3cd58d7a856a46fbe8fb69f0ba93d81e831cd68feb8b61bc3009",
-                       "timestamp" => "0x5b475393",
-                       "totalDifficulty" => "0x120259a450e2527e1e7",
-                       "transactions" => [],
-                       "transactionsRoot" => "0xa71969ed649cd1f21846ab7b4029e79662941cc34cd473aa4590e666920ad2f4",
-                       "uncles" => []
-                     }
-                   }
-                 end)}
-
-              [%{method: "eth_getBalance"} | _] = requests, _options ->
-                {:ok, Enum.map(requests, fn %{id: id} -> %{id: id, jsonrpc: "2.0", result: "0x0"} end)}
-            end)
-
-          variant_name ->
-            raise ArgumentError, "Unsupported variant name (#{variant_name})"
-        end
-      end
-
-      {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
-
-      default_blocks_batch_size = BlockFetcher.default_blocks_batch_size()
-
-      assert latest_block_number > default_blocks_batch_size
-
-      assert Repo.aggregate(Block, :count, :hash) == 0
-
-      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      start_supervised!({BlockFetcher, json_rpc_named_arguments: json_rpc_named_arguments})
-
-      first_catchup_block_number = latest_block_number - 1
-
-      wait_for_results(fn ->
-        Repo.one!(from(block in Block, where: block.number == ^first_catchup_block_number))
-      end)
-
-      assert Repo.aggregate(Block, :count, :hash) >= 1
-
-      previous_batch_block_number = first_catchup_block_number - default_blocks_batch_size
-
-      wait_for_results(fn ->
-        Repo.one!(from(block in Block, where: block.number == ^previous_batch_block_number))
-      end)
-
-      assert Repo.aggregate(Block, :count, :hash) >= default_blocks_batch_size
-    end
-  end
-
-  describe "handle_info(:catchup_index, state)" do
-    setup context do
-      # force to use `Mox`, so we can manipulate `lastest_block_number`
-      put_in(context.json_rpc_named_arguments[:transport], EthereumJSONRPC.Mox)
-    end
-
-    setup :state
-
-    test "increases catchup_bound_interval if no blocks missing", %{
-      json_rpc_named_arguments: json_rpc_named_arguments,
-      state: state
-    } do
-      insert(:block, number: 0)
-      insert(:block, number: 1)
-
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn %{method: "eth_getBlockByNumber", params: ["latest", false]}, _options ->
-        {:ok, %{"number" => "0x1"}}
-      end)
-
-      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-
-      # from `setup :state`
-      assert_received :catchup_index
-
-      assert {:noreply, %BlockFetcher{catchup_task: %Task{pid: pid, ref: ref}} = catchup_index_state} =
-               BlockFetcher.handle_info(:catchup_index, state)
-
-      assert_receive {^ref, 0} = message
-
-      # DOWN is not flushed
-      assert {:messages, [{:DOWN, ^ref, :process, ^pid, :normal}]} = Process.info(self(), :messages)
-
-      assert {:noreply, message_state} = BlockFetcher.handle_info(message, catchup_index_state)
-
-      # DOWN is flushed
-      assert {:messages, []} = Process.info(self(), :messages)
-
-      assert message_state.catchup_bound_interval.current > catchup_index_state.catchup_bound_interval.current
-    end
-
-    test "decreases catchup_bound_interval if blocks missing", %{
-      json_rpc_named_arguments: json_rpc_named_arguments,
-      state: state
-    } do
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn %{method: "eth_getBlockByNumber", params: ["latest", false]}, _options ->
-        {:ok, %{"number" => "0x1"}}
-      end)
-      |> expect(:json_rpc, fn [%{id: id, method: "eth_getBlockByNumber", params: ["0x0", true]}], _options ->
-        {:ok,
-         [
-           %{
-             id: id,
-             jsonrpc: "2.0",
-             result: %{
-               "difficulty" => "0x0",
-               "gasLimit" => "0x0",
-               "gasUsed" => "0x0",
-               "hash" =>
-                 Explorer.Factory.block_hash()
-                 |> to_string(),
-               "miner" => "0xb2930b35844a230f00e51431acae96fe543a0347",
-               "number" => "0x0",
-               "parentHash" =>
-                 Explorer.Factory.block_hash()
-                 |> to_string(),
-               "size" => "0x0",
-               "timestamp" => "0x0",
-               "totalDifficulty" => "0x0",
-               "transactions" => []
-             }
-           }
-         ]}
-      end)
-      |> stub(:json_rpc, fn [
-                              %{
-                                id: id,
-                                method: "eth_getBalance",
-                                params: ["0xb2930b35844a230f00e51431acae96fe543a0347", "0x0"]
-                              }
-                            ],
-                            _options ->
-        {:ok, [%{id: id, jsonrpc: "2.0", result: "0x0"}]}
-      end)
-
-      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-
-      # from `setup :state`
-      assert_received :catchup_index
-
-      assert {:noreply, %BlockFetcher{catchup_task: %Task{pid: pid, ref: ref}} = catchup_index_state} =
-               BlockFetcher.handle_info(:catchup_index, state)
-
-      # 2 blocks are missing, but latest is assumed to be handled by realtime_index, so only 1 is missing for
-      # catchup_index
-      assert_receive {^ref, 1} = message
-
-      # DOWN is not flushed
-      assert {:messages, [{:DOWN, ^ref, :process, ^pid, :normal}]} = Process.info(self(), :messages)
-
-      assert {:noreply, message_state} = BlockFetcher.handle_info(message, catchup_index_state)
-
-      # DOWN is flushed
-      assert {:messages, []} = Process.info(self(), :messages)
-
-      assert message_state.catchup_bound_interval.current == message_state.catchup_bound_interval.minimum
-
-      # When not at minimum it is decreased
-
-      above_minimum_state = update_in(catchup_index_state.catchup_bound_interval, &BoundInterval.increase/1)
-
-      assert above_minimum_state.catchup_bound_interval.current > message_state.catchup_bound_interval.minimum
-      assert {:noreply, above_minimum_message_state} = BlockFetcher.handle_info(message, above_minimum_state)
-
-      assert above_minimum_message_state.catchup_bound_interval.current <
-               above_minimum_state.catchup_bound_interval.current
-    end
-  end
-
-  describe "import_range/4" do
-    setup :state
-
+  describe "import_range/2" do
     setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
       start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
       AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      {:ok, state} = BlockFetcher.init(json_rpc_named_arguments: json_rpc_named_arguments)
 
-      %{state: state}
+      %{
+        block_fetcher:
+          BlockFetcher.new(
+            broadcast: false,
+            callback_module: Indexer.BlockFetcher.Catchup,
+            json_rpc_named_arguments: json_rpc_named_arguments
+          )
+      }
     end
 
     test "with single element range that is valid imports one block", %{
-      json_rpc_named_arguments: json_rpc_named_arguments,
-      state: state
+      block_fetcher: %BlockFetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher
     } do
       block_number = 0
 
@@ -496,6 +177,7 @@ defmodule Indexer.BlockFetcherTest do
       end
 
       {:ok, sequence} = Sequence.start_link(first: 0, step: 1)
+      sequenced_block_fetcher = %BlockFetcher{block_fetcher | sequence: sequence}
 
       %{address_hash: address_hash, block_hash: block_hash} =
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
@@ -532,7 +214,7 @@ defmodule Indexer.BlockFetcherTest do
         end
 
       log_bad_gateway(
-        fn -> BlockFetcher.import_range(block_number..block_number, state, sequence, :realtime_index) end,
+        fn -> BlockFetcher.import_range(sequenced_block_fetcher, block_number..block_number) end,
         fn result ->
           assert {:ok,
                   %{
@@ -560,8 +242,7 @@ defmodule Indexer.BlockFetcherTest do
     #   Implement when a full block is found for Ethereum Mainnet and remove :no_geth tag
     @tag :no_geth
     test "can import range with all synchronous imported schemas", %{
-      json_rpc_named_arguments: json_rpc_named_arguments,
-      state: state
+      block_fetcher: %BlockFetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher
     } do
       block_number = @first_full_block_number
 
@@ -733,6 +414,7 @@ defmodule Indexer.BlockFetcherTest do
       end
 
       {:ok, sequence} = Sequence.start_link(first: 0, step: 1)
+      sequenced_block_fetcher = %BlockFetcher{block_fetcher | sequence: sequence}
 
       case Keyword.fetch!(json_rpc_named_arguments, :variant) do
         EthereumJSONRPC.Geth ->
@@ -792,7 +474,7 @@ defmodule Indexer.BlockFetcherTest do
                             154, 143, 4, 28, 171, 95, 190, 255, 254, 174, 75, 182>>
                       }
                     ]
-                  }} = BlockFetcher.import_range(block_number..block_number, state, sequence, :realtime_index)
+                  }} = BlockFetcher.import_range(sequenced_block_fetcher, block_number..block_number)
 
           wait_for_tasks(InternalTransactionFetcher)
           wait_for_tasks(BalanceFetcher)
@@ -879,7 +561,7 @@ defmodule Indexer.BlockFetcherTest do
                             57, 101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
                       }
                     ]
-                  }} = BlockFetcher.import_range(block_number..block_number, state, sequence, :realtime_index)
+                  }} = BlockFetcher.import_range(block_fetcher, block_number..block_number)
 
           wait_for_tasks(InternalTransactionFetcher)
           wait_for_tasks(BalanceFetcher)
@@ -903,12 +585,6 @@ defmodule Indexer.BlockFetcherTest do
           raise ArgumentError, "Unsupport variant (#{variant})"
       end
     end
-  end
-
-  defp state(%{json_rpc_named_arguments: json_rpc_named_arguments}) do
-    {:ok, state} = BlockFetcher.init(json_rpc_named_arguments: json_rpc_named_arguments)
-
-    %{state: state}
   end
 
   defp wait_until(timeout, producer) do
