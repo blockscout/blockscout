@@ -63,6 +63,14 @@
         color: $teal;
       }
     }
+
+    &-api-documentation {
+      border-left: 4px solid $primary;
+
+      .tile-label {
+        color: $primary;
+      }
+    }
   }
 
   &-status {

@@ -95,5 +95,7 @@ defmodule ExplorerWeb.Router do
     end
 
     get("/search", ChainController, :search)
+
+    get("/api_docs", APIDocsController, :index)
   end
 end

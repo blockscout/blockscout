@@ -1,0 +1,16 @@
+<section class="container">
+  <div class="card">
+    <div class="card-body">
+
+      <h1 class="card-title mb-0">API Documentation</h2>
+      <small class="text-monospace text-secondary" data-endpoint-url="<%= ExplorerWeb.Endpoint.url() %>/api">[ Base URL: <%= @conn.host %>/api ]</small>
+      <p class="mt-4">This API is provided for developers transitioning their applications from Etherscan to Explorer. It supports GET and POST requests.</p>
+
+    </div>
+  </div>
+
+  <%= for module <- @documentation do %>
+    <%= render "_module_card.html", module: module %>
+  <% end %>
+
+</section>
