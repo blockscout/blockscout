@@ -618,7 +618,17 @@ defmodule Explorer.Chain.Import do
       from(
         t in Transaction,
         where: t.hash in ^ordered_transaction_hashes,
-        update: [set: [internal_transactions_indexed_at: ^timestamps.updated_at]]
+        update: [
+          set: [
+            internal_transactions_indexed_at: ^timestamps.updated_at,
+            created_contract_address_hash:
+              fragment(
+                "(SELECT it.created_contract_address_hash FROM internal_transactions AS it WHERE it.transaction_hash = ? and it.type = 'create' and ? IS NULL)",
+                t.hash,
+                t.to_address_hash
+              )
+          ]
+        ]
       )
 
     transaction_count = Enum.count(ordered_transaction_hashes)
