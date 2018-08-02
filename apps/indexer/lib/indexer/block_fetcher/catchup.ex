@@ -17,7 +17,7 @@ defmodule Indexer.BlockFetcher.Catchup do
   defstruct ~w(block_fetcher bound_interval task)a
 
   def new(%{block_fetcher: %BlockFetcher{} = common_block_fetcher, block_interval: block_interval}) do
-    block_fetcher = %BlockFetcher{common_block_fetcher | broadcast: true, callback_module: __MODULE__}
+    block_fetcher = %BlockFetcher{common_block_fetcher | broadcast: false, callback_module: __MODULE__}
     minimum_interval = div(block_interval, 2)
 
     %__MODULE__{
