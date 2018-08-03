@@ -37,6 +37,8 @@ defmodule ExplorerWeb.AddressContractVerificationTest do
     |> click(option(version))
     |> click(radio_button("No"))
     |> fill_in(text_field("Enter the Solidity Contract Code below"), with: source_code)
+
+    session
     |> click(button("Verify and publish"))
 
     assert current_path(session) =~ ~r/\/en\/addresses\/#{address_hash}\/contracts/

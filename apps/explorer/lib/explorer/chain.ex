@@ -7,6 +7,7 @@ defmodule Explorer.Chain do
     only: [
       from: 2,
       join: 4,
+      join: 5,
       limit: 2,
       order_by: 2,
       order_by: 3,
@@ -181,9 +182,10 @@ defmodule Explorer.Chain do
 
     options
     |> Keyword.get(:paging_options, @default_paging_options)
-    |> fetch_transactions()
-    |> Transaction.where_address_fields_match(address_hash, direction)
+    |> transactions_by_address(address_hash, direction)
     |> join_associations(necessity_by_association)
+    |> Transaction.preload_token_transfers(address_hash)
+    |> preload(token_transfers: [:from_address, :to_address, :token])
     |> Repo.all()
   end
 
@@ -289,12 +291,12 @@ defmodule Explorer.Chain do
   @spec block_to_transactions(Block.t(), [paging_options | necessity_by_association_option]) :: [Transaction.t()]
   def block_to_transactions(%Block{hash: block_hash}, options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    options
-    |> Keyword.get(:paging_options, @default_paging_options)
-    |> fetch_transactions()
+    Transaction
+    |> fetch_transactions(paging_options)
     |> join(:inner, [transaction], block in assoc(transaction, :block))
-    |> where([_, block], block.hash == ^block_hash)
+    |> where([_, _, block], block.hash == ^block_hash)
     |> join_associations(necessity_by_association)
     |> Repo.all()
   end
@@ -565,7 +567,8 @@ defmodule Explorer.Chain do
       when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    fetch_transactions()
+    Transaction
+    |> fetch_transactions()
     |> where(hash: ^hash)
     |> join_associations(necessity_by_association)
     |> Repo.one()
@@ -586,7 +589,7 @@ defmodule Explorer.Chain do
 
       iex> [%Transaction{hash: hash1}, %Transaction{hash: hash2}] = insert_list(2, :transaction)
       iex> [%Explorer.Chain.Transaction{hash: found_hash1}, %Explorer.Chain.Transaction{hash: found_hash2}] =
-      ...>   Explorer.Chain.hashes_to_transactions([hash1, hash2])
+      ...>   [hash1, hash2] |> Explorer.Chain.hashes_to_transactions() |> Enum.sort_by(& &1.hash)
       iex> found_hash1 == hash1
       true
       iex> found_hash2 == hash2
@@ -610,7 +613,8 @@ defmodule Explorer.Chain do
   def hashes_to_transactions(hashes, options \\ []) when is_list(hashes) and is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
-    fetch_transactions()
+    Transaction
+    |> fetch_transactions()
     |> where([transaction], transaction.hash in ^hashes)
     |> join_associations(necessity_by_association)
     |> Repo.all()
@@ -1239,10 +1243,10 @@ defmodule Explorer.Chain do
   @spec recent_collated_transactions([paging_options | necessity_by_association_option]) :: [Transaction.t()]
   def recent_collated_transactions(options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    options
-    |> Keyword.get(:paging_options, @default_paging_options)
-    |> fetch_transactions()
+    Transaction
+    |> fetch_transactions(paging_options)
     |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
     |> join_associations(necessity_by_association)
@@ -1533,22 +1537,16 @@ defmodule Explorer.Chain do
     Repo.one(query)
   end
 
-  defp fetch_transactions(paging_options \\ nil) do
-    Transaction
-    |> select_merge([transaction], %{
-      created_contract_address_hash:
-        type(
-          fragment(
-            ~s[
-              (SELECT i."created_contract_address_hash"
-              FROM "internal_transactions" AS i
-              WHERE (i."transaction_hash" = ?) AND (i."type" = 'create')
-              LIMIT 1)
-              ],
-            transaction.hash
-          ),
-          Explorer.Chain.Hash.Address
-        )
+  defp fetch_transactions(query, paging_options \\ nil) do
+    query
+    |> join(
+      :left,
+      [transaction],
+      internal_transaction in assoc(transaction, :internal_transactions),
+      internal_transaction.type == ^:create and is_nil(transaction.to_address_hash)
+    )
+    |> select_merge([_, internal_transaction], %{
+      created_contract_address_hash: internal_transaction.created_contract_address_hash
     })
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
     |> handle_paging_options(paging_options)
@@ -1638,6 +1636,54 @@ defmodule Explorer.Chain do
 
   defp page_transaction(query, %PagingOptions{key: {index}}) do
     where(query, [transaction], transaction.index < ^index)
+  end
+
+  defp transactions_by_address(
+         paging_options,
+         %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash,
+         nil
+       ) do
+    Transaction
+    |> where(
+      [transaction],
+      transaction.hash in fragment(
+        """
+          SELECT * from
+          (
+            SELECT t0.hash address
+            FROM transactions AS t0
+            LEFT OUTER JOIN internal_transactions AS i1 ON (i1.transaction_hash = t0.hash) AND (i1.type = 'create')
+            WHERE (i1.created_contract_address_hash = ? AND t0.to_address_hash IS NULL)
+
+            UNION
+
+            SELECT t0.hash address
+            FROM transactions AS t0
+            LEFT OUTER JOIN token_transfers AS t1 ON t1.transaction_hash = t0.hash
+            WHERE (t0.to_address_hash = ?)
+            OR (t0.from_address_hash = ?)
+            OR (t1.to_address_hash = ?)
+            OR (t1.from_address_hash = ?)
+          ) AS transaction_hash
+        """,
+        ^address_hash.bytes,
+        ^address_hash.bytes,
+        ^address_hash.bytes,
+        ^address_hash.bytes,
+        ^address_hash.bytes
+      )
+    )
+    |> fetch_transactions(paging_options)
+  end
+
+  defp transactions_by_address(
+         paging_options,
+         %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash,
+         direction
+       ) do
+    Transaction
+    |> fetch_transactions(paging_options)
+    |> Transaction.where_address_fields_match(address_hash, direction)
   end
 
   defp where_transaction_has_multiple_internal_transactions(query) do

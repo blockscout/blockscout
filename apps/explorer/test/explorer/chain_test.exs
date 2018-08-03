@@ -188,8 +188,8 @@ defmodule Explorer.ChainTest do
       token_transfer = insert(:token_transfer, to_address: address, transaction: transaction)
       insert(:token_transfer, to_address: build(:address), transaction: transaction)
 
-      transaction = Chain.address_to_transactions(address) |> List.first()
-      assert transaction.token_transfers |> Enum.map(& &1.id) == [token_transfer.id]
+      assert [%Transaction{token_transfers: token_transfers}] = Chain.address_to_transactions(address)
+      assert Enum.map(token_transfers, & &1.id) == [token_transfer.id]
     end
 
     test "returns just the token transfers related to the given contract address" do
@@ -478,7 +478,7 @@ defmodule Explorer.ChainTest do
       transaction =
         %Transaction{hash: hash_with_block} =
         :transaction
-        |> insert()
+        |> insert(to_address: nil)
         |> with_block()
 
       %InternalTransaction{created_contract_address_hash: contract_hash} =
@@ -509,7 +509,7 @@ defmodule Explorer.ChainTest do
   end
 
   describe "hashes_to_transactions/2" do
-    test "with transaction with block required without block returns nil" do
+    test "with transaction with block required without block returns empty list" do
       [%Transaction{hash: hash_with_block1}, %Transaction{hash: hash_with_block2}] =
         2
         |> insert_list(:transaction)
@@ -530,10 +530,9 @@ defmodule Explorer.ChainTest do
                )
 
       assert [%Transaction{hash: ^hash_without_index1}, %Transaction{hash: ^hash_without_index2}] =
-               Chain.hashes_to_transactions(
-                 [hash_without_index1, hash_without_index2],
-                 necessity_by_association: %{block: :optional}
-               )
+               [hash_without_index1, hash_without_index2]
+               |> Chain.hashes_to_transactions(necessity_by_association: %{block: :optional})
+               |> Enum.sort_by(& &1.hash)
     end
   end
 
@@ -1047,7 +1046,7 @@ defmodule Explorer.ChainTest do
     test "it has contract_creation_address_hash added" do
       transaction =
         :transaction
-        |> insert()
+        |> insert(to_address: nil)
         |> with_block()
 
       %InternalTransaction{created_contract_address_hash: hash} =
