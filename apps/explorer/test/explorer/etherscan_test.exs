@@ -54,14 +54,18 @@ defmodule Explorer.EtherscanTest do
 
     test "with created contract address" do
       address = insert(:address)
+      contract_address = insert(:contract_address)
 
       transaction =
         :transaction
-        |> insert(from_address: address)
+        |> insert(from_address: address, to_address: nil)
+        |> with_contract_creation(contract_address)
         |> with_block()
 
       %{created_contract_address_hash: contract_address_hash} =
-        insert(:internal_transaction_create, transaction: transaction, index: 0)
+        :internal_transaction_create
+        |> insert(transaction: transaction, index: 0)
+        |> with_contract_creation(contract_address)
 
       [found_transaction] = Etherscan.list_transactions(contract_address_hash)
 
@@ -121,14 +125,18 @@ defmodule Explorer.EtherscanTest do
 
     test "loads created_contract_address_hash if available" do
       address = insert(:address)
+      contract_address = insert(:contract_address)
 
       transaction =
         :transaction
-        |> insert(from_address: address)
+        |> insert(from_address: address, to_address: nil)
+        |> with_contract_creation(contract_address)
         |> with_block()
 
       %{created_contract_address_hash: contract_hash} =
-        insert(:internal_transaction_create, transaction: transaction, index: 0)
+        :internal_transaction_create
+        |> insert(transaction: transaction, index: 0)
+        |> with_contract_creation(contract_address)
 
       [found_transaction] = Etherscan.list_transactions(address.hash)
 
