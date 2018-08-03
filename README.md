@@ -50,28 +50,31 @@ The [development stack page](https://github.com/poanetwork/poa-explorer/wiki/Dev
 ### Build and Run
 
   1. Clone the repository.  
-  [`https://github.com/poanetwork/poa-explorer`](https://github.com/poanetwork/poa-explorer)
+  `git clone https://github.com/poanetwork/poa-explorer`
 
-  2. Set up default configurations.  
+  2. Go to the explorer subdirectory.  
+  `cd poa-explorer`
+
+  3. Set up default configurations.  
   `cp apps/explorer/config/dev.secret.exs.example apps/explorer/config/dev.secret.exs`  
   `cp apps/explorer_web/config/dev.secret.exs.example apps/explorer_web/config/dev.secret.exs`  
   <br />Optional: Set up default configuration for testing.  
   `cp apps/explorer/config/test.secret.exs.example apps/explorer/config/test.secret.exs`  
   Example usage: Changing the default Postgres port from localhost:15432 if [Boxen](https://github.com/boxen/boxen) is installed.
 
-  3. Install dependencies.  
+  4. Install dependencies.  
   `mix do deps.get, local.rebar --force, deps.compile, compile`
 
-  4. Create and migrate database.  
+  5. Create and migrate database.  
   `mix ecto.create && mix ecto.migrate`  
   <br />_Note:_ If you have run previously, drop the previous database  
   `mix do ecto.drop, ecto.create, ecto.migrate` 
 
-  5. Install Node.js dependencies.  
+  6. Install Node.js dependencies.  
   `cd apps/explorer_web/assets && npm install; cd -`  
   `cd apps/explorer && npm install; cd -`
 
-  6. Start Phoenix Server.  
+  7. Start Phoenix Server.  
   `mix phx.server`
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
