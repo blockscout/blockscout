@@ -1,7 +1,8 @@
 defmodule Explorer.Chain.ImportTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.Import
+  alias Explorer.Chain
+  alias Explorer.Chain.{Address, Import, Transaction}
 
   doctest Import
 
@@ -50,9 +51,9 @@ defmodule Explorer.Chain.ImportTest do
 
       assert {:ok, _} = Import.all(options)
 
-      address = Explorer.Repo.one(from(address in Explorer.Chain.Address, where: address.hash == ^address_hash))
+      address = Explorer.Repo.get(Address, address_hash)
 
-      assert address.contract_code != nil
+      assert address.contract_code != smart_contract_bytecode
     end
 
     test "with internal_transactions updates Transaction internal_transactions_indexed_at" do
@@ -108,8 +109,7 @@ defmodule Explorer.Chain.ImportTest do
 
       assert {:ok, _} = Import.all(options)
 
-      transaction =
-        Explorer.Repo.one(from(transaction in Explorer.Chain.Transaction, where: transaction.hash == ^transaction_hash))
+      transaction = Explorer.Repo.get(Transaction, transaction_hash)
 
       refute transaction.internal_transactions_indexed_at == nil
     end
@@ -174,10 +174,10 @@ defmodule Explorer.Chain.ImportTest do
 
       assert {:ok, _} = Import.all(options)
 
-      transaction =
-        Explorer.Repo.one(from(transaction in Explorer.Chain.Transaction, where: transaction.hash == ^transaction_hash))
+      transaction = Explorer.Repo.get(Transaction, transaction_hash)
 
-      refute transaction.created_contract_address_hash == nil
+      assert {:ok, transaction.created_contract_address_hash} ==
+               Chain.string_to_address_hash(created_contract_address_hash)
     end
 
     test "when the transaction has a to_address and an internal transaction with type create it does not populates the denormalized created_contract_address_hash" do
@@ -244,8 +244,7 @@ defmodule Explorer.Chain.ImportTest do
 
       assert {:ok, _} = Import.all(options)
 
-      transaction =
-        Explorer.Repo.one(from(transaction in Explorer.Chain.Transaction, where: transaction.hash == ^transaction_hash))
+      transaction = Explorer.Repo.get(Transaction, transaction_hash)
 
       assert transaction.created_contract_address_hash == nil
     end
