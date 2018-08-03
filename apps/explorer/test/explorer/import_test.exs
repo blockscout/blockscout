@@ -196,14 +196,14 @@ defmodule Explorer.Chain.ImportTest do
             %{
               contract_code: smart_contract_bytecode,
               hash: created_contract_address_hash
-            }
+            },
+            %{hash: to_address_hash}
           ]
         },
         transactions: %{
           params: [
             %{
               from_address_hash: from_address_hash,
-              to_address_hash: from_address_hash,
               gas: 4_677_320,
               gas_price: 1,
               hash: transaction_hash,
@@ -211,6 +211,7 @@ defmodule Explorer.Chain.ImportTest do
               nonce: 0,
               r: 0,
               s: 0,
+              to_address_hash: to_address_hash,
               v: 0,
               value: 0
             }
@@ -231,6 +232,7 @@ defmodule Explorer.Chain.ImportTest do
               init:
                 "0x6060604052341561000c57fe5b5b6101a68061001c6000396000f300606060405263ffffffff7c01000000000000000000000000000000000000000000000000000000006000350416631d3b9edf811461005b57806366098d4f1461007b578063a12f69e01461009b578063f4f3bdc1146100bb575bfe5b6100696004356024356100db565b60408051918252519081900360200190f35b61006960043560243561010a565b60408051918252519081900360200190f35b610069600435602435610124565b60408051918252519081900360200190f35b610069600435602435610163565b60408051918252519081900360200190f35b60008282028315806100f757508284828115156100f457fe5b04145b15156100ff57fe5b8091505b5092915050565b6000828201838110156100ff57fe5b8091505b5092915050565b60008080831161013057fe5b828481151561013b57fe5b049050828481151561014957fe5b0681840201841415156100ff57fe5b8091505b5092915050565b60008282111561016f57fe5b508082035b929150505600a165627a7a7230582020c944d8375ca14e2c92b14df53c2d044cb99dc30c3ba9f55e2bcde87bd4709b0029",
               output: "0x",
+              to_address_hash: to_address_hash,
               trace_address: [],
               transaction_hash: transaction_hash,
               type: "create",
@@ -248,5 +250,4 @@ defmodule Explorer.Chain.ImportTest do
       assert transaction.created_contract_address_hash == nil
     end
   end
-
 end

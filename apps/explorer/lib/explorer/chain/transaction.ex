@@ -298,6 +298,117 @@ defmodule Explorer.Chain.Transaction do
     |> unique_constraint(:hash)
   end
 
+  def preload_token_transfers(query, address_hash) do
+    token_transfers_query =
+      from(
+        tt in TokenTransfer,
+        where:
+          tt.token_contract_address_hash == ^address_hash or tt.to_address_hash == ^address_hash or
+            tt.from_address_hash == ^address_hash,
+        preload: [:token, :from_address, :to_address]
+      )
+
+    preload(query, [tt], token_transfers: ^token_transfers_query)
+  end
+
+  @doc """
+  Adds to the given transaction's query a `where` with one of the conditions that the matched
+  function returns.
+
+  `where_address_fields_match(query, address, :to)`
+  - returns a query considering that the given address_hash is equal to to_address_hash from
+    transactions' table or is equal to to_address_hash from token transfers' table.
+
+  `where_address_fields_match(query, address, :from)`
+  - returns a query considering that the given address_hash is equal to from_address_hash from
+    transactions' table or is equal to from_address_hash from token transfers' table.
+
+  `where_address_fields_match(query, address, nil)`
+  - returns a query considering that the given address_hash can be: to_address_hash,
+    from_address_hash, created_contract_address_hash,
+    to_address_hash or from_address_hash from token_transfers' table.
+
+  ### Token transfers' preload
+
+  Token transfers will be preloaded according to the given address_hash considering if it's equal
+  to token_contract_address_hash, to_address_hash or from_address_hash from Token Transfers's table.
+  """
+  def where_address_fields_match(query, address_hash, :to) do
+    query
+    |> where(
+      [t],
+      t.hash in fragment(
+        """
+        (
+          SELECT t0.hash AS hash
+          FROM transactions AS t0
+          WHERE t0.to_address_hash = ? OR t0.created_contract_address_hash = ?
+        )
+        UNION
+        (
+          SELECT tt.transaction_hash AS hash
+          FROM token_transfers AS tt
+          WHERE tt.to_address_hash = ?
+        )
+        """,
+        ^address_hash.bytes,
+        ^address_hash.bytes,
+        ^address_hash.bytes
+      )
+    )
+  end
+
+  def where_address_fields_match(query, address_hash, :from) do
+    query
+    |> where(
+      [t],
+      t.hash in fragment(
+        """
+        (
+          SELECT t0.hash AS hash
+          FROM transactions AS t0
+          WHERE t0.from_address_hash = ?
+        )
+        UNION
+        (
+          SELECT tt.transaction_hash AS hash
+          FROM token_transfers AS tt
+          WHERE tt.from_address_hash = ?
+        )
+        """,
+        ^address_hash.bytes,
+        ^address_hash.bytes
+      )
+    )
+  end
+
+  def where_address_fields_match(query, address_hash, nil) do
+    query
+    |> where(
+      [t],
+      t.hash in fragment(
+        """
+        (
+          SELECT t0.hash AS hash
+          FROM transactions AS t0
+          WHERE t0.to_address_hash = ? OR t0.from_address_hash = ? OR t0.created_contract_address_hash = ?
+        )
+        UNION
+        (
+          SELECT tt.transaction_hash AS hash
+          FROM token_transfers AS tt
+          WHERE tt.to_address_hash = ? OR tt.from_address_hash = ?
+        )
+        """,
+        ^address_hash.bytes,
+        ^address_hash.bytes,
+        ^address_hash.bytes,
+        ^address_hash.bytes,
+        ^address_hash.bytes
+      )
+    )
+  end
+
   @collated_fields ~w(block_number cumulative_gas_used gas_used index status)a
 
   @collated_message "can't be blank when the transaction is collated into a block"
@@ -353,74 +464,5 @@ defmodule Explorer.Chain.Transaction do
       nil -> Changeset.add_error(changeset, field, @collated_message)
       _ -> changeset
     end
-  end
-
-  @doc """
-  Adds to the given transaction's query a `where` with one of the conditions that the matched
-  function returns.
-
-  `where_address_fields_match(query, address, :to)`
-  - returns a query considering that the given address_hash is equal to to_address_hash from
-    transactions' table or is equal to to_address_hash from token transfers' table.
-
-  `where_address_fields_match(query, address, :from)`
-  - returns a query considering that the given address_hash is equal to from_address_hash from
-    transactions' table or is equal to from_address_hash from token transfers' table.
-
-  `where_address_fields_match(query, address, nil)`
-  - returns a query considering that the given address_hash can be: to_address_hash,
-    from_address_hash, created_contract_address_hash,
-    to_address_hash or from_address_hash from token_transfers' table.
-
-  ### Token transfers' preload
-
-  Token transfers will be preloaded according to the given address_hash considering if it's equal
-  to token_contract_address_hash, to_address_hash or from_address_hash from Token Transfers's table.
-  """
-  def where_address_fields_match(query, address_hash, :to) do
-    query
-    |> join_token_transfers()
-    |> preload_token_transfers(address_hash)
-    |> where(
-      [t, tt],
-      t.to_address_hash == ^address_hash or tt.to_address_hash == ^address_hash or
-        t.created_contract_address_hash == ^address_hash
-    )
-  end
-
-  def where_address_fields_match(query, address_hash, :from) do
-    query
-    |> join_token_transfers()
-    |> preload_token_transfers(address_hash)
-    |> where([t, tt], t.from_address_hash == ^address_hash or tt.from_address_hash == ^address_hash)
-  end
-
-  def where_address_fields_match(query, address_hash, nil) do
-    query
-    |> join_token_transfers()
-    |> preload_token_transfers(address_hash)
-    |> where(
-      [t, tt],
-      t.to_address_hash == ^address_hash or t.from_address_hash == ^address_hash or
-        t.created_contract_address_hash == ^address_hash or tt.to_address_hash == ^address_hash or
-        tt.from_address_hash == ^address_hash
-    )
-  end
-
-  defp join_token_transfers(query) do
-    join(query, :left, [t], tt in assoc(t, :token_transfers))
-  end
-
-  defp preload_token_transfers(query, address_hash) do
-    token_transfers_query =
-      from(
-        tt in TokenTransfer,
-        where:
-          tt.token_contract_address_hash == ^address_hash or tt.to_address_hash == ^address_hash or
-            tt.from_address_hash == ^address_hash,
-        preload: [:token, :from_address, :to_address]
-      )
-
-    preload(query, [tt], token_transfers: ^token_transfers_query)
   end
 end

@@ -183,6 +183,7 @@ defmodule Explorer.Chain do
     |> fetch_transactions()
     |> Transaction.where_address_fields_match(address_hash, direction)
     |> join_associations(necessity_by_association)
+    |> Transaction.preload_token_transfers(address_hash)
     |> Repo.all()
   end
 
