@@ -4,8 +4,7 @@ defmodule ExplorerWeb.API.RPC.AddressView do
   alias ExplorerWeb.API.RPC.RPCView
 
   def render("balance.json", %{addresses: [address]}) do
-    ether_balance = wei_to_ether(address.fetched_balance)
-    RPCView.render("show.json", data: ether_balance)
+    RPCView.render("show.json", data: "#{address.fetched_balance.value}")
   end
 
   def render("balance.json", assigns) do
@@ -17,7 +16,7 @@ defmodule ExplorerWeb.API.RPC.AddressView do
       Enum.map(addresses, fn address ->
         %{
           "account" => "#{address.hash}",
-          "balance" => wei_to_ether(address.fetched_balance)
+          "balance" => "#{address.fetched_balance.value}"
         }
       end)
 
@@ -31,10 +30,6 @@ defmodule ExplorerWeb.API.RPC.AddressView do
 
   def render("error.json", assigns) do
     RPCView.render("error.json", assigns)
-  end
-
-  defp wei_to_ether(wei) do
-    format_wei_value(wei, :ether, include_unit_label: false)
   end
 
   defp prepare_transaction(transaction) do
