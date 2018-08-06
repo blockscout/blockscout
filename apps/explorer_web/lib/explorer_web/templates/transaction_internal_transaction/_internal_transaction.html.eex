@@ -1,6 +1,6 @@
 <div class="tile tile-type-internal-transaction fade-in" data-test="internal_transaction" data-internal-transaction-id="<%= @internal_transaction.id %>">
-  <div class="row justify-content-end">
-    <div class="col-md-3 col-lg-2 d-flex align-items-center justify-content-start justify-content-lg-center tile-label">
+  <div class="row">
+    <div class="col-md-2 d-flex flex-column align-items-left justify-content-start justify-content-lg-center tile-label">
       <%=  gettext("Internal Transaction") %>
     </div>
     <div class="col-md-9 col-lg-10 d-flex flex-column text-nowrap">
