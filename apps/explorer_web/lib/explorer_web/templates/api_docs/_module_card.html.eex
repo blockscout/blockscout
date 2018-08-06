@@ -1,0 +1,13 @@
+<div class="card">
+  <h2 class="card-header">
+    <%= "#{String.capitalize(@module.name)}s" %>
+    <small class="text-primary">?module=<%= @module.name %></small>
+  </h2>
+
+  <div class="card-body">
+    <%= for action <- @module.actions do %>
+      <%= render "_action_tile.html", module_name: @module.name, action: action %>
+    <% end %>
+  </div> <!-- /card-body -->
+</div> <!-- /card -->
+

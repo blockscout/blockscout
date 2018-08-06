@@ -21,3 +21,8 @@
 .card-body {
   padding: 2.25rem 1.25rem;
 }
+
+.card-server-response-body {
+  max-height: 400px;
+  overflow-y: auto;
+}
