@@ -1,7 +1,7 @@
 defmodule ExplorerWeb.AddressTransactionView do
   use ExplorerWeb, :view
 
-  alias Explorer.Chain.{Transaction}
+  alias Explorer.Chain.Address
 
   import ExplorerWeb.AddressView,
     only: [contract?: 1, smart_contract_verified?: 1, smart_contract_with_read_only_functions?: 1]
@@ -37,7 +37,7 @@ defmodule ExplorerWeb.AddressTransactionView do
     |> Decimal.to_string(:normal)
   end
 
-  def transaction_from_or_to_current_address?(%Transaction{} = transaction, address_hash) do
-    transaction.from_address_hash == address_hash || transaction.to_address_hash == address_hash
+  def from_or_to_address?(%{from_address_hash: from_hash, to_address_hash: to_hash}, %Address{hash: hash}) do
+    from_hash == hash || to_hash == hash
   end
 end

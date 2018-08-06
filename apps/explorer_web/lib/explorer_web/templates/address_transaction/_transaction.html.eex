@@ -43,7 +43,7 @@
         ) %>
       </span>
       <span class="mr-2 mr-md-0 order-2" data-from-now="<%= @transaction.block.timestamp %>"></span>
-      <%= if transaction_from_or_to_current_address?(@transaction, @address.hash) do %>
+      <%= if from_or_to_address?(@transaction, @address) do %>
         <span class="mr-2 mr-md-0 order-0 order-md-3">
           <%= if @transaction.from_address_hash == @address.hash do %>
             <span data-test="transaction_type" class="badge badge-danger tile-badge">
@@ -81,7 +81,7 @@
         </span>
       </div>
       <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column align-items-end">
-        <%= if token_transfer.from_address_hash == @address.hash || token_transfer.to_address_hash == @address.hash do %>
+        <%= if from_or_to_address?(token_transfer, @address) do %>
           <%= if token_transfer.from_address_hash == @address.hash do %>
             <span data-test="transaction_type" class="badge badge-danger tile-badge">
               <%= gettext "OUT" %>
