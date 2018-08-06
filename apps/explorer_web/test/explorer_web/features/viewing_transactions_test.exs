@@ -4,7 +4,7 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
   use ExplorerWeb.FeatureCase, async: true
 
   alias Explorer.Chain.Wei
-  alias ExplorerWeb.{AddressPage, ChainPage, Notifier, TransactionListPage, TransactionLogsPage, TransactionPage}
+  alias ExplorerWeb.{AddressPage, Notifier, TransactionListPage, TransactionLogsPage, TransactionPage}
 
   setup do
     block =
@@ -63,78 +63,7 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
      }}
   end
 
-  test "search for transactions", %{session: session} do
-    transaction = insert(:transaction, input: "0x736f636b73")
-
-    session
-    |> ChainPage.visit_page()
-    |> ChainPage.search(to_string(transaction.hash))
-    |> assert_has(TransactionPage.detail_hash(transaction))
-  end
-
   describe "viewing transaction lists" do
-    test "transactions on the chain", %{session: session} do
-      session
-      |> ChainPage.visit_page()
-      |> assert_has(ChainPage.transactions(count: 5))
-    end
-
-    test "viewing new transactions via live update on the chain", %{
-      session: session,
-      last_shown_transaction: last_shown_transaction
-    } do
-      session
-      |> ChainPage.visit_page()
-      |> assert_has(ChainPage.transactions(count: 5))
-
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      Notifier.handle_event({:chain_event, :transactions, [transaction.hash]})
-
-      session
-      |> assert_has(ChainPage.transactions(count: 5))
-      |> assert_has(ChainPage.transaction(transaction))
-      |> refute_has(ChainPage.transaction(last_shown_transaction))
-    end
-
-    test "count of non-loaded transactions on chain live update when batch overflow", %{session: session} do
-      transaction_hashes =
-        30
-        |> insert_list(:transaction)
-        |> with_block()
-        |> Enum.map(& &1.hash)
-
-      session
-      |> ChainPage.visit_page()
-      |> assert_has(ChainPage.transactions(count: 5))
-
-      Notifier.handle_event({:chain_event, :transactions, transaction_hashes})
-
-      assert_has(session, AddressPage.non_loaded_transaction_count("30"))
-    end
-
-    test "contract creation is shown for to_address on chain page", %{session: session} do
-      contract_address = insert(:contract_address)
-
-      transaction =
-        :transaction
-        |> insert(to_address: nil)
-        |> with_contract_creation(contract_address)
-        |> with_block()
-
-      internal_transaction =
-        :internal_transaction_create
-        |> insert(transaction: transaction, index: 0)
-        |> with_contract_creation(contract_address)
-
-      session
-      |> ChainPage.visit_page()
-      |> assert_has(ChainPage.contract_creation(internal_transaction))
-    end
-
     test "viewing the default transactions tab", %{
       session: session,
       first_shown_transaction: transaction,

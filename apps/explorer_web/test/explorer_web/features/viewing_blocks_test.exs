@@ -1,7 +1,7 @@
 defmodule ExplorerWeb.ViewingBlocksTest do
   use ExplorerWeb.FeatureCase, async: true
 
-  alias ExplorerWeb.{BlockListPage, BlockPage, ChainPage, Notifier}
+  alias ExplorerWeb.{BlockListPage, BlockPage, Notifier}
 
   setup do
     timestamp = Timex.now() |> Timex.shift(hours: -1)
@@ -18,36 +18,6 @@ defmodule ExplorerWeb.ViewingBlocksTest do
       })
 
     {:ok, first_shown_block: newest_block, last_shown_block: oldest_block}
-  end
-
-  test "viewing blocks on the chain page", %{session: session} do
-    session
-    |> ChainPage.visit_page()
-    |> assert_has(ChainPage.blocks(count: 4))
-  end
-
-  test "viewing new blocks via live update on chain", %{session: session, last_shown_block: last_shown_block} do
-    session
-    |> ChainPage.visit_page()
-    |> assert_has(ChainPage.blocks(count: 4))
-
-    block = insert(:block, number: 42)
-
-    Notifier.handle_event({:chain_event, :blocks, [block]})
-
-    session
-    |> assert_has(ChainPage.blocks(count: 4))
-    |> assert_has(ChainPage.block(block))
-    |> refute_has(ChainPage.block(last_shown_block))
-  end
-
-  test "search for blocks from chain page", %{session: session} do
-    block = insert(:block, number: 42)
-
-    session
-    |> ChainPage.visit_page()
-    |> ChainPage.search(to_string(block.number))
-    |> assert_has(BlockPage.detail_number(block))
   end
 
   test "show block detail page", %{session: session} do

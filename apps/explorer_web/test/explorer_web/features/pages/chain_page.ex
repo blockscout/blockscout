@@ -19,6 +19,10 @@ defmodule ExplorerWeb.ChainPage do
     css("[data-test='contract-creation'] [data-address-hash='#{hash}']")
   end
 
+  def non_loaded_transaction_count(count) do
+    css("[data-selector='channel-batching-count']", text: count)
+  end
+
   def search(session, text) do
     session
     |> fill_in(css("[data-test='search_input']"), with: text)
