@@ -8,8 +8,10 @@ defmodule ExplorerWeb.Notifier do
   alias Explorer.ExchangeRates.Token
   alias ExplorerWeb.Endpoint
 
+  @address_count_module Application.get_env(:explorer_web, :fake_adapter) || Chain
+
   def handle_event({:chain_event, :addresses, addresses}) do
-    Endpoint.broadcast("addresses:new_address", "count", %{count: Chain.address_estimated_count()})
+    Endpoint.broadcast("addresses:new_address", "count", %{count: @address_count_module.address_estimated_count()})
 
     addresses
     |> Stream.reject(fn %Address{fetched_balance: fetched_balance} -> is_nil(fetched_balance) end)

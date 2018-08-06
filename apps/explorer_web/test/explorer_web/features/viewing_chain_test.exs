@@ -3,7 +3,6 @@ defmodule ExplorerWeb.ViewingChainTest do
 
   use ExplorerWeb.FeatureCase, async: true
 
-  alias Explorer.Chain
   alias ExplorerWeb.{AddressPage, BlockPage, ChainPage, Notifier, TransactionPage}
 
   setup do
@@ -52,7 +51,7 @@ defmodule ExplorerWeb.ViewingChainTest do
     end
 
     test "address count live updates", %{session: session} do
-      count = Chain.address_estimated_count()
+      count = ExplorerWeb.FakeAdapter.address_estimated_count()
 
       session
       |> ChainPage.visit_page()

@@ -11,3 +11,5 @@ config :explorer_web, ExplorerWeb.Endpoint,
 
 # Configure wallaby
 config :wallaby, screenshot_on_failure: true
+
+config :explorer_web, :fake_adapter, ExplorerWeb.FakeAdapter
