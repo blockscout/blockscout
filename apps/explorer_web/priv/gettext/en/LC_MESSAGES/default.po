@@ -27,7 +27,7 @@ msgstr "Blocks"
 msgid "Copyright %{year} POA"
 msgstr "%{year} POA Network Ltd. All rights reserved"
 
-#: lib/explorer_web/templates/block/index.html.eex:51
+#: lib/explorer_web/templates/block/_tile.html.eex:37
 #: lib/explorer_web/templates/block/overview.html.eex:84
 msgid "Gas Used"
 msgstr "Gas Used"
@@ -55,10 +55,10 @@ msgstr "POA Network Explorer"
 #: lib/explorer_web/templates/block_transaction/index.html.eex:13
 #: lib/explorer_web/templates/block_transaction/index.html.eex:26
 #: lib/explorer_web/templates/block_transaction/index.html.eex:36
-#: lib/explorer_web/templates/chain/_transactions.html.eex:4
+#: lib/explorer_web/templates/chain/show.html.eex:75
 #: lib/explorer_web/templates/layout/_topnav.html.eex:18
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:46
-#: lib/explorer_web/templates/transaction/index.html.eex:46
+#: lib/explorer_web/templates/transaction/index.html.eex:56
 msgid "Transactions"
 msgstr "Transactions"
 
@@ -74,12 +74,12 @@ msgstr "Block #%{number} Details"
 msgid "Difficulty"
 msgstr "Difficulty"
 
-#: lib/explorer_web/templates/block/index.html.eex:59
+#: lib/explorer_web/templates/block/_tile.html.eex:45
 #: lib/explorer_web/templates/block/overview.html.eex:92
 msgid "Gas Limit"
 msgstr "Gas Limit"
 
-#: lib/explorer_web/templates/block/index.html.eex:38
+#: lib/explorer_web/templates/block/_tile.html.eex:24
 #: lib/explorer_web/templates/block/overview.html.eex:70
 #: lib/explorer_web/templates/chain/_block.html.eex:9
 msgid "Miner"
@@ -297,10 +297,8 @@ msgstr ""
 #:
 #: lib/explorer_web/templates/address_internal_transaction/_internal_transaction.html.eex:29
 #: lib/explorer_web/templates/address_transaction/_transaction.html.eex:60
-#: lib/explorer_web/templates/block_transaction/_transaction.html.eex:33
-#: lib/explorer_web/templates/chain/_transactions.html.eex:33
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:71
-#: lib/explorer_web/templates/transaction/index.html.eex:76
+#: lib/explorer_web/templates/transaction/_tile.html.eex:26
 #: lib/explorer_web/templates/transaction/overview.html.eex:81
 #: lib/explorer_web/templates/transaction_internal_transaction/_internal_transaction.html.eex:16
 #: lib/explorer_web/views/wei_helpers.ex:71
@@ -367,10 +365,8 @@ msgid "All"
 msgstr ""
 
 #: lib/explorer_web/templates/address_transaction/_transaction.html.eex:62
-#: lib/explorer_web/templates/block_transaction/_transaction.html.eex:35
-#: lib/explorer_web/templates/chain/_transactions.html.eex:35
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:72
-#: lib/explorer_web/templates/transaction/index.html.eex:77
+#: lib/explorer_web/templates/transaction/_tile.html.eex:28
 msgid "Fee"
 msgstr ""
 
@@ -481,10 +477,10 @@ msgstr ""
 
 #: lib/explorer_web/templates/address_internal_transaction/index.html.eex:133
 #: lib/explorer_web/templates/address_transaction/index.html.eex:146
-#: lib/explorer_web/templates/block/index.html.eex:67
+#: lib/explorer_web/templates/block/index.html.eex:15
 #: lib/explorer_web/templates/block_transaction/index.html.eex:51
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:79
-#: lib/explorer_web/templates/transaction/index.html.eex:84
+#: lib/explorer_web/templates/transaction/index.html.eex:66
 msgid "Older"
 msgstr ""
 
@@ -559,7 +555,7 @@ msgid "View All Blocks →"
 msgstr ""
 
 #, elixir-format
-#: lib/explorer_web/templates/chain/_transactions.html.eex:3
+#: lib/explorer_web/templates/chain/show.html.eex:74
 msgid "View All Transactions →"
 msgstr ""
 
@@ -580,6 +576,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/explorer_web/templates/address_transaction/index.html.eex:89
+#: lib/explorer_web/templates/transaction/index.html.eex:53
 msgid "Connection Lost, click to load newer transactions"
 msgstr ""
 
@@ -593,11 +590,6 @@ msgstr ""
 #: lib/explorer_web/templates/address_internal_transaction/_internal_transaction.html.eex:4
 #: lib/explorer_web/templates/transaction_internal_transaction/_internal_transaction.html.eex:4
 msgid "Internal Transaction"
-msgstr ""
-
-#, elixir-format
-#: lib/explorer_web/templates/address_transaction/index.html.eex:84
-msgid "More messages have come in"
 msgstr ""
 
 #, elixir-format
@@ -641,9 +633,7 @@ msgstr ""
 #, elixir-format
 #: lib/explorer_web/templates/address_transaction/_transaction.html.eex:49
 #: lib/explorer_web/templates/address_transaction/_transaction.html.eex:111
-#: lib/explorer_web/templates/block_transaction/_transaction.html.eex:25
-#: lib/explorer_web/templates/chain/_transactions.html.eex:25
-#: lib/explorer_web/templates/transaction/index.html.eex:69
+#: lib/explorer_web/templates/transaction/_tile.html.eex:18
 msgid "Block #%{number}"
 msgstr ""
 
@@ -737,8 +727,25 @@ msgid "Transfers"
 msgstr ""
 
 #, elixir-format
-#: lib/explorer_web/templates/block/index.html.eex:29
+#: lib/explorer_web/templates/block/_tile.html.eex:15
 msgid "%{count} transaction"
 msgid_plural "%{count} transactions"
 msgstr[0] ""
 msgstr[1] ""
+
+#, elixir-format
+#: lib/explorer_web/templates/address_transaction/index.html.eex:84
+#: lib/explorer_web/templates/chain/show.html.eex:71
+#: lib/explorer_web/templates/transaction/index.html.eex:48
+msgid "More transactions have come in"
+msgstr ""
+
+#, elixir-format
+#: lib/explorer_web/templates/transaction/index.html.eex:57
+msgid "Showing"
+msgstr ""
+
+#, elixir-format
+#: lib/explorer_web/templates/transaction/index.html.eex:57
+msgid "Validated Transactions"
+msgstr ""
