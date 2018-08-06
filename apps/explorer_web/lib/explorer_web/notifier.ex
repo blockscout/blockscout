@@ -9,6 +9,8 @@ defmodule ExplorerWeb.Notifier do
   alias ExplorerWeb.Endpoint
 
   def handle_event({:chain_event, :addresses, addresses}) do
+    Endpoint.broadcast("addresses:new_address", "count", %{count: Chain.address_estimated_count()})
+
     addresses
     |> Stream.reject(fn %Address{fetched_balance: fetched_balance} -> is_nil(fetched_balance) end)
     |> Enum.each(&broadcast_balance/1)

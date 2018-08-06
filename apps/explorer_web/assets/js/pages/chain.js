@@ -10,6 +10,7 @@ import { batchChannel, initRedux } from '../utils'
 const BATCH_THRESHOLD = 10
 
 export const initialState = {
+  addressCount: null,
   averageBlockTime: null,
   batchCountAccumulator: 0,
   newBlock: null,
@@ -22,6 +23,11 @@ export function reducer (state = initialState, action) {
     case 'PAGE_LOAD': {
       return Object.assign({}, state, {
         transactionCount: numeral(action.transactionCount).value()
+      })
+    }
+    case 'RECEIVED_NEW_ADDRESS_COUNT': {
+      return Object.assign({}, state, {
+        addressCount: action.msg.count
       })
     }
     case 'RECEIVED_NEW_BLOCK': {
@@ -53,8 +59,12 @@ export function reducer (state = initialState, action) {
 
 router.when('', { exactPathMatch: true }).then(({ locale }) => initRedux(reducer, {
   main (store) {
-    const blocksChannel = socket.channel(`blocks:new_block`)
     numeral.locale(locale)
+    const addressesChannel = socket.channel(`addresses:new_address`)
+    addressesChannel.join()
+    addressesChannel.on('count', msg => store.dispatch({ type: 'RECEIVED_NEW_ADDRESS_COUNT', msg: humps.camelizeKeys(msg) }))
+
+    const blocksChannel = socket.channel(`blocks:new_block`)
     store.dispatch({
       type: 'PAGE_LOAD',
       transactionCount: $('[data-selector="transaction-count"]').text()
@@ -69,6 +79,7 @@ router.when('', { exactPathMatch: true }).then(({ locale }) => initRedux(reducer
     )
   },
   render (state, oldState) {
+    const $addressCount = $('[data-selector="address-count"]')
     const $averageBlockTime = $('[data-selector="average-block-time"]')
     const $blockList = $('[data-selector="chain-block-list"]')
     const $channelBatching = $('[data-selector="channel-batching-message"]')
@@ -76,6 +87,9 @@ router.when('', { exactPathMatch: true }).then(({ locale }) => initRedux(reducer
     const $transactionsList = $('[data-selector="transactions-list"]')
     const $transactionCount = $('[data-selector="transaction-count"]')
 
+    if (oldState.addressCount !== state.addressCount) {
+       $addressCount.empty().append(state.addressCount)
+    }
     if (oldState.averageBlockTime !== state.averageBlockTime) {
        $averageBlockTime.empty().append(state.averageBlockTime)
     }
