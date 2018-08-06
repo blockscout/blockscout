@@ -351,7 +351,7 @@ defmodule Explorer.Chain.Import do
         end)
         |> Multi.run(:internal_transactions_indexed_at_transactions, fn %{internal_transactions: internal_transactions}
                                                                         when is_list(internal_transactions) ->
-          update_transactions_internal_transactions_indexed_at(
+          update_transactions(
             internal_transactions,
             %{
               timeout: options[:transactions][:timeout] || @insert_transactions_timeout,
@@ -604,7 +604,7 @@ defmodule Explorer.Chain.Import do
     {:ok, inserted}
   end
 
-  defp update_transactions_internal_transactions_indexed_at(internal_transactions, %{
+  defp update_transactions(internal_transactions, %{
          timeout: timeout,
          timestamps: timestamps
        })
