@@ -733,210 +733,20 @@ defmodule Explorer.Chain do
   When there are addresses, the `reducer` is called for each `t:Explorer.Chain.Address.t/0` `hash` and all
   `t:Explorer.Chain.Block.t/0` `block_number` that address is mentioned.
 
-  An `t:Explorer.Chain.Address.t/0` `hash` can be used as an `t:Explorer.Chain.Block.t/0` `miner_hash`.
-
-      iex> {:ok, miner_hash} = Explorer.Chain.string_to_address_hash("0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca")
-      iex> miner = insert(:address, hash: miner_hash)
-      iex> insert(:block, miner: miner, number: 34)
-      iex> {:ok, balance_fields_list} = Explorer.Chain.stream_unfetched_balances(
-      ...>   [],
-      ...>   fn balance_fields, acc -> [balance_fields | acc] end
-      ...> )
-      iex> balance_fields_list
-      [
-        %{
-          address_hash: %Explorer.Chain.Hash{
-            byte_count: 20,
-            bytes: <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132,
-              89, 192, 16, 79, 223, 94, 152, 122, 202>>
-          },
-          block_number: 34
-        }
-      ]
-
-  An `t:Explorer.Chain.Address.t/0` `hash` can be used as an `t:Explorer.Chain.Transaction.t/0` `from_address_hash`.
-
-      iex> {:ok, from_address_hash} =
-      ...>   Explorer.Chain.string_to_address_hash("0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca")
-      iex> from_address = insert(:address, hash: from_address_hash)
-      iex> block = insert(:block, number: 34)
-      iex> :transaction |>
-      ...> insert(from_address: from_address) |>
-      ...> with_block(block)
-      iex> {:ok, balance_fields_list} = Explorer.Chain.stream_unfetched_balances(
-      ...>   [],
-      ...>   fn balance_fields, acc -> [balance_fields | acc] end
-      ...> )
-      iex> %{
-      ...>   address_hash: %Explorer.Chain.Hash{
-      ...>     byte_count: 20,
-      ...>     bytes: <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132,
-      ...>       89, 192, 16, 79, 223, 94, 152, 122, 202>>
-      ...>   },
-      ...>   block_number: 34
-      ...> } in balance_fields_list
-      true
-
-  An `t:Explorer.Chain.Address.t/0` `hash` can be used as an `t:Explorer.Chain.Transaction.t/0` `to_address_hash`.
-
-      iex> {:ok, to_address_hash} = Explorer.Chain.string_to_address_hash("0x8e854802d695269a6f1f3fcabb2111d2f5a0e6f9")
-      iex> to_address = insert(:address, hash: to_address_hash)
-      iex> block = insert(:block, number: 34)
-      iex> :transaction |>
-      ...> insert(to_address: to_address) |>
-      ...> with_block(block)
-      iex> {:ok, balance_fields_list} = Explorer.Chain.stream_unfetched_balances(
-      ...>   [],
-      ...>   fn balance_fields, acc -> [balance_fields | acc] end
-      ...> )
-      iex> %{
-      ...>   address_hash: %Explorer.Chain.Hash{
-      ...>     byte_count: 20,
-      ...>     bytes: <<142, 133, 72, 2, 214, 149, 38, 154, 111, 31, 63, 202,
-      ...>       187, 33, 17, 210, 245, 160, 230, 249>>
-      ...>   },
-      ...>   block_number: 34
-      ...> } in balance_fields_list
-      true
-
-  An `t:Explorer.Chain.Address.t/0` `hash` can be used as an `t:Explorer.Chain.Log.t/0` `address_hash`.
-
-      iex> {:ok, address_hash} = Explorer.Chain.string_to_address_hash("0x8bf38d4764929064f2d4d3a56520a76ab3df415b")
-      iex> address = insert(:address, hash: address_hash)
-      iex> block = insert(:block, number: 37)
-      iex> transaction =
-      ...>   :transaction |>
-      ...>   insert() |>
-      ...>   with_block(block)
-      ...> insert(:log, address: address, transaction: transaction)
-      iex> {:ok, balance_fields_list} = Explorer.Chain.stream_unfetched_balances(
-      ...>   [],
-      ...>   fn balance_fields, acc -> [balance_fields | acc] end
-      ...> )
-      iex> %{
-      iex>   address_hash: %Explorer.Chain.Hash{
-      iex>     byte_count: 20,
-      iex>     bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211,
-      iex>       165, 101, 32, 167, 106, 179, 223, 65, 91>>
-      iex>   },
-      iex>   block_number: 37
-      iex> } in balance_fields_list
-      true
-
-  An `t:Explorer.Chain.Address.t/0` `hash` can be used as an `t:Explorer.Chain.InternalTransaction.t/0`
-  `created_contract_address_hash`.
-
-      iex> {:ok, created_contract_address_hash} =
-      ...>   Explorer.Chain.string_to_address_hash("0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb4")
-      iex> created_contract_address = insert(:address, hash: created_contract_address_hash)
-      iex> block = insert(:block, number: 37)
-      iex> transaction =
-      ...>   :transaction |>
-      ...>   insert() |>
-      ...>   with_block(block)
-      iex> insert(
-      ...>   :internal_transaction_create,
-      ...>   created_contract_address: created_contract_address,
-      ...>   index: 0,
-      ...>   transaction: transaction
-      ...> )
-      iex> {:ok, balance_fields_list} = Explorer.Chain.stream_unfetched_balances(
-      ...>   [],
-      ...>   fn balance_fields, acc -> [balance_fields | acc] end
-      ...> )
-      iex> %{
-      ...>   address_hash: %Explorer.Chain.Hash{
-      ...>     byte_count: 20,
-      ...>     bytes: <<255, 200, 114, 57, 235, 2, 103, 188, 60, 162, 205, 81,
-      ...>       209, 47, 191, 39, 142, 2, 204, 180>>
-      ...>   },
-      ...>   block_number: 37
-      ...> } in balance_fields_list
-      true
-
-  An `t:Explorer.Chain.Address.t/0` `hash` can be used as an `t:Explorer.Chain.InternalTransaction.t/0`
-  `from_address_hash`.
-
-      iex> {:ok, from_address_hash} =
-      ...>   Explorer.Chain.string_to_address_hash("0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca")
-      iex> from_address = insert(:address, hash: from_address_hash)
-      iex> block = insert(:block, number: 37)
-      iex> transaction =
-      ...>   :transaction |>
-      ...>   insert() |>
-      ...>   with_block(block)
-      iex> insert(
-      ...>   :internal_transaction_create,
-      ...>   from_address: from_address,
-      ...>   index: 0,
-      ...>   transaction: transaction
-      ...> )
-      iex> {:ok, balance_fields_list} = Explorer.Chain.stream_unfetched_balances(
-      ...>   [],
-      ...>   fn balance_fields, acc -> [balance_fields | acc] end
-      ...> )
-      iex> %{
-      ...>   address_hash: %Explorer.Chain.Hash{
-      ...>     byte_count: 20,
-      ...>     bytes: <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132,
-      ...>       89, 192, 16, 79, 223, 94, 152, 122, 202>>
-      ...>   },
-      ...>   block_number: 37
-      ...> } in balance_fields_list
-      true
-
-  An `t:Explorer.Chain.Address.t/0` `hash` can be used as an `t:Explorer.Chain.InternalTransaction.t/0`
-  `to_address_hash`.
-
-      iex> {:ok, to_address_hash} =
-      ...>   Explorer.Chain.string_to_address_hash("0xfdca0da4158740a93693441b35809b5bb463e527")
-      iex> to_address = insert(:address, hash: to_address_hash)
-      iex> block = insert(:block, number: 38)
-      iex> transaction =
-      ...>   :transaction |>
-      ...>   insert() |>
-      ...>   with_block(block)
-      iex> insert(
-      ...>   :internal_transaction,
-      ...>   index: 0,
-      ...>   to_address: to_address,
-      ...>   transaction: transaction
-      ...> )
-      iex> {:ok, balance_fields_list} = Explorer.Chain.stream_unfetched_balances(
-      ...>   [],
-      ...>   fn balance_fields, acc -> [balance_fields | acc] end
-      ...> )
-      iex> %{
-      ...>   address_hash: %Explorer.Chain.Hash{
-      ...>     byte_count: 20,
-      ...>     bytes: <<253, 202, 13, 164, 21, 135, 64, 169, 54, 147, 68, 27,
-      ...>       53, 128, 155, 91, 180, 99, 229, 39>>
-      ...>   },
-      ...>   block_number: 38
-      ...> } in balance_fields_list
-      true
+  | Address Hash Schema                        | Address Hash Field              | Block Number Schema                | Block Number Field |
+  |--------------------------------------------|---------------------------------|------------------------------------|--------------------|
+  | `t:Explorer.Chain.Block.t/0`               | `miner_hash`                    | `t:Explorer.Chain.Block.t/0`       | `number`           |
+  | `t:Explorer.Chain.Transaction.t/0`         | `from_address_hash`             | `t:Explorer.Chain.Transaction.t/0` | `block_number`     |
+  | `t:Explorer.Chain.Transaction.t/0`         | `to_address_hash`               | `t:Explorer.Chain.Transaction.t/0` | `block_number`     |
+  | `t:Explorer.Chain.Log.t/0`                 | `address_hash`                  | `t:Explorer.Chain.Transaction.t/0` | `block_number`     |
+  | `t:Explorer.Chain.InternalTransaction.t/0` | `created_contract_address_hash` | `t:Explorer.Chain.Transaction.t/0` | `block_number`     |
+  | `t:Explorer.Chain.InternalTransaction.t/0` | `from_address_hash`             | `t:Explorer.Chain.Transaction.t/0` | `block_number`     |
+  | `t:Explorer.Chain.InternalTransaction.t/0` | `to_address_hash`               | `t:Explorer.Chain.Transaction.t/0` | `block_number`     |
 
   Pending `t:Explorer.Chain.Transaction.t/0` `from_address_hash` and `to_address_hash` aren't returned because they
   don't have an associated block number.
 
-      iex> insert(:transaction)
-      iex> {:ok, balance_fields_list} = Explorer.Chain.stream_unfetched_balances(
-      ...>   [],
-      ...>   fn balance_fields, acc -> [balance_fields | acc] end
-      ...> )
-      iex> balance_fields_list
-      []
-
   When there are no addresses, the `reducer` is never called and the `initial` is returned in an `:ok` tuple.
-
-      iex> {:ok, pid} = Agent.start_link(fn -> 0 end)
-      iex> Explorer.Chain.stream_unfetched_balances([], fn address_fields, acc ->
-      ...>   Agent.update(pid, &(&1 + 1))
-      ...>   [address_fields | acc]
-      ...> end)
-      {:ok, []}
-      iex> Agent.get(pid, & &1)
-      0
 
   When an `t:Explorer.Chain.Address.t/0` `hash` is used multiple times, all unique `t:Explorer.Chain.Block.t/0` `number`
   will be returned.
@@ -952,27 +762,9 @@ defmodule Explorer.Chain do
       fn ->
         query =
           from(
-            address in Address,
-            left_join: internal_transaction in InternalTransaction,
-            on:
-              address.hash in [
-                internal_transaction.created_contract_address_hash,
-                internal_transaction.from_address_hash,
-                internal_transaction.to_address_hash
-              ],
-            left_join: log in Log,
-            on: log.address_hash == address.hash,
-            left_join: transaction in Transaction,
-            on:
-              transaction.hash in [internal_transaction.transaction_hash, log.transaction_hash] or
-                address.hash in [transaction.from_address_hash, transaction.to_address_hash],
-            left_join: block in Block,
-            on: block.hash == transaction.block_hash or block.miner_hash == address.hash,
-            left_join: balance in Balance,
-            on: balance.address_hash == address.hash and balance.block_number == block.number,
-            where: not is_nil(block.number) and is_nil(balance.address_hash) and is_nil(balance.block_number),
-            group_by: [address.hash, block.number],
-            select: %{address_hash: address.hash, block_number: block.number}
+            balance in Balance,
+            where: is_nil(balance.value_fetched_at),
+            select: %{address_hash: balance.address_hash, block_number: balance.block_number}
           )
 
         query

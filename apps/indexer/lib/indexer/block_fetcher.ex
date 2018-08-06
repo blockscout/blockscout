@@ -8,13 +8,7 @@ defmodule Indexer.BlockFetcher do
   import Indexer, only: [debug: 1]
 
   alias Explorer.Chain.{Block, Import}
-
-  alias Indexer.{
-    AddressExtraction,
-    Sequence,
-    TokenTransfers
-  }
-
+  alias Indexer.{AddressExtraction, Balances, Sequence, TokenTransfers}
   alias Indexer.BlockFetcher.Receipts
 
   # dialyzer thinks that Logger.debug functions always have no_local_return
@@ -43,6 +37,7 @@ defmodule Indexer.BlockFetcher do
                 address_hash_to_fetched_balance_block_number: address_hash_to_fetched_balance_block_number,
                 transaction_hash_to_block_number_option: transaction_hash_to_block_number,
                 addresses: Import.addresses_options(),
+                balances: Import.balances_options(),
                 blocks: Import.blocks_options(),
                 broadcast: boolean,
                 logs: Import.logs_options(),
@@ -143,10 +138,21 @@ defmodule Indexer.BlockFetcher do
       {:ok, _} = ok ->
         ok
 
+      {:error, changesets} = error when is_list(changesets) ->
+        %{range: range} = options
+
+        Logger.error(fn ->
+          "failed to validate blocks #{inspect(range)}: #{inspect(changesets)}. Retrying"
+        end)
+
+        :ok = Sequence.queue(sequence, range)
+
+        error
+
       {:error, step, failed_value, _changes_so_far} = error ->
         %{range: range} = options
 
-        debug(fn ->
+        Logger.error(fn ->
           "failed to insert blocks during #{step} #{inspect(range)}: #{inspect(failed_value)}. Retrying"
         end)
 
@@ -203,11 +209,20 @@ defmodule Indexer.BlockFetcher do
           transactions: transactions_with_receipts
         })
 
+      balances_params_set =
+        Balances.params_set(%{
+          blocks_params: blocks,
+          logs_params: logs,
+          token_transfers_params: token_transfers,
+          transactions_params: transactions_with_receipts
+        })
+
       insert(
         state,
         %{
           range: range,
           addresses: %{params: addresses},
+          balances: %{params: balances_params_set},
           blocks: %{params: blocks},
           logs: %{params: logs},
           receipts: %{params: receipts},

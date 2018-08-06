@@ -8,7 +8,9 @@ defmodule Explorer.Chain.Balance do
 
   alias Explorer.Chain.{Address, Block, Hash, Wei}
 
-  @required_fields ~w(address_hash block_number value)a
+  @optional_fields ~w(value value_fetched_at)a
+  @required_fields ~w(address_hash block_number)a
+  @allowed_fields @optional_fields ++ @required_fields
 
   @typedoc """
    * `address` - the `t:Explorer.Chain.Address.t/0` with `value` at end of `block_number`.
@@ -21,6 +23,7 @@ defmodule Explorer.Chain.Balance do
    * `value` - the value of `address` at the end of the `t:Explorer.Chain.Block.block_number/0` for the
        `t:Explorer.Chain.Block.t/0`.  When `block_number` is the greatest `t:Explorer.Chain.Block.block_number/0` for a
        given `address`, the `t:Explorer.Chain.Address.t/0` `fetched_balance` will match this value.
+   * `value_fetched_at` - when `value` was fetched.
   """
   @type t :: %__MODULE__{
           address: %Ecto.Association.NotLoaded{} | Address.t(),
@@ -28,13 +31,14 @@ defmodule Explorer.Chain.Balance do
           block_number: Block.block_number(),
           inserted_at: DateTime.t(),
           updated_at: DateTime.t(),
-          value: Wei.t()
+          value: Wei.t() | nil
         }
 
   @primary_key false
   schema "balances" do
     field(:block_number, :integer)
     field(:value, Wei)
+    field(:value_fetched_at, :utc_datetime)
 
     timestamps()
 
@@ -43,7 +47,7 @@ defmodule Explorer.Chain.Balance do
 
   def changeset(%__MODULE__{} = balance, params) do
     balance
-    |> cast(params, @required_fields)
+    |> cast(params, @allowed_fields)
     |> validate_required(@required_fields)
     |> foreign_key_constraint(:address_hash)
     |> unique_constraint(:block_number, name: :balances_address_hash_block_number_index)

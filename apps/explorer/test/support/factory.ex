@@ -33,12 +33,23 @@ defmodule Explorer.Factory do
     }
   end
 
-  def balance_factory do
+  def unfetched_balance_factory do
     %Balance{
       address_hash: address_hash(),
-      block_number: block_number(),
-      value: Enum.random(1..100_000)
+      block_number: block_number()
     }
+  end
+
+  def update_balance_value(%Balance{address_hash: address_hash, block_number: block_number}, value) do
+    Repo.update_all(
+      from(balance in Balance, where: balance.address_hash == ^address_hash and balance.block_number == ^block_number),
+      set: [value: value, value_fetched_at: DateTime.utc_now()]
+    )
+  end
+
+  def fetched_balance_factory do
+    unfetched_balance_factory()
+    |> struct!(value: Enum.random(1..100_000))
   end
 
   def contract_address_factory do
@@ -237,6 +248,17 @@ defmodule Explorer.Factory do
       # caller MUST supply `transaction` because it can't be built lazily to allow overrides without creating an extra
       # transaction
       type: :create,
+      value: sequence("internal_transaction_value", &Decimal.new(&1))
+    }
+  end
+
+  def internal_transaction_suicide_factory() do
+    %InternalTransaction{
+      from_address: build(:address),
+      trace_address: [],
+      # caller MUST supply `transaction` because it can't be built lazily to allow overrides without creating an extra
+      # transaction
+      type: :suicide,
       value: sequence("internal_transaction_value", &Decimal.new(&1))
     }
   end

@@ -113,6 +113,9 @@ defmodule Indexer.BlockFetcher.SupervisorTest do
 
               [%{method: "eth_getBalance"} | _] = requests, _options ->
                 {:ok, Enum.map(requests, fn %{id: id} -> %{id: id, jsonrpc: "2.0", result: "0x0"} end)}
+
+              [], _options ->
+                {:ok, []}
             end)
 
           EthereumJSONRPC.Geth ->

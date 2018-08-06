@@ -567,12 +567,28 @@ defmodule Explorer.Chain.Import do
                 value:
                   fragment(
                     """
-                    CASE WHEN EXCLUDED.updated_at > ? THEN EXCLUDED.value
-                         ELSE  ?
+                    CASE WHEN EXCLUDED.value IS NOT NULL AND (? IS NULL OR EXCLUDED.value_fetched_at > ?) THEN
+                           EXCLUDED.value
+                         ELSE
+                           ?
                     END
                     """,
-                    balance.updated_at,
+                    balance.value_fetched_at,
+                    balance.value_fetched_at,
                     balance.value
+                  ),
+                value_fetched_at:
+                  fragment(
+                    """
+                    CASE WHEN EXCLUDED.value IS NOT NULL AND (? IS NULL OR EXCLUDED.value_fetched_at > ?) THEN
+                           EXCLUDED.value_fetched_at
+                         ELSE
+                           ?
+                    END
+                    """,
+                    balance.value_fetched_at,
+                    balance.value_fetched_at,
+                    balance.value_fetched_at
                   )
               ]
             ]
