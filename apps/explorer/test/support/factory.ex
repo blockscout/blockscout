@@ -160,6 +160,26 @@ defmodule Explorer.Factory do
     |> Repo.preload(:block)
   end
 
+  def with_contract_creation(%Transaction{} = transaction, %Address{hash: contract_address_hash}) do
+    transaction
+    |> Transaction.changeset(%{
+      created_contract_address_hash: contract_address_hash
+    })
+    |> Repo.update!()
+  end
+
+  def with_contract_creation(%InternalTransaction{} = internal_transaction, %Address{
+        contract_code: contract_code,
+        hash: contract_address_hash
+      }) do
+    internal_transaction
+    |> InternalTransaction.changeset(%{
+      contract_code: contract_code,
+      created_contract_address_hash: contract_address_hash
+    })
+    |> Repo.update!()
+  end
+
   def data(sequence_name) do
     unpadded =
       sequence_name

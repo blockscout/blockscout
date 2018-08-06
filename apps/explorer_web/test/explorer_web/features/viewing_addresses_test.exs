@@ -50,8 +50,8 @@ defmodule ExplorerWeb.ViewingAddressesTest do
   describe "viewing contract creator" do
     test "see the contract creator and transaction links", %{session: session} do
       address = insert(:address)
-      transaction = insert(:transaction, from_address: address)
       contract = insert(:address, contract_code: Explorer.Factory.data("contract_code"))
+      transaction = insert(:transaction, from_address: address, created_contract_address: contract)
 
       internal_transaction =
         insert(
@@ -148,18 +148,22 @@ defmodule ExplorerWeb.ViewingAddressesTest do
     } do
       lincoln = addresses.lincoln
 
+      contract_address = insert(:contract_address)
+
       from_lincoln =
         :transaction
         |> insert(from_address: lincoln, to_address: nil)
+        |> with_contract_creation(contract_address)
         |> with_block(block)
 
       internal_transaction =
-        insert(
-          :internal_transaction_create,
+        :internal_transaction_create
+        |> insert(
           transaction: from_lincoln,
           from_address: lincoln,
           index: 0
         )
+        |> with_contract_creation(contract_address)
 
       session
       |> AddressPage.visit_page(addresses.lincoln)

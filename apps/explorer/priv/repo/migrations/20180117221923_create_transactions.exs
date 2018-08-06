@@ -44,6 +44,7 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
       add(:from_address_hash, references(:addresses, column: :hash, on_delete: :delete_all, type: :bytea), null: false)
       # `null` when it is a contract creation transaction
       add(:to_address_hash, references(:addresses, column: :hash, on_delete: :delete_all, type: :bytea), null: true)
+      add(:created_contract_address_hash, references(:addresses, column: :hash, type: :bytea), null: true)
     end
 
     create(
@@ -129,6 +130,7 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
     create(index(:transactions, :block_hash))
     create(index(:transactions, :from_address_hash))
     create(index(:transactions, :to_address_hash))
+    create(index(:transactions, :created_contract_address_hash))
 
     create(index(:transactions, :inserted_at))
     create(index(:transactions, :updated_at))

@@ -474,23 +474,6 @@ defmodule Explorer.ChainTest do
                )
     end
 
-    test "created_contract_address_hash populated when existing" do
-      transaction =
-        %Transaction{hash: hash_with_block} =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      %InternalTransaction{created_contract_address_hash: contract_hash} =
-        insert(:internal_transaction_create, transaction: transaction, index: 0)
-
-      assert {:ok, %Transaction{hash: ^hash_with_block, created_contract_address_hash: ^contract_hash}} =
-               Chain.hash_to_transaction(
-                 hash_with_block,
-                 necessity_by_association: %{block: :required}
-               )
-    end
-
     test "transaction with multiple create internal transactions is returned" do
       transaction =
         %Transaction{hash: hash_with_block} =
@@ -1040,18 +1023,6 @@ defmodule Explorer.ChainTest do
     test "it excludes pending transactions" do
       insert(:transaction)
       assert [] == Explorer.Chain.recent_collated_transactions()
-    end
-
-    test "it has contract_creation_address_hash added" do
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      %InternalTransaction{created_contract_address_hash: hash} =
-        insert(:internal_transaction_create, transaction: transaction, index: 0)
-
-      assert [%Transaction{created_contract_address_hash: ^hash}] = Explorer.Chain.recent_collated_transactions()
     end
   end
 

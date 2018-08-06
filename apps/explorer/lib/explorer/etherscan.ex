@@ -45,20 +45,21 @@ defmodule Explorer.Etherscan do
   end
 
   @transaction_fields [
-    :block_number,
-    :hash,
-    :nonce,
     :block_hash,
-    :index,
+    :block_number,
+    :created_contract_address_hash,
+    :cumulative_gas_used,
     :from_address_hash,
-    :to_address_hash,
-    :value,
     :gas,
     :gas_price,
-    :status,
+    :gas_used,
+    :hash,
+    :index,
     :input,
-    :cumulative_gas_used,
-    :gas_used
+    :nonce,
+    :status,
+    :to_address_hash,
+    :value
   ]
 
   defp list_transactions(address_hash, max_block_number, options) do
@@ -66,17 +67,15 @@ defmodule Explorer.Etherscan do
       from(
         t in Transaction,
         inner_join: b in assoc(t, :block),
-        left_join: it in assoc(t, :internal_transactions),
         where: t.to_address_hash == ^address_hash,
         or_where: t.from_address_hash == ^address_hash,
-        or_where: it.transaction_hash == t.hash and it.type == ^"create",
+        or_where: t.created_contract_address_hash == ^address_hash,
         order_by: [{^options.order_by_direction, t.block_number}],
         limit: ^options.page_size,
         offset: ^offset(options),
         select:
           merge(map(t, ^@transaction_fields), %{
             block_timestamp: b.timestamp,
-            created_contract_address_hash: it.created_contract_address_hash,
             confirmations: fragment("? - ?", ^max_block_number, t.block_number)
           })
       )
