@@ -5,6 +5,7 @@ import 'numeral/locales'
 import socket from '../socket'
 import router from '../router'
 import { batchChannel, initRedux } from '../utils'
+import { updateAllAges } from '../lib/from_now'
 
 const BATCH_THRESHOLD = 10
 
@@ -108,6 +109,7 @@ router.when('/addresses/:addressHash').then((params) => initRedux(reducer, {
     }
     if (oldState.newTransactions !== state.newTransactions && $transactionsList.length) {
       $transactionsList.prepend(state.newTransactions.slice(oldState.newTransactions.length).reverse().join(''))
+      updateAllAges()
     }
   }
 }))

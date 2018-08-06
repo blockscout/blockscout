@@ -4,7 +4,7 @@ defmodule ExplorerWeb.BlockChannel do
   """
   use ExplorerWeb, :channel
 
-  alias ExplorerWeb.ChainView
+  alias ExplorerWeb.{BlockView, ChainView}
   alias Phoenix.View
 
   intercept(["new_block"])
@@ -16,6 +16,14 @@ defmodule ExplorerWeb.BlockChannel do
   def handle_out("new_block", %{block: block}, socket) do
     Gettext.put_locale(ExplorerWeb.Gettext, socket.assigns.locale)
 
+    rendered_block =
+      View.render_to_string(
+        BlockView,
+        "_tile.html",
+        locale: socket.assigns.locale,
+        block: block
+      )
+
     rendered_homepage_block =
       View.render_to_string(
         ChainView,
@@ -25,7 +33,9 @@ defmodule ExplorerWeb.BlockChannel do
       )
 
     push(socket, "new_block", %{
-      homepage_block_html: rendered_homepage_block
+      homepage_block_html: rendered_homepage_block,
+      block_html: rendered_block,
+      blockNumber: block.number
     })
 
     {:noreply, socket}

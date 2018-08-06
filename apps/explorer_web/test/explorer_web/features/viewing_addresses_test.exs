@@ -250,6 +250,24 @@ defmodule ExplorerWeb.ViewingAddressesTest do
     |> assert_has(AddressPage.transaction(transaction2))
   end
 
+  test "count of non-loaded transactions on live update when batch overflow", %{addresses: addresses, session: session} do
+    transaction_hashes =
+      30
+      |> insert_list(:transaction, from_address: addresses.lincoln)
+      |> with_block()
+      |> Repo.preload([:block, :from_address, :to_address])
+      |> Enum.map(& &1.hash)
+
+    session
+    |> AddressPage.visit_page(addresses.lincoln)
+    |> assert_has(AddressPage.balance())
+
+    Notifier.handle_event({:chain_event, :transactions, transaction_hashes})
+
+    session
+    |> assert_has(AddressPage.non_loaded_transaction_count("30"))
+  end
+
   test "transaction count live updates", %{addresses: addresses, session: session} do
     session
     |> AddressPage.visit_page(addresses.lincoln)

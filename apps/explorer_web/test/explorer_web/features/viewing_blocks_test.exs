@@ -93,4 +93,13 @@ defmodule ExplorerWeb.ViewingBlocksTest do
     |> BlockListPage.visit_page()
     |> assert_has(BlockListPage.block(block))
   end
+
+  test "viewing new blocks via live update on list page", %{session: session} do
+    BlockListPage.visit_page(session)
+
+    block = insert(:block, number: 42)
+    Notifier.handle_event({:chain_event, :blocks, [block]})
+
+    assert_has(session, BlockListPage.block(block))
+  end
 end
