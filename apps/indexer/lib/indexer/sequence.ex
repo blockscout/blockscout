@@ -212,7 +212,7 @@ defmodule Indexer.Sequence do
     {:ok, reducer.(range, initial)}
   end
 
-  defp reduce_chunked_range(first..last = _range, _, step, initial, reducer) do
+  defp reduce_chunked_range(first..last, _, step, initial, reducer) do
     {sign, comparator} =
       if step > 0 do
         {1, &Kernel.>=/2}
