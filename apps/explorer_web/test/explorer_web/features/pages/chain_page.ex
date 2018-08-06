@@ -7,6 +7,14 @@ defmodule ExplorerWeb.ChainPage do
 
   alias Explorer.Chain.{Block, InternalTransaction, Transaction}
 
+  def address_count(count) do
+    css("[data-selector='address-count']", text: Integer.to_string(count))
+  end
+
+  def average_time(average_time) do
+    css("[data-selector='average-block-time']", text: Integer.to_string(average_time))
+  end
+
   def block(%Block{number: number}) do
     css("[data-selector='chain-block'][data-block-number='#{number}']")
   end

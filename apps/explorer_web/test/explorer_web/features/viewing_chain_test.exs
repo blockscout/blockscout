@@ -3,6 +3,7 @@ defmodule ExplorerWeb.ViewingChainTest do
 
   use ExplorerWeb.FeatureCase, async: true
 
+  alias Explorer.Chain
   alias ExplorerWeb.{AddressPage, BlockPage, ChainPage, Notifier, TransactionPage}
 
   setup do
@@ -24,6 +25,38 @@ defmodule ExplorerWeb.ViewingChainTest do
        last_shown_block: oldest_block,
        last_shown_transaction: oldest_transaction
      }}
+  end
+
+  describe "statistics" do
+    test "average block time live updates", %{session: session} do
+      time = DateTime.utc_now()
+      for x <- 100..0 do
+        insert(:block, timestamp: Timex.shift(time, seconds: -5 * x - 100_000), number: x + 100)
+      end
+
+      session
+      |> ChainPage.visit_page()
+      |> assert_has(ChainPage.average_time(5))
+
+      for x <- 100..0 do
+        insert(:block, timestamp: Timex.shift(time, seconds: -10 * x), number: x + 300)
+      end
+
+      assert_has(session, ChainPage.average_time(10))
+    end
+
+    test "address count live updates", %{session: session} do
+      count = Chain.address_estimated_count()
+
+      session
+      |> ChainPage.visit_page()
+      |> assert_has(ChainPage.address_count(count))
+
+      address = insert(:address)
+      Notifier.handle_event({:chain_event, :addresses, [address]})
+
+      assert_has(session, ChainPage.address_count(count + 1))
+    end
   end
 
   describe "viewing addresses" do

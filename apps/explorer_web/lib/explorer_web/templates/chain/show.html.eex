@@ -27,8 +27,8 @@
           <span class="dashboard-banner-network-stats-label">
             <%= gettext "Average block time" %>
           </span>
-          <span class="dashboard-banner-network-stats-value">
-            <%= @chain.average_time |> Timex.format_duration(:humanized) %>
+          <span class="dashboard-banner-network-stats-value" data-selector="average-block-time">
+            <%= Timex.format_duration(@chain.average_time, :humanized) %>
           </span>
         </div>
         <div class="dashboard-banner-network-stats-item">
@@ -43,8 +43,8 @@
           <span class="dashboard-banner-network-stats-label">
             <%= gettext "Wallet addresses" %>
           </span>
-          <span class="dashboard-banner-network-stats-value">
-            <%= @address_estimated_count |> Cldr.Number.to_string!(format: "#,###") %>
+          <span class="dashboard-banner-network-stats-value" data-selector="address-count">
+            <%= Cldr.Number.to_string!(@address_estimated_count, format: "#,###") %>
           </span>
         </div>
       </div>
