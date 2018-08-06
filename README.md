@@ -23,7 +23,7 @@ Development is ongoing. Please see the [project timeline](https://github.com/poa
 
 - [x] **Smart contract interaction**: Users can read and verify Solidity smart contracts and access pre-existing contracts to fast-track development. Support for Vyper, LLL, and Web Assembly contracts is in progress.
 
-- [x] **ERC20 token support**: Version 1 supports ERC20 and ERC721 tokens. Future releases will support additional token types including ERC223 and ERC1155. 
+- [x] **Token support**: Version 1 supports ERC20 and ERC721 tokens. Future releases will support additional token types including ERC223 and ERC1155. 
 
 - [x] **User customization**: Users can easily deploy on a network and customize the Bootstrap interface.
 
