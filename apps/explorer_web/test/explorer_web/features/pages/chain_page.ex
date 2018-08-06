@@ -11,8 +11,8 @@ defmodule ExplorerWeb.ChainPage do
     css("[data-selector='address-count']", text: Integer.to_string(count))
   end
 
-  def average_time(average_time) do
-    css("[data-selector='average-block-time']", text: Integer.to_string(average_time))
+  def average_block_time(average_block_time) do
+    css("[data-selector='average-block-time']", text: average_block_time)
   end
 
   def block(%Block{number: number}) do

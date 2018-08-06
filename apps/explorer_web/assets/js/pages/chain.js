@@ -10,6 +10,7 @@ import { batchChannel, initRedux } from '../utils'
 const BATCH_THRESHOLD = 10
 
 export const initialState = {
+  averageBlockTime: null,
   batchCountAccumulator: 0,
   newBlock: null,
   newTransactions: [],
@@ -25,6 +26,7 @@ export function reducer (state = initialState, action) {
     }
     case 'RECEIVED_NEW_BLOCK': {
       return Object.assign({}, state, {
+        averageBlockTime: action.msg.averageBlockTime,
         newBlock: action.msg.chainBlockHtml
       })
     }
@@ -67,12 +69,16 @@ router.when('', { exactPathMatch: true }).then(({ locale }) => initRedux(reducer
     )
   },
   render (state, oldState) {
+    const $averageBlockTime = $('[data-selector="average-block-time"]')
     const $blockList = $('[data-selector="chain-block-list"]')
     const $channelBatching = $('[data-selector="channel-batching-message"]')
     const $channelBatchingCount = $('[data-selector="channel-batching-count"]')
     const $transactionsList = $('[data-selector="transactions-list"]')
     const $transactionCount = $('[data-selector="transaction-count"]')
 
+    if (oldState.averageBlockTime !== state.averageBlockTime) {
+       $averageBlockTime.empty().append(state.averageBlockTime)
+    }
     if (oldState.newBlock !== state.newBlock) {
       $blockList.children().last().remove()
       $blockList.prepend(state.newBlock)

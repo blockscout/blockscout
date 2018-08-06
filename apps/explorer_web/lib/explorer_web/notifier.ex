@@ -40,7 +40,11 @@ defmodule ExplorerWeb.Notifier do
 
   defp broadcast_block(block) do
     preloaded_block = Repo.preload(block, [:miner, :transactions])
-    Endpoint.broadcast("blocks:new_block", "new_block", %{block: preloaded_block})
+
+    Endpoint.broadcast("blocks:new_block", "new_block", %{
+      block: preloaded_block,
+      average_block_time: Chain.average_block_time()
+      })
   end
 
   defp broadcast_transaction(transaction) do

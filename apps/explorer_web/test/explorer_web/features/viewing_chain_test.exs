@@ -32,18 +32,23 @@ defmodule ExplorerWeb.ViewingChainTest do
     test "average block time live updates", %{session: session} do
       time = DateTime.utc_now()
       for x <- 100..0 do
-        insert(:block, timestamp: Timex.shift(time, seconds: -5 * x - 100_000), number: x + 100)
+        insert(:block, timestamp: Timex.shift(time, seconds: -5 * x), number: x + 500)
       end
 
       session
       |> ChainPage.visit_page()
-      |> assert_has(ChainPage.average_time(5))
+      |> assert_has(ChainPage.average_block_time("5 seconds"))
 
-      for x <- 100..0 do
-        insert(:block, timestamp: Timex.shift(time, seconds: -10 * x), number: x + 300)
-      end
+      block =
+        100..0
+        |> Enum.map(fn(index) ->
+          insert(:block, timestamp: Timex.shift(time, seconds: -10 * index), number: index + 800)
+        end)
+        |> hd()
 
-      assert_has(session, ChainPage.average_time(10))
+      Notifier.handle_event({:chain_event, :blocks, [block]})
+
+      assert_has(session, ChainPage.average_block_time("10 seconds"))
     end
 
     test "address count live updates", %{session: session} do
