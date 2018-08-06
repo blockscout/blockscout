@@ -4,7 +4,7 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
   use ExplorerWeb.FeatureCase, async: true
 
   alias Explorer.Chain.Wei
-  alias ExplorerWeb.{AddressPage, HomePage, Notifier, TransactionListPage, TransactionLogsPage, TransactionPage}
+  alias ExplorerWeb.{AddressPage, ChainPage, Notifier, TransactionListPage, TransactionLogsPage, TransactionPage}
 
   setup do
     block =
@@ -67,25 +67,25 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
     transaction = insert(:transaction, input: "0x736f636b73")
 
     session
-    |> HomePage.visit_page()
-    |> HomePage.search(to_string(transaction.hash))
+    |> ChainPage.visit_page()
+    |> ChainPage.search(to_string(transaction.hash))
     |> assert_has(TransactionPage.detail_hash(transaction))
   end
 
   describe "viewing transaction lists" do
-    test "transactions on the homepage", %{session: session} do
+    test "transactions on the chain", %{session: session} do
       session
-      |> HomePage.visit_page()
-      |> assert_has(HomePage.transactions(count: 5))
+      |> ChainPage.visit_page()
+      |> assert_has(ChainPage.transactions(count: 5))
     end
 
-    test "viewing new transactions via live update on the homepage", %{
+    test "viewing new transactions via live update on the chain", %{
       session: session,
       last_shown_transaction: last_shown_transaction
     } do
       session
-      |> HomePage.visit_page()
-      |> assert_has(HomePage.transactions(count: 5))
+      |> ChainPage.visit_page()
+      |> assert_has(ChainPage.transactions(count: 5))
 
       transaction =
         :transaction
@@ -95,12 +95,12 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
       Notifier.handle_event({:chain_event, :transactions, [transaction.hash]})
 
       session
-      |> assert_has(HomePage.transactions(count: 5))
-      |> assert_has(HomePage.transaction(transaction))
-      |> refute_has(HomePage.transaction(last_shown_transaction))
+      |> assert_has(ChainPage.transactions(count: 5))
+      |> assert_has(ChainPage.transaction(transaction))
+      |> refute_has(ChainPage.transaction(last_shown_transaction))
     end
 
-    test "count of non-loaded transactions on homepage live update when batch overflow", %{session: session} do
+    test "count of non-loaded transactions on chain live update when batch overflow", %{session: session} do
       transaction_hashes =
         30
         |> insert_list(:transaction)
@@ -108,15 +108,15 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
         |> Enum.map(& &1.hash)
 
       session
-      |> HomePage.visit_page()
-      |> assert_has(HomePage.transactions(count: 5))
+      |> ChainPage.visit_page()
+      |> assert_has(ChainPage.transactions(count: 5))
 
       Notifier.handle_event({:chain_event, :transactions, transaction_hashes})
 
       assert_has(session, AddressPage.non_loaded_transaction_count("30"))
     end
 
-    test "contract creation is shown for to_address on home page", %{session: session} do
+    test "contract creation is shown for to_address on chain page", %{session: session} do
       contract_address = insert(:contract_address)
 
       transaction =
@@ -131,8 +131,8 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
         |> with_contract_creation(contract_address)
 
       session
-      |> HomePage.visit_page()
-      |> assert_has(HomePage.contract_creation(internal_transaction))
+      |> ChainPage.visit_page()
+      |> assert_has(ChainPage.contract_creation(internal_transaction))
     end
 
     test "viewing the default transactions tab", %{

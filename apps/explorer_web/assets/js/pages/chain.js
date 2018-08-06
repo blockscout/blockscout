@@ -25,7 +25,7 @@ export function reducer (state = initialState, action) {
     }
     case 'RECEIVED_NEW_BLOCK': {
       return Object.assign({}, state, {
-        newBlock: action.msg.homepageBlockHtml
+        newBlock: action.msg.chainBlockHtml
       })
     }
     case 'RECEIVED_NEW_TRANSACTION_BATCH': {

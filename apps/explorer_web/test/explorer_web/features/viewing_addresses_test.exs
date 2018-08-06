@@ -3,7 +3,7 @@ defmodule ExplorerWeb.ViewingAddressesTest do
 
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Wei}
-  alias ExplorerWeb.{AddressPage, HomePage, Notifier}
+  alias ExplorerWeb.{AddressPage, ChainPage, Notifier}
 
   setup do
     block = insert(:block)
@@ -34,8 +34,8 @@ defmodule ExplorerWeb.ViewingAddressesTest do
     address = insert(:address)
 
     session
-    |> HomePage.visit_page()
-    |> HomePage.search(to_string(address.hash))
+    |> ChainPage.visit_page()
+    |> ChainPage.search(to_string(address.hash))
     |> assert_has(AddressPage.detail_hash(address))
   end
 

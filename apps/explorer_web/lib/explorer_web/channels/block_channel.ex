@@ -24,7 +24,7 @@ defmodule ExplorerWeb.BlockChannel do
         block: block
       )
 
-    rendered_homepage_block =
+    rendered_chain_block =
       View.render_to_string(
         ChainView,
         "_block.html",
@@ -33,7 +33,7 @@ defmodule ExplorerWeb.BlockChannel do
       )
 
     push(socket, "new_block", %{
-      homepage_block_html: rendered_homepage_block,
+      chain_block_html: rendered_chain_block,
       block_html: rendered_block,
       blockNumber: block.number
     })
