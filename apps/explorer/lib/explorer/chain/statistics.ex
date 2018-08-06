@@ -19,21 +19,10 @@ defmodule Explorer.Chain.Statistics do
     ) t
   """
 
-  @transaction_velocity_query """
-    SELECT count(transactions.inserted_at)
-      FROM transactions
-      WHERE transactions.inserted_at > NOW() - interval '1 minute'
-  """
-
   @typedoc """
   The number of `t:Explorer.Chain.Block.t/0` mined/validated per minute.
   """
   @type blocks_per_minute :: non_neg_integer()
-
-  @typedoc """
-  The number of `t:Explorer.Chain.Transaction.t/0` mined/validated per minute.
-  """
-  @type transactions_per_minute :: non_neg_integer()
 
   @typedoc """
    * `average_time` - the average time it took to mine/validate the last <= 100 `t:Explorer.Chain.Block.t/0`
@@ -51,7 +40,6 @@ defmodule Explorer.Chain.Statistics do
           blocks: [Block.t()],
           number: Block.block_number(),
           timestamp: :calendar.datetime(),
-          transaction_velocity: transactions_per_minute(),
           transactions: [Transaction.t()]
         }
 
@@ -59,7 +47,6 @@ defmodule Explorer.Chain.Statistics do
             blocks: [],
             number: -1,
             timestamp: nil,
-            transaction_velocity: 0,
             transactions: []
 
   def fetch do
@@ -84,7 +71,6 @@ defmodule Explorer.Chain.Statistics do
     %__MODULE__{
       average_time: query_duration(@average_time_query),
       blocks: Repo.all(blocks),
-      transaction_velocity: query_value(@transaction_velocity_query),
       transactions: transactions
     }
     |> put_max_numbered_block()
@@ -102,11 +88,6 @@ defmodule Explorer.Chain.Statistics do
       {:error, :not_found} ->
         state
     end
-  end
-
-  defp query_value(query, args \\ []) do
-    results = SQL.query!(Repo, query, args)
-    results.rows |> List.first() |> List.first()
   end
 
   defp query_duration(query) do
