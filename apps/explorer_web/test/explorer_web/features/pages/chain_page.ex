@@ -5,7 +5,7 @@ defmodule ExplorerWeb.ChainPage do
 
   import Wallaby.Query, only: [css: 1, css: 2]
 
-  alias Explorer.Chain.{Block, InternalTransaction, Transaction}
+  alias Explorer.Chain.{Block, Transaction}
 
   def address_count(count) do
     css("[data-selector='address-count']", text: Integer.to_string(count))
@@ -23,7 +23,7 @@ defmodule ExplorerWeb.ChainPage do
     css("[data-selector='chain-block']", count: count)
   end
 
-  def contract_creation(%InternalTransaction{created_contract_address_hash: hash}) do
+  def contract_creation(%Transaction{created_contract_address_hash: hash}) do
     css("[data-test='contract-creation'] [data-address-hash='#{hash}']")
   end
 

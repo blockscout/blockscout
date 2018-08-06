@@ -28,7 +28,7 @@
             <%= gettext "Average block time" %>
           </span>
           <span class="dashboard-banner-network-stats-value" data-selector="average-block-time">
-            <%= Timex.format_duration(@chain.average_time, :humanized) %>
+            <%= Timex.format_duration(@average_block_time, :humanized) %>
           </span>
         </div>
         <div class="dashboard-banner-network-stats-item">
@@ -57,7 +57,7 @@
       <%= link(gettext("View All Blocks →"), to: block_path(ExplorerWeb.Endpoint, :index, Gettext.get_locale), class: "button button--secondary button--xsmall float-right") %>
       <h2 class="card-title"><%= gettext "Blocks" %></h2>
       <div class="row" data-selector="chain-block-list">
-        <%= for block <- @chain.blocks do %>
+        <%= for block <- @blocks do %>
           <%= render ExplorerWeb.ChainView, "_block.html", locale: @locale, block: block %>
         <% end %>
       </div>
@@ -74,7 +74,7 @@
       <%= link(gettext("View All Transactions →"), to: transaction_path(ExplorerWeb.Endpoint, :index, Gettext.get_locale), class: "button button--secondary button--xsmall float-right") %>
       <h2 class="card-title"><%= gettext "Transactions" %></h2>
       <span data-selector="transactions-list">
-        <%= for transaction <- @chain.transactions do %>
+        <%= for transaction <- @transactions do %>
           <%= render ExplorerWeb.TransactionView, "_tile.html", locale: @locale, transaction: transaction %>
         <% end %>
       </span>

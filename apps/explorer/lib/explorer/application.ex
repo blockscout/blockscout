@@ -24,7 +24,6 @@ defmodule Explorer.Application do
 
   defp configurable_children do
     [
-      configure(Explorer.Chain.Statistics.Server),
       configure(Explorer.ExchangeRates),
       configure(Explorer.Market.History.Cataloger)
     ]

@@ -1,30 +1,48 @@
 defmodule ExplorerWeb.ChainController do
   use ExplorerWeb, :controller
 
-  alias Explorer.Chain.{Address, Block, Statistics, Transaction}
+  alias Explorer.{PagingOptions, Repo}
+  alias Explorer.Chain
+  alias Explorer.Chain.{Address, Block, Transaction}
   alias Explorer.ExchangeRates.Token
   alias Explorer.Market
-  alias ExplorerWeb.Chain
 
   def show(conn, _params) do
-    transaction_estimated_count = Explorer.Chain.transaction_estimated_count()
-    address_estimated_count = Explorer.Chain.address_estimated_count()
+    transaction_estimated_count = Chain.transaction_estimated_count()
+    address_estimated_count = Chain.address_estimated_count()
+
+    transactions =
+      Chain.recent_collated_transactions(
+        necessity_by_association: %{
+          block: :required,
+          from_address: :required,
+          to_address: :optional
+        },
+        paging_options: %PagingOptions{page_size: 5}
+      )
+
+    blocks =
+      [paging_options: %PagingOptions{page_size: 4}]
+      |> Chain.list_blocks()
+      |> Repo.preload([:miner, :transactions])
 
     render(
       conn,
       "show.html",
       address_estimated_count: address_estimated_count,
-      chain: Statistics.fetch(),
+      average_block_time: Chain.average_block_time(),
+      blocks: blocks,
       exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
       market_history_data: Market.fetch_recent_history(30),
-      transaction_estimated_count: transaction_estimated_count
+      transaction_estimated_count: transaction_estimated_count,
+      transactions: transactions
     )
   end
 
   def search(conn, %{"q" => query}) do
     query
     |> String.trim()
-    |> Chain.from_param()
+    |> ExplorerWeb.Chain.from_param()
     |> case do
       {:ok, item} ->
         redirect_search_results(conn, item)

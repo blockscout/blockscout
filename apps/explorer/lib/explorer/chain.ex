@@ -188,6 +188,31 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
+
+  @doc """
+  The average time it took to mine/validate the last <= 100 `t:Explorer.Chain.Block.t/0`
+  """
+  @spec average_block_time() :: non_neg_integer()
+  def average_block_time() do
+    {:ok, %Postgrex.Result{rows: [[rows]]}} =
+      SQL.query(
+        Repo,
+        """
+          SELECT coalesce(avg(difference), interval '0 seconds')
+          FROM (
+            SELECT b.timestamp - lag(b.timestamp) over (order by b.timestamp) as difference
+            FROM (SELECT * FROM blocks ORDER BY number DESC LIMIT 101) b
+            LIMIT 100 OFFSET 1
+          ) t
+        """,
+        []
+      )
+
+    {:ok, value} = Timex.Ecto.Time.load(rows)
+
+    value
+  end
+
   @doc """
   The `t:Explorer.Chain.Address.t/0` `balance` in `unit`.
   """

@@ -7,9 +7,9 @@ defmodule ExplorerWeb.ViewingChainTest do
   alias ExplorerWeb.{AddressPage, BlockPage, ChainPage, Notifier, TransactionPage}
 
   setup do
-    [oldest_block | _] = Enum.map(1..4, &insert(:block, number: &1))
+    [oldest_block | _] = Enum.map(401..404, &insert(:block, number: &1))
 
-    block = insert(:block, number: 5)
+    block = insert(:block, number: 405)
 
     [oldest_transaction | _] =
       4
@@ -22,6 +22,7 @@ defmodule ExplorerWeb.ViewingChainTest do
 
     {:ok,
      %{
+       block: block,
        last_shown_block: oldest_block,
        last_shown_transaction: oldest_transaction
      }}
@@ -120,6 +121,7 @@ defmodule ExplorerWeb.ViewingChainTest do
 
     test "viewing new transactions via live update", %{
       session: session,
+      block: block,
       last_shown_transaction: last_shown_transaction
     } do
       session
@@ -129,7 +131,7 @@ defmodule ExplorerWeb.ViewingChainTest do
       transaction =
         :transaction
         |> insert()
-        |> with_block()
+        |> with_block(block)
 
       Notifier.handle_event({:chain_event, :transactions, [transaction.hash]})
 
@@ -139,11 +141,11 @@ defmodule ExplorerWeb.ViewingChainTest do
       |> refute_has(ChainPage.transaction(last_shown_transaction))
     end
 
-    test "count of non-loaded transactions live update when batch overflow", %{session: session} do
+    test "count of non-loaded transactions live update when batch overflow", %{session: session, block: block} do
       transaction_hashes =
         30
         |> insert_list(:transaction)
-        |> with_block()
+        |> with_block(block)
         |> Enum.map(& &1.hash)
 
       session
@@ -155,23 +157,23 @@ defmodule ExplorerWeb.ViewingChainTest do
       assert_has(session, ChainPage.non_loaded_transaction_count("30"))
     end
 
-    test "contract creation is shown for to_address", %{session: session} do
+    test "contract creation is shown for to_address", %{session: session, block: block} do
       contract_address = insert(:contract_address)
 
       transaction =
         :transaction
         |> insert(to_address: nil)
         |> with_contract_creation(contract_address)
-        |> with_block()
+        |> with_block(block)
 
-      internal_transaction =
-        :internal_transaction_create
-        |> insert(transaction: transaction, index: 0)
-        |> with_contract_creation(contract_address)
+      # internal_transaction =
+      #   :internal_transaction_create
+      #   |> insert(transaction: transaction, index: 0)
+      #   |> with_contract_creation(contract_address)
 
       session
       |> ChainPage.visit_page()
-      |> assert_has(ChainPage.contract_creation(internal_transaction))
+      |> assert_has(ChainPage.contract_creation(transaction))
     end
   end
 end
