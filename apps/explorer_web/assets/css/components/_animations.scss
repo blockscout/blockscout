@@ -3,7 +3,7 @@
   100% {opacity: 1;}
 }
 
-@keyframes fade-up-blocks-homepage {
+@keyframes fade-up-blocks-chain {
   0% {
     flex-basis: 0%;
     width: 0%;
@@ -45,10 +45,10 @@
   animation: fade-in 1s ease-out forwards;
 }
 
-.fade-up-blocks-homepage {
+.fade-up-blocks-chain {
   will-change: transform, opacity, width;
   max-height: 98px;
-  animation: fade-up-blocks-homepage 0.6s cubic-bezier(0.455, 0.03, 0.515, 0.955);
+  animation: fade-up-blocks-chain 0.6s cubic-bezier(0.455, 0.03, 0.515, 0.955);
 }
 
 .fade-up {

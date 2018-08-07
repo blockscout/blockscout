@@ -13,7 +13,7 @@ defmodule ExplorerWeb.BlockChannel do
     {:ok, %{}, socket}
   end
 
-  def handle_out("new_block", %{block: block}, socket) do
+  def handle_out("new_block", %{block: block, average_block_time: average_block_time}, socket) do
     Gettext.put_locale(ExplorerWeb.Gettext, socket.assigns.locale)
 
     rendered_block =
@@ -24,7 +24,7 @@ defmodule ExplorerWeb.BlockChannel do
         block: block
       )
 
-    rendered_homepage_block =
+    rendered_chain_block =
       View.render_to_string(
         ChainView,
         "_block.html",
@@ -33,7 +33,8 @@ defmodule ExplorerWeb.BlockChannel do
       )
 
     push(socket, "new_block", %{
-      homepage_block_html: rendered_homepage_block,
+      average_block_time: Timex.format_duration(average_block_time, :humanized),
+      chain_block_html: rendered_chain_block,
       block_html: rendered_block,
       blockNumber: block.number
     })

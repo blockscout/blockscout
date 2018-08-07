@@ -1,11 +1,19 @@
-defmodule ExplorerWeb.HomePage do
+defmodule ExplorerWeb.ChainPage do
   @moduledoc false
 
   use Wallaby.DSL
 
   import Wallaby.Query, only: [css: 1, css: 2]
 
-  alias Explorer.Chain.{Block, InternalTransaction, Transaction}
+  alias Explorer.Chain.{Block, Transaction}
+
+  def address_count(count) do
+    css("[data-selector='address-count']", text: Integer.to_string(count))
+  end
+
+  def average_block_time(average_block_time) do
+    css("[data-selector='average-block-time']", text: average_block_time)
+  end
 
   def block(%Block{number: number}) do
     css("[data-selector='chain-block'][data-block-number='#{number}']")
@@ -15,8 +23,12 @@ defmodule ExplorerWeb.HomePage do
     css("[data-selector='chain-block']", count: count)
   end
 
-  def contract_creation(%InternalTransaction{created_contract_address_hash: hash}) do
+  def contract_creation(%Transaction{created_contract_address_hash: hash}) do
     css("[data-test='contract-creation'] [data-address-hash='#{hash}']")
+  end
+
+  def non_loaded_transaction_count(count) do
+    css("[data-selector='channel-batching-count']", text: count)
   end
 
   def search(session, text) do

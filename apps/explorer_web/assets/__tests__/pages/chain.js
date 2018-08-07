@@ -7,7 +7,7 @@ test('RECEIVED_NEW_BLOCK', () => {
   const action = {
     type: 'RECEIVED_NEW_BLOCK',
     msg: {
-      homepageBlockHtml: 'new block'
+      chainBlockHtml: 'new block'
     }
   }
   const output = reducer(state, action)

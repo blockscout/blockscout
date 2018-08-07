@@ -22,7 +22,7 @@ defmodule ExplorerWeb.ChainControllerTest do
       insert(:block, %{number: 23})
       conn = get(conn, "/en")
 
-      assert(List.first(conn.assigns.chain.blocks).number == 23)
+      assert(List.first(conn.assigns.blocks).number == 23)
     end
 
     test "excludes all but the most recent five blocks", %{conn: conn} do
@@ -30,7 +30,7 @@ defmodule ExplorerWeb.ChainControllerTest do
       insert_list(5, :block)
       conn = get(conn, "/en")
 
-      refute(Enum.member?(conn.assigns.chain.blocks, old_block))
+      refute(Enum.member?(conn.assigns.blocks, old_block))
     end
 
     test "only returns transactions with an associated block", %{conn: conn} do
@@ -43,7 +43,7 @@ defmodule ExplorerWeb.ChainControllerTest do
 
       conn = get(conn, "/en")
 
-      transaction_hashes = Enum.map(conn.assigns.chain.transactions, fn transaction -> transaction.hash end)
+      transaction_hashes = Enum.map(conn.assigns.transactions, fn transaction -> transaction.hash end)
 
       assert(Enum.member?(transaction_hashes, associated.hash))
       refute(Enum.member?(transaction_hashes, unassociated.hash))
@@ -57,7 +57,7 @@ defmodule ExplorerWeb.ChainControllerTest do
 
       conn = get(conn, "/en")
 
-      assert(List.first(conn.assigns.chain.transactions).hash == transaction.hash)
+      assert(List.first(conn.assigns.transactions).hash == transaction.hash)
     end
 
     test "returns market history data", %{conn: conn} do

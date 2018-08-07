@@ -14,8 +14,6 @@ config :explorer,
 
 config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: 2_000
 
-config :explorer, Explorer.Chain.Statistics.Server, enabled: true
-
 config :explorer, Explorer.ExchangeRates, enabled: true
 
 config :explorer, Explorer.Market.History.Cataloger, enabled: true
