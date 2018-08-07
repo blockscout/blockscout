@@ -92,6 +92,20 @@ defmodule Indexer.AddressExtraction do
         %{from: :block_number, to: :fetched_balance_block_number},
         %{from: :address_hash, to: :hash}
       ]
+    ],
+    token_transfers: [
+      [
+        %{from: :block_number, to: :fetched_balance_block_number},
+        %{from: :from_address_hash, to: :hash}
+      ],
+      [
+        %{from: :block_number, to: :fetched_balance_block_number},
+        %{from: :to_address_hash, to: :hash}
+      ],
+      [
+        %{from: :block_number, to: :fetched_balance_block_number},
+        %{from: :token_contract_address_hash, to: :hash}
+      ]
     ]
   }
 
@@ -338,6 +352,14 @@ defmodule Indexer.AddressExtraction do
           optional(:logs) => [
             %{
               required(:address_hash) => String.t(),
+              required(:block_number) => non_neg_integer()
+            }
+          ],
+          optional(:token_transfers) => [
+            %{
+              required(:from_address_hash) => String.t(),
+              required(:to_address_hash) => String.t(),
+              required(:token_contract_address_hash) => String.t(),
               required(:block_number) => non_neg_integer()
             }
           ]

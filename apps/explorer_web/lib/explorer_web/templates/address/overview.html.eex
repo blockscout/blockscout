@@ -44,7 +44,7 @@
                         @address.contracts_creation_internal_transaction.transaction_hash
                       ),
                       "data-test": "transaction_hash_link",
-                      "class": "tile-title"
+                      class: "tile-title"
                     ) %>
               </span>
             <% end %>

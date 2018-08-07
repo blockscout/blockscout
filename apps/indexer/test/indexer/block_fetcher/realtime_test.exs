@@ -7,6 +7,7 @@ defmodule Indexer.BlockFetcher.RealtimeTest do
   alias Explorer.Chain.{Address, Block}
   alias Indexer.{BlockFetcher, Sequence}
   alias Indexer.BlockFetcher.Realtime
+  alias Indexer.TokenFetcherCase
 
   @moduletag capture_log: true
 
@@ -41,6 +42,9 @@ defmodule Indexer.BlockFetcher.RealtimeTest do
       {:ok, sequence} = Sequence.start_link(ranges: [], step: 2)
       Sequence.cap(sequence)
       full_block_fetcher = %BlockFetcher{block_fetcher | sequence: sequence}
+
+      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
+      TokenFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         EthereumJSONRPC.Mox

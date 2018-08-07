@@ -10,7 +10,7 @@ defmodule Explorer.SmartContract.ReaderTest do
 
   setup :verify_on_exit!
 
-  describe "query_contract/2" do
+  describe "query_verified_contract/2" do
     test "correctly returns the results of the smart contract functions" do
       hash =
         :smart_contract
@@ -19,7 +19,7 @@ defmodule Explorer.SmartContract.ReaderTest do
 
       blockchain_get_function_mock()
 
-      assert Reader.query_contract(hash, %{"get" => []}) == %{"get" => [0]}
+      assert Reader.query_verified_contract(hash, %{"get" => []}) == %{"get" => {:ok, 0}}
     end
 
     test "won't raise error when there is a problem with the params to consult the blockchain" do
@@ -46,9 +46,54 @@ defmodule Explorer.SmartContract.ReaderTest do
 
       wrong_args = %{"sum" => [1, 1, 1, "abc"]}
 
-      assert %{"sum" => ["Data overflow encoding int, data `abc` cannot fit in 256 bits"]} =
-               Reader.query_contract(smart_contract.address_hash, wrong_args)
+      assert %{"sum" => {:error, "Data overflow encoding int, data `abc` cannot fit in 256 bits"}} =
+               Reader.query_verified_contract(smart_contract.address_hash, wrong_args)
     end
+
+    test "handles errors returned from RPC requests" do
+      %{address_hash: address_hash} = insert(:smart_contract)
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: _, params: [%{data: _, to: _}]}], _options ->
+          {:ok, [%{id: id, jsonrpc: "2.0", error: %{code: "12345", message: "Error message"}}]}
+        end
+      )
+
+      assert %{"get" => {:error, "(12345) Error message"}} =
+               Reader.query_verified_contract(address_hash, %{"get" => []})
+    end
+  end
+
+  test "query_unverified_contract/3" do
+    address = insert(:address)
+
+    abi = [
+      %{
+        "constant" => true,
+        "inputs" => [],
+        "name" => "decimals",
+        "outputs" => [
+          %{
+            "name" => "",
+            "type" => "uint8"
+          }
+        ],
+        "payable" => false,
+        "type" => "function"
+      }
+    ]
+
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn [%{id: id, method: _, params: [%{data: _, to: _}]}], _options ->
+        {:ok, [%{id: id, jsonrpc: "2.0", result: "0x0000000000000000000000000000000000000000000000000000000000000012"}]}
+      end
+    )
+
+    assert Reader.query_unverified_contract(address.hash, abi, %{"decimals" => []}) == %{"decimals" => {:ok, 18}}
   end
 
   describe "setup_call_payload/2" do
@@ -153,9 +198,8 @@ defmodule Explorer.SmartContract.ReaderTest do
   describe "link_outputs_and_values/2" do
     test "links the ABI outputs with the values retrieved from the blockchain" do
       blockchain_values = %{
-        "getOwner" => [
-          <<105, 55, 203, 37, 235, 84, 188, 1, 59, 156, 19, 196, 122, 179, 142, 182, 62, 221, 20, 147>>
-        ]
+        "getOwner" =>
+          {:ok, <<105, 55, 203, 37, 235, 84, 188, 1, 59, 156, 19, 196, 122, 179, 142, 182, 62, 221, 20, 147>>}
       }
 
       outputs = [%{"name" => "", "type" => "address"}]
@@ -168,9 +212,8 @@ defmodule Explorer.SmartContract.ReaderTest do
 
     test "correctly shows returns of 'bytes' type" do
       blockchain_values = %{
-        "get" => [
-          <<0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>
-        ]
+        "get" =>
+          {:ok, <<0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>}
       }
 
       outputs = [%{"name" => "", "type" => "bytes32"}]
@@ -188,8 +231,8 @@ defmodule Explorer.SmartContract.ReaderTest do
   end
 
   defp blockchain_get_function_mock() do
-    EthereumJSONRPC.Mox
-    |> expect(
+    expect(
+      EthereumJSONRPC.Mox,
       :json_rpc,
       fn [%{id: id, method: _, params: [%{data: _, to: _}]}], _options ->
         {:ok, [%{id: id, jsonrpc: "2.0", result: "0x0000000000000000000000000000000000000000000000000000000000000000"}]}

@@ -88,23 +88,24 @@ defmodule EthereumJSONRPC.Encoder do
   @doc """
   Given a result from the blockchain, and the function selector, returns the result decoded.
   """
-  @spec decode_result({map(), %ABI.FunctionSelector{}}) :: {String.t(), [String.t()]}
+  @spec decode_result({map(), %ABI.FunctionSelector{}}) ::
+          {String.t(), {:ok, any()} | {:error, String.t() | :invalid_data}}
   def decode_result({%{error: %{code: code, message: message}, id: id}, _selector}) do
-    {id, ["#{code} => #{message}"]}
+    {id, {:error, "(#{code}) #{message}"}}
   end
 
   def decode_result({%{id: id, result: result}, function_selector}) do
-    types_list = format_list_types(function_selector.returns)
+    types_list = List.wrap(function_selector.returns)
 
-    decoded_result =
+    [decoded_data] =
       result
       |> String.slice(2..-1)
       |> Base.decode16!(case: :lower)
       |> TypeDecoder.decode_raw(types_list)
 
-    {id, decoded_result}
+    {id, {:ok, decoded_data}}
+  rescue
+    MatchError ->
+      {id, {:error, :invalid_data}}
   end
-
-  defp format_list_types(:string), do: [{:array, :string, 1}]
-  defp format_list_types(return_types), do: List.wrap(return_types)
 end

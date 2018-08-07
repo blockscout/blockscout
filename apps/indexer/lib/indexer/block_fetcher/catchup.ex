@@ -9,7 +9,15 @@ defmodule Indexer.BlockFetcher.Catchup do
   import Indexer.BlockFetcher, only: [stream_import: 1]
 
   alias Explorer.Chain
-  alias Indexer.{BalanceFetcher, BlockFetcher, BoundInterval, InternalTransactionFetcher, Sequence}
+
+  alias Indexer.{
+    BalanceFetcher,
+    BlockFetcher,
+    BoundInterval,
+    InternalTransactionFetcher,
+    Sequence,
+    TokenFetcher
+  }
 
   @behaviour BlockFetcher
 
@@ -148,10 +156,13 @@ defmodule Indexer.BlockFetcher.Catchup do
     put_in(supervisor_state.catchup.task, nil)
   end
 
-  defp async_import_remaining_block_data(%{transactions: transaction_hashes, addresses: address_hashes}, %{
-         address_hash_to_fetched_balance_block_number: address_hash_to_block_number,
-         transaction_hash_to_block_number: transaction_hash_to_block_number
-       }) do
+  defp async_import_remaining_block_data(
+         %{transactions: transaction_hashes, addresses: address_hashes, tokens: tokens},
+         %{
+           address_hash_to_fetched_balance_block_number: address_hash_to_block_number,
+           transaction_hash_to_block_number: transaction_hash_to_block_number
+         }
+       ) do
     address_hashes
     |> Enum.map(fn address_hash ->
       block_number = Map.fetch!(address_hash_to_block_number, to_string(address_hash))
@@ -165,5 +176,9 @@ defmodule Indexer.BlockFetcher.Catchup do
       %{block_number: block_number, hash: transaction_hash}
     end)
     |> InternalTransactionFetcher.async_fetch(10_000)
+
+    tokens
+    |> Enum.map(& &1.contract_address_hash)
+    |> TokenFetcher.async_fetch()
   end
 end

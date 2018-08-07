@@ -18,8 +18,6 @@ config :explorer, Explorer.Chain.Statistics.Server, enabled: true
 
 config :explorer, Explorer.ExchangeRates, enabled: true
 
-config :explorer, Explorer.Indexer.Supervisor, enabled: true
-
 config :explorer, Explorer.Market.History.Cataloger, enabled: true
 
 config :explorer, Explorer.Repo, migration_timestamps: [type: :utc_datetime]
