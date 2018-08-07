@@ -9,6 +9,12 @@ defmodule ExplorerWeb.Etherscan do
     "result" => "663046792267785498951364"
   }
 
+  @account_balance_example_value_error %{
+    "status" => "0",
+    "message" => "Invalid address hash",
+    "result" => nil
+  }
+
   @account_balancemulti_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -54,6 +60,12 @@ defmodule ExplorerWeb.Etherscan do
         "confirmations" => "5994246"
       }
     ]
+  }
+
+  @account_txlist_example_value_error %{
+    "status" => "0",
+    "message" => "No transactions found",
+    "result" => []
   }
 
   @status_type %{
@@ -173,6 +185,7 @@ defmodule ExplorerWeb.Etherscan do
     responses: [
       %{
         code: "200",
+        description: "successful operation",
         example_value: Jason.encode!(@account_balance_example_value),
         model: %{
           name: "Result",
@@ -182,6 +195,11 @@ defmodule ExplorerWeb.Etherscan do
             result: @wei_type
           }
         }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@account_balance_example_value_error)
       }
     ]
   }
@@ -202,6 +220,7 @@ defmodule ExplorerWeb.Etherscan do
     responses: [
       %{
         code: "200",
+        description: "successful operation",
         example_value: Jason.encode!(@account_balancemulti_example_value),
         model: %{
           name: "Result",
@@ -214,6 +233,11 @@ defmodule ExplorerWeb.Etherscan do
             }
           }
         }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@account_balance_example_value_error)
       }
     ]
   }
@@ -262,6 +286,7 @@ defmodule ExplorerWeb.Etherscan do
     responses: [
       %{
         code: "200",
+        description: "successful operation",
         example_value: Jason.encode!(@account_txlist_example_value),
         model: %{
           name: "Result",
@@ -274,6 +299,11 @@ defmodule ExplorerWeb.Etherscan do
             }
           }
         }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@account_txlist_example_value_error)
       }
     ]
   }
