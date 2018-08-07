@@ -14,7 +14,7 @@ defmodule ExplorerWeb.API.RPC.AddressControllerTest do
       assert response =
                conn
                |> get("/api", params)
-               |> json_response(400)
+               |> json_response(200)
 
       assert response["message"] =~ "'address' is required"
       assert response["status"] == "0"
@@ -32,7 +32,7 @@ defmodule ExplorerWeb.API.RPC.AddressControllerTest do
       assert response =
                conn
                |> get("/api", params)
-               |> json_response(400)
+               |> json_response(200)
 
       assert response["message"] =~ "Invalid address hash"
       assert response["status"] == "0"
@@ -133,7 +133,7 @@ defmodule ExplorerWeb.API.RPC.AddressControllerTest do
       assert response =
                conn
                |> get("/api", params)
-               |> json_response(400)
+               |> json_response(200)
 
       assert response["message"] =~ "Invalid address hash"
       assert response["status"] == "0"
@@ -296,7 +296,7 @@ defmodule ExplorerWeb.API.RPC.AddressControllerTest do
       assert response =
                conn
                |> get("/api", params)
-               |> json_response(400)
+               |> json_response(200)
 
       assert response["message"] =~ "'address' is required"
       assert response["status"] == "0"
@@ -314,7 +314,7 @@ defmodule ExplorerWeb.API.RPC.AddressControllerTest do
       assert response =
                conn
                |> get("/api", params)
-               |> json_response(400)
+               |> json_response(200)
 
       assert response["message"] =~ "Invalid address format"
       assert response["status"] == "0"
