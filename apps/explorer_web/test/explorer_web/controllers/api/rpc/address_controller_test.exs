@@ -117,6 +117,28 @@ defmodule ExplorerWeb.API.RPC.AddressControllerTest do
       assert response["status"] == "1"
       assert response["message"] == "OK"
     end
+
+    test "supports GET and POST requests", %{conn: conn} do
+      address = insert(:address, fetched_balance: 100)
+
+      params = %{
+        "module" => "account",
+        "action" => "balance",
+        "address" => "#{address.hash}"
+      }
+
+      assert get_response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert post_response =
+               conn
+               |> post("/api", params)
+               |> json_response(200)
+
+      assert get_response == post_response
+    end
   end
 
   describe "balancemulti" do
@@ -283,6 +305,36 @@ defmodule ExplorerWeb.API.RPC.AddressControllerTest do
       assert response["result"] == expected_result
       assert response["status"] == "1"
       assert response["message"] == "OK"
+    end
+
+    test "supports GET and POST requests", %{conn: conn} do
+      addresses =
+        for _ <- 1..4 do
+          insert(:address, fetched_balance: Enum.random(1..1_000))
+        end
+
+      address_param =
+        addresses
+        |> Enum.map(&"#{&1.hash}")
+        |> Enum.join(",")
+
+      params = %{
+        "module" => "account",
+        "action" => "balancemulti",
+        "address" => address_param
+      }
+
+      assert get_response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert post_response =
+               conn
+               |> post("/api", params)
+               |> json_response(200)
+
+      assert get_response == post_response
     end
   end
 
@@ -955,6 +1007,32 @@ defmodule ExplorerWeb.API.RPC.AddressControllerTest do
       assert length(response["result"]) == 8
       assert response["status"] == "1"
       assert response["message"] == "OK"
+    end
+
+    test "supports GET and POST requests", %{conn: conn} do
+      address = insert(:address)
+
+      :transaction
+      |> insert(from_address: address)
+      |> with_block()
+
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "#{address.hash}"
+      }
+
+      assert get_response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert post_response =
+               conn
+               |> post("/api", params)
+               |> json_response(200)
+
+      assert get_response == post_response
     end
   end
 end
