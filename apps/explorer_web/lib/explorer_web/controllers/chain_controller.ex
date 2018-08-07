@@ -1,8 +1,7 @@
 defmodule ExplorerWeb.ChainController do
   use ExplorerWeb, :controller
 
-  alias Explorer.{PagingOptions, Repo}
-  alias Explorer.Chain
+  alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Block, Transaction}
   alias Explorer.ExchangeRates.Token
   alias Explorer.Market

@@ -69,7 +69,7 @@ defmodule Explorer.Chain do
 
   Estimated count of addresses
   """
-  @spec address_estimated_count() :: non_neg_integer()
+  @spec address_estimated_count :: non_neg_integer()
   def address_estimated_count do
     %Postgrex.Result{rows: [[rows]]} =
       SQL.query!(Repo, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='addresses'")
@@ -188,12 +188,11 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
-
   @doc """
   The average time it took to mine/validate the last <= 100 `t:Explorer.Chain.Block.t/0`
   """
-  @spec average_block_time() :: non_neg_integer()
-  def average_block_time() do
+  @spec average_block_time :: %Timex.Duration{}
+  def average_block_time do
     {:ok, %Postgrex.Result{rows: [[rows]]}} =
       SQL.query(
         Repo,
@@ -650,23 +649,6 @@ defmodule Explorer.Chain do
   @spec import(Import.all_options()) :: Import.all_result()
   def import(options) do
     Import.all(options)
-  end
-
-  @doc """
-  The number of `t:Explorer.Chain.Address.t/0`.
-
-      iex> insert_list(2, :address)
-      iex> Explorer.Chain.address_count()
-      2
-
-  When there are no `t:Explorer.Chain.Address.t/0`, the count is `0`.
-
-      iex> Explorer.Chain.address_count()
-      0
-
-  """
-  def address_count do
-    Repo.aggregate(Address, :count, :hash)
   end
 
   @doc """

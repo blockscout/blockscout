@@ -88,10 +88,10 @@ router.when('', { exactPathMatch: true }).then(({ locale }) => initRedux(reducer
     const $transactionCount = $('[data-selector="transaction-count"]')
 
     if (oldState.addressCount !== state.addressCount) {
-       $addressCount.empty().append(state.addressCount)
+      $addressCount.empty().append(state.addressCount)
     }
     if (oldState.averageBlockTime !== state.averageBlockTime) {
-       $averageBlockTime.empty().append(state.averageBlockTime)
+      $averageBlockTime.empty().append(state.averageBlockTime)
     }
     if (oldState.newBlock !== state.newBlock) {
       $blockList.children().last().remove()

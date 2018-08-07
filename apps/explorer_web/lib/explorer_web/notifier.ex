@@ -48,7 +48,7 @@ defmodule ExplorerWeb.Notifier do
     Endpoint.broadcast("blocks:new_block", "new_block", %{
       block: preloaded_block,
       average_block_time: Chain.average_block_time()
-      })
+    })
   end
 
   defp broadcast_transaction(transaction) do

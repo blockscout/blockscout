@@ -40,7 +40,7 @@ defmodule ExplorerWeb.AddressChannel do
 
     {:noreply, socket}
   end
-  
+
   def handle_out("transaction", %{address: address, transaction: transaction}, socket) do
     Gettext.put_locale(ExplorerWeb.Gettext, socket.assigns.locale)
 

@@ -30,6 +30,7 @@ defmodule ExplorerWeb.ViewingChainTest do
   describe "statistics" do
     test "average block time live updates", %{session: session} do
       time = DateTime.utc_now()
+
       for x <- 100..0 do
         insert(:block, timestamp: Timex.shift(time, seconds: -5 * x), number: x + 500)
       end
@@ -40,7 +41,7 @@ defmodule ExplorerWeb.ViewingChainTest do
 
       block =
         100..0
-        |> Enum.map(fn(index) ->
+        |> Enum.map(fn index ->
           insert(:block, timestamp: Timex.shift(time, seconds: -10 * index), number: index + 800)
         end)
         |> hd()
