@@ -6,24 +6,25 @@
 
       <%= form_for @changeset,
           address_verify_contract_path(@conn, :create, @conn.assigns.locale, @conn.params["address_id"]),
+          [class: "needs-validation"],
           fn f -> %>
 
         <div class="form-group">
           <%= label f, :address_hash, "Contract Address" %>
-          <%= text_input f, :address_hash, class: "form-control", disabled: true %>
-          <%= error_tag f, :address_hash %>
+          <%= text_input f, :address_hash, class: "form-control", readonly: true %>
+          <%= error_tag f, :address_hash, class: "text-danger" %>
         </div>
 
         <div class="form-group">
           <%= label f, :name, "Contract Name" %>
           <%= text_input f, :name, class: "form-control" %>
-          <%= error_tag f, :name %>
+          <%= error_tag f, :name, class: "text-danger" %>
         </div>
 
         <div class="form-group mb-4">
           <%= label f, :compiler_version, "Compiler" %>
           <%= select f, :compiler_version, @compiler_versions, class: "form-control", selected: "latest" %>
-          <%= error_tag f, :compiler_version %>
+          <%= error_tag f, :compiler_version, class: "text-danger" %>
         </div>
 
         <div class="form-group mb-4">
@@ -39,13 +40,13 @@
             <%= label :smart_contract_optimization, :true, "Yes", class: "form-check-label" %>
           </div>
 
-          <%= error_tag f, :optimization %>
+          <%= error_tag f, :optimization, class: "text-danger" %>
         </div>
 
         <div class="form-group mb-4">
           <%= label f, :contract_source_code, "Enter the Solidity Contract Code below" %>
           <%= textarea f, :contract_source_code, class: "form-control", rows: 3 %>
-          <%= error_tag f, :contract_source_code %>
+          <%= error_tag f, :contract_source_code, class: "text-danger" %>
         </div>
 
         <%= submit "Verify and publish", class: "button button--primary button--sm mr-2" %>
