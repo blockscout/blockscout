@@ -1,4 +1,4 @@
-<section class="container-fluid">
+<section class="container">
 
   <%= render ExplorerWeb.AddressView, "overview.html", assigns %>
 
@@ -44,14 +44,10 @@
 
     <div class="card-body">
       <%= if !smart_contract_verified?(@address) do %>
-        <p>
-          <%= link(
-                to: address_verify_contract_path(@conn, :new, @conn.assigns.locale, @conn.params["address_id"])
-              ) do %>
-              <i class="fas fa-info-circle"></i>
-              <%= gettext("Verify and Publish") %>
-          <% end %>
-        </p>
+        <%= link(
+              gettext("Verify and Publish"),
+              to: address_verify_contract_path(@conn, :new, @conn.assigns.locale, @conn.params["address_id"]), class: "button button--secondary button-xsmall float-right"
+            ) %>
       <% end %>
 
       <%= if smart_contract_verified?(@address) do %>
@@ -85,10 +81,12 @@
         </pre>
       <% end %>
 
-      <h4>Contract creation code</h4>
-      <pre class="pre-wrap p-2 bg-light mb-4">
-        <code><%= @address.contract_code %></code>
-      </pre>
+      <h2 class="card-title">Contract creation code</h2>
+      <div class="tile tile-muted">
+        <pre class="pre-wrap">
+          <code><%= @address.contract_code %></code>
+        </pre>
+      </div>
     </div>
   </div>
 </section>
