@@ -23,7 +23,7 @@ Development is ongoing. Please see the [project timeline](https://github.com/poa
 
 - [x] **Smart contract interaction**: Users can read and verify Solidity smart contracts and access pre-existing contracts to fast-track development. Support for Vyper, LLL, and Web Assembly contracts is in progress.
 
-- [x] **ERC20 token support**: Version 1 will support ERC20 token ecosystem. Future releases will support additional token types including ERC223, ERC721, and ERC1155.
+- [x] **Token support**: Version 1 supports ERC20 and ERC721 tokens. Future releases will support additional token types including ERC223 and ERC1155. 
 
 - [x] **User customization**: Users can easily deploy on a network and customize the Bootstrap interface.
 
@@ -47,41 +47,49 @@ The [development stack page](https://github.com/poanetwork/poa-explorer/wiki/Dev
   * For Mac OSX users: `brew install libtool`
 * GitHub for code storage
 
-### Setup Instructions
+### Build and Run
 
-  1. Fork and clone repository.
-  [`https://github.com/poanetwork/poa-explorer/fork`](https://github.com/poanetwork/poa-explorer/fork)
+  1. Clone the repository.  
+  `git clone https://github.com/poanetwork/poa-explorer`
 
-  2. Set up default configurations.  
+  2. Go to the explorer subdirectory.  
+  `cd poa-explorer`
+
+  3. Set up default configurations.  
   `cp apps/explorer/config/dev.secret.exs.example apps/explorer/config/dev.secret.exs`  
-  `cp apps/explorer_web/config/dev.secret.exs.example apps/explorer_web/config/dev.secret.exs`
-
-  Optional: Set up default configuration for testing.  
+  `cp apps/explorer_web/config/dev.secret.exs.example apps/explorer_web/config/dev.secret.exs`  
+  <br />Optional: Set up default configuration for testing.  
   `cp apps/explorer/config/test.secret.exs.example apps/explorer/config/test.secret.exs`  
   Example usage: Changing the default Postgres port from localhost:15432 if [Boxen](https://github.com/boxen/boxen) is installed.
 
-  3. Install dependencies.  
-  `mix do deps.get, local.rebar, deps.compile, compile`
+  4. Install dependencies.  
+  `mix do deps.get, local.rebar --force, deps.compile, compile`
 
-  4. Create and migrate database.  
-  `mix ecto.create && mix ecto.migrate`
+  5. Create and migrate database.  
+  `mix ecto.create && mix ecto.migrate`  
+  <br />_Note:_ If you have run previously, drop the previous database  
+  `mix do ecto.drop, ecto.create, ecto.migrate` 
 
-  5. Install Node.js dependencies.  
+  6. Install Node.js dependencies.  
   `cd apps/explorer_web/assets && npm install; cd -`  
   `cd apps/explorer && npm install; cd -`
 
-  6. Start Phoenix Server.
+  7. Start Phoenix Server.  
   `mix phx.server`
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
 _Additional runtime options:_
 
-*  Run Phoenix Server with IEx (Interactive Elixer)
+*  Run Phoenix Server with IEx (Interactive Elixer)  
 `iex -S mix phx.server`
 
 *  Run Phoenix Server with real time indexer
 `DEBUG_INDEXER=1 iex -S mix phx.server`
+
+### POA Explorer Visual Interface
+
+![POA Explorer Example](explorer_example.gif)
 
 
 ### Umbrella Project Organization
@@ -96,7 +104,6 @@ Each OTP application has a restricted domain.
 | `apps/explorer`         | `:explorer`         | `Explorer`        | Storage for the indexed chain.  Can read and write to the backing storage.  MUST be able to boot in a read-only mode when run independently from `:indexer`, so cannot depend on `:indexer` as that would start `:indexer` indexing.                                                                                                                                            |
 | `apps/explorer_web`     | `:explorer_web`     | `ExplorerWeb`     | Phoenix interface to `:explorer`.  The minimum interface to allow web access should go in `:explorer_web`.  Any business rules or interface not tied directly to `Phoenix` or `Plug` should go in `:explorer`. MUST be able to boot in a read-only mode when run independently from `:indexer`, so cannot depend on `:indexer` as that would start `:indexer` indexing. |
 | `apps/indexer`          | `:indexer`          | `Indexer`         | Uses `:ethereum_jsonrpc` to index chain and batch import data into `:explorer`.  Any process, `Task`, or `GenServer` that automatically reads from the chain and writes to `:explorer` should be in `:indexer`. This restricts automatic writes to `:indexer` and read-only mode can be achieved by not running `:indexer`.                                             |
-
 
 
 ### CircleCI Updates
