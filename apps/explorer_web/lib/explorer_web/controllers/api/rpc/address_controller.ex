@@ -12,12 +12,12 @@ defmodule ExplorerWeb.API.RPC.AddressController do
     else
       {:address_param, :error} ->
         conn
-        |> put_status(400)
+        |> put_status(200)
         |> render(:error, error: "Query parameter 'address' is required")
 
       {:format, :error} ->
         conn
-        |> put_status(400)
+        |> put_status(200)
         |> render(:error, error: "Invalid address hash")
     end
   end
@@ -36,12 +36,12 @@ defmodule ExplorerWeb.API.RPC.AddressController do
     else
       {:address_param, :error} ->
         conn
-        |> put_status(400)
+        |> put_status(200)
         |> render(:error, error: "Query parameter 'address' is required")
 
       {:format, :error} ->
         conn
-        |> put_status(400)
+        |> put_status(200)
         |> render(:error, error: "Invalid address format")
 
       {:error, :not_found} ->
