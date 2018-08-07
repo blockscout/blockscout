@@ -2,7 +2,7 @@ defmodule ExplorerWeb.API.RPC.AddressControllerTest do
   use ExplorerWeb.ConnCase
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Transaction, Wei}
+  alias Explorer.Chain.Transaction
 
   describe "balance" do
     test "with missing address hash", %{conn: conn} do
@@ -66,17 +66,12 @@ defmodule ExplorerWeb.API.RPC.AddressControllerTest do
         "address" => "#{address.hash}"
       }
 
-      expected_balance =
-        address.fetched_balance
-        |> Wei.to(:ether)
-        |> Decimal.to_string(:normal)
-
       assert response =
                conn
                |> get("/api", params)
                |> json_response(200)
 
-      assert response["result"] == expected_balance
+      assert response["result"] == "#{address.fetched_balance.value}"
       assert response["status"] == "1"
       assert response["message"] == "OK"
     end
@@ -100,12 +95,7 @@ defmodule ExplorerWeb.API.RPC.AddressControllerTest do
 
       expected_result =
         Enum.map(addresses, fn address ->
-          expected_balance =
-            address.fetched_balance
-            |> Wei.to(:ether)
-            |> Decimal.to_string(:normal)
-
-          %{"account" => "#{address.hash}", "balance" => expected_balance}
+          %{"account" => "#{address.hash}", "balance" => "#{address.fetched_balance.value}"}
         end)
 
       assert response =
@@ -207,12 +197,7 @@ defmodule ExplorerWeb.API.RPC.AddressControllerTest do
 
       expected_result =
         Enum.map(addresses, fn address ->
-          expected_balance =
-            address.fetched_balance
-            |> Wei.to(:ether)
-            |> Decimal.to_string(:normal)
-
-          %{"account" => "#{address.hash}", "balance" => expected_balance}
+          %{"account" => "#{address.hash}", "balance" => "#{address.fetched_balance.value}"}
         end)
 
       assert response =
@@ -235,14 +220,9 @@ defmodule ExplorerWeb.API.RPC.AddressControllerTest do
         "address" => "#{address1.hash},#{address2_hash}"
       }
 
-      expected_balance1 =
-        address1.fetched_balance
-        |> Wei.to(:ether)
-        |> Decimal.to_string(:normal)
-
       expected_result = [
         %{"account" => address2_hash, "balance" => "0"},
-        %{"account" => "#{address1.hash}", "balance" => expected_balance1}
+        %{"account" => "#{address1.hash}", "balance" => "#{address1.fetched_balance.value}"}
       ]
 
       assert response =
@@ -288,13 +268,8 @@ defmodule ExplorerWeb.API.RPC.AddressControllerTest do
         "address" => "#{address.hash}"
       }
 
-      expected_balance =
-        address.fetched_balance
-        |> Wei.to(:ether)
-        |> Decimal.to_string(:normal)
-
       expected_result = [
-        %{"account" => "#{address.hash}", "balance" => expected_balance}
+        %{"account" => "#{address.hash}", "balance" => "#{address.fetched_balance.value}"}
       ]
 
       assert response =
