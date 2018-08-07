@@ -6,9 +6,14 @@ defmodule ExplorerWeb.ChainController do
   alias Explorer.ExchangeRates.Token
   alias Explorer.Market
 
-  @address_count_module Application.get_env(:explorer_web, :fake_adapter) || Chain
-
   def show(conn, _params) do
+    address_count_module = Application.get_env(:explorer_web, :fake_adapter) || Chain
+
+    blocks =
+      [paging_options: %PagingOptions{page_size: 4}]
+      |> Chain.list_blocks()
+      |> Repo.preload([:miner, :transactions])
+
     transaction_estimated_count = Chain.transaction_estimated_count()
 
     transactions =
@@ -21,15 +26,10 @@ defmodule ExplorerWeb.ChainController do
         paging_options: %PagingOptions{page_size: 5}
       )
 
-    blocks =
-      [paging_options: %PagingOptions{page_size: 4}]
-      |> Chain.list_blocks()
-      |> Repo.preload([:miner, :transactions])
-
     render(
       conn,
       "show.html",
-      address_estimated_count: @address_count_module.address_estimated_count(),
+      address_estimated_count: address_count_module.address_estimated_count(),
       average_block_time: Chain.average_block_time(),
       blocks: blocks,
       exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
