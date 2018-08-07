@@ -6,17 +6,19 @@
   white-space:  nowrap;
   padding: 8px 10px;
   border-radius: .14589803rem;
+  cursor: pointer;
 
   &--primary {
-    background-color: lighten($primary, 20%) !important;
-    color: $black !important;
-    -webkit-transition: background-color .25s, color .25s !important;
+    background-color: lighten($primary, 20%);
+    color: $white;
+    border: 1px solid lighten($primary, 20%);
+    -webkit-transition: background-color .25s, color .25s;
     transition: background-color .25s, color .25s;
 
     &:hover,
     &:focus {
-      background-color: $gray-700 !important;
-      color: $gray-200 !important;
+      background-color: $primary;
+      border-color: $primary;
       text-decoration: none;
     }
 

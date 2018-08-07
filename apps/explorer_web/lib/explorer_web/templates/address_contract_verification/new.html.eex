@@ -1,19 +1,9 @@
-<section class="container-fluid">
-  <h1>Smart Contract</h1>
-
+<section class="container">
   <div class="card">
-    <div class="card-header">
-      <ul class="nav nav-tabs card-header-tabs">
-        <li class="nav-item">
-          <%= link(
-            gettext("Contract Source Code"),
-            class: "nav-link active",
-            to: '#'
-          ) %>
-        </li>
-      </ul>
-    </div>
     <div class="card-body">
+
+      <h1 class="card-title">New Smart Contract</h1>
+
       <%= form_for @changeset,
           address_verify_contract_path(@conn, :create, @conn.assigns.locale, @conn.params["address_id"]),
           fn f -> %>
@@ -30,21 +20,21 @@
           <%= error_tag f, :name %>
         </div>
 
-        <div class="form-group">
+        <div class="form-group mb-4">
           <%= label f, :compiler_version, "Compiler" %>
           <%= select f, :compiler_version, @compiler_versions, class: "form-control", selected: "latest" %>
           <%= error_tag f, :compiler_version %>
         </div>
 
-        <div class="form-group">
-          <%= label f, "Optimization", class: "d-block" %>
+        <div class="form-group mb-4">
+          <%= label f, "Optimization" %>
 
-          <div class="form-check form-check-inline">
+          <div class="form-check mb-2">
             <%= radio_button f, :optimization, false, checked: true, class: "form-check-input" %>
             <%= label :smart_contract_optimization, :false, "No", class: "form-check-label" %>
           </div>
 
-          <div class="form-check form-check-inline">
+          <div class="form-check">
             <%= radio_button f, :optimization, true, class: "form-check-input" %>
             <%= label :smart_contract_optimization, :true, "Yes", class: "form-check-label" %>
           </div>
@@ -52,14 +42,14 @@
           <%= error_tag f, :optimization %>
         </div>
 
-        <div class="form-group">
+        <div class="form-group mb-4">
           <%= label f, :contract_source_code, "Enter the Solidity Contract Code below" %>
           <%= textarea f, :contract_source_code, class: "form-control", rows: 3 %>
           <%= error_tag f, :contract_source_code %>
         </div>
 
-        <%= submit "Verify and publish", class: "button button--secondary button--sm" %>
-        <%= reset "Reset", class: "button button--tertiary button--sm" %>
+        <%= submit "Verify and publish", class: "button button--primary button--sm mr-2" %>
+        <%= reset "Reset", class: "button button--secondary button--sm" %>
       <% end %>
     </div>
   </div>
