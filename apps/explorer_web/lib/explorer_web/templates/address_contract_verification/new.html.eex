@@ -50,7 +50,11 @@
         </div>
 
         <%= submit "Verify and publish", class: "button button--primary button--sm mr-2" %>
-        <%= reset "Reset", class: "button button--secondary button--sm" %>
+        <%= reset "Reset", class: "button button--secondary button--sm mr-2" %>
+        <%= link(
+            "Cancel",
+            to: address_contract_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"]),
+            class: "button button--sm") %>
       <% end %>
     </div>
   </div>
