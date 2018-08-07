@@ -11,42 +11,42 @@
 
         <div class="form-group">
           <%= label f, :address_hash, "Contract Address" %>
-          <%= text_input f, :address_hash, class: "form-control", readonly: true %>
-          <%= error_tag f, :address_hash, class: "text-danger" %>
+          <%= text_input f, :address_hash, class: "form-control", "aria-describedby": "contract-address-help-block", readonly: true %>
+          <%= error_tag f, :address_hash, id: "contract-address-help-block", class: "text-danger" %>
         </div>
 
         <div class="form-group">
           <%= label f, :name, "Contract Name" %>
-          <%= text_input f, :name, class: "form-control" %>
-          <%= error_tag f, :name, class: "text-danger" %>
+          <%= text_input f, :name, class: "form-control", "aria-describedby": "contract-name-help-block" %>
+          <%= error_tag f, :name, id: "contract-name-help-block", class: "text-danger" %>
         </div>
 
         <div class="form-group mb-4">
           <%= label f, :compiler_version, "Compiler" %>
-          <%= select f, :compiler_version, @compiler_versions, class: "form-control", selected: "latest" %>
-          <%= error_tag f, :compiler_version, class: "text-danger" %>
+          <%= select f, :compiler_version, @compiler_versions, class: "form-control", selected: "latest", "aria-describedby": "compiler-help-block" %>
+          <%= error_tag f, :compiler_version, id: "compiler-help-block", class: "text-danger" %>
         </div>
 
         <div class="form-group mb-4">
           <%= label f, "Optimization" %>
 
           <div class="form-check mb-2">
-            <%= radio_button f, :optimization, false, checked: true, class: "form-check-input" %>
+            <%= radio_button f, :optimization, false, checked: true, class: "form-check-input", "aria-describedby": "optimization-help-block" %>
             <%= label :smart_contract_optimization, :false, "No", class: "form-check-label" %>
           </div>
 
           <div class="form-check">
-            <%= radio_button f, :optimization, true, class: "form-check-input" %>
+            <%= radio_button f, :optimization, true, class: "form-check-input", "aria-describedby": "optimization-help-block" %>
             <%= label :smart_contract_optimization, :true, "Yes", class: "form-check-label" %>
           </div>
 
-          <%= error_tag f, :optimization, class: "text-danger" %>
+          <%= error_tag f, :optimization, id: "optimization-help-block", class: "text-danger" %>
         </div>
 
         <div class="form-group mb-4">
           <%= label f, :contract_source_code, "Enter the Solidity Contract Code below" %>
-          <%= textarea f, :contract_source_code, class: "form-control", rows: 3 %>
-          <%= error_tag f, :contract_source_code, class: "text-danger" %>
+          <%= textarea f, :contract_source_code, class: "form-control", rows: 3, "aria-describedby": "contract-source-code-help-block" %>
+          <%= error_tag f, :contract_source_code, id: "contract-source-code-help-block", class: "text-danger" %>
         </div>
 
         <%= submit "Verify and publish", class: "button button--primary button--sm mr-2" %>
