@@ -43,10 +43,6 @@ defmodule BlockScoutWeb.AddressPage do
     css("[data-internal-transaction-id='#{id}'] [data-address-hash='#{address_hash}'][data-test='address_hash_link']")
   end
 
-  def non_loaded_transaction_count(count) do
-    css("[data-selector='channel-batching-count']", text: count)
-  end
-
   def transaction(%Transaction{hash: transaction_hash}), do: transaction(transaction_hash)
 
   def transaction(%Hash{} = hash) do

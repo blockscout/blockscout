@@ -18,6 +18,8 @@ import 'bootstrap'
 // Local files can be imported directly using relative
 // paths "./socket" or full ones "web/static/js/socket".
 
+import './locale'
+
 import './lib/clipboard_buttons'
 import './lib/from_now'
 import './lib/loading_element'

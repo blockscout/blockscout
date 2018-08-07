@@ -1,9 +1,8 @@
 defmodule BlockScoutWeb.ViewingAddressesTest do
   use BlockScoutWeb.FeatureCase, async: true
 
-  alias Explorer.Chain
-  alias Explorer.Chain.{Address, Wei}
-  alias BlockScoutWeb.{AddressPage, Notifier}
+  alias Explorer.Chain.Wei
+  alias BlockScoutWeb.AddressPage
 
   setup do
     block = insert(:block)
@@ -225,100 +224,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
     session
     |> AddressPage.visit_page(addresses.lincoln)
     |> assert_text(AddressPage.transaction_count(), "1,002")
-  end
-
-  test "viewing new transactions via live update", %{addresses: addresses, session: session} do
-    [transaction1, transaction2] =
-      2
-      |> insert_list(:transaction, from_address: addresses.lincoln)
-      |> with_block()
-      |> Repo.preload([:block, :from_address, :to_address])
-
-    session
-    |> AddressPage.visit_page(addresses.lincoln)
-    |> assert_has(AddressPage.balance())
-
-    Notifier.handle_event({:chain_event, :transactions, [transaction1.hash, transaction2.hash]})
-
-    session
-    |> assert_has(AddressPage.transaction(transaction1))
-    |> assert_has(AddressPage.transaction(transaction2))
-  end
-
-  test "count of non-loaded transactions on live update when batch overflow", %{addresses: addresses, session: session} do
-    transaction_hashes =
-      30
-      |> insert_list(:transaction, from_address: addresses.lincoln)
-      |> with_block()
-      |> Repo.preload([:block, :from_address, :to_address])
-      |> Enum.map(& &1.hash)
-
-    session
-    |> AddressPage.visit_page(addresses.lincoln)
-    |> assert_has(AddressPage.balance())
-
-    Notifier.handle_event({:chain_event, :transactions, transaction_hashes})
-
-    session
-    |> assert_has(AddressPage.non_loaded_transaction_count("30"))
-  end
-
-  test "transaction count live updates", %{addresses: addresses, session: session} do
-    session
-    |> AddressPage.visit_page(addresses.lincoln)
-    |> assert_text(AddressPage.transaction_count(), "2")
-
-    transaction =
-      :transaction
-      |> insert(from_address: addresses.lincoln)
-      |> with_block()
-
-    Notifier.handle_event({:chain_event, :transactions, [transaction.hash]})
-
-    assert_text(session, AddressPage.transaction_count(), "3")
-  end
-
-  test "viewing updated balance via live update", %{session: session} do
-    address = %Address{hash: hash} = insert(:address, fetched_balance: 500)
-
-    session
-    |> AddressPage.visit_page(address)
-    |> assert_text(AddressPage.balance(), "0.0000000000000005 POA")
-
-    fetched_balance = %Explorer.Chain.Wei{value: Decimal.new(100)}
-
-    {:ok,
-     %{
-       addresses: [
-         %Address{hash: ^hash, fetched_balance: ^fetched_balance, fetched_balance_block_number: 2} = updated_address
-       ],
-       balances: [%{address_hash: ^hash}]
-     }} =
-      Chain.import(%{
-        addresses: %{
-          params: [
-            %{
-              fetched_balance: 100,
-              fetched_balance_block_number: 2,
-              hash: hash
-            }
-          ],
-          with: :balance_changeset
-        },
-        balances: %{
-          params: [
-            %{
-              value: 100,
-              block_number: 2,
-              address_hash: hash
-            }
-          ]
-        }
-      })
-
-    Notifier.handle_event({:chain_event, :addresses, [updated_address]})
-
-    assert_text(session, AddressPage.balance(), "0.0000000000000001 POA")
   end
 
   test "contract creation is shown for to_address on list page", %{

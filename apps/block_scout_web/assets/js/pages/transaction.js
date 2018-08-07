@@ -1,7 +1,6 @@
 import $ from 'jquery'
 import humps from 'humps'
 import numeral from 'numeral'
-import 'numeral/locales'
 import socket from '../socket'
 import router from '../router'
 import { updateAllAges } from '../lib/from_now'
@@ -66,11 +65,10 @@ export function reducer (state = initialState, action) {
   }
 }
 
-router.when('/transactions/:transactionHash').then(({ locale }) => initRedux(reducer, {
+router.when('/transactions/:transactionHash').then(() => initRedux(reducer, {
   main (store) {
     const blocksChannel = socket.channel(`blocks:new_block`, {})
     const $transactionBlockNumber = $('[data-selector="block-number"]')
-    numeral.locale(locale)
     store.dispatch({
       type: 'PAGE_LOAD',
       blockNumber: $transactionBlockNumber.text()
@@ -89,9 +87,8 @@ router.when('/transactions/:transactionHash').then(({ locale }) => initRedux(red
 
 router.when('/transactions', { exactPathMatch: true }).then((params) => initRedux(reducer, {
   main (store) {
-    const { locale, index } = params
+    const { index } = params
     const transactionsChannel = socket.channel(`transactions:new_transaction`)
-    numeral.locale(locale)
     store.dispatch({
       type: 'PAGE_LOAD',
       transactionCount: $('[data-selector="transaction-count"]').text(),

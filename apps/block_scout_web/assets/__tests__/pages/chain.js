@@ -1,18 +1,57 @@
 import { reducer, initialState } from '../../js/pages/chain'
 
+test('RECEIVED_NEW_ADDRESS_COUNT', () => {
+  const state = Object.assign({}, initialState, {
+    addressCount: '1,000'
+  })
+  const action = {
+    type: 'RECEIVED_NEW_ADDRESS_COUNT',
+    msg: {
+      count: '1,000,000'
+    }
+  }
+  const output = reducer(state, action)
+
+  expect(output.addressCount).toEqual('1,000,000')
+})
+
 test('RECEIVED_NEW_BLOCK', () => {
   const state = Object.assign({}, initialState, {
+    averageBlockTime: '6 seconds',
     newBlock: 'last new block'
   })
   const action = {
     type: 'RECEIVED_NEW_BLOCK',
     msg: {
+      averageBlockTime: '5 seconds',
       chainBlockHtml: 'new block'
     }
   }
   const output = reducer(state, action)
 
+  expect(output.averageBlockTime).toEqual('5 seconds')
   expect(output.newBlock).toEqual('new block')
+})
+
+test('RECEIVED_NEW_EXCHANGE_RATE', () => {
+  const state = initialState
+  const action = {
+    type: 'RECEIVED_NEW_EXCHANGE_RATE',
+    msg: {
+      exchangeRate: {
+        availableSupply: 1000000,
+        usdValue: 1.23,
+        marketCapUsd: 1230000
+      },
+      marketHistoryData: { data: 'some stuff' }
+    }
+  }
+  const output = reducer(state, action)
+
+  expect(output.availableSupply).toEqual(1000000)
+  expect(output.marketHistoryData).toEqual({ data: 'some stuff' })
+  expect(output.usdExchangeRate).toEqual(1.23)
+  expect(output.usdMarketCap).toEqual(1230000)
 })
 
 describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {

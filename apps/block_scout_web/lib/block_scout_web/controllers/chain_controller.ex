@@ -26,14 +26,22 @@ defmodule BlockScoutWeb.ChainController do
         paging_options: %PagingOptions{page_size: 5}
       )
 
+    exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
+
+    market_history_data =
+      case Market.fetch_recent_history(30) do
+        [today | the_rest] -> [%{today | closing_price: exchange_rate.usd_value} | the_rest]
+        data -> data
+      end
+
     render(
       conn,
       "show.html",
       address_estimated_count: address_count_module.address_estimated_count(),
       average_block_time: Chain.average_block_time(),
       blocks: blocks,
-      exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-      market_history_data: Market.fetch_recent_history(30),
+      exchange_rate: exchange_rate,
+      market_history_data: market_history_data,
       transaction_estimated_count: transaction_estimated_count,
       transactions: transactions
     )

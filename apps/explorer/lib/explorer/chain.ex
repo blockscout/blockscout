@@ -46,7 +46,7 @@ defmodule Explorer.Chain do
   @typedoc """
   Event type where data is broadcasted whenever data is inserted from chain indexing.
   """
-  @type chain_event :: :addresses | :balances | :blocks | :logs | :transactions
+  @type chain_event :: :addresses | :balances | :blocks | :exchange_rate | :logs | :transactions
 
   @type direction :: :from | :to
 
@@ -1184,7 +1184,8 @@ defmodule Explorer.Chain do
   :ok
   """
   @spec subscribe_to_events(chain_event()) :: :ok
-  def subscribe_to_events(event_type) when event_type in ~w(addresses balances blocks logs transactions)a do
+  def subscribe_to_events(event_type)
+      when event_type in ~w(addresses balances blocks exchange_rate logs transactions)a do
     Registry.register(Registry.ChainEvents, event_type, [])
     :ok
   end

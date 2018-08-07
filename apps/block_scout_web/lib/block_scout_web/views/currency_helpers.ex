@@ -3,10 +3,8 @@ defmodule BlockScoutWeb.CurrencyHelpers do
   Helper functions for interacting with `t:BlockScoutWeb.ExchangeRates.USD.t/0` values.
   """
 
-  import BlockScoutWeb.Gettext
-
   alias BlockScoutWeb.ExchangeRates.USD
-  alias BlockScoutWeb.Cldr
+  alias BlockScoutWeb.Cldr.Number
 
   @doc """
   Formats a `BlockScoutWeb.ExchangeRates.USD` value into USD and applies a unit label.
@@ -28,8 +26,8 @@ defmodule BlockScoutWeb.CurrencyHelpers do
   def format_usd_value(%USD{value: nil}), do: nil
 
   def format_usd_value(%USD{value: value}) do
-    case Cldr.Number.to_string(value, format: "#,##0.00################") do
-      {:ok, formatted} -> "$#{formatted} " <> gettext("USD")
+    case Number.to_string(value, format: "#,##0.00################") do
+      {:ok, formatted} -> "$#{formatted} USD"
       _ -> nil
     end
   end
@@ -44,7 +42,7 @@ defmodule BlockScoutWeb.CurrencyHelpers do
   """
   @spec format_integer_to_currency(non_neg_integer()) :: String.t()
   def format_integer_to_currency(value) do
-    {:ok, formatted} = Cldr.Number.to_string(value, format: "#,##0")
+    {:ok, formatted} = Number.to_string(value, format: "#,##0")
 
     formatted
   end
@@ -90,7 +88,7 @@ defmodule BlockScoutWeb.CurrencyHelpers do
 
   defp thousands_separator(value) do
     if Decimal.to_float(value) > 999 do
-      Cldr.Number.to_string!(value)
+      Number.to_string!(value)
     else
       Decimal.to_string(value, :normal)
     end

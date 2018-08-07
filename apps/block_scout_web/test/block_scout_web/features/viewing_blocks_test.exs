@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.ViewingBlocksTest do
   use BlockScoutWeb.FeatureCase, async: true
 
-  alias BlockScoutWeb.{BlockListPage, BlockPage, Notifier}
+  alias BlockScoutWeb.{BlockListPage, BlockPage}
 
   setup do
     timestamp = Timex.now() |> Timex.shift(hours: -1)
@@ -68,14 +68,5 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
     session
     |> BlockListPage.visit_page()
     |> assert_has(BlockListPage.block(block))
-  end
-
-  test "viewing new blocks via live update on list page", %{session: session} do
-    BlockListPage.visit_page(session)
-
-    block = insert(:block, number: 42)
-    Notifier.handle_event({:chain_event, :blocks, [block]})
-
-    assert_has(session, BlockListPage.block(block))
   end
 end
