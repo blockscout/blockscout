@@ -12,12 +12,12 @@ defmodule Explorer.Chain.TokenTransferTest do
     test "returns token transfers for the given address" do
       token_contract_address = insert(:contract_address)
 
+      token = insert(:token, contract_address: token_contract_address)
+
       transaction =
         :transaction
         |> insert()
         |> with_block()
-
-      token = insert(:token, contract_address: token_contract_address)
 
       token_transfer =
         insert(
@@ -28,11 +28,16 @@ defmodule Explorer.Chain.TokenTransferTest do
           token: token
         )
 
+      another_transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
       another_transfer =
         insert(
           :token_transfer,
           to_address: build(:address),
-          transaction: transaction,
+          transaction: another_transaction,
           token_contract_address: token_contract_address,
           token: token
         )

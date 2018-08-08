@@ -33,7 +33,15 @@
             <span></span>
 
             <div class="text-right">
-              <h3 class="text-uppercase"><%= "#{format_integer_to_currency(@token.total_supply)} #{@token.symbol}" %></h3>
+              <h3 class="text-uppercase">
+                <%= if decimals?(@token.decimals) do %>
+                  <%= format_according_to_decimals(@token.total_supply, @token.decimals) %>
+                <% else %>
+                  <%= format_integer_to_currency(@token.total_supply) %>
+                <% end %>
+
+                <%= @token.symbol %>
+              </h3>
               <br />
             </div>
           </div>

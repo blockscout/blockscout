@@ -471,7 +471,7 @@ msgstr ""
 #: lib/explorer_web/templates/block/index.html.eex:15
 #: lib/explorer_web/templates/block_transaction/index.html.eex:51
 #: lib/explorer_web/templates/pending_transaction/index.html.eex:78
-#: lib/explorer_web/templates/token/show.html.eex:91
+#: lib/explorer_web/templates/token/show.html.eex:99
 #: lib/explorer_web/templates/transaction/index.html.eex:66
 msgid "Older"
 msgstr ""
@@ -744,7 +744,7 @@ msgstr ""
 msgid "Validated Transactions"
 msgstr ""
 
-#: lib/explorer_web/templates/token/show.html.eex:84
+#: lib/explorer_web/templates/token/show.html.eex:92
 msgid "There are no transfers for this Token."
 msgstr ""
 
@@ -754,10 +754,10 @@ msgid "Token Details"
 msgstr ""
 
 #, elixir-format
-#: lib/explorer_web/templates/token/show.html.eex:52
-#: lib/explorer_web/templates/token/show.html.eex:62
-#: lib/explorer_web/templates/token/show.html.eex:65
-#: lib/explorer_web/templates/token/show.html.eex:75
+#: lib/explorer_web/templates/token/show.html.eex:60
+#: lib/explorer_web/templates/token/show.html.eex:70
+#: lib/explorer_web/templates/token/show.html.eex:73
+#: lib/explorer_web/templates/token/show.html.eex:83
 msgid "Token Transfers"
 msgstr ""
 
