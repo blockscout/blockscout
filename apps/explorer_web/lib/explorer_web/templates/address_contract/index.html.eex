@@ -51,37 +51,41 @@
       <% end %>
 
       <%= if smart_contract_verified?(@address) do %>
-        <table class="table">
-          <tr>
-            <th>Contract name:</th>
-            <td><%= @address.smart_contract.name %></td>
-          </tr>
-          <tr>
-            <th>Optimization enabled:</th>
-            <td><%= format_optimization(@address.smart_contract.optimization) %></td>
-          </tr>
-          <tr>
-            <th>Compiler version:</th>
-            <td><%= @address.smart_contract.compiler_version %></td>
-          </tr>
-        </table>
+        <div class="mb-4">
+          <dl class="row">
+            <dt class="col-sm-4 col-md-2 text-muted">Contract name:</dt>
+            <dd class="col-sm-8 col-md-10"><%= @address.smart_contract.name %></dd>
+          </dl>
+          <dl class="row">
+            <dt class="col-sm-4 col-md-2 text-muted">Optimization enabled</dt>
+            <dd class="col-sm-8 col-md-10"><%= format_optimization(@address.smart_contract.optimization) %></dd>
+          </dl>
+          <dl class="row">
+            <dt class="col-sm-4 col-md-2 text-muted">Compiler version</dt>
+            <dd class="col-sm-8 col-md-10"><%= @address.smart_contract.compiler_version %></dd>
+          </dl>
+        </div>
+        <hr/>
+        <h3>Contract source code</h3>
+        <div class="tile tile-muted mb-4">
+          <pre>
+            <code>
+              <%= text_to_html(@address.smart_contract.contract_source_code, insert_brs: false) %>
+            </code>
+          </pre>
+        </div>
 
-        <h4>Contract source code</h4>
-        <pre class="p-2 bg-light mb-4">
-          <code>
-            <%= text_to_html(@address.smart_contract.contract_source_code, insert_brs: false) %>
-          </code>
-        </pre>
-
-        <h4>Contract ABI</h4>
-        <pre class="p-2 bg-light mb-4">
-          <code>
-            <%= format_smart_contract_abi(@address.smart_contract.abi) %>
-          </code>
-        </pre>
+        <h3>Contract ABI</h3>
+        <div class="tile tile-muted mb-4">
+          <pre>
+            <code>
+              <p><%= format_smart_contract_abi(@address.smart_contract.abi) %></p>
+            </code>
+          </pre>
+        </div>
       <% end %>
 
-      <h2 class="card-title">Contract creation code</h2>
+      <h3>Contract creation code</h3>
       <div class="tile tile-muted">
         <pre class="pre-wrap">
           <code><%= @address.contract_code %></code>
