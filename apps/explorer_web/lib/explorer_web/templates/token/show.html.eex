@@ -5,7 +5,7 @@
         <div class="card">
           <div class="card-body">
             <h1 class="card-title">
-              <%= if token_name?(@token.name) do %>
+              <%= if token_name?(@token) do %>
                 <%= @token.name %>
               <% else %>
                 <%= gettext("Token Details") %>
@@ -17,7 +17,7 @@
             <div class="d-flex flex-row justify-content-start text-muted">
               <span class="mr-4"><%= @total_address_in_token_transfers %>  <%= gettext "addresses" %></span>
               <span class="mr-4"><%= @total_token_transfers %> <%= gettext "Transfers" %></span>
-              <%= if decimals?(@token.decimals) do %>
+              <%= if decimals?(@token) do %>
                 <span class="mr-4"><%= @token.decimals %> <%= gettext "decimals" %></span>
               <% end %>
             </div>
@@ -25,29 +25,31 @@
         </div>
       </div>
 
-      <div class="col-md-6 col-lg-4">
-        <div class="card">
-          <div class="card-body">
-            <h2 class="card-title"><%= gettext "Total Supply" %></h2>
+      <%= if total_supply?(@token) do %>
+        <div class="col-md-6 col-lg-4">
+          <div class="card">
+            <div class="card-body">
+              <h2 class="card-title"><%= gettext "Total Supply" %></h2>
 
-            <span></span>
+              <span></span>
 
-            <div class="text-right">
-              <h3 class="text-uppercase">
-                <%= if decimals?(@token.decimals) do %>
-                  <%= format_according_to_decimals(@token.total_supply, @token.decimals) %>
-                <% else %>
-                  <%= format_integer_to_currency(@token.total_supply) %>
-                <% end %>
+              <div class="text-right">
+                <h3 class="text-uppercase">
+                  <%= if decimals?(@token) do %>
+                    <%= format_according_to_decimals(@token.total_supply, @token.decimals) %>
+                  <% else %>
+                    <%= format_integer_to_currency(@token.total_supply) %>
+                  <% end %>
 
-                <%= @token.symbol %>
-              </h3>
-              <br />
+                  <%= @token.symbol %>
+                </h3>
+                <br />
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    <% end %>
   </section>
 
   <section>
