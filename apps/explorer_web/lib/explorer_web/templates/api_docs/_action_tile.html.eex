@@ -148,14 +148,14 @@
               </tr>
             </thead>
             <tbody>
-              <%= for response <- @action.responses do %>
+              <%= for {response, index} <- Enum.with_index(@action.responses) do %>
               <tr>
                 <td>
                   <%= response.code %>
                 </td>
                 <td>
                   <div class="card card-body bg-dark rounded p-0">
-                    <pre class="text-white m-2"><em>successful operation</em></pre>
+                    <pre class="text-white m-2"><em><%= response.description %></em></pre>
                   </div>
 
                   <ul class="nav nav-pills mb-3" role="tablist">
@@ -170,17 +170,20 @@
                          Example Value
                       </a>
                     </li>
-                    <li class="nav-item">
-                      <a class="nav-link"
-                         id="<%= "#{@module_name}-#{@action.name}-model-tab" %>"
-                         data-toggle="pill"
-                         href="#<%= "#{@module_name}-#{@action.name}-model" %>"
-                         role="tab"
-                         aria-controls="<%= "#{@module_name}-#{@action.name}-model" %>"
-                         aria-selected="false">
-                         Model
-                      </a>
-                    </li>
+
+                    <%= if index == 0 do %>
+                      <li class="nav-item">
+                        <a class="nav-link"
+                           id="<%= "#{@module_name}-#{@action.name}-model-tab" %>"
+                           data-toggle="pill"
+                           href="#<%= "#{@module_name}-#{@action.name}-model" %>"
+                           role="tab"
+                           aria-controls="<%= "#{@module_name}-#{@action.name}-model" %>"
+                           aria-selected="false">
+                           Model
+                        </a>
+                      </li>
+                    <% end %>
                   </ul>
                   <div class="tab-content">
                     <div class="tab-pane fade show active"
@@ -191,12 +194,16 @@
                            <pre class="text-white m-2" data-json='<%= response.example_value %>'></pre>
                          </div>
                     </div> <!-- /tab-pane -->
-                    <div class="tab-pane fade"
-                         id="<%= "#{@module_name}-#{@action.name}-model" %>"
-                         role="tabpanel"
-                         aria-labelledby="<%= "#{@module_name}-#{@action.name}-model-tab" %>">
-                         <%= render "_model_table.html", model: response.model %>
-                    </div> <!-- /tab-pane -->
+
+                    <%= if index == 0 do %>
+                      <div class="tab-pane fade"
+                           id="<%= "#{@module_name}-#{@action.name}-model" %>"
+                           role="tabpanel"
+                           aria-labelledby="<%= "#{@module_name}-#{@action.name}-model-tab" %>">
+                           <%= render "_model_table.html", model: response.model %>
+                      </div> <!-- /tab-pane -->
+                    <% end %>
+
                   </div> <!-- /tab-content -->
 
                 </td>
