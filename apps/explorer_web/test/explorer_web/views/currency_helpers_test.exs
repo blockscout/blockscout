@@ -50,4 +50,10 @@ defmodule ExplorerWeb.CurrencyHelpersTest do
       assert CurrencyHelpers.format_according_to_decimals(amount, decimals) == "10,004.5"
     end
   end
+
+  describe "format_integer_to_currency/1" do
+    test "formats the integer value to a currency format" do
+      assert CurrencyHelpers.format_integer_to_currency(9000) == "9,000"
+    end
+  end
 end

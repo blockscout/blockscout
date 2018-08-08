@@ -19,7 +19,7 @@ defmodule Explorer.Chain.Token do
 
   use Ecto.Schema
 
-  import Ecto.Changeset
+  import Ecto.{Changeset}
   alias Explorer.Chain.{Address, Hash, Token}
 
   @typedoc """

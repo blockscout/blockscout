@@ -12,7 +12,7 @@ defmodule ExplorerWeb.Chain do
       string_to_transaction_hash: 1
     ]
 
-  alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Transaction}
+  alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Transaction, TokenTransfer}
   alias Explorer.PagingOptions
 
   @page_size 50
@@ -95,6 +95,9 @@ defmodule ExplorerWeb.Chain do
     end
   end
 
+  def paging_options(%{"inserted_at" => inserted_at}),
+    do: [paging_options: %{@default_paging_options | key: inserted_at}]
+
   def paging_options(_params), do: [paging_options: @default_paging_options]
 
   def param_to_block_number(formatted_number) when is_binary(formatted_number) do
@@ -133,6 +136,15 @@ defmodule ExplorerWeb.Chain do
 
   defp paging_params(%Transaction{block_number: block_number, index: index}) do
     %{"block_number" => block_number, "index" => index}
+  end
+
+  defp paging_params(%TokenTransfer{inserted_at: inserted_at}) do
+    inserted_at_datetime =
+      inserted_at
+      |> DateTime.from_naive!("Etc/UTC")
+      |> DateTime.to_iso8601()
+
+    %{"inserted_at" => inserted_at_datetime}
   end
 
   defp transaction_from_param(param) do

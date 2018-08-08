@@ -1,0 +1,48 @@
+<div class="tile tile-type-token fade-in mb-10">
+  <div class="row">
+    <div class="pl-5 col-md-2 d-flex flex-column align-items-left justify-content-start justify-content-lg-center">
+      <span class="tile-label"><%= gettext "Token Transfer" %></span>
+    </div>
+
+    <div class="col-md-7 col-lg-8 d-flex flex-column">
+      <p class="tile-title text-truncate">
+        <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: @transfer.transaction_hash %>
+      </p>
+      <span>
+        <%= render ExplorerWeb.AddressView,
+          "_link.html",
+          address_hash: to_string(@transfer.from_address_hash),
+          contract: ExplorerWeb.AddressView.contract?(@transfer.from_address),
+          locale: @locale %>
+
+        &rarr;
+
+        <%= render ExplorerWeb.AddressView,
+          "_link.html",
+          address_hash: to_string(@transfer.to_address_hash),
+          contract: ExplorerWeb.AddressView.contract?(@transfer.to_address),
+          locale: @locale %>
+      </span>
+
+      <span>
+        <span>
+          <%= token_transfer_amount(@transfer) %> <%= @transfer.token.symbol %></span>
+      </span>
+    </div>
+
+    <div class="p-4 col-md-2 col-lg-2 d-flex flex-row flex-md-column justify-content-start align-items-end text-md-right">
+        <span class="ml-1 mr-sm-0 text-muted" data-from-now="<%= @transfer.transaction.block.timestamp %>"></span>
+
+        <span class="ml-2">
+          <%= link(
+            gettext(
+              "Block #%{number}",
+              number: @transfer.transaction.block_number
+            ),
+            class: "mr-2 mr-sm-0 text-muted",
+            to: block_path(ExplorerWeb.Endpoint, :show, @locale, @transfer.transaction.block_number)
+          ) %>
+        </span>
+    </div>
+  </div>
+</div>
