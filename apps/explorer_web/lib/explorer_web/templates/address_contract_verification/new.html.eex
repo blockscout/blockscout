@@ -6,7 +6,6 @@
 
       <%= form_for @changeset,
           address_verify_contract_path(@conn, :create, @conn.assigns.locale, @conn.params["address_id"]),
-          [class: "needs-validation"],
           fn f -> %>
 
         <div class="form-group">
