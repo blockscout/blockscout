@@ -1,0 +1,35 @@
+.token-balance-dropdown {
+  min-width: 14.375rem;
+  margin-top: 1rem;
+  background-color: $gray-100;
+  box-shadow: 0px 2px 3px 2px $gray-200;
+  border: none;
+
+  // Overriding style added by Bootstrap dropdown via JS.
+  left: -17px !important;
+
+  .dropdown-items {
+    overflow-y: auto;
+    max-height: 18.5rem;
+
+    .dropdown-item:hover {
+      color: $white;
+    }
+  }
+
+  &:after, &:before {
+    bottom: 100%;
+    left: 14%;
+    border: solid transparent;
+    content: " ";
+    height: 0;
+    width: 0;
+    position: absolute;
+  }
+
+  &:before {
+    border-bottom-color: $gray-100;
+    border-width: 1rem;
+    margin-left: -1rem;
+  }
+}

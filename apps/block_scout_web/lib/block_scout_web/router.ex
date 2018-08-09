@@ -95,6 +95,13 @@ defmodule BlockScoutWeb.Router do
         only: [:index, :show],
         as: :read_contract
       )
+
+      resources(
+        "/token_balances",
+        AddressTokenBalanceController,
+        only: [:index],
+        as: :token_balance
+      )
     end
 
     resources "/tokens", Tokens.TokenController, only: [:show], as: :token do
