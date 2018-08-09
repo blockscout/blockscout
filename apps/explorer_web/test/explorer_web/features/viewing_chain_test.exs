@@ -146,22 +146,6 @@ defmodule ExplorerWeb.ViewingChainTest do
       |> refute_has(ChainPage.transaction(last_shown_transaction))
     end
 
-    test "count of non-loaded transactions live update when batch overflow", %{session: session, block: block} do
-      transaction_hashes =
-        30
-        |> insert_list(:transaction)
-        |> with_block(block)
-        |> Enum.map(& &1.hash)
-
-      session
-      |> ChainPage.visit_page()
-      |> assert_has(ChainPage.transactions(count: 5))
-
-      Notifier.handle_event({:chain_event, :transactions, transaction_hashes})
-
-      assert_has(session, ChainPage.non_loaded_transaction_count("30"))
-    end
-
     test "contract creation is shown for to_address", %{session: session, block: block} do
       contract_address = insert(:contract_address)
 
