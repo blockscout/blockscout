@@ -181,6 +181,8 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
+    # Added transaction.hash to order_by to force postgres to not use `transactions_recent_collated_index` for an
+    # index_scan before filtering based on the WHERE clauses (i.e. to speed up the query)
     Transaction
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index, asc: transaction.hash)
     |> handle_paging_options(paging_options)
