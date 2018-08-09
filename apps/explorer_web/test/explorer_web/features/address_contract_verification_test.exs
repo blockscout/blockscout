@@ -50,7 +50,7 @@ defmodule ExplorerWeb.AddressContractVerificationTest do
     |> fill_in(text_field("Contract Name"), with: "")
     |> fill_in(text_field("Enter the Solidity Contract Code below"), with: "")
     |> click(button("Verify and publish"))
-    |> assert_has(css(".has-error", text: "there was an error validating your contract, please try again."))
+    |> assert_has(css("[data-test='contract-source-code-error']", text: "there was an error validating your contract, please try again."))
   end
 
   def solc_bin_versions() do

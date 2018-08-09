@@ -45,7 +45,7 @@
         <div class="form-group mb-4" data-is-expandable>
           <%= label f, :contract_source_code, "Enter the Solidity Contract Code below" %>
           <%= textarea f, :contract_source_code, class: "form-control monospace", rows: 3, "aria-describedby": "contract-source-code-help-block" %>
-          <%= error_tag f, :contract_source_code, id: "contract-source-code-help-block", class: "text-danger" %>
+          <%= error_tag f, :contract_source_code, id: "contract-source-code-help-block", class: "text-danger", "data-test": "contract-source-code-error" %>
         </div>
 
         <%= submit "Verify and publish", class: "button button--primary button--sm mr-2" %>
