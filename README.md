@@ -37,8 +37,8 @@ We use [Terraform](https://www.terraform.io/intro/getting-started/install.html) 
 
 The [development stack page](https://github.com/poanetwork/poa-explorer/wiki/Development-Stack) contains more information about these frameworks.
 
-* [Erlang/OTP 20.3.2](https://github.com/erlang/otp)
-* [Elixir 1.6.5](https://elixir-lang.org/)
+* [Erlang/OTP 21.0.4](https://github.com/erlang/otp)
+* [Elixir 1.7.1](https://elixir-lang.org/)
 * [Postgres 10.3](https://www.postgresql.org/)
 * [Node.js 10.5.0](https://nodejs.org/en/)
 * [Automake](https://www.gnu.org/software/automake/)

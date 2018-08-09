@@ -260,6 +260,8 @@ defmodule Indexer.BlockFetcher.SupervisorTest do
 
       assert_receive {^ref, %{first_block_number: 0, missing_block_count: 0}} = message
 
+      Process.sleep(100)
+
       # DOWN is not flushed
       assert {:messages, [{:DOWN, ^ref, :process, ^pid, :normal}]} = Process.info(self(), :messages)
 

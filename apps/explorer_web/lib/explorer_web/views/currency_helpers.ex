@@ -6,7 +6,7 @@ defmodule ExplorerWeb.CurrencyHelpers do
   import ExplorerWeb.Gettext
 
   alias ExplorerWeb.ExchangeRates.USD
-  alias Cldr.Number
+  alias ExplorerWeb.Cldr
 
   @doc """
   Formats a `ExplorerWeb.ExchangeRates.USD` value into USD and applies a unit label.
@@ -28,7 +28,7 @@ defmodule ExplorerWeb.CurrencyHelpers do
   def format_usd_value(%USD{value: nil}), do: nil
 
   def format_usd_value(%USD{value: value}) do
-    case Number.to_string(value, format: "#,##0.00################") do
+    case Cldr.Number.to_string(value, format: "#,##0.00################") do
       {:ok, formatted} -> "$#{formatted} " <> gettext("USD")
       _ -> nil
     end

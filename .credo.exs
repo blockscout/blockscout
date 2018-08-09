@@ -74,7 +74,8 @@
         # You can customize the priority of any check
         # Priority values are: `low, normal, high, higher`
         #
-        {Credo.Check.Design.AliasUsage, excluded_lastnames: ~w(DateTime Full Number Repo Time Address), priority: :low},
+        {Credo.Check.Design.AliasUsage,
+         excluded_lastnames: ~w(Address DateTime Full Number Repo Time Unit), priority: :low},
 
         # For some checks, you can also set other parameters
         #

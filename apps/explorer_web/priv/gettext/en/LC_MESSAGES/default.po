@@ -301,12 +301,12 @@ msgstr ""
 #: lib/explorer_web/templates/transaction/_tile.html.eex:20
 #: lib/explorer_web/templates/transaction/overview.html.eex:84
 #: lib/explorer_web/templates/transaction_internal_transaction/_internal_transaction.html.eex:16
-#: lib/explorer_web/views/wei_helpers.ex:71
+#: lib/explorer_web/views/wei_helpers.ex:72
 msgid "Ether"
 msgstr "POA"
 
 #: lib/explorer_web/views/block_view.ex:18
-#: lib/explorer_web/views/wei_helpers.ex:70
+#: lib/explorer_web/views/wei_helpers.ex:71
 msgid "Gwei"
 msgstr ""
 
@@ -353,7 +353,7 @@ msgstr ""
 msgid "Type"
 msgstr ""
 
-#: lib/explorer_web/views/wei_helpers.ex:69
+#: lib/explorer_web/views/wei_helpers.ex:70
 msgid "Wei"
 msgstr ""
 
