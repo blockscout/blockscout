@@ -49,6 +49,13 @@ defmodule BlockScoutWeb.CurrencyHelpersTest do
 
       assert CurrencyHelpers.format_according_to_decimals(amount, decimals) == "10,004.5"
     end
+
+    test "supports value as integer" do
+      amount = 1_000_450
+      decimals = 2
+
+      assert CurrencyHelpers.format_according_to_decimals(amount, decimals) == "10,004.5"
+    end
   end
 
   describe "format_integer_to_currency/1" do
