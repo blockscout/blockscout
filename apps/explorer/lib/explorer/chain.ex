@@ -179,10 +179,13 @@ defmodule Explorer.Chain do
       when is_list(options) do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    options
-    |> Keyword.get(:paging_options, @default_paging_options)
-    |> fetch_transactions()
+    # Added transaction.hash to order_by to force postgres to not use `transactions_recent_collated_index` for an
+    # index_scan before filtering based on the WHERE clauses (i.e. to speed up the query)
+    Transaction
+    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index, asc: transaction.hash)
+    |> handle_paging_options(paging_options)
     |> Transaction.where_address_fields_match(address_hash, direction)
     |> join_associations(necessity_by_association)
     |> Transaction.preload_token_transfers(address_hash)
