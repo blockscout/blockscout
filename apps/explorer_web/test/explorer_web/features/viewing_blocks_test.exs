@@ -76,6 +76,8 @@ defmodule ExplorerWeb.ViewingBlocksTest do
     block = insert(:block, number: 42)
     Notifier.handle_event({:chain_event, :blocks, [block]})
 
-    assert_has(session, BlockListPage.block(block))
+    eventually(fn ->
+      assert_has(session, BlockListPage.block(block))
+    end)
   end
 end

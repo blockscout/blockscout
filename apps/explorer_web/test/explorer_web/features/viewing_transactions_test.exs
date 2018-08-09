@@ -97,6 +97,37 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
       |> TransactionListPage.visit_page()
       |> assert_has(TransactionListPage.contract_creation(transaction))
     end
+
+    test "viewing new transactions via live update on list page", %{session: session} do
+      TransactionListPage.visit_page(session)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      Notifier.handle_event({:chain_event, :transactions, [transaction.hash]})
+
+      eventually(fn ->
+        assert_has(session, TransactionListPage.transaction(transaction))
+      end)
+    end
+
+    test "count of non-loaded transactions on list page live update when batch overflow", %{session: session} do
+      transaction_hashes =
+        30
+        |> insert_list(:transaction)
+        |> with_block()
+        |> Enum.map(& &1.hash)
+
+      TransactionListPage.visit_page(session)
+
+      Notifier.handle_event({:chain_event, :transactions, transaction_hashes})
+
+      eventually(fn ->
+        assert_has(session, TransactionListPage.non_loaded_transaction_count("30"))
+      end)
+    end
   end
 
   describe "viewing a transaction page" do
@@ -139,7 +170,10 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
       assert_text(session, TransactionPage.block_confirmations(), "0")
 
       Notifier.handle_event({:chain_event, :blocks, blocks})
-      assert_text(session, TransactionPage.block_confirmations(), "10")
+
+      eventually(fn ->
+        assert_text(session, TransactionPage.block_confirmations(), "10")
+      end)
     end
   end
 end

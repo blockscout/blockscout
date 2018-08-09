@@ -48,7 +48,9 @@ defmodule ExplorerWeb.ViewingChainTest do
 
       Notifier.handle_event({:chain_event, :blocks, [block]})
 
-      assert_has(session, ChainPage.average_block_time("10 seconds"))
+      eventually(fn ->
+        assert_has(session, ChainPage.average_block_time("10 seconds"))
+      end)
     end
 
     test "address count live updates", %{session: session} do
@@ -61,7 +63,9 @@ defmodule ExplorerWeb.ViewingChainTest do
       address = insert(:address)
       Notifier.handle_event({:chain_event, :addresses, [address]})
 
-      assert_has(session, ChainPage.address_count(count + 1))
+      eventually(fn ->
+        assert_has(session, ChainPage.address_count(count + 1))
+      end)
     end
   end
 
@@ -101,10 +105,12 @@ defmodule ExplorerWeb.ViewingChainTest do
 
       Notifier.handle_event({:chain_event, :blocks, [block]})
 
-      session
-      |> assert_has(ChainPage.blocks(count: 4))
-      |> assert_has(ChainPage.block(block))
-      |> refute_has(ChainPage.block(last_shown_block))
+      eventually(fn ->
+        session
+        |> assert_has(ChainPage.blocks(count: 4))
+        |> assert_has(ChainPage.block(block))
+        |> refute_has(ChainPage.block(last_shown_block))
+      end)
     end
   end
 
@@ -140,10 +146,30 @@ defmodule ExplorerWeb.ViewingChainTest do
 
       Notifier.handle_event({:chain_event, :transactions, [transaction.hash]})
 
+      eventually(fn ->
+        session
+        |> assert_has(ChainPage.transactions(count: 5))
+        |> assert_has(ChainPage.transaction(transaction))
+        |> refute_has(ChainPage.transaction(last_shown_transaction))
+      end)
+    end
+
+    test "count of non-loaded transactions live update when batch overflow", %{session: session, block: block} do
+      transaction_hashes =
+        30
+        |> insert_list(:transaction)
+        |> with_block(block)
+        |> Enum.map(& &1.hash)
+
       session
+      |> ChainPage.visit_page()
       |> assert_has(ChainPage.transactions(count: 5))
-      |> assert_has(ChainPage.transaction(transaction))
-      |> refute_has(ChainPage.transaction(last_shown_transaction))
+
+      Notifier.handle_event({:chain_event, :transactions, transaction_hashes})
+
+      eventually(fn ->
+        assert_has(session, ChainPage.non_loaded_transaction_count("30"))
+      end)
     end
 
     test "contract creation is shown for to_address", %{session: session, block: block} do

@@ -240,9 +240,11 @@ defmodule ExplorerWeb.ViewingAddressesTest do
 
     Notifier.handle_event({:chain_event, :transactions, [transaction1.hash, transaction2.hash]})
 
-    session
-    |> assert_has(AddressPage.transaction(transaction1))
-    |> assert_has(AddressPage.transaction(transaction2))
+    eventually(fn ->
+      session
+      |> assert_has(AddressPage.transaction(transaction1))
+      |> assert_has(AddressPage.transaction(transaction2))
+    end)
   end
 
   test "count of non-loaded transactions on live update when batch overflow", %{addresses: addresses, session: session} do
@@ -259,8 +261,10 @@ defmodule ExplorerWeb.ViewingAddressesTest do
 
     Notifier.handle_event({:chain_event, :transactions, transaction_hashes})
 
-    session
-    |> assert_has(AddressPage.non_loaded_transaction_count("30"))
+    eventually(fn ->
+      session
+      |> assert_has(AddressPage.non_loaded_transaction_count("30"))
+    end)
   end
 
   test "transaction count live updates", %{addresses: addresses, session: session} do
@@ -275,7 +279,9 @@ defmodule ExplorerWeb.ViewingAddressesTest do
 
     Notifier.handle_event({:chain_event, :transactions, [transaction.hash]})
 
-    assert_text(session, AddressPage.transaction_count(), "3")
+    eventually(fn ->
+      assert_text(session, AddressPage.transaction_count(), "3")
+    end)
   end
 
   test "viewing updated balance via live update", %{session: session} do
@@ -318,7 +324,9 @@ defmodule ExplorerWeb.ViewingAddressesTest do
 
     Notifier.handle_event({:chain_event, :addresses, [updated_address]})
 
-    assert_text(session, AddressPage.balance(), "0.0000000000000001 POA")
+    eventually(fn ->
+      assert_text(session, AddressPage.balance(), "0.0000000000000001 POA")
+    end)
   end
 
   test "contract creation is shown for to_address on list page", %{
