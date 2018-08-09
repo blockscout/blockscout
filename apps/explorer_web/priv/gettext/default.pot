@@ -574,6 +574,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/explorer_web/templates/address/overview.html.eex:8
+#: lib/explorer_web/templates/address_contract/index.html.eex:73
 msgid "Copy Address"
 msgstr ""
 
