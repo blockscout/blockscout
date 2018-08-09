@@ -1564,4 +1564,11 @@ defmodule Explorer.Chain do
 
     Repo.one(query) != nil
   end
+
+  @spec fetch_tokens_from_address_hash(Hash.Address.t()) :: []
+  def fetch_tokens_from_address_hash(address_hash) do
+    address_hash
+    |> Token.with_transfers_by_address()
+    |> Repo.all()
+  end
 end
