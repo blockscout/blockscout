@@ -124,28 +124,6 @@ defmodule ExplorerWeb.ViewingChainTest do
       |> assert_has(ChainPage.transactions(count: 5))
     end
 
-    test "viewing new transactions via live update", %{
-      session: session,
-      block: block,
-      last_shown_transaction: last_shown_transaction
-    } do
-      session
-      |> ChainPage.visit_page()
-      |> assert_has(ChainPage.transactions(count: 5))
-
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block(block)
-
-      Notifier.handle_event({:chain_event, :transactions, [transaction.hash]})
-
-      session
-      |> assert_has(ChainPage.transactions(count: 5))
-      |> assert_has(ChainPage.transaction(transaction))
-      |> refute_has(ChainPage.transaction(last_shown_transaction))
-    end
-
     test "contract creation is shown for to_address", %{session: session, block: block} do
       contract_address = insert(:contract_address)
 
