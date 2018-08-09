@@ -85,7 +85,7 @@
         </div>
       <% end %>
 
-      <h3>Contract creation code</h3>
+      <h2 class="card-title">Contract creation code</h2>
       <div class="tile tile-muted">
         <pre class="pre-wrap">
           <code><%= @address.contract_code %></code>
