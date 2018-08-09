@@ -26,7 +26,6 @@ import './lib/tooltip'
 import './lib/smart_contract/read_function'
 import './lib/pretty_json'
 import './lib/try_api'
-import './lib/expandable_textarea'
 
 import './pages/address'
 import './pages/block'
