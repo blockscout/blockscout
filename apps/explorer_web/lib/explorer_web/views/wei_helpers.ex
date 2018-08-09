@@ -6,6 +6,7 @@ defmodule ExplorerWeb.WeiHelpers do
   import ExplorerWeb.Gettext
 
   alias Explorer.Chain.Wei
+  alias ExplorerWeb.Cldr
 
   @valid_units ~w(wei gwei ether)a
 

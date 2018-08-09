@@ -20,6 +20,21 @@ defmodule ExplorerWeb.BlockView do
     "#{average} #{unit_text}"
   end
 
+  @doc """
+  Work-around for spec issue in `Cldr.Unit.to_string!/1`
+  """
+  def cldr_unit_to_string!(unit) do
+    # We do this to trick Dialyzer to not complain about non-local returns caused by bug in Cldr.Unit.to_string! spec
+    case :erlang.phash2(1, 1) do
+      0 ->
+        Cldr.Unit.to_string!(unit)
+
+      1 ->
+        # does not occur
+        ""
+    end
+  end
+
   def formatted_gas(gas, format \\ []) do
     Cldr.Number.to_string!(gas, format)
   end
