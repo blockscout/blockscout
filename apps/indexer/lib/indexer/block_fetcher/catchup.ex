@@ -47,13 +47,11 @@ defmodule Indexer.BlockFetcher.Catchup do
     )
   end
 
-  def task(
-        %__MODULE__{
-          block_fetcher:
-            %BlockFetcher{blocks_batch_size: blocks_batch_size, json_rpc_named_arguments: json_rpc_named_arguments} =
-              block_fetcher
-        } = state
-      ) do
+  def task(%__MODULE__{
+        block_fetcher:
+          %BlockFetcher{blocks_batch_size: blocks_batch_size, json_rpc_named_arguments: json_rpc_named_arguments} =
+            block_fetcher
+      }) do
     {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
 
     case latest_block_number do

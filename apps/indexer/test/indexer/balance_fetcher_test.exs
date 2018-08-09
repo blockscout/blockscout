@@ -63,6 +63,7 @@ defmodule Indexer.AddressBalanceFetcherTest do
       {:ok, miner_hash} = Hash.Address.cast(miner_hash_data)
       miner = insert(:address, hash: miner_hash)
       block = insert(:block, miner: miner, number: block_number)
+      insert(:unfetched_balance, address_hash: miner.hash, block_number: block_number)
 
       assert miner.fetched_balance == nil
       assert miner.fetched_balance_block_number == nil
@@ -118,6 +119,7 @@ defmodule Indexer.AddressBalanceFetcherTest do
       {:ok, miner_hash} = Hash.Address.cast(miner_hash_data)
       miner = insert(:address, hash: miner_hash)
       block = insert(:block, miner: miner, number: block_number)
+      insert(:unfetched_balance, address_hash: miner.hash, block_number: block_number)
 
       AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments, max_batch_size: 2)
 

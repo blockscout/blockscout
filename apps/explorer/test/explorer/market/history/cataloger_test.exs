@@ -38,19 +38,6 @@ defmodule Explorer.Market.History.CatalogerTest do
     assert Repo.get_by(MarketHistory, date: record.date)
   end
 
-  @tag capture_log: true
-  test "handle_info with failed task" do
-    state = %{}
-    test_pid = self()
-    expect(TestSource, :fetch_history, fn 10 -> send(test_pid, :retry) end)
-    set_mox_global()
-
-    assert {:noreply, state} == Cataloger.handle_info({nil, {10, 0, :error}}, state)
-    # Back off check
-    refute_receive :retry, 100
-    assert_receive :retry, 300
-  end
-
   test "handle info for DOWN message" do
     assert {:noreply, %{}} == Cataloger.handle_info({:DOWN, nil, :process, nil, nil}, %{})
   end

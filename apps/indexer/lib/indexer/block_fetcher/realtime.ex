@@ -59,6 +59,7 @@ defmodule Indexer.BlockFetcher.Realtime do
         block_fetcher,
         %{
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number,
+          balances: %{params: balance_params},
           addresses: %{params: addresses_params},
           transactions: %{params: transactions_params}
         } = options
@@ -75,7 +76,8 @@ defmodule Indexer.BlockFetcher.Realtime do
          {:ok, %{addresses_params: balances_addresses_params, balances_params: balances_params}} <-
            balances(block_fetcher, %{
              address_hash_to_block_number: address_hash_to_block_number,
-             address_params: internal_transactions_addresses_params
+             addresses_params: internal_transactions_addresses_params,
+             balances_params: balance_params
            }),
          chain_import_options =
            options
@@ -86,65 +88,6 @@ defmodule Indexer.BlockFetcher.Realtime do
          {:ok, results} = ok <- Chain.import(chain_import_options) do
       async_import_remaining_block_data(results)
       ok
-    end
-  end
-
-  def internal_transactions(
-        %BlockFetcher{json_rpc_named_arguments: json_rpc_named_arguments},
-        %{addresses_params: addresses_params, transactions_params: transactions_params}
-      ) do
-    with {:ok, internal_transactions_params} <-
-           transactions_params
-           |> transactions_params_to_fetch_internal_transactions_params()
-           |> EthereumJSONRPC.fetch_internal_transactions(json_rpc_named_arguments) do
-      merged_addresses_params =
-        %{internal_transactions: internal_transactions_params}
-        |> AddressExtraction.extract_addresses()
-        |> Kernel.++(addresses_params)
-        |> AddressExtraction.merge_addresses()
-
-      {:ok, %{addresses_params: merged_addresses_params, internal_transactions_params: internal_transactions_params}}
-    end
-  end
-
-  defp transactions_params_to_fetch_internal_transactions_params(transactions_params) do
-    Enum.map(transactions_params, &transaction_params_to_fetch_internal_transaction_params/1)
-  end
-
-  defp transaction_params_to_fetch_internal_transaction_params(%{block_number: block_number, hash: hash})
-       when is_integer(block_number) do
-    %{block_number: block_number, hash_data: to_string(hash)}
-  end
-
-  def balances(
-        %BlockFetcher{json_rpc_named_arguments: json_rpc_named_arguments},
-        %{
-          address_params: address_params,
-          address_hash_to_block_number: address_hash_to_block_number
-        }
-      ) do
-    balances_params =
-      Enum.map(address_params, fn %{hash: address_hash} = address_params when is_binary(address_hash) ->
-        block_number =
-          case address_params do
-            %{fetched_balance_block_number: block_number} when is_integer(block_number) ->
-              block_number
-
-            _ ->
-              Map.fetch!(address_hash_to_block_number, address_hash)
-          end
-
-        %{hash_data: address_hash, block_quantity: integer_to_quantity(block_number)}
-      end)
-
-    with {:ok, balances_params} <- EthereumJSONRPC.fetch_balances(balances_params, json_rpc_named_arguments) do
-      merged_addresses_params =
-        %{balances: balances_params}
-        |> AddressExtraction.extract_addresses()
-        |> Kernel.++(address_params)
-        |> AddressExtraction.merge_addresses()
-
-      {:ok, %{addresses_params: merged_addresses_params, balances_params: balances_params}}
     end
   end
 
@@ -198,5 +141,88 @@ defmodule Indexer.BlockFetcher.Realtime do
     tokens
     |> Enum.map(& &1.contract_address_hash)
     |> TokenFetcher.async_fetch()
+  end
+
+  defp internal_transactions(
+         %BlockFetcher{json_rpc_named_arguments: json_rpc_named_arguments},
+         %{addresses_params: addresses_params, transactions_params: transactions_params}
+       ) do
+    with {:ok, internal_transactions_params} <-
+           transactions_params
+           |> transactions_params_to_fetch_internal_transactions_params()
+           |> EthereumJSONRPC.fetch_internal_transactions(json_rpc_named_arguments) do
+      merged_addresses_params =
+        %{internal_transactions: internal_transactions_params}
+        |> AddressExtraction.extract_addresses()
+        |> Kernel.++(addresses_params)
+        |> AddressExtraction.merge_addresses()
+
+      {:ok, %{addresses_params: merged_addresses_params, internal_transactions_params: internal_transactions_params}}
+    end
+  end
+
+  defp transactions_params_to_fetch_internal_transactions_params(transactions_params) do
+    Enum.map(transactions_params, &transaction_params_to_fetch_internal_transaction_params/1)
+  end
+
+  defp transaction_params_to_fetch_internal_transaction_params(%{block_number: block_number, hash: hash})
+       when is_integer(block_number) do
+    %{block_number: block_number, hash_data: to_string(hash)}
+  end
+
+  defp balances(
+         %BlockFetcher{json_rpc_named_arguments: json_rpc_named_arguments},
+         %{addresses_params: addresses_params} = options
+       ) do
+    with {:ok, fetched_balances_params} <-
+           options
+           |> fetch_balances_params_list()
+           |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments) do
+      merged_addresses_params =
+        %{balances: fetched_balances_params}
+        |> AddressExtraction.extract_addresses()
+        |> Kernel.++(addresses_params)
+        |> AddressExtraction.merge_addresses()
+
+      value_fetched_at = DateTime.utc_now()
+      importable_balances_params = Enum.map(fetched_balances_params, &Map.put(&1, :value_fetched_at, value_fetched_at))
+
+      {:ok, %{addresses_params: merged_addresses_params, balances_params: importable_balances_params}}
+    end
+  end
+
+  defp fetch_balances_params_list(%{
+         addresses_params: addresses_params,
+         address_hash_to_block_number: address_hash_to_block_number,
+         balances_params: balances_params
+       }) do
+    addresses_params
+    |> addresses_params_to_fetched_balances_params_set(%{address_hash_to_block_number: address_hash_to_block_number})
+    |> MapSet.union(balances_params_to_fetch_balances_params_set(balances_params))
+    # stable order for easier moxing
+    |> Enum.sort_by(fn %{hash_data: hash_data, block_quantity: block_quantity} -> {hash_data, block_quantity} end)
+  end
+
+  defp addresses_params_to_fetched_balances_params_set(addresses_params, %{
+         address_hash_to_block_number: address_hash_to_block_number
+       }) do
+    Enum.into(addresses_params, MapSet.new(), fn %{hash: address_hash} = address_params when is_binary(address_hash) ->
+      block_number =
+        case address_params do
+          %{fetched_balance_block_number: block_number} when is_integer(block_number) ->
+            block_number
+
+          _ ->
+            Map.fetch!(address_hash_to_block_number, address_hash)
+        end
+
+      %{hash_data: address_hash, block_quantity: integer_to_quantity(block_number)}
+    end)
+  end
+
+  defp balances_params_to_fetch_balances_params_set(balances_params) do
+    Enum.into(balances_params, MapSet.new(), fn %{address_hash: address_hash, block_number: block_number} ->
+      %{hash_data: address_hash, block_quantity: integer_to_quantity(block_number)}
+    end)
   end
 end

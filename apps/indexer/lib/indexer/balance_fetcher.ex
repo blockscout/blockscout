@@ -72,12 +72,16 @@ defmodule Indexer.BalanceFetcher do
 
     case EthereumJSONRPC.fetch_balances(unique_params_list, json_rpc_named_arguments) do
       {:ok, balances_params} ->
-        addresses_params = balances_params_to_address_params(balances_params)
+        value_fetched_at = DateTime.utc_now()
+
+        importable_balances_params = Enum.map(balances_params, &Map.put(&1, :value_fetched_at, value_fetched_at))
+
+        addresses_params = balances_params_to_address_params(importable_balances_params)
 
         {:ok, _} =
           Chain.import(%{
             addresses: %{params: addresses_params, with: :balance_changeset},
-            balances: %{params: balances_params}
+            balances: %{params: importable_balances_params}
           })
 
         :ok

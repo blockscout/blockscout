@@ -1125,20 +1125,21 @@ defmodule Explorer.ChainTest do
   end
 
   describe "stream_unfetched_balances/2" do
-    test "with existing `t:Explorer.Chain.Balance.t/0` with same `address_hash` and `block_number` " <>
+    test "with `t:Explorer.Chain.Balance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
            "does not return `t:Explorer.Chain.Block.t/0` `miner_hash`" do
       %Address{hash: miner_hash} = miner = insert(:address)
       %Block{number: block_number} = insert(:block, miner: miner)
+      balance = insert(:unfetched_balance, address_hash: miner_hash, block_number: block_number)
 
       assert {:ok, [%{address_hash: ^miner_hash, block_number: ^block_number}]} =
                Chain.stream_unfetched_balances([], &[&1 | &2])
 
-      insert(:balance, address_hash: miner_hash, block_number: block_number)
+      update_balance_value(balance, 1)
 
       assert {:ok, []} = Chain.stream_unfetched_balances([], &[&1 | &2])
     end
 
-    test "with existing `t:Explorer.Chain.Balance.t/0` with same `address_hash` and `block_number` " <>
+    test "with `t:Explorer.Chain.Balance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
            "does not return `t:Explorer.Chain.Transaction.t/0` `from_address_hash`" do
       %Address{hash: from_address_hash} = from_address = insert(:address)
       %Block{number: block_number} = block = insert(:block)
@@ -1146,6 +1147,8 @@ defmodule Explorer.ChainTest do
       :transaction
       |> insert(from_address: from_address)
       |> with_block(block)
+
+      balance = insert(:unfetched_balance, address_hash: from_address_hash, block_number: block_number)
 
       {:ok, balance_fields_list} =
         Explorer.Chain.stream_unfetched_balances(
@@ -1155,7 +1158,7 @@ defmodule Explorer.ChainTest do
 
       assert %{address_hash: from_address_hash, block_number: block_number} in balance_fields_list
 
-      insert(:balance, address_hash: from_address_hash, block_number: block_number)
+      update_balance_value(balance, 1)
 
       {:ok, balance_fields_list} =
         Explorer.Chain.stream_unfetched_balances(
@@ -1166,7 +1169,7 @@ defmodule Explorer.ChainTest do
       refute %{address_hash: from_address_hash, block_number: block_number} in balance_fields_list
     end
 
-    test "with existing `t:Explorer.Chain.Balance.t/0` with same `address_hash` and `block_number` " <>
+    test "with `t:Explorer.Chain.Balance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
            "does not return `t:Explorer.Chain.Transaction.t/0` `to_address_hash`" do
       %Address{hash: to_address_hash} = to_address = insert(:address)
       %Block{number: block_number} = block = insert(:block)
@@ -1174,6 +1177,8 @@ defmodule Explorer.ChainTest do
       :transaction
       |> insert(to_address: to_address)
       |> with_block(block)
+
+      balance = insert(:unfetched_balance, address_hash: to_address_hash, block_number: block_number)
 
       {:ok, balance_fields_list} =
         Explorer.Chain.stream_unfetched_balances(
@@ -1183,7 +1188,7 @@ defmodule Explorer.ChainTest do
 
       assert %{address_hash: to_address_hash, block_number: block_number} in balance_fields_list
 
-      insert(:balance, address_hash: to_address_hash, block_number: block_number)
+      update_balance_value(balance, 1)
 
       {:ok, balance_fields_list} =
         Explorer.Chain.stream_unfetched_balances(
@@ -1194,7 +1199,7 @@ defmodule Explorer.ChainTest do
       refute %{address_hash: to_address_hash, block_number: block_number} in balance_fields_list
     end
 
-    test "with existing `t:Explorer.Chain.Balance.t/0` with same `address_hash` and `block_number` " <>
+    test "with `t:Explorer.Chain.Balance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
            "does not return `t:Explorer.Chain.Log.t/0` `address_hash`" do
       address = insert(:address)
       block = insert(:block)
@@ -1205,6 +1210,8 @@ defmodule Explorer.ChainTest do
         |> with_block(block)
 
       insert(:log, address: address, transaction: transaction)
+
+      balance = insert(:unfetched_balance, address_hash: address.hash, block_number: block.number)
 
       {:ok, balance_fields_list} =
         Explorer.Chain.stream_unfetched_balances(
@@ -1217,7 +1224,7 @@ defmodule Explorer.ChainTest do
                block_number: block.number
              } in balance_fields_list
 
-      insert(:balance, address_hash: address.hash, block_number: block.number)
+      update_balance_value(balance, 1)
 
       {:ok, balance_fields_list} =
         Explorer.Chain.stream_unfetched_balances(
@@ -1231,7 +1238,7 @@ defmodule Explorer.ChainTest do
              } in balance_fields_list
     end
 
-    test "with existing `t:Explorer.Chain.Balance.t/0` with same `address_hash` and `block_number` " <>
+    test "with `t:Explorer.Chain.Balance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
            "does not return `t:Explorer.Chain.InternalTransaction.t/0` `created_contract_address_hash`" do
       created_contract_address = insert(:address)
       block = insert(:block)
@@ -1248,6 +1255,8 @@ defmodule Explorer.ChainTest do
         transaction: transaction
       )
 
+      balance = insert(:unfetched_balance, address_hash: created_contract_address.hash, block_number: block.number)
+
       {:ok, balance_fields_list} =
         Explorer.Chain.stream_unfetched_balances(
           [],
@@ -1259,7 +1268,7 @@ defmodule Explorer.ChainTest do
                block_number: block.number
              } in balance_fields_list
 
-      insert(:balance, address_hash: created_contract_address.hash, block_number: block.number)
+      update_balance_value(balance, 1)
 
       {:ok, balance_fields_list} =
         Explorer.Chain.stream_unfetched_balances(
@@ -1273,7 +1282,7 @@ defmodule Explorer.ChainTest do
              } in balance_fields_list
     end
 
-    test "with existing `t:Explorer.Chain.Balance.t/0` with same `address_hash` and `block_number` " <>
+    test "with `t:Explorer.Chain.Balance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
            "does not return `t:Explorer.Chain.InternalTransaction.t/0` `from_address_hash`" do
       from_address = insert(:address)
       block = insert(:block)
@@ -1290,6 +1299,8 @@ defmodule Explorer.ChainTest do
         transaction: transaction
       )
 
+      balance = insert(:unfetched_balance, address_hash: from_address.hash, block_number: block.number)
+
       {:ok, balance_fields_list} =
         Explorer.Chain.stream_unfetched_balances(
           [],
@@ -1298,7 +1309,7 @@ defmodule Explorer.ChainTest do
 
       assert %{address_hash: from_address.hash, block_number: block.number} in balance_fields_list
 
-      insert(:balance, address_hash: from_address.hash, block_number: block.number)
+      update_balance_value(balance, 1)
 
       {:ok, balance_fields_list} =
         Explorer.Chain.stream_unfetched_balances(
@@ -1309,7 +1320,7 @@ defmodule Explorer.ChainTest do
       refute %{address_hash: from_address.hash, block_number: block.number} in balance_fields_list
     end
 
-    test "with existing `t:Explorer.Chain.Balance.t/0` with same `address_hash` and `block_number` " <>
+    test "with `t:Explorer.Chain.Balance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
            "does not return `t:Explorer.Chain.InternalTransaction.t/0` `to_address_hash`" do
       to_address = insert(:address)
       block = insert(:block)
@@ -1326,6 +1337,8 @@ defmodule Explorer.ChainTest do
         transaction: transaction
       )
 
+      balance = insert(:unfetched_balance, address_hash: to_address.hash, block_number: block.number)
+
       {:ok, balance_fields_list} =
         Explorer.Chain.stream_unfetched_balances(
           [],
@@ -1334,7 +1347,7 @@ defmodule Explorer.ChainTest do
 
       assert %{address_hash: to_address.hash, block_number: block.number} in balance_fields_list
 
-      insert(:balance, address_hash: to_address.hash, block_number: block.number)
+      update_balance_value(balance, 1)
 
       {:ok, balance_fields_list} =
         Explorer.Chain.stream_unfetched_balances(
@@ -1349,17 +1362,23 @@ defmodule Explorer.ChainTest do
       miner = insert(:address)
       mined_block = insert(:block, miner: miner)
 
+      insert(:unfetched_balance, address_hash: miner.hash, block_number: mined_block.number)
+
       from_transaction_block = insert(:block)
 
       :transaction
       |> insert(from_address: miner)
       |> with_block(from_transaction_block)
 
+      insert(:unfetched_balance, address_hash: miner.hash, block_number: from_transaction_block.number)
+
       to_transaction_block = insert(:block)
 
       :transaction
       |> insert(to_address: miner)
       |> with_block(to_transaction_block)
+
+      insert(:unfetched_balance, address_hash: miner.hash, block_number: to_transaction_block.number)
 
       log_block = insert(:block)
 
@@ -1369,6 +1388,8 @@ defmodule Explorer.ChainTest do
         |> with_block(log_block)
 
       insert(:log, address: miner, transaction: log_transaction)
+      insert(:unfetched_balance, address_hash: miner.hash, block_number: log_block.number)
+
       from_internal_transaction_block = insert(:block)
 
       from_internal_transaction_transaction =
@@ -1383,6 +1404,8 @@ defmodule Explorer.ChainTest do
         transaction: from_internal_transaction_transaction
       )
 
+      insert(:unfetched_balance, address_hash: miner.hash, block_number: from_internal_transaction_block.number)
+
       to_internal_transaction_block = insert(:block)
 
       to_internal_transaction_transaction =
@@ -1396,6 +1419,8 @@ defmodule Explorer.ChainTest do
         to_address: miner,
         transaction: to_internal_transaction_transaction
       )
+
+      insert(:unfetched_balance, address_hash: miner.hash, block_number: to_internal_transaction_block.number)
 
       {:ok, balance_fields_list} =
         Explorer.Chain.stream_unfetched_balances(
@@ -1419,6 +1444,8 @@ defmodule Explorer.ChainTest do
     test "an address_hash used for the same block_number is only returned once" do
       miner = insert(:address)
       block = insert(:block, miner: miner)
+
+      insert(:unfetched_balance, address_hash: miner.hash, block_number: block.number)
 
       :transaction
       |> insert(from_address: miner)
