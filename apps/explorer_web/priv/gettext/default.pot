@@ -480,7 +480,7 @@ msgstr ""
 msgid "Contract Source Code"
 msgstr ""
 
-#: lib/explorer_web/templates/address_contract/index.html.eex:52
+#: lib/explorer_web/templates/address_contract/index.html.eex:48
 msgid "Verify and Publish"
 msgstr ""
 
@@ -586,7 +586,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/explorer_web/templates/address/overview.html.eex:13
-#: lib/explorer_web/templates/address/overview.html.eex:66
+#: lib/explorer_web/templates/address/overview.html.eex:65
 msgid "QR Code"
 msgstr ""
 
@@ -646,7 +646,7 @@ msgid "OUT"
 msgstr ""
 
 #, elixir-format
-#: lib/explorer_web/templates/address_read_contract/index.html.eex:69
+#: lib/explorer_web/templates/address_read_contract/index.html.eex:67
 msgid "Query"
 msgstr ""
 
@@ -659,7 +659,7 @@ msgid "Read Contract"
 msgstr ""
 
 #, elixir-format
-#: lib/explorer_web/templates/address_read_contract/index.html.eex:46
+#: lib/explorer_web/templates/address_read_contract/index.html.eex:44
 msgid "Read Contract Information"
 msgstr ""
 
@@ -674,7 +674,7 @@ msgid "Block Height #%{height}"
 msgstr ""
 
 #, elixir-format
-#: lib/explorer_web/templates/address/overview.html.eex:75
+#: lib/explorer_web/templates/address/overview.html.eex:74
 msgid "Close"
 msgstr ""
 
