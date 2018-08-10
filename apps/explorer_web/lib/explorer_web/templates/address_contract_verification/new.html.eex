@@ -48,7 +48,8 @@
           <%= error_tag f, :contract_source_code, id: "contract-source-code-help-block", class: "text-danger", "data-test": "contract-source-code-error" %>
         </div>
 
-        <%= submit "Verify and publish", class: "button button--primary button--sm mr-2" %>
+        <%= submit "Verify and publish", class: "button button--primary button--sm mr-2", "data-loading": "animation"  %>
+        <button type="button" name="button" id="loading" disabled="true" class="d-none button button--primary button--sm mr-2"><i class="fa fa-spinner fa-spin"></i> loading...</button>
         <%= reset "Reset", class: "button button--secondary button--sm mr-2" %>
         <%= link(
             "Cancel",
