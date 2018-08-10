@@ -1,34 +1,112 @@
 defmodule ExplorerWeb.AddressChannelTest do
   use ExplorerWeb.ChannelCase
 
-  describe "addresses channel tests" do
-    test "subscribed user can receive transaction event" do
-      channel = "addresses"
-      @endpoint.subscribe(channel)
+  alias ExplorerWeb.Notifier
 
-      ExplorerWeb.Endpoint.broadcast(channel, "transaction", %{body: "test"})
+  test "subscribed user is notified of new_address count event" do
+    topic = "addresses:new_address"
+    @endpoint.subscribe(topic)
+
+    address = insert(:address)
+
+    Notifier.handle_event({:chain_event, :addresses, [address]})
+
+    receive do
+      %Phoenix.Socket.Broadcast{topic: ^topic, event: "count", payload: %{count: 1}} ->
+        assert true
+    after
+      5_000 ->
+        assert false, "Expected message received nothing."
+    end
+  end
+
+  describe "user subscribed to address" do
+    setup do
+      address = insert(:address)
+      topic = "addresses:#{address.hash}"
+      @endpoint.subscribe(topic)
+      {:ok, %{address: address, topic: topic}}
+    end
+
+    test "notified of balance_update for matching address", %{address: address, topic: topic} do
+      Notifier.handle_event({:chain_event, :addresses, [address]})
 
       receive do
-        %Phoenix.Socket.Broadcast{event: "transaction", topic: ^channel, payload: %{body: body}} ->
-          assert body == "test"
+        %Phoenix.Socket.Broadcast{topic: ^topic, event: "balance_update", payload: payload} ->
+          assert payload.address.hash == address.hash
       after
         5_000 ->
           assert false, "Expected message received nothing."
       end
     end
 
-    test "subscribed user can receive overview event" do
-      channel = "addresses"
-      @endpoint.subscribe(channel)
-
-      ExplorerWeb.Endpoint.broadcast(channel, "overview", %{body: "test"})
+    test "not notified of balance_update if fetched_balance is nil", %{address: address} do
+      Notifier.handle_event({:chain_event, :addresses, [address]})
 
       receive do
-        %Phoenix.Socket.Broadcast{event: "overview", topic: ^channel, payload: %{body: body}} ->
-          assert body == "test"
+        _ -> assert false, "Message was broadcast for nil fetched_balance."
+      after
+        100 -> assert true
+      end
+    end
+
+    test "notified of new_transaction for matching from_address", %{address: address, topic: topic} do
+      transaction =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block()
+
+      Notifier.handle_event({:chain_event, :transactions, [transaction.hash]})
+
+      receive do
+        %Phoenix.Socket.Broadcast{topic: ^topic, event: "transaction", payload: payload} ->
+          assert payload.address.hash == address.hash
+          assert payload.transaction.hash == transaction.hash
       after
         5_000 ->
           assert false, "Expected message received nothing."
+      end
+    end
+
+    test "notified of new_transaction for matching to_address", %{address: address, topic: topic} do
+      transaction =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block()
+
+      Notifier.handle_event({:chain_event, :transactions, [transaction.hash]})
+
+      receive do
+        %Phoenix.Socket.Broadcast{topic: ^topic, event: "transaction", payload: payload} ->
+          assert payload.address.hash == address.hash
+          assert payload.transaction.hash == transaction.hash
+      after
+        5_000 ->
+          assert false, "Expected message received nothing."
+      end
+    end
+
+    test "not notified twice of new_transaction if to and from address are equal", %{address: address, topic: topic} do
+      transaction =
+        :transaction
+        |> insert(from_address: address, to_address: address)
+        |> with_block()
+
+      Notifier.handle_event({:chain_event, :transactions, [transaction.hash]})
+
+      receive do
+        %Phoenix.Socket.Broadcast{topic: ^topic, event: "transaction", payload: payload} ->
+          assert payload.address.hash == address.hash
+          assert payload.transaction.hash == transaction.hash
+      after
+        5_000 ->
+          assert false, "Expected message received nothing."
+      end
+
+      receive do
+        _ -> assert false, "Received duplicate broadcast."
+      after
+        100 -> assert true
       end
     end
   end
