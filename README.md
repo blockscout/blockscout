@@ -1,13 +1,12 @@
-# POA Explorer 
-[![CircleCI](https://circleci.com/gh/poanetwork/blockscout.svg?style=svg&circle-token=f8823a3d0090407c11f87028c73015a331dbf604)](https://circleci.com/gh/poanetwork/blockscout) [![Coverage Status](https://coveralls.io/repos/github/poanetwork/blockscout/badge.svg?branch=master)](https://coveralls.io/github/poanetwork/blockscout?branch=master)
+# BlockScout [![CircleCI](https://circleci.com/gh/poanetwork/blockscout.svg?style=svg&circle-token=f8823a3d0090407c11f87028c73015a331dbf604)](https://circleci.com/gh/poanetwork/blockscout) [![Coverage Status](https://coveralls.io/repos/github/poanetwork/blockscout/badge.svg?branch=master)](https://coveralls.io/github/poanetwork/blockscout?branch=master)
 
-POA Explorer provides a comprehensive, easy-to-use interface for users to view, confirm, and inspect transactions on **all EVM** (Ethereum Virtual Machine) blockchains. This includes the Ethereum main and test networks as well as **Ethereum forks and sidechains**.
+BlockScout provides a comprehensive, easy-to-use interface for users to view, confirm, and inspect transactions on **all EVM** (Ethereum Virtual Machine) blockchains. This includes the Ethereum main and test networks as well as **Ethereum forks and sidechains**.
 
 Following is an overview of the project and instructions for [getting started](#getting-started).
 
-## About POA Explorer
+## About BlockScout
 
-POA Explorer is an Elixir application that allows users to search transactions, view accounts and balances, and verify smart contracts on the entire Ethereum network including all forks and sidechains.
+BlockScout is an Elixir application that allows users to search transactions, view accounts and balances, and verify smart contracts on the entire Ethereum network including all forks and sidechains.
 
 Currently available block explorers (i.e. Etherscan and Etherchain) are closed systems which are not independently verifiable.  As Ethereum sidechains continue to proliferate in both private and public settings, transparent tools are needed to analyze and validate transactions.
 
@@ -32,7 +31,7 @@ Development is ongoing. Please see the [project timeline](https://github.com/poa
 
 ## Getting Started
 
-We use [Terraform](https://www.terraform.io/intro/getting-started/install.html) to build the correct infrastructure to run POA Explorer. See [https://github.com/poanetwork/poa-explorer-infra](https://github.com/poanetwork/poa-explorer-infra) for details.
+We use [Terraform](https://www.terraform.io/intro/getting-started/install.html) to build the correct infrastructure to run BlockScout. See [https://github.com/poanetwork/poa-explorer-infra](https://github.com/poanetwork/poa-explorer-infra) for details.
 
 ### Requirements
 
@@ -88,9 +87,9 @@ _Additional runtime options:_
 *  Run Phoenix Server with real time indexer
 `DEBUG_INDEXER=1 iex -S mix phx.server`
 
-### POA Explorer Visual Interface
+### BlockScout Visual Interface
 
-![POA Explorer Example](explorer_example.gif)
+![BlockScout Example](explorer_example.gif)
 
 
 ### Umbrella Project Organization
