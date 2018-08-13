@@ -60,11 +60,11 @@
 
                 <%= for input <- function["inputs"] do %>
                   <div class="form-group pr-2">
-                    <input type="text" name="function_input" class="form-control form-control-sm address-input-sm" placeholder='<%= input["name"] %>(<%= input["type"] %>)'  />
+                    <input type="text" name="function_input" class="form-control form-control-sm address-input-sm mt-2" placeholder='<%= input["name"] %>(<%= input["type"] %>)'  />
                   </div>
                 <% end %>
 
-                <input type="submit" value='<%= gettext("Query")%>' class="button button--secondary button--xsmall py-0" />
+                <input type="submit" value='<%= gettext("Query")%>' class="button button--secondary button--xsmall py-0 mt-2" />
               </form>
 
               <div class='p-2 text-muted <%= if (queryable?(function["inputs"]) == true), do: "w-100" %>'>
