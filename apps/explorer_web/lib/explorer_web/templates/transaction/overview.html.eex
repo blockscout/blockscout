@@ -29,7 +29,7 @@
           <!-- Block Hash -->
           <dl class="row">
             <dt class="col-sm-3 text-muted"><%= gettext "Block Number" %> </dt>
-            <dd class="col-sm-9">
+            <dd class="col-sm-9" data-selector="block-number">
               <%= if block do %>
                 <%= link(
                       block,

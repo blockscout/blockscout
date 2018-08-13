@@ -132,14 +132,14 @@ defmodule ExplorerWeb.ViewingTransactionsTest do
     end
 
     test "block confirmations via live update", %{session: session, first_shown_transaction: transaction} do
-      blocks = [insert(:block, number: transaction.block_number + 10)]
+      session
+      |> TransactionPage.visit_page(transaction)
+      |> assert_text(TransactionPage.block_confirmations(), "0")
 
-      TransactionPage.visit_page(session, transaction)
-
-      assert_text(session, TransactionPage.block_confirmations(), "0")
+      blocks = [insert(:block, number: transaction.block_number + 5)]
 
       Notifier.handle_event({:chain_event, :blocks, blocks})
-      assert_text(session, TransactionPage.block_confirmations(), "10")
+      assert_text(session, TransactionPage.block_confirmations(), "5")
     end
   end
 end
