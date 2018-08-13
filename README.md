@@ -115,7 +115,7 @@ To monitor build status, configure your local [CCMenu](http://ccmenu.org/) with 
 
 #### Requirements
 
-  * PhantomJS (for wallaby)
+  * chromedriver (for wallaby)
 
 #### Running the tests
 
