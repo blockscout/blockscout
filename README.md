@@ -57,7 +57,7 @@ The [development stack page](https://github.com/poanetwork/blockscout/wiki/Devel
 
   3. Set up default configurations.  
   `cp apps/explorer/config/dev.secret.exs.example apps/explorer/config/dev.secret.exs`  
-  `cp apps/explorer_web/config/dev.secret.exs.example apps/explorer_web/config/dev.secret.exs`  
+  `cp apps/block_scout_web/config/dev.secret.exs.example apps/block_scout_web/config/dev.secret.exs`  
   <br />Optional: Set up default configuration for testing.  
   `cp apps/explorer/config/test.secret.exs.example apps/explorer/config/test.secret.exs`  
   Example usage: Changing the default Postgres port from localhost:15432 if [Boxen](https://github.com/boxen/boxen) is installed.
@@ -71,7 +71,7 @@ The [development stack page](https://github.com/poanetwork/blockscout/wiki/Devel
   `mix do ecto.drop, ecto.create, ecto.migrate`
 
   6. Install Node.js dependencies.  
-  `cd apps/explorer_web/assets && npm install; cd -`  
+  `cd apps/block_scout_web/assets && npm install; cd -`  
   `cd apps/explorer && npm install; cd -`
 
   7. Start Phoenix Server.  
@@ -102,7 +102,7 @@ Each OTP application has a restricted domain.
 |:------------------------|:--------------------|:------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `apps/ethereum_jsonrpc` | `:ethereum_jsonrpc` | `EthereumJSONRPC` | Ethereum JSONRPC client.  It is allowed to know `Explorer`'s param format, but it cannot directly depend on `:explorer`                                                                                                                                                                                                                                                         |
 | `apps/explorer`         | `:explorer`         | `Explorer`        | Storage for the indexed chain.  Can read and write to the backing storage.  MUST be able to boot in a read-only mode when run independently from `:indexer`, so cannot depend on `:indexer` as that would start `:indexer` indexing.                                                                                                                                            |
-| `apps/explorer_web`     | `:explorer_web`     | `ExplorerWeb`     | Phoenix interface to `:explorer`.  The minimum interface to allow web access should go in `:explorer_web`.  Any business rules or interface not tied directly to `Phoenix` or `Plug` should go in `:explorer`. MUST be able to boot in a read-only mode when run independently from `:indexer`, so cannot depend on `:indexer` as that would start `:indexer` indexing. |
+| `apps/block_scout_web`     | `:block_scout_web`     | `ExplorerWeb`     | Phoenix interface to `:explorer`.  The minimum interface to allow web access should go in `:block_scout_web`.  Any business rules or interface not tied directly to `Phoenix` or `Plug` should go in `:explorer`. MUST be able to boot in a read-only mode when run independently from `:indexer`, so cannot depend on `:indexer` as that would start `:indexer` indexing. |
 | `apps/indexer`          | `:indexer`          | `Indexer`         | Uses `:ethereum_jsonrpc` to index chain and batch import data into `:explorer`.  Any process, `Task`, or `GenServer` that automatically reads from the chain and writes to `:explorer` should be in `:indexer`. This restricts automatic writes to `:indexer` and read-only mode can be achieved by not running `:indexer`.                                             |
 
 
@@ -120,7 +120,7 @@ To monitor build status, configure your local [CCMenu](http://ccmenu.org/) with 
 #### Running the tests
 
   1. Build the assets.  
-  `cd apps/explorer_web/assets && npm run build; cd -`
+  `cd apps/block_scout_web/assets && npm run build; cd -`
 
   2. Format the Elixir code.  
   `mix format`
@@ -136,13 +136,13 @@ To monitor build status, configure your local [CCMenu](http://ccmenu.org/) with 
 
   6. Check the Elixir code for vulnerabilities.  
   `cd apps/explorer && mix sobelow --config; cd -`  
-  `cd apps/explorer_web && mix sobelow --config; cd -`
+  `cd apps/block_scout_web && mix sobelow --config; cd -`
 
   7. Lint the JavaScript code.  
-  `cd apps/explorer_web/assets && npm run eslint; cd -`
+  `cd apps/block_scout_web/assets && npm run eslint; cd -`
 
   8. Test the JavaScript code.  
-  `cd apps/explorer_web/assets && npm run test; cd -`
+  `cd apps/block_scout_web/assets && npm run test; cd -`
 
 ##### Variant and Chain
 
@@ -170,8 +170,8 @@ To view Modules and API Reference documentation:
 The app is currently internationalized. It is only localized to U.S. English. To translate new strings.
 
 1. To setup translation file.  
-`cd apps/explorer_web; mix gettext.extract --merge; cd -`
-2. To edit the new strings, go to `apps/explorer_web/priv/gettext/en/LC_MESSAGES/default.po`.
+`cd apps/block_scout_web; mix gettext.extract --merge; cd -`
+2. To edit the new strings, go to `apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po`.
 
 ## Acknowledgements
 

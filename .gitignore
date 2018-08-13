@@ -14,7 +14,7 @@ erl_crash.dump
 npm-debug.log
 
 # Static artifacts
-/apps/explorer_web/assets/node_modules
+/apps/block_scout_web/assets/node_modules
 /apps/explorer/node_modules
 
 # Since we are building assets from assets/,

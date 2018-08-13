@@ -36,7 +36,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - v6-npm-install-{{ .Branch }}-{{ checksum "apps/explorer_web/assets/package-lock.json" }}
+            - v6-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
             - v6-npm-install-{{ .Branch }}
             - v6-npm-install
 
@@ -56,17 +56,17 @@ jobs:
 
       - run:
           command: npm install
-          working_directory: "apps/explorer_web/assets"
+          working_directory: "apps/block_scout_web/assets"
 
       - save_cache:
-          key: v6-npm-install-{{ .Branch }}-{{ checksum "apps/explorer_web/assets/package-lock.json" }}
-          paths: "apps/explorer_web/assets/node_modules"
+          key: v6-npm-install-{{ .Branch }}-{{ checksum "apps/block_scout_web/assets/package-lock.json" }}
+          paths: "apps/block_scout_web/assets/node_modules"
       - save_cache:
           key: v6-npm-install-{{ .Branch }}
-          paths: "apps/explorer_web/assets/node_modules"
+          paths: "apps/block_scout_web/assets/node_modules"
       - save_cache:
           key: v6-npm-install
-          paths: "apps/explorer_web/assets/node_modules"
+          paths: "apps/block_scout_web/assets/node_modules"
 
       - run: mix compile
 
@@ -91,7 +91,7 @@ jobs:
       - run:
           name: Build assets
           command: node node_modules/webpack/bin/webpack.js --mode development
-          working_directory: "apps/explorer_web/assets"
+          working_directory: "apps/block_scout_web/assets"
 
       - persist_to_workspace:
           root: .
@@ -229,10 +229,10 @@ jobs:
       - run:
           name: ESLint
           command: ./node_modules/.bin/eslint --format=junit --output-file="test/eslint/junit.xml" js/**
-          working_directory: apps/explorer_web/assets
+          working_directory: apps/block_scout_web/assets
 
       - store_test_results:
-          path: apps/explorer_web/assets/test
+          path: apps/block_scout_web/assets/test
   gettext:
     docker:
       # Ensure .tool-versions matches
@@ -253,10 +253,10 @@ jobs:
           command: |
             mix gettext.extract --merge | tee stdout.txt
             ! grep "Wrote " stdout.txt
-          working_directory: "apps/explorer_web"
+          working_directory: "apps/block_scout_web"
 
       - store_artifacts:
-          path: apps/explorer_web/priv/gettext
+          path: apps/block_scout_web/priv/gettext
   jest:
     docker:
       # Ensure .tool-versions matches
@@ -271,7 +271,7 @@ jobs:
       - run:
           name: Jest
           command: ./node_modules/.bin/jest
-          working_directory: apps/explorer_web/assets
+          working_directory: apps/block_scout_web/assets
   sobelow:
     docker:
       # Ensure .tool-versions matches
@@ -293,9 +293,9 @@ jobs:
           working_directory: "apps/explorer"
 
       - run:
-          name: Scan explorer_web for vulnerabilities
+          name: Scan block_scout_web for vulnerabilities
           command: mix sobelow --config
-          working_directory: "apps/explorer_web"
+          working_directory: "apps/block_scout_web"
   test_geth_http:
     docker:
       # Ensure .tool-versions matches
