@@ -23,7 +23,7 @@ Development is ongoing. Please see the [project timeline](https://github.com/poa
 
 - [x] **Smart contract interaction**: Users can read and verify Solidity smart contracts and access pre-existing contracts to fast-track development. Support for Vyper, LLL, and Web Assembly contracts is in progress.
 
-- [x] **Token support**: Version 1 supports ERC20 and ERC721 tokens. Future releases will support additional token types including ERC223 and ERC1155. 
+- [x] **Token support**: Version 1 supports ERC20 and ERC721 tokens. Future releases will support additional token types including ERC223 and ERC1155.
 
 - [x] **User customization**: Users can easily deploy on a network and customize the Bootstrap interface.
 
@@ -68,7 +68,7 @@ The [development stack page](https://github.com/poanetwork/poa-explorer/wiki/Dev
   5. Create and migrate database.  
   `mix ecto.create && mix ecto.migrate`  
   <br />_Note:_ If you have run previously, drop the previous database  
-  `mix do ecto.drop, ecto.create, ecto.migrate` 
+  `mix do ecto.drop, ecto.create, ecto.migrate`
 
   6. Install Node.js dependencies.  
   `cd apps/explorer_web/assets && npm install; cd -`  
@@ -144,6 +144,16 @@ To monitor build status, configure your local [CCMenu](http://ccmenu.org/) with 
   8. Test the JavaScript code.  
   `cd apps/explorer_web/assets && npm run test; cd -`
 
+##### Variant and Chain
+
+By default, [`mox`](https://github.com/plataformatec/mox) will be used to mock the `EthereumJSONRPC.Transport` and `EthereumJSONRPC.HTTP` behaviours.  They mocked behaviours returns differ based on the `EthereumJSONRPC.Variant`.
+
+| `EthereumJSONRPC.Variant` | `EthereumJSONRPC.Transport` | `EthereumJSONRPC.HTTP`           | `url`                                             | Command                                                                                                                                                                                                                                                  | Usage(s)                                           |
+|:--------------------------|:----------------------------|:---------------------------------|:--------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------|
+| `EthereumJSONRPC.Parity`  | `EthereumJSONRPC.Mox`       | `EthereumJSONRPC.HTTP.Mox`       | N/A                                               | `mix test`                                                                                                                                                                                                                                               | Local, `circleci/config.yml` `test_parity_mox` job |
+| `EthereumJSONRPC.Parity`  | `EthereumJSONRPC.HTTP`      | `EthereumJSONRPC.HTTP.HTTPoison` | `https://trace-sokol.poa.network`                 | `ETHEREUM_JSONRPC_VARIANT=EthereumJSONRPC.Parity ETHEREUM_JSONRPC_TRANSPORT=EthereumJSONRPC.HTTP ETHEREUM_JSONRPC_HTTP=EthereumJSONRPC.HTTP.HTTPoison ETHEREUM_JSONRPC_HTTP_URL=https://sokol-trace.poa.network mix test --exclude no_parity`            | `.circleci/config.yml` `test_parity_http` job      |
+| `EthereumJSONRPC.Geth`    | `EthereumJSONRPC.Mox`       | `EthereumJSONRPC.HTTP.Mox`       | N/A                                               | `ETHEREUM_JSONRPC_VARIANT=EthereumJSONRPC.Geth mix test --exclude no_geth`                                                                                                                                                                               | `.circleci/config.yml` `test_geth_http` job        |
+| `EthereumJSONRPC.Geth`    | `EthereumJSONRPC.HTTP`      | `EthereumJSONRPC.HTTP.HTTPoison` | `https://mainnet.infura.io/8lTvJTKmHPCHazkneJsY`  | `ETHEREUM_JSONRPC_VARIANT=EthereumJSONRPC.Geth ETHEREUM_JSONRPC_TRANSPORT=EthereumJSONRPC.HTTP ETHEREUM_JSONRPC_HTTP=EthereumJSONRPC.HTTP.HTTPoison ETHEREUM_JSONRPC_HTTP_URL=https://mainnet.infura.io/8lTvJTKmHPCHazkneJsY mix test --exclude no_geth` | `.circleci/config.yml` `test_geth_http` job        |
 
 ### API Documentation
 
