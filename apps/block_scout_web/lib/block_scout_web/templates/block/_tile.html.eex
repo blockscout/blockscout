@@ -1,6 +1,6 @@
 <div class="tile fade-up">
   <div class="row">
-    <div class="col-md-6">
+    <div class="col-md-8 col-lg-9">
       <!-- block height -->
       <%= link(
             @block,
@@ -19,7 +19,7 @@
         <!-- age -->
         <span data-from-now="<%= @block.timestamp %>"></span>
       </div>
-      <div class="">
+      <div class="text-nowrap text-truncate mt-3 mt-md-0">
         <!-- validator -->
         <%= gettext "Miner" %>
         <span class="ml-2">
@@ -29,20 +29,20 @@
         </span>
       </div>
     </div>
-    <div class="col-md-6 text-right d-flex flex-column align-items-end justify-content-end">
+    <div class="col-md-4 col-lg-3 text-md-right d-flex flex-column align-items-md-end justify-content-md-end mt-3 mt-md-0">
+      <!-- Gas Limit -->
+      <span> <%= formatted_gas(@block.gas_limit) %> <%= gettext "Gas Limit" %> </span>
       <!-- Gas Used -->
-      <div class="">
+      <div class="mr-3 mr-md-0">
         <%= formatted_gas(@block.gas_used) %>
         (<%= formatted_gas(@block.gas_used / @block.gas_limit, format: "#.#%") %>)
         <%= gettext "Gas Used" %>
       </div>
-      <div class="progress w-25">
+      <!-- Progress bar -->
+      <div class="progress w-100 mt-3 mt-md-0">
         <div class="progress-bar" role="progressbar" style="width: <%= formatted_gas(@block.gas_used / @block.gas_limit, format: "#.#%") %>;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
-
         </div>
       </div>
-      <!-- Gas Limit -->
-      <span> <%= formatted_gas(@block.gas_limit) %> <%= gettext "Gas Limit" %> </span>
     </div>
   </div>
 </div>
