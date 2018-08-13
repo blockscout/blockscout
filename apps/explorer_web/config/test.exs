@@ -10,6 +10,8 @@ config :explorer_web, ExplorerWeb.Endpoint,
   server: true
 
 # Configure wallaby
-config :wallaby, screenshot_on_failure: true
+config :wallaby,
+  driver: Wallaby.Experimental.Chrome,
+  screenshot_on_failure: true
 
 config :explorer_web, :fake_adapter, ExplorerWeb.FakeAdapter
