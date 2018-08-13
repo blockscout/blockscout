@@ -20,5 +20,6 @@ config :explorer_web, ExplorerWeb.Endpoint,
   http: [port: System.get_env("PORT")],
   url: [
     scheme: "http",
-    port: System.get_env("PORT")
+    port: System.get_env("PORT"),
+    host: System.get_env("HTTP_HOST")
   ]
