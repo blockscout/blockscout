@@ -1,65 +1,60 @@
-<section class="container-fluid">
-  <h1>Smart Contract</h1>
-
+<section class="container">
   <div class="card">
-    <div class="card-header">
-      <ul class="nav nav-tabs card-header-tabs">
-        <li class="nav-item">
-          <%= link(
-            gettext("Contract Source Code"),
-            class: "nav-link active",
-            to: '#'
-          ) %>
-        </li>
-      </ul>
-    </div>
     <div class="card-body">
+
+      <h1 class="card-title">New Smart Contract</h1>
+
       <%= form_for @changeset,
           address_verify_contract_path(@conn, :create, @conn.assigns.locale, @conn.params["address_id"]),
           fn f -> %>
 
         <div class="form-group">
           <%= label f, :address_hash, "Contract Address" %>
-          <%= text_input f, :address_hash, class: "form-control", disabled: true %>
-          <%= error_tag f, :address_hash %>
+          <%= text_input f, :address_hash, class: "form-control", "aria-describedby": "contract-address-help-block", readonly: true %>
+          <%= error_tag f, :address_hash, id: "contract-address-help-block", class: "text-danger" %>
         </div>
 
         <div class="form-group">
           <%= label f, :name, "Contract Name" %>
-          <%= text_input f, :name, class: "form-control" %>
-          <%= error_tag f, :name %>
+          <%= text_input f, :name, class: "form-control", "aria-describedby": "contract-name-help-block" %>
+          <%= error_tag f, :name, id: "contract-name-help-block", class: "text-danger" %>
         </div>
 
-        <div class="form-group">
+        <div class="form-group mb-4">
           <%= label f, :compiler_version, "Compiler" %>
-          <%= select f, :compiler_version, @compiler_versions, class: "form-control", selected: "latest" %>
-          <%= error_tag f, :compiler_version %>
+          <%= select f, :compiler_version, @compiler_versions, class: "form-control", selected: "latest", "aria-describedby": "compiler-help-block" %>
+          <%= error_tag f, :compiler_version, id: "compiler-help-block", class: "text-danger" %>
         </div>
 
-        <div class="form-group">
-          <%= label f, "Optimization", class: "d-block" %>
+        <div class="form-group mb-4">
+          <%= label f, "Optimization" %>
 
-          <div class="form-check form-check-inline">
-            <%= radio_button f, :optimization, false, checked: true, class: "form-check-input" %>
+          <div class="form-check mb-2">
+            <%= radio_button f, :optimization, false, checked: true, class: "form-check-input", "aria-describedby": "optimization-help-block" %>
             <%= label :smart_contract_optimization, :false, "No", class: "form-check-label" %>
           </div>
 
-          <div class="form-check form-check-inline">
-            <%= radio_button f, :optimization, true, class: "form-check-input" %>
+          <div class="form-check">
+            <%= radio_button f, :optimization, true, class: "form-check-input", "aria-describedby": "optimization-help-block" %>
             <%= label :smart_contract_optimization, :true, "Yes", class: "form-check-label" %>
           </div>
 
-          <%= error_tag f, :optimization %>
+          <%= error_tag f, :optimization, id: "optimization-help-block", class: "text-danger" %>
         </div>
 
-        <div class="form-group">
+        <div class="form-group mb-4">
           <%= label f, :contract_source_code, "Enter the Solidity Contract Code below" %>
-          <%= textarea f, :contract_source_code, class: "form-control", rows: 3 %>
-          <%= error_tag f, :contract_source_code %>
+          <%= textarea f, :contract_source_code, class: "form-control monospace", rows: 3, "aria-describedby": "contract-source-code-help-block" %>
+          <%= error_tag f, :contract_source_code, id: "contract-source-code-help-block", class: "text-danger", "data-test": "contract-source-code-error" %>
         </div>
 
-        <%= submit "Verify and publish", class: "button button--secondary button--sm" %>
-        <%= reset "Reset", class: "button button--tertiary button--sm" %>
+        <%= submit "Verify and publish", class: "button button--primary button--sm mr-2", "data-loading": "animation"  %>
+        <button type="button" name="button" id="loading" disabled="true" class="d-none button button--primary button--sm mr-2"><i class="fa fa-spinner fa-spin"></i> loading...</button>
+        <%= reset "Reset", class: "button button--secondary button--sm mr-2" %>
+        <%= link(
+            "Cancel",
+            to: address_contract_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"]),
+            class: "button button--sm") %>
       <% end %>
     </div>
   </div>

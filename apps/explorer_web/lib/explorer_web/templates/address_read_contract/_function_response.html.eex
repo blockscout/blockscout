@@ -1,7 +1,8 @@
-<span>
-  [ <%= @function_name %> method Response ] <br />
+<div class="tile tile-muted monospace">
+  [ <%= @function_name %> method Response ]
 
   <%= for item <- @outputs do %>
-    <i class="fa fa-angle-double-right"></i> <%= item["type"] %> : <%= item["value"] %>
+    <i class="fa fa-angle-double-right"></i>
+    <span class="text-dark"> <%= item["type"] %> : <%= item["value"] %> </span>
   <% end %>
-</span>
+</div>

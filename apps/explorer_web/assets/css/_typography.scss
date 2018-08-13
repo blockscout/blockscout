@@ -16,14 +16,15 @@ h2 {
 h3 {
   font-size: 14px;
   font-weight: 600;
+  line-height: 36px;
 }
 
 h4 {
-  font-size: 16px !important;
-  line-height: 24px !important;
-  font-weight: 300 !important;
-  color: $gray-600 !important;
-  margin-top: 4px !important;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 300;
+  color: $gray-600;
+  margin-top: 4px;
 
   &.underline {
     text-decoration: underline;
@@ -34,7 +35,7 @@ p {
   font-size: 13px;
 
   @media screen and (max-width: 768px) {
-    font-size: 14px !important;
+    font-size: 14px;
    }
 }
 
@@ -52,6 +53,11 @@ a {
     color: $white;
   }
 }
+
+label, textarea.form-control {
+  font-size: 13px;
+}
+
 .monospace {
   font-family: $font-family-monospace;
 }
