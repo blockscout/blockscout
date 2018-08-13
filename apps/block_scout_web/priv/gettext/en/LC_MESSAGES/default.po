@@ -486,7 +486,7 @@ msgstr ""
 #: lib/block_scout_web/templates/block/index.html.eex:15
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:51
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:78
-#: lib/block_scout_web/templates/token/show.html.eex:101
+#: lib/block_scout_web/templates/token/show.html.eex:102
 #: lib/block_scout_web/templates/transaction/index.html.eex:66
 msgid "Older"
 msgstr ""
@@ -650,7 +650,7 @@ msgstr ""
 #:
 #: lib/block_scout_web/templates/address_internal_transaction/_internal_transaction.html.eex:29
 #: lib/block_scout_web/templates/address_transaction/_transaction.html.eex:54
-#: lib/block_scout_web/templates/address_transaction/_transaction.html.eex:91
+#: lib/block_scout_web/templates/address_transaction/_transaction.html.eex:92
 msgid "IN"
 msgstr ""
 
@@ -658,7 +658,7 @@ msgstr ""
 #:
 #: lib/block_scout_web/templates/address_internal_transaction/_internal_transaction.html.eex:27
 #: lib/block_scout_web/templates/address_transaction/_transaction.html.eex:50
-#: lib/block_scout_web/templates/address_transaction/_transaction.html.eex:87
+#: lib/block_scout_web/templates/address_transaction/_transaction.html.eex:88
 msgid "OUT"
 msgstr ""
 
@@ -734,7 +734,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_transaction/_transaction.html.eex:64
-#: lib/block_scout_web/templates/token/show.html.eex:19
+#: lib/block_scout_web/templates/token/show.html.eex:20
 msgid "Transfers"
 msgstr ""
 
@@ -762,7 +762,7 @@ msgstr ""
 msgid "Validated Transactions"
 msgstr ""
 
-#: lib/block_scout_web/templates/token/show.html.eex:94
+#: lib/block_scout_web/templates/token/show.html.eex:95
 msgid "There are no transfers for this Token."
 msgstr ""
 
@@ -772,24 +772,24 @@ msgid "Token Details"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/token/show.html.eex:62
-#: lib/block_scout_web/templates/token/show.html.eex:72
-#: lib/block_scout_web/templates/token/show.html.eex:75
-#: lib/block_scout_web/templates/token/show.html.eex:85
+#: lib/block_scout_web/templates/token/show.html.eex:63
+#: lib/block_scout_web/templates/token/show.html.eex:73
+#: lib/block_scout_web/templates/token/show.html.eex:76
+#: lib/block_scout_web/templates/token/show.html.eex:86
 msgid "Token Transfers"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/token/show.html.eex:18
+#: lib/block_scout_web/templates/token/show.html.eex:19
 msgid "addresses"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/token/show.html.eex:21
+#: lib/block_scout_web/templates/token/show.html.eex:22
 msgid "decimals"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/token/show.html.eex:32
+#: lib/block_scout_web/templates/token/show.html.eex:33
 msgid "Total Supply"
 msgstr ""
