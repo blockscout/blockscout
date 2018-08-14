@@ -15,7 +15,8 @@
             <h3><%= to_string(@token.contract_address_hash) %></h3>
 
             <div class="d-flex flex-row justify-content-start text-muted">
-              <span class="mr-4"><%= @total_address_in_token_transfers %>  <%= gettext "addresses" %></span>
+              <span class="mr-4"><%= @token.type %></span>
+              <span class="mr-4"><%= @total_address_in_token_transfers %> <%= gettext "addresses" %></span>
               <span class="mr-4"><%= @total_token_transfers %> <%= gettext "Transfers" %></span>
               <%= if decimals?(@token) do %>
                 <span class="mr-4"><%= @token.decimals %> <%= gettext "decimals" %></span>
