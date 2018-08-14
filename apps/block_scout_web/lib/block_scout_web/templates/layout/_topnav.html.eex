@@ -17,7 +17,12 @@
           <%= link to: transaction_path(@conn, :index, Gettext.get_locale), class: "nav-link topnav-nav-link" do %>
             <%= gettext("Transactions") %>
           <% end %>
-        </li>  
+        </li>
+        <li class="nav-item">
+          <%= link to: api_docs_path(@conn, :index, Gettext.get_locale), class: "nav-link topnav-nav-link" do %>
+            <%= gettext("API") %>
+          <% end %>
+        </li>
       </ul>
       <%= form_for @conn, chain_path(@conn, :search, Gettext.get_locale), [class: "form-inline my-2 my-lg-0", method: :get, enforce_utf8: false], fn f -> %>
         <div class="input-group">
