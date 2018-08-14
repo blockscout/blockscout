@@ -52,7 +52,7 @@
   </div>
 </div>
 <section class="container">
-  <div class="card">
+  <div class="card card-chain-blocks">
     <div class="card-body">
       <%= link(gettext("View All Blocks →"), to: block_path(BlockScoutWeb.Endpoint, :index, Gettext.get_locale), class: "button button--secondary button--xsmall float-right") %>
       <h2 class="card-title"><%= gettext "Blocks" %></h2>
@@ -64,7 +64,7 @@
     </div>
   </div>
   <!-- We hardcoded the height on this element to keep the page from bouncing during the intro animation. -->
-  <div class="card" style="height: 694px;">
+  <div class="card card-chain-transactions">
     <div class="card-body">
       <div data-selector="channel-batching-message" style="display:none;">
         <div data-selector="reload-button" class="alert alert-info">
