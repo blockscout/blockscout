@@ -31,7 +31,7 @@ Development is ongoing. Please see the [project timeline](https://github.com/poa
 
 ## Getting Started
 
-We use [Terraform](https://www.terraform.io/intro/getting-started/install.html) to build the correct infrastructure to run BlockScout. See [https://github.com/poanetwork/blockscout-infra](https://github.com/poanetwork/blockscout-infra) for details.
+We use [Terraform](https://www.terraform.io/intro/getting-started/install.html) to build the correct infrastructure to run BlockScout. See [https://github.com/poanetwork/blockscout-terraform](https://github.com/poanetwork/blockscout-terraform) for details.
 
 ### Requirements
 
