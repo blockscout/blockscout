@@ -4,7 +4,7 @@ defmodule Indexer.AddressExtraction do
   Transactions and Logs.
 
   Address hashes are present in the Blockchain as a reference of a person that made/received an
-  operation in the network. In the POA Explorer it's treated like a entity, such as the ones mentioned
+  operation in the network. In BlockScout it's treated like a entity, such as the ones mentioned
   above.
 
   This module is responsible for collecting the hashes that are present as attributes in the already

@@ -34,8 +34,8 @@
             <%= gettext("Mainnet") %>
           </a>
           <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-            <a class="dropdown-item" href="https://explorer-sokol.poanetwork/"><%= gettext("POA Sokol") %></a>
-            <a class="dropdown-item" href="https://explorer-core.poanetwork/"><%= gettext("POA Core") %></a>
+            <a class="dropdown-item" href="https://sokol.blockscout.com/"><%= gettext("POA Sokol") %></a>
+            <a class="dropdown-item" href="https://poa.blockscout.com/"><%= gettext("POA Core") %></a>
           </div>
         </li>
       </ul>

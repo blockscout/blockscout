@@ -29,7 +29,7 @@ msgid "Height"
 msgstr ""
 
 #: lib/block_scout_web/templates/layout/app.html.eex:7
-msgid "POA Network Explorer"
+msgid "BlockScout"
 msgstr ""
 
 #: lib/block_scout_web/templates/address/overview.html.eex:21
