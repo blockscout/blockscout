@@ -224,10 +224,14 @@ msgid "Last Seen"
 msgstr ""
 
 #:
-#: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:18
-#: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:37
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:17
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:25
+#: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:27
+#: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:54
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:28
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:38
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:54
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:65
+#: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:25
+#: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:48
 msgid "Logs"
 msgstr ""
 
@@ -318,11 +322,14 @@ msgstr ""
 #: lib/block_scout_web/templates/address_read_contract/index.html.eex:17
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:20
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:60
-#: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:11
-#: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:29
-#: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:32
-#: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:47
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:10
+#: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:20
+#: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:38
+#: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:49
+#: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:64
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:21
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:49
+#: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:18
+#: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:43
 msgid "Internal Transactions"
 msgstr ""
 
@@ -488,6 +495,7 @@ msgstr ""
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:78
 #: lib/block_scout_web/templates/token/show.html.eex:102
 #: lib/block_scout_web/templates/transaction/index.html.eex:66
+#: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:72
 msgid "Older"
 msgstr ""
 
@@ -522,8 +530,8 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:61
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:82
+#: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:78
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:122
 msgid "Newer"
 msgstr ""
 
@@ -712,12 +720,12 @@ msgstr ""
 
 #, elixir-format
 #:
-#: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:54
+#: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:71
 msgid "There are no internal transactions for this transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:77
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:117
 msgid "There are no logs for this transaction."
 msgstr ""
 
@@ -728,6 +736,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/token/_token_transfer.html.eex:4
+#: lib/block_scout_web/templates/transaction_token_transfer/_token_transfer.html.eex:4
 #: lib/block_scout_web/views/transaction_view.ex:116
 msgid "Token Transfer"
 msgstr ""
@@ -776,6 +785,14 @@ msgstr ""
 #: lib/block_scout_web/templates/token/show.html.eex:73
 #: lib/block_scout_web/templates/token/show.html.eex:76
 #: lib/block_scout_web/templates/token/show.html.eex:86
+#: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:12
+#: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:42
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:13
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:42
+#: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:11
+#: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:35
+#: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:38
+#: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:58
 msgid "Token Transfers"
 msgstr ""
 
@@ -797,4 +814,14 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:23
 msgid "API"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/token_helpers.ex:38
+msgid "ERC-721 TokenID [%{token_id}]"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:65
+msgid "There are no token transfers for this transaction."
 msgstr ""
