@@ -126,7 +126,7 @@ defmodule BlockScoutWeb.Mixfile do
     [
       maintainers: ["POA Networks Ltd."],
       licenses: ["GPL 3.0"],
-      links: %{"GitHub" => "https://github.com/poanetwork/poa-explorer"}
+      links: %{"GitHub" => "https://github.com/poanetwork/blockscout"}
     ]
   end
 end

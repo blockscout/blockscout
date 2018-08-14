@@ -2,7 +2,7 @@
 
 ## Motivation
 
-*Why should we merge these changes.  If using GitHub keywords to close [issues](https://github.com/poanetwork/poa-explorer/issues), this is optional as the motivation can be read on the issue page.*
+*Why should we merge these changes.  If using GitHub keywords to close [issues](https://github.com/poanetwork/blockscout/issues), this is optional as the motivation can be read on the issue page.*
 
 ## Changelog
 

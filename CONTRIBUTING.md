@@ -1,6 +1,6 @@
 ## Contributing
 
-1. Fork it ( https://github.com/poanetwork/poa-explorer/fork )
+1. Fork it ( https://github.com/poanetwork/blockscout/fork )
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Write tests that cover your work
 4. Commit your changes (`git commit -am 'Add some feature'`)
@@ -20,8 +20,8 @@
 ### Enhancements
 
 Enhancements cover all changes that make users lives better:
-* [feature requests filed as issues](https://github.com/poanetwork/poa-explorer/labels/enhancement) that impact end-user [contributors](https://github.com/poanetwork/poa-explorer/labels/contributor) and [developers](https://github.com/poanetwork/poa-explorer/labels/developer)
-* changes to the [architecture](https://github.com/poanetwork/poa-explorer/labels/architecture) that make it easier for contributors (in the GitHub sense), dev-ops, and deployers to maintain and run poa-explorer
+* [feature requests filed as issues](https://github.com/poanetwork/blockscout/labels/enhancement) that impact end-user [contributors](https://github.com/poanetwork/blockscout/labels/contributor) and [developers](https://github.com/poanetwork/blockscout/labels/developer)
+* changes to the [architecture](https://github.com/poanetwork/blockscout/labels/architecture) that make it easier for contributors (in the GitHub sense), dev-ops, and deployers to maintain and run blockscout
 
 ### Bug Fixes
 
@@ -48,12 +48,12 @@ There is a [PULL_REQUEST_TEMPLATE.md](PULL_REQUEST_TEMPLATE.md) for this reposit
 
 - [ ] Title
   -  [ ] Prefix labels if you don't have permissions to set labels in the GitHub interface.
-    * (bug) for [bug](https://github.com/poanetwork/poa-explorer/labels/bug) fixes
-    * (enhancement) for [enhancement](https://github.com/poanetwork/poa-explorer/labels/enhancement)s
-    * (incompatible changes) for [incompatible changes](https://github.com/poanetwork/poa-explorer/labels/incompatible%20changes), such a refactor that removes functionality, changes arguments, or makes something required that wasn't previously.
+    * (bug) for [bug](https://github.com/poanetwork/blockscout/labels/bug) fixes
+    * (enhancement) for [enhancement](https://github.com/poanetwork/blockscout/labels/enhancement)s
+    * (incompatible changes) for [incompatible changes](https://github.com/poanetwork/blockscout/labels/incompatible%20changes), such a refactor that removes functionality, changes arguments, or makes something required that wasn't previously.
   - [ ] Single sentence summary of change
     * What was fixed for bugs
     * What was added for enhancements
     * What was changed for incompatible changes
 
-See [#255](https://github.com/poanetwork/poa-explorer/pull/255) as an example PR that uses GitHub keywords and a Changelog to explain multiple changes.
+See [#255](https://github.com/poanetwork/blockscout/pull/255) as an example PR that uses GitHub keywords and a Changelog to explain multiple changes.

@@ -28,10 +28,10 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
   setup :verify_on_exit!
 
   describe "json_rpc/2" do
-    # regression test for https://github.com/poanetwork/poa-explorer/issues/254
+    # regression test for https://github.com/poanetwork/blockscout/issues/254
     #
     # this test triggered a DoS with CloudFlare reporting 502 Bad Gateway
-    # (see https://github.com/poanetwork/poa-explorer/issues/340), so it can't be run against the real Sokol chain and
+    # (see https://github.com/poanetwork/blockscout/issues/340), so it can't be run against the real Sokol chain and
     # must use `mox` to fake it.
     test "transparently splits batch payloads that would trigger a 413 Request Entity Too Large", %{
       json_rpc_named_arguments: json_rpc_named_arguments
@@ -99,7 +99,7 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
     end
 
     @tag :no_geth
-    # Regression test for https://github.com/poanetwork/poa-explorer/issues/418
+    # Regression test for https://github.com/poanetwork/blockscout/issues/418
     test "transparently splits batch payloads that would trigger a 504 Gateway Timeout", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do

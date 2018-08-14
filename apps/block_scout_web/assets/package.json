@@ -1,10 +1,10 @@
 {
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/poanetwork/poa-explorer.git"
+    "url": "git+https://github.com/poanetwork/blockscout.git"
   },
   "private": true,
-  "name": "poa-explorer",
+  "name": "blockscout",
   "author": "POA Network",
   "license": "GPL-3.0",
   "engines": {
