@@ -68,6 +68,35 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => []
   }
 
+  @logs_getlogs_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    result: [
+      %{
+        "address" => "0x33990122638b9132ca29c723bdf037f1a891a70c",
+        "topics" => [
+          "0xf63780e752c6a54a94fc52715dbc5518a3b4c3c2833d301a204226548a2a8545",
+          "0x72657075746174696f6e00000000000000000000000000000000000000000000",
+          "0x000000000000000000000000d9b2f59f3b5c7b3c67047d2f03c3e8052470be92"
+        ],
+        "data" => "0x",
+        "blockNumber" => "0x5c958",
+        "timeStamp" => "0x561d688c",
+        "gasPrice" => "0xba43b7400",
+        "gasUsed" => "0x10682",
+        "logIndex" => "0x",
+        "transactionHash" => "0x0b03498648ae2da924f961dda00dc6bb0a8df15519262b7e012b7d67f4bb7e83",
+        "transactionIndex" => "0x"
+      }
+    ]
+  }
+
+  @logs_getlogs_example_value_error %{
+    "status" => "0",
+    "message" => "Invalid address format",
+    "result" => nil
+  }
+
   @status_type %{
     type: "status",
     enum: ~s(["0", "1"]),
@@ -166,6 +195,52 @@ defmodule BlockScoutWeb.Etherscan do
         type: "confirmations",
         definition: "A number equal to the current block height minus the transaction's block-number.",
         example: ~s("6005998")
+      }
+    }
+  }
+
+  @log %{
+    name: "Log",
+    fields: %{
+      address: @address_hash_type,
+      topics: %{
+        type: "topics",
+        definition: "An array including the topics for the log.",
+        example: ~s(["0xf63780e752c6a54a94fc52715dbc5518a3b4c3c2833d301a204226548a2a8545"])
+      },
+      data: %{
+        type: "data",
+        definition: "Non-indexed log parameters.",
+        example: ~s("0x")
+      },
+      blockNumber: %{
+        type: "block number",
+        definition: "A nonnegative number used to identify blocks.",
+        example: ~s("0x5c958")
+      },
+      timeStamp: %{
+        type: "timestamp",
+        definition: "The transaction's block-timestamp.",
+        example: ~s("0x561d688c")
+      },
+      gasPrice: %{
+        type: "wei",
+        definition: &__MODULE__.wei_type_definition/1,
+        example: ~s("0xba43b7400")
+      },
+      gasUsed: %{
+        type: "gas",
+        definition: "A nonnegative number roughly equivalent to computational steps.",
+        example: ~s("0x10682")
+      },
+      logIndex: %{
+        type: "hexadecimal",
+        example: ~s("0x")
+      },
+      transactionHash: @transaction_hash_type,
+      transactionIndex: %{
+        type: "hexadecimal",
+        example: ~s("0x")
       }
     }
   }
@@ -308,6 +383,121 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @logs_getlogs_action %{
+    name: "getLogs",
+    description: "Get event logs for an address and/or topics. Up to a maximum of 1,000 event logs.",
+    required_params: [
+      %{
+        key: "fromBlock",
+        placeholder: "blockNumber",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the starting block number. The use of 'latest' is also supported."
+      },
+      %{
+        key: "toBlock",
+        placeholder: "blockNumber",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the ending block number. The use of 'latest' is also supported."
+      },
+      %{
+        key: "address",
+        placeholder: "addressHash",
+        type: "string",
+        description: "A 160-bit code used for identifying contracts. An address and/or topic{x} is required."
+      },
+      %{
+        key: "topic0",
+        placeholder: "firstTopic",
+        type: "string",
+        description: "A string equal to the first topic. A topic{x} and/or address is required."
+      }
+    ],
+    optional_params: [
+      %{
+        key: "topic1",
+        type: "string",
+        description: "A string equal to the second topic. A topic{x} and/or address is required."
+      },
+      %{
+        key: "topic2",
+        type: "string",
+        description: "A string equal to the third topic. A topic{x} and/or address is required."
+      },
+      %{
+        key: "topic3",
+        type: "string",
+        description: "A string equal to the fourth topic. A topic{x} and/or address is required."
+      },
+      %{
+        key: "topic0_1_opr",
+        type: "string",
+        description:
+          "A string representing the and|or operator for topic0 and topic1. " <>
+            "Required if topic0 and topic1 is used. Available values: and, or"
+      },
+      %{
+        key: "topic0_2_opr",
+        type: "string",
+        description:
+          "A string representing the and|or operator for topic0 and topic2. " <>
+            "Required if topic0 and topic2 is used. Available values: and, or"
+      },
+      %{
+        key: "topic0_3_opr",
+        type: "string",
+        description:
+          "A string representing the and|or operator for topic0 and topic3. " <>
+            "Required if topic0 and topic3 is used. Available values: and, or"
+      },
+      %{
+        key: "topic1_2_opr",
+        type: "string",
+        description:
+          "A string representing the and|or operator for topic1 and topic2. " <>
+            "Required if topic1 and topic2 is used. Available values: and, or"
+      },
+      %{
+        key: "topic1_3_opr",
+        type: "string",
+        description:
+          "A string representing the and|or operator for topic1 and topic3. " <>
+            "Required if topic1 and topic3 is used. Available values: and, or"
+      },
+      %{
+        key: "topic2_3_opr",
+        type: "string",
+        description:
+          "A string representing the and|or operator for topic2 and topic3. " <>
+            "Required if topic2 and topic3 is used. Available values: and, or"
+      }
+    ],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@logs_getlogs_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "array",
+              array_type: @log
+            }
+          }
+        }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@logs_getlogs_example_value_error)
+      }
+    ]
+  }
+
   @account_module %{
     name: "account",
     actions: [
@@ -317,7 +507,12 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
-  @documentation [@account_module]
+  @logs_module %{
+    name: "logs",
+    actions: [@logs_getlogs_action]
+  }
+
+  @documentation [@account_module, @logs_module]
 
   def get_documentation do
     @documentation

@@ -1,6 +1,6 @@
 <div class="card">
   <h2 class="card-header">
-    <%= "#{String.capitalize(@module.name)}s" %>
+    <%= "#{String.capitalize(@module.name)}" %>
     <small class="text-primary">?module=<%= @module.name %></small>
   </h2>
 

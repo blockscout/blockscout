@@ -30,7 +30,8 @@ defmodule BlockScoutWeb.Router do
 
     forward("/", RPCTranslator, %{
       "block" => RPC.BlockController,
-      "account" => RPC.AddressController
+      "account" => RPC.AddressController,
+      "logs" => RPC.LogsController
     })
   end
 
