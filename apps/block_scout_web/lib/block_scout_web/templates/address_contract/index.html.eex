@@ -1,0 +1,125 @@
+<section class="container">
+
+  <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
+
+  <div class="card">
+    <div class="card-header">
+      <ul class="nav nav-tabs card-header-tabs">
+        <li class="nav-item">
+          <%= link(
+                gettext("Transactions"),
+                class: "nav-link",
+                to: address_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
+              ) %>
+        </li>
+        <li class="nav-item">
+          <%= link(
+                gettext("Internal Transactions"),
+                class: "nav-link",
+                "data-test": "internal_transactions_tab_link",
+                to: address_internal_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
+              ) %>
+        </li>
+        <li class="nav-item">
+          <%= link(
+              to: address_contract_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"]),
+              class: "nav-link active") do %>
+            <%= gettext("Code") %>
+
+            <%= if smart_contract_verified?(@address) do %>
+              <i class="far fa-check-circle"></i>
+            <% end %>
+          <% end %>
+        </li>
+        <%= if smart_contract_with_read_only_functions?(@address) do %>
+          <li class="nav-item">
+            <%= link(
+                gettext("Read Contract"),
+                to: address_read_contract_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"]),
+                class: "nav-link")%>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+
+    <div class="card-body">
+      <%= if !smart_contract_verified?(@address) do %>
+        <%= link(
+              gettext("Verify and Publish"),
+              to: address_verify_contract_path(@conn, :new, @conn.assigns.locale, @conn.params["address_id"]), class: "button button--primary button--sm float-right ml-3"
+            ) %>
+      <% end %>
+
+      <%= if smart_contract_verified?(@address) do %>
+        <div class="mb-4">
+          <dl class="row">
+            <dt class="col-sm-4 col-md-2 text-muted">Contract name:</dt>
+            <dd class="col-sm-8 col-md-10"><%= @address.smart_contract.name %></dd>
+          </dl>
+          <dl class="row">
+            <dt class="col-sm-4 col-md-2 text-muted">Optimization enabled</dt>
+            <dd class="col-sm-8 col-md-10"><%= format_optimization(@address.smart_contract.optimization) %></dd>
+          </dl>
+          <dl class="row">
+            <dt class="col-sm-4 col-md-2 text-muted">Compiler version</dt>
+            <dd class="col-sm-8 col-md-10"><%= @address.smart_contract.compiler_version %></dd>
+          </dl>
+        </div>
+        <hr/>
+        <section>
+          <div class="d-flex justify-content-between align-items-baseline">
+            <h3>Contract source code</h3>
+            <span class="icon-links" data-clipboard-text="<%= @address.smart_contract.contract_source_code %>">
+              <button type="button" class="button button--secondary button--sm" id="button" data-toggle="tooltip" data-placement="top" title="<%= gettext("Copy Address") %>" aria-label="Copy Address">
+                Copy Contract Source Code
+              </button>
+            </span>
+          </div>
+          <div class="tile tile-muted mb-4">
+            <pre class="pre-scrollable">
+              <code>
+                <%= text_to_html(@address.smart_contract.contract_source_code, insert_brs: false) %>
+              </code>
+            </pre>
+          </div>
+        </section>
+
+        <section>
+          <div class="d-flex justify-content-between align-items-baseline">
+            <h3>Contract ABI</h3>
+            <span class="icon-links" data-clipboard-text="<%= format_smart_contract_abi(@address.smart_contract.abi) %>">
+              <button type="button" class="button button--secondary button--sm" id="button">
+                Copy Contract ABI
+              </button>
+            </span>
+          </div>
+          <div class="tile tile-muted mb-4">
+            <pre class="pre-scrollable">
+              <code>
+                <p><%= format_smart_contract_abi(@address.smart_contract.abi) %></p>
+              </code>
+            </pre>
+          </div>
+        </section>
+
+
+      <% end %>
+      <section>
+        <div class="d-flex justify-content-between align-items-baseline">
+          <h3>Contract creation code</h3>
+          <span class="icon-links" data-clipboard-text="<%= @address.contract_code %>">
+            <button type="button" class="button button--secondary button--sm" id="button">
+              Copy Contract Creation Code
+            </button>
+          </span>
+        </div>
+        <div class="tile tile-muted">
+          <pre class="pre-wrap pre-scrollable">
+            <code><%= @address.contract_code %></code>
+          </pre>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>

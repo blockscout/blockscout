@@ -62,7 +62,7 @@ defmodule Indexer.SequenceTest do
       assert Sequence.pop(pid) == :halt
     end
 
-    # Regression test for https://github.com/poanetwork/poa-explorer/issues/387
+    # Regression test for https://github.com/poanetwork/blockscout/issues/387
     test "ensures Sequence shuts down when parent process dies" do
       parent = self()
 

@@ -1,0 +1,44 @@
+<nav class="navbar navbar-dark navbar-expand-lg bg-primary">
+  <div class="container">
+    <%= link to: chain_path(@conn, :show), class: "navbar-brand", "data-test": "header_logo" do %>
+      <img class="navbar-logo" src="<%= static_path(@conn, "/images/poa_logo.svg") %>" />
+    <% end %>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item">
+          <%= link to: block_path(@conn, :index, Gettext.get_locale), class: "nav-link topnav-nav-link" do %>
+            <%= gettext("Blocks") %>
+          <% end %>
+        </li>
+        <li class="nav-item">
+          <%= link to: transaction_path(@conn, :index, Gettext.get_locale), class: "nav-link topnav-nav-link" do %>
+            <%= gettext("Transactions") %>
+          <% end %>
+        </li>  
+      </ul>
+      <%= form_for @conn, chain_path(@conn, :search, Gettext.get_locale), [class: "form-inline my-2 my-lg-0", method: :get, enforce_utf8: false], fn f -> %>
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <span class="input-group-text" id="search-icon"><i class="fas fa-search"></i></span>
+          </div>
+          <%= search_input f, :q, class: 'form-control mr-sm-2 ml-auto', placeholder: gettext("Search by address, transaction hash, or block number"), "aria-describedby": "search-icon", "aria-label": "Search", "data-test": "search_input" %>
+        </div>
+        <button class="btn btn-outline-success my-2 my-sm-0 sr-only" type="submit">Search</button>
+      <% end %>
+      <ul class="navbar-nav">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <%= gettext("Mainnet") %>
+          </a>
+          <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+            <a class="dropdown-item" href="https://sokol.blockscout.com/"><%= gettext("POA Sokol") %></a>
+            <a class="dropdown-item" href="https://poa.blockscout.com/"><%= gettext("POA Core") %></a>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>

@@ -1,0 +1,4 @@
+<span class="<%= if @contract do %>contract-address<% end %>">
+  <span class="d-none d-md-none d-lg-inline"><%= @address_hash %></span>
+  <span class="d-md-inline-block d-lg-none "><%= BlockScoutWeb.AddressView.trimmed_hash(@address_hash) %></span>
+</span>

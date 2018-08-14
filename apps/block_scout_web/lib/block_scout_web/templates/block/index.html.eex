@@ -1,0 +1,27 @@
+<section class="container">
+  <div class="card">
+    <div class="card-body">
+
+      <h1>Blocks</h1>
+
+      <span data-selector="blocks-list">
+        <%= for block <- @blocks do %>
+          <%= render BlockScoutWeb.BlockView, "_tile.html", locale: @locale, block: block %>
+        <% end %>
+      </span>
+
+      <%= if @next_page_params do %>
+        <%= link(
+          gettext("Older"),
+          class: "button button--secondary button--sm float-right mt-3",
+          to: block_path(
+            @conn,
+            :index,
+            @conn.assigns.locale,
+            @next_page_params
+          )
+        ) %>
+      <% end %>
+    </div>
+  </div>
+</section>

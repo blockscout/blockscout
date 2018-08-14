@@ -26,7 +26,7 @@
           ~r"/_build/",
           ~r"/deps/",
           ~r"/node_modules/",
-          ~r"/apps/explorer_web/lib/explorer_web.ex"
+          ~r"/apps/block_scout_web/lib/block_scout_web.ex"
         ]
       },
       #

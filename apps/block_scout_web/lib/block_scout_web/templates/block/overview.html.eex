@@ -1,0 +1,103 @@
+<section>
+  <div class="row">
+    <div class="col-md-12 col-lg-8">
+      <!-- Block Details -->
+      <div class="card">
+        <div class="card-body">
+          <h1 class="card-title"> <%= gettext("Block Details") %> </h1>
+          <!-- Bolck Height -->
+          <h3 data-test="block_detail_number"> <%= gettext "Block Height #%{height}", height: @block.number %> </h3>
+          <div class="d-flex flex-row justify-content-start text-muted">
+            <!-- # of Transactions -->
+            <span class="mr-4"> <%= gettext "%{count} Transactions", count: @block_transaction_count %> </span>
+
+            <!-- Block Size -->
+            <span class="mr-4"> <%= Cldr.Unit.new(:byte, @block.size) |> cldr_unit_to_string!() %> </span>
+
+            <!-- Block Age -->
+            <span class="mr-4" data-from-now="<%= @block.timestamp %>"></span>
+          </div>
+
+          <hr>
+
+          <!-- Block details description list -->
+
+          <!-- Block Hash -->
+          <dl class="row">
+            <dt class="col-sm-3 text-muted"> <%= gettext "Hash" %> </dt>
+            <dd class="col-sm-9"> <%= to_string(@block.hash) %> </dd>
+          </dl>
+
+          <!-- Parent Hash -->
+          <dl class="row">
+            <dt class="col-sm-3 text-muted"> <%= gettext "Parent Hash" %> </dt>
+            <dd class="col-sm-9">
+              <%= link(
+                  @block.parent_hash,
+                  class: "block__link",
+                  to: block_path(@conn, :show, @conn.assigns.locale, @block.number - 1)
+                ) %>
+            </dd>
+          </dl>
+
+          <!-- Difficulty value -->
+          <dl class="row">
+            <dt class="col-sm-3 text-muted"> <%= gettext "Difficulty" %> </dt>
+            <dd class="col-sm-9">
+              <%= @block.difficulty |> Cldr.Number.to_string! %>
+            </dd>
+          </dl>
+
+          <!-- Total Difficulty -->
+          <dl class="row">
+            <dt class="col-sm-3 text-muted"> <%= gettext "Total Difficulty" %> </dt>
+            <dd class="col-sm-9"> <%= @block.total_difficulty |> Cldr.Number.to_string! %> </dd>
+          </dl>
+
+          <!-- Nonce -->
+          <dl class="row mb-0">
+            <dt class="col-sm-3 text-muted"> <%= gettext "Nonce" %> </dt>
+            <dd class="col-sm-9"> <%= to_string(@block.nonce) %> </dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-12 col-lg-4">
+      <div class="row">
+        <div class="col-md-6 col-lg-12">
+      <!-- Validator -->
+          <div class="card bg-primary">
+            <div class="card-body">
+              <h2 class="card-title text-white"> <%= gettext "Miner" %> </h2>
+              <div class="text-right">
+                <!-- Validator's Name -->
+                <!-- Until we can get the validator's name we are using the Validator's address hash -->
+                <h3 class="text-white text-truncate"> <%= link @block.miner, class: "text-white", to: address_path(BlockScoutWeb.Endpoint, :show, @locale, @block.miner) %> </h3>
+                <!-- Validator's address hash -->
+                <span class="text-light text-truncate"> </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-12">
+      <!-- Gas -->
+          <div class="card">
+            <div class="card-body">
+              <h2 class="card-title"> <%= gettext "Gas Used" %> </h2>
+              <div class="text-right">
+                <!-- Gas Used -->
+                <h3>
+                  <%= @block.gas_used |> Cldr.Number.to_string! %>
+                  <span class="text-muted"> (<%= (@block.gas_used / @block.gas_limit) |> Cldr.Number.to_string!(format: "#.#%") %>) </span>
+                </h3>
+                <!-- Gas Limit -->
+                <span class="text-muted"> <%= @block.gas_limit |> Cldr.Number.to_string! %> <%= gettext "Gas Limit" %> </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

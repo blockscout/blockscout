@@ -1,0 +1,95 @@
+<section class="container">
+
+  <%= render BlockScoutWeb.TransactionView, "overview.html", assigns %>
+
+    <div class="card">
+      <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs">
+          <li class="nav-item">
+            <%= link(
+                  gettext("Internal Transactions"),
+                  class: "nav-link",
+                  to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction)
+                ) %>
+          </li>
+          <li class="nav-item">
+            <%= link(
+                  gettext("Logs"),
+                  class: "nav-link active",
+                  to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction)
+                ) %>
+          </li>
+        </ul>
+      </div>
+      <div class="card-body">
+        <h2 class="card-title"><%= gettext "Logs" %></h2>
+        <%= if Enum.count(@logs) > 0 do %>
+          <%= for log <- @logs do %>
+            <div data-test="transaction_log" class="tile tile-muted">
+              <dl class="row">
+                <dt class="col-md-1"> Address </dt>
+                <dd class="col-md-11">
+                  <h3 class="">
+                    <%= link(
+                        log.address,
+                        to: address_path(@conn, :show, @conn.assigns.locale, log.address),
+                        "data-test": "log_address_link",
+                        "data-address-hash": log.address
+                      ) %>
+                  </h3>
+                </dd>
+                <dt class="col-md-1"> Topics </dt>
+                <dd class="col-md-11">
+                  <%= unless is_nil(log.first_topic) do %>
+                    <div class="text-dark">
+                      <span class="text-dark">[0]</span>
+                      <%= log.first_topic %>
+                    </div>
+                  <% end %>
+                  <%= unless is_nil(log.second_topic) do %>
+                    <div class="text-dark">
+                      <span class="">[1] </span>
+                      <%= log.second_topic %>
+                    </div>
+                  <% end %>
+                  <%= unless is_nil(log.third_topic) do %>
+                    <div class="text-dark">
+                      <span>[2]</span>
+                      <%= log.third_topic %>
+                    </div>
+                  <% end %>
+                </dd>
+                <dt class="col-md-1">
+                  Data
+                </dt>
+                <dd class="col-md-11">
+                  <%= unless is_nil(log.data) do %>
+                    <div class="text-dark">
+                      <%= log.data %>
+                    </div>
+                  <% end %>
+                </dd>
+              </dl>
+            </div>
+          <% end %>
+        <% else %>
+        <div class="tile tile-muted text-center">
+          <span><%= gettext "There are no logs for this transaction." %></span>
+        </div>
+        <% end %>
+        <%= if @next_page_params do %>
+          <%= link(
+            gettext("Newer"),
+            class: "button button--secondary button--sm u-float-right mt-3",
+            to: transaction_log_path(
+              @conn,
+              :index,
+              @conn.assigns.locale,
+              @transaction,
+              @next_page_params
+            )
+          ) %>
+        <% end %>
+      </div>
+    </div>
+  </section>

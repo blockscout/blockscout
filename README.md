@@ -1,13 +1,12 @@
-# POA Explorer 
-[![CircleCI](https://circleci.com/gh/poanetwork/blockscout.svg?style=svg&circle-token=f8823a3d0090407c11f87028c73015a331dbf604)](https://circleci.com/gh/poanetwork/blockscout) [![Coverage Status](https://coveralls.io/repos/github/poanetwork/blockscout/badge.svg?branch=master)](https://coveralls.io/github/poanetwork/blockscout?branch=master)
+# BlockScout [![CircleCI](https://circleci.com/gh/poanetwork/blockscout.svg?style=svg&circle-token=f8823a3d0090407c11f87028c73015a331dbf604)](https://circleci.com/gh/poanetwork/blockscout) [![Coverage Status](https://coveralls.io/repos/github/poanetwork/blockscout/badge.svg?branch=master)](https://coveralls.io/github/poanetwork/blockscout?branch=master)
 
-POA Explorer provides a comprehensive, easy-to-use interface for users to view, confirm, and inspect transactions on **all EVM** (Ethereum Virtual Machine) blockchains. This includes the Ethereum main and test networks as well as **Ethereum forks and sidechains**.
+BlockScout provides a comprehensive, easy-to-use interface for users to view, confirm, and inspect transactions on **all EVM** (Ethereum Virtual Machine) blockchains. This includes the Ethereum main and test networks as well as **Ethereum forks and sidechains**.
 
 Following is an overview of the project and instructions for [getting started](#getting-started).
 
-## About POA Explorer
+## About BlockScout
 
-POA Explorer is an Elixir application that allows users to search transactions, view accounts and balances, and verify smart contracts on the entire Ethereum network including all forks and sidechains.
+BlockScout is an Elixir application that allows users to search transactions, view accounts and balances, and verify smart contracts on the entire Ethereum network including all forks and sidechains.
 
 Currently available block explorers (i.e. Etherscan and Etherchain) are closed systems which are not independently verifiable.  As Ethereum sidechains continue to proliferate in both private and public settings, transparent tools are needed to analyze and validate transactions.
 
@@ -16,7 +15,7 @@ The first release will include a block explorer for the POA core and Sokol test 
 
 ### Features
 
-Development is ongoing. Please see the [project timeline](https://github.com/poanetwork/poa-explorer/wiki/Timeline-for-POA-Block-Explorer) for projected milestones.
+Development is ongoing. Please see the [project timeline](https://github.com/poanetwork/blockscout/wiki/Timeline-for-POA-Block-Explorer) for projected milestones.
 
 - [x] **Open source development**: The code is community driven and available for anyone to use, explore and improve.
 
@@ -32,11 +31,11 @@ Development is ongoing. Please see the [project timeline](https://github.com/poa
 
 ## Getting Started
 
-We use [Terraform](https://www.terraform.io/intro/getting-started/install.html) to build the correct infrastructure to run POA Explorer. See [https://github.com/poanetwork/poa-explorer-infra](https://github.com/poanetwork/poa-explorer-infra) for details.
+We use [Terraform](https://www.terraform.io/intro/getting-started/install.html) to build the correct infrastructure to run BlockScout. See [https://github.com/poanetwork/blockscout-terraform](https://github.com/poanetwork/blockscout-terraform) for details.
 
 ### Requirements
 
-The [development stack page](https://github.com/poanetwork/poa-explorer/wiki/Development-Stack) contains more information about these frameworks.
+The [development stack page](https://github.com/poanetwork/blockscout/wiki/Development-Stack) contains more information about these frameworks.
 
 * [Erlang/OTP 21.0.4](https://github.com/erlang/otp)
 * [Elixir 1.7.1](https://elixir-lang.org/)
@@ -51,14 +50,14 @@ The [development stack page](https://github.com/poanetwork/poa-explorer/wiki/Dev
 ### Build and Run
 
   1. Clone the repository.  
-  `git clone https://github.com/poanetwork/poa-explorer`
+  `git clone https://github.com/poanetwork/blockscout`
 
   2. Go to the explorer subdirectory.  
-  `cd poa-explorer`
+  `cd blockscout`
 
   3. Set up default configurations.  
   `cp apps/explorer/config/dev.secret.exs.example apps/explorer/config/dev.secret.exs`  
-  `cp apps/explorer_web/config/dev.secret.exs.example apps/explorer_web/config/dev.secret.exs`  
+  `cp apps/block_scout_web/config/dev.secret.exs.example apps/block_scout_web/config/dev.secret.exs`  
   <br />Optional: Set up default configuration for testing.  
   `cp apps/explorer/config/test.secret.exs.example apps/explorer/config/test.secret.exs`  
   Example usage: Changing the default Postgres port from localhost:15432 if [Boxen](https://github.com/boxen/boxen) is installed.
@@ -72,7 +71,7 @@ The [development stack page](https://github.com/poanetwork/poa-explorer/wiki/Dev
   `mix do ecto.drop, ecto.create, ecto.migrate`
 
   6. Install Node.js dependencies.  
-  `cd apps/explorer_web/assets && npm install; cd -`  
+  `cd apps/block_scout_web/assets && npm install; cd -`  
   `cd apps/explorer && npm install; cd -`
 
   7. Start Phoenix Server.  
@@ -88,9 +87,9 @@ _Additional runtime options:_
 *  Run Phoenix Server with real time indexer
 `DEBUG_INDEXER=1 iex -S mix phx.server`
 
-### POA Explorer Visual Interface
+### BlockScout Visual Interface
 
-![POA Explorer Example](explorer_example.gif)
+![BlockScout Example](explorer_example.gif)
 
 
 ### Umbrella Project Organization
@@ -103,13 +102,13 @@ Each OTP application has a restricted domain.
 |:------------------------|:--------------------|:------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `apps/ethereum_jsonrpc` | `:ethereum_jsonrpc` | `EthereumJSONRPC` | Ethereum JSONRPC client.  It is allowed to know `Explorer`'s param format, but it cannot directly depend on `:explorer`                                                                                                                                                                                                                                                         |
 | `apps/explorer`         | `:explorer`         | `Explorer`        | Storage for the indexed chain.  Can read and write to the backing storage.  MUST be able to boot in a read-only mode when run independently from `:indexer`, so cannot depend on `:indexer` as that would start `:indexer` indexing.                                                                                                                                            |
-| `apps/explorer_web`     | `:explorer_web`     | `ExplorerWeb`     | Phoenix interface to `:explorer`.  The minimum interface to allow web access should go in `:explorer_web`.  Any business rules or interface not tied directly to `Phoenix` or `Plug` should go in `:explorer`. MUST be able to boot in a read-only mode when run independently from `:indexer`, so cannot depend on `:indexer` as that would start `:indexer` indexing. |
+| `apps/block_scout_web`     | `:block_scout_web`     | `BlockScoutWeb`     | Phoenix interface to `:explorer`.  The minimum interface to allow web access should go in `:block_scout_web`.  Any business rules or interface not tied directly to `Phoenix` or `Plug` should go in `:explorer`. MUST be able to boot in a read-only mode when run independently from `:indexer`, so cannot depend on `:indexer` as that would start `:indexer` indexing. |
 | `apps/indexer`          | `:indexer`          | `Indexer`         | Uses `:ethereum_jsonrpc` to index chain and batch import data into `:explorer`.  Any process, `Task`, or `GenServer` that automatically reads from the chain and writes to `:explorer` should be in `:indexer`. This restricts automatic writes to `:indexer` and read-only mode can be achieved by not running `:indexer`.                                             |
 
 
 ### CircleCI Updates
 
-To monitor build status, configure your local [CCMenu](http://ccmenu.org/) with the following url: [`https://circleci.com/gh/poanetwork/poa-explorer.cc.xml?circle-token=f8823a3d0090407c11f87028c73015a331dbf604`](https://circleci.com/gh/poanetwork/poa-explorer.cc.xml?circle-token=f8823a3d0090407c11f87028c73015a331dbf604)
+To monitor build status, configure your local [CCMenu](http://ccmenu.org/) with the following url: [`https://circleci.com/gh/poanetwork/blockscout.cc.xml?circle-token=f8823a3d0090407c11f87028c73015a331dbf604`](https://circleci.com/gh/poanetwork/blockscout.cc.xml?circle-token=f8823a3d0090407c11f87028c73015a331dbf604)
 
 
 ### Testing
@@ -121,7 +120,7 @@ To monitor build status, configure your local [CCMenu](http://ccmenu.org/) with 
 #### Running the tests
 
   1. Build the assets.  
-  `cd apps/explorer_web/assets && npm run build; cd -`
+  `cd apps/block_scout_web/assets && npm run build; cd -`
 
   2. Format the Elixir code.  
   `mix format`
@@ -137,13 +136,13 @@ To monitor build status, configure your local [CCMenu](http://ccmenu.org/) with 
 
   6. Check the Elixir code for vulnerabilities.  
   `cd apps/explorer && mix sobelow --config; cd -`  
-  `cd apps/explorer_web && mix sobelow --config; cd -`
+  `cd apps/block_scout_web && mix sobelow --config; cd -`
 
   7. Lint the JavaScript code.  
-  `cd apps/explorer_web/assets && npm run eslint; cd -`
+  `cd apps/block_scout_web/assets && npm run eslint; cd -`
 
   8. Test the JavaScript code.  
-  `cd apps/explorer_web/assets && npm run test; cd -`
+  `cd apps/block_scout_web/assets && npm run test; cd -`
 
 ##### Variant and Chain
 
@@ -171,8 +170,8 @@ To view Modules and API Reference documentation:
 The app is currently internationalized. It is only localized to U.S. English. To translate new strings.
 
 1. To setup translation file.  
-`cd apps/explorer_web; mix gettext.extract --merge; cd -`
-2. To edit the new strings, go to `apps/explorer_web/priv/gettext/en/LC_MESSAGES/default.po`.
+`cd apps/block_scout_web; mix gettext.extract --merge; cd -`
+2. To edit the new strings, go to `apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po`.
 
 ## Acknowledgements
 

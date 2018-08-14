@@ -1,4 +1,4 @@
-defmodule ExplorerUmbrella.Mixfile do
+defmodule BlockScout.Mixfile do
   use Mix.Project
 
   # Functions

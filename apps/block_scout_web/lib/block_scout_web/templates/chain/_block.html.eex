@@ -1,0 +1,18 @@
+<div class="col-sm-3 fade-up-blocks-chain mb-3 mb-sm-0" data-selector="chain-block" data-block-number="<%= @block.number %>">
+  <div class="tile d-flex flex-column">
+    <%= link(@block, to: block_path(BlockScoutWeb.Endpoint, :show, @locale, @block), class: "tile-title") %>
+    <div>
+      <%= Enum.count(@block.transactions) %> Transactions
+      <span class="ml-2" data-from-now="<%= @block.timestamp %>"> </span>
+    </div>
+    <span class="text-truncate">
+      <%= gettext "Miner" %>
+      <%= link to: address_path(BlockScoutWeb.Endpoint, :show, @locale, @block.miner),
+        "data-toggle": "tooltip",
+        "data-placement": "top",
+        title: @block.miner do %>
+        <%= @block.miner %>
+      <% end %>
+    </span>
+  </div>
+</div>

@@ -140,7 +140,7 @@ defmodule Indexer.InternalTransactionFetcher do
     end
   end
 
-  # Protection and improved reporting for https://github.com/poanetwork/poa-explorer/issues/289
+  # Protection and improved reporting for https://github.com/poanetwork/blockscout/issues/289
   defp unique_transactions_params(transactions_params) do
     transaactions_params_by_hash_data = Enum.group_by(transactions_params, fn %{hash_data: hash_data} -> hash_data end)
 

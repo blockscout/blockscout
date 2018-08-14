@@ -1,4 +1,4 @@
-# POA Explorer
+# BlockScout
 
 This is a tool for inspecting and analyzing the POA Network blockchain.
 
@@ -19,7 +19,7 @@ This is a tool for inspecting and analyzing the POA Network blockchain.
 
 ### Development
 
-To get POA Explorer up and running locally:
+To get BlockScout up and running locally:
 
   * Set up some default configuration with: `$ cp config/dev.secret.exs.example config/dev.secret.exs`
   * Install dependencies with `$ mix do deps.get, local.rebar, deps.compile, compile`
