@@ -3,6 +3,8 @@ defmodule Explorer.Chain.Transaction do
 
   use Explorer.Schema
 
+  import Ecto.Query, only: [from: 2, join: 5, preload: 3]
+
   alias Ecto.Changeset
 
   alias Explorer.Chain.{
@@ -334,78 +336,90 @@ defmodule Explorer.Chain.Transaction do
   to token_contract_address_hash, to_address_hash or from_address_hash from Token Transfers's table.
   """
   def where_address_fields_match(query, address_hash, :to) do
-    query
-    |> where(
-      [t],
-      t.hash in fragment(
+    join(
+      query,
+      :inner,
+      [transaction],
+      matches in fragment(
         """
-        (
-          SELECT t0.hash AS hash
-          FROM transactions AS t0
-          WHERE t0.to_address_hash = ? OR t0.created_contract_address_hash = ?
-        )
-        UNION
-        (
-          SELECT tt.transaction_hash AS hash
-          FROM token_transfers AS tt
-          WHERE tt.to_address_hash = ?
-        )
+        WITH hashes AS (
+          (
+            SELECT t0.hash AS hash
+            FROM transactions AS t0
+            WHERE t0.to_address_hash = ? OR t0.created_contract_address_hash = ?
+          )
+          UNION ALL
+          (
+            SELECT tt.transaction_hash AS hash
+            FROM token_transfers AS tt
+            WHERE tt.to_address_hash = ?
+          )
+        ) SELECT * from hashes
         """,
         ^address_hash.bytes,
         ^address_hash.bytes,
         ^address_hash.bytes
-      )
+      ),
+      transaction.hash == matches.hash
     )
   end
 
   def where_address_fields_match(query, address_hash, :from) do
-    query
-    |> where(
-      [t],
-      t.hash in fragment(
+    join(
+      query,
+      :inner,
+      [transaction],
+      matches in fragment(
         """
-        (
-          SELECT t0.hash AS hash
-          FROM transactions AS t0
-          WHERE t0.from_address_hash = ?
-        )
-        UNION
-        (
-          SELECT tt.transaction_hash AS hash
-          FROM token_transfers AS tt
-          WHERE tt.from_address_hash = ?
-        )
+        WITH hashes AS (
+          (
+            SELECT t0.hash AS hash
+            FROM transactions AS t0
+            WHERE t0.from_address_hash = ?
+          )
+          UNION ALL
+          (
+            SELECT tt.transaction_hash AS hash
+            FROM token_transfers AS tt
+            WHERE tt.from_address_hash = ?
+          )
+        ) SELECT * from hashes
         """,
         ^address_hash.bytes,
         ^address_hash.bytes
-      )
+      ),
+      transaction.hash == matches.hash
     )
   end
 
   def where_address_fields_match(query, address_hash, nil) do
-    query
-    |> where(
-      [t],
-      t.hash in fragment(
+    join(
+      query,
+      :inner,
+      [transaction],
+      matches in fragment(
         """
-        (
-          SELECT t0.hash AS hash
-          FROM transactions AS t0
-          WHERE t0.to_address_hash = ? OR t0.from_address_hash = ? OR t0.created_contract_address_hash = ?
-        )
-        UNION
-        (
-          SELECT tt.transaction_hash AS hash
-          FROM token_transfers AS tt
-          WHERE tt.to_address_hash = ? OR tt.from_address_hash = ?
-        )
+        WITH hashes AS (
+          (
+            SELECT t0.hash AS hash
+            FROM transactions AS t0
+            WHERE t0.to_address_hash = ? OR t0.from_address_hash = ? OR t0.created_contract_address_hash = ?
+          )
+          UNION ALL
+          (
+            SELECT tt.transaction_hash AS hash
+            FROM token_transfers AS tt
+            WHERE tt.to_address_hash = ? OR tt.from_address_hash = ?
+          )
+        ) SELECT * from hashes
         """,
         ^address_hash.bytes,
         ^address_hash.bytes,
         ^address_hash.bytes,
         ^address_hash.bytes,
         ^address_hash.bytes
-      )
+      ),
+      transaction.hash == matches.hash
     )
   end
 
