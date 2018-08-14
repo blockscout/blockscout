@@ -1,5 +1,5 @@
-defmodule ExplorerWeb.AddressReadContractControllerTest do
-  use ExplorerWeb.ConnCase
+defmodule BlockScoutWeb.AddressReadContractControllerTest do
+  use BlockScoutWeb.ConnCase
 
   describe "GET show/3" do
     test "only responds to ajax requests", %{conn: conn} do
@@ -7,7 +7,7 @@ defmodule ExplorerWeb.AddressReadContractControllerTest do
 
       path =
         address_read_contract_path(
-          ExplorerWeb.Endpoint,
+          BlockScoutWeb.Endpoint,
           :show,
           :en,
           smart_contract.address_hash,

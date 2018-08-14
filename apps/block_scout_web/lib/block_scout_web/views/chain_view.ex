@@ -1,8 +1,8 @@
-defmodule ExplorerWeb.ChainView do
-  use ExplorerWeb, :view
+defmodule BlockScoutWeb.ChainView do
+  use BlockScoutWeb, :view
 
   alias Explorer.ExchangeRates.Token
-  alias ExplorerWeb.ExchangeRates.USD
+  alias BlockScoutWeb.ExchangeRates.USD
 
   def encode_market_history_data(market_history_data) do
     market_history_data

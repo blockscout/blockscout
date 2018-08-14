@@ -1,11 +1,11 @@
-defmodule ExplorerWeb.API.RPC.RPCTranslatorTest do
-  use ExplorerWeb.ConnCase
+defmodule BlockScoutWeb.API.RPC.RPCTranslatorTest do
+  use BlockScoutWeb.ConnCase
 
-  alias ExplorerWeb.API.RPC.RPCTranslator
+  alias BlockScoutWeb.API.RPC.RPCTranslator
   alias Plug.Conn
 
   defmodule TestController do
-    use ExplorerWeb, :controller
+    use BlockScoutWeb, :controller
 
     def test_action(conn, _) do
       json(conn, %{})

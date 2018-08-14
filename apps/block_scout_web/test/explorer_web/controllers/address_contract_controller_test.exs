@@ -1,7 +1,7 @@
-defmodule ExplorerWeb.AddressContractControllerTest do
-  use ExplorerWeb.ConnCase
+defmodule BlockScoutWeb.AddressContractControllerTest do
+  use BlockScoutWeb.ConnCase
 
-  import ExplorerWeb.Router.Helpers, only: [address_contract_path: 4]
+  import BlockScoutWeb.Router.Helpers, only: [address_contract_path: 4]
 
   alias Explorer.Factory
   alias Explorer.Chain.Hash
@@ -11,7 +11,7 @@ defmodule ExplorerWeb.AddressContractControllerTest do
     test "returns not found for unexistent address", %{conn: conn} do
       unexistent_address_hash = Hash.to_string(Factory.address_hash())
 
-      conn = get(conn, address_contract_path(ExplorerWeb.Endpoint, :index, :en, unexistent_address_hash))
+      conn = get(conn, address_contract_path(BlockScoutWeb.Endpoint, :index, :en, unexistent_address_hash))
 
       assert html_response(conn, 404)
     end
@@ -19,7 +19,7 @@ defmodule ExplorerWeb.AddressContractControllerTest do
     test "returns not found given an invalid address hash ", %{conn: conn} do
       invalid_hash = "invalid_hash"
 
-      conn = get(conn, address_contract_path(ExplorerWeb.Endpoint, :index, :en, invalid_hash))
+      conn = get(conn, address_contract_path(BlockScoutWeb.Endpoint, :index, :en, invalid_hash))
 
       assert html_response(conn, 404)
     end
@@ -27,7 +27,7 @@ defmodule ExplorerWeb.AddressContractControllerTest do
     test "returns not found when the address isn't a contract", %{conn: conn} do
       address = insert(:address)
 
-      conn = get(conn, address_contract_path(ExplorerWeb.Endpoint, :index, :en, address))
+      conn = get(conn, address_contract_path(BlockScoutWeb.Endpoint, :index, :en, address))
 
       assert html_response(conn, 404)
     end
@@ -44,7 +44,7 @@ defmodule ExplorerWeb.AddressContractControllerTest do
         created_contract_address: address
       )
 
-      conn = get(conn, address_contract_path(ExplorerWeb.Endpoint, :index, :en, address))
+      conn = get(conn, address_contract_path(BlockScoutWeb.Endpoint, :index, :en, address))
 
       assert html_response(conn, 200)
       assert address.hash == conn.assigns.address.hash

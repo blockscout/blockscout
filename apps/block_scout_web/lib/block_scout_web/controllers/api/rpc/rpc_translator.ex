@@ -1,4 +1,4 @@
-defmodule ExplorerWeb.API.RPC.RPCTranslator do
+defmodule BlockScoutWeb.API.RPC.RPCTranslator do
   @moduledoc """
   Converts an RPC-style request into a controller action.
 
@@ -15,7 +15,7 @@ defmodule ExplorerWeb.API.RPC.RPCTranslator do
 
   import Plug.Conn
 
-  alias ExplorerWeb.API.RPC.RPCView
+  alias BlockScoutWeb.API.RPC.RPCView
   alias Plug.Conn
   alias Phoenix.Controller
 

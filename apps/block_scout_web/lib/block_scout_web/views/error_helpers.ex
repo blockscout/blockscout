@@ -1,4 +1,4 @@
-defmodule ExplorerWeb.ErrorHelpers do
+defmodule BlockScoutWeb.ErrorHelpers do
   @moduledoc """
   Conveniences for translating and building error messages.
   """
@@ -32,9 +32,9 @@ defmodule ExplorerWeb.ErrorHelpers do
     #     dgettext "errors", "is invalid"
     #
     if count = opts[:count] do
-      Gettext.dngettext(ExplorerWeb.Gettext, "errors", msg, msg, count, opts)
+      Gettext.dngettext(BlockScoutWeb.Gettext, "errors", msg, msg, count, opts)
     else
-      Gettext.dgettext(ExplorerWeb.Gettext, "errors", msg, opts)
+      Gettext.dgettext(BlockScoutWeb.Gettext, "errors", msg, opts)
     end
   end
 end

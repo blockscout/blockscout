@@ -1,7 +1,7 @@
-defmodule ExplorerWeb.ChainControllerTest do
-  use ExplorerWeb.ConnCase
+defmodule BlockScoutWeb.ChainControllerTest do
+  use BlockScoutWeb.ConnCase
 
-  import ExplorerWeb.Router.Helpers, only: [chain_path: 3, block_path: 4, transaction_path: 4, address_path: 4]
+  import BlockScoutWeb.Router.Helpers, only: [chain_path: 3, block_path: 4, transaction_path: 4, address_path: 4]
 
   describe "GET index/2 without a locale" do
     test "redirects to the en locale", %{conn: conn} do
@@ -13,7 +13,7 @@ defmodule ExplorerWeb.ChainControllerTest do
 
   describe "GET index/2 with a locale" do
     test "returns a welcome message", %{conn: conn} do
-      conn = get(conn, chain_path(ExplorerWeb.Endpoint, :show, %{locale: :en}))
+      conn = get(conn, chain_path(BlockScoutWeb.Endpoint, :show, %{locale: :en}))
 
       assert(html_response(conn, 200) =~ "POA")
     end

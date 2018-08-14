@@ -1,4 +1,4 @@
-defmodule ExplorerWeb.Etherscan do
+defmodule BlockScoutWeb.Etherscan do
   @moduledoc """
   Documentation data for Etherscan-compatible API.
   """

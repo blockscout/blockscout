@@ -1,4 +1,4 @@
-defmodule ExplorerWeb.ExchangeRates.USD do
+defmodule BlockScoutWeb.ExchangeRates.USD do
   @moduledoc """
   Struct and associated conversion functions for USD currency
   """

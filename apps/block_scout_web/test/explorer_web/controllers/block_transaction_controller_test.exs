@@ -1,8 +1,8 @@
-defmodule ExplorerWeb.BlockTransactionControllerTest do
-  use ExplorerWeb.ConnCase
+defmodule BlockScoutWeb.BlockTransactionControllerTest do
+  use BlockScoutWeb.ConnCase
 
   alias Explorer.Chain.Block
-  import ExplorerWeb.Router.Helpers, only: [block_transaction_path: 4]
+  import BlockScoutWeb.Router.Helpers, only: [block_transaction_path: 4]
 
   describe "GET index/2" do
     test "with invalid block number", %{conn: conn} do
@@ -23,7 +23,7 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
       :transaction |> insert() |> with_block(block)
       :transaction |> insert(to_address: nil) |> with_block(block)
 
-      conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block.number))
+      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, :en, block.number))
 
       assert html_response(conn, 200)
       assert 2 == Enum.count(conn.assigns.transactions)
@@ -33,7 +33,7 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
       insert(:transaction)
       block = insert(:block)
 
-      conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block))
+      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, :en, block))
 
       assert html_response(conn, 200)
       assert Enum.empty?(conn.assigns.transactions)
@@ -43,7 +43,7 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
       block = insert(:block)
       insert(:transaction)
 
-      conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block))
+      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, :en, block))
 
       assert html_response(conn, 200)
       assert Enum.empty?(conn.assigns.transactions)
@@ -56,7 +56,7 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
       |> insert_list(:transaction)
       |> with_block(block)
 
-      conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block))
+      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, :en, block))
 
       assert %{"block_number" => ^number, "index" => 10} = conn.assigns.next_page_params
     end
@@ -68,7 +68,7 @@ defmodule ExplorerWeb.BlockTransactionControllerTest do
       |> insert()
       |> with_block(block)
 
-      conn = get(conn, block_transaction_path(ExplorerWeb.Endpoint, :index, :en, block))
+      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, :en, block))
 
       refute conn.assigns.next_page_params
     end

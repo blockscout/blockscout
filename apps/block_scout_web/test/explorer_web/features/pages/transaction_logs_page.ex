@@ -1,13 +1,13 @@
-defmodule ExplorerWeb.TransactionLogsPage do
+defmodule BlockScoutWeb.TransactionLogsPage do
   @moduledoc false
 
   use Wallaby.DSL
 
   import Wallaby.Query, only: [css: 1, css: 2]
-  import ExplorerWeb.Router.Helpers, only: [transaction_log_path: 4]
+  import BlockScoutWeb.Router.Helpers, only: [transaction_log_path: 4]
 
   alias Explorer.Chain.{Address, Transaction}
-  alias ExplorerWeb.Endpoint
+  alias BlockScoutWeb.Endpoint
 
   def logs(count: count) do
     css("[data-test='transaction_log']", count: count)

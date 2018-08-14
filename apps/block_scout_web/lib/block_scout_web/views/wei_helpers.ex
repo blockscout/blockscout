@@ -1,12 +1,12 @@
-defmodule ExplorerWeb.WeiHelpers do
+defmodule BlockScoutWeb.WeiHelpers do
   @moduledoc """
   Helper functions for interacting with `t:Explorer.Chain.Wei.t/0` values.
   """
 
-  import ExplorerWeb.Gettext
+  import BlockScoutWeb.Gettext
 
   alias Explorer.Chain.Wei
-  alias ExplorerWeb.Cldr
+  alias BlockScoutWeb.Cldr
 
   @valid_units ~w(wei gwei ether)a
 

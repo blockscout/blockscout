@@ -1,8 +1,8 @@
-defmodule ExplorerWeb.ErrorHelpersTest do
-  use ExplorerWeb.ConnCase, async: true
+defmodule BlockScoutWeb.ErrorHelpersTest do
+  use BlockScoutWeb.ConnCase, async: true
   import Phoenix.HTML.Tag, only: [content_tag: 3]
 
-  alias ExplorerWeb.ErrorHelpers
+  alias BlockScoutWeb.ErrorHelpers
 
   @changeset %{
     errors: [

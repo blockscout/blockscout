@@ -1,5 +1,5 @@
-defmodule ExplorerWeb.API.RPC.RPCView do
-  use ExplorerWeb, :view
+defmodule BlockScoutWeb.API.RPC.RPCView do
+  use BlockScoutWeb, :view
 
   def render("show.json", %{data: data}) do
     %{

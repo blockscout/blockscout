@@ -1,9 +1,9 @@
-defmodule ExplorerWeb.ViewingChainTest do
+defmodule BlockScoutWeb.ViewingChainTest do
   @moduledoc false
 
-  use ExplorerWeb.FeatureCase, async: true
+  use BlockScoutWeb.FeatureCase, async: true
 
-  alias ExplorerWeb.{AddressPage, BlockPage, ChainPage, Notifier, TransactionPage}
+  alias BlockScoutWeb.{AddressPage, BlockPage, ChainPage, Notifier, TransactionPage}
 
   setup do
     [oldest_block | _] = Enum.map(401..404, &insert(:block, number: &1))
@@ -52,7 +52,7 @@ defmodule ExplorerWeb.ViewingChainTest do
     end
 
     test "address count live updates", %{session: session} do
-      count = ExplorerWeb.FakeAdapter.address_estimated_count()
+      count = BlockScoutWeb.FakeAdapter.address_estimated_count()
 
       session
       |> ChainPage.visit_page()

@@ -5,7 +5,7 @@
       <%= link(
             @block,
             class: "tile-title",
-            to: block_path(ExplorerWeb.Endpoint, :show, @locale, @block),
+            to: block_path(BlockScoutWeb.Endpoint, :show, @locale, @block),
             "data-test": "block_number",
             "data-block-number": to_string(@block.number)
           ) %>
@@ -23,7 +23,7 @@
         <!-- validator -->
         <%= gettext "Miner" %>
         <span class="ml-2">
-          <%= link to: address_path(ExplorerWeb.Endpoint, :show, @locale, @block.miner_hash) do %>
+          <%= link to: address_path(BlockScoutWeb.Endpoint, :show, @locale, @block.miner_hash) do %>
             <%= @block.miner_hash %>
           <% end %>
         </span>

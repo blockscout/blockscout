@@ -1,5 +1,5 @@
-defmodule ExplorerWeb.API.RPC.AddressControllerTest do
-  use ExplorerWeb.ConnCase
+defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
+  use BlockScoutWeb.ConnCase
 
   alias Explorer.Chain
   alias Explorer.Chain.Transaction

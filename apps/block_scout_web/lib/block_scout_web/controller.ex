@@ -1,4 +1,4 @@
-defmodule ExplorerWeb.Controller do
+defmodule BlockScoutWeb.Controller do
   @moduledoc """
   Common controller error responses
   """
@@ -12,14 +12,14 @@ defmodule ExplorerWeb.Controller do
   def not_found(conn) do
     conn
     |> put_status(:not_found)
-    |> put_view(ExplorerWeb.ErrorView)
+    |> put_view(BlockScoutWeb.ErrorView)
     |> render("404.html")
   end
 
   def unprocessable_entity(conn) do
     conn
     |> put_status(:unprocessable_entity)
-    |> put_view(ExplorerWeb.ErrorView)
+    |> put_view(BlockScoutWeb.ErrorView)
     |> render("422.html")
   end
 end

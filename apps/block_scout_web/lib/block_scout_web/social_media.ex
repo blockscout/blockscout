@@ -1,4 +1,4 @@
-defmodule ExplorerWeb.SocialMedia do
+defmodule BlockScoutWeb.SocialMedia do
   @moduledoc """
   This module provides social media links
   """

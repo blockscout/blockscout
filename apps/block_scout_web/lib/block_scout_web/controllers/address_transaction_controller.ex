@@ -1,12 +1,12 @@
-defmodule ExplorerWeb.AddressTransactionController do
+defmodule BlockScoutWeb.AddressTransactionController do
   @moduledoc """
     Display all the Transactions that terminate at this Address.
   """
 
-  use ExplorerWeb, :controller
+  use BlockScoutWeb, :controller
 
-  import ExplorerWeb.AddressController, only: [transaction_count: 1]
-  import ExplorerWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+  import BlockScoutWeb.AddressController, only: [transaction_count: 1]
+  import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token

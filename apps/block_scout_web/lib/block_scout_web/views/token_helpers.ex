@@ -1,10 +1,10 @@
-defmodule ExplorerWeb.TokenHelpers do
+defmodule BlockScoutWeb.TokenHelpers do
   @moduledoc """
-  Helper functions for intereacting with `t:ExplorerWeb.Chain.Token` attributes.
+  Helper functions for intereacting with `t:BlockScoutWeb.Chain.Token` attributes.
   """
 
   alias Explorer.Chain.{Token, TokenTransfer}
-  alias ExplorerWeb.{CurrencyHelpers}
+  alias BlockScoutWeb.{CurrencyHelpers}
 
   @doc """
   Returns the token transfers' amount according to the token's type and decimails.

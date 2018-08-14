@@ -1,5 +1,5 @@
-defmodule ExplorerWeb.API.V1.SupplyView do
-  use ExplorerWeb, :view
+defmodule BlockScoutWeb.API.V1.SupplyView do
+  use BlockScoutWeb, :view
 
   def render("supply.json", %{total: total_supply, circulating: circulating_supply}) do
     %{

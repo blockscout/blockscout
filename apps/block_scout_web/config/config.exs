@@ -7,19 +7,19 @@ use Mix.Config
 
 # General application configuration
 config :block_scout_web,
-  namespace: ExplorerWeb,
+  namespace: BlockScoutWeb,
   ecto_repos: [Explorer.Repo]
 
 # Configures the endpoint
-config :block_scout_web, ExplorerWeb.Endpoint,
+config :block_scout_web, BlockScoutWeb.Endpoint,
   url: [host: "localhost"],
-  render_errors: [view: ExplorerWeb.ErrorView, accepts: ~w(html json)],
-  pubsub: [name: ExplorerWeb.PubSub, adapter: Phoenix.PubSub.PG2]
+  render_errors: [view: BlockScoutWeb.ErrorView, accepts: ~w(html json)],
+  pubsub: [name: BlockScoutWeb.PubSub, adapter: Phoenix.PubSub.PG2]
 
 # Configures gettext
-config :block_scout_web, ExplorerWeb.Gettext, locales: ~w(en), default_locale: "en"
+config :block_scout_web, BlockScoutWeb.Gettext, locales: ~w(en), default_locale: "en"
 
-config :block_scout_web, ExplorerWeb.SocialMedia,
+config :block_scout_web, BlockScoutWeb.SocialMedia,
   twitter: "PoaNetwork",
   telegram: "oraclesnetwork",
   facebook: "PoaNetwork",
@@ -28,7 +28,7 @@ config :block_scout_web, ExplorerWeb.SocialMedia,
 config :ex_cldr,
   default_locale: "en",
   locales: ["en"],
-  gettext: ExplorerWeb.Gettext
+  gettext: BlockScoutWeb.Gettext
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

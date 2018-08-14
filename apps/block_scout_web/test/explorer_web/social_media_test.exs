@@ -1,12 +1,12 @@
-defmodule ExplorerWeb.SocialMediaTest do
+defmodule BlockScoutWeb.SocialMediaTest do
   use Explorer.DataCase
 
-  alias ExplorerWeb.SocialMedia
+  alias BlockScoutWeb.SocialMedia
 
   test "it filters out unsupported services" do
     Application.put_env(
       :block_scout_web,
-      ExplorerWeb.SocialMedia,
+      BlockScoutWeb.SocialMedia,
       twitter: "MyTwitterProfile",
       myspace: "MyAwesomeProfile"
     )
@@ -17,7 +17,7 @@ defmodule ExplorerWeb.SocialMediaTest do
   end
 
   test "it prepends the service url" do
-    Application.put_env(:block_scout_web, ExplorerWeb.SocialMedia, twitter: "MyTwitterProfile")
+    Application.put_env(:block_scout_web, BlockScoutWeb.SocialMedia, twitter: "MyTwitterProfile")
 
     links = SocialMedia.links()
     assert links[:twitter] == "https://www.twitter.com/MyTwitterProfile"

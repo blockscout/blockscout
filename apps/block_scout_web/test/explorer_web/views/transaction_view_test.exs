@@ -1,10 +1,10 @@
-defmodule ExplorerWeb.TransactionViewTest do
-  use ExplorerWeb.ConnCase, async: true
+defmodule BlockScoutWeb.TransactionViewTest do
+  use BlockScoutWeb.ConnCase, async: true
 
   alias Explorer.Chain.Wei
   alias Explorer.ExchangeRates.Token
   alias Explorer.Repo
-  alias ExplorerWeb.TransactionView
+  alias BlockScoutWeb.TransactionView
 
   describe "formatted_fee/2" do
     test "pending transaction with no Receipt" do

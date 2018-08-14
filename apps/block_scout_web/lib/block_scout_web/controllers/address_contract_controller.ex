@@ -1,7 +1,7 @@
-defmodule ExplorerWeb.AddressContractController do
-  use ExplorerWeb, :controller
+defmodule BlockScoutWeb.AddressContractController do
+  use BlockScoutWeb, :controller
 
-  import ExplorerWeb.AddressController, only: [transaction_count: 1]
+  import BlockScoutWeb.AddressController, only: [transaction_count: 1]
 
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token

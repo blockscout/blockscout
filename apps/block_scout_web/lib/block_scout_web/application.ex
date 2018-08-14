@@ -1,11 +1,11 @@
-defmodule ExplorerWeb.Application do
+defmodule BlockScoutWeb.Application do
   @moduledoc """
-  Supervises `ExplorerWeb.Endpoint` in order to serve Web UI.
+  Supervises `BlockScoutWeb.Endpoint` in order to serve Web UI.
   """
 
   use Application
 
-  alias ExplorerWeb.{Endpoint, EventHandler}
+  alias BlockScoutWeb.{Endpoint, EventHandler}
 
   def start(_type, _args) do
     import Supervisor.Spec
@@ -21,7 +21,7 @@ defmodule ExplorerWeb.Application do
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
-    opts = [strategy: :one_for_one, name: ExplorerWeb.Supervisor]
+    opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor]
     Supervisor.start_link(children, opts)
   end
 

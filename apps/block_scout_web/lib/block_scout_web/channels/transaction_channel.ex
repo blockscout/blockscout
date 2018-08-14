@@ -1,10 +1,10 @@
-defmodule ExplorerWeb.TransactionChannel do
+defmodule BlockScoutWeb.TransactionChannel do
   @moduledoc """
   Establishes pub/sub channel for live updates of transaction events.
   """
-  use ExplorerWeb, :channel
+  use BlockScoutWeb, :channel
 
-  alias ExplorerWeb.TransactionView
+  alias BlockScoutWeb.TransactionView
   alias Phoenix.View
 
   intercept(["new_transaction"])
@@ -14,7 +14,7 @@ defmodule ExplorerWeb.TransactionChannel do
   end
 
   def handle_out("new_transaction", %{transaction: transaction}, socket) do
-    Gettext.put_locale(ExplorerWeb.Gettext, socket.assigns.locale)
+    Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
 
     rendered_transaction =
       View.render_to_string(

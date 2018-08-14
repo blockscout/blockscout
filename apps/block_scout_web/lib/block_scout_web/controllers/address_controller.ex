@@ -1,5 +1,5 @@
-defmodule ExplorerWeb.AddressController do
-  use ExplorerWeb, :controller
+defmodule BlockScoutWeb.AddressController do
+  use BlockScoutWeb, :controller
 
   alias Explorer.Chain
   alias Explorer.Chain.Address

@@ -1,8 +1,8 @@
-defmodule ExplorerWeb.TransactionControllerTest do
-  use ExplorerWeb.ConnCase
+defmodule BlockScoutWeb.TransactionControllerTest do
+  use BlockScoutWeb.ConnCase
   alias Explorer.Chain.{Block, Transaction}
 
-  import ExplorerWeb.Router.Helpers, only: [transaction_path: 4, transaction_internal_transaction_path: 4]
+  import BlockScoutWeb.Router.Helpers, only: [transaction_path: 4, transaction_internal_transaction_path: 4]
 
   describe "GET index/2" do
     test "returns a collated transactions", %{conn: conn} do
@@ -101,9 +101,9 @@ defmodule ExplorerWeb.TransactionControllerTest do
     test "redirects to transactions/:transaction_id/internal_transactions", %{conn: conn} do
       locale = "en"
       hash = "0x9"
-      conn = get(conn, transaction_path(ExplorerWeb.Endpoint, :show, locale, hash))
+      conn = get(conn, transaction_path(BlockScoutWeb.Endpoint, :show, locale, hash))
 
-      assert redirected_to(conn) =~ transaction_internal_transaction_path(ExplorerWeb.Endpoint, :index, locale, hash)
+      assert redirected_to(conn) =~ transaction_internal_transaction_path(BlockScoutWeb.Endpoint, :index, locale, hash)
     end
   end
 end

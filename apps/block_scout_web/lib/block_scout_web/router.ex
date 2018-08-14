@@ -1,12 +1,12 @@
-defmodule ExplorerWeb.Router do
-  use ExplorerWeb, :router
+defmodule BlockScoutWeb.Router do
+  use BlockScoutWeb, :router
 
   pipeline :browser do
     plug(:accepts, ["html"])
     plug(:fetch_session)
     plug(:fetch_flash)
     plug(:protect_from_forgery)
-    plug(ExplorerWeb.CSPHeader)
+    plug(BlockScoutWeb.CSPHeader)
   end
 
   pipeline :api do
@@ -14,19 +14,19 @@ defmodule ExplorerWeb.Router do
   end
 
   pipeline :set_locale do
-    plug(SetLocale, gettext: ExplorerWeb.Gettext, default_locale: "en")
+    plug(SetLocale, gettext: BlockScoutWeb.Gettext, default_locale: "en")
   end
 
-  scope "/api/v1", ExplorerWeb.API.V1, as: :api_v1 do
+  scope "/api/v1", BlockScoutWeb.API.V1, as: :api_v1 do
     pipe_through(:api)
 
     get("/supply", SupplyController, :supply)
   end
 
-  scope "/api", ExplorerWeb.API.RPC do
+  scope "/api", BlockScoutWeb.API.RPC do
     pipe_through(:api)
 
-    alias ExplorerWeb.API.RPC
+    alias BlockScoutWeb.API.RPC
 
     forward("/", RPCTranslator, %{
       "block" => RPC.BlockController,
@@ -34,13 +34,13 @@ defmodule ExplorerWeb.Router do
     })
   end
 
-  scope "/", ExplorerWeb do
+  scope "/", BlockScoutWeb do
     pipe_through(:browser)
     pipe_through(:set_locale)
     resources("/", ChainController, only: [:show], singleton: true, as: :chain)
   end
 
-  scope "/:locale", ExplorerWeb do
+  scope "/:locale", BlockScoutWeb do
     pipe_through(:browser)
     pipe_through(:set_locale)
     resources("/", ChainController, only: [:show], singleton: true, as: :chain)

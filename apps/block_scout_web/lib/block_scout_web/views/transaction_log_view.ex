@@ -1,4 +1,4 @@
-defmodule ExplorerWeb.TransactionLogView do
-  use ExplorerWeb, :view
+defmodule BlockScoutWeb.TransactionLogView do
+  use BlockScoutWeb, :view
   @dialyzer :no_match
 end

@@ -57,7 +57,7 @@
       <p><%= gettext("Showing") %> <span data-selector="transaction-count"><%= Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###") %></span> <%= gettext("Validated Transactions") %></p>
       <span data-selector="transactions-list">
         <%= for transaction <- @transactions do %>
-          <%= render ExplorerWeb.TransactionView, "_tile.html", locale: @locale, transaction: transaction %>
+          <%= render BlockScoutWeb.TransactionView, "_tile.html", locale: @locale, transaction: transaction %>
         <% end %>
       </span>
 

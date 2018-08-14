@@ -1,8 +1,8 @@
-defmodule ExplorerWeb.PendingTransactionControllerTest do
-  use ExplorerWeb.ConnCase
+defmodule BlockScoutWeb.PendingTransactionControllerTest do
+  use BlockScoutWeb.ConnCase
   alias Explorer.Chain.{Hash, Transaction}
 
-  import ExplorerWeb.Router.Helpers, only: [pending_transaction_path: 3]
+  import BlockScoutWeb.Router.Helpers, only: [pending_transaction_path: 3]
 
   describe "GET index/2" do
     test "returns no transactions that are in a block", %{conn: conn} do
@@ -10,7 +10,7 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
       |> insert()
       |> with_block()
 
-      conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
+      conn = get(conn, pending_transaction_path(BlockScoutWeb.Endpoint, :index, :en))
 
       assert html_response(conn, 200)
       assert Enum.empty?(conn.assigns.transactions)
@@ -21,7 +21,7 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
       |> insert()
       |> with_block()
 
-      conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
+      conn = get(conn, pending_transaction_path(BlockScoutWeb.Endpoint, :index, :en))
 
       assert html_response(conn, 200)
       assert Enum.empty?(conn.assigns.transactions)
@@ -30,7 +30,7 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
     test "returns pending transactions", %{conn: conn} do
       transaction = insert(:transaction)
 
-      conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
+      conn = get(conn, pending_transaction_path(BlockScoutWeb.Endpoint, :index, :en))
 
       actual_transaction_hashes =
         conn.assigns.transactions
@@ -43,7 +43,7 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
     test "returns a count of pending transactions", %{conn: conn} do
       insert(:transaction)
 
-      conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
+      conn = get(conn, pending_transaction_path(BlockScoutWeb.Endpoint, :index, :en))
 
       assert html_response(conn, 200)
       assert 1 == conn.assigns.pending_transaction_count
@@ -64,7 +64,7 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
       %Transaction{inserted_at: inserted_at, hash: hash} = insert(:transaction)
 
       conn =
-        get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en), %{
+        get(conn, pending_transaction_path(BlockScoutWeb.Endpoint, :index, :en), %{
           "inserted_at" => DateTime.to_iso8601(inserted_at),
           "hash" => Hash.to_string(hash)
         })
@@ -85,7 +85,7 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
 
       converted_date = DateTime.to_iso8601(inserted_at)
 
-      conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
+      conn = get(conn, pending_transaction_path(BlockScoutWeb.Endpoint, :index, :en))
 
       assert %{"inserted_at" => ^converted_date, "hash" => ^hash} = conn.assigns.next_page_params
     end
@@ -93,7 +93,7 @@ defmodule ExplorerWeb.PendingTransactionControllerTest do
     test "next_page_params are empty if on last page", %{conn: conn} do
       insert(:transaction)
 
-      conn = get(conn, pending_transaction_path(ExplorerWeb.Endpoint, :index, :en))
+      conn = get(conn, pending_transaction_path(BlockScoutWeb.Endpoint, :index, :en))
 
       refute conn.assigns.next_page_params
     end

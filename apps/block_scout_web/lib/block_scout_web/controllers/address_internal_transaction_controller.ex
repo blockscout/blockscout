@@ -1,12 +1,12 @@
-defmodule ExplorerWeb.AddressInternalTransactionController do
+defmodule BlockScoutWeb.AddressInternalTransactionController do
   @moduledoc """
     Manages the displaying of information about internal transactions as they relate to addresses
   """
 
-  use ExplorerWeb, :controller
+  use BlockScoutWeb, :controller
 
-  import ExplorerWeb.AddressController, only: [transaction_count: 1]
-  import ExplorerWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+  import BlockScoutWeb.AddressController, only: [transaction_count: 1]
+  import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token

@@ -1,8 +1,8 @@
-defmodule ExplorerWeb.AddressViewTest do
-  use ExplorerWeb.ConnCase, async: true
+defmodule BlockScoutWeb.AddressViewTest do
+  use BlockScoutWeb.ConnCase, async: true
 
   alias Explorer.Chain.Data
-  alias ExplorerWeb.AddressView
+  alias BlockScoutWeb.AddressView
   alias Explorer.ExchangeRates.Token
 
   describe "contract?/1" do

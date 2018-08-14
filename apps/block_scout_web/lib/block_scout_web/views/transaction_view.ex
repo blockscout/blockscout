@@ -1,14 +1,14 @@
-defmodule ExplorerWeb.TransactionView do
-  use ExplorerWeb, :view
+defmodule BlockScoutWeb.TransactionView do
+  use BlockScoutWeb, :view
 
   alias Cldr.Number
   alias Explorer.Chain
   alias Explorer.Chain.{Address, InternalTransaction, Transaction, Wei}
   alias Explorer.ExchangeRates.Token
-  alias ExplorerWeb.{AddressView, BlockView}
-  alias ExplorerWeb.ExchangeRates.USD
+  alias BlockScoutWeb.{AddressView, BlockView}
+  alias BlockScoutWeb.ExchangeRates.USD
 
-  import ExplorerWeb.Gettext
+  import BlockScoutWeb.Gettext
 
   defguardp is_transaction_type(mod) when mod in [InternalTransaction, Transaction]
 

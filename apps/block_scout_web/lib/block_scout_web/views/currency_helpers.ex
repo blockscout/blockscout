@@ -1,15 +1,15 @@
-defmodule ExplorerWeb.CurrencyHelpers do
+defmodule BlockScoutWeb.CurrencyHelpers do
   @moduledoc """
-  Helper functions for interacting with `t:ExplorerWeb.ExchangeRates.USD.t/0` values.
+  Helper functions for interacting with `t:BlockScoutWeb.ExchangeRates.USD.t/0` values.
   """
 
-  import ExplorerWeb.Gettext
+  import BlockScoutWeb.Gettext
 
-  alias ExplorerWeb.ExchangeRates.USD
-  alias ExplorerWeb.Cldr
+  alias BlockScoutWeb.ExchangeRates.USD
+  alias BlockScoutWeb.Cldr
 
   @doc """
-  Formats a `ExplorerWeb.ExchangeRates.USD` value into USD and applies a unit label.
+  Formats a `BlockScoutWeb.ExchangeRates.USD` value into USD and applies a unit label.
 
   ## Examples
 
@@ -39,7 +39,7 @@ defmodule ExplorerWeb.CurrencyHelpers do
 
   ## Examples
 
-      iex> ExplorerWeb.CurrencyHelpers.format_integer_to_currency(1000000)
+      iex> BlockScoutWeb.CurrencyHelpers.format_integer_to_currency(1000000)
       "1,000,000"
   """
   @spec format_integer_to_currency(non_neg_integer()) :: String.t()

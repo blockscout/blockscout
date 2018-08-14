@@ -1,4 +1,4 @@
-defmodule ExplorerWeb.FakeAdapter do
+defmodule BlockScoutWeb.FakeAdapter do
   alias Explorer.Chain.Address
   alias Explorer.Repo
 

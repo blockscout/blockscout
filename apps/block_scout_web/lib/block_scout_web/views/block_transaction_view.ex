@@ -1,7 +1,7 @@
-defmodule ExplorerWeb.BlockTransactionView do
-  use ExplorerWeb, :view
+defmodule BlockScoutWeb.BlockTransactionView do
+  use BlockScoutWeb, :view
 
-  alias ExplorerWeb.BlockView
+  alias BlockScoutWeb.BlockView
 
   defdelegate formatted_timestamp(block), to: BlockView
 end

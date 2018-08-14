@@ -1,7 +1,7 @@
-defmodule ExplorerWeb.ExchangeRates.USDTest do
+defmodule BlockScoutWeb.ExchangeRates.USDTest do
   use ExUnit.Case, async: true
 
-  alias ExplorerWeb.ExchangeRates.USD
+  alias BlockScoutWeb.ExchangeRates.USD
   alias Explorer.ExchangeRates.Token
   alias Explorer.Chain.Wei
 

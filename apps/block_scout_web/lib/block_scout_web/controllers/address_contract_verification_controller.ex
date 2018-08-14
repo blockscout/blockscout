@@ -1,5 +1,5 @@
-defmodule ExplorerWeb.AddressContractVerificationController do
-  use ExplorerWeb, :controller
+defmodule BlockScoutWeb.AddressContractVerificationController do
+  use BlockScoutWeb, :controller
 
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.{Solidity.CompilerVersion, Publisher}

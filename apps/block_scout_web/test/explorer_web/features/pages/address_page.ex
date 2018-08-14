@@ -1,4 +1,4 @@
-defmodule ExplorerWeb.AddressPage do
+defmodule BlockScoutWeb.AddressPage do
   @moduledoc false
 
   use Wallaby.DSL

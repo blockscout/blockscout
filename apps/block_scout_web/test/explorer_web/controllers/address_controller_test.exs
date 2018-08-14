@@ -1,5 +1,5 @@
-defmodule ExplorerWeb.AddressControllerTest do
-  use ExplorerWeb.ConnCase
+defmodule BlockScoutWeb.AddressControllerTest do
+  use BlockScoutWeb.ConnCase
 
   describe "GET show/3" do
     test "redirects to addresses/:address_id/transactions", %{conn: conn} do

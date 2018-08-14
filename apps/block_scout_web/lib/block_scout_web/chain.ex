@@ -1,4 +1,4 @@
-defmodule ExplorerWeb.Chain do
+defmodule BlockScoutWeb.Chain do
   @moduledoc """
   Converts the `param` to the corresponding resource that uses that format of param.
   """

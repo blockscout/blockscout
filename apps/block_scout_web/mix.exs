@@ -1,4 +1,4 @@
-defmodule ExplorerWeb.Mixfile do
+defmodule BlockScoutWeb.Mixfile do
   use Mix.Project
 
   def project do
@@ -36,7 +36,7 @@ defmodule ExplorerWeb.Mixfile do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {ExplorerWeb.Application, []},
+      mod: {BlockScoutWeb.Application, []},
       extra_applications: extra_applications()
     ]
   end

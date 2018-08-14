@@ -1,5 +1,5 @@
-defmodule ExplorerWeb.ChainController do
-  use ExplorerWeb, :controller
+defmodule BlockScoutWeb.ChainController do
+  use BlockScoutWeb, :controller
 
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Block, Transaction}
@@ -42,7 +42,7 @@ defmodule ExplorerWeb.ChainController do
   def search(conn, %{"q" => query}) do
     query
     |> String.trim()
-    |> ExplorerWeb.Chain.from_param()
+    |> BlockScoutWeb.Chain.from_param()
     |> case do
       {:ok, item} ->
         redirect_search_results(conn, item)

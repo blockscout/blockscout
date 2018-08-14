@@ -1,7 +1,7 @@
-defmodule ExplorerWeb.ViewingBlocksTest do
-  use ExplorerWeb.FeatureCase, async: true
+defmodule BlockScoutWeb.ViewingBlocksTest do
+  use BlockScoutWeb.FeatureCase, async: true
 
-  alias ExplorerWeb.{BlockListPage, BlockPage, Notifier}
+  alias BlockScoutWeb.{BlockListPage, BlockPage, Notifier}
 
   setup do
     timestamp = Timex.now() |> Timex.shift(hours: -1)

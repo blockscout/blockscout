@@ -1,7 +1,7 @@
-defmodule ExplorerWeb.InternalTransactionViewTest do
-  use ExplorerWeb.ConnCase, async: true
+defmodule BlockScoutWeb.InternalTransactionViewTest do
+  use BlockScoutWeb.ConnCase, async: true
 
-  alias ExplorerWeb.InternalTransactionView
+  alias BlockScoutWeb.InternalTransactionView
 
   describe "create?/1" do
     test "with internal transaction of type create returns true" do

@@ -1,5 +1,5 @@
-defmodule ExplorerWeb.API.RPC.AddressController do
-  use ExplorerWeb, :controller
+defmodule BlockScoutWeb.API.RPC.AddressController do
+  use BlockScoutWeb, :controller
 
   alias Explorer.{Etherscan, Chain}
   alias Explorer.Chain.{Address, Wei}

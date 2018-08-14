@@ -1,5 +1,5 @@
-defmodule ExplorerWeb.API.RPC.BlockControllerTest do
-  use ExplorerWeb.ConnCase
+defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
+  use BlockScoutWeb.ConnCase
 
   alias Explorer.Chain.{Hash, Wei}
 

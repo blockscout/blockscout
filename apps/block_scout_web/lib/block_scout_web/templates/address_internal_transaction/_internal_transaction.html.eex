@@ -4,22 +4,22 @@
       <%=  gettext("Internal Transaction") %>
     </div>
     <div class="col-md-8 col-lg-8 d-flex flex-column text-nowrap pr-2 pr-sm-2 pr-md-0">
-      <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: @internal_transaction.transaction_hash %>
+      <%= render BlockScoutWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: @internal_transaction.transaction_hash %>
       <span class="text-nowrap">
         <%= if @address.hash == @internal_transaction.from_address_hash do %>
-          <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: @internal_transaction.from_address_hash, contract: ExplorerWeb.AddressView.contract?(@internal_transaction.from_address) %>
+          <%= render BlockScoutWeb.AddressView, "_responsive_hash.html", address_hash: @internal_transaction.from_address_hash, contract: BlockScoutWeb.AddressView.contract?(@internal_transaction.from_address) %>
         <% else %>
-          <%= render ExplorerWeb.AddressView, "_link.html", address_hash: @internal_transaction.from_address_hash, contract: ExplorerWeb.AddressView.contract?(@internal_transaction.from_address), locale: @locale %>
+          <%= render BlockScoutWeb.AddressView, "_link.html", address_hash: @internal_transaction.from_address_hash, contract: BlockScoutWeb.AddressView.contract?(@internal_transaction.from_address), locale: @locale %>
         <% end %>
         &rarr;
-        <%= if @address.hash == ExplorerWeb.InternalTransactionView.to_address_hash(@internal_transaction) do %>
-          <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: ExplorerWeb.InternalTransactionView.to_address_hash(@internal_transaction), contract: ExplorerWeb.AddressView.contract?(@internal_transaction.to_address) %>
+        <%= if @address.hash == BlockScoutWeb.InternalTransactionView.to_address_hash(@internal_transaction) do %>
+          <%= render BlockScoutWeb.AddressView, "_responsive_hash.html", address_hash: BlockScoutWeb.InternalTransactionView.to_address_hash(@internal_transaction), contract: BlockScoutWeb.AddressView.contract?(@internal_transaction.to_address) %>
         <% else %>
-          <%= render ExplorerWeb.AddressView, "_link.html", address_hash: ExplorerWeb.InternalTransactionView.to_address_hash(@internal_transaction), contract: ExplorerWeb.AddressView.contract?(@internal_transaction.to_address), locale: @locale %>
+          <%= render BlockScoutWeb.AddressView, "_link.html", address_hash: BlockScoutWeb.InternalTransactionView.to_address_hash(@internal_transaction), contract: BlockScoutWeb.AddressView.contract?(@internal_transaction.to_address), locale: @locale %>
         <% end %>
       </span>
       <span class="tile-title text-truncate mt-3 mt-md-0">
-        <%= ExplorerWeb.TransactionView.value(@internal_transaction, include_label: false) %> <%= gettext "Ether" %>
+        <%= BlockScoutWeb.TransactionView.value(@internal_transaction, include_label: false) %> <%= gettext "Ether" %>
       </span>
     </div>
     <div class="col-md-2 d-flex flex-row flex-md-column justify-content-start align-items-end  mt-3 mt-md-0">

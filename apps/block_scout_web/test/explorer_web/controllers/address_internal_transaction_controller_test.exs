@@ -1,7 +1,7 @@
-defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
-  use ExplorerWeb.ConnCase
+defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
+  use BlockScoutWeb.ConnCase
 
-  import ExplorerWeb.Router.Helpers, only: [address_internal_transaction_path: 4]
+  import BlockScoutWeb.Router.Helpers, only: [address_internal_transaction_path: 4]
 
   alias Explorer.Chain.{Block, InternalTransaction, Transaction}
   alias Explorer.ExchangeRates.Token
@@ -10,7 +10,7 @@ defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
     test "with invalid address hash", %{conn: conn} do
       conn =
         conn
-        |> get(address_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, "invalid_address"))
+        |> get(address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, :en, "invalid_address"))
 
       assert html_response(conn, 404)
     end
@@ -49,7 +49,7 @@ defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
     test "includes USD exchange rate value for address in assigns", %{conn: conn} do
       address = insert(:address)
 
-      conn = get(conn, address_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
+      conn = get(conn, address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, :en, address.hash))
 
       assert %Token{} = conn.assigns.exchange_rate
     end
@@ -118,7 +118,7 @@ defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
         |> insert(transaction: transaction_3, from_address: address, index: 11)
 
       conn =
-        get(conn, address_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, address.hash), %{
+        get(conn, address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, :en, address.hash), %{
           "block_number" => Integer.to_string(b_block.number),
           "transaction_index" => Integer.to_string(transaction_3.index),
           "index" => Integer.to_string(index)
@@ -152,7 +152,7 @@ defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
         )
       end)
 
-      conn = get(conn, address_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
+      conn = get(conn, address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, :en, address.hash))
 
       assert %{"block_number" => ^number, "index" => 11, "transaction_index" => ^transaction_index} =
                conn.assigns.next_page_params
@@ -176,7 +176,7 @@ defmodule ExplorerWeb.AddressInternalTransactionControllerTest do
         )
       end)
 
-      conn = get(conn, address_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, address.hash))
+      conn = get(conn, address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, :en, address.hash))
 
       refute conn.assigns.next_page_params
     end

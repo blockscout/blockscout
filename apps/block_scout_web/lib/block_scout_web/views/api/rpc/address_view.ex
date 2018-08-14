@@ -1,7 +1,7 @@
-defmodule ExplorerWeb.API.RPC.AddressView do
-  use ExplorerWeb, :view
+defmodule BlockScoutWeb.API.RPC.AddressView do
+  use BlockScoutWeb, :view
 
-  alias ExplorerWeb.API.RPC.RPCView
+  alias BlockScoutWeb.API.RPC.RPCView
 
   def render("balance.json", %{addresses: [address]}) do
     RPCView.render("show.json", data: "#{address.fetched_balance.value}")

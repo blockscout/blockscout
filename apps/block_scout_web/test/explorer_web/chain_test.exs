@@ -1,8 +1,8 @@
-defmodule ExplorerWeb.ChainTest do
+defmodule BlockScoutWeb.ChainTest do
   use Explorer.DataCase
 
   alias Explorer.Chain.{Address, Block, Transaction}
-  alias ExplorerWeb.Chain
+  alias BlockScoutWeb.Chain
 
   describe "from_param/1" do
     test "finds a block by block number with a valid block number" do

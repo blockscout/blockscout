@@ -1,10 +1,10 @@
-defmodule ExplorerWeb.AddressView do
-  use ExplorerWeb, :view
+defmodule BlockScoutWeb.AddressView do
+  use BlockScoutWeb, :view
 
   alias Explorer.Chain.{Address, Hash, SmartContract, Wei}
 
   alias Explorer.ExchangeRates.Token
-  alias ExplorerWeb.ExchangeRates.USD
+  alias BlockScoutWeb.ExchangeRates.USD
 
   @dialyzer :no_match
 

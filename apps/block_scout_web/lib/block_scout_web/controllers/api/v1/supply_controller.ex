@@ -1,5 +1,5 @@
-defmodule ExplorerWeb.API.V1.SupplyController do
-  use ExplorerWeb, :controller
+defmodule BlockScoutWeb.API.V1.SupplyController do
+  use BlockScoutWeb, :controller
 
   alias Explorer.Chain
 

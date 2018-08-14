@@ -1,7 +1,7 @@
-defmodule ExplorerWeb.TokenHelpersTest do
-  use ExplorerWeb.ConnCase, async: true
+defmodule BlockScoutWeb.TokenHelpersTest do
+  use BlockScoutWeb.ConnCase, async: true
 
-  alias ExplorerWeb.{TokenHelpers}
+  alias BlockScoutWeb.{TokenHelpers}
 
   describe "token_transfer_amount/1" do
     test "returns the symbol -- with ERC-20 token and amount nil" do

@@ -1,6 +1,6 @@
 <section class="container">
 
-  <%= render ExplorerWeb.AddressView, "overview.html", assigns %>
+  <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
 
   <section>
     <div class="card">

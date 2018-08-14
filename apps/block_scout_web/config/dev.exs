@@ -6,7 +6,7 @@ use Mix.Config
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we use it
 # with webpack to recompile .js and .css sources.
-config :block_scout_web, ExplorerWeb.Endpoint,
+config :block_scout_web, BlockScoutWeb.Endpoint,
   http: [port: 4000],
   debug_errors: true,
   code_reloader: true,
@@ -38,7 +38,7 @@ config :block_scout_web, ExplorerWeb.Endpoint,
 # different ports.
 
 # Watch static and templates for browser reloading.
-config :block_scout_web, ExplorerWeb.Endpoint,
+config :block_scout_web, BlockScoutWeb.Endpoint,
   live_reload: [
     patterns: [
       ~r{priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$},

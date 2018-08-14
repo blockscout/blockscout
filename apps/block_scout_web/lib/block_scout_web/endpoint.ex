@@ -1,11 +1,11 @@
-defmodule ExplorerWeb.Endpoint do
+defmodule BlockScoutWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :block_scout_web
 
   if Application.get_env(:block_scout_web, :sql_sandbox) do
     plug(Phoenix.Ecto.SQL.Sandbox, repo: Explorer.Repo)
   end
 
-  socket("/socket", ExplorerWeb.UserSocket)
+  socket("/socket", BlockScoutWeb.UserSocket)
 
   # Serve at "/" the static files from "priv/static" directory.
   #
@@ -50,7 +50,7 @@ defmodule ExplorerWeb.Endpoint do
     signing_salt: "iC2ksJHS"
   )
 
-  plug(ExplorerWeb.Router)
+  plug(BlockScoutWeb.Router)
 
   def init(_key, config) do
     if config[:load_from_system_env] do

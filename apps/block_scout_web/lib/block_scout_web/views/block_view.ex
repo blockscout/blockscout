@@ -1,5 +1,5 @@
-defmodule ExplorerWeb.BlockView do
-  use ExplorerWeb, :view
+defmodule BlockScoutWeb.BlockView do
+  use BlockScoutWeb, :view
 
   import Math.Enum, only: [mean: 1]
 

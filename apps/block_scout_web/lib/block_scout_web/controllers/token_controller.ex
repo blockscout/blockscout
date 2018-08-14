@@ -1,9 +1,9 @@
-defmodule ExplorerWeb.TokenController do
-  use ExplorerWeb, :controller
+defmodule BlockScoutWeb.TokenController do
+  use BlockScoutWeb, :controller
 
   alias Explorer.Chain
 
-  import ExplorerWeb.Chain, only: [split_list_by_page: 1, paging_options: 1, next_page_params: 3]
+  import BlockScoutWeb.Chain, only: [split_list_by_page: 1, paging_options: 1, next_page_params: 3]
 
   def show(conn, %{"id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),

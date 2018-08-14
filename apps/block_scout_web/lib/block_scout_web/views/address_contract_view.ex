@@ -1,7 +1,7 @@
-defmodule ExplorerWeb.AddressContractView do
-  use ExplorerWeb, :view
+defmodule BlockScoutWeb.AddressContractView do
+  use BlockScoutWeb, :view
 
-  import ExplorerWeb.AddressView, only: [smart_contract_verified?: 1, smart_contract_with_read_only_functions?: 1]
+  import BlockScoutWeb.AddressView, only: [smart_contract_verified?: 1, smart_contract_with_read_only_functions?: 1]
 
   def format_smart_contract_abi(abi), do: Poison.encode!(abi, pretty: true)
 

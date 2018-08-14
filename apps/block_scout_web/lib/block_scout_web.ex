@@ -1,12 +1,12 @@
-defmodule ExplorerWeb do
+defmodule BlockScoutWeb do
   @moduledoc """
   The entrypoint for defining your web interface, such
   as controllers, views, channels and so on.
 
   This can be used in your application as:
 
-      use ExplorerWeb, :controller
-      use ExplorerWeb, :view
+      use BlockScoutWeb, :controller
+      use BlockScoutWeb, :view
 
   The definitions below will be executed for every view,
   controller, etc, so keep them short and clean, focused
@@ -19,12 +19,12 @@ defmodule ExplorerWeb do
 
   def controller do
     quote do
-      use Phoenix.Controller, namespace: ExplorerWeb
+      use Phoenix.Controller, namespace: BlockScoutWeb
 
-      import ExplorerWeb.Controller
-      import ExplorerWeb.Router.Helpers
-      import ExplorerWeb.Gettext
-      import ExplorerWeb.ErrorHelpers
+      import BlockScoutWeb.Controller
+      import BlockScoutWeb.Router.Helpers
+      import BlockScoutWeb.Gettext
+      import BlockScoutWeb.ErrorHelpers
       import Plug.Conn
     end
   end
@@ -33,7 +33,7 @@ defmodule ExplorerWeb do
     quote do
       use Phoenix.View,
         root: "lib/block_scout_web/templates",
-        namespace: ExplorerWeb
+        namespace: BlockScoutWeb
 
       # Import convenience functions from controllers
       import Phoenix.Controller, only: [get_flash: 2, view_module: 1]
@@ -41,7 +41,7 @@ defmodule ExplorerWeb do
       # Use all HTML functionality (forms, tags, etc)
       use Phoenix.HTML
 
-      import ExplorerWeb.{
+      import BlockScoutWeb.{
         CurrencyHelpers,
         ErrorHelpers,
         Gettext,
@@ -65,7 +65,7 @@ defmodule ExplorerWeb do
     quote do
       use Phoenix.Channel
 
-      import ExplorerWeb.Gettext
+      import BlockScoutWeb.Gettext
     end
   end
 

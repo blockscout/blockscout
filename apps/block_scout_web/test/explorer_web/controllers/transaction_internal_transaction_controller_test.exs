@@ -1,7 +1,7 @@
-defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
-  use ExplorerWeb.ConnCase
+defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
+  use BlockScoutWeb.ConnCase
 
-  import ExplorerWeb.Router.Helpers, only: [transaction_internal_transaction_path: 4]
+  import BlockScoutWeb.Router.Helpers, only: [transaction_internal_transaction_path: 4]
 
   alias Explorer.Chain.{Block, InternalTransaction, Transaction}
   alias Explorer.ExchangeRates.Token
@@ -9,13 +9,13 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
   describe "GET index/3" do
     test "with missing transaction", %{conn: conn} do
       hash = transaction_hash()
-      conn = get(conn, transaction_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, hash))
+      conn = get(conn, transaction_internal_transaction_path(BlockScoutWeb.Endpoint, :index, :en, hash))
 
       assert html_response(conn, 404)
     end
 
     test "with invalid transaction hash", %{conn: conn} do
-      conn = get(conn, transaction_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, "nope"))
+      conn = get(conn, transaction_internal_transaction_path(BlockScoutWeb.Endpoint, :index, :en, "nope"))
 
       assert html_response(conn, 404)
     end
@@ -28,7 +28,7 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
         |> insert()
         |> with_block(block)
 
-      conn = get(conn, transaction_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, transaction.hash))
+      conn = get(conn, transaction_internal_transaction_path(BlockScoutWeb.Endpoint, :index, :en, transaction.hash))
 
       assert html_response(conn, 200)
       assert conn.assigns.transaction.hash == transaction.hash
@@ -39,7 +39,7 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
       expected_internal_transaction = insert(:internal_transaction, transaction: transaction, index: 0)
       insert(:internal_transaction, transaction: transaction, index: 1)
 
-      path = transaction_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, transaction.hash)
+      path = transaction_internal_transaction_path(BlockScoutWeb.Endpoint, :index, :en, transaction.hash)
 
       conn = get(conn, path)
 
@@ -55,7 +55,7 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
     test "includes USD exchange rate value for address in assigns", %{conn: conn} do
       transaction = insert(:transaction)
 
-      conn = get(conn, transaction_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, transaction.hash))
+      conn = get(conn, transaction_internal_transaction_path(BlockScoutWeb.Endpoint, :index, :en, transaction.hash))
 
       assert %Token{} = conn.assigns.exchange_rate
     end
@@ -78,7 +78,7 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
         get(
           conn,
           transaction_internal_transaction_path(
-            ExplorerWeb.Endpoint,
+            BlockScoutWeb.Endpoint,
             :index,
             :en,
             internal_transaction.transaction_hash
@@ -102,7 +102,7 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
         |> Enum.map(& &1.index)
 
       conn =
-        get(conn, transaction_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, transaction.hash), %{
+        get(conn, transaction_internal_transaction_path(BlockScoutWeb.Endpoint, :index, :en, transaction.hash), %{
           "index" => Integer.to_string(index)
         })
 
@@ -131,7 +131,7 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
         )
       end)
 
-      conn = get(conn, transaction_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, transaction.hash))
+      conn = get(conn, transaction_internal_transaction_path(BlockScoutWeb.Endpoint, :index, :en, transaction.hash))
 
       assert %{"block_number" => ^number, "index" => 50, "transaction_index" => ^transaction_index} =
                conn.assigns.next_page_params
@@ -152,7 +152,7 @@ defmodule ExplorerWeb.TransactionInternalTransactionControllerTest do
         )
       end)
 
-      conn = get(conn, transaction_internal_transaction_path(ExplorerWeb.Endpoint, :index, :en, transaction.hash))
+      conn = get(conn, transaction_internal_transaction_path(BlockScoutWeb.Endpoint, :index, :en, transaction.hash))
 
       refute conn.assigns.next_page_params
     end

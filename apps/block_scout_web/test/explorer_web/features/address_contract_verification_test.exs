@@ -1,5 +1,5 @@
-defmodule ExplorerWeb.AddressContractVerificationTest do
-  use ExplorerWeb.FeatureCase, async: true
+defmodule BlockScoutWeb.AddressContractVerificationTest do
+  use BlockScoutWeb.FeatureCase, async: true
 
   import Wallaby.Query
 

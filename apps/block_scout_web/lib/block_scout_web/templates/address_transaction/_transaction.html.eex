@@ -1,37 +1,37 @@
-<div class="tile tile-type-<%= ExplorerWeb.TransactionView.type_suffix(@transaction) %> fade-in  tile-status--<%= ExplorerWeb.TransactionView.status(@transaction) %>" data-transaction-hash="<%= @transaction.hash %>">
+<div class="tile tile-type-<%= BlockScoutWeb.TransactionView.type_suffix(@transaction) %> fade-in  tile-status--<%= BlockScoutWeb.TransactionView.status(@transaction) %>" data-transaction-hash="<%= @transaction.hash %>">
   <div class="row">
     <div class="col-md-2 d-flex flex-row flex-md-column align-items-left justify-content-start justify-content-lg-center mb-1 mb-md-0 pl-md-4">
       <span class="tile-label">
-        <%= ExplorerWeb.TransactionView.transaction_display_type(@transaction) %>
+        <%= BlockScoutWeb.TransactionView.transaction_display_type(@transaction) %>
       </span>
 
       <span class="tile-status-label ml-2 ml-md-0" data-test="transaction_status">
-        <%= ExplorerWeb.TransactionView.formatted_status(@transaction) %>
+        <%= BlockScoutWeb.TransactionView.formatted_status(@transaction) %>
       </span>
     </div>
     <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0">
-      <%= render ExplorerWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: @transaction.hash %>
+      <%= render BlockScoutWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: @transaction.hash %>
       <span class="text-nowrap">
         <%= if @address.hash == @transaction.from_address_hash do %>
-          <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: @transaction.from_address_hash, contract: ExplorerWeb.AddressView.contract?(@transaction.from_address) %>
+          <%= render BlockScoutWeb.AddressView, "_responsive_hash.html", address_hash: @transaction.from_address_hash, contract: BlockScoutWeb.AddressView.contract?(@transaction.from_address) %>
         <% else %>
-          <%= render ExplorerWeb.AddressView, "_link.html", address_hash: @transaction.from_address_hash, contract: ExplorerWeb.AddressView.contract?(@transaction.from_address), locale: @locale %>
+          <%= render BlockScoutWeb.AddressView, "_link.html", address_hash: @transaction.from_address_hash, contract: BlockScoutWeb.AddressView.contract?(@transaction.from_address), locale: @locale %>
         <% end %>
 
         &rarr;
 
-        <%= if @address.hash == ExplorerWeb.TransactionView.to_address_hash(@transaction) do %>
-          <%= render ExplorerWeb.AddressView, "_responsive_hash.html", address_hash: ExplorerWeb.TransactionView.to_address_hash(@transaction), contract: ExplorerWeb.AddressView.contract?(@transaction.to_address) %>
+        <%= if @address.hash == BlockScoutWeb.TransactionView.to_address_hash(@transaction) do %>
+          <%= render BlockScoutWeb.AddressView, "_responsive_hash.html", address_hash: BlockScoutWeb.TransactionView.to_address_hash(@transaction), contract: BlockScoutWeb.AddressView.contract?(@transaction.to_address) %>
         <% else %>
-          <%= render ExplorerWeb.AddressView, "_link.html", address_hash: ExplorerWeb.TransactionView.to_address_hash(@transaction), contract: ExplorerWeb.AddressView.contract?(@transaction.to_address), locale: @locale %>
+          <%= render BlockScoutWeb.AddressView, "_link.html", address_hash: BlockScoutWeb.TransactionView.to_address_hash(@transaction), contract: BlockScoutWeb.AddressView.contract?(@transaction.to_address), locale: @locale %>
         <% end %>
       </span>
       <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
         <span class="tile-title">
-          <%= ExplorerWeb.TransactionView.value(@transaction, include_label: false) %> <%= gettext "Ether" %>
+          <%= BlockScoutWeb.TransactionView.value(@transaction, include_label: false) %> <%= gettext "Ether" %>
         </span>
         <span class="ml-0 ml-md-1 text-nowrap">
-          <%= ExplorerWeb.TransactionView.formatted_fee(@transaction, denomination: :ether, include_label: false) %> <%= gettext "TX Fee" %>
+          <%= BlockScoutWeb.TransactionView.formatted_fee(@transaction, denomination: :ether, include_label: false) %> <%= gettext "TX Fee" %>
         </span>
       </span>
     </div>
@@ -39,7 +39,7 @@
       <span class="mr-2 mr-md-0 order-1">
         <%= link(
           gettext("Block #%{number}", number: to_string(@transaction.block.number)),
-          to: block_path(ExplorerWeb.Endpoint, :show, @locale, @transaction.block)
+          to: block_path(BlockScoutWeb.Endpoint, :show, @locale, @transaction.block)
         ) %>
       </span>
       <span class="mr-2 mr-md-0 order-2" data-from-now="<%= @transaction.block.timestamp %>"></span>
@@ -58,7 +58,7 @@
       <% end %>
     </div>
 
-    <%= if ExplorerWeb.TransactionView.involves_token_transfers?(@transaction) do %>
+    <%= if BlockScoutWeb.TransactionView.involves_token_transfers?(@transaction) do %>
       <div class="offset-md-2 col-md-10">
         <hr class="mt-3 mb-3 w-100" />
         <p class="tile-title"><%= gettext "Transfers" %></p>
@@ -69,11 +69,11 @@
       <div class="offset-md-2 col-md-7 col-lg-8 d-flex flex-column mt-1 mb-2">
         <span class="text-nowrap" data-test="token_transfer">
           <span data-test="token_transfer_address_hash">
-            <%= ExplorerWeb.AddressView.display_address_hash(@address, token_transfer.from_address, @locale) %>
+            <%= BlockScoutWeb.AddressView.display_address_hash(@address, token_transfer.from_address, @locale) %>
           </span>
           &rarr;
           <span data-test="token_transfer_address_hash">
-            <%= ExplorerWeb.AddressView.display_address_hash(@address, token_transfer.to_address, @locale) %>
+            <%= BlockScoutWeb.AddressView.display_address_hash(@address, token_transfer.to_address, @locale) %>
           </span>
         </span>
         <span class="tile-title">

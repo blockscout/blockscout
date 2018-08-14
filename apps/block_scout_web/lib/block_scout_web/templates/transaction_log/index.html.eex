@@ -1,6 +1,6 @@
 <section class="container">
 
-  <%= render ExplorerWeb.TransactionView, "overview.html", assigns %>
+  <%= render BlockScoutWeb.TransactionView, "overview.html", assigns %>
 
     <div class="card">
       <div class="card-header">

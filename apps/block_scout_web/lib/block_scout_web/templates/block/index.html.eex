@@ -6,7 +6,7 @@
 
       <span data-selector="blocks-list">
         <%= for block <- @blocks do %>
-          <%= render ExplorerWeb.BlockView, "_tile.html", locale: @locale, block: block %>
+          <%= render BlockScoutWeb.BlockView, "_tile.html", locale: @locale, block: block %>
         <% end %>
       </span>
 

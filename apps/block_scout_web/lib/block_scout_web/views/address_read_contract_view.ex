@@ -1,7 +1,7 @@
-defmodule ExplorerWeb.AddressReadContractView do
-  use ExplorerWeb, :view
+defmodule BlockScoutWeb.AddressReadContractView do
+  use BlockScoutWeb, :view
 
-  import ExplorerWeb.AddressView, only: [smart_contract_verified?: 1]
+  import BlockScoutWeb.AddressView, only: [smart_contract_verified?: 1]
 
   def queryable?(inputs), do: Enum.any?(inputs)
 

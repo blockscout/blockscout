@@ -1,3 +1,3 @@
-defmodule ExplorerWeb.LayoutViewTest do
-  use ExplorerWeb.ConnCase, async: true
+defmodule BlockScoutWeb.LayoutViewTest do
+  use BlockScoutWeb.ConnCase, async: true
 end

@@ -1,9 +1,9 @@
-defmodule ExplorerWeb.UserSocket do
+defmodule BlockScoutWeb.UserSocket do
   use Phoenix.Socket
 
-  channel("addresses:*", ExplorerWeb.AddressChannel)
-  channel("blocks:*", ExplorerWeb.BlockChannel)
-  channel("transactions:*", ExplorerWeb.TransactionChannel)
+  channel("addresses:*", BlockScoutWeb.AddressChannel)
+  channel("blocks:*", BlockScoutWeb.BlockChannel)
+  channel("transactions:*", BlockScoutWeb.TransactionChannel)
 
   transport(:websocket, Phoenix.Transports.WebSocket, timeout: 45_000)
   # transport :longpoll, Phoenix.Transports.LongPoll

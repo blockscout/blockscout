@@ -1,4 +1,4 @@
-defmodule ExplorerWeb.ChannelCase do
+defmodule BlockScoutWeb.ChannelCase do
   @moduledoc """
   This module defines the test case to be used by
   channel tests.
@@ -21,7 +21,7 @@ defmodule ExplorerWeb.ChannelCase do
       use Phoenix.ChannelTest
 
       # The default endpoint for testing
-      @endpoint ExplorerWeb.Endpoint
+      @endpoint BlockScoutWeb.Endpoint
 
       import Explorer.Factory
     end
@@ -36,6 +36,6 @@ defmodule ExplorerWeb.ChannelCase do
     end
 
     :ok
-    # {k:ok, conn: %Plug.Conn{} |> Plug.Conn.put_private(:phoenix_endpoint, ExplorerWeb.Endpoint)}
+    # {k:ok, conn: %Plug.Conn{} |> Plug.Conn.put_private(:phoenix_endpoint, BlockScoutWeb.Endpoint)}
   end
 end

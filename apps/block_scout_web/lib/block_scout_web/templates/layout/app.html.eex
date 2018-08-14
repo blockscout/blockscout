@@ -10,13 +10,13 @@
 
   <body>
     <div class="layout-container">
-      <%= render ExplorerWeb.LayoutView, "_topnav.html", assigns %>
+      <%= render BlockScoutWeb.LayoutView, "_topnav.html", assigns %>
       <main class="pt-5">
         <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
         <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
         <%= render @view_module, @view_template, assigns %>
       </main>
-      <%= render ExplorerWeb.LayoutView, "_footer.html", assigns %>
+      <%= render BlockScoutWeb.LayoutView, "_footer.html", assigns %>
     </div>
     <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
   </body>

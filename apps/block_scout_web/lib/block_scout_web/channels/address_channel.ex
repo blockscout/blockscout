@@ -1,10 +1,10 @@
-defmodule ExplorerWeb.AddressChannel do
+defmodule BlockScoutWeb.AddressChannel do
   @moduledoc """
   Establishes pub/sub channel for address page live updates.
   """
-  use ExplorerWeb, :channel
+  use BlockScoutWeb, :channel
 
-  alias ExplorerWeb.{AddressTransactionView, AddressView}
+  alias BlockScoutWeb.{AddressTransactionView, AddressView}
   alias Phoenix.View
 
   intercept(["balance_update", "count", "transaction"])
@@ -18,7 +18,7 @@ defmodule ExplorerWeb.AddressChannel do
         %{address: address, exchange_rate: exchange_rate},
         socket
       ) do
-    Gettext.put_locale(ExplorerWeb.Gettext, socket.assigns.locale)
+    Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
 
     rendered =
       View.render_to_string(
@@ -34,7 +34,7 @@ defmodule ExplorerWeb.AddressChannel do
   end
 
   def handle_out("count", %{count: count}, socket) do
-    Gettext.put_locale(ExplorerWeb.Gettext, socket.assigns.locale)
+    Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
 
     push(socket, "count", %{count: Cldr.Number.to_string!(count, format: "#,###")})
 
@@ -42,7 +42,7 @@ defmodule ExplorerWeb.AddressChannel do
   end
 
   def handle_out("transaction", %{address: address, transaction: transaction}, socket) do
-    Gettext.put_locale(ExplorerWeb.Gettext, socket.assigns.locale)
+    Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
 
     rendered =
       View.render_to_string(

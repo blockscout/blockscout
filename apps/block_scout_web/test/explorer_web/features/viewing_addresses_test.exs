@@ -1,9 +1,9 @@
-defmodule ExplorerWeb.ViewingAddressesTest do
-  use ExplorerWeb.FeatureCase, async: true
+defmodule BlockScoutWeb.ViewingAddressesTest do
+  use BlockScoutWeb.FeatureCase, async: true
 
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Wei}
-  alias ExplorerWeb.{AddressPage, Notifier}
+  alias BlockScoutWeb.{AddressPage, Notifier}
 
   setup do
     block = insert(:block)
@@ -53,8 +53,8 @@ defmodule ExplorerWeb.ViewingAddressesTest do
           created_contract_address: contract
         )
 
-      address_hash = ExplorerWeb.AddressView.trimmed_hash(address.hash)
-      transaction_hash = ExplorerWeb.AddressView.trimmed_hash(transaction.hash)
+      address_hash = BlockScoutWeb.AddressView.trimmed_hash(address.hash)
+      transaction_hash = BlockScoutWeb.AddressView.trimmed_hash(transaction.hash)
 
       session
       |> AddressPage.visit_page(internal_transaction.created_contract_address)
@@ -86,8 +86,8 @@ defmodule ExplorerWeb.ViewingAddressesTest do
           created_contract_address: another_contract
         )
 
-      contract_hash = ExplorerWeb.AddressView.trimmed_hash(contract.hash)
-      transaction_hash = ExplorerWeb.AddressView.trimmed_hash(transaction.hash)
+      contract_hash = BlockScoutWeb.AddressView.trimmed_hash(contract.hash)
+      transaction_hash = BlockScoutWeb.AddressView.trimmed_hash(transaction.hash)
 
       session
       |> AddressPage.visit_page(internal_transaction.created_contract_address)

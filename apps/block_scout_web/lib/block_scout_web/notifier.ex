@@ -1,4 +1,4 @@
-defmodule ExplorerWeb.Notifier do
+defmodule BlockScoutWeb.Notifier do
   @moduledoc """
   Responds to events from EventHandler by sending appropriate channel updates to front-end.
   """
@@ -6,7 +6,7 @@ defmodule ExplorerWeb.Notifier do
   alias Explorer.{Chain, Market, Repo}
   alias Explorer.Chain.Address
   alias Explorer.ExchangeRates.Token
-  alias ExplorerWeb.Endpoint
+  alias BlockScoutWeb.Endpoint
 
   def handle_event({:chain_event, :addresses, addresses}) do
     address_count_module = Application.get_env(:block_scout_web, :fake_adapter) || Chain

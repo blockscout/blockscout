@@ -1,11 +1,11 @@
-defmodule ExplorerWeb.EventHandler do
+defmodule BlockScoutWeb.EventHandler do
   @moduledoc """
   Subscribing process for broadcast events from Chain context.
   """
 
   use GenServer
   alias Explorer.Chain
-  alias ExplorerWeb.Notifier
+  alias BlockScoutWeb.Notifier
 
   # Client
 

@@ -7,7 +7,7 @@ File.mkdir_p!(junit_folder)
 {:ok, _} = Application.ensure_all_started(:block_scout_web)
 
 {:ok, _} = Application.ensure_all_started(:wallaby)
-Application.put_env(:wallaby, :base_url, ExplorerWeb.Endpoint.url())
+Application.put_env(:wallaby, :base_url, BlockScoutWeb.Endpoint.url())
 
 {:ok, _} = Application.ensure_all_started(:ex_machina)
 

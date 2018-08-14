@@ -1,5 +1,5 @@
-defmodule ExplorerWeb.AddresstransactionViewTest do
-  use ExplorerWeb.ConnCase, async: true
+defmodule BlockScoutWeb.AddresstransactionViewTest do
+  use BlockScoutWeb.ConnCase, async: true
 
-  doctest ExplorerWeb.AddressTransactionView
+  doctest BlockScoutWeb.AddressTransactionView
 end

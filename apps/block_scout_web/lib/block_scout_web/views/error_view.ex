@@ -1,5 +1,5 @@
-defmodule ExplorerWeb.ErrorView do
-  use ExplorerWeb, :view
+defmodule BlockScoutWeb.ErrorView do
+  use BlockScoutWeb, :view
 
   def render("404.html", _assigns) do
     "Page not found"

@@ -1,7 +1,7 @@
-defmodule ExplorerWeb.PendingTransactionController do
-  use ExplorerWeb, :controller
+defmodule BlockScoutWeb.PendingTransactionController do
+  use BlockScoutWeb, :controller
 
-  import ExplorerWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+  import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias Explorer.Chain
 

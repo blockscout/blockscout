@@ -8,17 +8,17 @@
           <h1 class="card-title"><%= gettext "Transaction Details" %> </h1>
           <h3 data-test="transaction_detail_hash"><%= @transaction %> </h3>
           <span class="d-block mb-2">
-            <%= render ExplorerWeb.AddressView, "_link.html", address_hash: @transaction.from_address_hash, contract: ExplorerWeb.AddressView.contract?(@transaction.from_address), locale: @locale %>
+            <%= render BlockScoutWeb.AddressView, "_link.html", address_hash: @transaction.from_address_hash, contract: BlockScoutWeb.AddressView.contract?(@transaction.from_address), locale: @locale %>
             <span class="text-muted">  &rarr; </span>
             <%= if @transaction.to_address_hash do %>
-              <%= render ExplorerWeb.AddressView, "_link.html", address_hash: @transaction.to_address_hash, contract: ExplorerWeb.AddressView.contract?(@transaction.to_address), locale: @locale %>
+              <%= render BlockScoutWeb.AddressView, "_link.html", address_hash: @transaction.to_address_hash, contract: BlockScoutWeb.AddressView.contract?(@transaction.to_address), locale: @locale %>
             <% else %>
               <%= gettext("Contract Address Pending") %>
             <% end %>
           </span>
           <div class="d-flex flex-row justify-content-start text-muted">
-            <span class="mr-4 text-<%= ExplorerWeb.TransactionView.type_suffix(@transaction) %>"><%= ExplorerWeb.TransactionView.transaction_display_type(@transaction) %></span>
-            <span class="mr-4"><%= ExplorerWeb.TransactionView.formatted_status(@transaction) %></span>
+            <span class="mr-4 text-<%= BlockScoutWeb.TransactionView.type_suffix(@transaction) %>"><%= BlockScoutWeb.TransactionView.transaction_display_type(@transaction) %></span>
+            <span class="mr-4"><%= BlockScoutWeb.TransactionView.formatted_status(@transaction) %></span>
             <span class="mr-4">
               <%= if block do %>
                 <span data-from-now="<%= @transaction.block.timestamp %>"></span>

@@ -1,8 +1,8 @@
-defmodule ExplorerWeb.ChainViewTest do
-  use ExplorerWeb.ConnCase, async: true
+defmodule BlockScoutWeb.ChainViewTest do
+  use BlockScoutWeb.ConnCase, async: true
 
   alias Explorer.ExchangeRates.Token
-  alias ExplorerWeb.ChainView
+  alias BlockScoutWeb.ChainView
 
   describe "format_exchange_rate/1" do
     test "returns a formatted usd value from a `Token`'s usd_value" do

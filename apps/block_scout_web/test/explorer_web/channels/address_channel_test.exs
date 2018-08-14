@@ -1,12 +1,12 @@
-defmodule ExplorerWeb.AddressChannelTest do
-  use ExplorerWeb.ChannelCase
+defmodule BlockScoutWeb.AddressChannelTest do
+  use BlockScoutWeb.ChannelCase
 
   describe "addresses channel tests" do
     test "subscribed user can receive transaction event" do
       channel = "addresses"
       @endpoint.subscribe(channel)
 
-      ExplorerWeb.Endpoint.broadcast(channel, "transaction", %{body: "test"})
+      BlockScoutWeb.Endpoint.broadcast(channel, "transaction", %{body: "test"})
 
       receive do
         %Phoenix.Socket.Broadcast{event: "transaction", topic: ^channel, payload: %{body: body}} ->
@@ -21,7 +21,7 @@ defmodule ExplorerWeb.AddressChannelTest do
       channel = "addresses"
       @endpoint.subscribe(channel)
 
-      ExplorerWeb.Endpoint.broadcast(channel, "overview", %{body: "test"})
+      BlockScoutWeb.Endpoint.broadcast(channel, "overview", %{body: "test"})
 
       receive do
         %Phoenix.Socket.Broadcast{event: "overview", topic: ^channel, payload: %{body: body}} ->

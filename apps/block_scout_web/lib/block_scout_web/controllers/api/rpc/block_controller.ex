@@ -1,8 +1,8 @@
-defmodule ExplorerWeb.API.RPC.BlockController do
-  use ExplorerWeb, :controller
+defmodule BlockScoutWeb.API.RPC.BlockController do
+  use BlockScoutWeb, :controller
 
   alias Explorer.Chain
-  alias ExplorerWeb.Chain, as: ChainWeb
+  alias BlockScoutWeb.Chain, as: ChainWeb
 
   def getblockreward(conn, params) do
     with {:block_param, {:ok, unsafe_block_number}} <- {:block_param, Map.fetch(params, "blockno")},

@@ -1,6 +1,6 @@
 <section class="container">
 
-  <%= render ExplorerWeb.BlockView, "overview.html", assigns %>
+  <%= render BlockScoutWeb.BlockView, "overview.html", assigns %>
 
   <section>
     <div class="card mb-3">
@@ -36,7 +36,7 @@
           <h2 class="card-title"><%= gettext "Transactions" %></h2>
           <span data-selector="transactions-list">
             <%= for transaction <- @transactions do %>
-              <%= render ExplorerWeb.TransactionView, "_tile.html", locale: @locale, transaction: transaction %>
+              <%= render BlockScoutWeb.TransactionView, "_tile.html", locale: @locale, transaction: transaction %>
             <% end %>
           </span>
         <% else %>

@@ -1,5 +1,5 @@
-defmodule ExplorerWeb.InternalTransactionView do
-  use ExplorerWeb, :view
+defmodule BlockScoutWeb.InternalTransactionView do
+  use BlockScoutWeb, :view
   @dialyzer :no_match
 
   alias Explorer.Chain.InternalTransaction

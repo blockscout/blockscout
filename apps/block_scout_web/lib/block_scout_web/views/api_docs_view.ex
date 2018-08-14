@@ -1,5 +1,5 @@
-defmodule ExplorerWeb.APIDocsView do
-  use ExplorerWeb, :view
+defmodule BlockScoutWeb.APIDocsView do
+  use BlockScoutWeb, :view
 
   def action_tile_id(module, action) do
     "#{module}-#{action}"

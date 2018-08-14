@@ -1,7 +1,7 @@
-defmodule ExplorerWeb.AddressReadContractViewTest do
-  use ExplorerWeb.ConnCase, async: true
+defmodule BlockScoutWeb.AddressReadContractViewTest do
+  use BlockScoutWeb.ConnCase, async: true
 
-  alias ExplorerWeb.AddressReadContractView
+  alias BlockScoutWeb.AddressReadContractView
 
   describe "queryable?/1" do
     test "returns true if list of inputs is not empty" do

@@ -1,3 +1,3 @@
-defmodule ExplorerWeb.IconsView do
-  use ExplorerWeb, :view
+defmodule BlockScoutWeb.IconsView do
+  use BlockScoutWeb, :view
 end

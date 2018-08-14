@@ -1,5 +1,5 @@
-defmodule ExplorerWeb.AddressTransactionTest do
-  use ExplorerWeb.ChannelCase
+defmodule BlockScoutWeb.AddressTransactionTest do
+  use BlockScoutWeb.ChannelCase
 
   describe "transactions channel tests" do
     test "subscribed user can receive block confirmations event" do
@@ -13,7 +13,7 @@ defmodule ExplorerWeb.AddressTransactionTest do
         |> insert()
         |> with_block(block)
 
-      ExplorerWeb.Endpoint.broadcast(channel, "confirmations", %{max_block_number: 3, transaction: transaction})
+      BlockScoutWeb.Endpoint.broadcast(channel, "confirmations", %{max_block_number: 3, transaction: transaction})
 
       receive do
         %Phoenix.Socket.Broadcast{
