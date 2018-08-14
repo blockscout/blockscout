@@ -17,7 +17,7 @@ defmodule EthereumJSONRPC do
   """
 
   alias Explorer.Chain.Block
-  alias EthereumJSONRPC.{Blocks, Receipts, Transactions, Transport, Variant}
+  alias EthereumJSONRPC.{Blocks, Receipts, Subscription, Transactions, Transport, Variant}
 
   @typedoc """
   Truncated 20-byte [KECCAK-256](https://en.wikipedia.org/wiki/SHA-3) hash encoded as a hexadecimal number in a
@@ -290,6 +290,50 @@ defmodule EthereumJSONRPC do
   def request(%{method: method, params: params} = map)
       when is_binary(method) and is_list(params) do
     Map.put(map, :jsonrpc, "2.0")
+  end
+
+  @doc """
+  Subscribes to `event` with parameters.
+
+  Events are delivered in a tuple tagged with the `t:EthereumJSONRPC.Subscription.t/0` and containing the same output
+  as the single-request form of `json_rpc/2`.
+
+  | Message                                                                           | Description                            |
+  |-----------------------------------------------------------------------------------|----------------------------------------|
+  | `{EthereumJSONRPC.Subscription.t(), {:ok, EthreumsJSONRPC.Transport.result.t()}}` | New result in subscription             |
+  | `{EthereumJSONRPC.Subscription.t(), {:error, reason :: term()}}`                  | There was an error in the subscription |
+
+  Subscription can be canceled by calling `unsubscribe/1` with the returned `t:EthereumJSONRPC.Subscription.t/0`.
+  """
+  @spec subscribe(event :: Subscription.event(), params :: Subscription.params(), json_rpc_named_arguments) ::
+          {:ok, Subscription.t()} | {:error, reason :: term()}
+  def subscribe(event, params \\ [], named_arguments) when is_list(params) do
+    transport = Keyword.fetch!(named_arguments, :transport)
+    transport_options = Keyword.fetch!(named_arguments, :transport_options)
+
+    transport.subscribe(event, params, transport_options)
+  end
+
+  @doc """
+  Unsubscribes to `t:EthereumJSONRPC.Subscription.t/0` created with `subscribe/2`.
+
+  ## Returns
+
+   * `:ok` - subscription was canceled
+   * `:error` - subscription could not be canceled.  It did not exist because either the server already canceled it, it
+       never existed, or `unsubscribe/1 ` was called on it before.
+
+  """
+  @spec unsubscribe(Subscription.t()) :: :ok | :error
+  def unsubscribe(%Subscription{transport: transport} = subscription) do
+    transport.unsubscribe(subscription)
+  end
+
+  # We can only depend on implementations supporting 64-bit integers:
+  # * Parity only supports u64 (https://github.com/paritytech/jsonrpc-core/blob/f2c61edb817e344d92ab3baf872fa77d1602430a/src/id.rs#L13)
+  def unique_request_id do
+    <<unique_request_id::big-integer-size(8)-unit(8)>> = :crypto.strong_rand_bytes(8)
+    unique_request_id
   end
 
   @doc """

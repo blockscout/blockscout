@@ -4,6 +4,8 @@ defmodule EthereumJSONRPCTest do
   import EthereumJSONRPC.Case
   import Mox
 
+  alias EthereumJSONRPC.{Subscription, WebSocket}
+
   setup :verify_on_exit!
 
   @moduletag :capture_log
@@ -217,6 +219,98 @@ defmodule EthereumJSONRPCTest do
             assert number > 0
         end
       )
+    end
+  end
+
+  describe "subscribe/2" do
+    setup do
+      pid = start_supervised!({WebSocket.Client, %{url: EthereumJSONRPC.WebSocket.Case.url()}})
+
+      %{
+        block_interval: 5000,
+        json_rpc_named_arguments: [
+          transport: EthereumJSONRPC.WebSocket,
+          transport_options: %{
+            pid: pid
+          }
+        ]
+      }
+    end
+
+    test "can subscribe to newHeads", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      subscriber_pid = self()
+      options = json_rpc_named_arguments[:transport_options]
+
+      assert {:ok,
+              %Subscription{
+                id: subscription_id,
+                subscriber_pid: ^subscriber_pid,
+                transport: WebSocket,
+                transport_options: ^options
+              }} = EthereumJSONRPC.subscribe("newHeads", json_rpc_named_arguments)
+
+      assert is_binary(subscription_id)
+    end
+
+    test "delivers new heads to caller", %{block_interval: block_interval, json_rpc_named_arguments: json_rpc_named_arguments} do
+      assert {:ok, subscription} = EthereumJSONRPC.subscribe("newHeads", json_rpc_named_arguments)
+
+      assert_receive {^subscription, {:ok, %{"number" => _}}}, block_interval * 2
+    end
+  end
+
+  describe "unsubscribe/2" do
+    setup do
+      pid = start_supervised!({WebSocket.Client, %{url: EthereumJSONRPC.WebSocket.Case.url()}})
+
+      %{
+        block_interval: 5000,
+        json_rpc_named_arguments: [
+          transport: EthereumJSONRPC.WebSocket,
+          transport_options: %{
+            pid: pid
+          }
+        ]
+      }
+    end
+
+    test "can unsubscribe", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      assert {:ok, subscription} = EthereumJSONRPC.subscribe("newHeads", json_rpc_named_arguments)
+
+      assert {:ok, true} = EthereumJSONRPC.unsubscribe(subscription)
+    end
+
+    test "stops messages being sent to subscriber", %{
+      block_interval: block_interval,
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      assert {:ok, subscription} = EthereumJSONRPC.subscribe("newHeads", json_rpc_named_arguments)
+
+      wait = block_interval * 2
+
+      assert_receive {^subscription, {:ok, %{"number" => _}}}, wait
+
+      assert {:ok, true} = EthereumJSONRPC.unsubscribe(subscription)
+
+      clear_mailbox()
+
+      refute_receive {^subscription, _}, wait
+    end
+
+    test "return error if already unsubscribed", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      assert {:ok, subscription} = EthereumJSONRPC.subscribe("newHeads", [], json_rpc_named_arguments)
+      assert {:ok, true} = EthereumJSONRPC.unsubscribe(subscription)
+
+      assert {:error, :not_found} = EthereumJSONRPC.unsubscribe(subscription)
+    end
+  end
+
+  defp clear_mailbox do
+    receive do
+      _ -> clear_mailbox()
+    after
+      0 ->
+        :ok
     end
   end
 end

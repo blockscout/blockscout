@@ -57,6 +57,8 @@ defmodule EthereumJsonrpc.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      # CACerts bundle for `EthereumJSONRPC.WebSocket.Client`
+      {:certifi, "~> 2.3"},
       # Style Checking
       {:credo, "0.9.2", only: [:dev, :test], runtime: false},
       # Static Type Checking
@@ -72,7 +74,9 @@ defmodule EthereumJsonrpc.MixProject do
       # Convert unix timestamps in JSONRPC to DateTimes
       {:timex, "~> 3.1.24"},
       # Encode/decode function names and arguments
-      {:ex_abi, "~> 0.1.16"}
+      {:ex_abi, "~> 0.1.16"},
+      # `EthereumJSONRPC.WebSocket.Client`
+      {:websockex, "~> 0.4.1"}
     ]
   end
 end

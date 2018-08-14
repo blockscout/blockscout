@@ -33,6 +33,11 @@ defmodule EthereumJSONRPC.Case do
             http_options: EthereumJSONRPC.HTTP.Case.http_options()
           ]
 
+        EthereumJSONRPC.WebSocket ->
+          pid = start_supervised!({WebSocket.Client, %{url: EthereumJSONRPC.WebSocket.Case.url()}})
+
+          %{pid: pid}
+
         _ ->
           []
       end
