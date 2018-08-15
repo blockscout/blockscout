@@ -15,3 +15,5 @@ ExUnit.configure(formatters: [JUnitFormatter, ExUnit.CLIFormatter])
 ExUnit.start()
 
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :manual)
+
+Mox.defmock(EthereumJSONRPC.Mox, for: EthereumJSONRPC.Transport)

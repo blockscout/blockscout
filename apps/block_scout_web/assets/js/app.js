@@ -24,7 +24,7 @@ import './lib/loading_element'
 import './lib/market_history_chart'
 import './lib/reload_button'
 import './lib/tooltip'
-import './lib/smart_contract/read_function'
+import './lib/smart_contract/read_only_functions'
 import './lib/pretty_json'
 import './lib/try_api'
 
