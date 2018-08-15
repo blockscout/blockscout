@@ -57,11 +57,4 @@ defmodule BlockScoutWeb.SmartContractController do
         not_found(conn)
     end
   end
-
-  defp ajax?(conn) do
-    case get_req_header(conn, "x-requested-with") do
-      [value] -> value in ["XMLHttpRequest", "xmlhttprequest"]
-      [] -> false
-    end
-  end
 end

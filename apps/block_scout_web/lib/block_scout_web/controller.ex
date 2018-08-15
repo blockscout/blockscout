@@ -22,4 +22,14 @@ defmodule BlockScoutWeb.Controller do
     |> put_view(BlockScoutWeb.ErrorView)
     |> render("422.html")
   end
+
+  @doc """
+  Checks if the request is AJAX or not.
+  """
+  def ajax?(conn) do
+    case get_req_header(conn, "x-requested-with") do
+      [value] -> value in ["XMLHttpRequest", "xmlhttprequest"]
+      [] -> false
+    end
+  end
 end
