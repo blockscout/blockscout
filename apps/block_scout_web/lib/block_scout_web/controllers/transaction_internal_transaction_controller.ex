@@ -14,7 +14,8 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
              necessity_by_association: %{
                block: :optional,
                from_address: :optional,
-               to_address: :optional
+               to_address: :optional,
+               token_transfers: :optional
              }
            ) do
       full_options =
@@ -40,6 +41,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         internal_transactions: internal_transactions,
         max_block_number: max_block_number,
+        show_token_transfers: Chain.transaction_has_token_transfers?(hash),
         next_page_params: next_page_params(next_page, internal_transactions, params),
         transaction: transaction
       )

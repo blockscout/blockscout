@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.Chain do
       string_to_transaction_hash: 1
     ]
 
-  alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Transaction, TokenTransfer}
+  alias Explorer.Chain.{Address, Block, InternalTransaction, Log, TokenTransfer, Transaction}
   alias Explorer.PagingOptions
 
   @page_size 50

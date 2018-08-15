@@ -11,6 +11,7 @@ defmodule Explorer.ChainTest do
     InternalTransaction,
     Log,
     Token,
+    TokenTransfer,
     Transaction,
     SmartContract,
     Wei
@@ -933,6 +934,50 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "transaction_to_token_transfers/2" do
+    test "without token transfers" do
+      transaction = insert(:transaction)
+
+      assert [] = Chain.transaction_to_token_transfers(transaction)
+    end
+
+    test "with token transfers" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      %TokenTransfer{id: id} = insert(:token_transfer, transaction: transaction)
+
+      assert [%TokenTransfer{id: ^id}] = Chain.transaction_to_token_transfers(transaction)
+    end
+
+    test "token transfers necessity_by_association loads associations" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer, transaction: transaction)
+
+      assert [%TokenTransfer{token: %Token{}, transaction: %Transaction{}}] =
+               Chain.transaction_to_token_transfers(
+                 transaction,
+                 necessity_by_association: %{
+                   token: :optional,
+                   transaction: :optional
+                 }
+               )
+
+      assert [
+               %TokenTransfer{
+                 token: %Ecto.Association.NotLoaded{},
+                 transaction: %Ecto.Association.NotLoaded{}
+               }
+             ] = Chain.transaction_to_token_transfers(transaction)
+    end
+  end
+
   describe "value/2" do
     test "with InternalTransaction.t with :wei" do
       assert Chain.value(%InternalTransaction{value: %Wei{value: Decimal.new(1)}}, :wei) == Decimal.new(1)
@@ -1543,5 +1588,20 @@ defmodule Explorer.ChainTest do
     insert(:token, cataloged: true)
     %Token{contract_address_hash: uncatalog_address} = insert(:token, cataloged: false)
     assert Chain.stream_uncataloged_token_contract_address_hashes([], &[&1 | &2]) == {:ok, [uncatalog_address]}
+  end
+
+  describe "transaction_has_token_transfers?/1" do
+    test "returns true if transaction has token transfers" do
+      transaction = insert(:transaction)
+      insert(:token_transfer, transaction: transaction)
+
+      assert Chain.transaction_has_token_transfers?(transaction.hash) == true
+    end
+
+    test "returns false if transaction has no token transfers" do
+      transaction = insert(:transaction)
+
+      assert Chain.transaction_has_token_transfers?(transaction.hash) == false
+    end
   end
 end

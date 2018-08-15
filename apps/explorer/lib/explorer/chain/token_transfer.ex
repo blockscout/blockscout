@@ -167,9 +167,9 @@ defmodule Explorer.Chain.TokenTransfer do
     result
   end
 
-  defp page_token_transfer(query, %PagingOptions{key: nil}), do: query
+  def page_token_transfer(query, %PagingOptions{key: nil}), do: query
 
-  defp page_token_transfer(query, %PagingOptions{key: inserted_at}) do
+  def page_token_transfer(query, %PagingOptions{key: inserted_at}) do
     where(
       query,
       [token_transfer],

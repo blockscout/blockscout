@@ -331,11 +331,14 @@ defmodule Explorer.Factory do
     from_address = build(:address, hash: from_address_hash)
     contract_code = Map.fetch!(contract_code_info(), :bytecode)
 
+    token_address = insert(:contract_address, contract_code: contract_code)
+    insert(:token, contract_address: token_address)
+
     %TokenTransfer{
       amount: Decimal.new(1),
       from_address: from_address,
       to_address: to_address,
-      token_contract_address: build(:address, contract_code: contract_code),
+      token_contract_address: token_address,
       transaction: log.transaction,
       log_index: log.index
     }

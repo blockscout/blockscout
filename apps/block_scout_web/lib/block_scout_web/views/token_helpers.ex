@@ -6,6 +6,8 @@ defmodule BlockScoutWeb.TokenHelpers do
   alias Explorer.Chain.{Token, TokenTransfer}
   alias BlockScoutWeb.{CurrencyHelpers}
 
+  import BlockScoutWeb.Gettext
+
   @doc """
   Returns the token transfers' amount according to the token's type and decimails.
 
@@ -33,7 +35,7 @@ defmodule BlockScoutWeb.TokenHelpers do
   end
 
   defp do_token_transfer_amount(%Token{type: "ERC-721"}, _amount, token_id) do
-    "TokenID [#{token_id}]"
+    gettext("ERC-721 TokenID [%{token_id}]", token_id: token_id)
   end
 
   defp do_token_transfer_amount(_token, _amount, _token_id) do

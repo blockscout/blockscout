@@ -1211,7 +1211,7 @@ defmodule Explorer.Chain do
       `:required`, and the `t:Explorer.Chain.InternalTransaction.t/0` has no associated record for that association,
       then the `t:Explorer.Chain.InternalTransaction.t/0` will not be included in the list.
     * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
-      `:key` (a tuple of the lowest/oldest `{index}`) and. Results will be the internal transactions older than
+      `:key` (a tuple of the lowest/oldest `{index}`). Results will be the internal transactions older than
       the `index` that is passed.
 
   """
@@ -1246,7 +1246,7 @@ defmodule Explorer.Chain do
       `:required`, and the `t:Explorer.Chain.Log.t/0` has no associated record for that association, then the
       `t:Explorer.Chain.Log.t/0` will not be included in the page `entries`.
     * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
-      `:key` (a tuple of the lowest/oldest `{index}`) and. Results will be the transactions older than
+      `:key` (a tuple of the lowest/oldest `{index}`). Results will be the transactions older than
       the `index` that are passed.
 
   """
@@ -1265,6 +1265,40 @@ defmodule Explorer.Chain do
     |> page_logs(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by([log], asc: log.index)
+    |> join_associations(necessity_by_association)
+    |> Repo.all()
+  end
+
+  @doc """
+  Finds all `t:Explorer.Chain.TokenTransfer.t/0`s for `t:Explorer.Chain.Transaction.t/0`.
+
+  ## Options
+
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+      `:required`, and the `t:Explorer.Chain.TokenTransfer.t/0` has no associated record for that association, then the
+      `t:Explorer.Chain.TokenTransfer.t/0` will not be included in the page `entries`.
+    * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
+      `:key` (in the form of `%{"inserted_at" => inserted_at}`). Results will be the transactions older than
+      the `index` that are passed.
+
+  """
+  @spec transaction_to_token_transfers(Transaction.t(), [paging_options | necessity_by_association_option]) :: [
+          TokenTransfer.t()
+        ]
+  def transaction_to_token_transfers(
+        %Transaction{hash: %Hash{byte_count: unquote(Hash.Full.byte_count())} = transaction_hash},
+        options \\ []
+      )
+      when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    TokenTransfer
+    |> join(:inner, [token_transfer], transaction in assoc(token_transfer, :transaction))
+    |> where([_, transaction], transaction.hash == ^transaction_hash)
+    |> TokenTransfer.page_token_transfer(paging_options)
+    |> limit(^paging_options.page_size)
+    |> order_by([token_transfer], asc: token_transfer.inserted_at)
     |> join_associations(necessity_by_association)
     |> Repo.all()
   end
@@ -1515,5 +1549,12 @@ defmodule Explorer.Chain do
   @spec count_addresses_in_token_transfers_from_token_hash(Hash.t()) :: non_neg_integer()
   def count_addresses_in_token_transfers_from_token_hash(token_address_hash) do
     TokenTransfer.count_addresses_in_token_transfers_from_token_hash(token_address_hash)
+  end
+
+  @spec transaction_has_token_transfers?(Hash.t()) :: boolean()
+  def transaction_has_token_transfers?(transaction_hash) do
+    query = from(tt in TokenTransfer, where: tt.transaction_hash == ^transaction_hash, limit: 1, select: 1)
+
+    Repo.one(query) != nil
   end
 end

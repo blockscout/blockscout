@@ -60,6 +60,8 @@ defmodule BlockScoutWeb.Router do
       )
 
       resources("/logs", TransactionLogController, only: [:index], as: :log)
+
+      resources("/token_transfers", TransactionTokenTransferController, only: [:index], as: :token_transfer)
     end
 
     resources "/addresses", AddressController, only: [:show] do
