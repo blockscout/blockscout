@@ -337,9 +337,9 @@ jobs:
           command: |
             # Don't submit coverage report for forks, but let the build succeed
             if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
-              mix coveralls.html --exclude no_geth --parallel --umbrella
+              mix coveralls.html --parallel --umbrella
             else
-              mix coveralls.circle --exclude no_geth --parallel --umbrella
+              mix coveralls.circle --parallel --umbrella
             fi
 
       - store_artifacts:
@@ -385,9 +385,9 @@ jobs:
           command: |
             # Don't submit coverage report for forks, but let the build succeed
             if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
-              mix coveralls.html --exclude no_geth --parallel --umbrella
+              mix coveralls.html --parallel --umbrella
             else
-              mix coveralls.circle --exclude no_geth --parallel --umbrella
+              mix coveralls.circle --parallel --umbrella
             fi
 
       - store_artifacts:
@@ -436,9 +436,9 @@ jobs:
           command: |
             # Don't submit coverage report for forks, but let the build succeed
             if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
-              mix coveralls.html --exclude no_parity --parallel --umbrella
+              mix coveralls.html --parallel --umbrella
             else
-              mix coveralls.circle --exclude no_parity --parallel --umbrella
+              mix coveralls.circle --parallel --umbrella
             fi
 
       - store_artifacts:
@@ -484,9 +484,9 @@ jobs:
           command: |
             # Don't submit coverage report for forks, but let the build succeed
             if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
-              mix coveralls.html --exclude no_parity --parallel --umbrella
+              mix coveralls.html --parallel --umbrella
             else
-              mix coveralls.circle --exclude no_parity --parallel --umbrella
+              mix coveralls.circle --parallel --umbrella
             fi
 
       - store_artifacts:
