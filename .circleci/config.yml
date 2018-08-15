@@ -332,11 +332,7 @@ jobs:
           name: Wait for DB
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
 
-      - run:
-          name: mix test --exclude no_geth
-          command: |
-            # Don't submit coverage report for forks, but let the build succeed
-            mix coveralls.circle --exclude no_geth --parallel --umbrella
+      - run: mix coveralls.circle --exclude no_geth --parallel --umbrella
 
       - store_artifacts:
           path: cover/excoveralls.html
@@ -376,11 +372,7 @@ jobs:
           name: Wait for DB
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
 
-      - run:
-          name: mix test --exclude no_geth
-          command: |
-            # Don't submit coverage report for forks, but let the build succeed
-            mix coveralls.circle --exclude no_geth --parallel --umbrella
+      - run: mix coveralls.circle --exclude no_geth --parallel --umbrella
 
       - store_artifacts:
           path: cover/excoveralls.html
@@ -423,11 +415,7 @@ jobs:
           name: Wait for DB
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
 
-      - run:
-          name: mix test --exclude no_geth
-          command: |
-            # Don't submit coverage report for forks, but let the build succeed
-            mix coveralls.circle --exclude no_parity --parallel --umbrella
+      - run: mix coveralls.circle --exclude no_geth --parallel --umbrella
 
       - store_artifacts:
           path: cover/excoveralls.html
@@ -467,11 +455,7 @@ jobs:
           name: Wait for DB
           command: dockerize -wait tcp://localhost:5432 -timeout 1m
 
-      - run:
-          name: mix test --exclude no_geth
-          command: |
-            # Don't submit coverage report for forks, but let the build succeed
-            mix coveralls.circle --exclude no_parity --parallel --umbrella
+      - run: mix coveralls.circle --exclude no_parity --parallel --umbrella
 
       - store_artifacts:
           path: cover/excoveralls.html
