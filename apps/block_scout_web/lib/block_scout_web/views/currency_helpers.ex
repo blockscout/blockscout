@@ -70,6 +70,10 @@ defmodule BlockScoutWeb.CurrencyHelpers do
       "2,050"
   """
   @spec format_according_to_decimals(non_neg_integer(), non_neg_integer()) :: String.t()
+  def format_according_to_decimals(value, nil) do
+    format_according_to_decimals(value, 0)
+  end
+
   def format_according_to_decimals(value, decimals) when is_integer(value) do
     value
     |> Decimal.new()

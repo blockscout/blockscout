@@ -56,6 +56,13 @@ defmodule BlockScoutWeb.CurrencyHelpersTest do
 
       assert CurrencyHelpers.format_according_to_decimals(amount, decimals) == "10,004.5"
     end
+
+    test "considers 0 when decimals is nil" do
+      amount = 1_000_450
+      decimals = nil
+
+      assert CurrencyHelpers.format_according_to_decimals(amount, decimals) == "1,000,450"
+    end
   end
 
   describe "format_integer_to_currency/1" do
