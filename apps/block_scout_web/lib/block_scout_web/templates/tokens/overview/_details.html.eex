@@ -1,0 +1,52 @@
+<section>
+  <div class="row">
+    <div class="col-md-12 col-lg-8">
+      <div class="card">
+        <div class="card-body">
+          <h1 class="card-title">
+            <%= if token_name?(@token) do %>
+              <%= @token.name %>
+            <% else %>
+              <%= gettext("Token Details") %>
+            <% end %>
+          </h1>
+
+          <h3><%= to_string(@token.contract_address_hash) %></h3>
+
+          <div class="d-flex flex-row justify-content-start text-muted">
+            <span class="mr-4"><%= @total_address_in_token_transfers %>  <%= gettext "addresses" %></span>
+            <span class="mr-4"><%= @total_token_transfers %> <%= gettext "Transfers" %></span>
+            <%= if decimals?(@token) do %>
+              <span class="mr-4"><%= @token.decimals %> <%= gettext "decimals" %></span>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%= if total_supply?(@token) do %>
+      <div class="col-md-6 col-lg-4">
+        <div class="card bg-primary">
+          <div class="card-body">
+            <h2 class="card-title text-white"><%= gettext "Total Supply" %></h2>
+
+            <span></span>
+
+            <div class="text-right">
+              <h3 class="text-uppercase text-white">
+                <%= if decimals?(@token) do %>
+                  <%= format_according_to_decimals(@token.total_supply, @token.decimals) %>
+                <% else %>
+                  <%= format_integer_to_currency(@token.total_supply) %>
+                <% end %>
+
+                <%= @token.symbol %>
+              </h3>
+              <br />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</section>

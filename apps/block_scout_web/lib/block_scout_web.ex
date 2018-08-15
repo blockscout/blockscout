@@ -46,7 +46,7 @@ defmodule BlockScoutWeb do
         ErrorHelpers,
         Gettext,
         Router.Helpers,
-        TokenHelpers,
+        Tokens.Helpers,
         WeiHelpers
       }
     end

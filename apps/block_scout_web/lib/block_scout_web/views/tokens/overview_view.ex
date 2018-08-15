@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.TokenView do
+defmodule BlockScoutWeb.Tokens.OverviewView do
   use BlockScoutWeb, :view
 
   alias Explorer.Chain.Token

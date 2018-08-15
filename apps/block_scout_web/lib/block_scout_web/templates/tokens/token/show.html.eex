@@ -1,57 +1,11 @@
 <section class="container">
-  <section>
-    <div class="row">
-      <div class="col-md-12 col-lg-8">
-        <div class="card">
-          <div class="card-body">
-            <h1 class="card-title">
-              <%= if token_name?(@token) do %>
-                <%= @token.name %>
-              <% else %>
-                <%= gettext("Token Details") %>
-              <% end %>
-            </h1>
-
-            <h3><%= to_string(@token.contract_address_hash) %></h3>
-
-            <div class="d-flex flex-row justify-content-start text-muted">
-              <span class="mr-4"><%= @token.type %></span>
-              <span class="mr-4"><%= @total_address_in_token_transfers %> <%= gettext "addresses" %></span>
-              <span class="mr-4"><%= @total_token_transfers %> <%= gettext "Transfers" %></span>
-              <%= if decimals?(@token) do %>
-                <span class="mr-4"><%= @token.decimals %> <%= gettext "decimals" %></span>
-              <% end %>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <%= if total_supply?(@token) do %>
-        <div class="col-md-6 col-lg-4">
-          <div class="card">
-            <div class="card-body">
-              <h2 class="card-title"><%= gettext "Total Supply" %></h2>
-
-              <span></span>
-
-              <div class="text-right">
-                <h3 class="text-uppercase">
-                  <%= if decimals?(@token) do %>
-                    <%= format_according_to_decimals(@token.total_supply, @token.decimals) %>
-                  <% else %>
-                    <%= format_integer_to_currency(@token.total_supply) %>
-                  <% end %>
-
-                  <%= @token.symbol %>
-                </h3>
-                <br />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    <% end %>
-  </section>
+  <%= render(
+    OverviewView,
+    "_details.html",
+    token: @token,
+    total_token_transfers: @total_token_transfers,
+    total_address_in_token_transfers: @total_address_in_token_transfers
+  ) %>
 
   <section>
     <div class="card">
@@ -65,6 +19,15 @@
                   to: token_path(@conn, :show, @conn.assigns.locale, "1")
                 ) %>
           </li>
+
+          <%= if smart_contract_with_read_only_functions?(@token) do %>
+            <li class="nav-item">
+              <%= link(
+                  gettext("Read Contract"),
+                  to: token_read_contract_path(@conn, :index, @conn.assigns.locale, @conn.params["id"]),
+                  class: "nav-link")%>
+            </li>
+          <% end %>
         </ul>
 
         <!-- MOBILE DROPDOWN NAV -->
@@ -77,6 +40,12 @@
                     class: "nav-link active",
                     to: token_path(@conn, :show, @conn.assigns.locale, "1")
                   ) %>
+              <%= if smart_contract_with_read_only_functions?(@token) do %>
+                  <%= link(
+                      gettext("Read Contract"),
+                      to: "#",
+                      class: "nav-link")%>
+              <% end %>
             </div>
           </li>
         </ul>
