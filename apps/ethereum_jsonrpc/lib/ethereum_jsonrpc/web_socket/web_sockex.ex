@@ -1,31 +1,42 @@
-defmodule EthereumJSONRPC.WebSocket.Client do
+defmodule EthereumJSONRPC.WebSocket.WebSockex do
+  @moduledoc """
+  Implements `EthereumJSONRPC.WebSocket` using `WebSockex`.
+  """
+
   use WebSockex
 
   require Logger
 
   import EthereumJSONRPC, only: [request: 1]
 
-  alias EthereumJSONRPC.Subscription
-  alias EthereumJSONRPC.WebSocket.Client.Registration
+  alias EthereumJSONRPC.{Subscription, Transport, WebSocket}
+  alias EthereumJSONRPC.WebSocket.WebSockex.Registration
 
+  @behaviour WebSocket
+
+  @enforce_keys ~w(url)a
   defstruct request_id_to_registration: %{},
-            subscription_id_to_subscription: %{}
+            subscription_id_to_subscription: %{},
+            url: nil
 
   @type t :: %__MODULE__{
           request_id_to_registration: %{non_neg_integer() => Registration.t()},
-          subscription_id_to_subscription: %{String.t() => Subscription.t()}
+          subscription_id_to_subscription: %{String.t() => Subscription.t()},
+          url: String.t()
         }
 
   # Supervisor interface
 
+  @impl WebSocket
   # only allow secure WSS
-  def start_link(%{url: "wss://" <> _ = url}) do
-    WebSockex.start_link(url, __MODULE__, %__MODULE__{}, cacerts: :certifi.cacerts(), insecure: false)
+  def start_link("wss://" <> _ = url) do
+    WebSockex.start_link(url, __MODULE__, %__MODULE__{url: url}, cacerts: :certifi.cacerts(), insecure: false)
   end
 
   # Client interface
 
-  @spec json_rpc(WebSockex.client(), Transport.request()) :: {:ok, Transport.result()} | {:error, reason :: term()}
+  @impl WebSocket
+  @spec json_rpc(WebSocket.web_socket(), Transport.request()) :: {:ok, Transport.result()} | {:error, reason :: term()}
   def json_rpc(client, request) do
     unique_id = EthereumJSONRPC.unique_request_id()
     unique_request = Map.put(request, :id, unique_id)
@@ -41,7 +52,8 @@ defmodule EthereumJSONRPC.WebSocket.Client do
     end
   end
 
-  @spec subscribe(WebSockex.client(), Subscription.event(), Subscription.params()) ::
+  @impl WebSocket
+  @spec subscribe(WebSocket.web_socket(), Subscription.event(), Subscription.params()) ::
           {:ok, Subscription.t()} | {:error, reason :: term()}
   def subscribe(client, event, params) when is_binary(event) and is_list(params) do
     unique_id = EthereumJSONRPC.unique_request_id()
@@ -61,8 +73,9 @@ defmodule EthereumJSONRPC.WebSocket.Client do
     end
   end
 
-  @spec unsubscribe(WebSocket.client(), Subscription.t()) :: :ok | {:error, :not_found}
-  def unsubscribe(client, %Subscription{id: subscription_id, transport_options: %{pid: client}}) do
+  @impl WebSocket
+  @spec unsubscribe(WebSocket.web_socket(), Subscription.t()) :: :ok | {:error, :not_found}
+  def unsubscribe(client, %Subscription{id: subscription_id}) do
     unique_id = EthereumJSONRPC.unique_request_id()
 
     unique_request =
@@ -217,13 +230,13 @@ defmodule EthereumJSONRPC.WebSocket.Client do
          %Registration{type: :subscribe, from: {subscriber_pid, _} = from},
          new_request_id_to_registration,
          %{"result" => subscription_id},
-         %__MODULE__{} = state
+         %__MODULE__{url: url} = state
        ) do
     subscription = %Subscription{
       id: subscription_id,
       subscriber_pid: subscriber_pid,
       transport: EthereumJSONRPC.WebSocket,
-      transport_options: %{pid: self()}
+      transport_options: [web_socket: __MODULE__, web_socket_options: %{web_socket: self()}, url: url]
     }
 
     GenServer.reply(from, {:ok, subscription})
@@ -255,7 +268,8 @@ defmodule EthereumJSONRPC.WebSocket.Client do
        ) do
     reply =
       case response do
-        %{"result" => result} -> {:ok, result}
+        %{"result" => true} -> :ok
+        %{"result" => false} -> {:error, :not_found}
         %{"error" => error} -> {:error, error}
       end
 

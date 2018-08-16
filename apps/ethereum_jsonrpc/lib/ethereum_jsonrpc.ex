@@ -53,6 +53,17 @@ defmodule EthereumJSONRPC do
         ]
 
   @typedoc """
+  Named arguments to `subscribe/2`.
+
+  * `:transport` - the `t:EthereumJSONRPC.Transport.t/0` callback module
+  * `:transport_options` - options passed to `c:EthereumJSONRPC.Transport.json_rpc/2`
+  * `:variant` - the `t:EthereumJSONRPC.Variant.t/0` callback module
+  """
+  @type subscribe_named_arguments :: [
+          {:transport, Transport.t()} | {:transport_options, Transport.options()} | {:variant, Variant.t()}
+        ]
+
+  @typedoc """
   8 byte [KECCAK-256](https://en.wikipedia.org/wiki/SHA-3) hash of the proof-of-work.
   """
   @type nonce :: String.t()
@@ -293,7 +304,7 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
-  Subscribes to `event` with parameters.
+  Subscribes to `t:EthereumJSONRPC.Subscription.event/0` with `t:EthereumJSONRPC.Subscription.params/0`.
 
   Events are delivered in a tuple tagged with the `t:EthereumJSONRPC.Subscription.t/0` and containing the same output
   as the single-request form of `json_rpc/2`.
@@ -305,7 +316,7 @@ defmodule EthereumJSONRPC do
 
   Subscription can be canceled by calling `unsubscribe/1` with the returned `t:EthereumJSONRPC.Subscription.t/0`.
   """
-  @spec subscribe(event :: Subscription.event(), params :: Subscription.params(), json_rpc_named_arguments) ::
+  @spec subscribe(event :: Subscription.event(), params :: Subscription.params(), subscribe_named_arguments) ::
           {:ok, Subscription.t()} | {:error, reason :: term()}
   def subscribe(event, params \\ [], named_arguments) when is_list(params) do
     transport = Keyword.fetch!(named_arguments, :transport)
@@ -320,11 +331,12 @@ defmodule EthereumJSONRPC do
   ## Returns
 
    * `:ok` - subscription was canceled
-   * `:error` - subscription could not be canceled.  It did not exist because either the server already canceled it, it
-       never existed, or `unsubscribe/1 ` was called on it before.
+   * `{:error, :not_found}` - subscription could not be canceled.  It did not exist because either the server already
+       canceled it, it never existed, or `unsubscribe/1 ` was called on it before.
+   * `{:error, reason :: term}` - other error cancelling subscription.
 
   """
-  @spec unsubscribe(Subscription.t()) :: :ok | :error
+  @spec unsubscribe(Subscription.t()) :: :ok | {:error, reason :: term()}
   def unsubscribe(%Subscription{transport: transport} = subscription) do
     transport.unsubscribe(subscription)
   end

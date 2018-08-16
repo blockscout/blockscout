@@ -4,7 +4,7 @@ defmodule EthereumJSONRPCTest do
   import EthereumJSONRPC.Case
   import Mox
 
-  alias EthereumJSONRPC.{Subscription, WebSocket}
+  alias EthereumJSONRPC.Subscription
 
   setup :verify_on_exit!
 
@@ -223,83 +223,151 @@ defmodule EthereumJSONRPCTest do
   end
 
   describe "subscribe/2" do
-    setup do
-      pid = start_supervised!({WebSocket.Client, %{url: EthereumJSONRPC.WebSocket.Case.url()}})
-
-      %{
-        block_interval: 5000,
-        json_rpc_named_arguments: [
-          transport: EthereumJSONRPC.WebSocket,
-          transport_options: %{
-            pid: pid
-          }
-        ]
-      }
-    end
-
-    test "can subscribe to newHeads", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+    test "can subscribe to newHeads", %{subscribe_named_arguments: subscribe_named_arguments} do
+      transport = Keyword.fetch!(subscribe_named_arguments, :transport)
+      transport_options = subscribe_named_arguments[:transport_options]
       subscriber_pid = self()
-      options = json_rpc_named_arguments[:transport_options]
+
+      if transport == EthereumJSONRPC.Mox do
+        expect(transport, :subscribe, fn _, _, _ ->
+          {:ok,
+           %Subscription{
+             id: "0x1",
+             subscriber_pid: subscriber_pid,
+             transport: transport,
+             transport_options: transport_options
+           }}
+        end)
+      end
 
       assert {:ok,
               %Subscription{
                 id: subscription_id,
                 subscriber_pid: ^subscriber_pid,
-                transport: WebSocket,
-                transport_options: ^options
-              }} = EthereumJSONRPC.subscribe("newHeads", json_rpc_named_arguments)
+                transport: ^transport,
+                transport_options: ^transport_options
+              }} = EthereumJSONRPC.subscribe("newHeads", subscribe_named_arguments)
 
       assert is_binary(subscription_id)
     end
 
-    test "delivers new heads to caller", %{block_interval: block_interval, json_rpc_named_arguments: json_rpc_named_arguments} do
-      assert {:ok, subscription} = EthereumJSONRPC.subscribe("newHeads", json_rpc_named_arguments)
+    test "delivers new heads to caller", %{
+      block_interval: block_interval,
+      subscribe_named_arguments: subscribe_named_arguments
+    } do
+      transport = Keyword.fetch!(subscribe_named_arguments, :transport)
+      transport_options = subscribe_named_arguments[:transport_options]
+      subscriber_pid = self()
+
+      if transport == EthereumJSONRPC.Mox do
+        expect(transport, :subscribe, fn _, _, _ ->
+          subscription = %Subscription{
+            id: "0x1",
+            subscriber_pid: subscriber_pid,
+            transport: transport,
+            transport_options: transport_options
+          }
+
+          Process.send_after(subscriber_pid, {subscription, {:ok, %{"number" => "0x1"}}}, block_interval)
+
+          {:ok, subscription}
+        end)
+      end
+
+      assert {:ok, subscription} = EthereumJSONRPC.subscribe("newHeads", subscribe_named_arguments)
 
       assert_receive {^subscription, {:ok, %{"number" => _}}}, block_interval * 2
     end
   end
 
   describe "unsubscribe/2" do
-    setup do
-      pid = start_supervised!({WebSocket.Client, %{url: EthereumJSONRPC.WebSocket.Case.url()}})
+    test "can unsubscribe", %{subscribe_named_arguments: subscribe_named_arguments} do
+      transport = Keyword.fetch!(subscribe_named_arguments, :transport)
+      transport_options = subscribe_named_arguments[:transport_options]
+      subscriber_pid = self()
 
-      %{
-        block_interval: 5000,
-        json_rpc_named_arguments: [
-          transport: EthereumJSONRPC.WebSocket,
-          transport_options: %{
-            pid: pid
-          }
-        ]
-      }
-    end
+      if transport == EthereumJSONRPC.Mox do
+        subscription = %Subscription{
+          id: "0x1",
+          subscriber_pid: subscriber_pid,
+          transport: transport,
+          transport_options: transport_options
+        }
 
-    test "can unsubscribe", %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      assert {:ok, subscription} = EthereumJSONRPC.subscribe("newHeads", json_rpc_named_arguments)
+        transport
+        |> expect(:subscribe, fn _, _, _ -> {:ok, subscription} end)
+        |> expect(:unsubscribe, fn ^subscription -> :ok end)
+      end
 
-      assert {:ok, true} = EthereumJSONRPC.unsubscribe(subscription)
+      assert {:ok, subscription} = EthereumJSONRPC.subscribe("newHeads", subscribe_named_arguments)
+
+      assert :ok = EthereumJSONRPC.unsubscribe(subscription)
     end
 
     test "stops messages being sent to subscriber", %{
       block_interval: block_interval,
-      json_rpc_named_arguments: json_rpc_named_arguments
+      subscribe_named_arguments: subscribe_named_arguments
     } do
-      assert {:ok, subscription} = EthereumJSONRPC.subscribe("newHeads", json_rpc_named_arguments)
+      transport = Keyword.fetch!(subscribe_named_arguments, :transport)
+      subscriber_pid = self()
+
+      if transport == EthereumJSONRPC.Mox do
+        subscription = %Subscription{
+          id: "0x1",
+          subscriber_pid: subscriber_pid,
+          transport: transport,
+          transport_options: Keyword.fetch!(subscribe_named_arguments, :transport_options)
+        }
+
+        {:ok, pid} = Task.start_link(EthereumJSONRPC.WebSocket.Case.Mox, :loop, [%{}])
+
+        transport
+        |> expect(:subscribe, fn "newHeads", [], _ ->
+          send(pid, {:subscribe, subscription})
+
+          {:ok, subscription}
+        end)
+        |> expect(:unsubscribe, fn ^subscription ->
+          send(pid, {:unsubscribe, subscription})
+
+          :ok
+        end)
+      end
+
+      assert {:ok, subscription} = EthereumJSONRPC.subscribe("newHeads", subscribe_named_arguments)
 
       wait = block_interval * 2
 
       assert_receive {^subscription, {:ok, %{"number" => _}}}, wait
 
-      assert {:ok, true} = EthereumJSONRPC.unsubscribe(subscription)
+      assert :ok = EthereumJSONRPC.unsubscribe(subscription)
 
       clear_mailbox()
 
       refute_receive {^subscription, _}, wait
     end
 
-    test "return error if already unsubscribed", %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      assert {:ok, subscription} = EthereumJSONRPC.subscribe("newHeads", [], json_rpc_named_arguments)
-      assert {:ok, true} = EthereumJSONRPC.unsubscribe(subscription)
+    test "return error if already unsubscribed", %{subscribe_named_arguments: subscribe_named_arguments} do
+      transport = Keyword.fetch!(subscribe_named_arguments, :transport)
+      transport_options = subscribe_named_arguments[:transport_options]
+      subscriber_pid = self()
+
+      if transport == EthereumJSONRPC.Mox do
+        subscription = %Subscription{
+          id: "0x1",
+          subscriber_pid: subscriber_pid,
+          transport: transport,
+          transport_options: transport_options
+        }
+
+        transport
+        |> expect(:subscribe, fn _, _, _ -> {:ok, subscription} end)
+        |> expect(:unsubscribe, fn ^subscription -> :ok end)
+        |> expect(:unsubscribe, fn ^subscription -> {:error, :not_found} end)
+      end
+
+      assert {:ok, subscription} = EthereumJSONRPC.subscribe("newHeads", [], subscribe_named_arguments)
+      assert :ok = EthereumJSONRPC.unsubscribe(subscription)
 
       assert {:error, :not_found} = EthereumJSONRPC.unsubscribe(subscription)
     end

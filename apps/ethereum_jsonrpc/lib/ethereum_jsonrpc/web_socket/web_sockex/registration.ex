@@ -1,4 +1,4 @@
-defmodule EthereumJSONRPC.WebSocket.Client.Registration do
+defmodule EthereumJSONRPC.WebSocket.WebSockex.Registration do
   @moduledoc """
   When a caller registers for responses to asynchronous `WebSockex.send_frame` responses.
   """
