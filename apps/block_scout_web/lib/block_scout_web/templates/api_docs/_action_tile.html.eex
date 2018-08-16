@@ -1,8 +1,8 @@
 <a class="nounderline" data-toggle="collapse" href="#<%= action_tile_id(@module_name, @action.name) %>" role="button" aria-expanded="false" aria-controls="<%= action_tile_id(@module_name, @action.name) %>">
   <div class="tile tile-type-api-documentation">
     <h3>
-      <span class="badge badge-secondary tile-badge float-right">POST</span>
-      <span class="badge badge-primary tile-badge float-right mr-1">GET</span>
+      <span class="badge badge-secondary tile-badge float-right"><%= gettext "POST" %></span>
+      <span class="badge badge-primary tile-badge float-right mr-1"><%= gettext "GET" %></span>
       <strong class="tile-label"><%= @action.name %></strong>
     </h3>
     <h4 class="text-dark"><%= @action.description %></h4>
@@ -14,44 +14,44 @@
   <div class="col">
     <div class="collapse multi-collapse" id="<%= action_tile_id(@module_name, @action.name) %>">
       <div class="card card-body pt-3 rounded">
-        <h4 class="text-primary">Parameters
-          <button data-selector="<%= "#{@module_name}-#{@action.name}-btn-try-api" %>" role="button" class="btn btn-sm btn-outline-primary float-right" style="width: 8rem" data-module="<%= @module_name %>" data-action="<%= @action.name %>">Try it out</button>
-          <button data-selector="<%= "#{@module_name}-#{@action.name}-btn-try-api-cancel" %>" role="button" class="collapse btn btn-sm btn-outline-secondary float-right" style="width: 8rem" data-module="<%= @module_name %>" data-action="<%= @action.name %>">Cancel</button>
+        <h4 class="text-primary"><%= gettext "Parameters" %>
+          <button data-selector="<%= "#{@module_name}-#{@action.name}-btn-try-api" %>" role="button" class="btn btn-sm btn-outline-primary float-right" style="width: 8rem" data-module="<%= @module_name %>" data-action="<%= @action.name %>"><%= gettext "Try it out" %></button>
+          <button data-selector="<%= "#{@module_name}-#{@action.name}-btn-try-api-cancel" %>" role="button" class="collapse btn btn-sm btn-outline-secondary float-right" style="width: 8rem" data-module="<%= @module_name %>" data-action="<%= @action.name %>"><%= gettext "Cancel" %></button>
         </h4>
 
         <div class="mb-4">
               <dl class="row">
-                <dt class="col-sm-4 col-md-2 text-muted">Name</dt>
-                <dt class="col-sm-8 col-md-10 text-muted">Description</dt>
+                <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "Name" %></dt>
+                <dt class="col-sm-8 col-md-10 text-muted"><%= gettext "Description" %></dt>
               </dl>
               <dl class="row">
                 <dd class="col-sm-4 col-md-2">
                   <div class="">
-                    Module
+                    <%= gettext "Module" %>
                     <span class="text-danger">
-                      * <small>required</small>
+                      * <small><%= gettext "required" %></small>
                     </span>
                   </div>
-                  <span class="text-muted">string <em>(query)</em></span>
+                  <span class="text-muted"><%= gettext "string" %> <em><%= gettext "(query)" %></em></span>
                 </dd>
                 <dd class="col-sm-8 col-md-10">
-                  A string with the name of the module to be invoked.
-                  <em>Must be set to:</em> <%= @module_name %>
+                  <%= gettext "A string with the name of the module to be invoked." %>
+                  <em><%= gettext "Must be set to:" %></em> <%= @module_name %>
                 </dd>
               </dl>
               <dl class="row">
                 <dd class="col-sm-4 col-md-2">
                   <div class="">
-                   Action
+                   <%= gettext "Action" %>
                    <span class="text-danger">
-                     * <small>required</small>
+                     * <small><%= gettext "required" %></small>
                    </span>
                  </div>
-                  <span class="text-muted">string <em>(query)</em></span>
+                  <span class="text-muted"><%= gettext "string" %><em><%= gettext "(query)" %></em></span>
                 </dd>
                 <dd class="col-sm-8 col-md-10">
-                  A string with the name of the action to be invoked.
-                  <em>Must be set to:</em> <%= @action.name %>
+                  <%= gettext "A string with the name of the action to be invoked." %>
+                  <em><%= gettext "Must be set to:" %></em> <%= @action.name %>
                 </dd>
               </dl>
               <dl class="row">
@@ -60,10 +60,10 @@
                     <div class="">
                       <%= required_param.key %>
                       <span class="align-text-bottom text-danger">
-                        * <small>required</small>
+                        * <small><%= gettext "required" %></small>
                       </span>
                     </div>
-                    <span class="text-muted"><%= required_param.type %> <em>(query)</em></span>
+                    <span class="text-muted"><%= required_param.type %> <em><%= gettext "(query)" %></em></span>
                   </dd>
                   <dd class="col-sm-8 col-md-10">
                     <%= required_param.description %>
@@ -77,7 +77,7 @@
             <dl class="row">
               <dd class="col-sm-4 col-md-2">
                 <div><%= optional_param.key %></div>
-                <span class="text-muted"><%= optional_param.type %> <em>(query)</em></span>
+                <span class="text-muted"><%= optional_param.type %> <em><%= gettext "(query)" %></em></span>
 
               </dd>
               <dd class="col-sm-8 col-md-10">
@@ -88,56 +88,56 @@
             <% end %>
             <div class="row">
               <div class="col-sm-2 offset-sm-4 col-md-2 offset-md-2">
-                <button data-selector="<%= "#{@module_name}-#{@action.name}-try-api-ui" %>" data-try-api-ui-button-type="execute" role="button" class="collapse btn btn-primary w-100" data-module="<%= @module_name %>" data-action="<%= @action.name %>">Execute</button>
+                <button data-selector="<%= "#{@module_name}-#{@action.name}-try-api-ui" %>" data-try-api-ui-button-type="execute" role="button" class="collapse btn btn-primary w-100" data-module="<%= @module_name %>" data-action="<%= @action.name %>"><%= gettext "Execute" %></button>
               </div>
               <div class="col-sm-2 col-md-2">
-                <button role="button" class="collapse btn btn-outline-secondary" data-selector="<%= "#{@module_name}-#{@action.name}-btn-try-api-clear" %>" data-module="<%= @module_name %>" data-action="<%= @action.name %>">Clear</button>
+                <button role="button" class="collapse btn btn-outline-secondary" data-selector="<%= "#{@module_name}-#{@action.name}-btn-try-api-clear" %>" data-module="<%= @module_name %>" data-action="<%= @action.name %>"><%= gettext "Clear" %></button>
               </div>
             </div>
      <!-- /btn-group -->
 
         </div> <!-- /Descriptor container -->
 
-        <h4 class="text-primary mt-4">Responses</h4>
+        <h4 class="text-primary mt-4"><%= gettext "Responses" %></h4>
 
         <div data-selector="<%= "#{@module_name}-#{@action.name}-try-api-ui-result" %>" class="collapse">
           <div class="mb-3">
-            <h5 class="">Curl</h5>
+            <h5 class=""><%= gettext "Curl" %></h5>
             <div class="tile tile-muted p-1">
               <pre data-selector="<%= "#{@module_name}-#{@action.name}-curl" %>" class="m-2"></pre>
             </div>
           </div>
 
           <div class="mb-3">
-            <h5>Request URL</h5>
+            <h5><%= gettext "Request URL" %></h5>
             <div class="tile tile-muted p-1">
               <pre data-selector="<%= "#{@module_name}-#{@action.name}-request-url" %>" class="m-2"></pre>
             </div>
           </div>
           <div class="mb-3">
-            <h5>Server Response</h5>
+            <h5><%= gettext "Server Response" %></h5>
               <dl class="row">
-                <dt class="col-sm-4 col-md-2">Code</dt>
-                <dt class="col-sm-8 col-md-10">Details</dt>
+                <dt class="col-sm-4 col-md-2"><%= gettext "Code" %></dt>
+                <dt class="col-sm-8 col-md-10"><%= gettext "Details" %></dt>
               </dl>
               <dl class="row">
                 <dd class="col-sm-4 col-md-2" data-selector="<%= "#{@module_name}-#{@action.name}-server-response-code" %>">
                 </dd>
                 <dd class="col-sm-8 col-md-10">
-                  <h5 class="">Response Body</h5>
+                  <h5 class=""><%= gettext "Response Body" %></h5>
                   <div class="tile tile-muted p-1 card-server-response-body">
                     <pre data-selector="<%= "#{@module_name}-#{@action.name}-server-response-body" %>" class="m-2"></pre>
                   </div>
                 </dd>
               </dl>
           </div>
-          <h5>Responses</h5>
+          <h5><%= gettext "Responses" %></h5>
         </div> <!-- /*-try-api-ui-result -->
 
         <div>
           <dl class="row">
-            <dt class="col-sm-4 col-md-2">Code</dt>
-            <dt class="col-sm-8 col-md-10">Description</dt>
+            <dt class="col-sm-4 col-md-2"><%= gettext "Code" %></dt>
+            <dt class="col-sm-8 col-md-10"><%= gettext "Description" %></dt>
           </dl>
             <%= for {response, index} <- Enum.with_index(@action.responses) do %>
             <dl class="row">
@@ -158,7 +158,7 @@
                        role="tab"
                        aria-controls="<%= "#{@module_name}-#{@action.name}-example-value" %>"
                        aria-selected="true">
-                       Example Value
+                       <%= gettext "Example Value" %>
                     </a>
                   </li>
 
@@ -171,7 +171,7 @@
                          role="tab"
                          aria-controls="<%= "#{@module_name}-#{@action.name}-model" %>"
                          aria-selected="false">
-                         Model
+                        <%= gettext "Model" %>
                       </a>
                     </li>
                   <% end %>
