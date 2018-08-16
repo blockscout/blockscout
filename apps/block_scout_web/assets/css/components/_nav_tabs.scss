@@ -29,3 +29,13 @@
   background-color: darken($primary, 10%);
   border-color: darken($primary, 10%);
 }
+
+.api-doc-tab {
+  padding-bottom: 5px;
+  color: $primary !important;
+  background-color: transparent !important;
+}
+
+.api-doc-tab.active {
+  border-bottom: 1px solid $primary;
+}
