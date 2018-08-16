@@ -119,3 +119,17 @@
   background-color: $gray-100;
   box-shadow: none;
 }
+
+.tile-function-response {
+  span.function-response-item {
+    display: block;
+    margin-left: 1rem;
+
+    &:not(:last-of-type)::after {
+      content: ",";
+    }
+  }
+  p {
+    margin: 0;
+  }
+}

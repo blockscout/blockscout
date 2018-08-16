@@ -1,8 +1,11 @@
-<div class="tile tile-muted monospace">
+<div class="tile tile-muted tile-function-response monospace">
   [ <%= @function_name %> method Response ]
 
-  <%= for item <- @outputs do %>
-    <i class="fa fa-angle-double-right"></i>
-    <span class="text-dark"> <%= item["type"] %> : <%= item["value"] %> </span>
-  <% end %>
+  <p class="text-dark">
+    [
+      <%= for item <- @outputs do %>
+        <span class="text-dark function-response-item"><%= if named_argument?(item) do %><%= item["name"] %><% end %>(<%= item["type"] %>) : <%= item["value"] %></span>
+      <% end %>
+    ]
+  </p>
 </div>
