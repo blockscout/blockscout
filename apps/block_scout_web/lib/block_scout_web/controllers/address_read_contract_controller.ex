@@ -1,3 +1,10 @@
+# credo:disable-for-this-file
+#
+# When moving the calls to ajax, this controller became very similar to the
+# `address_contract_controller`, but both are necessary until we are able to
+# address a better way to organize the controllers.
+#
+# So, for now, I'm adding this comment to disable the credo check for this file.
 defmodule BlockScoutWeb.AddressReadContractController do
   use BlockScoutWeb, :controller
 
