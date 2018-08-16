@@ -116,7 +116,6 @@
           </div>
           <div class="mb-3">
             <h5>Server Response</h5>
-            <div>
               <dl class="row">
                 <dt class="col-sm-4 col-md-2">Code</dt>
                 <dt class="col-sm-8 col-md-10">Details</dt>
@@ -126,30 +125,27 @@
                 </dd>
                 <dd class="col-sm-8 col-md-10">
                   <h5 class="">Response Body</h5>
-                  <div class="tile-muted card-server-response-body">
+                  <div class="tile tile-muted p-1 card-server-response-body">
                     <pre data-selector="<%= "#{@module_name}-#{@action.name}-server-response-body" %>" class="m-2"></pre>
                   </div>
                 </dd>
               </dl>
-            </div>
           </div>
-
           <h5>Responses</h5>
-
         </div> <!-- /*-try-api-ui-result -->
 
         <div>
           <dl class="row">
-            <dt class="col-sm-4 col-md-4">Code</dt>
-            <dt class="col-sm-8 col-md-8">Description</dt>
+            <dt class="col-sm-4 col-md-2">Code</dt>
+            <dt class="col-sm-8 col-md-10">Description</dt>
           </dl>
             <%= for {response, index} <- Enum.with_index(@action.responses) do %>
             <dl class="row">
               <dd class="col-sm-4 col-md-2">
-                <%= response.code %>
+                  <%= response.code %>
               </dd>
               <dd class="col-sm-8 col-md-10">
-                <div class="">
+                <div class="tile tile-muted p-1 mb-3">
                   <pre class="m-2"><strong><%= response.description %></strong></pre>
                 </div>
 
@@ -185,7 +181,7 @@
                        id="<%= "#{@module_name}-#{@action.name}-example-value" %>"
                        role="tabpanel"
                        aria-labelledby="<%= "#{@module_name}-#{@action.name}-example-value-tab" %>">
-                       <div class="tile-muted">
+                       <div class="tile tile-muted p-1">
                          <pre class="m-2" data-json='<%= response.example_value %>'></pre>
                        </div>
                   </div> <!-- /tab-pane -->
