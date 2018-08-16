@@ -7,7 +7,7 @@ defmodule Explorer.Etherscan do
 
   alias Explorer.Etherscan.Logs
   alias Explorer.{Repo, Chain}
-  alias Explorer.Chain.{Hash, Transaction}
+  alias Explorer.Chain.{Hash, InternalTransaction, Transaction}
 
   @default_options %{
     order_by_direction: :asc,
@@ -27,7 +27,7 @@ defmodule Explorer.Etherscan do
   end
 
   @doc """
-  Gets a list of transactions for a given `t:Explorer.Chain.Hash.Address`.
+  Gets a list of transactions for a given `t:Explorer.Chain.Hash.Address.t/0`.
 
   """
   @spec list_transactions(Hash.Address.t()) :: [map()]
@@ -45,23 +45,69 @@ defmodule Explorer.Etherscan do
     end
   end
 
-  @transaction_fields [
-    :block_hash,
-    :block_number,
-    :created_contract_address_hash,
-    :cumulative_gas_used,
-    :from_address_hash,
-    :gas,
-    :gas_price,
-    :gas_used,
-    :hash,
-    :index,
-    :input,
-    :nonce,
-    :status,
-    :to_address_hash,
-    :value
-  ]
+  @internal_transaction_fields ~w(
+    from_address_hash
+    to_address_hash
+    value
+    created_contract_address_hash
+    input
+    type
+    gas
+    gas_used
+    error
+  )a
+
+  @doc """
+  Gets a list of internal transactions for a given transaction hash
+  (`t:Explorer.Chain.Hash.Full.t/0`).
+
+  Note that this function relies on `Explorer.Chain` to exclude/include
+  internal transactions as follows:
+
+    * exclude internal transactions of type call with no siblings in the
+      transaction
+    * include internal transactions of type create, reward, or suicide
+      even when they are alone in the parent transaction
+
+  """
+  @spec list_internal_transactions(Hash.Full.t()) :: [map()]
+  def list_internal_transactions(%Hash{byte_count: unquote(Hash.Full.byte_count())} = transaction_hash) do
+    query =
+      from(
+        it in InternalTransaction,
+        inner_join: t in assoc(it, :transaction),
+        inner_join: b in assoc(t, :block),
+        where: it.transaction_hash == ^transaction_hash,
+        limit: 10_000,
+        select:
+          merge(map(it, ^@internal_transaction_fields), %{
+            block_timestamp: b.timestamp,
+            block_number: b.number
+          })
+      )
+
+    query
+    |> Chain.where_transaction_has_multiple_internal_transactions()
+    |> Repo.all()
+  end
+
+  @transaction_fields ~w(
+    block_hash
+    block_number
+    created_contract_address_hash
+    cumulative_gas_used
+    from_address_hash
+    gas
+    gas_price
+    gas_used
+    hash
+    index
+    input
+    nonce
+    status
+    to_address_hash
+    value
+  )a
 
   defp list_transactions(address_hash, max_block_number, options) do
     query =

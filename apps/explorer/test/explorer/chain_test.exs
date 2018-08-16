@@ -853,6 +853,32 @@ defmodule Explorer.ChainTest do
       assert actual.id == expected.id
     end
 
+    test "includes internal transactions of type `reward` even when they are alone in the parent transaction" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      expected = insert(:internal_transaction, index: 0, transaction: transaction, type: :reward)
+
+      actual = Enum.at(Chain.transaction_to_internal_transactions(transaction), 0)
+
+      assert actual.id == expected.id
+    end
+
+    test "includes internal transactions of type `suicide` even when they are alone in the parent transaction" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      expected = insert(:internal_transaction, index: 0, transaction: transaction, gas: nil, type: :suicide)
+
+      actual = Enum.at(Chain.transaction_to_internal_transactions(transaction), 0)
+
+      assert actual.id == expected.id
+    end
+
     test "returns the internal transactions in ascending index order" do
       transaction =
         :transaction

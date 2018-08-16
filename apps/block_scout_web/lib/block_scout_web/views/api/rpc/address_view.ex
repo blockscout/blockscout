@@ -28,6 +28,11 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     RPCView.render("show.json", data: data)
   end
 
+  def render("txlistinternal.json", %{internal_transactions: internal_transactions}) do
+    data = Enum.map(internal_transactions, &prepare_internal_transaction/1)
+    RPCView.render("show.json", data: data)
+  end
+
   def render("error.json", assigns) do
     RPCView.render("error.json", assigns)
   end
@@ -52,6 +57,23 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "cumulativeGasUsed" => "#{transaction.cumulative_gas_used}",
       "gasUsed" => "#{transaction.gas_used}",
       "confirmations" => "#{transaction.confirmations}"
+    }
+  end
+
+  defp prepare_internal_transaction(internal_transaction) do
+    %{
+      "blockNumber" => "#{internal_transaction.block_number}",
+      "timeStamp" => "#{DateTime.to_unix(internal_transaction.block_timestamp)}",
+      "from" => "#{internal_transaction.from_address_hash}",
+      "to" => "#{internal_transaction.to_address_hash}",
+      "value" => "#{internal_transaction.value.value}",
+      "contractAddress" => "#{internal_transaction.created_contract_address_hash}",
+      "input" => "#{internal_transaction.input}",
+      "type" => "#{internal_transaction.type}",
+      "gas" => "#{internal_transaction.gas}",
+      "gasUsed" => "#{internal_transaction.gas_used}",
+      "isError" => if(internal_transaction.error, do: "1", else: "0"),
+      "errCode" => "#{internal_transaction.error}"
     }
   end
 end

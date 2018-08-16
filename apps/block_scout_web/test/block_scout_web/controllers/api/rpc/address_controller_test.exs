@@ -1010,4 +1010,167 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert get_response == post_response
     end
   end
+
+  describe "txlistinternal" do
+    test "with missing txhash", %{conn: conn} do
+      params = %{
+        "module" => "account",
+        "action" => "txlistinternal"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["message"] =~ "txhash is required"
+      assert response["status"] == "0"
+      assert Map.has_key?(response, "result")
+      refute response["result"]
+    end
+
+    test "with an invalid txhash", %{conn: conn} do
+      params = %{
+        "module" => "account",
+        "action" => "txlistinternal",
+        "txhash" => "badhash"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["message"] =~ "Invalid txhash format"
+      assert response["status"] == "0"
+      assert Map.has_key?(response, "result")
+      refute response["result"]
+    end
+
+    test "with an txhash that doesn't exist", %{conn: conn} do
+      params = %{
+        "module" => "account",
+        "action" => "txlistinternal",
+        "txhash" => "0x40eb908387324f2b575b4879cd9d7188f69c8fc9d87c901b9e2daaea4b442170"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == []
+      assert response["status"] == "0"
+      assert response["message"] == "No internal transactions found"
+    end
+
+    test "response includes all the expected fields", %{conn: conn} do
+      address = insert(:address)
+      contract_address = insert(:contract_address)
+
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert(from_address: address, to_address: nil)
+        |> with_contract_creation(contract_address)
+        |> with_block(block)
+
+      internal_transaction =
+        :internal_transaction_create
+        |> insert(transaction: transaction, index: 0, from_address: address)
+        |> with_contract_creation(contract_address)
+
+      params = %{
+        "module" => "account",
+        "action" => "txlistinternal",
+        "txhash" => "#{transaction.hash}"
+      }
+
+      expected_result = [
+        %{
+          "blockNumber" => "#{transaction.block_number}",
+          "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
+          "from" => "#{internal_transaction.from_address_hash}",
+          "to" => "#{internal_transaction.to_address_hash}",
+          "value" => "#{internal_transaction.value.value}",
+          "contractAddress" => "#{contract_address.hash}",
+          "input" => "",
+          "type" => "#{internal_transaction.type}",
+          "gas" => "#{internal_transaction.gas}",
+          "gasUsed" => "#{internal_transaction.gas_used}",
+          "isError" => "0",
+          "errCode" => "#{internal_transaction.error}"
+        }
+      ]
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == expected_result
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "isError is true if internal transaction has an error", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      internal_transaction_details = [
+        transaction: transaction,
+        index: 0,
+        type: :reward,
+        error: "some error"
+      ]
+
+      insert(:internal_transaction_create, internal_transaction_details)
+
+      params = %{
+        "module" => "account",
+        "action" => "txlistinternal",
+        "txhash" => "#{transaction.hash}"
+      }
+
+      assert %{"result" => [found_internal_transaction]} =
+               response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert found_internal_transaction["isError"] == "1"
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "with transaction with multiple internal transactions", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      for index <- 0..2 do
+        insert(:internal_transaction_create, transaction: transaction, index: index)
+      end
+
+      params = %{
+        "module" => "account",
+        "action" => "txlistinternal",
+        "txhash" => "#{transaction.hash}"
+      }
+
+      assert %{"result" => found_internal_transactions} =
+               response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert length(found_internal_transactions) == 3
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+  end
 end

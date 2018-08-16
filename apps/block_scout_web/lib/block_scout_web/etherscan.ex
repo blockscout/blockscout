@@ -37,7 +37,7 @@ defmodule BlockScoutWeb.Etherscan do
   @account_txlist_example_value %{
     "status" => "1",
     "message" => "OK",
-    result: [
+    "result" => [
       %{
         "blockNumber" => "65204",
         "timeStamp" => "1439232889",
@@ -68,10 +68,37 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => []
   }
 
+  @account_txlistinternal_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => [
+      %{
+        "blockNumber" => "6153702",
+        "timeStamp" => "1534362606",
+        "from" => "0x2ca1e3f250f56f1761b9a52bc42db53986085eff",
+        "to" => "",
+        "value" => "5488334153118633",
+        "contractAddress" => "0x883103875d905c11f9ac7dacbfc16deb39655361",
+        "input" => "",
+        "type" => "create",
+        "gas" => "814937",
+        "gasUsed" => "536262",
+        "isError" => "0",
+        "errCode" => ""
+      }
+    ]
+  }
+
+  @account_txlistinternal_example_value_error %{
+    "status" => "0",
+    "message" => "No internal transactions found",
+    "result" => []
+  }
+
   @logs_getlogs_example_value %{
     "status" => "1",
     "message" => "OK",
-    result: [
+    "result" => [
       %{
         "address" => "0x33990122638b9132ca29c723bdf037f1a891a70c",
         "topics" => [
@@ -195,6 +222,44 @@ defmodule BlockScoutWeb.Etherscan do
         type: "confirmations",
         definition: "A number equal to the current block height minus the transaction's block-number.",
         example: ~s("6005998")
+      }
+    }
+  }
+
+  @internal_transaction %{
+    name: "InternalTransaction",
+    fields: %{
+      blockNumber: @block_number_type,
+      timeStamp: %{
+        type: "timestamp",
+        definition: "The transaction's block-timestamp.",
+        example: ~s("1439232889")
+      },
+      from: @address_hash_type,
+      to: @address_hash_type,
+      value: @wei_type,
+      contractAddress: @address_hash_type,
+      input: %{
+        type: "input",
+        definition: "Data sent along with the call. A variable-byte-length binary.",
+        example: ~s("0x797af627d02e23b68e085092cd0d47d6cfb54be025f37b5989c0264398f534c08af7dea9")
+      },
+      type: %{
+        type: "type",
+        definition: ~s(Possible values: "create", "call", "reward", or "suicide"),
+        example: ~s("create")
+      },
+      gas: @gas_type,
+      gasUsed: @gas_type,
+      isError: %{
+        type: "error",
+        enum: ~s(["0", "1"]),
+        enum_interpretation: %{"0" => "ok", "1" => "rejected/cancelled"}
+      },
+      errCode: %{
+        type: "string",
+        definition: "Error message when call type error.",
+        example: ~s("Out of gas")
       }
     }
   }
@@ -383,6 +448,43 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @account_txlistinternal_action %{
+    name: "txlistinternal",
+    description: "Get internal transactions by transaction hash. Up to a maximum of 10,000 internal transactions.",
+    required_params: [
+      %{
+        key: "txhash",
+        placeholder: "transactionHash",
+        type: "string",
+        description: "Transaction hash. Hash of contents of the transaction."
+      }
+    ],
+    optional_params: [],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@account_txlistinternal_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "array",
+              array_type: @internal_transaction
+            }
+          }
+        }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@account_txlistinternal_example_value_error)
+      }
+    ]
+  }
+
   @logs_getlogs_action %{
     name: "getLogs",
     description: "Get event logs for an address and/or topics. Up to a maximum of 1,000 event logs.",
@@ -503,7 +605,8 @@ defmodule BlockScoutWeb.Etherscan do
     actions: [
       @account_balance_action,
       @account_balancemulti_action,
-      @account_txlist_action
+      @account_txlist_action,
+      @account_txlistinternal_action
     ]
   }
 
