@@ -5,6 +5,7 @@ defmodule Explorer.Etherscan do
 
   import Ecto.Query, only: [from: 2, where: 3]
 
+  alias Explorer.Etherscan.Logs
   alias Explorer.{Repo, Chain}
   alias Explorer.Chain.{Hash, Transaction}
 
@@ -99,4 +100,36 @@ defmodule Explorer.Etherscan do
   end
 
   defp offset(options), do: (options.page_number - 1) * options.page_size
+
+  @doc """
+  Gets a list of logs that meet the criteria in a given filter map.
+
+  Required filter parameters:
+
+  * `from_block`
+  * `to_block`
+  * `address_hash` and/or `{x}_topic`
+  * When multiple `{x}_topic` params are provided, then the corresponding
+  `topic{x}_{x}_opr` param is required. For example, if "first_topic" and
+  "second_topic" are provided, then "topic0_1_opr" is required.
+
+  Supported `{x}_topic`s:
+
+  * first_topic
+  * second_topic
+  * third_topic
+  * fourth_topic
+
+  Supported `topic{x}_{x}_opr`s:
+
+  * topic0_1_opr
+  * topic0_2_opr
+  * topic0_3_opr
+  * topic1_2_opr
+  * topic1_3_opr
+  * topic2_3_opr
+
+  """
+  @spec list_logs(map()) :: [map()]
+  def list_logs(filter), do: Logs.list_logs(filter)
 end
