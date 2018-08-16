@@ -1527,7 +1527,14 @@ defmodule Explorer.Chain do
   """
   @spec token_from_address_hash(Hash.Address.t()) :: {:ok, Token.t()} | {:error, :not_found}
   def token_from_address_hash(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash) do
-    case Repo.get_by(Token, contract_address_hash: hash) do
+    query =
+      from(
+        token in Token,
+        where: token.contract_address_hash == ^hash,
+        preload: [{:contract_address, :smart_contract}]
+      )
+
+    case Repo.one(query) do
       nil ->
         {:error, :not_found}
 

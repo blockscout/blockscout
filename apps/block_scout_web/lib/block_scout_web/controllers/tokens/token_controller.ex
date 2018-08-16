@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.TokenController do
+defmodule BlockScoutWeb.Tokens.TokenController do
   use BlockScoutWeb, :controller
 
   alias Explorer.Chain

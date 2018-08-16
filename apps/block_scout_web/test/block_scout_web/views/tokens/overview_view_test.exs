@@ -1,19 +1,19 @@
-defmodule BlockScoutWeb.TokenViewTest do
+defmodule BlockScoutWeb.Tokens.OverviewViewTest do
   use BlockScoutWeb.ConnCase, async: true
 
-  alias BlockScoutWeb.TokenView
+  alias BlockScoutWeb.Tokens.OverviewView
 
   describe "decimals?/1" do
     test "returns true when Token has decimals" do
       token = insert(:token, decimals: 18)
 
-      assert TokenView.decimals?(token) == true
+      assert OverviewView.decimals?(token) == true
     end
 
     test "returns false when Token hasn't decimals" do
       token = insert(:token, decimals: nil)
 
-      assert TokenView.decimals?(token) == false
+      assert OverviewView.decimals?(token) == false
     end
   end
 
@@ -21,13 +21,13 @@ defmodule BlockScoutWeb.TokenViewTest do
     test "returns true when Token has a name" do
       token = insert(:token, name: "Some Token")
 
-      assert TokenView.token_name?(token) == true
+      assert OverviewView.token_name?(token) == true
     end
 
     test "returns false when Token hasn't a name" do
       token = insert(:token, name: nil)
 
-      assert TokenView.token_name?(token) == false
+      assert OverviewView.token_name?(token) == false
     end
   end
 
@@ -35,13 +35,13 @@ defmodule BlockScoutWeb.TokenViewTest do
     test "returns true when Token has total_supply" do
       token = insert(:token, total_supply: 1_000)
 
-      assert TokenView.total_supply?(token) == true
+      assert OverviewView.total_supply?(token) == true
     end
 
     test "returns false when Token hasn't total_supply" do
       token = insert(:token, total_supply: nil)
 
-      assert TokenView.total_supply?(token) == false
+      assert OverviewView.total_supply?(token) == false
     end
   end
 end

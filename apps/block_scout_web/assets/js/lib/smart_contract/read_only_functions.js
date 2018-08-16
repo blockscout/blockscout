@@ -1,5 +1,25 @@
 import $ from 'jquery'
 
+const loadFunctions = (element) => {
+  const $element = $(element)
+  const url = $element.data('url')
+  const hash = $element.data('hash')
+
+  $.get(
+    url,
+    { hash: hash },
+    response => $element.html(response)
+  )
+    .done(function () {
+      $('[data-function]').each((_, element) => {
+        readFunction(element)
+      })
+    })
+    .fail(function (response) {
+      $element.html(response.statusText)
+    })
+}
+
 const readFunction = (element) => {
   const $element = $(element)
   const $form = $element.find('[data-function-form]')
@@ -26,6 +46,6 @@ const readFunction = (element) => {
   })
 }
 
-$('[data-function]').each((_, element) => {
-  readFunction(element)
-})
+const container = $('[data-smart-contract-functions]')
+
+loadFunctions(container)
