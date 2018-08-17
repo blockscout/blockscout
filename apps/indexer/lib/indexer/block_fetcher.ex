@@ -213,7 +213,6 @@ defmodule Indexer.BlockFetcher do
         Balances.params_set(%{
           blocks_params: blocks,
           logs_params: logs,
-          token_transfers_params: token_transfers,
           transactions_params: transactions_with_receipts
         })
 
