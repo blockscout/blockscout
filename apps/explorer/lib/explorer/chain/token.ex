@@ -19,8 +19,8 @@ defmodule Explorer.Chain.Token do
 
   use Ecto.Schema
 
-  import Ecto.{Changeset}
-  alias Explorer.Chain.{Address, Hash, Token}
+  import Ecto.{Changeset, Query}
+  alias Explorer.Chain.{Address, Hash, Token, TokenTransfer}
 
   @typedoc """
   * `:name` - Name of the token
@@ -73,5 +73,22 @@ defmodule Explorer.Chain.Token do
     |> validate_required(@required_attrs)
     |> foreign_key_constraint(:contract_address)
     |> unique_constraint(:contract_address_hash)
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch tokens that the given address has interacted with.
+
+  In order to fetch a token, the given address must have transfered tokens to or received tokens
+  from an another address.
+  """
+  def with_transfers_by_address(address_hash) do
+    from(
+      token in Token,
+      join: tt in TokenTransfer,
+      on: tt.token_contract_address_hash == token.contract_address_hash,
+      where: tt.to_address_hash == ^address_hash or tt.from_address_hash == ^address_hash,
+      distinct: tt.token_contract_address_hash,
+      select: token
+    )
   end
 end
