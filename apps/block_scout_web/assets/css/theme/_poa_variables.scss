@@ -63,7 +63,8 @@ $colors: map-merge((
 ), $colors);
 
 $primary:       $indigo !default;
-$secondary:     $cyan !default;
+$secondary:     $teal !default;
+$tertiary:      $purple !default;
 $success:       $green !default;
 $info:          $cyan !default;
 $warning:       $orange !default;
@@ -74,7 +75,7 @@ $dark:          $gray-800 !default;
 $theme-colors: () !default;
 $theme-colors: map-merge((
   "primary":    $primary,
-  "secondary":  $cyan,
+  "secondary":  $secondary,
   "success":    $success,
   "info":       $info,
   "warning":    $warning,
@@ -710,7 +711,7 @@ $card-columns-margin:               $card-spacer-y !default;
 $tooltip-font-size:                 ($font-size-sm * 0.875) !default;
 $tooltip-max-width:                 70ch !default;
 $tooltip-color:                     $white !default;
-$tooltip-bg:                        darken($secondary, 25%) !default;
+$tooltip-bg:                        $secondary !default;
 $tooltip-border-radius:             $border-radius !default;
 $tooltip-opacity:                   1 !default;
 $tooltip-padding-y:                 .30rem !default;

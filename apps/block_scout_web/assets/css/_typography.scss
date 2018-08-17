@@ -45,10 +45,11 @@ p {
 
 a {
   text-decoration: none;
-  color: lighten($primary, 25%);
+  color: $tertiary;
 
   &:hover,
   &:focus {
+    color: darken($tertiary, 20%);
     text-decoration: underline;
   }
 
