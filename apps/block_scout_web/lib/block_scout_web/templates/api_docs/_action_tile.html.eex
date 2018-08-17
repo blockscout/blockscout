@@ -15,8 +15,8 @@
     <div class="collapse multi-collapse" id="<%= action_tile_id(@module_name, @action.name) %>">
       <div class="card card-body pt-3 rounded">
         <h4 class="text-primary"><%= gettext "Parameters" %>
-          <button data-selector="<%= "#{@module_name}-#{@action.name}-btn-try-api" %>" role="button" class="btn btn-sm btn-outline-primary float-right" style="width: 8rem" data-module="<%= @module_name %>" data-action="<%= @action.name %>"><%= gettext "Try it out" %></button>
-          <button data-selector="<%= "#{@module_name}-#{@action.name}-btn-try-api-cancel" %>" role="button" class="collapse btn btn-sm btn-outline-secondary float-right" style="width: 8rem" data-module="<%= @module_name %>" data-action="<%= @action.name %>"><%= gettext "Cancel" %></button>
+          <button data-selector="<%= "#{@module_name}-#{@action.name}-btn-try-api" %>" role="button" class="button button--small button--primary float-right" style="width: 8rem" data-module="<%= @module_name %>" data-action="<%= @action.name %>"><%= gettext "Try it out" %></button>
+          <button data-selector="<%= "#{@module_name}-#{@action.name}-btn-try-api-cancel" %>" role="button" class="collapse button button--small button--secondary float-right" style="width: 8rem" data-module="<%= @module_name %>" data-action="<%= @action.name %>"><%= gettext "Cancel" %></button>
         </h4>
 
         <div class="mb-4">
@@ -88,10 +88,10 @@
             <% end %>
             <div class="row">
               <div class="col-sm-2 offset-sm-4 col-md-2 offset-md-2">
-                <button data-selector="<%= "#{@module_name}-#{@action.name}-try-api-ui" %>" data-try-api-ui-button-type="execute" role="button" class="collapse btn btn-primary w-100" data-module="<%= @module_name %>" data-action="<%= @action.name %>"><%= gettext "Execute" %></button>
+                <button data-selector="<%= "#{@module_name}-#{@action.name}-try-api-ui" %>" data-try-api-ui-button-type="execute" role="button" class="collapse button button--primary w-100" data-module="<%= @module_name %>" data-action="<%= @action.name %>"><%= gettext "Execute" %></button>
               </div>
               <div class="col-sm-2 col-md-2">
-                <button role="button" class="collapse btn btn-outline-secondary" data-selector="<%= "#{@module_name}-#{@action.name}-btn-try-api-clear" %>" data-module="<%= @module_name %>" data-action="<%= @action.name %>"><%= gettext "Clear" %></button>
+                <button role="button" class="collapse button button--secondary" data-selector="<%= "#{@module_name}-#{@action.name}-btn-try-api-clear" %>" data-module="<%= @module_name %>" data-action="<%= @action.name %>"><%= gettext "Clear" %></button>
               </div>
             </div>
      <!-- /btn-group -->
@@ -108,13 +108,14 @@
             </div>
           </div>
 
-          <div class="mb-3">
+          <div class="mb-4">
             <h5><%= gettext "Request URL" %></h5>
             <div class="tile tile-muted p-1">
               <pre data-selector="<%= "#{@module_name}-#{@action.name}-request-url" %>" class="m-2"></pre>
             </div>
           </div>
-          <div class="mb-3">
+            <hr/>
+          <div>
             <h5><%= gettext "Server Response" %></h5>
               <dl class="row">
                 <dt class="col-sm-4 col-md-2"><%= gettext "Code" %></dt>
@@ -131,10 +132,10 @@
                 </dd>
               </dl>
           </div>
-          <h5><%= gettext "Responses" %></h5>
         </div> <!-- /*-try-api-ui-result -->
-
+        <hr/>
         <div>
+          <h5><%= gettext "Responses" %></h5>
           <dl class="row">
             <dt class="col-sm-4 col-md-2"><%= gettext "Code" %></dt>
             <dt class="col-sm-8 col-md-10"><%= gettext "Description" %></dt>
