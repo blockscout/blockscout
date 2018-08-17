@@ -32,7 +32,7 @@ defmodule BlockScoutWeb.Notifier do
 
     Endpoint.broadcast("exchange_rate:new_rate", "new_rate", %{
       exchange_rate: exchange_rate,
-      market_history_data: market_history_data |> Enum.map(fn day -> Map.take(day, [:closing_price, :date]) end)
+      market_history_data: Enum.map(market_history_data, fn day -> Map.take(day, [:closing_price, :date]) end)
     })
   end
 
