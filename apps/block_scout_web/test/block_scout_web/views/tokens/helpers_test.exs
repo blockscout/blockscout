@@ -48,15 +48,10 @@ defmodule BlockScoutWeb.Tokens.HelpersTest do
     end
 
     test "returns the token contract address hash when the symbol is nil" do
-      address = build(:address)
+      address = build(:address, hash: "de3fa0f9f8d47790ce88c2b2b82ab81f79f2e65f")
       token = build(:token, symbol: nil, contract_address_hash: address.hash)
 
-      address_hash =
-        address.hash
-        |> Explorer.Chain.Hash.to_string()
-        |> String.slice(0..6)
-
-      assert Helpers.token_symbol(token) == "#{address_hash}..."
+      assert Helpers.token_symbol(token) == "de3fa0f..."
     end
   end
 
@@ -68,15 +63,10 @@ defmodule BlockScoutWeb.Tokens.HelpersTest do
     end
 
     test "returns the token contract address hash when the name is nil" do
-      address = build(:address)
+      address = build(:address, hash: "de3fa0f9f8d47790ce88c2b2b82ab81f79f2e65f")
       token = build(:token, name: nil, contract_address_hash: address.hash)
 
-      address_hash =
-        address.hash
-        |> Explorer.Chain.Hash.to_string()
-        |> String.slice(0..6)
-
-      assert Helpers.token_name(token) == "#{address_hash}..."
+      assert Helpers.token_name(token) == "de3fa0f..."
     end
   end
 end
