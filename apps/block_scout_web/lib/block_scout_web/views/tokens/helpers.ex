@@ -46,15 +46,29 @@ defmodule BlockScoutWeb.Tokens.Helpers do
   When the token's symbol is nil, the function will return the contract address hash.
   """
   def token_symbol(%Token{symbol: nil, contract_address_hash: address_hash}) do
-    address_hash =
-      address_hash
-      |> to_string()
-      |> String.slice(0..6)
-
-    "#{address_hash}..."
+    "#{contract_address_hash_truncated(address_hash)}..."
   end
 
   def token_symbol(%Token{symbol: symbol}) do
     symbol
+  end
+
+  @doc """
+  Returns the token's name.
+
+  When the token's name is nil, the function will return the contract address hash.
+  """
+  def token_name(%Token{name: nil, contract_address_hash: address_hash}) do
+    "#{contract_address_hash_truncated(address_hash)}..."
+  end
+
+  def token_name(%Token{name: name}) do
+    name
+  end
+
+  defp contract_address_hash_truncated(address_hash) do
+    address_hash
+    |> to_string()
+    |> String.slice(0..6)
   end
 end
