@@ -29,6 +29,8 @@ defmodule Explorer.Token.BalanceReader do
 
   @doc """
   Fetches the token balances that were fetched without error and have balances more than 0.
+
+  TODO: Remove this function once AddressTokenBalanceController is fetching balances from database.
   """
   def fetch_token_balances_without_error(tokens, address_hash_string) do
     tokens
@@ -53,7 +55,7 @@ defmodule Explorer.Token.BalanceReader do
   def fetch_token_balances_from_blockchain(tokens, address_hash_string) do
     tokens
     |> Task.async_stream(&fetch_from_blockchain(&1, address_hash_string))
-    |> Enum.map(&blockchain_result_from_tasks/1)
+    |> Enum.map(&format_blockchain_result_from_tasks/1)
   end
 
   defp fetch_from_blockchain(%{contract_address_hash: address_hash} = token, address_hash_string) do
@@ -70,5 +72,28 @@ defmodule Explorer.Token.BalanceReader do
     {:error, Map.put(token, :balance, error)}
   end
 
-  defp blockchain_result_from_tasks({:ok, blockchain_result}), do: blockchain_result
+  defp format_blockchain_result_from_tasks({:ok, blockchain_result}), do: blockchain_result
+
+  @spec get_balance_of(String.t(), String.t(), non_neg_integer()) :: {atom(), non_neg_integer() | String.t()}
+  def get_balance_of(token_contract_address_hash, address_hash, block_number) do
+    result =
+      Reader.query_contract(
+        token_contract_address_hash,
+        @balance_function_abi,
+        %{
+          "balanceOf" => [address_hash]
+        },
+        block_number: block_number
+      )
+
+    format_balance_result(result)
+  end
+
+  defp format_balance_result(%{"balanceOf" => {:ok, [balance]}}) do
+    {:ok, balance}
+  end
+
+  defp format_balance_result(%{"balanceOf" => {:error, error_message}}) do
+    {:error, error_message}
+  end
 end

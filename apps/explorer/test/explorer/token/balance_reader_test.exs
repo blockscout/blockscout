@@ -77,11 +77,44 @@ defmodule Explorer.Token.BalanceReaderTest do
     end
   end
 
+  describe "get_balance_of/3" do
+    setup do
+      address = insert(:address)
+      token = insert(:token, contract_address: build(:contract_address))
+
+      %{address: address, token: token}
+    end
+
+    test "returns the token's balance that the given address has", %{address: address, token: token} do
+      block_number = 1_000
+      token_contract_address_hash = Hash.to_string(token.contract_address_hash)
+      address_hash = Hash.to_string(address.hash)
+
+      get_balance_from_blockchain()
+
+      result = BalanceReader.get_balance_of(token_contract_address_hash, address_hash, block_number)
+
+      assert result == {:ok, 1_000_000_000_000_000_000_000_000}
+    end
+
+    test "returns the error message when there is one", %{address: address, token: token} do
+      block_number = 1_000
+      token_contract_address_hash = Hash.to_string(token.contract_address_hash)
+      address_hash = Hash.to_string(address.hash)
+
+      get_balance_from_blockchain_with_error()
+
+      result = BalanceReader.get_balance_of(token_contract_address_hash, address_hash, block_number)
+
+      assert result == {:error, "(-32015) VM execution error."}
+    end
+  end
+
   defp get_balance_from_blockchain() do
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
-      fn [%{id: _, method: _, params: [%{data: _, to: _}]}], _options ->
+      fn [%{id: _, method: _, params: _}], _options ->
         {:ok,
          [
            %{
@@ -115,7 +148,7 @@ defmodule Explorer.Token.BalanceReaderTest do
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
-      fn [%{id: _, method: _, params: [%{data: _, to: _}]}], _options ->
+      fn [%{id: _, method: _, params: _}], _options ->
         {:ok,
          [
            %{
