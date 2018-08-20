@@ -1,70 +1,56 @@
-<div class="card card-body bg-light rounded p-0">
-  <div class="m-2">
+<div class="tile-muted p-3">
     <h3><strong><%= @model.name %></strong> {</h3>
-    <div class="table-responsive">
-      <table class="table table-borderless table-sm bg-light">
-        <tbody>
-          <%= for {key, details} <- @model.fields do %>
-            <tr>
-              <th scope="row">
-                <%= key %>
-              </th>
-              <td>
-                <span class="row text-primary">
-                  <%= details.type %>
-                  <%= if details[:definition] do %>
-                    <i class="fas fa-info-circle ml-2"
-                       data-toggle="tooltip"
-                       data-placement="right"
-                       data-html="true"
-                       title="<%= model_type_definition(details.definition) %>"></i>
-                  <% end %>
-                </span>
-                <%= if details[:type] == "array" do %>
-                  <span class="row">
-                    [<strong><%= details.array_type.name %></strong>]
-                  </span>
-                <% end %>
-                <%= if details[:enum] do %>
-                  <span class="row">enum: <%= details.enum %></span>
+      <%= for {key, details} <- @model.fields do %>
+        <dl class="row">
+          <dt class="col-md-2">
+            <%= key %>
+          </dt>
+          <dd class="col-md-10">
+            <span>
+              <%= details.type %>
+              <%= if details[:definition] do %>
+                <i class="fas fa-info-circle ml-2"
+                   data-toggle="tooltip"
+                   data-placement="right"
+                   data-html="true"
+                   title="<%= model_type_definition(details.definition) %>"></i>
+              <% end %>
+            </span>
+            <%= if details[:type] == "array" do %>
+              <span>
+                [<strong><%= details.array_type.name %></strong>]
+              </span>
+            <% end %>
+            <%= if details[:enum] do %>
+              <span>enum: <%= details.enum %></span>
+              <dl class="row">
+                <dt class="col-md-2"> <strong>enum</strong></th>
+                <dt class="col-md-10"><strong>interpretation</strong></th>
+              </dl>
+              <%= for {enum, interpretation} <- details[:enum_interpretation] do %>
+                <dl class="row">
+                  <dd class="col-md-2">
+                    "<%= enum %>"
+                  </dd>
+                  <dd class="col-md-10">
+                    <%= interpretation %>
+                  </dd>
+                </dl>
+              <% end %>
 
-                  <table class="table table-bordered bg-light">
-                    <thead>
-                      <tr>
-                        <th scope="col">enum</th>
-                        <th scope="col">interpretation</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <%= for {enum, interpretation} <- details[:enum_interpretation] do %>
-                        <tr>
-                          <td scope="row">
-                            "<%= enum %>"
-                          </td>
-                          <td>
-                            <%= interpretation %>
-                          </td>
-                        </tr>
-                      <% end %>
-                    </tbody>
-                  </table>
-                <% end %>
-                <%= if details[:example] do %>
-                  <span class="row">example: <%= details.example %></span>
-                <% end %>
-                <%= if details[:description] do %>
-                  <span class="row">description: <%= details.description %></span>
-                <% end %>
-              </td>
-              <td></td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
+            <% end %>
+            <%= if details[:example] do %>
+              <span>example: <%= details.example %></span>
+            <% end %>
+            <%= if details[:description] do %>
+              <span>description: <%= details.description %></span>
+            <% end %>
+          </dd>
+
+        </dl>
+      <% end %>
+      <h3>}</h3>
     </div> <!-- /table-responsive -->
-    <h3>}</h3>
-  </div>
-</div>
 
 <%= if @model.fields[:result][:type] == "array" do %>
   <%= render "_model_table.html", model: @model.fields[:result].array_type %>

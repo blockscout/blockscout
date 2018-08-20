@@ -513,6 +513,8 @@ msgstr ""
 #: lib/block_scout_web/templates/address_read_contract/index.html.eex:27
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:31
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:69
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:121
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:140
 msgid "Code"
 msgstr ""
 
@@ -849,4 +851,148 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/_token_holdings.html.eex:3
 msgid "Token Holdings"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:35
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:50
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:66
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:80
+msgid "(query)"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:53
+msgid "A string with the name of the action to be invoked."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:38
+msgid "A string with the name of the module to be invoked."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:45
+msgid "Action"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/index.html.eex:6
+msgid "Base URL:"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:19
+msgid "Cancel"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:94
+msgid "Clear"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:105
+msgid "Curl"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:25
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:141
+msgid "Description"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:122
+msgid "Details"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:162
+msgid "Example Value"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:91
+msgid "Execute"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:5
+msgid "GET"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:175
+msgid "Model"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:30
+msgid "Module"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:39
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:54
+msgid "Must be set to:"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:24
+msgid "Name"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:4
+msgid "POST"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:17
+msgid "Parameters"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:112
+msgid "Request URL"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:128
+msgid "Response Body"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:101
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:138
+msgid "Responses"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:119
+msgid "Server Response"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/index.html.eex:7
+msgid "This API is provided for developers transitioning their applications from Etherscan to Explorer. It supports GET and POST requests."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:18
+msgid "Try it out"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:32
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:47
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:63
+msgid "required"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:35
+#: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:50
+msgid "string"
 msgstr ""
