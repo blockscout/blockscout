@@ -1,3 +1,4 @@
 :0: Unknown function 'Elixir.ExUnit.Callbacks':'__merge__'/3
 :0: Unknown function 'Elixir.ExUnit.CaseTemplate':'__proxy__'/2
 :0: Unknown type 'Elixir.Map':t/0
+lib/websockex.ex:6: The inferred return type of handle_ping/2 ({'reply','pong' | {'pong',_},_}) has nothing in common with {'close',_} | {'ok',_} | {'close',{integer(),binary()},_} | {'reply',{'binary',binary()} | {'ping',binary()} | {'text',binary()},_}, which is the expected return type for the callback of the 'Elixir.WebSockex' behaviour
