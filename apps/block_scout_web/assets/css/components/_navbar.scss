@@ -1,10 +1,16 @@
 .navbar {
   position: relative;
   z-index: 10;
+
+  &-primary {
+    background-color: $primary;
+  }
 }
 
-.navbar-logo {
+.navbar-brand {
   height: 36px;
+  width: 175px;
+  background: $logo-file-path no-repeat;
 }
 
 @include media-breakpoint-up(md) {

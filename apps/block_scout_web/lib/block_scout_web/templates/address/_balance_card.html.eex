@@ -1,4 +1,4 @@
-<div class="card bg-primary">
+<div class="card card-primary">
   <div class="card-body">
     <h2 class="card-title text-white"><%= gettext "Balance" %></h2>
     <span></span>
