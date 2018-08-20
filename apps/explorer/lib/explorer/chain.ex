@@ -1461,7 +1461,17 @@ defmodule Explorer.Chain do
     where(query, [transaction], transaction.index < ^index)
   end
 
-  defp where_transaction_has_multiple_internal_transactions(query) do
+  @doc """
+  Ensures the following conditions are true:
+
+    * excludes internal transactions of type call with no siblings in the
+      transaction
+    * includes internal transactions of type create, reward, or suicide
+      even when they are alone in the parent transaction
+
+  """
+  @spec where_transaction_has_multiple_internal_transactions(Ecto.Query.t()) :: Ecto.Query.t()
+  def where_transaction_has_multiple_internal_transactions(query) do
     where(
       query,
       [internal_transaction, transaction],

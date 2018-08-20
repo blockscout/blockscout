@@ -6,7 +6,7 @@ defmodule Explorer.EtherscanTest do
   alias Explorer.{Etherscan, Chain}
   alias Explorer.Chain.Transaction
 
-  describe "list_transactions/1" do
+  describe "list_transactions/2" do
     test "with empty db" do
       address = build(:address)
 
@@ -343,5 +343,108 @@ defmodule Explorer.EtherscanTest do
         assert transaction.block_number in expected_block_numbers
       end
     end
+  end
+
+  describe "list_internal_transactions/1" do
+    test "with empty db" do
+      transaction = build(:transaction)
+
+      assert Etherscan.list_internal_transactions(transaction.hash) == []
+    end
+
+    test "response includes all the expected fields" do
+      address = insert(:address)
+      contract_address = insert(:contract_address)
+
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert(from_address: address, to_address: nil)
+        |> with_contract_creation(contract_address)
+        |> with_block(block)
+
+      internal_transaction =
+        :internal_transaction_create
+        |> insert(transaction: transaction, index: 0, from_address: address)
+        |> with_contract_creation(contract_address)
+
+      [found_internal_transaction] = Etherscan.list_internal_transactions(transaction.hash)
+
+      assert found_internal_transaction.block_number == block.number
+      assert found_internal_transaction.block_timestamp == block.timestamp
+      assert found_internal_transaction.from_address_hash == internal_transaction.from_address_hash
+      assert found_internal_transaction.to_address_hash == internal_transaction.to_address_hash
+      assert found_internal_transaction.value == internal_transaction.value
+
+      assert found_internal_transaction.created_contract_address_hash ==
+               internal_transaction.created_contract_address_hash
+
+      assert found_internal_transaction.input == internal_transaction.input
+      assert found_internal_transaction.type == internal_transaction.type
+      assert found_internal_transaction.gas == internal_transaction.gas
+      assert found_internal_transaction.gas_used == internal_transaction.gas_used
+      assert found_internal_transaction.error == internal_transaction.error
+    end
+
+    test "with transaction with 0 internal transactions" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      assert Etherscan.list_internal_transactions(transaction.hash) == []
+    end
+
+    test "with transaction with multiple internal transactions" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      for index <- 0..2 do
+        insert(:internal_transaction, transaction: transaction, index: index)
+      end
+
+      found_internal_transactions = Etherscan.list_internal_transactions(transaction.hash)
+
+      assert length(found_internal_transactions) == 3
+    end
+
+    test "only returns internal transactions that belong to the transaction" do
+      transaction1 =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      transaction2 =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:internal_transaction, transaction: transaction1, index: 0)
+      insert(:internal_transaction, transaction: transaction1, index: 1)
+      insert(:internal_transaction, transaction: transaction2, index: 0, type: :reward)
+
+      internal_transactions1 = Etherscan.list_internal_transactions(transaction1.hash)
+
+      assert length(internal_transactions1) == 2
+
+      internal_transactions2 = Etherscan.list_internal_transactions(transaction2.hash)
+
+      assert length(internal_transactions2) == 1
+    end
+
+    # Note that `list_internal_transactions/1` relies on
+    # `Chain.where_transaction_has_multiple_transactions/1` to ensure the
+    # following behavior:
+    #
+    # * exclude internal transactions of type call with no siblings in the
+    #   transaction
+    #
+    # * include internal transactions of type create, reward, or suicide
+    #   even when they are alone in the parent transaction
+    #
+    # These two requirements are tested in `Explorer.ChainTest`.
   end
 end
