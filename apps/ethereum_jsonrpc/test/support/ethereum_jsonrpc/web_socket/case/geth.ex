@@ -8,7 +8,7 @@ defmodule EthereumJSONRPC.WebSocket.Case.Geth do
   def setup do
     url = "wss://mainnet.infura.io/ws/8lTvJTKmHPCHazkneJsY"
     web_socket_module = EthereumJSONRPC.WebSocket.WebSockex
-    web_socket = start_supervised!({web_socket_module, url})
+    web_socket = start_supervised!({web_socket_module, [url, []]})
 
     %{
       block_interval: 5_000,

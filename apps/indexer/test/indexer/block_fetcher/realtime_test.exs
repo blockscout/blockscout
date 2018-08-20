@@ -27,17 +27,20 @@ defmodule Indexer.BlockFetcher.RealtimeTest do
         trace_replayTransaction: "https://core-trace.poa.network"
       )
 
-    block_fetcher = %{BlockFetcher.new(json_rpc_named_arguments: core_json_rpc_named_arguments) | broadcast: false}
-    realtime = Realtime.new(%{block_fetcher: block_fetcher, block_interval: 5_000})
+    block_fetcher = %BlockFetcher{
+      broadcast: false,
+      callback_module: Realtime,
+      json_rpc_named_arguments: core_json_rpc_named_arguments
+    }
 
-    %{json_rpc_named_arguments: core_json_rpc_named_arguments, realtime: realtime}
+    %{block_fetcher: block_fetcher, json_rpc_named_arguments: core_json_rpc_named_arguments}
   end
 
   describe "Indexer.BlockFetcher.stream_import/1" do
     @tag :no_geth
     test "in range with internal transactions", %{
-      json_rpc_named_arguments: json_rpc_named_arguments,
-      realtime: %Realtime{block_fetcher: %BlockFetcher{} = block_fetcher}
+      block_fetcher: %BlockFetcher{} = block_fetcher,
+      json_rpc_named_arguments: json_rpc_named_arguments
     } do
       {:ok, sequence} = Sequence.start_link(ranges: [], step: 2)
       Sequence.cap(sequence)

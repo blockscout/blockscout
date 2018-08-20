@@ -22,8 +22,9 @@ defmodule Indexer.Application do
       |> Application.get_all_env()
       |> Keyword.take(
         ~w(blocks_batch_size blocks_concurrency block_interval json_rpc_named_arguments receipts_batch_size
-           receipts_concurrency)a
+           receipts_concurrency subscribe_named_arguments)a
       )
+      |> Enum.into(%{})
 
     children = [
       {Task.Supervisor, name: Indexer.TaskSupervisor},

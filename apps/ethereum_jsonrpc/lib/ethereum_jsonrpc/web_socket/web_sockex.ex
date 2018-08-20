@@ -29,8 +29,11 @@ defmodule EthereumJSONRPC.WebSocket.WebSockex do
 
   @impl WebSocket
   # only allow secure WSS
-  def start_link("wss://" <> _ = url) do
-    WebSockex.start_link(url, __MODULE__, %__MODULE__{url: url}, cacerts: :certifi.cacerts(), insecure: false)
+  def start_link(["wss://" <> _ = url, gen_server_options]) when is_list(gen_server_options) do
+    WebSockex.start_link(url, __MODULE__, %__MODULE__{url: url}, [
+      {:cacerts, :certifi.cacerts()},
+      {:insecure, false} | gen_server_options
+    ])
   end
 
   # Client interface

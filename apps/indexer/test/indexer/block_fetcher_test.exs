@@ -53,12 +53,11 @@ defmodule Indexer.BlockFetcherTest do
       TokenFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       %{
-        block_fetcher:
-          BlockFetcher.new(
-            broadcast: false,
-            callback_module: Indexer.BlockFetcher.Catchup,
-            json_rpc_named_arguments: json_rpc_named_arguments
-          )
+        block_fetcher: %BlockFetcher{
+          broadcast: false,
+          callback_module: Indexer.BlockFetcher.Catchup,
+          json_rpc_named_arguments: json_rpc_named_arguments
+        }
       }
     end
 

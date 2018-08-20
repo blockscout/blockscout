@@ -6,14 +6,13 @@ defmodule Indexer.BlockFetcher.Catchup do
   require Logger
 
   import Indexer, only: [debug: 1]
-  import Indexer.BlockFetcher, only: [stream_fetch_and_import: 2]
+  import Indexer.BlockFetcher, only: [fetch_and_import_range: 2]
 
   alias Explorer.Chain
 
   alias Indexer.{
     BalanceFetcher,
     BlockFetcher,
-    BoundInterval,
     InternalTransactionFetcher,
     Sequence,
     TokenFetcher
@@ -21,37 +20,44 @@ defmodule Indexer.BlockFetcher.Catchup do
 
   @behaviour BlockFetcher
 
-  @enforce_keys ~w(block_fetcher bound_interval)a
-  defstruct ~w(block_fetcher bound_interval task)a
+  # These are all the *default* values for options.
+  # DO NOT use them directly in the code.  Get options from `state`.
 
-  def new(%{block_fetcher: %BlockFetcher{} = common_block_fetcher, block_interval: block_interval}) do
-    block_fetcher = %BlockFetcher{common_block_fetcher | broadcast: false, callback_module: __MODULE__}
-    minimum_interval = div(block_interval, 2)
+  @blocks_batch_size 10
+  @blocks_concurrency 10
 
-    %__MODULE__{
-      block_fetcher: block_fetcher,
-      bound_interval: BoundInterval.within(minimum_interval..(minimum_interval * 10))
-    }
-  end
+  defstruct blocks_batch_size: @blocks_batch_size,
+            blocks_concurrency: @blocks_concurrency,
+            block_fetcher: nil
+
+  @doc false
+  def default_blocks_batch_size, do: @blocks_batch_size
 
   @doc """
-  Starts `task/1` and puts it in `t:Indexer.BlockFetcher.t/0`
-  """
-  @spec put(%BlockFetcher.Supervisor{catchup: %__MODULE__{task: nil}}) :: %BlockFetcher.Supervisor{
-          catchup: %__MODULE__{task: Task.t()}
-        }
-  def put(%BlockFetcher.Supervisor{catchup: %__MODULE__{task: nil} = state} = supervisor_state) do
-    put_in(
-      supervisor_state.catchup.task,
-      Task.Supervisor.async_nolink(Indexer.TaskSupervisor, __MODULE__, :task, [state])
-    )
-  end
+  Required named arguments
 
-  def task(%__MODULE__{
-        block_fetcher:
-          %BlockFetcher{blocks_batch_size: blocks_batch_size, json_rpc_named_arguments: json_rpc_named_arguments} =
-            block_fetcher
-      }) do
+    * `:json_rpc_named_arguments` - `t:EthereumJSONRPC.json_rpc_named_arguments/0` passed to
+        `EthereumJSONRPC.json_rpc/2`.
+
+  The follow options can be overridden:
+
+    * `:blocks_batch_size` - The number of blocks to request in one call to the JSONRPC.  Defaults to
+      `#{@blocks_batch_size}`.  Block requests also include the transactions for those blocks.  *These transactions
+      are not paginated.*
+    * `:blocks_concurrency` - The number of concurrent requests of `:blocks_batch_size` to allow against the JSONRPC.
+      Defaults to #{@blocks_concurrency}.  So upto `blocks_concurrency * block_batch_size` (defaults to
+      `#{@blocks_concurrency * @blocks_batch_size}`) blocks can be requested from the JSONRPC at once over all
+      connections.  Upto `block_concurrency * receipts_batch_size * receipts_concurrency` (defaults to
+      `#{@blocks_concurrency * BlockFetcher.default_receipts_batch_size() * BlockFetcher.default_receipts_batch_size()}`
+      ) receipts can be requested from the JSONRPC at once over all connections.
+
+  """
+  def task(
+        %__MODULE__{
+          blocks_batch_size: blocks_batch_size,
+          block_fetcher: %BlockFetcher{json_rpc_named_arguments: json_rpc_named_arguments}
+        } = state
+      ) do
     {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
 
     case latest_block_number do
@@ -81,7 +87,7 @@ defmodule Indexer.BlockFetcher.Catchup do
             {:ok, sequence} = Sequence.start_link(ranges: missing_ranges, step: -1 * blocks_batch_size)
             Sequence.cap(sequence)
 
-            stream_fetch_and_import(block_fetcher, sequence)
+            stream_fetch_and_import(state, sequence)
         end
 
         %{first_block_number: first, missing_block_count: missing_block_count}
@@ -103,55 +109,6 @@ defmodule Indexer.BlockFetcher.Catchup do
 
       ok
     end
-  end
-
-  def handle_success(
-        {ref, %{first_block_number: first_block_number, missing_block_count: missing_block_count}},
-        %BlockFetcher.Supervisor{
-          catchup: %__MODULE__{
-            bound_interval: bound_interval,
-            task: %Task{ref: ref}
-          }
-        } = supervisor_state
-      )
-      when is_integer(missing_block_count) do
-    new_bound_interval =
-      case missing_block_count do
-        0 ->
-          Logger.info("Index already caught up in #{first_block_number}-0")
-
-          BoundInterval.increase(bound_interval)
-
-        _ ->
-          Logger.info("Index had to catch up #{missing_block_count} blocks in #{first_block_number}-0")
-
-          BoundInterval.decrease(bound_interval)
-      end
-
-    Process.demonitor(ref, [:flush])
-
-    interval = new_bound_interval.current
-
-    Logger.info(fn ->
-      "Checking if index needs to catch up in #{interval}ms"
-    end)
-
-    Process.send_after(self(), :catchup_index, interval)
-
-    update_in(supervisor_state.catchup, fn state ->
-      %__MODULE__{state | bound_interval: new_bound_interval, task: nil}
-    end)
-  end
-
-  def handle_failure(
-        {:DOWN, ref, :process, pid, reason},
-        %BlockFetcher.Supervisor{catchup: %__MODULE__{task: %Task{pid: pid, ref: ref}}} = supervisor_state
-      ) do
-    Logger.error(fn -> "Catchup index stream exited with reason (#{inspect(reason)}). Restarting" end)
-
-    send(self(), :catchup_index)
-
-    put_in(supervisor_state.catchup.task, nil)
   end
 
   defp async_import_remaining_block_data(
@@ -178,5 +135,73 @@ defmodule Indexer.BlockFetcher.Catchup do
     tokens
     |> Enum.map(& &1.contract_address_hash)
     |> TokenFetcher.async_fetch()
+  end
+
+  defp stream_fetch_and_import(%__MODULE__{blocks_concurrency: blocks_concurrency} = state, sequence)
+       when is_pid(sequence) do
+    sequence
+    |> Sequence.build_stream()
+    |> Task.async_stream(
+      &fetch_and_import_range_from_sequence(state, &1, sequence),
+      max_concurrency: blocks_concurrency,
+      timeout: :infinity
+    )
+    |> Stream.run()
+  end
+
+  # Run at state.blocks_concurrency max_concurrency when called by `stream_import/1`
+  defp fetch_and_import_range_from_sequence(
+         %__MODULE__{block_fetcher: %BlockFetcher{} = block_fetcher},
+         _.._ = range,
+         sequence
+       ) do
+    case fetch_and_import_range(block_fetcher, range) do
+      {:ok, {inserted, next}} ->
+        cap_seq(sequence, next, range)
+        {:ok, inserted}
+
+      {:error, {step, reason}} = error ->
+        Logger.error(fn ->
+          first..last = range
+          "failed to fetch #{step} for blocks #{first} - #{last}: #{inspect(reason)}. Retrying block range."
+        end)
+
+        :ok = Sequence.queue(sequence, range)
+
+        error
+
+      {:error, changesets} = error when is_list(changesets) ->
+        Logger.error(fn ->
+          "failed to validate blocks #{inspect(range)}: #{inspect(changesets)}. Retrying"
+        end)
+
+        :ok = Sequence.queue(sequence, range)
+
+        error
+
+      {:error, {step, failed_value, _changes_so_far}} = error ->
+        Logger.error(fn ->
+          "failed to insert blocks during #{step} #{inspect(range)}: #{inspect(failed_value)}. Retrying"
+        end)
+
+        :ok = Sequence.queue(sequence, range)
+
+        error
+    end
+  end
+
+  defp cap_seq(seq, next, range) do
+    case next do
+      :more ->
+        debug(fn ->
+          first_block_number..last_block_number = range
+          "got blocks #{first_block_number} - #{last_block_number}"
+        end)
+
+      :end_of_chain ->
+        Sequence.cap(seq)
+    end
+
+    :ok
   end
 end

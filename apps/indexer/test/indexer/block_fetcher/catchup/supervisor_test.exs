@@ -1,4 +1,4 @@
-defmodule Indexer.BlockFetcher.SupervisorTest do
+defmodule Indexer.BlockFetcher.Catchup.SupervisorTest do
   # `async: false` due to use of named GenServer
   use EthereumJSONRPC.Case, async: false
   use Explorer.DataCase
@@ -199,7 +199,7 @@ defmodule Indexer.BlockFetcher.SupervisorTest do
 
       {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
 
-      default_blocks_batch_size = BlockFetcher.default_blocks_batch_size()
+      default_blocks_batch_size = BlockFetcher.Catchup.default_blocks_batch_size()
 
       assert latest_block_number > default_blocks_batch_size
 
@@ -209,7 +209,10 @@ defmodule Indexer.BlockFetcher.SupervisorTest do
       AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      start_supervised!({BlockFetcher.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments], []]})
+
+      start_supervised!(
+        {Catchup.Supervisor, [%{block_fetcher: %BlockFetcher{json_rpc_named_arguments: json_rpc_named_arguments}}, []]}
+      )
 
       first_catchup_block_number = latest_block_number - 1
 
@@ -256,9 +259,8 @@ defmodule Indexer.BlockFetcher.SupervisorTest do
       # from `setup :state`
       assert_received :catchup_index
 
-      assert {:noreply,
-              %BlockFetcher.Supervisor{catchup: %Catchup{task: %Task{pid: pid, ref: ref}}} = catchup_index_state} =
-               BlockFetcher.Supervisor.handle_info(:catchup_index, state)
+      assert {:noreply, %Catchup.Supervisor{catchup: %Catchup{}, task: %Task{pid: pid, ref: ref}} = catchup_index_state} =
+               Catchup.Supervisor.handle_info(:catchup_index, state)
 
       assert_receive {^ref, %{first_block_number: 0, missing_block_count: 0}} = message
 
@@ -267,12 +269,12 @@ defmodule Indexer.BlockFetcher.SupervisorTest do
       # DOWN is not flushed
       assert {:messages, [{:DOWN, ^ref, :process, ^pid, :normal}]} = Process.info(self(), :messages)
 
-      assert {:noreply, message_state} = BlockFetcher.Supervisor.handle_info(message, catchup_index_state)
+      assert {:noreply, message_state} = Catchup.Supervisor.handle_info(message, catchup_index_state)
 
       # DOWN is flushed
       assert {:messages, []} = Process.info(self(), :messages)
 
-      assert message_state.catchup.bound_interval.current > catchup_index_state.catchup.bound_interval.current
+      assert message_state.bound_interval.current > catchup_index_state.bound_interval.current
     end
 
     test "decreases catchup_bound_interval if blocks missing", %{
@@ -327,38 +329,39 @@ defmodule Indexer.BlockFetcher.SupervisorTest do
       # from `setup :state`
       assert_received :catchup_index
 
-      assert {:noreply,
-              %BlockFetcher.Supervisor{catchup: %Catchup{task: %Task{pid: pid, ref: ref}}} = catchup_index_state} =
-               BlockFetcher.Supervisor.handle_info(:catchup_index, state)
+      assert {:noreply, %Catchup.Supervisor{catchup: %Catchup{}, task: %Task{pid: pid, ref: ref}} = catchup_index_state} =
+               Catchup.Supervisor.handle_info(:catchup_index, state)
 
       # 2 blocks are missing, but latest is assumed to be handled by realtime_index, so only 1 is missing for
       # catchup_index
       assert_receive {^ref, %{first_block_number: 0, missing_block_count: 1}} = message, 200
 
+      Process.sleep(200)
+
       # DOWN is not flushed
       assert {:messages, [{:DOWN, ^ref, :process, ^pid, :normal}]} = Process.info(self(), :messages)
 
-      assert {:noreply, message_state} = BlockFetcher.Supervisor.handle_info(message, catchup_index_state)
+      assert {:noreply, message_state} = Catchup.Supervisor.handle_info(message, catchup_index_state)
 
       # DOWN is flushed
       assert {:messages, []} = Process.info(self(), :messages)
 
-      assert message_state.catchup.bound_interval.current == message_state.catchup.bound_interval.minimum
+      assert message_state.bound_interval.current == message_state.bound_interval.minimum
 
       # When not at minimum it is decreased
 
-      above_minimum_state = update_in(catchup_index_state.catchup.bound_interval, &BoundInterval.increase/1)
+      above_minimum_state = update_in(catchup_index_state.bound_interval, &BoundInterval.increase/1)
 
-      assert above_minimum_state.catchup.bound_interval.current > message_state.catchup.bound_interval.minimum
-      assert {:noreply, above_minimum_message_state} = BlockFetcher.Supervisor.handle_info(message, above_minimum_state)
+      assert above_minimum_state.bound_interval.current > message_state.bound_interval.minimum
+      assert {:noreply, above_minimum_message_state} = Catchup.Supervisor.handle_info(message, above_minimum_state)
 
-      assert above_minimum_message_state.catchup.bound_interval.current <
-               above_minimum_state.catchup.bound_interval.current
+      assert above_minimum_message_state.bound_interval.current < above_minimum_state.bound_interval.current
     end
   end
 
   defp state(%{json_rpc_named_arguments: json_rpc_named_arguments}) do
-    {:ok, state} = BlockFetcher.Supervisor.init(json_rpc_named_arguments: json_rpc_named_arguments)
+    {:ok, state} =
+      Catchup.Supervisor.init(%{block_fetcher: %BlockFetcher{json_rpc_named_arguments: json_rpc_named_arguments}})
 
     %{state: state}
   end
