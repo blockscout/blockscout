@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.UserSocket do
   channel("addresses:*", BlockScoutWeb.AddressChannel)
   channel("blocks:*", BlockScoutWeb.BlockChannel)
   channel("transactions:*", BlockScoutWeb.TransactionChannel)
+  channel("exchange_rate:*", BlockScoutWeb.ExchangeRateChannel)
 
   transport(:websocket, Phoenix.Transports.WebSocket, timeout: 45_000)
   # transport :longpoll, Phoenix.Transports.LongPoll

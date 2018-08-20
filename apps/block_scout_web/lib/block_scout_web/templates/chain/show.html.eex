@@ -2,14 +2,14 @@
   <div class="container">
     <div class="dashboard-banner">
       <div class="dashboard-banner-chart">
-        <canvas data-chart="marketHistoryChart" data-current_exchange_rate ='<%= @exchange_rate.usd_value %>' data-available_supply='<%= @exchange_rate.available_supply %>' data-market_history_data='<%=raw encode_market_history_data(@market_history_data) %>' width="350" height="152"></canvas>
+        <canvas data-chart="marketHistoryChart" data-available_supply='<%= @exchange_rate.available_supply %>' data-market_history_data='<%=raw encode_market_history_data(@market_history_data) %>' width="350" height="152"></canvas>
       </div>
       <div class="dashboard-banner-chart-legend">
         <div class="dashboard-banner-chart-legend-item">
           <span class="dashboard-banner-chart-legend-label">
             <%= gettext "Price" %>
           </span>
-          <span class="dashboard-banner-chart-legend-value">
+          <span class="dashboard-banner-chart-legend-value" data-selector="exchange-rate">
             <%= format_exchange_rate(@exchange_rate) %>
           </span>
         </div>
@@ -17,7 +17,7 @@
           <span class="dashboard-banner-chart-legend-label">
             <%= gettext "Market Cap" %>
           </span>
-          <span class="dashboard-banner-chart-legend-value">
+          <span class="dashboard-banner-chart-legend-value" data-selector="market-cap">
             <%= format_market_cap(@exchange_rate) %>
           </span>
         </div>

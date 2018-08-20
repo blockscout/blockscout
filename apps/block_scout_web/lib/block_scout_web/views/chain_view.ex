@@ -20,12 +20,6 @@ defmodule BlockScoutWeb.ChainView do
     |> format_usd_value()
   end
 
-  def format_volume_24h(%Token{volume_24h_usd: volume_24h}) do
-    volume_24h
-    |> USD.from()
-    |> format_usd_value()
-  end
-
   def format_market_cap(%Token{market_cap_usd: market_cap}) do
     market_cap
     |> USD.from()

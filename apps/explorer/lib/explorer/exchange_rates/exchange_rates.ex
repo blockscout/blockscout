@@ -35,6 +35,8 @@ defmodule Explorer.ExchangeRates do
       :ets.insert(table_name(), records)
     end
 
+    broadcast_event(:exchange_rate)
+
     {:noreply, state}
   end
 
@@ -102,6 +104,15 @@ defmodule Explorer.ExchangeRates do
   @doc false
   @spec table_name() :: atom()
   def table_name, do: @table_name
+
+  @spec broadcast_event(atom()) :: :ok
+  defp broadcast_event(event_type) do
+    Registry.dispatch(Registry.ChainEvents, event_type, fn entries ->
+      for {pid, _registered_val} <- entries do
+        send(pid, {:chain_event, event_type})
+      end
+    end)
+  end
 
   @spec config(atom()) :: term
   defp config(key) do

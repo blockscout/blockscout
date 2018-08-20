@@ -1,21 +1,25 @@
 import $ from 'jquery'
 import humps from 'humps'
 import numeral from 'numeral'
-import 'numeral/locales'
 import router from '../router'
 import socket from '../socket'
 import { updateAllAges } from '../lib/from_now'
 import { batchChannel, initRedux } from '../utils'
+import { createMarketHistoryChart } from '../lib/market_history_chart'
 
 const BATCH_THRESHOLD = 10
 
 export const initialState = {
   addressCount: null,
+  availableSupply: null,
   averageBlockTime: null,
   batchCountAccumulator: 0,
+  marketHistoryData: null,
   newBlock: null,
   newTransactions: [],
-  transactionCount: null
+  transactionCount: null,
+  usdExchangeRate: null,
+  usdMarketCap: null
 }
 
 export function reducer (state = initialState, action) {
@@ -34,6 +38,14 @@ export function reducer (state = initialState, action) {
       return Object.assign({}, state, {
         averageBlockTime: action.msg.averageBlockTime,
         newBlock: action.msg.chainBlockHtml
+      })
+    }
+    case 'RECEIVED_NEW_EXCHANGE_RATE': {
+      return Object.assign({}, state, {
+        availableSupply: action.msg.exchangeRate.availableSupply,
+        marketHistoryData: action.msg.marketHistoryData,
+        usdExchangeRate: action.msg.exchangeRate.usdValue,
+        usdMarketCap: action.msg.exchangeRate.marketCapUsd
       })
     }
     case 'RECEIVED_NEW_TRANSACTION_BATCH': {
@@ -57,9 +69,9 @@ export function reducer (state = initialState, action) {
   }
 }
 
-router.when('', { exactPathMatch: true }).then(({ locale }) => initRedux(reducer, {
+let chart
+router.when('', { exactPathMatch: true }).then(() => initRedux(reducer, {
   main (store) {
-    numeral.locale(locale)
     const addressesChannel = socket.channel(`addresses:new_address`)
     addressesChannel.join()
     addressesChannel.on('count', msg => store.dispatch({ type: 'RECEIVED_NEW_ADDRESS_COUNT', msg: humps.camelizeKeys(msg) }))
@@ -72,11 +84,17 @@ router.when('', { exactPathMatch: true }).then(({ locale }) => initRedux(reducer
     blocksChannel.join()
     blocksChannel.on('new_block', msg => store.dispatch({ type: 'RECEIVED_NEW_BLOCK', msg: humps.camelizeKeys(msg) }))
 
+    const exchangeRateChannel = socket.channel(`exchange_rate:new_rate`)
+    exchangeRateChannel.join()
+    exchangeRateChannel.on('new_rate', (msg) => store.dispatch({ type: 'RECEIVED_NEW_EXCHANGE_RATE', msg: humps.camelizeKeys(msg) }))
+
     const transactionsChannel = socket.channel(`transactions:new_transaction`)
     transactionsChannel.join()
     transactionsChannel.on('new_transaction', batchChannel((msgs) =>
       store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION_BATCH', msgs: humps.camelizeKeys(msgs) }))
     )
+
+    chart = createMarketHistoryChart($('[data-chart="marketHistoryChart"]')[0])
   },
   render (state, oldState) {
     const $addressCount = $('[data-selector="address-count"]')
@@ -84,6 +102,8 @@ router.when('', { exactPathMatch: true }).then(({ locale }) => initRedux(reducer
     const $blockList = $('[data-selector="chain-block-list"]')
     const $channelBatching = $('[data-selector="channel-batching-message"]')
     const $channelBatchingCount = $('[data-selector="channel-batching-count"]')
+    const $exchangeRate = $('[data-selector="exchange-rate"]')
+    const $marketCap = $('[data-selector="market-cap"]')
     const $transactionsList = $('[data-selector="transactions-list"]')
     const $transactionCount = $('[data-selector="transaction-count"]')
 
@@ -92,6 +112,12 @@ router.when('', { exactPathMatch: true }).then(({ locale }) => initRedux(reducer
     }
     if (oldState.averageBlockTime !== state.averageBlockTime) {
       $averageBlockTime.empty().append(state.averageBlockTime)
+    }
+    if (oldState.usdExchangeRate !== state.usdExchangeRate) {
+      $exchangeRate.empty().append(`$${numeral(state.usdExchangeRate).format('0,0.00[0000000000000000]')} USD`)
+    }
+    if (oldState.usdMarketCap !== state.usdMarketCap) {
+      $marketCap.empty().append(`$${numeral(state.usdMarketCap).format('0,0.00[0000000000000000]')} USD`)
     }
     if (oldState.newBlock !== state.newBlock) {
       $blockList.children().last().remove()
@@ -114,6 +140,10 @@ router.when('', { exactPathMatch: true }).then(({ locale }) => initRedux(reducer
       $transactionsList.prepend(newTransactionsToInsert.reverse().join(''))
 
       updateAllAges()
+    }
+
+    if (oldState.availableSupply !== state.availableSupply || oldState.marketHistoryData !== state.marketHistoryData) {
+      chart.update(state.availableSupply, state.marketHistoryData)
     }
   }
 }))

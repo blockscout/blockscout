@@ -7,10 +7,6 @@ defmodule BlockScoutWeb.TransactionPage do
 
   alias Explorer.Chain.{Transaction, Hash}
 
-  def block_confirmations() do
-    css("[data-selector='block-confirmations']")
-  end
-
   def click_logs(session) do
     click(session, css("[data-test='transaction_logs_link']"))
   end

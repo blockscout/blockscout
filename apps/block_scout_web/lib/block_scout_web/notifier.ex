@@ -21,6 +21,21 @@ defmodule BlockScoutWeb.Notifier do
     Enum.each(blocks, &broadcast_block/1)
   end
 
+  def handle_event({:chain_event, :exchange_rate}) do
+    exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
+
+    market_history_data =
+      case Market.fetch_recent_history(30) do
+        [today | the_rest] -> [%{today | closing_price: exchange_rate.usd_value} | the_rest]
+        data -> data
+      end
+
+    Endpoint.broadcast("exchange_rate:new_rate", "new_rate", %{
+      exchange_rate: exchange_rate,
+      market_history_data: Enum.map(market_history_data, fn day -> Map.take(day, [:closing_price, :date]) end)
+    })
+  end
+
   def handle_event({:chain_event, :transactions, transaction_hashes}) do
     transaction_hashes
     |> Chain.hashes_to_transactions(

@@ -1,8 +1,5 @@
 import $ from 'jquery'
 import moment from 'moment'
-import router from '../router'
-
-moment.locale(router.locale)
 
 moment.relativeTimeThreshold('M', 12)
 moment.relativeTimeThreshold('d', 30)

@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
   use BlockScoutWeb.FeatureCase, async: true
 
   alias Explorer.Chain.Wei
-  alias BlockScoutWeb.{AddressPage, Notifier, TransactionListPage, TransactionLogsPage, TransactionPage}
+  alias BlockScoutWeb.{AddressPage, TransactionListPage, TransactionLogsPage, TransactionPage}
 
   setup do
     block =
@@ -14,10 +14,9 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
         gas_used: 123_987
       })
 
-    [oldest_transaction | _] =
-      3
-      |> insert_list(:transaction)
-      |> with_block()
+    3
+    |> insert_list(:transaction)
+    |> with_block()
 
     pending = insert(:transaction, block_hash: nil, gas: 5891, index: nil)
     pending_contract = insert(:transaction, to_address: nil, block_hash: nil, gas: 5891, index: nil)
@@ -31,7 +30,7 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
       |> insert(from_address: lincoln, to_address: taft)
       |> with_block(block)
 
-    newest_transaction =
+    transaction =
       :transaction
       |> insert(
         value: Wei.from(Decimal.new(5656), :ether),
@@ -46,9 +45,9 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
       )
       |> with_block(block, gas_used: Decimal.new(1_230_000_000_000_123_000), status: :ok)
 
-    insert(:log, address: lincoln, index: 0, transaction: newest_transaction)
+    insert(:log, address: lincoln, index: 0, transaction: transaction)
 
-    internal = insert(:internal_transaction, index: 0, transaction: newest_transaction)
+    internal = insert(:internal_transaction, index: 0, transaction: transaction)
 
     {:ok,
      %{
@@ -57,8 +56,7 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
        internal: internal,
        lincoln: lincoln,
        taft: taft,
-       first_shown_transaction: newest_transaction,
-       last_shown_transaction: oldest_transaction,
+       transaction: transaction,
        txn_from_lincoln: txn_from_lincoln
      }}
   end
@@ -66,7 +64,7 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
   describe "viewing transaction lists" do
     test "viewing the default transactions tab", %{
       session: session,
-      first_shown_transaction: transaction,
+      transaction: transaction,
       pending: pending
     } do
       session
@@ -100,20 +98,20 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
   end
 
   describe "viewing a transaction page" do
-    test "can navigate to transaction show from list page", %{session: session, first_shown_transaction: transaction} do
+    test "can navigate to transaction show from list page", %{session: session, transaction: transaction} do
       session
       |> TransactionListPage.visit_page()
       |> TransactionListPage.click_transaction(transaction)
       |> assert_has(TransactionPage.detail_hash(transaction))
     end
 
-    test "can see a transaction's details", %{session: session, first_shown_transaction: transaction} do
+    test "can see a transaction's details", %{session: session, transaction: transaction} do
       session
       |> TransactionPage.visit_page(transaction)
       |> assert_has(TransactionPage.detail_hash(transaction))
     end
 
-    test "can view a transaction's logs", %{session: session, first_shown_transaction: transaction} do
+    test "can view a transaction's logs", %{session: session, transaction: transaction} do
       session
       |> TransactionPage.visit_page(transaction)
       |> TransactionPage.click_logs()
@@ -123,23 +121,12 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
     test "can visit an address from the transaction logs page", %{
       lincoln: lincoln,
       session: session,
-      first_shown_transaction: transaction
+      transaction: transaction
     } do
       session
       |> TransactionLogsPage.visit_page(transaction)
       |> TransactionLogsPage.click_address(lincoln)
       |> assert_has(AddressPage.detail_hash(lincoln))
-    end
-
-    test "block confirmations via live update", %{session: session, first_shown_transaction: transaction} do
-      session
-      |> TransactionPage.visit_page(transaction)
-      |> assert_text(TransactionPage.block_confirmations(), "0")
-
-      blocks = [insert(:block, number: transaction.block_number + 5)]
-
-      Notifier.handle_event({:chain_event, :blocks, blocks})
-      assert_text(session, TransactionPage.block_confirmations(), "5")
     end
   end
 end

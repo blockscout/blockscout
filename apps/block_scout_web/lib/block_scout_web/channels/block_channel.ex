@@ -36,7 +36,7 @@ defmodule BlockScoutWeb.BlockChannel do
       average_block_time: Timex.format_duration(average_block_time, :humanized),
       chain_block_html: rendered_chain_block,
       block_html: rendered_block,
-      blockNumber: block.number
+      block_number: block.number
     })
 
     {:noreply, socket}

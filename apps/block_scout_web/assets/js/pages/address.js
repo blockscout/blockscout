@@ -1,7 +1,6 @@
 import $ from 'jquery'
 import humps from 'humps'
 import numeral from 'numeral'
-import 'numeral/locales'
 import socket from '../socket'
 import router from '../router'
 import { batchChannel, initRedux } from '../utils'
@@ -75,9 +74,8 @@ export function reducer (state = initialState, action) {
 
 router.when('/addresses/:addressHash').then((params) => initRedux(reducer, {
   main (store) {
-    const { addressHash, blockNumber, locale } = params
+    const { addressHash, blockNumber } = params
     const channel = socket.channel(`addresses:${addressHash}`, {})
-    numeral.locale(locale)
     store.dispatch({
       type: 'PAGE_LOAD',
       params,

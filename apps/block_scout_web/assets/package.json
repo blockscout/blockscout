@@ -58,5 +58,10 @@
     "style-loader": "^0.21.0",
     "webpack": "^4.6.0",
     "webpack-cli": "^3.0.8"
+  },
+  "jest": {
+    "moduleNameMapper": {
+      "/css/app.scss": "<rootDir>/__mocks__/css/app.scss.js"
+    }
   }
 }
