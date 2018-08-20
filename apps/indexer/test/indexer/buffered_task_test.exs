@@ -132,7 +132,7 @@ defmodule Indexer.BufferedTaskTest do
     {:ok, buffer} = start_buffer(RetryableTask)
 
     BufferedTask.buffer(buffer, [1, 2, 3])
-    assert_receive {:run, {0, [1, 2]}}
+    assert_receive {:run, {0, [1, 2]}}, 200
     assert_receive {:run, {0, [3]}}
     assert_receive {:run, {1, [1, 2]}}
     assert_receive {:run, {1, [3]}}

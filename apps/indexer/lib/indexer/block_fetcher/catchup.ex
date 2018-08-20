@@ -6,7 +6,7 @@ defmodule Indexer.BlockFetcher.Catchup do
   require Logger
 
   import Indexer, only: [debug: 1]
-  import Indexer.BlockFetcher, only: [stream_import: 1]
+  import Indexer.BlockFetcher, only: [stream_fetch_and_import: 2]
 
   alias Explorer.Chain
 
@@ -81,7 +81,7 @@ defmodule Indexer.BlockFetcher.Catchup do
             {:ok, sequence} = Sequence.start_link(ranges: missing_ranges, step: -1 * blocks_batch_size)
             Sequence.cap(sequence)
 
-            stream_import(%BlockFetcher{block_fetcher | sequence: sequence})
+            stream_fetch_and_import(block_fetcher, sequence)
         end
 
         %{first_block_number: first, missing_block_count: missing_block_count}

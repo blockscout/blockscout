@@ -16,7 +16,6 @@ defmodule Indexer.BlockFetcherTest do
     BufferedTask,
     InternalTransactionFetcher,
     InternalTransactionFetcherCase,
-    Sequence,
     TokenFetcherCase
   }
 
@@ -178,9 +177,6 @@ defmodule Indexer.BlockFetcherTest do
         end
       end
 
-      {:ok, sequence} = Sequence.start_link(first: 0, step: 1)
-      sequenced_block_fetcher = %BlockFetcher{block_fetcher | sequence: sequence}
-
       %{address_hash: address_hash, block_hash: block_hash} =
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
           EthereumJSONRPC.Geth ->
@@ -216,15 +212,15 @@ defmodule Indexer.BlockFetcherTest do
         end
 
       log_bad_gateway(
-        fn -> BlockFetcher.import_range(sequenced_block_fetcher, block_number..block_number) end,
+        fn -> BlockFetcher.fetch_and_import_range(block_fetcher, block_number..block_number) end,
         fn result ->
           assert {:ok,
-                  %{
-                    addresses: [%Address{hash: ^address_hash}],
-                    blocks: [%Block{hash: ^block_hash}],
-                    logs: [],
-                    transactions: []
-                  }} = result
+                  {%{
+                     addresses: [%Address{hash: ^address_hash}],
+                     blocks: [%Block{hash: ^block_hash}],
+                     logs: [],
+                     transactions: []
+                   }, :more}} = result
 
           wait_for_tasks(InternalTransactionFetcher)
           wait_for_tasks(BalanceFetcher)
@@ -415,9 +411,6 @@ defmodule Indexer.BlockFetcherTest do
         end
       end
 
-      {:ok, sequence} = Sequence.start_link(first: 0, step: 1)
-      sequenced_block_fetcher = %BlockFetcher{block_fetcher | sequence: sequence}
-
       case Keyword.fetch!(json_rpc_named_arguments, :variant) do
         EthereumJSONRPC.Geth ->
           block_number = 48230
@@ -476,7 +469,7 @@ defmodule Indexer.BlockFetcherTest do
                             154, 143, 4, 28, 171, 95, 190, 255, 254, 174, 75, 182>>
                       }
                     ]
-                  }} = BlockFetcher.import_range(sequenced_block_fetcher, block_number..block_number)
+                  }} = BlockFetcher.fetch_and_import_range(block_fetcher, block_number..block_number)
 
           wait_for_tasks(InternalTransactionFetcher)
           wait_for_tasks(BalanceFetcher)
@@ -513,57 +506,57 @@ defmodule Indexer.BlockFetcherTest do
 
         EthereumJSONRPC.Parity ->
           assert {:ok,
-                  %{
-                    addresses: [
-                      %Address{
-                        hash:
-                          %Explorer.Chain.Hash{
-                            byte_count: 20,
-                            bytes:
-                              <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179, 223,
-                                65, 91>>
-                          } = first_address_hash
-                      },
-                      %Address{
-                        hash:
-                          %Explorer.Chain.Hash{
-                            byte_count: 20,
-                            bytes:
-                              <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132, 89, 192, 16, 79, 223, 94, 152,
-                                122, 202>>
-                          } = second_address_hash
-                      }
-                    ],
-                    blocks: [
-                      %Block{
-                        hash: %Explorer.Chain.Hash{
-                          byte_count: 32,
-                          bytes:
-                            <<246, 180, 184, 200, 141, 243, 235, 210, 82, 236, 71, 99, 40, 51, 77, 192, 38, 207, 102,
-                              96, 106, 132, 251, 118, 155, 61, 60, 188, 204, 132, 113, 189>>
-                        }
-                      }
-                    ],
-                    logs: [
-                      %Log{
-                        index: 0,
-                        transaction_hash: %Explorer.Chain.Hash{
-                          byte_count: 32,
-                          bytes:
-                            <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77,
-                              57, 101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
-                        }
-                      }
-                    ],
-                    transactions: [
-                      %Explorer.Chain.Hash{
-                        byte_count: 32,
-                        bytes:
-                          <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77,
-                            57, 101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
-                      }
-                    ]
-                  }} = BlockFetcher.import_range(block_fetcher, block_number..block_number)
+                  {%{
+                     addresses: [
+                       %Address{
+                         hash:
+                           %Explorer.Chain.Hash{
+                             byte_count: 20,
+                             bytes:
+                               <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179, 223,
+                                 65, 91>>
+                           } = first_address_hash
+                       },
+                       %Address{
+                         hash:
+                           %Explorer.Chain.Hash{
+                             byte_count: 20,
+                             bytes:
+                               <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132, 89, 192, 16, 79, 223, 94, 152,
+                                 122, 202>>
+                           } = second_address_hash
+                       }
+                     ],
+                     blocks: [
+                       %Block{
+                         hash: %Explorer.Chain.Hash{
+                           byte_count: 32,
+                           bytes:
+                             <<246, 180, 184, 200, 141, 243, 235, 210, 82, 236, 71, 99, 40, 51, 77, 192, 38, 207, 102,
+                               96, 106, 132, 251, 118, 155, 61, 60, 188, 204, 132, 113, 189>>
+                         }
+                       }
+                     ],
+                     logs: [
+                       %Log{
+                         index: 0,
+                         transaction_hash: %Explorer.Chain.Hash{
+                           byte_count: 32,
+                           bytes:
+                             <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35,
+                               77, 57, 101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
+                         }
+                       }
+                     ],
+                     transactions: [
+                       %Explorer.Chain.Hash{
+                         byte_count: 32,
+                         bytes:
+                           <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77,
+                             57, 101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
+                       }
+                     ]
+                   }, :more}} = BlockFetcher.fetch_and_import_range(block_fetcher, block_number..block_number)
 
           wait_for_tasks(InternalTransactionFetcher)
           wait_for_tasks(BalanceFetcher)

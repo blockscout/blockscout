@@ -41,7 +41,6 @@ defmodule Indexer.BlockFetcher.RealtimeTest do
     } do
       {:ok, sequence} = Sequence.start_link(ranges: [], step: 2)
       Sequence.cap(sequence)
-      full_block_fetcher = %BlockFetcher{block_fetcher | sequence: sequence}
 
       start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
       TokenFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
@@ -358,48 +357,48 @@ defmodule Indexer.BlockFetcher.RealtimeTest do
       end
 
       assert {:ok,
-              %{
-                addresses: [
-                  %Address{hash: first_address_hash, fetched_balance_block_number: 3_946_079},
-                  %Address{hash: second_address_hash, fetched_balance_block_number: 3_946_079},
-                  %Address{hash: third_address_hash, fetched_balance_block_number: 3_946_079},
-                  %Address{hash: fourth_address_hash, fetched_balance_block_number: 3_946_080},
-                  %Address{hash: fifth_address_hash, fetched_balance_block_number: 3_946_079}
-                ],
-                balances: [
-                  %{
-                    address_hash: first_address_hash,
-                    block_number: 3_946_079
-                  },
-                  %{
-                    address_hash: second_address_hash,
-                    block_number: 3_946_079
-                  },
-                  %{
-                    address_hash: third_address_hash,
-                    block_number: 3_946_079
-                  },
-                  %{
-                    address_hash: fourth_address_hash,
-                    block_number: 3_946_080
-                  },
-                  %{
-                    address_hash: fifth_address_hash,
-                    block_number: 3_946_079
-                  }
-                ],
-                blocks: [%Block{number: 3_946_079}, %Block{number: 3_946_080}],
-                internal_transactions: [
-                  %{index: 0, transaction_hash: transaction_hash},
-                  %{index: 1, transaction_hash: transaction_hash},
-                  %{index: 2, transaction_hash: transaction_hash},
-                  %{index: 3, transaction_hash: transaction_hash},
-                  %{index: 4, transaction_hash: transaction_hash},
-                  %{index: 5, transaction_hash: transaction_hash}
-                ],
-                logs: [],
-                transactions: [transaction_hash]
-              }} = BlockFetcher.import_range(full_block_fetcher, 3_946_079..3_946_080)
+              {%{
+                 addresses: [
+                   %Address{hash: first_address_hash, fetched_balance_block_number: 3_946_079},
+                   %Address{hash: second_address_hash, fetched_balance_block_number: 3_946_079},
+                   %Address{hash: third_address_hash, fetched_balance_block_number: 3_946_079},
+                   %Address{hash: fourth_address_hash, fetched_balance_block_number: 3_946_080},
+                   %Address{hash: fifth_address_hash, fetched_balance_block_number: 3_946_079}
+                 ],
+                 balances: [
+                   %{
+                     address_hash: first_address_hash,
+                     block_number: 3_946_079
+                   },
+                   %{
+                     address_hash: second_address_hash,
+                     block_number: 3_946_079
+                   },
+                   %{
+                     address_hash: third_address_hash,
+                     block_number: 3_946_079
+                   },
+                   %{
+                     address_hash: fourth_address_hash,
+                     block_number: 3_946_080
+                   },
+                   %{
+                     address_hash: fifth_address_hash,
+                     block_number: 3_946_079
+                   }
+                 ],
+                 blocks: [%Block{number: 3_946_079}, %Block{number: 3_946_080}],
+                 internal_transactions: [
+                   %{index: 0, transaction_hash: transaction_hash},
+                   %{index: 1, transaction_hash: transaction_hash},
+                   %{index: 2, transaction_hash: transaction_hash},
+                   %{index: 3, transaction_hash: transaction_hash},
+                   %{index: 4, transaction_hash: transaction_hash},
+                   %{index: 5, transaction_hash: transaction_hash}
+                 ],
+                 logs: [],
+                 transactions: [transaction_hash]
+               }, :more}} = BlockFetcher.fetch_and_import_range(block_fetcher, 3_946_079..3_946_080)
     end
   end
 end

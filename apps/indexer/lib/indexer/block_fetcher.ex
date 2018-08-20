@@ -56,8 +56,7 @@ defmodule Indexer.BlockFetcher do
             callback_module: nil,
             json_rpc_named_arguments: nil,
             receipts_batch_size: @receipts_batch_size,
-            receipts_concurrency: @receipts_concurrency,
-            sequence: nil
+            receipts_concurrency: @receipts_concurrency
 
   @doc false
   def default_blocks_batch_size, do: @blocks_batch_size
@@ -90,12 +89,12 @@ defmodule Indexer.BlockFetcher do
     struct!(__MODULE__, named_arguments)
   end
 
-  def stream_import(%__MODULE__{blocks_concurrency: blocks_concurrency, sequence: sequence} = state)
+  def stream_fetch_and_import(%__MODULE__{blocks_concurrency: blocks_concurrency} = state, sequence)
       when is_pid(sequence) do
     sequence
     |> Sequence.build_stream()
     |> Task.async_stream(
-      &import_range(state, &1),
+      &fetch_and_import_range_from_sequence(state, &1, sequence),
       max_concurrency: blocks_concurrency,
       timeout: :infinity
     )
@@ -117,7 +116,10 @@ defmodule Indexer.BlockFetcher do
     :ok
   end
 
-  defp insert(%__MODULE__{broadcast: broadcast, callback_module: callback_module, sequence: sequence} = state, options)
+  defp import_range(
+         %__MODULE__{broadcast: broadcast, callback_module: callback_module} = state,
+         options
+       )
        when is_map(options) do
     {address_hash_to_fetched_balance_block_number, import_options} =
       pop_address_hash_to_fetched_balance_block_number(options)
@@ -134,33 +136,7 @@ defmodule Indexer.BlockFetcher do
         }
       )
 
-    # use a `case` to ensure that `callback_module` `import` has correct return type
-    case callback_module.import(state, options_with_broadcast) do
-      {:ok, _} = ok ->
-        ok
-
-      {:error, changesets} = error when is_list(changesets) ->
-        %{range: range} = options
-
-        Logger.error(fn ->
-          "failed to validate blocks #{inspect(range)}: #{inspect(changesets)}. Retrying"
-        end)
-
-        :ok = Sequence.queue(sequence, range)
-
-        error
-
-      {:error, step, failed_value, _changes_so_far} = error ->
-        %{range: range} = options
-
-        Logger.error(fn ->
-          "failed to insert blocks during #{step} #{inspect(range)}: #{inspect(failed_value)}. Retrying"
-        end)
-
-        :ok = Sequence.queue(sequence, range)
-
-        error
-    end
+    callback_module.import(state, options_with_broadcast)
   end
 
   # `fetched_balance_block_number` is needed for the `BalanceFetcher`, but should not be used for `import` because the
@@ -193,57 +169,89 @@ defmodule Indexer.BlockFetcher do
   # Run at state.blocks_concurrency max_concurrency when called by `stream_import/1`
   # Only public for testing
   @doc false
-  def import_range(%__MODULE__{json_rpc_named_arguments: json_rpc_named_arguments, sequence: seq} = state, range) do
-    with {:blocks, {:ok, next, result}} <-
-           {:blocks, EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments)},
-         %{blocks: blocks, transactions: transactions_without_receipts} = result,
-         cap_seq(seq, next, range),
-         {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_without_receipts)},
-         %{logs: logs, receipts: receipts} = receipt_params,
-         transactions_with_receipts = Receipts.put(transactions_without_receipts, receipts),
-         %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.from_log_params(logs) do
-      addresses =
-        AddressExtraction.extract_addresses(%{
-          blocks: blocks,
-          logs: logs,
-          token_transfers: token_transfers,
-          transactions: transactions_with_receipts
-        })
+  def fetch_and_import_range_from_sequence(
+        %__MODULE__{} = state,
+        _.._ = range,
+        sequence
+      ) do
+    case fetch_and_import_range(state, range) do
+      {:ok, {inserted, next}} ->
+        cap_seq(sequence, next, range)
+        {:ok, inserted}
 
-      balances_params_set =
-        Balances.params_set(%{
-          blocks_params: blocks,
-          logs_params: logs,
-          transactions_params: transactions_with_receipts
-        })
-
-      token_balances = Balances.params_set(%{token_transfers_params: token_transfers})
-
-      insert(
-        state,
-        %{
-          range: range,
-          addresses: %{params: addresses},
-          balances: %{params: balances_params_set},
-          token_balances: %{params: token_balances},
-          blocks: %{params: blocks},
-          logs: %{params: logs},
-          receipts: %{params: receipts},
-          token_transfers: %{params: token_transfers},
-          tokens: %{on_conflict: :nothing, params: tokens},
-          transactions: %{params: transactions_with_receipts, on_conflict: :replace_all}
-        }
-      )
-    else
-      {step, {:error, reason}} ->
-        debug(fn ->
+      {:error, {step, reason}} = error ->
+        Logger.error(fn ->
           first..last = range
           "failed to fetch #{step} for blocks #{first} - #{last}: #{inspect(reason)}. Retrying block range."
         end)
 
-        :ok = Sequence.queue(seq, range)
+        :ok = Sequence.queue(sequence, range)
 
-        {:error, step, reason}
+        error
+
+      {:error, {step, failed_value, _changes_so_far}} = error ->
+        Logger.error(fn ->
+          "failed to insert blocks during #{step} #{inspect(range)}: #{inspect(failed_value)}. Retrying"
+        end)
+
+        :ok = Sequence.queue(sequence, range)
+
+        error
+
+      {:error, changesets} = error when is_list(changesets) ->
+        Logger.error(fn ->
+          "failed to validate blocks #{inspect(range)}: #{inspect(changesets)}. Retrying"
+        end)
+
+        :ok = Sequence.queue(sequence, range)
+
+        error
+    end
+  end
+
+  @spec fetch_and_import_range(t, Range.t()) ::
+          {:ok, {inserted :: %{}, next :: :more | :end_of_chain}} | {:error, {step :: atom, reason :: term()}}
+  def fetch_and_import_range(%__MODULE__{json_rpc_named_arguments: json_rpc_named_arguments} = state, _.._ = range) do
+    with {:blocks, {:ok, next, result}} <-
+           {:blocks, EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments)},
+         %{blocks: blocks, transactions: transactions_without_receipts} = result,
+         {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_without_receipts)},
+         %{logs: logs, receipts: receipts} = receipt_params,
+         transactions_with_receipts = Receipts.put(transactions_without_receipts, receipts),
+         %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.from_log_params(logs),
+         addresses =
+           AddressExtraction.extract_addresses(%{
+             blocks: blocks,
+             logs: logs,
+             token_transfers: token_transfers,
+             transactions: transactions_with_receipts
+           }),
+         balances_params_set =
+           Balances.params_set(%{
+             blocks_params: blocks,
+             logs_params: logs,
+             transactions_params: transactions_with_receipts
+           }),
+         token_balances = Balances.params_set(%{token_transfers_params: token_transfers}),
+         {:ok, inserted} <-
+           import_range(
+             state,
+             %{
+               range: range,
+               addresses: %{params: addresses},
+               balances: %{params: balances_params_set},
+               token_balances: %{params: token_balances},
+               blocks: %{params: blocks},
+               logs: %{params: logs},
+               receipts: %{params: receipts},
+               token_transfers: %{params: token_transfers},
+               tokens: %{on_conflict: :nothing, params: tokens},
+               transactions: %{params: transactions_with_receipts, on_conflict: :replace_all}
+             }
+           ) do
+      {:ok, {inserted, next}}
+    else
+      {step, {:error, reason}} -> {:error, {step, reason}}
     end
   end
 end

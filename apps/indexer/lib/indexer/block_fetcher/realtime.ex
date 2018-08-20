@@ -6,7 +6,7 @@ defmodule Indexer.BlockFetcher.Realtime do
   require Logger
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
-  import Indexer.BlockFetcher, only: [stream_import: 1]
+  import Indexer.BlockFetcher, only: [stream_fetch_and_import: 2]
 
   alias Explorer.Chain
 
@@ -49,7 +49,7 @@ defmodule Indexer.BlockFetcher.Realtime do
   def task(%__MODULE__{block_fetcher: %BlockFetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher}) do
     {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
     {:ok, sequence} = Sequence.start_link(first: latest_block_number, step: 2)
-    stream_import(%BlockFetcher{block_fetcher | sequence: sequence})
+    stream_fetch_and_import(block_fetcher, sequence)
   end
 
   @import_options ~w(address_hash_to_fetched_balance_block_number transaction_hash_to_block_number)a
