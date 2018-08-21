@@ -20,6 +20,7 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.{
     Address,
+    Address.TokenBalance,
     Balance,
     Block,
     Data,
@@ -764,6 +765,27 @@ defmodule Explorer.Chain do
             where: is_nil(balance.value_fetched_at),
             select: %{address_hash: balance.address_hash, block_number: balance.block_number}
           )
+
+        query
+        |> Repo.stream(timeout: :infinity)
+        |> Enum.reduce(initial, reducer)
+      end,
+      timeout: :infinity
+    )
+  end
+
+  @doc """
+  Returns a stream of all token balances that weren't fetched values.
+  """
+  @spec stream_unfetched_token_balances(
+          initial :: accumulator,
+          reducer :: (entry :: TokenBalance.t(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_unfetched_token_balances(initial, reducer) when is_function(reducer, 2) do
+    Repo.transaction(
+      fn ->
+        query = from(tb in TokenBalance, where: is_nil(tb.value_fetched_at))
 
         query
         |> Repo.stream(timeout: :infinity)
