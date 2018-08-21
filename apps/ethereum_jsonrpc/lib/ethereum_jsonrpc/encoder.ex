@@ -97,7 +97,7 @@ defmodule EthereumJSONRPC.Encoder do
   def decode_result({%{id: id, result: result}, function_selector}) do
     types_list = List.wrap(function_selector.returns)
 
-    [decoded_data] =
+    decoded_data =
       result
       |> String.slice(2..-1)
       |> Base.decode16!(case: :lower)

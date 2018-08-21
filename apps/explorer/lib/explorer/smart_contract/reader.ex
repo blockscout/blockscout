@@ -39,7 +39,7 @@ defmodule Explorer.SmartContract.Reader do
         },
         %{"sum" => [20, 22]}
       )
-      # => %{"sum" => {:ok, 42}}
+      # => %{"sum" => {:ok, [42]}}
 
       $ Explorer.SmartContract.Reader.query_verified_contract(
         %Explorer.Chain.Hash{
@@ -138,7 +138,7 @@ defmodule Explorer.SmartContract.Reader do
           "constant" => true,
           "inputs" => [],
           "name" => "get",
-          "outputs" => [%{"name" => "", "type" => "uint256", "value" => 0}],
+          "outputs" => [%{"name" => "", "type" => "uint256", "value" => [0]}],
           "payable" => false,
           "stateMutability" => "view",
           "type" => "function"
@@ -147,7 +147,7 @@ defmodule Explorer.SmartContract.Reader do
           "constant" => true,
           "inputs" => [%{"name" => "x", "type" => "uint256"}],
           "name" => "with_arguments",
-          "outputs" => [%{"name" => "", "type" => "bool", "value" => ""}],
+          "outputs" => [%{"name" => "", "type" => "bool", "value" => [""]}],
           "payable" => false,
           "stateMutability" => "view",
           "type" => "function"
@@ -234,22 +234,22 @@ defmodule Explorer.SmartContract.Reader do
   end
 
   def link_outputs_and_values(blockchain_values, outputs, function_name) do
-    {_, value} = Map.get(blockchain_values, function_name, {:ok, ""})
+    {_, value} = Map.get(blockchain_values, function_name, {:ok, [""]})
 
     for output <- outputs do
-      new_value(output, value)
+      new_value(output, List.wrap(value))
     end
   end
 
-  defp new_value(%{"type" => "address"} = output, value) do
+  defp new_value(%{"type" => "address"} = output, [value]) do
     Map.put_new(output, "value", bytes_to_string(value))
   end
 
-  defp new_value(%{"type" => "bytes" <> _number} = output, value) do
+  defp new_value(%{"type" => "bytes" <> _number} = output, [value]) do
     Map.put_new(output, "value", bytes_to_string(value))
   end
 
-  defp new_value(output, value) do
+  defp new_value(output, [value]) do
     Map.put_new(output, "value", value)
   end
 

@@ -145,7 +145,7 @@ defmodule Indexer.TokenFetcher do
 
   def format_token_params(token, token_contract_data) do
     token_contract_data =
-      for {function_name, {:ok, function_data}} <- token_contract_data, into: %{} do
+      for {function_name, {:ok, [function_data]}} <- token_contract_data, into: %{} do
         {atomized_key(function_name), function_data}
       end
 

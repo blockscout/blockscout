@@ -62,7 +62,7 @@ defmodule Explorer.Token.BalanceReader do
     |> format_blockchain_result(token)
   end
 
-  defp format_blockchain_result(%{"balanceOf" => {:ok, balance}}, token) do
+  defp format_blockchain_result(%{"balanceOf" => {:ok, [balance]}}, token) do
     {:ok, Map.put(token, :balance, balance)}
   end
 
