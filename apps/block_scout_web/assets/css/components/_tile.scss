@@ -66,6 +66,10 @@
 
     &-api-documentation {
       border-left: 4px solid $primary;
+      background-color: transparent;
+      width: 100%;
+      text-align: left;
+      padding: 15px;
 
       .tile-label {
         color: $primary;
