@@ -7,7 +7,7 @@ defmodule EthereumJSONRPC.WebSocket.Case.Parity do
 
   def setup do
     url = "wss://sokol-ws.poa.network/ws"
-    web_socket_module = EthereumJSONRPC.WebSocket.WebSockex
+    web_socket_module = EthereumJSONRPC.WebSocket.Socket
     web_socket = start_supervised!({web_socket_module, [url, []]})
 
     %{

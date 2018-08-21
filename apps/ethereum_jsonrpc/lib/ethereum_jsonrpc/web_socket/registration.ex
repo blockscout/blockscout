@@ -1,6 +1,6 @@
-defmodule EthereumJSONRPC.WebSocket.WebSockex.Registration do
+defmodule EthereumJSONRPC.WebSocket.Registration do
   @moduledoc """
-  When a caller registers for responses to asynchronous `WebSockex.send_frame` responses.
+  When a caller registers for responses to asynchronous frame responses.
   """
 
   alias EthereumJSONRPC.Subscription
@@ -18,7 +18,7 @@ defmodule EthereumJSONRPC.WebSocket.WebSockex.Registration do
     * `:unsubscribe` - an `eth_unsubscribe` request will be issued by the caller.  Its response needs to be returned to
       caller **AND** the client needs to stop tracking the subscription.
   """
-  @type type :: :json_rpc | :subscribe
+  @type type :: :json_rpc | :subscribe | :unsubscribe
 
   @type t :: %__MODULE__{from: GenServer.from(), type: type, subscription_id: Subscription.id()}
 end

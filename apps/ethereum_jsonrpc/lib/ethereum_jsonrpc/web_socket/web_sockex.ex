@@ -10,7 +10,7 @@ defmodule EthereumJSONRPC.WebSocket.WebSockex do
   import EthereumJSONRPC, only: [request: 1]
 
   alias EthereumJSONRPC.{Subscription, Transport, WebSocket}
-  alias EthereumJSONRPC.WebSocket.WebSockex.Registration
+  alias EthereumJSONRPC.WebSocket.Registration
 
   @behaviour WebSocket
 
