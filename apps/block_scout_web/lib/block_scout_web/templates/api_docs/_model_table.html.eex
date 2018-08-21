@@ -1,4 +1,4 @@
-<div class="tile-muted p-3">
+<div class="tile tile-muted text-dark p-3">
     <h3><strong><%= @model.name %></strong> {</h3>
       <%= for {key, details} <- @model.fields do %>
         <dl class="row">
