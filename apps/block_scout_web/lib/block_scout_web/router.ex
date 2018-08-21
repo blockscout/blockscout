@@ -32,7 +32,8 @@ defmodule BlockScoutWeb.Router do
       "block" => RPC.BlockController,
       "account" => RPC.AddressController,
       "logs" => RPC.LogsController,
-      "token" => RPC.TokenController
+      "token" => RPC.TokenController,
+      "stats" => RPC.StatsController
     })
   end
 
