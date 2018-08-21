@@ -22,13 +22,13 @@
               </span>
             <% end %>
             <%= if details[:type] == "array" do %>
-              <span>
+              <div>
                 [<strong><%= details.array_type.name %></strong>]
-              </span>
+              </div>
             <% end %>
             <%= if details[:enum] do %>
-              <span>enum: <%= details.enum %></span>
-              <dl class="row">
+              <div>enum: <%= details.enum %></div>
+              <dl class="row mt-2">
                 <dt class="col-md-2"> <strong>enum</strong></th>
                 <dt class="col-md-10"><strong>interpretation</strong></th>
               </dl>
