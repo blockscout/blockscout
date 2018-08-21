@@ -7,7 +7,7 @@ msgid "Block"
 msgstr ""
 
 #: lib/block_scout_web/templates/chain/show.html.eex:58
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:13
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:11
 msgid "Blocks"
 msgstr ""
 
@@ -44,7 +44,7 @@ msgstr ""
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:26
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:36
 #: lib/block_scout_web/templates/chain/show.html.eex:75
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:18
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:16
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:46
 #: lib/block_scout_web/templates/transaction/index.html.eex:56
 msgid "Transactions"
@@ -321,7 +321,7 @@ msgstr ""
 msgid "Internal Transactions"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:32
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:30
 msgid "Search by address, transaction hash, or block number"
 msgstr ""
 
@@ -531,17 +531,17 @@ msgid "Contract Creation"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:39
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:37
 msgid "Mainnet"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:43
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:41
 msgid "POA Core"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:42
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:40
 msgid "POA Sokol"
 msgstr ""
 
@@ -804,7 +804,7 @@ msgid "Total Supply"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:23
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:21
 msgid "API"
 msgstr ""
 
