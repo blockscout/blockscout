@@ -1,0 +1,24 @@
+<span class="text-nowrap" data-test="token_transfer">
+  <%= token_transfer_amount(@token_transfer) %>
+  <%= link(token_symbol(@token_transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, @locale, @token_transfer.token.contract_address_hash)) %>
+
+  <span data-test="token_transfer_address_hash">
+    <%= BlockScoutWeb.AddressView.display_address_hash(@address, @token_transfer.from_address, @locale, true) %>
+  </span>
+  &rarr;
+  <span data-test="token_transfer_address_hash">
+    <%= BlockScoutWeb.AddressView.display_address_hash(@address, @token_transfer.to_address, @locale, true) %>
+  </span>
+
+  <%= if from_or_to_address?(@token_transfer, @address) do %>
+    <%= if @token_transfer.from_address_hash == @address.hash do %>
+      <span data-test="transaction_type" class="badge badge-danger tile-badge">
+        <%= gettext "OUT" %>
+      </span>
+    <% else %>
+      <span data-test="transaction_type" class="badge badge-success tile-badge">
+        <%= gettext "IN" %>
+      </span>
+    <% end %>
+  <% end %>
+</span>
