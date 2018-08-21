@@ -151,9 +151,9 @@ defmodule EthereumJSONRPC.EncoderTest do
       }
 
       assert Encoder.decode_abi_results(result, abi, functions) == %{
-               "get1" => {:ok, 42},
-               "get2" => {:ok, 42},
-               "get3" => {:ok, 32}
+               "get1" => {:ok, [42]},
+               "get2" => {:ok, [42]},
+               "get3" => {:ok, [32]}
              }
     end
   end
@@ -172,7 +172,7 @@ defmodule EthereumJSONRPC.EncoderTest do
         types: [{:uint, 256}]
       }
 
-      assert Encoder.decode_result({result, selector}) == {"sum", {:ok, 42}}
+      assert Encoder.decode_result({result, selector}) == {"sum", {:ok, [42]}}
     end
 
     test "correclty handles the blockchain error response" do
@@ -199,9 +199,9 @@ defmodule EthereumJSONRPC.EncoderTest do
       result =
         "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000441494f4e00000000000000000000000000000000000000000000000000000000"
 
-      selector = %ABI.FunctionSelector{function: "name", types: [], returns: :string}
+      selector = %ABI.FunctionSelector{function: "name", types: [], returns: [:string]}
 
-      assert Encoder.decode_result({%{id: "storedName", result: result}, selector}) == {"storedName", {:ok, "AION"}}
+      assert Encoder.decode_result({%{id: "storedName", result: result}, selector}) == {"storedName", {:ok, ["AION"]}}
     end
   end
 end

@@ -19,7 +19,7 @@ defmodule Explorer.SmartContract.ReaderTest do
 
       blockchain_get_function_mock()
 
-      assert Reader.query_verified_contract(hash, %{"get" => []}) == %{"get" => {:ok, 0}}
+      assert Reader.query_verified_contract(hash, %{"get" => []}) == %{"get" => {:ok, [0]}}
     end
 
     test "won't raise error when there is a problem with the params to consult the blockchain" do
@@ -93,7 +93,7 @@ defmodule Explorer.SmartContract.ReaderTest do
       end
     )
 
-    assert Reader.query_unverified_contract(address.hash, abi, %{"decimals" => []}) == %{"decimals" => {:ok, 18}}
+    assert Reader.query_unverified_contract(address.hash, abi, %{"decimals" => []}) == %{"decimals" => {:ok, [18]}}
   end
 
   describe "setup_call_payload/2" do
