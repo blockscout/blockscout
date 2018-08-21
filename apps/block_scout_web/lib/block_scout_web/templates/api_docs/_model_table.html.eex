@@ -42,13 +42,12 @@
                   </dd>
                 </dl>
               <% end %>
-
             <% end %>
             <%= if details[:example] do %>
-              <span>example: <%= details.example %></span>
+              <div>example: <%= details.example %></div>
             <% end %>
             <%= if details[:description] do %>
-              <span>description: <%= details.description %></span>
+              <div> description: <%= details.description %></div>
             <% end %>
           </dd>
 
