@@ -1,14 +1,17 @@
-<a class="nounderline" data-toggle="collapse" href="#<%= action_tile_id(@module_name, @action.name) %>" role="button" aria-expanded="false" aria-controls="<%= action_tile_id(@module_name, @action.name) %>">
-  <div class="tile tile-type-api-documentation">
-    <h3>
-      <span class="badge badge-secondary tile-badge float-right"><%= gettext "POST" %></span>
-      <span class="badge badge-primary tile-badge float-right mr-1"><%= gettext "GET" %></span>
-      <strong class="tile-label"><%= @action.name %></strong>
-    </h3>
-    <h4 class="text-dark"><%= @action.description %></h4>
-    <code><%= raw query_params(@module_name, @action) %></code>
+
+
+  <div>
+    <button class="nounderline tile tile-type-api-documentation" data-toggle="collapse" href="#<%= action_tile_id(@module_name, @action.name) %>" role="button" aria-expanded="false" aria-controls="<%= action_tile_id(@module_name, @action.name) %>">
+      <h3>
+        <span class="badge badge-secondary tile-badge float-right"><%= gettext "POST" %></span>
+        <span class="badge badge-primary tile-badge float-right mr-1"><%= gettext "GET" %></span>
+        <strong class="tile-label"><%= @action.name %></strong>
+      </h3>
+      <h4 class="text-dark"><%= @action.description %></h4>
+      <code><%= raw query_params(@module_name, @action) %></code>
+    </button>
   </div>
-</a>
+
 
 <div class="row mt-2">
   <div class="col">
