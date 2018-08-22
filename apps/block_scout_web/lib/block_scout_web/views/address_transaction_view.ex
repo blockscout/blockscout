@@ -14,6 +14,8 @@ defmodule BlockScoutWeb.AddressTransactionView do
     end
   end
 
+  def from_or_to_address?(_token_transfer, nil), do: false
+
   def from_or_to_address?(%{from_address_hash: from_hash, to_address_hash: to_hash}, %Address{hash: hash}) do
     from_hash == hash || to_hash == hash
   end

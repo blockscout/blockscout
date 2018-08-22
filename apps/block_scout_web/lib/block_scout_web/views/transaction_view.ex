@@ -45,9 +45,8 @@ defmodule BlockScoutWeb.TransactionView do
     AddressView.contract?(from_address) || AddressView.contract?(to_address)
   end
 
-  def involves_token_transfers?(%Transaction{} = transaction) do
-    Ecto.assoc_loaded?(transaction.token_transfers) && Enum.any?(transaction.token_transfers)
-  end
+  def involves_token_transfers?(%Transaction{token_transfers: []}), do: false
+  def involves_token_transfers?(%Transaction{token_transfers: transfers}) when is_list(transfers), do: true
 
   def contract_creation?(%Transaction{to_address: nil}), do: true
 

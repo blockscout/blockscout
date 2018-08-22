@@ -1,4 +1,4 @@
-<div class="tile tile-type-<%= BlockScoutWeb.TransactionView.type_suffix(@transaction) %> tile-status--<%= BlockScoutWeb.TransactionView.status(@transaction) %> fade-up" data-test="<%= BlockScoutWeb.TransactionView.type_suffix(@transaction) %>" data-transaction-hash="<%= @transaction.hash %>">
+<div class="tile tile-type-<%= BlockScoutWeb.TransactionView.type_suffix(@transaction) %> tile-status--<%= BlockScoutWeb.TransactionView.status(@transaction) %> fade-in" data-test="<%= BlockScoutWeb.TransactionView.type_suffix(@transaction) %>" data-transaction-hash="<%= @transaction.hash %>">
   <div class="row" data-test="chain_transaction">
     <div class="col-md-2 d-flex flex-row flex-md-column align-items-left justify-content-start justify-content-lg-center mb-1 mb-md-0 pl-md-4">
       <span class="tile-label" data-test="transaction_type">
@@ -19,11 +19,13 @@
         <span class="tile-title">
           <%= BlockScoutWeb.TransactionView.value(@transaction, include_label: false) %> <%= gettext "Ether" %>
         </span>
-        <span class="ml-0 ml-md-1 text-nowrap"> <%= BlockScoutWeb.TransactionView.formatted_fee(@transaction, denomination: :ether, include_label: false) %> <%= gettext "TX Fee" %></span>
+        <span class="ml-0 ml-md-1 text-nowrap">
+          <%= BlockScoutWeb.TransactionView.formatted_fee(@transaction, denomination: :ether, include_label: false) %> <%= gettext "TX Fee" %>
+        </span>
       </span>
     </div>
-    <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column justify-content-start text-md-right mt-3 mt-md-0">
-      <span class="mr-2 mr-md-0">
+    <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column flex-nowrap justify-content-start text-md-right mt-3 mt-md-0">
+      <span class="mr-2 mr-md-0 order-1">
         <%= link(
           gettext("Block #%{number}", number: to_string(@transaction.block.number)),
           to: block_path(BlockScoutWeb.Endpoint, :show, @locale, @transaction.block)
@@ -31,5 +33,25 @@
       </span>
       <span data-from-now="<%= @transaction.block.timestamp %>"></span>
     </div>
+
+    <%= if BlockScoutWeb.TransactionView.involves_token_transfers?(@transaction) do %>
+      <div class="offset-md-2 col-md-7 col-lg-8 d-flex flex-column mt-1 mb-2">
+        <% [first_token_transfer | tail]= @transaction.token_transfers %>
+        <%= render BlockScoutWeb.AddressTransactionView, "_token_transfer.html", address: assigns[:address], locale: @locale, token_transfer: first_token_transfer %>
+
+          <div class="collapse" id="<%= @transaction.hash %>">
+            <%= for token_transfer <- tail do %>
+              <%= render BlockScoutWeb.AddressTransactionView, "_token_transfer.html", address: assigns[:address], locale: @locale, token_transfer: token_transfer %>
+            <% end %>
+          </div>
+      </div>
+      <%= if length(tail) != 0 do %>
+        <div class="col-md-3 col-lg-2 d-flex flex-column mt-1 mb-2 float-right">
+          <%= link to: "##{@transaction.hash}", "data-toggle": "collapse", "data-test": "token_transfers_expansion" do %>
+            <%= gettext "See More" %>
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
   </div>
 </div>

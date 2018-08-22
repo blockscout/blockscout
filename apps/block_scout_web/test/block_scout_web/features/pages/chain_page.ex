@@ -30,6 +30,14 @@ defmodule BlockScoutWeb.ChainPage do
     |> send_keys([:enter])
   end
 
+  def token_transfers(%Transaction{hash: transaction_hash}, count: count) do
+    css("[data-transaction-hash='#{transaction_hash}'] [data-test='token_transfer']", count: count)
+  end
+
+  def token_transfers_expansion(%Transaction{hash: transaction_hash}) do
+    css("[data-transaction-hash='#{transaction_hash}'] [data-test='token_transfers_expansion']")
+  end
+
   def transactions(count: count) do
     css("[data-test='chain_transaction']", count: count)
   end

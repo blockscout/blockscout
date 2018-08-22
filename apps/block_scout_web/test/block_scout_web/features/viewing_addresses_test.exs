@@ -261,12 +261,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       lincoln = addresses.lincoln
       taft = addresses.taft
 
-      contract_token_address =
-        insert(
-          :address,
-          contract_code: Explorer.Factory.data("contract_code")
-        )
-
+      contract_token_address = insert(:contract_address)
       insert(:token, contract_address: contract_token_address)
 
       transaction =
@@ -284,9 +279,9 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
 
       session
       |> AddressPage.visit_page(lincoln)
-      |> assert_has(AddressPage.token_transfers(count: 1))
-      |> assert_has(AddressPage.token_transfer(lincoln, count: 1))
-      |> assert_has(AddressPage.token_transfer(taft, count: 1))
+      |> assert_has(AddressPage.token_transfers(transaction, count: 1))
+      |> assert_has(AddressPage.token_transfer(transaction, lincoln, count: 1))
+      |> assert_has(AddressPage.token_transfer(transaction, taft, count: 1))
       |> refute_has(AddressPage.token_transfers_expansion(transaction))
     end
 
@@ -299,12 +294,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       taft = addresses.taft
       morty = build(:address)
 
-      contract_token_address =
-        insert(
-          :address,
-          contract_code: Explorer.Factory.data("contract_code")
-        )
-
+      contract_token_address = insert(:contract_address)
       insert(:token, contract_address: contract_token_address)
 
       transaction =
@@ -330,10 +320,10 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
 
       session
       |> AddressPage.visit_page(morty)
-      |> assert_has(AddressPage.token_transfers(count: 1))
-      |> assert_has(AddressPage.token_transfer(lincoln, count: 1))
-      |> assert_has(AddressPage.token_transfer(morty, count: 1))
-      |> refute_has(AddressPage.token_transfer(taft, count: 1))
+      |> assert_has(AddressPage.token_transfers(transaction, count: 1))
+      |> assert_has(AddressPage.token_transfer(transaction, lincoln, count: 1))
+      |> assert_has(AddressPage.token_transfer(transaction, morty, count: 1))
+      |> refute_has(AddressPage.token_transfer(transaction, taft, count: 1))
     end
 
     test "transactions with multiple token transfers shows only the first one by default", %{
@@ -368,10 +358,10 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
 
       session
       |> AddressPage.visit_page(lincoln)
-      |> assert_has(AddressPage.token_transfer(lincoln, count: 1))
+      |> assert_has(AddressPage.token_transfers(transaction, count: 1))
     end
 
-    test "transactions with multiple token transfers shows all transferrs if expanded", %{
+    test "transaction with multiple token transfers shows all transfers if expanded", %{
       addresses: addresses,
       block: block,
       session: session
@@ -379,12 +369,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       lincoln = addresses.lincoln
       taft = addresses.taft
 
-      contract_token_address =
-        insert(
-          :address,
-          contract_code: Explorer.Factory.data("contract_code")
-        )
-
+      contract_token_address = insert(:contract_address)
       insert(:token, contract_address: contract_token_address)
 
       transaction =
@@ -404,7 +389,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       session
       |> AddressPage.visit_page(lincoln)
       |> click(AddressPage.token_transfers_expansion(transaction))
-      |> assert_has(AddressPage.token_transfer(lincoln, count: 3))
+      |> assert_has(AddressPage.token_transfers(transaction, count: 3))
     end
   end
 end
