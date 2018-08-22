@@ -7,7 +7,7 @@
           </dt>
           <dd class="col-md-10">
             <span>
-              <%= details.type %>
+              <%= if details[:type] != "model", do: details.type %>
               <%= if details[:definition] do %>
                 <i class="fas fa-info-circle ml-2"
                    data-toggle="tooltip"
@@ -16,6 +16,11 @@
                    title="<%= model_type_definition(details.definition) %>"></i>
               <% end %>
             </span>
+            <%= if details[:type] == "model" do %>
+              <span>
+                <strong><%= details.model.name %></strong>
+              </span>
+            <% end %>
             <%= if details[:type] == "array" do %>
               <span>
                 [<strong><%= details.array_type.name %></strong>]
@@ -54,4 +59,8 @@
 
 <%= if @model.fields[:result][:type] == "array" do %>
   <%= render "_model_table.html", model: @model.fields[:result].array_type %>
+<% end %>
+
+<%= if @model.fields[:result][:type] == "model" do %>
+  <%= render "_model_table.html", model: @model.fields[:result].model %>
 <% end %>

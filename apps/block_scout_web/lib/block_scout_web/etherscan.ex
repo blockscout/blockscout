@@ -124,6 +124,26 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => nil
   }
 
+  @token_gettoken_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => %{
+      "cataloged" => true,
+      "contractAddress" => "0x0000000000000000000000000000000000000000",
+      "decimals" => "18",
+      "name" => "Example Token",
+      "symbol" => "ET",
+      "totalSupply" => "1000000000",
+      "type" => "ERC-20"
+    }
+  }
+
+  @token_gettoken_example_value_error %{
+    "status" => "0",
+    "message" => "Invalid contractaddress format",
+    "result" => nil
+  }
+
   @status_type %{
     type: "status",
     enum: ~s(["0", "1"]),
@@ -149,7 +169,7 @@ defmodule BlockScoutWeb.Etherscan do
 
   @address_hash_type %{
     type: "address hash",
-    definition: "A 160-bit code used for identifying Accounts.",
+    definition: "A 160-bit code used for identifying accounts or contracts.",
     example: ~s("0x95426f2bc716022fcf1def006dbc4bb81f5b5164")
   }
 
@@ -307,6 +327,43 @@ defmodule BlockScoutWeb.Etherscan do
         type: "hexadecimal",
         example: ~s("0x")
       }
+    }
+  }
+
+  @token_model %{
+    name: "Token",
+    fields: %{
+      name: %{
+        type: "string",
+        definition: "Name of the token.",
+        example: ~s("Some Token Name")
+      },
+      symbol: %{
+        type: "string",
+        definition: "Trading symbol of the token.",
+        example: ~s("SYMBOL")
+      },
+      totalSupply: %{
+        type: "integer",
+        definition: "The total supply of the token.",
+        example: ~s("1000000000")
+      },
+      decimals: %{
+        type: "integer",
+        definition: "Number of decimal place the token can be subdivided to.",
+        example: ~s("18")
+      },
+      type: %{
+        type: "token type",
+        enum: ~s(["ERC-20", "ERC-721"]),
+        enum_interpretation: %{"ERC-20" => "ERC-20 token standard", "ERC-721" => "ERC-721 token standard"}
+      },
+      cataloged: %{
+        type: "boolean",
+        definition: "Flag for if token information has been cataloged.",
+        example: ~s(true)
+      },
+      contractAddress: @address_hash_type
     }
   }
 
@@ -600,6 +657,43 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @token_gettoken_action %{
+    name: "getToken",
+    description: "Get ERC-20 or ERC-721 token by contract address.",
+    required_params: [
+      %{
+        key: "contractaddress",
+        placeholder: "contractAddressHash",
+        type: "string",
+        description: "A 160-bit code used for identifying contracts."
+      }
+    ],
+    optional_params: [],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@token_gettoken_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "model",
+              model: @token_model
+            }
+          }
+        }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@token_gettoken_example_value_error)
+      }
+    ]
+  }
+
   @account_module %{
     name: "account",
     actions: [
@@ -615,7 +709,12 @@ defmodule BlockScoutWeb.Etherscan do
     actions: [@logs_getlogs_action]
   }
 
-  @documentation [@account_module, @logs_module]
+  @token_module %{
+    name: "token",
+    actions: [@token_gettoken_action]
+  }
+
+  @documentation [@account_module, @logs_module, @token_module]
 
   def get_documentation do
     @documentation
