@@ -80,6 +80,8 @@ defmodule EthereumJsonrpc.MixProject do
       # `:verify_fun` for `Socket.Web.connect`
       {:ssl_verify_fun, "~> 1.1"},
       # `EthereumJSONRPC.WebSocket`
+      {:websocket_client, "~> 1.3"},
+      # `EthereumJSONRPC.WebSocket`
       {:websockex, "~> 0.4.1"}
     ]
   end

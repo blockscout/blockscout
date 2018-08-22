@@ -31,19 +31,21 @@ defmodule EthereumJSONRPC.WebSocketTest do
         expect(EthereumJSONRPC.WebSocket.Mox, :json_rpc, fn _, _ ->
           {:error,
            %{
-             "code" => -32600,
-             "message" => "Unsupported JSON-RPC protocol version"
+             "code" => -32601,
+             "message" => "Method not found"
            }}
         end)
       end
 
       assert {:error,
               %{
-                "code" => -32600,
-                "message" => "Unsupported JSON-RPC protocol version"
+                "code" => -32601,
+                # Message varies by variant, so don't match on it
+                "message" => _
               }} =
-               %{id: 1, method: "eth_getBlockByNumber", params: ["earliest", false]}
-               # purposely don't call `request()`, so that `jsonrpc` is NOT set.
+               # purposely misspell method to trigger error
+               %{id: 1, method: "eth_getBlockByNumbe", params: ["earliest", false]}
+               |> request()
                |> WebSocket.json_rpc(transport_options)
     end
   end

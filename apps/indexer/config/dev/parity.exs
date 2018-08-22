@@ -18,7 +18,7 @@ config :indexer,
   subscribe_named_arguments: [
     transport: EthereumJSONRPC.WebSocket,
     transport_options: [
-      web_socket: EthereumJSONRPC.WebSocket.WebSockex,
+      web_socket: EthereumJSONRPC.WebSocket.WebSocketClient,
       url: "wss://sokol-ws.poa.network/ws"
     ]
   ]

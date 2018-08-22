@@ -1,9 +1,7 @@
-defmodule EthereumJSONRPC.WebSocket.Socket do
+defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
   @moduledoc """
-  Implements `EthereumJSONRPC.WebSocket` using `Socket.Web`.
+  `EthereumJSONRPC.WebSocket` that uses `websocket_client`
   """
-
-  use GenServer
 
   require Logger
 
@@ -11,31 +9,46 @@ defmodule EthereumJSONRPC.WebSocket.Socket do
 
   alias EthereumJSONRPC.{Subscription, Transport, WebSocket}
   alias EthereumJSONRPC.WebSocket.Registration
-  alias EthereumJSONRPC.WebSocket.Socket.Receiver
 
+  @behaviour :websocket_client
   @behaviour WebSocket
 
-  @enforce_keys ~w(receiver socket_web url)a
-  defstruct receiver: nil,
-            request_id_to_registration: %{},
-            socket_web: nil,
+  @enforce_keys ~w(url)a
+  defstruct request_id_to_registration: %{},
             subscription_id_to_subscription: %{},
             url: nil
-
-  @type t :: %__MODULE__{
-          receiver: pid(),
-          request_id_to_registration: %{non_neg_integer() => Registration.t()},
-          socket_web: Socket.Web.t(),
-          subscription_id_to_subscription: %{Subscription.id() => Subscription.t()},
-          url: String.t()
-        }
 
   # Supervisor interface
 
   @impl WebSocket
+  def child_spec(arg) do
+    Supervisor.child_spec(%{id: __MODULE__, start: {__MODULE__, :start_link, [arg]}}, [])
+  end
+
+  @impl WebSocket
   # only allow secure WSS
-  def start_link(["wss://" <> _ = url, gen_server_options]) when is_list(gen_server_options) do
-    GenServer.start_link(__MODULE__, url, gen_server_options)
+  def start_link(["wss://" <> _ = url, gen_fsm_options]) when is_list(gen_fsm_options) do
+    fsm_name =
+      case Keyword.fetch(gen_fsm_options, :name) do
+        {:ok, name} when is_atom(name) -> {:local, name}
+        :error -> :undefined
+      end
+
+    %URI{host: host} = URI.parse(url)
+    host_charlist = String.to_charlist(host)
+
+    # `:depth`, `:verify`, and `:verify_fun`, are based on `:hackney_connect.ssl_opts_1/2` as we use `:hackney` through
+    # `:httpoison` and this keeps the SSL rules consistent between HTTP and WebSocket
+    :websocket_client.start_link(fsm_name, url, __MODULE__, url,
+      ssl_verify: :verify_peer,
+      socket_opts: [
+        cacerts: :certifi.cacerts(),
+        depth: 99,
+        # SNI extension discloses host name in the clear, but allows for compatibility with Virtual Hosting for TLS
+        server_name_indication: host_charlist,
+        verify_fun: {&:ssl_verify_hostname.verify_fun/3, [check_hostname: host_charlist]}
+      ]
+    )
   end
 
   # Client interface
@@ -59,70 +72,53 @@ defmodule EthereumJSONRPC.WebSocket.Socket do
     GenServer.call(web_socket, {:unsubscribe, subscription})
   end
 
-  @impl GenServer
-  def init("wss://" <> _ = url) do
-    uri = URI.parse(url)
-    address = uri_to_address(uri)
-
-    options =
-      options_put_uri(
-        [
-          authorities: [path: :certifi.cacertfile()],
-          partial_chain: &partial_chain/1,
-          secure: true,
-          server_name: uri.host,
-          verify: [function: &:ssl_verify_hostname.verify_fun/3, data: [check_hostname: String.to_charlist(uri.host)]]
-        ],
-        uri
-      )
-
-    case Socket.Web.connect(address, options) do
-      {:ok, socket_web} ->
-        receiver = Receiver.spawn_link(%{parent: self(), socket_web: socket_web})
-        {:ok, %__MODULE__{receiver: receiver, socket_web: socket_web, url: url}}
-
-      {:error, reason} ->
-        {:stop, reason}
-    end
+  @impl :websocket_client
+  def init(url) do
+    {:reconnect, %__MODULE__{url: url}}
   end
 
-  @impl GenServer
-  def handle_call(message, from, %__MODULE__{socket_web: socket_web} = state) do
-    {updated_state, unique_request} = register(message, from, state)
-
-    Socket.Web.send(socket_web, {:text, Jason.encode!(unique_request)})
-
-    {:noreply, updated_state}
+  @impl :websocket_client
+  def onconnect(_, %__MODULE__{} = state) do
+    {:ok, state}
   end
 
-  @impl GenServer
-  def handle_cast({:text, text}, %__MODULE__{} = state) do
+  @impl :websocket_client
+  def ondisconnect(reason, %__MODULE__{} = state) do
+    {:close, reason, state}
+  end
+
+  @impl :websocket_client
+  def websocket_handle({:text, text}, _request, %__MODULE__{} = state) do
     case Jason.decode(text) do
       {:ok, json} ->
         handle_response(json, state)
 
       {:error, _} = error ->
         broadcast(error, state)
-        {:noreply, state}
+        {:ok, state}
     end
   end
 
-  def handle_cast(:close = close, %__MODULE__{} = state) do
-    broadcast({:error, close}, state)
+  @impl :websocket_client
+  def websocket_info({:"$gen_call", from, request}, _, %__MODULE__{} = state) do
+    handle_call(request, from, state)
   end
 
-  def handle_cast({:close, _code, _data} = close, %__MODULE__{} = state) do
-    broadcast({:error, close}, state)
-  end
-
-  def handle_cast({:error, _reason} = error, %__MODULE__{} = state) do
-    broadcast(error, state)
+  @impl :websocket_client
+  def websocket_terminate(close, _request, %__MODULE__{} = state) do
+    broadcast(close, state)
   end
 
   defp broadcast(message, %__MODULE__{subscription_id_to_subscription: id_to_subscription}) do
     id_to_subscription
     |> Map.values()
     |> Subscription.broadcast(message)
+  end
+
+  defp handle_call(message, from, %__MODULE__{} = state) do
+    {updated_state, unique_request} = register(message, from, state)
+
+    {:reply, {:text, Jason.encode!(unique_request)}, updated_state}
   end
 
   defp handle_response(
@@ -149,7 +145,7 @@ defmodule EthereumJSONRPC.WebSocket.Socket do
         end)
     end
 
-    {:noreply, state}
+    {:ok, state}
   end
 
   defp handle_response(
@@ -171,17 +167,7 @@ defmodule EthereumJSONRPC.WebSocket.Socket do
       ]
     end)
 
-    {:noreply, state}
-  end
-
-  defp options_put_uri(options, %URI{path: nil}), do: options
-
-  defp options_put_uri(options, %URI{path: path}) when is_binary(path) do
-    Keyword.put(options, :path, path)
-  end
-
-  defp partial_chain(certs) do
-    raise "BBOOM: #{inspect(certs)}"
+    {:ok, state}
   end
 
   defp register(
@@ -240,19 +226,6 @@ defmodule EthereumJSONRPC.WebSocket.Socket do
     }
   end
 
-  defp unique_request_id(%__MODULE__{request_id_to_registration: request_id_to_registration} = state) do
-    unique_request_id = EthereumJSONRPC.unique_request_id()
-
-    case request_id_to_registration do
-      # collision
-      %{^unique_request_id => _} ->
-        unique_request_id(state)
-
-      _ ->
-        unique_request_id
-    end
-  end
-
   defp respond_to_registration(
          %Registration{type: :json_rpc, from: from},
          new_request_id_to_registration,
@@ -267,7 +240,7 @@ defmodule EthereumJSONRPC.WebSocket.Socket do
 
     GenServer.reply(from, reply)
 
-    {:noreply, %__MODULE__{state | request_id_to_registration: new_request_id_to_registration}}
+    {:ok, %__MODULE__{state | request_id_to_registration: new_request_id_to_registration}}
   end
 
   defp respond_to_registration(
@@ -290,7 +263,7 @@ defmodule EthereumJSONRPC.WebSocket.Socket do
       |> put_in([Access.key!(:request_id_to_registration)], new_request_id_to_registration)
       |> put_in([Access.key!(:subscription_id_to_subscription), subscription_id], subscription)
 
-    {:noreply, new_state}
+    {:ok, new_state}
   end
 
   defp respond_to_registration(
@@ -301,7 +274,7 @@ defmodule EthereumJSONRPC.WebSocket.Socket do
        ) do
     GenServer.reply(from, {:error, error})
 
-    {:noreply, %__MODULE__{state | request_id_to_registration: new_request_id_to_registration}}
+    {:ok, %__MODULE__{state | request_id_to_registration: new_request_id_to_registration}}
   end
 
   defp respond_to_registration(
@@ -314,6 +287,7 @@ defmodule EthereumJSONRPC.WebSocket.Socket do
       case response do
         %{"result" => true} -> :ok
         %{"result" => false} -> {:error, :not_found}
+        %{"error" => %{"message" => "subscription not found"}} -> {:error, :not_found}
         %{"error" => error} -> {:error, error}
       end
 
@@ -324,15 +298,25 @@ defmodule EthereumJSONRPC.WebSocket.Socket do
       |> put_in([Access.key!(:request_id_to_registration)], new_request_id_to_registration)
       |> update_in([Access.key!(:subscription_id_to_subscription)], &Map.delete(&1, subscription_id))
 
-    {:noreply, new_state}
+    {:ok, new_state}
   end
 
   defp respond_to_registration(nil, _, response, %__MODULE__{} = state) do
     Logger.error(fn -> ["Got response for unregistered request ID: ", inspect(response)] end)
 
-    {:noreply, state}
+    {:ok, state}
   end
 
-  defp uri_to_address(%URI{host: host, port: nil}), do: host
-  defp uri_to_address(%URI{host: host, port: port}) when is_integer(port), do: {host, port}
+  defp unique_request_id(%__MODULE__{request_id_to_registration: request_id_to_registration} = state) do
+    unique_request_id = EthereumJSONRPC.unique_request_id()
+
+    case request_id_to_registration do
+      # collision
+      %{^unique_request_id => _} ->
+        unique_request_id(state)
+
+      _ ->
+        unique_request_id
+    end
+  end
 end

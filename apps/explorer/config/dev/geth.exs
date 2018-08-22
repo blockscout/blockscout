@@ -13,7 +13,7 @@ config :explorer,
   subscribe_named_arguments: [
     transport: EthereumJSONRPC.WebSocket,
     transport_options: [
-      web_socket: EthereumJSONRPC.WebSocket.WebSockex,
+      web_socket: EthereumJSONRPC.WebSocket.WebSocketClient,
       url: System.get_env("ETHEREUM_JSONRPC_WEB_SOCKET_URL") || "wss://mainnet.infura.io/8lTvJTKmHPCHazkneJsY/ws"
     ],
     variant: EthereumJSONRPC.Geth
