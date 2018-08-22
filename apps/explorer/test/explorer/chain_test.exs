@@ -528,6 +528,38 @@ defmodule Explorer.ChainTest do
              |> Chain.hashes_to_transactions(necessity_by_association: %{block: :optional})
              |> Enum.all?(&(&1.hash in [hash_without_index1, hash_without_index2]))
     end
+
+    test "returns transactions with token_transfers preloaded" do
+      token_contract_address = insert(:contract_address)
+
+      token = insert(:token, contract_address: token_contract_address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(
+        :token_transfer,
+        to_address: build(:address),
+        transaction: transaction,
+        token_contract_address: token_contract_address,
+        token: token
+      )
+
+      insert(
+        :token_transfer,
+        to_address: build(:address),
+        transaction: transaction,
+        token_contract_address: token_contract_address,
+        token: token
+      )
+
+      fetched_transaction = List.first(Explorer.Chain.recent_collated_transactions())
+
+      assert fetched_transaction.hash == transaction.hash
+      refute fetched_transaction.token_transfers == []
+    end
   end
 
   describe "list_blocks/2" do
@@ -1105,6 +1137,38 @@ defmodule Explorer.ChainTest do
     test "it excludes pending transactions" do
       insert(:transaction)
       assert [] == Explorer.Chain.recent_collated_transactions()
+    end
+
+    test "returns recent transactions with token_transfers preloaded" do
+      token_contract_address = insert(:contract_address)
+
+      token = insert(:token, contract_address: token_contract_address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(
+        :token_transfer,
+        to_address: build(:address),
+        transaction: transaction,
+        token_contract_address: token_contract_address,
+        token: token
+      )
+
+      insert(
+        :token_transfer,
+        to_address: build(:address),
+        transaction: transaction,
+        token_contract_address: token_contract_address,
+        token: token
+      )
+
+      fetched_transaction = List.first(Explorer.Chain.recent_collated_transactions())
+
+      assert fetched_transaction.hash == transaction.hash
+      refute fetched_transaction.token_transfers == []
     end
   end
 

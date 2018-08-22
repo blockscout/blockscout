@@ -34,7 +34,9 @@
 }
 
 .card-chain-transactions {
-  height: 694px;
+  min-height: 694px;
 
-  @media (max-width: 767px) { height: 1231px; }
+  @media (max-width: 767px) {
+    min-height: 1231px;
+  }
 }

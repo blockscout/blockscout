@@ -1,0 +1,12 @@
+<div class="offset-md-2 col-md-10 col-lg-8 d-flex flex-column mt-1 mb-2">
+  <span class="text-nowrap">
+    <%= render BlockScoutWeb.AddressView, "_link.html", address_hash: @token_transfer.from_address_hash, contract: BlockScoutWeb.AddressView.contract?(@token_transfer.from_address), locale: @locale %>
+    &rarr;
+    <%= render BlockScoutWeb.AddressView, "_link.html", address_hash: @token_transfer.to_address_hash, contract: BlockScoutWeb.AddressView.contract?(@token_transfer.to_address), locale: @locale %>
+  </span>
+
+  <span class="tile-title">
+    <%= token_transfer_amount(@token_transfer) %>
+    <%= link(token_symbol(@token_transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, @locale, @token_transfer.token.contract_address_hash)) %>
+  </span>
+</div>
