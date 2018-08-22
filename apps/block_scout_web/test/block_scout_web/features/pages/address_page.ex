@@ -81,11 +81,15 @@ defmodule BlockScoutWeb.AddressPage do
     css("[data-test='token_transfer']", count: count)
   end
 
-  def token_transfer(address_hash, count: count) do
-    css("[data-test='token_transfer_address_hash']", count: count, text: to_string(address_hash))
+  def token_transfer(%Address{hash: address_hash}, count: count) do
+    css("[data-test='token_transfer_address_hash'][data-address_hash='#{address_hash}']", count: count)
   end
 
   def transaction_type do
     css("[data-test='transaction_type']")
+  end
+
+  def token_transfers_expansion(%Transaction{hash: transaction_hash}) do
+    css("[data-transaction-hash='#{transaction_hash}'] [data-test='token_transfers_expansion']")
   end
 end

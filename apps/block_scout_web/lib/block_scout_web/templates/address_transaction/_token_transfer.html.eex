@@ -2,11 +2,11 @@
   <%= token_transfer_amount(@token_transfer) %>
   <%= link(token_symbol(@token_transfer.token), to: token_path(BlockScoutWeb.Endpoint, :show, @locale, @token_transfer.token.contract_address_hash)) %>
 
-  <span data-test="token_transfer_address_hash">
+  <span data-test="token_transfer_address_hash" data-address_hash="<%= @token_transfer.from_address_hash %>">
     <%= BlockScoutWeb.AddressView.display_address_hash(@address, @token_transfer.from_address, @locale, true) %>
   </span>
   &rarr;
-  <span data-test="token_transfer_address_hash">
+  <span data-test="token_transfer_address_hash" data-address_hash="<%= @token_transfer.to_address_hash %>">
     <%= BlockScoutWeb.AddressView.display_address_hash(@address, @token_transfer.to_address, @locale, true) %>
   </span>
 
