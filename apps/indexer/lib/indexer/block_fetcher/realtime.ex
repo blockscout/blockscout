@@ -147,17 +147,23 @@ defmodule Indexer.BlockFetcher.Realtime do
          %BlockFetcher{json_rpc_named_arguments: json_rpc_named_arguments},
          %{addresses_params: addresses_params, transactions_params: transactions_params}
        ) do
-    with {:ok, internal_transactions_params} <-
-           transactions_params
-           |> transactions_params_to_fetch_internal_transactions_params()
-           |> EthereumJSONRPC.fetch_internal_transactions(json_rpc_named_arguments) do
-      merged_addresses_params =
-        %{internal_transactions: internal_transactions_params}
-        |> AddressExtraction.extract_addresses()
-        |> Kernel.++(addresses_params)
-        |> AddressExtraction.merge_addresses()
+    case transactions_params
+         |> transactions_params_to_fetch_internal_transactions_params()
+         |> EthereumJSONRPC.fetch_internal_transactions(json_rpc_named_arguments) do
+      {:ok, internal_transactions_params} ->
+        merged_addresses_params =
+          %{internal_transactions: internal_transactions_params}
+          |> AddressExtraction.extract_addresses()
+          |> Kernel.++(addresses_params)
+          |> AddressExtraction.merge_addresses()
 
-      {:ok, %{addresses_params: merged_addresses_params, internal_transactions_params: internal_transactions_params}}
+        {:ok, %{addresses_params: merged_addresses_params, internal_transactions_params: internal_transactions_params}}
+
+      :ignore ->
+        {:ok, %{addresses_params: addresses_params, internal_transactions_params: []}}
+
+      {:error, _reason} = error ->
+        error
     end
   end
 
