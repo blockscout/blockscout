@@ -11,7 +11,7 @@ defmodule EthereumJSONRPC.WebSocket.Case.Geth do
     web_socket = start_supervised!({web_socket_module, [url, []]})
 
     %{
-      block_interval: 5_000,
+      block_interval: 25_000,
       subscribe_named_arguments: [
         transport: EthereumJSONRPC.WebSocket,
         transport_options: [

@@ -322,7 +322,7 @@ defmodule EthereumJSONRPCTest do
         {:ok, pid} = Task.start_link(EthereumJSONRPC.WebSocket.Case.Mox, :loop, [%{}])
 
         transport
-        |> expect(:subscribe, fn "newHeads", [], _ ->
+        |> expect(:subscribe, 2, fn "newHeads", [], _ ->
           send(pid, {:subscribe, subscription})
 
           {:ok, subscription}
@@ -334,17 +334,22 @@ defmodule EthereumJSONRPCTest do
         end)
       end
 
-      assert {:ok, subscription} = EthereumJSONRPC.subscribe("newHeads", subscribe_named_arguments)
+      assert {:ok, first_subscription} = EthereumJSONRPC.subscribe("newHeads", [], subscribe_named_arguments)
+      assert {:ok, second_subscription} = EthereumJSONRPC.subscribe("newHeads", [], subscribe_named_arguments)
 
       wait = block_interval * 2
 
-      assert_receive {^subscription, {:ok, %{"number" => _}}}, wait
+      assert_receive {^first_subscription, {:ok, %{"number" => _}}}, wait
+      assert_receive {^second_subscription, {:ok, %{"number" => _}}}, wait
 
-      assert :ok = EthereumJSONRPC.unsubscribe(subscription)
+      assert :ok = EthereumJSONRPC.unsubscribe(first_subscription)
 
       clear_mailbox()
 
-      refute_receive {^subscription, _}, wait
+      # see the message on the second subscription, so that we don't have to wait for the refute_receive, which would
+      # wait the full timeout
+      assert_receive {^second_subscription, {:ok, %{"number" => _}}}, wait
+      refute_receive {^first_subscription, _}
     end
 
     test "return error if already unsubscribed", %{subscribe_named_arguments: subscribe_named_arguments} do
