@@ -75,14 +75,10 @@ defmodule EthereumJsonrpc.MixProject do
       {:timex, "~> 3.1.24"},
       # Encode/decode function names and arguments
       {:ex_abi, "~> 0.1.16"},
-      # `EthereumJSONRPC.WebSocket`
-      {:socket, "~> 0.3.13"},
       # `:verify_fun` for `Socket.Web.connect`
       {:ssl_verify_fun, "~> 1.1"},
       # `EthereumJSONRPC.WebSocket`
-      {:websocket_client, "~> 1.3"},
-      # `EthereumJSONRPC.WebSocket`
-      {:websockex, "~> 0.4.1"}
+      {:websocket_client, "~> 1.3"}
     ]
   end
 end
