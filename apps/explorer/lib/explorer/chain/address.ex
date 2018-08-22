@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Address do
   use Explorer.Schema
 
   alias Ecto.Changeset
-  alias Explorer.Chain.{Block, Data, Hash, Wei, SmartContract, InternalTransaction, Token}
+  alias Explorer.Chain.{Address, Block, Data, Hash, Wei, SmartContract, InternalTransaction, Token}
 
   @optional_attrs ~w(contract_code fetched_balance fetched_balance_block_number)a
   @required_attrs ~w(hash)a
@@ -23,6 +23,7 @@ defmodule Explorer.Chain.Address do
      which `fetched_balance` was fetched
    * `hash` - the hash of the address's public key
    * `contract_code` - the code of the contract when an Address is a contract
+   * `names` - names known for the address
    * `inserted_at` - when this address was inserted
    * `updated_at` when this address was last updated
   """
@@ -31,6 +32,7 @@ defmodule Explorer.Chain.Address do
           fetched_balance_block_number: Block.block_number(),
           hash: Hash.Address.t(),
           contract_code: Data.t() | nil,
+          names: %Ecto.Association.NotLoaded{} | [Address.Name.t()],
           inserted_at: DateTime.t(),
           updated_at: DateTime.t()
         }
@@ -49,6 +51,8 @@ defmodule Explorer.Chain.Address do
       InternalTransaction,
       foreign_key: :created_contract_address_hash
     )
+
+    has_many(:names, Address.Name, foreign_key: :address_hash)
 
     timestamps()
   end

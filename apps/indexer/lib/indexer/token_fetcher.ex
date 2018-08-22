@@ -139,7 +139,7 @@ defmodule Indexer.TokenFetcher do
 
     token_params = format_token_params(token, token_contract_results)
 
-    {:ok, %{tokens: [_]}} = Chain.import(%{tokens: %{params: [token_params], on_conflict: :replace_all}})
+    {:ok, _} = Chain.update_token(token, token_params)
     :ok
   end
 

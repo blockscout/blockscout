@@ -1192,6 +1192,7 @@ defmodule Explorer.ChainTest do
       assert smart_contract.optimization == false
       assert smart_contract.contract_source_code != ""
       assert smart_contract.abi != ""
+      assert Repo.get_by(Address.Name, address_hash: smart_contract.address_hash, name: smart_contract.name)
     end
   end
 
@@ -1726,5 +1727,52 @@ defmodule Explorer.ChainTest do
 
       assert expected_tokens == [token.name]
     end
+  end
+
+  describe "update_token/2" do
+    test "updates a token's values" do
+      token = insert(:token, name: nil, symbol: nil, total_supply: nil, decimals: nil, cataloged: false)
+
+      update_params = %{
+        name: "Hodl Token",
+        symbol: "HT",
+        total_supply: 10,
+        decimals: 1,
+        cataloged: true
+      }
+
+      assert {:ok, updated_token} = Chain.update_token(token, update_params)
+      assert updated_token.name == update_params.name
+      assert updated_token.symbol == update_params.symbol
+      assert updated_token.total_supply == Decimal.new(update_params.total_supply)
+      assert updated_token.decimals == update_params.decimals
+      assert updated_token.cataloged
+    end
+  end
+
+  test "inserts an address name record when token has a name in params" do
+    token = insert(:token, name: nil, symbol: nil, total_supply: nil, decimals: nil, cataloged: false)
+
+    update_params = %{
+      name: "Hodl Token",
+      symbol: "HT",
+      total_supply: 10,
+      decimals: 1,
+      cataloged: true
+    }
+
+    Chain.update_token(token, update_params)
+    assert Repo.get_by(Address.Name, name: update_params.name, address_hash: token.contract_address_hash)
+  end
+
+  test "does not insert address name record when token doesn't have name in params" do
+    token = insert(:token, name: nil, symbol: nil, total_supply: nil, decimals: nil, cataloged: false)
+
+    update_params = %{
+      cataloged: true
+    }
+
+    Chain.update_token(token, update_params)
+    refute Repo.get_by(Address.Name, address_hash: token.contract_address_hash)
   end
 end

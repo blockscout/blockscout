@@ -16,6 +16,7 @@ defmodule Explorer.Chain do
     ]
 
   alias Ecto.Adapters.SQL
+  alias Ecto.Multi
 
   alias Explorer.Chain.{
     Address,
@@ -1352,10 +1353,29 @@ defmodule Explorer.Chain do
     |> Data.to_string()
   end
 
+  @doc """
+  Inserts a `t:SmartContract.t/0`.
+
+  As part of inserting a new smart contract, an additional record is inserted for
+  naming the address for reference.
+  """
+  @spec create_smart_contract(map()) :: {:ok, SmartContract.t()} | {:error, Ecto.Changeset.t()}
   def create_smart_contract(attrs \\ %{}) do
-    %SmartContract{}
-    |> SmartContract.changeset(attrs)
-    |> Repo.insert()
+    smart_contract_changeset = SmartContract.changeset(%SmartContract{}, attrs)
+    address_name = Address.Name.changeset(%Address.Name{}, attrs)
+
+    insert_result =
+      Multi.new()
+      |> Multi.insert(:smart_contract, smart_contract_changeset)
+      |> Multi.insert(:address_name, address_name, on_conflict: :nothing, conflict_target: [:address_hash, :name])
+      |> Repo.transaction()
+
+    with {:ok, %{smart_contract: smart_contract}} <- insert_result do
+      {:ok, smart_contract}
+    else
+      {:error, :smart_contract, changeset, _} ->
+        {:error, changeset}
+    end
   end
 
   @spec address_hash_to_smart_contract(%Explorer.Chain.Hash{}) :: %Explorer.Chain.SmartContract{}
@@ -1581,5 +1601,38 @@ defmodule Explorer.Chain do
     address_hash
     |> Token.with_transfers_by_address()
     |> Repo.all()
+  end
+
+  @doc """
+  Update a new `t:Token.t/0` record.
+
+  As part of updating token, an additional record is inserted for
+  naming the address for reference if a name is provided for a token.
+  """
+  @spec update_token(Token.t(), map()) :: {:ok, Token.t()} | {:error, Ecto.Changeset.t()}
+  def update_token(%Token{contract_address_hash: address_hash} = token, params \\ %{}) do
+    token_changeset = Token.changeset(token, params)
+    address_name_changeset = Address.Name.changeset(%Address.Name{}, Map.put(params, :address_hash, address_hash))
+
+    token_opts = [on_conflict: :replace_all, conflict_target: :contract_address_hash]
+    address_name_opts = [on_conflict: :nothing, conflict_target: [:address_hash, :name]]
+
+    insert_result =
+      Multi.new()
+      |> Multi.insert(:token, token_changeset, token_opts)
+      |> Multi.run(
+        :address_name,
+        fn _ ->
+          {:ok, Repo.insert(address_name_changeset, address_name_opts)}
+        end
+      )
+      |> Repo.transaction()
+
+    with {:ok, %{token: token}} <- insert_result do
+      {:ok, token}
+    else
+      {:error, :token, changeset, _} ->
+        {:error, changeset}
+    end
   end
 end
