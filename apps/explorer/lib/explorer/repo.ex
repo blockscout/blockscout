@@ -27,6 +27,9 @@ defmodule Explorer.Repo do
           insert_all(kind, chunk, opts)
         rescue
           exception ->
+            old_truncate = Application.get_env(:logger, :truncate)
+            Logger.configure(truncate: :infinity)
+
             Logger.error(fn ->
               [
                 "Could not insert all of chunk into ",
@@ -35,7 +38,7 @@ defmodule Explorer.Repo do
                 "\n",
                 "Chunk:\n",
                 "\n",
-                inspect(chunk),
+                inspect(chunk, limit: :infinity, printable_limit: :infinity),
                 "\n",
                 "\n",
                 "Options:\n",
@@ -48,6 +51,8 @@ defmodule Explorer.Repo do
                 Exception.format(:error, exception)
               ]
             end)
+
+            Logger.configure(truncate: old_truncate)
 
             # reraise to kill caller
             raise exception
