@@ -996,3 +996,8 @@ msgstr ""
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:53
 msgid "string"
 msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:57
+msgid "loading....."
+msgstr ""

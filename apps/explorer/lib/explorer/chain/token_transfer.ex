@@ -67,7 +67,7 @@ defmodule Explorer.Chain.TokenTransfer do
   schema "token_transfers" do
     field(:amount, :decimal)
     field(:log_index, :integer)
-    field(:token_id, :integer)
+    field(:token_id, :decimal)
 
     belongs_to(:from_address, Address, foreign_key: :from_address_hash, references: :hash, type: Hash.Address)
     belongs_to(:to_address, Address, foreign_key: :to_address_hash, references: :hash, type: Hash.Address)
