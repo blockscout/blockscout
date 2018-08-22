@@ -269,7 +269,7 @@ defmodule Explorer.Factory do
       data: data(:log_data),
       first_topic: nil,
       fourth_topic: nil,
-      index: Enum.random(1..1000),
+      index: sequence("log_index", & &1),
       second_topic: nil,
       third_topic: nil,
       transaction: build(:transaction),
