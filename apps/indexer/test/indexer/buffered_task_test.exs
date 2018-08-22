@@ -4,6 +4,7 @@ defmodule Indexer.BufferedTaskTest do
   alias Indexer.BufferedTask
 
   @max_batch_size 2
+  @assert_receive_timeout 200
 
   defp start_buffer(callback_module) do
     start_supervised!({Task.Supervisor, name: BufferedTaskSup})
@@ -94,13 +95,13 @@ defmodule Indexer.BufferedTaskTest do
     refute_receive _
 
     BufferedTask.buffer(buffer, ~w(12 13 14 15 16))
-    assert_receive {:run, ~w(12 13)}
-    assert_receive {:run, ~w(14 15)}
-    assert_receive {:run, ~w(16)}
+    assert_receive {:run, ~w(12 13)}, @assert_receive_timeout
+    assert_receive {:run, ~w(14 15)}, @assert_receive_timeout
+    assert_receive {:run, ~w(16)}, @assert_receive_timeout
     refute_receive _
 
     BufferedTask.buffer(buffer, ~w(17))
-    assert_receive {:run, ~w(17)}
+    assert_receive {:run, ~w(17)}, @assert_receive_timeout
     refute_receive _
   end
 
@@ -111,8 +112,8 @@ defmodule Indexer.BufferedTaskTest do
 
     BufferedTask.buffer(buffer, ~w(some more entries))
 
-    assert_receive {:run, ~w(some more)}
-    assert_receive {:run, ~w(entries)}
+    assert_receive {:run, ~w(some more)}, @assert_receive_timeout
+    assert_receive {:run, ~w(entries)}, @assert_receive_timeout
     refute_receive _
   end
 
@@ -122,8 +123,8 @@ defmodule Indexer.BufferedTaskTest do
     {:ok, buffer} = start_buffer(RetryableTask)
 
     BufferedTask.buffer(buffer, [:boom])
-    assert_receive {:run, {0, :boom}}
-    assert_receive {:run, {1, :boom}}, 200
+    assert_receive {:run, {0, :boom}}, @assert_receive_timeout
+    assert_receive {:run, {1, :boom}}, @assert_receive_timeout
     refute_receive _
   end
 
@@ -132,12 +133,12 @@ defmodule Indexer.BufferedTaskTest do
     {:ok, buffer} = start_buffer(RetryableTask)
 
     BufferedTask.buffer(buffer, [1, 2, 3])
-    assert_receive {:run, {0, [1, 2]}}, 200
-    assert_receive {:run, {0, [3]}}
-    assert_receive {:run, {1, [1, 2]}}
-    assert_receive {:run, {1, [3]}}
-    assert_receive {:final_run, {2, [1, 2]}}
-    assert_receive {:final_run, {2, [3]}}
+    assert_receive {:run, {0, [1, 2]}}, @assert_receive_timeout
+    assert_receive {:run, {0, [3]}}, @assert_receive_timeout
+    assert_receive {:run, {1, [1, 2]}}, @assert_receive_timeout
+    assert_receive {:run, {1, [3]}}, @assert_receive_timeout
+    assert_receive {:final_run, {2, [1, 2]}}, @assert_receive_timeout
+    assert_receive {:final_run, {2, [3]}}, @assert_receive_timeout
     refute_receive _
   end
 
