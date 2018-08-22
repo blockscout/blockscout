@@ -104,3 +104,16 @@
     }
   }
 }
+
+.dropdown-menu {
+  padding: 0px;
+}
+
+.dropdown-item {
+  padding: 10px 20px;
+
+  &:hover {
+    background-color: $secondary;
+    color: $white;
+  }
+}
