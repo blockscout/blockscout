@@ -40,9 +40,21 @@ defmodule Indexer.Balances do
                                                            is_binary(to_address_hash) and
                                                            is_binary(token_contract_address_hash) ->
       acc
-      |> MapSet.put(%{address_hash: from_address_hash, block_number: block_number})
-      |> MapSet.put(%{address_hash: to_address_hash, block_number: block_number})
-      |> MapSet.put(%{address_hash: token_contract_address_hash, block_number: block_number})
+      |> MapSet.put(%{
+        address_hash: from_address_hash,
+        token_contract_address_hash: token_contract_address_hash,
+        block_number: block_number
+      })
+      |> MapSet.put(%{
+        address_hash: to_address_hash,
+        token_contract_address_hash: token_contract_address_hash,
+        block_number: block_number
+      })
+      |> MapSet.put(%{
+        address_hash: token_contract_address_hash,
+        token_contract_address_hash: token_contract_address_hash,
+        block_number: block_number
+      })
     end)
   end
 

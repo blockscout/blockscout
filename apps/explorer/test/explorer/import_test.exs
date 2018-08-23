@@ -5,6 +5,7 @@ defmodule Explorer.Chain.ImportTest do
 
   alias Explorer.Chain.{
     Address,
+    Address.TokenBalance,
     Block,
     Data,
     Log,
@@ -305,6 +306,52 @@ defmodule Explorer.Chain.ImportTest do
                   }
                 ]
               }} = Import.all(@import_data)
+    end
+
+    test "inserts a token_balance" do
+      params = %{
+        addresses: %{
+          params: [
+            %{hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"},
+            %{hash: "0x515c09c5bba1ed566b02a5b0599ec5d5d0aee73d"},
+            %{hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"}
+          ]
+        },
+        tokens: %{
+          on_conflict: :nothing,
+          params: [
+            %{
+              contract_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+              type: "ERC-20"
+            }
+          ]
+        },
+        token_balances: %{
+          params: [
+            %{
+              address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+              token_contract_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+              block_number: "37"
+            },
+            %{
+              address_hash: "0x515c09c5bba1ed566b02a5b0599ec5d5d0aee73d",
+              token_contract_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+              block_number: "37"
+            },
+            %{
+              address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+              token_contract_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+              block_number: "37"
+            }
+          ]
+        }
+      }
+
+      Import.all(params)
+
+      count = Explorer.Repo.one(Ecto.Query.from(t in TokenBalance, select: count(t.id)))
+
+      assert 3 == count
     end
 
     test "with empty map" do

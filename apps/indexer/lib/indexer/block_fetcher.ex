@@ -42,6 +42,7 @@ defmodule Indexer.BlockFetcher do
                 broadcast: boolean,
                 logs: Import.logs_options(),
                 receipts: Import.receipts_options(),
+                token_balances: Import.token_balances(),
                 token_transfers: Import.token_transfers_options(),
                 tokens: Import.tokens_options(),
                 transactions: Import.transactions_options()
@@ -213,9 +214,10 @@ defmodule Indexer.BlockFetcher do
         Balances.params_set(%{
           blocks_params: blocks,
           logs_params: logs,
-          token_transfers_params: token_transfers,
           transactions_params: transactions_with_receipts
         })
+
+      token_balances = Balances.params_set(%{token_transfers_params: token_transfers})
 
       insert(
         state,
@@ -223,6 +225,7 @@ defmodule Indexer.BlockFetcher do
           range: range,
           addresses: %{params: addresses},
           balances: %{params: balances_params_set},
+          token_balances: %{params: token_balances},
           blocks: %{params: blocks},
           logs: %{params: logs},
           receipts: %{params: receipts},
