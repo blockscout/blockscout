@@ -12,12 +12,11 @@ defmodule Indexer.TokenBalanceFetcherTest do
 
   describe "init/3" do
     test "returns unfetched token balances" do
-      %TokenBalance{address_hash: address_hash} =
-        insert(:token_balance, block_number: 1_000, value_fetched_at: nil)
+      %TokenBalance{address_hash: address_hash} = insert(:token_balance, block_number: 1_000, value_fetched_at: nil)
 
       insert(:token_balance, value_fetched_at: DateTime.utc_now())
 
-      assert TokenBalanceFetcher.init([], &[&1.address_hash| &2], nil) == [address_hash]
+      assert TokenBalanceFetcher.init([], &[&1.address_hash | &2], nil) == [address_hash]
     end
   end
 
