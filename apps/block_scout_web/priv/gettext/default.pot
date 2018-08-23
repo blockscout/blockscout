@@ -666,6 +666,16 @@ msgid "Query"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:51
+msgid "WEI"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:52
+msgid "ETH"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/address_contract/index.html.eex:37
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:42
 #: lib/block_scout_web/templates/address_read_contract/index.html.eex:36
