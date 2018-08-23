@@ -17,7 +17,7 @@ defmodule Indexer.BlockFetcher.Realtime do
 
   @behaviour BlockFetcher
 
-  @enforce_keys ~w(block_fetcher subscription)a
+  @enforce_keys ~w(block_fetcher)a
   defstruct ~w(block_fetcher subscription)a
 
   @type t :: %__MODULE__{
@@ -36,19 +36,18 @@ defmodule Indexer.BlockFetcher.Realtime do
   end
 
   @impl GenServer
-  @spec init(%{block_fetcher: BlockFetcher.t(), subscribe_named_arguments: Keyword.t()}) ::
-          {:ok, t()} | {:stop, reason :: term()}
-  def init(%{block_fetcher: block_fetcher, subscribe_named_arguments: subscribe_named_arguments}) do
-    case EthereumJSONRPC.subscribe("newHeads", subscribe_named_arguments) do
-      {:ok, subscription} ->
-        {:ok,
-         %__MODULE__{
-           block_fetcher: %BlockFetcher{block_fetcher | broadcast: true, callback_module: __MODULE__},
-           subscription: subscription
-         }}
+  def init(%{block_fetcher: %BlockFetcher{} = block_fetcher, subscribe_named_arguments: subscribe_named_arguments})
+      when is_list(subscribe_named_arguments) do
+    {:ok, %__MODULE__{block_fetcher: %BlockFetcher{block_fetcher | broadcast: true, callback_module: __MODULE__}},
+     {:continue, {:init, subscribe_named_arguments}}}
+  end
 
-      {:error, reason} ->
-        {:stop, reason}
+  @impl GenServer
+  def handle_continue({:init, subscribe_named_arguments}, %__MODULE__{subscription: nil} = state)
+      when is_list(subscribe_named_arguments) do
+    case EthereumJSONRPC.subscribe("newHeads", subscribe_named_arguments) do
+      {:ok, subscription} -> {:noreply, %__MODULE__{state | subscription: subscription}}
+      {:error, reason} -> {:stop, reason, state}
     end
   end
 
