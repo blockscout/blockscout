@@ -1362,12 +1362,12 @@ defmodule Explorer.Chain do
   @spec create_smart_contract(map()) :: {:ok, SmartContract.t()} | {:error, Ecto.Changeset.t()}
   def create_smart_contract(attrs \\ %{}) do
     smart_contract_changeset = SmartContract.changeset(%SmartContract{}, attrs)
-    address_name = Address.Name.changeset(%Address.Name{}, attrs)
 
     insert_result =
       Multi.new()
       |> Multi.insert(:smart_contract, smart_contract_changeset)
-      |> Multi.insert(:address_name, address_name, on_conflict: :nothing, conflict_target: [:address_hash, :name])
+      |> Multi.run(:clear_primary_address_names, &clear_primary_address_names/1)
+      |> Multi.run(:insert_address_name, &create_address_name/1)
       |> Repo.transaction()
 
     with {:ok, %{smart_contract: smart_contract}} <- insert_result do
@@ -1376,6 +1376,30 @@ defmodule Explorer.Chain do
       {:error, :smart_contract, changeset, _} ->
         {:error, changeset}
     end
+  end
+
+  defp clear_primary_address_names(%{smart_contract: %SmartContract{address_hash: address_hash}}) do
+    clear_primary_query =
+      from(address_name in Address.Name,
+        where: address_name.address_hash == ^address_hash,
+        update: [set: [primary: false]]
+      )
+
+    Repo.update_all(clear_primary_query, [])
+
+    {:ok, []}
+  end
+
+  defp create_address_name(%{smart_contract: %SmartContract{name: name, address_hash: address_hash}}) do
+    params = %{
+      address_hash: address_hash,
+      name: name,
+      primary: true
+    }
+
+    %Address.Name{}
+    |> Address.Name.changeset(params)
+    |> Repo.insert(on_conflict: :nothing, conflict_target: [:address_hash, :name])
   end
 
   @spec address_hash_to_smart_contract(%Explorer.Chain.Hash{}) :: %Explorer.Chain.SmartContract{}
