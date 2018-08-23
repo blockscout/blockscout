@@ -57,16 +57,14 @@
                   <em><%= gettext "Must be set to:" %></em> <%= @action.name %>
                 </dd>
               </dl>
-              <dl class="row">
                 <%= for required_param <- @action.required_params do %>
+                <dl class="row">
                   <dd class="col-sm-4 col-md-2">
-                    <div class="">
                       <%= required_param.key %>
                       <span class="align-text-bottom text-danger">
                         * <small><%= gettext "required" %></small>
                       </span>
-                    </div>
-                    <span class="text-muted"><%= required_param.type %> <em><%= gettext "(query)" %></em></span>
+                    <div class="text-muted"><%= required_param.type %> <em><%= gettext "(query)" %></em></div>
                   </dd>
                   <dd class="col-sm-8 col-md-10">
                     <%= required_param.description %>
@@ -75,7 +73,7 @@
                     </div>
                   </dd>
                 </dl>
-            <% end %>
+              <% end %>
             <%= for optional_param <- @action.optional_params do %>
             <dl class="row">
               <dd class="col-sm-4 col-md-2">
