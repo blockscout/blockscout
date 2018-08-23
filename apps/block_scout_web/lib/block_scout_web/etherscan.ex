@@ -144,6 +144,12 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => nil
   }
 
+  @stats_tokensupply_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => "21265524714464"
+  }
+
   @status_type %{
     type: "status",
     enum: ~s(["0", "1"]),
@@ -694,6 +700,44 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @stats_tokensupply_action %{
+    name: "tokensupply",
+    description: "Get an ERC-20 or ERC-721 token total supply by contract address.",
+    required_params: [
+      %{
+        key: "contractaddress",
+        placeholder: "contractAddressHash",
+        type: "string",
+        description: "A 160-bit code used for identifying contracts."
+      }
+    ],
+    optional_params: [],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@stats_tokensupply_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "integer",
+              definition: "The total supply of the token.",
+              example: ~s("1000000000")
+            }
+          }
+        }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@token_gettoken_example_value_error)
+      }
+    ]
+  }
+
   @account_module %{
     name: "account",
     actions: [
@@ -714,7 +758,12 @@ defmodule BlockScoutWeb.Etherscan do
     actions: [@token_gettoken_action]
   }
 
-  @documentation [@account_module, @logs_module, @token_module]
+  @stats_module %{
+    name: "stats",
+    actions: [@stats_tokensupply_action]
+  }
+
+  @documentation [@account_module, @logs_module, @token_module, @stats_module]
 
   def get_documentation do
     @documentation
