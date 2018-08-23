@@ -27,6 +27,8 @@ defmodule Indexer.BlockFetcher.SupervisorTest do
   setup :verify_on_exit!
 
   describe "start_link/1" do
+    # See https://github.com/poanetwork/blockscout/issues/597
+    @tag :no_geth
     test "starts fetching blocks from latest and goes down", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
