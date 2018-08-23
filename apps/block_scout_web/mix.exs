@@ -61,6 +61,7 @@ defmodule BlockScoutWeb.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:bypass, "~> 0.8", only: :test},
       {:cowboy, "~> 1.0"},
       {:credo, "0.9.2", only: [:dev, :test], runtime: false},
       {:crontab, "~> 1.1"},
@@ -87,16 +88,15 @@ defmodule BlockScoutWeb.Mixfile do
       {:phoenix_html, "~> 2.10"},
       {:phoenix_live_reload, "~> 1.0", only: [:dev]},
       {:phoenix_pubsub, "~> 1.0"},
+      # Waiting for the Pretty Print to be implemented at the Jason lib
+      # https://github.com/michalmuskala/jason/issues/15
+      {:poison, "~> 3.1"},
       {:postgrex, ">= 0.0.0"},
+      {:qrcode, "~> 0.1.0"},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
       {:timex, "~> 3.1.24"},
       {:timex_ecto, "~> 3.2.1"},
-      {:wallaby, "~> 0.20", only: [:test], runtime: false},
-      {:qrcode, "~> 0.1.0"},
-      {:bypass, "~> 0.8", only: :test},
-      # Waiting for the Pretty Print to be implemented at the Jason lib
-      # https://github.com/michalmuskala/jason/issues/15
-      {:poison, "~> 3.1"}
+      {:wallaby, "~> 0.20", only: [:test], runtime: false}
     ]
   end
 
