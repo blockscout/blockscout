@@ -91,6 +91,26 @@ defmodule Explorer.Etherscan do
     |> Repo.all()
   end
 
+  @doc """
+  Gets a list of token transfers for a given `t:Explorer.Chain.Hash.Address.t/0`.
+
+  """
+  @spec list_token_transfers(Hash.Address.t(), Hash.Address.t() | nil, map()) :: [map()]
+  def list_token_transfers(
+        %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash,
+        contract_address_hash,
+        options \\ @default_options
+      ) do
+    case Chain.max_block_number() do
+      {:ok, max_block_number} ->
+        merged_options = Map.merge(@default_options, options)
+        list_token_transfers(address_hash, contract_address_hash, max_block_number, merged_options)
+
+      _ ->
+        []
+    end
+  end
+
   @transaction_fields ~w(
     block_hash
     block_number
@@ -133,6 +153,52 @@ defmodule Explorer.Etherscan do
     |> Repo.all()
   end
 
+  @token_transfer_fields ~w(
+    token_contract_address_hash
+    transaction_hash
+    from_address_hash
+    to_address_hash
+    amount
+  )a
+
+  defp list_token_transfers(address_hash, contract_address_hash, max_block_number, options) do
+    query =
+      from(
+        t in Transaction,
+        inner_join: b in assoc(t, :block),
+        inner_join: tt in assoc(t, :token_transfers),
+        inner_join: tkn in assoc(tt, :token),
+        where: tt.from_address_hash == ^address_hash,
+        or_where: tt.to_address_hash == ^address_hash,
+        order_by: [{^options.order_by_direction, t.block_number}],
+        limit: ^options.page_size,
+        offset: ^offset(options),
+        select:
+          merge(map(tt, ^@token_transfer_fields), %{
+            transaction_nonce: t.nonce,
+            transaction_index: t.index,
+            transaction_gas: t.gas,
+            transaction_gas_price: t.gas_price,
+            transaction_gas_used: t.gas_used,
+            transaction_cumulative_gas_used: t.cumulative_gas_used,
+            transaction_input: t.input,
+            block_hash: b.hash,
+            block_number: b.number,
+            block_timestamp: b.timestamp,
+            confirmations: fragment("? - ?", ^max_block_number, t.block_number),
+            token_name: tkn.name,
+            token_symbol: tkn.symbol,
+            token_decimals: tkn.decimals
+          })
+      )
+
+    query
+    |> where_start_block_match(options)
+    |> where_end_block_match(options)
+    |> where_contract_address_match(contract_address_hash)
+    |> Repo.all()
+  end
+
   defp where_start_block_match(query, %{start_block: nil}), do: query
 
   defp where_start_block_match(query, %{start_block: start_block}) do
@@ -143,6 +209,12 @@ defmodule Explorer.Etherscan do
 
   defp where_end_block_match(query, %{end_block: end_block}) do
     where(query, [t], t.block_number <= ^end_block)
+  end
+
+  defp where_contract_address_match(query, nil), do: query
+
+  defp where_contract_address_match(query, contract_address_hash) do
+    where(query, [_, _, tt], tt.token_contract_address_hash == ^contract_address_hash)
   end
 
   defp offset(options), do: (options.page_number - 1) * options.page_size

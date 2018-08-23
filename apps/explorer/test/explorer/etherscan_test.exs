@@ -447,4 +447,357 @@ defmodule Explorer.EtherscanTest do
     #
     # These two requirements are tested in `Explorer.ChainTest`.
   end
+
+  describe "list_token_transfers/2" do
+    test "with empty db" do
+      address = build(:address)
+
+      assert Etherscan.list_token_transfers(address.hash, nil) == []
+    end
+
+    test "with from address" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      token_transfer = insert(:token_transfer, transaction: transaction)
+
+      [found_token_transfer] = Etherscan.list_token_transfers(token_transfer.from_address_hash, nil)
+
+      assert token_transfer.from_address_hash == found_token_transfer.from_address_hash
+    end
+
+    test "with to address" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      token_transfer = insert(:token_transfer, transaction: transaction)
+
+      [found_token_transfer] = Etherscan.list_token_transfers(token_transfer.to_address_hash, nil)
+
+      assert token_transfer.to_address_hash == found_token_transfer.to_address_hash
+    end
+
+    test "with address with 0 token transfers" do
+      address = insert(:address)
+
+      assert Etherscan.list_token_transfers(address.hash, nil) == []
+    end
+
+    test "with address with multiple token transfers" do
+      address1 = insert(:address)
+      address2 = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer, from_address: address1, transaction: transaction)
+      insert(:token_transfer, from_address: address1, transaction: transaction)
+      insert(:token_transfer, from_address: address2, transaction: transaction)
+
+      found_token_transfers = Etherscan.list_token_transfers(address1.hash, nil)
+
+      assert length(found_token_transfers) == 2
+
+      for found_token_transfer <- found_token_transfers do
+        assert found_token_transfer.from_address_hash == address1.hash
+      end
+    end
+
+    test "confirmations value is calculated correctly" do
+      insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      token_transfer = insert(:token_transfer, transaction: transaction)
+
+      insert(:block)
+
+      [found_token_transfer] = Etherscan.list_token_transfers(token_transfer.from_address_hash, nil)
+
+      {:ok, max_block_number} = Chain.max_block_number()
+      expected_confirmations = max_block_number - transaction.block_number
+
+      assert found_token_transfer.confirmations == expected_confirmations
+    end
+
+    test "returns all required fields" do
+      transaction =
+        %{block: block} =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      token_transfer = insert(:token_transfer, transaction: transaction)
+
+      {:ok, token} = Chain.token_from_address_hash(token_transfer.token_contract_address_hash)
+
+      [found_token_transfer] = Etherscan.list_token_transfers(token_transfer.from_address_hash, nil)
+
+      assert found_token_transfer.block_number == transaction.block_number
+      assert found_token_transfer.block_timestamp == block.timestamp
+      assert found_token_transfer.transaction_hash == token_transfer.transaction_hash
+      assert found_token_transfer.transaction_nonce == transaction.nonce
+      assert found_token_transfer.block_hash == block.hash
+      assert found_token_transfer.from_address_hash == token_transfer.from_address_hash
+      assert found_token_transfer.token_contract_address_hash == token_transfer.token_contract_address_hash
+      assert found_token_transfer.to_address_hash == token_transfer.to_address_hash
+      assert found_token_transfer.amount == token_transfer.amount
+      assert found_token_transfer.token_name == token.name
+      assert found_token_transfer.token_symbol == token.symbol
+      assert found_token_transfer.token_decimals == token.decimals
+      assert found_token_transfer.transaction_index == transaction.index
+      assert found_token_transfer.transaction_gas == transaction.gas
+      assert found_token_transfer.transaction_gas_price == transaction.gas_price
+      assert found_token_transfer.transaction_gas_used == transaction.gas_used
+      assert found_token_transfer.transaction_cumulative_gas_used == transaction.cumulative_gas_used
+      assert found_token_transfer.transaction_input == transaction.input
+      # There is a separate test to ensure confirmations are calculated correctly.
+      assert found_token_transfer.confirmations
+    end
+
+    test "orders token transfers by block, in ascending order (default)" do
+      address = insert(:address)
+
+      first_block = insert(:block)
+      second_block = insert(:block)
+
+      transaction1 =
+        :transaction
+        |> insert()
+        |> with_block(second_block)
+
+      transaction2 =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      transaction3 =
+        :transaction
+        |> insert()
+        |> with_block(first_block)
+
+      insert(:token_transfer, from_address: address, transaction: transaction2)
+      insert(:token_transfer, from_address: address, transaction: transaction1)
+      insert(:token_transfer, from_address: address, transaction: transaction3)
+
+      found_token_transfers = Etherscan.list_token_transfers(address.hash, nil)
+
+      block_numbers_order = Enum.map(found_token_transfers, & &1.block_number)
+
+      assert block_numbers_order == Enum.sort(block_numbers_order)
+    end
+
+    test "orders token transfers by block, in descending order" do
+      address = insert(:address)
+
+      first_block = insert(:block)
+      second_block = insert(:block)
+
+      transaction1 =
+        :transaction
+        |> insert()
+        |> with_block(second_block)
+
+      transaction2 =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      transaction3 =
+        :transaction
+        |> insert()
+        |> with_block(first_block)
+
+      insert(:token_transfer, from_address: address, transaction: transaction2)
+      insert(:token_transfer, from_address: address, transaction: transaction1)
+      insert(:token_transfer, from_address: address, transaction: transaction3)
+
+      options = %{order_by_direction: :desc}
+
+      found_token_transfers = Etherscan.list_token_transfers(address.hash, nil, options)
+
+      block_numbers_order = Enum.map(found_token_transfers, & &1.block_number)
+
+      assert block_numbers_order == Enum.sort(block_numbers_order, &(&1 >= &2))
+    end
+
+    test "with page_size and page_number options" do
+      address = insert(:address)
+
+      first_block = insert(:block)
+      second_block = insert(:block)
+      third_block = insert(:block)
+
+      transaction1 =
+        :transaction
+        |> insert()
+        |> with_block(first_block)
+
+      transaction2 =
+        :transaction
+        |> insert()
+        |> with_block(second_block)
+
+      transaction3 =
+        :transaction
+        |> insert()
+        |> with_block(third_block)
+
+      second_block_token_transfers = insert_list(2, :token_transfer, from_address: address, transaction: transaction2)
+
+      third_block_token_transfers = insert_list(2, :token_transfer, from_address: address, transaction: transaction3)
+
+      first_block_token_transfers = insert_list(2, :token_transfer, from_address: address, transaction: transaction1)
+
+      options1 = %{page_number: 1, page_size: 2}
+
+      page1_token_transfers = Etherscan.list_token_transfers(address.hash, nil, options1)
+
+      page1_hashes = Enum.map(page1_token_transfers, & &1.transaction_hash)
+
+      assert length(page1_token_transfers) == 2
+
+      for token_transfer <- first_block_token_transfers do
+        assert token_transfer.transaction_hash in page1_hashes
+      end
+
+      options2 = %{page_number: 2, page_size: 2}
+
+      page2_token_transfers = Etherscan.list_token_transfers(address.hash, nil, options2)
+
+      page2_hashes = Enum.map(page2_token_transfers, & &1.transaction_hash)
+
+      assert length(page2_token_transfers) == 2
+
+      for token_transfer <- second_block_token_transfers do
+        assert token_transfer.transaction_hash in page2_hashes
+      end
+
+      options3 = %{page_number: 3, page_size: 2}
+
+      page3_token_transfers = Etherscan.list_token_transfers(address.hash, nil, options3)
+
+      page3_hashes = Enum.map(page3_token_transfers, & &1.transaction_hash)
+
+      assert length(page3_token_transfers) == 2
+
+      for token_transfer <- third_block_token_transfers do
+        assert token_transfer.transaction_hash in page3_hashes
+      end
+
+      options4 = %{page_number: 4, page_size: 2}
+
+      assert Etherscan.list_token_transfers(address.hash, nil, options4) == []
+    end
+
+    test "with start and end block options" do
+      blocks = [_, second_block, third_block, _] = insert_list(4, :block)
+      address = insert(:address)
+
+      for block <- blocks do
+        transaction =
+          :transaction
+          |> insert()
+          |> with_block(block)
+
+        insert(:token_transfer, from_address: address, transaction: transaction)
+      end
+
+      options = %{
+        start_block: second_block.number,
+        end_block: third_block.number
+      }
+
+      found_token_transfers = Etherscan.list_token_transfers(address.hash, nil, options)
+
+      expected_block_numbers = [second_block.number, third_block.number]
+
+      assert length(found_token_transfers) == 2
+
+      for token_transfer <- found_token_transfers do
+        assert token_transfer.block_number in expected_block_numbers
+      end
+    end
+
+    test "with start_block but no end_block option" do
+      blocks = [_, _, third_block, fourth_block] = insert_list(4, :block)
+      address = insert(:address)
+
+      for block <- blocks do
+        transaction =
+          :transaction
+          |> insert()
+          |> with_block(block)
+
+        insert(:token_transfer, from_address: address, transaction: transaction)
+      end
+
+      options = %{start_block: third_block.number}
+
+      found_token_transfers = Etherscan.list_token_transfers(address.hash, nil, options)
+
+      expected_block_numbers = [third_block.number, fourth_block.number]
+
+      assert length(found_token_transfers) == 2
+
+      for token_transfer <- found_token_transfers do
+        assert token_transfer.block_number in expected_block_numbers
+      end
+    end
+
+    test "with end_block but no start_block option" do
+      blocks = [first_block, second_block, _, _] = insert_list(4, :block)
+      address = insert(:address)
+
+      for block <- blocks do
+        transaction =
+          :transaction
+          |> insert()
+          |> with_block(block)
+
+        insert(:token_transfer, from_address: address, transaction: transaction)
+      end
+
+      options = %{end_block: second_block.number}
+
+      found_token_transfers = Etherscan.list_token_transfers(address.hash, nil, options)
+
+      expected_block_numbers = [first_block.number, second_block.number]
+
+      assert length(found_token_transfers) == 2
+
+      for token_transfer <- found_token_transfers do
+        assert token_transfer.block_number in expected_block_numbers
+      end
+    end
+
+    test "with contract_address option" do
+      address = insert(:address)
+
+      contract_address = insert(:contract_address)
+
+      insert(:token, contract_address: contract_address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer, from_address: address, transaction: transaction)
+      insert(:token_transfer, from_address: address, token_contract_address: contract_address, transaction: transaction)
+
+      [found_token_transfer] = Etherscan.list_token_transfers(address.hash, contract_address.hash)
+
+      assert found_token_transfer.token_contract_address_hash == contract_address.hash
+    end
+  end
 end

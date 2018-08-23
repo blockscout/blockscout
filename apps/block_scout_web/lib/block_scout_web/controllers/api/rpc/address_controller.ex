@@ -70,6 +70,37 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     end
   end
 
+  def tokentx(conn, params) do
+    options = optional_params(params)
+
+    with {:address_param, {:ok, address_param}} <- fetch_address(params),
+         {:format, {:ok, address_hash}} <- to_address_hash(address_param),
+         {:contract_address, {:ok, contract_address_hash}} <- to_contract_address_hash(params["contractaddress"]),
+         {:ok, token_transfers} <- list_token_transfers(address_hash, contract_address_hash, options) do
+      render(conn, :tokentx, %{token_transfers: token_transfers})
+    else
+      {:address_param, :error} ->
+        render(conn, :error, error: "Query parameter address is required")
+
+      {:format, :error} ->
+        render(conn, :error, error: "Invalid address format")
+
+      {:contract_address, :error} ->
+        render(conn, :error, error: "Invalid contractaddress format")
+
+      {:error, :not_found} ->
+        render(conn, :error, error: "No token transfers found", data: [])
+    end
+  end
+
+  def optional_params(params) do
+    %{}
+    |> put_order_by_direction(params)
+    |> put_pagination_options(params)
+    |> put_start_block(params)
+    |> put_end_block(params)
+  end
+
   defp fetch_address(params) do
     {:address_param, Map.fetch(params, "address")}
   end
@@ -133,20 +164,18 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     end)
   end
 
+  defp to_contract_address_hash(nil), do: {:contract_address, {:ok, nil}}
+
+  defp to_contract_address_hash(address_hash_string) do
+    {:contract_address, Chain.string_to_address_hash(address_hash_string)}
+  end
+
   defp to_address_hash(address_hash_string) do
     {:format, Chain.string_to_address_hash(address_hash_string)}
   end
 
   defp to_transaction_hash(transaction_hash_string) do
     {:format, Chain.string_to_transaction_hash(transaction_hash_string)}
-  end
-
-  defp optional_params(params) do
-    %{}
-    |> put_order_by_direction(params)
-    |> put_pagination_options(params)
-    |> put_start_block(params)
-    |> put_end_block(params)
   end
 
   defp put_order_by_direction(options, params) do
@@ -209,6 +238,13 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     case Etherscan.list_internal_transactions(transaction_hash) do
       [] -> {:error, :not_found}
       internal_transactions -> {:ok, internal_transactions}
+    end
+  end
+
+  defp list_token_transfers(address_hash, contract_address_hash, options) do
+    case Etherscan.list_token_transfers(address_hash, contract_address_hash, options) do
+      [] -> {:error, :not_found}
+      token_transfers -> {:ok, token_transfers}
     end
   end
 end

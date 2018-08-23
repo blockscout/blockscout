@@ -55,7 +55,6 @@ defmodule Explorer.Chain.TokenTransfer do
           token_contract_address_hash: Hash.Address.t(),
           token_id: non_neg_integer() | nil,
           transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
-          transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
           transaction_hash: Hash.Full.t(),
           log_index: non_neg_integer()
         }
