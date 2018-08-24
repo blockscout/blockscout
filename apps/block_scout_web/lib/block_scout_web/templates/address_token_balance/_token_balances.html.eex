@@ -1,19 +1,20 @@
 <%= if Enum.any?(@tokens) do %>
   <a href="#"
+      class="text-white"
       data-dropdown-toggle
       data-toggle="dropdown"
       role="button"
-      class="icon-link"
       id="dropdown-tokens"
       aria-haspopup="true"
       aria-expanded="false"
       style="text-decoration: none;">
-     <i class="fas fa-chevron-circle-down"></i>
+
+     <i class="fas fa-chevron-down mr-2"></i>
+     <h5 data-tokens-count class="d-inline"><%= tokens_count_title(@tokens) %></h5>
   </a>
 <% end %>
-<h4 data-tokens-count class="ml-2 text-dark"><%= tokens_count_title(@tokens) %></h4>
 
-<div class="dropdown-menu p-0 token-balance-dropdown" aria-labelledby="dropdown-tokens">
+<div class="dropdown-menu dropdown-menu-right token-balance-dropdown p-0" aria-labelledby="dropdown-tokens">
   <div data-dropdown-items class="dropdown-items">
     <%= if Enum.any?(@tokens, & &1.type == "ERC-721") do %>
       <%= render(

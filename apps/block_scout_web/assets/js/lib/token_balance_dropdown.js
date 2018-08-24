@@ -9,7 +9,7 @@ const tokenBalanceDropdown = (element) => {
   $loading.show()
 
   $.get(apiPath)
-    .done(response => $element.html(response))
+    .done(response => {$element.html(response); console.log(response)})
     .fail(() => {
       $loading.hide()
       $errorMessage.show()
