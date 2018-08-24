@@ -33,6 +33,13 @@ defmodule Explorer.Factory do
     }
   end
 
+  def address_name_factory do
+    %Address.Name{
+      address: build(:address),
+      name: "FooContract"
+    }
+  end
+
   def unfetched_balance_factory do
     %Balance{
       address_hash: address_hash(),
