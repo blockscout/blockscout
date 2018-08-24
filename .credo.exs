@@ -75,7 +75,9 @@
         # Priority values are: `low, normal, high, higher`
         #
         {Credo.Check.Design.AliasUsage,
-         excluded_lastnames: ~w(Address DateTime Full Number Repo Time Unit), priority: :low},
+         excluded_namespaces: ~w(Socket Task),
+         excluded_lastnames: ~w(Address DateTime Full Number Repo Time Unit),
+         priority: :low},
 
         # For some checks, you can also set other parameters
         #

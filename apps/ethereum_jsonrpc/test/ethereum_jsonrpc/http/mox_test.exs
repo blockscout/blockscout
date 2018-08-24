@@ -7,7 +7,6 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
   use ExUnit.Case, async: true
 
   import EthereumJSONRPC, only: [request: 1]
-  import EthereumJSONRPC.Case, only: [variant: 0]
   import EthereumJSONRPC.HTTP.Case
   import Mox
 
@@ -20,7 +19,8 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
           url: url(),
           http_options: http_options()
         ],
-        variant: variant()
+        # Which one does not matter, so pick one
+        variant: EthereumJSONRPC.Parity
       ]
     }
   end

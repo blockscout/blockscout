@@ -9,6 +9,9 @@ defmodule EthereumJSONRPC.HTTP do
 
   @behaviour Transport
 
+  @doc """
+  Sends JSONRPC request encoded as `t:iodata/0` to `url` with `options`
+  """
   @callback json_rpc(url :: String.t(), json :: iodata(), options :: term()) ::
               {:ok, %{body: body :: String.t(), status_code: status_code :: pos_integer()}}
               | {:error, reason :: term}

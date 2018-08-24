@@ -10,4 +10,11 @@ config :indexer,
       http_options: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :ethereum_jsonrpc]]
     ],
     variant: EthereumJSONRPC.Geth
+  ],
+  subscribe_named_arguments: [
+    transport: EthereumJSONRPC.WebSocket,
+    transport_options: [
+      web_socket: EthereumJSONRPC.WebSocket.WebSocketClient,
+      url: "wss://mainnet.infura.io/ws/8lTvJTKmHPCHazkneJsY"
+    ]
   ]

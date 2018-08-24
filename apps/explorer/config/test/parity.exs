@@ -6,4 +6,9 @@ config :explorer,
     transport: EthereumJSONRPC.Mox,
     transport_options: [],
     variant: EthereumJSONRPC.Parity
+  ],
+  subscribe_named_arguments: [
+    transport: EthereumJSONRPC.Mox,
+    transport_options: [],
+    variant: EthereumJSONRPC.Parity
   ]

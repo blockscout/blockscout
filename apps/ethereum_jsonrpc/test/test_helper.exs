@@ -9,6 +9,8 @@ File.mkdir_p!(junit_folder)
 Mox.defmock(EthereumJSONRPC.Mox, for: EthereumJSONRPC.Transport)
 # for when we need to simulate HTTP-specific stuff like 413 Request Entity Too Large
 Mox.defmock(EthereumJSONRPC.HTTP.Mox, for: EthereumJSONRPC.HTTP)
+# for when we need to simulate WebSocket-specific stuff
+Mox.defmock(EthereumJSONRPC.WebSocket.Mox, for: EthereumJSONRPC.WebSocket)
 
 ExUnit.configure(formatters: [JUnitFormatter, ExUnit.CLIFormatter])
 ExUnit.start()

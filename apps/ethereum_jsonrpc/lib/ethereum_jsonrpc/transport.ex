@@ -10,6 +10,8 @@ defmodule EthereumJSONRPC.Transport do
 
   """
 
+  alias EthereumJSONRPC.Subscription
+
   @typedoc @moduledoc
   @type t :: module
 
@@ -74,6 +76,54 @@ defmodule EthereumJSONRPC.Transport do
   """
   @type options :: term()
 
+  @doc """
+  Run a single Remote Procedure Call (RPC) `t:EthereumJSONRPC.EthereumJSONRPC.request/0` with
+  `t:EthereumJSONRPC.EthereumJSONRPC.options/0`.
+
+  ## Returns
+
+   * `{:ok, result}` - `result` is the `/result` from JSONRPC response object of format
+     `%{"id" => ..., "result" => result}`.
+   * `{:error, reason}` - `reason` is the the `/error` from JSONRPC response object of format
+     `%{"id" => ..., "error" => reason}`.  The transport can also give any `term()` for `reason` if a more specific
+     reason is possible.
+
+  """
   @callback json_rpc(request, options) :: {:ok, result} | {:error, reason :: term()}
+
+  @doc """
+  Runs a batch of Remote Procedure Call (RPC) `request`s with `options`.
+
+  ## Returns
+
+   * `{:ok, [response]}` unlike `json_rpc(request, options)`, the individual `t:response.t/0` are not unwrapped and it
+     is the callers responsibility to extract the `t:result/0` or error `reason`.
+   * `{:error, reason}` an error that affects *all* `t:request/0`s, such as the batch as a whole being rejected.
+
+  """
   @callback json_rpc(batch_request, options) :: {:ok, batch_response} | {:error, reason :: term()}
+
+  @doc """
+  Subscribes to event in `request`.
+
+  Events **MUST** be delivered in a tuple tagged with the `t:EthereumJSONRPC.Subscription.t/0` and containing the same
+  output as the single-request form of `json_rpc/2`.
+
+  | Message                                                                           | Description                            |
+  |-----------------------------------------------------------------------------------|----------------------------------------|
+  | `{EthereumJSONRPC.Subscription.t(), {:ok, EthereumJSONRPC.Transport.result.t()}}` | New result in subscription             |
+  | `{EthereumJSONRPC.Subscription.t(), {:error, reason :: term()}}`                  | There was an error in the subscription |
+
+  `t:EthereumJSONRPC.Subscription.t/0` must be cancellable by passing it to `c:unsubscribe/1`
+  """
+  @callback subscribe(Subscription.event(), Subscription.params(), options) ::
+              {:ok, Subscription.t()} | {:error, reason :: term()}
+
+  @doc """
+  Unsubscribes to subscription created by `c:subscribe/2`
+  """
+  @callback unsubscribe(Subscription.t()) :: :ok | {:error, reason :: term()}
+
+  # HTTP does not support subscriptions
+  @optional_callbacks subscribe: 3, unsubscribe: 1
 end

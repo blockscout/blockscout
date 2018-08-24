@@ -6,15 +6,13 @@ defmodule EthereumJSONRPC.MoxTest do
 
   use ExUnit.Case, async: true
 
-  import EthereumJSONRPC.Case, only: [variant: 0]
   import Mox
 
   setup do
     %{
       json_rpc_named_arguments: [
         transport: EthereumJSONRPC.Mox,
-        transport_options: [],
-        variant: variant()
+        transport_options: []
       ]
     }
   end
