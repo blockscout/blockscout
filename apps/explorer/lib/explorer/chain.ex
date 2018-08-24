@@ -639,6 +639,7 @@ defmodule Explorer.Chain do
     fetch_transactions()
     |> where([transaction], transaction.hash in ^hashes)
     |> join_associations(necessity_by_association)
+    |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
     |> Repo.all()
   end
 
@@ -1047,6 +1048,7 @@ defmodule Explorer.Chain do
     |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
     |> join_associations(necessity_by_association)
+    |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
     |> Repo.all()
   end
 

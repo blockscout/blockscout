@@ -90,4 +90,229 @@ defmodule BlockScoutWeb.TransactionViewTest do
       assert {:ok, _} = Base.decode64(TransactionView.qr_code(transaction))
     end
   end
+
+  describe "involves_token_transfers_and_transferred_value?/1" do
+    test "returns true when transaction is greater than 0 and has troken transfers" do
+      token_contract_address = insert(:contract_address)
+
+      token = insert(:token, contract_address: token_contract_address)
+
+      transaction =
+        :transaction
+        |> insert(value: 5)
+        |> with_block()
+
+      insert(
+        :token_transfer,
+        to_address: build(:address),
+        transaction: transaction,
+        token_contract_address: token_contract_address,
+        token: token
+      )
+
+      transaction_preloaded = Repo.preload(transaction, :token_transfers)
+
+      assert TransactionView.involves_token_transfers_and_transferred_value?(transaction_preloaded) == true
+    end
+
+    test "returns false when transaction is equals 0 and has troken transfers" do
+      transaction = insert(:transaction, value: 0)
+
+      assert TransactionView.involves_token_transfers_and_transferred_value?(transaction) == false
+    end
+  end
+
+  describe "display_transaction_info?/1" do
+    test "returns true when transaction is not a token transfer" do
+      transaction = build(:transaction, value: 0)
+
+      assert TransactionView.display_transaction_info?(transaction) == true
+    end
+
+    test "returns true when transaction value is greater than 0 and has troken transfers" do
+      token_contract_address = insert(:contract_address)
+
+      token = insert(:token, contract_address: token_contract_address)
+
+      transaction =
+        :transaction
+        |> insert(value: 5)
+        |> with_block()
+
+      insert(
+        :token_transfer,
+        to_address: build(:address),
+        transaction: transaction,
+        token_contract_address: token_contract_address,
+        token: token
+      )
+
+      transaction_preloaded = Repo.preload(transaction, :token_transfers)
+
+      assert TransactionView.display_transaction_info?(transaction_preloaded) == true
+    end
+
+    test "return false when transaction value is equals 0 and has token transfers" do
+      token_contract_address = insert(:contract_address)
+
+      token = insert(:token, contract_address: token_contract_address)
+
+      transaction =
+        :transaction
+        |> insert(value: 0)
+        |> with_block()
+
+      insert(
+        :token_transfer,
+        to_address: build(:address),
+        transaction: transaction,
+        token_contract_address: token_contract_address,
+        token: token
+      )
+
+      transaction_preloaded = Repo.preload(transaction, :token_transfers)
+
+      assert TransactionView.display_transaction_info?(transaction_preloaded) == false
+    end
+  end
+
+  describe "more_than_one_token_transfer?/1" do
+    test "returns true when the transaction has more than one token transfer" do
+      token_contract_address = insert(:contract_address)
+
+      token = insert(:token, contract_address: token_contract_address)
+
+      transaction =
+        :transaction
+        |> insert(value: 0)
+        |> with_block()
+
+      insert(
+        :token_transfer,
+        to_address: build(:address),
+        transaction: transaction,
+        token_contract_address: token_contract_address,
+        token: token
+      )
+
+      insert(
+        :token_transfer,
+        to_address: build(:address),
+        transaction: transaction,
+        token_contract_address: token_contract_address,
+        token: token
+      )
+
+      transaction_preloaded = Repo.preload(transaction, :token_transfers)
+
+      assert TransactionView.more_than_one_token_transfer?(transaction_preloaded) == true
+    end
+
+    test "returns false when the transaction has only one token transfer" do
+      token_contract_address = insert(:contract_address)
+
+      token = insert(:token, contract_address: token_contract_address)
+
+      transaction =
+        :transaction
+        |> insert(value: 0)
+        |> with_block()
+
+      insert(
+        :token_transfer,
+        to_address: build(:address),
+        transaction: transaction,
+        token_contract_address: token_contract_address,
+        token: token
+      )
+
+      transaction_preloaded = Repo.preload(transaction, :token_transfers)
+
+      assert TransactionView.more_than_one_token_transfer?(transaction_preloaded) == false
+    end
+  end
+
+  describe "first_token_transfer/1" do
+    test "returns the transaction first token transfer" do
+      token_contract_address = insert(:contract_address)
+
+      token = insert(:token, contract_address: token_contract_address)
+
+      transaction =
+        :transaction
+        |> insert(value: 0)
+        |> with_block()
+
+      token_transfer =
+        insert(
+          :token_transfer,
+          to_address: build(:address),
+          transaction: transaction,
+          token_contract_address: token_contract_address,
+          token: token
+        )
+
+      insert(
+        :token_transfer,
+        to_address: build(:address),
+        transaction: transaction,
+        token_contract_address: token_contract_address,
+        token: token
+      )
+
+      transaction_preloaded = Repo.preload(transaction, :token_transfers)
+
+      first_token_transfer = TransactionView.first_token_transfer(transaction_preloaded)
+
+      assert first_token_transfer.id == token_transfer.id
+    end
+
+    test "returns nothing when the transaction doesn't have a token transfer" do
+      token_contract_address = insert(:contract_address)
+
+      insert(:token, contract_address: token_contract_address)
+
+      transaction =
+        :transaction
+        |> insert(value: 0)
+        |> with_block()
+
+      transaction_preloaded = Repo.preload(transaction, :token_transfers)
+
+      assert TransactionView.first_token_transfer(transaction_preloaded) == nil
+    end
+  end
+
+  describe "token_transfers_left_to_show/1" do
+    test "returns how many token transfers are left to be shown, besides the first one" do
+      token_contract_address = insert(:contract_address)
+
+      token = insert(:token, contract_address: token_contract_address)
+
+      transaction =
+        :transaction
+        |> insert(value: 0)
+        |> with_block()
+
+      insert(
+        :token_transfer,
+        to_address: build(:address),
+        transaction: transaction,
+        token_contract_address: token_contract_address,
+        token: token
+      )
+
+      insert(
+        :token_transfer,
+        to_address: build(:address),
+        transaction: transaction,
+        token_contract_address: token_contract_address,
+        token: token
+      )
+
+      transaction_preloaded = Repo.preload(transaction, :token_transfers)
+
+      assert TransactionView.token_transfers_left_to_show(transaction_preloaded) == 1
+    end
+  end
 end

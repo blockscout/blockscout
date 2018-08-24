@@ -132,6 +132,41 @@ defmodule BlockScoutWeb.TransactionView do
     format_wei_value(value, :ether, include_unit_label: include_label?)
   end
 
+  def involves_token_transfers_and_transferred_value?(%Transaction{} = transaction) do
+    transaction_value =
+      transaction.value
+      |> Wei.to(:ether)
+      |> Decimal.to_float()
+
+    involves_token_transfers?(transaction) && transaction_value > 0
+  end
+
+  @doc """
+  Knows when to show the transaction specific fields.
+
+  * When the `transaction` does not have `token transfers`, shows `transaction`
+    information;
+  * When the `transaction` has `token transfers` and the `transaction` value is
+    `greater than 0`, shows `transaction` information;
+  * When the `transaction` has `token transfers` and the transaction value is
+    `equal 0`, does not show `transaction` information;
+  """
+  def display_transaction_info?(%Transaction{} = transaction) do
+    !involves_token_transfers?(transaction) || involves_token_transfers_and_transferred_value?(transaction)
+  end
+
+  def more_than_one_token_transfer?(%Transaction{} = transaction) do
+    Enum.count(transaction.token_transfers) > 1
+  end
+
+  def first_token_transfer(%Transaction{} = transaction) do
+    List.first(transaction.token_transfers)
+  end
+
+  def token_transfers_left_to_show(%Transaction{} = transaction) do
+    Enum.count(transaction.token_transfers) - 1
+  end
+
   defp fee_to_currency(fee, options) do
     case Keyword.fetch(options, :exchange_rate) do
       {:ok, exchange_rate} -> fee_to_usd(fee, exchange_rate)

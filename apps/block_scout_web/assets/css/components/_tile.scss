@@ -138,3 +138,23 @@
     margin: 0;
   }
 }
+
+.tile-separator {
+  min-width: 13.75rem;
+  height: .4375rem;
+  margin-top: .5rem;
+  border-top: 1px solid $border-color;
+  border-bottom: 1px solid $border-color;
+
+  &:first-child {
+    margin-right: .3125rem;
+  }
+
+  &:not(:first-child) {
+    margin-left: .3125rem;
+  }
+
+  & + a {
+    width: 14.375rem;
+  }
+}
