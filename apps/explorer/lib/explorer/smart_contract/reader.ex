@@ -7,7 +7,7 @@ defmodule Explorer.SmartContract.Reader do
   """
 
   alias Explorer.Chain
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{Block, Hash}
   alias EthereumJSONRPC.Encoder
 
   @typedoc """
