@@ -601,7 +601,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:13
-#: lib/block_scout_web/templates/address/overview.html.eex:68
+#: lib/block_scout_web/templates/address/overview.html.eex:66
 msgid "QR Code"
 msgstr ""
 
@@ -688,7 +688,7 @@ msgid "Block Height #%{height}"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:77
+#: lib/block_scout_web/templates/address/overview.html.eex:75
 msgid "Close"
 msgstr ""
 
@@ -827,11 +827,13 @@ msgstr[0] ""
 msgstr[1] ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/address/_balance_card.html.eex:16
 #: lib/block_scout_web/templates/address/_token_holdings.html.eex:16
 msgid "Error tryng to fetch balances."
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/address/_balance_card.html.eex:12
 #: lib/block_scout_web/templates/address/_token_holdings.html.eex:12
 msgid "Fetching tokens..."
 msgstr ""
