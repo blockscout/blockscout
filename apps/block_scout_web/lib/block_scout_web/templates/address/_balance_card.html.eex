@@ -7,12 +7,12 @@
       <span class="text-light"><%= formatted_usd(@address, @exchange_rate) %></span>
 
       <div class="mt-3" data-token-balance-dropdown data-api_path=<%= address_token_balance_path(@conn, :index, :en, @address.hash) %> >
-          <p data-loading class="mb-0" stytle="display: none">
+          <p data-loading class="mb-0 text-light" style="display: none;">
             <i class="fa fa-spinner fa-spin"></i>
             <%= gettext("Fetching tokens...") %>
           </p>
 
-          <p data-error-message class="mb-0" style="display: none">
+          <p data-error-message class="mb-0 text-light" style="display: none;">
             <%= gettext("Error tryng to fetch balances.") %>
           </p>
       </div>
