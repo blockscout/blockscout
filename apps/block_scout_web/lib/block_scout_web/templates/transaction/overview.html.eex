@@ -79,7 +79,7 @@
       <div class="row">
         <div class="col-md-6 col-lg-12">
           <!-- Value -->
-          <div class="card bg-primary ">
+          <div class="card card-primary ">
             <div class="card-body">
               <h2 class="card-title text-white"><%= gettext "Ether" %> <%= gettext "Value" %></h2>
               <div class="text-right">

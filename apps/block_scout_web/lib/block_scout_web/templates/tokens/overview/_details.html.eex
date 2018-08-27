@@ -26,7 +26,7 @@
 
     <%= if total_supply?(@token) do %>
       <div class="col-md-6 col-lg-4">
-        <div class="card bg-primary">
+        <div class="card card-primary">
           <div class="card-body">
             <h2 class="card-title text-white"><%= gettext "Total Supply" %></h2>
 

@@ -1,6 +1,14 @@
 .navbar {
   position: relative;
   z-index: 10;
+
+  &-primary {
+    background-color: $primary;
+  }
+}
+
+.navbar-brand {
+  margin-left: 10px;
 }
 
 .navbar-logo {
@@ -28,9 +36,23 @@
   font-size: 12px;
   border-left: none;
   color: $white;
+  border-color: transparentize($white, 0.30);
+
+
+  &::-webkit-input-placeholder { /* Chrome/Opera/Safari */
+    color: transparentize($white, 0.5);
+  }
+  &::-moz-placeholder { /* Firefox 19+ */
+    color: transparentize($white, 0.5);
+  }
+  &:-ms-input-placeholder { /* IE 10+ */
+    color: transparentize($white, 0.5);
+  }
+  &:-moz-placeholder { /* Firefox 18- */
+    color: transparentize($white, 0.5);
+  }
 
   &:focus {
-    border-color: $input-border-color;
     box-shadow: none;
   }
 
@@ -42,6 +64,7 @@
 .navbar .input-group-text {
   background: none;
   border-right: none;
+  border-color: transparentize($white, 0.30);
 }
 
 .fa-search {
@@ -81,5 +104,18 @@
       transition: all 0.1s ease-out;
       transform: translateX(-50%) translateY(-0.5rem);
     }
+  }
+}
+
+.dropdown-menu {
+  padding: 0px;
+}
+
+.dropdown-item {
+  padding: 10px 20px;
+
+  &:hover {
+    background-color: $secondary;
+    color: $white;
   }
 }

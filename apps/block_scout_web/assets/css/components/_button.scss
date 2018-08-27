@@ -11,9 +11,9 @@
   transition: all 0.25s;
 
   &--primary {
-    background-color: lighten($primary, 20%);
+    background-color: $primary;
     color: $white;
-    border: 1px solid lighten($primary, 20%);
+    border: 1px solid $primary;
 
     &:hover,
     &:focus {
@@ -30,14 +30,14 @@
   }
 
   &--secondary {
-    border: 1px solid lighten($primary, 25%);
-    color: lighten($primary, 25%);
+    border: 1px solid $tertiary;
+    color: $tertiary;
     font-weight: 400;
 
     &:hover,
     &:focus {
-      background-color: $primary;
-      border-color: $primary;
+      background-color: darken($tertiary, 20%);
+      border-color: darken($tertiary, 20%);
       color: $white;
       text-decoration: none;
       outline: none !important;

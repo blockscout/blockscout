@@ -10,6 +10,8 @@ config :block_scout_web,
   namespace: BlockScoutWeb,
   ecto_repos: [Explorer.Repo]
 
+config :block_scout_web, BlockScoutWeb.Chain, logo: "/images/poa_logo.svg"
+
 # Configures the endpoint
 config :block_scout_web, BlockScoutWeb.Endpoint,
   url: [host: "localhost"],
