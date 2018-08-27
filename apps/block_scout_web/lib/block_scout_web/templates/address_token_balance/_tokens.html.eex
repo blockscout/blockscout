@@ -1,7 +1,6 @@
-<h6 class="dropdown-header border-bottom">
+<h6 class="dropdown-header">
   <%= @type %> (<%= Enum.count(@tokens)%>)
 </h6>
-
 <%= for token <- sort_by_name(@tokens) do %>
   <div class="border-bottom">
     <%= link(
