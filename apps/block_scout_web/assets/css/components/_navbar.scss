@@ -8,9 +8,11 @@
 }
 
 .navbar-brand {
+  margin-left: 10px;
+}
+
+.navbar-logo {
   height: 36px;
-  width: 175px;
-  background: $logo-file-path no-repeat;
 }
 
 @include media-breakpoint-up(md) {
