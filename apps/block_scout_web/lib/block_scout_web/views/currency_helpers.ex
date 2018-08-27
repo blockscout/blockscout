@@ -11,14 +11,23 @@ defmodule BlockScoutWeb.CurrencyHelpers do
 
   ## Examples
 
-      iex> format_usd_value(%USD{value: Decimal.new(5)})
-      "$5.00 USD"
+      iex> format_usd_value(%USD{value: Decimal.new(0.0000001)})
+      "< $0.000001 USD"
 
-      iex> format_usd_value(%USD{value: Decimal.new(5000)})
-      "$5,000.00 USD"
+      iex> format_usd_value(%USD{value: Decimal.new(0.123456789)})
+      "$0.123457 USD"
 
-      iex> format_usd_value(%USD{value: Decimal.new(0.000005)})
-      "$0.000005 USD"
+      iex> format_usd_value(%USD{value: Decimal.new(0.1234)})
+      "$0.123400 USD"
+
+      iex> format_usd_value(%USD{value: Decimal.new(1.23456789)})
+      "$1.23 USD"
+
+      iex> format_usd_value(%USD{value: Decimal.new(1.2)})
+      "$1.20 USD"
+
+      iex> format_usd_value(%USD{value: Decimal.new(123456.789)})
+      "$123,457 USD"
   """
   @spec format_usd_value(USD.t() | nil) :: binary() | nil
   def format_usd_value(nil), do: nil
@@ -26,9 +35,11 @@ defmodule BlockScoutWeb.CurrencyHelpers do
   def format_usd_value(%USD{value: nil}), do: nil
 
   def format_usd_value(%USD{value: value}) do
-    case Number.to_string(value, format: "#,##0.00################") do
-      {:ok, formatted} -> "$#{formatted} USD"
-      _ -> nil
+    cond do
+      Decimal.cmp(value, "0.000001") == :lt -> "< $0.000001 USD"
+      Decimal.cmp(value, 1) == :lt -> "$#{Number.to_string!(value, format: "0.000000")} USD"
+      Decimal.cmp(value, 100_000) == :lt -> "$#{Number.to_string!(value, format: "#,###.00")} USD"
+      true -> "$#{Number.to_string!(value, format: "#,###")} USD"
     end
   end
 
