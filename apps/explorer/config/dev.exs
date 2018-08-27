@@ -10,6 +10,10 @@ config :explorer, Explorer.Repo,
   pool_timeout: 60_000,
   timeout: 80_000
 
+config :logger, :explorer,
+  level: :debug,
+  path: "logs/dev/explorer.log"
+
 import_config "dev.secret.exs"
 
 variant =

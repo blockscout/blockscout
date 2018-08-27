@@ -32,6 +32,12 @@ config :ex_cldr,
   locales: ["en"],
   gettext: BlockScoutWeb.Gettext
 
+config :logger, :block_scout_web,
+  # keep synced with `config/config.exs`
+  format: "$time $metadata[$level] $message\n",
+  metadata: [:request_id],
+  metadata_filter: [application: :block_scout_web]
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

@@ -40,6 +40,8 @@ defmodule Indexer.MixProject do
       {:ethereum_jsonrpc, in_umbrella: true},
       # Importing to database
       {:explorer, in_umbrella: true},
+      # Log errors and application output to separate files
+      {:logger_file_backend, "~> 0.0.10"},
       # Mocking `EthereumJSONRPC.Transport`, so we avoid hitting real chains for local testing
       {:mox, "~> 0.4", only: [:test]}
     ]

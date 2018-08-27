@@ -23,3 +23,7 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
     scheme: "http",
     port: System.get_env("PORT")
   ]
+
+config :logger, :block_scout_web,
+  level: :info,
+  path: "logs/prod/block_scout_web.log"

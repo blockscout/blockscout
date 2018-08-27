@@ -6,6 +6,7 @@
 /deps
 /doc
 /*.ez
+/logs
 
 # Generated on crash by the VM
 erl_crash.dump

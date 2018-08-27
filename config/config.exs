@@ -9,9 +9,33 @@ use Mix.Config
 # back to each application for organization purposes.
 import_config "../apps/*/config/config.exs"
 
+config :logger,
+  backends: [
+    # all applications and all levels
+    :console,
+    # all applications, but only errors
+    {LoggerFileBackend, :error},
+    # only :block_scout_web, but all levels
+    {LoggerFileBackend, :block_scout_web},
+    # only :ethereum_jsonrpc, but all levels
+    {LoggerFileBackend, :ethereum_jsonrpc},
+    # only :explorer, but all levels
+    {LoggerFileBackend, :explorer},
+    # only :indexer, but all levels
+    {LoggerFileBackend, :indexer}
+  ]
+
+# Use same format for all loggers, even though the level should only ever be `:error` for `:error` backend
+format = "$time $metadata[$level] $message\n"
+
 # Configures Elixir's Logger
 config :logger, :console,
-  format: "$time $metadata[$level] $message\n",
+  format: format,
+  metadata: [:request_id]
+
+config :logger, :error,
+  format: format,
+  level: :error,
   metadata: [:request_id]
 
 # Import environment specific config. This must remain at the bottom

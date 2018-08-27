@@ -81,6 +81,8 @@ defmodule Explorer.Mixfile do
       {:httpoison, "~> 1.0", override: true},
       {:jason, "~> 1.0"},
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
+      # Log errors and application output to separate files
+      {:logger_file_backend, "~> 0.0.10"},
       {:math, "~> 0.3.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:mox, "~> 0.4", only: [:test]},

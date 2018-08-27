@@ -48,6 +48,10 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
     ]
   ]
 
+config :logger, :block_scout_web,
+  level: :debug,
+  path: "logs/dev/block_scout_web.log"
+
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20
