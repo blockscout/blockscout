@@ -5,7 +5,6 @@ defmodule Indexer.BlockFetcher.Catchup do
 
   require Logger
 
-  import Indexer, only: [debug: 1]
   import Indexer.BlockFetcher, only: [fetch_and_import_range: 2]
 
   alias Explorer.Chain
@@ -77,7 +76,9 @@ defmodule Indexer.BlockFetcher.Catchup do
           |> Stream.map(&Enum.count/1)
           |> Enum.sum()
 
-        debug(fn -> "#{missing_block_count} missed blocks in #{range_count} ranges between #{first} and #{last}" end)
+        Logger.debug(fn ->
+          "#{missing_block_count} missed blocks in #{range_count} ranges between #{first} and #{last}"
+        end)
 
         case missing_block_count do
           0 ->
@@ -193,7 +194,7 @@ defmodule Indexer.BlockFetcher.Catchup do
   defp cap_seq(seq, next, range) do
     case next do
       :more ->
-        debug(fn ->
+        Logger.debug(fn ->
           first_block_number..last_block_number = range
           "got blocks #{first_block_number} - #{last_block_number}"
         end)

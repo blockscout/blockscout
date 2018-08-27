@@ -35,7 +35,7 @@ config :ex_cldr,
 config :logger, :block_scout_web,
   # keep synced with `config/config.exs`
   format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id],
+  metadata: [:application, :request_id],
   metadata_filter: [application: :block_scout_web]
 
 # Import environment specific config. This must remain at the bottom

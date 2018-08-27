@@ -26,7 +26,7 @@ config :explorer,
 config :logger, :explorer,
   # keep synced with `config/config.exs`
   format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id],
+  metadata: [:application, :request_id],
   metadata_filter: [application: :explorer]
 
 # Import environment specific config. This must remain at the bottom

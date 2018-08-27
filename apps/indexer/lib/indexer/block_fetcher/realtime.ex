@@ -8,7 +8,6 @@ defmodule Indexer.BlockFetcher.Realtime do
   require Logger
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
-  import Indexer, only: [debug: 1]
   import Indexer.BlockFetcher, only: [fetch_and_import_range: 2]
 
   alias EthereumJSONRPC.Subscription
@@ -65,7 +64,7 @@ defmodule Indexer.BlockFetcher.Realtime do
     # Subscriptions don't support getting all the blocks and transactions data, so we need to go back and get the full block
     case fetch_and_import_range(block_fetcher, number..number) do
       {:ok, {_inserted, _next}} ->
-        debug(fn ->
+        Logger.debug(fn ->
           ["realtime indexer fetched and imported block ", to_string(number)]
         end)
 

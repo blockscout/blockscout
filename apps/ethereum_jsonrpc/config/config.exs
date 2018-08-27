@@ -3,7 +3,7 @@ use Mix.Config
 config :logger, :ethereum_jsonrpc,
   # keep synced with `config/config.exs`
   format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id],
+  metadata: [:application, :request_id],
   metadata_filter: [application: :ethereum_jsonrpc]
 
 # Import environment specific config. This must remain at the bottom

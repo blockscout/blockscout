@@ -3,13 +3,12 @@
 use Mix.Config
 
 config :indexer,
-  debug_logs: !!System.get_env("DEBUG_INDEXER"),
   ecto_repos: [Explorer.Repo]
 
 config :logger, :indexer,
   # keep synced with `config/config.exs`
   format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id],
+  metadata: [:application, :request_id],
   metadata_filter: [application: :indexer]
 
 # Import environment specific config. This must remain at the bottom

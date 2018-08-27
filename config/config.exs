@@ -15,6 +15,8 @@ config :logger,
     :console,
     # all applications, but only errors
     {LoggerFileBackend, :error},
+    # only :ecto, but all levels
+    {LoggerFileBackend, :ecto},
     # only :block_scout_web, but all levels
     {LoggerFileBackend, :block_scout_web},
     # only :ethereum_jsonrpc, but all levels
@@ -25,18 +27,22 @@ config :logger,
     {LoggerFileBackend, :indexer}
   ]
 
-# Use same format for all loggers, even though the level should only ever be `:error` for `:error` backend
-format = "$time $metadata[$level] $message\n"
-
-# Configures Elixir's Logger
 config :logger, :console,
-  format: format,
-  metadata: [:request_id]
+  # Use same format for all loggers, even though the level should only ever be `:error` for `:error` backend
+  format: "$time $metadata[$level] $message\n",
+  metadata: [:application, :request_id]
+
+config :logger, :ecto,
+  # Use same format for all loggers, even though the level should only ever be `:error` for `:error` backend
+  format: "$time $metadata[$level] $message\n",
+  metadata: [:application, :request_id],
+  metadata_filter: [application: :ecto]
 
 config :logger, :error,
-  format: format,
+  # Use same format for all loggers, even though the level should only ever be `:error` for `:error` backend
+  format: "$time $metadata[$level] $message\n",
   level: :error,
-  metadata: [:request_id]
+  metadata: [:application, :request_id]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

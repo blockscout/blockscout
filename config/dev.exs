@@ -1,3 +1,8 @@
 use Mix.Config
 
-config :logger, :console, level: :debug
+# DO NOT make it `:debug` or all Ecto logs will be shown for indexer
+config :logger, :console, level: :info
+
+config :logger, :ecto,
+  level: :debug,
+  path: "logs/dev/ecto.log"
