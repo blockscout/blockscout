@@ -834,9 +834,14 @@ defmodule Explorer.Chain.Import do
 
     transaction_count = Enum.count(ordered_transaction_hashes)
 
-    {^transaction_count, result} = Repo.update_all(query, [], timeout: timeout)
+    try do
+      {^transaction_count, result} = Repo.update_all(query, [], timeout: timeout)
 
-    {:ok, result}
+      {:ok, result}
+    rescue
+      postgrex_error in Postgrex.Error ->
+        {:error, %{exception: postgrex_error, transaction_hashes: ordered_transaction_hashes}}
+    end
   end
 
   defp timestamp_changes_list(changes_list, timestamps) when is_list(changes_list) do
