@@ -2295,6 +2295,39 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "tokens_with_number_of_transfers_from_address/2" do
+    test "returns tokens with number of transfers attached" do
+      address = insert(:address)
+
+      token =
+        :token
+        |> insert(name: "token-c", type: "ERC-721")
+        |> Repo.preload(:contract_address)
+
+      insert(
+        :token_transfer,
+        token_contract_address: token.contract_address,
+        from_address: address,
+        to_address: build(:address)
+      )
+
+      insert(
+        :token_transfer,
+        token_contract_address: token.contract_address,
+        from_address: build(:address),
+        to_address: address
+      )
+
+      fetched_token =
+        address.hash
+        |> Chain.tokens_with_number_of_transfers_from_address()
+        |> List.first()
+
+      assert fetched_token.name == "token-c"
+      assert fetched_token.number_of_transfers == 2
+    end
+  end
+
   describe "fetch_tokens_from_address_hash/1" do
     test "only returns tokens that a given address has interacted with" do
       alice = insert(:address)
@@ -2389,6 +2422,117 @@ defmodule Explorer.ChainTest do
         |> Enum.map(& &1.name)
 
       assert expected_tokens == [token.name]
+    end
+
+    test "orders by type, name and inserted_at time" do
+      address = insert(:address)
+
+      first_token =
+        :token
+        |> insert(name: "token-c", type: "ERC-721")
+        |> Repo.preload(:contract_address)
+
+      second_token =
+        :token
+        |> insert(name: "token-a", type: "ERC-20")
+        |> Repo.preload(:contract_address)
+
+      third_token =
+        :token
+        |> insert(name: "token-b", type: "ERC-20")
+        |> Repo.preload(:contract_address)
+
+      fourth_token =
+        :token
+        |> insert(name: "token-b", type: "ERC-20", inserted_at: third_token.inserted_at)
+        |> Repo.preload(:contract_address)
+
+      insert(
+        :token_transfer,
+        token_contract_address: first_token.contract_address,
+        from_address: address,
+        to_address: build(:address)
+      )
+
+      insert(
+        :token_transfer,
+        token_contract_address: second_token.contract_address,
+        from_address: address,
+        to_address: build(:address)
+      )
+
+      insert(
+        :token_transfer,
+        token_contract_address: third_token.contract_address,
+        from_address: build(:address),
+        to_address: address
+      )
+
+      insert(
+        :token_transfer,
+        token_contract_address: fourth_token.contract_address,
+        from_address: build(:address),
+        to_address: address
+      )
+
+      fetched_tokens =
+        address.hash
+        |> Chain.fetch_tokens_from_address_hash()
+        |> Enum.map(&Repo.preload(&1, :contract_address))
+
+      assert fetched_tokens == [first_token, second_token, third_token, fourth_token]
+    end
+
+    test "supports pagination" do
+      address = insert(:address)
+
+      first_token =
+        :token
+        |> insert(name: "token-c", type: "ERC-721")
+        |> Repo.preload(:contract_address)
+
+      second_token =
+        :token
+        |> insert(name: "token-a", type: "ERC-20")
+        |> Repo.preload(:contract_address)
+
+      third_token =
+        :token
+        |> insert(name: "token-b", type: "ERC-20")
+        |> Repo.preload(:contract_address)
+
+      paging_options = %PagingOptions{
+        page_size: 1,
+        key: {first_token.name, first_token.type, first_token.inserted_at}
+      }
+
+      insert(
+        :token_transfer,
+        token_contract_address: first_token.contract_address,
+        from_address: address,
+        to_address: build(:address)
+      )
+
+      insert(
+        :token_transfer,
+        token_contract_address: second_token.contract_address,
+        from_address: address,
+        to_address: build(:address)
+      )
+
+      insert(
+        :token_transfer,
+        token_contract_address: third_token.contract_address,
+        from_address: build(:address),
+        to_address: address
+      )
+
+      fetched_tokens =
+        address.hash
+        |> Chain.fetch_tokens_from_address_hash(paging_options: paging_options)
+        |> Enum.map(& &1.name)
+
+      assert fetched_tokens == [second_token.name]
     end
   end
 

@@ -91,6 +91,13 @@ defmodule BlockScoutWeb.Router do
       )
 
       resources(
+        "/tokens",
+        AddressTokenController,
+        only: [:index],
+        as: :token
+      )
+
+      resources(
         "/token_balances",
         AddressTokenBalanceController,
         only: [:index],

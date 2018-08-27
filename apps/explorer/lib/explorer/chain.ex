@@ -1647,10 +1647,17 @@ defmodule Explorer.Chain do
     Repo.one(query) != nil
   end
 
-  @spec fetch_tokens_from_address_hash(Hash.Address.t()) :: []
-  def fetch_tokens_from_address_hash(address_hash) do
+  @spec tokens_with_number_of_transfers_from_address(Hash.Address.t(), [any()]) :: []
+  def tokens_with_number_of_transfers_from_address(address_hash, paging_options \\ []) do
     address_hash
-    |> Token.with_transfers_by_address()
+    |> fetch_tokens_from_address_hash(paging_options)
+    |> add_number_of_transfers_to_tokens_from_address(address_hash)
+  end
+
+  @spec fetch_tokens_from_address_hash(Hash.Address.t(), [any()]) :: []
+  def fetch_tokens_from_address_hash(address_hash, paging_options \\ []) do
+    address_hash
+    |> Token.with_transfers_by_address(paging_options)
     |> Repo.all()
   end
 

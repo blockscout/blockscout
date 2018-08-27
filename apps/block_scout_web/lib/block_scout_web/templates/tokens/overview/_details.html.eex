@@ -23,8 +23,6 @@
             <% end %>
           </h1>
 
-
-
           <h3><%= to_string(@token.contract_address_hash) %></h3>
 
           <div class="d-flex flex-row justify-content-start text-muted">

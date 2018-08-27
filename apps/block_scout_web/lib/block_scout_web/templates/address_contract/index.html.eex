@@ -9,7 +9,14 @@
           <%= link(
                 gettext("Transactions"),
                 class: "nav-link",
-                to: address_transaction_path(@conn, :index, @conn.params["address_id"])
+                to: address_transaction_path(@conn, :index, @address.hash)
+              ) %>
+        </li>
+        <li class="nav-item">
+          <%= link(
+                gettext("Tokens"),
+                class: "nav-link",
+                to: address_token_path(@conn, :index, @address.hash)
               ) %>
         </li>
         <li class="nav-item">
@@ -17,12 +24,12 @@
                 gettext("Internal Transactions"),
                 class: "nav-link",
                 "data-test": "internal_transactions_tab_link",
-                to: address_internal_transaction_path(@conn, :index, @conn.params["address_id"])
+                to: address_internal_transaction_path(@conn, :index, @address.hash)
               ) %>
         </li>
         <li class="nav-item">
           <%= link(
-              to: address_contract_path(@conn, :index, @conn.params["address_id"]),
+              to: address_contract_path(@conn, :index, @address.hash),
               class: "nav-link active") do %>
             <%= gettext("Code") %>
 
@@ -35,7 +42,7 @@
           <li class="nav-item">
             <%= link(
                 gettext("Read Contract"),
-                to: address_read_contract_path(@conn, :index, @conn.params["address_id"]),
+                to: address_read_contract_path(@conn, :index, @address.hash),
                 class: "nav-link")%>
           </li>
         <% end %>
@@ -46,7 +53,7 @@
       <%= if !smart_contract_verified?(@address) do %>
         <%= link(
               gettext("Verify and Publish"),
-              to: address_verify_contract_path(@conn, :new, @conn.params["address_id"]),
+              to: address_verify_contract_path(@conn, :new, @address.hash),
               class: "button button-primary button-sm float-right ml-3",
               "data-test": "verify_and_publish"
             ) %>
