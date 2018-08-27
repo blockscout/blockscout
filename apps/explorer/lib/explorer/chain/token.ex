@@ -79,7 +79,7 @@ defmodule Explorer.Chain.Token do
   Builds an `Ecto.Query` to fetch tokens that the given address has interacted with.
 
   In order to fetch a token, the given address must have transfered tokens to or received tokens
-  from an another address.
+  from another address.
   """
   def with_transfers_by_address(address_hash) do
     from(
@@ -89,6 +89,19 @@ defmodule Explorer.Chain.Token do
       where: tt.to_address_hash == ^address_hash or tt.from_address_hash == ^address_hash,
       distinct: tt.token_contract_address_hash,
       select: token
+    )
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch the transactions between a token and an address.
+  """
+  def interactions_with_address(token_hash, address_hash) do
+    from(
+      t in Token,
+      join: tt in TokenTransfer,
+      on: tt.token_contract_address_hash == ^token_hash,
+      where: t.contract_address_hash == ^token_hash,
+      where: tt.to_address_hash == ^address_hash or tt.from_address_hash == ^address_hash
     )
   end
 end

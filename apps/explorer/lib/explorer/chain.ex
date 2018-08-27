@@ -1654,6 +1654,24 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
+  @spec add_number_of_transfers_to_tokens_from_address([Token], Hash.Address.t()) :: []
+  defp add_number_of_transfers_to_tokens_from_address(tokens, address_hash) do
+    Enum.map(tokens, fn token ->
+      Map.put(
+        token,
+        :number_of_transfers,
+        count_token_transfers_from_address_hash(token.contract_address_hash, address_hash)
+      )
+    end)
+  end
+
+  @spec count_token_transfers_from_address_hash(Hash.Address.t(), Hash.Address.t()) :: []
+  def count_token_transfers_from_address_hash(token_hash, address_hash) do
+    token_hash
+    |> Token.interactions_with_address(address_hash)
+    |> Repo.aggregate(:count, :name)
+  end
+
   @doc """
   Update a new `t:Token.t/0` record.
 
