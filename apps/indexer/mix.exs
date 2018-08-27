@@ -38,6 +38,8 @@ defmodule Indexer.MixProject do
     [
       # JSONRPC access to Parity for `Explorer.Indexer`
       {:ethereum_jsonrpc, in_umbrella: true},
+      # Code coverage
+      {:excoveralls, "~> 0.10.0", only: [:test], github: "KronicDeth/excoveralls", branch: "circle-workflows"},
       # Importing to database
       {:explorer, in_umbrella: true},
       # Log errors and application output to separate files

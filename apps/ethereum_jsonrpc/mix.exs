@@ -64,7 +64,7 @@ defmodule EthereumJsonrpc.MixProject do
       # Static Type Checking
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       # Code coverage
-      {:excoveralls, "~> 0.8.1", only: [:test]},
+      {:excoveralls, "~> 0.10.0", only: [:test], github: "KronicDeth/excoveralls", branch: "circle-workflows"},
       # JSONRPC HTTP Post calls
       {:httpoison, "~> 1.0", override: true},
       # Decode/Encode JSON for JSONRPC
