@@ -4,6 +4,7 @@ import numeral from 'numeral'
 import router from '../router'
 import socket from '../socket'
 import { updateAllAges } from '../lib/from_now'
+import { formatUsdValue } from '../lib/currency'
 import { batchChannel, initRedux } from '../utils'
 import { createMarketHistoryChart } from '../lib/market_history_chart'
 
@@ -114,10 +115,10 @@ router.when('', { exactPathMatch: true }).then(() => initRedux(reducer, {
       $averageBlockTime.empty().append(state.averageBlockTime)
     }
     if (oldState.usdExchangeRate !== state.usdExchangeRate) {
-      $exchangeRate.empty().append(`$${numeral(state.usdExchangeRate).format('0,0.00[0000000000000000]')} USD`)
+      $exchangeRate.empty().append(formatUsdValue(state.usdExchangeRate))
     }
     if (oldState.usdMarketCap !== state.usdMarketCap) {
-      $marketCap.empty().append(`$${numeral(state.usdMarketCap).format('0,0.00[0000000000000000]')} USD`)
+      $marketCap.empty().append(formatUsdValue(state.usdMarketCap))
     }
     if (oldState.newBlock !== state.newBlock) {
       $blockList.children().last().remove()
