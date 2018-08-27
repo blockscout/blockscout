@@ -19,6 +19,12 @@ defmodule BlockScoutWeb.TransactionView do
     end
   end
 
+  def from_or_to_address?(_token_transfer, nil), do: false
+
+  def from_or_to_address?(%{from_address_hash: from_hash, to_address_hash: to_hash}, %Address{hash: hash}) do
+    from_hash == hash || to_hash == hash
+  end
+
   # This is the address to be shown in the to field
   def to_address_hash(%Transaction{to_address_hash: nil, created_contract_address_hash: address_hash}), do: address_hash
 
