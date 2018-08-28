@@ -95,6 +95,41 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => []
   }
 
+  @account_tokentx_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => [
+      %{
+        "blockNumber" => "5997843",
+        "timeStamp" => "1532086946",
+        "hash" => "0xd65b788c610949704a5f9aac2228c7c777434dfe11c863a12306f57fcbd8cdbb",
+        "nonce" => "765",
+        "blockHash" => "0x6169c5dc05d0051564ba3eae8ebfbdefda640c5f5ffc095846b8aed0b44f64ea",
+        "from" => "0x4e83362442b8d1bec281594cea3050c8eb01311c",
+        "contractAddress" => "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+        "to" => "0x21e21ba085289f81a86921de890eed30f1ad2375",
+        "value" => "10000000000000000000",
+        "tokenName" => "Maker",
+        "tokenSymbol" => "MKR",
+        "tokenDecimal" => "18",
+        "transactionIndex" => "27",
+        "gas" => "44758",
+        "gasPrice" => "7000000000",
+        "gasUsed" => "37298",
+        "cumulativeGasUsed" => "1043649",
+        "input" =>
+          "0xa9059cbb00000000000000000000000021e21ba085289f81a86921de890eed30f1ad23750000000000000000000000000000000000000000000000008ac7230489e80000",
+        "confirmations" => "199384"
+      }
+    ]
+  }
+
+  @account_tokentx_example_value_error %{
+    "status" => "0",
+    "message" => "No token transfers found",
+    "result" => []
+  }
+
   @logs_getlogs_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -192,6 +227,42 @@ defmodule BlockScoutWeb.Etherscan do
     example: ~s("34092")
   }
 
+  @input_type %{
+    type: "input",
+    definition: "Data sent along with the transaction. A variable-byte-length binary.",
+    example: ~s("0x797af627d02e23b68e085092cd0d47d6cfb54be025f37b5989c0264398f534c08af7dea9")
+  }
+
+  @confirmation_type %{
+    type: "confirmations",
+    definition: "A number equal to the current block height minus the transaction's block-number.",
+    example: ~s("6005998")
+  }
+
+  @transaction_index_type %{
+    type: "transaction index",
+    definition: "Index of the transaction in it's block.",
+    example: ~s("0")
+  }
+
+  @token_name_type %{
+    type: "string",
+    definition: "Name of the token.",
+    example: ~s("Some Token Name")
+  }
+
+  @token_symbol_type %{
+    type: "string",
+    definition: "Trading symbol of the token.",
+    example: ~s("SYMBOL")
+  }
+
+  @token_decimal_type %{
+    type: "integer",
+    definition: "Number of decimal places the token can be subdivided to.",
+    example: ~s("18")
+  }
+
   @address_balance %{
     name: "AddressBalance",
     fields: %{
@@ -220,11 +291,7 @@ defmodule BlockScoutWeb.Etherscan do
         definition: "A 32-byte hash used for identifying blocks.",
         example: ~s("0xd3cabad6adab0b52eb632c386ea194036805713682c62cb589b5abcd76de2159")
       },
-      transactionIndex: %{
-        type: "transaction index",
-        definition: "Index of the transaction in it's block.",
-        example: ~s("0")
-      },
+      transactionIndex: @transaction_index_type,
       from: @address_hash_type,
       to: @address_hash_type,
       value: @wei_type,
@@ -236,19 +303,11 @@ defmodule BlockScoutWeb.Etherscan do
         enum_interpretation: %{"0" => "ok", "1" => "error"}
       },
       txreceipt_status: @status_type,
-      input: %{
-        type: "input",
-        definition: "Data sent along with the transaction. A variable-byte-length binary.",
-        example: ~s("0x797af627d02e23b68e085092cd0d47d6cfb54be025f37b5989c0264398f534c08af7dea9")
-      },
+      input: @input_type,
       contractAddress: @address_hash_type,
       cumulativeGasUsed: @gas_type,
       gasUsed: @gas_type,
-      confirmations: %{
-        type: "confirmations",
-        definition: "A number equal to the current block height minus the transaction's block-number.",
-        example: ~s("6005998")
-      }
+      confirmations: @confirmation_type
     }
   }
 
@@ -265,11 +324,7 @@ defmodule BlockScoutWeb.Etherscan do
       to: @address_hash_type,
       value: @wei_type,
       contractAddress: @address_hash_type,
-      input: %{
-        type: "input",
-        definition: "Data sent along with the call. A variable-byte-length binary.",
-        example: ~s("0x797af627d02e23b68e085092cd0d47d6cfb54be025f37b5989c0264398f534c08af7dea9")
-      },
+      input: @input_type,
       type: %{
         type: "type",
         definition: ~s(Possible values: "create", "call", "reward", or "suicide"),
@@ -287,6 +342,47 @@ defmodule BlockScoutWeb.Etherscan do
         definition: "Error message when call type error.",
         example: ~s("Out of gas")
       }
+    }
+  }
+
+  @token_transfer_model %{
+    name: "TokenTransfer",
+    fields: %{
+      blockNumber: @block_number_type,
+      timeStamp: %{
+        type: "timestamp",
+        definition: "The transaction's block-timestamp.",
+        example: ~s("1439232889")
+      },
+      hash: @transaction_hash_type,
+      nonce: %{
+        type: "nonce",
+        definition: "A scalar value equal to the number of transactions sent by the sender prior to this transaction.",
+        example: ~s("0")
+      },
+      blockHash: %{
+        type: "block hash",
+        definition: "A 32-byte hash used for identifying blocks.",
+        example: ~s("0xd3cabad6adab0b52eb632c386ea194036805713682c62cb589b5abcd76de2159")
+      },
+      from: @address_hash_type,
+      contractAddress: @address_hash_type,
+      to: @address_hash_type,
+      value: %{
+        type: "integer",
+        definition: "The transferred amount.",
+        example: ~s("663046792267785498951364")
+      },
+      tokenName: @token_name_type,
+      tokenSymbol: @token_symbol_type,
+      tokenDecimal: @token_decimal_type,
+      transactionIndex: @transaction_index_type,
+      gas: @gas_type,
+      gasPrice: @wei_type,
+      gasUsed: @gas_type,
+      cumulativeGasUsed: @gas_type,
+      input: @input_type,
+      confirmations: @confirmation_type
     }
   }
 
@@ -339,26 +435,14 @@ defmodule BlockScoutWeb.Etherscan do
   @token_model %{
     name: "Token",
     fields: %{
-      name: %{
-        type: "string",
-        definition: "Name of the token.",
-        example: ~s("Some Token Name")
-      },
-      symbol: %{
-        type: "string",
-        definition: "Trading symbol of the token.",
-        example: ~s("SYMBOL")
-      },
+      name: @token_name_type,
+      symbol: @token_symbol_type,
       totalSupply: %{
         type: "integer",
         definition: "The total supply of the token.",
         example: ~s("1000000000")
       },
-      decimals: %{
-        type: "integer",
-        definition: "Number of decimal place the token can be subdivided to.",
-        example: ~s("18")
-      },
+      decimals: @token_decimal_type,
       type: %{
         type: "token type",
         enum: ~s(["ERC-20", "ERC-721"]),
@@ -544,6 +628,78 @@ defmodule BlockScoutWeb.Etherscan do
         code: "200",
         description: "error",
         example_value: Jason.encode!(@account_txlistinternal_example_value_error)
+      }
+    ]
+  }
+
+  @account_tokentx_action %{
+    name: "tokentx",
+    description: "Get token transfer events by address. Up to a maximum of 10,000 token transfer events.",
+    required_params: [
+      %{
+        key: "address",
+        placeholder: "addressHash",
+        type: "string",
+        description: "A 160-bit code used for identifying accounts."
+      }
+    ],
+    optional_params: [
+      %{
+        key: "contractaddress",
+        placeholder: "contractAddressHash",
+        type: "string",
+        description: "A 160-bit code used for identifying contracts."
+      },
+      %{
+        key: "sort",
+        type: "string",
+        description:
+          "A string representing the order by block number direction. Defaults to ascending order. Available values: asc, desc"
+      },
+      %{
+        key: "startblock",
+        type: "integer",
+        description: "A nonnegative integer that represents the starting block number."
+      },
+      %{
+        key: "endblock",
+        type: "integer",
+        description: "A nonnegative integer that represents the ending block number."
+      },
+      %{
+        key: "page",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the page number to be used for pagination. 'offset' must be provided in conjunction."
+      },
+      %{
+        key: "offset",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the maximum number of records to return when paginating. 'page' must be provided in conjunction."
+      }
+    ],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@account_tokentx_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "array",
+              array_type: @token_transfer_model
+            }
+          }
+        }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@account_tokentx_example_value_error)
       }
     ]
   }
@@ -744,7 +900,8 @@ defmodule BlockScoutWeb.Etherscan do
       @account_balance_action,
       @account_balancemulti_action,
       @account_txlist_action,
-      @account_txlistinternal_action
+      @account_txlistinternal_action,
+      @account_tokentx_action
     ]
   }
 

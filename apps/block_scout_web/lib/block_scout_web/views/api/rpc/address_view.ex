@@ -33,6 +33,11 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     RPCView.render("show.json", data: data)
   end
 
+  def render("tokentx.json", %{token_transfers: token_transfers}) do
+    data = Enum.map(token_transfers, &prepare_token_transfer/1)
+    RPCView.render("show.json", data: data)
+  end
+
   def render("error.json", assigns) do
     RPCView.render("error.json", assigns)
   end
@@ -74,6 +79,30 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "gasUsed" => "#{internal_transaction.gas_used}",
       "isError" => if(internal_transaction.error, do: "1", else: "0"),
       "errCode" => "#{internal_transaction.error}"
+    }
+  end
+
+  defp prepare_token_transfer(token_transfer) do
+    %{
+      "blockNumber" => to_string(token_transfer.block_number),
+      "timeStamp" => to_string(DateTime.to_unix(token_transfer.block_timestamp)),
+      "hash" => to_string(token_transfer.transaction_hash),
+      "nonce" => to_string(token_transfer.transaction_nonce),
+      "blockHash" => to_string(token_transfer.block_hash),
+      "from" => to_string(token_transfer.from_address_hash),
+      "contractAddress" => to_string(token_transfer.token_contract_address_hash),
+      "to" => to_string(token_transfer.to_address_hash),
+      "value" => to_string(token_transfer.amount),
+      "tokenName" => token_transfer.token_name,
+      "tokenSymbol" => token_transfer.token_symbol,
+      "tokenDecimal" => to_string(token_transfer.token_decimals),
+      "transactionIndex" => to_string(token_transfer.transaction_index),
+      "gas" => to_string(token_transfer.transaction_gas),
+      "gasPrice" => to_string(token_transfer.transaction_gas_price.value),
+      "gasUsed" => to_string(token_transfer.transaction_gas_used),
+      "cumulativeGasUsed" => to_string(token_transfer.transaction_cumulative_gas_used),
+      "input" => to_string(token_transfer.transaction_input),
+      "confirmations" => to_string(token_transfer.confirmations)
     }
   end
 end

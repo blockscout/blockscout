@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
   alias Explorer.Chain
   alias Explorer.Chain.Transaction
+  alias BlockScoutWeb.API.RPC.AddressController
 
   describe "balance" do
     test "with missing address hash", %{conn: conn} do
@@ -1171,6 +1172,249 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert length(found_internal_transactions) == 3
       assert response["status"] == "1"
       assert response["message"] == "OK"
+    end
+  end
+
+  describe "tokentx" do
+    test "with missing address hash", %{conn: conn} do
+      params = %{
+        "module" => "account",
+        "action" => "tokentx"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["message"] =~ "address is required"
+      assert response["status"] == "0"
+      assert Map.has_key?(response, "result")
+      refute response["result"]
+    end
+
+    test "with an invalid address hash", %{conn: conn} do
+      params = %{
+        "module" => "account",
+        "action" => "tokentx",
+        "address" => "badhash"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["message"] =~ "Invalid address format"
+      assert response["status"] == "0"
+      assert Map.has_key?(response, "result")
+      refute response["result"]
+    end
+
+    test "with an address that doesn't exist", %{conn: conn} do
+      params = %{
+        "module" => "account",
+        "action" => "tokentx",
+        "address" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == []
+      assert response["status"] == "0"
+      assert response["message"] == "No token transfers found"
+    end
+
+    test "returns all the required fields", %{conn: conn} do
+      transaction =
+        %{block: block} =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      token_transfer = insert(:token_transfer, transaction: transaction)
+      {:ok, token} = Chain.token_from_address_hash(token_transfer.token_contract_address_hash)
+
+      params = %{
+        "module" => "account",
+        "action" => "tokentx",
+        "address" => to_string(token_transfer.from_address.hash)
+      }
+
+      expected_result = [
+        %{
+          "blockNumber" => to_string(transaction.block_number),
+          "timeStamp" => to_string(DateTime.to_unix(block.timestamp)),
+          "hash" => to_string(token_transfer.transaction_hash),
+          "nonce" => to_string(transaction.nonce),
+          "blockHash" => to_string(block.hash),
+          "from" => to_string(token_transfer.from_address_hash),
+          "contractAddress" => to_string(token_transfer.token_contract_address_hash),
+          "to" => to_string(token_transfer.to_address_hash),
+          "value" => to_string(token_transfer.amount),
+          "tokenName" => token.name,
+          "tokenSymbol" => token.symbol,
+          "tokenDecimal" => to_string(token.decimals),
+          "transactionIndex" => to_string(transaction.index),
+          "gas" => to_string(transaction.gas),
+          "gasPrice" => to_string(transaction.gas_price.value),
+          "gasUsed" => to_string(transaction.gas_used),
+          "cumulativeGasUsed" => to_string(transaction.cumulative_gas_used),
+          "input" => to_string(transaction.input),
+          "confirmations" => "0"
+        }
+      ]
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == expected_result
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "with an invalid contract address", %{conn: conn} do
+      params = %{
+        "module" => "account",
+        "action" => "tokentx",
+        "address" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+        "contractaddress" => "invalid"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["message"] =~ "Invalid contractaddress format"
+      assert response["status"] == "0"
+      assert Map.has_key?(response, "result")
+      refute response["result"]
+    end
+
+    test "filters results by contract address", %{conn: conn} do
+      address = insert(:address)
+
+      contract_address = insert(:contract_address)
+
+      insert(:token, contract_address: contract_address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer, from_address: address, transaction: transaction)
+      insert(:token_transfer, from_address: address, token_contract_address: contract_address, transaction: transaction)
+
+      params = %{
+        "module" => "account",
+        "action" => "tokentx",
+        "address" => to_string(address.hash),
+        "contractaddress" => to_string(contract_address.hash)
+      }
+
+      assert response =
+               %{"result" => [result]} =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert result["contractAddress"] == to_string(contract_address.hash)
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+  end
+
+  describe "optional_params/1" do
+    test "includes valid optional params in the required format" do
+      params = %{
+        "startblock" => "100",
+        "endblock" => "120",
+        "sort" => "asc",
+        # page number
+        "page" => "1",
+        # page size
+        "offset" => "2"
+      }
+
+      optional_params = AddressController.optional_params(params)
+
+      assert optional_params.page_number == 1
+      assert optional_params.page_size == 2
+      assert optional_params.order_by_direction == :asc
+      assert optional_params.start_block == 100
+      assert optional_params.end_block == 120
+    end
+
+    test "'sort' values can be 'asc' or 'desc'" do
+      params1 = %{"sort" => "asc"}
+
+      optional_params = AddressController.optional_params(params1)
+
+      assert optional_params.order_by_direction == :asc
+
+      params2 = %{"sort" => "desc"}
+
+      optional_params = AddressController.optional_params(params2)
+
+      assert optional_params.order_by_direction == :desc
+
+      params3 = %{"sort" => "invalid"}
+
+      assert AddressController.optional_params(params3) == %{}
+    end
+
+    test "only includes optional params when they're given" do
+      assert AddressController.optional_params(%{}) == %{}
+    end
+
+    test "ignores invalid optional params, keeps valid ones" do
+      params1 = %{
+        "startblock" => "invalid",
+        "endblock" => "invalid",
+        "sort" => "invalid",
+        "page" => "invalid",
+        "offset" => "invalid"
+      }
+
+      assert AddressController.optional_params(params1) == %{}
+
+      params2 = %{
+        "startblock" => "4",
+        "endblock" => "10",
+        "sort" => "invalid",
+        "page" => "invalid",
+        "offset" => "invalid"
+      }
+
+      optional_params = AddressController.optional_params(params2)
+
+      assert optional_params.start_block == 4
+      assert optional_params.end_block == 10
+    end
+
+    test "ignores 'page' if less than 1" do
+      params = %{"page" => "0"}
+
+      assert AddressController.optional_params(params) == %{}
+    end
+
+    test "ignores 'offset' if less than 1" do
+      params = %{"offset" => "0"}
+
+      assert AddressController.optional_params(params) == %{}
+    end
+
+    test "ignores 'offset' if more than 10,000" do
+      params = %{"offset" => "10001"}
+
+      assert AddressController.optional_params(params) == %{}
     end
   end
 end
