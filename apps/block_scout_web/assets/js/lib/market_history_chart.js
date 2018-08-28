@@ -1,6 +1,7 @@
 import Chart from 'chart.js'
 import humps from 'humps'
 import numeral from 'numeral'
+import { formatUsdValue } from '../lib/currency'
 import sassVariables from '../../css/app.scss'
 
 const config = {
@@ -33,7 +34,7 @@ const config = {
         },
         ticks: {
           beginAtZero: true,
-          callback: (value, index, values) => formatPrice(value),
+          callback: (value, index, values) => `$${numeral(value).format('0,0.00')} USD`,
           maxTicksLimit: 4
         }
       }, {
@@ -56,10 +57,10 @@ const config = {
       callbacks: {
         label: ({datasetIndex, yLabel}, {datasets}) => {
           const label = datasets[datasetIndex].label
-          if (datasets[datasetIndex].label === 'Price') {
-            return `${label}: ${formatPrice(yLabel)}`
-          } else if (datasets[datasetIndex].label === 'Market Cap') {
-            return `${label}: ${formatMarketCap(yLabel)}`
+          if (datasets[datasetIndex].yAxisID === 'price') {
+            return `${label}: ${formatUsdValue(yLabel)}`
+          } else if (datasets[datasetIndex].yAxisID === 'marketCap') {
+            return `${label}: ${formatUsdValue(yLabel)}`
           } else {
             return yLabel
           }
@@ -67,14 +68,6 @@ const config = {
       }
     }
   }
-}
-
-function formatPrice (price) {
-  return `$${numeral(price).format('0,0.00[0000000000000000]')}`
-}
-
-function formatMarketCap (marketCap) {
-  return numeral(marketCap).format('($0,0a)')
 }
 
 function getPriceData (marketHistoryData) {
@@ -88,7 +81,7 @@ function getMarketCapData (marketHistoryData, availableSupply) {
 class MarketHistoryChart {
   constructor (el, availableSupply, marketHistoryData) {
     this.price = {
-      label: 'Price',
+      label: window.localized['Price'],
       yAxisID: 'price',
       data: getPriceData(marketHistoryData),
       fill: false,
@@ -98,7 +91,7 @@ class MarketHistoryChart {
       lineTension: 0
     }
     this.marketCap = {
-      label: 'Market Cap',
+      label: window.localized['Market Cap'],
       yAxisID: 'marketCap',
       data: getMarketCapData(marketHistoryData, availableSupply),
       fill: false,

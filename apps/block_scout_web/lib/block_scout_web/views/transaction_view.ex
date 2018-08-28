@@ -4,9 +4,7 @@ defmodule BlockScoutWeb.TransactionView do
   alias Cldr.Number
   alias Explorer.Chain
   alias Explorer.Chain.{Address, InternalTransaction, Transaction, Wei}
-  alias Explorer.ExchangeRates.Token
   alias BlockScoutWeb.{AddressView, BlockView}
-  alias BlockScoutWeb.ExchangeRates.USD
 
   import BlockScoutWeb.Gettext
 
@@ -30,12 +28,16 @@ defmodule BlockScoutWeb.TransactionView do
 
   def to_address_hash(%Transaction{to_address: %Address{hash: address_hash}}), do: address_hash
 
+  def fee(%Transaction{} = transaction) do
+    {_, value} = Chain.fee(transaction, :wei)
+    value
+  end
+
   def formatted_fee(%Transaction{} = transaction, opts) do
     transaction
     |> Chain.fee(:wei)
-    |> fee_to_currency(opts)
+    |> fee_to_denomination(opts)
     |> case do
-      {_, nil} -> nil
       {:actual, value} -> value
       {:maximum, value} -> "<= " <> value
     end
@@ -78,12 +80,6 @@ defmodule BlockScoutWeb.TransactionView do
       :pending -> gettext("Pending")
       :success -> gettext("Success")
     end
-  end
-
-  def formatted_usd_value(%Transaction{value: nil}, _token), do: nil
-
-  def formatted_usd_value(%Transaction{value: value}, token) do
-    format_usd_value(USD.from(value, token))
   end
 
   defdelegate formatted_timestamp(block), to: BlockView
@@ -135,23 +131,6 @@ defmodule BlockScoutWeb.TransactionView do
   def value(%mod{value: value}, opts \\ []) when is_transaction_type(mod) do
     include_label? = Keyword.get(opts, :include_label, true)
     format_wei_value(value, :ether, include_unit_label: include_label?)
-  end
-
-  defp fee_to_currency(fee, options) do
-    case Keyword.fetch(options, :exchange_rate) do
-      {:ok, exchange_rate} -> fee_to_usd(fee, exchange_rate)
-      :error -> fee_to_denomination(fee, options)
-    end
-  end
-
-  defp fee_to_usd({fee_type, fee}, %Token{} = exchange_rate) do
-    formatted =
-      fee
-      |> Wei.from(:wei)
-      |> USD.from(exchange_rate)
-      |> format_usd_value()
-
-    {fee_type, formatted}
   end
 
   defp fee_to_denomination({fee_type, fee}, opts) do

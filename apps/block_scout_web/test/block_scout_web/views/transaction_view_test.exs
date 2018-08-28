@@ -2,7 +2,6 @@ defmodule BlockScoutWeb.TransactionViewTest do
   use BlockScoutWeb.ConnCase, async: true
 
   alias Explorer.Chain.Wei
-  alias Explorer.ExchangeRates.Token
   alias Explorer.Repo
   alias BlockScoutWeb.TransactionView
 
@@ -18,21 +17,16 @@ defmodule BlockScoutWeb.TransactionViewTest do
           gas_used: nil
         )
 
-      token = %Token{usd_value: Decimal.new(0.50)}
-
       expected_value = "<= 0.009 POA"
       assert expected_value == TransactionView.formatted_fee(transaction, denomination: :ether)
-      assert "<= $0.004500 USD" == TransactionView.formatted_fee(transaction, exchange_rate: token)
     end
 
-    test "with fee and exchange_rate" do
+    test "with fee" do
       {:ok, gas_price} = Wei.cast(3_000_000_000)
       transaction = build(:transaction, gas_price: gas_price, gas_used: Decimal.new(1_034_234.0))
-      token = %Token{usd_value: Decimal.new(0.50)}
 
       expected_value = "0.003102702 POA"
       assert expected_value == TransactionView.formatted_fee(transaction, denomination: :ether)
-      assert "$0.001551 USD" == TransactionView.formatted_fee(transaction, exchange_rate: token)
     end
 
     test "with fee but no available exchange_rate" do

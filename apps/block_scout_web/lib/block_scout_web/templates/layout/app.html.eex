@@ -18,6 +18,12 @@
       </main>
       <%= render BlockScoutWeb.LayoutView, "_footer.html", assigns %>
     </div>
+    <script>
+      window.localized = {
+        'Market Cap': '<%= gettext("Market Cap") %>',
+        'Price': '<%= gettext("Price") %>',
+      }
+    </script>
     <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
   </body>
 </html>
