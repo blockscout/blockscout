@@ -7,7 +7,8 @@ defmodule Explorer.Etherscan do
 
   alias Explorer.Etherscan.Logs
   alias Explorer.{Repo, Chain}
-  alias Explorer.Chain.{Hash, InternalTransaction, Transaction}
+  alias Explorer.Chain.{Block, Hash, InternalTransaction, Transaction, Wei}
+  alias Explorer.Chain.Block.Reward
 
   @default_options %{
     order_by_direction: :asc,
@@ -109,6 +110,50 @@ defmodule Explorer.Etherscan do
       _ ->
         []
     end
+  end
+
+  @doc """
+  Gets a list of blocks mined by `t:Explorer.Chain.Hash.Address.t/0`.
+
+  For each block it returns the block's number, timestamp, and reward.
+
+  The block reward is the sum of the following:
+
+  * Sum of the transaction fees (gas_used * gas_price) for the block
+  * A static reward for miner (this value may change during the life of the chain)
+  * The reward for uncle blocks (1/32 * static_reward * number_of_uncles)
+
+  *NOTE*
+
+  Uncles are not currently accounted for.
+
+  """
+  @spec list_blocks(Hash.Address.t()) :: [map()]
+  def list_blocks(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash, options \\ %{}) do
+    merged_options = Map.merge(@default_options, options)
+
+    query =
+      from(
+        b in Block,
+        left_join: t in assoc(b, :transactions),
+        inner_join: r in Reward,
+        on: fragment("? <@ ?", b.number, r.block_range),
+        where: b.miner_hash == ^address_hash,
+        group_by: b.number,
+        group_by: b.timestamp,
+        group_by: r.reward,
+        limit: ^merged_options.page_size,
+        offset: ^offset(merged_options),
+        select: %{
+          number: b.number,
+          timestamp: b.timestamp,
+          reward: %Wei{
+            value: fragment("coalesce(sum(? * ?), 0) + ?", t.gas_used, t.gas_price, r.reward)
+          }
+        }
+      )
+
+    Repo.all(query)
   end
 
   @transaction_fields ~w(
