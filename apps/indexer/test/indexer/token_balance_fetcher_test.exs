@@ -45,8 +45,7 @@ defmodule Indexer.TokenBalanceFetcherTest do
         TokenBalance
         |> Explorer.Repo.get_by(address_hash: token_balance.address_hash)
 
-      {:ok, wei_value} = Explorer.Chain.Wei.cast(1_000_000_000_000_000_000_000_000)
-      assert token_balance_updated.value == wei_value
+      assert token_balance_updated.value == Decimal.new(1_000_000_000_000_000_000_000_000)
       assert token_balance_updated.value_fetched_at != nil
     end
   end

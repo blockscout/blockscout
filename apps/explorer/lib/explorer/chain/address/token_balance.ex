@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Address.TokenBalance do
   import Ecto.Changeset
 
   alias Explorer.Chain.Address.TokenBalance
-  alias Explorer.Chain.{Address, Block, Hash, Token, Wei}
+  alias Explorer.Chain.{Address, Block, Hash, Token}
 
   @typedoc """
    *  `address` - The `t:Explorer.Chain.Address.t/0` that is the balance's owner.
@@ -25,11 +25,11 @@ defmodule Explorer.Chain.Address.TokenBalance do
           block_number: Block.block_number(),
           inserted_at: DateTime.t(),
           updated_at: DateTime.t(),
-          value: Wei.t() | nil
+          value: Decimal.t() | nil
         }
 
   schema "address_token_balances" do
-    field(:value, Wei)
+    field(:value, :decimal)
     field(:block_number, :integer)
     field(:value_fetched_at, :utc_datetime)
 

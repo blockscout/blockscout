@@ -12,7 +12,7 @@ defmodule Explorer.Repo.Migrations.CreateAddressTokenBalances do
         null: false
       )
 
-      add(:value, :numeric, precision: 100, default: fragment("NULL"), null: true)
+      add(:value, :decimal, null: true)
       add(:value_fetched_at, :utc_datetime, default: fragment("NULL"), null: true)
 
       timestamps(null: false, type: :utc_datetime)
