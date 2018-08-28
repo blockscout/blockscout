@@ -1,6 +1,6 @@
 defmodule Indexer.Balances do
   @moduledoc """
-  Extracts `Explorer.Chain.Balance` params from other schema's params
+  Extracts `Explorer.Chain.Balance` params from other schema's params.
   """
 
   def params_set(%{} = import_options) do
@@ -25,36 +25,6 @@ defmodule Indexer.Balances do
     Enum.into(logs_params, acc, fn %{address_hash: address_hash, block_number: block_number}
                                    when is_binary(address_hash) and is_integer(block_number) ->
       %{address_hash: address_hash, block_number: block_number}
-    end)
-  end
-
-  defp reducer({:token_transfers_params, token_transfers_params}, initial) when is_list(token_transfers_params) do
-    Enum.reduce(token_transfers_params, initial, fn %{
-                                                      block_number: block_number,
-                                                      from_address_hash: from_address_hash,
-                                                      to_address_hash: to_address_hash,
-                                                      token_contract_address_hash: token_contract_address_hash
-                                                    },
-                                                    acc
-                                                    when is_integer(block_number) and is_binary(from_address_hash) and
-                                                           is_binary(to_address_hash) and
-                                                           is_binary(token_contract_address_hash) ->
-      acc
-      |> MapSet.put(%{
-        address_hash: from_address_hash,
-        token_contract_address_hash: token_contract_address_hash,
-        block_number: block_number
-      })
-      |> MapSet.put(%{
-        address_hash: to_address_hash,
-        token_contract_address_hash: token_contract_address_hash,
-        block_number: block_number
-      })
-      |> MapSet.put(%{
-        address_hash: token_contract_address_hash,
-        token_contract_address_hash: token_contract_address_hash,
-        block_number: block_number
-      })
     end)
   end
 
