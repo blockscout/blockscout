@@ -9,6 +9,7 @@ defmodule EthereumJsonrpc.MixProject do
       config_path: "../../config/config.exs",
       deps: deps(),
       deps_path: "../../deps",
+      description: "Ethereum JSONRPC client.",
       dialyzer: [
         plt_add_deps: :transitive,
         plt_add_apps: [:mix],

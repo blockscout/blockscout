@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.Mixfile do
       compilers: [:phoenix, :gettext | Mix.compilers()],
       deps: deps(),
       deps_path: "../../deps",
+      description: "Web interface for BlockScout.",
       dialyzer: [
         plt_add_deps: :transitive,
         ignore_warnings: "../../.dialyzer-ignore"

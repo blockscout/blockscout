@@ -9,6 +9,7 @@ defmodule Explorer.Mixfile do
       config_path: "../../config/config.exs",
       deps: deps(),
       deps_path: "../../deps",
+      description: "Read-access to indexed block chain data.",
       dialyzer: [
         plt_add_deps: :transitive,
         plt_add_apps: ~w(ex_unit mix)a,
