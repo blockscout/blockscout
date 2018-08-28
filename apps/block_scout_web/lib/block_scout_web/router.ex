@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.Router do
   use BlockScoutWeb, :router
 
+  forward("/wobserver", Wobserver.Web.Router)
+
   pipeline :browser do
     plug(:accepts, ["html"])
     plug(:fetch_session)
