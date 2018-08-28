@@ -8,6 +8,8 @@ config :logger, :ecto,
   level: :warn,
   path: "logs/test/ecto.log"
 
+config :logger, :error, path: "logs/test/error.log"
+
 config :explorer, Explorer.ExchangeRates,
   source: Explorer.ExchangeRates.Source.NoOpSource,
   store: :none
