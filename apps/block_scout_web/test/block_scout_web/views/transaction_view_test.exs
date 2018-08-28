@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
 
       expected_value = "<= 0.009 POA"
       assert expected_value == TransactionView.formatted_fee(transaction, denomination: :ether)
-      assert "<= $0.0045 USD" == TransactionView.formatted_fee(transaction, exchange_rate: token)
+      assert "<= $0.004500 USD" == TransactionView.formatted_fee(transaction, exchange_rate: token)
     end
 
     test "with fee and exchange_rate" do
@@ -32,7 +32,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
 
       expected_value = "0.003102702 POA"
       assert expected_value == TransactionView.formatted_fee(transaction, denomination: :ether)
-      assert "$0.001551351 USD" == TransactionView.formatted_fee(transaction, exchange_rate: token)
+      assert "$0.001551 USD" == TransactionView.formatted_fee(transaction, exchange_rate: token)
     end
 
     test "with fee but no available exchange_rate" do
