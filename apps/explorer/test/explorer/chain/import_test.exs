@@ -11,6 +11,7 @@ defmodule Explorer.Chain.ImportTest do
     Log,
     Hash,
     Import,
+    InternalTransaction,
     Token,
     TokenTransfer,
     Transaction
@@ -415,6 +416,12 @@ defmodule Explorer.Chain.ImportTest do
       Chain.subscribe_to_events(:blocks)
       Import.all(@import_data)
       assert_received {:chain_event, :blocks, [%Block{}]}
+    end
+
+    test "publishes internal_transaction data to subscribers on insert" do
+      Chain.subscribe_to_events(:internal_transactions)
+      Import.all(@import_data)
+      assert_received {:chain_event, :internal_transactions, [%InternalTransaction{}]}
     end
 
     test "publishes log data to subscribers on insert" do

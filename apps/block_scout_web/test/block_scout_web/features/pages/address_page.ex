@@ -31,6 +31,10 @@ defmodule BlockScoutWeb.AddressPage do
     css("[data-test='address_detail_hash']", text: to_string(address_hash))
   end
 
+  def internal_transaction(%InternalTransaction{id: id}) do
+    css("[data-test='internal_transaction'][data-internal-transaction-id='#{id}']")
+  end
+
   def internal_transactions(count: count) do
     css("[data-test='internal_transaction']", count: count)
   end

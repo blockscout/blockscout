@@ -110,5 +110,75 @@ defmodule BlockScoutWeb.AddressChannelTest do
         100 -> assert true
       end
     end
+
+    test "notified of new_internal_transaction for matching from_address", %{address: address, topic: topic} do
+      transaction =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block()
+
+      internal_transaction = insert(:internal_transaction, transaction: transaction, from_address: address, index: 0)
+
+      Notifier.handle_event({:chain_event, :internal_transactions, [internal_transaction]})
+
+      receive do
+        %Phoenix.Socket.Broadcast{topic: ^topic, event: "internal_transaction", payload: payload} ->
+          assert payload.address.hash == address.hash
+          assert payload.internal_transaction.id == internal_transaction.id
+      after
+        5_000 ->
+          assert false, "Expected message received nothing."
+      end
+    end
+
+    test "notified of new_internal_transaction for matching to_address", %{address: address, topic: topic} do
+      transaction =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block()
+
+      internal_transaction = insert(:internal_transaction, transaction: transaction, to_address: address, index: 0)
+
+      Notifier.handle_event({:chain_event, :internal_transactions, [internal_transaction]})
+
+      receive do
+        %Phoenix.Socket.Broadcast{topic: ^topic, event: "internal_transaction", payload: payload} ->
+          assert payload.address.hash == address.hash
+          assert payload.internal_transaction.id == internal_transaction.id
+      after
+        5_000 ->
+          assert false, "Expected message received nothing."
+      end
+    end
+
+    test "not notified twice of new_internal_transaction if to and from address are equal", %{
+      address: address,
+      topic: topic
+    } do
+      transaction =
+        :transaction
+        |> insert(from_address: address, to_address: address)
+        |> with_block()
+
+      internal_transaction =
+        insert(:internal_transaction, transaction: transaction, from_address: address, to_address: address, index: 0)
+
+      Notifier.handle_event({:chain_event, :internal_transactions, [internal_transaction]})
+
+      receive do
+        %Phoenix.Socket.Broadcast{topic: ^topic, event: "internal_transaction", payload: payload} ->
+          assert payload.address.hash == address.hash
+          assert payload.internal_transaction.id == internal_transaction.id
+      after
+        5_000 ->
+          assert false, "Expected message received nothing."
+      end
+
+      receive do
+        _ -> assert false, "Received duplicate broadcast."
+      after
+        100 -> assert true
+      end
+    end
   end
 end

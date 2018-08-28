@@ -116,12 +116,14 @@
         </div>
         <h2 class="card-title"><%= gettext "Internal Transactions" %></h2>
         <%= if Enum.count(@internal_transactions) > 0 do %>
-          <%= for internal_transaction <- @internal_transactions do %>
-            <%= render "_internal_transaction.html", address: @address, internal_transaction: internal_transaction %>
-          <% end %>
+          <span data-selector="internal-transactions-list">
+            <%= for internal_transaction <- @internal_transactions do %>
+              <%= render "_internal_transaction.html", address: @address, internal_transaction: internal_transaction %>
+            <% end %>
+          </span>
         <% else %>
           <div class="tile tile-muted text-center">
-            <span><%= gettext "There are no internal transactions for this address." %></span>
+            <span data-selector="empty-internal-transactions-list"><%= gettext "There are no internal transactions for this address." %></span>
           </div>
         <% end %>
         <div>

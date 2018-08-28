@@ -209,7 +209,8 @@ defmodule Explorer.Chain.Import do
   end
 
   defp broadcast_events(data) do
-    for {event_type, event_data} <- data, event_type in ~w(addresses balances blocks logs transactions)a do
+    for {event_type, event_data} <- data,
+        event_type in ~w(addresses balances blocks internal_transactions logs transactions)a do
       broadcast_event_data(event_type, event_data)
     end
   end
@@ -671,11 +672,7 @@ defmodule Explorer.Chain.Import do
         timestamps: timestamps
       )
 
-    {:ok,
-     for(
-       internal_transaction <- internal_transactions,
-       do: Map.take(internal_transaction, [:index, :transaction_hash])
-     )}
+    {:ok, internal_transactions}
   end
 
   @spec insert_logs([map()], %{required(:timeout) => timeout, required(:timestamps) => timestamps}) ::

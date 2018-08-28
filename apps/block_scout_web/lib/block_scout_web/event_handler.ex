@@ -19,6 +19,7 @@ defmodule BlockScoutWeb.EventHandler do
     Chain.subscribe_to_events(:addresses)
     Chain.subscribe_to_events(:blocks)
     Chain.subscribe_to_events(:exchange_rate)
+    Chain.subscribe_to_events(:internal_transactions)
     Chain.subscribe_to_events(:transactions)
     {:ok, []}
   end
