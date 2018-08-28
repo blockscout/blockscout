@@ -17,6 +17,10 @@ config :explorer, Explorer.ExchangeRates, enabled: false
 
 config :explorer, Explorer.Market.History.Cataloger, enabled: false
 
+config :logger, :explorer,
+  level: :warn,
+  path: "logs/test/explorer.log"
+
 if File.exists?(file = "test.secret.exs") do
   import_config file
 end

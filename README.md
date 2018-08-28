@@ -85,7 +85,7 @@ _Additional runtime options:_
 `iex -S mix phx.server`
 
 *  Run Phoenix Server with real time indexer
-`DEBUG_INDEXER=1 iex -S mix phx.server`
+`iex -S mix phx.server`
 
 ### BlockScout Visual Interface
 

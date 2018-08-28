@@ -9,6 +9,10 @@ config :explorer, Explorer.Repo,
   prepare: :unnamed,
   timeout: 60_000
 
+config :logger, :explorer,
+  level: :info,
+  path: "logs/prod/explorer.log"
+
 variant =
   if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do
     "parity"

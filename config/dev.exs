@@ -1,5 +1,8 @@
 use Mix.Config
 
-# Do not include metadata nor timestamps in development logs
-config :logger, :console, format: "[$level] $message\n"
-config :logger, level: :debug
+# DO NOT make it `:debug` or all Ecto logs will be shown for indexer
+config :logger, :console, level: :info
+
+config :logger, :ecto,
+  level: :debug,
+  path: "logs/dev/ecto.log"

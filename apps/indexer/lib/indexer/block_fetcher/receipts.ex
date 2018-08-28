@@ -3,7 +3,7 @@ defmodule Indexer.BlockFetcher.Receipts do
   Fetches transaction receipts after the transactions have been fetched with the blocks in `Indexer.BlockFetcher`.
   """
 
-  import Indexer, only: [debug: 1]
+  require Logger
 
   alias Indexer.BlockFetcher
 
@@ -13,7 +13,7 @@ defmodule Indexer.BlockFetcher.Receipts do
         %BlockFetcher{json_rpc_named_arguments: json_rpc_named_arguments} = state,
         transaction_params
       ) do
-    debug(fn -> "fetching #{length(transaction_params)} transaction receipts" end)
+    Logger.debug(fn -> "fetching #{length(transaction_params)} transaction receipts" end)
     stream_opts = [max_concurrency: state.receipts_concurrency, timeout: :infinity]
 
     transaction_params

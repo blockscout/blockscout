@@ -4,6 +4,8 @@ defmodule Indexer.BalanceFetcher do
   `fetched_balance_block_number` to value at max `t:Explorer.Chain.Balance.t/0` `block_number` for the given `t:Explorer.Chain.Address.t/` `hash`.
   """
 
+  require Logger
+
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
   alias Explorer.Chain
@@ -68,7 +70,7 @@ defmodule Indexer.BalanceFetcher do
     # `{address, block}`, so take unique params only
     unique_params_list = Enum.uniq(params_list)
 
-    Indexer.debug(fn -> "fetching #{length(unique_params_list)} balances" end)
+    Logger.debug(fn -> "fetching #{length(unique_params_list)} balances" end)
 
     case EthereumJSONRPC.fetch_balances(unique_params_list, json_rpc_named_arguments) do
       {:ok, balances_params} ->
@@ -87,7 +89,7 @@ defmodule Indexer.BalanceFetcher do
         :ok
 
       {:error, reason} ->
-        Indexer.debug(fn -> "failed to fetch #{length(unique_params_list)} balances, #{inspect(reason)}" end)
+        Logger.debug(fn -> "failed to fetch #{length(unique_params_list)} balances, #{inspect(reason)}" end)
         {:retry, unique_params_list}
     end
   end

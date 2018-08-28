@@ -88,7 +88,7 @@ defmodule Indexer.InternalTransactionFetcher do
   def run(transactions_params, _retries, json_rpc_named_arguments) do
     unique_transactions_params = unique_transactions_params(transactions_params)
 
-    Indexer.debug(fn -> "fetching internal transactions for #{length(unique_transactions_params)} transactions" end)
+    Logger.debug(fn -> "fetching internal transactions for #{length(unique_transactions_params)} transactions" end)
 
     case EthereumJSONRPC.fetch_internal_transactions(unique_transactions_params, json_rpc_named_arguments) do
       {:ok, internal_transactions_params} ->
@@ -112,7 +112,7 @@ defmodule Indexer.InternalTransactionFetcher do
           |> BalanceFetcher.async_fetch_balances()
         else
           {:error, step, reason, _changes_so_far} ->
-            Indexer.debug(fn ->
+            Logger.debug(fn ->
               [
                 "failed to import internal transactions for ",
                 to_string(length(transactions_params)),
@@ -128,7 +128,7 @@ defmodule Indexer.InternalTransactionFetcher do
         end
 
       {:error, reason} ->
-        Indexer.debug(fn ->
+        Logger.debug(fn ->
           "failed to fetch internal transactions for #{length(transactions_params)} transactions: #{inspect(reason)}"
         end)
 

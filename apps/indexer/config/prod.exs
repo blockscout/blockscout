@@ -1,5 +1,9 @@
 use Mix.Config
 
+config :logger, :indexer,
+  level: :info,
+  path: "logs/prod/indexer.log"
+
 variant =
   if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do
     "parity"
