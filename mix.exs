@@ -63,7 +63,7 @@ defmodule BlockScout.Mixfile do
       # Documentation
       {:ex_doc, "~> 0.18.3", only: [:dev]},
       # Code coverage
-      {:excoveralls, "~> 0.8.1", only: [:test]}
+      {:excoveralls, "~> 0.10.0", only: [:test], github: "KronicDeth/excoveralls", branch: "circle-workflows"}
     ]
   end
 end

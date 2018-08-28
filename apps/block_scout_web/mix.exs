@@ -70,7 +70,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:ex_cldr_units, "~> 1.0"},
       {:ex_machina, "~> 2.1", only: [:test]},
       # Code coverage
-      {:excoveralls, "~> 0.8.1", only: [:test]},
+      {:excoveralls, "~> 0.10.0", only: [:test], github: "KronicDeth/excoveralls", branch: "circle-workflows"},
       {:explorer, in_umbrella: true},
       {:exvcr, "~> 0.10", only: :test},
       # HTML CSS selectors for Phoenix controller tests

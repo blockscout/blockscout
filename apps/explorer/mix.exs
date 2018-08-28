@@ -76,7 +76,7 @@ defmodule Explorer.Mixfile do
       # Data factory for testing
       {:ex_machina, "~> 2.1", only: [:test]},
       # Code coverage
-      {:excoveralls, "~> 0.8.1", only: [:test]},
+      {:excoveralls, "~> 0.10.0", only: [:test], github: "KronicDeth/excoveralls", branch: "circle-workflows"},
       {:exvcr, "~> 0.10", only: :test},
       {:httpoison, "~> 1.0", override: true},
       {:jason, "~> 1.0"},

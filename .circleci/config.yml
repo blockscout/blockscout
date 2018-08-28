@@ -337,7 +337,9 @@ jobs:
             if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
               mix coveralls.html --exclude no_geth --parallel --umbrella
             else
-              mix coveralls.circle --exclude no_geth --parallel --umbrella
+              mix coveralls.circle --exclude no_geth --parallel --umbrella ||
+                # if mix failed, then coveralls_merge won't run, so single done here
+                curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done"
             fi
 
       - store_artifacts:
@@ -385,7 +387,9 @@ jobs:
             if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
               mix coveralls.html --exclude no_geth --parallel --umbrella
             else
-              mix coveralls.circle --exclude no_geth --parallel --umbrella
+              mix coveralls.circle --exclude no_geth --parallel --umbrella ||
+                # if mix failed, then coveralls_merge won't run, so signal done here
+                curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done"
             fi
 
       - store_artifacts:
@@ -433,7 +437,9 @@ jobs:
             if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
               mix coveralls.html --exclude no_parity --parallel --umbrella
             else
-              mix coveralls.circle --exclude no_parity --parallel --umbrella
+              mix coveralls.circle --exclude no_parity --parallel --umbrella ||
+                # if mix failed, then coveralls_merge won't run, so signal done here
+                curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done"
             fi
 
       - store_artifacts:
@@ -481,13 +487,26 @@ jobs:
             if [[ -z "$COVERALLS_REPO_TOKEN" ]]; then
               mix coveralls.html --exclude no_parity --parallel --umbrella
             else
-              mix coveralls.circle --exclude no_parity --parallel --umbrella
+              mix coveralls.circle --exclude no_parity --parallel --umbrella ||
+                # if mix failed, then coveralls_merge won't run, so single done here
+                curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done"
             fi
 
       - store_artifacts:
           path: cover/excoveralls.html
       - store_test_results:
           path: _build/test/junit
+  coveralls_merge:
+    docker:
+      # Ensure .tool-versions matches
+      - image: circleci/elixir:1.7.2
+        environment:
+          MIX_ENV: test
+
+    steps:
+      - run:
+          name: Tell coveralls.io build is done
+          command: curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done"
 workflows:
   version: 2
   primary:
@@ -496,6 +515,13 @@ workflows:
       - check_formatted:
           requires:
             - build
+      # This unfortunately will only fire if all the tests pass because of how `requires` works
+      - coveralls_merge:
+          requires:
+            - test_parity_http_websocket
+            - test_parity_mox
+            - test_geth_http_websocket
+            - test_geth_mox
       - credo:
           requires:
             - build
