@@ -757,7 +757,7 @@ defmodule Explorer.Chain.Import do
     {:ok, _} =
       insert_changes_list(
         ordered_changes_list,
-        conflict_target: [:address_hash, :block_number],
+        conflict_target: ~w(address_hash token_contract_address_hash block_number)a,
         on_conflict: :replace_all,
         for: TokenBalance,
         returning: true,
