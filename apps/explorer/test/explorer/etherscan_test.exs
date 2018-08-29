@@ -343,6 +343,42 @@ defmodule Explorer.EtherscanTest do
         assert transaction.block_number in expected_block_numbers
       end
     end
+
+    test "with filter_by: 'to' option with one matching transaction" do
+      address = insert(:address)
+      contract_address = insert(:contract_address)
+
+      :transaction
+      |> insert(to_address: address)
+      |> with_block()
+
+      :transaction
+      |> insert(from_address: address, to_address: nil)
+      |> with_contract_creation(contract_address)
+      |> with_block()
+
+      options = %{filter_by: "to"}
+
+      found_transactions = Etherscan.list_transactions(address.hash, options)
+
+      assert length(found_transactions) == 1
+    end
+
+    test "with filter_by: 'to' option with non-matching transaction" do
+      address = insert(:address)
+      contract_address = insert(:contract_address)
+
+      :transaction
+      |> insert(from_address: address, to_address: nil)
+      |> with_contract_creation(contract_address)
+      |> with_block()
+
+      options = %{filter_by: "to"}
+
+      found_transactions = Etherscan.list_transactions(address.hash, options)
+
+      assert length(found_transactions) == 0
+    end
   end
 
   describe "list_internal_transactions/1" do

@@ -1522,7 +1522,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         # page number
         "page" => "1",
         # page size
-        "offset" => "2"
+        "offset" => "2",
+        "filterby" => "to"
       }
 
       optional_params = AddressController.optional_params(params)
@@ -1532,6 +1533,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert optional_params.order_by_direction == :asc
       assert optional_params.start_block == 100
       assert optional_params.end_block == 120
+      assert optional_params.filter_by == "to"
     end
 
     test "'sort' values can be 'asc' or 'desc'" do
@@ -1550,6 +1552,18 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       params3 = %{"sort" => "invalid"}
 
       assert AddressController.optional_params(params3) == %{}
+    end
+
+    test "'filterby' value can only be 'to'" do
+      params1 = %{"filterby" => "to"}
+
+      optional_params = AddressController.optional_params(params1)
+
+      assert optional_params.filter_by == "to"
+
+      params2 = %{"filterby" => "invalid"}
+
+      assert AddressController.optional_params(params2) == %{}
     end
 
     test "only includes optional params when they're given" do
