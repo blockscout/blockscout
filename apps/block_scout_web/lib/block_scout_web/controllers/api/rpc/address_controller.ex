@@ -118,6 +118,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     |> put_pagination_options(params)
     |> put_start_block(params)
     |> put_end_block(params)
+    |> put_filter_by(params)
   end
 
   defp fetch_address(params) do
@@ -241,6 +242,16 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
          {end_block, ""} <- Integer.parse(endblock_param) do
       Map.put(options, :end_block, end_block)
     else
+      _ ->
+        options
+    end
+  end
+
+  defp put_filter_by(options, params) do
+    case params do
+      %{"filterby" => filter_by} when filter_by in ["to"] ->
+        Map.put(options, :filter_by, filter_by)
+
       _ ->
         options
     end

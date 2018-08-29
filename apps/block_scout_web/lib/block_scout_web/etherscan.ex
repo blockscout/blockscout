@@ -603,6 +603,15 @@ defmodule BlockScoutWeb.Etherscan do
         type: "integer",
         description:
           "A nonnegative integer that represents the maximum number of records to return when paginating. 'page' must be provided in conjunction."
+      },
+      %{
+        key: "filterby",
+        type: "string",
+        description: """
+        A string representing the field to filter by. If none is given
+        it returns transactions that match to, from, or contract address.
+        Available values: to
+        """
       }
     ],
     responses: [
