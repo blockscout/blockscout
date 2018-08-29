@@ -52,7 +52,7 @@
     </div>
 
     <%= if involves_token_transfers?(@transaction) do %>
-      <div class="offset-md-2 col-md-7 col-lg-8 d-flex flex-column mt-1 mb-2">
+      <div class="offset-md-2 col-md-10 col-lg-8 d-flex flex-column mt-2 mb-2">
         <% [first_token_transfer | tail]= @transaction.token_transfers %>
         <%= render "_token_transfer.html", address: assigns[:current_address], locale: @locale, token_transfer: first_token_transfer %>
 
@@ -63,7 +63,7 @@
         </div>
       </div>
       <%= if length(tail) != 0 do %>
-        <div class="col-md-3 col-lg-2 d-flex flex-column mt-1 mb-2 text-center token-tile-more">
+        <div class="col-md-12 d-flex flex-column mt-1 mb-2 text-center token-tile-more">
           <span>
             <%= link to: "##{@transaction.hash}", "data-toggle": "collapse", "data-test": "token_transfers_expansion" do %>
               <%= gettext "View More Transder" %>

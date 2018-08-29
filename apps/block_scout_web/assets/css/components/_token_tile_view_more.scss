@@ -1,0 +1,66 @@
+.token-tile-more {
+  line-height: 0.5;
+  text-align: center;
+
+  &:hover, :focus {
+    text-decoration: none;
+  }
+}
+.token-tile-more span {
+  display: inline-block;
+  position: relative;
+}
+.token-tile-more span:before,
+.token-tile-more span:after {
+  content: "";
+  position: absolute;
+  height: 5px;
+  border-bottom: 1px solid $border-color;
+  border-top: 1px solid $border-color;
+  top: 0;
+  width: 100%;
+}
+.token-tile-more span:before {
+  right: 55%;
+  margin-right: 15px;
+}
+.token-tile-more span:after {
+  left: 55%;
+  margin-left: 15px;
+}
+
+
+
+@media (min-width: 768px) {
+
+  .token-tile-more span:before,
+  .token-tile-more span:after {
+    width: 40%;
+  }
+  .token-tile-more span:before {
+    right: 58%;
+    margin-right: 15px;
+  }
+  .token-tile-more span:after {
+    left: 58%;
+    margin-left: 15px;
+  }
+
+}
+
+@media (max-width: 375px) {
+
+  .token-tile-more span:before,
+  .token-tile-more span:after {
+    width: 28%;
+  }
+  .token-tile-more span:before {
+    right: 66%;
+    margin-right: 15px;
+  }
+  .token-tile-more span:after {
+    left: 66%;
+    margin-left: 15px;
+  }
+
+}
