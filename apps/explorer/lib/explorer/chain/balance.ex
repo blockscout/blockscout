@@ -35,7 +35,7 @@ defmodule Explorer.Chain.Balance do
         }
 
   @primary_key false
-  schema "balances" do
+  schema "address_coin_balances" do
     field(:block_number, :integer)
     field(:value, Wei)
     field(:value_fetched_at, :utc_datetime)
@@ -50,6 +50,6 @@ defmodule Explorer.Chain.Balance do
     |> cast(params, @allowed_fields)
     |> validate_required(@required_fields)
     |> foreign_key_constraint(:address_hash)
-    |> unique_constraint(:block_number, name: :balances_address_hash_block_number_index)
+    |> unique_constraint(:block_number, name: :address_coin_balances_address_hash_block_number_index)
   end
 end
