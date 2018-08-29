@@ -9,7 +9,7 @@ defmodule Indexer.BlockFetcher.Catchup.SupervisorTest do
   alias Explorer.Chain.Block
 
   alias Indexer.{
-    AddressBalanceFetcherCase,
+    CoinBalanceFetcherCase,
     BlockFetcher,
     BoundInterval,
     InternalTransactionFetcherCase,
@@ -207,7 +207,7 @@ defmodule Indexer.BlockFetcher.Catchup.SupervisorTest do
       assert Repo.aggregate(Block, :count, :hash) == 0
 
       start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CoinBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
@@ -255,7 +255,7 @@ defmodule Indexer.BlockFetcher.Catchup.SupervisorTest do
       end)
 
       start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CoinBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
@@ -326,7 +326,7 @@ defmodule Indexer.BlockFetcher.Catchup.SupervisorTest do
       end)
 
       start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CoinBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)

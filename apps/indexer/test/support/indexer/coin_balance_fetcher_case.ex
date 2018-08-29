@@ -1,4 +1,4 @@
-defmodule Indexer.AddressBalanceFetcherCase do
+defmodule Indexer.CoinBalanceFetcherCase do
   alias Indexer.CoinBalanceFetcher
 
   def start_supervised!(options \\ []) when is_list(options) do

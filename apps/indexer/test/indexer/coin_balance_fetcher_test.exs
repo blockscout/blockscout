@@ -8,7 +8,7 @@ defmodule Indexer.CoinBalanceFetcherTest do
   import Mox
 
   alias Explorer.Chain.{Address, Balance, Hash, Wei}
-  alias Indexer.{CoinBalanceFetcher, AddressBalanceFetcherCase}
+  alias Indexer.{CoinBalanceFetcher, CoinBalanceFetcherCase}
 
   @moduletag :capture_log
 
@@ -68,7 +68,7 @@ defmodule Indexer.CoinBalanceFetcherTest do
       assert miner.fetched_balance == nil
       assert miner.fetched_balance_block_number == nil
 
-      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CoinBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       fetched_address =
         wait(fn ->
@@ -121,7 +121,7 @@ defmodule Indexer.CoinBalanceFetcherTest do
       block = insert(:block, miner: miner, number: block_number)
       insert(:unfetched_balance, address_hash: miner.hash, block_number: block_number)
 
-      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments, max_batch_size: 2)
+      CoinBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments, max_batch_size: 2)
 
       fetched_address =
         wait(fn ->
@@ -177,7 +177,7 @@ defmodule Indexer.CoinBalanceFetcherTest do
         end)
       end
 
-      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CoinBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       assert :ok = CoinBalanceFetcher.async_fetch_balances([%{address_hash: hash, block_number: block_number}])
 

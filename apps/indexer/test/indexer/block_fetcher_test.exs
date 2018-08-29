@@ -49,7 +49,7 @@ defmodule Indexer.BlockFetcherTest do
   describe "import_range/2" do
     setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
       start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CoinBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
