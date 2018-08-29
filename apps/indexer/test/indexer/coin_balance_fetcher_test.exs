@@ -1,5 +1,5 @@
-defmodule Indexer.AddressBalanceFetcherTest do
-  # MUST be `async: false` so that {:shared, pid} is set for connection to allow BalanceFetcher's self-send to have
+defmodule Indexer.CoinBalanceFetcherTest do
+  # MUST be `async: false` so that {:shared, pid} is set for connection to allow CoinBalanceFetcher's self-send to have
   # connection allowed immediately.
   use EthereumJSONRPC.Case, async: false
   use Explorer.DataCase
@@ -8,7 +8,7 @@ defmodule Indexer.AddressBalanceFetcherTest do
   import Mox
 
   alias Explorer.Chain.{Address, Balance, Hash, Wei}
-  alias Indexer.{BalanceFetcher, AddressBalanceFetcherCase}
+  alias Indexer.{CoinBalanceFetcher, AddressBalanceFetcherCase}
 
   @moduletag :capture_log
 
@@ -179,7 +179,7 @@ defmodule Indexer.AddressBalanceFetcherTest do
 
       AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
-      assert :ok = BalanceFetcher.async_fetch_balances([%{address_hash: hash, block_number: block_number}])
+      assert :ok = CoinBalanceFetcher.async_fetch_balances([%{address_hash: hash, block_number: block_number}])
 
       address =
         wait(fn ->
@@ -250,7 +250,7 @@ defmodule Indexer.AddressBalanceFetcherTest do
 
       params_list = Enum.map(block_quantities, &%{block_quantity: &1, hash_data: hash_data})
 
-      case BalanceFetcher.run(params_list, 0, json_rpc_named_arguments) do
+      case CoinBalanceFetcher.run(params_list, 0, json_rpc_named_arguments) do
         :ok ->
           balances = Repo.all(from(balance in Balance, where: balance.address_hash == ^hash_data))
 
@@ -292,7 +292,7 @@ defmodule Indexer.AddressBalanceFetcherTest do
         end)
       end
 
-      assert BalanceFetcher.run(
+      assert CoinBalanceFetcher.run(
                [%{block_quantity: "0x1", hash_data: hash_data}, %{block_quantity: "0x1", hash_data: hash_data}],
                0,
                json_rpc_named_arguments

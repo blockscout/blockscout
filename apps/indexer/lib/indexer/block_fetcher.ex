@@ -157,7 +157,7 @@ defmodule Indexer.BlockFetcher do
     callback_module.import(state, options_with_broadcast)
   end
 
-  # `fetched_balance_block_number` is needed for the `BalanceFetcher`, but should not be used for `import` because the
+  # `fetched_balance_block_number` is needed for the `CoinBalanceFetcher`, but should not be used for `import` because the
   # balance is not known yet.
   defp pop_address_hash_to_fetched_balance_block_number(options) do
     {address_hash_fetched_balance_block_number_pairs, import_options} =
