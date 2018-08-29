@@ -26,4 +26,4 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
 
 config :logger, :block_scout_web,
   level: :info,
-  path: "logs/prod/block_scout_web.log"
+  path: Path.absname("logs/prod/block_scout_web.log")

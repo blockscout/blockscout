@@ -11,7 +11,7 @@ config :explorer, Explorer.Repo,
 
 config :logger, :explorer,
   level: :debug,
-  path: "logs/dev/explorer.log"
+  path: Path.absname("logs/dev/explorer.log")
 
 import_config "dev.secret.exs"
 

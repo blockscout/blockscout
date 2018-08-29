@@ -19,7 +19,7 @@ config :explorer, Explorer.Market.History.Cataloger, enabled: false
 
 config :logger, :explorer,
   level: :warn,
-  path: "logs/test/explorer.log"
+  path: Path.absname("logs/test/explorer.log")
 
 if File.exists?(file = "test.secret.exs") do
   import_config file

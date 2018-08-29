@@ -2,4 +2,4 @@ use Mix.Config
 
 config :logger, :ethereum_jsonrpc,
   level: :debug,
-  path: "logs/dev/ethereum_jsonrpc.log"
+  path: Path.absname("logs/dev/ethereum_jsonrpc.log")
