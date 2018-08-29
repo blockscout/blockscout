@@ -1,4 +1,4 @@
-defmodule Indexer.Balances do
+defmodule Indexer.Address.CoinBalances do
   @moduledoc """
   Extracts `Explorer.Chain.Balance` params from other schema's params.
   """
