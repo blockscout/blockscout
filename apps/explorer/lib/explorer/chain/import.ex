@@ -66,12 +66,10 @@ defmodule Explorer.Chain.Import do
           optional(:on_conflict) => :nothing | :replace_all,
           optional(:timeout) => timeout
         }
-
-  @type token_balances :: %{
+  @type token_balances_options :: %{
           required(:params) => params,
           optional(:timeout) => timeout
         }
-
   @type all_options :: %{
           optional(:addresses) => addresses_options,
           optional(:balances) => balances_options,
@@ -83,8 +81,8 @@ defmodule Explorer.Chain.Import do
           optional(:timeout) => timeout,
           optional(:token_transfers) => token_transfers_options,
           optional(:tokens) => tokens_options,
-          optional(:transactions) => transactions_options,
-          optional(:token_balances) => token_balances
+          optional(:token_balances) => token_balances_options,
+          optional(:transactions) => transactions_options
         }
   @type all_result ::
           {:ok,
@@ -101,6 +99,7 @@ defmodule Explorer.Chain.Import do
              optional(:receipts) => [Hash.Full.t()],
              optional(:token_transfers) => [TokenTransfer.t()],
              optional(:tokens) => [Token.t()],
+             optional(:token_balances) => [TokenBalance.t()],
              optional(:transactions) => [Hash.Full.t()]
            }}
           | {:error, [Changeset.t()]}

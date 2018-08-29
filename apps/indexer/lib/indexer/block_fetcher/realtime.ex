@@ -12,7 +12,7 @@ defmodule Indexer.BlockFetcher.Realtime do
 
   alias EthereumJSONRPC.Subscription
   alias Explorer.Chain
-  alias Indexer.{AddressExtraction, BlockFetcher, TokenFetcher}
+  alias Indexer.{AddressExtraction, BlockFetcher, TokenBalances, TokenFetcher}
 
   @behaviour BlockFetcher
 
@@ -118,7 +118,8 @@ defmodule Indexer.BlockFetcher.Realtime do
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number,
           balances: %{params: balance_params},
           addresses: %{params: addresses_params},
-          transactions: %{params: transactions_params}
+          transactions: %{params: transactions_params},
+          token_balances: %{params: token_balances_params}
         } = options
       ) do
     with {:ok,
@@ -136,12 +137,14 @@ defmodule Indexer.BlockFetcher.Realtime do
              addresses_params: internal_transactions_addresses_params,
              balances_params: balance_params
            }),
+         {:ok, token_balances} <- TokenBalances.fetch_token_balances_from_blockchain(token_balances_params),
          chain_import_options =
            options
            |> Map.drop(@import_options)
            |> put_in([:addresses, :params], balances_addresses_params)
            |> put_in([Access.key(:balances, %{}), :params], balances_params)
-           |> put_in([Access.key(:internal_transactions, %{}), :params], internal_transactions_params),
+           |> put_in([Access.key(:internal_transactions, %{}), :params], internal_transactions_params)
+           |> put_in([Access.key(:token_balances), :params], token_balances),
          {:ok, results} = ok <- Chain.import(chain_import_options) do
       async_import_remaining_block_data(results)
       ok

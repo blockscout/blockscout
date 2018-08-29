@@ -13,7 +13,8 @@ defmodule Indexer.BlockFetcher.Catchup.SupervisorTest do
     BlockFetcher,
     BoundInterval,
     InternalTransactionFetcherCase,
-    TokenFetcherCase
+    TokenFetcherCase,
+    TokenBalanceFetcherCase
   }
 
   alias Indexer.BlockFetcher.Catchup
@@ -209,6 +210,7 @@ defmodule Indexer.BlockFetcher.Catchup.SupervisorTest do
       AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       start_supervised!(
         {Catchup.Supervisor, [%{block_fetcher: %BlockFetcher{json_rpc_named_arguments: json_rpc_named_arguments}}, []]}
@@ -256,6 +258,7 @@ defmodule Indexer.BlockFetcher.Catchup.SupervisorTest do
       AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       # from `setup :state`
       assert_received :catchup_index
 
@@ -326,6 +329,7 @@ defmodule Indexer.BlockFetcher.Catchup.SupervisorTest do
       AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       # from `setup :state`
       assert_received :catchup_index
 

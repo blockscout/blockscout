@@ -10,6 +10,7 @@ defmodule Explorer.Factory do
 
   alias Explorer.Chain.{
     Address,
+    Address.TokenBalance,
     Balance,
     Block,
     Data,
@@ -437,6 +438,16 @@ defmodule Explorer.Factory do
           "type" => "function"
         }
       ]
+    }
+  end
+
+  def token_balance_factory() do
+    %TokenBalance{
+      address: build(:address),
+      token: build(:token),
+      block_number: block_number(),
+      value: Enum.random(1..100_000),
+      value_fetched_at: DateTime.utc_now()
     }
   end
 

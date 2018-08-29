@@ -7,7 +7,7 @@ defmodule Explorer.SmartContract.Reader do
   """
 
   alias Explorer.Chain
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{Block, Hash}
   alias EthereumJSONRPC.Encoder
 
   @typedoc """
@@ -22,8 +22,22 @@ defmodule Explorer.SmartContract.Reader do
 
   @typedoc """
   Options that can be forwarded when calling the Ethereum JSON RPC.
+
+  ## Required
+
+  * `:json_rpc_named_arguments` - the named arguments to `EthereumJSONRPC.json_rpc/2`.
+
+  ## Optional
+
+  * `:block_number` - the block in which to execute the function. Defaults to the `nil` to indicate
+  the latest block as determined by the remote node, which may differ from the latest block number
+  in `Explorer.Chain`.
   """
-  @type contract_call_options :: [{:json_rpc_named_arguments, EthereumJSONRPC.json_rpc_named_arguments()}]
+  @type contract_call_options :: [
+          {:json_rpc_named_arguments, EthereumJSONRPC.json_rpc_named_arguments()},
+          {:block_number, Block.block_number()}
+        ]
+
   @doc """
   Queries the contract functions on the blockchain and returns the call results.
 
@@ -52,8 +66,6 @@ defmodule Explorer.SmartContract.Reader do
   """
   @spec query_verified_contract(Hash.Address.t(), functions()) :: functions_results()
   def query_verified_contract(address_hash, functions) do
-    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-
     contract_address = Hash.to_string(address_hash)
 
     abi =
@@ -61,7 +73,7 @@ defmodule Explorer.SmartContract.Reader do
       |> Chain.address_hash_to_smart_contract()
       |> Map.get(:abi)
 
-    query_contract(contract_address, abi, functions, json_rpc_named_arguments)
+    query_contract(contract_address, abi, functions)
   end
 
   @doc """
@@ -82,20 +94,24 @@ defmodule Explorer.SmartContract.Reader do
       ) do
     contract_address = Hash.to_string(address)
 
+    query_contract(contract_address, abi, functions, opts)
+  end
+
+  @spec query_contract(
+          String.t(),
+          term(),
+          functions(),
+          contract_call_options()
+        ) :: functions_results()
+  def query_contract(contract_address, abi, functions, opts \\ []) do
     json_rpc_named_arguments =
       Keyword.get(opts, :json_rpc_named_arguments) || Application.get_env(:explorer, :json_rpc_named_arguments)
 
-    query_contract(contract_address, abi, functions, json_rpc_named_arguments)
-  end
-
-  @spec query_contract(String.t(), term(), functions(), EthereumJSONRPC.json_rpc_named_arguments()) ::
-          functions_results()
-  defp query_contract(contract_address, abi, functions, json_rpc_named_arguments) do
     blockchain_result =
       abi
       |> Encoder.encode_abi(functions)
       |> Enum.map(&setup_call_payload(&1, contract_address))
-      |> EthereumJSONRPC.execute_contract_functions(json_rpc_named_arguments)
+      |> EthereumJSONRPC.execute_contract_functions(json_rpc_named_arguments, opts)
 
     Encoder.decode_abi_results(blockchain_result, abi, functions)
   rescue
@@ -164,7 +180,11 @@ defmodule Explorer.SmartContract.Reader do
     |> Enum.reverse()
   end
 
-  def fetch_current_value_from_blockchain([%{"inputs" => []} = function | tail], contract_address_hash, acc) do
+  def fetch_current_value_from_blockchain(
+        [%{"inputs" => []} = function | tail],
+        contract_address_hash,
+        acc
+      ) do
     values =
       fetch_from_blockchain(contract_address_hash, %{
         name: function["name"],
@@ -204,7 +224,11 @@ defmodule Explorer.SmartContract.Reader do
       |> Enum.filter(fn function -> function["name"] == name end)
       |> List.first()
 
-    fetch_from_blockchain(contract_address_hash, %{name: name, args: args, outputs: function["outputs"]})
+    fetch_from_blockchain(contract_address_hash, %{
+      name: name,
+      args: args,
+      outputs: function["outputs"]
+    })
   end
 
   defp fetch_from_blockchain(contract_address_hash, %{name: name, args: args, outputs: outputs}) do

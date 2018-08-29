@@ -10,7 +10,8 @@ defmodule Indexer.Application do
     BlockFetcher,
     InternalTransactionFetcher,
     PendingTransactionFetcher,
-    TokenFetcher
+    TokenFetcher,
+    TokenBalanceFetcher
   }
 
   @impl Application
@@ -33,6 +34,7 @@ defmodule Indexer.Application do
       {InternalTransactionFetcher,
        name: InternalTransactionFetcher, json_rpc_named_arguments: json_rpc_named_arguments},
       {TokenFetcher, name: TokenFetcher, json_rpc_named_arguments: json_rpc_named_arguments},
+      {TokenBalanceFetcher, name: TokenBalanceFetcher, json_rpc_named_arguments: json_rpc_named_arguments},
       {BlockFetcher.Supervisor, [block_fetcher_supervisor_named_arguments, [name: BlockFetcher.Supervisor]]}
     ]
 

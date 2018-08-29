@@ -1592,6 +1592,15 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "stream_unfetched_token_balances/2" do
+    test "returns only the token balances that have value_fetched_at nil" do
+      token_balance = insert(:token_balance, value_fetched_at: nil)
+      insert(:token_balance)
+
+      assert Chain.stream_unfetched_token_balances([], &[&1.block_number | &2]) == {:ok, [token_balance.block_number]}
+    end
+  end
+
   test "total_supply/0" do
     height = 2_000_000
     insert(:block, number: height)
