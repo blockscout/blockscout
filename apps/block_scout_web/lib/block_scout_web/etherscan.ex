@@ -821,7 +821,9 @@ defmodule BlockScoutWeb.Etherscan do
 
   @token_gettoken_action %{
     name: "getToken",
-    description: "Get ERC-20 or ERC-721 token by contract address.",
+    description:
+      "Get <a href='https://github.com/ethereum/EIPs/issues/20'>ERC-20</a>" <>
+        "or <a href='https://github.com/ethereum/EIPs/issues/721'>ERC-721</a> token by contract address.",
     required_params: [
       %{
         key: "contractaddress",
@@ -858,7 +860,10 @@ defmodule BlockScoutWeb.Etherscan do
 
   @stats_tokensupply_action %{
     name: "tokensupply",
-    description: "Get an ERC-20 or ERC-721 token total supply by contract address.",
+    description:
+      "Get <a href='https://github.com/ethereum/EIPs/issues/20'>ERC-20</a> or " <>
+        "<a href='https://github.com/ethereum/EIPs/issues/721'>ERC-721</a> " <>
+        " token total supply by contract address.",
     required_params: [
       %{
         key: "contractaddress",
