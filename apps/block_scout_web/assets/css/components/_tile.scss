@@ -138,3 +138,35 @@
     margin: 0;
   }
 }
+
+
+.token-tile-more {
+  line-height: 0.5;
+  text-align: center;
+
+  &:hover, :focus {
+    text-decoration: none;
+  }
+}
+.token-tile-more span {
+  display: inline-block;
+  position: relative;
+}
+.token-tile-more span:before,
+.token-tile-more span:after {
+  content: "";
+  position: absolute;
+  height: 5px;
+  border-bottom: 1px solid $border-color;
+  border-top: 1px solid $border-color;
+  top: 0;
+  width: 400px;
+}
+.token-tile-more span:before {
+  right: 55%;
+  margin-right: 15px;
+}
+.token-tile-more span:after {
+  left: 55%;
+  margin-left: 15px;
+}

@@ -63,10 +63,12 @@
         </div>
       </div>
       <%= if length(tail) != 0 do %>
-        <div class="col-md-3 col-lg-2 d-flex flex-column mt-1 mb-2 float-right">
-          <%= link to: "##{@transaction.hash}", "data-toggle": "collapse", "data-test": "token_transfers_expansion" do %>
-            <%= gettext "See More" %>
+        <div class="col-md-3 col-lg-2 d-flex flex-column mt-1 mb-2 text-center token-tile-more">
+          <span>
+            <%= link to: "##{@transaction.hash}", "data-toggle": "collapse", "data-test": "token_transfers_expansion" do %>
+              <%= gettext "View More Transder" %>
           <% end %>
+        </span>
         </div>
       <% end %>
     <% end %>
