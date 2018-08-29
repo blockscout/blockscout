@@ -7,6 +7,8 @@ defmodule Explorer.Application do
 
   @impl Application
   def start(_type, _args) do
+    register_metrics()
+
     # Children to start in all environments
     base_children = [
       Explorer.Repo,
@@ -28,6 +30,13 @@ defmodule Explorer.Application do
       configure(Explorer.Market.History.Cataloger)
     ]
     |> List.flatten()
+  end
+
+  defp register_metrics do
+    if Code.ensure_loaded(Wobserver) == {:module, Wobserver} do
+      Wobserver.register(:page, {"Explorer", :explorer, &Explorer.Wobserver.page/0})
+      Wobserver.register(:metric, &Explorer.Wobserver.metrics/0)
+    end
   end
 
   defp should_start?(process) do
