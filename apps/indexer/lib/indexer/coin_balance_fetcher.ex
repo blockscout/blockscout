@@ -1,7 +1,7 @@
 defmodule Indexer.CoinBalanceFetcher do
   @moduledoc """
-  Fetches `t:Explorer.Chain.Balance.t/0` and updates `t:Explorer.Chain.Address.t/0` `fetched_balance` and
-  `fetched_balance_block_number` to value at max `t:Explorer.Chain.Balance.t/0` `block_number` for the given `t:Explorer.Chain.Address.t/` `hash`.
+  Fetches `t:Explorer.Chain.Address.CoinBalance.t/0` and updates `t:Explorer.Chain.Address.t/0` `fetched_balance` and
+  `fetched_balance_block_number` to value at max `t:Explorer.Chain.Address.CoinBalance.t/0` `block_number` for the given `t:Explorer.Chain.Address.t/` `hash`.
   """
 
   require Logger

@@ -7,7 +7,8 @@ defmodule Indexer.CoinBalanceFetcherTest do
   import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
   import Mox
 
-  alias Explorer.Chain.{Address, Balance, Hash, Wei}
+  alias Explorer.Chain.{Address, Hash, Wei}
+  alias Explorer.Chain.Address.CoinBalance
   alias Indexer.{CoinBalanceFetcher, CoinBalanceFetcherCase}
 
   @moduletag :capture_log
@@ -252,17 +253,19 @@ defmodule Indexer.CoinBalanceFetcherTest do
 
       case CoinBalanceFetcher.run(params_list, 0, json_rpc_named_arguments) do
         :ok ->
-          balances = Repo.all(from(balance in Balance, where: balance.address_hash == ^hash_data))
+          balances = Repo.all(from(balance in CoinBalance, where: balance.address_hash == ^hash_data))
 
           assert Enum.count(balances) == 2
 
           balance_by_block_number =
-            Enum.into(balances, %{}, fn %Balance{block_number: block_number} = balance -> {block_number, balance} end)
+            Enum.into(balances, %{}, fn %CoinBalance{block_number: block_number} = balance ->
+              {block_number, balance}
+            end)
 
           Enum.each(expected_balance_by_block_number, fn {block_number, expected_balance} ->
             expected_value = %Explorer.Chain.Wei{value: Decimal.new(expected_balance)}
 
-            assert %Balance{value: ^expected_value} = balance_by_block_number[block_number]
+            assert %CoinBalance{value: ^expected_value} = balance_by_block_number[block_number]
           end)
 
           fetched_address = Repo.one!(from(address in Address, where: address.hash == ^hash_data))

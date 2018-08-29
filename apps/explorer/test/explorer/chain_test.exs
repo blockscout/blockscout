@@ -1316,7 +1316,7 @@ defmodule Explorer.ChainTest do
   end
 
   describe "stream_unfetched_balances/2" do
-    test "with `t:Explorer.Chain.Balance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
+    test "with `t:Explorer.Chain.Address.CoinBalance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
            "does not return `t:Explorer.Chain.Block.t/0` `miner_hash`" do
       %Address{hash: miner_hash} = miner = insert(:address)
       %Block{number: block_number} = insert(:block, miner: miner)
@@ -1330,7 +1330,7 @@ defmodule Explorer.ChainTest do
       assert {:ok, []} = Chain.stream_unfetched_balances([], &[&1 | &2])
     end
 
-    test "with `t:Explorer.Chain.Balance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
+    test "with `t:Explorer.Chain.Address.CoinBalance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
            "does not return `t:Explorer.Chain.Transaction.t/0` `from_address_hash`" do
       %Address{hash: from_address_hash} = from_address = insert(:address)
       %Block{number: block_number} = block = insert(:block)
@@ -1360,7 +1360,7 @@ defmodule Explorer.ChainTest do
       refute %{address_hash: from_address_hash, block_number: block_number} in balance_fields_list
     end
 
-    test "with `t:Explorer.Chain.Balance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
+    test "with `t:Explorer.Chain.Address.CoinBalance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
            "does not return `t:Explorer.Chain.Transaction.t/0` `to_address_hash`" do
       %Address{hash: to_address_hash} = to_address = insert(:address)
       %Block{number: block_number} = block = insert(:block)
@@ -1390,7 +1390,7 @@ defmodule Explorer.ChainTest do
       refute %{address_hash: to_address_hash, block_number: block_number} in balance_fields_list
     end
 
-    test "with `t:Explorer.Chain.Balance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
+    test "with `t:Explorer.Chain.Address.CoinBalance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
            "does not return `t:Explorer.Chain.Log.t/0` `address_hash`" do
       address = insert(:address)
       block = insert(:block)
@@ -1429,7 +1429,7 @@ defmodule Explorer.ChainTest do
              } in balance_fields_list
     end
 
-    test "with `t:Explorer.Chain.Balance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
+    test "with `t:Explorer.Chain.Address.CoinBalance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
            "does not return `t:Explorer.Chain.InternalTransaction.t/0` `created_contract_address_hash`" do
       created_contract_address = insert(:address)
       block = insert(:block)
@@ -1473,7 +1473,7 @@ defmodule Explorer.ChainTest do
              } in balance_fields_list
     end
 
-    test "with `t:Explorer.Chain.Balance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
+    test "with `t:Explorer.Chain.Address.CoinBalance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
            "does not return `t:Explorer.Chain.InternalTransaction.t/0` `from_address_hash`" do
       from_address = insert(:address)
       block = insert(:block)
@@ -1511,7 +1511,7 @@ defmodule Explorer.ChainTest do
       refute %{address_hash: from_address.hash, block_number: block.number} in balance_fields_list
     end
 
-    test "with `t:Explorer.Chain.Balance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
+    test "with `t:Explorer.Chain.Address.CoinBalance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
            "does not return `t:Explorer.Chain.InternalTransaction.t/0` `to_address_hash`" do
       to_address = insert(:address)
       block = insert(:block)

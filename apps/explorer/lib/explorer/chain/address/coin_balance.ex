@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Balance do
+defmodule Explorer.Chain.Address.CoinBalance do
   @moduledoc """
   The `t:Explorer.Chain.Wei.t/0` `value` of `t:Explorer.Chain.Address.t/0` at the end of a `t:Explorer.Chain.Block.t/0`
   `t:Explorer.Chain.Block.block_number/0`.
