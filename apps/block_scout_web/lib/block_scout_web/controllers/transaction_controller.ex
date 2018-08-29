@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.TransactionController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, EstimatedCount}
 
   def index(conn, params) do
     full_options =
@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.TransactionController do
 
     {transactions, next_page} = split_list_by_page(transactions_plus_one)
 
-    transaction_estimated_count = Chain.transaction_estimated_count()
+    transaction_estimated_count = EstimatedCount.transaction()
 
     render(
       conn,

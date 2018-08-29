@@ -1,10 +1,9 @@
 defmodule BlockScoutWeb.ChainController do
   use BlockScoutWeb, :controller
 
-  alias Explorer.{Chain, PagingOptions, Repo}
+  alias Explorer.{Chain, EstimatedCount, Market, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Block, Transaction}
   alias Explorer.ExchangeRates.Token
-  alias Explorer.Market
 
   def show(conn, _params) do
     blocks =
@@ -12,7 +11,7 @@ defmodule BlockScoutWeb.ChainController do
       |> Chain.list_blocks()
       |> Repo.preload([:miner, :transactions])
 
-    transaction_estimated_count = Chain.transaction_estimated_count()
+    transaction_estimated_count = EstimatedCount.transaction()
 
     transactions =
       Chain.recent_collated_transactions(

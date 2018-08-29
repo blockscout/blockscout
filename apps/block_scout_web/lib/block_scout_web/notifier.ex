@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.Notifier do
   Responds to events from EventHandler by sending appropriate channel updates to front-end.
   """
 
-  alias Explorer.{Chain, Market, Repo}
+  alias Explorer.{Chain, EstimatedCount, Market, Repo}
   alias Explorer.Chain.{Address, InternalTransaction, Transaction}
   alias Explorer.ExchangeRates.Token
   alias BlockScoutWeb.Endpoint
