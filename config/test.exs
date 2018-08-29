@@ -6,9 +6,9 @@ config :logger, :console, level: :warn
 
 config :logger, :ecto,
   level: :warn,
-  path: "logs/test/ecto.log"
+  path: Path.absname("logs/test/ecto.log")
 
-config :logger, :error, path: "logs/test/error.log"
+config :logger, :error, path: Path.absname("logs/test/error.log")
 
 config :explorer, Explorer.ExchangeRates,
   source: Explorer.ExchangeRates.Source.NoOpSource,

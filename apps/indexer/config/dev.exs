@@ -2,7 +2,7 @@ use Mix.Config
 
 config :logger, :indexer,
   level: :debug,
-  path: "logs/dev/indexer.log"
+  path: Path.absname("logs/dev/indexer.log")
 
 variant =
   if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do

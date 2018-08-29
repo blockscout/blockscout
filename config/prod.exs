@@ -6,6 +6,6 @@ config :logger, :console, level: :info
 
 config :logger, :ecto,
   level: :info,
-  path: "logs/prod/ecto.log"
+  path: Path.absname("logs/prod/ecto.log")
 
-config :logger, :error, path: "logs/prod/error.log"
+config :logger, :error, path: Path.absname("logs/prod/error.log")
