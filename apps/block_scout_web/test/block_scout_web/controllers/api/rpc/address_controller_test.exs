@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias Explorer.Chain
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{Transaction, Wei}
   alias BlockScoutWeb.API.RPC.AddressController
 
   describe "balance" do
@@ -1326,6 +1326,188 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
                |> json_response(200)
 
       assert result["contractAddress"] == to_string(contract_address.hash)
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+  end
+
+  describe "getminedblocks" do
+    test "with missing address hash", %{conn: conn} do
+      params = %{
+        "module" => "account",
+        "action" => "getminedblocks"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["message"] =~ "'address' is required"
+      assert response["status"] == "0"
+      assert Map.has_key?(response, "result")
+      refute response["result"]
+    end
+
+    test "with an invalid address hash", %{conn: conn} do
+      params = %{
+        "module" => "account",
+        "action" => "getminedblocks",
+        "address" => "badhash"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["message"] =~ "Invalid address format"
+      assert response["status"] == "0"
+      assert Map.has_key?(response, "result")
+      refute response["result"]
+    end
+
+    test "with an address that doesn't exist", %{conn: conn} do
+      params = %{
+        "module" => "account",
+        "action" => "getminedblocks",
+        "address" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == []
+      assert response["status"] == "0"
+      assert response["message"] == "No blocks found"
+    end
+
+    test "returns all the required fields", %{conn: conn} do
+      %{block_range: range} = block_reward = insert(:block_reward)
+
+      block = insert(:block, number: Enum.random(Range.new(range.from, range.to)))
+
+      :transaction
+      |> insert(gas_price: 1)
+      |> with_block(block, gas_used: 1)
+
+      expected_reward =
+        block_reward.reward
+        |> Wei.to(:wei)
+        |> Decimal.add(Decimal.new(1))
+        |> Wei.from(:wei)
+
+      expected_result = [
+        %{
+          "blockNumber" => to_string(block.number),
+          "timeStamp" => to_string(block.timestamp),
+          "blockReward" => to_string(expected_reward.value)
+        }
+      ]
+
+      params = %{
+        "module" => "account",
+        "action" => "getminedblocks",
+        "address" => to_string(block.miner_hash)
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == expected_result
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "with a block with one transaction", %{conn: conn} do
+      %{block_range: range} = block_reward = insert(:block_reward)
+
+      block = insert(:block, number: Enum.random(Range.new(range.from, range.to)))
+
+      :transaction
+      |> insert(gas_price: 1)
+      |> with_block(block, gas_used: 1)
+
+      expected_reward =
+        block_reward.reward
+        |> Wei.to(:wei)
+        |> Decimal.add(Decimal.new(1))
+        |> Wei.from(:wei)
+
+      params = %{
+        "module" => "account",
+        "action" => "getminedblocks",
+        "address" => to_string(block.miner_hash)
+      }
+
+      expected_result = [
+        %{
+          "blockNumber" => to_string(block.number),
+          "timeStamp" => to_string(block.timestamp),
+          "blockReward" => to_string(expected_reward.value)
+        }
+      ]
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == expected_result
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "with pagination options", %{conn: conn} do
+      %{block_range: range} = block_reward = insert(:block_reward)
+
+      block_numbers = Range.new(range.from, range.to)
+
+      [block_number1, block_number2] = Enum.take(block_numbers, 2)
+
+      address = insert(:address)
+
+      block1 = insert(:block, number: block_number1, miner: address)
+      _block2 = insert(:block, number: block_number2, miner: address)
+
+      :transaction
+      |> insert(gas_price: 2)
+      |> with_block(block1, gas_used: 2)
+
+      expected_reward =
+        block_reward.reward
+        |> Wei.to(:wei)
+        |> Decimal.add(Decimal.new(4))
+        |> Wei.from(:wei)
+
+      params = %{
+        "module" => "account",
+        "action" => "getminedblocks",
+        "address" => to_string(address.hash),
+        # page number
+        "page" => "1",
+        # page size
+        "offset" => "1"
+      }
+
+      expected_result = [
+        %{
+          "blockNumber" => to_string(block1.number),
+          "timeStamp" => to_string(block1.timestamp),
+          "blockReward" => to_string(expected_reward.value)
+        }
+      ]
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == expected_result
       assert response["status"] == "1"
       assert response["message"] == "OK"
     end
