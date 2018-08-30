@@ -1331,6 +1331,158 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     end
   end
 
+  describe "tokenbalance" do
+    test "without required params", %{conn: conn} do
+      params = %{
+        "module" => "account",
+        "action" => "tokenbalance"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["message"] =~ "missing: address, contractaddress"
+      assert response["status"] == "0"
+      assert Map.has_key?(response, "result")
+      refute response["result"]
+    end
+
+    test "with contractaddress but without address", %{conn: conn} do
+      params = %{
+        "module" => "account",
+        "action" => "tokenbalance",
+        "contractaddress" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["message"] =~ "missing: address"
+      assert response["status"] == "0"
+      assert Map.has_key?(response, "result")
+      refute response["result"]
+    end
+
+    test "with address but without contractaddress", %{conn: conn} do
+      params = %{
+        "module" => "account",
+        "action" => "tokenbalance",
+        "address" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["message"] =~ "missing: contractaddress"
+      assert response["status"] == "0"
+      assert Map.has_key?(response, "result")
+      refute response["result"]
+    end
+
+    test "with an invalid contractaddress hash", %{conn: conn} do
+      params = %{
+        "module" => "account",
+        "action" => "tokenbalance",
+        "contractaddress" => "badhash",
+        "address" => "badhash"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["message"] =~ "Invalid contractaddress format"
+      assert response["status"] == "0"
+      assert Map.has_key?(response, "result")
+      refute response["result"]
+    end
+
+    test "with an invalid address hash", %{conn: conn} do
+      params = %{
+        "module" => "account",
+        "action" => "tokenbalance",
+        "contractaddress" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+        "address" => "badhash"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["message"] =~ "Invalid address format"
+      assert response["status"] == "0"
+      assert Map.has_key?(response, "result")
+      refute response["result"]
+    end
+
+    test "with a contractaddress and address that doesn't exist", %{conn: conn} do
+      params = %{
+        "module" => "account",
+        "action" => "tokenbalance",
+        "contractaddress" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+        "address" => "0x9bf38d4764929064f2d4d3a56520a76ab3df415b"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == "0"
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "with contractaddress and address without row in token_balances table", %{conn: conn} do
+      token = insert(:token)
+      address = insert(:address)
+
+      params = %{
+        "module" => "account",
+        "action" => "tokenbalance",
+        "contractaddress" => to_string(token.contract_address_hash),
+        "address" => to_string(address.hash)
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == "0"
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "with contractaddress and address with existing balance in token_balances table", %{conn: conn} do
+      token_balance = insert(:token_balance)
+
+      params = %{
+        "module" => "account",
+        "action" => "tokenbalance",
+        "contractaddress" => to_string(token_balance.token_contract_address_hash),
+        "address" => to_string(token_balance.address_hash)
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == to_string(token_balance.value)
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+  end
+
   describe "getminedblocks" do
     test "with missing address hash", %{conn: conn} do
       params = %{
@@ -1611,6 +1763,28 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       params = %{"offset" => "10001"}
 
       assert AddressController.optional_params(params) == %{}
+    end
+  end
+
+  describe "fetch_required_params/2" do
+    test "returns error with missing param" do
+      params = %{"address" => "some address"}
+
+      required_params = ~w(address contractaddress)
+
+      result = AddressController.fetch_required_params(params, required_params)
+
+      assert result == {:required_params, {:error, ["contractaddress"]}}
+    end
+
+    test "returns ok with all required params" do
+      params = %{"address" => "some address", "contractaddress" => "some contract"}
+
+      required_params = ~w(address contractaddress)
+
+      result = AddressController.fetch_required_params(params, required_params)
+
+      assert result == {:required_params, {:ok, params}}
     end
   end
 end
