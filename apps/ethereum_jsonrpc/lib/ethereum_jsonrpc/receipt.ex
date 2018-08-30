@@ -248,7 +248,40 @@ defmodule EthereumJSONRPC.Receipt do
   """
   @spec to_elixir(t) :: elixir
   def to_elixir(receipt) when is_map(receipt) do
-    Enum.into(receipt, %{}, &entry_to_elixir/1)
+    receipt
+    |> Enum.reduce({:ok, %{}}, &entry_reducer/2)
+    |> ok!(receipt)
+  end
+
+  defp entry_reducer(entry, acc) do
+    entry
+    |> entry_to_elixir()
+    |> elixir_reducer(acc)
+  end
+
+  defp elixir_reducer({:ok, {key, elixir_value}}, {:ok, elixir_map}) do
+    {:ok, Map.put(elixir_map, key, elixir_value)}
+  end
+
+  defp elixir_reducer({:ok, {_, _}}, {:error, _reasons} = acc_error), do: acc_error
+  defp elixir_reducer({:error, reason}, {:ok, _}), do: {:error, [reason]}
+  defp elixir_reducer({:error, reason}, {:error, reasons}), do: {:error, [reason | reasons]}
+
+  defp ok!({:ok, elixir}, _receipt), do: elixir
+
+  defp ok!({:error, reasons}, receipt) do
+    formatted_errors = Enum.map_join(reasons, "\n", fn reason -> "  #{inspect(reason)}" end)
+
+    raise ArgumentError,
+          """
+          Could not convert receipt to elixir
+
+          Receipt:
+            #{inspect(receipt)}
+
+          Errors:
+          #{formatted_errors}
+          """
   end
 
   defp elixir_to_status(elixir) do
@@ -279,24 +312,26 @@ defmodule EthereumJSONRPC.Receipt do
   # gas is passsed in from the `t:EthereumJSONRPC.Transaction.params/0` to allow pre-Byzantium status to be derived
   defp entry_to_elixir({key, _} = entry)
        when key in ~w(blockHash contractAddress from gas logsBloom root to transactionHash),
-       do: entry
+       do: {:ok, entry}
 
   defp entry_to_elixir({key, quantity})
        when key in ~w(blockNumber cumulativeGasUsed gasUsed transactionIndex) do
-    {key, quantity_to_integer(quantity)}
+    {:ok, {key, quantity_to_integer(quantity)}}
   end
 
   defp entry_to_elixir({"logs" = key, logs}) do
-    {key, Logs.to_elixir(logs)}
+    {:ok, {key, Logs.to_elixir(logs)}}
   end
 
   defp entry_to_elixir({"status" = key, status}) do
-    elixir_status =
-      case status do
-        "0x0" -> :error
-        "0x1" -> :ok
-      end
+    case status do
+      "0x0" -> {:ok, {key, :error}}
+      "0x1" -> {:ok, {key, :ok}}
+      other -> {:error, {:unknown_value, %{key: key, value: other}}}
+    end
+  end
 
-    {key, elixir_status}
+  defp entry_to_elixir({key, value}) do
+    {:error, {:unknown_key, %{key: key, value: value}}}
   end
 end

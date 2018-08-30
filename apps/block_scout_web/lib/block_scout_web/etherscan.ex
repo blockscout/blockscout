@@ -130,6 +130,24 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => []
   }
 
+  @account_getminedblocks_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => [
+      %{
+        "blockNumber" => "3462296",
+        "timeStamp" => "1491118514",
+        "blockReward" => "5194770940000000000"
+      }
+    ]
+  }
+
+  @account_getminedblocks_example_value_error %{
+    "status" => "0",
+    "message" => "No blocks found",
+    "result" => []
+  }
+
   @logs_getlogs_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -341,6 +359,23 @@ defmodule BlockScoutWeb.Etherscan do
         type: "string",
         definition: "Error message when call type error.",
         example: ~s("Out of gas")
+      }
+    }
+  }
+
+  @block_model %{
+    name: "Block",
+    fields: %{
+      blockNumber: @block_number_type,
+      timeStamp: %{
+        type: "timestamp",
+        definition: "When the block was collated.",
+        example: ~s("1480072029")
+      },
+      blockReward: %{
+        type: "block reward",
+        definition: "The reward given to the miner of a block.",
+        example: ~s("5003251945421042780")
       }
     }
   }
@@ -568,6 +603,15 @@ defmodule BlockScoutWeb.Etherscan do
         type: "integer",
         description:
           "A nonnegative integer that represents the maximum number of records to return when paginating. 'page' must be provided in conjunction."
+      },
+      %{
+        key: "filterby",
+        type: "string",
+        description: """
+        A string representing the field to filter by. If none is given
+        it returns transactions that match to, from, or contract address.
+        Available values: to
+        """
       }
     ],
     responses: [
@@ -704,6 +748,56 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @account_getminedblocks_action %{
+    name: "getminedblocks",
+    description: "Get list of blocks mined by address.",
+    required_params: [
+      %{
+        key: "address",
+        placeholder: "addressHash",
+        type: "string",
+        description: "A 160-bit code used for identifying accounts."
+      }
+    ],
+    optional_params: [
+      %{
+        key: "page",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the page number to be used for pagination. 'offset' must be provided in conjunction."
+      },
+      %{
+        key: "offset",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the maximum number of records to return when paginating. 'page' must be provided in conjunction."
+      }
+    ],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@account_getminedblocks_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "array",
+              array_type: @block_model
+            }
+          }
+        }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@account_getminedblocks_example_value_error)
+      }
+    ]
+  }
+
   @logs_getlogs_action %{
     name: "getLogs",
     description: "Get event logs for an address and/or topics. Up to a maximum of 1,000 event logs.",
@@ -821,7 +915,9 @@ defmodule BlockScoutWeb.Etherscan do
 
   @token_gettoken_action %{
     name: "getToken",
-    description: "Get ERC-20 or ERC-721 token by contract address.",
+    description:
+      "Get <a href='https://github.com/ethereum/EIPs/issues/20'>ERC-20</a>" <>
+        "or <a href='https://github.com/ethereum/EIPs/issues/721'>ERC-721</a> token by contract address.",
     required_params: [
       %{
         key: "contractaddress",
@@ -858,7 +954,10 @@ defmodule BlockScoutWeb.Etherscan do
 
   @stats_tokensupply_action %{
     name: "tokensupply",
-    description: "Get an ERC-20 or ERC-721 token total supply by contract address.",
+    description:
+      "Get <a href='https://github.com/ethereum/EIPs/issues/20'>ERC-20</a> or " <>
+        "<a href='https://github.com/ethereum/EIPs/issues/721'>ERC-721</a> " <>
+        " token total supply by contract address.",
     required_params: [
       %{
         key: "contractaddress",
@@ -901,7 +1000,8 @@ defmodule BlockScoutWeb.Etherscan do
       @account_balancemulti_action,
       @account_txlist_action,
       @account_txlistinternal_action,
-      @account_tokentx_action
+      @account_tokentx_action,
+      @account_getminedblocks_action
     ]
   }
 

@@ -127,16 +127,30 @@ defmodule EthereumJSONRPC do
   """
   @spec execute_contract_functions(
           [%{contract_address: String.t(), data: String.t(), id: String.t()}],
-          json_rpc_named_arguments
-        ) :: {:ok, []}
-  def execute_contract_functions(functions, json_rpc_named_arguments) do
+          json_rpc_named_arguments,
+          [{:block_number, non_neg_integer()}]
+        ) :: {:ok, list()}
+  def execute_contract_functions(functions, json_rpc_named_arguments, opts \\ []) do
+    block_number = Keyword.get(opts, :block_number)
+
     functions
-    |> Enum.map(&build_eth_call_payload/1)
+    |> Enum.map(&build_eth_call_payload(&1, block_number))
     |> json_rpc(json_rpc_named_arguments)
   end
 
-  defp build_eth_call_payload(%{contract_address: address, data: data, id: id}) do
+  defp build_eth_call_payload(
+         %{contract_address: address, data: data, id: id},
+         nil = _block_number
+       ) do
     params = [%{to: address, data: data}]
+    request(%{id: id, method: "eth_call", params: params})
+  end
+
+  defp build_eth_call_payload(
+         %{contract_address: address, data: data, id: id},
+         block_number
+       ) do
+    params = [%{to: address, data: data}, integer_to_quantity(block_number)]
     request(%{id: id, method: "eth_call", params: params})
   end
 

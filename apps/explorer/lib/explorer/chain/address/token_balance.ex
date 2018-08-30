@@ -5,9 +5,10 @@ defmodule Explorer.Chain.Address.TokenBalance do
 
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query, only: [from: 2]
 
   alias Explorer.Chain.Address.TokenBalance
-  alias Explorer.Chain.{Address, Block, Hash, Token, Wei}
+  alias Explorer.Chain.{Address, Block, Hash, Token}
 
   @typedoc """
    *  `address` - The `t:Explorer.Chain.Address.t/0` that is the balance's owner.
@@ -25,11 +26,11 @@ defmodule Explorer.Chain.Address.TokenBalance do
           block_number: Block.block_number(),
           inserted_at: DateTime.t(),
           updated_at: DateTime.t(),
-          value: Wei.t() | nil
+          value: Decimal.t() | nil
         }
 
   schema "address_token_balances" do
-    field(:value, Wei)
+    field(:value, :decimal)
     field(:block_number, :integer)
     field(:value_fetched_at, :utc_datetime)
 
@@ -58,5 +59,20 @@ defmodule Explorer.Chain.Address.TokenBalance do
     |> foreign_key_constraint(:address_hash)
     |> foreign_key_constraint(:token_contract_address_hash)
     |> unique_constraint(:block_number, name: :token_balances_address_hash_block_number_index)
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch the last token balances.
+
+  The last token balances from an Address is the last block indexed.
+  """
+  def last_token_balances(address_hash) do
+    from(
+      tb in TokenBalance,
+      where: tb.address_hash == ^address_hash and tb.value > 0,
+      distinct: :token_contract_address_hash,
+      order_by: [desc: :block_number],
+      preload: :token
+    )
   end
 end

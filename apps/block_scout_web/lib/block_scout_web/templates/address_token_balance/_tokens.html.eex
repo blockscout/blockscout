@@ -1,15 +1,15 @@
 <h6 class="dropdown-header">
-  <%= @type %> (<%= Enum.count(@tokens)%>)
+  <%= @type %> (<%= Enum.count(@token_balances)%>)
 </h6>
-<%= for token <- sort_by_name(@tokens) do %>
+<%= for token_balance <- sort_by_name(@token_balances) do %>
   <div class="border-bottom">
     <%= link(
-          to: token_path(@conn, :show, :en, token.contract_address_hash),
+          to: token_path(@conn, :show, :en, token_balance.token.contract_address_hash),
           class: "dropdown-item"
         ) do %>
-      <p class="mb-0"><%= token_name(token) %></p>
+      <p class="mb-0"><%= token_name(token_balance.token) %></p>
       <p class="mb-0">
-        <%= format_according_to_decimals(token.balance, token.decimals) %> <%= token.symbol %>
+        <%= format_according_to_decimals(token_balance.value, token_balance.token.decimals) %> <%= token_balance.token.symbol %>
       </p>
     <% end %>
   </div>

@@ -11,7 +11,7 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
 
 config :logger, :block_scout_web,
   level: :warn,
-  path: "logs/test/block_scout_web.log"
+  path: Path.absname("logs/test/block_scout_web.log")
 
 # Configure wallaby
 config :wallaby, screenshot_on_failure: true

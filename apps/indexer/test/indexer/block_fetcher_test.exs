@@ -16,7 +16,8 @@ defmodule Indexer.BlockFetcherTest do
     BufferedTask,
     InternalTransactionFetcher,
     InternalTransactionFetcherCase,
-    TokenFetcherCase
+    TokenFetcherCase,
+    TokenBalanceFetcherCase
   }
 
   @moduletag capture_log: true
@@ -51,6 +52,7 @@ defmodule Indexer.BlockFetcherTest do
       AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       %{
         block_fetcher: %BlockFetcher{

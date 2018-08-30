@@ -7,6 +7,7 @@ config :explorer,
       http: EthereumJSONRPC.HTTP.HTTPoison,
       url: "https://sokol.poa.network",
       method_to_url: [
+        eth_call: "https://sokol-trace.poa.network",
         eth_getBalance: "https://sokol-trace.poa.network",
         trace_replayTransaction: "https://sokol-trace.poa.network"
       ],

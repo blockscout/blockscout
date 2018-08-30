@@ -4,7 +4,7 @@ defmodule Explorer.EtherscanTest do
   import Explorer.Factory
 
   alias Explorer.{Etherscan, Chain}
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{Transaction, Wei}
 
   describe "list_transactions/2" do
     test "with empty db" do
@@ -342,6 +342,42 @@ defmodule Explorer.EtherscanTest do
       for transaction <- found_transactions do
         assert transaction.block_number in expected_block_numbers
       end
+    end
+
+    test "with filter_by: 'to' option with one matching transaction" do
+      address = insert(:address)
+      contract_address = insert(:contract_address)
+
+      :transaction
+      |> insert(to_address: address)
+      |> with_block()
+
+      :transaction
+      |> insert(from_address: address, to_address: nil)
+      |> with_contract_creation(contract_address)
+      |> with_block()
+
+      options = %{filter_by: "to"}
+
+      found_transactions = Etherscan.list_transactions(address.hash, options)
+
+      assert length(found_transactions) == 1
+    end
+
+    test "with filter_by: 'to' option with non-matching transaction" do
+      address = insert(:address)
+      contract_address = insert(:contract_address)
+
+      :transaction
+      |> insert(from_address: address, to_address: nil)
+      |> with_contract_creation(contract_address)
+      |> with_block()
+
+      options = %{filter_by: "to"}
+
+      found_transactions = Etherscan.list_transactions(address.hash, options)
+
+      assert length(found_transactions) == 0
     end
   end
 
@@ -798,6 +834,195 @@ defmodule Explorer.EtherscanTest do
       [found_token_transfer] = Etherscan.list_token_transfers(address.hash, contract_address.hash)
 
       assert found_token_transfer.token_contract_address_hash == contract_address.hash
+    end
+  end
+
+  describe "list_blocks/1" do
+    test "it returns all required fields" do
+      %{block_range: range} = block_reward = insert(:block_reward)
+
+      block = insert(:block, number: Enum.random(Range.new(range.from, range.to)))
+
+      # irrelevant transaction
+      insert(:transaction)
+
+      :transaction
+      |> insert(gas_price: 1)
+      |> with_block(block, gas_used: 1)
+
+      expected_reward =
+        block_reward.reward
+        |> Wei.to(:wei)
+        |> Decimal.add(Decimal.new(1))
+        |> Wei.from(:wei)
+
+      expected = [
+        %{
+          number: block.number,
+          timestamp: block.timestamp,
+          reward: expected_reward
+        }
+      ]
+
+      assert Etherscan.list_blocks(block.miner_hash) == expected
+    end
+
+    test "with block containing multiple transactions" do
+      %{block_range: range} = block_reward = insert(:block_reward)
+
+      block = insert(:block, number: Enum.random(Range.new(range.from, range.to)))
+
+      # irrelevant transaction
+      insert(:transaction)
+
+      :transaction
+      |> insert(gas_price: 1)
+      |> with_block(block, gas_used: 1)
+
+      :transaction
+      |> insert(gas_price: 1)
+      |> with_block(block, gas_used: 2)
+
+      expected_reward =
+        block_reward.reward
+        |> Wei.to(:wei)
+        |> Decimal.add(Decimal.new(3))
+        |> Wei.from(:wei)
+
+      expected = [
+        %{
+          number: block.number,
+          timestamp: block.timestamp,
+          reward: expected_reward
+        }
+      ]
+
+      assert Etherscan.list_blocks(block.miner_hash) == expected
+    end
+
+    test "with block without transactions" do
+      %{block_range: range} = block_reward = insert(:block_reward)
+
+      block = insert(:block, number: Enum.random(Range.new(range.from, range.to)))
+
+      # irrelevant transaction
+      insert(:transaction)
+
+      expected = [
+        %{
+          number: block.number,
+          timestamp: block.timestamp,
+          reward: block_reward.reward
+        }
+      ]
+
+      assert Etherscan.list_blocks(block.miner_hash) == expected
+    end
+
+    test "with multiple blocks" do
+      %{block_range: range} = block_reward = insert(:block_reward)
+
+      block_numbers = Range.new(range.from, range.to)
+
+      [block_number1, block_number2] = Enum.take(block_numbers, 2)
+
+      address = insert(:address)
+
+      block1 = insert(:block, number: block_number1, miner: address)
+      block2 = insert(:block, number: block_number2, miner: address)
+
+      # irrelevant transaction
+      insert(:transaction)
+
+      :transaction
+      |> insert(gas_price: 2)
+      |> with_block(block1, gas_used: 2)
+
+      :transaction
+      |> insert(gas_price: 2)
+      |> with_block(block1, gas_used: 2)
+
+      :transaction
+      |> insert(gas_price: 3)
+      |> with_block(block2, gas_used: 3)
+
+      :transaction
+      |> insert(gas_price: 3)
+      |> with_block(block2, gas_used: 3)
+
+      expected_reward1 =
+        block_reward.reward
+        |> Wei.to(:wei)
+        |> Decimal.add(Decimal.new(8))
+        |> Wei.from(:wei)
+
+      expected_reward2 =
+        block_reward.reward
+        |> Wei.to(:wei)
+        |> Decimal.add(Decimal.new(18))
+        |> Wei.from(:wei)
+
+      expected = [
+        %{
+          number: block1.number,
+          timestamp: block1.timestamp,
+          reward: expected_reward1
+        },
+        %{
+          number: block2.number,
+          timestamp: block2.timestamp,
+          reward: expected_reward2
+        }
+      ]
+
+      assert Etherscan.list_blocks(address.hash) == expected
+    end
+
+    test "with pagination options" do
+      %{block_range: range} = block_reward = insert(:block_reward)
+
+      block_numbers = Range.new(range.from, range.to)
+
+      [block_number1, block_number2] = Enum.take(block_numbers, 2)
+
+      address = insert(:address)
+
+      block1 = insert(:block, number: block_number1, miner: address)
+      block2 = insert(:block, number: block_number2, miner: address)
+
+      :transaction
+      |> insert(gas_price: 2)
+      |> with_block(block1, gas_used: 2)
+
+      expected_reward =
+        block_reward.reward
+        |> Wei.to(:wei)
+        |> Decimal.add(Decimal.new(4))
+        |> Wei.from(:wei)
+
+      expected1 = [
+        %{
+          number: block1.number,
+          timestamp: block1.timestamp,
+          reward: expected_reward
+        }
+      ]
+
+      expected2 = [
+        %{
+          number: block2.number,
+          timestamp: block2.timestamp,
+          reward: block_reward.reward
+        }
+      ]
+
+      options1 = %{page_number: 1, page_size: 1}
+      options2 = %{page_number: 2, page_size: 1}
+      options3 = %{page_number: 3, page_size: 1}
+
+      assert Etherscan.list_blocks(address.hash, options1) == expected1
+      assert Etherscan.list_blocks(address.hash, options2) == expected2
+      assert Etherscan.list_blocks(address.hash, options3) == []
     end
   end
 end

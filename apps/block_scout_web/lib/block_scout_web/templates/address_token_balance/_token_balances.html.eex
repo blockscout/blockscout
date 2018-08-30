@@ -1,4 +1,4 @@
-<%= if Enum.any?(@tokens) do %>
+<%= if Enum.any?(@token_balances) do %>
   <a href="#"
       class="text-white"
       data-dropdown-toggle
@@ -10,26 +10,26 @@
       style="text-decoration: none;">
 
      <i class="fas fa-chevron-down mr-2"></i>
-     <h5 data-tokens-count class="d-inline"><%= tokens_count_title(@tokens) %></h5>
+     <h5 data-tokens-count class="d-inline"><%= tokens_count_title(@token_balances) %></h5>
   </a>
 <% end %>
 
 <div class="dropdown-menu dropdown-menu-right token-balance-dropdown p-0" aria-labelledby="dropdown-tokens">
   <div data-dropdown-items class="dropdown-items">
-    <%= if Enum.any?(@tokens, & &1.type == "ERC-721") do %>
+    <%= if Enum.any?(@token_balances, & &1.token.type == "ERC-721") do %>
       <%= render(
             "_tokens.html",
             conn: @conn,
-            tokens: filter_by_type(@tokens, "ERC-721"),
+            token_balances: filter_by_type(@token_balances, "ERC-721"),
             type: "ERC-721"
           ) %>
     <% end %>
 
-    <%= if Enum.any?(@tokens, & &1.type == "ERC-20") do %>
+    <%= if Enum.any?(@token_balances, & &1.token.type == "ERC-20") do %>
       <%= render(
             "_tokens.html",
             conn: @conn,
-            tokens: filter_by_type(@tokens, "ERC-20"),
+            token_balances: filter_by_type(@token_balances, "ERC-20"),
             type: "ERC-20"
           )  %>
     <% end %>

@@ -66,12 +66,10 @@ defmodule Explorer.Chain.Import do
           optional(:on_conflict) => :nothing | :replace_all,
           optional(:timeout) => timeout
         }
-
-  @type token_balances :: %{
+  @type token_balances_options :: %{
           required(:params) => params,
           optional(:timeout) => timeout
         }
-
   @type all_options :: %{
           optional(:addresses) => addresses_options,
           optional(:balances) => balances_options,
@@ -83,8 +81,8 @@ defmodule Explorer.Chain.Import do
           optional(:timeout) => timeout,
           optional(:token_transfers) => token_transfers_options,
           optional(:tokens) => tokens_options,
-          optional(:transactions) => transactions_options,
-          optional(:token_balances) => token_balances
+          optional(:token_balances) => token_balances_options,
+          optional(:transactions) => transactions_options
         }
   @type all_result ::
           {:ok,
@@ -101,6 +99,7 @@ defmodule Explorer.Chain.Import do
              optional(:receipts) => [Hash.Full.t()],
              optional(:token_transfers) => [TokenTransfer.t()],
              optional(:tokens) => [Token.t()],
+             optional(:token_balances) => [TokenBalance.t()],
              optional(:transactions) => [Hash.Full.t()]
            }}
           | {:error, [Changeset.t()]}
@@ -757,8 +756,43 @@ defmodule Explorer.Chain.Import do
     {:ok, _} =
       insert_changes_list(
         ordered_changes_list,
-        conflict_target: [:address_hash, :block_number],
-        on_conflict: :replace_all,
+        conflict_target: ~w(address_hash token_contract_address_hash block_number)a,
+        on_conflict:
+          from(
+            token_balance in TokenBalance,
+            update: [
+              set: [
+                inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", token_balance.inserted_at),
+                updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", token_balance.updated_at),
+                value:
+                  fragment(
+                    """
+                    CASE WHEN EXCLUDED.value IS NOT NULL AND (? IS NULL OR EXCLUDED.value_fetched_at > ?) THEN
+                           EXCLUDED.value
+                         ELSE
+                           ?
+                    END
+                    """,
+                    token_balance.value_fetched_at,
+                    token_balance.value_fetched_at,
+                    token_balance.value
+                  ),
+                value_fetched_at:
+                  fragment(
+                    """
+                    CASE WHEN EXCLUDED.value IS NOT NULL AND (? IS NULL OR EXCLUDED.value_fetched_at > ?) THEN
+                           EXCLUDED.value_fetched_at
+                         ELSE
+                           ?
+                    END
+                    """,
+                    token_balance.value_fetched_at,
+                    token_balance.value_fetched_at,
+                    token_balance.value_fetched_at
+                  )
+              ]
+            ]
+          ),
         for: TokenBalance,
         returning: true,
         timeout: timeout,

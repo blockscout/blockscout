@@ -7,6 +7,7 @@ defmodule Indexer.BlockFetcher do
 
   alias Explorer.Chain.{Block, Import}
   alias Indexer.{AddressExtraction, Balances, TokenTransfers}
+  alias Indexer.Address.TokenBalances
   alias Indexer.BlockFetcher.Receipts
 
   @type address_hash_to_fetched_balance_block_number :: %{String.t() => Block.block_number()}
@@ -28,7 +29,7 @@ defmodule Indexer.BlockFetcher do
                 broadcast: boolean,
                 logs: Import.logs_options(),
                 receipts: Import.receipts_options(),
-                token_balances: Import.token_balances(),
+                token_balances: Import.token_balances_options(),
                 token_transfers: Import.token_transfers_options(),
                 tokens: Import.tokens_options(),
                 transactions: Import.transactions_options()
@@ -108,7 +109,7 @@ defmodule Indexer.BlockFetcher do
              logs_params: logs,
              transactions_params: transactions_with_receipts
            }),
-         token_balances = Balances.params_set(%{token_transfers_params: token_transfers}),
+         token_balances = TokenBalances.params_set(%{token_transfers_params: token_transfers}),
          {:ok, inserted} <-
            import_range(
              state,

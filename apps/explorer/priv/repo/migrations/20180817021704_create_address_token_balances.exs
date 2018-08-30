@@ -12,18 +12,18 @@ defmodule Explorer.Repo.Migrations.CreateAddressTokenBalances do
         null: false
       )
 
-      add(:value, :numeric, precision: 100, default: fragment("NULL"), null: true)
+      add(:value, :decimal, null: true)
       add(:value_fetched_at, :utc_datetime, default: fragment("NULL"), null: true)
 
       timestamps(null: false, type: :utc_datetime)
     end
 
-    create(unique_index(:address_token_balances, [:address_hash, :block_number]))
+    create(unique_index(:address_token_balances, ~w(address_hash token_contract_address_hash block_number)a))
 
     create(
       unique_index(
         :address_token_balances,
-        [:address_hash, :block_number],
+        ~w(address_hash token_contract_address_hash block_number)a,
         name: :unfetched_token_balances,
         where: "value_fetched_at IS NULL"
       )
