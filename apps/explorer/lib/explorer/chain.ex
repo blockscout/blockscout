@@ -324,6 +324,7 @@ defmodule Explorer.Chain do
     |> join(:inner, [transaction], block in assoc(transaction, :block))
     |> where([_, block], block.hash == ^block_hash)
     |> join_associations(necessity_by_association)
+    |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
     |> Repo.all()
   end
 
@@ -641,6 +642,7 @@ defmodule Explorer.Chain do
     fetch_transactions()
     |> where([transaction], transaction.hash in ^hashes)
     |> join_associations(necessity_by_association)
+    |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
     |> Repo.all()
   end
 
@@ -1070,6 +1072,7 @@ defmodule Explorer.Chain do
     |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
     |> join_associations(necessity_by_association)
+    |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
     |> Repo.all()
   end
 
@@ -1108,6 +1111,7 @@ defmodule Explorer.Chain do
     |> where([transaction], is_nil(transaction.block_hash))
     |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
     |> join_associations(necessity_by_association)
+    |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
     |> Repo.all()
   end
 

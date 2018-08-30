@@ -1,5 +1,5 @@
 <%= if @address_hash do %>
-  <%= link to: address_path(BlockScoutWeb.Endpoint, :show, @locale, @address_hash), "data-address-hash": @address_hash, "data-test": "address_hash_link" do %>
-    <%= render BlockScoutWeb.AddressView, "_responsive_hash.html", address_hash: @address_hash, contract: @contract %>
+  <%= link to: address_path(BlockScoutWeb.Endpoint, :show, @locale, @address_hash), "data-test": "address_hash_link" do %>
+    <%= render BlockScoutWeb.AddressView, "_responsive_hash.html", address_hash: @address_hash, contract: @contract, truncate: assigns[:truncate] %>
   <% end %>
 <% end %>

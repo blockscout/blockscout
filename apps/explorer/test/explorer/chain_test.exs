@@ -326,6 +326,31 @@ defmodule Explorer.ChainTest do
                |> Enum.map(& &1.hash)
                |> Enum.reverse()
     end
+
+    test "returns transactions with token_transfers preloaded" do
+      address = insert(:address)
+      block = insert(:block)
+      token_contract_address = insert(:contract_address)
+      token = insert(:token, contract_address: token_contract_address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      insert_list(
+        2,
+        :token_transfer,
+        to_address: address,
+        transaction: transaction,
+        token_contract_address: token_contract_address,
+        token: token
+      )
+
+      fetched_transaction = List.first(Explorer.Chain.block_to_transactions(block))
+      assert fetched_transaction.hash == transaction.hash
+      assert length(fetched_transaction.token_transfers) == 2
+    end
   end
 
   describe "block_to_transaction_count/1" do
@@ -527,6 +552,41 @@ defmodule Explorer.ChainTest do
       assert [hash_without_index1, hash_without_index2]
              |> Chain.hashes_to_transactions(necessity_by_association: %{block: :optional})
              |> Enum.all?(&(&1.hash in [hash_without_index1, hash_without_index2]))
+    end
+
+    test "returns transactions with token_transfers preloaded" do
+      address = insert(:address)
+      token_contract_address = insert(:contract_address)
+      token = insert(:token, contract_address: token_contract_address)
+
+      [transaction1, transaction2] =
+        2
+        |> insert_list(:transaction)
+        |> with_block()
+
+      %TokenTransfer{id: id1} =
+        insert(
+          :token_transfer,
+          to_address: address,
+          transaction: transaction1,
+          token_contract_address: token_contract_address,
+          token: token
+        )
+
+      %TokenTransfer{id: id2} =
+        insert(
+          :token_transfer,
+          to_address: address,
+          transaction: transaction2,
+          token_contract_address: token_contract_address,
+          token: token
+        )
+
+      fetched_transactions = Explorer.Chain.hashes_to_transactions([transaction1.hash, transaction2.hash])
+
+      assert Enum.all?(fetched_transactions, fn transaction ->
+               hd(transaction.token_transfers).id in [id1, id2]
+             end)
     end
   end
 
@@ -1105,6 +1165,45 @@ defmodule Explorer.ChainTest do
     test "it excludes pending transactions" do
       insert(:transaction)
       assert [] == Explorer.Chain.recent_collated_transactions()
+    end
+
+    test "returns a list of recent collated transactions" do
+      newest_first_transactions =
+        50
+        |> insert_list(:transaction)
+        |> with_block()
+        |> Enum.reverse()
+
+      oldest_seen = Enum.at(newest_first_transactions, 9)
+      paging_options = %Explorer.PagingOptions{page_size: 10, key: {oldest_seen.block_number, oldest_seen.index}}
+      recent_collated_transactions = Explorer.Chain.recent_collated_transactions(paging_options: paging_options)
+
+      assert length(recent_collated_transactions) == 10
+      assert hd(recent_collated_transactions).hash == Enum.at(newest_first_transactions, 10).hash
+    end
+
+    test "returns transactions with token_transfers preloaded" do
+      address = insert(:address)
+      token_contract_address = insert(:contract_address)
+      token = insert(:token, contract_address: token_contract_address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert_list(
+        2,
+        :token_transfer,
+        to_address: address,
+        transaction: transaction,
+        token_contract_address: token_contract_address,
+        token: token
+      )
+
+      fetched_transaction = List.first(Explorer.Chain.recent_collated_transactions())
+      assert fetched_transaction.hash == transaction.hash
+      assert length(fetched_transaction.token_transfers) == 2
     end
   end
 

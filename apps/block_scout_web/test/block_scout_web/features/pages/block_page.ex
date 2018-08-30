@@ -15,6 +15,14 @@ defmodule BlockScoutWeb.BlockPage do
     css("[data-test='block_detail_number']", text: to_string(block_number))
   end
 
+  def token_transfers(%Transaction{hash: transaction_hash}, count: count) do
+    css("[data-transaction-hash='#{transaction_hash}'] [data-test='token_transfer']", count: count)
+  end
+
+  def token_transfers_expansion(%Transaction{hash: transaction_hash}) do
+    css("[data-transaction-hash='#{transaction_hash}'] [data-test='token_transfers_expansion']")
+  end
+
   def transaction(%Transaction{hash: transaction_hash}) do
     css("[data-transaction-hash='#{transaction_hash}']")
   end
