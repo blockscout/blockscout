@@ -63,10 +63,10 @@
         </div>
       </div>
       <%= if length(tail) != 0 do %>
-        <div class="col-md-12 d-flex flex-column mt-1 mb-2 text-center token-tile-more">
+        <div class="col-md-12 d-flex flex-column mt-1 mb-2 text-center token-tile-view-more">
           <span>
             <%= link to: "##{@transaction.hash}", "data-toggle": "collapse", "data-test": "token_transfers_expansion" do %>
-              <%= gettext "View More Transder" %>
+              <%= gettext "View More Transfers" %>
           <% end %>
         </span>
         </div>
