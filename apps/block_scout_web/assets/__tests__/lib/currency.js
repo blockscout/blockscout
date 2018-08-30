@@ -2,10 +2,10 @@ import { formatUsdValue } from '../../js/lib/currency'
 
 test('formatUsdValue', () => {
   window.localized = {
-    'less than': 'less than'
+    'Less than': 'Less than'
   }
   expect(formatUsdValue(0)).toEqual('$0.000000 USD')
-  expect(formatUsdValue(0.0000001)).toEqual('< $0.000001 USD')
+  expect(formatUsdValue(0.0000001)).toEqual('Less than $0.000001 USD')
   expect(formatUsdValue(0.123456789)).toEqual('$0.123457 USD')
   expect(formatUsdValue(0.1234)).toEqual('$0.123400 USD')
   expect(formatUsdValue(1.23456789)).toEqual('$1.23 USD')

@@ -34,7 +34,7 @@ const config = {
         },
         ticks: {
           beginAtZero: true,
-          callback: (value, index, values) => `$${numeral(value).format('0,0.00')} USD`,
+          callback: (value, index, values) => `$${numeral(value).format('0,0.00')}`,
           maxTicksLimit: 4
         }
       }, {

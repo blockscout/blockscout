@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
           gas_used: nil
         )
 
-      expected_value = "<= 0.009 POA"
+      expected_value = "max of 0.009 POA"
       assert expected_value == TransactionView.formatted_fee(transaction, denomination: :ether)
     end
 
