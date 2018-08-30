@@ -1718,4 +1718,11 @@ defmodule Explorer.Chain do
     |> TokenBalance.last_token_balances()
     |> Repo.all()
   end
+
+  @spec fetch_token_holders_from_token_hash(Hash.Address.t(), [paging_options]) :: [TokenBalance.t()]
+  def fetch_token_holders_from_token_hash(contract_address_hash, options) do
+    contract_address_hash
+    |> TokenBalance.token_holders_ordered_by_value(options)
+    |> Repo.all()
+  end
 end

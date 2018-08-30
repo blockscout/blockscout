@@ -5,10 +5,13 @@ defmodule Explorer.Chain.Address.TokenBalance do
 
   use Ecto.Schema
   import Ecto.Changeset
-  import Ecto.Query, only: [from: 2]
+  import Ecto.Query, only: [from: 2, limit: 2, where: 3, subquery: 1]
 
+  alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.Address.TokenBalance
   alias Explorer.Chain.{Address, Block, Hash, Token}
+
+  @default_paging_options %PagingOptions{page_size: 50}
 
   @typedoc """
    *  `address` - The `t:Explorer.Chain.Address.t/0` that is the balance's owner.
@@ -73,6 +76,55 @@ defmodule Explorer.Chain.Address.TokenBalance do
       distinct: :token_contract_address_hash,
       order_by: [desc: :block_number],
       preload: :token
+    )
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch the token holders from the given token contract address hash.
+
+  The Token Holders are the addresses that own a positive amount of the Token. So this query is
+  considering the following conditions:
+
+  * The token balance from the last block.
+  * Balances greater than 0.
+  * Excluding the burn address (0x0000000000000000000000000000000000000000).
+
+  Then, the result will be ordered by the value.
+  """
+  def token_holders_ordered_by_value(token_contract_address_hash, options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    query =
+      from(
+        tb in subquery(token_holders_query(token_contract_address_hash)),
+        where: tb.value > 0,
+        order_by: [desc: tb.value, desc: tb.address_hash],
+        preload: :address
+      )
+
+    query
+    |> page_token_balances(paging_options)
+    |> limit(^paging_options.page_size)
+  end
+
+  defp token_holders_query(contract_address_hash) do
+    {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+
+    from(
+      tb in TokenBalance,
+      distinct: :address_hash,
+      where: tb.token_contract_address_hash == ^contract_address_hash and tb.address_hash != ^burn_address_hash,
+      order_by: [desc: :block_number]
+    )
+  end
+
+  defp page_token_balances(query, %PagingOptions{key: nil}), do: query
+
+  defp page_token_balances(query, %PagingOptions{key: {value, address_hash}}) do
+    where(
+      query,
+      [tb],
+      tb.value < ^value or (tb.value == ^value and tb.address_hash < ^address_hash)
     )
   end
 end
