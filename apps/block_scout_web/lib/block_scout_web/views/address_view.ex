@@ -19,16 +19,16 @@ defmodule BlockScoutWeb.AddressView do
   @doc """
   Returns a formatted address balance and includes the unit.
   """
-  def balance(%Address{fetched_balance: nil}), do: ""
+  def balance(%Address{fetched_coin_balance: nil}), do: ""
 
-  def balance(%Address{fetched_balance: balance}) do
+  def balance(%Address{fetched_coin_balance: balance}) do
     format_wei_value(balance, :ether)
   end
 
-  def balance_block_number(%Address{fetched_balance_block_number: nil}), do: ""
+  def balance_block_number(%Address{fetched_coin_balance_block_number: nil}), do: ""
 
-  def balance_block_number(%Address{fetched_balance_block_number: fetched_balance_block_number}) do
-    to_string(fetched_balance_block_number)
+  def balance_block_number(%Address{fetched_coin_balance_block_number: fetched_coin_balance_block_number}) do
+    to_string(fetched_coin_balance_block_number)
   end
 
   def contract?(%Address{contract_code: nil}), do: false
@@ -37,9 +37,9 @@ defmodule BlockScoutWeb.AddressView do
 
   def contract?(nil), do: true
 
-  def formatted_usd(%Address{fetched_balance: nil}, _), do: nil
+  def formatted_usd(%Address{fetched_coin_balance: nil}, _), do: nil
 
-  def formatted_usd(%Address{fetched_balance: balance}, %Token{} = exchange_rate) do
+  def formatted_usd(%Address{fetched_coin_balance: balance}, %Token{} = exchange_rate) do
     case Wei.cast(balance) do
       {:ok, wei} ->
         wei

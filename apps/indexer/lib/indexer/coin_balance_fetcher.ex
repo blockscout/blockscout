@@ -1,7 +1,7 @@
 defmodule Indexer.CoinBalanceFetcher do
   @moduledoc """
-  Fetches `t:Explorer.Chain.Address.CoinBalance.t/0` and updates `t:Explorer.Chain.Address.t/0` `fetched_balance` and
-  `fetched_balance_block_number` to value at max `t:Explorer.Chain.Address.CoinBalance.t/0` `block_number` for the given `t:Explorer.Chain.Address.t/` `hash`.
+  Fetches `t:Explorer.Chain.Address.CoinBalance.t/0` and updates `t:Explorer.Chain.Address.t/0` `fetched_coin_balance` and
+  `fetched_coin_balance_block_number` to value at max `t:Explorer.Chain.Address.CoinBalance.t/0` `block_number` for the given `t:Explorer.Chain.Address.t/` `hash`.
   """
 
   require Logger
@@ -107,7 +107,7 @@ defmodule Indexer.CoinBalanceFetcher do
     |> Map.values()
     |> Stream.map(&Enum.max_by(&1, fn %{block_number: block_number} -> block_number end))
     |> Enum.map(fn %{address_hash: addresss_hash, block_number: block_number, value: value} ->
-      %{hash: addresss_hash, fetched_balance_block_number: block_number, fetched_balance: value}
+      %{hash: addresss_hash, fetched_coin_balance_block_number: block_number, fetched_coin_balance: value}
     end)
   end
 end

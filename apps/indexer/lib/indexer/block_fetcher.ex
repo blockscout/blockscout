@@ -177,10 +177,10 @@ defmodule Indexer.BlockFetcher do
 
   defp pop_hash_fetched_balance_block_number(
          %{
-           fetched_balance_block_number: fetched_balance_block_number,
+           fetched_coin_balance_block_number: fetched_coin_balance_block_number,
            hash: hash
          } = address_params
        ) do
-    {{hash, fetched_balance_block_number}, Map.delete(address_params, :fetched_balance_block_number)}
+    {{hash, fetched_coin_balance_block_number}, Map.delete(address_params, :fetched_coin_balance_block_number)}
   end
 end

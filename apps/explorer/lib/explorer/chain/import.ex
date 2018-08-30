@@ -521,34 +521,34 @@ defmodule Explorer.Chain.Import do
             set: [
               contract_code: fragment("COALESCE(?, EXCLUDED.contract_code)", address.contract_code),
               # ARGMAX on two columns
-              fetched_balance:
+              fetched_coin_balance:
                 fragment(
                   """
-                  CASE WHEN EXCLUDED.fetched_balance_block_number IS NOT NULL AND
+                  CASE WHEN EXCLUDED.fetched_coin_balance_block_number IS NOT NULL AND
                             (? IS NULL OR
-                             EXCLUDED.fetched_balance_block_number >= ?) THEN
-                              EXCLUDED.fetched_balance
+                             EXCLUDED.fetched_coin_balance_block_number >= ?) THEN
+                              EXCLUDED.fetched_coin_balance
                        ELSE ?
                   END
                   """,
-                  address.fetched_balance_block_number,
-                  address.fetched_balance_block_number,
-                  address.fetched_balance
+                  address.fetched_coin_balance_block_number,
+                  address.fetched_coin_balance_block_number,
+                  address.fetched_coin_balance
                 ),
               # MAX on two columns
-              fetched_balance_block_number:
+              fetched_coin_balance_block_number:
                 fragment(
                   """
-                  CASE WHEN EXCLUDED.fetched_balance_block_number IS NOT NULL AND
+                  CASE WHEN EXCLUDED.fetched_coin_balance_block_number IS NOT NULL AND
                             (? IS NULL OR
-                             EXCLUDED.fetched_balance_block_number >= ?) THEN
-                              EXCLUDED.fetched_balance_block_number
+                             EXCLUDED.fetched_coin_balance_block_number >= ?) THEN
+                              EXCLUDED.fetched_coin_balance_block_number
                        ELSE ?
                   END
                   """,
-                  address.fetched_balance_block_number,
-                  address.fetched_balance_block_number,
-                  address.fetched_balance_block_number
+                  address.fetched_coin_balance_block_number,
+                  address.fetched_coin_balance_block_number,
+                  address.fetched_coin_balance_block_number
                 )
             ]
           ]

@@ -221,7 +221,7 @@ defmodule Explorer.Chain do
   @spec balance(Address.t(), :wei) :: Wei.wei() | nil
   @spec balance(Address.t(), :gwei) :: Wei.gwei() | nil
   @spec balance(Address.t(), :ether) :: Wei.ether() | nil
-  def balance(%Address{fetched_balance: balance}, unit) do
+  def balance(%Address{fetched_coin_balance: balance}, unit) do
     case balance do
       nil -> nil
       _ -> Wei.to(balance, unit)

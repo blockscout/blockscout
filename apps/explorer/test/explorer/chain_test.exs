@@ -271,20 +271,20 @@ defmodule Explorer.ChainTest do
 
   describe "balance/2" do
     test "with Address.t with :wei" do
-      assert Chain.balance(%Address{fetched_balance: %Wei{value: Decimal.new(1)}}, :wei) == Decimal.new(1)
-      assert Chain.balance(%Address{fetched_balance: nil}, :wei) == nil
+      assert Chain.balance(%Address{fetched_coin_balance: %Wei{value: Decimal.new(1)}}, :wei) == Decimal.new(1)
+      assert Chain.balance(%Address{fetched_coin_balance: nil}, :wei) == nil
     end
 
     test "with Address.t with :gwei" do
-      assert Chain.balance(%Address{fetched_balance: %Wei{value: Decimal.new(1)}}, :gwei) == Decimal.new("1e-9")
-      assert Chain.balance(%Address{fetched_balance: %Wei{value: Decimal.new("1e9")}}, :gwei) == Decimal.new(1)
-      assert Chain.balance(%Address{fetched_balance: nil}, :gwei) == nil
+      assert Chain.balance(%Address{fetched_coin_balance: %Wei{value: Decimal.new(1)}}, :gwei) == Decimal.new("1e-9")
+      assert Chain.balance(%Address{fetched_coin_balance: %Wei{value: Decimal.new("1e9")}}, :gwei) == Decimal.new(1)
+      assert Chain.balance(%Address{fetched_coin_balance: nil}, :gwei) == nil
     end
 
     test "with Address.t with :ether" do
-      assert Chain.balance(%Address{fetched_balance: %Wei{value: Decimal.new(1)}}, :ether) == Decimal.new("1e-18")
-      assert Chain.balance(%Address{fetched_balance: %Wei{value: Decimal.new("1e18")}}, :ether) == Decimal.new(1)
-      assert Chain.balance(%Address{fetched_balance: nil}, :ether) == nil
+      assert Chain.balance(%Address{fetched_coin_balance: %Wei{value: Decimal.new(1)}}, :ether) == Decimal.new("1e-18")
+      assert Chain.balance(%Address{fetched_coin_balance: %Wei{value: Decimal.new("1e18")}}, :ether) == Decimal.new(1)
+      assert Chain.balance(%Address{fetched_coin_balance: nil}, :ether) == nil
     end
   end
 

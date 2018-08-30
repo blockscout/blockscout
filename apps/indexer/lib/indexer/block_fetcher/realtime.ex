@@ -229,7 +229,7 @@ defmodule Indexer.BlockFetcher.Realtime do
     Enum.into(addresses_params, MapSet.new(), fn %{hash: address_hash} = address_params when is_binary(address_hash) ->
       block_number =
         case address_params do
-          %{fetched_balance_block_number: block_number} when is_integer(block_number) ->
+          %{fetched_coin_balance_block_number: block_number} when is_integer(block_number) ->
             block_number
 
           _ ->

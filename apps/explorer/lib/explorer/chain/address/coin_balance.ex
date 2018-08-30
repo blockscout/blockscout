@@ -17,12 +17,12 @@ defmodule Explorer.Chain.Address.CoinBalance do
    * `address_hash` - foreign key for `address`.
    * `block_number` - the `t:Explorer.Chain.Block.block_number/0` for the `t:Explorer.Chain.Block.t/0` at the end of
        which `address` had `value`.  When `block_number` is the greatest `t:Explorer.Chain.Block.block_number/0` for a
-       given `address`, the `t:Explorer.Chain.Address.t/0` `fetched_balance_block_number` will match this value.
+       given `address`, the `t:Explorer.Chain.Address.t/0` `fetched_coin_balance_block_number` will match this value.
    * `inserted_at` - When the balance was first inserted into the database.
    * `updated_at` - When the balance was last updated.
    * `value` - the value of `address` at the end of the `t:Explorer.Chain.Block.block_number/0` for the
        `t:Explorer.Chain.Block.t/0`.  When `block_number` is the greatest `t:Explorer.Chain.Block.block_number/0` for a
-       given `address`, the `t:Explorer.Chain.Address.t/0` `fetched_balance` will match this value.
+       given `address`, the `t:Explorer.Chain.Address.t/0` `fetched_coin_balance` will match this value.
    * `value_fetched_at` - when `value` was fetched.
   """
   @type t :: %__MODULE__{

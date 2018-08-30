@@ -66,20 +66,20 @@ defmodule Indexer.CoinBalanceFetcherTest do
       block = insert(:block, miner: miner, number: block_number)
       insert(:unfetched_balance, address_hash: miner.hash, block_number: block_number)
 
-      assert miner.fetched_balance == nil
-      assert miner.fetched_balance_block_number == nil
+      assert miner.fetched_coin_balance == nil
+      assert miner.fetched_coin_balance_block_number == nil
 
       CoinBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       fetched_address =
         wait(fn ->
           Repo.one!(
-            from(address in Address, where: address.hash == ^miner_hash and not is_nil(address.fetched_balance))
+            from(address in Address, where: address.hash == ^miner_hash and not is_nil(address.fetched_coin_balance))
           )
         end)
 
-      assert fetched_address.fetched_balance == %Wei{value: Decimal.new(fetched_balance)}
-      assert fetched_address.fetched_balance_block_number == block.number
+      assert fetched_address.fetched_coin_balance == %Wei{value: Decimal.new(fetched_balance)}
+      assert fetched_address.fetched_coin_balance_block_number == block.number
     end
 
     test "fetches unfetched addresses when less than max batch size", %{
@@ -127,12 +127,12 @@ defmodule Indexer.CoinBalanceFetcherTest do
       fetched_address =
         wait(fn ->
           Repo.one!(
-            from(address in Address, where: address.hash == ^miner_hash and not is_nil(address.fetched_balance))
+            from(address in Address, where: address.hash == ^miner_hash and not is_nil(address.fetched_coin_balance))
           )
         end)
 
-      assert fetched_address.fetched_balance == %Wei{value: Decimal.new(fetched_balance)}
-      assert fetched_address.fetched_balance_block_number == block.number
+      assert fetched_address.fetched_coin_balance == %Wei{value: Decimal.new(fetched_balance)}
+      assert fetched_address.fetched_coin_balance_block_number == block.number
     end
   end
 
@@ -187,8 +187,8 @@ defmodule Indexer.CoinBalanceFetcherTest do
           Repo.get!(Address, hash)
         end)
 
-      assert address.fetched_balance == %Wei{value: Decimal.new(fetched_balance)}
-      assert address.fetched_balance_block_number == block_number
+      assert address.fetched_coin_balance == %Wei{value: Decimal.new(fetched_balance)}
+      assert address.fetched_coin_balance_block_number == block_number
     end
   end
 
@@ -275,8 +275,8 @@ defmodule Indexer.CoinBalanceFetcherTest do
 
           expected_fetched_balance = %Explorer.Chain.Wei{value: Decimal.new(expected_fetched_balance_value)}
 
-          assert fetched_address.fetched_balance == expected_fetched_balance
-          assert fetched_address.fetched_balance_block_number == expected_fetched_balance_block_number
+          assert fetched_address.fetched_coin_balance == expected_fetched_balance
+          assert fetched_address.fetched_coin_balance_block_number == expected_fetched_balance_block_number
 
         other ->
           # not all nodes behind the `https://mainnet.infura.io` pool are fully-synced.  Node that aren't fully-synced

@@ -95,7 +95,7 @@ defmodule Indexer.InternalTransactionFetcher do
         addresses_params = AddressExtraction.extract_addresses(%{internal_transactions: internal_transactions_params})
 
         address_hash_to_block_number =
-          Enum.into(addresses_params, %{}, fn %{fetched_balance_block_number: block_number, hash: hash} ->
+          Enum.into(addresses_params, %{}, fn %{fetched_coin_balance_block_number: block_number, hash: hash} ->
             {hash, block_number}
           end)
 

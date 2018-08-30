@@ -231,8 +231,8 @@ defmodule Indexer.BlockFetcherTest do
 
           address = Repo.get!(Address, address_hash)
 
-          assert address.fetched_balance == %Wei{value: Decimal.new(0)}
-          assert address.fetched_balance_block_number == 0
+          assert address.fetched_coin_balance == %Wei{value: Decimal.new(0)}
+          assert address.fetched_coin_balance_block_number == 0
         end
       )
     end
@@ -482,28 +482,28 @@ defmodule Indexer.BlockFetcherTest do
 
           first_address = Repo.get!(Address, first_address_hash)
 
-          assert first_address.fetched_balance == %Wei{value: Decimal.new(1_999_953_415_287_753_599_000)}
-          assert first_address.fetched_balance_block_number == block_number
+          assert first_address.fetched_coin_balance == %Wei{value: Decimal.new(1_999_953_415_287_753_599_000)}
+          assert first_address.fetched_coin_balance_block_number == block_number
 
           second_address = Repo.get!(Address, second_address_hash)
 
-          assert second_address.fetched_balance == %Wei{value: Decimal.new(50_000_000_000_000_000)}
-          assert second_address.fetched_balance_block_number == block_number
+          assert second_address.fetched_coin_balance == %Wei{value: Decimal.new(50_000_000_000_000_000)}
+          assert second_address.fetched_coin_balance_block_number == block_number
 
           third_address = Repo.get!(Address, third_address_hash)
 
-          assert third_address.fetched_balance == %Wei{value: Decimal.new(30_827_986_037_499_360_709_544)}
-          assert third_address.fetched_balance_block_number == block_number
+          assert third_address.fetched_coin_balance == %Wei{value: Decimal.new(30_827_986_037_499_360_709_544)}
+          assert third_address.fetched_coin_balance_block_number == block_number
 
           fourth_address = Repo.get!(Address, fourth_address_hash)
 
-          assert fourth_address.fetched_balance == %Wei{value: Decimal.new(500_000_000_001_437_727_304)}
-          assert fourth_address.fetched_balance_block_number == block_number
+          assert fourth_address.fetched_coin_balance == %Wei{value: Decimal.new(500_000_000_001_437_727_304)}
+          assert fourth_address.fetched_coin_balance_block_number == block_number
 
           fifth_address = Repo.get!(Address, fifth_address_hash)
 
-          assert fifth_address.fetched_balance == %Wei{value: Decimal.new(930_417_572_224_879_702_000)}
-          assert fifth_address.fetched_balance_block_number == block_number
+          assert fifth_address.fetched_coin_balance == %Wei{value: Decimal.new(930_417_572_224_879_702_000)}
+          assert fifth_address.fetched_coin_balance_block_number == block_number
 
         EthereumJSONRPC.Parity ->
           assert {:ok,
@@ -569,13 +569,13 @@ defmodule Indexer.BlockFetcherTest do
 
           first_address = Repo.get!(Address, first_address_hash)
 
-          assert first_address.fetched_balance == %Wei{value: Decimal.new(1)}
-          assert first_address.fetched_balance_block_number == block_number
+          assert first_address.fetched_coin_balance == %Wei{value: Decimal.new(1)}
+          assert first_address.fetched_coin_balance_block_number == block_number
 
           second_address = Repo.get!(Address, second_address_hash)
 
-          assert second_address.fetched_balance == %Wei{value: Decimal.new(252_460_837_000_000_000_000_000_000)}
-          assert second_address.fetched_balance_block_number == block_number
+          assert second_address.fetched_coin_balance == %Wei{value: Decimal.new(252_460_837_000_000_000_000_000_000)}
+          assert second_address.fetched_coin_balance_block_number == block_number
 
         variant ->
           raise ArgumentError, "Unsupport variant (#{variant})"
