@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.Notifier do
   """
 
   alias Explorer.{Chain, Market, Repo}
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, InternalTransaction}
   alias Explorer.ExchangeRates.Token
   alias BlockScoutWeb.Endpoint
 
@@ -37,7 +37,9 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event({:chain_event, :internal_transactions, internal_transactions}) do
-    Enum.each(internal_transactions, &broadcast_internal_transaction/1)
+    internal_transactions
+    |> Stream.map(&(InternalTransaction |> Repo.get(&1.id) |> Repo.preload([:from_address, :to_address])))
+    |> Enum.each(&broadcast_internal_transaction/1)
   end
 
   def handle_event({:chain_event, :transactions, transaction_hashes}) do

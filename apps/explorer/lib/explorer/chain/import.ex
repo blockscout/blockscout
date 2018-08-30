@@ -667,12 +667,16 @@ defmodule Explorer.Chain.Import do
         conflict_target: [:transaction_hash, :index],
         for: InternalTransaction,
         on_conflict: :replace_all,
-        returning: [:index, :transaction_hash],
+        returning: [:id, :index, :transaction_hash],
         timeout: timeout,
         timestamps: timestamps
       )
 
-    {:ok, internal_transactions}
+    {:ok,
+     for(
+       internal_transaction <- internal_transactions,
+       do: Map.take(internal_transaction, [:id, :index, :transaction_hash])
+     )}
   end
 
   @spec insert_logs([map()], %{required(:timeout) => timeout, required(:timestamps) => timestamps}) ::
