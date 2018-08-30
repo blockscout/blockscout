@@ -1,5 +1,5 @@
 <div class="tile tile-type-<%= type_suffix(@transaction) %> fade-in tile-status--<%= status(@transaction) %>" data-test="<%= type_suffix(@transaction) %>" data-transaction-hash="<%= @transaction.hash %>">
-  <div class="row" data-test="chain_transaction">
+  <div class="row" data-selector="token-transfers-toggle" data-test="chain_transaction">
     <div class="col-md-2 d-flex flex-row flex-md-column align-items-left justify-content-start justify-content-lg-center mb-1 mb-md-0 pl-md-4">
       <span class="tile-label" data-test="transaction_type">
         <%= transaction_display_type(@transaction) %>
@@ -53,20 +53,19 @@
 
     <%= if involves_token_transfers?(@transaction) do %>
       <div class="offset-md-2 col-md-10 col-lg-8 d-flex flex-column mt-2 mb-2">
-        <% [first_token_transfer | tail]= @transaction.token_transfers %>
+        <% [first_token_transfer | remaining_token_transfers]= @transaction.token_transfers %>
         <%= render "_token_transfer.html", address: assigns[:current_address], locale: @locale, token_transfer: first_token_transfer %>
-        <div class="collapse" id="<%= @transaction.hash %>">
-          <%= for token_transfer <- tail do %>
+        <div class="collapse token-transfer-toggle" id="<%= @transaction.hash %>">
+          <%= for token_transfer <- remaining_token_transfers do %>
             <%= render "_token_transfer.html", address: assigns[:current_address], locale: @locale, token_transfer: token_transfer %>
           <% end %>
         </div>
       </div>
-      <%= if length(tail) != 0 do %>
+      <%= if Enum.any?(remaining_token_transfers) do %>
         <div class="col-md-12 d-flex flex-column mt-1 mb-2 text-center token-tile-view-more">
-          <span>
-            <%= link to: "##{@transaction.hash}", "data-toggle": "collapse", "data-test": "token_transfers_expansion" do %>
-              <%= gettext "View More Transfers" %>
-            <% end %>
+          <span class="token-tile-more-lines">
+            <%= link gettext("View More Transfers"), to: "##{@transaction.hash}", "data-toggle": "collapse", "data-selector": "token-transfer-open", "data-test": "token_transfers_expansion" %>
+            <%= link gettext("View Less Transfers"), class: "d-none", to: "##{@transaction.hash}", "data-toggle": "collapse", "data-selector": "token-transfer-close" %>
           </span>
         </div>
       <% end %>
