@@ -55,7 +55,6 @@
       <div class="offset-md-2 col-md-10 col-lg-8 d-flex flex-column mt-2 mb-2">
         <% [first_token_transfer | tail]= @transaction.token_transfers %>
         <%= render "_token_transfer.html", address: assigns[:current_address], locale: @locale, token_transfer: first_token_transfer %>
-
         <div class="collapse" id="<%= @transaction.hash %>">
           <%= for token_transfer <- tail do %>
             <%= render "_token_transfer.html", address: assigns[:current_address], locale: @locale, token_transfer: token_transfer %>
@@ -67,8 +66,8 @@
           <span>
             <%= link to: "##{@transaction.hash}", "data-toggle": "collapse", "data-test": "token_transfers_expansion" do %>
               <%= gettext "View More Transfers" %>
-          <% end %>
-        </span>
+            <% end %>
+          </span>
         </div>
       <% end %>
     <% end %>
