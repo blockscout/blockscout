@@ -99,9 +99,9 @@ export function reducer (state = initialState, action) {
 
 router.when('/address/:addressHash').then((params) => initRedux(reducer, {
   main (store) {
-    const { addressHash, blockNumber } = params
+    const { addressHash } = params
     const addressChannel = socket.channel(`addresses:${addressHash}`, {})
-    store.dispatch({
+    const state = store.dispatch({
       type: 'PAGE_LOAD',
       params,
       transactionCount: $('[data-selector="transaction-count"]').text()
@@ -109,12 +109,11 @@ router.when('/address/:addressHash').then((params) => initRedux(reducer, {
     addressChannel.join()
     addressChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
     addressChannel.on('balance', (msg) => store.dispatch({ type: 'RECEIVED_UPDATED_BALANCE', msg }))
-    if (!blockNumber) {
+    if (!state.beyondPageOne) {
       addressChannel.on('transaction', batchChannel((msgs) =>
         store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION_BATCH', msgs })
       ))
-    }
-    if (!blockNumber) {
+
       addressChannel.on('internal_transaction', batchChannel((msgs) =>
         store.dispatch({ type: 'RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH', msgs })
       ))
