@@ -226,6 +226,10 @@ defmodule Explorer.Etherscan do
     where(query, [t], t.to_address_hash == ^address_hash)
   end
 
+  defp where_address_match(query, address_hash, %{filter_by: "from"}) do
+    where(query, [t], t.from_address_hash == ^address_hash)
+  end
+
   defp where_address_match(query, address_hash, _) do
     query
     |> where([t], t.to_address_hash == ^address_hash)
