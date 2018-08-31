@@ -169,6 +169,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       session
       |> AddressPage.visit_page(addresses.lincoln)
       |> assert_has(AddressPage.transaction_address_link(transactions.from_lincoln, :to))
+      |> refute_has(AddressPage.transaction_address_link(transactions.from_lincoln, :from))
     end
   end
 
@@ -216,6 +217,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> AddressPage.visit_page(addresses.lincoln)
       |> AddressPage.click_internal_transactions()
       |> assert_has(AddressPage.internal_transaction_address_link(internal_transaction, :from))
+      |> refute_has(AddressPage.internal_transaction_address_link(internal_transaction, :to))
     end
 
     test "viewing new internal transactions via live update", %{addresses: addresses, session: session} do

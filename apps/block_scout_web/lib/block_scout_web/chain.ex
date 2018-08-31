@@ -18,6 +18,26 @@ defmodule BlockScoutWeb.Chain do
   @page_size 50
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
 
+  def current_filter(%{paging_options: paging_options} = params) do
+    params
+    |> Map.get("filter")
+    |> case do
+      "to" -> [direction: :to, paging_options: paging_options]
+      "from" -> [direction: :from, paging_options: paging_options]
+      _ -> [paging_options: paging_options]
+    end
+  end
+
+  def current_filter(params) do
+    params
+    |> Map.get("filter")
+    |> case do
+      "to" -> [direction: :to]
+      "from" -> [direction: :from]
+      _ -> []
+    end
+  end
+
   @spec from_param(String.t()) :: {:ok, Address.t() | Block.t() | Transaction.t()} | {:error, :not_found}
   def from_param(param)
 

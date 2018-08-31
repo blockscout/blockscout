@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
   alias Explorer.ExchangeRates
   alias Explorer.ExchangeRates.Token
   alias Explorer.ExchangeRates.Source.TestSource
+  alias Explorer.Market
 
   setup :verify_on_exit!
 
@@ -25,7 +26,7 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
       market_cap_usd: Decimal.new("1000000.0"),
       name: "test",
       symbol: Explorer.coin(),
-      usd_value: Decimal.new("1.0"),
+      usd_value: Decimal.new("2.5"),
       volume_24h_usd: Decimal.new("1000.0")
     }
 
@@ -36,20 +37,55 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
     {:ok, %{token: token}}
   end
 
-  test "subscribed user is notified of new_rate event", %{token: token} do
-    ExchangeRates.handle_info({nil, {:ok, [token]}}, %{})
+  describe "new_rate" do
+    test "subscribed user is notified", %{token: token} do
+      ExchangeRates.handle_info({nil, {:ok, [token]}}, %{})
 
-    topic = "exchange_rate:new_rate"
-    @endpoint.subscribe(topic)
+      topic = "exchange_rate:new_rate"
+      @endpoint.subscribe(topic)
 
-    Notifier.handle_event({:chain_event, :exchange_rate})
+      Notifier.handle_event({:chain_event, :exchange_rate})
 
-    receive do
-      %Phoenix.Socket.Broadcast{topic: ^topic, event: "new_rate", payload: payload} ->
-        assert payload.exchange_rate == token
-    after
-      5_000 ->
-        assert false, "Expected message received nothing."
+      receive do
+        %Phoenix.Socket.Broadcast{topic: ^topic, event: "new_rate", payload: payload} ->
+          assert payload.exchange_rate == token
+          assert payload.market_history_data == []
+      after
+        5_000 ->
+          assert false, "Expected message received nothing."
+      end
+    end
+
+    test "subscribed user is notified with market history", %{token: token} do
+      ExchangeRates.handle_info({nil, {:ok, [token]}}, %{})
+
+      today = Date.utc_today()
+
+      old_records =
+        for i <- 1..29 do
+          %{
+            date: Timex.shift(today, days: i * -1),
+            closing_price: Decimal.new(1)
+          }
+        end
+
+      records = [%{date: today, closing_price: token.usd_value} | old_records]
+
+      Market.bulk_insert_history(records)
+
+      topic = "exchange_rate:new_rate"
+      @endpoint.subscribe(topic)
+
+      Notifier.handle_event({:chain_event, :exchange_rate})
+
+      receive do
+        %Phoenix.Socket.Broadcast{topic: ^topic, event: "new_rate", payload: payload} ->
+          assert payload.exchange_rate == token
+          assert payload.market_history_data == records
+      after
+        5_000 ->
+          assert false, "Expected message received nothing."
+      end
     end
   end
 end
