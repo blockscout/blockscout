@@ -79,20 +79,34 @@ defmodule BlockScoutWeb.AddressView do
 
   def smart_contract_with_read_only_functions?(%Address{smart_contract: nil}), do: false
 
-  def display_address_hash(current_address, another_address, locale) do
-    if current_address.hash == another_address.hash do
+  def display_address_hash(current_address, target_address, locale, truncate \\ false)
+
+  def display_address_hash(nil, target_address, locale, truncate) do
+    render(
+      "_link.html",
+      address_hash: target_address.hash,
+      contract: contract?(target_address),
+      locale: locale,
+      truncate: truncate
+    )
+  end
+
+  def display_address_hash(current_address, target_address, locale, truncate) do
+    if current_address.hash == target_address.hash do
       render(
         "_responsive_hash.html",
         address_hash: current_address.hash,
         contract: contract?(current_address),
-        locale: locale
+        locale: locale,
+        truncate: truncate
       )
     else
       render(
         "_link.html",
-        address_hash: another_address.hash,
-        contract: contract?(another_address),
-        locale: locale
+        address_hash: target_address.hash,
+        contract: contract?(target_address),
+        locale: locale,
+        truncate: truncate
       )
     end
   end

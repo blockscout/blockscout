@@ -30,6 +30,7 @@ import './lib/smart_contract/read_only_functions'
 import './lib/pretty_json'
 import './lib/try_api'
 import './lib/token_balance_dropdown'
+import './lib/token_transfers_toggle'
 
 import './pages/address'
 import './pages/block'

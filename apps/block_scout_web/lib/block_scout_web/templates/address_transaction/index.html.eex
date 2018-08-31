@@ -131,7 +131,7 @@
           <h2 class="card-title"><%= gettext "Transactions" %></h2>
           <span data-selector="transactions-list">
             <%= for transaction <- @transactions do %>
-              <%= render("_transaction.html", locale: @locale, address: @address, transaction: transaction, conn: @conn) %>
+              <%= render(BlockScoutWeb.TransactionView, "_tile.html", locale: @locale, current_address: @address, transaction: transaction) %>
             <% end %>
           </span>
         <% else %>
@@ -143,7 +143,7 @@
         <%= if @next_page_params do %>
           <%= link(
             gettext("Older"),
-            class: "button button--secondary button--sm float-right",
+            class: "button button--secondary button--sm float-right mt-3",
             to: address_transaction_path(
               @conn,
               :index,

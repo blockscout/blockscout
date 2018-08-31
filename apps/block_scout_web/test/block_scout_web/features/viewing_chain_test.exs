@@ -81,5 +81,31 @@ defmodule BlockScoutWeb.ViewingChainTest do
       |> ChainPage.visit_page()
       |> assert_has(ChainPage.contract_creation(transaction))
     end
+
+    test "transaction with multiple token transfers shows all transfers if expanded", %{
+      block: block,
+      session: session
+    } do
+      contract_token_address = insert(:contract_address)
+      insert(:token, contract_address: contract_token_address)
+
+      transaction =
+        :transaction
+        |> insert(to_address: contract_token_address)
+        |> with_block(block)
+
+      insert_list(
+        3,
+        :token_transfer,
+        transaction: transaction,
+        token_contract_address: contract_token_address
+      )
+
+      session
+      |> ChainPage.visit_page()
+      |> assert_has(ChainPage.token_transfers(transaction, count: 1))
+      |> click(ChainPage.token_transfers_expansion(transaction))
+      |> assert_has(ChainPage.token_transfers(transaction, count: 3))
+    end
   end
 end
