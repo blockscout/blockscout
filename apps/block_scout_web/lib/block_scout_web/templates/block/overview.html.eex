@@ -55,9 +55,9 @@
           </dl>
 
           <!-- Nonce -->
-          <dl class="row mb-0">
+          <dl class="row">
             <dt class="col-sm-3 text-muted"> <%= gettext "Nonce" %> </dt>
-            <dd class="col-sm-9"> <%= to_string(@block.nonce) %> </dd>
+            <dd class="col-sm-9 mb-0"> <%= to_string(@block.nonce) %> </dd>
           </dl>
         </div>
       </div>
@@ -93,6 +93,11 @@
                 </h3>
                 <!-- Gas Limit -->
                 <span class="text-muted"> <%= @block.gas_limit |> Cldr.Number.to_string! %> <%= gettext "Gas Limit" %> </span>
+                <!-- Progress bar -->
+                <div class="progress w-100 mt-3 mb-1">
+                  <div class="progress-bar" role="progressbar" style="width: <%= formatted_gas(@block.gas_used / @block.gas_limit, format: "#.#%") %>;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
+                  </div>
+                </div>
               </div>
             </div>
           </div>
