@@ -130,6 +130,18 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => []
   }
 
+  @account_tokenbalance_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => "135499"
+  }
+
+  @account_tokenbalance_example_value_error %{
+    "status" => "0",
+    "message" => "Invalid address format",
+    "result" => nil
+  }
+
   @account_getminedblocks_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -787,6 +799,50 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @account_tokenbalance_action %{
+    name: "tokenbalance",
+    description: "Get token account balance for token contract address.",
+    required_params: [
+      %{
+        key: "contractaddress",
+        placeholder: "contractAddressHash",
+        type: "string",
+        description: "A 160-bit code used for identifying contracts."
+      },
+      %{
+        key: "address",
+        placeholder: "addressHash",
+        type: "string",
+        description: "A 160-bit code used for identifying accounts."
+      }
+    ],
+    optional_params: [],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@account_tokenbalance_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "integer",
+              definition: "The token account balance for the contract address.",
+              example: ~s("135499")
+            }
+          }
+        }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@account_tokenbalance_example_value_error)
+      }
+    ]
+  }
+
   @account_getminedblocks_action %{
     name: "getminedblocks",
     description: "Get list of blocks mined by address.",
@@ -1077,6 +1133,7 @@ defmodule BlockScoutWeb.Etherscan do
       @account_txlist_action,
       @account_txlistinternal_action,
       @account_tokentx_action,
+      @account_tokenbalance_action,
       @account_getminedblocks_action
     ]
   }

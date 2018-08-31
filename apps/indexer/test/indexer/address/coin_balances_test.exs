@@ -1,8 +1,8 @@
-defmodule Indexer.BalancesTest do
+defmodule Indexer.Address.CoinBalancesTest do
   use ExUnit.Case, async: true
 
   alias Explorer.Factory
-  alias Indexer.Balances
+  alias Indexer.Address.CoinBalances
 
   describe "params_set/1" do
     test "with block extracts miner_hash" do
@@ -11,7 +11,7 @@ defmodule Indexer.BalancesTest do
         |> to_string()
 
       block_number = 1
-      params_set = Balances.params_set(%{blocks_params: [%{miner_hash: miner_hash, number: block_number}]})
+      params_set = CoinBalances.params_set(%{blocks_params: [%{miner_hash: miner_hash, number: block_number}]})
 
       assert MapSet.size(params_set) == 1
       assert %{address_hash: miner_hash, block_number: block_number}
@@ -24,7 +24,7 @@ defmodule Indexer.BalancesTest do
         |> Map.update!(:type, &to_string/1)
         |> Map.put(:block_number, 1)
 
-      params_set = Balances.params_set(%{internal_transactions_params: [internal_transaction_params]})
+      params_set = CoinBalances.params_set(%{internal_transactions_params: [internal_transaction_params]})
 
       assert MapSet.size(params_set) == 0
     end
@@ -37,7 +37,7 @@ defmodule Indexer.BalancesTest do
         |> Map.put(:block_number, 1)
         |> Map.put(:error, "illegal operation")
 
-      params_set = Balances.params_set(%{internal_transactions_params: [internal_transaction_params]})
+      params_set = CoinBalances.params_set(%{internal_transactions_params: [internal_transaction_params]})
 
       assert MapSet.size(params_set) == 0
     end
@@ -56,7 +56,7 @@ defmodule Indexer.BalancesTest do
         |> Map.put(:block_number, block_number)
         |> Map.put(:created_contract_address_hash, created_contract_address_hash)
 
-      params_set = Balances.params_set(%{internal_transactions_params: [internal_transaction_params]})
+      params_set = CoinBalances.params_set(%{internal_transactions_params: [internal_transaction_params]})
 
       assert MapSet.size(params_set) == 1
       assert %{address_hash: created_contract_address_hash, block_number: block_number}
@@ -81,7 +81,7 @@ defmodule Indexer.BalancesTest do
         |> Map.put(:from_address_hash, from_address_hash)
         |> Map.put(:to_address_hash, to_address_hash)
 
-      params_set = Balances.params_set(%{internal_transactions_params: [internal_transaction_params]})
+      params_set = CoinBalances.params_set(%{internal_transactions_params: [internal_transaction_params]})
 
       assert MapSet.size(params_set) == 2
       assert %{address_hash: from_address_hash, block_number: block_number}
@@ -101,7 +101,7 @@ defmodule Indexer.BalancesTest do
         |> Map.put(:block_number, block_number)
         |> Map.put(:address_hash, address_hash)
 
-      params_set = Balances.params_set(%{logs_params: [log_params]})
+      params_set = CoinBalances.params_set(%{logs_params: [log_params]})
 
       assert MapSet.size(params_set) == 1
       assert %{address_hash: address_hash, block_number: block_number}
@@ -120,7 +120,7 @@ defmodule Indexer.BalancesTest do
         |> Map.put(:block_number, block_number)
         |> Map.put(:from_address_hash, from_address_hash)
 
-      params_set = Balances.params_set(%{transactions_params: [transaction_params]})
+      params_set = CoinBalances.params_set(%{transactions_params: [transaction_params]})
 
       assert MapSet.size(params_set) == 1
       assert %{address_hash: from_address_hash, block_number: block_number}
@@ -144,7 +144,7 @@ defmodule Indexer.BalancesTest do
         |> Map.put(:from_address_hash, from_address_hash)
         |> Map.put(:to_address_hash, to_address_hash)
 
-      params_set = Balances.params_set(%{transactions_params: [transaction_params]})
+      params_set = CoinBalances.params_set(%{transactions_params: [transaction_params]})
 
       assert MapSet.size(params_set) == 2
       assert %{address_hash: from_address_hash, block_number: block_number}

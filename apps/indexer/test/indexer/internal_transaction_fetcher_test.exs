@@ -5,7 +5,7 @@ defmodule Indexer.InternalTransactionFetcherTest do
   import ExUnit.CaptureLog
   import Mox
 
-  alias Indexer.{AddressBalanceFetcherCase, InternalTransactionFetcher, PendingTransactionFetcher}
+  alias Indexer.{CoinBalanceFetcherCase, InternalTransactionFetcher, PendingTransactionFetcher}
 
   # MUST use global mode because we aren't guaranteed to get PendingTransactionFetcher's pid back fast enough to `allow`
   # it to use expectations and stubs from test's pid.
@@ -62,7 +62,7 @@ defmodule Indexer.InternalTransactionFetcherTest do
     end
 
     start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-    AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+    CoinBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
     start_supervised!({PendingTransactionFetcher, json_rpc_named_arguments: json_rpc_named_arguments})
 
     wait_for_results(fn ->
@@ -129,7 +129,7 @@ defmodule Indexer.InternalTransactionFetcherTest do
       end
 
       start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CoinBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       insert(:transaction, hash: "0x03cd5899a63b6f6222afda8705d059fd5a7d126bcabe962fb654d9736e6bcafa")
 
@@ -161,7 +161,7 @@ defmodule Indexer.InternalTransactionFetcherTest do
       end
 
       start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CoinBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       # not a real transaction hash, so that it fails
       insert(:transaction, hash: "0x0000000000000000000000000000000000000000000000000000000000000001")

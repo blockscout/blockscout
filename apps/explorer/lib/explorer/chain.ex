@@ -21,7 +21,7 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.{
     Address,
     Address.TokenBalance,
-    Balance,
+    Address.CoinBalance,
     Block,
     Data,
     Hash,
@@ -221,7 +221,7 @@ defmodule Explorer.Chain do
   @spec balance(Address.t(), :wei) :: Wei.wei() | nil
   @spec balance(Address.t(), :gwei) :: Wei.gwei() | nil
   @spec balance(Address.t(), :ether) :: Wei.ether() | nil
-  def balance(%Address{fetched_balance: balance}, unit) do
+  def balance(%Address{fetched_coin_balance: balance}, unit) do
     case balance do
       nil -> nil
       _ -> Wei.to(balance, unit)
@@ -729,7 +729,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Returns a stream of unfetched `t:Explorer.Chain.Balance.t/0`.
+  Returns a stream of unfetched `t:Explorer.Chain.Address.CoinBalance.t/0`.
 
   When there are addresses, the `reducer` is called for each `t:Explorer.Chain.Address.t/0` `hash` and all
   `t:Explorer.Chain.Block.t/0` `block_number` that address is mentioned.
@@ -763,7 +763,7 @@ defmodule Explorer.Chain do
       fn ->
         query =
           from(
-            balance in Balance,
+            balance in CoinBalance,
             where: is_nil(balance.value_fetched_at),
             select: %{address_hash: balance.address_hash, block_number: balance.block_number}
           )

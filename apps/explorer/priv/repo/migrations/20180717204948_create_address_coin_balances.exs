@@ -1,8 +1,8 @@
-defmodule Explorer.Repo.Migrations.CreateBalances do
+defmodule Explorer.Repo.Migrations.CreateCoinBalances do
   use Ecto.Migration
 
   def change do
-    create table(:balances, primary_key: false) do
+    create table(:address_coin_balances, primary_key: false) do
       add(:address_hash, references(:addresses, column: :hash, type: :bytea), null: false)
       add(:block_number, :bigint, null: false)
 
@@ -13,11 +13,11 @@ defmodule Explorer.Repo.Migrations.CreateBalances do
       timestamps(null: false, type: :utc_datetime)
     end
 
-    create(unique_index(:balances, [:address_hash, :block_number]))
+    create(unique_index(:address_coin_balances, [:address_hash, :block_number]))
 
     create(
       unique_index(
-        :balances,
+        :address_coin_balances,
         [:address_hash, :block_number],
         name: :unfetched_balances,
         where: "value_fetched_at IS NULL"

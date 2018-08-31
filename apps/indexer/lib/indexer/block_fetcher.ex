@@ -6,8 +6,8 @@ defmodule Indexer.BlockFetcher do
   require Logger
 
   alias Explorer.Chain.{Block, Import}
-  alias Indexer.{AddressExtraction, Balances, TokenTransfers}
-  alias Indexer.Address.TokenBalances
+  alias Indexer.{AddressExtraction, TokenTransfers}
+  alias Indexer.Address.{CoinBalances, TokenBalances}
   alias Indexer.BlockFetcher.Receipts
 
   @type address_hash_to_fetched_balance_block_number :: %{String.t() => Block.block_number()}
@@ -103,8 +103,8 @@ defmodule Indexer.BlockFetcher do
              token_transfers: token_transfers,
              transactions: transactions_with_receipts
            }),
-         balances_params_set =
-           Balances.params_set(%{
+         coin_balances_params_set =
+           CoinBalances.params_set(%{
              blocks_params: blocks,
              logs_params: logs,
              transactions_params: transactions_with_receipts
@@ -116,7 +116,7 @@ defmodule Indexer.BlockFetcher do
              %{
                range: range,
                addresses: %{params: addresses},
-               balances: %{params: balances_params_set},
+               balances: %{params: coin_balances_params_set},
                token_balances: %{params: token_balances},
                blocks: %{params: blocks},
                logs: %{params: logs},
@@ -157,7 +157,7 @@ defmodule Indexer.BlockFetcher do
     callback_module.import(state, options_with_broadcast)
   end
 
-  # `fetched_balance_block_number` is needed for the `BalanceFetcher`, but should not be used for `import` because the
+  # `fetched_balance_block_number` is needed for the `CoinBalanceFetcher`, but should not be used for `import` because the
   # balance is not known yet.
   defp pop_address_hash_to_fetched_balance_block_number(options) do
     {address_hash_fetched_balance_block_number_pairs, import_options} =
@@ -177,10 +177,10 @@ defmodule Indexer.BlockFetcher do
 
   defp pop_hash_fetched_balance_block_number(
          %{
-           fetched_balance_block_number: fetched_balance_block_number,
+           fetched_coin_balance_block_number: fetched_coin_balance_block_number,
            hash: hash
          } = address_params
        ) do
-    {{hash, fetched_balance_block_number}, Map.delete(address_params, :fetched_balance_block_number)}
+    {{hash, fetched_coin_balance_block_number}, Map.delete(address_params, :fetched_coin_balance_block_number)}
   end
 end

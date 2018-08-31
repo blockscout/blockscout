@@ -6,7 +6,7 @@ defmodule Indexer.Application do
   use Application
 
   alias Indexer.{
-    BalanceFetcher,
+    CoinBalanceFetcher,
     BlockFetcher,
     InternalTransactionFetcher,
     PendingTransactionFetcher,
@@ -29,7 +29,7 @@ defmodule Indexer.Application do
 
     children = [
       {Task.Supervisor, name: Indexer.TaskSupervisor},
-      {BalanceFetcher, name: BalanceFetcher, json_rpc_named_arguments: json_rpc_named_arguments},
+      {CoinBalanceFetcher, name: CoinBalanceFetcher, json_rpc_named_arguments: json_rpc_named_arguments},
       {PendingTransactionFetcher, name: PendingTransactionFetcher, json_rpc_named_arguments: json_rpc_named_arguments},
       {InternalTransactionFetcher,
        name: InternalTransactionFetcher, json_rpc_named_arguments: json_rpc_named_arguments},
