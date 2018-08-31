@@ -54,7 +54,9 @@ defmodule BlockScoutWeb.Router do
 
     resources("/pending_transactions", PendingTransactionController, only: [:index])
 
-    resources "/transactions", TransactionController, only: [:index, :show] do
+    get("/txs", TransactionController, :index)
+
+    resources "/tx", TransactionController, only: [:show] do
       resources(
         "/internal_transactions",
         TransactionInternalTransactionController,
@@ -67,7 +69,7 @@ defmodule BlockScoutWeb.Router do
       resources("/token_transfers", TransactionTokenTransferController, only: [:index], as: :token_transfer)
     end
 
-    resources "/addresses", AddressController, only: [:show] do
+    resources "/address", AddressController, only: [:show] do
       resources("/transactions", AddressTransactionController, only: [:index], as: :transaction)
 
       resources(

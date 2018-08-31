@@ -2,7 +2,8 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
   use BlockScoutWeb.FeatureCase, async: true
 
   alias Explorer.Chain.Wei
-  alias BlockScoutWeb.AddressPage
+  alias Explorer.Factory
+  alias BlockScoutWeb.{AddressPage, AddressView}
 
   setup do
     block = insert(:block)
@@ -40,7 +41,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
   describe "viewing contract creator" do
     test "see the contract creator and transaction links", %{session: session} do
       address = insert(:address)
-      contract = insert(:address, contract_code: Explorer.Factory.data("contract_code"))
+      contract = insert(:address, contract_code: Factory.data("contract_code"))
       transaction = insert(:transaction, from_address: address, created_contract_address: contract)
 
       internal_transaction =
@@ -52,8 +53,8 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
           created_contract_address: contract
         )
 
-      address_hash = BlockScoutWeb.AddressView.trimmed_hash(address.hash)
-      transaction_hash = BlockScoutWeb.AddressView.trimmed_hash(transaction.hash)
+      address_hash = AddressView.trimmed_hash(address.hash)
+      transaction_hash = AddressView.trimmed_hash(transaction.hash)
 
       session
       |> AddressPage.visit_page(internal_transaction.created_contract_address)
@@ -62,9 +63,9 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
 
     test "see the contract creator and transaction links even when the creator is another contract", %{session: session} do
       lincoln = insert(:address)
-      contract = insert(:address, contract_code: Explorer.Factory.data("contract_code"))
+      contract = insert(:address, contract_code: Factory.data("contract_code"))
       transaction = insert(:transaction)
-      another_contract = insert(:address, contract_code: Explorer.Factory.data("contract_code"))
+      another_contract = insert(:address, contract_code: Factory.data("contract_code"))
 
       insert(
         :internal_transaction,
@@ -85,8 +86,8 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
           created_contract_address: another_contract
         )
 
-      contract_hash = BlockScoutWeb.AddressView.trimmed_hash(contract.hash)
-      transaction_hash = BlockScoutWeb.AddressView.trimmed_hash(transaction.hash)
+      contract_hash = AddressView.trimmed_hash(contract.hash)
+      transaction_hash = AddressView.trimmed_hash(transaction.hash)
 
       session
       |> AddressPage.visit_page(internal_transaction.created_contract_address)
@@ -337,7 +338,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       contract_token_address =
         insert(
           :address,
-          contract_code: Explorer.Factory.data("contract_code")
+          contract_code: Factory.data("contract_code")
         )
 
       insert(:token, contract_address: contract_token_address)

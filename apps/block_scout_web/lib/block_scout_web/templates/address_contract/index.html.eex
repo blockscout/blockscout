@@ -46,7 +46,9 @@
       <%= if !smart_contract_verified?(@address) do %>
         <%= link(
               gettext("Verify and Publish"),
-              to: address_verify_contract_path(@conn, :new, @conn.assigns.locale, @conn.params["address_id"]), class: "button button--primary button--sm float-right ml-3"
+              to: address_verify_contract_path(@conn, :new, @conn.assigns.locale, @conn.params["address_id"]),
+              class: "button button--primary button--sm float-right ml-3",
+              "data-test": "verify_and_publish"
             ) %>
       <% end %>
 

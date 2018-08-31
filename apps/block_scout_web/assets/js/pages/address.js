@@ -72,7 +72,7 @@ export function reducer (state = initialState, action) {
   }
 }
 
-router.when('/addresses/:addressHash').then((params) => initRedux(reducer, {
+router.when('/address/:addressHash').then((params) => initRedux(reducer, {
   main (store) {
     const { addressHash, blockNumber } = params
     const channel = socket.channel(`addresses:${addressHash}`, {})
