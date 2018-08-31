@@ -55,51 +55,41 @@
           </dl>
 
           <!-- Nonce -->
-          <dl class="row">
+          <dl class="row mb-0">
             <dt class="col-sm-3 text-muted"> <%= gettext "Nonce" %> </dt>
-            <dd class="col-sm-9 mb-0"> <%= to_string(@block.nonce) %> </dd>
+            <dd class="col-sm-9"> <%= to_string(@block.nonce) %> </dd>
           </dl>
         </div>
       </div>
     </div>
 
-    <div class="col-md-12 col-lg-4">
-      <div class="row">
-        <div class="col-md-6 col-lg-12">
+    <div class="col-md-12 col-lg-4 d-flex flex-column flex-md-row flex-lg-column">
       <!-- Validator -->
-          <div class="card card-primary">
-            <div class="card-body">
-              <h2 class="card-title text-white"> <%= gettext "Miner" %> </h2>
-              <div class="text-right">
-                <!-- Validator's Name -->
-                <!-- Until we can get the validator's name we are using the Validator's address hash -->
-                <h3 class="text-white text-truncate"> <%= link @block.miner, class: "text-white", to: address_path(BlockScoutWeb.Endpoint, :show, @locale, @block.miner) %> </h3>
-                <!-- Validator's address hash -->
-                <span class="text-light text-truncate"> </span>
-              </div>
-            </div>
+      <div class="card card-primary flex-grow-1">
+        <div class="card-body">
+          <h2 class="card-title text-white"> <%= gettext "Miner" %> </h2>
+          <div class="text-right">
+            <!-- Validator's Name -->
+            <!-- Until we can get the validator's name we are using the Validator's address hash -->
+            <h3 class="text-white text-truncate"> <%= link @block.miner, class: "text-white", to: address_path(BlockScoutWeb.Endpoint, :show, @locale, @block.miner) %> </h3>
+            <!-- Validator's address hash -->
+            <span class="text-light text-truncate"> </span>
           </div>
         </div>
-        <div class="col-md-6 col-lg-12">
+      </div>
+
       <!-- Gas -->
-          <div class="card">
-            <div class="card-body">
-              <h2 class="card-title"> <%= gettext "Gas Used" %> </h2>
-              <div class="text-right">
-                <!-- Gas Used -->
-                <h3>
-                  <%= @block.gas_used |> Cldr.Number.to_string! %>
-                  <span class="text-muted"> (<%= (@block.gas_used / @block.gas_limit) |> Cldr.Number.to_string!(format: "#.#%") %>) </span>
-                </h3>
-                <!-- Gas Limit -->
-                <span class="text-muted"> <%= @block.gas_limit |> Cldr.Number.to_string! %> <%= gettext "Gas Limit" %> </span>
-                <!-- Progress bar -->
-                <div class="progress w-100 mt-3 mb-1">
-                  <div class="progress-bar" role="progressbar" style="width: <%= formatted_gas(@block.gas_used / @block.gas_limit, format: "#.#%") %>;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
-                  </div>
-                </div>
-              </div>
-            </div>
+      <div class="card flex-grow-1 ml-0 ml-md-5 ml-lg-0">
+        <div class="card-body">
+          <h2 class="card-title"> <%= gettext "Gas Used" %> </h2>
+          <div class="text-right">
+            <!-- Gas Used -->
+            <h3>
+              <%= @block.gas_used |> Cldr.Number.to_string! %>
+              <span class="text-muted"> (<%= (@block.gas_used / @block.gas_limit) |> Cldr.Number.to_string!(format: "#.#%") %>) </span>
+            </h3>
+            <!-- Gas Limit -->
+            <span class="text-muted"> <%= @block.gas_limit |> Cldr.Number.to_string! %> <%= gettext "Gas Limit" %> </span>
           </div>
         </div>
       </div>
