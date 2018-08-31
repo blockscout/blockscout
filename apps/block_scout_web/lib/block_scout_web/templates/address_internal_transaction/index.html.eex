@@ -78,6 +78,16 @@
         </ul>
       </div>
       <div class="card-body">
+        <div data-selector="channel-batching-message" style="display:none;">
+          <div data-selector="reload-button" class="alert alert-info">
+            <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More internal transactions have come in" %></a>
+          </div>
+        </div>
+        <div data-selector="channel-disconnected-message" style="display:none;">
+          <div data-selector="reload-button" class="alert alert-danger">
+            <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer internal transactions" %></a>
+          </div>
+        </div>
         <div class="dropdown float-right u-push-sm">
           <button data-test="filter_dropdown" class="button button--secondary button--xsmall dropdown-toggle" type="button"
             id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
