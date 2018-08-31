@@ -30,7 +30,7 @@
       </span>
     </div>
 
-    <div class="p-4 col-md-2 col-lg-2 d-flex flex-row flex-md-column justify-content-start align-items-end text-md-right">
+    <div class="col-md-2 col-lg-2 d-flex flex-row flex-md-column justify-content-start align-items-end text-md-right">
         <span class="ml-1 mr-sm-0 text-muted" data-from-now="<%= @transfer.transaction.block.timestamp %>"></span>
 
         <span class="ml-2">
