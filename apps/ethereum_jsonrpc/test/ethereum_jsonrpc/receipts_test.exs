@@ -130,5 +130,43 @@ defmodule EthereumJSONRPC.ReceiptsTest do
                  json_rpc_named_arguments
                )
     end
+
+    test "with errors return all errors", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      # Can't be faked reliably on real chain
+      moxed_json_rpc_named_arguments = Keyword.put(json_rpc_named_arguments, :transport, EthereumJSONRPC.Mox)
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn json, _options ->
+        assert length(json) == 5
+
+        {:ok,
+         [
+           %{id: 0, result: %{}},
+           # :ok, :ok
+           %{id: 1, result: %{}},
+           # :error, :ok
+           %{id: 2, error: %{code: 2}},
+           # :ok, :error
+           %{id: 3, result: %{}},
+           # :error, :error
+           %{id: 4, error: %{code: 4}}
+         ]}
+      end)
+
+      assert {:error,
+              [
+                %{code: 4, data: %{gas: 4, hash: "0x4"}},
+                %{code: 2, data: %{gas: 2, hash: "0x2"}}
+              ]} =
+               Receipts.fetch(
+                 [
+                   %{gas: 0, hash: "0x0"},
+                   %{gas: 1, hash: "0x1"},
+                   %{gas: 2, hash: "0x2"},
+                   %{gas: 3, hash: "0x3"},
+                   %{gas: 4, hash: "0x4"}
+                 ],
+                 moxed_json_rpc_named_arguments
+               )
+    end
   end
 end
