@@ -130,7 +130,7 @@
           <%= if @next_page_params do %>
             <%= link(
               gettext("Older"),
-              class: "button button--secondary button--sm float-right",
+              class: "button button--secondary button--sm float-right mt-3",
               to: address_internal_transaction_path(
                 @conn,
                 :index,
