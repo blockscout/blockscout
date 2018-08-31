@@ -245,7 +245,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     Enum.map(hashes, fn hash ->
       %Address{
         hash: hash,
-        fetched_balance: %Wei{value: 0}
+        fetched_coin_balance: %Wei{value: 0}
       }
     end)
   end

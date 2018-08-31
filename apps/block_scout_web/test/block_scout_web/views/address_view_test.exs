@@ -19,8 +19,8 @@ defmodule BlockScoutWeb.AddressViewTest do
   end
 
   describe "formatted_usd/2" do
-    test "without a fetched_balance returns nil" do
-      address = build(:address, fetched_balance: nil)
+    test "without a fetched_coin_balance returns nil" do
+      address = build(:address, fetched_coin_balance: nil)
       token = %Token{usd_value: Decimal.new(0.5)}
       assert nil == AddressView.formatted_usd(address, token)
     end
@@ -32,7 +32,7 @@ defmodule BlockScoutWeb.AddressViewTest do
     end
 
     test "returns formatted usd value" do
-      address = build(:address, fetched_balance: 10_000_000_000_000)
+      address = build(:address, fetched_coin_balance: 10_000_000_000_000)
       token = %Token{usd_value: Decimal.new(0.5)}
       assert "$0.000005 USD" == AddressView.formatted_usd(address, token)
     end

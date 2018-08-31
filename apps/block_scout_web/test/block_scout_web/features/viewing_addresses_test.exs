@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
     block = insert(:block)
 
     {:ok, balance} = Wei.cast(5)
-    lincoln = insert(:address, fetched_balance: balance)
+    lincoln = insert(:address, fetched_coin_balance: balance)
     taft = insert(:address)
 
     from_taft =
@@ -30,7 +30,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
   end
 
   test "viewing address overview information", %{session: session} do
-    address = insert(:address, fetched_balance: 500)
+    address = insert(:address, fetched_coin_balance: 500)
 
     session
     |> AddressPage.visit_page(address)

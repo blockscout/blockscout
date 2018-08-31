@@ -59,7 +59,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     end
 
     test "with a valid address", %{conn: conn} do
-      address = insert(:address, fetched_balance: 100)
+      address = insert(:address, fetched_coin_balance: 100)
 
       params = %{
         "module" => "account",
@@ -72,7 +72,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
-      assert response["result"] == "#{address.fetched_balance.value}"
+      assert response["result"] == "#{address.fetched_coin_balance.value}"
       assert response["status"] == "1"
       assert response["message"] == "OK"
     end
@@ -80,7 +80,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     test "with multiple valid addresses", %{conn: conn} do
       addresses =
         for _ <- 1..2 do
-          insert(:address, fetched_balance: Enum.random(1..1_000))
+          insert(:address, fetched_coin_balance: Enum.random(1..1_000))
         end
 
       address_param =
@@ -96,7 +96,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       expected_result =
         Enum.map(addresses, fn address ->
-          %{"account" => "#{address.hash}", "balance" => "#{address.fetched_balance.value}"}
+          %{"account" => "#{address.hash}", "balance" => "#{address.fetched_coin_balance.value}"}
         end)
 
       assert response =
@@ -110,7 +110,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     end
 
     test "supports GET and POST requests", %{conn: conn} do
-      address = insert(:address, fetched_balance: 100)
+      address = insert(:address, fetched_coin_balance: 100)
 
       params = %{
         "module" => "account",
@@ -182,7 +182,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     test "with multiple valid addresses", %{conn: conn} do
       addresses =
         for _ <- 1..4 do
-          insert(:address, fetched_balance: Enum.random(1..1_000))
+          insert(:address, fetched_coin_balance: Enum.random(1..1_000))
         end
 
       address_param =
@@ -198,7 +198,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       expected_result =
         Enum.map(addresses, fn address ->
-          %{"account" => "#{address.hash}", "balance" => "#{address.fetched_balance.value}"}
+          %{"account" => "#{address.hash}", "balance" => "#{address.fetched_coin_balance.value}"}
         end)
 
       assert response =
@@ -212,7 +212,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     end
 
     test "with an address that exists and one that doesn't", %{conn: conn} do
-      address1 = insert(:address, fetched_balance: 100)
+      address1 = insert(:address, fetched_coin_balance: 100)
       address2_hash = "0x9bf49d5875030175f3d5d4a67631a87ab4df526b"
 
       params = %{
@@ -223,7 +223,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       expected_result = [
         %{"account" => address2_hash, "balance" => "0"},
-        %{"account" => "#{address1.hash}", "balance" => "#{address1.fetched_balance.value}"}
+        %{"account" => "#{address1.hash}", "balance" => "#{address1.fetched_coin_balance.value}"}
       ]
 
       assert response =
@@ -237,7 +237,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     end
 
     test "up to a maximum of 20 addresses in a single request", %{conn: conn} do
-      addresses = insert_list(25, :address, fetched_balance: 0)
+      addresses = insert_list(25, :address, fetched_coin_balance: 0)
 
       address_param =
         addresses
@@ -261,7 +261,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     end
 
     test "with a single address", %{conn: conn} do
-      address = insert(:address, fetched_balance: 100)
+      address = insert(:address, fetched_coin_balance: 100)
 
       params = %{
         "module" => "account",
@@ -270,7 +270,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       }
 
       expected_result = [
-        %{"account" => "#{address.hash}", "balance" => "#{address.fetched_balance.value}"}
+        %{"account" => "#{address.hash}", "balance" => "#{address.fetched_coin_balance.value}"}
       ]
 
       assert response =
@@ -286,7 +286,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     test "supports GET and POST requests", %{conn: conn} do
       addresses =
         for _ <- 1..4 do
-          insert(:address, fetched_balance: Enum.random(1..1_000))
+          insert(:address, fetched_coin_balance: Enum.random(1..1_000))
         end
 
       address_param =

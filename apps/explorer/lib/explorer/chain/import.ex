@@ -9,8 +9,8 @@ defmodule Explorer.Chain.Import do
 
   alias Explorer.Chain.{
     Address,
+    Address.CoinBalance,
     Address.TokenBalance,
-    Balance,
     Block,
     Hash,
     InternalTransaction,
@@ -160,7 +160,7 @@ defmodule Explorer.Chain.Import do
       * `:timeout` - the timeout for inserting all addresses.  Defaults to `#{@insert_addresses_timeout}` milliseconds.
       * `:with` - the changeset function on `Explorer.Chain.Address` to use validate `:params`.
     * `:balances`
-      * `:params` - `list` of params for `Explorer.Chain.Balance.changeset/2`.
+      * `:params` - `list` of params for `Explorer.Chain.Address.CoinBalance.changeset/2`.
       * `:timeout` - the timeout for inserting all balances.  Defaults to `#{@insert_balances_timeout}` milliseconds.
     * `:blocks`
       * `:params` - `list` of params for `Explorer.Chain.Block.changeset/2`.
@@ -271,7 +271,7 @@ defmodule Explorer.Chain.Import do
 
   @import_option_key_to_ecto_schema_module %{
     addresses: Address,
-    balances: Balance,
+    balances: CoinBalance,
     blocks: Block,
     internal_transactions: InternalTransaction,
     logs: Log,
@@ -322,7 +322,7 @@ defmodule Explorer.Chain.Import do
   defp run_balances(multi, ecto_schema_module_to_changes_list_map, options)
        when is_map(ecto_schema_module_to_changes_list_map) and is_map(options) do
     case ecto_schema_module_to_changes_list_map do
-      %{Balance => balances_changes} ->
+      %{CoinBalance => balances_changes} ->
         timestamps = Map.fetch!(options, :timestamps)
 
         Multi.run(multi, :balances, fn _ ->
@@ -521,34 +521,34 @@ defmodule Explorer.Chain.Import do
             set: [
               contract_code: fragment("COALESCE(?, EXCLUDED.contract_code)", address.contract_code),
               # ARGMAX on two columns
-              fetched_balance:
+              fetched_coin_balance:
                 fragment(
                   """
-                  CASE WHEN EXCLUDED.fetched_balance_block_number IS NOT NULL AND
+                  CASE WHEN EXCLUDED.fetched_coin_balance_block_number IS NOT NULL AND
                             (? IS NULL OR
-                             EXCLUDED.fetched_balance_block_number >= ?) THEN
-                              EXCLUDED.fetched_balance
+                             EXCLUDED.fetched_coin_balance_block_number >= ?) THEN
+                              EXCLUDED.fetched_coin_balance
                        ELSE ?
                   END
                   """,
-                  address.fetched_balance_block_number,
-                  address.fetched_balance_block_number,
-                  address.fetched_balance
+                  address.fetched_coin_balance_block_number,
+                  address.fetched_coin_balance_block_number,
+                  address.fetched_coin_balance
                 ),
               # MAX on two columns
-              fetched_balance_block_number:
+              fetched_coin_balance_block_number:
                 fragment(
                   """
-                  CASE WHEN EXCLUDED.fetched_balance_block_number IS NOT NULL AND
+                  CASE WHEN EXCLUDED.fetched_coin_balance_block_number IS NOT NULL AND
                             (? IS NULL OR
-                             EXCLUDED.fetched_balance_block_number >= ?) THEN
-                              EXCLUDED.fetched_balance_block_number
+                             EXCLUDED.fetched_coin_balance_block_number >= ?) THEN
+                              EXCLUDED.fetched_coin_balance_block_number
                        ELSE ?
                   END
                   """,
-                  address.fetched_balance_block_number,
-                  address.fetched_balance_block_number,
-                  address.fetched_balance_block_number
+                  address.fetched_coin_balance_block_number,
+                  address.fetched_coin_balance_block_number,
+                  address.fetched_coin_balance_block_number
                 )
             ]
           ]
@@ -589,7 +589,7 @@ defmodule Explorer.Chain.Import do
         conflict_target: [:address_hash, :block_number],
         on_conflict:
           from(
-            balance in Balance,
+            balance in CoinBalance,
             update: [
               set: [
                 inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", balance.inserted_at),
@@ -623,7 +623,7 @@ defmodule Explorer.Chain.Import do
               ]
             ]
           ),
-        for: Balance,
+        for: CoinBalance,
         timeout: timeout,
         timestamps: timestamps
       )
