@@ -2,10 +2,10 @@
     <h3><strong><%= @model.name %></strong> {</h3>
       <%= for {key, details} <- @model.fields do %>
         <dl class="row">
-          <dt class="col-md-2">
+          <dt class="col-md-3">
             <%= key %>
           </dt>
-          <dd class="col-md-10">
+          <dd class="col-md-9">
             <span>
               <%= if details[:type] != "model", do: details.type %>
               <%= if details[:definition] do %>
