@@ -63,7 +63,7 @@
       </div>
     </div>
   </div>
-  <!-- We hardcoded the height on this element to keep the page from bouncing during the intro animation. -->
+
   <div class="card card-chain-transactions">
     <div class="card-body">
       <div data-selector="channel-batching-message" style="display:none;">
