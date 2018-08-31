@@ -5,6 +5,7 @@ import socket from '../socket'
 import router from '../router'
 import { batchChannel, initRedux } from '../utils'
 import { updateAllAges } from '../lib/from_now'
+import { loadTokenBalanceDropdown } from '../lib/token_balance_dropdown'
 
 const BATCH_THRESHOLD = 10
 
@@ -133,7 +134,10 @@ router.when('/address/:addressHash').then((params) => initRedux(reducer, {
     if ($emptyInternalTransactionsList.length && state.newInternalTransactions.length) window.location.reload()
     if ($emptyTransactionsList.length && state.newTransactions.length) window.location.reload()
     if (state.channelDisconnected) $channelDisconnected.show()
-    if (oldState.balance !== state.balance) $balance.empty().append(state.balance)
+    if (oldState.balance !== state.balance) {
+      $balance.empty().append(state.balance)
+      loadTokenBalanceDropdown()
+    }
     if (oldState.transactionCount !== state.transactionCount) $transactionCount.empty().append(numeral(state.transactionCount).format())
     if (state.batchCountAccumulator) {
       $channelBatching.show()
