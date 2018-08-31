@@ -38,6 +38,10 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     RPCView.render("show.json", data: data)
   end
 
+  def render("tokenbalance.json", %{token_balance: token_balance}) do
+    RPCView.render("show.json", data: to_string(token_balance))
+  end
+
   def render("getminedblocks.json", %{blocks: blocks}) do
     data = Enum.map(blocks, &prepare_block/1)
     RPCView.render("show.json", data: data)
