@@ -93,6 +93,23 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     end
   end
 
+  @tokenbalance_required_params ~w(contractaddress address)
+
+  def tokenbalance(conn, params) do
+    with {:required_params, {:ok, fetched_params}} <- fetch_required_params(params, @tokenbalance_required_params),
+         {:format, {:ok, validated_params}} <- to_valid_format(fetched_params, :tokenbalance) do
+      token_balance = get_token_balance(validated_params)
+      render(conn, "tokenbalance.json", %{token_balance: token_balance})
+    else
+      {:required_params, {:error, missing_params}} ->
+        error = "Required query parameters missing: #{Enum.join(missing_params, ", ")}"
+        render(conn, :error, error: error)
+
+      {:format, {:error, param}} ->
+        render(conn, :error, error: "Invalid #{param} format")
+    end
+  end
+
   def getminedblocks(conn, params) do
     options = put_pagination_options(%{}, params)
 
@@ -112,6 +129,11 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     end
   end
 
+  @doc """
+  Sanitizes optional params.
+
+  """
+  @spec optional_params(map()) :: map()
   def optional_params(params) do
     %{}
     |> put_order_by_direction(params)
@@ -119,6 +141,50 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     |> put_start_block(params)
     |> put_end_block(params)
     |> put_filter_by(params)
+  end
+
+  @doc """
+  Fetches required params. Returns error tuple if required params are missing.
+
+  """
+  @spec fetch_required_params(map(), list()) :: {:required_params, {:ok, map()} | {:error, [String.t(), ...]}}
+  def fetch_required_params(params, required_params) do
+    fetched_params = Map.take(params, required_params)
+
+    result =
+      if all_of_required_keys_found?(fetched_params, required_params) do
+        {:ok, fetched_params}
+      else
+        missing_params = get_missing_required_params(fetched_params, required_params)
+        {:error, missing_params}
+      end
+
+    {:required_params, result}
+  end
+
+  defp to_valid_format(params, :tokenbalance) do
+    result =
+      with {:ok, contract_address_hash} <- to_address_hash(params, "contractaddress"),
+           {:ok, address_hash} <- to_address_hash(params, "address") do
+        {:ok, %{contract_address_hash: contract_address_hash, address_hash: address_hash}}
+      else
+        {:error, _param_key} = error -> error
+      end
+
+    {:format, result}
+  end
+
+  defp all_of_required_keys_found?(fetched_params, required_params) do
+    Enum.all?(required_params, &Map.has_key?(fetched_params, &1))
+  end
+
+  defp get_missing_required_params(fetched_params, required_params) do
+    fetched_keys = fetched_params |> Map.keys() |> MapSet.new()
+
+    required_params
+    |> MapSet.new()
+    |> MapSet.difference(fetched_keys)
+    |> MapSet.to_list()
   end
 
   defp fetch_address(params) do
@@ -192,6 +258,13 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
 
   defp to_address_hash(address_hash_string) do
     {:format, Chain.string_to_address_hash(address_hash_string)}
+  end
+
+  defp to_address_hash(params, param_key) do
+    case Chain.string_to_address_hash(params[param_key]) do
+      {:ok, address_hash} -> {:ok, address_hash}
+      :error -> {:error, param_key}
+    end
   end
 
   defp to_transaction_hash(transaction_hash_string) do
@@ -282,6 +355,13 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     case Etherscan.list_blocks(address_hash, options) do
       [] -> {:error, :not_found}
       blocks -> {:ok, blocks}
+    end
+  end
+
+  defp get_token_balance(%{contract_address_hash: contract_address_hash, address_hash: address_hash}) do
+    case Etherscan.get_token_balance(contract_address_hash, address_hash) do
+      nil -> 0
+      token_balance -> token_balance.value
     end
   end
 end
