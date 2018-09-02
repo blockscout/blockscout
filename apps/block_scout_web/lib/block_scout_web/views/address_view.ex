@@ -19,16 +19,16 @@ defmodule BlockScoutWeb.AddressView do
   @doc """
   Returns a formatted address balance and includes the unit.
   """
-  def balance(%Address{fetched_balance: nil}), do: ""
+  def balance(%Address{fetched_coin_balance: nil}), do: ""
 
-  def balance(%Address{fetched_balance: balance}) do
+  def balance(%Address{fetched_coin_balance: balance}) do
     format_wei_value(balance, :ether)
   end
 
-  def balance_block_number(%Address{fetched_balance_block_number: nil}), do: ""
+  def balance_block_number(%Address{fetched_coin_balance_block_number: nil}), do: ""
 
-  def balance_block_number(%Address{fetched_balance_block_number: fetched_balance_block_number}) do
-    to_string(fetched_balance_block_number)
+  def balance_block_number(%Address{fetched_coin_balance_block_number: fetched_coin_balance_block_number}) do
+    to_string(fetched_coin_balance_block_number)
   end
 
   def contract?(%Address{contract_code: nil}), do: false
@@ -37,9 +37,9 @@ defmodule BlockScoutWeb.AddressView do
 
   def contract?(nil), do: true
 
-  def formatted_usd(%Address{fetched_balance: nil}, _), do: nil
+  def formatted_usd(%Address{fetched_coin_balance: nil}, _), do: nil
 
-  def formatted_usd(%Address{fetched_balance: balance}, %Token{} = exchange_rate) do
+  def formatted_usd(%Address{fetched_coin_balance: balance}, %Token{} = exchange_rate) do
     case Wei.cast(balance) do
       {:ok, wei} ->
         wei
@@ -79,20 +79,34 @@ defmodule BlockScoutWeb.AddressView do
 
   def smart_contract_with_read_only_functions?(%Address{smart_contract: nil}), do: false
 
-  def display_address_hash(current_address, another_address, locale) do
-    if current_address.hash == another_address.hash do
+  def display_address_hash(current_address, target_address, locale, truncate \\ false)
+
+  def display_address_hash(nil, target_address, locale, truncate) do
+    render(
+      "_link.html",
+      address_hash: target_address.hash,
+      contract: contract?(target_address),
+      locale: locale,
+      truncate: truncate
+    )
+  end
+
+  def display_address_hash(current_address, target_address, locale, truncate) do
+    if current_address.hash == target_address.hash do
       render(
         "_responsive_hash.html",
         address_hash: current_address.hash,
         contract: contract?(current_address),
-        locale: locale
+        locale: locale,
+        truncate: truncate
       )
     else
       render(
         "_link.html",
-        address_hash: another_address.hash,
-        contract: contract?(another_address),
-        locale: locale
+        address_hash: target_address.hash,
+        contract: contract?(target_address),
+        locale: locale,
+        truncate: truncate
       )
     end
   end

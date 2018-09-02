@@ -62,23 +62,6 @@ defmodule Explorer.Token.BalanceReaderTest do
     )
   end
 
-  defp get_balance_from_blockchain_with_balance_zero() do
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn [%{id: _, method: _, params: [%{data: _, to: _}]}], _options ->
-        {:ok,
-         [
-           %{
-             id: "balanceOf",
-             jsonrpc: "2.0",
-             result: "0x0000000000000000000000000000000000000000000000000000000000000000"
-           }
-         ]}
-      end
-    )
-  end
-
   defp get_balance_from_blockchain_with_error() do
     expect(
       EthereumJSONRPC.Mox,

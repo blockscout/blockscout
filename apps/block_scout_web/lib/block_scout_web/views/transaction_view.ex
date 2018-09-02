@@ -19,6 +19,12 @@ defmodule BlockScoutWeb.TransactionView do
     end
   end
 
+  def from_or_to_address?(_token_transfer, nil), do: false
+
+  def from_or_to_address?(%{from_address_hash: from_hash, to_address_hash: to_hash}, %Address{hash: hash}) do
+    from_hash == hash || to_hash == hash
+  end
+
   # This is the address to be shown in the to field
   def to_address_hash(%Transaction{to_address_hash: nil, created_contract_address_hash: address_hash}), do: address_hash
 
@@ -45,9 +51,8 @@ defmodule BlockScoutWeb.TransactionView do
     AddressView.contract?(from_address) || AddressView.contract?(to_address)
   end
 
-  def involves_token_transfers?(%Transaction{} = transaction) do
-    Ecto.assoc_loaded?(transaction.token_transfers) && Enum.any?(transaction.token_transfers)
-  end
+  def involves_token_transfers?(%Transaction{token_transfers: []}), do: false
+  def involves_token_transfers?(%Transaction{token_transfers: transfers}) when is_list(transfers), do: true
 
   def contract_creation?(%Transaction{to_address: nil}), do: true
 

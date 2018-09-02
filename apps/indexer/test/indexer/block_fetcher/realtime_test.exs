@@ -362,11 +362,11 @@ defmodule Indexer.BlockFetcher.RealtimeTest do
       assert {:ok,
               {%{
                  addresses: [
-                   %Address{hash: first_address_hash, fetched_balance_block_number: 3_946_079},
-                   %Address{hash: second_address_hash, fetched_balance_block_number: 3_946_079},
-                   %Address{hash: third_address_hash, fetched_balance_block_number: 3_946_079},
-                   %Address{hash: fourth_address_hash, fetched_balance_block_number: 3_946_080},
-                   %Address{hash: fifth_address_hash, fetched_balance_block_number: 3_946_079}
+                   %Address{hash: first_address_hash, fetched_coin_balance_block_number: 3_946_079},
+                   %Address{hash: second_address_hash, fetched_coin_balance_block_number: 3_946_079},
+                   %Address{hash: third_address_hash, fetched_coin_balance_block_number: 3_946_079},
+                   %Address{hash: fourth_address_hash, fetched_coin_balance_block_number: 3_946_080},
+                   %Address{hash: fifth_address_hash, fetched_coin_balance_block_number: 3_946_079}
                  ],
                  balances: [
                    %{

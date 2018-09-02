@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Balance do
+defmodule Explorer.Chain.Address.CoinBalance do
   @moduledoc """
   The `t:Explorer.Chain.Wei.t/0` `value` of `t:Explorer.Chain.Address.t/0` at the end of a `t:Explorer.Chain.Block.t/0`
   `t:Explorer.Chain.Block.block_number/0`.
@@ -17,12 +17,12 @@ defmodule Explorer.Chain.Balance do
    * `address_hash` - foreign key for `address`.
    * `block_number` - the `t:Explorer.Chain.Block.block_number/0` for the `t:Explorer.Chain.Block.t/0` at the end of
        which `address` had `value`.  When `block_number` is the greatest `t:Explorer.Chain.Block.block_number/0` for a
-       given `address`, the `t:Explorer.Chain.Address.t/0` `fetched_balance_block_number` will match this value.
+       given `address`, the `t:Explorer.Chain.Address.t/0` `fetched_coin_balance_block_number` will match this value.
    * `inserted_at` - When the balance was first inserted into the database.
    * `updated_at` - When the balance was last updated.
    * `value` - the value of `address` at the end of the `t:Explorer.Chain.Block.block_number/0` for the
        `t:Explorer.Chain.Block.t/0`.  When `block_number` is the greatest `t:Explorer.Chain.Block.block_number/0` for a
-       given `address`, the `t:Explorer.Chain.Address.t/0` `fetched_balance` will match this value.
+       given `address`, the `t:Explorer.Chain.Address.t/0` `fetched_coin_balance` will match this value.
    * `value_fetched_at` - when `value` was fetched.
   """
   @type t :: %__MODULE__{
@@ -35,7 +35,7 @@ defmodule Explorer.Chain.Balance do
         }
 
   @primary_key false
-  schema "balances" do
+  schema "address_coin_balances" do
     field(:block_number, :integer)
     field(:value, Wei)
     field(:value_fetched_at, :utc_datetime)
@@ -50,6 +50,6 @@ defmodule Explorer.Chain.Balance do
     |> cast(params, @allowed_fields)
     |> validate_required(@required_fields)
     |> foreign_key_constraint(:address_hash)
-    |> unique_constraint(:block_number, name: :balances_address_hash_block_number_index)
+    |> unique_constraint(:block_number, name: :address_coin_balances_address_hash_block_number_index)
   end
 end

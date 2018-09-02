@@ -378,7 +378,7 @@ defmodule Explorer.Chain.ImportTest do
       assert changeset_errors(changeset)[:call_type] == ["can't be blank"]
     end
 
-    test "publishes addresses with updated fetched_balance data to subscribers on insert" do
+    test "publishes addresses with updated fetched_coin_balance data to subscribers on insert" do
       Chain.subscribe_to_events(:addresses)
       Import.all(@import_data)
       assert_received {:chain_event, :addresses, [%Address{}, %Address{}, %Address{}]}

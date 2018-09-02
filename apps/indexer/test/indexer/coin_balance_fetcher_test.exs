@@ -1,5 +1,5 @@
-defmodule Indexer.AddressBalanceFetcherTest do
-  # MUST be `async: false` so that {:shared, pid} is set for connection to allow BalanceFetcher's self-send to have
+defmodule Indexer.CoinBalanceFetcherTest do
+  # MUST be `async: false` so that {:shared, pid} is set for connection to allow CoinBalanceFetcher's self-send to have
   # connection allowed immediately.
   use EthereumJSONRPC.Case, async: false
   use Explorer.DataCase
@@ -7,8 +7,9 @@ defmodule Indexer.AddressBalanceFetcherTest do
   import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
   import Mox
 
-  alias Explorer.Chain.{Address, Balance, Hash, Wei}
-  alias Indexer.{BalanceFetcher, AddressBalanceFetcherCase}
+  alias Explorer.Chain.{Address, Hash, Wei}
+  alias Explorer.Chain.Address.CoinBalance
+  alias Indexer.{CoinBalanceFetcher, CoinBalanceFetcherCase}
 
   @moduletag :capture_log
 
@@ -65,20 +66,20 @@ defmodule Indexer.AddressBalanceFetcherTest do
       block = insert(:block, miner: miner, number: block_number)
       insert(:unfetched_balance, address_hash: miner.hash, block_number: block_number)
 
-      assert miner.fetched_balance == nil
-      assert miner.fetched_balance_block_number == nil
+      assert miner.fetched_coin_balance == nil
+      assert miner.fetched_coin_balance_block_number == nil
 
-      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CoinBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       fetched_address =
         wait(fn ->
           Repo.one!(
-            from(address in Address, where: address.hash == ^miner_hash and not is_nil(address.fetched_balance))
+            from(address in Address, where: address.hash == ^miner_hash and not is_nil(address.fetched_coin_balance))
           )
         end)
 
-      assert fetched_address.fetched_balance == %Wei{value: Decimal.new(fetched_balance)}
-      assert fetched_address.fetched_balance_block_number == block.number
+      assert fetched_address.fetched_coin_balance == %Wei{value: Decimal.new(fetched_balance)}
+      assert fetched_address.fetched_coin_balance_block_number == block.number
     end
 
     test "fetches unfetched addresses when less than max batch size", %{
@@ -121,17 +122,17 @@ defmodule Indexer.AddressBalanceFetcherTest do
       block = insert(:block, miner: miner, number: block_number)
       insert(:unfetched_balance, address_hash: miner.hash, block_number: block_number)
 
-      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments, max_batch_size: 2)
+      CoinBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments, max_batch_size: 2)
 
       fetched_address =
         wait(fn ->
           Repo.one!(
-            from(address in Address, where: address.hash == ^miner_hash and not is_nil(address.fetched_balance))
+            from(address in Address, where: address.hash == ^miner_hash and not is_nil(address.fetched_coin_balance))
           )
         end)
 
-      assert fetched_address.fetched_balance == %Wei{value: Decimal.new(fetched_balance)}
-      assert fetched_address.fetched_balance_block_number == block.number
+      assert fetched_address.fetched_coin_balance == %Wei{value: Decimal.new(fetched_balance)}
+      assert fetched_address.fetched_coin_balance_block_number == block.number
     end
   end
 
@@ -177,17 +178,17 @@ defmodule Indexer.AddressBalanceFetcherTest do
         end)
       end
 
-      AddressBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CoinBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
-      assert :ok = BalanceFetcher.async_fetch_balances([%{address_hash: hash, block_number: block_number}])
+      assert :ok = CoinBalanceFetcher.async_fetch_balances([%{address_hash: hash, block_number: block_number}])
 
       address =
         wait(fn ->
           Repo.get!(Address, hash)
         end)
 
-      assert address.fetched_balance == %Wei{value: Decimal.new(fetched_balance)}
-      assert address.fetched_balance_block_number == block_number
+      assert address.fetched_coin_balance == %Wei{value: Decimal.new(fetched_balance)}
+      assert address.fetched_coin_balance_block_number == block_number
     end
   end
 
@@ -250,19 +251,21 @@ defmodule Indexer.AddressBalanceFetcherTest do
 
       params_list = Enum.map(block_quantities, &%{block_quantity: &1, hash_data: hash_data})
 
-      case BalanceFetcher.run(params_list, 0, json_rpc_named_arguments) do
+      case CoinBalanceFetcher.run(params_list, 0, json_rpc_named_arguments) do
         :ok ->
-          balances = Repo.all(from(balance in Balance, where: balance.address_hash == ^hash_data))
+          balances = Repo.all(from(balance in CoinBalance, where: balance.address_hash == ^hash_data))
 
           assert Enum.count(balances) == 2
 
           balance_by_block_number =
-            Enum.into(balances, %{}, fn %Balance{block_number: block_number} = balance -> {block_number, balance} end)
+            Enum.into(balances, %{}, fn %CoinBalance{block_number: block_number} = balance ->
+              {block_number, balance}
+            end)
 
           Enum.each(expected_balance_by_block_number, fn {block_number, expected_balance} ->
             expected_value = %Explorer.Chain.Wei{value: Decimal.new(expected_balance)}
 
-            assert %Balance{value: ^expected_value} = balance_by_block_number[block_number]
+            assert %CoinBalance{value: ^expected_value} = balance_by_block_number[block_number]
           end)
 
           fetched_address = Repo.one!(from(address in Address, where: address.hash == ^hash_data))
@@ -272,8 +275,8 @@ defmodule Indexer.AddressBalanceFetcherTest do
 
           expected_fetched_balance = %Explorer.Chain.Wei{value: Decimal.new(expected_fetched_balance_value)}
 
-          assert fetched_address.fetched_balance == expected_fetched_balance
-          assert fetched_address.fetched_balance_block_number == expected_fetched_balance_block_number
+          assert fetched_address.fetched_coin_balance == expected_fetched_balance
+          assert fetched_address.fetched_coin_balance_block_number == expected_fetched_balance_block_number
 
         other ->
           # not all nodes behind the `https://mainnet.infura.io` pool are fully-synced.  Node that aren't fully-synced
@@ -292,7 +295,7 @@ defmodule Indexer.AddressBalanceFetcherTest do
         end)
       end
 
-      assert BalanceFetcher.run(
+      assert CoinBalanceFetcher.run(
                [%{block_quantity: "0x1", hash_data: hash_data}, %{block_quantity: "0x1", hash_data: hash_data}],
                0,
                json_rpc_named_arguments

@@ -1,10 +1,10 @@
 <div class="tile tile-type-token fade-in">
   <div class="row justify-content-end">
-    <div class="col-md-3 col-lg-2 d-flex align-items-center justify-content-start justify-content-lg-center tile-label">
+    <div class="col-12 col-md-4 col-lg-2 d-flex align-items-center justify-content-start justify-content-lg-center tile-label">
       <%=  gettext("Token Transfer") %>
     </div>
 
-    <div class="col-md-9 col-lg-10 d-flex flex-column text-nowrap">
+    <div class="col-12 col-md-8 col-lg-10 d-flex flex-column text-nowrap">
       <%= render BlockScoutWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: @token_transfer.transaction_hash %>
       <span class="text-nowrap">
         <%= render BlockScoutWeb.AddressView, "_link.html", address_hash: @token_transfer.from_address_hash, contract: BlockScoutWeb.AddressView.contract?(@token_transfer.from_address), locale: @locale %>
