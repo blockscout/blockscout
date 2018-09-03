@@ -60,6 +60,32 @@ defmodule Indexer.TokenBalancesTest do
                value_fetched_at: nil
              } = List.first(result)
     end
+
+    test "ignores results that raised :timeout" do
+      address = insert(:address)
+      token = insert(:token, contract_address: build(:contract_address))
+      address_hash_string = Hash.to_string(address.hash)
+
+      token_balance_params = [
+        %{
+          token_contract_address_hash: Hash.to_string(token.contract_address_hash),
+          address_hash: address_hash_string,
+          block_number: 1_000
+        },
+        %{
+          token_contract_address_hash: Hash.to_string(token.contract_address_hash),
+          address_hash: address_hash_string,
+          block_number: 1_001
+        }
+      ]
+
+      get_balance_from_blockchain()
+      get_balance_from_blockchain_with_timeout()
+
+      {:ok, result} = TokenBalances.fetch_token_balances_from_blockchain(token_balance_params)
+
+      assert length(result) == 1
+    end
   end
 
   defp get_balance_from_blockchain() do
@@ -75,6 +101,16 @@ defmodule Indexer.TokenBalancesTest do
              result: "0x00000000000000000000000000000000000000000000d3c21bcecceda1000000"
            }
          ]}
+      end
+    )
+  end
+
+  defp get_balance_from_blockchain_with_timeout() do
+    expect(
+      EthereumJSONRPC.Mox,
+      :json_rpc,
+      fn [%{id: _, method: _, params: [%{data: _, to: _}, _]}], _options ->
+        :timer.sleep(5001)
       end
     )
   end
