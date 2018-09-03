@@ -61,8 +61,8 @@ defmodule Explorer.Chain.Block do
   @primary_key {:hash, Hash.Full, autogenerate: false}
   schema "blocks" do
     field(:difficulty, :decimal)
-    field(:gas_limit, :integer)
-    field(:gas_used, :integer)
+    field(:gas_limit, :decimal)
+    field(:gas_used, :decimal)
     field(:nonce, Hash.Nonce)
     field(:number, :integer)
     field(:size, :integer)
