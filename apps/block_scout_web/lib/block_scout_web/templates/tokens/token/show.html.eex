@@ -16,7 +16,7 @@
             <%= link(
                   gettext("Token Transfers"),
                   class: "nav-link active",
-                  to: token_path(@conn, :show, @conn.assigns.locale, "1")
+                  to: token_path(@conn, :show, "1")
                 ) %>
           </li>
 
@@ -24,7 +24,7 @@
             <li class="nav-item">
               <%= link(
                   gettext("Read Contract"),
-                  to: token_read_contract_path(@conn, :index, @conn.assigns.locale, @conn.params["id"]),
+                  to: token_read_contract_path(@conn, :index, @conn.params["id"]),
                   class: "nav-link")%>
             </li>
           <% end %>
@@ -38,7 +38,7 @@
               <%= link(
                     gettext("Token Transfers"),
                     class: "nav-link active",
-                    to: token_path(@conn, :show, @conn.assigns.locale, "1")
+                    to: token_path(@conn, :show, "1")
                   ) %>
               <%= if smart_contract_with_read_only_functions?(@token) do %>
                   <%= link(
@@ -56,7 +56,7 @@
 
         <%= if Enum.any?(@transfers) do %>
           <%= for transfer <- @transfers do %>
-            <%= render("_token_transfer.html", locale: @locale, token: @token, transfer: transfer) %>
+            <%= render("_token_transfer.html", token: @token, transfer: transfer) %>
           <% end %>
         <% else %>
           <div class="tile tile-muted text-center">
@@ -70,7 +70,7 @@
           <%= link(
             gettext("Older"),
             class: "button button--secondary button--small float-right mt-4",
-            to: token_path(@conn, :show, @conn.assigns.locale, @token.contract_address_hash, @next_page_params)
+            to: token_path(@conn, :show, @token.contract_address_hash, @next_page_params)
           ) %>
         <% end %>
       </div>

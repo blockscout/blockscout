@@ -10,7 +10,7 @@
 
     <%= if queryable?(function["inputs"]) do %>
       <div class="">
-        <form class="form-inline" data-function-form data-url="<%= smart_contract_path(@conn, :show, :en, @address.hash) %>">
+        <form class="form-inline" data-function-form data-url="<%= smart_contract_path(@conn, :show, @address.hash) %>">
           <input type="hidden" name="function_name" value='<%= function["name"] %>' />
 
           <%= for input <- function["inputs"] do %>
@@ -38,7 +38,7 @@
           <%= if address?(output["type"]) do %>
             <%= link(
                output["value"],
-               to: address_path(@conn, :show, @conn.assigns.locale, output["value"])
+               to: address_path(@conn, :show, output["value"])
              ) %>
           <% else %>
             <%= output["value"] %>

@@ -6,7 +6,7 @@
 
       <span data-selector="blocks-list">
         <%= for block <- @blocks do %>
-          <%= render BlockScoutWeb.BlockView, "_tile.html", locale: @locale, block: block %>
+          <%= render BlockScoutWeb.BlockView, "_tile.html", block: block %>
         <% end %>
       </span>
 
@@ -17,7 +17,6 @@
           to: block_path(
             @conn,
             :index,
-            @conn.assigns.locale,
             @next_page_params
           )
         ) %>

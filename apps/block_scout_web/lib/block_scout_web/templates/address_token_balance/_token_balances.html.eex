@@ -31,7 +31,7 @@
             conn: @conn,
             token_balances: filter_by_type(@token_balances, "ERC-20"),
             type: "ERC-20"
-          )  %>
+          ) %>
     <% end %>
   </div>
 </div>

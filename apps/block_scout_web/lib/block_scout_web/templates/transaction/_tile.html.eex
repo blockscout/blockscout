@@ -9,14 +9,14 @@
       </span>
     </div>
     <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0">
-      <%= render "_link.html", locale: @locale, transaction_hash: @transaction.hash %>
+      <%= render "_link.html", transaction_hash: @transaction.hash %>
       <span class="text-nowrap">
-        <%= BlockScoutWeb.AddressView.display_address_hash(assigns[:current_address], @transaction.from_address, @locale) %>
+        <%= BlockScoutWeb.AddressView.display_address_hash(assigns[:current_address], @transaction.from_address) %>
         &rarr;
         <%= if assigns[:current_address] && assigns[:current_address].hash == to_address_hash(@transaction) do %>
           <%= render BlockScoutWeb.AddressView, "_responsive_hash.html", address_hash: to_address_hash(@transaction), contract: BlockScoutWeb.AddressView.contract?(@transaction.to_address) %>
         <% else %>
-          <%= render BlockScoutWeb.AddressView, "_link.html", address_hash: to_address_hash(@transaction), contract: BlockScoutWeb.AddressView.contract?(@transaction.to_address), locale: @locale %>
+          <%= render BlockScoutWeb.AddressView, "_link.html", address_hash: to_address_hash(@transaction), contract: BlockScoutWeb.AddressView.contract?(@transaction.to_address) %>
         <% end %>
       </span>
       <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
@@ -32,7 +32,7 @@
       <span class="mr-2 mr-md-0 order-1">
         <%= link(
           gettext("Block #%{number}", number: to_string(@transaction.block.number)),
-          to: block_path(BlockScoutWeb.Endpoint, :show, @locale, @transaction.block)
+          to: block_path(BlockScoutWeb.Endpoint, :show, @transaction.block)
         ) %>
       </span>
       <span class="mr-2 mr-md-0 order-2" data-from-now="<%= @transaction.block.timestamp %>"></span>
@@ -54,10 +54,10 @@
     <%= if involves_token_transfers?(@transaction) do %>
       <div class="offset-md-2 col-md-10 col-lg-8 d-flex flex-column mt-2 mb-2">
         <% [first_token_transfer | remaining_token_transfers]= @transaction.token_transfers %>
-        <%= render "_token_transfer.html", address: assigns[:current_address], locale: @locale, token_transfer: first_token_transfer %>
+        <%= render "_token_transfer.html", address: assigns[:current_address], token_transfer: first_token_transfer %>
         <div class="collapse token-transfer-toggle" id="<%= @transaction.hash %>">
           <%= for token_transfer <- remaining_token_transfers do %>
-            <%= render "_token_transfer.html", address: assigns[:current_address], locale: @locale, token_transfer: token_transfer %>
+            <%= render "_token_transfer.html", address: assigns[:current_address], token_transfer: token_transfer %>
           <% end %>
         </div>
       </div>

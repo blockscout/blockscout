@@ -2,13 +2,11 @@ defmodule BlockScoutWeb.BlockControllerTest do
   use BlockScoutWeb.ConnCase
   alias Explorer.Chain.Block
 
-  @locale "en"
-
   describe "GET show/2" do
     test "with block redirects to block transactions route", %{conn: conn} do
       insert(:block, number: 3)
-      conn = get(conn, "/en/blocks/3")
-      assert redirected_to(conn) =~ "/en/blocks/3/transactions"
+      conn = get(conn, "/blocks/3")
+      assert redirected_to(conn) =~ "/blocks/3/transactions"
     end
   end
 
@@ -20,7 +18,7 @@ defmodule BlockScoutWeb.BlockControllerTest do
         |> Stream.map(fn block -> block.number end)
         |> Enum.reverse()
 
-      conn = get(conn, block_path(conn, :index, @locale))
+      conn = get(conn, block_path(conn, :index))
 
       assert conn.assigns.blocks |> Enum.map(fn block -> block.number end) == block_ids
     end
@@ -32,7 +30,7 @@ defmodule BlockScoutWeb.BlockControllerTest do
       |> insert_list(:transaction)
       |> with_block(block)
 
-      conn = get(conn, block_path(conn, :index, @locale))
+      conn = get(conn, block_path(conn, :index))
 
       assert conn.assigns.blocks |> Enum.count() == 1
     end
@@ -46,7 +44,7 @@ defmodule BlockScoutWeb.BlockControllerTest do
       block = insert(:block)
 
       conn =
-        get(conn, block_path(conn, :index, @locale), %{
+        get(conn, block_path(conn, :index), %{
           "block_number" => Integer.to_string(block.number)
         })
 
@@ -64,7 +62,7 @@ defmodule BlockScoutWeb.BlockControllerTest do
         |> insert_list(:block)
         |> Enum.fetch!(10)
 
-      conn = get(conn, block_path(conn, :index, @locale))
+      conn = get(conn, block_path(conn, :index))
 
       assert %{"block_number" => ^number} = conn.assigns.next_page_params
     end
@@ -72,7 +70,7 @@ defmodule BlockScoutWeb.BlockControllerTest do
     test "next_page_params are empty if on last page", %{conn: conn} do
       insert(:block)
 
-      conn = get(conn, block_path(conn, :index, @locale))
+      conn = get(conn, block_path(conn, :index))
 
       refute conn.assigns.next_page_params
     end

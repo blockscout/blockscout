@@ -4,18 +4,18 @@
       <%=  gettext("Internal Transaction") %>
     </div>
     <div class="col-md-8 col-lg-8 d-flex flex-column text-nowrap pr-2 pr-sm-2 pr-md-0">
-      <%= render BlockScoutWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: @internal_transaction.transaction_hash %>
+      <%= render BlockScoutWeb.TransactionView, "_link.html", transaction_hash: @internal_transaction.transaction_hash %>
       <span class="text-nowrap">
         <%= if @address.hash == @internal_transaction.from_address_hash do %>
           <%= render BlockScoutWeb.AddressView, "_responsive_hash.html", address_hash: @internal_transaction.from_address_hash, contract: BlockScoutWeb.AddressView.contract?(@internal_transaction.from_address) %>
         <% else %>
-          <%= render BlockScoutWeb.AddressView, "_link.html", address_hash: @internal_transaction.from_address_hash, contract: BlockScoutWeb.AddressView.contract?(@internal_transaction.from_address), locale: @locale %>
+          <%= render BlockScoutWeb.AddressView, "_link.html", address_hash: @internal_transaction.from_address_hash, contract: BlockScoutWeb.AddressView.contract?(@internal_transaction.from_address) %>
         <% end %>
         &rarr;
         <%= if @address.hash == BlockScoutWeb.InternalTransactionView.to_address_hash(@internal_transaction) do %>
           <%= render BlockScoutWeb.AddressView, "_responsive_hash.html", address_hash: BlockScoutWeb.InternalTransactionView.to_address_hash(@internal_transaction), contract: BlockScoutWeb.AddressView.contract?(@internal_transaction.to_address) %>
         <% else %>
-          <%= render BlockScoutWeb.AddressView, "_link.html", address_hash: BlockScoutWeb.InternalTransactionView.to_address_hash(@internal_transaction), contract: BlockScoutWeb.AddressView.contract?(@internal_transaction.to_address), locale: @locale %>
+          <%= render BlockScoutWeb.AddressView, "_link.html", address_hash: BlockScoutWeb.InternalTransactionView.to_address_hash(@internal_transaction), contract: BlockScoutWeb.AddressView.contract?(@internal_transaction.to_address) %>
         <% end %>
       </span>
       <span class="tile-title text-truncate mt-3 mt-md-0">

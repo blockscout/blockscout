@@ -61,11 +61,11 @@ defmodule BlockScoutWeb.ChainController do
   end
 
   defp redirect_search_results(conn, %Address{} = item) do
-    redirect(conn, to: address_path(conn, :show, Gettext.get_locale(), item))
+    redirect(conn, to: address_path(conn, :show, item))
   end
 
   defp redirect_search_results(conn, %Block{} = item) do
-    redirect(conn, to: block_path(conn, :show, Gettext.get_locale(), item))
+    redirect(conn, to: block_path(conn, :show, item))
   end
 
   defp redirect_search_results(conn, %Transaction{} = item) do
@@ -75,7 +75,6 @@ defmodule BlockScoutWeb.ChainController do
         transaction_path(
           conn,
           :show,
-          Gettext.get_locale(),
           item
         )
     )

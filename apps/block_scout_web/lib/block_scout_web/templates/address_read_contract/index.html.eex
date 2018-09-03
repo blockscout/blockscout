@@ -9,7 +9,7 @@
           <%= link(
                 gettext("Transactions"),
                 class: "nav-link",
-                to: address_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
+                to: address_transaction_path(@conn, :index, @conn.params["address_id"])
               ) %>
         </li>
         <li class="nav-item">
@@ -17,12 +17,12 @@
                 gettext("Internal Transactions"),
                 class: "nav-link",
                 "data-test": "internal_transactions_tab_link",
-                to: address_internal_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
+                to: address_internal_transaction_path(@conn, :index, @conn.params["address_id"])
               ) %>
         </li>
         <li class="nav-item">
           <%= link(
-              to: address_contract_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"]),
+              to: address_contract_path(@conn, :index, @conn.params["address_id"]),
               class: "nav-link") do %>
             <%= gettext("Code") %>
 
@@ -34,14 +34,14 @@
         <li class="nav-item">
           <%= link(
               gettext("Read Contract"),
-              to: address_read_contract_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"]),
+              to: address_read_contract_path(@conn, :index, @conn.params["address_id"]),
               class: "nav-link active")%>
         </li>
       </ul>
     </div>
 
     <!-- loaded via AJAX -->
-    <div class="card-body" data-smart-contract-functions data-hash="<%= to_string(@address.hash) %>" data-url="<%= smart_contract_path(@conn, :index, :en) %>">
+    <div class="card-body" data-smart-contract-functions data-hash="<%= to_string(@address.hash) %>" data-url="<%= smart_contract_path(@conn, :index) %>">
       <i class="fa fa-spinner fa-spin"></i> <%= gettext("loading...") %>
     </div>
   </div>

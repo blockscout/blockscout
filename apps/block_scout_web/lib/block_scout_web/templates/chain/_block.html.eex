@@ -1,13 +1,13 @@
 <div class="col-sm-3 fade-up-blocks-chain mb-3 mb-sm-0" data-selector="chain-block" data-block-number="<%= @block.number %>">
   <div class="tile d-flex flex-column">
-    <%= link(@block, to: block_path(BlockScoutWeb.Endpoint, :show, @locale, @block), class: "tile-title") %>
+    <%= link(@block, to: block_path(BlockScoutWeb.Endpoint, :show, @block), class: "tile-title") %>
     <div>
       <span class="mr-2"> <%= Enum.count(@block.transactions) %> Transactions </span>
       <span class="text-nowrap" data-from-now="<%= @block.timestamp %>"> </span>
     </div>
     <span class="text-truncate">
       <%= gettext "Miner" %>
-      <%= link to: address_path(BlockScoutWeb.Endpoint, :show, @locale, @block.miner),
+      <%= link to: address_path(BlockScoutWeb.Endpoint, :show, @block.miner),
         "data-toggle": "tooltip",
         "data-placement": "top",
         title: @block.miner do %>

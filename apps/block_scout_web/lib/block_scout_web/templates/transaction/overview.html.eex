@@ -8,10 +8,10 @@
           <h1 class="card-title"><%= gettext "Transaction Details" %> </h1>
           <h3 data-test="transaction_detail_hash"><%= @transaction %> </h3>
           <span class="d-block mb-2">
-            <%= render BlockScoutWeb.AddressView, "_link.html", address_hash: @transaction.from_address_hash, contract: BlockScoutWeb.AddressView.contract?(@transaction.from_address), locale: @locale %>
+            <%= render BlockScoutWeb.AddressView, "_link.html", address_hash: @transaction.from_address_hash, contract: BlockScoutWeb.AddressView.contract?(@transaction.from_address) %>
             <span class="text-muted">  &rarr; </span>
             <%= if @transaction.to_address_hash do %>
-              <%= render BlockScoutWeb.AddressView, "_link.html", address_hash: @transaction.to_address_hash, contract: BlockScoutWeb.AddressView.contract?(@transaction.to_address), locale: @locale %>
+              <%= render BlockScoutWeb.AddressView, "_link.html", address_hash: @transaction.to_address_hash, contract: BlockScoutWeb.AddressView.contract?(@transaction.to_address) %>
             <% else %>
               <%= gettext("Contract Address Pending") %>
             <% end %>
@@ -34,7 +34,7 @@
                 <%= link(
                       block,
                       class: "transaction__link",
-                      to: block_path(@conn, :show, @conn.assigns.locale, block)
+                      to: block_path(@conn, :show, block)
                     ) %>
               <% else %>
                 <%= gettext "Pending" %>

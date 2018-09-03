@@ -12,7 +12,7 @@
               <%= link(
                     gettext("Token Transfers"),
                     class: "nav-link",
-                    to: transaction_token_transfer_path(@conn, :index, @conn.assigns.locale, @transaction)
+                    to: transaction_token_transfer_path(@conn, :index, @transaction)
                   ) %>
             <% end %>
           </li>
@@ -20,14 +20,14 @@
             <%= link(
                   gettext("Internal Transactions"),
                   class: "nav-link",
-                  to: transaction_internal_transaction_path(@conn, :index, @conn.assigns.locale, @transaction)
+                  to: transaction_internal_transaction_path(@conn, :index, @transaction)
                 ) %>
           </li>
           <li class="nav-item">
             <%= link(
                   gettext("Logs"),
                   class: "nav-link active",
-                  to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction)
+                  to: transaction_log_path(@conn, :index, @transaction)
                 ) %>
           </li>
         </ul>
@@ -41,19 +41,19 @@
                   <%= link(
                         gettext("Token Transfers"),
                         class: "dropdown-item",
-                        to: transaction_token_transfer_path(@conn, :index, @conn.assigns.locale, @transaction),
+                        to: transaction_token_transfer_path(@conn, :index, @transaction),
                         "data-test": "transaction_token_transfer_link"
                       ) %>
                  <% end %>
               <%= link(
                     gettext("Internal Transactions"),
                     class: "dropdown-item",
-                    to: transaction_path(@conn, :show, @conn.assigns.locale, @transaction)
+                    to: transaction_path(@conn, :show, @transaction)
                   ) %>
               <%= link(
                     gettext("Logs"),
                     class: "dropdown-item",
-                    to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction),
+                    to: transaction_log_path(@conn, :index, @transaction),
                     "data-test": "transaction_logs_link"
                   ) %>
             </div>
@@ -72,7 +72,7 @@
                   <h3 class="">
                     <%= link(
                         log.address,
-                        to: address_path(@conn, :show, @conn.assigns.locale, log.address),
+                        to: address_path(@conn, :show, log.address),
                         "data-test": "log_address_link",
                         "data-address-hash": log.address
                       ) %>
@@ -124,7 +124,6 @@
             to: transaction_log_path(
               @conn,
               :index,
-              @conn.assigns.locale,
               @transaction,
               @next_page_params
             )

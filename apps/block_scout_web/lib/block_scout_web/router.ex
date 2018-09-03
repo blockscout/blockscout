@@ -13,10 +13,6 @@ defmodule BlockScoutWeb.Router do
     plug(:accepts, ["json"])
   end
 
-  pipeline :set_locale do
-    plug(SetLocale, gettext: BlockScoutWeb.Gettext, default_locale: "en")
-  end
-
   scope "/api/v1", BlockScoutWeb.API.V1, as: :api_v1 do
     pipe_through(:api)
 
@@ -39,13 +35,7 @@ defmodule BlockScoutWeb.Router do
 
   scope "/", BlockScoutWeb do
     pipe_through(:browser)
-    pipe_through(:set_locale)
-    resources("/", ChainController, only: [:show], singleton: true, as: :chain)
-  end
 
-  scope "/:locale", BlockScoutWeb do
-    pipe_through(:browser)
-    pipe_through(:set_locale)
     resources("/", ChainController, only: [:show], singleton: true, as: :chain)
 
     resources "/blocks", BlockController, only: [:index, :show] do

@@ -28,7 +28,6 @@
                       to: address_path(
                         BlockScoutWeb.Endpoint,
                         :show,
-                        @locale,
                         @address.contracts_creation_internal_transaction.from_address_hash
                       )
                     ) %>
@@ -40,7 +39,6 @@
                       to: transaction_path(
                         BlockScoutWeb.Endpoint,
                         :show,
-                        @locale,
                         @address.contracts_creation_internal_transaction.transaction_hash
                       ),
                       "data-test": "transaction_hash_link"
