@@ -52,7 +52,6 @@ defmodule BlockScoutWeb.Mixfile do
       :timex,
       :timex_ecto,
       :crontab,
-      :set_locale,
       :logger,
       :runtime_tools
     ]
@@ -89,8 +88,6 @@ defmodule BlockScoutWeb.Mixfile do
       {:phoenix_live_reload, "~> 1.0", only: [:dev]},
       {:phoenix_pubsub, "~> 1.0"},
       {:postgrex, ">= 0.0.0"},
-      # Waiting on https://github.com/smeevil/set_locale/pull/9
-      {:set_locale, github: "minifast/set_locale", branch: "master"},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
       {:timex, "~> 3.1.24"},
       {:timex_ecto, "~> 3.2.1"},
