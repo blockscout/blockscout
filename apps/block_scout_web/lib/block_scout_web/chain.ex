@@ -12,7 +12,18 @@ defmodule BlockScoutWeb.Chain do
       string_to_transaction_hash: 1
     ]
 
-  alias Explorer.Chain.{Address, Block, InternalTransaction, Log, Token, TokenTransfer, Transaction}
+  alias Explorer.Chain.{
+    Address,
+    Address.TokenBalance,
+    Block,
+    Hash,
+    InternalTransaction,
+    Log,
+    Token,
+    TokenTransfer,
+    Transaction
+  }
+
   alias Explorer.PagingOptions
 
   @page_size 50
@@ -121,6 +132,10 @@ defmodule BlockScoutWeb.Chain do
   def paging_options(%{"token_name" => name, "token_type" => type, "token_inserted_at" => inserted_at}),
     do: [paging_options: %{@default_paging_options | key: {name, type, inserted_at}}]
 
+  def paging_options(%{"value" => value, "address_hash" => address_hash}) do
+    [paging_options: %{@default_paging_options | key: {value, address_hash}}]
+  end
+
   def paging_options(_params), do: [paging_options: @default_paging_options]
 
   def param_to_block_number(formatted_number) when is_binary(formatted_number) do
@@ -177,6 +192,10 @@ defmodule BlockScoutWeb.Chain do
       |> DateTime.to_iso8601()
 
     %{"token_name" => name, "token_type" => type, "token_inserted_at" => inserted_at_datetime}
+  end
+
+  defp paging_params(%TokenBalance{address_hash: address_hash, value: value}) do
+    %{"address_hash" => Hash.to_string(address_hash), "value" => Decimal.to_integer(value)}
   end
 
   defp transaction_from_param(param) do

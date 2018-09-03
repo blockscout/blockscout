@@ -113,6 +113,13 @@ defmodule BlockScoutWeb.Router do
         only: [:index],
         as: :read_contract
       )
+
+      resources(
+        "/token_holders",
+        Tokens.HolderController,
+        only: [:index],
+        as: :holder
+      )
     end
 
     resources(
