@@ -16,7 +16,7 @@
             <%= link(
                   gettext("Token Transfers"),
                   class: "nav-link active",
-                  to: token_path(@conn, :show, "1")
+                  to: token_path(@conn, :show, @token.contract_address_hash)
                 ) %>
           </li>
 
@@ -38,7 +38,7 @@
               <%= link(
                     gettext("Token Transfers"),
                     class: "nav-link active",
-                    to: token_path(@conn, :show, "1")
+                    to: token_path(@conn, :show, @token.contract_address_hash)
                   ) %>
               <%= if smart_contract_with_read_only_functions?(@token) do %>
                   <%= link(
