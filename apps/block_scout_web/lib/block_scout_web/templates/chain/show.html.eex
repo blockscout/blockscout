@@ -9,16 +9,14 @@
           <span class="dashboard-banner-chart-legend-label">
             <%= gettext "Price" %>
           </span>
-          <span class="dashboard-banner-chart-legend-value" data-selector="exchange-rate">
-            <%= format_exchange_rate(@exchange_rate) %>
+          <span class="dashboard-banner-chart-legend-value" data-selector="exchange-rate" data-wei-value="<%= Explorer.Chain.Wei.from(Decimal.new(1), :ether).value %>" data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
           </span>
         </div>
         <div class="dashboard-banner-chart-legend-item">
           <span class="dashboard-banner-chart-legend-label">
             <%= gettext "Market Cap" %>
           </span>
-          <span class="dashboard-banner-chart-legend-value" data-selector="market-cap">
-            <%= format_market_cap(@exchange_rate) %>
+          <span class="dashboard-banner-chart-legend-value" data-selector="market-cap" data-usd-value="<%= @exchange_rate.market_cap_usd %>">
           </span>
         </div>
       </div>

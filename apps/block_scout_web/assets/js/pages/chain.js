@@ -4,7 +4,7 @@ import numeral from 'numeral'
 import router from '../router'
 import socket from '../socket'
 import { updateAllAges } from '../lib/from_now'
-import { formatUsdValue } from '../lib/currency'
+import { exchangeRateChannel, formatUsdValue } from '../lib/currency'
 import { batchChannel, initRedux } from '../utils'
 import { createMarketHistoryChart } from '../lib/market_history_chart'
 
@@ -19,7 +19,6 @@ export const initialState = {
   newBlock: null,
   newTransactions: [],
   transactionCount: null,
-  usdExchangeRate: null,
   usdMarketCap: null
 }
 
@@ -45,7 +44,6 @@ export function reducer (state = initialState, action) {
       return Object.assign({}, state, {
         availableSupply: action.msg.exchangeRate.availableSupply,
         marketHistoryData: action.msg.marketHistoryData,
-        usdExchangeRate: action.msg.exchangeRate.usdValue,
         usdMarketCap: action.msg.exchangeRate.marketCapUsd
       })
     }
@@ -85,8 +83,6 @@ router.when('', { exactPathMatch: true }).then(() => initRedux(reducer, {
     blocksChannel.join()
     blocksChannel.on('new_block', msg => store.dispatch({ type: 'RECEIVED_NEW_BLOCK', msg: humps.camelizeKeys(msg) }))
 
-    const exchangeRateChannel = socket.channel(`exchange_rate:new_rate`)
-    exchangeRateChannel.join()
     exchangeRateChannel.on('new_rate', (msg) => store.dispatch({ type: 'RECEIVED_NEW_EXCHANGE_RATE', msg: humps.camelizeKeys(msg) }))
 
     const transactionsChannel = socket.channel(`transactions:new_transaction`)
@@ -103,7 +99,6 @@ router.when('', { exactPathMatch: true }).then(() => initRedux(reducer, {
     const $blockList = $('[data-selector="chain-block-list"]')
     const $channelBatching = $('[data-selector="channel-batching-message"]')
     const $channelBatchingCount = $('[data-selector="channel-batching-count"]')
-    const $exchangeRate = $('[data-selector="exchange-rate"]')
     const $marketCap = $('[data-selector="market-cap"]')
     const $transactionsList = $('[data-selector="transactions-list"]')
     const $transactionCount = $('[data-selector="transaction-count"]')
@@ -113,9 +108,6 @@ router.when('', { exactPathMatch: true }).then(() => initRedux(reducer, {
     }
     if (oldState.averageBlockTime !== state.averageBlockTime) {
       $averageBlockTime.empty().append(state.averageBlockTime)
-    }
-    if (oldState.usdExchangeRate !== state.usdExchangeRate) {
-      $exchangeRate.empty().append(formatUsdValue(state.usdExchangeRate))
     }
     if (oldState.usdMarketCap !== state.usdMarketCap) {
       $marketCap.empty().append(formatUsdValue(state.usdMarketCap))
