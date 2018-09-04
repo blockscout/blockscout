@@ -188,10 +188,15 @@ defmodule EthereumJSONRPC do
   Transaction data is included for each block.
   """
   def fetch_blocks_by_hash(block_hashes, json_rpc_named_arguments) do
-    block_hashes
+    id_to_params =
+      block_hashes
+      |> Enum.map(fn block_hash -> %{hash: block_hash} end)
+      |> id_to_params()
+
+    id_to_params
     |> get_block_by_hash_requests()
     |> json_rpc(json_rpc_named_arguments)
-    |> handle_get_blocks()
+    |> handle_get_blocks(id_to_params)
     |> case do
       {:ok, _next, results} -> {:ok, results}
       {:error, reason} -> {:error, reason}
@@ -202,10 +207,15 @@ defmodule EthereumJSONRPC do
   Fetches blocks by block number range.
   """
   def fetch_blocks_by_range(_first.._last = range, json_rpc_named_arguments) do
-    range
+    id_to_params =
+      range
+      |> Enum.map(fn number -> %{number: number} end)
+      |> id_to_params()
+
+    id_to_params
     |> get_block_by_number_requests()
     |> json_rpc(json_rpc_named_arguments)
-    |> handle_get_blocks()
+    |> handle_get_blocks(id_to_params)
   end
 
   @doc """
@@ -282,14 +292,6 @@ defmodule EthereumJSONRPC do
     transport_options = Keyword.fetch!(named_arguments, :transport_options)
 
     transport.json_rpc(request, transport_options)
-  end
-
-  @doc """
-  Converts `t:nonce/0` to `t:non_neg_integer/0`
-  """
-  @spec nonce_to_integer(nonce) :: non_neg_integer()
-  def nonce_to_integer(nonce) do
-    quantity_to_integer(nonce)
   end
 
   @doc """
@@ -427,10 +429,10 @@ defmodule EthereumJSONRPC do
     {:error, annotated_error}
   end
 
-  defp get_block_by_hash_requests(block_hashes) do
-    for block_hash <- block_hashes do
-      get_block_by_hash_request(%{id: block_hash, hash: block_hash, transactions: :full})
-    end
+  defp get_block_by_hash_requests(id_to_params) do
+    Enum.map(id_to_params, fn {id, %{hash: hash}} ->
+      get_block_by_hash_request(%{id: id, hash: hash, transactions: :full})
+    end)
   end
 
   defp get_block_by_hash_request(%{id: id} = options) do
@@ -441,10 +443,10 @@ defmodule EthereumJSONRPC do
     [hash, get_block_transactions(options)]
   end
 
-  defp get_block_by_number_requests(range) do
-    for current <- range do
-      get_block_by_number_request(%{id: current, quantity: current, transactions: :full})
-    end
+  defp get_block_by_number_requests(id_to_params) do
+    Enum.map(id_to_params, fn {id, %{number: number}} ->
+      get_block_by_number_request(%{id: id, quantity: number, transactions: :full})
+    end)
   end
 
   defp get_block_by_number_request(%{id: id} = options) do
@@ -467,12 +469,6 @@ defmodule EthereumJSONRPC do
 
       {:error, {:ok, tag}} ->
         tag
-
-      {{:ok, _}, {:ok, _}} ->
-        raise ArgumentError, "Only one of :quantity or :tag can be passed to get_block_by_number_request"
-
-      {:error, :error} ->
-        raise ArgumentError, "One of :quantity or :tag MUST be passed to get_block_by_number_request"
     end
   end
 
@@ -483,26 +479,40 @@ defmodule EthereumJSONRPC do
     end
   end
 
-  defp handle_get_blocks({:ok, results}) do
-    {blocks, next} =
-      Enum.reduce(results, {[], :more}, fn
-        %{result: nil}, {blocks, _} -> {blocks, :end_of_chain}
-        %{result: %{} = block}, {blocks, next} -> {[block | blocks], next}
-      end)
+  defp handle_get_blocks({:ok, results}, id_to_params) when is_list(results) do
+    with {:ok, next, blocks} <- reduce_results(results, id_to_params) do
+      elixir_blocks = Blocks.to_elixir(blocks)
+      elixir_transactions = Blocks.elixir_to_transactions(elixir_blocks)
+      blocks_params = Blocks.elixir_to_params(elixir_blocks)
+      transactions_params = Transactions.elixir_to_params(elixir_transactions)
 
-    elixir_blocks = Blocks.to_elixir(blocks)
-    elixir_transactions = Blocks.elixir_to_transactions(elixir_blocks)
-    blocks_params = Blocks.elixir_to_params(elixir_blocks)
-    transactions_params = Transactions.elixir_to_params(elixir_transactions)
-
-    {:ok, next,
-     %{
-       blocks: blocks_params,
-       transactions: transactions_params
-     }}
+      {:ok, next,
+       %{
+         blocks: blocks_params,
+         transactions: transactions_params
+       }}
+    end
   end
 
-  defp handle_get_blocks({:error, _} = error), do: error
+  defp handle_get_blocks({:error, _} = error, _id_to_params), do: error
+
+  defp reduce_results(results, id_to_params) do
+    Enum.reduce(results, {:ok, :more, []}, &reduce_result(&1, &2, id_to_params))
+  end
+
+  defp reduce_result(%{result: nil}, {:ok, _, blocks}, _id_to_params), do: {:ok, :end_of_chain, blocks}
+  defp reduce_result(%{result: %{} = block}, {:ok, next, blocks}, _id_to_params), do: {:ok, next, [block | blocks]}
+  defp reduce_result(%{result: _}, {:error, _} = error, _id_to_params), do: error
+
+  defp reduce_result(%{error: reason, id: id}, acc, id_to_params) do
+    data = Map.fetch!(id_to_params, id)
+    annotated_reason = Map.put(reason, :data, data)
+
+    case acc do
+      {:ok, _, _} -> {:error, [annotated_reason]}
+      {:error, reasons} -> {:error, [annotated_reason | reasons]}
+    end
+  end
 
   defp handle_get_block_by_tag({:ok, %{"number" => quantity}}) do
     {:ok, quantity_to_integer(quantity)}

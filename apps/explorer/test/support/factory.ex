@@ -262,17 +262,6 @@ defmodule Explorer.Factory do
     }
   end
 
-  def internal_transaction_suicide_factory() do
-    %InternalTransaction{
-      from_address: build(:address),
-      trace_address: [],
-      # caller MUST supply `transaction` because it can't be built lazily to allow overrides without creating an extra
-      # transaction
-      type: :suicide,
-      value: sequence("internal_transaction_value", &Decimal.new(&1))
-    }
-  end
-
   def log_factory do
     %Log{
       address: build(:address),

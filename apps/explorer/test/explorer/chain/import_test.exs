@@ -19,6 +19,7 @@ defmodule Explorer.Chain.ImportTest do
   doctest Import
 
   describe "all/1" do
+    # set :timeout options to cover lines that use the timeout override when available
     @import_data %{
       blocks: %{
         params: [
@@ -35,7 +36,8 @@ defmodule Explorer.Chain.ImportTest do
             timestamp: Timex.parse!("2017-12-15T21:06:30.000000Z", "{ISO:Extended:Z}"),
             total_difficulty: 12_590_447_576_074_723_148_144_860_474_975_121_280_509
           }
-        ]
+        ],
+        timeout: 5
       },
       broadcast: true,
       internal_transactions: %{
@@ -52,8 +54,22 @@ defmodule Explorer.Chain.ImportTest do
             transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
             type: "call",
             value: 0
+          },
+          %{
+            call_type: "call",
+            from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+            gas: 4_677_320,
+            gas_used: 27770,
+            index: 1,
+            output: "0x",
+            to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+            trace_address: [],
+            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+            type: "call",
+            value: 0
           }
-        ]
+        ],
+        timeout: 5
       },
       logs: %{
         params: [
@@ -68,7 +84,8 @@ defmodule Explorer.Chain.ImportTest do
             transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
             type: "mined"
           }
-        ]
+        ],
+        timeout: 5
       },
       transactions: %{
         on_conflict: :replace_all,
@@ -95,14 +112,16 @@ defmodule Explorer.Chain.ImportTest do
             v: 0xBE,
             value: 0
           }
-        ]
+        ],
+        timeout: 5
       },
       addresses: %{
         params: [
           %{hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"},
           %{hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"},
           %{hash: "0x515c09c5bba1ed566b02a5b0599ec5d5d0aee73d"}
-        ]
+        ],
+        timeout: 5
       },
       tokens: %{
         on_conflict: :nothing,
@@ -111,7 +130,8 @@ defmodule Explorer.Chain.ImportTest do
             contract_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             type: "ERC-20"
           }
-        ]
+        ],
+        timeout: 5
       },
       token_transfers: %{
         params: [
@@ -124,7 +144,8 @@ defmodule Explorer.Chain.ImportTest do
             token_contract_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5"
           }
-        ]
+        ],
+        timeout: 5
       }
     }
 
@@ -216,6 +237,15 @@ defmodule Explorer.Chain.ImportTest do
                 internal_transactions: [
                   %{
                     index: 0,
+                    transaction_hash: %Hash{
+                      byte_count: 32,
+                      bytes:
+                        <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57,
+                          101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
+                    }
+                  },
+                  %{
+                    index: 1,
                     transaction_hash: %Hash{
                       byte_count: 32,
                       bytes:
@@ -315,7 +345,8 @@ defmodule Explorer.Chain.ImportTest do
             %{hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"},
             %{hash: "0x515c09c5bba1ed566b02a5b0599ec5d5d0aee73d"},
             %{hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"}
-          ]
+          ],
+          timeout: 5
         },
         tokens: %{
           on_conflict: :nothing,
@@ -324,7 +355,8 @@ defmodule Explorer.Chain.ImportTest do
               contract_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
               type: "ERC-20"
             }
-          ]
+          ],
+          timeout: 5
         },
         token_balances: %{
           params: [
@@ -343,7 +375,8 @@ defmodule Explorer.Chain.ImportTest do
               token_contract_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
               block_number: "37"
             }
-          ]
+          ],
+          timeout: 5
         }
       }
 
@@ -365,14 +398,8 @@ defmodule Explorer.Chain.ImportTest do
     end
 
     test "with invalid data" do
-      invalid_transaction =
-        @import_data
-        |> Map.get(:internal_transactions)
-        |> Map.get(:params)
-        |> Enum.at(0)
-        |> Map.delete(:call_type)
-
-      invalid_import_data = put_in(@import_data, [:internal_transactions, :params], [invalid_transaction])
+      invalid_import_data =
+        update_in(@import_data, [:internal_transactions, :params, Access.at(0)], &Map.delete(&1, :call_type))
 
       assert {:error, [changeset]} = Import.all(invalid_import_data)
       assert changeset_errors(changeset)[:call_type] == ["can't be blank"]
@@ -650,6 +677,116 @@ defmodule Explorer.Chain.ImportTest do
       transaction = Explorer.Repo.get(Transaction, transaction_hash)
 
       assert transaction.created_contract_address_hash == nil
+    end
+
+    test "import balances" do
+      assert {:ok, _} =
+               Import.all(%{
+                 addresses: %{
+                   params: [%{hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"}]
+                 },
+                 balances: %{
+                   params: [%{address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b", block_number: 1}],
+                   timeout: 5
+                 }
+               })
+    end
+
+    test "transactions with multiple create internal transactions return error" do
+      assert {:error, :internal_transactions_indexed_at_transactions,
+              %{exception: %Postgrex.Error{postgres: %{code: :cardinality_violation}}, transaction_hashes: [_]},
+              _} =
+               Import.all(%{
+                 blocks: %{
+                   params: [
+                     %{
+                       difficulty: 340_282_366_920_938_463_463_374_607_431_768_211_454,
+                       gas_limit: 6_946_336,
+                       gas_used: 50450,
+                       hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+                       miner_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+                       nonce: 0,
+                       number: 37,
+                       parent_hash: "0xc37bbad7057945d1bf128c1ff009fb1ad632110bf6a000aac025a80f7766b66e",
+                       size: 719,
+                       timestamp: Timex.parse!("2017-12-15T21:06:30.000000Z", "{ISO:Extended:Z}"),
+                       total_difficulty: 12_590_447_576_074_723_148_144_860_474_975_121_280_509
+                     }
+                   ],
+                   timeout: 5
+                 },
+                 transactions: %{
+                   on_conflict: :replace_all,
+                   params: [
+                     %{
+                       block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+                       block_number: 37,
+                       cumulative_gas_used: 50450,
+                       from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+                       gas: 4_700_000,
+                       gas_price: 100_000_000_000,
+                       gas_used: 50450,
+                       hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+                       index: 0,
+                       input: "0x10855269000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
+                       nonce: 4,
+                       public_key:
+                         "0xe5d196ad4ceada719d9e592f7166d0c75700f6eab2e3c3de34ba751ea786527cb3f6eb96ad9fdfdb9989ff572df50f1c42ef800af9c5207a38b929aff969b5c9",
+                       r: 0xA7F8F45CCE375BB7AF8750416E1B03E0473F93C256DA2285D1134FC97A700E01,
+                       s: 0x1F87A076F13824F4BE8963E3DFFD7300DAE64D5F23C9A062AF0C6EAD347C135F,
+                       standard_v: 1,
+                       status: :ok,
+                       v: 0xBE,
+                       value: 0
+                     }
+                   ],
+                   timeout: 5
+                 },
+                 internal_transactions: %{
+                   params: [
+                     %{
+                       created_contract_address_hash: "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb4",
+                       created_contract_code:
+                         "0x606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
+                       from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+                       gas: 4_677_320,
+                       gas_used: 27770,
+                       index: 0,
+                       init:
+                         "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
+                       trace_address: [],
+                       transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+                       type: "create",
+                       value: 0
+                     },
+                     %{
+                       created_contract_address_hash: "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb5",
+                       created_contract_code:
+                         "0x606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
+                       from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+                       gas: 4_677_320,
+                       gas_used: 27770,
+                       index: 1,
+                       init:
+                         "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
+                       trace_address: [],
+                       transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+                       type: "create",
+                       value: 0
+                     }
+                   ],
+                   timeout: 5
+                 },
+                 addresses: %{
+                   params: [
+                     %{hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"},
+                     %{hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"},
+                     %{hash: "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb4"},
+                     %{hash: "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb5"}
+                   ],
+                   timeout: 5
+                 }
+               })
     end
   end
 end
