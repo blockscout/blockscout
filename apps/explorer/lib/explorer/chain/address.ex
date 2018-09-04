@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Address do
   alias Ecto.Changeset
   alias Explorer.Chain.{Address, Block, Data, Hash, Wei, SmartContract, InternalTransaction, Token}
 
-  @optional_attrs ~w(contract_code fetched_balance fetched_balance_block_number)a
+  @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number)a
   @required_attrs ~w(hash)a
   @allowed_attrs @optional_attrs ++ @required_attrs
 
@@ -18,9 +18,9 @@ defmodule Explorer.Chain.Address do
   @type hash :: Hash.t()
 
   @typedoc """
-   * `fetched_balance` - The last fetched balance from Parity
-   * `fetched_balance_block_number` - the `t:Explorer.Chain.Block.t/0` `t:Explorer.Chain.Block.block_number/0` for
-     which `fetched_balance` was fetched
+   * `fetched_coin_balance` - The last fetched balance from Parity
+   * `fetched_coin_balance_block_number` - the `t:Explorer.Chain.Block.t/0` `t:Explorer.Chain.Block.block_number/0` for
+     which `fetched_coin_balance` was fetched
    * `hash` - the hash of the address's public key
    * `contract_code` - the code of the contract when an Address is a contract
    * `names` - names known for the address
@@ -28,8 +28,8 @@ defmodule Explorer.Chain.Address do
    * `updated_at` when this address was last updated
   """
   @type t :: %__MODULE__{
-          fetched_balance: Wei.t(),
-          fetched_balance_block_number: Block.block_number(),
+          fetched_coin_balance: Wei.t(),
+          fetched_coin_balance_block_number: Block.block_number(),
           hash: Hash.Address.t(),
           contract_code: Data.t() | nil,
           names: %Ecto.Association.NotLoaded{} | [Address.Name.t()],
@@ -39,8 +39,8 @@ defmodule Explorer.Chain.Address do
 
   @primary_key {:hash, Hash.Address, autogenerate: false}
   schema "addresses" do
-    field(:fetched_balance, Wei)
-    field(:fetched_balance_block_number, :integer)
+    field(:fetched_coin_balance, Wei)
+    field(:fetched_coin_balance_block_number, :integer)
     field(:contract_code, Data)
 
     has_one(:smart_contract, SmartContract)
@@ -57,7 +57,7 @@ defmodule Explorer.Chain.Address do
     timestamps()
   end
 
-  @balance_changeset_required_attrs @required_attrs ++ ~w(fetched_balance fetched_balance_block_number)a
+  @balance_changeset_required_attrs @required_attrs ++ ~w(fetched_coin_balance fetched_coin_balance_block_number)a
 
   def balance_changeset(%__MODULE__{} = address, attrs) do
     address

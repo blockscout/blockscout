@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast("addresses:new_address", "count", %{count: address_count_module.address_estimated_count()})
 
     addresses
-    |> Stream.reject(fn %Address{fetched_balance: fetched_balance} -> is_nil(fetched_balance) end)
+    |> Stream.reject(fn %Address{fetched_coin_balance: fetched_coin_balance} -> is_nil(fetched_coin_balance) end)
     |> Enum.each(&broadcast_balance/1)
   end
 

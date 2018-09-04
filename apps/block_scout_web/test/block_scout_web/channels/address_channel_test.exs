@@ -29,7 +29,7 @@ defmodule BlockScoutWeb.AddressChannelTest do
     end
 
     test "notified of balance_update for matching address", %{address: address, topic: topic} do
-      address_with_balance = %{address | fetched_balance: 1}
+      address_with_balance = %{address | fetched_coin_balance: 1}
       Notifier.handle_event({:chain_event, :addresses, [address_with_balance]})
 
       receive do
@@ -41,11 +41,11 @@ defmodule BlockScoutWeb.AddressChannelTest do
       end
     end
 
-    test "not notified of balance_update if fetched_balance is nil", %{address: address} do
+    test "not notified of balance_update if fetched_coin_balance is nil", %{address: address} do
       Notifier.handle_event({:chain_event, :addresses, [address]})
 
       receive do
-        _ -> assert false, "Message was broadcast for nil fetched_balance."
+        _ -> assert false, "Message was broadcast for nil fetched_coin_balance."
       after
         100 -> assert true
       end

@@ -74,7 +74,7 @@ defmodule Indexer.AddressExtractionTest do
                ]
              }) == [
                %{
-                 fetched_balance_block_number: 2,
+                 fetched_coin_balance_block_number: 2,
                  contract_code: "0x1",
                  hash: "0x0000000000000000000000000000000000000001"
                }
@@ -116,34 +116,34 @@ defmodule Indexer.AddressExtractionTest do
       }
 
       assert AddressExtraction.extract_addresses(blockchain_data) == [
-               %{hash: block.miner_hash, fetched_balance_block_number: block.number},
+               %{hash: block.miner_hash, fetched_coin_balance_block_number: block.number},
                %{
                  hash: internal_transaction.from_address_hash,
-                 fetched_balance_block_number: internal_transaction.block_number
+                 fetched_coin_balance_block_number: internal_transaction.block_number
                },
                %{
                  hash: internal_transaction.to_address_hash,
-                 fetched_balance_block_number: internal_transaction.block_number
+                 fetched_coin_balance_block_number: internal_transaction.block_number
                },
                %{
                  hash: internal_transaction.created_contract_address_hash,
                  contract_code: internal_transaction.created_contract_code,
-                 fetched_balance_block_number: internal_transaction.block_number
+                 fetched_coin_balance_block_number: internal_transaction.block_number
                },
-               %{hash: transaction.from_address_hash, fetched_balance_block_number: transaction.block_number},
-               %{hash: transaction.to_address_hash, fetched_balance_block_number: transaction.block_number},
-               %{hash: log.address_hash, fetched_balance_block_number: log.block_number},
+               %{hash: transaction.from_address_hash, fetched_coin_balance_block_number: transaction.block_number},
+               %{hash: transaction.to_address_hash, fetched_coin_balance_block_number: transaction.block_number},
+               %{hash: log.address_hash, fetched_coin_balance_block_number: log.block_number},
                %{
                  hash: token_transfer.from_address_hash,
-                 fetched_balance_block_number: token_transfer.block_number
+                 fetched_coin_balance_block_number: token_transfer.block_number
                },
                %{
                  hash: token_transfer.to_address_hash,
-                 fetched_balance_block_number: token_transfer.block_number
+                 fetched_coin_balance_block_number: token_transfer.block_number
                },
                %{
                  hash: token_transfer.token_contract_address_hash,
-                 fetched_balance_block_number: token_transfer.block_number
+                 fetched_coin_balance_block_number: token_transfer.block_number
                }
              ]
     end
@@ -178,7 +178,7 @@ defmodule Indexer.AddressExtractionTest do
 
       assert AddressExtraction.extract_addresses(blockchain_data) ==
                [
-                 %{hash: hash, fetched_balance_block_number: 34, contract_code: "code"}
+                 %{hash: hash, fetched_coin_balance_block_number: 34, contract_code: "code"}
                ]
     end
 
@@ -189,7 +189,7 @@ defmodule Indexer.AddressExtractionTest do
       }
 
       assert AddressExtraction.extract_addresses(blockchain_data) == [
-               %{fetched_balance_block_number: 34, hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"}
+               %{fetched_coin_balance_block_number: 34, hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"}
              ]
     end
 

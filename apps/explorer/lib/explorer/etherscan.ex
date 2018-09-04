@@ -9,6 +9,7 @@ defmodule Explorer.Etherscan do
   alias Explorer.{Repo, Chain}
   alias Explorer.Chain.{Block, Hash, InternalTransaction, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
+  alias Explorer.Chain.Address.TokenBalance
 
   @default_options %{
     order_by_direction: :asc,
@@ -158,6 +159,27 @@ defmodule Explorer.Etherscan do
       )
 
     Repo.all(query)
+  end
+
+  @doc """
+  Gets the token balance for a given contract address hash and address hash.
+
+  """
+  @spec get_token_balance(Hash.Address.t(), Hash.Address.t()) :: TokenBalance.t() | nil
+  def get_token_balance(
+        %Hash{byte_count: unquote(Hash.Address.byte_count())} = contract_address_hash,
+        %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash
+      ) do
+    query =
+      from(tb in TokenBalance,
+        where: tb.token_contract_address_hash == ^contract_address_hash,
+        where: tb.address_hash == ^address_hash,
+        order_by: [desc: :block_number],
+        limit: 1,
+        select: tb
+      )
+
+    Repo.one(query)
   end
 
   @transaction_fields ~w(

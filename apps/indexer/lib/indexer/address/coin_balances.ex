@@ -1,6 +1,6 @@
-defmodule Indexer.Balances do
+defmodule Indexer.Address.CoinBalances do
   @moduledoc """
-  Extracts `Explorer.Chain.Balance` params from other schema's params.
+  Extracts `Explorer.Chain.Address.CoinBalance` params from other schema's params.
   """
 
   def params_set(%{} = import_options) do

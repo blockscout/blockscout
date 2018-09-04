@@ -7,7 +7,7 @@
         <span class="badge badge-primary tile-badge float-right mr-1"><%= gettext "GET" %></span>
         <strong class="tile-label"><%= @action.name %></strong>
       </h3>
-      <h4 class="text-dark"><%= raw @action.description %></h4>
+      <h4 class="text-dark"><span data-selector="stop-propagation"><%= raw @action.description %></span></h4>
       <code><%= raw query_params(@module_name, @action) %></code>
     </button>
   </div>

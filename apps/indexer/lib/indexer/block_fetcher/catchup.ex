@@ -10,7 +10,7 @@ defmodule Indexer.BlockFetcher.Catchup do
   alias Explorer.Chain
 
   alias Indexer.{
-    BalanceFetcher,
+    CoinBalanceFetcher,
     BlockFetcher,
     InternalTransactionFetcher,
     Sequence,
@@ -130,7 +130,7 @@ defmodule Indexer.BlockFetcher.Catchup do
       block_number = Map.fetch!(address_hash_to_block_number, to_string(address_hash))
       %{address_hash: address_hash, block_number: block_number}
     end)
-    |> BalanceFetcher.async_fetch_balances()
+    |> CoinBalanceFetcher.async_fetch_balances()
 
     transaction_hashes
     |> Enum.map(fn transaction_hash ->

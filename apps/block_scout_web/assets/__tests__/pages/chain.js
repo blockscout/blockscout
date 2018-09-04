@@ -40,7 +40,6 @@ test('RECEIVED_NEW_EXCHANGE_RATE', () => {
     msg: {
       exchangeRate: {
         availableSupply: 1000000,
-        usdValue: 1.23,
         marketCapUsd: 1230000
       },
       marketHistoryData: { data: 'some stuff' }
@@ -50,7 +49,6 @@ test('RECEIVED_NEW_EXCHANGE_RATE', () => {
 
   expect(output.availableSupply).toEqual(1000000)
   expect(output.marketHistoryData).toEqual({ data: 'some stuff' })
-  expect(output.usdExchangeRate).toEqual(1.23)
   expect(output.usdMarketCap).toEqual(1230000)
 })
 

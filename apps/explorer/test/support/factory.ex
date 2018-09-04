@@ -11,7 +11,7 @@ defmodule Explorer.Factory do
   alias Explorer.Chain.{
     Address,
     Address.TokenBalance,
-    Balance,
+    Address.CoinBalance,
     Block,
     Data,
     Hash,
@@ -42,15 +42,17 @@ defmodule Explorer.Factory do
   end
 
   def unfetched_balance_factory do
-    %Balance{
+    %CoinBalance{
       address_hash: address_hash(),
       block_number: block_number()
     }
   end
 
-  def update_balance_value(%Balance{address_hash: address_hash, block_number: block_number}, value) do
+  def update_balance_value(%CoinBalance{address_hash: address_hash, block_number: block_number}, value) do
     Repo.update_all(
-      from(balance in Balance, where: balance.address_hash == ^address_hash and balance.block_number == ^block_number),
+      from(balance in CoinBalance,
+        where: balance.address_hash == ^address_hash and balance.block_number == ^block_number
+      ),
       set: [value: value, value_fetched_at: DateTime.utc_now()]
     )
   end

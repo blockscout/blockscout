@@ -44,19 +44,20 @@
             <span data-selector="empty-transactions-list"><%= gettext "There are no transactions for this address." %></span>
           </div>
         <% end %>
+
+        <%= if @next_page_params do %>
+          <%= link(
+            gettext("Older"),
+            class: "button button--secondary button--sm float-right mt-3",
+            to: transaction_path(
+              @conn,
+              :index,
+              @conn.assigns.locale,
+              @next_page_params
+            )
+          ) %>
+        <% end %>
       </div>
     </div>
-    <%= if @next_page_params do %>
-      <%= link(
-        gettext("Older"),
-        class: "button button--secondary button--sm u-float-right mt-3",
-        to: transaction_path(
-          @conn,
-          :index,
-          @conn.assigns.locale,
-          @next_page_params
-        )
-      ) %>
-    <% end %>
   </section>
 </section>

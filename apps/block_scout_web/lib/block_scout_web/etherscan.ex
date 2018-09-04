@@ -130,6 +130,18 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => []
   }
 
+  @account_tokenbalance_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => "135499"
+  }
+
+  @account_tokenbalance_example_value_error %{
+    "status" => "0",
+    "message" => "Invalid address format",
+    "result" => nil
+  }
+
   @account_getminedblocks_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -201,6 +213,25 @@ defmodule BlockScoutWeb.Etherscan do
     "status" => "1",
     "message" => "OK",
     "result" => "21265524714464"
+  }
+
+  @block_getblockreward_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => %{
+      "blockNumber" => "2165403",
+      "timeStamp" => "1472533979",
+      "blockMiner" => "0x13a06d3dfe21e0db5c016c03ea7d2509f7f8d1e3",
+      "blockReward" => "5314181600000000000",
+      "uncles" => nil,
+      "uncleInclusionReward" => nil
+    }
+  }
+
+  @block_getblockreward_example_value_error %{
+    "status" => "0",
+    "message" => "Invalid block number",
+    "result" => nil
   }
 
   @status_type %{
@@ -492,6 +523,26 @@ defmodule BlockScoutWeb.Etherscan do
     }
   }
 
+  @block_reward_model %{
+    name: "BlockReward",
+    fields: %{
+      blockNumber: @block_number_type,
+      timeStamp: %{
+        type: "timestamp",
+        definition: "When the block was collated.",
+        example: ~s("1480072029")
+      },
+      blockMiner: @address_hash_type,
+      blockReward: %{
+        type: "block reward",
+        definition: "The reward given to the miner of a block.",
+        example: ~s("5003251945421042780")
+      },
+      uncles: %{type: "null"},
+      uncleInclusionReward: %{type: "null"}
+    }
+  }
+
   @account_balance_action %{
     name: "balance",
     description: "Get balance for address",
@@ -748,6 +799,50 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @account_tokenbalance_action %{
+    name: "tokenbalance",
+    description: "Get token account balance for token contract address.",
+    required_params: [
+      %{
+        key: "contractaddress",
+        placeholder: "contractAddressHash",
+        type: "string",
+        description: "A 160-bit code used for identifying contracts."
+      },
+      %{
+        key: "address",
+        placeholder: "addressHash",
+        type: "string",
+        description: "A 160-bit code used for identifying accounts."
+      }
+    ],
+    optional_params: [],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@account_tokenbalance_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "integer",
+              definition: "The token account balance for the contract address.",
+              example: ~s("135499")
+            }
+          }
+        }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@account_tokenbalance_example_value_error)
+      }
+    ]
+  }
+
   @account_getminedblocks_action %{
     name: "getminedblocks",
     description: "Get list of blocks mined by address.",
@@ -993,6 +1088,43 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @block_getblockreward_action %{
+    name: "getblockreward",
+    description: "Get block reward by block number.",
+    required_params: [
+      %{
+        key: "blockno",
+        placeholder: "blockNumber",
+        type: "integer",
+        description: "A nonnegative integer that represents the block number."
+      }
+    ],
+    optional_params: [],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@block_getblockreward_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "model",
+              model: @block_reward_model
+            }
+          }
+        }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@block_getblockreward_example_value_error)
+      }
+    ]
+  }
+
   @account_module %{
     name: "account",
     actions: [
@@ -1001,6 +1133,7 @@ defmodule BlockScoutWeb.Etherscan do
       @account_txlist_action,
       @account_txlistinternal_action,
       @account_tokentx_action,
+      @account_tokenbalance_action,
       @account_getminedblocks_action
     ]
   }
@@ -1020,7 +1153,18 @@ defmodule BlockScoutWeb.Etherscan do
     actions: [@stats_tokensupply_action]
   }
 
-  @documentation [@account_module, @logs_module, @token_module, @stats_module]
+  @block_module %{
+    name: "block",
+    actions: [@block_getblockreward_action]
+  }
+
+  @documentation [
+    @account_module,
+    @logs_module,
+    @token_module,
+    @stats_module,
+    @block_module
+  ]
 
   def get_documentation do
     @documentation
