@@ -600,7 +600,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:8
-#: lib/block_scout_web/templates/address_contract/index.html.eex:73
+#: lib/block_scout_web/templates/address_contract/index.html.eex:75
 msgid "Copy Address"
 msgstr ""
 

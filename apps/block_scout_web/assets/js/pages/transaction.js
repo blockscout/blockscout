@@ -65,7 +65,7 @@ export function reducer (state = initialState, action) {
   }
 }
 
-router.when('/transactions/:transactionHash').then(() => initRedux(reducer, {
+router.when('/tx/:transactionHash').then(() => initRedux(reducer, {
   main (store) {
     const blocksChannel = socket.channel(`blocks:new_block`, {})
     const $transactionBlockNumber = $('[data-selector="block-number"]')
@@ -85,7 +85,7 @@ router.when('/transactions/:transactionHash').then(() => initRedux(reducer, {
   }
 }))
 
-router.when('/transactions', { exactPathMatch: true }).then((params) => initRedux(reducer, {
+router.when('/txs', { exactPathMatch: true }).then((params) => initRedux(reducer, {
   main (store) {
     const { index } = params
     const transactionsChannel = socket.channel(`transactions:new_transaction`)

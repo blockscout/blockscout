@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.TransactionControllerTest do
         |> insert()
         |> with_block()
 
-      conn = get(conn, "/en/transactions")
+      conn = get(conn, "/en/txs")
 
       assert List.first(conn.assigns.transactions).hash == transaction.hash
     end
@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.TransactionControllerTest do
       |> insert()
       |> with_block()
 
-      conn = get(conn, "/en/transactions")
+      conn = get(conn, "/en/txs")
 
       assert is_integer(conn.assigns.transaction_estimated_count)
     end
@@ -35,7 +35,7 @@ defmodule BlockScoutWeb.TransactionControllerTest do
 
       insert(:transaction)
 
-      conn = get(conn, "/en/transactions")
+      conn = get(conn, "/en/txs")
 
       assert [%Transaction{hash: ^hash}] = conn.assigns.transactions
     end
@@ -53,7 +53,7 @@ defmodule BlockScoutWeb.TransactionControllerTest do
         |> with_block()
 
       conn =
-        get(conn, "/en/transactions", %{
+        get(conn, "/en/txs", %{
           "block_number" => Integer.to_string(block_number),
           "index" => Integer.to_string(index)
         })
@@ -74,7 +74,7 @@ defmodule BlockScoutWeb.TransactionControllerTest do
       |> insert_list(:transaction, from_address: address)
       |> with_block(block)
 
-      conn = get(conn, "/en/transactions")
+      conn = get(conn, "/en/txs")
 
       assert %{"block_number" => ^number, "index" => 10} = conn.assigns.next_page_params
     end
@@ -86,13 +86,13 @@ defmodule BlockScoutWeb.TransactionControllerTest do
       |> insert(from_address: address)
       |> with_block()
 
-      conn = get(conn, "/en/transactions")
+      conn = get(conn, "/en/txs")
 
       refute conn.assigns.next_page_params
     end
 
     test "works when there are no transactions", %{conn: conn} do
-      conn = get(conn, "/en/transactions")
+      conn = get(conn, "/en/txs")
 
       assert conn.assigns.transactions == []
     end
