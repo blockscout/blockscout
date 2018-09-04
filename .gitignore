@@ -1,6 +1,7 @@
 # App artifacts
 /_build
 /apps/*/cover
+/apps/*/logs
 /cover
 /db
 /deps
@@ -15,8 +16,7 @@ erl_crash.dump
 npm-debug.log
 
 # Static artifacts
-/apps/block_scout_web/assets/node_modules
-/apps/explorer/node_modules
+/apps/**/node_modules
 
 # Since we are building assets from assets/,
 # we ignore priv/static. You may want to comment
@@ -30,7 +30,6 @@ npm-debug.log
 # secrets files as long as you replace their contents by environment
 # variables.
 /apps/*/config/*.secret.exs
-/apps/*/cover/
 
 # Wallaby screenshots
 screenshots/

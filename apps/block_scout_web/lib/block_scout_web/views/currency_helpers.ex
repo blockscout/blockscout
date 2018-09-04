@@ -3,45 +3,7 @@ defmodule BlockScoutWeb.CurrencyHelpers do
   Helper functions for interacting with `t:BlockScoutWeb.ExchangeRates.USD.t/0` values.
   """
 
-  alias BlockScoutWeb.ExchangeRates.USD
   alias BlockScoutWeb.Cldr.Number
-
-  @doc """
-  Formats a `BlockScoutWeb.ExchangeRates.USD` value into USD and applies a unit label.
-
-  ## Examples
-
-      iex> format_usd_value(%USD{value: Decimal.new(0.0000001)})
-      "< $0.000001 USD"
-
-      iex> format_usd_value(%USD{value: Decimal.new(0.123456789)})
-      "$0.123457 USD"
-
-      iex> format_usd_value(%USD{value: Decimal.new(0.1234)})
-      "$0.123400 USD"
-
-      iex> format_usd_value(%USD{value: Decimal.new(1.23456789)})
-      "$1.23 USD"
-
-      iex> format_usd_value(%USD{value: Decimal.new(1.2)})
-      "$1.20 USD"
-
-      iex> format_usd_value(%USD{value: Decimal.new(123456.789)})
-      "$123,457 USD"
-  """
-  @spec format_usd_value(USD.t() | nil) :: binary() | nil
-  def format_usd_value(nil), do: nil
-
-  def format_usd_value(%USD{value: nil}), do: nil
-
-  def format_usd_value(%USD{value: value}) do
-    cond do
-      Decimal.cmp(value, "0.000001") == :lt -> "< $0.000001 USD"
-      Decimal.cmp(value, 1) == :lt -> "$#{Number.to_string!(value, format: "0.000000")} USD"
-      Decimal.cmp(value, 100_000) == :lt -> "$#{Number.to_string!(value, format: "#,###.00")} USD"
-      true -> "$#{Number.to_string!(value, format: "#,###")} USD"
-    end
-  end
 
   @doc """
   Formats the given integer value to a currency format.

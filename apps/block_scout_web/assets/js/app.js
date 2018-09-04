@@ -21,6 +21,7 @@ import 'bootstrap'
 import './locale'
 
 import './lib/clipboard_buttons'
+import './lib/currency'
 import './lib/from_now'
 import './lib/loading_element'
 import './lib/market_history_chart'

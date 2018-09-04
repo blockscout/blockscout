@@ -4,9 +4,12 @@
     <span></span>
     <div class="text-right">
       <h3 class="text-white" data-test="address_balance"><%= balance(@address) %></h3>
-      <span class="text-light"><%= formatted_usd(@address, @exchange_rate) %></span>
+      <span class="text-light"
+        data-wei-value="<%= if @address.fetched_coin_balance, do: @address.fetched_coin_balance.value %>"
+        data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
+      </span>
 
-      <div class="mt-3" data-token-balance-dropdown data-api_path=<%= address_token_balance_path(@conn, :index, :en, @address.hash) %> >
+      <div class="mt-3" data-token-balance-dropdown data-api_path="<%= address_token_balance_path(@conn, :index, :en, @address.hash) %>">
           <p data-loading class="mb-0 text-light" style="display: none;">
             <i class="fa fa-spinner fa-spin"></i>
             <%= gettext("Fetching tokens...") %>
