@@ -1,9 +1,6 @@
 defmodule BlockScoutWeb.ChainView do
   use BlockScoutWeb, :view
 
-  alias Explorer.ExchangeRates.Token
-  alias BlockScoutWeb.ExchangeRates.USD
-
   def encode_market_history_data(market_history_data) do
     market_history_data
     |> Enum.map(fn day -> Map.take(day, [:closing_price, :date]) end)
@@ -12,17 +9,5 @@ defmodule BlockScoutWeb.ChainView do
       {:ok, data} -> data
       _ -> []
     end
-  end
-
-  def format_exchange_rate(%Token{usd_value: usd_value}) do
-    usd_value
-    |> USD.from()
-    |> format_usd_value()
-  end
-
-  def format_market_cap(%Token{market_cap_usd: market_cap}) do
-    market_cap
-    |> USD.from()
-    |> format_usd_value()
   end
 end

@@ -266,6 +266,7 @@ defmodule EthereumJSONRPC.Receipt do
   defp elixir_reducer({:ok, {_, _}}, {:error, _reasons} = acc_error), do: acc_error
   defp elixir_reducer({:error, reason}, {:ok, _}), do: {:error, [reason]}
   defp elixir_reducer({:error, reason}, {:error, reasons}), do: {:error, [reason | reasons]}
+  defp elixir_reducer(:ignore, acc), do: acc
 
   defp ok!({:ok, elixir}, _receipt), do: elixir
 
@@ -327,6 +328,8 @@ defmodule EthereumJSONRPC.Receipt do
     case status do
       "0x0" -> {:ok, {key, :error}}
       "0x1" -> {:ok, {key, :ok}}
+      # pre-Byzantium / Ethereum Classic on Parity
+      nil -> :ignore
       other -> {:error, {:unknown_value, %{key: key, value: other}}}
     end
   end

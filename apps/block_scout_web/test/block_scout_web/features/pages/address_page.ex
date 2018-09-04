@@ -74,7 +74,7 @@ defmodule BlockScoutWeb.AddressPage do
   def visit_page(session, %Address{hash: address_hash}), do: visit_page(session, address_hash)
 
   def visit_page(session, address_hash) do
-    visit(session, "/en/addresses/#{address_hash}")
+    visit(session, "/en/address/#{address_hash}")
   end
 
   def token_transfer(%Transaction{hash: transaction_hash}, %Address{hash: address_hash}, count: count) do

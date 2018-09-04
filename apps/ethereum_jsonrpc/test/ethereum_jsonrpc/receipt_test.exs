@@ -43,5 +43,10 @@ defmodule EthereumJSONRPC.ReceiptTest do
                      })
                    end
     end
+
+    # Regression test for https://github.com/poanetwork/blockscout/issues/638
+    test ~s|"status" => nil is treated the same as no status| do
+      assert Receipt.to_elixir(%{"status" => nil, "transactionHash" => "0x0"}) == %{"transactionHash" => "0x0"}
+    end
   end
 end
