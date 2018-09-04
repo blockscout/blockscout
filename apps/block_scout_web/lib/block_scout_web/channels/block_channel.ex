@@ -20,7 +20,6 @@ defmodule BlockScoutWeb.BlockChannel do
       View.render_to_string(
         BlockView,
         "_tile.html",
-        locale: socket.assigns.locale,
         block: block
       )
 
@@ -28,7 +27,6 @@ defmodule BlockScoutWeb.BlockChannel do
       View.render_to_string(
         ChainView,
         "_block.html",
-        locale: socket.assigns.locale,
         block: block
       )
 

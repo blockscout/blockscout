@@ -1,13 +1,13 @@
 defmodule BlockScoutWeb.TransactionLogControllerTest do
   use BlockScoutWeb.ConnCase
 
-  import BlockScoutWeb.Router.Helpers, only: [transaction_log_path: 4]
+  import BlockScoutWeb.Router.Helpers, only: [transaction_log_path: 3]
 
   alias Explorer.ExchangeRates.Token
 
   describe "GET index/2" do
     test "with invalid transaction hash", %{conn: conn} do
-      conn = get(conn, transaction_log_path(conn, :index, :en, "invalid_transaction_string"))
+      conn = get(conn, transaction_log_path(conn, :index, "invalid_transaction_string"))
 
       assert html_response(conn, 404)
     end
@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.TransactionLogControllerTest do
       conn =
         get(
           conn,
-          transaction_log_path(conn, :index, :en, "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6")
+          transaction_log_path(conn, :index, "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6")
         )
 
       assert html_response(conn, 404)
@@ -31,7 +31,7 @@ defmodule BlockScoutWeb.TransactionLogControllerTest do
       address = insert(:address)
       insert(:log, address: address, transaction: transaction)
 
-      conn = get(conn, transaction_log_path(conn, :index, :en, transaction))
+      conn = get(conn, transaction_log_path(conn, :index, transaction))
 
       first_log = List.first(conn.assigns.logs)
 
@@ -47,7 +47,7 @@ defmodule BlockScoutWeb.TransactionLogControllerTest do
       address = insert(:address)
       insert(:log, address: address, transaction: transaction)
 
-      conn = get(conn, transaction_log_path(conn, :index, :en, transaction))
+      conn = get(conn, transaction_log_path(conn, :index, transaction))
 
       first_log = List.first(conn.assigns.logs)
 
@@ -56,7 +56,7 @@ defmodule BlockScoutWeb.TransactionLogControllerTest do
 
     test "assigns no logs when there are none", %{conn: conn} do
       transaction = insert(:transaction)
-      path = transaction_log_path(conn, :index, :en, transaction)
+      path = transaction_log_path(conn, :index, transaction)
 
       conn = get(conn, path)
 
@@ -77,7 +77,7 @@ defmodule BlockScoutWeb.TransactionLogControllerTest do
         |> Enum.map(& &1.index)
 
       conn =
-        get(conn, transaction_log_path(conn, :index, :en, transaction), %{
+        get(conn, transaction_log_path(conn, :index, transaction), %{
           "index" => Integer.to_string(log.index)
         })
 
@@ -95,7 +95,7 @@ defmodule BlockScoutWeb.TransactionLogControllerTest do
       1..60
       |> Enum.map(fn index -> insert(:log, transaction: transaction, index: index) end)
 
-      conn = get(conn, transaction_log_path(conn, :index, :en, transaction))
+      conn = get(conn, transaction_log_path(conn, :index, transaction))
 
       assert %{"index" => 50} = conn.assigns.next_page_params
     end
@@ -106,7 +106,7 @@ defmodule BlockScoutWeb.TransactionLogControllerTest do
         |> insert()
         |> with_block()
 
-      conn = get(conn, transaction_log_path(conn, :index, :en, transaction))
+      conn = get(conn, transaction_log_path(conn, :index, transaction))
 
       refute conn.assigns.next_page_params
     end
@@ -115,7 +115,7 @@ defmodule BlockScoutWeb.TransactionLogControllerTest do
   test "includes USD exchange rate value for address in assigns", %{conn: conn} do
     transaction = insert(:transaction)
 
-    conn = get(conn, transaction_log_path(BlockScoutWeb.Endpoint, :index, :en, transaction.hash))
+    conn = get(conn, transaction_log_path(BlockScoutWeb.Endpoint, :index, transaction.hash))
 
     assert %Token{} = conn.assigns.exchange_rate
   end

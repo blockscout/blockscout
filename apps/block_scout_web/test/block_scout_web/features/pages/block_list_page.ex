@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.BlockListPage do
   alias Explorer.Chain.Block
 
   def visit_page(session) do
-    visit(session, "/en/blocks")
+    visit(session, "/blocks")
   end
 
   def block(%Block{number: block_number}) do

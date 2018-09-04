@@ -12,7 +12,7 @@
             <%= link(
                   gettext("Transactions"),
                   class: "nav-link",
-                  to: address_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
+                  to: address_transaction_path(@conn, :index, @conn.params["address_id"])
                 ) %>
           </li>
           <li class="nav-item">
@@ -20,13 +20,13 @@
                   gettext("Internal Transactions"),
                   class: "nav-link active",
                   "data-test": "internal_transactions_tab_link",
-                  to: address_internal_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
+                  to: address_internal_transaction_path(@conn, :index, @conn.params["address_id"])
                 ) %>
           </li>
           <%= if contract?(@address) do %>
             <li class="nav-item">
               <%= link(
-                  to: address_contract_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"]),
+                  to: address_contract_path(@conn, :index, @conn.params["address_id"]),
                   class: "nav-link") do %>
                 <%= gettext("Code") %>
 
@@ -40,7 +40,7 @@
             <li class="nav-item">
               <%= link(
                   gettext("Read Contract"),
-                  to: address_read_contract_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"]),
+                  to: address_read_contract_path(@conn, :index, @conn.params["address_id"]),
                   class: "nav-link")%>
             </li>
           <% end %>
@@ -54,17 +54,17 @@
               <%= link(
                     gettext("Transactions"),
                     class: "dropdown-item",
-                    to: address_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
+                    to: address_transaction_path(@conn, :index, @conn.params["address_id"])
                   ) %>
               <%= link(
                     gettext("Internal Transactions"),
                     class: "dropdown-item",
                     "data-test": "internal_transactions_tab_link",
-                    to: address_internal_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"])
+                    to: address_internal_transaction_path(@conn, :index, @conn.params["address_id"])
                   ) %>
               <%= if contract?(@address) do %>
                 <%= link(
-                    to: address_contract_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"]),
+                    to: address_contract_path(@conn, :index, @conn.params["address_id"]),
                     class: "dropdown-item") do %>
                   <%= gettext("Code") %>
 
@@ -86,7 +86,7 @@
           <div class="dropdown-menu dropdown-menu-right filter" aria-labelledby="dropdownMenu2">
             <%= link(
               gettext("All"),
-              to: address_internal_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"]),
+              to: address_internal_transaction_path(@conn, :index, @conn.params["address_id"]),
               class: "address__link address__link--active dropdown-item",
               "data-test": "filter_option"
             ) %>
@@ -95,7 +95,6 @@
               to: address_internal_transaction_path(
                 @conn,
                 :index,
-                @conn.assigns.locale,
                 @conn.params["address_id"],
                 filter: "to"
               ),
@@ -107,7 +106,6 @@
               to: address_internal_transaction_path(
                 @conn,
                 :index,
-                @conn.assigns.locale,
                 @conn.params["address_id"],
                 filter: "from"
               ),
@@ -119,7 +117,7 @@
         <h2 class="card-title"><%= gettext "Internal Transactions" %></h2>
         <%= if Enum.count(@internal_transactions) > 0 do %>
           <%= for internal_transaction <- @internal_transactions do %>
-            <%= render "_internal_transaction.html", locale: @locale, address: @address, internal_transaction: internal_transaction %>
+            <%= render "_internal_transaction.html", address: @address, internal_transaction: internal_transaction %>
           <% end %>
         <% else %>
           <div class="tile tile-muted text-center">
@@ -134,7 +132,6 @@
               to: address_internal_transaction_path(
                 @conn,
                 :index,
-                @conn.assigns.locale,
                 @address,
                 @next_page_params
               )

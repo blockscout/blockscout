@@ -9,22 +9,22 @@
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav mr-auto">
         <li class="nav-item">
-          <%= link to: block_path(@conn, :index, Gettext.get_locale), class: "nav-link topnav-nav-link" do %>
+          <%= link to: block_path(@conn, :index), class: "nav-link topnav-nav-link" do %>
             <%= gettext("Blocks") %>
           <% end %>
         </li>
         <li class="nav-item">
-          <%= link to: transaction_path(@conn, :index, Gettext.get_locale), class: "nav-link topnav-nav-link" do %>
+          <%= link to: transaction_path(@conn, :index), class: "nav-link topnav-nav-link" do %>
             <%= gettext("Transactions") %>
           <% end %>
         </li>
         <li class="nav-item">
-          <%= link to: api_docs_path(@conn, :index, Gettext.get_locale), class: "nav-link topnav-nav-link" do %>
+          <%= link to: api_docs_path(@conn, :index), class: "nav-link topnav-nav-link" do %>
             <%= gettext("API") %>
           <% end %>
         </li>
       </ul>
-      <%= form_for @conn, chain_path(@conn, :search, Gettext.get_locale), [class: "form-inline my-2 my-lg-0", method: :get, enforce_utf8: false], fn f -> %>
+      <%= form_for @conn, chain_path(@conn, :search), [class: "form-inline my-2 my-lg-0", method: :get, enforce_utf8: false], fn f -> %>
         <div class="input-group">
           <div class="input-group-prepend">
             <span class="input-group-text" id="search-icon"><i class="fas fa-search"></i></span>

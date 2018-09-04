@@ -20,7 +20,6 @@ defmodule BlockScoutWeb.TransactionChannel do
       View.render_to_string(
         TransactionView,
         "_tile.html",
-        locale: socket.assigns.locale,
         transaction: transaction
       )
 

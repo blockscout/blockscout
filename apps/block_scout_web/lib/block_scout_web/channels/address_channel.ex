@@ -24,7 +24,6 @@ defmodule BlockScoutWeb.AddressChannel do
       View.render_to_string(
         AddressView,
         "_balance_card.html",
-        locale: socket.assigns.locale,
         address: address,
         exchange_rate: exchange_rate
       )
@@ -48,7 +47,6 @@ defmodule BlockScoutWeb.AddressChannel do
       View.render_to_string(
         AddressTransactionView,
         "_transaction.html",
-        locale: socket.assigns.locale,
         address: address,
         transaction: transaction
       )

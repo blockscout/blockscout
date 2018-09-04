@@ -12,7 +12,7 @@
             <%= link(
                   gettext("Transactions"),
                   class: "nav-link active",
-                  to: block_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["block_id"])
+                  to: block_transaction_path(@conn, :index, @conn.params["block_id"])
                 ) %>
           </li>
         </ul>
@@ -25,7 +25,7 @@
               <%= link(
                     gettext("Transactions"),
                     class: "dropdown-item",
-                    to: block_transaction_path(@conn, :index, @conn.assigns.locale, @conn.params["block_id"])
+                    to: block_transaction_path(@conn, :index, @conn.params["block_id"])
                   ) %>
             </div>
           </li>
@@ -36,7 +36,7 @@
           <h2 class="card-title"><%= gettext "Transactions" %></h2>
           <span data-selector="transactions-list">
             <%= for transaction <- @transactions do %>
-              <%= render BlockScoutWeb.TransactionView, "_tile.html", locale: @locale, transaction: transaction %>
+              <%= render BlockScoutWeb.TransactionView, "_tile.html", transaction: transaction %>
             <% end %>
           </span>
         <% else %>
@@ -52,7 +52,6 @@
             to: transaction_path(
               @conn,
               :index,
-              @conn.assigns.locale,
               @next_page_params
             )
           ) %>

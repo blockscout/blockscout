@@ -32,6 +32,6 @@ defmodule BlockScoutWeb.TransactionListPage do
   end
 
   def visit_page(session) do
-    visit(session, "/en/txs")
+    visit(session, "/txs")
   end
 end

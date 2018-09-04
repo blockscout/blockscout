@@ -32,6 +32,6 @@ defmodule BlockScoutWeb.BlockPage do
   end
 
   def visit_page(session, %Block{number: block_number}) do
-    visit(session, "/en/blocks/#{block_number}/transactions")
+    visit(session, "/blocks/#{block_number}/transactions")
   end
 end

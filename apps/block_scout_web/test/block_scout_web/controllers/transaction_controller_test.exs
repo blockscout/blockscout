@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.TransactionControllerTest do
   alias Explorer.Chain.{Block, Transaction}
 
   import BlockScoutWeb.Router.Helpers,
-    only: [transaction_path: 4, transaction_internal_transaction_path: 4, transaction_token_transfer_path: 4]
+    only: [transaction_path: 3, transaction_internal_transaction_path: 3, transaction_token_transfer_path: 3]
 
   describe "GET index/2" do
     test "returns a collated transactions", %{conn: conn} do
@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.TransactionControllerTest do
         |> insert()
         |> with_block()
 
-      conn = get(conn, "/en/txs")
+      conn = get(conn, "/txs")
 
       assert List.first(conn.assigns.transactions).hash == transaction.hash
     end
@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.TransactionControllerTest do
       |> insert()
       |> with_block()
 
-      conn = get(conn, "/en/txs")
+      conn = get(conn, "/txs")
 
       assert is_integer(conn.assigns.transaction_estimated_count)
     end
@@ -35,7 +35,7 @@ defmodule BlockScoutWeb.TransactionControllerTest do
 
       insert(:transaction)
 
-      conn = get(conn, "/en/txs")
+      conn = get(conn, "/txs")
 
       assert [%Transaction{hash: ^hash}] = conn.assigns.transactions
     end
@@ -53,7 +53,7 @@ defmodule BlockScoutWeb.TransactionControllerTest do
         |> with_block()
 
       conn =
-        get(conn, "/en/txs", %{
+        get(conn, "/txs", %{
           "block_number" => Integer.to_string(block_number),
           "index" => Integer.to_string(index)
         })
@@ -74,7 +74,7 @@ defmodule BlockScoutWeb.TransactionControllerTest do
       |> insert_list(:transaction, from_address: address)
       |> with_block(block)
 
-      conn = get(conn, "/en/txs")
+      conn = get(conn, "/txs")
 
       assert %{"block_number" => ^number, "index" => 10} = conn.assigns.next_page_params
     end
@@ -86,13 +86,13 @@ defmodule BlockScoutWeb.TransactionControllerTest do
       |> insert(from_address: address)
       |> with_block()
 
-      conn = get(conn, "/en/txs")
+      conn = get(conn, "/txs")
 
       refute conn.assigns.next_page_params
     end
 
     test "works when there are no transactions", %{conn: conn} do
-      conn = get(conn, "/en/txs")
+      conn = get(conn, "/txs")
 
       assert conn.assigns.transactions == []
     end
@@ -100,23 +100,20 @@ defmodule BlockScoutWeb.TransactionControllerTest do
 
   describe "GET show/3" do
     test "redirects to transactions/:transaction_id/token_transfers when there are token transfers", %{conn: conn} do
-      locale = "en"
       transaction = insert(:transaction)
       insert(:token_transfer, transaction: transaction)
-      conn = get(conn, transaction_path(BlockScoutWeb.Endpoint, :show, locale, transaction))
+      conn = get(conn, transaction_path(BlockScoutWeb.Endpoint, :show, transaction))
 
-      assert redirected_to(conn) =~ transaction_token_transfer_path(BlockScoutWeb.Endpoint, :index, locale, transaction)
+      assert redirected_to(conn) =~ transaction_token_transfer_path(BlockScoutWeb.Endpoint, :index, transaction)
     end
 
     test "redirects to transactions/:transaction_id/internal_transactions when there are no token transfers", %{
       conn: conn
     } do
-      locale = "en"
       transaction = insert(:transaction)
-      conn = get(conn, transaction_path(BlockScoutWeb.Endpoint, :show, locale, transaction))
+      conn = get(conn, transaction_path(BlockScoutWeb.Endpoint, :show, transaction))
 
-      assert redirected_to(conn) =~
-               transaction_internal_transaction_path(BlockScoutWeb.Endpoint, :index, locale, transaction)
+      assert redirected_to(conn) =~ transaction_internal_transaction_path(BlockScoutWeb.Endpoint, :index, transaction)
     end
   end
 end

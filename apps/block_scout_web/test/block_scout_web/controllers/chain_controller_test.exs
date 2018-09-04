@@ -1,26 +1,18 @@
 defmodule BlockScoutWeb.ChainControllerTest do
   use BlockScoutWeb.ConnCase
 
-  import BlockScoutWeb.Router.Helpers, only: [chain_path: 3, block_path: 4, transaction_path: 4, address_path: 4]
+  import BlockScoutWeb.Router.Helpers, only: [chain_path: 2, block_path: 3, transaction_path: 3, address_path: 3]
 
-  describe "GET index/2 without a locale" do
-    test "redirects to the en locale", %{conn: conn} do
-      conn = get(conn, "/")
-
-      assert(redirected_to(conn) == "/en")
-    end
-  end
-
-  describe "GET index/2 with a locale" do
+  describe "GET index/2" do
     test "returns a welcome message", %{conn: conn} do
-      conn = get(conn, chain_path(BlockScoutWeb.Endpoint, :show, %{locale: :en}))
+      conn = get(conn, chain_path(BlockScoutWeb.Endpoint, :show))
 
       assert(html_response(conn, 200) =~ "POA")
     end
 
     test "returns a block", %{conn: conn} do
       insert(:block, %{number: 23})
-      conn = get(conn, "/en")
+      conn = get(conn, "/")
 
       assert(List.first(conn.assigns.blocks).number == 23)
     end
@@ -28,7 +20,7 @@ defmodule BlockScoutWeb.ChainControllerTest do
     test "excludes all but the most recent five blocks", %{conn: conn} do
       old_block = insert(:block)
       insert_list(5, :block)
-      conn = get(conn, "/en")
+      conn = get(conn, "/")
 
       refute(Enum.member?(conn.assigns.blocks, old_block))
     end
@@ -41,7 +33,7 @@ defmodule BlockScoutWeb.ChainControllerTest do
 
       unassociated = insert(:transaction)
 
-      conn = get(conn, "/en")
+      conn = get(conn, "/")
 
       transaction_hashes = Enum.map(conn.assigns.transactions, fn transaction -> transaction.hash end)
 
@@ -55,7 +47,7 @@ defmodule BlockScoutWeb.ChainControllerTest do
         |> insert()
         |> with_block()
 
-      conn = get(conn, "/en")
+      conn = get(conn, "/")
 
       assert(List.first(conn.assigns.transactions).hash == transaction.hash)
     end
@@ -64,7 +56,7 @@ defmodule BlockScoutWeb.ChainControllerTest do
       today = Date.utc_today()
       for day <- -40..0, do: insert(:market_history, date: Date.add(today, day))
 
-      conn = get(conn, "/en")
+      conn = get(conn, "/")
 
       assert Map.has_key?(conn.assigns, :market_history_data)
       assert length(conn.assigns.market_history_data) == 30
@@ -74,9 +66,9 @@ defmodule BlockScoutWeb.ChainControllerTest do
   describe "GET q/2" do
     test "finds a block by block number", %{conn: conn} do
       insert(:block, number: 37)
-      conn = get(conn, "/en/search?q=37")
+      conn = get(conn, "/search?q=37")
 
-      assert redirected_to(conn) == block_path(conn, :show, "en", "37")
+      assert redirected_to(conn) == block_path(conn, :show, "37")
     end
 
     test "finds a transaction by hash", %{conn: conn} do
@@ -85,27 +77,27 @@ defmodule BlockScoutWeb.ChainControllerTest do
         |> insert()
         |> with_block()
 
-      conn = get(conn, "/en/search?q=#{to_string(transaction.hash)}")
+      conn = get(conn, "/search?q=#{to_string(transaction.hash)}")
 
-      assert redirected_to(conn) == transaction_path(conn, :show, "en", transaction)
+      assert redirected_to(conn) == transaction_path(conn, :show, transaction)
     end
 
     test "finds an address by hash", %{conn: conn} do
       address = insert(:address)
-      conn = get(conn, "en/search?q=#{to_string(address.hash)}")
+      conn = get(conn, "search?q=#{to_string(address.hash)}")
 
-      assert redirected_to(conn) == address_path(conn, :show, "en", address)
+      assert redirected_to(conn) == address_path(conn, :show, address)
     end
 
     test "finds an address by hash when there are extra spaces", %{conn: conn} do
       address = insert(:address)
-      conn = get(conn, "en/search?q=#{to_string(address.hash)}    ")
+      conn = get(conn, "search?q=#{to_string(address.hash)}")
 
-      assert redirected_to(conn) == address_path(conn, :show, "en", address)
+      assert redirected_to(conn) == address_path(conn, :show, address)
     end
 
     test "redirects to 404 when it finds nothing", %{conn: conn} do
-      conn = get(conn, "en/search?q=zaphod")
+      conn = get(conn, "search?q=zaphod")
       assert conn.status == 404
     end
   end
