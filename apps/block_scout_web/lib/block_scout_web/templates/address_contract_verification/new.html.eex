@@ -53,15 +53,15 @@
           name="button"
           id="loading"
           disabled="true"
-          class="d-none px-4 position-absolute button button--primary button--sm mr-2">
+          class="d-none px-4 position-absolute button button-primary button-sm mr-2">
           <i class="fa fa-spinner fa-spin"></i> <%= gettext("loading.....") %>
         </button>
-        <%= submit "Verify and publish", class: "button button--primary button--sm mr-2", "data-loading": "animation"  %>
-        <%= reset "Reset", class: "button button--secondary button--sm mr-2" %>
+        <%= submit "Verify and publish", class: "button button-primary button-sm mr-2", "data-loading": "animation"  %>
+        <%= reset "Reset", class: "button button-secondary button-sm mr-2" %>
         <%= link(
             "Cancel",
             to: address_contract_path(@conn, :index, @conn.params["address_id"]),
-            class: "button button--sm") %>
+            class: "button button-sm") %>
       <% end %>
     </div>
   </div>

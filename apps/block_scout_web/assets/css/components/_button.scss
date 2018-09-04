@@ -10,15 +10,15 @@
   -webkit-transition: all 0.25s;
   transition: all 0.25s;
 
-  &--primary {
+  &-primary {
     background-color: $primary;
     color: $white;
     border: 1px solid $primary;
 
     &:hover,
     &:focus {
-      background-color: $primary;
-      border-color: $primary;
+      background-color: darken($primary, 10%);
+      border-color: darken($primary, 10%);
       text-decoration: none;
     }
 
@@ -29,50 +29,51 @@
     }
   }
 
-  &--secondary {
+  &-secondary {
     border: 1px solid $tertiary;
     color: $tertiary;
     font-weight: 400;
 
     &:hover,
     &:focus {
-      background-color: darken($tertiary, 20%);
-      border-color: darken($tertiary, 20%);
+      background-color: darken($tertiary, 10%);
+      border-color: darken($tertiary, 10%);
       color: $white;
       text-decoration: none;
       outline: none !important;
     }
   }
 
-  &--xsmall {
+  &-xs {
     font-size: 11px;
     padding: 6px 9px 6px !important;
   }
 
-  &--small {
+  &-sm {
     font-size: 12px;
     padding: 10px 20px 10px;
   }
 
-  &--medium {
+  &-md {
     font-size: 1.5rem;
     padding: 15px 30px 15px;
   }
 
-  &--large {
+  &-lg {
     font-size: 1.5rem;
     padding: 20px 60px 20px;
   }
 
 // Block button
-// --------------------------------------------------
+// -------------------------
 
-  &--block {
+  &-block {
     display: block;
     width: 100%;
   }
 
-  &--disabled {
+  &-disabled,
+  &:disabled, {
     background-color: $gray-300;
     color: $gray-500;
     text-decoration: none;
@@ -81,6 +82,6 @@
 }
 
 // Vertically space out multiple block buttons
-.button--block + .button--block {
+.button-block + .button-block {
   margin-top: 5px;
 }
