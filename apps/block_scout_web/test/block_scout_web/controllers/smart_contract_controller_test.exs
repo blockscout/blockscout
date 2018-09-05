@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
 
   describe "GET index/3" do
     test "error for invalid address", %{conn: conn} do
-      path = smart_contract_path(BlockScoutWeb.Endpoint, :index, :en, hash: "0x00")
+      path = smart_contract_path(BlockScoutWeb.Endpoint, :index, hash: "0x00")
 
       conn = get(conn, path)
 
@@ -49,7 +49,6 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
         smart_contract_path(
           BlockScoutWeb.Endpoint,
           :show,
-          :en,
           "0x00",
           function_name: "get",
           args: []
