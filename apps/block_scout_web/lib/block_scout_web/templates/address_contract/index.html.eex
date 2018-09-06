@@ -72,7 +72,7 @@
           <div class="d-flex justify-content-between align-items-baseline">
             <h3>Contract source code</h3>
             <span class="icon-links" data-clipboard-text="<%= @address.smart_contract.contract_source_code %>">
-              <button type="button" class="button button-secondary button-sm" id="button" data-toggle="tooltip" data-placement="top" title="<%= gettext("Copy Address") %>" aria-label="Copy Address">
+              <button type="button" class="button button-secondary button-sm" id="button" data-toggle="tooltip" data-placement="top" title="<%= gettext("Copy Contract Source Code") %>" aria-label="Copy Contract Source Code">
                 Copy Contract Source Code
               </button>
             </span>
