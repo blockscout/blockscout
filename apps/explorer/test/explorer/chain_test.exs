@@ -773,6 +773,8 @@ defmodule Explorer.ChainTest do
       difficulty = Decimal.new(340_282_366_920_938_463_463_374_607_431_768_211_454)
       total_difficulty = Decimal.new(12_590_447_576_074_723_148_144_860_474_975_121_280_509)
       token_transfer_amount = Decimal.new(1_000_000_000_000_000_000)
+      gas_limit = Decimal.new(6_946_336)
+      gas_used = Decimal.new(50450)
 
       assert {:ok,
               %{
@@ -810,8 +812,8 @@ defmodule Explorer.ChainTest do
                 blocks: [
                   %Block{
                     difficulty: ^difficulty,
-                    gas_limit: 6_946_336,
-                    gas_used: 50450,
+                    gas_limit: ^gas_limit,
+                    gas_used: ^gas_used,
                     hash: %Hash{
                       byte_count: 32,
                       bytes:
