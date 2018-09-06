@@ -34,35 +34,9 @@ defmodule BlockScoutWeb.AddressView do
 
   def contract?(nil), do: true
 
-  def hash(%Address{hash: hash}) do
-    to_string(hash)
-  end
-
-  def qr_code(%Address{hash: hash}) do
-    hash
-    |> to_string()
-    |> QRCode.to_png()
-    |> Base.encode64()
-  end
-
-  def smart_contract_verified?(%Address{smart_contract: %SmartContract{}}), do: true
-
-  def smart_contract_verified?(%Address{smart_contract: nil}), do: false
-
-  def trimmed_hash(%Hash{} = hash) do
-    string_hash = to_string(hash)
-    "#{String.slice(string_hash, 0..5)}–#{String.slice(string_hash, -6..-1)}"
-  end
-
-  def trimmed_hash(_), do: ""
-
-  def smart_contract_with_read_only_functions?(%Address{smart_contract: %SmartContract{}} = address) do
-    Enum.any?(address.smart_contract.abi, & &1["constant"])
-  end
-
-  def smart_contract_with_read_only_functions?(%Address{smart_contract: nil}), do: false
-
   def display_address_hash(current_address, target_address, truncate \\ false)
+
+  def display_address_hash(nil, nil, _truncate), do: gettext("Contract Address Pending")
 
   def display_address_hash(nil, target_address, truncate) do
     render(
@@ -90,4 +64,32 @@ defmodule BlockScoutWeb.AddressView do
       )
     end
   end
+
+  def hash(%Address{hash: hash}) do
+    to_string(hash)
+  end
+
+  def qr_code(%Address{hash: hash}) do
+    hash
+    |> to_string()
+    |> QRCode.to_png()
+    |> Base.encode64()
+  end
+
+  def smart_contract_verified?(%Address{smart_contract: %SmartContract{}}), do: true
+
+  def smart_contract_verified?(%Address{smart_contract: nil}), do: false
+
+  def trimmed_hash(%Hash{} = hash) do
+    string_hash = to_string(hash)
+    "#{String.slice(string_hash, 0..5)}–#{String.slice(string_hash, -6..-1)}"
+  end
+
+  def trimmed_hash(_), do: ""
+
+  def smart_contract_with_read_only_functions?(%Address{smart_contract: %SmartContract{}} = address) do
+    Enum.any?(address.smart_contract.abi, & &1["constant"])
+  end
+
+  def smart_contract_with_read_only_functions?(%Address{smart_contract: nil}), do: false
 end
