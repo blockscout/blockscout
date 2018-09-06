@@ -11,9 +11,9 @@
         </span>
       <% end %>
     <% end %>
-    <%= BlockScoutWeb.AddressView.display_address_hash(@address, @token_transfer, :from, true) %>
+    <%= @token_transfer |> BlockScoutWeb.AddressView.address_partial_selector(:from, @address, true) |> BlockScoutWeb.AddressView.render_partial() %>
     &rarr;
-    <%= BlockScoutWeb.AddressView.display_address_hash(@address, @token_transfer, :to, true) %>
+    <%= @token_transfer |> BlockScoutWeb.AddressView.address_partial_selector(:to, @address, true) |> BlockScoutWeb.AddressView.render_partial() %>
   </span>
   <span class="col-12 col-md-7 ml-3 ml-sm-0">
   <%= token_transfer_amount(@token_transfer) %>

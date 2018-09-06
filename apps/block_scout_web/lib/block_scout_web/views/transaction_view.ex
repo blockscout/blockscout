@@ -99,7 +99,8 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   # This is the address to be shown in the to field
-  def to_address_hash(%Transaction{to_address_hash: nil, created_contract_address_hash: address_hash}), do: address_hash |> IO.inspect
+  def to_address_hash(%Transaction{to_address_hash: nil, created_contract_address_hash: address_hash}),
+    do: address_hash
 
   def to_address_hash(%Transaction{to_address: %Address{hash: address_hash}}), do: address_hash
 

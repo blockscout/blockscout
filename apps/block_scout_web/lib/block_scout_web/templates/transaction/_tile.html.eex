@@ -11,9 +11,9 @@
     <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0">
       <%= render "_link.html", transaction_hash: @transaction.hash %>
       <span class="text-nowrap">
-        <%= BlockScoutWeb.AddressView.display_address_hash(assigns[:current_address], @transaction, :from) %>
+        <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:from, assigns[:current_address]) |> BlockScoutWeb.AddressView.render_partial() %>
         &rarr;
-        <%= BlockScoutWeb.AddressView.display_address_hash(assigns[:current_address], @transaction, :to) %>
+        <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:to, assigns[:current_address]) |> BlockScoutWeb.AddressView.render_partial() %>
       </span>
       <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
         <span class="tile-title">

@@ -5,6 +5,42 @@ defmodule BlockScoutWeb.AddressView do
 
   @dialyzer :no_match
 
+  def address_partial_selector(struct_to_render_from, direction, current_address, truncate \\ false)
+
+  def address_partial_selector(%TokenTransfer{to_address: address}, :to, current_address, truncate) do
+    matching_address_check(current_address, address.hash, contract?(address), truncate)
+  end
+
+  def address_partial_selector(%TokenTransfer{from_address: address}, :from, current_address, truncate) do
+    matching_address_check(current_address, address.hash, contract?(address), truncate)
+  end
+
+  def address_partial_selector(
+        %Transaction{to_address_hash: nil, created_contract_address_hash: nil},
+        :to,
+        _current_address,
+        _truncate
+      ) do
+    gettext("Contract Address Pending")
+  end
+
+  def address_partial_selector(
+        %Transaction{to_address_hash: nil, created_contract_address_hash: hash},
+        :to,
+        current_address,
+        truncate
+      ) do
+    matching_address_check(current_address, hash, true, truncate)
+  end
+
+  def address_partial_selector(%Transaction{to_address: address}, :to, current_address, truncate) do
+    matching_address_check(current_address, address.hash, contract?(address), truncate)
+  end
+
+  def address_partial_selector(%Transaction{from_address: address}, :from, current_address, truncate) do
+    matching_address_check(current_address, address.hash, contract?(address), truncate)
+  end
+
   def address_title(%Address{} = address) do
     if contract?(address) do
       gettext("Contract Address")
@@ -34,32 +70,6 @@ defmodule BlockScoutWeb.AddressView do
 
   def contract?(nil), do: true
 
-  def display_address_hash(current_address, struct_to_render_from, direction, truncate \\ false)
-
-  def display_address_hash(current_address, %TokenTransfer{to_address: address}, :to, truncate) do
-    display_hash(current_address, address.hash, contract?(address), truncate)
-  end
-
-  def display_address_hash(current_address, %TokenTransfer{from_address: address}, :from, truncate) do
-    display_hash(current_address, address.hash, contract?(address), truncate)
-  end
-
-  def display_address_hash(_current_address, %Transaction{to_address_hash: nil, created_contract_address_hash: nil}, :to, _truncate) do
-    gettext("Contract Address Pending")
-  end
-
-  def display_address_hash(current_address, %Transaction{to_address_hash: nil, created_contract_address_hash: hash}, :to, truncate) do
-    display_hash(current_address, hash, true, truncate)
-  end
-
-  def display_address_hash(current_address, %Transaction{to_address: address}, :to, truncate) do
-    display_hash(current_address, address.hash, contract?(address), truncate)
-  end
-
-  def display_address_hash(current_address, %Transaction{from_address: address}, :from, truncate) do
-    display_hash(current_address, address.hash, contract?(address), truncate)
-  end
-
   def hash(%Address{hash: hash}) do
     to_string(hash)
   end
@@ -70,6 +80,17 @@ defmodule BlockScoutWeb.AddressView do
     |> QRCode.to_png()
     |> Base.encode64()
   end
+
+  def render_partial(%{partial: partial, address_hash: hash, contract: contract?, truncate: truncate}) do
+    render(
+      partial,
+      address_hash: hash,
+      contract: contract?,
+      truncate: truncate
+    )
+  end
+
+  def render_partial(text), do: text
 
   def smart_contract_verified?(%Address{smart_contract: %SmartContract{}}), do: true
 
@@ -88,30 +109,21 @@ defmodule BlockScoutWeb.AddressView do
 
   def trimmed_hash(_), do: ""
 
-  defp display_hash(nil, hash, contract?, truncate) do
-    render(
-      "_link.html",
-      address_hash: hash,
-      contract: contract?,
-      truncate: truncate
-    )
-  end
-
-  defp display_hash(current_address, hash, contract?, truncate) do
-    if current_address.hash == hash do
-      render(
-        "_responsive_hash.html",
+  defp matching_address_check(current_address, hash, contract?, truncate) do
+    if current_address && current_address.hash == hash do
+      %{
+        partial: "_responsive_hash.html",
         address_hash: hash,
         contract: contract?,
         truncate: truncate
-      )
+      }
     else
-      render(
-        "_link.html",
+      %{
+        partial: "_link.html",
         address_hash: hash,
         contract: contract?,
         truncate: truncate
-      )
+      }
     end
   end
 end
