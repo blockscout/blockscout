@@ -15,6 +15,51 @@ defmodule BlockScoutWeb.AddressViewTest do
       address = insert(:address, contract_code: nil)
       refute AddressView.contract?(address)
     end
+
+    test "with nil address" do
+      assert AddressView.contract?(nil)
+    end
+  end
+
+  describe "display_address_hash/3" do
+    test "for a pending contract creation to address" do
+      transaction = insert(:transaction, to_address: nil, created_contract_address_hash: nil)
+      assert AddressView.display_address_hash(nil, transaction, :to) == "Contract Address Pending"
+    end
+
+    test "for a non-contract to address not on address page" do
+      transaction = insert(:transaction)
+      rendered_string =
+        nil
+        |> AddressView.display_address_hash(transaction, :to)
+        |> Phoenix.HTML.safe_to_string()
+      assert rendered_string =~ "responsive_hash"
+      assert rendered_string =~ "address_hash_link"
+      refute rendered_string =~ "contract-address"
+    end
+
+    test "for a non-contract to address non matching address page" do
+      transaction = insert(:transaction)
+      rendered_string =
+        :address
+        |> insert()
+        |> AddressView.display_address_hash(transaction, :to)
+        |> Phoenix.HTML.safe_to_string()
+      assert rendered_string =~ "responsive_hash"
+      assert rendered_string =~ "address_hash_link"
+      refute rendered_string =~ "contract-address"
+    end
+
+    test "for a non-contract to address matching address page" do
+      transaction = insert(:transaction)
+      rendered_string =
+        transaction.to_address
+        |> AddressView.display_address_hash(transaction, :to)
+        |> Phoenix.HTML.safe_to_string()
+      assert rendered_string =~ "responsive_hash"
+      refute rendered_string =~ "address_hash_link"
+      refute rendered_string =~ "contract-address"
+    end
   end
 
   describe "qr_code/1" do

@@ -15,9 +15,9 @@
           <h1 class="card-title"><%= gettext "Transaction Details" %> </h1>
           <h3 data-test="transaction_detail_hash"><%= @transaction %> </h3>
           <span class="d-block mb-2 text-muted">
-            <%= BlockScoutWeb.AddressView.display_address_hash(assigns[:current_address], @transaction.from_address) %>
+            <%= BlockScoutWeb.AddressView.display_address_hash(nil, @transaction, :from) %>
             <span class="text-muted">  &rarr; </span>
-            <%= BlockScoutWeb.AddressView.display_address_hash(assigns[:current_address], @transaction.to_address) %>
+            <%= BlockScoutWeb.AddressView.display_address_hash(nil, @transaction, :to) %>
           </span>
           <div class="d-flex flex-row justify-content-start text-muted">
             <span class="mr-4 text-<%= BlockScoutWeb.TransactionView.type_suffix(@transaction) %>"><%= BlockScoutWeb.TransactionView.transaction_display_type(@transaction) %></span>
