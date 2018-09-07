@@ -16,14 +16,14 @@
             <%= link(
                   gettext("Token Transfers"),
                   class: "nav-link",
-                  to: token_path(@conn, :show, @conn.assigns.locale, @conn.params["token_id"])
+                  to: token_path(@conn, :show, @conn.params["token_id"])
                 ) %>
           </li>
 
           <li class="nav-item">
             <%= link(
                 gettext("Read Contract"),
-                to: token_read_contract_path(@conn, :index, @conn.assigns.locale, @conn.params["token_id"]),
+                to: token_read_contract_path(@conn, :index, @conn.params["token_id"]),
                 class: "nav-link active")%>
           </li>
         </ul>
@@ -36,7 +36,7 @@
               <%= link(
                     gettext("Token Transfers"),
                     class: "nav-link active",
-                    to: token_path(@conn, :show, @conn.assigns.locale, "1")
+                    to: token_path(@conn, :show, @token.contract_address_hash)
                   ) %>
               <%= link(
                   gettext("Read Contract"),
@@ -48,7 +48,7 @@
       </div>
 
       <!-- loaded via AJAX -->
-      <div class="card-body" data-smart-contract-functions data-hash="<%= to_string(@token.contract_address.hash) %>" data-url="<%= smart_contract_path(@conn, :index, :en) %>">
+      <div class="card-body" data-smart-contract-functions data-hash="<%= to_string(@token.contract_address.hash) %>" data-url="<%= smart_contract_path(@conn, :index) %>">
         <i class="fa fa-spinner fa-spin"></i> <%= gettext("loading...") %>
       </div>
     </div>

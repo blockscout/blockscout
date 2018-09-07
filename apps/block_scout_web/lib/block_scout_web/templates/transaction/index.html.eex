@@ -8,7 +8,7 @@
           <%= link(
                 gettext("Validated"),
                 class: "nav-link active",
-                to: transaction_path(@conn, :index, @conn.assigns.locale)
+                to: transaction_path(@conn, :index)
               ) %>
         </li>
         <li class="nav-item">
@@ -16,7 +16,7 @@
                 gettext("Pending"),
                 class: "nav-link",
                 "data-test": "pending_transactions_link",
-                to: pending_transaction_path(@conn, :index, @conn.assigns.locale)
+                to: pending_transaction_path(@conn, :index)
               ) %>
         </li>
       </ul>
@@ -29,13 +29,13 @@
             <%= link(
                   gettext("Validated"),
                   class: "dropdown-item",
-                  to: transaction_path(@conn, :index, @conn.assigns.locale)
+                  to: transaction_path(@conn, :index)
                 ) %>
             <%= link(
                   gettext("Pending"),
                   class: "dropdown-item",
                   "data-test": "pending_transactions_link",
-                  to: pending_transaction_path(@conn, :index, @conn.assigns.locale)
+                  to: pending_transaction_path(@conn, :index)
                 ) %>
           </div>
         </li>
@@ -57,7 +57,7 @@
       <p><%= gettext("Showing") %> <span data-selector="transaction-count"><%= Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###") %></span> <%= gettext("Validated Transactions") %></p>
       <span data-selector="transactions-list">
         <%= for transaction <- @transactions do %>
-          <%= render BlockScoutWeb.TransactionView, "_tile.html", locale: @locale, transaction: transaction %>
+          <%= render BlockScoutWeb.TransactionView, "_tile.html", transaction: transaction %>
         <% end %>
       </span>
 
@@ -68,7 +68,6 @@
           to: transaction_path(
             @conn,
             :index,
-            @conn.assigns.locale,
             @next_page_params
           )
         ) %>

@@ -33,13 +33,13 @@ defmodule BlockScoutWeb.TransactionController do
     )
   end
 
-  def show(conn, %{"id" => id, "locale" => locale}) do
+  def show(conn, %{"id" => id}) do
     {:ok, transaction_hash} = Chain.string_to_transaction_hash(id)
 
     if Chain.transaction_has_token_transfers?(transaction_hash) do
-      redirect(conn, to: transaction_token_transfer_path(conn, :index, locale, id))
+      redirect(conn, to: transaction_token_transfer_path(conn, :index, id))
     else
-      redirect(conn, to: transaction_internal_transaction_path(conn, :index, locale, id))
+      redirect(conn, to: transaction_internal_transaction_path(conn, :index, id))
     end
   end
 end

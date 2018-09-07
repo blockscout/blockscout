@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
     test "only responds to ajax requests", %{conn: conn} do
       smart_contract = insert(:smart_contract)
 
-      path = smart_contract_path(BlockScoutWeb.Endpoint, :index, :en, hash: smart_contract.address_hash)
+      path = smart_contract_path(BlockScoutWeb.Endpoint, :index, hash: smart_contract.address_hash)
 
       conn = get(conn, path)
 
@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
 
       blockchain_get_function_mock()
 
-      path = smart_contract_path(BlockScoutWeb.Endpoint, :index, :en, hash: token_contract_address.hash)
+      path = smart_contract_path(BlockScoutWeb.Endpoint, :index, hash: token_contract_address.hash)
 
       conn =
         build_conn()
@@ -43,7 +43,6 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
         smart_contract_path(
           BlockScoutWeb.Endpoint,
           :show,
-          :en,
           smart_contract.address_hash,
           function_name: "get",
           args: []
@@ -63,7 +62,6 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
         smart_contract_path(
           BlockScoutWeb.Endpoint,
           :show,
-          :en,
           smart_contract.address_hash,
           function_name: "get",
           args: []
@@ -79,7 +77,6 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
       assert %{
                function_name: "get",
                layout: false,
-               locale: "en",
                outputs: [%{"name" => "", "type" => "uint256", "value" => 0}]
              } = conn.assigns
     end

@@ -6,22 +6,20 @@
 
     <div class="col-md-7 col-lg-8 d-flex flex-column">
       <p class="tile-title text-truncate">
-        <%= render BlockScoutWeb.TransactionView, "_link.html", locale: @locale, transaction_hash: @transfer.transaction_hash %>
+        <%= render BlockScoutWeb.TransactionView, "_link.html", transaction_hash: @transfer.transaction_hash %>
       </p>
       <span>
         <%= render BlockScoutWeb.AddressView,
           "_link.html",
           address_hash: to_string(@transfer.from_address_hash),
-          contract: BlockScoutWeb.AddressView.contract?(@transfer.from_address),
-          locale: @locale %>
+          contract: BlockScoutWeb.AddressView.contract?(@transfer.from_address) %>
 
         &rarr;
 
         <%= render BlockScoutWeb.AddressView,
           "_link.html",
           address_hash: to_string(@transfer.to_address_hash),
-          contract: BlockScoutWeb.AddressView.contract?(@transfer.to_address),
-          locale: @locale %>
+          contract: BlockScoutWeb.AddressView.contract?(@transfer.to_address) %>
       </span>
 
       <span>
@@ -40,7 +38,7 @@
               number: @transfer.transaction.block_number
             ),
             class: "mr-2 mr-sm-0 text-muted",
-            to: block_path(BlockScoutWeb.Endpoint, :show, @locale, @transfer.transaction.block_number)
+            to: block_path(BlockScoutWeb.Endpoint, :show, @transfer.transaction.block_number)
           ) %>
         </span>
     </div>

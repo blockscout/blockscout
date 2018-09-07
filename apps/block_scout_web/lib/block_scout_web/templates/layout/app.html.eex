@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="<%= @conn.assigns.locale %>">
+<html lang="en-US">
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -18,6 +18,13 @@
       </main>
       <%= render BlockScoutWeb.LayoutView, "_footer.html", assigns %>
     </div>
+    <script>
+      window.localized = {
+        'Less than': '<%= gettext("Less than") %>',
+        'Market Cap': '<%= gettext("Market Cap") %>',
+        'Price': '<%= gettext("Price") %>',
+      }
+    </script>
     <script src="<%= static_path(@conn, "/js/app.js") %>"></script>
   </body>
 </html>

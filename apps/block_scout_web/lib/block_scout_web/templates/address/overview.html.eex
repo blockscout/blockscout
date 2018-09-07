@@ -28,7 +28,6 @@
                       to: address_path(
                         BlockScoutWeb.Endpoint,
                         :show,
-                        @locale,
                         @address.contracts_creation_internal_transaction.from_address_hash
                       )
                     ) %>
@@ -40,7 +39,6 @@
                       to: transaction_path(
                         BlockScoutWeb.Endpoint,
                         :show,
-                        @locale,
                         @address.contracts_creation_internal_transaction.transaction_hash
                       ),
                       "data-test": "transaction_hash_link"
@@ -51,7 +49,7 @@
         </div>
       </div>
     </div>
-    <div class="card-section col-md-6 col-lg-4" data-selector="balance-card">
+    <div class="card-section col-md-12 col-lg-4" data-selector="balance-card">
       <%= render BlockScoutWeb.AddressView, "_balance_card.html", conn: @conn, address: @address, exchange_rate: @exchange_rate %>
     </div>
 

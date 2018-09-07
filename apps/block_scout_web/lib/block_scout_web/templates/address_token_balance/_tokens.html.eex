@@ -4,7 +4,7 @@
 <%= for token_balance <- sort_by_name(@token_balances) do %>
   <div class="border-bottom">
     <%= link(
-          to: token_path(@conn, :show, :en, token_balance.token.contract_address_hash),
+          to: token_path(@conn, :show, token_balance.token.contract_address_hash),
           class: "dropdown-item"
         ) do %>
       <p class="mb-0"><%= token_name(token_balance.token) %></p>

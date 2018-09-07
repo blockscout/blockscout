@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.Tokens.ReadContractControllerTest do
 
   describe "GET index/3" do
     test "with invalid address hash", %{conn: conn} do
-      conn = get(conn, token_read_contract_path(BlockScoutWeb.Endpoint, :index, :en, "invalid_address"))
+      conn = get(conn, token_read_contract_path(BlockScoutWeb.Endpoint, :index, "invalid_address"))
 
       assert html_response(conn, 404)
     end
@@ -26,7 +26,7 @@ defmodule BlockScoutWeb.Tokens.ReadContractControllerTest do
         token: token
       )
 
-      conn = get(conn, token_read_contract_path(BlockScoutWeb.Endpoint, :index, :en, token.contract_address_hash))
+      conn = get(conn, token_read_contract_path(BlockScoutWeb.Endpoint, :index, token.contract_address_hash))
 
       assert html_response(conn, 200)
       assert token.contract_address_hash == conn.assigns.token.contract_address_hash

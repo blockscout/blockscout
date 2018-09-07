@@ -1,10 +1,7 @@
 defmodule BlockScoutWeb.AddressView do
   use BlockScoutWeb, :view
 
-  alias Explorer.Chain.{Address, Hash, SmartContract, Wei}
-
-  alias Explorer.ExchangeRates.Token
-  alias BlockScoutWeb.ExchangeRates.USD
+  alias Explorer.Chain.{Address, Hash, SmartContract}
 
   @dialyzer :no_match
 
@@ -37,20 +34,6 @@ defmodule BlockScoutWeb.AddressView do
 
   def contract?(nil), do: true
 
-  def formatted_usd(%Address{fetched_coin_balance: nil}, _), do: nil
-
-  def formatted_usd(%Address{fetched_coin_balance: balance}, %Token{} = exchange_rate) do
-    case Wei.cast(balance) do
-      {:ok, wei} ->
-        wei
-        |> USD.from(exchange_rate)
-        |> format_usd_value()
-
-      _ ->
-        nil
-    end
-  end
-
   def hash(%Address{hash: hash}) do
     to_string(hash)
   end
@@ -79,25 +62,23 @@ defmodule BlockScoutWeb.AddressView do
 
   def smart_contract_with_read_only_functions?(%Address{smart_contract: nil}), do: false
 
-  def display_address_hash(current_address, target_address, locale, truncate \\ false)
+  def display_address_hash(current_address, target_address, truncate \\ false)
 
-  def display_address_hash(nil, target_address, locale, truncate) do
+  def display_address_hash(nil, target_address, truncate) do
     render(
       "_link.html",
       address_hash: target_address.hash,
       contract: contract?(target_address),
-      locale: locale,
       truncate: truncate
     )
   end
 
-  def display_address_hash(current_address, target_address, locale, truncate) do
+  def display_address_hash(current_address, target_address, truncate) do
     if current_address.hash == target_address.hash do
       render(
         "_responsive_hash.html",
         address_hash: current_address.hash,
         contract: contract?(current_address),
-        locale: locale,
         truncate: truncate
       )
     else
@@ -105,7 +86,6 @@ defmodule BlockScoutWeb.AddressView do
         "_link.html",
         address_hash: target_address.hash,
         contract: contract?(target_address),
-        locale: locale,
         truncate: truncate
       )
     end

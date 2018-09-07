@@ -9,16 +9,14 @@
           <span class="dashboard-banner-chart-legend-label">
             <%= gettext "Price" %>
           </span>
-          <span class="dashboard-banner-chart-legend-value" data-selector="exchange-rate">
-            <%= format_exchange_rate(@exchange_rate) %>
+          <span class="dashboard-banner-chart-legend-value" data-selector="exchange-rate" data-wei-value="<%= Explorer.Chain.Wei.from(Decimal.new(1), :ether).value %>" data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
           </span>
         </div>
         <div class="dashboard-banner-chart-legend-item">
           <span class="dashboard-banner-chart-legend-label">
             <%= gettext "Market Cap" %>
           </span>
-          <span class="dashboard-banner-chart-legend-value" data-selector="market-cap">
-            <%= format_market_cap(@exchange_rate) %>
+          <span class="dashboard-banner-chart-legend-value" data-selector="market-cap" data-usd-value="<%= @exchange_rate.market_cap_usd %>">
           </span>
         </div>
       </div>
@@ -54,11 +52,11 @@
 <section class="container">
   <div class="card card-chain-blocks">
     <div class="card-body">
-      <%= link(gettext("View All Blocks →"), to: block_path(BlockScoutWeb.Endpoint, :index, Gettext.get_locale), class: "button button--secondary button--xsmall float-right") %>
+      <%= link(gettext("View All Blocks →"), to: block_path(BlockScoutWeb.Endpoint, :index), class: "button button--secondary button--xsmall float-right") %>
       <h2 class="card-title"><%= gettext "Blocks" %></h2>
       <div class="row" data-selector="chain-block-list">
         <%= for block <- @blocks do %>
-          <%= render BlockScoutWeb.ChainView, "_block.html", locale: @locale, block: block %>
+          <%= render BlockScoutWeb.ChainView, "_block.html", block: block %>
         <% end %>
       </div>
     </div>
@@ -71,11 +69,11 @@
           <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>
         </div>
       </div>
-      <%= link(gettext("View All Transactions →"), to: transaction_path(BlockScoutWeb.Endpoint, :index, Gettext.get_locale), class: "button button--secondary button--xsmall float-right") %>
+      <%= link(gettext("View All Transactions →"), to: transaction_path(BlockScoutWeb.Endpoint, :index), class: "button button--secondary button--xsmall float-right") %>
       <h2 class="card-title"><%= gettext "Transactions" %></h2>
       <span data-selector="transactions-list">
         <%= for transaction <- @transactions do %>
-          <%= render BlockScoutWeb.TransactionView, "_tile.html", locale: @locale, transaction: transaction %>
+          <%= render BlockScoutWeb.TransactionView, "_tile.html", transaction: transaction %>
         <% end %>
       </span>
     </div>

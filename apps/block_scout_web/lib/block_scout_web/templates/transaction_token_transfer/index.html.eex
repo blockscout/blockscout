@@ -10,21 +10,21 @@
           <%= link(
                 gettext("Token Transfers"),
                 class: "nav-link active",
-                to: transaction_token_transfer_path(@conn, :index, @conn.assigns.locale, @transaction)
+                to: transaction_token_transfer_path(@conn, :index, @transaction)
           ) %>
         </li>
         <li class="nav-item">
           <%= link(
                 gettext("Internal Transactions"),
                 class: "nav-link",
-                to: transaction_internal_transaction_path(@conn, :index, @conn.assigns.locale, @transaction)
+                to: transaction_internal_transaction_path(@conn, :index, @transaction)
           ) %>
         </li>
         <li class="nav-item">
           <%= link(
                 gettext("Logs"),
                 class: "nav-link",
-                to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction)
+                to: transaction_log_path(@conn, :index, @transaction)
           ) %>
         </li>
       </ul>
@@ -37,17 +37,17 @@
             <%= link(
                   gettext("Token Transfers"),
                   class: "dropdown-item",
-                  to: transaction_token_transfer_path(@conn, :index, @conn.assigns.locale, @transaction)
+                  to: transaction_token_transfer_path(@conn, :index, @transaction)
             ) %>
             <%= link(
                   gettext("Internal Transactions"),
                   class: "dropdown-item",
-                  to: transaction_internal_transaction_path(@conn, :index, @conn.assigns.locale, @transaction)
+                  to: transaction_internal_transaction_path(@conn, :index, @transaction)
             ) %>
             <%= link(
                   gettext("Logs"),
                   class: "dropdown-item",
-                  to: transaction_log_path(@conn, :index, @conn.assigns.locale, @transaction)
+                  to: transaction_log_path(@conn, :index, @transaction)
             ) %>
           </div>
         </li>
@@ -58,7 +58,7 @@
       <h2 class="card-title"><%= gettext "Token Transfers" %></h2>
       <%= if Enum.any?(@token_transfers) do %>
         <%= for token_transfer <- @token_transfers do %>
-          <%= render "_token_transfer.html", locale: @locale, token_transfer: token_transfer, conn: @conn %>
+          <%= render "_token_transfer.html", token_transfer: token_transfer, conn: @conn %>
         <% end %>
       <% else %>
         <div class="tile tile-muted text-center">
@@ -74,7 +74,6 @@
       to: transaction_token_transfer_path(
         @conn,
         :index,
-        @conn.assigns.locale,
         @transaction,
         @next_page_params
       )

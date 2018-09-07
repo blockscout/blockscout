@@ -2,17 +2,17 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias Explorer.Chain.Block
-  import BlockScoutWeb.Router.Helpers, only: [block_transaction_path: 4]
+  import BlockScoutWeb.Router.Helpers, only: [block_transaction_path: 3]
 
   describe "GET index/2" do
     test "with invalid block number", %{conn: conn} do
-      conn = get(conn, block_transaction_path(conn, :index, :en, "unknown"))
+      conn = get(conn, block_transaction_path(conn, :index, "unknown"))
 
       assert html_response(conn, 404)
     end
 
     test "with valid block number without block", %{conn: conn} do
-      conn = get(conn, block_transaction_path(conn, :index, :en, "1"))
+      conn = get(conn, block_transaction_path(conn, :index, "1"))
 
       assert html_response(conn, 404)
     end
@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
       :transaction |> insert() |> with_block(block)
       :transaction |> insert(to_address: nil) |> with_block(block)
 
-      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, :en, block.number))
+      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, block.number))
 
       assert html_response(conn, 200)
       assert 2 == Enum.count(conn.assigns.transactions)
@@ -33,7 +33,7 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
       insert(:transaction)
       block = insert(:block)
 
-      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, :en, block))
+      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, block))
 
       assert html_response(conn, 200)
       assert Enum.empty?(conn.assigns.transactions)
@@ -43,7 +43,7 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
       block = insert(:block)
       insert(:transaction)
 
-      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, :en, block))
+      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, block))
 
       assert html_response(conn, 200)
       assert Enum.empty?(conn.assigns.transactions)
@@ -56,7 +56,7 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
       |> insert_list(:transaction)
       |> with_block(block)
 
-      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, :en, block))
+      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, block))
 
       assert %{"block_number" => ^number, "index" => 10} = conn.assigns.next_page_params
     end
@@ -68,7 +68,7 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
       |> insert()
       |> with_block(block)
 
-      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, :en, block))
+      conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, block))
 
       refute conn.assigns.next_page_params
     end

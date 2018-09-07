@@ -1,7 +1,7 @@
 import {Socket} from 'phoenix'
-import router from './router'
+import {locale} from './locale'
 
-const socket = new Socket('/socket', {params: {locale: router.locale}})
+const socket = new Socket('/socket', {params: {locale: locale}})
 socket.connect()
 
 export default socket

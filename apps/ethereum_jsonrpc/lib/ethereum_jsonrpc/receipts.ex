@@ -132,11 +132,9 @@ defmodule EthereumJSONRPC.Receipts do
         {requests, id_to_transaction_params}
       end)
 
-    with {:ok, responses} <- json_rpc(requests, json_rpc_named_arguments) do
-      elixir_receipts =
-        responses
-        |> responses_to_receipts(id_to_transaction_params)
-        |> to_elixir()
+    with {:ok, responses} <- json_rpc(requests, json_rpc_named_arguments),
+         {:ok, receipts} <- reduce_responses(responses, id_to_transaction_params) do
+      elixir_receipts = to_elixir(receipts)
 
       elixir_logs = elixir_to_logs(elixir_receipts)
       receipts = elixir_to_params(elixir_receipts)
@@ -220,20 +218,35 @@ defmodule EthereumJSONRPC.Receipts do
     })
   end
 
-  defp response_to_receipt(%{result: nil}, _), do: %{}
+  defp response_to_receipt(%{id: id, result: nil}, id_to_transaction_params) do
+    data = Map.fetch!(id_to_transaction_params, id)
+    {:error, %{code: -32602, data: data, message: "Not Found"}}
+  end
 
   defp response_to_receipt(%{id: id, result: receipt}, id_to_transaction_params) do
-    gas =
-      id_to_transaction_params
-      |> Map.fetch!(id)
-      |> Map.fetch!(:gas)
+    %{gas: gas} = Map.fetch!(id_to_transaction_params, id)
 
     # gas from the transaction is needed for pre-Byzantium derived status
-    Map.put(receipt, "gas", gas)
+    {:ok, Map.put(receipt, "gas", gas)}
   end
 
-  defp responses_to_receipts(responses, id_to_transaction_params)
-       when is_list(responses) and is_map(id_to_transaction_params) do
-    Enum.map(responses, &response_to_receipt(&1, id_to_transaction_params))
+  defp response_to_receipt(%{id: id, error: reason}, id_to_transaction_params) do
+    data = Map.fetch!(id_to_transaction_params, id)
+    annotated_reason = Map.put(reason, :data, data)
+    {:error, annotated_reason}
   end
+
+  defp reduce_responses(responses, id_to_transaction_params)
+       when is_list(responses) and is_map(id_to_transaction_params) do
+    responses
+    |> Stream.map(&response_to_receipt(&1, id_to_transaction_params))
+    |> Enum.reduce({:ok, []}, &reduce_receipt(&1, &2))
+  end
+
+  defp reduce_receipt({:ok, receipt}, {:ok, receipts}) when is_list(receipts),
+    do: {:ok, [receipt | receipts]}
+
+  defp reduce_receipt({:ok, _}, {:error, _} = error), do: error
+  defp reduce_receipt({:error, reason}, {:ok, _}), do: {:error, [reason]}
+  defp reduce_receipt({:error, reason}, {:error, reasons}) when is_list(reasons), do: {:error, [reason | reasons]}
 end

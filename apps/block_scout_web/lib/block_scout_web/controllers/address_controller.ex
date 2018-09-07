@@ -4,8 +4,8 @@ defmodule BlockScoutWeb.AddressController do
   alias Explorer.Chain
   alias Explorer.Chain.Address
 
-  def show(conn, %{"id" => id, "locale" => locale}) do
-    redirect(conn, to: address_transaction_path(conn, :index, locale, id))
+  def show(conn, %{"id" => id}) do
+    redirect(conn, to: address_transaction_path(conn, :index, id))
   end
 
   def transaction_count(%Address{} = address) do

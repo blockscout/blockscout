@@ -2,17 +2,8 @@ defmodule BlockScoutWeb.CurrencyHelpersTest do
   use ExUnit.Case
 
   alias BlockScoutWeb.CurrencyHelpers
-  alias BlockScoutWeb.ExchangeRates.USD
 
   doctest BlockScoutWeb.CurrencyHelpers, import: true
-
-  test "with nil it returns nil" do
-    assert nil == CurrencyHelpers.format_usd_value(nil)
-  end
-
-  test "with USD.null() it returns nil" do
-    assert nil == CurrencyHelpers.format_usd_value(USD.null())
-  end
 
   describe "format_according_to_decimals/1" do
     test "formats the amount as value considering the given decimals" do

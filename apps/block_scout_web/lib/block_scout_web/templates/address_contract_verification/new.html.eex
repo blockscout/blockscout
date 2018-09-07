@@ -5,7 +5,7 @@
       <h1 class="card-title">New Smart Contract</h1>
 
       <%= form_for @changeset,
-          address_verify_contract_path(@conn, :create, @conn.assigns.locale, @conn.params["address_id"]),
+          address_verify_contract_path(@conn, :create, @conn.params["address_id"]),
           fn f -> %>
 
         <div class="form-group">
@@ -16,7 +16,7 @@
 
         <div class="form-group">
           <%= label f, :name, "Contract Name" %>
-          <%= text_input f, :name, class: "form-control", "aria-describedby": "contract-name-help-block" %>
+          <%= text_input f, :name, class: "form-control", "aria-describedby": "contract-name-help-block", "data-test": "contract_name" %>
           <%= error_tag f, :name, id: "contract-name-help-block", class: "text-danger" %>
         </div>
 
@@ -60,7 +60,7 @@
         <%= reset "Reset", class: "button button--secondary button--sm mr-2" %>
         <%= link(
             "Cancel",
-            to: address_contract_path(@conn, :index, @conn.assigns.locale, @conn.params["address_id"]),
+            to: address_contract_path(@conn, :index, @conn.params["address_id"]),
             class: "button button--sm") %>
       <% end %>
     </div>

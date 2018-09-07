@@ -6,7 +6,6 @@ defmodule BlockScoutWeb.ChainPage do
   import Wallaby.Query, only: [css: 1, css: 2]
 
   alias Explorer.Chain.Transaction
-  alias BlockScoutWeb.ChainView
 
   def blocks(count: count) do
     css("[data-selector='chain-block']", count: count)
@@ -14,10 +13,6 @@ defmodule BlockScoutWeb.ChainPage do
 
   def contract_creation(%Transaction{created_contract_address_hash: hash}) do
     css("[data-test='contract-creation'] [data-address-hash='#{hash}']")
-  end
-
-  def exchange_rate(token) do
-    css("[data-selector='exchange-rate']", text: ChainView.format_exchange_rate(token))
   end
 
   def non_loaded_transaction_count(count) do

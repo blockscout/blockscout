@@ -177,6 +177,20 @@ defmodule Explorer.SmartContract.ReaderTest do
                }
              ] = Reader.query_function(smart_contract.address_hash, %{name: "get", args: []})
     end
+
+    test "nil arguments is treated as []" do
+      smart_contract = insert(:smart_contract)
+
+      blockchain_get_function_mock()
+
+      assert [
+               %{
+                 "name" => "",
+                 "type" => "uint256",
+                 "value" => 0
+               }
+             ] = Reader.query_function(smart_contract.address_hash, %{name: "get", args: nil})
+    end
   end
 
   describe "normalize_args/1" do

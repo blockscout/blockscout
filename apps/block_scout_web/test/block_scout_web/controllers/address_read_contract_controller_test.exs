@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.AddressReadContractControllerTest do
 
   describe "GET index/3" do
     test "with invalid address hash", %{conn: conn} do
-      conn = get(conn, address_read_contract_path(BlockScoutWeb.Endpoint, :index, :en, "invalid_address"))
+      conn = get(conn, address_read_contract_path(BlockScoutWeb.Endpoint, :index, "invalid_address"))
 
       assert html_response(conn, 404)
     end
@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.AddressReadContractControllerTest do
     test "with valid address that is not a contract", %{conn: conn} do
       address = insert(:address)
 
-      conn = get(conn, address_read_contract_path(BlockScoutWeb.Endpoint, :index, :en, address.hash))
+      conn = get(conn, address_read_contract_path(BlockScoutWeb.Endpoint, :index, address.hash))
 
       assert html_response(conn, 404)
     end
@@ -32,7 +32,7 @@ defmodule BlockScoutWeb.AddressReadContractControllerTest do
 
       insert(:smart_contract, address_hash: contract_address.hash)
 
-      conn = get(conn, address_read_contract_path(BlockScoutWeb.Endpoint, :index, :en, contract_address.hash))
+      conn = get(conn, address_read_contract_path(BlockScoutWeb.Endpoint, :index, contract_address.hash))
 
       assert html_response(conn, 200)
       assert contract_address.hash == conn.assigns.address.hash

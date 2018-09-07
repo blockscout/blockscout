@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.TransactionLogsPage do
   use Wallaby.DSL
 
   import Wallaby.Query, only: [css: 1, css: 2]
-  import BlockScoutWeb.Router.Helpers, only: [transaction_log_path: 4]
+  import BlockScoutWeb.Router.Helpers, only: [transaction_log_path: 3]
 
   alias Explorer.Chain.{Address, Transaction}
   alias BlockScoutWeb.Endpoint
@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.TransactionLogsPage do
   end
 
   def visit_page(session, %Transaction{} = transaction) do
-    visit(session, transaction_log_path(Endpoint, :index, :en, transaction))
+    visit(session, transaction_log_path(Endpoint, :index, transaction))
   end
 
   def click_address(session, %Address{hash: address_hash}) do

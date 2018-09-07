@@ -1,11 +1,9 @@
 defmodule BlockScoutWeb.AddressContractVerificationTest do
   use BlockScoutWeb.FeatureCase, async: true
 
-  import Wallaby.Query
-
   alias Plug.Conn
-  alias Explorer.Chain.Address
   alias Explorer.Factory
+  alias BlockScoutWeb.{AddressContractPage, ContractVerifyPage}
 
   setup do
     bypass = Bypass.open()
@@ -21,7 +19,7 @@ defmodule BlockScoutWeb.AddressContractVerificationTest do
     %{name: name, source_code: source_code, bytecode: bytecode, version: version} = Factory.contract_code_info()
 
     transaction = :transaction |> insert() |> with_block()
-    address = %Address{hash: address_hash} = insert(:address, contract_code: bytecode)
+    address = insert(:address, contract_code: bytecode)
 
     insert(
       :internal_transaction_create,
@@ -32,33 +30,30 @@ defmodule BlockScoutWeb.AddressContractVerificationTest do
     )
 
     session
-    |> visit("/en/addresses/#{address_hash}/contract_verifications/new")
-    |> fill_in(text_field("Contract Name"), with: name)
-    |> click(option(version))
-    |> click(radio_button("No"))
-    |> fill_in(text_field("Enter the Solidity Contract Code below"), with: source_code)
-    |> click(button("Verify and publish"))
+    |> AddressContractPage.visit_page(address)
+    |> AddressContractPage.click_verify_and_publish()
+    |> ContractVerifyPage.fill_form(%{
+      contract_name: name,
+      version: version,
+      optimization: false,
+      source_code: source_code
+    })
+    |> ContractVerifyPage.verify_and_publish()
 
-    assert current_path(session) =~ ~r/\/en\/addresses\/#{address_hash}\/contracts/
+    assert AddressContractPage.on_page?(session, address)
   end
 
   test "with invalid data shows error messages", %{session: session, bypass: bypass} do
     Bypass.expect(bypass, fn conn -> Conn.resp(conn, 200, solc_bin_versions()) end)
 
     session
-    |> visit("/en/addresses/0x1e0eaa06d02f965be2dfe0bc9ff52b2d82133461/contract_verifications/new")
-    |> fill_in(text_field("Contract Name"), with: "")
-    |> fill_in(text_field("Enter the Solidity Contract Code below"), with: "")
-    |> click(button("Verify and publish"))
-    |> assert_has(
-      css(
-        "[data-test='contract-source-code-error']",
-        text: "there was an error validating your contract, please try again."
-      )
-    )
+    |> ContractVerifyPage.visit_page("0x1e0eaa06d02f965be2dfe0bc9ff52b2d82133461")
+    |> ContractVerifyPage.fill_form(%{contract_name: "", version: nil, optimization: nil, source_code: ""})
+    |> ContractVerifyPage.verify_and_publish()
+    |> assert_has(ContractVerifyPage.validation_error())
   end
 
-  def solc_bin_versions() do
+  defp solc_bin_versions do
     File.read!("./test/support/fixture/smart_contract/solc_bin.json")
   end
 end
