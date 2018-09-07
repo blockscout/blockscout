@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.Notifier do
   """
 
   alias Explorer.{Chain, Market, Repo}
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, InternalTransaction}
   alias Explorer.ExchangeRates.Token
   alias BlockScoutWeb.Endpoint
 
@@ -36,6 +36,12 @@ defmodule BlockScoutWeb.Notifier do
     })
   end
 
+  def handle_event({:chain_event, :internal_transactions, internal_transactions}) do
+    internal_transactions
+    |> Stream.map(&(InternalTransaction |> Repo.get(&1.id) |> Repo.preload([:from_address, :to_address])))
+    |> Enum.each(&broadcast_internal_transaction/1)
+  end
+
   def handle_event({:chain_event, :transactions, transaction_hashes}) do
     transaction_hashes
     |> Chain.hashes_to_transactions(
@@ -65,6 +71,24 @@ defmodule BlockScoutWeb.Notifier do
     })
   end
 
+  defp broadcast_internal_transaction(internal_transaction) do
+    Endpoint.broadcast("internal_transactions:new_internal_transaction", "new_internal_transaction", %{
+      internal_transaction: internal_transaction
+    })
+
+    Endpoint.broadcast("addresses:#{internal_transaction.from_address_hash}", "internal_transaction", %{
+      address: internal_transaction.from_address,
+      internal_transaction: internal_transaction
+    })
+
+    if internal_transaction.to_address_hash != internal_transaction.from_address_hash do
+      Endpoint.broadcast("addresses:#{internal_transaction.to_address_hash}", "internal_transaction", %{
+        address: internal_transaction.to_address,
+        internal_transaction: internal_transaction
+      })
+    end
+  end
+
   defp broadcast_transaction(transaction) do
     Endpoint.broadcast("transactions:new_transaction", "new_transaction", %{
       transaction: transaction
@@ -75,7 +99,7 @@ defmodule BlockScoutWeb.Notifier do
       transaction: transaction
     })
 
-    if transaction.to_address_hash && transaction.to_address_hash != transaction.from_address_hash do
+    if transaction.to_address_hash != transaction.from_address_hash do
       Endpoint.broadcast("addresses:#{transaction.to_address_hash}", "transaction", %{
         address: transaction.to_address,
         transaction: transaction

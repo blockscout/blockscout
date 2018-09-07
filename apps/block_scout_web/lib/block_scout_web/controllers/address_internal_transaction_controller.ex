@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.AddressController, only: [transaction_count: 1]
-  import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+  import BlockScoutWeb.Chain, only: [current_filter: 1, paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
@@ -44,26 +44,6 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
 
       {:error, :not_found} ->
         not_found(conn)
-    end
-  end
-
-  defp current_filter(%{paging_options: paging_options} = params) do
-    params
-    |> Map.get("filter")
-    |> case do
-      "to" -> [direction: :to, paging_options: paging_options]
-      "from" -> [direction: :from, paging_options: paging_options]
-      _ -> [paging_options: paging_options]
-    end
-  end
-
-  defp current_filter(params) do
-    params
-    |> Map.get("filter")
-    |> case do
-      "to" -> [direction: :to]
-      "from" -> [direction: :from]
-      _ -> []
     end
   end
 end

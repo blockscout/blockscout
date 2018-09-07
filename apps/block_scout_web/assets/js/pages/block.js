@@ -19,14 +19,12 @@ export function reducer (state = initialState, action) {
       })
     }
     case 'CHANNEL_DISCONNECTED': {
-      if (state.beyondPageOne) return state
-
       return Object.assign({}, state, {
         channelDisconnected: true
       })
     }
     case 'RECEIVED_NEW_BLOCK': {
-      if (state.channelDisconnected || state.beyondPageOne) return state
+      if (state.channelDisconnected) return state
 
       return Object.assign({}, state, {
         newBlock: action.msg.blockHtml
@@ -39,13 +37,15 @@ export function reducer (state = initialState, action) {
 
 router.when('/blocks', { exactPathMatch: true }).then(({ blockNumber }) => initRedux(reducer, {
   main (store) {
-    const blocksChannel = socket.channel(`blocks:new_block`, {})
-    store.dispatch({ type: 'PAGE_LOAD', blockNumber })
-    blocksChannel.join()
-    blocksChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
-    blocksChannel.on('new_block', (msg) =>
-      store.dispatch({ type: 'RECEIVED_NEW_BLOCK', msg: humps.camelizeKeys(msg) })
-    )
+    const state = store.dispatch({ type: 'PAGE_LOAD', blockNumber })
+    if (!state.beyondPageOne) {
+      const blocksChannel = socket.channel(`blocks:new_block`, {})
+      blocksChannel.join()
+      blocksChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
+      blocksChannel.on('new_block', (msg) =>
+        store.dispatch({ type: 'RECEIVED_NEW_BLOCK', msg: humps.camelizeKeys(msg) })
+      )
+    }
   },
   render (state, oldState) {
     const $channelDisconnected = $('[data-selector="channel-disconnected-message"]')

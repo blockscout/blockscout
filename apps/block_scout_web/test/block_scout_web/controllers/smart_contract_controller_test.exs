@@ -6,6 +6,14 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
   setup :verify_on_exit!
 
   describe "GET index/3" do
+    test "error for invalid address", %{conn: conn} do
+      path = smart_contract_path(BlockScoutWeb.Endpoint, :index, :en, hash: "0x00")
+
+      conn = get(conn, path)
+
+      assert conn.status == 404
+    end
+
     test "only responds to ajax requests", %{conn: conn} do
       smart_contract = insert(:smart_contract)
 
@@ -36,6 +44,22 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
   end
 
   describe "GET show/3" do
+    test "error for invalid address", %{conn: conn} do
+      path =
+        smart_contract_path(
+          BlockScoutWeb.Endpoint,
+          :show,
+          :en,
+          "0x00",
+          function_name: "get",
+          args: []
+        )
+
+      conn = get(conn, path)
+
+      assert conn.status == 404
+    end
+
     test "only responds to ajax requests", %{conn: conn} do
       smart_contract = insert(:smart_contract)
 
