@@ -15,6 +15,10 @@ defmodule BlockScoutWeb.AddressPage do
     css("[data-test='address_balance']")
   end
 
+  def token_hash_link do
+    css("[data-test='token_hash_link']")
+  end
+
   def contract_creator do
     css("[data-test='address_contract_creator']")
   end
