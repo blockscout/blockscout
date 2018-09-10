@@ -140,7 +140,7 @@
         <%= if Enum.count(@internal_transactions) > 0 do %>
           <span data-selector="internal-transactions-list">
             <%= for internal_transaction <- @internal_transactions do %>
-              <%= render "_internal_transaction.html", current_address: @address, internal_transaction: internal_transaction %>
+              <%= render BlockScoutWeb.InternalTransactionView, "_tile.html", current_address: @address, internal_transaction: internal_transaction %>
             <% end %>
           </span>
         <% else %>
