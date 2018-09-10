@@ -2,7 +2,7 @@ import $ from 'jquery'
 import { BigNumber } from 'bignumber.js'
 
 const weiToEtherConverter = (element, event) => {
-  const weiUnit = '1000000000000000000'
+  const weiUnit = new BigNumber('1000000000000000000')
   const $element = $(element)
   const $conversionTextWei = $element.find('[data-conversion-text-wei]')
   const $conversionTextEth = $element.find('[data-conversion-text-eth]')
@@ -10,14 +10,14 @@ const weiToEtherConverter = (element, event) => {
   let unitVal = new BigNumber($conversionUnit.html())
 
   if (event.target.checked) {
-    $conversionTextWei.css({display: 'none'})
-    $conversionTextEth.css({display: 'inline-block'})
-    unitVal = unitVal / new BigNumber(weiUnit)
+    $conversionTextWei.hide()
+    $conversionTextEth.show()
+    unitVal = unitVal.dividedBy(weiUnit)
     $conversionUnit.html(String(unitVal > 0 ? unitVal : unitVal.toFixed(3)))
   } else {
-    $conversionTextWei.css({display: 'inline-block'})
-    $conversionTextEth.css({display: 'none'})
-    unitVal = unitVal * new BigNumber(weiUnit)
+    $conversionTextWei.show()
+    $conversionTextEth.hide()
+    unitVal = unitVal.multipliedBy(weiUnit)
     $conversionUnit.html(unitVal)
   }
 }
