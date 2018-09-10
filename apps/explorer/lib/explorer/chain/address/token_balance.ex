@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Address.TokenBalance do
 
   use Ecto.Schema
   import Ecto.Changeset
-  import Ecto.Query, only: [from: 2, limit: 2, where: 3, subquery: 1]
+  import Ecto.Query, only: [from: 2, limit: 2, where: 3, subquery: 1, order_by: 3, preload: 2]
 
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.Address.TokenBalance
@@ -89,20 +89,20 @@ defmodule Explorer.Chain.Address.TokenBalance do
   * Balances greater than 0.
   * Excluding the burn address (0x0000000000000000000000000000000000000000).
 
-  Then, the result will be ordered by the value.
   """
+  def token_holders_from_token_hash(token_contract_address_hash) do
+    query = token_holders_query(token_contract_address_hash)
+
+    from(tb in subquery(query), where: tb.value > 0)
+  end
+
   def token_holders_ordered_by_value(token_contract_address_hash, options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    query =
-      from(
-        tb in subquery(token_holders_query(token_contract_address_hash)),
-        where: tb.value > 0,
-        order_by: [desc: tb.value, desc: tb.address_hash],
-        preload: :address
-      )
-
-    query
+    token_contract_address_hash
+    |> token_holders_from_token_hash()
+    |> order_by([tb], desc: tb.value, desc: tb.address_hash)
+    |> preload(:address)
     |> page_token_balances(paging_options)
     |> limit(^paging_options.page_size)
   end

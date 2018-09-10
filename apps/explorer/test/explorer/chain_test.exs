@@ -507,28 +507,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "count_addresses_in_token_transfers_from_token_hash/1" do
-    test "without token transfers" do
-      %Token{contract_address_hash: contract_address_hash} = insert(:token)
-
-      assert Chain.count_addresses_in_token_transfers_from_token_hash(contract_address_hash) == 0
-    end
-
-    test "with token transfers" do
-      address = insert(:address)
-
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      %TokenTransfer{token_contract_address_hash: token_contract_address_hash} =
-        insert(:token_transfer, to_address: address, transaction: transaction)
-
-      assert Chain.count_addresses_in_token_transfers_from_token_hash(token_contract_address_hash) == 2
-    end
-  end
-
   describe "gas_price/2" do
     test ":wei unit" do
       assert Chain.gas_price(%Transaction{gas_price: %Wei{value: Decimal.new(1)}}, :wei) == Decimal.new(1)
@@ -2801,39 +2779,7 @@ defmodule Explorer.ChainTest do
       assert Chain.fetch_token_holders_from_token_hash(contract_address_hash, []) == []
     end
 
-    test "considers the value to paginate the results" do
-      %Token{contract_address_hash: contract_address_hash} = insert(:token)
-
-      first_page =
-        insert(
-          :token_balance,
-          block_number: 1001,
-          token_contract_address_hash: contract_address_hash,
-          value: 5000
-        )
-
-      second_page =
-        insert(
-          :token_balance,
-          block_number: 1000,
-          token_contract_address_hash: contract_address_hash,
-          value: 4000
-        )
-
-      paging_options = %PagingOptions{
-        key: {first_page.value, first_page.block_number},
-        page_size: 1
-      }
-
-      holders_paginated =
-        contract_address_hash
-        |> Chain.fetch_token_holders_from_token_hash(paging_options: paging_options)
-        |> Enum.map(& &1.address_hash)
-
-      assert holders_paginated == [second_page.address_hash]
-    end
-
-    test "considers the address_hash when there are values with the same value" do
+    test "paginates the result by value and different address" do
       address_a = build(:address, hash: "0xcb2cf1fd3199584ac5faa16c6aca49472dc6495a")
       address_b = build(:address, hash: "0x5f26097334b6a32b7951df61fd0c5803ec5d8354")
 
@@ -2889,6 +2835,81 @@ defmodule Explorer.ChainTest do
       )
 
       assert Chain.fetch_token_holders_from_token_hash(contract_address_hash, []) == []
+    end
+  end
+
+  describe "count_token_holders_from_token_hash" do
+    test "counts different addresses that have the token" do
+      address_a = insert(:address, hash: "0xe49fedd93960a0267b3c3b2c1e2d66028e013fee")
+      address_b = insert(:address, hash: "0x5f26097334b6a32b7951df61fd0c5803ec5d8354")
+
+      %Token{contract_address_hash: contract_address_hash} = insert(:token)
+
+      insert(
+        :token_balance,
+        address: address_a,
+        block_number: 1000,
+        token_contract_address_hash: contract_address_hash,
+        value: 5000
+      )
+
+      insert(
+        :token_balance,
+        address: address_b,
+        block_number: 1002,
+        token_contract_address_hash: contract_address_hash,
+        value: 1000
+      )
+
+      assert Chain.count_token_holders_from_token_hash(contract_address_hash) == 2
+    end
+
+    test "counts only the last block" do
+      address = insert(:address, hash: "0xe49fedd93960a0267b3c3b2c1e2d66028e013fee")
+
+      %Token{contract_address_hash: contract_address_hash} = insert(:token)
+
+      insert(
+        :token_balance,
+        address: address,
+        block_number: 1000,
+        token_contract_address_hash: contract_address_hash,
+        value: 5000
+      )
+
+      insert(
+        :token_balance,
+        address: address,
+        block_number: 1002,
+        token_contract_address_hash: contract_address_hash,
+        value: 1000
+      )
+
+      assert Chain.count_token_holders_from_token_hash(contract_address_hash) == 1
+    end
+
+    test "counts only the last block that has value greater than 0" do
+      address = insert(:address, hash: "0xe49fedd93960a0267b3c3b2c1e2d66028e013fee")
+
+      %Token{contract_address_hash: contract_address_hash} = insert(:token)
+
+      insert(
+        :token_balance,
+        address: address,
+        block_number: 1000,
+        token_contract_address_hash: contract_address_hash,
+        value: 5000
+      )
+
+      insert(
+        :token_balance,
+        address: address,
+        block_number: 1002,
+        token_contract_address_hash: contract_address_hash,
+        value: 0
+      )
+
+      assert Chain.count_token_holders_from_token_hash(contract_address_hash) == 0
     end
   end
 end
