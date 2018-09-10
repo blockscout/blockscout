@@ -234,6 +234,18 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => nil
   }
 
+  @contract_getabi_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" =>
+      ~s([{"constant":false,"inputs":[{"name":"voucher_token","type":"bytes32"}],"name":"burn","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"voucher_token","type":"bytes32"}],"name":"is_expired","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"voucher_token","type":"bytes32"}],"name":"is_burnt","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[{"name":"voucher_token","type":"bytes32"},{"name":"_lifetime","type":"uint256"}],"payable":false,"stateMutability":"nonpayable","type":"constructor"}])
+  }
+
+  @contract_getabi_example_value_error %{
+    "status" => "0",
+    "message" => "Contract source code not verified",
+    "result" => nil
+  }
   @status_type %{
     type: "status",
     enum: ~s(["0", "1"]),
@@ -1125,6 +1137,43 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @contract_getabi_action %{
+    name: "getabi",
+    description: "Get ABI for verified contract.",
+    required_params: [
+      %{
+        key: "address",
+        placeholder: "addressHash",
+        type: "string",
+        description: "A 160-bit code used for identifying contracts."
+      }
+    ],
+    optional_params: [],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@contract_getabi_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "abi",
+              definition: "JSON string for the Application Binary Interface (ABI)"
+            }
+          }
+        }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@contract_getabi_example_value_error)
+      }
+    ]
+  }
+
   @account_module %{
     name: "account",
     actions: [
@@ -1158,12 +1207,18 @@ defmodule BlockScoutWeb.Etherscan do
     actions: [@block_getblockreward_action]
   }
 
+  @contract_module %{
+    name: "contract",
+    actions: [@contract_getabi_action]
+  }
+
   @documentation [
     @account_module,
     @logs_module,
     @token_module,
     @stats_module,
-    @block_module
+    @block_module,
+    @contract_module
   ]
 
   def get_documentation do

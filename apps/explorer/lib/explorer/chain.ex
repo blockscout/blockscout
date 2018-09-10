@@ -1429,7 +1429,7 @@ defmodule Explorer.Chain do
     |> Repo.insert(on_conflict: :nothing, conflict_target: [:address_hash, :name])
   end
 
-  @spec address_hash_to_smart_contract(%Explorer.Chain.Hash{}) :: %Explorer.Chain.SmartContract{}
+  @spec address_hash_to_smart_contract(%Explorer.Chain.Hash{}) :: %Explorer.Chain.SmartContract{} | nil
   def address_hash_to_smart_contract(%Explorer.Chain.Hash{} = address_hash) do
     query =
       from(
