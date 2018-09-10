@@ -90,7 +90,7 @@
           </div>
         </div>
         <div class="dropdown float-right u-push-sm">
-          <button data-test="filter_dropdown" class="button button--secondary button--xsmall dropdown-toggle" type="button"
+          <button data-test="filter_dropdown" class="button button-secondary button-xs dropdown-toggle" type="button"
             id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             Filter: <%= format_current_filter(@filter) %>
           </button>
@@ -141,7 +141,7 @@
         <%= if @next_page_params do %>
           <%= link(
             gettext("Older"),
-            class: "button button--secondary button--sm float-right mt-3",
+            class: "button button-secondary button-sm float-right mt-3",
             to: address_transaction_path(
               @conn,
               :index,

@@ -69,7 +69,7 @@
         <%= if @next_page_params do %>
           <%= link(
             gettext("Older"),
-            class: "button button--secondary button--small float-right mt-4",
+            class: "button button-secondary button-small float-right mt-4",
             to: token_path(@conn, :show, @token.contract_address_hash, @next_page_params)
           ) %>
         <% end %>
