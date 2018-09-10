@@ -68,6 +68,10 @@
   border-color: transparentize($white, 0.30);
 }
 
+.input-group-append {
+  margin-left: 0px;
+}
+
 .fa-search {
   color: $white;
 }
