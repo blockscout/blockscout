@@ -35,7 +35,11 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
     end
 
     test "includes internal transactions for the transaction", %{conn: conn} do
-      transaction = insert(:transaction)
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
       expected_internal_transaction = insert(:internal_transaction, transaction: transaction, index: 0)
       insert(:internal_transaction, transaction: transaction, index: 1)
 

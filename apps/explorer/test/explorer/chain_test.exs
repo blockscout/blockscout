@@ -1332,18 +1332,21 @@ defmodule Explorer.ChainTest do
     end
 
     test "with transaction with internal transactions returns all internal transactions for a given transaction hash" do
-      transaction = insert(:transaction)
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
       first = insert(:internal_transaction, transaction: transaction, index: 0)
       second = insert(:internal_transaction, transaction: transaction, index: 1)
 
-      results =
-        transaction
-        |> Chain.transaction_to_internal_transactions()
-        |> Enum.map(& &1.id)
+      results = [internal_transaction | _] = Chain.transaction_to_internal_transactions(transaction)
 
       assert 2 == length(results)
-      assert Enum.member?(results, first.id)
-      assert Enum.member?(results, second.id)
+      assert Enum.all?(results, &(&1.id in [first.id, second.id]))
+      assert internal_transaction.transaction.block.number == block.number
     end
 
     test "with transaction with internal transactions loads associations with in necessity_by_association" do
@@ -1354,7 +1357,7 @@ defmodule Explorer.ChainTest do
                %InternalTransaction{
                  from_address: %Ecto.Association.NotLoaded{},
                  to_address: %Ecto.Association.NotLoaded{},
-                 transaction: %Ecto.Association.NotLoaded{}
+                 transaction: %Transaction{}
                }
              ] = Chain.transaction_to_internal_transactions(transaction)
 

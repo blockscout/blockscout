@@ -5,9 +5,23 @@ defmodule BlockScoutWeb.AddressViewTest do
   alias BlockScoutWeb.AddressView
 
   describe "address_partial_selector/4" do
-    test "for a pending contract creation to address" do
+    test "for a pending transaction contract creation to address" do
       transaction = insert(:transaction, to_address: nil, created_contract_address_hash: nil)
       assert AddressView.address_partial_selector(transaction, :to, nil) == "Contract Address Pending"
+    end
+
+    test "for a pending internal transaction contract creation to address" do
+      transaction = insert(:transaction, to_address: nil)
+
+      internal_transaction =
+        insert(:internal_transaction,
+          index: 1,
+          transaction: transaction,
+          to_address: nil,
+          created_contract_address_hash: nil
+        )
+
+      assert AddressView.address_partial_selector(internal_transaction, :to, nil) == "Contract Address Pending"
     end
 
     test "will truncate address" do
