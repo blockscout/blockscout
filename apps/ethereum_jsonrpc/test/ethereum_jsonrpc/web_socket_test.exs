@@ -24,6 +24,8 @@ defmodule EthereumJSONRPC.WebSocketTest do
                |> WebSocket.json_rpc(transport_options)
     end
 
+    # Infura timeouts on 2018-09-10
+    @tag :no_geth
     test "can get error", %{subscribe_named_arguments: subscribe_named_arguments} do
       transport_options = subscribe_named_arguments[:transport_options]
 
@@ -79,6 +81,8 @@ defmodule EthereumJSONRPC.WebSocketTest do
       assert is_binary(subscription_id)
     end
 
+    # Infura timeouts on 2018-09-10
+    @tag :no_geth
     test "delivers new heads to caller", %{
       block_interval: block_interval,
       subscribe_named_arguments: subscribe_named_arguments
@@ -132,6 +136,8 @@ defmodule EthereumJSONRPC.WebSocketTest do
       assert :ok = WebSocket.unsubscribe(subscription)
     end
 
+    # Infura timeouts on 2018-09-10
+    @tag :no_geth
     test "stops messages being sent to subscriber", %{
       block_interval: block_interval,
       subscribe_named_arguments: subscribe_named_arguments

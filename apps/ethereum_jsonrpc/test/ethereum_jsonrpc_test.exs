@@ -599,6 +599,8 @@ defmodule EthereumJSONRPCTest do
   end
 
   describe "unsubscribe/2" do
+    # Infura timeouts on 2018-09-10
+    @tag :no_geth
     test "can unsubscribe", %{subscribe_named_arguments: subscribe_named_arguments} do
       transport = Keyword.fetch!(subscribe_named_arguments, :transport)
       transport_options = subscribe_named_arguments[:transport_options]
@@ -622,6 +624,8 @@ defmodule EthereumJSONRPCTest do
       assert :ok = EthereumJSONRPC.unsubscribe(subscription)
     end
 
+    # Infura timeouts on 2018-09-10
+    @tag :no_geth
     test "stops messages being sent to subscriber", %{
       block_interval: block_interval,
       subscribe_named_arguments: subscribe_named_arguments
