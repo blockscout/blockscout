@@ -7,7 +7,7 @@
         <div class="card-body">
           <div class="icon-links float-right">
             <span data-clipboard-text="<%= @transaction %>">
-              <button type="button" class="icon-link" id="button" data-toggle="tooltip" data-placement="top" title="<%= gettext("Copy Txn Hash") %>" aria-label="Copy Transaction Hash">
+              <button type="button" class="icon-link" id="button" data-toggle="tooltip" data-placement="top" title="<%= gettext("Copy Txn Hash") %>" aria-label="<%= gettext("Copy Transaction Hash") %>">
                 <i class="fas fa-clone"></i>
               </button>
             </span>
