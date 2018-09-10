@@ -985,6 +985,63 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert response["message"] == "OK"
     end
 
+    test "with filterby=to option", %{conn: conn} do
+      block = insert(:block)
+      address = insert(:address)
+
+      insert(:transaction, from_address: address)
+      |> with_block(block)
+
+      insert(:transaction, to_address: address)
+      |> with_block(block)
+
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "#{address.hash}",
+        "filterby" => "to"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert length(response["result"]) == 1
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "with filterby=from option", %{conn: conn} do
+      block = insert(:block)
+      address = insert(:address)
+
+      insert(:transaction, from_address: address)
+      |> with_block(block)
+
+      insert(:transaction, from_address: address)
+      |> with_block(block)
+
+      insert(:transaction, to_address: address)
+      |> with_block(block)
+
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "#{address.hash}",
+        "filterby" => "from"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert length(response["result"]) == 2
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
     test "supports GET and POST requests", %{conn: conn} do
       address = insert(:address)
 
@@ -1706,16 +1763,22 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert AddressController.optional_params(params3) == %{}
     end
 
-    test "'filterby' value can only be 'to'" do
+    test "'filterby' value can be 'to' or 'from'" do
       params1 = %{"filterby" => "to"}
 
-      optional_params = AddressController.optional_params(params1)
+      optional_params1 = AddressController.optional_params(params1)
 
-      assert optional_params.filter_by == "to"
+      assert optional_params1.filter_by == "to"
 
-      params2 = %{"filterby" => "invalid"}
+      params2 = %{"filterby" => "from"}
 
-      assert AddressController.optional_params(params2) == %{}
+      optional_params2 = AddressController.optional_params(params2)
+
+      assert optional_params2.filter_by == "from"
+
+      params3 = %{"filterby" => "invalid"}
+
+      assert AddressController.optional_params(params3) == %{}
     end
 
     test "only includes optional params when they're given" do
