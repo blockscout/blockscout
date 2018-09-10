@@ -34,9 +34,10 @@
   background: transparent;
   width: auto;
   font-size: 12px;
-  border-left: none;
+  border-right: none;
   color: $white;
   border-color: transparentize($white, 0.30);
+  padding-right: 0px;
 
 
   &::-webkit-input-placeholder { /* Chrome/Opera/Safari */
@@ -57,13 +58,13 @@
   }
 
   @include media-breakpoint-up(xl) {
-    width: calc(43ch + #{$input-padding-x * 2});
+    width: calc(41ch + #{$input-padding-x});
   }
 }
 
 .navbar .input-group-text {
   background: none;
-  border-right: none;
+  border-left: none;
   border-color: transparentize($white, 0.30);
 }
 
