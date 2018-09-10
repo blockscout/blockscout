@@ -1,5 +1,6 @@
 import $ from 'jquery'
 import { BigNumber } from 'bignumber.js'
+import numeral from 'numeral'
 
 const weiToEtherConverter = (element, event) => {
   const weiUnit = new BigNumber('1000000000000000000')
@@ -12,13 +13,13 @@ const weiToEtherConverter = (element, event) => {
   if (event.target.checked) {
     $conversionTextWei.hide()
     $conversionTextEth.show()
-    unitVal = unitVal.dividedBy(weiUnit)
-    $conversionUnit.html(String(unitVal > 0 ? unitVal : unitVal.toFixed(3)))
+    unitVal = unitVal.dividedBy(weiUnit).toNumber()
+    $conversionUnit.html(String(unitVal > 0 ? numeral(unitVal).format('0,0') : numeral(unitVal).format('0.0[00000]')))
   } else {
     $conversionTextWei.show()
     $conversionTextEth.hide()
-    unitVal = unitVal.multipliedBy(weiUnit)
-    $conversionUnit.html(unitVal)
+    unitVal = unitVal.multipliedBy(weiUnit).toNumber()
+    $conversionUnit.html(String(numeral(unitVal).format('0,0')))
   }
 }
 
