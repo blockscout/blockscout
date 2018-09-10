@@ -6,13 +6,13 @@
     <div class="col-md-8 col-lg-8 d-flex flex-column text-nowrap pr-2 pr-sm-2 pr-md-0">
       <%= render BlockScoutWeb.TransactionView, "_link.html", transaction_hash: @internal_transaction.transaction_hash %>
       <span class="text-nowrap">
-        <%= if @address.hash == @internal_transaction.from_address_hash do %>
+        <%= if @current_address.hash == @internal_transaction.from_address_hash do %>
           <%= render BlockScoutWeb.AddressView, "_responsive_hash.html", address: @internal_transaction.from_address, contract: BlockScoutWeb.AddressView.contract?(@internal_transaction.from_address) %>
         <% else %>
           <%= render BlockScoutWeb.AddressView, "_link.html", address: @internal_transaction.from_address, contract: BlockScoutWeb.AddressView.contract?(@internal_transaction.from_address) %>
         <% end %>
         &rarr;
-        <%= if @address.hash == BlockScoutWeb.InternalTransactionView.to_address_hash(@internal_transaction) do %>
+        <%= if @current_address.hash == BlockScoutWeb.InternalTransactionView.to_address_hash(@internal_transaction) do %>
           <%= render BlockScoutWeb.AddressView, "_responsive_hash.html", address: BlockScoutWeb.InternalTransactionView.to_address(@internal_transaction), contract: BlockScoutWeb.AddressView.contract?(@internal_transaction.to_address) %>
         <% else %>
           <%= render BlockScoutWeb.AddressView, "_link.html", address: BlockScoutWeb.InternalTransactionView.to_address(@internal_transaction), contract: BlockScoutWeb.AddressView.contract?(@internal_transaction.to_address) %>
@@ -23,7 +23,7 @@
       </span>
     </div>
     <div class="col-md-2 d-flex flex-row flex-md-column justify-content-start align-items-end  mt-3 mt-md-0">
-      <%= if @address.hash == @internal_transaction.from_address_hash do %>
+      <%= if @current_address.hash == @internal_transaction.from_address_hash do %>
         <span class="badge badge-danger tile-badge"><%= gettext "OUT" %></span>
       <% else %>
         <span class="badge badge-success tile-badge"><%= gettext "IN" %></span>

@@ -47,7 +47,7 @@ defmodule BlockScoutWeb.AddressChannel do
       View.render_to_string(
         AddressInternalTransactionView,
         "_internal_transaction.html",
-        address: address,
+        current_address: address,
         internal_transaction: internal_transaction
       )
 
@@ -67,7 +67,7 @@ defmodule BlockScoutWeb.AddressChannel do
       View.render_to_string(
         TransactionView,
         "_tile.html",
-        address: address,
+        current_address: address,
         transaction: transaction
       )
 
