@@ -70,7 +70,7 @@
   <%= if @next_page_params do %>
     <%= link(
       gettext("Older"),
-      class: "button button--secondary button--sm u-float-left mt-3",
+      class: "button button-secondary button-sm u-float-left mt-3",
       to: transaction_token_transfer_path(
         @conn,
         :index,

@@ -28,8 +28,6 @@ export function reducer (state = initialState, action) {
       })
     }
     case 'CHANNEL_DISCONNECTED': {
-      if (state.beyondPageOne) return state
-
       return Object.assign({}, state, {
         channelDisconnected: true,
         batchCountAccumulator: 0
@@ -88,17 +86,19 @@ router.when('/tx/:transactionHash').then(() => initRedux(reducer, {
 router.when('/txs', { exactPathMatch: true }).then((params) => initRedux(reducer, {
   main (store) {
     const { index } = params
-    const transactionsChannel = socket.channel(`transactions:new_transaction`)
-    store.dispatch({
+    const state = store.dispatch({
       type: 'PAGE_LOAD',
       transactionCount: $('[data-selector="transaction-count"]').text(),
       index
     })
-    transactionsChannel.join()
-    transactionsChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
-    transactionsChannel.on('new_transaction', batchChannel((msgs) =>
-      store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION_BATCH', msgs: humps.camelizeKeys(msgs) }))
-    )
+    if (!state.beyondPageOne) {
+      const transactionsChannel = socket.channel(`transactions:new_transaction`)
+      transactionsChannel.join()
+      transactionsChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
+      transactionsChannel.on('new_transaction', batchChannel((msgs) =>
+        store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION_BATCH', msgs: humps.camelizeKeys(msgs) }))
+      )
+    }
   },
   render (state, oldState) {
     const $channelBatching = $('[data-selector="channel-batching-message"]')

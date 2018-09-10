@@ -379,6 +379,39 @@ defmodule Explorer.EtherscanTest do
 
       assert length(found_transactions) == 0
     end
+
+    test "with filter_by: 'from' option with one matching transaction" do
+      address = insert(:address)
+
+      :transaction
+      |> insert(to_address: address)
+      |> with_block()
+
+      :transaction
+      |> insert(from_address: address)
+      |> with_block()
+
+      options = %{filter_by: "from"}
+
+      found_transactions = Etherscan.list_transactions(address.hash, options)
+
+      assert length(found_transactions) == 1
+    end
+
+    test "with filter_by: 'from' option with non-matching transaction" do
+      address = insert(:address)
+      other_address = insert(:address)
+
+      :transaction
+      |> insert(from_address: other_address, to_address: nil)
+      |> with_block()
+
+      options = %{filter_by: "from"}
+
+      found_transactions = Etherscan.list_transactions(address.hash, options)
+
+      assert length(found_transactions) == 0
+    end
   end
 
   describe "list_internal_transactions/1" do

@@ -19,10 +19,6 @@ defmodule BlockScoutWeb.TransactionListPage do
     css("[data-transaction-hash='#{hash}'] [data-test='transaction_type']", text: "Contract Creation")
   end
 
-  def non_loaded_transaction_count(count) do
-    css("[data-selector='channel-batching-count']", text: count)
-  end
-
   def transaction(%Transaction{hash: transaction_hash}) do
     css("[data-transaction-hash='#{transaction_hash}']")
   end

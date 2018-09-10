@@ -4,10 +4,10 @@ defmodule BlockScoutWeb.AddressChannel do
   """
   use BlockScoutWeb, :channel
 
-  alias BlockScoutWeb.{AddressTransactionView, AddressView}
+  alias BlockScoutWeb.{AddressInternalTransactionView, AddressView, TransactionView}
   alias Phoenix.View
 
-  intercept(["balance_update", "count", "transaction"])
+  intercept(["balance_update", "count", "internal_transaction", "transaction"])
 
   def join("addresses:" <> _address_hash, _params, socket) do
     {:ok, %{}, socket}
@@ -40,13 +40,33 @@ defmodule BlockScoutWeb.AddressChannel do
     {:noreply, socket}
   end
 
+  def handle_out("internal_transaction", %{address: address, internal_transaction: internal_transaction}, socket) do
+    Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
+
+    rendered_internal_transaction =
+      View.render_to_string(
+        AddressInternalTransactionView,
+        "_internal_transaction.html",
+        address: address,
+        internal_transaction: internal_transaction
+      )
+
+    push(socket, "internal_transaction", %{
+      to_address_hash: to_string(internal_transaction.to_address_hash),
+      from_address_hash: to_string(internal_transaction.from_address_hash),
+      internal_transaction_html: rendered_internal_transaction
+    })
+
+    {:noreply, socket}
+  end
+
   def handle_out("transaction", %{address: address, transaction: transaction}, socket) do
     Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
 
     rendered =
       View.render_to_string(
-        AddressTransactionView,
-        "_transaction.html",
+        TransactionView,
+        "_tile.html",
         address: address,
         transaction: transaction
       )

@@ -16,4 +16,7 @@ const tokenBalanceDropdown = (element) => {
     })
 }
 
-$('[data-token-balance-dropdown]').each((_index, element) => tokenBalanceDropdown(element))
+export function loadTokenBalanceDropdown () {
+  $('[data-token-balance-dropdown]').each((_index, element) => tokenBalanceDropdown(element))
+}
+loadTokenBalanceDropdown()

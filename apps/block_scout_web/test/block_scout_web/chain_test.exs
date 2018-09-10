@@ -4,6 +4,24 @@ defmodule BlockScoutWeb.ChainTest do
   alias Explorer.Chain.{Address, Block, Transaction}
   alias BlockScoutWeb.Chain
 
+  describe "current_filter/1" do
+    test "sets direction based on to filter" do
+      assert [direction: :to] = Chain.current_filter(%{"filter" => "to"})
+    end
+
+    test "sets direction based on from filter" do
+      assert [direction: :from] = Chain.current_filter(%{"filter" => "from"})
+    end
+
+    test "no direction set" do
+      assert [] = Chain.current_filter(%{})
+    end
+
+    test "no direction set with paging_options" do
+      assert [paging_options: "test"] = Chain.current_filter(%{paging_options: "test"})
+    end
+  end
+
   describe "from_param/1" do
     test "finds a block by block number with a valid block number" do
       %Block{number: number} = insert(:block, number: 37)

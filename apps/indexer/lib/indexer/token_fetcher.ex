@@ -4,7 +4,7 @@ defmodule Indexer.TokenFetcher do
   """
 
   alias Explorer.Chain
-  alias Explorer.Chain.Token
+  alias Explorer.Chain.{Hash, Token}
   alias Explorer.Chain.Hash.Address
   alias Explorer.SmartContract.Reader
   alias Indexer.BufferedTask
@@ -153,10 +153,42 @@ defmodule Indexer.TokenFetcher do
     |> Map.from_struct()
     |> Map.put(:cataloged, true)
     |> Map.merge(token_contract_data)
+    |> handle_invalid_strings()
   end
 
   defp atomized_key("decimals"), do: :decimals
   defp atomized_key("name"), do: :name
   defp atomized_key("symbol"), do: :symbol
   defp atomized_key("totalSupply"), do: :total_supply
+
+  # It's a temp fix to store tokens that have names and/or symbols with characters that the database
+  # doesn't accept. See https://github.com/poanetwork/blockscout/issues/669 for more info.
+  defp handle_invalid_strings(%{name: name, symbol: symbol, contract_address_hash: contract_address_hash} = token) do
+    name = handle_invalid_name(name, contract_address_hash)
+    symbol = handle_invalid_symbol(symbol)
+
+    %{token | name: name, symbol: symbol}
+  end
+
+  defp handle_invalid_name(nil, _contract_address_hash), do: nil
+
+  defp handle_invalid_name(name, contract_address_hash) do
+    case String.valid?(name) do
+      true -> name
+      false -> format_according_contract_address_hash(contract_address_hash)
+    end
+  end
+
+  defp handle_invalid_symbol(symbol) do
+    case String.valid?(symbol) do
+      true -> symbol
+      false -> nil
+    end
+  end
+
+  defp format_according_contract_address_hash(contract_address_hash) do
+    contract_address_hash
+    |> Hash.to_string()
+    |> String.slice(0, 6)
+  end
 end

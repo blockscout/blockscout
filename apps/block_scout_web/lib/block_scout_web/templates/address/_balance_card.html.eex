@@ -9,7 +9,7 @@
         data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
       </span>
 
-      <div class="mt-3" data-token-balance-dropdown data-api_path="<%= address_token_balance_path(@conn, :index, @address.hash) %>">
+      <div class="mt-3" data-token-balance-dropdown data-api_path="<%= address_token_balance_path(BlockScoutWeb.Endpoint, :index, @address.hash) %>">
           <p data-loading class="mb-0 text-light" style="display: none;">
             <i class="fa fa-spinner fa-spin"></i>
             <%= gettext("Fetching tokens...") %>

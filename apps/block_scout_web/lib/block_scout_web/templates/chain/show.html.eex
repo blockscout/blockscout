@@ -52,7 +52,7 @@
 <section class="container">
   <div class="card card-chain-blocks">
     <div class="card-body">
-      <%= link(gettext("View All Blocks →"), to: block_path(BlockScoutWeb.Endpoint, :index), class: "button button--secondary button--xsmall float-right") %>
+      <%= link(gettext("View All Blocks →"), to: block_path(BlockScoutWeb.Endpoint, :index), class: "button button-secondary button-xsmall float-right") %>
       <h2 class="card-title"><%= gettext "Blocks" %></h2>
       <div class="row" data-selector="chain-block-list">
         <%= for block <- @blocks do %>
@@ -69,7 +69,7 @@
           <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>
         </div>
       </div>
-      <%= link(gettext("View All Transactions →"), to: transaction_path(BlockScoutWeb.Endpoint, :index), class: "button button--secondary button--xsmall float-right") %>
+      <%= link(gettext("View All Transactions →"), to: transaction_path(BlockScoutWeb.Endpoint, :index), class: "button button-secondary button-xsmall float-right") %>
       <h2 class="card-title"><%= gettext "Transactions" %></h2>
       <span data-selector="transactions-list">
         <%= for transaction <- @transactions do %>

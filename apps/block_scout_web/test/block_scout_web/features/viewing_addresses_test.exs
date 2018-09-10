@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
 
   alias Explorer.Chain.Wei
   alias Explorer.Factory
-  alias BlockScoutWeb.{AddressPage, AddressView}
+  alias BlockScoutWeb.{AddressPage, AddressView, Notifier}
 
   setup do
     block = insert(:block)
@@ -169,6 +169,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       session
       |> AddressPage.visit_page(addresses.lincoln)
       |> assert_has(AddressPage.transaction_address_link(transactions.from_lincoln, :to))
+      |> refute_has(AddressPage.transaction_address_link(transactions.from_lincoln, :from))
     end
   end
 
@@ -216,6 +217,28 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> AddressPage.visit_page(addresses.lincoln)
       |> AddressPage.click_internal_transactions()
       |> assert_has(AddressPage.internal_transaction_address_link(internal_transaction, :from))
+      |> refute_has(AddressPage.internal_transaction_address_link(internal_transaction, :to))
+    end
+
+    test "viewing new internal transactions via live update", %{addresses: addresses, session: session} do
+      transaction =
+        :transaction
+        |> insert(from_address: addresses.lincoln)
+        |> with_block()
+
+      session
+      |> AddressPage.visit_page(addresses.lincoln)
+      |> AddressPage.click_internal_transactions()
+      |> assert_has(AddressPage.internal_transactions(count: 2))
+
+      internal_transaction =
+        insert(:internal_transaction, transaction: transaction, index: 0, from_address: addresses.lincoln)
+
+      Notifier.handle_event({:chain_event, :internal_transactions, [internal_transaction]})
+
+      session
+      |> assert_has(AddressPage.internal_transactions(count: 3))
+      |> assert_has(AddressPage.internal_transaction(internal_transaction))
     end
   end
 
