@@ -661,7 +661,7 @@ defmodule BlockScoutWeb.Etherscan do
         description: """
         A string representing the field to filter by. If none is given
         it returns transactions that match to, from, or contract address.
-        Available values: to
+        Available values: to, from
         """
       }
     ],
