@@ -280,10 +280,10 @@ defmodule Indexer.BufferedTask do
     {:reply, :ok, buffer_entries(state, entries)}
   end
 
-  def handle_call(:debug_count, _from, state) do
-    count = length(state.current_buffer) + :queue.len(state.buffer) * state.max_batch_size
+  def handle_call(:metrics, _from, state) do
+    length = length(state.current_buffer) + :queue.len(state.buffer) * state.max_batch_size
 
-    {:reply, %{buffer: count, tasks: Enum.count(state.tasks)}, state}
+    {:reply, %{buffer_guage: length, task_guage: Enum.count(state.tasks)}, state}
   end
 
   defp drop_task(state, ref) do
@@ -300,7 +300,9 @@ defmodule Indexer.BufferedTask do
 
   defp buffer_entries(state, []), do: state
 
-  defp buffer_entries(state, entries) do
+  defp buffer_entries(%__MODULE__{callback_module: callback_module} = state, entries) do
+    Telemetry.execute([:indexer, :buffered_task, :current_buffer, :grow], length(entries), %{callback_module: callback_module})
+
     %{state | current_buffer: [entries | state.current_buffer]}
   end
 
@@ -392,7 +394,9 @@ defmodule Indexer.BufferedTask do
     state |> spawn_next_batch() |> schedule_next_buffer_flush()
   end
 
-  defp flush(%BufferedTask{current_buffer: current} = state) do
+  defp flush(%BufferedTask{callback_module: callback_module, current_buffer: current} = state) do
+    Telemetry.execute([:indexer, :buffered_task, :current_buffer, :reset], 0, %{callback_module: callback_module})
+
     current
     |> List.flatten()
     |> Enum.chunk_every(state.max_batch_size)

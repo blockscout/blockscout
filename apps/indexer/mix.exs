@@ -50,10 +50,16 @@ defmodule Indexer.MixProject do
       {:excoveralls, "~> 0.10.0", only: [:test], github: "KronicDeth/excoveralls", branch: "circle-workflows"},
       # Importing to database
       {:explorer, in_umbrella: true},
+      # Override to force `wobserver` compatibility
+      {:httpoison, "~> 1.1.0", override: true},
       # Log errors and application output to separate files
       {:logger_file_backend, "~> 0.0.10"},
       # Mocking `EthereumJSONRPC.Transport`, so we avoid hitting real chains for local testing
-      {:mox, "~> 0.4", only: [:test]}
+      {:mox, "~> 0.4", only: [:test]},
+      # Metrics from indexer to Wobserver and anything else that wants to listen
+      {:telemetry, "~> 0.1.0"},
+      # Register "Indexer" page in Wobserver
+      {:wobserver, "~> 0.1.8", optional: true}
     ]
   end
 

@@ -19,7 +19,8 @@ defmodule Indexer.PendingTransaction.Fetcher do
 
   defstruct interval: @default_interval,
             json_rpc_named_arguments: [],
-            task: nil
+            task: nil,
+            timer_reference: nil
 
   def child_spec([init_arguments]) do
     child_spec([init_arguments, []])
@@ -56,6 +57,31 @@ defmodule Indexer.PendingTransaction.Fetcher do
     GenServer.start_link(__MODULE__, arguments, gen_server_options)
   end
 
+  @doc false
+  def metrics(server \\ __MODULE__) do
+    %__MODULE__{timer_reference: timer_reference, task: task} = :sys.get_state(server)
+
+    countdown =
+      case timer_reference do
+        nil ->
+          0
+
+        _ ->
+          case :erlang.read_timer(timer_reference) do
+            false -> 0
+            time -> time
+          end
+      end
+
+    status =
+      case task do
+        nil -> :waiting
+        _ -> :running
+      end
+
+    %{countdown: countdown, status: status}
+  end
+
   @impl GenServer
   def init(opts) when is_list(opts) do
     opts =
@@ -76,7 +102,7 @@ defmodule Indexer.PendingTransaction.Fetcher do
   @impl GenServer
   def handle_info(:fetch, %PendingTransaction.Fetcher{} = state) do
     task = Task.Supervisor.async_nolink(PendingTransaction.TaskSupervisor, fn -> task(state) end)
-    {:noreply, %PendingTransaction.Fetcher{state | task: task}}
+    {:noreply, %PendingTransaction.Fetcher{state | task: task, timer_reference: nil}}
   end
 
   def handle_info({ref, _}, %PendingTransaction.Fetcher{task: %Task{ref: ref}} = state) do
@@ -95,8 +121,8 @@ defmodule Indexer.PendingTransaction.Fetcher do
   end
 
   defp schedule_fetch(%PendingTransaction.Fetcher{interval: interval} = state) do
-    Process.send_after(self(), :fetch, interval)
-    %PendingTransaction.Fetcher{state | task: nil}
+    timer_reference = Process.send_after(self(), :fetch, interval)
+    %PendingTransaction.Fetcher{state | task: nil, timer_reference: timer_reference}
   end
 
   defp task(%PendingTransaction.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = _state) do

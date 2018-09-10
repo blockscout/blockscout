@@ -73,6 +73,7 @@
   "set_locale": {:git, "https://github.com/minifast/set_locale.git", "da9ae029642bc0fbd9212c2aaf86c0adca70c084", [branch: "master"]},
   "sobelow": {:hex, :sobelow, "0.7.0", "68ac7cb55040e8d33fb0e5df0008b4f612d2b97ea2bc99a013967a9a200ffc57", [:mix], []},
   "ssl_verify_fun": {:hex, :ssl_verify_fun, "1.1.1", "28a4d65b7f59893bc2c7de786dec1e1555bd742d336043fe644ae956c3497fbe", [:make, :rebar], []},
+  "telemetry": {:hex, :telemetry, "0.1.0", "e473e8dc0cc9310b33b8a5a11d7ca46d99b09a2a6338792bea961441ecb03cf9", [:mix], [], "hexpm"},
   "timex": {:hex, :timex, "3.1.25", "6002dae5432f749d1c93e2cd103eb73cecb53e50d2c885349e8e4146fc96bd44", [:mix], [{:combine, "~> 0.10", [hex: :combine, optional: false]}, {:gettext, "~> 0.10", [hex: :gettext, optional: false]}, {:tzdata, "~> 0.1.8 or ~> 0.5", [hex: :tzdata, optional: false]}]},
   "timex_ecto": {:hex, :timex_ecto, "3.2.1", "461140751026e1ca03298fab628f78ab189e78784175f5e301eefa034ee530aa", [:mix], [{:ecto, "~> 2.2", [hex: :ecto, optional: false]}, {:timex, "~> 3.1", [hex: :timex, optional: false]}]},
   "tzdata": {:hex, :tzdata, "0.5.16", "13424d3afc76c68ff607f2df966c0ab4f3258859bbe3c979c9ed1606135e7352", [:mix], [{:hackney, "~> 1.0", [hex: :hackney, optional: false]}]},

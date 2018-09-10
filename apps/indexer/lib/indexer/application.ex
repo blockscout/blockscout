@@ -16,6 +16,8 @@ defmodule Indexer.Application do
 
   @impl Application
   def start(_type, _args) do
+    register_metrics()
+
     json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
 
     block_fetcher_supervisor_named_arguments =
@@ -28,6 +30,7 @@ defmodule Indexer.Application do
       |> Enum.into(%{})
 
     children = [
+      {Registry, keys: :duplicate, name: Indexer.Registry, id: Indexer.Registry},
       {CoinBalance.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments], [name: CoinBalance.Supervisor]]},
       {PendingTransaction.Supervisor,
        [[json_rpc_named_arguments: json_rpc_named_arguments], [name: PendingTransactionFetcher]]},
@@ -42,5 +45,14 @@ defmodule Indexer.Application do
     opts = [strategy: :one_for_one, name: Indexer.Supervisor]
 
     Supervisor.start_link(children, opts)
+  end
+
+  defp register_metrics do
+    if Code.ensure_loaded(Wobserver) == {:module, Wobserver} do
+      Indexer.Wobserver.attach_to_telemetry()
+      Indexer.Wobserver.register()
+      Wobserver.register(:page, {"Indexer", :indexer, &Indexer.Wobserver.page/0})
+      Wobserver.register(:metric, &Indexer.Wobserver.metrics/0)
+    end
   end
 end
