@@ -588,6 +588,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:8
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:8
 msgid "Copy Address"
 msgstr ""
 
@@ -601,6 +602,8 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:13
 #: lib/block_scout_web/templates/address/overview.html.eex:64
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:13
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:73
 msgid "QR Code"
 msgstr ""
 
@@ -685,6 +688,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:73
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:82
 msgid "Close"
 msgstr ""
 
@@ -727,7 +731,7 @@ msgid "Token Transfer"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:18
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:33
 msgid "Transfers"
 msgstr ""
 
@@ -760,7 +764,7 @@ msgid "There are no transfers for this Token."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:10
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:22
 msgid "Token Details"
 msgstr ""
 
@@ -784,17 +788,17 @@ msgid "Token Transfers"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:17
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:32
 msgid "addresses"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:20
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:35
 msgid "decimals"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:31
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:46
 msgid "Total Supply"
 msgstr ""
 
