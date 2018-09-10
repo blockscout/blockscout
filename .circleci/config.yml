@@ -338,8 +338,8 @@ jobs:
               mix coveralls.html --exclude no_geth --parallel --umbrella
             else
               mix coveralls.circle --exclude no_geth --parallel --umbrella ||
-                # if mix failed, then coveralls_merge won't run, so single done here
-                curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done"
+                # if mix failed, then coveralls_merge won't run, so signal done here and return original exit status
+                (retval=$? && curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done" && return $retval)
             fi
 
       - store_artifacts:
@@ -388,8 +388,8 @@ jobs:
               mix coveralls.html --exclude no_geth --parallel --umbrella
             else
               mix coveralls.circle --exclude no_geth --parallel --umbrella ||
-                # if mix failed, then coveralls_merge won't run, so signal done here
-                curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done"
+                # if mix failed, then coveralls_merge won't run, so signal done here and return original exit status
+                (retval=$? && curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done" && return $retval)
             fi
 
       - store_artifacts:
@@ -438,8 +438,8 @@ jobs:
               mix coveralls.html --exclude no_parity --parallel --umbrella
             else
               mix coveralls.circle --exclude no_parity --parallel --umbrella ||
-                # if mix failed, then coveralls_merge won't run, so signal done here
-                curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done"
+                # if mix failed, then coveralls_merge won't run, so signal done here and return original exit status
+                (retval=$? && curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done" && return $retval)
             fi
 
       - store_artifacts:
@@ -488,8 +488,8 @@ jobs:
               mix coveralls.html --exclude no_parity --parallel --umbrella
             else
               mix coveralls.circle --exclude no_parity --parallel --umbrella ||
-                # if mix failed, then coveralls_merge won't run, so single done here
-                curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done"
+                # if mix failed, then coveralls_merge won't run, so signal done here and return original exit status
+                (retval=$? && curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_WORKFLOW_WORKSPACE_ID&payload[status]=done" && return $retval)
             fi
 
       - store_artifacts:

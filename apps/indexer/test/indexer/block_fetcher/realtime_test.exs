@@ -52,13 +52,13 @@ defmodule Indexer.BlockFetcher.RealtimeTest do
         EthereumJSONRPC.Mox
         |> expect(:json_rpc, fn [
                                   %{
-                                    id: 3_946_079,
+                                    id: 0,
                                     jsonrpc: "2.0",
                                     method: "eth_getBlockByNumber",
                                     params: ["0x3C365F", true]
                                   },
                                   %{
-                                    id: 3_946_080,
+                                    id: 1,
                                     jsonrpc: "2.0",
                                     method: "eth_getBlockByNumber",
                                     params: ["0x3C3660", true]
@@ -68,7 +68,7 @@ defmodule Indexer.BlockFetcher.RealtimeTest do
           {:ok,
            [
              %{
-               id: 3_946_079,
+               id: 0,
                jsonrpc: "2.0",
                result: %{
                  "author" => "0x5ee341ac44d344ade1ca3a771c59b98eb2a77df2",
@@ -127,7 +127,7 @@ defmodule Indexer.BlockFetcher.RealtimeTest do
                }
              },
              %{
-               id: 3_946_080,
+               id: 1,
                jsonrpc: "2.0",
                result: %{
                  "author" => "0x66c9343c7e8ca673a1fedf9dbf2cd7936dbbf7e3",

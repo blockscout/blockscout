@@ -18,6 +18,6 @@ defmodule BlockScoutWeb.AddressContractPage do
   end
 
   defp address_contract_path(address) do
-    "/en/address/#{address.hash}/contracts"
+    "/address/#{address.hash}/contracts"
   end
 end
