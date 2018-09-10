@@ -4,7 +4,7 @@ defmodule Indexer.TokenFetcherTest do
 
   import Mox
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Token
   alias Indexer.TokenFetcher
 
@@ -72,6 +72,120 @@ defmodule Indexer.TokenFetcherTest do
                   decimals: 18,
                   cataloged: true
                 }} = Chain.token_from_address_hash(contract_address_hash)
+      end
+    end
+
+    test "considers the contract address formatted hash when it is an invalid string", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      token = insert(:token, name: nil, symbol: nil, total_supply: nil, decimals: nil, cataloged: false)
+      contract_address_hash = token.contract_address_hash
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        expect(
+          EthereumJSONRPC.Mox,
+          :json_rpc,
+          1,
+          fn [%{id: "decimals"}, %{id: "name"}, %{id: "symbol"}, %{id: "totalSupply"}], _opts ->
+            {:ok,
+             [
+               %{
+                 id: "decimals",
+                 result: "0x0000000000000000000000000000000000000000000000000000000000000012"
+               },
+               %{
+                 id: "name",
+                 result:
+                   "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001aa796568616e7a652067676761202075797575206e6e6e6e6e200000000000000"
+               },
+               %{
+                 id: "symbol",
+                 result:
+                   "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003424e540000000000000000000000000000000000000000000000000000000000"
+               },
+               %{
+                 id: "totalSupply",
+                 result: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
+               }
+             ]}
+          end
+        )
+
+        assert TokenFetcher.run([contract_address_hash], 0, json_rpc_named_arguments) == :ok
+        assert {:ok, %Token{cataloged: true, name: "0x0000"}} = Chain.token_from_address_hash(contract_address_hash)
+      end
+    end
+
+    test "considers the symbol nil when it is an invalid string", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      token = insert(:token, name: nil, symbol: nil, total_supply: nil, decimals: nil, cataloged: false)
+      contract_address_hash = token.contract_address_hash
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        expect(
+          EthereumJSONRPC.Mox,
+          :json_rpc,
+          1,
+          fn [%{id: "decimals"}, %{id: "name"}, %{id: "symbol"}, %{id: "totalSupply"}], _opts ->
+            {:ok,
+             [
+               %{
+                 id: "decimals",
+                 result: "0x0000000000000000000000000000000000000000000000000000000000000012"
+               },
+               %{
+                 id: "name",
+                 result:
+                   "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003424e540000000000000000000000000000000000000000000000000000000000"
+               },
+               %{
+                 id: "symbol",
+                 result:
+                   "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001aa796568616e7a652067676761202075797575206e6e6e6e6e200000000000000"
+               },
+               %{
+                 id: "totalSupply",
+                 result: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
+               }
+             ]}
+          end
+        )
+
+        assert TokenFetcher.run([contract_address_hash], 0, json_rpc_named_arguments) == :ok
+        assert {:ok, %Token{cataloged: true, symbol: nil}} = Chain.token_from_address_hash(contract_address_hash)
+      end
+    end
+
+    test "considers name as nil when the name is nil", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      token = insert(:token, name: nil, symbol: nil, total_supply: nil, decimals: nil, cataloged: false)
+      contract_address_hash = token.contract_address_hash
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        expect(
+          EthereumJSONRPC.Mox,
+          :json_rpc,
+          1,
+          fn [%{id: "decimals"}, %{id: "name"}, %{id: "symbol"}, %{id: "totalSupply"}], _opts ->
+            {:ok,
+             [
+               %{
+                 id: "decimals",
+                 result: "0x0000000000000000000000000000000000000000000000000000000000000012"
+               },
+               %{
+                 id: "symbol",
+                 result:
+                   "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001aa796568616e7a652067676761202075797575206e6e6e6e6e200000000000000"
+               },
+               %{
+                 id: "totalSupply",
+                 result: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
+               }
+             ]}
+          end
+        )
+
+        assert TokenFetcher.run([contract_address_hash], 0, json_rpc_named_arguments) == :ok
+        assert {:ok, %Token{cataloged: true, name: nil}} = Chain.token_from_address_hash(contract_address_hash)
       end
     end
   end
