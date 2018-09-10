@@ -255,19 +255,22 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
     session: session
   } do
     lincoln = addresses.lincoln
+    contract_address = insert(:contract_address)
 
     from_lincoln =
       :transaction
       |> insert(from_address: lincoln, to_address: nil)
       |> with_block(block)
+      |> with_contract_creation(contract_address)
 
     internal_transaction =
-      insert(
-        :internal_transaction_create,
+      :internal_transaction_create
+      |> insert(
         transaction: from_lincoln,
         from_address: lincoln,
         index: 0
       )
+      |> with_contract_creation(contract_address)
 
     session
     |> AddressPage.visit_page(addresses.lincoln)

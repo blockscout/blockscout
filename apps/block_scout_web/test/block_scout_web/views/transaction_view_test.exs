@@ -130,9 +130,12 @@ defmodule BlockScoutWeb.TransactionViewTest do
     end
 
     test "returns hash for transaction" do
-      address = insert(:address)
-      transaction = insert(:transaction, to_address: address)
-      assert address.hash == TransactionView.to_address_hash(transaction)
+      transaction =
+        :transaction
+        |> insert(to_address: build(:address), created_contract_address: nil)
+        |> Repo.preload([:created_contract_address, :to_address])
+
+      assert TransactionView.to_address(transaction) == transaction.to_address
     end
   end
 end

@@ -307,7 +307,7 @@ defmodule Explorer.Chain.Transaction do
         where:
           tt.token_contract_address_hash == ^address_hash or tt.to_address_hash == ^address_hash or
             tt.from_address_hash == ^address_hash,
-        preload: [:token, :from_address, :to_address]
+        preload: [:token, [from_address: :names], [to_address: :names]]
       )
 
     preload(query, [tt], token_transfers: ^token_transfers_query)

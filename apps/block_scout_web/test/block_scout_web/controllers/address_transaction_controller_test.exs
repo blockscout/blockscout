@@ -128,7 +128,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
         :transaction
         |> insert(to_address: nil, created_contract_address_hash: address.hash)
         |> with_block(block)
-        |> Explorer.Repo.preload(:token_transfers)
+        |> Explorer.Repo.preload([[created_contract_address: :names], [from_address: :names], :token_transfers])
 
       insert(
         :internal_transaction_create,

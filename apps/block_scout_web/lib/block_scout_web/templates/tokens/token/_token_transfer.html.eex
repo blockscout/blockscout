@@ -11,14 +11,14 @@
       <span>
         <%= render BlockScoutWeb.AddressView,
           "_link.html",
-          address_hash: to_string(@transfer.from_address_hash),
+          address: @transfer.from_address,
           contract: BlockScoutWeb.AddressView.contract?(@transfer.from_address) %>
 
         &rarr;
 
         <%= render BlockScoutWeb.AddressView,
           "_link.html",
-          address_hash: to_string(@transfer.to_address_hash),
+          address: @transfer.to_address,
           contract: BlockScoutWeb.AddressView.contract?(@transfer.to_address) %>
       </span>
 

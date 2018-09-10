@@ -488,7 +488,7 @@ defmodule Explorer.Chain do
     query =
       from(
         address in Address,
-        preload: [:smart_contract, :contracts_creation_internal_transaction, :token],
+        preload: [:contracts_creation_internal_transaction, :names, :smart_contract, :token],
         where: address.hash == ^hash
       )
 
@@ -521,7 +521,7 @@ defmodule Explorer.Chain do
     query =
       from(
         address in Address,
-        preload: [:smart_contract, :contracts_creation_internal_transaction, :token],
+        preload: [:contracts_creation_internal_transaction, :names, :smart_contract, :token],
         where: address.hash == ^hash and not is_nil(address.contract_code)
       )
 
@@ -1407,7 +1407,8 @@ defmodule Explorer.Chain do
 
   defp clear_primary_address_names(%{smart_contract: %SmartContract{address_hash: address_hash}}) do
     clear_primary_query =
-      from(address_name in Address.Name,
+      from(
+        address_name in Address.Name,
         where: address_name.address_hash == ^address_hash,
         update: [set: [primary: false]]
       )
@@ -1460,6 +1461,21 @@ defmodule Explorer.Chain do
     query
     |> page_transaction(paging_options)
     |> limit(^paging_options.page_size)
+  end
+
+  defp join_association(query, [{association, nested_preload}], necessity)
+       when is_atom(association) and is_atom(nested_preload) do
+    case necessity do
+      :optional ->
+        preload(query, [{^association, ^nested_preload}])
+
+      :required ->
+        from(q in query,
+          inner_join: a in assoc(q, ^association),
+          left_join: b in assoc(a, ^nested_preload),
+          preload: [{^association, {a, [{^nested_preload, b}]}}]
+        )
+    end
   end
 
   defp join_association(query, association, necessity) when is_atom(association) do

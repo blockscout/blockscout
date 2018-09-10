@@ -12,10 +12,11 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
            Chain.hash_to_transaction(
              hash,
              necessity_by_association: %{
-               block: :optional,
-               from_address: :optional,
-               to_address: :optional,
-               token_transfers: :optional
+               :block => :optional,
+               [created_contract_address: :names] => :optional,
+               [from_address: :names] => :optional,
+               [to_address: :names] => :optional,
+               :token_transfers => :optional
              }
            ) do
       full_options =
