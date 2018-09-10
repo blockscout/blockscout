@@ -10,6 +10,11 @@ defmodule EthereumJSONRPC.Receipt do
   alias EthereumJSONRPC
   alias EthereumJSONRPC.Logs
 
+  # > 21000 gas is charged for any transaction as a "base fee". This covers the cost of an elliptic curve operation to
+  # > recover the sender address from the signature as well as the disk and bandwidth space of storing the transaction.
+  # -- https://github.com/ethereum/wiki/wiki/Design-Rationale
+  @base_fee_gas 21_000
+
   @type elixir :: %{String.t() => String.t() | non_neg_integer}
 
   @typedoc """
@@ -86,6 +91,33 @@ defmodule EthereumJSONRPC.Receipt do
       ...>     "blockHash" => "0x4e3a3754410177e6937ef1f84bba68ea139e8d1a2258c5f85db9f1cd715a1bdd",
       ...>     "blockNumber" => 46147,
       ...>     "contractAddress" => nil,
+      ...>     "cumulativeGasUsed" => 21001,
+      ...>     "from" => "0xa1e4380a3b1f749673e270229993ee55f35663b4",
+      ...>     "gas" => 21001,
+      ...>     "gasUsed" => 21001,
+      ...>     "logs" => [],
+      ...>     "logsBloom" => "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      ...>     "root" => "0x96a8e009d2b88b1483e6941e6812e32263b05683fac202abc622a3e31aed1957",
+      ...>     "to" => "0x5df9b87991262f6ba471f09758cde1c0fc1de734",
+      ...>     "transactionHash" => "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
+      ...>     "transactionIndex" => 0
+      ...>   }
+      ...> )
+      %{
+        cumulative_gas_used: 21001,
+        gas_used: 21001,
+        status: :error,
+        transaction_hash: "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
+        transaction_index: 0
+      }
+
+    * Except, when it is the base transaction fee (21,000 gas)
+
+      iex> EthereumJSONRPC.Receipt.elixir_to_params(
+      ...>   %{
+      ...>     "blockHash" => "0x4e3a3754410177e6937ef1f84bba68ea139e8d1a2258c5f85db9f1cd715a1bdd",
+      ...>     "blockNumber" => 46147,
+      ...>     "contractAddress" => nil,
       ...>     "cumulativeGasUsed" => 21000,
       ...>     "from" => "0xa1e4380a3b1f749673e270229993ee55f35663b4",
       ...>     "gas" => 21000,
@@ -101,7 +133,7 @@ defmodule EthereumJSONRPC.Receipt do
       %{
         cumulative_gas_used: 21000,
         gas_used: 21000,
-        status: :error,
+        status: :ok,
         transaction_hash: "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
         transaction_index: 0
       }
@@ -298,6 +330,10 @@ defmodule EthereumJSONRPC.Receipt do
               "Pre-Byzantium transaction receipts require the transaction gas to be given to derive their status"
     end
   end
+
+  # Temporary fix for https://github.com/poanetwork/blockscout/issues/673 as this is the most common gas == gas_used,
+  # but not failed scenario.  Only internal transactions can prove if gas == gas_used means failure pre-Byzantium.
+  defp pre_byzantium_status(@base_fee_gas, @base_fee_gas), do: :ok
 
   defp pre_byzantium_status(gas, gas_used) when is_integer(gas) and is_integer(gas_used) do
     if gas_used < gas do
