@@ -5,6 +5,13 @@
       <!-- Transaction Details -->
       <div class="card">
         <div class="card-body">
+          <div class="icon-links float-right">
+            <span data-clipboard-text="<%= @transaction %>">
+              <button type="button" class="icon-link" id="button" data-toggle="tooltip" data-placement="top" title="<%= gettext("Copy Txn Hash") %>" aria-label="Copy Transaction Hash">
+                <i class="fas fa-clone"></i>
+              </button>
+            </span>
+          </div>
           <h1 class="card-title"><%= gettext "Transaction Details" %> </h1>
           <h3 data-test="transaction_detail_hash"><%= @transaction %> </h3>
           <span class="d-block mb-2">
