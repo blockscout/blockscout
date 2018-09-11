@@ -70,8 +70,8 @@ defmodule BlockScoutWeb.AddressView do
 
   def contract?(nil), do: true
 
-  def token_title(token = %Token{name: nil}) do
-    token.contract_address_hash
+  def token_title(%Token{name: nil, contract_address_hash: contract_address_hash}) do
+    contract_address_hash
     |> to_string
     |> String.slice(-6..-1)
   end
