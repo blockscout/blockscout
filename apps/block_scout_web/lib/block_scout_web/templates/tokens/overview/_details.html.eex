@@ -31,7 +31,7 @@
                   address_path(@conn, :show, @token.contract_address_hash),
                   "data-test": "token_contract_address"
               do %>
-                <%=  gettext "Contract" %>
+                <%=  gettext "View Contract" %>
               <% end %>
             </span>
             <span class="mr-4"> <%= @token.type %> </span>
