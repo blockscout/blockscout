@@ -5,12 +5,12 @@
         <div class="card-body">
           <div class="icon-links float-right">
             <span data-clipboard-text="<%= @token.contract_address_hash %>">
-              <button type="button" class="icon-link" id="button" data-toggle="tooltip" data-placement="top" title="<%= gettext("Copy Address") %>" aria-label="Copy Address">
+              <button type="button" class="icon-link" id="button" data-toggle="tooltip" data-placement="top" title="<%= gettext("Copy Address") %>" aria-label="<%= gettext("Copy Address") %>">
                 <i class="fas fa-clone"></i>
               </button>
             </span>
             <span data-toggle="modal" data-target="#qrModal">
-              <button type="button" class="icon-link"  data-toggle="tooltip" data-placement="top" title="<%= gettext("QR Code") %>" aria-label="Show QR Code">
+              <button type="button" class="icon-link"  data-toggle="tooltip" data-placement="top" title="<%= gettext("QR Code") %>" aria-label="<%= gettext("QR Code") %>">
                 <i class="fas fa-qrcode"></i>
               </button>
             </span>
@@ -69,7 +69,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h2 class="modal-title" id="qrModalLabel"><%= gettext "QR Code" %></h2>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="<%= gettext("Close") %>">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>

@@ -2,26 +2,26 @@
   <div class="card">
     <div class="card-body">
 
-      <h1 class="card-title">New Smart Contract</h1>
+      <h1 class="card-title"><%= gettext "New Smart Contract" %></h1>
 
       <%= form_for @changeset,
           address_verify_contract_path(@conn, :create, @conn.params["address_id"]),
           fn f -> %>
 
         <div class="form-group">
-          <%= label f, :address_hash, "Contract Address" %>
+          <%= label f, :address_hash, gettext("Contract Address") %>
           <%= text_input f, :address_hash, class: "form-control", "aria-describedby": "contract-address-help-block", readonly: true %>
           <%= error_tag f, :address_hash, id: "contract-address-help-block", class: "text-danger" %>
         </div>
 
         <div class="form-group">
-          <%= label f, :name, "Contract Name" %>
+          <%= label f, :name, gettext("Contract Name") %>
           <%= text_input f, :name, class: "form-control", "aria-describedby": "contract-name-help-block", "data-test": "contract_name" %>
           <%= error_tag f, :name, id: "contract-name-help-block", class: "text-danger" %>
         </div>
 
         <div class="form-group mb-4">
-          <%= label f, :compiler_version, "Compiler" %>
+          <%= label f, :compiler_version, gettext("Compiler") %>
           <%= select f, :compiler_version, @compiler_versions, class: "form-control", selected: "latest", "aria-describedby": "compiler-help-block" %>
           <%= error_tag f, :compiler_version, id: "compiler-help-block", class: "text-danger" %>
         </div>
@@ -31,19 +31,19 @@
 
           <div class="form-check mb-2">
             <%= radio_button f, :optimization, false, checked: true, class: "form-check-input", "aria-describedby": "optimization-help-block" %>
-            <%= label :smart_contract_optimization, :false, "No", class: "form-check-label" %>
+            <%= label :smart_contract_optimization, :false, gettext("No"), class: "form-check-label" %>
           </div>
 
           <div class="form-check">
             <%= radio_button f, :optimization, true, class: "form-check-input", "aria-describedby": "optimization-help-block" %>
-            <%= label :smart_contract_optimization, :true, "Yes", class: "form-check-label" %>
+            <%= label :smart_contract_optimization, :true, gettext("Yes"), class: "form-check-label" %>
           </div>
 
           <%= error_tag f, :optimization, id: "optimization-help-block", class: "text-danger" %>
         </div>
 
         <div class="form-group mb-4">
-          <%= label f, :contract_source_code, "Enter the Solidity Contract Code below" %>
+          <%= label f, :contract_source_code, gettext("Enter the Solidity Contract Code below") %>
           <%= textarea f, :contract_source_code, class: "form-control monospace", rows: 3, "aria-describedby": "contract-source-code-help-block" %>
           <%= error_tag f, :contract_source_code, id: "contract-source-code-help-block", class: "text-danger", "data-test": "contract-source-code-error" %>
         </div>
@@ -56,10 +56,10 @@
           class="d-none px-4 position-absolute button button-primary button-sm mr-2">
           <i class="fa fa-spinner fa-spin"></i> <%= gettext("loading.....") %>
         </button>
-        <%= submit "Verify and publish", class: "button button-primary button-sm mr-2", "data-loading": "animation"  %>
-        <%= reset "Reset", class: "button button-secondary button-sm mr-2" %>
+        <%= submit gettext("Verify and publish"), class: "button button-primary button-sm mr-2", "data-loading": "animation"  %>
+        <%= reset gettext("Reset"), class: "button button-secondary button-sm mr-2" %>
         <%= link(
-            "Cancel",
+            gettext("Cancel"),
             to: address_contract_path(@conn, :index, @conn.params["address_id"]),
             class: "button button-sm") %>
       <% end %>

@@ -5,17 +5,17 @@
         <div class="card-body">
           <div class="icon-links float-right">
             <span data-clipboard-text="<%= @address %>">
-              <button type="button" class="icon-link" id="button" data-toggle="tooltip" data-placement="top" title="<%= gettext("Copy Address") %>" aria-label="Copy Address">
+              <button type="button" class="icon-link" id="button" data-toggle="tooltip" data-placement="top" title="<%= gettext("Copy Address") %>" aria-label="<%= gettext("Copy Address") %>">
                 <i class="fas fa-clone"></i>
               </button>
             </span>
             <span data-toggle="modal" data-target="#qrModal">
-              <button type="button" class="icon-link"  data-toggle="tooltip" data-placement="top" title="<%= gettext("QR Code") %>" aria-label="Show QR Code">
+              <button type="button" class="icon-link"  data-toggle="tooltip" data-placement="top" title="<%= gettext("QR Code") %>" aria-label="<%= gettext("Show QR Code") %>">
                 <i class="fas fa-qrcode"></i>
               </button>
             </span>
           </div>
-          <h1 class="card-title"><%= address_title(@address) %> Details </h1>
+          <h1 class="card-title"><%= address_title(@address) %> <%= gettext "Details" %> </h1>
           <h3 class="<%= if BlockScoutWeb.AddressView.contract?(@address) do %>contract-address<% end %>" data-test="address_detail_hash"><%= @address.hash %></h3>
           <div class="d-flex flex-row flex-md-column justify-content-start text-muted">
             <span class="mr-4 mb-md-2"><span data-selector="transaction-count"><%= Cldr.Number.to_string!(@transaction_count, format: "#,###") %></span> <%= gettext "Transactions" %></span>
@@ -62,7 +62,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h2 class="modal-title" id="qrModalLabel"><%= gettext "QR Code" %></h2>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="<%= gettext("Close") %>">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>

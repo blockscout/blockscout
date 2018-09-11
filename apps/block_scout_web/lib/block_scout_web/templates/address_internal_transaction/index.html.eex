@@ -56,7 +56,7 @@
         <!-- MOBILE DROPDOWN NAV -->
         <ul class="nav nav-tabs card-header-tabs d-md-none">
           <li class="nav-item dropdown flex-fill text-center">
-            <a class="nav-link active dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Internal Transactions</a>
+            <a class="nav-link active dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false"><%= gettext("Internal Transactions") %></a>
             <div class="dropdown-menu">
               <%= link(
                     gettext("Transactions"),
