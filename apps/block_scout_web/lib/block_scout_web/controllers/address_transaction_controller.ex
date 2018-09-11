@@ -28,12 +28,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
       transactions_plus_one = Chain.address_to_transactions(address, full_options)
       {transactions, next_page} = split_list_by_page(transactions_plus_one)
 
-      token =
-        case Chain.token_from_address_hash(address_hash) do
-          {:ok, token} -> token
-          {:error, :not_found} -> nil
-        end
-
       render(
         conn,
         "index.html",
@@ -42,8 +36,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
         transactions: transactions,
-        transaction_count: transaction_count(address),
-        token: token
+        transaction_count: transaction_count(address)
       )
     else
       :error ->
