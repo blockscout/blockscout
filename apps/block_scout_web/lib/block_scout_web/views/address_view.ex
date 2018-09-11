@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.AddressView do
   use BlockScoutWeb, :view
 
-  alias Explorer.Chain.{Address, Hash, SmartContract, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Hash, SmartContract, Token, TokenTransfer, Transaction}
 
   @dialyzer :no_match
 
@@ -69,6 +69,14 @@ defmodule BlockScoutWeb.AddressView do
   def contract?(%Address{contract_code: _}), do: true
 
   def contract?(nil), do: true
+
+  def token_title(token = %Token{name: nil}) do
+    token.contract_address_hash
+    |> to_string
+    |> String.slice(-6..-1)
+  end
+
+  def token_title(%Token{name: name, symbol: symbol}), do: "#{name}(#{symbol})"
 
   def hash(%Address{hash: hash}) do
     to_string(hash)
