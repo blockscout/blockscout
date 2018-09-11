@@ -29,12 +29,12 @@ defmodule Indexer.Application do
 
     children = [
       {Task.Supervisor, name: Indexer.TaskSupervisor},
-      {CoinBalanceFetcher, name: CoinBalanceFetcher, json_rpc_named_arguments: json_rpc_named_arguments},
+      {CoinBalanceFetcher, [[json_rpc_named_arguments: json_rpc_named_arguments], [name: CoinBalanceFetcher]]},
       {PendingTransactionFetcher, name: PendingTransactionFetcher, json_rpc_named_arguments: json_rpc_named_arguments},
       {InternalTransactionFetcher,
-       name: InternalTransactionFetcher, json_rpc_named_arguments: json_rpc_named_arguments},
-      {TokenFetcher, name: TokenFetcher, json_rpc_named_arguments: json_rpc_named_arguments},
-      {TokenBalanceFetcher, name: TokenBalanceFetcher, json_rpc_named_arguments: json_rpc_named_arguments},
+       [[json_rpc_named_arguments: json_rpc_named_arguments], [name: InternalTransactionFetcher]]},
+      {TokenFetcher, [[json_rpc_named_arguments: json_rpc_named_arguments], [name: TokenFetcher]]},
+      {TokenBalanceFetcher, [[json_rpc_named_arguments: json_rpc_named_arguments], [name: TokenBalanceFetcher]]},
       {BlockFetcher.Supervisor, [block_fetcher_supervisor_named_arguments, [name: BlockFetcher.Supervisor]]}
     ]
 

@@ -75,8 +75,8 @@ defmodule Indexer.TokenFetcher do
   ]
 
   @doc false
-  def child_spec(provided_opts) do
-    {state, mergable_opts} = Keyword.pop(provided_opts, :json_rpc_named_arguments)
+  def child_spec([init_options, gen_server_options]) do
+    {state, mergeable_init_options} = Keyword.pop(init_options, :json_rpc_named_arguments)
 
     unless state do
       raise ArgumentError,
@@ -84,12 +84,12 @@ defmodule Indexer.TokenFetcher do
               "to allow for json_rpc calls when running."
     end
 
-    opts =
+    merged_init_opts =
       @defaults
-      |> Keyword.merge(mergable_opts)
+      |> Keyword.merge(mergeable_init_options)
       |> Keyword.put(:state, state)
 
-    Supervisor.child_spec({BufferedTask, {__MODULE__, opts}}, id: __MODULE__)
+    Supervisor.child_spec({BufferedTask, [{__MODULE__, merged_init_opts}, gen_server_options]}, id: __MODULE__)
   end
 
   @impl BufferedTask

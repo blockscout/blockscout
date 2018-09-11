@@ -198,11 +198,11 @@ defmodule Indexer.BufferedTask do
              | {:state, state}
            ]}
         ) :: {:ok, pid()} | {:error, {:already_started, pid()}}
-  def start_link({module, base_opts}) do
+  def start_link([{module, base_init_opts}, genserver_opts]) do
     default_opts = Application.get_all_env(:indexer)
-    opts = Keyword.merge(default_opts, base_opts)
+    init_opts = Keyword.merge(default_opts, base_init_opts)
 
-    GenServer.start_link(__MODULE__, {module, opts}, name: opts[:name])
+    GenServer.start_link(__MODULE__, {module, init_opts}, genserver_opts)
   end
 
   def init({callback_module, opts}) do
