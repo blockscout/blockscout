@@ -105,7 +105,7 @@ defmodule BlockScoutWeb.TransactionView do
 
   def type_suffix(%Transaction{} = transaction) do
     cond do
-      involves_token_transfers?(transaction) -> "token"
+      involves_token_transfers?(transaction) -> "token-transfer"
       contract_creation?(transaction) -> "contract-creation"
       involves_contract?(transaction) -> "contract-call"
       true -> "transaction"

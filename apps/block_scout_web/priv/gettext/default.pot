@@ -35,11 +35,13 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:21
 #: lib/block_scout_web/templates/address_contract/index.html.eex:10
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:13
-#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:55
+#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:62
 #: lib/block_scout_web/templates/address_read_contract/index.html.eex:10
+#: lib/block_scout_web/templates/address_token/index.html.eex:11
+#: lib/block_scout_web/templates/address_token/index.html.eex:72
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:13
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:55
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:129
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:62
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:141
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:13
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:26
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:36
@@ -134,8 +136,8 @@ msgstr ""
 msgid "Address"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:115
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:116
+#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:127
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:128
 #: lib/block_scout_web/views/address_internal_transaction_view.ex:10
 #: lib/block_scout_web/views/address_transaction_view.ex:10
 msgid "From"
@@ -150,8 +152,8 @@ msgstr ""
 msgid "Success"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:104
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:105
+#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:116
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:117
 #: lib/block_scout_web/views/address_internal_transaction_view.ex:9
 #: lib/block_scout_web/views/address_transaction_view.ex:9
 msgid "To"
@@ -302,13 +304,15 @@ msgstr ""
 msgid "Gwei"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract/index.html.eex:17
-#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:20
-#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:60
-#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:127
-#: lib/block_scout_web/templates/address_read_contract/index.html.eex:17
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:20
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:60
+#: lib/block_scout_web/templates/address_contract/index.html.eex:24
+#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:27
+#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:72
+#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:139
+#: lib/block_scout_web/templates/address_read_contract/index.html.eex:24
+#: lib/block_scout_web/templates/address_token/index.html.eex:26
+#: lib/block_scout_web/templates/address_token/index.html.eex:82
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:27
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:72
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:20
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:38
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:49
@@ -354,8 +358,8 @@ msgstr ""
 msgid "Wei"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:98
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:99
+#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:110
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:111
 #: lib/block_scout_web/views/address_internal_transaction_view.ex:11
 #: lib/block_scout_web/views/address_transaction_view.ex:11
 msgid "All"
@@ -433,7 +437,15 @@ msgstr ""
 msgid "TXNs"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:29
+#: lib/block_scout_web/templates/address_contract/index.html.eex:17
+#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:20
+#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:67
+#: lib/block_scout_web/templates/address_read_contract/index.html.eex:17
+#: lib/block_scout_web/templates/address_token/index.html.eex:19
+#: lib/block_scout_web/templates/address_token/index.html.eex:77
+#: lib/block_scout_web/templates/address_token/index.html.eex:104
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:20
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:67
 msgid "Tokens"
 msgstr ""
 
@@ -476,8 +488,8 @@ msgstr ""
 msgid "There are no Transactions"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:142
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:143
+#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:154
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:155
 #: lib/block_scout_web/templates/block/index.html.eex:15
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:50
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:78
@@ -491,16 +503,18 @@ msgstr ""
 msgid "Contract Source Code"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract/index.html.eex:48
+#: lib/block_scout_web/templates/address_contract/index.html.eex:55
 msgid "Verify and Publish"
 msgstr ""
 
-#: lib/block_scout_web/templates/address_contract/index.html.eex:27
-#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:31
-#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:69
-#: lib/block_scout_web/templates/address_read_contract/index.html.eex:27
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:31
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:69
+#: lib/block_scout_web/templates/address_contract/index.html.eex:34
+#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:38
+#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:81
+#: lib/block_scout_web/templates/address_read_contract/index.html.eex:34
+#: lib/block_scout_web/templates/address_token/index.html.eex:38
+#: lib/block_scout_web/templates/address_token/index.html.eex:91
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:38
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:81
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:122
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:141
 msgid "Code"
@@ -581,7 +595,7 @@ msgid "Wallet addresses"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:89
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:101
 #: lib/block_scout_web/templates/transaction/index.html.eex:53
 msgid "Connection Lost, click to load newer transactions"
 msgstr ""
@@ -603,17 +617,17 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:13
 #: lib/block_scout_web/templates/address/overview.html.eex:64
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:13
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:73
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:71
 msgid "QR Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:136
+#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:148
 msgid "There are no internal transactions for this address."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:137
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:149
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:44
 msgid "There are no transactions for this address."
 msgstr ""
@@ -665,10 +679,12 @@ msgid "Query"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:37
-#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:42
-#: lib/block_scout_web/templates/address_read_contract/index.html.eex:36
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:42
+#: lib/block_scout_web/templates/address_contract/index.html.eex:44
+#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:49
+#: lib/block_scout_web/templates/address_read_contract/index.html.eex:43
+#: lib/block_scout_web/templates/address_token/index.html.eex:50
+#: lib/block_scout_web/templates/address_token/index.html.eex:58
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:49
 #: lib/block_scout_web/templates/tokens/read_contract/index.html.eex:25
 #: lib/block_scout_web/templates/tokens/read_contract/index.html.eex:42
 #: lib/block_scout_web/templates/tokens/token/show.html.eex:26
@@ -688,7 +704,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:73
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:82
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:80
 msgid "Close"
 msgstr ""
 
@@ -731,7 +747,7 @@ msgid "Token Transfer"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:33
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:31
 msgid "Transfers"
 msgstr ""
 
@@ -743,7 +759,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:84
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:96
 #: lib/block_scout_web/templates/chain/show.html.eex:69
 #: lib/block_scout_web/templates/transaction/index.html.eex:48
 msgid "More transactions have come in"
@@ -788,17 +804,17 @@ msgid "Token Transfers"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:32
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:30
 msgid "addresses"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:35
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:33
 msgid "decimals"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:46
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:44
 msgid "Total Supply"
 msgstr ""
 
@@ -813,7 +829,7 @@ msgid "There are no token transfers for this transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_read_contract/index.html.eex:45
+#: lib/block_scout_web/templates/address_read_contract/index.html.eex:52
 #: lib/block_scout_web/templates/tokens/read_contract/index.html.eex:52
 msgid "loading..."
 msgstr ""
@@ -1005,12 +1021,12 @@ msgid "Max of"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:88
+#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:100
 msgid "Connection Lost, click to load newer internal transactions"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:83
+#: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:95
 msgid "More internal transactions have come in"
 msgstr ""
 
@@ -1022,4 +1038,21 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:10
 msgid "Copy Txn Hash"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/address_token_view.ex:7
+msgid "%{count} transfer"
+msgid_plural "%{count} transfers"
+msgstr[0] ""
+msgstr[1] ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_token/index.html.eex:118
+msgid "Next"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_token/index.html.eex:111
+msgid "There are no tokens for this address."
 msgstr ""

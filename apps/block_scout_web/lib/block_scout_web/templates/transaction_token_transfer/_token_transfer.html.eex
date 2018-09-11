@@ -1,4 +1,4 @@
-<div class="tile tile-type-token fade-in">
+<div class="tile tile-type-token-transfer fade-in">
   <div class="row justify-content-end">
     <div class="col-12 col-md-4 col-lg-2 d-flex align-items-center justify-content-start justify-content-lg-center tile-label">
       <%=  gettext("Token Transfer") %>
