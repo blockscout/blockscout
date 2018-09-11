@@ -73,7 +73,7 @@ defmodule BlockScoutWeb.AddressView do
   def token_title(%Token{name: nil, contract_address_hash: contract_address_hash}) do
     contract_address_hash
     |> to_string
-    |> String.slice(-6..-1)
+    |> String.slice(0..5)
   end
 
   def token_title(%Token{name: name, symbol: symbol}), do: "#{name}(#{symbol})"
