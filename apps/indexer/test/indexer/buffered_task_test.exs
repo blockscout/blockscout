@@ -11,13 +11,15 @@ defmodule Indexer.BufferedTaskTest do
 
     start_supervised(
       {BufferedTask,
-       {callback_module,
-        state: nil,
-        task_supervisor: BufferedTaskSup,
-        flush_interval: 50,
-        max_batch_size: @max_batch_size,
-        max_concurrency: 2,
-        init_chunk_size: @max_batch_size * 2}}
+       [
+         {callback_module,
+          state: nil,
+          task_supervisor: BufferedTaskSup,
+          flush_interval: 50,
+          max_batch_size: @max_batch_size,
+          max_concurrency: 2,
+          init_chunk_size: @max_batch_size * 2}
+       ]}
     )
   end
 

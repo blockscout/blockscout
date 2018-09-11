@@ -1,22 +1,23 @@
-defmodule Indexer.TokenBalanceFetcherTest do
+defmodule Indexer.TokenBalance.FetcherTest do
   use EthereumJSONRPC.Case
   use Explorer.DataCase
 
   import Mox
 
-  alias Explorer.Chain.{Address.TokenBalance}
-  alias Indexer.TokenBalanceFetcher
+  alias Explorer.Chain.Address
+  alias Indexer.TokenBalance
 
   setup :verify_on_exit!
   setup :set_mox_global
 
   describe "init/3" do
     test "returns unfetched token balances" do
-      %TokenBalance{address_hash: address_hash} = insert(:token_balance, block_number: 1_000, value_fetched_at: nil)
+      %Address.TokenBalance{address_hash: address_hash} =
+        insert(:token_balance, block_number: 1_000, value_fetched_at: nil)
 
       insert(:token_balance, value_fetched_at: DateTime.utc_now())
 
-      assert TokenBalanceFetcher.init([], &[&1.address_hash | &2], nil) == [address_hash]
+      assert TokenBalance.Fetcher.init([], &[&1.address_hash | &2], nil) == [address_hash]
     end
   end
 
@@ -39,10 +40,10 @@ defmodule Indexer.TokenBalanceFetcherTest do
         end
       )
 
-      assert TokenBalanceFetcher.run([token_balance], 0, nil) == :ok
+      assert TokenBalance.Fetcher.run([token_balance], 0, nil) == :ok
 
       token_balance_updated =
-        TokenBalance
+        Address.TokenBalance
         |> Explorer.Repo.get_by(address_hash: token_balance.address_hash)
 
       assert token_balance_updated.value == Decimal.new(1_000_000_000_000_000_000_000_000)

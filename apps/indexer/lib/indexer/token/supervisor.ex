@@ -1,11 +1,11 @@
-defmodule Indexer.BlockFetcher.Catchup.Supervisor do
+defmodule Indexer.Token.Supervisor do
   @moduledoc """
-  Supervises `Indexer.BlockFetcher.Catchup.TaskSupervisor` and `Indexer.BlockFetcher.Catchup.BoundIntervalSupervisor`
+  Supervises `Indexer.Token.Fetcher` and its batch tasks through `Indexer.Token.TaskSupervisor`.
   """
 
   use Supervisor
 
-  alias Indexer.BlockFetcher.Catchup.BoundIntervalSupervisor
+  alias Indexer.Token.Fetcher
 
   def child_spec([init_arguments]) do
     child_spec([init_arguments, []])
@@ -22,15 +22,15 @@ defmodule Indexer.BlockFetcher.Catchup.Supervisor do
   end
 
   def start_link(arguments, gen_server_options \\ []) do
-    Supervisor.start_link(__MODULE__, arguments, gen_server_options)
+    Supervisor.start_link(__MODULE__, arguments, Keyword.put_new(gen_server_options, :name, __MODULE__))
   end
 
   @impl Supervisor
-  def init(bound_interval_supervisor_arguments) do
+  def init(fetcher_arguments) do
     Supervisor.init(
       [
-        {Task.Supervisor, name: Indexer.BlockFetcher.Catchup.TaskSupervisor},
-        {BoundIntervalSupervisor, [bound_interval_supervisor_arguments, [name: BoundIntervalSupervisor]]}
+        {Task.Supervisor, name: Indexer.Token.TaskSupervisor},
+        {Fetcher, [fetcher_arguments, [name: Fetcher]]}
       ],
       strategy: :one_for_one
     )

@@ -10,12 +10,12 @@ defmodule Indexer.BlockFetcher.Catchup do
   alias Explorer.Chain
 
   alias Indexer.{
-    CoinBalanceFetcher,
     BlockFetcher,
-    InternalTransactionFetcher,
+    CoinBalance,
+    InternalTransaction,
     Sequence,
-    TokenFetcher,
-    TokenBalanceFetcher
+    Token,
+    TokenBalance
   }
 
   @behaviour BlockFetcher
@@ -130,20 +130,20 @@ defmodule Indexer.BlockFetcher.Catchup do
       block_number = Map.fetch!(address_hash_to_block_number, to_string(address_hash))
       %{address_hash: address_hash, block_number: block_number}
     end)
-    |> CoinBalanceFetcher.async_fetch_balances()
+    |> CoinBalance.Fetcher.async_fetch_balances()
 
     transaction_hashes
     |> Enum.map(fn transaction_hash ->
       block_number = Map.fetch!(transaction_hash_to_block_number, to_string(transaction_hash))
       %{block_number: block_number, hash: transaction_hash}
     end)
-    |> InternalTransactionFetcher.async_fetch(10_000)
+    |> InternalTransaction.Fetcher.async_fetch(10_000)
 
     tokens
     |> Enum.map(& &1.contract_address_hash)
-    |> TokenFetcher.async_fetch()
+    |> Token.Fetcher.async_fetch()
 
-    TokenBalanceFetcher.async_fetch(token_balances)
+    TokenBalance.Fetcher.async_fetch(token_balances)
   end
 
   defp stream_fetch_and_import(%__MODULE__{blocks_concurrency: blocks_concurrency} = state, sequence)

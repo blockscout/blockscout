@@ -158,6 +158,19 @@ defmodule Indexer.BufferedTask do
     GenServer.call(server, {:buffer, entries}, timeout)
   end
 
+  def child_spec([init_arguments]) do
+    child_spec([init_arguments, []])
+  end
+
+  def child_spec([_init_arguments, _gen_server_options] = start_link_arguments) do
+    default = %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, start_link_arguments}
+    }
+
+    Supervisor.child_spec(default, [])
+  end
+
   @doc false
   def debug_count(server) do
     GenServer.call(server, :debug_count)
@@ -198,7 +211,7 @@ defmodule Indexer.BufferedTask do
              | {:state, state}
            ]}
         ) :: {:ok, pid()} | {:error, {:already_started, pid()}}
-  def start_link([{module, base_init_opts}, genserver_opts]) do
+  def start_link({module, base_init_opts}, genserver_opts \\ []) do
     default_opts = Application.get_all_env(:indexer)
     init_opts = Keyword.merge(default_opts, base_init_opts)
 

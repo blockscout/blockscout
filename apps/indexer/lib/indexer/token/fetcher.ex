@@ -1,4 +1,4 @@
-defmodule Indexer.TokenFetcher do
+defmodule Indexer.Token.Fetcher do
   @moduledoc """
   Fetches information about a token.
   """
@@ -16,7 +16,7 @@ defmodule Indexer.TokenFetcher do
     max_batch_size: 1,
     max_concurrency: 10,
     init_chunk_size: 1,
-    task_supervisor: Indexer.TaskSupervisor
+    task_supervisor: Indexer.Token.TaskSupervisor
   ]
 
   @contract_abi [

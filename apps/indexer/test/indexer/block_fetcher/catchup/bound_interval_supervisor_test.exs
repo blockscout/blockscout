@@ -1,4 +1,4 @@
-defmodule Indexer.BlockFetcher.Catchup.SupervisorTest do
+defmodule Indexer.BlockFetcher.Catchup.BoundIntervalSupervisorTest do
   # `async: false` due to use of named GenServer
   use EthereumJSONRPC.Case, async: false
   use Explorer.DataCase
@@ -7,16 +7,7 @@ defmodule Indexer.BlockFetcher.Catchup.SupervisorTest do
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
   alias Explorer.Chain.Block
-
-  alias Indexer.{
-    CoinBalanceFetcherCase,
-    BlockFetcher,
-    BoundInterval,
-    InternalTransactionFetcherCase,
-    TokenFetcherCase,
-    TokenBalanceFetcherCase
-  }
-
+  alias Indexer.{BlockFetcher, BoundInterval, CoinBalance, InternalTransaction, Token, TokenBalance}
   alias Indexer.BlockFetcher.Catchup
 
   @moduletag capture_log: true
@@ -206,15 +197,14 @@ defmodule Indexer.BlockFetcher.Catchup.SupervisorTest do
 
       assert Repo.aggregate(Block, :count, :hash) == 0
 
-      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-      CoinBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      TokenFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      TokenBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
-      start_supervised!(
-        {Catchup.Supervisor, [%{block_fetcher: %BlockFetcher{json_rpc_named_arguments: json_rpc_named_arguments}}, []]}
-      )
+      BlockFetcher.Catchup.Supervisor.Case.start_supervised!(%{
+        block_fetcher: %BlockFetcher{json_rpc_named_arguments: json_rpc_named_arguments}
+      })
 
       first_catchup_block_number = latest_block_number - 1
 
@@ -254,16 +244,18 @@ defmodule Indexer.BlockFetcher.Catchup.SupervisorTest do
         {:ok, %{"number" => "0x1"}}
       end)
 
-      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-      CoinBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      TokenFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      TokenBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      start_supervised!({Task.Supervisor, name: Indexer.BlockFetcher.Catchup.TaskSupervisor})
+      CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
       # from `setup :state`
       assert_received :catchup_index
 
-      assert {:noreply, %Catchup.Supervisor{catchup: %Catchup{}, task: %Task{pid: pid, ref: ref}} = catchup_index_state} =
-               Catchup.Supervisor.handle_info(:catchup_index, state)
+      assert {:noreply,
+              %Catchup.BoundIntervalSupervisor{catchup: %Catchup{}, task: %Task{pid: pid, ref: ref}} =
+                catchup_index_state} = Catchup.BoundIntervalSupervisor.handle_info(:catchup_index, state)
 
       assert_receive {^ref, %{first_block_number: 0, missing_block_count: 0}} = message
 
@@ -272,7 +264,7 @@ defmodule Indexer.BlockFetcher.Catchup.SupervisorTest do
       # DOWN is not flushed
       assert {:messages, [{:DOWN, ^ref, :process, ^pid, :normal}]} = Process.info(self(), :messages)
 
-      assert {:noreply, message_state} = Catchup.Supervisor.handle_info(message, catchup_index_state)
+      assert {:noreply, message_state} = Catchup.BoundIntervalSupervisor.handle_info(message, catchup_index_state)
 
       # DOWN is flushed
       assert {:messages, []} = Process.info(self(), :messages)
@@ -325,16 +317,18 @@ defmodule Indexer.BlockFetcher.Catchup.SupervisorTest do
         {:ok, [%{id: id, jsonrpc: "2.0", result: "0x0"}]}
       end)
 
-      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-      CoinBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      InternalTransactionFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      TokenFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      TokenBalanceFetcherCase.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      start_supervised({Task.Supervisor, name: Indexer.BlockFetcher.Catchup.TaskSupervisor})
+      CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
       # from `setup :state`
       assert_received :catchup_index
 
-      assert {:noreply, %Catchup.Supervisor{catchup: %Catchup{}, task: %Task{pid: pid, ref: ref}} = catchup_index_state} =
-               Catchup.Supervisor.handle_info(:catchup_index, state)
+      assert {:noreply,
+              %Catchup.BoundIntervalSupervisor{catchup: %Catchup{}, task: %Task{pid: pid, ref: ref}} =
+                catchup_index_state} = Catchup.BoundIntervalSupervisor.handle_info(:catchup_index, state)
 
       # 2 blocks are missing, but latest is assumed to be handled by realtime_index, so only 1 is missing for
       # catchup_index
@@ -345,7 +339,7 @@ defmodule Indexer.BlockFetcher.Catchup.SupervisorTest do
       # DOWN is not flushed
       assert {:messages, [{:DOWN, ^ref, :process, ^pid, :normal}]} = Process.info(self(), :messages)
 
-      assert {:noreply, message_state} = Catchup.Supervisor.handle_info(message, catchup_index_state)
+      assert {:noreply, message_state} = Catchup.BoundIntervalSupervisor.handle_info(message, catchup_index_state)
 
       # DOWN is flushed
       assert {:messages, []} = Process.info(self(), :messages)
@@ -357,7 +351,9 @@ defmodule Indexer.BlockFetcher.Catchup.SupervisorTest do
       above_minimum_state = update_in(catchup_index_state.bound_interval, &BoundInterval.increase/1)
 
       assert above_minimum_state.bound_interval.current > message_state.bound_interval.minimum
-      assert {:noreply, above_minimum_message_state} = Catchup.Supervisor.handle_info(message, above_minimum_state)
+
+      assert {:noreply, above_minimum_message_state} =
+               Catchup.BoundIntervalSupervisor.handle_info(message, above_minimum_state)
 
       assert above_minimum_message_state.bound_interval.current < above_minimum_state.bound_interval.current
     end
@@ -365,7 +361,9 @@ defmodule Indexer.BlockFetcher.Catchup.SupervisorTest do
 
   defp state(%{json_rpc_named_arguments: json_rpc_named_arguments}) do
     {:ok, state} =
-      Catchup.Supervisor.init(%{block_fetcher: %BlockFetcher{json_rpc_named_arguments: json_rpc_named_arguments}})
+      Catchup.BoundIntervalSupervisor.init(%{
+        block_fetcher: %BlockFetcher{json_rpc_named_arguments: json_rpc_named_arguments}
+      })
 
     %{state: state}
   end

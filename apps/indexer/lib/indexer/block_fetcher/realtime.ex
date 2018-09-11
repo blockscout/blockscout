@@ -12,7 +12,7 @@ defmodule Indexer.BlockFetcher.Realtime do
 
   alias EthereumJSONRPC.Subscription
   alias Explorer.Chain
-  alias Indexer.{AddressExtraction, BlockFetcher, TokenBalances, TokenFetcher}
+  alias Indexer.{AddressExtraction, BlockFetcher, Token, TokenBalances}
 
   @behaviour BlockFetcher
 
@@ -154,7 +154,7 @@ defmodule Indexer.BlockFetcher.Realtime do
   defp async_import_remaining_block_data(%{tokens: tokens}) do
     tokens
     |> Enum.map(& &1.contract_address_hash)
-    |> TokenFetcher.async_fetch()
+    |> Token.Fetcher.async_fetch()
   end
 
   defp internal_transactions(

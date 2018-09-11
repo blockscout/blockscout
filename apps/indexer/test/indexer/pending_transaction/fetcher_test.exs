@@ -6,7 +6,7 @@ defmodule Indexer.PendingTransactionFetcherTest do
   import Mox
 
   alias Explorer.Chain.Transaction
-  alias Indexer.PendingTransactionFetcher
+  alias Indexer.PendingTransaction
 
   # MUST use global mode because we aren't guaranteed to get PendingTransactionFetcher's pid back fast enough to `allow`
   # it to use expectations and stubs from test's pid.
@@ -58,8 +58,7 @@ defmodule Indexer.PendingTransactionFetcherTest do
 
       assert Repo.aggregate(Transaction, :count, :hash) == 0
 
-      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-      start_supervised!({PendingTransactionFetcher, json_rpc_named_arguments: json_rpc_named_arguments})
+      PendingTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       wait_for_results(fn ->
         Repo.one!(from(transaction in Transaction, where: is_nil(transaction.block_hash), limit: 1))

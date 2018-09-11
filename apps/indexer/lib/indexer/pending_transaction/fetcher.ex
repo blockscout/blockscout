@@ -1,4 +1,4 @@
-defmodule Indexer.PendingTransactionFetcher do
+defmodule Indexer.PendingTransaction.Fetcher do
   @moduledoc """
   Fetches pending transactions and imports them.
 
@@ -12,7 +12,7 @@ defmodule Indexer.PendingTransactionFetcher do
   import EthereumJSONRPC, only: [fetch_pending_transactions: 1]
 
   alias Explorer.Chain
-  alias Indexer.{AddressExtraction, PendingTransactionFetcher}
+  alias Indexer.{AddressExtraction, PendingTransaction}
 
   # milliseconds
   @default_interval 1_000
@@ -21,7 +21,18 @@ defmodule Indexer.PendingTransactionFetcher do
             json_rpc_named_arguments: [],
             task: nil
 
-  @gen_server_options ~w(debug name spawn_opt timeout)a
+  def child_spec([init_arguments]) do
+    child_spec([init_arguments, []])
+  end
+
+  def child_spec([_init_arguments, _gen_server_options] = start_link_arguments) do
+    default = %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, start_link_arguments}
+    }
+
+    Supervisor.child_spec(default, [])
+  end
 
   @doc """
   Starts the pending transaction fetcher.
@@ -41,19 +52,19 @@ defmodule Indexer.PendingTransactionFetcher do
       be terminated and the start function will return `{:error, :timeout}`
 
   """
-  def start_link(opts) do
-    GenServer.start_link(__MODULE__, Keyword.drop(opts, @gen_server_options), Keyword.take(opts, @gen_server_options))
+  def start_link(arguments, gen_server_options \\ []) do
+    GenServer.start_link(__MODULE__, arguments, gen_server_options)
   end
 
   @impl GenServer
-  def init(opts) do
+  def init(opts) when is_list(opts) do
     opts =
       :indexer
       |> Application.get_all_env()
       |> Keyword.merge(opts)
 
     state =
-      %PendingTransactionFetcher{
+      %PendingTransaction.Fetcher{
         json_rpc_named_arguments: Keyword.fetch!(opts, :json_rpc_named_arguments),
         interval: opts[:pending_transaction_interval] || @default_interval
       }
@@ -63,12 +74,12 @@ defmodule Indexer.PendingTransactionFetcher do
   end
 
   @impl GenServer
-  def handle_info(:fetch, %PendingTransactionFetcher{} = state) do
-    task = Task.Supervisor.async_nolink(Indexer.TaskSupervisor, fn -> task(state) end)
-    {:noreply, %PendingTransactionFetcher{state | task: task}}
+  def handle_info(:fetch, %PendingTransaction.Fetcher{} = state) do
+    task = Task.Supervisor.async_nolink(PendingTransaction.TaskSupervisor, fn -> task(state) end)
+    {:noreply, %PendingTransaction.Fetcher{state | task: task}}
   end
 
-  def handle_info({ref, _}, %PendingTransactionFetcher{task: %Task{ref: ref}} = state) do
+  def handle_info({ref, _}, %PendingTransaction.Fetcher{task: %Task{ref: ref}} = state) do
     Process.demonitor(ref, [:flush])
 
     {:noreply, schedule_fetch(state)}
@@ -76,19 +87,19 @@ defmodule Indexer.PendingTransactionFetcher do
 
   def handle_info(
         {:DOWN, ref, :process, pid, reason},
-        %PendingTransactionFetcher{task: %Task{pid: pid, ref: ref}} = state
+        %PendingTransaction.Fetcher{task: %Task{pid: pid, ref: ref}} = state
       ) do
     Logger.error(fn -> "pending transaction fetcher task exited due to #{inspect(reason)}.  Rescheduling." end)
 
     {:noreply, schedule_fetch(state)}
   end
 
-  defp schedule_fetch(%PendingTransactionFetcher{interval: interval} = state) do
+  defp schedule_fetch(%PendingTransaction.Fetcher{interval: interval} = state) do
     Process.send_after(self(), :fetch, interval)
-    %PendingTransactionFetcher{state | task: nil}
+    %PendingTransaction.Fetcher{state | task: nil}
   end
 
-  defp task(%PendingTransactionFetcher{json_rpc_named_arguments: json_rpc_named_arguments} = _state) do
+  defp task(%PendingTransaction.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = _state) do
     case fetch_pending_transactions(json_rpc_named_arguments) do
       {:ok, transactions_params} ->
         addresses_params = AddressExtraction.extract_addresses(%{transactions: transactions_params}, pending: true)

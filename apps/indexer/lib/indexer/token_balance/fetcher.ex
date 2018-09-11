@@ -1,4 +1,4 @@
-defmodule Indexer.TokenBalanceFetcher do
+defmodule Indexer.TokenBalance.Fetcher do
   @moduledoc """
   Fetches the token balances values.
   """
@@ -14,7 +14,7 @@ defmodule Indexer.TokenBalanceFetcher do
     max_batch_size: 1,
     max_concurrency: 10,
     init_chunk_size: 1,
-    task_supervisor: Indexer.TaskSupervisor
+    task_supervisor: Indexer.TokenBalance.TaskSupervisor
   ]
 
   def async_fetch(token_balances_params) do

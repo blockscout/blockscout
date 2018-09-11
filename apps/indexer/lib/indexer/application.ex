@@ -6,12 +6,12 @@ defmodule Indexer.Application do
   use Application
 
   alias Indexer.{
-    CoinBalanceFetcher,
+    CoinBalance,
     BlockFetcher,
-    InternalTransactionFetcher,
-    PendingTransactionFetcher,
-    TokenFetcher,
-    TokenBalanceFetcher
+    InternalTransaction,
+    PendingTransaction,
+    Token,
+    TokenBalance
   }
 
   @impl Application
@@ -28,13 +28,14 @@ defmodule Indexer.Application do
       |> Enum.into(%{})
 
     children = [
-      {Task.Supervisor, name: Indexer.TaskSupervisor},
-      {CoinBalanceFetcher, [[json_rpc_named_arguments: json_rpc_named_arguments], [name: CoinBalanceFetcher]]},
-      {PendingTransactionFetcher, name: PendingTransactionFetcher, json_rpc_named_arguments: json_rpc_named_arguments},
-      {InternalTransactionFetcher,
-       [[json_rpc_named_arguments: json_rpc_named_arguments], [name: InternalTransactionFetcher]]},
-      {TokenFetcher, [[json_rpc_named_arguments: json_rpc_named_arguments], [name: TokenFetcher]]},
-      {TokenBalanceFetcher, [[json_rpc_named_arguments: json_rpc_named_arguments], [name: TokenBalanceFetcher]]},
+      {CoinBalance.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments], [name: CoinBalance.Supervisor]]},
+      {PendingTransaction.Supervisor,
+       [[json_rpc_named_arguments: json_rpc_named_arguments], [name: PendingTransactionFetcher]]},
+      {InternalTransaction.Supervisor,
+       [[json_rpc_named_arguments: json_rpc_named_arguments], [name: InternalTransaction.Supervisor]]},
+      {Token.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments], [name: Token.Supervisor]]},
+      {TokenBalance.Supervisor,
+       [[json_rpc_named_arguments: json_rpc_named_arguments], [name: TokenBalance.Supervisor]]},
       {BlockFetcher.Supervisor, [block_fetcher_supervisor_named_arguments, [name: BlockFetcher.Supervisor]]}
     ]
 

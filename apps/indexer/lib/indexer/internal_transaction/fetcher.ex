@@ -1,4 +1,4 @@
-defmodule Indexer.InternalTransactionFetcher do
+defmodule Indexer.InternalTransaction.Fetcher do
   @moduledoc """
   Fetches and indexes `t:Explorer.Chain.InternalTransaction.t/0`.
 
@@ -8,7 +8,7 @@ defmodule Indexer.InternalTransactionFetcher do
   require Logger
 
   alias Explorer.Chain
-  alias Indexer.{CoinBalanceFetcher, AddressExtraction, BufferedTask}
+  alias Indexer.{AddressExtraction, BufferedTask, CoinBalance}
   alias Explorer.Chain.{Block, Hash}
 
   @behaviour BufferedTask
@@ -20,7 +20,7 @@ defmodule Indexer.InternalTransactionFetcher do
     max_concurrency: @max_concurrency,
     max_batch_size: @max_batch_size,
     init_chunk_size: 5000,
-    task_supervisor: Indexer.TaskSupervisor
+    task_supervisor: Indexer.InternalTransaction.TaskSupervisor
   ]
 
   @doc """
@@ -109,7 +109,7 @@ defmodule Indexer.InternalTransactionFetcher do
             block_number = Map.fetch!(address_hash_to_block_number, to_string(address_hash))
             %{address_hash: address_hash, block_number: block_number}
           end)
-          |> CoinBalanceFetcher.async_fetch_balances()
+          |> CoinBalance.Fetcher.async_fetch_balances()
         else
           {:error, step, reason, _changes_so_far} ->
             Logger.debug(fn ->

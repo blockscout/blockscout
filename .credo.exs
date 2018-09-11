@@ -76,7 +76,7 @@
         #
         {Credo.Check.Design.AliasUsage,
          excluded_namespaces: ~w(Socket Task),
-         excluded_lastnames: ~w(Address DateTime Full Name Number Repo Time Unit),
+         excluded_lastnames: ~w(Address DateTime Fetcher Full Name Number Repo Time Unit),
          priority: :low},
 
         # For some checks, you can also set other parameters

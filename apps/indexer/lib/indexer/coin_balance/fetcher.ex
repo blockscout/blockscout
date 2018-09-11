@@ -1,4 +1,4 @@
-defmodule Indexer.CoinBalanceFetcher do
+defmodule Indexer.CoinBalance.Fetcher do
   @moduledoc """
   Fetches `t:Explorer.Chain.Address.CoinBalance.t/0` and updates `t:Explorer.Chain.Address.t/0` `fetched_coin_balance` and
   `fetched_coin_balance_block_number` to value at max `t:Explorer.Chain.Address.CoinBalance.t/0` `block_number` for the given `t:Explorer.Chain.Address.t/` `hash`.
@@ -19,7 +19,7 @@ defmodule Indexer.CoinBalanceFetcher do
     max_batch_size: 500,
     max_concurrency: 4,
     init_chunk_size: 1000,
-    task_supervisor: Indexer.TaskSupervisor
+    task_supervisor: Indexer.CoinBalance.TaskSupervisor
   ]
 
   @doc """
