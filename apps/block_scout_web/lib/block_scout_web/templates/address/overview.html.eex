@@ -22,30 +22,22 @@
 
             <%= if contract?(@address) do %>
               <span class="mr-4 mb-md-2">
-                <%= link(gettext("Token"), to: token_path(BlockScoutWeb.Endpoint, :show, @address.hash), "data-test": "token_hash_link" ) %>
+                <%= link(gettext("Token"), to: token_path(@conn, :show, @address.hash), "data-test": "token_hash_link" ) %>
               </span>
               <span class="mr-4" data-test="address_contract_creator">
                 <%= gettext "Contract created by" %>
                 <%= link(
-                      trimmed_hash(@address.contracts_creation_internal_transaction.from_address_hash),
-                      to: address_path(
-                        BlockScoutWeb.Endpoint,
-                        :show,
-                        @address.contracts_creation_internal_transaction.from_address_hash
-                      )
-                    ) %>
+                  trimmed_hash(@address.contracts_creation_internal_transaction.from_address_hash),
+                  to: address_path(@conn, :show, @address.contracts_creation_internal_transaction.from_address_hash)
+                ) %>
 
                 <%= gettext "at" %>
 
                 <%= link(
-                      trimmed_hash(@address.contracts_creation_internal_transaction.transaction_hash),
-                      to: transaction_path(
-                        BlockScoutWeb.Endpoint,
-                        :show,
-                        @address.contracts_creation_internal_transaction.transaction_hash
-                      ),
-                      "data-test": "transaction_hash_link"
-                    ) %>
+                  trimmed_hash(@address.contracts_creation_internal_transaction.transaction_hash),
+                  to: transaction_path(@conn, :show, @address.contracts_creation_internal_transaction.transaction_hash),
+                  "data-test": "transaction_hash_link"
+                ) %>
               </span>
             <% end %>
           </div>
