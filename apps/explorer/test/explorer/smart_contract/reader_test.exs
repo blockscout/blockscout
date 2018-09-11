@@ -5,10 +5,84 @@ defmodule Explorer.SmartContract.ReaderTest do
   doctest Explorer.SmartContract.Reader
 
   alias Explorer.SmartContract.Reader
+  alias Explorer.Chain.Hash
 
   import Mox
 
   setup :verify_on_exit!
+
+  describe "query_contract/4" do
+    test "correctly returns the results of the smart contract functions" do
+      smart_contract = build(:smart_contract)
+      contract_address_hash = Hash.to_string(smart_contract.address_hash)
+      abi = smart_contract.abi
+
+      blockchain_get_function_mock()
+
+      response = Reader.query_contract(contract_address_hash, abi, %{"get" => []})
+
+      assert %{"get" => {:ok, [0]}} == response
+    end
+
+    test "handles errors when there are malformed function arguments" do
+      smart_contract = build(:smart_contract)
+      contract_address_hash = Hash.to_string(smart_contract.address_hash)
+
+      int_function_abi = %{
+        "constant" => true,
+        "inputs" => [
+          %{"name" => "a", "type" => "int256"}
+        ],
+        "name" => "sum",
+        "outputs" => [%{"name" => "", "type" => "int256"}],
+        "payable" => false,
+        "stateMutability" => "pure",
+        "type" => "function"
+      }
+
+      string_argument = %{"sum" => ["abc"]}
+
+      response = Reader.query_contract(contract_address_hash, [int_function_abi], string_argument)
+
+      assert %{"sum" => {:error, "Data overflow encoding int, data `abc` cannot fit in 256 bits"}} = response
+    end
+
+    test "handles standardize errors returned from RPC requests" do
+      smart_contract = build(:smart_contract)
+      contract_address_hash = Hash.to_string(smart_contract.address_hash)
+      abi = smart_contract.abi
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: _, params: [%{data: _, to: _}]}], _options ->
+          {:ok, [%{id: id, jsonrpc: "2.0", error: %{code: "12345", message: "Error message"}}]}
+        end
+      )
+
+      response = Reader.query_contract(contract_address_hash, abi, %{"get" => []})
+
+      assert %{"get" => {:error, "(12345) Error message"}} = response
+    end
+
+    test "handles bad_gateway errors returned from RPC requests" do
+      smart_contract = build(:smart_contract)
+      contract_address_hash = Hash.to_string(smart_contract.address_hash)
+      abi = smart_contract.abi
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: _, params: [%{data: _, to: _}]}], _options ->
+          {:error, {:bad_gateway, "request_url"}}
+        end
+      )
+
+      response = Reader.query_contract(contract_address_hash, abi, %{"get" => []})
+
+      assert %{"get" => {:error, "Bad Gateway"}} = response
+    end
+  end
 
   describe "query_verified_contract/2" do
     test "correctly returns the results of the smart contract functions" do
@@ -20,49 +94,6 @@ defmodule Explorer.SmartContract.ReaderTest do
       blockchain_get_function_mock()
 
       assert Reader.query_verified_contract(hash, %{"get" => []}) == %{"get" => {:ok, [0]}}
-    end
-
-    test "won't raise error when there is a problem with the params to consult the blockchain" do
-      smart_contract =
-        insert(
-          :smart_contract,
-          abi: [
-            %{
-              "constant" => true,
-              "inputs" => [
-                %{"name" => "a", "type" => "int256"},
-                %{"name" => "b", "type" => "int256"},
-                %{"name" => "c", "type" => "int256"},
-                %{"name" => "d", "type" => "int256"}
-              ],
-              "name" => "sum",
-              "outputs" => [%{"name" => "", "type" => "int256"}],
-              "payable" => false,
-              "stateMutability" => "pure",
-              "type" => "function"
-            }
-          ]
-        )
-
-      wrong_args = %{"sum" => [1, 1, 1, "abc"]}
-
-      assert %{"sum" => {:error, "Data overflow encoding int, data `abc` cannot fit in 256 bits"}} =
-               Reader.query_verified_contract(smart_contract.address_hash, wrong_args)
-    end
-
-    test "handles errors returned from RPC requests" do
-      %{address_hash: address_hash} = insert(:smart_contract)
-
-      expect(
-        EthereumJSONRPC.Mox,
-        :json_rpc,
-        fn [%{id: id, method: _, params: [%{data: _, to: _}]}], _options ->
-          {:ok, [%{id: id, jsonrpc: "2.0", error: %{code: "12345", message: "Error message"}}]}
-        end
-      )
-
-      assert %{"get" => {:error, "(12345) Error message"}} =
-               Reader.query_verified_contract(address_hash, %{"get" => []})
     end
   end
 
