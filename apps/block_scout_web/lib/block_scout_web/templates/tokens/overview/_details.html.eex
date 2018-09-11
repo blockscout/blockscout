@@ -25,8 +25,8 @@
 
           <h3><%= to_string(@token.contract_address_hash) %></h3>
 
-          <div class="d-flex flex-row justify-content-start text-muted">
-            <span class="mr-4">
+          <div class="d-flex flex-column flex-md-row justify-content-start text-muted">
+            <span class="mr-4 mb-3 mb-md-0">
               <%= link to:
                   address_path(@conn, :show, @token.contract_address_hash),
                   "data-test": "token_contract_address"
@@ -34,12 +34,15 @@
                 <%=  gettext "View Contract" %>
               <% end %>
             </span>
-            <span class="mr-4"> <%= @token.type %> </span>
-            <span class="mr-4"><%= @total_token_holders %>  <%= gettext "addresses" %></span>
-            <span class="mr-4"><%= @total_token_transfers %> <%= gettext "Transfers" %></span>
-            <%= if decimals?(@token) do %>
-              <span class="mr-4"><%= @token.decimals %> <%= gettext "decimals" %></span>
-            <% end %>
+            <div class="d-flex flex-row justify-content-start text-muted">
+              <span class="mr-4"> <%= @token.type %> </span>
+              <span class="mr-4"><%= @total_token_holders %>  <%= gettext "addresses" %></span>
+              <span class="mr-4"><%= @total_address_in_token_transfers %>  <%= gettext "addresses" %></span>
+              <span class="mr-4"><%= @total_token_transfers %> <%= gettext "Transfers" %></span>
+              <%= if decimals?(@token) do %>
+                <span class="mr-4"><%= @token.decimals %> <%= gettext "decimals" %></span>
+              <% end %>
+            </div>
           </div>
         </div>
       </div>
