@@ -2665,6 +2665,29 @@ defmodule Explorer.ChainTest do
 
       assert Chain.fetch_last_token_balances(address.hash) == []
     end
+
+    test "does not consider other blocks when the last block has the value 0" do
+      address = insert(:address)
+      token = insert(:token, contract_address: build(:contract_address))
+
+      insert(
+        :token_balance,
+        address: address,
+        block_number: 1000,
+        token_contract_address_hash: token.contract_address_hash,
+        value: 5000
+      )
+
+      insert(
+        :token_balance,
+        address: address,
+        block_number: 1001,
+        token_contract_address_hash: token.contract_address_hash,
+        value: 0
+      )
+
+      assert Chain.fetch_last_token_balances(address.hash) == []
+    end
   end
 
   describe "fetch_token_holders_from_token_hash/2" do
