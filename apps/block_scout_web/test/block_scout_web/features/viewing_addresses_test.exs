@@ -94,29 +94,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
     end
   end
 
-  describe "viewing contract token" do
-    test "see a link to the token of the contract", %{session: session} do
-      address = insert(:address)
-      contract = insert(:address, contract_code: Factory.data("contract_code"))
-      transaction = insert(:transaction, from_address: address, created_contract_address: contract)
-
-      internal_transaction =
-        insert(
-          :internal_transaction_create,
-          index: 0,
-          transaction: transaction,
-          from_address: address,
-          created_contract_address: contract
-        )
-
-      insert(:token, contract_address: address)
-
-      session
-      |> AddressPage.visit_page(internal_transaction.created_contract_address)
-      |> assert_has(AddressPage.token_hash_link())
-    end
-  end
-
   describe "viewing transactions" do
     test "sees all addresses transactions by default", %{
       addresses: addresses,
