@@ -320,7 +320,7 @@ msgstr ""
 msgid "Internal Transactions"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:32
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:29
 msgid "Search by address, transaction hash, or block number"
 msgstr ""
 

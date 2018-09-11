@@ -26,10 +26,10 @@
       </ul>
       <%= form_for @conn, chain_path(@conn, :search), [class: "form-inline my-2 my-lg-0", method: :get, enforce_utf8: false], fn f -> %>
         <div class="input-group">
-          <div class="input-group-prepend">
-            <span class="input-group-text" id="search-icon"><i class="fas fa-search"></i></span>
+          <%= search_input f, :q, class: 'form-control mr-auto', placeholder: gettext("Search by address, transaction hash, or block number"), "aria-describedby": "search-icon", "aria-label": "Search", "data-test": "search_input" %>
+          <div class="input-group-append">
+            <button class="input-group-text" id="search-icon"><i class="fas fa-search"></i></button>
           </div>
-          <%= search_input f, :q, class: 'form-control mr-sm-2 ml-auto', placeholder: gettext("Search by address, transaction hash, or block number"), "aria-describedby": "search-icon", "aria-label": "Search", "data-test": "search_input" %>
         </div>
         <button class="btn btn-outline-success my-2 my-sm-0 sr-only" type="submit">Search</button>
       <% end %>
