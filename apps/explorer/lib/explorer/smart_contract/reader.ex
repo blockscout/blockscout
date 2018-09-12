@@ -6,6 +6,8 @@ defmodule Explorer.SmartContract.Reader do
   [wiki](https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI).
   """
 
+  require Logger
+
   alias Explorer.Chain
   alias Explorer.Chain.{Block, Hash}
   alias EthereumJSONRPC.Encoder
@@ -119,7 +121,14 @@ defmodule Explorer.SmartContract.Reader do
 
   defp decode_results({:ok, results}, abi, functions), do: Encoder.decode_abi_results(results, abi, functions)
 
-  defp decode_results({:error, {:bad_gateway, _request_url}}, _abi, functions) do
+  defp decode_results({:error, {:bad_gateway, request_url}}, _abi, functions) do
+    Logger.error(fn ->
+      [
+        "BadGateway in #{request_url} while interacting with Contract functions: ",
+        inspect(functions)
+      ]
+    end)
+
     format_error(functions, "Bad Gateway")
   end
 
