@@ -9,32 +9,38 @@
         <div class="tile">
           <div class="row">
             <!-- rank -->
-            <div class="col-md-1 d-flex justify-content-center align-items-center">
+            <div class="col-2 col-md-1 d-flex justify-content-center align-items-center">
               <!-- incremented number by order in the list -->
               <span> 1 </span>
             </div>
 
-            <!-- address and txn count -->
-            <div class="col-md-7 d-flex flex-column">
-              <!-- address with link to address page -->
-              <a href="#" class="tile-title">
-                0x281055afc982d96fab65b3a49cac8b878184cb16
-              </a>
-              <!-- number of txns for this address -->
-              <span> 516 Transactions </span>
-            </div>
+            <div class="col-10 col-md-11">
+              <div class="row">
+                <!-- address and txn count -->
+                <div class="col-md-7 d-flex flex-column mt-3 mt-md-0">
+                  <!-- address with link to address page -->
+                  <a href="#" class="tile-title text-truncate">
+                    0x281055afc982d96fab65b3a49cac8b878184cb16
+                  </a>
+                  <!-- number of txns for this address -->
+                  <span> 516 Transactions </span>
+                </div>
 
-            <!-- balance and percentage -->
-            <div class="col-md-4 d-flex flex-column text-md-right">
-              <!-- percentage of coins from total supply -->
-              <span class="tile-title"> 1.50954711% </span>
-              <div>
-                <!-- address coin balance -->
-                <span> 1,538,423.05662936 POA </span>
-                <!-- USD value of the balance -->
-                <span class="ml-2"> 82,261.53 USD </span>
+                <!-- balance and percentage -->
+                <div class="col-md-5 d-flex flex-column text-md-right mt-3 mt-md-0">
+                  <!-- percentage of coins from total supply -->
+                  <span class="tile-title"> 1.50954711% </span>
+                  <div class="d-flex flex-column flex-lg-row justify-content-md-end">
+                    <!-- address coin balance -->
+                    <span class="mr-0 mr-lg-2"> 1,538,423.05662936 POA </span>
+                    <!-- USD value of the balance -->
+                    <span> 82,261.53 USD </span>
+                  </div>
+                </div>
               </div>
             </div>
+
+
           </div>
         </div>
       </span>
