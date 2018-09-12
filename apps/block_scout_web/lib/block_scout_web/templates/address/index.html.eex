@@ -1,0 +1,57 @@
+<section class="container">
+  <div class="card">
+    <div class="card-body">
+
+      <h1><%= gettext "Top Addresses" %></h1>
+
+      <span data-selector="top-addresses-list">
+
+        <div class="tile">
+          <div class="row">
+            <!-- rank -->
+            <div class="col-md-1 d-flex justify-content-center align-items-center">
+              <!-- incremented number by order in the list -->
+              <span> 1 </span>
+            </div>
+
+            <!-- address and txn count -->
+            <div class="col-md-7 d-flex flex-column">
+              <!-- address with link to address page -->
+              <a href="#" class="tile-title">
+                0x281055afc982d96fab65b3a49cac8b878184cb16
+              </a>
+              <!-- number of txns for this address -->
+              <span> 516 Transactions </span>
+            </div>
+
+            <!-- balance and percentage -->
+            <div class="col-md-4 d-flex flex-column text-md-right">
+              <!-- percentage of coins from total supply -->
+              <span class="tile-title"> 1.50954711% </span>
+              <div>
+                <!-- address coin balance -->
+                <span> 1,538,423.05662936 POA </span>
+                <!-- USD value of the balance -->
+                <span class="ml-2"> 82,261.53 USD </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </span>
+
+      <!-- paging -->
+
+      <!-- <%= if @next_page_params do %>
+        <%= link(
+          gettext("Older"),
+          class: "button button-secondary button-sm float-right mt-3",
+          to: block_path(
+            @conn,
+            :index,
+            @next_page_params
+          )
+        ) %>
+      <% end %> -->
+    </div>
+  </div>
+</section>
