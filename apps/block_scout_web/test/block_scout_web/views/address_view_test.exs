@@ -224,7 +224,7 @@ defmodule BlockScoutWeb.AddressViewTest do
     test "returns name(symbol) when token has name" do
       token = insert(:token, name: "super token money", symbol: "ST$")
 
-      assert AddressView.token_title(token) == "super token money(ST$)"
+      assert AddressView.token_title(token) == "super token money (ST$)"
     end
   end
 end

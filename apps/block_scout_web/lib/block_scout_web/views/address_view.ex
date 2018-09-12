@@ -70,14 +70,6 @@ defmodule BlockScoutWeb.AddressView do
 
   def contract?(nil), do: true
 
-  def token_title(%Token{name: nil, contract_address_hash: contract_address_hash}) do
-    contract_address_hash
-    |> to_string
-    |> String.slice(0..5)
-  end
-
-  def token_title(%Token{name: name, symbol: symbol}), do: "#{name}(#{symbol})"
-
   def hash(%Address{hash: hash}) do
     to_string(hash)
   end
@@ -109,6 +101,14 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def smart_contract_with_read_only_functions?(%Address{smart_contract: nil}), do: false
+
+  def token_title(%Token{name: nil, contract_address_hash: contract_address_hash}) do
+    contract_address_hash
+    |> to_string
+    |> String.slice(0..5)
+  end
+
+  def token_title(%Token{name: name, symbol: symbol}), do: "#{name} (#{symbol})"
 
   def trimmed_hash(%Hash{} = hash) do
     string_hash = to_string(hash)
