@@ -212,4 +212,19 @@ defmodule BlockScoutWeb.AddressViewTest do
       refute AddressView.smart_contract_with_read_only_functions?(address)
     end
   end
+
+  describe "token_title/1" do
+    test "returns the 6 first chars of address hash when token has no name" do
+      token = insert(:token, name: nil)
+
+      expected_hash = to_string(token.contract_address_hash)
+      assert String.starts_with?(expected_hash, AddressView.token_title(token))
+    end
+
+    test "returns name(symbol) when token has name" do
+      token = insert(:token, name: "super token money", symbol: "ST$")
+
+      assert AddressView.token_title(token) == "super token money (ST$)"
+    end
+  end
 end
