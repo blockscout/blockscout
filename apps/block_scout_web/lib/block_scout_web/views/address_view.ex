@@ -8,11 +8,11 @@ defmodule BlockScoutWeb.AddressView do
   def address_partial_selector(struct_to_render_from, direction, current_address, truncate \\ false)
 
   def address_partial_selector(%TokenTransfer{to_address: address}, :to, current_address, truncate) do
-    matching_address_check(current_address, address.hash, contract?(address), truncate)
+    matching_address_check(current_address, address, contract?(address), truncate)
   end
 
   def address_partial_selector(%TokenTransfer{from_address: address}, :from, current_address, truncate) do
-    matching_address_check(current_address, address.hash, contract?(address), truncate)
+    matching_address_check(current_address, address, contract?(address), truncate)
   end
 
   def address_partial_selector(
@@ -25,20 +25,20 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def address_partial_selector(
-        %Transaction{to_address_hash: nil, created_contract_address_hash: hash},
+        %Transaction{to_address: nil, created_contract_address: contract_address},
         :to,
         current_address,
         truncate
       ) do
-    matching_address_check(current_address, hash, true, truncate)
+    matching_address_check(current_address, contract_address, true, truncate)
   end
 
   def address_partial_selector(%Transaction{to_address: address}, :to, current_address, truncate) do
-    matching_address_check(current_address, address.hash, contract?(address), truncate)
+    matching_address_check(current_address, address, contract?(address), truncate)
   end
 
   def address_partial_selector(%Transaction{from_address: address}, :from, current_address, truncate) do
-    matching_address_check(current_address, address.hash, contract?(address), truncate)
+    matching_address_check(current_address, address, contract?(address), truncate)
   end
 
   def address_title(%Address{} = address) do
@@ -81,10 +81,10 @@ defmodule BlockScoutWeb.AddressView do
     |> Base.encode64()
   end
 
-  def render_partial(%{partial: partial, address_hash: hash, contract: contract?, truncate: truncate}) do
+  def render_partial(%{partial: partial, address: address, contract: contract?, truncate: truncate}) do
     render(
       partial,
-      address_hash: hash,
+      address: address,
       contract: contract?,
       truncate: truncate
     )
@@ -117,21 +117,33 @@ defmodule BlockScoutWeb.AddressView do
 
   def trimmed_hash(_), do: ""
 
-  defp matching_address_check(current_address, hash, contract?, truncate) do
-    if current_address && current_address.hash == hash do
-      %{
-        partial: "_responsive_hash.html",
-        address_hash: hash,
-        contract: contract?,
-        truncate: truncate
-      }
-    else
-      %{
-        partial: "_link.html",
-        address_hash: hash,
-        contract: contract?,
-        truncate: truncate
-      }
+  defp matching_address_check(%Address{hash: hash} = current_address, %Address{hash: hash}, contract?, truncate) do
+    %{
+      partial: "_responsive_hash.html",
+      address: current_address,
+      contract: contract?,
+      truncate: truncate
+    }
+  end
+
+  defp matching_address_check(_current_address, %Address{} = address, contract?, truncate) do
+    %{
+      partial: "_link.html",
+      address: address,
+      contract: contract?,
+      truncate: truncate
+    }
+  end
+
+  @doc """
+  Returns the primary name of an address if available.
+  """
+  def primary_name(%Address{names: [_ | _] = address_names}) do
+    case Enum.find(address_names, &(&1.primary == true)) do
+      nil -> nil
+      %Address.Name{name: name} -> name
     end
   end
+
+  def primary_name(%Address{names: _}), do: nil
 end

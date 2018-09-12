@@ -20,8 +20,14 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
     test "returns transactions for the block", %{conn: conn} do
       block = insert(:block)
 
-      :transaction |> insert() |> with_block(block)
-      :transaction |> insert(to_address: nil) |> with_block(block)
+      :transaction
+      |> insert()
+      |> with_block(block)
+
+      :transaction
+      |> insert(to_address: nil)
+      |> with_block(block)
+      |> with_contract_creation(insert(:contract_address))
 
       conn = get(conn, block_transaction_path(BlockScoutWeb.Endpoint, :index, block.number))
 

@@ -84,12 +84,17 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
     end
 
     test "contract creation is shown for to_address on list page", %{session: session} do
+      contract_address = insert(:contract_address)
+
       transaction =
         :transaction
         |> insert(to_address: nil)
         |> with_block()
+        |> with_contract_creation(contract_address)
 
-      insert(:internal_transaction_create, transaction: transaction, index: 0)
+      :internal_transaction_create
+      |> insert(transaction: transaction, index: 0)
+      |> with_contract_creation(contract_address)
 
       session
       |> TransactionListPage.visit_page()

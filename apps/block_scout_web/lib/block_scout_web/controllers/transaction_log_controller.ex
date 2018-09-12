@@ -12,10 +12,10 @@ defmodule BlockScoutWeb.TransactionLogController do
            Chain.hash_to_transaction(
              transaction_hash,
              necessity_by_association: %{
-               block: :optional,
-               from_address: :required,
-               to_address: :optional,
-               token_transfers: :optional
+               :block => :optional,
+               [from_address: :names] => :required,
+               [to_address: :names] => :optional,
+               :token_transfers => :optional
              }
            ) do
       full_options =

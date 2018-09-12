@@ -23,6 +23,10 @@ defmodule BlockScoutWeb.TransactionView do
 
   def contract_creation?(_), do: false
 
+  def to_address(%Transaction{to_address: nil, created_contract_address: %Address{} = address}), do: address
+
+  def to_address(%Transaction{to_address: %Address{} = address}), do: address
+
   def fee(%Transaction{} = transaction) do
     {_, value} = Chain.fee(transaction, :wei)
     value
@@ -102,7 +106,7 @@ defmodule BlockScoutWeb.TransactionView do
   def to_address_hash(%Transaction{to_address_hash: nil, created_contract_address_hash: address_hash}),
     do: address_hash
 
-  def to_address_hash(%Transaction{to_address: %Address{hash: address_hash}}), do: address_hash
+  def to_address_hash(%Transaction{to_address_hash: address_hash}), do: address_hash
 
   def transaction_display_type(%Transaction{} = transaction) do
     cond do

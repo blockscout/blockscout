@@ -17,9 +17,10 @@ defmodule BlockScoutWeb.AddressTransactionController do
       full_options =
         [
           necessity_by_association: %{
-            block: :required,
-            from_address: :optional,
-            to_address: :optional
+            :block => :required,
+            [created_contract_address: :names] => :optional,
+            [from_address: :names] => :optional,
+            [to_address: :names] => :optional
           }
         ]
         |> Keyword.merge(paging_options(params))

@@ -10,8 +10,8 @@ defmodule BlockScoutWeb.PendingTransactionController do
       Keyword.merge(
         [
           necessity_by_association: %{
-            from_address: :optional,
-            to_address: :optional
+            [from_address: :names] => :optional,
+            [to_address: :names] => :optional
           }
         ],
         paging_options(params)
