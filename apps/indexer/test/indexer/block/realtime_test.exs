@@ -4,10 +4,10 @@ defmodule Indexer.BlockFetcher.RealtimeTest do
 
   import Mox
 
-  alias Explorer.Chain.{Address, Block}
-  alias Indexer.{BlockFetcher, Sequence}
-  alias Indexer.BlockFetcher.Realtime
-  alias Indexer.Token
+  alias Explorer.Chain
+  alias Explorer.Chain.Address
+  alias Indexer.{Sequence, Token}
+  alias Indexer.Block.Realtime
 
   @moduletag capture_log: true
 
@@ -27,9 +27,9 @@ defmodule Indexer.BlockFetcher.RealtimeTest do
         trace_replayTransaction: "https://core-trace.poa.network"
       )
 
-    block_fetcher = %BlockFetcher{
+    block_fetcher = %Indexer.Block.Fetcher{
       broadcast: false,
-      callback_module: Realtime,
+      callback_module: Realtime.Fetcher,
       json_rpc_named_arguments: core_json_rpc_named_arguments
     }
 
@@ -39,7 +39,7 @@ defmodule Indexer.BlockFetcher.RealtimeTest do
   describe "Indexer.BlockFetcher.stream_import/1" do
     @tag :no_geth
     test "in range with internal transactions", %{
-      block_fetcher: %BlockFetcher{} = block_fetcher,
+      block_fetcher: %Indexer.Block.Fetcher{} = block_fetcher,
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
       {:ok, sequence} = Sequence.start_link(ranges: [], step: 2)
@@ -389,7 +389,7 @@ defmodule Indexer.BlockFetcher.RealtimeTest do
                      block_number: 3_946_079
                    }
                  ],
-                 blocks: [%Block{number: 3_946_079}, %Block{number: 3_946_080}],
+                 blocks: [%Chain.Block{number: 3_946_079}, %Chain.Block{number: 3_946_080}],
                  internal_transactions: [
                    %{index: 0, transaction_hash: transaction_hash},
                    %{index: 1, transaction_hash: transaction_hash},
@@ -400,7 +400,7 @@ defmodule Indexer.BlockFetcher.RealtimeTest do
                  ],
                  logs: [],
                  transactions: [transaction_hash]
-               }, :more}} = BlockFetcher.fetch_and_import_range(block_fetcher, 3_946_079..3_946_080)
+               }, :more}} = Indexer.Block.Fetcher.fetch_and_import_range(block_fetcher, 3_946_079..3_946_080)
     end
   end
 end

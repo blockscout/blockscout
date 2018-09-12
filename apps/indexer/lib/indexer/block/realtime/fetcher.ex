@@ -1,4 +1,4 @@
-defmodule Indexer.BlockFetcher.Realtime do
+defmodule Indexer.Block.Realtime.Fetcher do
   @moduledoc """
   Fetches and indexes block ranges from latest block forward using a WebSocket.
   """
@@ -8,19 +8,19 @@ defmodule Indexer.BlockFetcher.Realtime do
   require Logger
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
-  import Indexer.BlockFetcher, only: [fetch_and_import_range: 2]
+  import Indexer.Block.Fetcher, only: [fetch_and_import_range: 2]
 
   alias EthereumJSONRPC.Subscription
   alias Explorer.Chain
-  alias Indexer.{AddressExtraction, BlockFetcher, Token, TokenBalances}
+  alias Indexer.{AddressExtraction, Block, Token, TokenBalances}
 
-  @behaviour BlockFetcher
+  @behaviour Block.Fetcher
 
   @enforce_keys ~w(block_fetcher)a
   defstruct ~w(block_fetcher subscription)a
 
   @type t :: %__MODULE__{
-          block_fetcher: %BlockFetcher{
+          block_fetcher: %Block.Fetcher{
             broadcast: true,
             callback_module: __MODULE__,
             json_rpc_named_arguments: EthereumJSONRPC.json_rpc_named_arguments(),
@@ -35,9 +35,9 @@ defmodule Indexer.BlockFetcher.Realtime do
   end
 
   @impl GenServer
-  def init(%{block_fetcher: %BlockFetcher{} = block_fetcher, subscribe_named_arguments: subscribe_named_arguments})
+  def init(%{block_fetcher: %Block.Fetcher{} = block_fetcher, subscribe_named_arguments: subscribe_named_arguments})
       when is_list(subscribe_named_arguments) do
-    {:ok, %__MODULE__{block_fetcher: %BlockFetcher{block_fetcher | broadcast: true, callback_module: __MODULE__}},
+    {:ok, %__MODULE__{block_fetcher: %Block.Fetcher{block_fetcher | broadcast: true, callback_module: __MODULE__}},
      {:continue, {:init, subscribe_named_arguments}}}
   end
 
@@ -54,7 +54,7 @@ defmodule Indexer.BlockFetcher.Realtime do
   def handle_info(
         {subscription, {:ok, %{"number" => quantity}}},
         %__MODULE__{
-          block_fetcher: %BlockFetcher{} = block_fetcher,
+          block_fetcher: %Block.Fetcher{} = block_fetcher,
           subscription: %Subscription{} = subscription
         } = state
       )
@@ -111,7 +111,7 @@ defmodule Indexer.BlockFetcher.Realtime do
 
   @import_options ~w(address_hash_to_fetched_balance_block_number transaction_hash_to_block_number)a
 
-  @impl BlockFetcher
+  @impl Block.Fetcher
   def import(
         block_fetcher,
         %{
@@ -158,7 +158,7 @@ defmodule Indexer.BlockFetcher.Realtime do
   end
 
   defp internal_transactions(
-         %BlockFetcher{json_rpc_named_arguments: json_rpc_named_arguments},
+         %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments},
          %{addresses_params: addresses_params, transactions_params: transactions_params}
        ) do
     case transactions_params
@@ -191,7 +191,7 @@ defmodule Indexer.BlockFetcher.Realtime do
   end
 
   defp balances(
-         %BlockFetcher{json_rpc_named_arguments: json_rpc_named_arguments},
+         %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments},
          %{addresses_params: addresses_params} = options
        ) do
     with {:ok, fetched_balances_params} <-

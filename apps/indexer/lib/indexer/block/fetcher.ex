@@ -1,4 +1,4 @@
-defmodule Indexer.BlockFetcher do
+defmodule Indexer.Block.Fetcher do
   @moduledoc """
   Fetches and indexes block ranges.
   """
@@ -8,7 +8,7 @@ defmodule Indexer.BlockFetcher do
   alias Explorer.Chain.{Block, Import}
   alias Indexer.{AddressExtraction, TokenTransfers}
   alias Indexer.Address.{CoinBalances, TokenBalances}
-  alias Indexer.BlockFetcher.Receipts
+  alias Indexer.Block.Fetcher.Receipts
 
   @type address_hash_to_fetched_balance_block_number :: %{String.t() => Block.block_number()}
   @type transaction_hash_to_block_number :: %{String.t() => Block.block_number()}

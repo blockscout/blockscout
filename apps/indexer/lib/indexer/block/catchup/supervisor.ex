@@ -1,11 +1,11 @@
-defmodule Indexer.BlockFetcher.Catchup.Supervisor do
+defmodule Indexer.Block.Catchup.Supervisor do
   @moduledoc """
-  Supervises `Indexer.BlockFetcher.Catchup.TaskSupervisor` and `Indexer.BlockFetcher.Catchup.BoundIntervalSupervisor`
+  Supervises `Indexer.Block.Catchup.TaskSupervisor` and `Indexer.Block.Catchup.BoundIntervalSupervisor`
   """
 
   use Supervisor
 
-  alias Indexer.BlockFetcher.Catchup.BoundIntervalSupervisor
+  alias Indexer.Block.Catchup.BoundIntervalSupervisor
 
   def child_spec([init_arguments]) do
     child_spec([init_arguments, []])
@@ -29,7 +29,7 @@ defmodule Indexer.BlockFetcher.Catchup.Supervisor do
   def init(bound_interval_supervisor_arguments) do
     Supervisor.init(
       [
-        {Task.Supervisor, name: Indexer.BlockFetcher.Catchup.TaskSupervisor},
+        {Task.Supervisor, name: Indexer.Block.Catchup.TaskSupervisor},
         {BoundIntervalSupervisor, [bound_interval_supervisor_arguments, [name: BoundIntervalSupervisor]]}
       ],
       strategy: :one_for_one

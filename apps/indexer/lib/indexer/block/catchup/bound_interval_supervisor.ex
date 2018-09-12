@@ -1,4 +1,4 @@
-defmodule Indexer.BlockFetcher.Catchup.BoundIntervalSupervisor do
+defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
   @moduledoc """
   Supervises the `Indexer.BlockerFetcher.Catchup` with exponential backoff for restarts.
   """
@@ -8,15 +8,15 @@ defmodule Indexer.BlockFetcher.Catchup.BoundIntervalSupervisor do
 
   require Logger
 
-  alias Indexer.{BlockFetcher, BoundInterval}
-  alias Indexer.BlockFetcher.Catchup
+  alias Indexer.{Block, BoundInterval}
+  alias Indexer.Block.Catchup
 
   # milliseconds
   @block_interval 5_000
 
-  @enforce_keys ~w(bound_interval catchup)a
+  @enforce_keys ~w(bound_interval fetcher)a
   defstruct bound_interval: nil,
-            catchup: %Catchup{},
+            fetcher: %Catchup.Fetcher{},
             task: nil
 
   def child_spec(arg) do
@@ -45,22 +45,22 @@ defmodule Indexer.BlockFetcher.Catchup.BoundIntervalSupervisor do
   end
 
   defp new(%{block_fetcher: common_block_fetcher} = named_arguments) do
-    block_fetcher = %BlockFetcher{common_block_fetcher | broadcast: false, callback_module: Catchup}
+    block_fetcher = %Block.Fetcher{common_block_fetcher | broadcast: false, callback_module: Catchup.Fetcher}
 
     block_interval = Map.get(named_arguments, :block_interval, @block_interval)
     minimum_interval = div(block_interval, 2)
     bound_interval = BoundInterval.within(minimum_interval..(minimum_interval * 10))
 
     %__MODULE__{
-      catchup: %Catchup{block_fetcher: block_fetcher},
+      fetcher: %Catchup.Fetcher{block_fetcher: block_fetcher},
       bound_interval: bound_interval
     }
   end
 
   @impl GenServer
-  def handle_info(:catchup_index, %__MODULE__{catchup: %Catchup{} = catchup} = state) do
+  def handle_info(:catchup_index, %__MODULE__{fetcher: %Catchup.Fetcher{} = catchup} = state) do
     {:noreply,
-     %__MODULE__{state | task: Task.Supervisor.async_nolink(Catchup.TaskSupervisor, Catchup, :task, [catchup])}}
+     %__MODULE__{state | task: Task.Supervisor.async_nolink(Catchup.TaskSupervisor, Catchup.Fetcher, :task, [catchup])}}
   end
 
   def handle_info(

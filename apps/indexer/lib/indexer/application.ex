@@ -6,8 +6,8 @@ defmodule Indexer.Application do
   use Application
 
   alias Indexer.{
+    Block,
     CoinBalance,
-    BlockFetcher,
     InternalTransaction,
     PendingTransaction,
     Token,
@@ -36,7 +36,7 @@ defmodule Indexer.Application do
       {Token.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments], [name: Token.Supervisor]]},
       {TokenBalance.Supervisor,
        [[json_rpc_named_arguments: json_rpc_named_arguments], [name: TokenBalance.Supervisor]]},
-      {BlockFetcher.Supervisor, [block_fetcher_supervisor_named_arguments, [name: BlockFetcher.Supervisor]]}
+      {Block.Supervisor, [block_fetcher_supervisor_named_arguments, [name: Block.Supervisor]]}
     ]
 
     opts = [strategy: :one_for_one, name: Indexer.Supervisor]

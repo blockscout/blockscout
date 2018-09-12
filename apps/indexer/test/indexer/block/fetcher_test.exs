@@ -1,4 +1,4 @@
-defmodule Indexer.BlockFetcherTest do
+defmodule Indexer.Block.FetcherTest do
   # `async: false` due to use of named GenServer
   use EthereumJSONRPC.Case, async: false
   use Explorer.DataCase
@@ -7,16 +7,10 @@ defmodule Indexer.BlockFetcherTest do
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
   import EthereumJSONRPC.Case
 
-  alias Explorer.Chain.{Address, Block, Log, Transaction, Wei}
-
-  alias Indexer.{
-    CoinBalance,
-    BlockFetcher,
-    BufferedTask,
-    InternalTransaction,
-    Token,
-    TokenBalance
-  }
+  alias Explorer.Chain
+  alias Explorer.Chain.{Address, Log, Transaction, Wei}
+  alias Indexer.{CoinBalance, BufferedTask, InternalTransaction, Token, TokenBalance}
+  alias Indexer.Block.Fetcher
 
   @moduletag capture_log: true
 
@@ -52,16 +46,16 @@ defmodule Indexer.BlockFetcherTest do
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       %{
-        block_fetcher: %BlockFetcher{
+        block_fetcher: %Fetcher{
           broadcast: false,
-          callback_module: Indexer.BlockFetcher.Catchup,
+          callback_module: Indexer.Block.Catchup.Fetcher,
           json_rpc_named_arguments: json_rpc_named_arguments
         }
       }
     end
 
     test "with single element range that is valid imports one block", %{
-      block_fetcher: %BlockFetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher
+      block_fetcher: %Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher
     } do
       block_number = 0
 
@@ -210,12 +204,12 @@ defmodule Indexer.BlockFetcherTest do
         end
 
       log_bad_gateway(
-        fn -> BlockFetcher.fetch_and_import_range(block_fetcher, block_number..block_number) end,
+        fn -> Fetcher.fetch_and_import_range(block_fetcher, block_number..block_number) end,
         fn result ->
           assert {:ok,
                   {%{
                      addresses: [%Address{hash: ^address_hash}],
-                     blocks: [%Block{hash: ^block_hash}],
+                     blocks: [%Chain.Block{hash: ^block_hash}],
                      logs: [],
                      transactions: []
                    }, :more}} = result
@@ -223,7 +217,7 @@ defmodule Indexer.BlockFetcherTest do
           wait_for_tasks(InternalTransaction.Fetcher)
           wait_for_tasks(CoinBalance.Fetcher)
 
-          assert Repo.aggregate(Block, :count, :hash) == 1
+          assert Repo.aggregate(Chain.Block, :count, :hash) == 1
           assert Repo.aggregate(Address, :count, :hash) == 1
 
           address = Repo.get!(Address, address_hash)
@@ -238,7 +232,7 @@ defmodule Indexer.BlockFetcherTest do
     #   Implement when a full block is found for Ethereum Mainnet and remove :no_geth tag
     @tag :no_geth
     test "can import range with all synchronous imported schemas", %{
-      block_fetcher: %BlockFetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher
+      block_fetcher: %Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher
     } do
       block_number = @first_full_block_number
 
@@ -467,7 +461,7 @@ defmodule Indexer.BlockFetcherTest do
                             154, 143, 4, 28, 171, 95, 190, 255, 254, 174, 75, 182>>
                       }
                     ]
-                  }} = BlockFetcher.fetch_and_import_range(block_fetcher, block_number..block_number)
+                  }} = Fetcher.fetch_and_import_range(block_fetcher, block_number..block_number)
 
           wait_for_tasks(InternalTransaction.Fetcher)
           wait_for_tasks(CoinBalance.Fetcher)
@@ -526,7 +520,7 @@ defmodule Indexer.BlockFetcherTest do
                        }
                      ],
                      blocks: [
-                       %Block{
+                       %Chain.Block{
                          hash: %Explorer.Chain.Hash{
                            byte_count: 32,
                            bytes:
@@ -554,12 +548,12 @@ defmodule Indexer.BlockFetcherTest do
                              57, 101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
                        }
                      ]
-                   }, :more}} = BlockFetcher.fetch_and_import_range(block_fetcher, block_number..block_number)
+                   }, :more}} = Fetcher.fetch_and_import_range(block_fetcher, block_number..block_number)
 
           wait_for_tasks(InternalTransaction.Fetcher)
           wait_for_tasks(CoinBalance.Fetcher)
 
-          assert Repo.aggregate(Block, :count, :hash) == 1
+          assert Repo.aggregate(Chain.Block, :count, :hash) == 1
           assert Repo.aggregate(Address, :count, :hash) == 2
           assert Repo.aggregate(Log, :count, :id) == 1
           assert Repo.aggregate(Transaction, :count, :hash) == 1

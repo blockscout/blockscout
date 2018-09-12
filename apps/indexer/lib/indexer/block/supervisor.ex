@@ -1,10 +1,10 @@
-defmodule Indexer.BlockFetcher.Supervisor do
+defmodule Indexer.Block.Supervisor do
   @moduledoc """
-  Supervises catchup and realtime block fetchers
+  Supervises `Indexer.Block.Catchup.Supervisor` and `Indexer.Block.Realtime.Supervisor`.
   """
 
-  alias Indexer.BlockFetcher
-  alias Indexer.BlockFetcher.{Catchup, Realtime}
+  alias Indexer.Block
+  alias Indexer.Block.{Catchup, Realtime}
 
   use Supervisor
 
@@ -17,7 +17,7 @@ defmodule Indexer.BlockFetcher.Supervisor do
     block_fetcher =
       named_arguments
       |> Map.drop(~w(block_interval subscribe_named_arguments)a)
-      |> BlockFetcher.new()
+      |> Block.Fetcher.new()
 
     Supervisor.init(
       [

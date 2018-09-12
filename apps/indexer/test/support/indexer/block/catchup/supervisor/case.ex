@@ -1,5 +1,5 @@
-defmodule Indexer.BlockFetcher.Catchup.Supervisor.Case do
-  alias Indexer.BlockFetcher.Catchup
+defmodule Indexer.Block.Catchup.Supervisor.Case do
+  alias Indexer.Block.Catchup
 
   def start_supervised!(fetcher_arguments) when is_map(fetcher_arguments) do
     [fetcher_arguments]

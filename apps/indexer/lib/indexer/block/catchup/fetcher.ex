@@ -1,16 +1,16 @@
-defmodule Indexer.BlockFetcher.Catchup do
+defmodule Indexer.Block.Catchup.Fetcher do
   @moduledoc """
   Fetches and indexes block ranges from the block before the latest block to genesis (0) that are missing.
   """
 
   require Logger
 
-  import Indexer.BlockFetcher, only: [fetch_and_import_range: 2]
+  import Indexer.Block.Fetcher, only: [fetch_and_import_range: 2]
 
   alias Explorer.Chain
 
   alias Indexer.{
-    BlockFetcher,
+    Block,
     CoinBalance,
     InternalTransaction,
     Sequence,
@@ -18,7 +18,7 @@ defmodule Indexer.BlockFetcher.Catchup do
     TokenBalance
   }
 
-  @behaviour BlockFetcher
+  @behaviour Block.Fetcher
 
   # These are all the *default* values for options.
   # DO NOT use them directly in the code.  Get options from `state`.
@@ -48,14 +48,16 @@ defmodule Indexer.BlockFetcher.Catchup do
       Defaults to #{@blocks_concurrency}.  So upto `blocks_concurrency * block_batch_size` (defaults to
       `#{@blocks_concurrency * @blocks_batch_size}`) blocks can be requested from the JSONRPC at once over all
       connections.  Upto `block_concurrency * receipts_batch_size * receipts_concurrency` (defaults to
-      `#{@blocks_concurrency * BlockFetcher.default_receipts_batch_size() * BlockFetcher.default_receipts_batch_size()}`
+      `#{
+    @blocks_concurrency * Block.Fetcher.default_receipts_batch_size() * Block.Fetcher.default_receipts_batch_size()
+  }`
       ) receipts can be requested from the JSONRPC at once over all connections.
 
   """
   def task(
         %__MODULE__{
           blocks_batch_size: blocks_batch_size,
-          block_fetcher: %BlockFetcher{json_rpc_named_arguments: json_rpc_named_arguments}
+          block_fetcher: %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
         } = state
       ) do
     {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
@@ -98,7 +100,7 @@ defmodule Indexer.BlockFetcher.Catchup do
 
   @async_import_remaning_block_data_options ~w(address_hash_to_fetched_balance_block_number transaction_hash_to_block_number)a
 
-  @impl BlockFetcher
+  @impl Block.Fetcher
   def import(_, options) when is_map(options) do
     {async_import_remaning_block_data_options, chain_import_options} =
       Map.split(options, @async_import_remaning_block_data_options)
@@ -160,7 +162,7 @@ defmodule Indexer.BlockFetcher.Catchup do
 
   # Run at state.blocks_concurrency max_concurrency when called by `stream_import/1`
   defp fetch_and_import_range_from_sequence(
-         %__MODULE__{block_fetcher: %BlockFetcher{} = block_fetcher},
+         %__MODULE__{block_fetcher: %Block.Fetcher{} = block_fetcher},
          _.._ = range,
          sequence
        ) do

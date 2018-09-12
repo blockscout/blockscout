@@ -1,4 +1,4 @@
-defmodule Indexer.BlockFetcher.Realtime.Supervisor do
+defmodule Indexer.Block.Realtime.Supervisor do
   @moduledoc """
   Supervises realtime block fetcher.
   """
@@ -17,17 +17,17 @@ defmodule Indexer.BlockFetcher.Realtime.Supervisor do
           transport_options = Keyword.fetch!(subscribe_named_arguments, :transport_options)
           url = Keyword.fetch!(transport_options, :url)
           web_socket_module = Keyword.fetch!(transport_options, :web_socket)
-          web_socket = Indexer.BlockFetcher.Realtime.WebSocket
+          web_socket = Indexer.Block.Realtime.WebSocket
 
           block_fetcher_subscribe_named_arguments =
             put_in(subscribe_named_arguments[:transport_options][:web_socket_options], %{web_socket: web_socket})
 
           [
             {web_socket_module, [url, [name: web_socket]]},
-            {Indexer.BlockFetcher.Realtime,
+            {Indexer.Block.Realtime.Fetcher,
              [
                %{block_fetcher: block_fetcher, subscribe_named_arguments: block_fetcher_subscribe_named_arguments},
-               [name: Indexer.BlockFetcher.Realtime]
+               [name: Indexer.Block.Realtime.Fetcher]
              ]}
           ]
       end

@@ -1,16 +1,16 @@
-defmodule Indexer.BlockFetcher.Receipts do
+defmodule Indexer.Block.Fetcher.Receipts do
   @moduledoc """
   Fetches transaction receipts after the transactions have been fetched with the blocks in `Indexer.BlockFetcher`.
   """
 
   require Logger
 
-  alias Indexer.BlockFetcher
+  alias Indexer.Block
 
-  def fetch(%BlockFetcher{} = _state, []), do: {:ok, %{logs: [], receipts: []}}
+  def fetch(%Block.Fetcher{} = _state, []), do: {:ok, %{logs: [], receipts: []}}
 
   def fetch(
-        %BlockFetcher{json_rpc_named_arguments: json_rpc_named_arguments} = state,
+        %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = state,
         transaction_params
       ) do
     Logger.debug(fn -> "fetching #{length(transaction_params)} transaction receipts" end)
