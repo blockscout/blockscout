@@ -21,7 +21,7 @@ defmodule Indexer.TokenBalance.Fetcher do
 
   @spec async_fetch([%TokenBalance{}]) :: :ok
   def async_fetch(token_balances_params) do
-    BufferedTask.buffer(__MODULE__, token_balances_params)
+    BufferedTask.buffer(__MODULE__, token_balances_params, :infinity)
   end
 
   @doc false
