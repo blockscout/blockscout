@@ -101,10 +101,11 @@ Note: Most of these modifications will be consolidated into a single file in the
   3. Update the `check_origin` configuration in `apps/block_scout_web/config/prod.exs`. This allows realtime events to occur on your endpoint.
   
   4. Update the node configuration. You will need a full tracing node with WebSockets enabled. Make the changes in the following files (dev/prod):
-    * `apps/explorer/config/dev/parity.exs`
-    * `apps/explorer/config/prod/parity.exs`
-    * `apps/indexer/config/dev/parity.exs`
-    * `apps/indexer/config/prod/parity.exs`
+  
+   * `apps/explorer/config/dev/parity.exs`
+   * `apps/explorer/config/prod/parity.exs`
+   * `apps/indexer/config/dev/parity.exs`
+   * `apps/indexer/config/prod/parity.exs`
 
 ### Umbrella Project Organization
 
