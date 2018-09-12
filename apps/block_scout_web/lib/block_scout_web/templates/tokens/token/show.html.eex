@@ -5,7 +5,7 @@
     token: @token,
     total_token_transfers: @total_token_transfers,
     total_token_holders: @total_token_holders,
-    total_address_in_token_transfers: @total_address_in_token_transfers,
+    total_token_holders: @total_token_holders,
     conn: @conn
   ) %>
 
