@@ -569,6 +569,8 @@ defmodule EthereumJSONRPCTest do
       assert is_binary(subscription_id)
     end
 
+    # Infura timeouts on 2018-09-12
+    @tag :no_geth
     test "delivers new heads to caller", %{
       block_interval: block_interval,
       subscribe_named_arguments: subscribe_named_arguments
