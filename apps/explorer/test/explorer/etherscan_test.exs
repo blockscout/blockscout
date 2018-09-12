@@ -983,13 +983,13 @@ defmodule Explorer.EtherscanTest do
       |> insert(gas_price: 3)
       |> with_block(block2, gas_used: 3)
 
-      expected_reward1 =
+      expected_reward_block1 =
         block_reward.reward
         |> Wei.to(:wei)
         |> Decimal.add(Decimal.new(8))
         |> Wei.from(:wei)
 
-      expected_reward2 =
+      expected_reward_block2 =
         block_reward.reward
         |> Wei.to(:wei)
         |> Decimal.add(Decimal.new(18))
@@ -997,14 +997,14 @@ defmodule Explorer.EtherscanTest do
 
       expected = [
         %{
-          number: block1.number,
-          timestamp: block1.timestamp,
-          reward: expected_reward1
-        },
-        %{
           number: block2.number,
           timestamp: block2.timestamp,
-          reward: expected_reward2
+          reward: expected_reward_block2
+        },
+        %{
+          number: block1.number,
+          timestamp: block1.timestamp,
+          reward: expected_reward_block1
         }
       ]
 
@@ -1035,17 +1035,17 @@ defmodule Explorer.EtherscanTest do
 
       expected1 = [
         %{
-          number: block1.number,
-          timestamp: block1.timestamp,
-          reward: expected_reward
+          number: block2.number,
+          timestamp: block2.timestamp,
+          reward: block_reward.reward
         }
       ]
 
       expected2 = [
         %{
-          number: block2.number,
-          timestamp: block2.timestamp,
-          reward: block_reward.reward
+          number: block1.number,
+          timestamp: block1.timestamp,
+          reward: expected_reward
         }
       ]
 
