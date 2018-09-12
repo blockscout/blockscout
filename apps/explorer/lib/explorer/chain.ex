@@ -1635,11 +1635,6 @@ defmodule Explorer.Chain do
     TokenTransfer.count_token_transfers_from_token_hash(token_address_hash)
   end
 
-  @spec count_addresses_in_token_transfers_from_token_hash(Hash.t()) :: non_neg_integer()
-  def count_addresses_in_token_transfers_from_token_hash(token_address_hash) do
-    TokenTransfer.count_addresses_in_token_transfers_from_token_hash(token_address_hash)
-  end
-
   @spec transaction_has_token_transfers?(Hash.t()) :: boolean()
   def transaction_has_token_transfers?(transaction_hash) do
     query = from(tt in TokenTransfer, where: tt.transaction_hash == ^transaction_hash, limit: 1, select: 1)
@@ -1717,5 +1712,19 @@ defmodule Explorer.Chain do
     address_hash
     |> TokenBalance.last_token_balances()
     |> Repo.all()
+  end
+
+  @spec fetch_token_holders_from_token_hash(Hash.Address.t(), [paging_options]) :: [TokenBalance.t()]
+  def fetch_token_holders_from_token_hash(contract_address_hash, options) do
+    contract_address_hash
+    |> TokenBalance.token_holders_ordered_by_value(options)
+    |> Repo.all()
+  end
+
+  @spec count_token_holders_from_token_hash(Hash.Address.t()) :: non_neg_integer()
+  def count_token_holders_from_token_hash(contract_address_hash) do
+    contract_address_hash
+    |> TokenBalance.token_holders_from_token_hash()
+    |> Repo.aggregate(:count, :address_hash)
   end
 end

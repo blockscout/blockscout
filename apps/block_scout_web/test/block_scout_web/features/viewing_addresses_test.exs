@@ -2,7 +2,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
   use BlockScoutWeb.FeatureCase, async: true
 
   alias Explorer.Chain.Wei
-  alias Explorer.Factory
   alias BlockScoutWeb.{AddressPage, AddressView, Notifier}
 
   setup do
@@ -41,7 +40,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
   describe "viewing contract creator" do
     test "see the contract creator and transaction links", %{session: session} do
       address = insert(:address)
-      contract = insert(:address, contract_code: Factory.data("contract_code"))
+      contract = insert(:contract_address)
       transaction = insert(:transaction, from_address: address, created_contract_address: contract)
 
       internal_transaction =
@@ -63,9 +62,9 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
 
     test "see the contract creator and transaction links even when the creator is another contract", %{session: session} do
       lincoln = insert(:address)
-      contract = insert(:address, contract_code: Factory.data("contract_code"))
+      contract = insert(:contract_address)
       transaction = insert(:transaction)
-      another_contract = insert(:address, contract_code: Factory.data("contract_code"))
+      another_contract = insert(:contract_address)
 
       insert(
         :internal_transaction,
@@ -285,12 +284,12 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       lincoln = addresses.lincoln
       taft = addresses.taft
 
-      contract_token_address = insert(:contract_address)
-      insert(:token, contract_address: contract_token_address)
+      contract_address = insert(:contract_address)
+      insert(:token, contract_address: contract_address)
 
       transaction =
         :transaction
-        |> insert(from_address: lincoln, to_address: contract_token_address)
+        |> insert(from_address: lincoln, to_address: contract_address)
         |> with_block(block)
 
       insert(
@@ -298,7 +297,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         from_address: lincoln,
         to_address: taft,
         transaction: transaction,
-        token_contract_address: contract_token_address
+        token_contract_address: contract_address
       )
 
       session
@@ -318,12 +317,12 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       taft = addresses.taft
       morty = build(:address)
 
-      contract_token_address = insert(:contract_address)
-      insert(:token, contract_address: contract_token_address)
+      contract_address = insert(:contract_address)
+      insert(:token, contract_address: contract_address)
 
       transaction =
         :transaction
-        |> insert(from_address: lincoln, to_address: contract_token_address)
+        |> insert(from_address: lincoln, to_address: contract_address)
         |> with_block(block)
 
       insert(
@@ -331,7 +330,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         from_address: lincoln,
         to_address: taft,
         transaction: transaction,
-        token_contract_address: contract_token_address
+        token_contract_address: contract_address
       )
 
       insert(
@@ -339,7 +338,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         from_address: lincoln,
         to_address: morty,
         transaction: transaction,
-        token_contract_address: contract_token_address
+        token_contract_address: contract_address
       )
 
       session
@@ -358,17 +357,13 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       lincoln = addresses.lincoln
       taft = addresses.taft
 
-      contract_token_address =
-        insert(
-          :address,
-          contract_code: Factory.data("contract_code")
-        )
+      contract_address = insert(:contract_address)
 
-      insert(:token, contract_address: contract_token_address)
+      insert(:token, contract_address: contract_address)
 
       transaction =
         :transaction
-        |> insert(from_address: lincoln, to_address: contract_token_address)
+        |> insert(from_address: lincoln, to_address: contract_address)
         |> with_block(block)
 
       insert_list(
@@ -377,7 +372,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         from_address: lincoln,
         to_address: taft,
         transaction: transaction,
-        token_contract_address: contract_token_address
+        token_contract_address: contract_address
       )
 
       session
@@ -393,12 +388,12 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       lincoln = addresses.lincoln
       taft = addresses.taft
 
-      contract_token_address = insert(:contract_address)
-      insert(:token, contract_address: contract_token_address)
+      contract_address = insert(:contract_address)
+      insert(:token, contract_address: contract_address)
 
       transaction =
         :transaction
-        |> insert(from_address: lincoln, to_address: contract_token_address)
+        |> insert(from_address: lincoln, to_address: contract_address)
         |> with_block(block)
 
       insert_list(
@@ -407,7 +402,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         from_address: lincoln,
         to_address: taft,
         transaction: transaction,
-        token_contract_address: contract_token_address
+        token_contract_address: contract_address
       )
 
       session
