@@ -3,6 +3,8 @@ defmodule Indexer.TokenBalance.Fetcher do
   Fetches the token balances values.
   """
 
+  require Logger
+
   alias Indexer.{BufferedTask, TokenBalances}
   alias Explorer.Chain
   alias Explorer.Chain.{Hash, Address.TokenBalance}
@@ -17,6 +19,7 @@ defmodule Indexer.TokenBalance.Fetcher do
     task_supervisor: Indexer.TokenBalance.TaskSupervisor
   ]
 
+  @spec async_fetch([%TokenBalance{}]) :: :ok
   def async_fetch(token_balances_params) do
     BufferedTask.buffer(__MODULE__, token_balances_params)
   end
@@ -51,14 +54,38 @@ defmodule Indexer.TokenBalance.Fetcher do
 
   @impl BufferedTask
   def run(token_balances, _retries, _json_rpc_named_arguments) do
+    Logger.debug(fn -> "fetching #{length(token_balances)} token balances" end)
+
+    result =
+      token_balances
+      |> fetch_from_blockchain
+      |> import_token_balances
+
+    if result == :ok do
+      :ok
+    else
+      {:retry, token_balances}
+    end
+  end
+
+  def fetch_from_blockchain(token_balances) do
     {:ok, token_balances_params} =
       token_balances
       |> Stream.map(&format_params/1)
       |> TokenBalances.fetch_token_balances_from_blockchain()
 
-    {:ok, %{token_balances: [_]}} = Chain.import(%{token_balances: %{params: token_balances_params}})
+    token_balances_params
+  end
 
-    :ok
+  def import_token_balances(token_balances_params) do
+    with {:ok, _} <- Chain.import(%{token_balances: %{params: token_balances_params}}) do
+      :ok
+    else
+      {:error, reason} ->
+        Logger.debug(fn -> "failed to import #{length(token_balances_params)} token balances, #{inspect(reason)}" end)
+
+        :error
+    end
   end
 
   defp format_params(%TokenBalance{
