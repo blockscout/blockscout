@@ -1680,12 +1680,12 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       address = insert(:address)
 
-      block1 = insert(:block, number: block_number1, miner: address)
-      _block2 = insert(:block, number: block_number2, miner: address)
+      _block1 = insert(:block, number: block_number1, miner: address)
+      block2 = insert(:block, number: block_number2, miner: address)
 
       :transaction
       |> insert(gas_price: 2)
-      |> with_block(block1, gas_used: 2)
+      |> with_block(block2, gas_used: 2)
 
       expected_reward =
         block_reward.reward
@@ -1705,8 +1705,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       expected_result = [
         %{
-          "blockNumber" => to_string(block1.number),
-          "timeStamp" => to_string(block1.timestamp),
+          "blockNumber" => to_string(block2.number),
+          "timeStamp" => to_string(block2.timestamp),
           "blockReward" => to_string(expected_reward.value)
         }
       ]
