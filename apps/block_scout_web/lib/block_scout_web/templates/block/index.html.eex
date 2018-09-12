@@ -2,7 +2,7 @@
   <div class="card">
     <div class="card-body">
 
-      <h1>Blocks</h1>
+      <h1><%= gettext "Blocks" %></h1>
 
       <span data-selector="blocks-list">
         <%= for block <- @blocks do %>

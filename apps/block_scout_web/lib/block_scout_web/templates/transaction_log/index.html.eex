@@ -67,7 +67,7 @@
           <%= for log <- @logs do %>
             <div data-test="transaction_log" class="tile tile-muted">
               <dl class="row">
-                <dt class="col-md-1"> Address </dt>
+                <dt class="col-md-1"> <%= gettext "Address" %> </dt>
                 <dd class="col-md-11">
                   <h3 class="">
                     <%= link(
@@ -78,7 +78,7 @@
                       ) %>
                   </h3>
                 </dd>
-                <dt class="col-md-1"> Topics </dt>
+                <dt class="col-md-1"><%= gettext "Topics" %></dt>
                 <dd class="col-md-11">
                   <%= unless is_nil(log.first_topic) do %>
                     <div class="text-dark">
@@ -100,7 +100,7 @@
                   <% end %>
                 </dd>
                 <dt class="col-md-1">
-                  Data
+                  <%= gettext "Data" %>
                 </dt>
                 <dd class="col-md-11">
                   <%= unless is_nil(log.data) do %>
