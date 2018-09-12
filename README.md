@@ -91,6 +91,20 @@ _Additional runtime options:_
 
 ![BlockScout Example](explorer_example.gif)
 
+### Configuring Other Chains
+Note: Most of these modifications will be consolidated into a single file in the future.
+  
+  1. Update the css file in `apps/block_scout_web/assets/css/theme/_variables.scss`. There are several presets available in this folder. You can customize the `_neutral_variables.scss` file to create a custom theme and then add it to `_variables.scss`.
+
+  2. Update the logo file in `apps/block_scout_web/config/config.exs`
+
+  3. Update the `check_origin` configuration in `apps/block_scout_web/config/prod.exs`. This allows realtime events to occur on your endpoint.
+
+  4. Update the node configuration. You will need a full tracing node with WebSockets enabled. Make the changes in the following files (dev/prod):
+    - `apps/explorer/config/dev/parity.exs`
+    - `apps/explorer/config/prod/parity.exs`
+    - `apps/indexer/config/dev/parity.exs`
+    - `apps/indexer/config/prod/parity.exs`
 
 ### Umbrella Project Organization
 
