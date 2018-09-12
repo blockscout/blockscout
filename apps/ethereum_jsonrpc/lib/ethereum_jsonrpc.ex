@@ -129,7 +129,7 @@ defmodule EthereumJSONRPC do
           [%{contract_address: String.t(), data: String.t(), id: String.t()}],
           json_rpc_named_arguments,
           [{:block_number, non_neg_integer()}]
-        ) :: {:ok, list()}
+        ) :: {:ok, list()} | {:error, term()}
   def execute_contract_functions(functions, json_rpc_named_arguments, opts \\ []) do
     block_number = Keyword.get(opts, :block_number)
 

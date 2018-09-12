@@ -107,16 +107,20 @@ defmodule Explorer.SmartContract.Reader do
     json_rpc_named_arguments =
       Keyword.get(opts, :json_rpc_named_arguments) || Application.get_env(:explorer, :json_rpc_named_arguments)
 
-    blockchain_result =
-      abi
-      |> Encoder.encode_abi(functions)
-      |> Enum.map(&setup_call_payload(&1, contract_address))
-      |> EthereumJSONRPC.execute_contract_functions(json_rpc_named_arguments, opts)
-
-    Encoder.decode_abi_results(blockchain_result, abi, functions)
+    abi
+    |> Encoder.encode_abi(functions)
+    |> Enum.map(&setup_call_payload(&1, contract_address))
+    |> EthereumJSONRPC.execute_contract_functions(json_rpc_named_arguments, opts)
+    |> decode_results(abi, functions)
   rescue
     error ->
       format_error(functions, error.message)
+  end
+
+  defp decode_results({:ok, results}, abi, functions), do: Encoder.decode_abi_results(results, abi, functions)
+
+  defp decode_results({:error, {:bad_gateway, _request_url}}, _abi, functions) do
+    format_error(functions, "Bad Gateway")
   end
 
   defp format_error(functions, message) do

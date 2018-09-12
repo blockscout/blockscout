@@ -67,8 +67,8 @@ defmodule EthereumJSONRPC.Encoder do
 
   This functions assumes the result["id"] is the name of the function the result is for.
   """
-  @spec decode_abi_results({any(), [map()]}, [map()], %{String.t() => [any()]}) :: map()
-  def decode_abi_results({:ok, results}, abi, functions) do
+  @spec decode_abi_results([map()], [map()], %{String.t() => [any()]}) :: map()
+  def decode_abi_results(results, abi, functions) do
     selectors =
       abi
       |> ABI.parse_specification()
