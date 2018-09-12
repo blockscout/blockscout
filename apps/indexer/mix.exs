@@ -5,15 +5,15 @@ defmodule Indexer.MixProject do
     [
       aliases: aliases(),
       app: :indexer,
-      version: "0.1.0",
       build_path: "../../_build",
       config_path: "../../config/config.exs",
+      deps: deps(),
       deps_path: "../../deps",
-      lockfile: "../../mix.lock",
       elixir: "~> 1.6",
       elixirc_paths: elixirc_paths(Mix.env()),
+      lockfile: "../../mix.lock",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      version: "0.1.0"
     ]
   end
 
