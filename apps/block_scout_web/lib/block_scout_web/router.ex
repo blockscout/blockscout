@@ -30,7 +30,8 @@ defmodule BlockScoutWeb.Router do
       "logs" => RPC.LogsController,
       "token" => RPC.TokenController,
       "stats" => RPC.StatsController,
-      "contract" => RPC.ContractController
+      "contract" => RPC.ContractController,
+      "transaction" => RPC.TransactionController
     })
   end
 
