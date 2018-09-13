@@ -7,7 +7,7 @@
       <div class="card-header">
 
         <!-- DESKTOP TAB NAV -->
-        <ul class="nav nav-tabs card-header-tabs d-none d-md-inline-flex">
+        <ul class="nav nav-tabs card-header-tabs d-none d-lg-inline-flex">
           <li class="nav-item">
             <%= link(
                   gettext("Transactions"),
@@ -54,9 +54,11 @@
         </ul>
 
         <!-- MOBILE DROPDOWN NAV -->
-        <ul class="nav nav-tabs card-header-tabs d-md-none">
+        <ul class="nav nav-tabs card-header-tabs d-lg-none">
           <li class="nav-item dropdown flex-fill text-center">
-            <a class="nav-link active dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false"><%= gettext("Internal Transactions") %></a>
+            <a class="nav-link active dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
+              <%= gettext("Internal Transactions") %>
+            </a>
             <div class="dropdown-menu">
               <%= link(
                     gettext("Transactions"),
@@ -70,21 +72,23 @@
                   ) %>
               <%= link(
                     gettext("Internal Transactions"),
-                    class: "dropdown-item",
+                    class: "dropdown-item active",
                     "data-test": "internal_transactions_tab_link",
                     to: address_internal_transaction_path(@conn, :index, @address.hash)
                   ) %>
-              <%= if contract?(@address) do %>
-                <%= link(
-                    to: address_contract_path(@conn, :index, @address.hash),
-                    class: "dropdown-item") do %>
-                  <%= gettext("Code") %>
+              <%= link(
+                  to: address_contract_path(@conn, :index, @address.hash),
+                  class: "dropdown-item") do %>
+                <%= gettext("Code") %>
 
-                  <%= if smart_contract_verified?(@address) do %>
-                    <i class="far fa-check-circle"></i>
-                  <% end %>
+                <%= if smart_contract_verified?(@address) do %>
+                  <i class="far fa-check-circle"></i>
                 <% end %>
               <% end %>
+              <%= link(
+                  gettext("Read Contract"),
+                  to: address_read_contract_path(@conn, :index, @address.hash),
+                  class: "dropdown-item")%>
             </div>
           </li>
         </ul>
