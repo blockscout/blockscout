@@ -34,8 +34,10 @@ function tryUpdateCalculatedUsdValues (el, usdExchangeRate = el.dataset.usdExcha
   const formattedUsd = formatUsdValue(usd)
   if (formattedUsd !== el.innerHTML) el.innerHTML = formattedUsd
 }
-function updateAllCalculatedUsdValues (usdExchangeRate) {
-  $('[data-usd-exchange-rate]').each((i, el) => tryUpdateCalculatedUsdValues(el, usdExchangeRate))
+let currentUsdExchangeRate
+export function updateAllCalculatedUsdValues (usdExchangeRate) {
+  currentUsdExchangeRate = usdExchangeRate
+  $('[data-usd-exchange-rate]').each((i, el) => tryUpdateCalculatedUsdValues(el, currentUsdExchangeRate))
 }
 updateAllCalculatedUsdValues()
 

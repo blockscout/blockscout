@@ -5,6 +5,7 @@ import numeral from 'numeral'
 import socket from '../socket'
 import { batchChannel, initRedux } from '../utils'
 import { updateAllAges } from '../lib/from_now'
+import { updateAllCalculatedUsdValues } from '../lib/currency.js'
 import { loadTokenBalanceDropdown } from '../lib/token_balance_dropdown'
 
 const BATCH_THRESHOLD = 10
@@ -141,6 +142,7 @@ if ($addressDetailsPage.length) {
       if (oldState.balance !== state.balance) {
         $balance.empty().append(state.balance)
         loadTokenBalanceDropdown()
+        updateAllCalculatedUsdValues()
       }
       if (oldState.transactionCount !== state.transactionCount) $transactionCount.empty().append(numeral(state.transactionCount).format())
       if (state.batchCountAccumulator) {
