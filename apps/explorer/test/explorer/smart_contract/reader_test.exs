@@ -73,7 +73,7 @@ defmodule Explorer.SmartContract.ReaderTest do
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
-        fn [%{id: id, method: _, params: [%{data: _, to: _}]}], _options ->
+        fn [%{id: _, method: _, params: [%{data: _, to: _}]}], _options ->
           {:error, {:bad_gateway, "request_url"}}
         end
       )
@@ -270,6 +270,32 @@ defmodule Explorer.SmartContract.ReaderTest do
                  "name" => "",
                  "type" => "bytes32",
                  "value" => "0x000a000000000000000000000000000000000000000000000000000000000000"
+               }
+             ] = Reader.link_outputs_and_values(blockchain_values, outputs, function_name)
+    end
+
+    test "links the ABI outputs correctly when there are multiple values" do
+      blockchain_values = %{"getNarco" => {:ok, ["Justin Sun", 0, [8, 6, 9, 2, 2, 37]]}}
+
+      outputs = [
+        %{"name" => "narcoName", "type" => "string"},
+        %{"name" => "weedTotal", "type" => "uint256"},
+        %{"name" => "skills", "type" => "uint16[6]"}
+      ]
+
+      function_name = "getNarco"
+
+      assert [
+               %{
+                 "name" => "narcoName",
+                 "type" => "string",
+                 "value" => "Justin Sun"
+               },
+               %{"name" => "weedTotal", "type" => "uint256", "value" => 0},
+               %{
+                 "name" => "skills",
+                 "type" => "uint16[6]",
+                 "value" => [8, 6, 9, 2, 2, 37]
                }
              ] = Reader.link_outputs_and_values(blockchain_values, outputs, function_name)
     end
