@@ -17,6 +17,7 @@
 
     &:hover,
     &:focus {
+      color: $white;
       background-color: darken($primary, 10%);
       border-color: darken($primary, 10%);
       text-decoration: none;
@@ -32,6 +33,7 @@
   &-secondary {
     border: 1px solid $tertiary;
     color: $tertiary;
+    background-color: $white;
     font-weight: 400;
 
     &:hover,
