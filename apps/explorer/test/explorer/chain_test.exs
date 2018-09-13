@@ -29,53 +29,53 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "address_to_transaction_count/1" do
-    test "without transactions" do
-      address = insert(:address)
+  # describe "address_to_transaction_count/1" do
+  #   test "without transactions" do
+  #     address = insert(:address)
 
-      assert Chain.address_to_transaction_count(address) == 0
-    end
+  #     assert Chain.address_to_transaction_count(address) == 0
+  #   end
 
-    test "with transactions" do
-      %Transaction{from_address: address} = insert(:transaction) |> Repo.preload(:from_address)
-      insert(:transaction, to_address: address)
+  #   test "with transactions" do
+  #     %Transaction{from_address: address} = insert(:transaction) |> Repo.preload(:from_address)
+  #     insert(:transaction, to_address: address)
 
-      assert Chain.address_to_transaction_count(address) == 2
-    end
+  #     assert Chain.address_to_transaction_count(address) == 2
+  #   end
 
-    test "with contract creation transactions the contract address is counted" do
-      address = insert(:address)
+  #   test "with contract creation transactions the contract address is counted" do
+  #     address = insert(:address)
 
-      insert(
-        :internal_transaction_create,
-        created_contract_address: address,
-        index: 0,
-        transaction: insert(:transaction, to_address: nil)
-      )
+  #     insert(
+  #       :internal_transaction_create,
+  #       created_contract_address: address,
+  #       index: 0,
+  #       transaction: insert(:transaction, to_address: nil)
+  #     )
 
-      assert Chain.address_to_transaction_count(address) == 1
-    end
+  #     assert Chain.address_to_transaction_count(address) == 1
+  #   end
 
-    test "doesn't double count addresses when to_address = from_address" do
-      %Transaction{from_address: address} = insert(:transaction) |> Repo.preload(:from_address)
-      insert(:transaction, to_address: address, from_address: address)
+  #   test "doesn't double count addresses when to_address = from_address" do
+  #     %Transaction{from_address: address} = insert(:transaction) |> Repo.preload(:from_address)
+  #     insert(:transaction, to_address: address, from_address: address)
 
-      assert Chain.address_to_transaction_count(address) == 2
-    end
+  #     assert Chain.address_to_transaction_count(address) == 2
+  #   end
 
-    test "does not count non-contract-creation parent transactions" do
-      transaction_with_to_address =
-        %Transaction{} =
-        :transaction
-        |> insert()
-        |> with_block()
+  #   test "does not count non-contract-creation parent transactions" do
+  #     transaction_with_to_address =
+  #       %Transaction{} =
+  #       :transaction
+  #       |> insert()
+  #       |> with_block()
 
-      %InternalTransaction{created_contract_address: address} =
-        insert(:internal_transaction_create, transaction: transaction_with_to_address, index: 0)
+  #     %InternalTransaction{created_contract_address: address} =
+  #       insert(:internal_transaction_create, transaction: transaction_with_to_address, index: 0)
 
-      assert Chain.address_to_transaction_count(address) == 0
-    end
-  end
+  #     assert Chain.address_to_transaction_count(address) == 0
+  #   end
+  # end
 
   describe "address_to_transactions/2" do
     test "without transactions" do
