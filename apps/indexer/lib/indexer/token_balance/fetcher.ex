@@ -78,9 +78,9 @@ defmodule Indexer.TokenBalance.Fetcher do
   end
 
   def import_token_balances(token_balances_params) do
-    with {:ok, _} <- Chain.import(%{token_balances: %{params: token_balances_params}}) do
-      :ok
-    else
+    case Chain.import(%{token_balances: %{params: token_balances_params}, timeout: :infinity}) do
+      {:ok, _} ->
+        :ok
       {:error, reason} ->
         Logger.debug(fn -> "failed to import #{length(token_balances_params)} token balances, #{inspect(reason)}" end)
 
