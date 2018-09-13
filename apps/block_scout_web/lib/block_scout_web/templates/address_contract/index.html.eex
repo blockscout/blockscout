@@ -147,7 +147,7 @@
             </button>
           </div>
           <div class="tile tile-muted mb-4">
-            <pre>
+            <pre class="pre-wrap pre-scrollable">
               <code>
                 <%= format_smart_contract_abi(@address.smart_contract.abi) %>
               </code>
