@@ -64,6 +64,7 @@ defmodule EthereumJSONRPC.ReceiptsTest do
           case status do
             :ok -> "0x1"
             :error -> "0x0"
+            nil -> nil
           end
 
         expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->

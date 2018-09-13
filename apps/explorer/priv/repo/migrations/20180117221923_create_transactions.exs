@@ -6,6 +6,9 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
       # `null` when a pending transaction
       add(:cumulative_gas_used, :numeric, precision: 100, null: true)
 
+      # `null` before internal transactions are fetched or if no error in those internal transactions
+      add(:error, :string, null: true)
+
       add(:gas, :numeric, precision: 100, null: false)
       add(:gas_price, :numeric, precision: 100, null: false)
 
@@ -82,8 +85,30 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
     create(
       constraint(
         :transactions,
-        :collated_status,
-        check: "block_hash IS NULL OR status IS NOT NULL"
+        :status,
+        # | block_hash | internal_transactions_indexed_at | status | OK | description
+        # |------------|----------------------------------|--------|----|------------
+        # | 0          | 0                                | 0      | 1  | pending
+        # | 0          | 0                                | 1      | 0  | pending with status
+        # | 0          | 1                                | 0      | 0  | pending with internal transactions
+        # | 0          | 1                                | 1      | 0  | pending with internal transactions and status
+        # | 1          | 0                                | 0      | 1  | pre-byzantium collated transaction without internal transactions
+        # | 1          | 0                                | 1      | 1  | post-byzantium collated transaction without internal transactions
+        # | 1          | 1                                | 0      | 0  | pre-byzantium collated transaction with internal transaction without status
+        # | 1          | 1                                | 1      | 1  | pre- or post-byzantium collated transaction with internal transactions and status
+        #
+        # [Karnaugh map](https://en.wikipedia.org/wiki/Karnaugh_map)
+        # b \ is | 00 | 01 | 11 | 10 |
+        # -------|----|----|----|----|
+        #      0 | 1  | 0  | 0  | 0  |
+        #      1 | 1  | 1  | 1  | 0  |
+        #
+        # Simplification: ¬i·¬s + b·¬i + b·s
+        check: """
+        (internal_transactions_indexed_at IS NULL AND status IS NULL) OR
+        (block_hash IS NOT NULL AND internal_transactions_indexed_at IS NULL) OR
+        (block_hash IS NOT NULL AND status IS NOT NULL)
+        """
       )
     )
 
@@ -116,14 +141,6 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
         :transactions,
         :pending_index,
         check: "block_hash IS NOT NULL OR index IS NULL"
-      )
-    )
-
-    create(
-      constraint(
-        :transactions,
-        :pending_status,
-        check: "block_hash IS NOT NULL OR status IS NULL"
       )
     )
 

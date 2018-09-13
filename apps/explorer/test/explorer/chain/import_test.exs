@@ -794,5 +794,176 @@ defmodule Explorer.Chain.ImportTest do
                  }
                })
     end
+
+    test "updates transaction status from internal transactions when status is not set from (pre-Byzantium/Ethereum Classic) receipts" do
+      assert {:ok, _} =
+               Import.all(%{
+                 addresses: %{
+                   params: [
+                     %{hash: "0x1c0fa194a9d3b44313dcd849f3c6be6ad270a0a4"},
+                     %{hash: "0x679ed2245eba484021c2d3f4d174fb2bb2bd0e49"},
+                     %{hash: "0xb7cffe2ac19b9d5705a24cbe14fef5663af905a6"},
+                     %{hash: "0xfa52274dd61e1643d2205169732f29114bc240b3"}
+                   ]
+                 },
+                 balances: %{
+                   params: [
+                     %{
+                       address_hash: "0x1c0fa194a9d3b44313dcd849f3c6be6ad270a0a4",
+                       block_number: 6_535_159
+                     },
+                     %{
+                       address_hash: "0x679ed2245eba484021c2d3f4d174fb2bb2bd0e49",
+                       block_number: 6_535_159
+                     },
+                     %{
+                       address_hash: "0xb7cffe2ac19b9d5705a24cbe14fef5663af905a6",
+                       block_number: 6_535_159
+                     },
+                     %{
+                       address_hash: "0xfa52274dd61e1643d2205169732f29114bc240b3",
+                       block_number: 6_535_159
+                     }
+                   ]
+                 },
+                 blocks: %{
+                   params: [
+                     %{
+                       difficulty: 242_354_495_292_210,
+                       gas_limit: 4_703_218,
+                       gas_used: 1_009_480,
+                       hash: "0x1f8cde8bd326702c49e065d56b08bdc82caa0c4820d914e27026c9c68ca1cf09",
+                       miner_hash: "0x1c0fa194a9d3b44313dcd849f3c6be6ad270a0a4",
+                       nonce: "0xafa5fc5c07f55ba5",
+                       number: 6_535_159,
+                       parent_hash: "0xd2cf6cf7a3d5455f450a2a3701995a7ad51f12010674883a6690cee337f75ffa",
+                       size: 4052,
+                       timestamp: DateTime.from_iso8601("2018-09-10 21:34:39Z") |> elem(1),
+                       total_difficulty: 415_641_295_487_918_824_165
+                     },
+                     %{
+                       difficulty: 247_148_243_947_046,
+                       gas_limit: 4_704_624,
+                       gas_used: 363_000,
+                       hash: "0xe16d3ce09c2f5bba53bb8a78268e70692f7d3401f654038f2733948f267819bf",
+                       miner_hash: "0x1c0fa194a9d3b44313dcd849f3c6be6ad270a0a4",
+                       nonce: "0xe7e0f2502c57af36",
+                       number: 6_546_180,
+                       parent_hash: "0x9fcef5db897c50c347bd62aaee3fd62f9430d7c5a6c1026645fd2d95bf84f77f",
+                       size: 4135,
+                       timestamp: DateTime.from_iso8601("2018-09-12 16:44:31Z") |> elem(1),
+                       total_difficulty: 418_368_856_288_094_184_226
+                     }
+                   ]
+                 },
+                 broadcast: false,
+                 transactions: %{
+                   on_conflict: :replace_all,
+                   params: [
+                     %{
+                       block_hash: "0x1f8cde8bd326702c49e065d56b08bdc82caa0c4820d914e27026c9c68ca1cf09",
+                       block_number: 6_535_159,
+                       cumulative_gas_used: 978_227,
+                       from_address_hash: "0xb7cffe2ac19b9d5705a24cbe14fef5663af905a6",
+                       gas: 978_227,
+                       gas_price: 99_000_000_000,
+                       gas_used: 978_227,
+                       hash: "0x1a263224a95275d77bc30a7e131bc64d948777946a790c0915ab293791fbcb61",
+                       index: 0,
+                       input: "0x",
+                       nonce: 1,
+                       r:
+                         33_589_694_337_999_451_585_110_289_972_555_130_664_768_096_048_542_148_916_928_040_955_524_640_045_158,
+                       s:
+                         42_310_749_137_599_445_408_044_732_541_966_181_996_695_356_587_068_481_874_121_265_172_051_825_560_665,
+                       status: nil,
+                       to_address_hash: nil,
+                       transaction_hash: "0x1a263224a95275d77bc30a7e131bc64d948777946a790c0915ab293791fbcb61",
+                       transaction_index: 0,
+                       v: 158,
+                       value: 0
+                     },
+                     %{
+                       block_hash: "0xe16d3ce09c2f5bba53bb8a78268e70692f7d3401f654038f2733948f267819bf",
+                       block_number: 6_546_180,
+                       cumulative_gas_used: 300_000,
+                       from_address_hash: "0xb7cffe2ac19b9d5705a24cbe14fef5663af905a6",
+                       gas: 300_000,
+                       gas_price: 99_000_000_000,
+                       gas_used: 300_000,
+                       hash: "0xab349efbe1ddc6d85d84a993aa52bdaadce66e8ee166dd10013ce3f2a94ca724",
+                       index: 0,
+                       input: "0x",
+                       nonce: 3,
+                       r:
+                         112_892_797_256_444_263_807_020_641_321_940_863_808_119_293_610_243_619_618_565_205_638_202_411_794_106,
+                       s:
+                         28_179_956_245_836_116_326_552_218_962_386_200_332_659_903_648_647_895_680_413_482_893_962_976_715_400,
+                       status: nil,
+                       to_address_hash: nil,
+                       transaction_hash: "0xab349efbe1ddc6d85d84a993aa52bdaadce66e8ee166dd10013ce3f2a94ca724",
+                       transaction_index: 0,
+                       v: 157,
+                       value: 0
+                     }
+                   ]
+                 }
+               })
+
+      assert %Transaction{status: nil} =
+               Repo.get(Transaction, "0x1a263224a95275d77bc30a7e131bc64d948777946a790c0915ab293791fbcb61")
+
+      assert %Transaction{status: nil} =
+               Repo.get(Transaction, "0xab349efbe1ddc6d85d84a993aa52bdaadce66e8ee166dd10013ce3f2a94ca724")
+
+      assert {:ok, _} =
+               Import.all(%{
+                 addresses: %{
+                   params: [
+                     %{
+                       contract_code: "0x",
+                       fetched_coin_balance_block_number: 6_535_159,
+                       hash: "0xf606a51bd1be5e633f4170e302ea9f6f90a85c0f"
+                     }
+                   ]
+                 },
+                 internal_transactions: %{
+                   params: [
+                     %{
+                       block_number: 6_535_159,
+                       created_contract_address_hash: "0xf606a51bd1be5e633f4170e302ea9f6f90a85c0f",
+                       created_contract_code: "0x",
+                       from_address_hash: "0xb7cffe2ac19b9d5705a24cbe14fef5663af905a6",
+                       gas: 710_459,
+                       gas_used: 710_459,
+                       index: 0,
+                       init: "0x",
+                       trace_address: [],
+                       transaction_hash: "0x1a263224a95275d77bc30a7e131bc64d948777946a790c0915ab293791fbcb61",
+                       type: "create",
+                       value: 0
+                     },
+                     %{
+                       block_number: 6_546_180,
+                       error: "Out of gas",
+                       from_address_hash: "0xb7cffe2ac19b9d5705a24cbe14fef5663af905a6",
+                       gas: 44376,
+                       index: 0,
+                       init: "0x",
+                       trace_address: [],
+                       transaction_hash: "0xab349efbe1ddc6d85d84a993aa52bdaadce66e8ee166dd10013ce3f2a94ca724",
+                       type: "create",
+                       value: 0
+                     }
+                   ]
+                 }
+               })
+
+      assert %Transaction{status: :ok} =
+               Repo.get(Transaction, "0x1a263224a95275d77bc30a7e131bc64d948777946a790c0915ab293791fbcb61")
+
+      assert %Transaction{status: :error} =
+               Repo.get(Transaction, "0xab349efbe1ddc6d85d84a993aa52bdaadce66e8ee166dd10013ce3f2a94ca724")
+    end
   end
 end
