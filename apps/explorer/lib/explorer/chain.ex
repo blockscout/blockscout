@@ -135,32 +135,33 @@ defmodule Explorer.Chain do
   Counts the number of `t:Explorer.Chain.Transaction.t/0` to or from the `address`.
   """
   @spec address_to_transaction_count(Address.t()) :: non_neg_integer()
-  def address_to_transaction_count(%Address{hash: _hash}) do
-    # {:ok, %{rows: [[result]]}} =
-    #   SQL.query(
-    #     Repo,
-    #     """
-    #       SELECT COUNT(hash) from
-    #       (
-    #         SELECT t0."hash" address
-    #         FROM "transactions" AS t0
-    #         LEFT OUTER JOIN "internal_transactions" AS i1 ON (i1."transaction_hash" = t0."hash") AND (i1."type" = 'create')
-    #         WHERE (i1."created_contract_address_hash" = $1 AND t0."to_address_hash" IS NULL)
+  def address_to_transaction_count(%Address{hash: address_hash}) do
+    {:ok, %{rows: [[result]]}} =
+      Repo.query(
+        """
+        SELECT COUNT(*) FROM
+        (
+          SELECT * FROM transactions AS t0 WHERE t0.from_address_hash = $1
+          UNION
+          SELECT * FROM transactions AS t0 WHERE t0.to_address_hash = $1
+          UNION
+          SELECT * FROM transactions AS t0 WHERE t0.created_contract_address_hash = $1
+          UNION
+          SELECT t0.* FROM transactions AS t0
+          LEFT JOIN token_transfers AS tt
+          ON tt.transaction_hash = t0.hash
+          WHERE tt.from_address_hash = $1
+          UNION
+          SELECT t0.* FROM transactions AS t0
+          LEFT JOIN token_transfers AS tt
+          ON tt.transaction_hash = t0.hash
+          WHERE tt.to_address_hash = $1
+        ) as t
+        """,
+        [address_hash.bytes]
+      )
 
-    #         UNION
-
-    #         SELECT t0."hash" address
-    #         FROM "transactions" AS t0
-    #         WHERE (t0."to_address_hash" = $1)
-    #         OR (t0."from_address_hash" = $1)
-    #       ) AS hash
-    #     """,
-    #     [hash.bytes]
-    #   )
-
-    # result
-
-    5
+    result
   end
 
   @doc """
