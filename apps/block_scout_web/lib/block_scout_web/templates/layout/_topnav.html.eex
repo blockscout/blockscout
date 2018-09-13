@@ -19,6 +19,11 @@
           <% end %>
         </li>
         <li class="nav-item">
+          <%= link to: address_path(@conn, :index), class: "nav-link topnav-nav-link" do %>
+            <%= gettext("Top Addresses") %>
+          <% end %>
+        </li>
+        <li class="nav-item">
           <%= link to: api_docs_path(@conn, :index), class: "nav-link topnav-nav-link" do %>
             <%= gettext("API") %>
           <% end %>

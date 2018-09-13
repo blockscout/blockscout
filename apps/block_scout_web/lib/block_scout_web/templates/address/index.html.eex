@@ -1,63 +1,65 @@
 <section class="container">
-  <div class="card">
-    <div class="card-body">
 
-      <h1><%= gettext "Top Addresses" %></h1>
 
-      <span data-selector="top-addresses-list">
+  <h1><%= gettext "Top Addresses" %></h1>
 
-        <div class="tile">
-          <div class="row">
-            <!-- rank -->
-            <div class="col-2 col-md-1 d-flex justify-content-center align-items-center">
-              <!-- incremented number by order in the list -->
-              <span> 1 </span>
-            </div>
+  <span data-selector="top-addresses-list">
 
-            <div class="col-10 col-md-11">
-              <div class="row">
-                <!-- address and txn count -->
-                <div class="col-md-7 d-flex flex-column mt-3 mt-md-0">
-                  <!-- address with link to address page -->
-                  <a href="#" class="tile-title text-truncate">
-                    0x281055afc982d96fab65b3a49cac8b878184cb16
-                  </a>
-                  <!-- number of txns for this address -->
-                  <span> 516 Transactions </span>
-                </div>
+    <div class="tile">
+      <%= for {address, index} <- Enum.with_index(@addresses, 1) do %>
+        <div class="card">
+          <div class="card-body">
+            <div class="row">
+              <!-- rank -->
+              <div class="col-2 col-md-1 d-flex justify-content-center align-items-center">
+                <!-- incremented number by order in the list -->
+                <!-- <span><%= index %></span> -->
+              </div>
 
-                <!-- balance and percentage -->
-                <div class="col-md-5 d-flex flex-column text-md-right mt-3 mt-md-0">
-                  <!-- percentage of coins from total supply -->
-                  <span class="tile-title"> 1.50954711% </span>
-                  <div class="d-flex flex-column flex-lg-row justify-content-md-end">
-                    <!-- address coin balance -->
-                    <span class="mr-0 mr-lg-2"> 1,538,423.05662936 POA </span>
-                    <!-- USD value of the balance -->
-                    <span> 82,261.53 USD </span>
+              <div class="col-10 col-md-11">
+                <div class="row">
+                  <div class="col-md-7 d-flex flex-column mt-3 mt-md-0">
+                    <%= address |> BlockScoutWeb.AddressView.address_partial_selector(nil, nil) |> BlockScoutWeb.AddressView.render_partial() %>
+                    <!-- number of txns for this address -->
+                    <span>
+                      <span data-test="transaction_count"><%= transaction_count(address) %></span>
+                      <%= gettext "Transactions" %>
+                    </span>
+                  </div>
+
+                  <!-- balance and percentage -->
+                  <div class="col-md-5 d-flex flex-column text-md-right mt-3 mt-md-0">
+                    <!-- percentage of coins from total supply -->
+                    <span class="tile-title"><%= balance_percentage(address) %></span>
+                    <div class="d-flex flex-column flex-lg-row justify-content-md-end">
+                      <!-- address coin balance -->
+                      <span class="mr-0 mr-lg-2" data-test="address_balance"><%= balance(address) %></span>
+                      <!-- USD value of the balance -->
+                      <span
+                        data-wei-value="<%= if address.fetched_coin_balance, do: address.fetched_coin_balance.value %>"
+                        data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-
-
           </div>
         </div>
-      </span>
-
-      <!-- paging -->
-
-      <!-- <%= if @next_page_params do %>
-        <%= link(
-          gettext("Older"),
-          class: "button button-secondary button-sm float-right mt-3",
-          to: block_path(
-            @conn,
-            :index,
-            @next_page_params
-          )
-        ) %>
-      <% end %> -->
+      <% end %>
     </div>
-  </div>
+  </span>
+
+  <!-- paging -->
+  <%= if @next_page_params do %>
+    <%= link(
+      gettext("Next"),
+      class: "button button-secondary button-sm float-right mt-3",
+      to: address_path(
+        @conn,
+        :index,
+        @next_page_params
+      )
+    ) %>
+  <% end %>
 </section>

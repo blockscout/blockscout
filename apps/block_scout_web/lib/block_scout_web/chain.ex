@@ -16,12 +16,12 @@ defmodule BlockScoutWeb.Chain do
     Address,
     Address.TokenBalance,
     Block,
-    Hash,
     InternalTransaction,
     Log,
     Token,
     TokenTransfer,
-    Transaction
+    Transaction,
+    Wei
   }
 
   alias Explorer.PagingOptions
@@ -155,6 +155,11 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
+  defp paging_params(%Address{fetched_coin_balance: value, hash: hash}) do
+    integer_value = value |> Wei.to(:wei) |> Decimal.to_integer()
+    %{"address_hash" => to_string(hash), "value" => integer_value}
+  end
+
   defp paging_params(%Block{number: number}) do
     %{"block_number" => number}
   end
@@ -195,7 +200,7 @@ defmodule BlockScoutWeb.Chain do
   end
 
   defp paging_params(%TokenBalance{address_hash: address_hash, value: value}) do
-    %{"address_hash" => Hash.to_string(address_hash), "value" => Decimal.to_integer(value)}
+    %{"address_hash" => to_string(address_hash), "value" => Decimal.to_integer(value)}
   end
 
   defp transaction_from_param(param) do

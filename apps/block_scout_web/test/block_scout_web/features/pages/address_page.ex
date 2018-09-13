@@ -15,6 +15,10 @@ defmodule BlockScoutWeb.AddressPage do
     css("[data-test='address_balance']")
   end
 
+  def address(%Address{hash: hash}) do
+    css("[data-address-hash='#{hash}']", text: to_string(hash))
+  end
+
   def contract_creator do
     css("[data-test='address_contract_creator']")
   end
@@ -75,12 +79,6 @@ defmodule BlockScoutWeb.AddressPage do
     css("[data-transaction-hash='#{transaction_hash}'] [data-test='transaction_status']")
   end
 
-  def visit_page(session, %Address{hash: address_hash}), do: visit_page(session, address_hash)
-
-  def visit_page(session, address_hash) do
-    visit(session, "/address/#{address_hash}")
-  end
-
   def token_transfer(%Transaction{hash: transaction_hash}, %Address{hash: address_hash}, count: count) do
     css(
       "[data-transaction-hash='#{transaction_hash}'] [data-test='token_transfer'] [data-address-hash='#{address_hash}']",
@@ -94,5 +92,15 @@ defmodule BlockScoutWeb.AddressPage do
 
   def token_transfers_expansion(%Transaction{hash: transaction_hash}) do
     css("[data-transaction-hash='#{transaction_hash}'] [data-test='token_transfers_expansion']")
+  end
+
+  def visit_page(session, %Address{hash: address_hash}), do: visit_page(session, address_hash)
+
+  def visit_page(session, address_hash) do
+    visit(session, "/address/#{address_hash}")
+  end
+
+  def visit_page(session) do
+    visit(session, "/top_addresses")
   end
 end
