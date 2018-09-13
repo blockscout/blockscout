@@ -37,7 +37,7 @@ defmodule EthereumJSONRPC.ReceiptsTest do
               index: 12,
               first_topic: "0xf6db2bace4ac8277384553ad9603d045220a91fb2448ab6130d7a6f044f9a8cf",
               gas_used: 106_025,
-              status: :error,
+              status: nil,
               type: nil,
               transaction_hash: "0xd3efddbbeb6ad8d8bb3f6b8c8fb6165567e9dd868013146bdbeb60953c82822a",
               transaction_index: 17
