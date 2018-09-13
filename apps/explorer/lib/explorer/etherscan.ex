@@ -144,6 +144,7 @@ defmodule Explorer.Etherscan do
         inner_join: r in Reward,
         on: fragment("? <@ ?", b.number, r.block_range),
         where: b.miner_hash == ^address_hash,
+        order_by: [desc: b.number],
         group_by: b.number,
         group_by: b.timestamp,
         group_by: r.reward,

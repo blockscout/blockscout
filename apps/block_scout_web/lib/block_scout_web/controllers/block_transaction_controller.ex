@@ -14,9 +14,10 @@ defmodule BlockScoutWeb.BlockTransactionController do
         Keyword.merge(
           [
             necessity_by_association: %{
-              block: :required,
-              from_address: :required,
-              to_address: :optional
+              :block => :required,
+              [created_contract_address: :names] => :optional,
+              [from_address: :names] => :required,
+              [to_address: :names] => :optional
             }
           ],
           paging_options(params)

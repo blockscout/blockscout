@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.AddressViewTest do
   use BlockScoutWeb.ConnCase, async: true
 
-  alias Explorer.Chain.{Address, Data, Transaction}
+  alias Explorer.Chain.{Address, Data, Hash, Transaction}
   alias BlockScoutWeb.AddressView
 
   describe "address_partial_selector/4" do
@@ -11,90 +11,90 @@ defmodule BlockScoutWeb.AddressViewTest do
     end
 
     test "will truncate address" do
-      transaction = %Transaction{to_address_hash: hash} = insert(:transaction)
+      transaction = %Transaction{to_address: to_address} = insert(:transaction)
 
       assert %{
                partial: "_link.html",
-               address_hash: ^hash,
+               address: ^to_address,
                contract: false,
                truncate: true
              } = AddressView.address_partial_selector(transaction, :to, nil, true)
     end
 
     test "for a non-contract to address not on address page" do
-      transaction = %Transaction{to_address_hash: hash} = insert(:transaction)
+      transaction = %Transaction{to_address: to_address} = insert(:transaction)
 
       assert %{
                partial: "_link.html",
-               address_hash: ^hash,
+               address: ^to_address,
                contract: false,
                truncate: false
              } = AddressView.address_partial_selector(transaction, :to, nil)
     end
 
     test "for a non-contract to address non matching address page" do
-      transaction = %Transaction{to_address_hash: hash} = insert(:transaction)
+      transaction = %Transaction{to_address: to_address} = insert(:transaction)
 
       assert %{
                partial: "_link.html",
-               address_hash: ^hash,
+               address: ^to_address,
                contract: false,
                truncate: false
              } = AddressView.address_partial_selector(transaction, :to, nil)
     end
 
     test "for a non-contract to address matching address page" do
-      transaction = %Transaction{to_address_hash: hash} = insert(:transaction)
+      transaction = %Transaction{to_address: to_address} = insert(:transaction)
 
       assert %{
                partial: "_responsive_hash.html",
-               address_hash: ^hash,
+               address: ^to_address,
                contract: false,
                truncate: false
              } = AddressView.address_partial_selector(transaction, :to, transaction.to_address)
     end
 
     test "for a contract to address non matching address page" do
-      contract = %Address{hash: hash} = insert(:contract_address)
-      transaction = insert(:transaction, to_address: nil, created_contract_address: contract)
+      contract_address = insert(:contract_address)
+      transaction = insert(:transaction, to_address: nil, created_contract_address: contract_address)
 
       assert %{
                partial: "_link.html",
-               address_hash: ^hash,
+               address: ^contract_address,
                contract: true,
                truncate: false
              } = AddressView.address_partial_selector(transaction, :to, transaction.to_address)
     end
 
     test "for a contract to address matching address page" do
-      contract = %Address{hash: hash} = insert(:contract_address)
-      transaction = insert(:transaction, to_address: nil, created_contract_address: contract)
+      contract_address = insert(:contract_address)
+      transaction = insert(:transaction, to_address: nil, created_contract_address: contract_address)
 
       assert %{
                partial: "_responsive_hash.html",
-               address_hash: ^hash,
+               address: ^contract_address,
                contract: true,
                truncate: false
-             } = AddressView.address_partial_selector(transaction, :to, contract)
+             } = AddressView.address_partial_selector(transaction, :to, contract_address)
     end
 
     test "for a non-contract from address not on address page" do
-      transaction = %Transaction{to_address_hash: hash} = insert(:transaction)
+      transaction = %Transaction{to_address: to_address} = insert(:transaction)
 
       assert %{
                partial: "_link.html",
-               address_hash: ^hash,
+               address: ^to_address,
                contract: false,
                truncate: false
              } = AddressView.address_partial_selector(transaction, :to, nil)
     end
 
     test "for a non-contract from address matching address page" do
-      transaction = %Transaction{from_address_hash: hash} = insert(:transaction)
+      transaction = %Transaction{from_address: from_address} = insert(:transaction)
 
       assert %{
                partial: "_responsive_hash.html",
-               address_hash: ^hash,
+               address: ^from_address,
                contract: false,
                truncate: false
              } = AddressView.address_partial_selector(transaction, :from, transaction.from_address)
@@ -127,19 +127,19 @@ defmodule BlockScoutWeb.AddressViewTest do
 
   describe "render_partial/1" do
     test "renders _link partial" do
-      %Address{hash: hash} = build(:address)
+      address = build(:address)
 
       assert {:safe, _} =
-               AddressView.render_partial(%{partial: "_link.html", address_hash: hash, contract: false, truncate: false})
+               AddressView.render_partial(%{partial: "_link.html", address: address, contract: false, truncate: false})
     end
 
     test "renders _responsive_hash partial" do
-      %Address{hash: hash} = build(:address)
+      address = build(:address)
 
       assert {:safe, _} =
                AddressView.render_partial(%{
                  partial: "_responsive_hash.html",
-                 address_hash: hash,
+                 address: address,
                  contract: false,
                  truncate: false
                })
@@ -225,6 +225,49 @@ defmodule BlockScoutWeb.AddressViewTest do
       token = insert(:token, name: "super token money", symbol: "ST$")
 
       assert AddressView.token_title(token) == "super token money (ST$)"
+    end
+  end
+
+  describe "hash/1" do
+    test "gives a string version of an address's hash" do
+      address = %Address{
+        hash: %Hash{
+          byte_count: 20,
+          bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179, 223, 65, 91>>
+        }
+      }
+
+      assert AddressView.hash(address) == "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
+    end
+  end
+
+  describe "balance_block_number/1" do
+    test "gives empty string with no fetched balance block number present" do
+      assert AddressView.balance_block_number(%Address{}) == ""
+    end
+
+    test "gives block number when fetched balance block number is non-nil" do
+      assert AddressView.balance_block_number(%Address{fetched_coin_balance_block_number: 1_000_000}) == "1000000"
+    end
+  end
+
+  describe "primary_name/1" do
+    test "gives an address's primary name when present" do
+      address = insert(:address)
+
+      address_name = insert(:address_name, address: address, primary: true, name: "POA Foundation Wallet")
+      insert(:address_name, address: address, name: "POA Wallet")
+
+      preloaded_address = Explorer.Repo.preload(address, :names)
+
+      assert AddressView.primary_name(preloaded_address) == address_name.name
+    end
+
+    test "returns nil when no primary available" do
+      address_name = insert(:address_name, name: "POA Wallet")
+      preloaded_address = Explorer.Repo.preload(address_name.address, :names)
+
+      refute AddressView.primary_name(preloaded_address)
     end
   end
 end

@@ -158,6 +158,19 @@ defmodule Indexer.BufferedTask do
     GenServer.call(server, {:buffer, entries}, timeout)
   end
 
+  def child_spec([init_arguments]) do
+    child_spec([init_arguments, []])
+  end
+
+  def child_spec([_init_arguments, _gen_server_options] = start_link_arguments) do
+    default = %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, start_link_arguments}
+    }
+
+    Supervisor.child_spec(default, [])
+  end
+
   @doc false
   def debug_count(server) do
     GenServer.call(server, :debug_count)
@@ -198,11 +211,11 @@ defmodule Indexer.BufferedTask do
              | {:state, state}
            ]}
         ) :: {:ok, pid()} | {:error, {:already_started, pid()}}
-  def start_link({module, base_opts}) do
+  def start_link({module, base_init_opts}, genserver_opts \\ []) do
     default_opts = Application.get_all_env(:indexer)
-    opts = Keyword.merge(default_opts, base_opts)
+    init_opts = Keyword.merge(default_opts, base_init_opts)
 
-    GenServer.start_link(__MODULE__, {module, opts}, name: opts[:name])
+    GenServer.start_link(__MODULE__, {module, init_opts}, genserver_opts)
   end
 
   def init({callback_module, opts}) do
@@ -230,20 +243,20 @@ defmodule Indexer.BufferedTask do
     {:noreply, flush(state)}
   end
 
-  def handle_info({ref, {:performed, :ok}}, state) do
+  def handle_info({ref, :ok}, %{init_task: ref} = state) do
+    {:noreply, state}
+  end
+
+  def handle_info({ref, :ok}, state) do
     {:noreply, drop_task(state, ref)}
   end
 
-  def handle_info({ref, {:performed, :retry}}, state) do
+  def handle_info({ref, :retry}, state) do
     {:noreply, drop_task_and_retry(state, ref)}
   end
 
-  def handle_info({ref, {:performed, {:retry, retryable_entries}}}, state) do
+  def handle_info({ref, {:retry, retryable_entries}}, state) do
     {:noreply, drop_task_and_retry(state, ref, retryable_entries)}
-  end
-
-  def handle_info({ref, :ok}, %{init_task: ref} = state) do
-    {:noreply, state}
   end
 
   def handle_info({:DOWN, ref, :process, _pid, :normal}, %BufferedTask{init_task: ref} = state) do
@@ -363,9 +376,11 @@ defmodule Indexer.BufferedTask do
       {{batch, retries}, new_queue} = take_batch(state)
 
       task =
-        Task.Supervisor.async_nolink(state.task_supervisor, fn ->
-          {:performed, state.callback_module.run(batch, retries, state.callback_module_state)}
-        end)
+        Task.Supervisor.async_nolink(state.task_supervisor, state.callback_module, :run, [
+          batch,
+          retries,
+          state.callback_module_state
+        ])
 
       %{state | tasks: Map.put(state.tasks, task.ref, {batch, retries}), buffer: new_queue}
     else

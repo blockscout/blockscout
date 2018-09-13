@@ -39,7 +39,11 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
 
     # `:depth`, `:verify`, and `:verify_fun`, are based on `:hackney_connect.ssl_opts_1/2` as we use `:hackney` through
     # `:httpoison` and this keeps the SSL rules consistent between HTTP and WebSocket
-    :websocket_client.start_link(fsm_name, url, __MODULE__, url,
+    :websocket_client.start_link(
+      fsm_name,
+      url,
+      __MODULE__,
+      url,
       ssl_verify: :verify_peer,
       socket_opts: [
         cacerts: :certifi.cacerts(),

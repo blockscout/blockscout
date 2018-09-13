@@ -5,15 +5,22 @@ defmodule Indexer.MixProject do
     [
       aliases: aliases(),
       app: :indexer,
-      version: "0.1.0",
       build_path: "../../_build",
       config_path: "../../config/config.exs",
+      deps: deps(),
       deps_path: "../../deps",
-      lockfile: "../../mix.lock",
       elixir: "~> 1.6",
       elixirc_paths: elixirc_paths(Mix.env()),
+      lockfile: "../../mix.lock",
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ],
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      test_coverage: [tool: ExCoveralls],
+      version: "0.1.0"
     ]
   end
 
