@@ -4,7 +4,12 @@
   <p class="text-dark">
     [
       <%= for item <- @outputs do %>
-        <span class="text-dark function-response-item"><%= if named_argument?(item) do %><%= item["name"] %><% end %>(<%= item["type"] %>) : <%= item["value"] %></span>
+        <span class="text-dark function-response-item">
+          <%= if named_argument?(item) do %>
+            <%= item["name"] %>
+          <% end %>
+          (<%= item["type"] %>) : <%= values(item["value"]) %>
+        </span>
       <% end %>
     ]
   </p>
