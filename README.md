@@ -91,12 +91,12 @@ _Additional runtime options:_
 
 ![BlockScout Example](explorer_example.gif)
 
-### Configuring Other Chains
-Note: Most of these modifications will be consolidated into a single file in the future.
+### Configuring Ethereum Classic and other EVM Chains
+**Note: Most of these modifications will be consolidated into a single file in the future.**
   
-  1. Update the css file in `apps/block_scout_web/assets/css/theme/_variables.scss`. There are several presets available in this folder. You can customize the `_neutral_variables.scss` file to create a custom theme and then add it to `_variables.scss`.
+  1. Update the import file in `apps/block_scout_web/assets/css/theme/_variables.scss`. There are several preset css files for our supported chains which include Ethereum Classic, Ethereum Mainnet, Ropsten Testnet, Kovan Testnet, POA Core, and POA Sokol. To deploy Ethereum Classic, change the import to `ethereum_classic_variables`.
   
-  2. Update the logo file in `apps/block_scout_web/config/config.exs`
+  2. Update the logo file in `apps/block_scout_web/config/config.exs`. To deploy Ethereum Classic, change this file to `classic_ethereum_logo.svg`.
   
   3. Update the `check_origin` configuration in `apps/block_scout_web/config/prod.exs`. This allows realtime events to occur on your endpoint.
   
