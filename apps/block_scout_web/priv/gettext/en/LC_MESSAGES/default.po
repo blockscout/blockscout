@@ -18,7 +18,7 @@ msgstr "Age"
 msgid "Block"
 msgstr "Block"
 
-#: lib/block_scout_web/templates/block/index.html.eex:5
+#: lib/block_scout_web/templates/block/index.html.eex:10
 #: lib/block_scout_web/templates/chain/show.html.eex:56
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:13
 msgid "Blocks"
@@ -509,7 +509,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:154
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:155
-#: lib/block_scout_web/templates/block/index.html.eex:15
+#: lib/block_scout_web/templates/block/index.html.eex:20
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:50
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:78
 #: lib/block_scout_web/templates/tokens/token/show.html.eex:86
@@ -1218,4 +1218,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:34
 msgid "View Contract"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/block/index.html.eex:6
+msgid "Connection Lost, click to load newer blocks"
 msgstr ""
