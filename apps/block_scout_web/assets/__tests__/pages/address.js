@@ -5,9 +5,8 @@ describe('PAGE_LOAD', () => {
     const state = initialState
     const action = {
       type: 'PAGE_LOAD',
-      params: {
-        addressHash: '1234'
-      }
+      beyondPageOne: false,
+      addressHash: '1234'
     }
     const output = reducer(state, action)
 
@@ -19,10 +18,8 @@ describe('PAGE_LOAD', () => {
     const state = initialState
     const action = {
       type: 'PAGE_LOAD',
-      params: {
-        addressHash: '1234',
-        blockNumber: '4321'
-      }
+      beyondPageOne: true,
+      addressHash: '1234'
     }
     const output = reducer(state, action)
 
@@ -34,10 +31,9 @@ describe('PAGE_LOAD', () => {
     const state = initialState
     const action = {
       type: 'PAGE_LOAD',
-      params: {
-        addressHash: '1234',
-        filter: 'to'
-      }
+      addressHash: '1234',
+      beyondPageOne: false,
+      filter: 'to'
     }
     const output = reducer(state, action)
 
@@ -49,11 +45,9 @@ describe('PAGE_LOAD', () => {
     const state = initialState
     const action = {
       type: 'PAGE_LOAD',
-      params: {
-        addressHash: '1234',
-        filter: 'to',
-        blockNumber: '4321'
-      }
+      beyondPageOne: true,
+      addressHash: '1234',
+      filter: 'to'
     }
     const output = reducer(state, action)
 
