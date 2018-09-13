@@ -1,4 +1,4 @@
-<div class="dashboard-banner-container d-none d-md-block">
+<div class="dashboard-banner-container d-none d-md-block" data-page="chain-details">
   <div class="container">
     <div class="dashboard-banner">
       <div class="dashboard-banner-chart">

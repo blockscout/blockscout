@@ -1,4 +1,4 @@
-<section class="address-overview">
+<section class="address-overview" data-page="address-details" data-page-address-hash="<%= @address %>">
   <div class="row">
     <div class="card-section col-md-12 col-lg-8">
       <div class="card">

@@ -1,7 +1,7 @@
 import $ from 'jquery'
+import URI from 'urijs'
 import humps from 'humps'
 import socket from '../socket'
-import router from '../router'
 import { updateAllAges } from '../lib/from_now'
 import { initRedux } from '../utils'
 
@@ -15,7 +15,7 @@ export function reducer (state = initialState, action) {
   switch (action.type) {
     case 'PAGE_LOAD': {
       return Object.assign({}, state, {
-        beyondPageOne: !!action.blockNumber
+        beyondPageOne: action.beyondPageOne
       })
     }
     case 'CHANNEL_DISCONNECTED': {
@@ -35,26 +35,32 @@ export function reducer (state = initialState, action) {
   }
 }
 
-router.when('/blocks', { exactPathMatch: true }).then(({ blockNumber }) => initRedux(reducer, {
-  main (store) {
-    const state = store.dispatch({ type: 'PAGE_LOAD', blockNumber })
-    if (!state.beyondPageOne) {
-      const blocksChannel = socket.channel(`blocks:new_block`, {})
-      blocksChannel.join()
-      blocksChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
-      blocksChannel.on('new_block', (msg) =>
-        store.dispatch({ type: 'RECEIVED_NEW_BLOCK', msg: humps.camelizeKeys(msg) })
-      )
-    }
-  },
-  render (state, oldState) {
-    const $channelDisconnected = $('[data-selector="channel-disconnected-message"]')
-    const $blocksList = $('[data-selector="blocks-list"]')
+const $blockListPage = $('[data-page="block-list"]')
+if ($blockListPage.length) {
+  initRedux(reducer, {
+    main (store) {
+      const state = store.dispatch({
+        type: 'PAGE_LOAD',
+        beyondPageOne: !!humps.camelizeKeys(URI(window.location).query(true)).blockNumber
+      })
+      if (!state.beyondPageOne) {
+        const blocksChannel = socket.channel(`blocks:new_block`, {})
+        blocksChannel.join()
+        blocksChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
+        blocksChannel.on('new_block', (msg) =>
+          store.dispatch({ type: 'RECEIVED_NEW_BLOCK', msg: humps.camelizeKeys(msg) })
+        )
+      }
+    },
+    render (state, oldState) {
+      const $channelDisconnected = $('[data-selector="channel-disconnected-message"]')
+      const $blocksList = $('[data-selector="blocks-list"]')
 
-    if (state.channelDisconnected) $channelDisconnected.show()
-    if (oldState.newBlock !== state.newBlock) {
-      $blocksList.prepend(state.newBlock)
-      updateAllAges()
+      if (state.channelDisconnected) $channelDisconnected.show()
+      if (oldState.newBlock !== state.newBlock) {
+        $blocksList.prepend(state.newBlock)
+        updateAllAges()
+      }
     }
-  }
-}))
+  })
+}
