@@ -246,6 +246,50 @@ defmodule BlockScoutWeb.Etherscan do
     "message" => "Contract source code not verified",
     "result" => nil
   }
+
+  @contract_getsourcecode_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => %{
+      "SourceCode" => """
+      pragma solidity >0.4.24;
+
+      contract Test {
+      constructor() public { b = hex"12345678901234567890123456789012"; }
+      event Event(uint indexed a, bytes32 b);
+      event Event2(uint indexed a, bytes32 b);
+      function foo(uint a) public { emit Event(a, b); }
+      bytes32 b;
+      }
+      """,
+      "ABI" => """
+      [{
+      "type":"event",
+      "inputs": [{"name":"a","type":"uint256","indexed":true},{"name":"b","type":"bytes32","indexed":false}],
+      "name":"Event"
+      }, {
+      "type":"event",
+      "inputs": [{"name":"a","type":"uint256","indexed":true},{"name":"b","type":"bytes32","indexed":false}],
+      "name":"Event2"
+      }, {
+      "type":"function",
+      "inputs": [{"name":"a","type":"uint256"}],
+      "name":"foo",
+      "outputs": []
+      }]
+      """,
+      "ContractName" => "Test",
+      "CompilerVersion" => "v0.2.1-2016-01-30-91a6b35",
+      "OptimizationUsed" => "1"
+    }
+  }
+
+  @contract_getsourcecode_example_value_error %{
+    "status" => "0",
+    "message" => "Invalid address hash",
+    "result" => nil
+  }
+
   @status_type %{
     type: "status",
     enum: ~s(["0", "1"]),
@@ -552,6 +596,56 @@ defmodule BlockScoutWeb.Etherscan do
       },
       uncles: %{type: "null"},
       uncleInclusionReward: %{type: "null"}
+    }
+  }
+
+  @contract_model %{
+    name: "Contract",
+    fields: %{
+      "SourceCode" => %{
+        type: "contract source code",
+        definition: "The contract's source code.",
+        example: """
+        "pragma solidity >0.4.24;
+
+        contract Test {
+          constructor() public { b = hex"12345678901234567890123456789012"; }
+          event Event(uint indexed a, bytes32 b);
+          event Event2(uint indexed a, bytes32 b);
+          function foo(uint a) public { emit Event(a, b); }
+          bytes32 b;
+        }"
+        """
+      },
+      "ABI" => %{
+        type: "ABI",
+        definition: "JSON string for the contract's Application Binary Interface (ABI)",
+        example: """
+        "[{
+        \\"type\\":\\"event\\",
+        \\"inputs\\": [{\\"name\\":\\"a\\",\\"type\\":\\"uint256\\",\\"indexed\\":true},{\\"name\\":\\"b\\",\\"type\\":\\"bytes32\\",\\"indexed\\":false}],
+        \\"name\\":\\"Event\\"
+        }, {
+        \\"type\\":\\"event\\",
+        \\"inputs\\": [{\\"name\\":\\"a\\",\\"type\\":\\"uint256\\",\\"indexed\\":true},{\\"name\\":\\"b\\",\\"type\\":\\"bytes32\\",\\"indexed\\":false}],
+        \\"name\\":\\"Event2\\"
+        }, {
+        \\"type\\":\\"function\\",
+        \\"inputs\\": [{\\"name\\":\\"a\\",\\"type\\":\\"uint256\\"}],
+        \\"name\\":\\"foo\\",
+        \\"outputs\\": []
+        }]"
+        """
+      },
+      "ContractName" => %{
+        type: "string",
+        example: ~S("Some name")
+      },
+      "OptimizationUsed" => %{
+        type: "optimization used",
+        enum: ~s(["0", "1"]),
+        enum_interpretation: %{"0" => "false", "1" => "true"}
+      }
     }
   }
 
@@ -1174,6 +1268,43 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @contract_getsourcecode_action %{
+    name: "getsourcecode",
+    description: "Get contract source code for verified contract.",
+    required_params: [
+      %{
+        key: "address",
+        placeholder: "addressHash",
+        type: "string",
+        description: "A 160-bit code used for identifying contracts."
+      }
+    ],
+    optional_params: [],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@contract_getsourcecode_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "array",
+              array_type: @contract_model
+            }
+          }
+        }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@contract_getsourcecode_example_value_error)
+      }
+    ]
+  }
+
   @account_module %{
     name: "account",
     actions: [
@@ -1209,7 +1340,10 @@ defmodule BlockScoutWeb.Etherscan do
 
   @contract_module %{
     name: "contract",
-    actions: [@contract_getabi_action]
+    actions: [
+      @contract_getabi_action,
+      @contract_getsourcecode_action
+    ]
   }
 
   @documentation [
