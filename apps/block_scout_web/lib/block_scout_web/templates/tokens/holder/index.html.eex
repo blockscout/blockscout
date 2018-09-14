@@ -25,7 +25,7 @@
             <li class="nav-item">
               <%= link(
                   gettext("Read Contract"),
-                  to: token_read_contract_path(@conn, :index, @conn.params["id"]),
+                  to: token_read_contract_path(@conn, :index, @token.contract_address_hash),
                   class: "nav-link")%>
             </li>
           <% end %>
