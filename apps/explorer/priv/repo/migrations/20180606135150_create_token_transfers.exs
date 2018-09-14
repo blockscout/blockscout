@@ -23,9 +23,9 @@ defmodule Explorer.Repo.Migrations.CreateTokenTransfers do
     end
 
     create(index(:token_transfers, :transaction_hash))
-    create(index(:token_transfers, :to_address_hash))
-    create(index(:token_transfers, :from_address_hash))
-    create(index(:token_transfers, :token_contract_address_hash))
+    create(index(:token_transfers, [:to_address_hash, :transaction_hash]))
+    create(index(:token_transfers, [:from_address_hash, :transaction_hash]))
+    create(index(:token_transfers, [:token_contract_address_hash, :transaction_hash]))
 
     create(unique_index(:token_transfers, [:transaction_hash, :log_index]))
   end
