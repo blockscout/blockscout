@@ -182,9 +182,9 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
     )
 
     create(index(:transactions, :block_hash))
-    create(index(:transactions, :from_address_hash))
-    create(index(:transactions, :to_address_hash))
-    create(index(:transactions, :created_contract_address_hash))
+    create(index(:transactions, [:from_address_hash, :hash]))
+    create(index(:transactions, [:to_address_hash, :hash]))
+    create(index(:transactions, [:created_contract_address_hash, :hash]))
 
     create(index(:transactions, :inserted_at))
     create(index(:transactions, :updated_at))
