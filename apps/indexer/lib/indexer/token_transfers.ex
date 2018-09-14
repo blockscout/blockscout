@@ -3,6 +3,8 @@ defmodule Indexer.TokenTransfers do
   Helper functions for transforming data for ERC-20 and ERC-721 token transfers.
   """
 
+  require Logger
+
   alias ABI.TypeDecoder
   alias Explorer.Chain.TokenTransfer
 
@@ -17,19 +19,26 @@ defmodule Indexer.TokenTransfers do
     |> Enum.reduce(initial_acc, &do_from_log_params/2)
   end
 
-  defp do_from_log_params(log, %{tokens: tokens, token_transfers: token_transfers}) do
+  defp do_from_log_params(log, %{tokens: tokens, token_transfers: token_transfers} = acc) do
     {token, token_transfer} = parse_params(log)
 
     %{
       tokens: [token | tokens],
       token_transfers: [token_transfer | token_transfers]
     }
+  rescue
+    _ in [FunctionClauseError, MatchError] ->
+      Logger.error(fn -> "Unknown token transfer format: #{inspect(log)}" end)
+      acc
   end
 
   # ERC-20 token transfer
-  defp parse_params(%{fourth_topic: nil} = log) do
+  defp parse_params(%{second_topic: second_topic, third_topic: third_topic, fourth_topic: nil} = log)
+       when not is_nil(second_topic) and not is_nil(third_topic) do
+    [amount] = decode_data(log.data, [{:uint, 256}])
+
     token_transfer = %{
-      amount: Decimal.new(convert_to_integer(log.data)),
+      amount: Decimal.new(amount || 0),
       block_number: log.block_number,
       log_index: log.index,
       from_address_hash: truncate_address_hash(log.second_topic),
@@ -46,15 +55,41 @@ defmodule Indexer.TokenTransfers do
     {token, token_transfer}
   end
 
-  # ERC-721 token transfer
-  defp parse_params(%{fourth_topic: fourth_topic} = log) when not is_nil(fourth_topic) do
+  # ERC-721 token transfer with topics as addresses
+  defp parse_params(%{second_topic: second_topic, third_topic: third_topic, fourth_topic: fourth_topic} = log)
+       when not is_nil(second_topic) and not is_nil(third_topic) and not is_nil(fourth_topic) do
+    [token_id] = decode_data(fourth_topic, [{:uint, 256}])
+
     token_transfer = %{
       block_number: log.block_number,
       log_index: log.index,
       from_address_hash: truncate_address_hash(log.second_topic),
       to_address_hash: truncate_address_hash(log.third_topic),
       token_contract_address_hash: log.address_hash,
-      token_id: convert_to_integer(fourth_topic),
+      token_id: token_id || 0,
+      transaction_hash: log.transaction_hash
+    }
+
+    token = %{
+      contract_address_hash: log.address_hash,
+      type: "ERC-721"
+    }
+
+    {token, token_transfer}
+  end
+
+  # ERC-721 token transfer with info in data field instead of in log topics
+  defp parse_params(%{second_topic: nil, third_topic: nil, fourth_topic: nil, data: data} = log)
+       when not is_nil(data) do
+    [from_address_hash, to_address_hash, token_id] = decode_data(data, [:address, :address, {:uint, 256}])
+
+    token_transfer = %{
+      block_number: log.block_number,
+      log_index: log.index,
+      from_address_hash: encode_address_hash(from_address_hash),
+      to_address_hash: encode_address_hash(to_address_hash),
+      token_contract_address_hash: log.address_hash,
+      token_id: token_id,
       transaction_hash: log.transaction_hash
     }
 
@@ -72,14 +107,17 @@ defmodule Indexer.TokenTransfers do
     "0x#{truncated_hash}"
   end
 
-  defp convert_to_integer("0x"), do: 0
+  defp encode_address_hash(binary) do
+    "0x" <> Base.encode16(binary, case: :lower)
+  end
 
-  defp convert_to_integer("0x" <> encoded_integer) do
-    [value] =
-      encoded_integer
-      |> Base.decode16!(case: :mixed)
-      |> TypeDecoder.decode_raw([{:uint, 256}])
+  defp decode_data("0x", types) do
+    for _ <- types, do: nil
+  end
 
-    value
+  defp decode_data("0x" <> encoded_data, types) do
+    encoded_data
+    |> Base.decode16!(case: :mixed)
+    |> TypeDecoder.decode_raw(types)
   end
 end
