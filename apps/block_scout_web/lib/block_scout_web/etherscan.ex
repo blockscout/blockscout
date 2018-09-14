@@ -215,6 +215,12 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => "21265524714464"
   }
 
+  @stats_ethsupply_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => "101959776311500000000000000"
+  }
+
   @block_getblockreward_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -1249,6 +1255,32 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @stats_ethsupply_action %{
+    name: "ethsupply",
+    description: "Get total supply in Wei.",
+    required_params: [],
+    optional_params: [],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@stats_ethsupply_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "integer",
+              description: "The total supply.",
+              example: ~s("101959776311500000000000000")
+            }
+          }
+        }
+      }
+    ]
+  }
+
   @block_getblockreward_action %{
     name: "getblockreward",
     description: "Get block reward by block number.",
@@ -1459,7 +1491,10 @@ defmodule BlockScoutWeb.Etherscan do
 
   @stats_module %{
     name: "stats",
-    actions: [@stats_tokensupply_action]
+    actions: [
+      @stats_tokensupply_action,
+      @stats_ethsupply_action
+    ]
   }
 
   @block_module %{
