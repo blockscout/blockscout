@@ -1,13 +1,27 @@
 defmodule BlockScoutWeb.API.RPC.TransactionController do
   use BlockScoutWeb, :controller
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, Etherscan}
 
   def gettxreceiptstatus(conn, params) do
     with {:txhash_param, {:ok, txhash_param}} <- fetch_txhash(params),
          {:format, {:ok, transaction_hash}} <- to_transaction_hash(txhash_param) do
       status = to_transaction_status(transaction_hash)
       render(conn, :gettxreceiptstatus, %{status: status})
+    else
+      {:txhash_param, :error} ->
+        render(conn, :error, error: "Query parameter txhash is required")
+
+      {:format, :error} ->
+        render(conn, :error, error: "Invalid txhash format")
+    end
+  end
+
+  def getstatus(conn, params) do
+    with {:txhash_param, {:ok, txhash_param}} <- fetch_txhash(params),
+         {:format, {:ok, transaction_hash}} <- to_transaction_hash(txhash_param) do
+      error = Etherscan.get_transaction_error(transaction_hash)
+      render(conn, :getstatus, %{error: error})
     else
       {:txhash_param, :error} ->
         render(conn, :error, error: "Query parameter txhash is required")

@@ -304,6 +304,21 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => nil
   }
 
+  @transaction_getstatus_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => %{
+      "isError" => "1",
+      "errDescription" => "Out of gas"
+    }
+  }
+
+  @transaction_getstatus_example_value_error %{
+    "status" => "0",
+    "message" => "Query parameter txhash is required",
+    "result" => nil
+  }
+
   @status_type %{
     type: "status",
     enum: ~s(["0", "1"]),
@@ -670,6 +685,21 @@ defmodule BlockScoutWeb.Etherscan do
         type: "status",
         enum: ~s(["0", "1"]),
         enum_interpretation: %{"0" => "fail", "1" => "pass"}
+      }
+    }
+  }
+
+  @transaction_status_model %{
+    name: "TransactionStatus",
+    fields: %{
+      isError: %{
+        type: "isError",
+        enum: ~s(["0", "1"]),
+        enum_interpretation: %{"0" => "pass", "1" => "error"}
+      },
+      errDescription: %{
+        type: "string",
+        example: ~s("Out of gas")
       }
     }
   }
@@ -1367,6 +1397,43 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @transaction_getstatus_action %{
+    name: "getstatus",
+    description: "Get error status and error message.",
+    required_params: [
+      %{
+        key: "txhash",
+        placeholder: "transactionHash",
+        type: "string",
+        description: "Transaction hash. Hash of contents of the transaction."
+      }
+    ],
+    optional_params: [],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@transaction_getstatus_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "model",
+              model: @transaction_status_model
+            }
+          }
+        }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@transaction_getstatus_example_value_error)
+      }
+    ]
+  }
+
   @account_module %{
     name: "account",
     actions: [
@@ -1410,7 +1477,10 @@ defmodule BlockScoutWeb.Etherscan do
 
   @transaction_module %{
     name: "transaction",
-    actions: [@transaction_gettxreceiptstatus_action]
+    actions: [
+      @transaction_gettxreceiptstatus_action,
+      @transaction_getstatus_action
+    ]
   }
 
   @documentation [

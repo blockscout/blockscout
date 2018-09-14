@@ -183,6 +183,24 @@ defmodule Explorer.Etherscan do
     Repo.one(query)
   end
 
+  @doc """
+  Gets the error for a given transaction hash
+  (`t:Explorer.Chain.Hash.Full.t/0`). Returns nil if no error is found.
+
+  """
+  @spec get_transaction_error(Hash.Full.t()) :: String.t() | nil
+  def get_transaction_error(%Hash{byte_count: unquote(Hash.Full.byte_count())} = transaction_hash) do
+    query =
+      from(it in InternalTransaction,
+        where: it.transaction_hash == ^transaction_hash,
+        order_by: [desc: :index],
+        limit: 1,
+        select: it.error
+      )
+
+    Repo.one(query)
+  end
+
   @transaction_fields ~w(
     block_hash
     block_number
