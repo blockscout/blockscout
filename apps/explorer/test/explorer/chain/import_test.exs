@@ -456,6 +456,7 @@ defmodule Explorer.Chain.ImportTest do
       block = insert(:block)
 
       transaction_string_hash = "0x0705ea0a5b997d9aafd5c531e016d9aabe3297a28c0bd4ef005fe6ea329d301b"
+
       :transaction
       |> insert(from_address: from_address, hash: transaction_string_hash)
       |> with_block(block, status: :ok)

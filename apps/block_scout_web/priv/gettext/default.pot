@@ -152,7 +152,7 @@ msgstr ""
 msgid "Overview"
 msgstr ""
 
-#: lib/block_scout_web/views/transaction_view.ex:56
+#: lib/block_scout_web/views/transaction_view.ex:55
 msgid "Success"
 msgstr ""
 
@@ -204,8 +204,8 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/index.html.eex:16
 #: lib/block_scout_web/templates/transaction/index.html.eex:35
 #: lib/block_scout_web/templates/transaction/overview.html.eex:43
-#: lib/block_scout_web/views/transaction_view.ex:55
-#: lib/block_scout_web/views/transaction_view.ex:77
+#: lib/block_scout_web/views/transaction_view.ex:53
+#: lib/block_scout_web/views/transaction_view.ex:79
 msgid "Pending"
 msgstr ""
 
@@ -459,7 +459,7 @@ msgstr ""
 msgid "Total Gas Used"
 msgstr ""
 
-#: lib/block_scout_web/views/transaction_view.ex:116
+#: lib/block_scout_web/views/transaction_view.ex:124
 msgid "Transaction"
 msgstr ""
 
@@ -547,7 +547,7 @@ msgid "Newer"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:114
+#: lib/block_scout_web/views/transaction_view.ex:122
 msgid "Contract Creation"
 msgstr ""
 
@@ -649,7 +649,7 @@ msgid "Contract Address Pending"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:115
+#: lib/block_scout_web/views/transaction_view.ex:123
 msgid "Contract Call"
 msgstr ""
 
@@ -756,7 +756,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/token/_token_transfer.html.eex:4
 #: lib/block_scout_web/templates/transaction_token_transfer/_token_transfer.html.eex:4
-#: lib/block_scout_web/views/transaction_view.ex:113
+#: lib/block_scout_web/views/transaction_view.ex:121
 msgid "Token Transfer"
 msgstr ""
 
@@ -1211,4 +1211,19 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block/index.html.eex:6
 msgid "Connection Lost, click to load newer blocks"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/transaction_view.ex:54
+msgid "(Awaiting internal transactions for status)"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/transaction_view.ex:58
+msgid "Error: %{reason}"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/transaction_view.ex:56
+msgid "Error: (Awaiting internal transactions for reason)"
 msgstr ""
