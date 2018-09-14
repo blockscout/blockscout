@@ -20,7 +20,7 @@
         </li>
         <li class="nav-item">
           <%= link to: address_path(@conn, :index), class: "nav-link topnav-nav-link" do %>
-            <%= gettext("Top Addresses") %>
+            <%= gettext("Addresses") %>
           <% end %>
         </li>
         <li class="nav-item">
