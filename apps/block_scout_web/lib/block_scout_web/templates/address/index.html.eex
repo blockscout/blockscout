@@ -31,16 +31,16 @@
 
                   <!-- balance and percentage -->
                   <div class="col-md-5 d-flex flex-column text-md-right mt-3 mt-md-0">
-                    <!-- percentage of coins from total supply -->
-                    <span class="tile-title"><%= balance_percentage(address) %></span>
-                    <div class="d-flex flex-column flex-lg-row justify-content-md-end">
-                      <!-- address coin balance -->
-                      <span class="mr-0 mr-lg-2" data-test="address_balance"><%= balance(address) %></span>
+                    <!-- address coin balance -->
+                    <span class="tile-title" data-test="address_balance"><%= balance(address) %></span>
+                    <div class="d-flex flex-column flex-md-row justify-content-md-end">
                       <!-- USD value of the balance -->
                       <span
                         data-wei-value="<%= if address.fetched_coin_balance, do: address.fetched_coin_balance.value %>"
                         data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
                       </span>
+                      <!-- percentage of coins from total supply -->
+                      <span class="ml-0 ml-md-2">(<%= balance_percentage(address) %> Market Cap)</span>
                     </div>
                   </div>
                 </div>
