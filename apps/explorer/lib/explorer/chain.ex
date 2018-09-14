@@ -139,22 +139,18 @@ defmodule Explorer.Chain do
     {:ok, %{rows: [[result]]}} =
       Repo.query(
         """
-        SELECT COUNT(*) FROM
+        SELECT COUNT(DISTINCT t.hash) FROM
         (
-          SELECT * FROM transactions AS t0 WHERE t0.from_address_hash = $1
+          SELECT t0.hash FROM transactions AS t0 WHERE t0.from_address_hash = $1
           UNION
-          SELECT * FROM transactions AS t0 WHERE t0.to_address_hash = $1
+          SELECT t0.hash FROM transactions AS t0 WHERE t0.to_address_hash = $1
           UNION
-          SELECT * FROM transactions AS t0 WHERE t0.created_contract_address_hash = $1
+          SELECT t0.hash FROM transactions AS t0 WHERE t0.created_contract_address_hash = $1
           UNION
-          SELECT t0.* FROM transactions AS t0
-          LEFT JOIN token_transfers AS tt
-          ON tt.transaction_hash = t0.hash
+          SELECT tt.transaction_hash AS hash FROM token_transfers AS tt
           WHERE tt.from_address_hash = $1
           UNION
-          SELECT t0.* FROM transactions AS t0
-          LEFT JOIN token_transfers AS tt
-          ON tt.transaction_hash = t0.hash
+          SELECT tt.transaction_hash AS hash FROM token_transfers AS tt
           WHERE tt.to_address_hash = $1
         ) as t
         """,
@@ -216,8 +212,8 @@ defmodule Explorer.Chain do
     transaction_matches
     |> Enum.reduce(token_transfer_matches, &MapSet.union/2)
     |> MapSet.to_list()
-    |> Enum.sort_by(& &1.block_number, &>=/2)
     |> Enum.sort_by(& &1.index, &>=/2)
+    |> Enum.sort_by(& &1.block_number, &>=/2)
     |> Enum.slice(0..paging_options.page_size)
   end
 
