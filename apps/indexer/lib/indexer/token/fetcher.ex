@@ -154,6 +154,7 @@ defmodule Indexer.Token.Fetcher do
     |> Map.put(:cataloged, true)
     |> Map.merge(token_contract_data)
     |> handle_invalid_strings()
+    |> handle_large_strings()
   end
 
   defp atomized_key("decimals"), do: :decimals
@@ -191,4 +192,15 @@ defmodule Indexer.Token.Fetcher do
     |> Hash.to_string()
     |> String.slice(0, 6)
   end
+
+  defp handle_large_strings(%{name: name, symbol: symbol, type: type} = token) do
+    [name, type, symbol] = Enum.map([name, type, symbol], &handle_large_string/1)
+
+    %{token | name: name, symbol: symbol, type: type}
+  end
+
+  defp handle_large_string(nil), do: nil
+  defp handle_large_string(string), do: handle_large_string(string, byte_size(string))
+  defp handle_large_string(string, size) when size > 255, do: binary_part(string, 0, 255)
+  defp handle_large_string(string, _size), do: string
 end

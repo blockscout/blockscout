@@ -188,5 +188,37 @@ defmodule Indexer.Token.FetcherTest do
         assert {:ok, %Token{cataloged: true, name: nil}} = Chain.token_from_address_hash(contract_address_hash)
       end
     end
+
+    test "shortens strings larger than 255 characters", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      long_token_name_shortened =
+        "<button class=\"navbar-toggler\" type=\"button\" data-toggle=\"collapse\" data-target=\"#navbarSupportedContent\" aria-controls=\"navbarSupportedContent\" aria-expanded=\"false\" aria-label=\"<%= gettext(\"Toggle navigation\") %>\"> <span class=\"navbar-toggler-icon\"></sp"
+
+      token = insert(:token, cataloged: false)
+      contract_address_hash = token.contract_address_hash
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        expect(
+          EthereumJSONRPC.Mox,
+          :json_rpc,
+          1,
+          fn [%{id: "decimals"}, %{id: "name"}, %{id: "symbol"}, %{id: "totalSupply"}], _opts ->
+            {:ok,
+             [
+               %{
+                 id: "name",
+                 # this is how the token name would come from the blockchain unshortened.
+                 result:
+                   "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000010c3c627574746f6e20636c6173733d226e61766261722d746f67676c65722220747970653d22627574746f6e2220646174612d746f67676c653d22636f6c6c617073652220646174612d7461726765743d22236e6176626172537570706f72746564436f6e74656e742220617269612d636f6e74726f6c733d226e6176626172537570706f72746564436f6e74656e742220617269612d657870616e6465643d2266616c73652220617269612d6c6162656c3d223c253d20676574746578742822546f67676c65206e617669676174696f6e222920253e223e203c7370616e20636c6173733d226e61766261722d746f67676c65722d69636f6e223e3c2f7370616e3e203c2f627574746f6e3e0000000000000000000000000000000000000000"
+               }
+             ]}
+          end
+        )
+
+        assert Fetcher.run([contract_address_hash], 0, json_rpc_named_arguments) == :ok
+
+        assert {:ok, %Token{cataloged: true, name: ^long_token_name_shortened}} =
+                 Chain.token_from_address_hash(contract_address_hash)
+      end
+    end
   end
 end
