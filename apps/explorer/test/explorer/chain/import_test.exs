@@ -453,8 +453,12 @@ defmodule Explorer.Chain.ImportTest do
       from_address_hash = "0x8cc2e4b51b4340cb3727cffe3f1878756e732cee"
       from_address = insert(:address, hash: from_address_hash)
 
+      block = insert(:block)
+
       transaction_string_hash = "0x0705ea0a5b997d9aafd5c531e016d9aabe3297a28c0bd4ef005fe6ea329d301b"
-      insert(:transaction, from_address: from_address, hash: transaction_string_hash)
+      :transaction
+      |> insert(from_address: from_address, hash: transaction_string_hash)
+      |> with_block(block, status: :ok)
 
       options = %{
         addresses: %{
@@ -493,7 +497,9 @@ defmodule Explorer.Chain.ImportTest do
     end
 
     test "with internal_transactions updates Transaction internal_transactions_indexed_at" do
-      from_address_hash = "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
+      block_hash = "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47"
+      block_number = 34
+      miner_hash = from_address_hash = "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
       to_address_hash = "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
       transaction_hash = "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6"
 
@@ -504,17 +510,40 @@ defmodule Explorer.Chain.ImportTest do
             %{hash: to_address_hash}
           ]
         },
+        blocks: %{
+          params: [
+            %{
+              difficulty: 340_282_366_920_938_463_463_374_607_431_768_211_454,
+              gas_limit: 6_926_030,
+              gas_used: 269_607,
+              hash: block_hash,
+              miner_hash: miner_hash,
+              nonce: 0,
+              number: block_number,
+              parent_hash: "0x106d528393159b93218dd410e2a778f083538098e46f1a44902aa67a164aed0b",
+              size: 1493,
+              timestamp: Timex.parse!("2017-12-15T21:06:15Z", "{ISO:Extended:Z}"),
+              total_difficulty: 11_569_600_475_311_907_757_754_736_652_679_816_646_147
+            }
+          ]
+        },
         transactions: %{
           params: [
             %{
+              block_hash: block_hash,
+              block_number: block_number,
+              cumulative_gas_used: 269_607,
               from_address_hash: from_address_hash,
-              gas: 4_677_320,
+              gas: 269_607,
               gas_price: 1,
+              gas_used: 269_607,
               hash: transaction_hash,
+              index: 0,
               input: "0x",
               nonce: 0,
               r: 0,
               s: 0,
+              status: :ok,
               v: 0,
               value: 0
             }
@@ -554,7 +583,9 @@ defmodule Explorer.Chain.ImportTest do
       smart_contract_bytecode =
         "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582040d82a7379b1ee1632ad4d8a239954fd940277b25628ead95259a85c5eddb2120029"
 
-      from_address_hash = "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
+      block_hash = "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47"
+      block_number = 34
+      miner_hash = from_address_hash = "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
       created_contract_address_hash = "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
       transaction_hash = "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6"
 
@@ -568,17 +599,40 @@ defmodule Explorer.Chain.ImportTest do
             }
           ]
         },
+        blocks: %{
+          params: [
+            %{
+              difficulty: 340_282_366_920_938_463_463_374_607_431_768_211_454,
+              gas_limit: 6_926_030,
+              gas_used: 269_607,
+              hash: block_hash,
+              miner_hash: miner_hash,
+              nonce: 0,
+              number: block_number,
+              parent_hash: "0x106d528393159b93218dd410e2a778f083538098e46f1a44902aa67a164aed0b",
+              size: 1493,
+              timestamp: Timex.parse!("2017-12-15T21:06:15Z", "{ISO:Extended:Z}"),
+              total_difficulty: 11_569_600_475_311_907_757_754_736_652_679_816_646_147
+            }
+          ]
+        },
         transactions: %{
           params: [
             %{
+              block_hash: block_hash,
+              block_number: block_number,
+              cumulative_gas_used: 269_607,
               from_address_hash: from_address_hash,
-              gas: 4_677_320,
+              gas: 269_607,
               gas_price: 1,
+              gas_used: 269_607,
               hash: transaction_hash,
+              index: 0,
               input: "0x",
               nonce: 0,
               r: 0,
               s: 0,
+              status: :ok,
               v: 0,
               value: 0
             }
@@ -620,7 +674,9 @@ defmodule Explorer.Chain.ImportTest do
       smart_contract_bytecode =
         "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582040d82a7379b1ee1632ad4d8a239954fd940277b25628ead95259a85c5eddb2120029"
 
-      from_address_hash = "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
+      block_hash = "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47"
+      block_number = 34
+      miner_hash = from_address_hash = "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
       to_address_hash = "0xf7ddc5c7a2d2f0d7a9798459c0104fdf5e9a7bbb"
       created_contract_address_hash = "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
       transaction_hash = "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6"
@@ -636,17 +692,40 @@ defmodule Explorer.Chain.ImportTest do
             %{hash: to_address_hash}
           ]
         },
+        blocks: %{
+          params: [
+            %{
+              difficulty: 340_282_366_920_938_463_463_374_607_431_768_211_454,
+              gas_limit: 6_926_030,
+              gas_used: 269_607,
+              hash: block_hash,
+              miner_hash: miner_hash,
+              nonce: 0,
+              number: block_number,
+              parent_hash: "0x106d528393159b93218dd410e2a778f083538098e46f1a44902aa67a164aed0b",
+              size: 1493,
+              timestamp: Timex.parse!("2017-12-15T21:06:15Z", "{ISO:Extended:Z}"),
+              total_difficulty: 11_569_600_475_311_907_757_754_736_652_679_816_646_147
+            }
+          ]
+        },
         transactions: %{
           params: [
             %{
+              block_hash: block_hash,
+              block_number: block_number,
+              cumulative_gas_used: 269_607,
               from_address_hash: from_address_hash,
-              gas: 4_677_320,
+              gas: 269_607,
               gas_price: 1,
+              gas_used: 269_607,
               hash: transaction_hash,
+              index: 0,
               input: "0x",
               nonce: 0,
               r: 0,
               s: 0,
+              status: :ok,
               to_address_hash: to_address_hash,
               v: 0,
               value: 0
@@ -795,7 +874,7 @@ defmodule Explorer.Chain.ImportTest do
                })
     end
 
-    test "updates transaction status from internal transactions when status is not set from (pre-Byzantium/Ethereum Classic) receipts" do
+    test "updates transaction error and status from internal transactions when status is not set from (pre-Byzantium/Ethereum Classic) receipts" do
       assert {:ok, _} =
                Import.all(%{
                  addresses: %{
@@ -910,10 +989,10 @@ defmodule Explorer.Chain.ImportTest do
                  }
                })
 
-      assert %Transaction{status: nil} =
+      assert %Transaction{status: nil, error: nil} =
                Repo.get(Transaction, "0x1a263224a95275d77bc30a7e131bc64d948777946a790c0915ab293791fbcb61")
 
-      assert %Transaction{status: nil} =
+      assert %Transaction{status: nil, error: nil} =
                Repo.get(Transaction, "0xab349efbe1ddc6d85d84a993aa52bdaadce66e8ee166dd10013ce3f2a94ca724")
 
       assert {:ok, _} =
@@ -959,10 +1038,10 @@ defmodule Explorer.Chain.ImportTest do
                  }
                })
 
-      assert %Transaction{status: :ok} =
+      assert %Transaction{status: :ok, error: nil} =
                Repo.get(Transaction, "0x1a263224a95275d77bc30a7e131bc64d948777946a790c0915ab293791fbcb61")
 
-      assert %Transaction{status: :error} =
+      assert %Transaction{status: :error, error: "Out of gas"} =
                Repo.get(Transaction, "0xab349efbe1ddc6d85d84a993aa52bdaadce66e8ee166dd10013ce3f2a94ca724")
     end
   end

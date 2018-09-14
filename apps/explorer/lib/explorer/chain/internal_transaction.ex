@@ -9,7 +9,7 @@ defmodule Explorer.Chain.InternalTransaction do
   @typedoc """
    * `call_type` - the type of call.  `nil` when `type` is not `:call`.
    * `created_contract_code` - the code of the contract that was created when `type` is `:create`.
-   * `error` - error message when `:call` `type` errors
+   * `error` - error message when `:call` or `:create` `type` errors
    * `from_address` - the source of the `value`
    * `from_address_hash` - hash of the source of the `value`
    * `gas` - the amount of gas allowed

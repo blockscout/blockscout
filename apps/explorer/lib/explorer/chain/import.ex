@@ -866,6 +866,11 @@ defmodule Explorer.Chain.Import do
                 t.hash,
                 t.to_address_hash
               ),
+            error:
+              fragment(
+                "(SELECT it.error FROM internal_transactions AS it WHERE it.transaction_hash = ? ORDER BY it.index DESC LIMIT 1)",
+                t.hash
+              ),
             status:
               fragment(
                 "COALESCE(?, CASE WHEN (SELECT it.error FROM internal_transactions AS it WHERE it.transaction_hash = ? ORDER BY it.index DESC LIMIT 1) IS NULL THEN ? ELSE ? END)",
