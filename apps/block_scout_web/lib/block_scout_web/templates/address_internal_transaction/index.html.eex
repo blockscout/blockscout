@@ -12,7 +12,7 @@
             <%= link(
                   gettext("Transactions"),
                   class: "nav-link",
-                  to: address_transaction_path(@conn, :index, @address.hash)
+                  to: address_transaction_path(@conn, :show, @address.hash)
                 ) %>
           </li>
           <li class="nav-item">
@@ -61,7 +61,7 @@
               <%= link(
                     gettext("Transactions"),
                     class: "dropdown-item",
-                    to: address_transaction_path(@conn, :index, @address.hash)
+                    to: address_transaction_path(@conn, :show, @address.hash)
                   ) %>
               <%= link(
                     gettext("Tokens"),

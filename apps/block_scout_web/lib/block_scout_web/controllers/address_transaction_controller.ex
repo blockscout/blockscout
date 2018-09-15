@@ -5,14 +5,13 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.AddressController, only: [transaction_count: 1]
   import BlockScoutWeb.Chain, only: [current_filter: 1, paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias Explorer.{Chain, Market}
-  alias Explorer.ExchangeRates.Token
+  alias Explorer.Chain
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
-    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+    with true <- ajax?(conn),
+         {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash) do
       full_options =
         [
@@ -29,15 +28,15 @@ defmodule BlockScoutWeb.AddressTransactionController do
       transactions_plus_one = Chain.address_to_transactions(address, full_options)
       {transactions, next_page} = split_list_by_page(transactions_plus_one)
 
-      render(
-        conn,
+      conn
+      |> put_status(200)
+      |> put_layout(false)
+      |> render(
         "index.html",
         address: address,
         next_page_params: next_page_params(next_page, transactions, params),
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
-        transactions: transactions,
-        transaction_count: transaction_count(address)
+        transactions: transactions
       )
     else
       :error ->
