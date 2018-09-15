@@ -826,7 +826,6 @@ defmodule Explorer.Chain do
 
   @doc """
   Lists the top 250 `t:Explorer.Chain.Address.t/0`'s' in descending order based on coin balance.
-
   """
   @spec list_top_addresses :: [Address.t()]
   def list_top_addresses do
@@ -834,6 +833,54 @@ defmodule Explorer.Chain do
     |> limit(250)
     |> order_by(desc: :fetched_coin_balance, asc: :hash)
     |> where([address], address.fetched_coin_balance > ^0)
+    |> Repo.all()
+  end
+
+  @doc """
+  Counts the number of `t:Explorer.Chain.Block.t/0` validated by the `address`.
+  """
+  @spec address_to_validation_count(Address.t()) :: non_neg_integer()
+  def address_to_validation_count(%Address{hash: hash}) do
+    {:ok, %{rows: [[result]]}} = 
+      SQL.query(
+        Repo,
+        """
+          SELECT COUNT(hash) FROM "blocks"
+            WHERE "miner_hash" = $1
+        """,
+        [hash.bytes]
+      )
+
+      result
+  end
+
+   @doc """
+  Finds all Blocks validated by the address given.
+
+    ## Options
+      * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+          `:required`, and the `t:Explorer.Chain.Block.t/0` has no associated record for that association, then the
+          `t:Explorer.Chain.Block.t/0` will not be included in the page `entries`.
+      * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
+        `:key` (a tuple of the lowest/oldest `{block_number}`) and. Results will be the internal
+        transactions older than the `block_number` that are passed.
+
+  Returns all blocks validated by the address given.
+  """
+  @spec get_blocks_validated_by_address(
+          [paging_options | necessity_by_association_option],
+          Address.t()
+        ) :: [Block.t()]
+  def get_blocks_validated_by_address(options \\ [], %Address{hash: hash}) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    Block
+    |> join_associations(necessity_by_association)
+    |> where(miner_hash: ^hash)
+    |> page_blocks(paging_options)
+    |> limit(^paging_options.page_size)
+    |> order_by(desc: :number)
     |> Repo.all()
   end
 

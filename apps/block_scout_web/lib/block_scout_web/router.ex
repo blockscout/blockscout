@@ -70,12 +70,19 @@ defmodule BlockScoutWeb.Router do
 
     resources "/address", AddressController, only: [:show] do
       resources("/transactions", AddressTransactionController, only: [:index], as: :transaction)
-
+      
       resources(
         "/internal_transactions",
         AddressInternalTransactionController,
         only: [:index],
         as: :internal_transaction
+      )
+
+      resources(
+        "/validations",
+        AddressValidationController,
+        only: [:index],
+        as: :validation
       )
 
       resources(

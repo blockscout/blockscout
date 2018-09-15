@@ -17,15 +17,19 @@
           </div>
           <h1 class="card-title"><%= address_title(@address) %> <%= gettext "Details" %> </h1>
           <h3 class="<%= if BlockScoutWeb.AddressView.contract?(@address) do %>contract-address<% end %>" data-test="address_detail_hash"><%= @address.hash %></h3>
-
           <div class="d-flex flex-column flex-lg-row justify-content-start text-muted">
             <%= if address_name = primary_name(@address) do %>
               <strong class="mr-4 mb-2 text-primary"><%= address_name %></strong>
             <% end %>
             <span class="mr-4 mb-2">
-              <span data-selector="transaction-count"><%= Cldr.Number.to_string!(@transaction_count, format: "#,###") %></span>
-
-              <%= gettext "Transactions" %>
+              <span data-selector="transaction-count">
+                <%= Cldr.Number.to_string!(@transaction_count, format: "#,###") %>    
+              </span> <%= gettext("Transactions") %>
+              <%= if @validation_count > 0 do %>
+                <span data-selector="validation-count">
+                  <%= Cldr.Number.to_string!(@validation_count, format: "#,###") %>
+                </span> <%= gettext("Blocks Validated") %>
+              <% end %>
             </span>
             <%= if @address.token do %>
               <span class="mr-4 mb-2">

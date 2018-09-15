@@ -29,6 +29,16 @@
                 to: address_internal_transaction_path(@conn, :index, @address.hash)
               ) %>
         </li>
+        <%= if @validation_count > 0 do %>
+            <li class="nav-item">
+              <%= link(
+                "Blocks #{gettext("Validated")}",
+                class: "nav-link",
+                "data-test": "validations_tab_link",
+                to: address_validation_path(@conn, :index, @address.hash)
+              ) %>
+            </li>
+          <% end %>
         <li class="nav-item">
           <%= link(
               to: address_contract_path(@conn, :index, @address.hash),

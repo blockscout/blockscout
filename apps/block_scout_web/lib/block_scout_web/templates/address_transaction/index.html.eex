@@ -31,6 +31,16 @@
                   to: address_internal_transaction_path(@conn, :index, @address.hash)
                 ) %>
           </li>
+          <%= if @validation_count > 0 do %>
+            <li class="nav-item">
+              <%= link(
+                "Blocks #{gettext("Validated")}",
+                class: "nav-link",
+                "data-test": "validations_tab_link",
+                to: address_validation_path(@conn, :index, @address.hash)
+              ) %>
+            </li>
+          <% end %>
           <%= if contract?(@address) do %>
             <li class="nav-item">
               <%= link(
@@ -60,21 +70,29 @@
             <a class="nav-link active dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false"><%= gettext "Transactions" %></a>
             <div class="dropdown-menu">
               <%= link(
-                    gettext("Transactions"),
-                    class: "dropdown-item active",
-                    to: address_transaction_path(@conn, :index, @address.hash)
-                  ) %>
+                gettext("Transactions"),
+                class: "dropdown-item",
+                to: address_transaction_path(@conn, :index, @address.hash)
+              ) %>
               <%= link(
-                    gettext("Tokens"),
-                    class: "dropdown-item",
-                    to: address_token_path(@conn, :index, @address.hash)
-                  ) %>
+                gettext("Tokens"),
+                class: "dropdown-item",
+                to: address_token_path(@conn, :index, @address.hash)
+              ) %>
               <%= link(
-                    gettext("Internal Transactions"),
-                    class: "dropdown-item",
-                    "data-test": "internal_transactions_tab_link",
-                    to: address_internal_transaction_path(@conn, :index, @address.hash)
-                  ) %>
+                gettext("Internal Transactions"),
+                class: "dropdown-item",
+                "data-test": "internal_transactions_tab_link",
+                to: address_internal_transaction_path(@conn, :index, @address.hash)
+              ) %>
+              <%= if @validation_count > 0 do %>
+                <%= link(
+                  "Blocks #{gettext("Validated")}",
+                  class: "nav-link",
+                  "data-test": "validations_tab_link",
+                  to: address_validation_path(@conn, :index, @address.hash)
+                ) %>
+              <% end %>
               <%= if contract?(@address) do %>
                 <%= link(
                     to: address_contract_path(@conn, :index, @address.hash),
@@ -90,7 +108,7 @@
                 <%= link(
                     gettext("Read Contract"),
                     to: address_read_contract_path(@conn, :index, @address.hash),
-                    class: "dropdown-item")%>
+                    class: "dropdown-item") %>
               <% end %>
             </div>
           </li>

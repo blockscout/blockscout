@@ -13,7 +13,6 @@
                   to: address_transaction_path(@conn, :index, @address.hash)
                 ) %>
           </li>
-
           <li class="nav-item">
             <%= link(
                   gettext("Tokens"),
@@ -21,15 +20,24 @@
                   to: address_token_path(@conn, :index, @address.hash)
                 ) %>
           </li>
-
-          <li class="nav-item"> <%= link(
+          <li class="nav-item"> 
+            <%= link(
                   gettext("Internal Transactions"),
                   class: "nav-link",
                   "data-test": "internal_transactions_tab_link",
                   to: address_internal_transaction_path(@conn, :index, @address.hash)
                 ) %>
           </li>
-
+          <%= if @validation_count > 0 do %>
+            <li class="nav-item">
+              <%= link(
+                "Blocks #{gettext("Validated")}",
+                class: "nav-link",
+                "data-test": "validations_tab_link",
+                to: address_validation_path(@conn, :index, @address.hash)
+              ) %>
+            </li>
+          <% end %>
           <%= if AddressView.contract?(@address) do %>
             <li class="nav-item">
               <%= link(
@@ -43,7 +51,6 @@
               <% end %>
             </li>
           <% end %>
-
           <%= if AddressView.smart_contract_with_read_only_functions?(@address) do %>
             <li class="nav-item">
               <%= link(
@@ -70,28 +77,38 @@
             </a>
             <div class="dropdown-menu">
               <%= link(
-                    gettext("Transactions"),
-                    class: "dropdown-item",
-                    to: address_transaction_path(@conn, :index, @address.hash)
-                  ) %>
+                gettext("Transactions"),
+                class: "dropdown-item",
+                to: address_transaction_path(@conn, :index, @address.hash)
+              ) %>
               <%= link(
-                    gettext("Tokens"),
-                    class: "dropdown-item active",
-                    to: address_token_path(@conn, :index, @address.hash)
-                  ) %>
+                gettext("Tokens"),
+                class: "dropdown-item",
+                to: address_token_path(@conn, :index, @address.hash)
+              ) %>
               <%= link(
-                    gettext("Internal Transactions"),
-                    class: "dropdown-item",
-                    "data-test": "internal_transactions_tab_link",
-                    to: address_internal_transaction_path(@conn, :index, @address.hash)
-                  ) %>
-              <%= link(
-                  to: address_contract_path(@conn, :index, @address.hash),
-                  class: "dropdown-item") do %>
-                <%= gettext("Code") %>
+                gettext("Internal Transactions"),
+                class: "dropdown-item",
+                "data-test": "internal_transactions_tab_link",
+                to: address_internal_transaction_path(@conn, :index, @address.hash)
+              ) %>
+              <%= if @validation_count > 0 do %>
+                <%= link(
+                  gettext("Blocks Validated"),
+                  class: "nav-link",
+                  "data-test": "validations_tab_link",
+                  to: address_validation_path(@conn, :index, @address.hash)
+                ) %>
+              <% end %>
+              <%= if AddressView.contract?(@address) do %>
+                <%= link(
+                    to: address_contract_path(@conn, :index, @address.hash),
+                    class: "dropdown-item") do %>
+                  <%= gettext("Code") %>
 
-                <%= if AddressView.smart_contract_verified?(@address) do %>
-                  <i class="far fa-check-circle"></i>
+                  <%= if AddressView.smart_contract_verified?(@address) do %>
+                    <i class="far fa-check-circle"></i>
+                  <% end %>
                 <% end %>
               <% end %>
               <%= if AddressView.smart_contract_with_read_only_functions?(@address) do %>
