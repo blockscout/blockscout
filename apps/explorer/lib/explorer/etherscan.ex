@@ -172,7 +172,8 @@ defmodule Explorer.Etherscan do
         %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash
       ) do
     query =
-      from(tb in TokenBalance,
+      from(
+        tb in TokenBalance,
         where: tb.token_contract_address_hash == ^contract_address_hash,
         where: tb.address_hash == ^address_hash,
         order_by: [desc: :block_number],

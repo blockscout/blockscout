@@ -9,7 +9,6 @@ defmodule BlockScoutWeb.AddressContractController do
   def index(conn, %{"address_id" => address_hash_string}) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.find_contract_address(address_hash) do
-
       render(
         conn,
         "index.html",

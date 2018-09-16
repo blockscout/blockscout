@@ -27,16 +27,14 @@
             to: address_internal_transaction_path(@conn, :index, @address.hash)
           ) %>
           </li>
-          <%= if @validation_count > 0 do %>
-            <li class="nav-item">
-              <%= link(
-                "Blocks #{gettext("Validated")}",
-                class: "nav-link active",
-                "data-test": "validations_tab_link",
-                to: address_validation_path(@conn, :index, @address.hash)
-              ) %>
-            </li>
-          <% end %>
+          <li class="nav-item">
+            <%= link(
+              gettext("Blocks Validated"),
+              class: "nav-link active",
+              "data-test": "validations_tab_link",
+              to: address_validation_path(@conn, :index, @address.hash)
+            ) %>
+          </li>
           <%= if contract?(@address) do %>
             <li class="nav-item">
               <%= link(
@@ -47,14 +45,6 @@
                   <i class="far fa-check-circle"></i>
                 <% end %>
               <% end %>
-            </li>
-          <% end %>
-          <%= if smart_contract_with_read_only_functions?(@address) do %>
-            <li class="nav-item">
-              <%= link(
-                gettext("Read Contract"),
-                to: address_read_contract_path(@conn, :index, @address.hash),
-                class: "nav-link")%>
             </li>
           <% end %>
           <%= if smart_contract_with_read_only_functions?(@address) do %>
@@ -87,14 +77,12 @@
                 "data-test": "internal_transactions_tab_link",
                 to: address_internal_transaction_path(@conn, :index, @address.hash)
               ) %>
-              <%= if @validation_count > 0 do %>
-                <%= link(
-                  "Blocks #{gettext("Validated")}",
-                  class: "nav-link active",
-                  "data-test": "validations_tab_link",
-                  to: address_validation_path(@conn, :index, @address.hash)
-                ) %>
-              <% end %>
+              <%= link(
+                gettext("Blocks Validated"),
+                class: "dropdown-item active",
+                "data-test": "validations_tab_link",
+                to: address_validation_path(@conn, :index, @address.hash)
+              ) %>
               <%= if contract?(@address) do %>
                 <%= link(
                   to: address_contract_path(@conn, :index, @address.hash),
@@ -111,30 +99,24 @@
       </div>
       
       <div class="card-body">
-        <div data-selector="channel-batching-message" style="display:none;">
-          <div data-selector="reload-button" class="alert alert-info">
+        <div data-selector="channel-batching-message">
+          <div data-selector="reload-button" class="alert alert-info" class="d-none">
             <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More validations have come in." %></a>
           </div>
         </div>
 
-        <div data-selector="channel-disconnected-message" style="display:none;">
+        <div data-selector="channel-disconnected-message" class="d-none">
           <div data-selector="reload-button" class="alert alert-danger">
             <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer validations" %></a>
           </div>
         </div>
 
-        <h2 class="card-title"><%="Blocks #{gettext("Validated")}"%></h2>
-        <%= if Enum.count(@blocks) > 0 do %>
-          <span data-selector="validations-list">
-            <%= for block <- @blocks do %>
-              <%= render BlockScoutWeb.BlockView, "_tile.html", block: block %>
-            <% end %>
-          </span>
-        <% else %>
-          <div class="tile tile-muted text-center">
-            <span data-selector="empty-validations-list"><%= gettext "There are no validations for this address." %></span>
-          </div>
-        <% end %>
+        <h2 class="card-title"><%=gettext("Blocks Validated")%></h2>
+        <span data-selector="validations-list">
+          <%= for block <- @blocks do %>
+            <%= render BlockScoutWeb.BlockView, "_tile.html", block: block %>
+          <% end %>
+        </span>
         <div>
           <%= if @next_page_params do %>
             <%= link(

@@ -9,34 +9,34 @@
       <ul class="nav nav-tabs card-header-tabs d-none d-lg-inline-flex">
         <li class="nav-item">
           <%= link(
-                gettext("Transactions"),
-                class: "nav-link",
-                to: address_transaction_path(@conn, :index, @address.hash)
-              ) %>
+            gettext("Transactions"),
+            class: "nav-link",
+            to: address_transaction_path(@conn, :index, @address.hash)
+          ) %>
         </li>
         <li class="nav-item">
           <%= link(
-                gettext("Tokens"),
-                class: "nav-link",
-                to: address_token_path(@conn, :index, @address.hash)
-              ) %>
+            gettext("Tokens"),
+            class: "nav-link",
+            to: address_token_path(@conn, :index, @address.hash)
+          ) %>
         </li>
         <li class="nav-item">
           <%= link(
-                gettext("Internal Transactions"),
-                class: "nav-link",
-                "data-test": "internal_transactions_tab_link",
-                to: address_internal_transaction_path(@conn, :index, @address.hash)
-              ) %>
+            gettext("Internal Transactions"),
+            class: "nav-link",
+            "data-test": "internal_transactions_tab_link",
+            to: address_internal_transaction_path(@conn, :index, @address.hash)
+          ) %>
         </li>
-        <%= if @validation_count > 0 do %>
+        <%= if BlockScoutWeb.AddressView.validator?(@validation_count) do %>
           <li class="nav-item">
             <%= link(
-                  "Blocks #{gettext("Validated")}",
-                  class: "nav-link",
-                  "data-test": "validations_tab_link",
-                  to: address_validation_path(@conn, :index, @address.hash)
-                ) %>
+              gettext("Blocks Validated"),
+              class: "nav-link",
+              "data-test": "validations_tab_link",
+              to: address_validation_path(@conn, :index, @address.hash)
+            ) %>
           </li>
         <% end %>
         <li class="nav-item">
@@ -53,9 +53,10 @@
         <%= if BlockScoutWeb.AddressView.smart_contract_with_read_only_functions?(@address) do %>
           <li class="nav-item">
             <%= link(
-                gettext("Read Contract"),
-                to: address_read_contract_path(@conn, :index, @address.hash),
-                class: "nav-link")%>
+              gettext("Read Contract"),
+              to: address_read_contract_path(@conn, :index, @address.hash),
+              class: "nav-link"
+            )%>
           </li>
         <% end %>
       </ul>
@@ -87,6 +88,14 @@
                   "data-test": "internal_transactions_tab_link",
                   to: address_internal_transaction_path(@conn, :index, @address.hash)
                 ) %>
+            <%= if BlockScoutWeb.AddressView.validator?(@validation_count) do %>
+                <%= link(
+                  gettext("Blocks Validated"),
+                  class: "dropdown-item",
+                  "data-test": "validations_tab_link",
+                  to: address_validation_path(@conn, :index, @address.hash)
+                ) %>
+            <% end %>
             <%= link(
                 to: address_contract_path(@conn, :index, @address.hash),
                 class: "dropdown-item active") do %>
@@ -164,7 +173,6 @@
             </pre>
           </div>
         </section>
-
 
       <% end %>
       <section>

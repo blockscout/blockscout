@@ -10,30 +10,30 @@
         <ul class="nav nav-tabs card-header-tabs d-none d-lg-inline-flex">
           <li class="nav-item">
             <%= link(
-                  gettext("Transactions"),
-                  class: "nav-link",
-                  to: address_transaction_path(@conn, :index, @address.hash)
-                ) %>
+              gettext("Transactions"),
+              class: "nav-link",
+              to: address_transaction_path(@conn, :index, @address.hash)
+            ) %>
           </li>
           <li class="nav-item">
             <%= link(
-                  gettext("Tokens"),
-                  class: "nav-link",
-                  to: address_token_path(@conn, :index, @address.hash)
-                ) %>
+              gettext("Tokens"),
+              class: "nav-link",
+              to: address_token_path(@conn, :index, @address.hash)
+            ) %>
           </li>
           <li class="nav-item">
             <%= link(
-                  gettext("Internal Transactions"),
-                  class: "nav-link active",
-                  "data-test": "internal_transactions_tab_link",
-                  to: address_internal_transaction_path(@conn, :index, @address.hash)
-                ) %>
+              gettext("Internal Transactions"),
+              class: "nav-link active",
+              "data-test": "internal_transactions_tab_link",
+              to: address_internal_transaction_path(@conn, :index, @address.hash)
+            ) %>
           </li>
-          <%= if @validation_count > 0 do %>
+          <%= if validator?(@validation_count) do %>
             <li class="nav-item">
               <%= link(
-                "Blocks #{gettext("Validated")}",
+                gettext("Blocks Validated"),
                 class: "nav-link",
                 "data-test": "validations_tab_link",
                 to: address_validation_path(@conn, :index, @address.hash)
@@ -71,25 +71,25 @@
             </a>
             <div class="dropdown-menu">
               <%= link(
-                    gettext("Transactions"),
-                    class: "dropdown-item",
-                    to: address_transaction_path(@conn, :index, @address.hash)
-                  ) %>
+                gettext("Transactions"),
+                class: "dropdown-item",
+                to: address_transaction_path(@conn, :index, @address.hash)
+              ) %>
               <%= link(
-                    gettext("Tokens"),
-                    class: "dropdown-item",
-                    to: address_token_path(@conn, :index, @address.hash)
-                  ) %>
+                gettext("Tokens"),
+                class: "dropdown-item",
+                to: address_token_path(@conn, :index, @address.hash)
+              ) %>
               <%= link(
-                    gettext("Internal Transactions"),
-                    class: "dropdown-item active",
-                    "data-test": "internal_transactions_tab_link",
-                    to: address_internal_transaction_path(@conn, :index, @address.hash)
-                  ) %>
-              <%= if @validation_count > 0 do %>
+                gettext("Internal Transactions"),
+                class: "dropdown-item active",
+                "data-test": "internal_transactions_tab_link",
+                to: address_internal_transaction_path(@conn, :index, @address.hash)
+              ) %>
+              <%= if validator?(@validation_count) do %>
                 <%= link(
                   gettext("Blocks Validated"),
-                  class: "nav-link",
+                  class: "dropdown-item",
                   "data-test": "validations_tab_link",
                   to: address_validation_path(@conn, :index, @address.hash)
                 ) %>
@@ -114,12 +114,12 @@
         </ul>
       </div>
       <div class="card-body">
-        <div data-selector="channel-batching-message" style="display:none;">
+        <div data-selector="channel-batching-message" class="d-none">
           <div data-selector="reload-button" class="alert alert-info">
             <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More internal transactions have come in" %></a>
           </div>
         </div>
-        <div data-selector="channel-disconnected-message" style="display:none;">
+        <div data-selector="channel-disconnected-message" class="d-none">
           <div data-selector="reload-button" class="alert alert-danger">
             <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer internal transactions" %></a>
           </div>
@@ -188,6 +188,5 @@
         </div>
       </div>
     </div>
-
   </section>
 </section>

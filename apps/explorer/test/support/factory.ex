@@ -50,7 +50,8 @@ defmodule Explorer.Factory do
 
   def update_balance_value(%CoinBalance{address_hash: address_hash, block_number: block_number}, value) do
     Repo.update_all(
-      from(balance in CoinBalance,
+      from(
+        balance in CoinBalance,
         where: balance.address_hash == ^address_hash and balance.block_number == ^block_number
       ),
       set: [value: value, value_fetched_at: DateTime.utc_now()]

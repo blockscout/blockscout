@@ -12,7 +12,8 @@ defmodule Explorer.Chain do
       order_by: 3,
       preload: 2,
       where: 2,
-      where: 3
+      where: 3,
+      select: 3
     ]
 
   alias Ecto.Adapters.SQL
@@ -826,6 +827,7 @@ defmodule Explorer.Chain do
 
   @doc """
   Lists the top 250 `t:Explorer.Chain.Address.t/0`'s' in descending order based on coin balance.
+
   """
   @spec list_top_addresses :: [Address.t()]
   def list_top_addresses do
@@ -837,24 +839,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Counts the number of `t:Explorer.Chain.Block.t/0` validated by the `address`.
-  """
-  @spec address_to_validation_count(Address.t()) :: non_neg_integer()
-  def address_to_validation_count(%Address{hash: hash}) do
-    {:ok, %{rows: [[result]]}} = 
-      SQL.query(
-        Repo,
-        """
-          SELECT COUNT(hash) FROM "blocks"
-            WHERE "miner_hash" = $1
-        """,
-        [hash.bytes]
-      )
-
-      result
-  end
-
-   @doc """
   Finds all Blocks validated by the address given.
 
     ## Options
@@ -882,6 +866,17 @@ defmodule Explorer.Chain do
     |> limit(^paging_options.page_size)
     |> order_by(desc: :number)
     |> Repo.all()
+  end
+
+  @doc """
+  Counts the number of `t:Explorer.Chain.Block.t/0` validated by the `address`.
+  """
+  @spec address_to_validation_count(Address.t()) :: non_neg_integer()
+  def address_to_validation_count(%Address{hash: hash}) do
+    Block
+    |> where(miner_hash: ^hash)
+    |> select([b], count(b.hash))
+    |> Repo.one()
   end
 
   @doc """
@@ -1927,3 +1922,4 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 end
+

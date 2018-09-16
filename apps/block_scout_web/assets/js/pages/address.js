@@ -100,7 +100,6 @@ export function reducer (state = initialState, action) {
         newBlock: action.msg.blockHtml,
         minerHash: action.msg.blockMinerHash
       })
-
     }
     default:
       return state
