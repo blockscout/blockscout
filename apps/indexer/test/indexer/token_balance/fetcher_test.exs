@@ -50,4 +50,26 @@ defmodule Indexer.TokenBalance.FetcherTest do
       assert token_balance_updated.value_fetched_at != nil
     end
   end
+
+  describe "import_token_balances/1" do
+    test "ignores when it receives a empty list" do
+      assert TokenBalance.Fetcher.import_token_balances([]) == :ok
+    end
+
+    test "returns :error when the token balances has invalid data" do
+      token_balance = insert(:token_balance, value_fetched_at: nil, value: nil)
+
+      token_balances_params = [
+        %{
+          address_hash: nil,
+          block_number: nil,
+          token_contract_address_hash: to_string(token_balance.token_contract_address_hash),
+          value: nil,
+          value_fetched_at: nil
+        }
+      ]
+
+      assert TokenBalance.Fetcher.import_token_balances(token_balances_params) == :error
+    end
+  end
 end

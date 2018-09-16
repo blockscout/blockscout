@@ -102,7 +102,8 @@ defmodule Indexer.InternalTransaction.Fetcher do
         with {:ok, %{addresses: address_hashes}} <-
                Chain.import(%{
                  addresses: %{params: addresses_params},
-                 internal_transactions: %{params: internal_transactions_params}
+                 internal_transactions: %{params: internal_transactions_params},
+                 timeout: :infinity
                }) do
           address_hashes
           |> Enum.map(fn address_hash ->
