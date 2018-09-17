@@ -44,16 +44,10 @@ defmodule Explorer.ChainTest do
     end
 
     test "with contract creation transactions the contract address is counted" do
-      address = insert(:address)
+      contract_address = insert(:contract_address)
+      insert(:transaction, to_address: nil, created_contract_address: contract_address)
 
-      insert(
-        :internal_transaction_create,
-        created_contract_address: address,
-        index: 0,
-        transaction: insert(:transaction, to_address: nil)
-      )
-
-      assert Chain.address_to_transaction_count(address) == 1
+      assert Chain.address_to_transaction_count(contract_address) == 1
     end
 
     test "doesn't double count addresses when to_address = from_address" do
@@ -74,6 +68,22 @@ defmodule Explorer.ChainTest do
         insert(:internal_transaction_create, transaction: transaction_with_to_address, index: 0)
 
       assert Chain.address_to_transaction_count(address) == 0
+    end
+
+    test "counts transactions with token transfers on to or from address" do
+      address = insert(:address)
+      insert(:token_transfer, to_address: address, transaction: build(:transaction))
+      insert(:token_transfer, from_address: address, transaction: build(:transaction))
+
+      assert Chain.address_to_transaction_count(address) == 2
+    end
+
+    test "does not double count transactions" do
+      address = insert(:address)
+      transaction = insert(:transaction, to_address: address, from_address: address)
+      insert(:token_transfer, to_address: address, transaction: transaction)
+
+      assert Chain.address_to_transaction_count(address) == 1
     end
   end
 
@@ -274,6 +284,54 @@ defmodule Explorer.ChainTest do
                )
                |> Enum.map(& &1.hash)
                |> Enum.reverse()
+    end
+
+    test "returns results in reverse chronological order by block number and transaction index" do
+      address = insert(:address)
+
+      %Transaction{hash: first_pending} = insert(:transaction, to_address: address)
+      %Transaction{hash: second_pending} = insert(:transaction, to_address: address)
+
+      a_block = insert(:block, number: 6000)
+
+      %Transaction{hash: first} =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block(a_block)
+
+      %Transaction{hash: second} =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block(a_block)
+
+      %Transaction{hash: third} =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block(a_block)
+
+      %Transaction{hash: fourth} =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block(a_block)
+
+      b_block = insert(:block, number: 2000)
+
+      %Transaction{hash: fifth} =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block(b_block)
+
+      %Transaction{hash: sixth} =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block(b_block)
+
+      result =
+        address
+        |> Chain.address_to_transactions()
+        |> Enum.map(& &1.hash)
+
+      assert [first_pending, second_pending, fourth, third, second, first, sixth, fifth] == result
     end
   end
 

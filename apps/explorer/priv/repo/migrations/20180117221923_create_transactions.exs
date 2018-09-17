@@ -128,9 +128,6 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
     )
 
     create(index(:transactions, :block_hash))
-    create(index(:transactions, :from_address_hash))
-    create(index(:transactions, :to_address_hash))
-    create(index(:transactions, :created_contract_address_hash))
 
     create(index(:transactions, :inserted_at))
     create(index(:transactions, :updated_at))
@@ -142,6 +139,30 @@ defmodule Explorer.Repo.Migrations.CreateTransactions do
         :transactions,
         ["block_number DESC NULLS FIRST", "index DESC NULLS FIRST"],
         name: "transactions_recent_collated_index"
+      )
+    )
+
+    create(
+      index(
+        :transactions,
+        [:from_address_hash, "block_number DESC NULLS FIRST", "index DESC NULLS FIRST", :hash],
+        name: "transactions_from_address_hash_recent_collated_index"
+      )
+    )
+
+    create(
+      index(
+        :transactions,
+        [:to_address_hash, "block_number DESC NULLS FIRST", "index DESC NULLS FIRST", :hash],
+        name: "transactions_to_address_hash_recent_collated_index"
+      )
+    )
+
+    create(
+      index(
+        :transactions,
+        [:created_contract_address_hash, "block_number DESC NULLS FIRST", "index DESC NULLS FIRST", :hash],
+        name: "transactions_created_contract_address_hash_recent_collated_index"
       )
     )
 

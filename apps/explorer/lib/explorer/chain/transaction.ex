@@ -3,7 +3,7 @@ defmodule Explorer.Chain.Transaction do
 
   use Explorer.Schema
 
-  import Ecto.Query, only: [from: 2, join: 5, preload: 3]
+  import Ecto.Query, only: [from: 2, preload: 3, where: 3]
 
   alias Ecto.Changeset
 
@@ -317,110 +317,12 @@ defmodule Explorer.Chain.Transaction do
   Adds to the given transaction's query a `where` with one of the conditions that the matched
   function returns.
 
-  `where_address_fields_match(query, address, :to)`
-  - returns a query considering that the given address_hash is equal to to_address_hash from
-    transactions' table or is equal to to_address_hash from token transfers' table.
-
-  `where_address_fields_match(query, address, :from)`
-  - returns a query considering that the given address_hash is equal to from_address_hash from
-    transactions' table or is equal to from_address_hash from token transfers' table.
-
-  `where_address_fields_match(query, address, nil)`
-  - returns a query considering that the given address_hash can be: to_address_hash,
-    from_address_hash, created_contract_address_hash,
-    to_address_hash or from_address_hash from token_transfers' table.
-
-  ### Token transfers' preload
-
-  Token transfers will be preloaded according to the given address_hash considering if it's equal
-  to token_contract_address_hash, to_address_hash or from_address_hash from Token Transfers's table.
+  `where_address_fields_match(query, address, address_field)`
+  - returns a query constraining the given address_hash to be equal to the given
+    address field from transactions' table.
   """
-  def where_address_fields_match(query, address_hash, :to) do
-    join(
-      query,
-      :inner,
-      [transaction],
-      matches in fragment(
-        """
-        WITH hashes AS (
-          (
-            SELECT t0.hash AS hash
-            FROM transactions AS t0
-            WHERE t0.to_address_hash = ? OR t0.created_contract_address_hash = ?
-          )
-          UNION ALL
-          (
-            SELECT tt.transaction_hash AS hash
-            FROM token_transfers AS tt
-            WHERE tt.to_address_hash = ?
-          )
-        ) SELECT * from hashes
-        """,
-        ^address_hash.bytes,
-        ^address_hash.bytes,
-        ^address_hash.bytes
-      ),
-      transaction.hash == matches.hash
-    )
-  end
-
-  def where_address_fields_match(query, address_hash, :from) do
-    join(
-      query,
-      :inner,
-      [transaction],
-      matches in fragment(
-        """
-        WITH hashes AS (
-          (
-            SELECT t0.hash AS hash
-            FROM transactions AS t0
-            WHERE t0.from_address_hash = ?
-          )
-          UNION ALL
-          (
-            SELECT tt.transaction_hash AS hash
-            FROM token_transfers AS tt
-            WHERE tt.from_address_hash = ?
-          )
-        ) SELECT * from hashes
-        """,
-        ^address_hash.bytes,
-        ^address_hash.bytes
-      ),
-      transaction.hash == matches.hash
-    )
-  end
-
-  def where_address_fields_match(query, address_hash, nil) do
-    join(
-      query,
-      :inner,
-      [transaction],
-      matches in fragment(
-        """
-        WITH hashes AS (
-          (
-            SELECT t0.hash AS hash
-            FROM transactions AS t0
-            WHERE t0.to_address_hash = ? OR t0.from_address_hash = ? OR t0.created_contract_address_hash = ?
-          )
-          UNION ALL
-          (
-            SELECT tt.transaction_hash AS hash
-            FROM token_transfers AS tt
-            WHERE tt.to_address_hash = ? OR tt.from_address_hash = ?
-          )
-        ) SELECT * from hashes
-        """,
-        ^address_hash.bytes,
-        ^address_hash.bytes,
-        ^address_hash.bytes,
-        ^address_hash.bytes,
-        ^address_hash.bytes
-      ),
-      transaction.hash == matches.hash
-    )
+  def where_address_fields_match(query, address_hash, address_field) do
+    where(query, [t], field(t, ^address_field) == ^address_hash)
   end
 
   @collated_fields ~w(block_number cumulative_gas_used gas_used index status)a
