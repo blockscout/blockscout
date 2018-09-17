@@ -38,7 +38,11 @@ defmodule BlockScoutWeb.Notifier do
 
   def handle_event({:chain_event, :internal_transactions, internal_transactions}) do
     internal_transactions
-    |> Stream.map(&(InternalTransaction |> Repo.get(&1.id) |> Repo.preload([:from_address, :to_address])))
+    |> Stream.map(
+      &(InternalTransaction
+        |> Repo.get(&1.id)
+        |> Repo.preload([:from_address, :to_address, transaction: :block]))
+    )
     |> Enum.each(&broadcast_internal_transaction/1)
   end
 
