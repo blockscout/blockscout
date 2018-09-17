@@ -1,26 +1,17 @@
 defmodule BlockScoutWeb.AddressController do
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
-
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Address
   alias Explorer.ExchangeRates.Token
 
-  def index(conn, params) do
+  def index(conn, _params) do
     address_count_module = Application.get_env(:block_scout_web, :fake_adapter) || Chain
 
-    full_options = paging_options(params)
-
-    addresses_plus_one = Chain.list_top_addresses(full_options)
-
-    {addresses, next_page} = split_list_by_page(addresses_plus_one)
-
     render(conn, "index.html",
-      addresses: addresses,
+      addresses: Chain.list_top_addresses(),
       address_estimated_count: address_count_module.address_estimated_count(),
-      exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-      next_page_params: next_page_params(next_page, addresses, params)
+      exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
     )
   end
 

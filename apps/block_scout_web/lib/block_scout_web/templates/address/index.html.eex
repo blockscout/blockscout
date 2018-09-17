@@ -3,7 +3,7 @@
     <div class="card-body">
       <h1><%= gettext "Addresses" %></h1>
       <p>
-        <%= gettext "Showing 50 addresses of" %>
+        <%= gettext "Showing 250 addresses of" %>
         <%= Cldr.Number.to_string!(@address_estimated_count, format: "#,###") %>
         <%= gettext "total addresses with a balance" %>
       </p>
@@ -13,12 +13,12 @@
           <div class="tile">
             <div class="row">
               <!-- rank -->
-              <!-- <div class="col-2 col-md-1 d-flex justify-content-center align-items-center"> -->
+              <div class="col-2 col-md-1 d-flex justify-content-center align-items-center">
                 <!-- incremented number by order in the list -->
-                <!-- <span><%= index %></span> -->
-              <!-- </div> -->
+                <span><%= index %></span>
+              </div>
 
-              <div class="col-12 col-md-12">
+              <div class="col-10 col-md-11">
                 <div class="row">
                   <div class="col-md-7 d-flex flex-column mt-3 mt-md-0">
                     <%= address |> BlockScoutWeb.AddressView.address_partial_selector(nil, nil) |> BlockScoutWeb.AddressView.render_partial() %>
@@ -49,19 +49,6 @@
           </div>
         <% end %>
       </span>
-
-      <!-- paging -->
-      <%= if @next_page_params do %>
-        <%= link(
-          gettext("Next Page"),
-          class: "button button-secondary button-sm float-right mt-3",
-          to: address_path(
-            @conn,
-            :index,
-            @next_page_params
-          )
-        ) %>
-      <% end %>
     </div>
   </div>
 

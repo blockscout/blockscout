@@ -760,30 +760,15 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Lists `t:Explorer.Chain.Address.t/0`'s' in descending order based on coin balance.
-
-  ## Options
-
-    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
-        `:required`, and the `t:Explorer.Chain.Address.t/0` has no associated record for that association, then the
-        `t:Explorer.Chain.Address.t/0` will not be included in the page `entries`.
-    * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size`
-      and`:key` (`{value, address_hash}` of the last seen address).  Results will be the addresses with lesser
-      `fetched_coin_balance` (or equal `fetched_coin_balance` and greater alphabetical 'hash') than the last seen address.
+  Lists the top 250 `t:Explorer.Chain.Address.t/0`'s' in descending order based on coin balance.
 
   """
-  @spec list_top_addresses([paging_options | necessity_by_association_option]) :: [Address.t()]
-  def list_top_addresses(options \\ []) when is_list(options) do
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-    {:ok, zero_wei} = Wei.cast(Decimal.new(0))
-
+  @spec list_top_addresses :: [Address.t()]
+  def list_top_addresses do
     Address
-    |> join_associations(necessity_by_association)
-    |> page_addresses(paging_options)
-    |> limit(^paging_options.page_size)
+    |> limit(250)
     |> order_by(desc: :fetched_coin_balance, asc: :hash)
-    |> where([address], address.fetched_coin_balance > ^zero_wei)
+    |> where([address], address.fetched_coin_balance > ^0)
     |> Repo.all()
   end
 
@@ -1561,16 +1546,6 @@ defmodule Explorer.Chain do
     Enum.reduce(necessity_by_association, query, fn {association, join}, acc_query ->
       join_association(acc_query, association, join)
     end)
-  end
-
-  defp page_addresses(query, %PagingOptions{key: nil}), do: query
-
-  defp page_addresses(query, %PagingOptions{key: {value, hash}}) do
-    where(
-      query,
-      [address],
-      address.fetched_coin_balance < ^value or (address.fetched_coin_balance == ^value and address.hash > ^hash)
-    )
   end
 
   defp page_blocks(query, %PagingOptions{key: nil}), do: query

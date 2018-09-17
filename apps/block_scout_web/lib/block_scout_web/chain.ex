@@ -20,8 +20,7 @@ defmodule BlockScoutWeb.Chain do
     Log,
     Token,
     TokenTransfer,
-    Transaction,
-    Wei
+    Transaction
   }
 
   alias Explorer.PagingOptions
@@ -153,11 +152,6 @@ defmodule BlockScoutWeb.Chain do
     else
       :error -> {:error, :not_found}
     end
-  end
-
-  defp paging_params(%Address{fetched_coin_balance: value, hash: hash}) do
-    integer_value = value |> Wei.to(:wei) |> Decimal.to_integer()
-    %{"address_hash" => to_string(hash), "value" => integer_value}
   end
 
   defp paging_params(%Block{number: number}) do

@@ -979,7 +979,7 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "list_top_addresses/2" do
+  describe "list_top_addresses/0" do
     test "without addresses with balance > 0" do
       insert(:address, fetched_coin_balance: 0)
       assert [] = Chain.list_top_addresses()
@@ -1011,20 +1011,6 @@ defmodule Explorer.ChainTest do
         |> Map.fetch!(:hash)
 
       assert [first_result_hash | tail] == Enum.map(Chain.list_top_addresses(), & &1.hash)
-    end
-
-    test "with addresses can be paginated" do
-      second_page_address_hashes =
-        50..1
-        |> Enum.map(&insert(:address, fetched_coin_balance: &1))
-        |> Enum.map(& &1.hash)
-
-      %Address{fetched_coin_balance: value, hash: address_hash} = insert(:address, fetched_coin_balance: 51)
-
-      assert second_page_address_hashes ==
-               [paging_options: %PagingOptions{key: {value, address_hash}, page_size: 50}]
-               |> Chain.list_top_addresses()
-               |> Enum.map(& &1.hash)
     end
   end
 
