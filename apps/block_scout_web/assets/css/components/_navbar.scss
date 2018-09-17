@@ -84,30 +84,20 @@
     content: "";
     position: absolute;
     display: block;
-    bottom: 0;
+    bottom: -13px;
     left: 50%;
-    width: 100%;
+    width: 75%;
     height: 0.2rem;
     background-color: $white;
     opacity: 0;
-    transform: translateX(-50%) translateY(-0.5rem);
-    transition: all 0.3s ease;
+    transform: translateX(-50%);
+    transition: all 0.2s ease;
   }
 
   &:hover {
-    color: $white;
 
     &:before {
-      transform: translateX(-50%) translateY(-0.25rem);
       opacity: 1;
-    }
-  }
-
-  &:active {
-
-    &:before {
-      transition: all 0.1s ease-out;
-      transform: translateX(-50%) translateY(-0.5rem);
     }
   }
 }
@@ -120,7 +110,7 @@
   padding: 10px 20px;
 
   &:hover {
-    background-color: $secondary;
+    background-color: $tertiary;
     color: $white;
   }
 }
