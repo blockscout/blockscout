@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.AddressView do
   def address_partial_selector(struct_to_render_from, direction, current_address, truncate \\ false)
 
   def address_partial_selector(%Address{} = address, _, current_address, truncate) do
-    matching_address_check(current_address, address.hash, contract?(address), truncate)
+    matching_address_check(current_address, address, contract?(address), truncate)
   end
 
   def address_partial_selector(
