@@ -1,9 +1,13 @@
-.pre-wrap {
-  white-space: normal;
+pre {
+  white-space: pre-wrap;
+}
 
-  code {
-    word-break: break-all;
-  }
+pre code {
+  font-size: 13px;
+}
+
+.pre-wrap code {
+  white-space: pre-wrap;
 }
 
 .pre-scrollable-shorty {

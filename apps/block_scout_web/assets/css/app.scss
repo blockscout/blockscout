@@ -79,6 +79,7 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/token-balance-dropdown";
 @import "components/address-overview";
 @import "components/token_tile_view_more";
+@import "components/dropdown";
 
 :export {
   primary: $primary;
