@@ -53,7 +53,8 @@ defmodule EthereumJSONRPC.Blocks do
           parent_hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
           size: 533,
           timestamp: Timex.parse!("1970-01-01T00:00:00Z", "{ISO:Extended:Z}"),
-          total_difficulty: 131072
+          total_difficulty: 131072,
+          uncles: []
         }
       ]
 

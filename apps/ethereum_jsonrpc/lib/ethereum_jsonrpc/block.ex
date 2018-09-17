@@ -77,7 +77,7 @@ defmodule EthereumJSONRPC.Block do
       ...>     "totalDifficulty" => 340282366920938463463374607431465668165,
       ...>     "transactions" => [],
       ...>     "transactionsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-      ...>     "uncles" => []
+      ...>     "uncles" => ["0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d15273311"]
       ...>   }
       ...> )
       %{
@@ -91,7 +91,8 @@ defmodule EthereumJSONRPC.Block do
         parent_hash: "0x5b28c1bfd3a15230c9a46b399cd0f9a6920d432e85381cc6a140b06e8410112f",
         size: 576,
         timestamp: Timex.parse!("2017-12-15T21:03:30Z", "{ISO:Extended:Z}"),
-        total_difficulty: 340282366920938463463374607431465668165
+        total_difficulty: 340282366920938463463374607431465668165,
+        uncles: [%{hash: "0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d15273311"}]
       }
 
   [Geth] `elixir` can be converted to params
@@ -131,7 +132,8 @@ defmodule EthereumJSONRPC.Block do
         parent_hash: "0xcd5b5c4cecd7f18a13fe974255badffd58e737dc67596d56bc01f063dd282e9e",
         size: 542,
         timestamp: Timex.parse!("2015-07-30T15:32:07Z", "{ISO:Extended:Z}"),
-        total_difficulty: 1039309006117
+        total_difficulty: 1039309006117,
+        uncles: []
       }
 
   """
@@ -147,7 +149,8 @@ defmodule EthereumJSONRPC.Block do
           "parentHash" => parent_hash,
           "size" => size,
           "timestamp" => timestamp,
-          "totalDifficulty" => total_difficulty
+          "totalDifficulty" => total_difficulty,
+          "uncles" => uncles
         } = elixir
       ) do
     %{
@@ -160,7 +163,8 @@ defmodule EthereumJSONRPC.Block do
       parent_hash: parent_hash,
       size: size,
       timestamp: timestamp,
-      total_difficulty: total_difficulty
+      total_difficulty: total_difficulty,
+      uncles: Enum.map(uncles, &%{hash: &1})
     }
     |> Map.put(:nonce, Map.get(elixir, "nonce", 0))
   end

@@ -301,7 +301,8 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
                "size" => "0x0",
                "timestamp" => "0x0",
                "totalDifficulty" => "0x0",
-               "transactions" => []
+               "transactions" => [],
+               "uncles" => []
              }
            }
          ]}
