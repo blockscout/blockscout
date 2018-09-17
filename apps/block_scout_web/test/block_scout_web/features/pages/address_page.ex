@@ -101,6 +101,6 @@ defmodule BlockScoutWeb.AddressPage do
   end
 
   def visit_page(session) do
-    visit(session, "/top_addresses")
+    visit(session, "/accounts")
   end
 end

@@ -127,7 +127,7 @@ defmodule BlockScoutWeb.AddressViewTest do
 
   test "balance_percentage/1" do
     address = insert(:address, fetched_coin_balance: 2_524_608_000_000_000_000_000_000)
-    assert "1.00%" = AddressView.balance_percentage(address)
+    assert "1.0000% Market Cap" = AddressView.balance_percentage(address)
   end
 
   describe "contract?/1" do

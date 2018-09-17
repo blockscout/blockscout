@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.AddressController do
 
   def index(conn, params) do
     address_count_module = Application.get_env(:block_scout_web, :fake_adapter) || Chain
-    
+
     full_options = paging_options(params)
 
     addresses_plus_one = Chain.list_top_addresses(full_options)

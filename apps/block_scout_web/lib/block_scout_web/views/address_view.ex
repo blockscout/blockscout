@@ -94,8 +94,9 @@ defmodule BlockScoutWeb.AddressView do
     |> Wei.to(:ether)
     |> Decimal.div(Decimal.new(Chain.total_supply()))
     |> Decimal.mult(100)
-    |> Decimal.to_string()
-    |> Kernel.<>("%")
+    |> Decimal.round(4)
+    |> Decimal.to_string(:normal)
+    |> Kernel.<>("% #{gettext("Market Cap")}")
   end
 
   def balance_block_number(%Address{fetched_coin_balance_block_number: nil}), do: ""
