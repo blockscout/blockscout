@@ -1,4 +1,4 @@
-defmodule Indexer.TokenTransfers do
+defmodule Indexer.TokenTransfers.Parser do
   @moduledoc """
   Helper functions for transforming data for ERC-20 and ERC-721 token transfers.
   """
