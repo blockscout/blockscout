@@ -1103,4 +1103,36 @@ defmodule Explorer.EtherscanTest do
       assert found_token_balance.id == token_balance2.id
     end
   end
+
+  describe "get_transaction_error/1" do
+    test "with a transaction that doesn't exist" do
+      transaction = build(:transaction)
+
+      refute Etherscan.get_transaction_error(transaction.hash)
+    end
+
+    test "with a transaction with no errors" do
+      transaction = insert(:transaction)
+
+      refute Etherscan.get_transaction_error(transaction.hash)
+    end
+
+    test "with a transaction with an error" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(status: :error)
+
+      internal_transaction_details = [
+        transaction: transaction,
+        index: 0,
+        type: :reward,
+        error: "some error"
+      ]
+
+      insert(:internal_transaction, internal_transaction_details)
+
+      assert Etherscan.get_transaction_error(transaction.hash) == "some error"
+    end
+  end
 end
