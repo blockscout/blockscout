@@ -1,6 +1,9 @@
 defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
   use BlockScoutWeb.ConnCase
 
+  alias Explorer.Chain
+  alias Explorer.Chain.Wei
+
   describe "tokensupply" do
     test "with missing contract address", %{conn: conn} do
       params = %{
@@ -70,6 +73,24 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
                |> json_response(200)
 
       assert response["result"] == to_string(token.total_supply)
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+  end
+
+  describe "ethsupply" do
+    test "returns total supply", %{conn: conn} do
+      params = %{
+        "module" => "stats",
+        "action" => "ethsupply"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == "252460800000000000000000000"
       assert response["status"] == "1"
       assert response["message"] == "OK"
     end
