@@ -89,6 +89,14 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
 
       Enum.each(1..51, fn i ->
         token = insert(:token, name: "A Token#{i}", type: "ERC-20")
+
+        insert(
+          :token_balance,
+          token_contract_address_hash: token.contract_address_hash,
+          address: address,
+          value: 1000
+        )
+
         insert(:token_transfer, token_contract_address: token.contract_address, from_address: address)
       end)
 
