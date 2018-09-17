@@ -10,11 +10,13 @@
       <ul class="navbar-nav mr-auto">
         <li class="nav-item">
           <%= link to: block_path(@conn, :index), class: "nav-link topnav-nav-link" do %>
+            <i class="fas fa-cube mr-1"></i>
             <%= gettext("Blocks") %>
           <% end %>
         </li>
         <li class="nav-item">
           <%= link to: transaction_path(@conn, :index), class: "nav-link topnav-nav-link" do %>
+            <i class="fas fa-th-list mr-1"></i>
             <%= gettext("Transactions") %>
           <% end %>
         </li>
@@ -25,6 +27,7 @@
         </li>
         <li class="nav-item">
           <%= link to: api_docs_path(@conn, :index), class: "nav-link topnav-nav-link" do %>
+            <i class="fas fa-sliders-h mr-1"></i>
             <%= gettext("API") %>
           <% end %>
         </li>
@@ -41,6 +44,7 @@
       <ul class="navbar-nav">
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fas fa-globe mr-1"></i>
             <%= gettext("Mainnet") %>
           </a>
           <div class="dropdown-menu" aria-labelledby="navbarDropdown">
