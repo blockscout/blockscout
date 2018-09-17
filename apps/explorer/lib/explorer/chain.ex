@@ -1338,21 +1338,31 @@ defmodule Explorer.Chain do
 
   ## Returns
 
-    * `:failed` - the transaction failed without running out of gas
-    * `:pending` - the transaction has not be confirmed in a block yet
-    * `:out_of_gas` - the transaction failed because it ran out of gas
+    * `:pending` - the transaction has not be confirmed in a block yet.
+    * `:awaiting_internal_transactions` - the transaction happened in a pre-Byzantium block or on a chain like Ethereum
+      Classic (ETC) that never adopted [EIP-658](https://github.com/Arachnid/EIPs/blob/master/EIPS/eip-658.md), which
+      add transaction status to transaction receipts, so the stats can only be derived whether the last internal
+      transaction has an error.
     * `:success` - the transaction has been confirmed in a block
+    * `{:error, :awaiting_internal_transactions}` - the transactions happened post-Byzantium, but the error message
+       requires the internal transactions.
+    * `{:error, reason}` - the transaction failed due to `reason` in its last internal transaction.
 
   """
-  @spec transaction_to_status(Transaction.t()) :: :failed | :pending | :out_of_gas | :success
-  def transaction_to_status(%Transaction{status: nil}), do: :pending
+  @spec transaction_to_status(Transaction.t()) ::
+          :pending
+          | :awaiting_internal_transactions
+          | :success
+          | {:error, :awaiting_internal_transactions}
+          | {:error, reason :: String.t()}
+  def transaction_to_status(%Transaction{block_hash: nil, status: nil}), do: :pending
+  def transaction_to_status(%Transaction{status: nil}), do: :awaiting_internal_transactions
   def transaction_to_status(%Transaction{status: :ok}), do: :success
 
-  def transaction_to_status(%Transaction{gas: gas, gas_used: gas_used, status: :error}) when gas_used >= gas do
-    :out_of_gas
-  end
+  def transaction_to_status(%Transaction{status: :error, internal_transactions_indexed_at: nil, error: nil}),
+    do: {:error, :awaiting_internal_transactions}
 
-  def transaction_to_status(%Transaction{status: :error}), do: :failed
+  def transaction_to_status(%Transaction{status: :error, error: error}) when is_binary(error), do: {:error, error}
 
   @doc """
   The `t:Explorer.Chain.Transaction.t/0` or `t:Explorer.Chain.InternalTransaction.t/0` `value` of the `transaction` in
