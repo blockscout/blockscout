@@ -1263,6 +1263,7 @@ defmodule Explorer.Chain do
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by([internal_transaction], asc: internal_transaction.index)
+    |> preload(transaction: :block)
     |> Repo.all()
   end
 

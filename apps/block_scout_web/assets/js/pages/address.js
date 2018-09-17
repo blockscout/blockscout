@@ -153,6 +153,7 @@ if ($addressDetailsPage.length) {
       }
       if (oldState.newInternalTransactions !== state.newInternalTransactions && $internalTransactionsList.length) {
         $internalTransactionsList.prepend(state.newInternalTransactions.slice(oldState.newInternalTransactions.length).reverse().join(''))
+        updateAllAges()
       }
       if (oldState.newTransactions !== state.newTransactions && $transactionsList.length) {
         $transactionsList.prepend(state.newTransactions.slice(oldState.newTransactions.length).reverse().join(''))

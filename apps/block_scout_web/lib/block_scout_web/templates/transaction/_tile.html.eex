@@ -27,7 +27,7 @@
     <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column flex-nowrap justify-content-start text-md-right mt-3 mt-md-0">
       <span class="mr-2 mr-md-0 order-1">
         <%= link(
-          gettext("Block #%{number}", number: to_string(@transaction.block.number)),
+          gettext("Block #%{number}", number: to_string(@transaction.block_number)),
           to: block_path(BlockScoutWeb.Endpoint, :show, @transaction.block)
         ) %>
       </span>

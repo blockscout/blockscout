@@ -136,7 +136,7 @@ msgid "%{count} transactions in this block"
 msgstr ""
 
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:70
-#: lib/block_scout_web/views/address_view.ex:48
+#: lib/block_scout_web/views/address_view.ex:74
 msgid "Address"
 msgstr ""
 
@@ -293,12 +293,10 @@ msgstr ""
 msgid "Showing #%{number}"
 msgstr ""
 
-#:
-#: lib/block_scout_web/templates/address_internal_transaction/_internal_transaction.html.eex:22
+#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:15
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:68
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:20
 #: lib/block_scout_web/templates/transaction/overview.html.eex:87
-#: lib/block_scout_web/templates/transaction_internal_transaction/_internal_transaction.html.eex:16
 #: lib/block_scout_web/views/wei_helpers.ex:72
 msgid "Ether"
 msgstr ""
@@ -483,7 +481,7 @@ msgid "Contract"
 msgstr ""
 
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:12
-#: lib/block_scout_web/views/address_view.ex:46
+#: lib/block_scout_web/views/address_view.ex:72
 msgid "Contract Address"
 msgstr ""
 
@@ -616,9 +614,7 @@ msgid "Copy Address"
 msgstr ""
 
 #, elixir-format
-#:
-#: lib/block_scout_web/templates/address_internal_transaction/_internal_transaction.html.eex:4
-#: lib/block_scout_web/templates/transaction_internal_transaction/_internal_transaction.html.eex:4
+#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:4
 msgid "Internal Transaction"
 msgstr ""
 
@@ -644,7 +640,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:64
-#: lib/block_scout_web/views/address_view.ex:24
+#: lib/block_scout_web/views/address_view.ex:16
+#: lib/block_scout_web/views/address_view.ex:50
 msgid "Contract Address Pending"
 msgstr ""
 
@@ -664,21 +661,20 @@ msgid "at"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:21
 #: lib/block_scout_web/templates/tokens/token/_token_transfer.html.eex:36
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:30
 msgid "Block #%{number}"
 msgstr ""
 
 #, elixir-format
-#:
-#: lib/block_scout_web/templates/address_internal_transaction/_internal_transaction.html.eex:29
+#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:31
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:43
 msgid "IN"
 msgstr ""
 
 #, elixir-format
-#:
-#: lib/block_scout_web/templates/address_internal_transaction/_internal_transaction.html.eex:27
+#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:29
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:39
 msgid "OUT"
 msgstr ""
