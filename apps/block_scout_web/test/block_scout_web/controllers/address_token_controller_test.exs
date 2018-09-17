@@ -18,7 +18,7 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
       assert html_response(conn, 404)
     end
 
-    test "returns tokens for the address", %{conn: conn} do
+    test "returns tokens that have balance for the address", %{conn: conn} do
       address = insert(:address)
 
       token1 =
@@ -28,6 +28,20 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
       token2 =
         :token
         |> insert(name: "token2")
+
+      insert(
+        :token_balance,
+        address: address,
+        token_contract_address_hash: token1.contract_address_hash,
+        value: 1000
+      )
+
+      insert(
+        :token_balance,
+        address: address,
+        token_contract_address_hash: token2.contract_address_hash,
+        value: 0
+      )
 
       insert(
         :token_transfer,
@@ -51,7 +65,7 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
 
       assert html_response(conn, 200)
       assert Enum.member?(actual_token_hashes, token1.contract_address_hash)
-      assert Enum.member?(actual_token_hashes, token2.contract_address_hash)
+      refute Enum.member?(actual_token_hashes, token2.contract_address_hash)
     end
 
     test "returns next page of results based on last seen token", %{conn: conn} do
@@ -61,12 +75,28 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
         1..50
         |> Enum.reduce([], fn i, acc ->
           token = insert(:token, name: "A Token#{i}", type: "ERC-20")
+
+          insert(
+            :token_balance,
+            token_contract_address_hash: token.contract_address_hash,
+            address: address,
+            value: 1000
+          )
+
           insert(:token_transfer, token_contract_address: token.contract_address, from_address: address)
           acc ++ [token.name]
         end)
         |> Enum.sort()
 
       token = insert(:token, name: "Another Token", type: "ERC-721")
+
+      insert(
+        :token_balance,
+        token_contract_address_hash: token.contract_address_hash,
+        address: address,
+        value: 1000
+      )
+
       insert(:token_transfer, token: token, from_address: address)
       %Token{name: name, type: type} = token
 

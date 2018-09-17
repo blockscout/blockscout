@@ -1712,10 +1712,10 @@ defmodule Explorer.Chain do
     Repo.one(query) != nil
   end
 
-  @spec tokens_with_number_of_transfers_from_address(Hash.Address.t(), [any()]) :: []
-  def tokens_with_number_of_transfers_from_address(address_hash, paging_options \\ []) do
+  @spec address_tokens_with_balance(Hash.Address.t(), [any()]) :: []
+  def address_tokens_with_balance(address_hash, paging_options \\ []) do
     address_hash
-    |> Token.with_transfers_by_address(paging_options)
+    |> Address.Token.list_address_tokens_with_balance(paging_options)
     |> Repo.all()
   end
 

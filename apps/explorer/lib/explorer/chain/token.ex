@@ -20,11 +20,7 @@ defmodule Explorer.Chain.Token do
   use Ecto.Schema
 
   import Ecto.{Changeset, Query}
-  alias Explorer.PagingOptions
   alias Explorer.Chain.{Address, Hash, Token, TokenTransfer}
-  alias Explorer.Chain.Address.TokenBalance
-
-  @default_paging_options %PagingOptions{page_size: 50}
 
   @typedoc """
   * `:name` - Name of the token
@@ -46,8 +42,6 @@ defmodule Explorer.Chain.Token do
           contract_address: %Ecto.Association.NotLoaded{} | Address.t(),
           contract_address_hash: Hash.Address.t()
         }
-
-  @typep paging_options :: {:paging_options, PagingOptions.t()}
 
   @primary_key false
   schema "tokens" do
@@ -81,72 +75,11 @@ defmodule Explorer.Chain.Token do
     |> unique_constraint(:contract_address_hash)
   end
 
-  @doc """
-  Builds an `Ecto.Query` to fetch tokens that the given address has interacted with
-  along with the latest balance of each token for that address and the count of
-  transfers the address had with each token
-
-  warning: tokens with a latest balance of zero will be ignored
-
-  In order to fetch a token, the given address must have transfered tokens to or received tokens
-  from another address. This quey orders by the token type and name.
-  """
-  @spec with_transfers_by_address(Hash.t(), [paging_options()]) :: %Ecto.Query{}
-  def with_transfers_by_address(address_hash, options \\ []) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
-    query =
-      from(
-        tb in TokenBalance,
-        where: tb.address_hash == ^address_hash,
-        distinct: :token_contract_address_hash,
-        order_by: [desc: :block_number],
-        select: %{value: tb.value, token_contract_address_hash: tb.token_contract_address_hash}
-      )
-
-    query
-    |> with_last_balance_and_transfers_count(address_hash)
-    |> page_token(paging_options)
-    |> limit(^paging_options.page_size)
-  end
-
-  defp with_last_balance_and_transfers_count(last_balance_query, address_hash) do
+  def join_with_transfers(queryable \\ Token) do
     from(
-      t in Token,
+      t in queryable,
       join: tt in TokenTransfer,
-      on: tt.token_contract_address_hash == t.contract_address_hash,
-      join: tb in subquery(last_balance_query),
-      on: tb.token_contract_address_hash == t.contract_address_hash,
-      order_by: [desc: t.type, asc: fragment("UPPER(?)", t.name)],
-      where: (tt.to_address_hash == ^address_hash or tt.from_address_hash == ^address_hash) and tb.value > 0,
-      group_by: [t.name, t.symbol, tb.value, t.type, t.contract_address_hash],
-      select: %{
-        contract_address_hash: t.contract_address_hash,
-        inserted_at: max(t.inserted_at),
-        name: t.name,
-        symbol: t.symbol,
-        value: tb.value,
-        decimals: max(t.decimals),
-        type: t.type,
-        transfers: count(t.name)
-      }
-    )
-  end
-
-  @doc """
-  adds to the passed `Ecto.Query` a criteria indicating the first token of the current page
-  returns the original query if the received `PagingOptions` has a nil value for the key attribute
-  """
-  def page_token(query, %PagingOptions{key: nil}), do: query
-
-  def page_token(query, %PagingOptions{key: {name, type, inserted_at}}) do
-    upper_name = String.upcase(name)
-
-    where(
-      query,
-      [token],
-      token.type < ^type or (token.type == ^type and fragment("UPPER(?)", token.name) > ^upper_name) or
-        (token.type == ^type and fragment("UPPER(?)", token.name) == ^upper_name and token.inserted_at < ^inserted_at)
+      on: tt.token_contract_address_hash == t.contract_address_hash
     )
   end
 end
