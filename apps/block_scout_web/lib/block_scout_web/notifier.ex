@@ -51,6 +51,7 @@ defmodule BlockScoutWeb.Notifier do
     |> Chain.hashes_to_transactions(
       necessity_by_association: %{
         :block => :required,
+        [created_contract_address: :names] => :optional,
         [from_address: :names] => :optional,
         [to_address: :names] => :optional,
         :token_transfers => :optional
