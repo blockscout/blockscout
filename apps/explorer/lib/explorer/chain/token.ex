@@ -22,6 +22,7 @@ defmodule Explorer.Chain.Token do
   import Ecto.{Changeset, Query}
   alias Explorer.PagingOptions
   alias Explorer.Chain.{Address, Hash, Token, TokenTransfer}
+  alias Explorer.Chain.Address.TokenBalance
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -123,11 +124,13 @@ defmodule Explorer.Chain.Token do
   def page_token(query, %PagingOptions{key: nil}), do: query
 
   def page_token(query, %PagingOptions{key: {name, type, inserted_at}}) do
+    upper_name = String.upcase(name)
+
     where(
       query,
       [token],
-      token.type < ^type or (token.type == ^type and token.name > ^name) or
-        (token.type == ^type and token.name == ^name and token.inserted_at < ^inserted_at)
+      token.type < ^type or (token.type == ^type and fragment("UPPER(?)", token.name) > ^upper_name) or
+        (token.type == ^type and fragment("UPPER(?)", token.name) == ^upper_name and token.inserted_at < ^inserted_at)
     )
   end
 end
