@@ -69,16 +69,18 @@ defmodule Explorer.Chain do
   @typep paging_options :: {:paging_options, PagingOptions.t()}
 
   @doc """
-  Estimated count of `t:Explorer.Chain.Address.t/0`.
-
-  Estimated count of addresses
+  Gets an estimated count of `t:Explorer.Chain.Address.t/0`'s where the `fetched_coin_balance` is > 0
   """
   @spec address_estimated_count :: non_neg_integer()
   def address_estimated_count do
-    %Postgrex.Result{rows: [[rows]]} =
-      SQL.query!(Repo, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='addresses'")
+    {:ok, %Postgrex.Result{rows: result}} =
+      Repo.query("""
+      EXPLAIN SELECT COUNT(a0.hash) FROM addresses AS a0 WHERE (a0.fetched_coin_balance > 0)
+      """)
 
-    rows
+    {[explain], _} = List.pop_at(result, 1)
+    [[_ | [rows]]] = Regex.scan(~r/rows=(\d+)/, explain)
+    String.to_integer(rows)
   end
 
   @doc """
