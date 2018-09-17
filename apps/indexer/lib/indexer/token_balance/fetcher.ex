@@ -69,12 +69,14 @@ defmodule Indexer.TokenBalance.Fetcher do
   end
 
   def fetch_from_blockchain(token_balances) do
-    {:ok, token_balances_params} =
+    {:ok, token_balances} =
       token_balances
       |> Stream.map(&format_params/1)
       |> TokenBalances.fetch_token_balances_from_blockchain()
 
-    token_balances_params
+    TokenBalances.log_fetching_errors(__MODULE__, token_balances)
+
+    token_balances
   end
 
   def import_token_balances(token_balances_params) do
