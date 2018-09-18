@@ -30,6 +30,21 @@
   color: $white;
 }
 
+.navbar-nav .nav-link {
+  display: flex;
+  align-items: center;
+}
+
+.nav-link-icon {
+  height: 1.5em;
+  width: 1.5em;
+  margin-right: 0.75em;
+
+  path {
+    fill: $secondary;
+  }
+}
+
 .navbar .form-control {
   background: transparent;
   width: auto;
@@ -70,10 +85,10 @@
 
 .input-group-append {
   margin-left: 0px;
-}
 
-.fa-search {
-  color: $white;
+  path {
+    fill: $secondary;
+  }
 }
 
 .topnav-nav-link {
@@ -88,15 +103,15 @@
     left: 50%;
     width: 75%;
     height: 0.2rem;
-    background-color: $white;
+    background-color: $secondary;
+    border-radius: 4px 4px 0 0;
     opacity: 0;
     transform: translateX(-50%);
     transition: all 0.2s ease;
   }
 
   &:hover {
-
-    &:before {
+    &:before{
       opacity: 1;
     }
   }
