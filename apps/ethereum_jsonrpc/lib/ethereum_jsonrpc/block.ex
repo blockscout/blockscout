@@ -6,10 +6,23 @@ defmodule EthereumJSONRPC.Block do
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1, timestamp_to_datetime: 1]
 
-  alias EthereumJSONRPC
-  alias EthereumJSONRPC.Transactions
+  alias EthereumJSONRPC.{Transactions, Uncles}
 
   @type elixir :: %{String.t() => non_neg_integer | DateTime.t() | String.t() | nil}
+  @type params :: %{
+          difficulty: pos_integer(),
+          gas_limit: non_neg_integer(),
+          gas_used: non_neg_integer(),
+          hash: EthereumJSONRPC.hash(),
+          miner_hash: EthereumJSONRPC.hash(),
+          nonce: EthereumJSONRPC.hash(),
+          number: non_neg_integer(),
+          parent_hash: EthereumJSONRPC.hash(),
+          size: non_neg_integer(),
+          timestamp: DateTime.t(),
+          total_difficulty: non_neg_integer(),
+          uncles: [EthereumJSONRPC.hash()]
+        }
 
   @typedoc """
    * `"author"` - `t:EthereumJSONRPC.address/0` that created the block.  Aliased by `"miner"`.
@@ -77,7 +90,7 @@ defmodule EthereumJSONRPC.Block do
       ...>     "totalDifficulty" => 340282366920938463463374607431465668165,
       ...>     "transactions" => [],
       ...>     "transactionsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-      ...>     "uncles" => ["0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d15273311"]
+      ...>     "uncles" => []
       ...>   }
       ...> )
       %{
@@ -92,7 +105,7 @@ defmodule EthereumJSONRPC.Block do
         size: 576,
         timestamp: Timex.parse!("2017-12-15T21:03:30Z", "{ISO:Extended:Z}"),
         total_difficulty: 340282366920938463463374607431465668165,
-        uncles: [%{hash: "0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d15273311"}]
+        uncles: []
       }
 
   [Geth] `elixir` can be converted to params
@@ -137,7 +150,7 @@ defmodule EthereumJSONRPC.Block do
       }
 
   """
-  @spec elixir_to_params(elixir) :: map
+  @spec elixir_to_params(elixir) :: params
   def elixir_to_params(
         %{
           "difficulty" => difficulty,
@@ -159,14 +172,14 @@ defmodule EthereumJSONRPC.Block do
       gas_used: gas_used,
       hash: hash,
       miner_hash: miner_hash,
+      nonce: Map.get(elixir, "nonce", 0),
       number: number,
       parent_hash: parent_hash,
       size: size,
       timestamp: timestamp,
       total_difficulty: total_difficulty,
-      uncles: Enum.map(uncles, &%{hash: &1})
+      uncles: uncles
     }
-    |> Map.put(:nonce, Map.get(elixir, "nonce", 0))
   end
 
   @doc """
@@ -252,6 +265,53 @@ defmodule EthereumJSONRPC.Block do
   """
   @spec elixir_to_transactions(elixir) :: Transactions.elixir()
   def elixir_to_transactions(%{"transactions" => transactions}), do: transactions
+
+  @doc """
+  Get `t:EthereumJSONRPC.Uncles.elixir/0` from `t:elixir/0`.
+
+  Because an uncle can have multiple nephews, the `t:elixir/0` `"hash"` value is included as the `"nephewHash"` value.
+
+      iex> EthereumJSONRPC.Block.elixir_to_uncles(
+      ...>   %{
+      ...>     "author" => "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>     "difficulty" => 340282366920938463463374607431768211454,
+      ...>     "extraData" => "0xd5830108048650617269747986312e32322e31826c69",
+      ...>     "gasLimit" => 6926030,
+      ...>     "gasUsed" => 269607,
+      ...>     "hash" => "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47",
+      ...>     "logsBloom" => "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      ...>     "miner" => "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>     "number" => 34,
+      ...>     "parentHash" => "0x106d528393159b93218dd410e2a778f083538098e46f1a44902aa67a164aed0b",
+      ...>     "receiptsRoot" => "0xf45ed4ab910504ffe231230879c86e32b531bb38a398a7c9e266b4a992e12dfb",
+      ...>     "sealFields" => [
+      ...>       "0x84120a71db",
+      ...>       "0xb8417ad0ecca535f81e1807dac338a57c7ccffd05d3e7f0687944650cd005360a192205df306a68eddfe216e0674c6b113050d90eff9b627c1762d43657308f986f501"
+      ...>     ],
+      ...>     "sha3Uncles" => "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+      ...>     "signature" => "7ad0ecca535f81e1807dac338a57c7ccffd05d3e7f0687944650cd005360a192205df306a68eddfe216e0674c6b113050d90eff9b627c1762d43657308f986f501",
+      ...>     "size" => 1493,
+      ...>     "stateRoot" => "0x6eaa6281df37b9b010f4779affc25ee059088240547ce86cf7ca7b7acd952d4f",
+      ...>     "step" => "302674395",
+      ...>     "timestamp" => Timex.parse!("2017-12-15T21:06:15Z", "{ISO:Extended:Z}"),
+      ...>     "totalDifficulty" => 11569600475311907757754736652679816646147,
+      ...>     "transactions" => [],
+      ...>     "transactionsRoot" => "0x2c2e243e9735f6d0081ffe60356c0e4ec4c6a9064c68d10bf8091ff896f33087",
+      ...>     "uncles" => ["0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d15273311"]
+      ...>   }
+      ...> )
+      [
+        %{
+          "hash" => "0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d15273311",
+          "nephewHash" => "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47"
+        }
+      ]
+
+  """
+  @spec elixir_to_uncles(elixir) :: Uncles.elixir()
+  def elixir_to_uncles(%{"hash" => nephew_hash, "uncles" => uncles}) do
+    Enum.map(uncles, &%{"hash" => &1, "nephewHash" => nephew_hash})
+  end
 
   @doc """
   Decodes the stringly typed numerical fields to `t:non_neg_integer/0` and the timestamps to `t:DateTime.t/0`

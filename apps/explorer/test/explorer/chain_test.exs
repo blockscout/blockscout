@@ -684,6 +684,14 @@ defmodule Explorer.ChainTest do
           }
         ]
       },
+      block_second_degree_relations: %{
+        params: [
+          %{
+            nephew_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+            uncle_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471be"
+          }
+        ]
+      },
       broadcast: true,
       internal_transactions: %{
         params: [

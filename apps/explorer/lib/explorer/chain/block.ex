@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Block do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, Gas, Hash, Transaction}
+  alias Explorer.Chain.{Address, Block.SecondDegreeRelation, Gas, Hash, Transaction}
 
   @required_attrs ~w(difficulty gas_limit gas_used hash miner_hash nonce number parent_hash size timestamp
                      total_difficulty)a
@@ -72,7 +72,15 @@ defmodule Explorer.Chain.Block do
     timestamps()
 
     belongs_to(:miner, Address, foreign_key: :miner_hash, references: :hash, type: Hash.Address)
+
+    has_many(:nephew_relations, SecondDegreeRelation, foreign_key: :uncle_hash)
+    has_many(:nephews, through: [:nephew_relations, :nephew])
+
     belongs_to(:parent, __MODULE__, foreign_key: :parent_hash, references: :hash, type: Hash.Full)
+
+    has_many(:uncle_relations, SecondDegreeRelation, foreign_key: :nephew_hash)
+    has_many(:uncles, through: [:uncle_relations, :uncle])
+
     has_many(:transactions, Transaction)
   end
 

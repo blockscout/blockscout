@@ -132,6 +132,13 @@ defmodule Explorer.Factory do
     sequence("block_number", & &1)
   end
 
+  def block_second_degree_relation_factory do
+    %Block.SecondDegreeRelation{
+      uncle_hash: block_hash(),
+      nephew: build(:block)
+    }
+  end
+
   def with_block(%Transaction{index: nil} = transaction) do
     with_block(transaction, insert(:block))
   end

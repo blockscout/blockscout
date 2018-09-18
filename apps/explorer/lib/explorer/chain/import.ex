@@ -39,6 +39,10 @@ defmodule Explorer.Chain.Import do
           required(:params) => params,
           optional(:timeout) => timeout
         }
+  @type block_second_degree_relations_options :: %{
+          required(:params) => params,
+          optional(:timeout) => timeout
+        }
   @type internal_transactions_options :: %{
           required(:params) => params,
           optional(:timeout) => timeout
@@ -74,6 +78,7 @@ defmodule Explorer.Chain.Import do
           optional(:addresses) => addresses_options,
           optional(:balances) => balances_options,
           optional(:blocks) => blocks_options,
+          optional(:block_second_degree_relations) => block_second_degree_relations_options,
           optional(:broadcast) => boolean,
           optional(:internal_transactions) => internal_transactions_options,
           optional(:logs) => logs_options,
@@ -92,6 +97,9 @@ defmodule Explorer.Chain.Import do
                %{required(:address_hash) => Hash.Address.t(), required(:block_number) => Block.block_number()}
              ],
              optional(:blocks) => [Block.t()],
+             optional(:block_second_degree_relations) => [
+               %{required(:nephew_hash) => Hash.Full.t(), required(:uncle_hash) => Hash.Full.t()}
+             ],
              optional(:internal_transactions) => [
                %{required(:index) => non_neg_integer(), required(:transaction_hash) => Hash.Full.t()}
              ],
@@ -115,6 +123,7 @@ defmodule Explorer.Chain.Import do
   @insert_addresses_timeout 60_000
   @insert_balances_timeout 60_000
   @insert_blocks_timeout 60_000
+  @insert_block_second_degree_relations_timeout 60_000
   @insert_internal_transactions_timeout 60_000
   @insert_logs_timeout 60_000
   @insert_token_transfers_timeout 60_000
@@ -127,16 +136,17 @@ defmodule Explorer.Chain.Import do
 
   The import returns the unique key(s) for each type of record inserted.
 
-  | Key                      | Value Type                                                                                      | Value Description                                                                             |
-  |--------------------------|-------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
-  | `:addresses`             | `[Explorer.Chain.Address.t()]`                                                                  | List of `t:Explorer.Chain.Address.t/0`s                                                       |
-  | `:balances`              | `[%{address_hash: Explorer.Chain.Hash.t(), block_number: Explorer.Chain.Block.block_number()}]` | List of `t:Explorer.Chain.Address.t/0`s                                                       |
-  | `:blocks`                | `[Explorer.Chain.Block.t()]`                                                                    | List of `t:Explorer.Chain.Block.t/0`s                                                         |
-  | `:internal_transactions` | `[%{index: non_neg_integer(), transaction_hash: Explorer.Chain.Hash.t()}]`                      | List of maps of the `t:Explorer.Chain.InternalTransaction.t/0` `index` and `transaction_hash` |
-  | `:logs`                  | `[Explorer.Chain.Log.t()]`                                                                      | List of `t:Explorer.Chain.Log.t/0`s                                                           |
-  | `:token_transfers`       | `[Explorer.Chain.TokenTransfer.t()]`                                                            | List of `t:Explor.Chain.TokenTransfer.t/0`s                                                   |
-  | `:tokens`                | `[Explorer.Chain.Token.t()]`                                                                    | List of `t:Explorer.Chain.token.t/0`s                                                         |
-  | `:transactions`          | `[Explorer.Chain.Hash.t()]`                                                                     | List of `t:Explorer.Chain.Transaction.t/0` `hash`                                             |
+  | Key                              | Value Type                                                                                      | Value Description                                                                             |
+  |----------------------------------|-------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
+  | `:addresses`                     | `[Explorer.Chain.Address.t()]`                                                                  | List of `t:Explorer.Chain.Address.t/0`s                                                       |
+  | `:balances`                      | `[%{address_hash: Explorer.Chain.Hash.t(), block_number: Explorer.Chain.Block.block_number()}]` | List of `t:Explorer.Chain.Address.t/0`s                                                       |
+  | `:blocks`                        | `[Explorer.Chain.Block.t()]`                                                                    | List of `t:Explorer.Chain.Block.t/0`s                                                         |
+  | `:internal_transactions`         | `[%{index: non_neg_integer(), transaction_hash: Explorer.Chain.Hash.t()}]`                      | List of maps of the `t:Explorer.Chain.InternalTransaction.t/0` `index` and `transaction_hash` |
+  | `:logs`                          | `[Explorer.Chain.Log.t()]`                                                                      | List of `t:Explorer.Chain.Log.t/0`s                                                           |
+  | `:token_transfers`               | `[Explorer.Chain.TokenTransfer.t()]`                                                            | List of `t:Explor.Chain.TokenTransfer.t/0`s                                                   |
+  | `:tokens`                        | `[Explorer.Chain.Token.t()]`                                                                    | List of `t:Explorer.Chain.token.t/0`s                                                         |
+  | `:transactions`                  | `[Explorer.Chain.Hash.t()]`                                                                     | List of `t:Explorer.Chain.Transaction.t/0` `hash`                                             |
+  | `:block_second_degree_relations` | `[%{uncle_hash: Explorer.Chain.Hash.t(), nephew_hash: Explorer.Chain.Hash.t()]`                 | List of maps `t:Explorer.Chain.Block.SecondDegreeRelation.t/0` `uncle_hash` and `nephew_hash` |
 
   The params for each key are validated using the corresponding `Ecto.Schema` module's `changeset/2` function.  If there
   are errors, they are returned in `Ecto.Changeset.t`s, so that the original, invalid value can be reconstructed for any
@@ -165,6 +175,9 @@ defmodule Explorer.Chain.Import do
     * `:blocks`
       * `:params` - `list` of params for `Explorer.Chain.Block.changeset/2`.
       * `:timeout` - the timeout for inserting all blocks. Defaults to `#{@insert_blocks_timeout}` milliseconds.
+    * `:block_second_degree_relations`
+      * `:params` - `list` of params `for `Explorer.Chain.Block.SecondDegreeRelation.changeset/2`.
+      * `:timeout` - the timeout for inserting all uncles found in the params list.
     * `:broadcast` - Boolean flag indicating whether or not to broadcast the event.
     * `:internal_transactions`
       * `:params` - `list` of params for `Explorer.Chain.InternalTransaction.changeset/2`.
@@ -198,6 +211,7 @@ defmodule Explorer.Chain.Import do
     * `:token_balances`
       * `:params` - `list` of params for `Explorer.Chain.TokenBalance.changeset/2`
     * `:timeout` - the timeout for `Repo.transaction`. Defaults to `#{@transaction_timeout}` milliseconds.
+
   """
   @spec all(all_options()) :: all_result()
   def all(options) when is_map(options) do
@@ -277,6 +291,7 @@ defmodule Explorer.Chain.Import do
     addresses: Address,
     balances: CoinBalance,
     blocks: Block,
+    block_second_degree_relations: Block.SecondDegreeRelation,
     internal_transactions: InternalTransaction,
     logs: Log,
     token_transfers: TokenTransfer,
@@ -294,6 +309,7 @@ defmodule Explorer.Chain.Import do
     |> run_addresses(ecto_schema_module_to_changes_list_map, full_options)
     |> run_balances(ecto_schema_module_to_changes_list_map, full_options)
     |> run_blocks(ecto_schema_module_to_changes_list_map, full_options)
+    |> run_block_second_degree_relations(ecto_schema_module_to_changes_list_map, full_options)
     |> run_transactions(ecto_schema_module_to_changes_list_map, full_options)
     |> run_internal_transactions(ecto_schema_module_to_changes_list_map, full_options)
     |> run_logs(ecto_schema_module_to_changes_list_map, full_options)
@@ -507,6 +523,25 @@ defmodule Explorer.Chain.Import do
     end
   end
 
+  defp run_block_second_degree_relations(multi, ecto_schema_module_to_changes_list, options)
+       when is_map(ecto_schema_module_to_changes_list) and is_map(options) do
+    case ecto_schema_module_to_changes_list do
+      %{Block.SecondDegreeRelation => block_second_degree_relations_changes} ->
+        Multi.run(multi, :block_second_degree_relations, fn _ ->
+          insert_block_second_degree_relations(
+            block_second_degree_relations_changes,
+            %{
+              timeout:
+                options[:block_second_degree_relations][:timeout] || @insert_block_second_degree_relations_timeout
+            }
+          )
+        end)
+
+      _ ->
+        multi
+    end
+  end
+
   @spec insert_addresses([%{hash: Hash.Address.t()}], %{
           required(:timeout) => timeout,
           required(:timestamps) => timestamps
@@ -654,6 +689,32 @@ defmodule Explorer.Chain.Import do
       )
 
     {:ok, blocks}
+  end
+
+  @spec insert_block_second_degree_relations([map()], %{required(:timeout) => timeout}) ::
+          {:ok, %{nephew_hash: Hash.Full.t(), uncle_hash: Hash.Full.t()}} | {:error, [Changeset.t()]}
+  defp insert_block_second_degree_relations(changes_list, %{timeout: timeout}) when is_list(changes_list) do
+    # order so that row ShareLocks are grabbed in a consistent order
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.nephew_hash, &1.uncle_hash})
+
+    insert_changes_list(ordered_changes_list,
+      conflict_target: [:nephew_hash, :uncle_hash],
+      on_conflict:
+        from(
+          block_second_degree_relation in Block.SecondDegreeRelation,
+          update: [
+            set: [
+              uncle_fetched_at:
+                fragment("LEAST(?, EXCLUDED.uncle_fetched_at)", block_second_degree_relation.uncle_fetched_at)
+            ]
+          ]
+        ),
+      for: Block.SecondDegreeRelation,
+      returning: [:nephew_hash, :uncle_hash],
+      timeout: timeout,
+      # block_second_degree_relations doesn't have timestamps
+      timestamps: %{}
+    )
   end
 
   @spec insert_internal_transactions([map], %{required(:timeout) => timeout, required(:timestamps) => timestamps}) ::
