@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.RPC.StatsController do
   use BlockScoutWeb, :controller
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, ExchangeRates}
   alias Explorer.Chain.Wei
 
   def tokensupply(conn, params) do
@@ -30,6 +30,13 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
       |> Decimal.to_string()
 
     render(conn, "ethsupply.json", total_supply: wei_total_supply)
+  end
+
+  def ethprice(conn, _params) do
+    symbol = Application.get_env(:explorer, :coin)
+    rates = ExchangeRates.lookup(symbol)
+
+    render(conn, "ethprice.json", rates: rates)
   end
 
   defp fetch_contractaddress(params) do
