@@ -132,33 +132,35 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Counts the number of `t:Explorer.Chain.Transaction.t/0` to or from the `address`.
+  Gets an estimated count of `t:Explorer.Chain.Transaction.t/0` to or from the `address` based on the estimated rows
+  resulting in an EXPLAIN of the query plan for the count query.
   """
-  @spec address_to_transaction_count(Address.t()) :: non_neg_integer()
-  def address_to_transaction_count(%Address{hash: hash}) do
-    {:ok, %{rows: [[result]]}} =
-      SQL.query(
-        Repo,
+  @spec address_to_transaction_count_estimate(Address.t()) :: non_neg_integer()
+  def address_to_transaction_count_estimate(%Address{hash: address_hash}) do
+    {:ok, %Postgrex.Result{rows: result}} =
+      Repo.query(
         """
-          SELECT COUNT(hash) from
-          (
-            SELECT t0."hash" address
-            FROM "transactions" AS t0
-            LEFT OUTER JOIN "internal_transactions" AS i1 ON (i1."transaction_hash" = t0."hash") AND (i1."type" = 'create')
-            WHERE (i1."created_contract_address_hash" = $1 AND t0."to_address_hash" IS NULL)
-
-            UNION
-
-            SELECT t0."hash" address
-            FROM "transactions" AS t0
-            WHERE (t0."to_address_hash" = $1)
-            OR (t0."from_address_hash" = $1)
-          ) AS hash
+        EXPLAIN SELECT COUNT(DISTINCT t.hash) FROM
+        (
+          SELECT t0.hash FROM transactions AS t0 WHERE t0.from_address_hash = $1
+          UNION
+          SELECT t0.hash FROM transactions AS t0 WHERE t0.to_address_hash = $1
+          UNION
+          SELECT t0.hash FROM transactions AS t0 WHERE t0.created_contract_address_hash = $1
+          UNION
+          SELECT tt.transaction_hash AS hash FROM token_transfers AS tt
+          WHERE tt.from_address_hash = $1
+          UNION
+          SELECT tt.transaction_hash AS hash FROM token_transfers AS tt
+          WHERE tt.to_address_hash = $1
+        ) as t
         """,
-        [hash.bytes]
+        [address_hash.bytes]
       )
 
-    result
+    {[unique_explain], _} = List.pop_at(result, 1)
+    [[_ | [rows]]] = Regex.scan(~r/rows=(\d+)/, unique_explain)
+    String.to_integer(rows)
   end
 
   @doc """
@@ -182,11 +184,17 @@ defmodule Explorer.Chain do
       when is_list(options) do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    options
-    |> Keyword.get(:paging_options, @default_paging_options)
+    {block_number, index} =
+      case paging_options.key do
+        nil -> {nil, nil}
+        {block_number, index} -> {block_number, index}
+      end
+
+    paging_options
     |> fetch_transactions()
-    |> Transaction.where_address_fields_match(address_hash, direction)
+    |> Transaction.where_address_fields_match(address_hash, direction, paging_options.page_size, block_number, index)
     |> join_associations(necessity_by_association)
     |> Transaction.preload_token_transfers(address_hash)
     |> Repo.all()
@@ -1363,6 +1371,7 @@ defmodule Explorer.Chain do
     do: {:error, :awaiting_internal_transactions}
 
   def transaction_to_status(%Transaction{status: :error, error: error}) when is_binary(error), do: {:error, error}
+  def transaction_to_status(%Transaction{status: :error}), do: {:error, "error"}
 
   @doc """
   The `t:Explorer.Chain.Transaction.t/0` or `t:Explorer.Chain.InternalTransaction.t/0` `value` of the `transaction` in

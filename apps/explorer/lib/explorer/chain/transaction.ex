@@ -423,7 +423,7 @@ defmodule Explorer.Chain.Transaction do
   Token transfers will be preloaded according to the given address_hash considering if it's equal
   to token_contract_address_hash, to_address_hash or from_address_hash from Token Transfers's table.
   """
-  def where_address_fields_match(query, address_hash, :to) do
+  def where_address_fields_match(query, address_hash, :to, page_size, nil, nil) do
     join(
       query,
       :inner,
@@ -434,7 +434,17 @@ defmodule Explorer.Chain.Transaction do
           (
             SELECT t0.hash AS hash
             FROM transactions AS t0
-            WHERE t0.to_address_hash = ? OR t0.created_contract_address_hash = ?
+            WHERE t0.to_address_hash = ?
+            ORDER BY t0.block_number DESC, t0.index DESC
+            LIMIT ?
+          )
+          UNION ALL
+          (
+            SELECT t0.hash AS hash
+            FROM transactions AS t0
+            WHERE t0.created_contract_address_hash = ?
+            ORDER BY t0.block_number DESC, t0.index DESC
+            LIMIT ?
           )
           UNION ALL
           (
@@ -445,14 +455,69 @@ defmodule Explorer.Chain.Transaction do
         ) SELECT * from hashes
         """,
         ^address_hash.bytes,
+        ^page_size,
         ^address_hash.bytes,
+        ^page_size,
         ^address_hash.bytes
       ),
       transaction.hash == matches.hash
     )
   end
 
-  def where_address_fields_match(query, address_hash, :from) do
+  def where_address_fields_match(query, address_hash, :to, page_size, block_number, index) do
+    join(
+      query,
+      :inner,
+      [transaction],
+      matches in fragment(
+        """
+        WITH hashes AS (
+          (
+            SELECT t0.hash AS hash
+            FROM transactions AS t0
+            WHERE ((t0.block_number < ?) OR ((t0.block_number = ?) AND (t0.index < ?))) AND (t0.to_address_hash = ?)
+            ORDER BY t0.block_number DESC, t0.index DESC
+            LIMIT ?
+          )
+          UNION ALL
+          (
+            SELECT t0.hash AS hash
+            FROM transactions AS t0
+            WHERE ((t0.block_number < ?) OR ((t0.block_number = ?) AND (t0.index < ?))) AND (t0.created_contract_address_hash = ?)
+            ORDER BY t0.block_number DESC, t0.index DESC
+            LIMIT ?
+          )
+          UNION ALL
+          (
+            SELECT tt.transaction_hash AS hash
+            JOIN transactions AS t0 ON t0.hash = tt.transaction_hash
+            FROM token_transfers AS tt
+            WHERE ((t0.block_number < ?) OR ((t0.block_number = ?) AND (t0.index < ?))) AND (tt.to_address_hash = ?)
+            LIMIT ?
+          )
+        ) SELECT * from hashes
+        """,
+        ^block_number,
+        ^block_number,
+        ^index,
+        ^address_hash.bytes,
+        ^page_size,
+        ^block_number,
+        ^block_number,
+        ^index,
+        ^address_hash.bytes,
+        ^page_size,
+        ^block_number,
+        ^block_number,
+        ^index,
+        ^address_hash.bytes,
+        ^page_size
+      ),
+      transaction.hash == matches.hash
+    )
+  end
+
+  def where_address_fields_match(query, address_hash, :from, page_size, nil, nil) do
     join(
       query,
       :inner,
@@ -464,6 +529,8 @@ defmodule Explorer.Chain.Transaction do
             SELECT t0.hash AS hash
             FROM transactions AS t0
             WHERE t0.from_address_hash = ?
+            ORDER BY t0.block_number DESC, t0.index DESC
+            LIMIT ?
           )
           UNION ALL
           (
@@ -474,13 +541,14 @@ defmodule Explorer.Chain.Transaction do
         ) SELECT * from hashes
         """,
         ^address_hash.bytes,
+        ^page_size,
         ^address_hash.bytes
       ),
       transaction.hash == matches.hash
     )
   end
 
-  def where_address_fields_match(query, address_hash, nil) do
+  def where_address_fields_match(query, address_hash, :from, page_size, block_number, index) do
     join(
       query,
       :inner,
@@ -491,7 +559,65 @@ defmodule Explorer.Chain.Transaction do
           (
             SELECT t0.hash AS hash
             FROM transactions AS t0
-            WHERE t0.to_address_hash = ? OR t0.from_address_hash = ? OR t0.created_contract_address_hash = ?
+            WHERE ((t0.block_number < ?) OR ((t0.block_number = ?) AND (t0.index < ?))) AND (t0.from_address_hash = ?)
+            ORDER BY t0.block_number DESC, t0.index DESC
+            LIMIT ?
+          )
+          UNION ALL
+          (
+            SELECT tt.transaction_hash AS hash
+            FROM token_transfers AS tt
+            JOIN transactions AS t0 ON t0.hash = tt.transaction_hash
+            WHERE ((t0.block_number < ?) OR ((t0.block_number = ?) AND (t0.index < ?))) AND (tt.from_address_hash = ?)
+            LIMIT ?
+          )
+        ) SELECT * from hashes
+        """,
+        ^block_number,
+        ^block_number,
+        ^index,
+        ^address_hash.bytes,
+        ^page_size,
+        ^block_number,
+        ^block_number,
+        ^index,
+        ^address_hash.bytes,
+        ^page_size
+      ),
+      transaction.hash == matches.hash
+    )
+  end
+
+  def where_address_fields_match(query, address_hash, nil, page_size, nil, nil) do
+    join(
+      query,
+      :inner,
+      [transaction],
+      matches in fragment(
+        """
+        WITH hashes AS (
+          (
+            SELECT t0.hash AS hash
+            FROM transactions AS t0
+            WHERE t0.to_address_hash = ?
+            ORDER BY t0.block_number DESC, t0.index DESC
+            LIMIT ?
+          )
+          UNION ALL
+          (
+            SELECT t0.hash AS hash
+            FROM transactions AS t0
+            WHERE t0.from_address_hash = ?
+            ORDER BY t0.block_number DESC, t0.index DESC
+            LIMIT ?
+          )
+          UNION ALL
+          (
+            SELECT t0.hash AS hash
+            FROM transactions AS t0
+            WHERE t0.created_contract_address_hash = ?
+            ORDER BY t0.block_number DESC, t0.index DESC
+            LIMIT ?
           )
           UNION ALL
           (
@@ -502,10 +628,80 @@ defmodule Explorer.Chain.Transaction do
         ) SELECT * from hashes
         """,
         ^address_hash.bytes,
+        ^page_size,
         ^address_hash.bytes,
+        ^page_size,
         ^address_hash.bytes,
+        ^page_size,
         ^address_hash.bytes,
         ^address_hash.bytes
+      ),
+      transaction.hash == matches.hash
+    )
+  end
+
+  def where_address_fields_match(query, address_hash, nil, page_size, block_number, index) do
+    join(
+      query,
+      :inner,
+      [transaction],
+      matches in fragment(
+        """
+        WITH hashes AS (
+          (
+            SELECT t0.hash AS hash
+            FROM transactions AS t0
+            WHERE ((t0.block_number < ?) OR ((t0.block_number = ?) AND (t0.index < ?))) AND (t0.to_address_hash = ?)
+            ORDER BY t0.block_number DESC, t0.index DESC
+            LIMIT ?
+          )
+          UNION ALL
+          (
+            SELECT t0.hash AS hash
+            FROM transactions AS t0
+            WHERE ((t0.block_number < ?) OR ((t0.block_number = ?) AND (t0.index < ?))) AND (t0.from_address_hash = ?)
+            ORDER BY t0.block_number DESC, t0.index DESC
+            LIMIT ?
+          )
+          UNION ALL
+          (
+            SELECT t0.hash AS hash
+            FROM transactions AS t0
+            WHERE ((t0.block_number < ?) OR ((t0.block_number = ?) AND (t0.index < ?))) AND (t0.created_contract_address_hash = ?)
+            ORDER BY t0.block_number DESC, t0.index DESC
+            LIMIT ?
+          )
+          UNION ALL
+          (
+            SELECT tt.transaction_hash AS hash
+            FROM token_transfers AS tt
+            JOIN transactions AS t0 ON t0.hash = tt.transaction_hash
+            WHERE ((t0.block_number < ?) OR ((t0.block_number = ?) AND (t0.index < ?))) AND ((tt.to_address_hash = ?) OR (tt.from_address_hash = ?))
+            LIMIT ?
+          )
+        ) SELECT * from hashes
+        """,
+        ^block_number,
+        ^block_number,
+        ^index,
+        ^address_hash.bytes,
+        ^page_size,
+        ^block_number,
+        ^block_number,
+        ^index,
+        ^address_hash.bytes,
+        ^page_size,
+        ^block_number,
+        ^block_number,
+        ^index,
+        ^address_hash.bytes,
+        ^page_size,
+        ^block_number,
+        ^block_number,
+        ^index,
+        ^address_hash.bytes,
+        ^address_hash.bytes,
+        ^page_size
       ),
       transaction.hash == matches.hash
     )
