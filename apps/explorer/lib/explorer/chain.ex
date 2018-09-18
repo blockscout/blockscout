@@ -185,10 +185,11 @@ defmodule Explorer.Chain do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    {block_number, index} = Map.get(paging_options, :key, {nil, nil})
 
     paging_options
     |> fetch_transactions()
-    |> Transaction.where_address_fields_match(address_hash, direction, paging_options.page_size)
+    |> Transaction.where_address_fields_match(address_hash, direction, paging_options.page_size, block_number, index)
     |> join_associations(necessity_by_association)
     |> Transaction.preload_token_transfers(address_hash)
     |> Repo.all()
