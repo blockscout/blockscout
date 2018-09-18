@@ -1,4 +1,4 @@
-defmodule Indexer.TokenTransfers.Parser do
+defmodule Indexer.TokenTransfer.Parser do
   @moduledoc """
   Helper functions for transforming data for ERC-20 and ERC-721 token transfers.
   """
@@ -11,15 +11,15 @@ defmodule Indexer.TokenTransfers.Parser do
   @doc """
   Returns a list of token transfers given a list of logs.
   """
-  def from_log_params(logs) do
+  def parse(logs) do
     initial_acc = %{tokens: [], token_transfers: []}
 
     logs
     |> Enum.filter(&(&1.first_topic == unquote(TokenTransfer.constant())))
-    |> Enum.reduce(initial_acc, &do_from_log_params/2)
+    |> Enum.reduce(initial_acc, &do_parse/2)
   end
 
-  defp do_from_log_params(log, %{tokens: tokens, token_transfers: token_transfers} = acc) do
+  defp do_parse(log, %{tokens: tokens, token_transfers: token_transfers} = acc) do
     {token, token_transfer} = parse_params(log)
 
     %{
