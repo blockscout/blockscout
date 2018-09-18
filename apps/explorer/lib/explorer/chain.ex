@@ -185,7 +185,12 @@ defmodule Explorer.Chain do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-    {block_number, index} = Map.get(paging_options, :key, {nil, nil})
+
+    {block_number, index} =
+      case paging_options.key do
+        nil -> {nil, nil}
+        {block_number, index} -> {block_number, index}
+      end
 
     paging_options
     |> fetch_transactions()
