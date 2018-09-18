@@ -9,6 +9,6 @@ defmodule BlockScoutWeb.AddressController do
   end
 
   def transaction_count(%Address{} = address) do
-    Chain.address_to_transaction_count(address)
+    Chain.address_to_transaction_count_estimate(address)
   end
 end

@@ -29,64 +29,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "address_to_transaction_count/1" do
-    test "without transactions" do
-      address = insert(:address)
-
-      assert Chain.address_to_transaction_count(address) == 0
-    end
-
-    test "with transactions" do
-      %Transaction{from_address: address} = insert(:transaction) |> Repo.preload(:from_address)
-      insert(:transaction, to_address: address)
-
-      assert Chain.address_to_transaction_count(address) == 2
-    end
-
-    test "with contract creation transactions the contract address is counted" do
-      contract_address = insert(:contract_address)
-      insert(:transaction, to_address: nil, created_contract_address: contract_address)
-
-      assert Chain.address_to_transaction_count(contract_address) == 1
-    end
-
-    test "doesn't double count addresses when to_address = from_address" do
-      %Transaction{from_address: address} = insert(:transaction) |> Repo.preload(:from_address)
-      insert(:transaction, to_address: address, from_address: address)
-
-      assert Chain.address_to_transaction_count(address) == 2
-    end
-
-    test "does not count non-contract-creation parent transactions" do
-      transaction_with_to_address =
-        %Transaction{} =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      %InternalTransaction{created_contract_address: address} =
-        insert(:internal_transaction_create, transaction: transaction_with_to_address, index: 0)
-
-      assert Chain.address_to_transaction_count(address) == 0
-    end
-
-    test "counts transactions with token transfers on to or from address" do
-      address = insert(:address)
-      insert(:token_transfer, to_address: address, transaction: build(:transaction))
-      insert(:token_transfer, from_address: address, transaction: build(:transaction))
-
-      assert Chain.address_to_transaction_count(address) == 2
-    end
-
-    test "does not double count transactions" do
-      address = insert(:address)
-      transaction = insert(:transaction, to_address: address, from_address: address)
-      insert(:token_transfer, to_address: address, transaction: transaction)
-
-      assert Chain.address_to_transaction_count(address) == 1
-    end
-  end
-
   describe "address_to_transactions/2" do
     test "without transactions" do
       address = insert(:address)
