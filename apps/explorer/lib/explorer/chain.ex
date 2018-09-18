@@ -1371,6 +1371,7 @@ defmodule Explorer.Chain do
     do: {:error, :awaiting_internal_transactions}
 
   def transaction_to_status(%Transaction{status: :error, error: error}) when is_binary(error), do: {:error, error}
+  def transaction_to_status(%Transaction{status: :error}), do: {:error, "error"}
 
   @doc """
   The `t:Explorer.Chain.Transaction.t/0` or `t:Explorer.Chain.InternalTransaction.t/0` `value` of the `transaction` in
