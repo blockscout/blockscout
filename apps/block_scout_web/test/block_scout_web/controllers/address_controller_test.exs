@@ -1,8 +1,6 @@
 defmodule BlockScoutWeb.AddressControllerTest do
   use BlockScoutWeb.ConnCase
 
-  alias Explorer.Chain.{Address, Wei}
-
   describe "GET index/2" do
     test "returns top addresses", %{conn: conn} do
       address_hashes =

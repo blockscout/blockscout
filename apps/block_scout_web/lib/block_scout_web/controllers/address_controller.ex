@@ -6,11 +6,9 @@ defmodule BlockScoutWeb.AddressController do
   alias Explorer.ExchangeRates.Token
 
   def index(conn, _params) do
-    address_count_module = Application.get_env(:block_scout_web, :fake_adapter) || Chain
-
     render(conn, "index.html",
       addresses: Chain.list_top_addresses(),
-      address_estimated_count: address_count_module.address_estimated_count(),
+      address_estimated_count: Chain.address_estimated_count(),
       exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
     )
   end
@@ -20,6 +18,6 @@ defmodule BlockScoutWeb.AddressController do
   end
 
   def transaction_count(%Address{} = address) do
-    Chain.address_to_transaction_count_estimate(address)
+    Chain.address_to_transactions_estimated_count(address)
   end
 end

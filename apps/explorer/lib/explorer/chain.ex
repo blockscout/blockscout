@@ -137,8 +137,8 @@ defmodule Explorer.Chain do
   Gets an estimated count of `t:Explorer.Chain.Transaction.t/0` to or from the `address` based on the estimated rows
   resulting in an EXPLAIN of the query plan for the count query.
   """
-  @spec address_to_transaction_count_estimate(Address.t()) :: non_neg_integer()
-  def address_to_transaction_count_estimate(%Address{hash: address_hash}) do
+  @spec address_to_transactions_estimated_count(Address.t()) :: non_neg_integer()
+  def address_to_transactions_estimated_count(%Address{hash: address_hash}) do
     {:ok, %Postgrex.Result{rows: result}} =
       Repo.query(
         """

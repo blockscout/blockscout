@@ -15,5 +15,3 @@ config :logger, :block_scout_web,
 
 # Configure wallaby
 config :wallaby, screenshot_on_failure: true
-
-config :block_scout_web, :fake_adapter, BlockScoutWeb.FakeAdapter
