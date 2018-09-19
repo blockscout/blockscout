@@ -16,7 +16,6 @@ defmodule BlockScoutWeb.Chain do
     Address,
     Address.TokenBalance,
     Block,
-    Hash,
     InternalTransaction,
     Log,
     Token,
@@ -195,7 +194,7 @@ defmodule BlockScoutWeb.Chain do
   end
 
   defp paging_params(%TokenBalance{address_hash: address_hash, value: value}) do
-    %{"address_hash" => Hash.to_string(address_hash), "value" => Decimal.to_integer(value)}
+    %{"address_hash" => to_string(address_hash), "value" => Decimal.to_integer(value)}
   end
 
   defp transaction_from_param(param) do

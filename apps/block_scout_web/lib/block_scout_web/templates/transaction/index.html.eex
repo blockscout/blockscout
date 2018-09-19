@@ -53,7 +53,7 @@
           <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer transactions" %></a>
         </div>
       </div>
-      <h2 class="card-title mb-0"><%= gettext "Transactions" %></h2>
+      <h1><%= gettext "Transactions" %></h1>
       <p><%= gettext("Showing") %> <span data-selector="transaction-count"><%= Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###") %></span> <%= gettext("Validated Transactions") %></p>
       <span data-selector="transactions-list">
         <%= for transaction <- @transactions do %>

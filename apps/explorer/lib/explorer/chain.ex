@@ -69,16 +69,18 @@ defmodule Explorer.Chain do
   @typep paging_options :: {:paging_options, PagingOptions.t()}
 
   @doc """
-  Estimated count of `t:Explorer.Chain.Address.t/0`.
-
-  Estimated count of addresses
+  Gets an estimated count of `t:Explorer.Chain.Address.t/0`'s where the `fetched_coin_balance` is > 0
   """
   @spec address_estimated_count :: non_neg_integer()
   def address_estimated_count do
-    %Postgrex.Result{rows: [[rows]]} =
-      SQL.query!(Repo, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='addresses'")
+    {:ok, %Postgrex.Result{rows: result}} =
+      Repo.query("""
+      EXPLAIN SELECT COUNT(a0.hash) FROM addresses AS a0 WHERE (a0.fetched_coin_balance > 0)
+      """)
 
-    rows
+    {[explain], _} = List.pop_at(result, 1)
+    [[_ | [rows]]] = Regex.scan(~r/rows=(\d+)/, explain)
+    String.to_integer(rows)
   end
 
   @doc """
@@ -135,8 +137,8 @@ defmodule Explorer.Chain do
   Gets an estimated count of `t:Explorer.Chain.Transaction.t/0` to or from the `address` based on the estimated rows
   resulting in an EXPLAIN of the query plan for the count query.
   """
-  @spec address_to_transaction_count_estimate(Address.t()) :: non_neg_integer()
-  def address_to_transaction_count_estimate(%Address{hash: address_hash}) do
+  @spec address_to_transactions_estimated_count(Address.t()) :: non_neg_integer()
+  def address_to_transactions_estimated_count(%Address{hash: address_hash}) do
     {:ok, %Postgrex.Result{rows: result}} =
       Repo.query(
         """
@@ -740,7 +742,7 @@ defmodule Explorer.Chain do
         `:required`, and the `t:Explorer.Chain.Block.t/0` has no associated record for that association, then the
         `t:Explorer.Chain.Block.t/0` will not be included in the page `entries`.
     * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
-      `:key` (a tuple of the lowest/oldest `{block_number}`) and. Results will be the internal
+      `:key` (a tuple of the lowest/oldest `{block_number}`). Results will be the internal
       transactions older than the `block_number` that are passed.
 
   """
@@ -754,6 +756,19 @@ defmodule Explorer.Chain do
     |> page_blocks(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by(desc: :number)
+    |> Repo.all()
+  end
+
+  @doc """
+  Lists the top 250 `t:Explorer.Chain.Address.t/0`'s' in descending order based on coin balance.
+
+  """
+  @spec list_top_addresses :: [Address.t()]
+  def list_top_addresses do
+    Address
+    |> limit(250)
+    |> order_by(desc: :fetched_coin_balance, asc: :hash)
+    |> where([address], address.fetched_coin_balance > ^0)
     |> Repo.all()
   end
 

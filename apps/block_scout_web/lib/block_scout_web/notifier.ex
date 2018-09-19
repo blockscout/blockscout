@@ -9,8 +9,7 @@ defmodule BlockScoutWeb.Notifier do
   alias BlockScoutWeb.Endpoint
 
   def handle_event({:chain_event, :addresses, addresses}) do
-    address_count_module = Application.get_env(:block_scout_web, :fake_adapter) || Chain
-    Endpoint.broadcast("addresses:new_address", "count", %{count: address_count_module.address_estimated_count()})
+    Endpoint.broadcast("addresses:new_address", "count", %{count: Chain.address_estimated_count()})
 
     addresses
     |> Stream.reject(fn %Address{fetched_coin_balance: fetched_coin_balance} -> is_nil(fetched_coin_balance) end)

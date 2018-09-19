@@ -277,6 +277,12 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "address_to_transactions_estimated_count/1" do
+    test "returns integer" do
+      assert is_integer(Chain.address_to_transactions_estimated_count(build(:address)))
+    end
+  end
+
   describe "average_block_time/0" do
     test "without blocks duration is 0" do
       assert Chain.average_block_time() == Timex.Duration.parse!("PT0S")
@@ -976,6 +982,41 @@ defmodule Explorer.ChainTest do
                |> Chain.list_blocks()
                |> Enum.map(& &1.number)
                |> Enum.reverse()
+    end
+  end
+
+  describe "list_top_addresses/0" do
+    test "without addresses with balance > 0" do
+      insert(:address, fetched_coin_balance: 0)
+      assert [] = Chain.list_top_addresses()
+    end
+
+    test "with top addresses in order" do
+      address_hashes =
+        4..1
+        |> Enum.map(&insert(:address, fetched_coin_balance: &1))
+        |> Enum.map(& &1.hash)
+
+      assert address_hashes == Enum.map(Chain.list_top_addresses(), & &1.hash)
+    end
+
+    test "with top addresses in order with matching value" do
+      test_hashes =
+        4..0
+        |> Enum.map(&Explorer.Chain.Hash.cast(Explorer.Chain.Hash.Address, &1))
+        |> Enum.map(&elem(&1, 1))
+
+      tail =
+        4..1
+        |> Enum.map(&insert(:address, fetched_coin_balance: &1, hash: Enum.fetch!(test_hashes, &1 - 1)))
+        |> Enum.map(& &1.hash)
+
+      first_result_hash =
+        :address
+        |> insert(fetched_coin_balance: 4, hash: Enum.fetch!(test_hashes, 4))
+        |> Map.fetch!(:hash)
+
+      assert [first_result_hash | tail] == Enum.map(Chain.list_top_addresses(), & &1.hash)
     end
   end
 

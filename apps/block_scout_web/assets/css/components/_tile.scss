@@ -3,7 +3,6 @@
   color: $text-muted;
   line-height: 1.4rem;
   border: 1px solid $border-color;
-  border-left: 4px solid $primary;
   border-radius: 2px;
   padding: 1rem;
   box-shadow: 0 1px 5px rgba($black, 0.15);
@@ -17,6 +16,10 @@
   }
 
   &-type {
+
+    &-block {
+      border-left: 4px solid $primary;
+    }
 
     &-transaction {
       border-left: 4px solid $blue;
