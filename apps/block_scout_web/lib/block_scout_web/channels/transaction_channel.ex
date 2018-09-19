@@ -13,6 +13,10 @@ defmodule BlockScoutWeb.TransactionChannel do
     {:ok, %{}, socket}
   end
 
+  def join("transactions:" <> _transaction_hash, _params, socket) do
+    {:ok, %{}, socket}
+  end
+
   def handle_out("new_transaction", %{transaction: transaction}, socket) do
     Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
 
