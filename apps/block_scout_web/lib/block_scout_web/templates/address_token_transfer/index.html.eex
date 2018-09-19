@@ -22,7 +22,8 @@
                 ) %>
           </li>
 
-          <li class="nav-item"> <%= link(
+          <li class="nav-item">
+            <%= link(
                   gettext("Internal Transactions"),
                   class: "nav-link",
                   "data-test": "internal_transactions_tab_link",
@@ -96,9 +97,10 @@
               <% end %>
               <%= if AddressView.smart_contract_with_read_only_functions?(@address) do %>
                 <%= link(
-                    gettext("Read Contract"),
-                    to: address_read_contract_path(@conn, :index, @address.hash),
-                    class: "dropdown-item")%>
+                      gettext("Read Contract"),
+                      to: address_read_contract_path(@conn, :index, @address.hash),
+                      class: "dropdown-item"
+                    )%>
               <% end %>
             </div>
           </li>
@@ -106,31 +108,40 @@
       </div>
 
       <div class="card-body">
-        <h2 class="card-title"><%= gettext "Tokens" %></h2>
-        <%= if Enum.any?(@tokens) do %>
-          <%= for token <- @tokens do %>
-            <%= render "_tokens.html", conn: @conn, token: token, address: @address %>
-          <% end %>
+        <h2 class="card-title">
+          <span class="text-muted"><%= gettext "Tokens" %></span> / <%= token_name(@token) %>
+        </h2>
+
+        <%= if Enum.any?(@transactions) do %>
+          <span data-selector="transactions-list">
+            <%= for transaction <- @transactions do %>
+              <%= render(
+                  BlockScoutWeb.TransactionView,
+                  "_tile.html",
+                  transaction: transaction,
+                  current_address: @address
+                  ) %>
+            <% end %>
+          </span>
         <% else %>
           <div class="tile tile-muted text-center">
-            <span><%= gettext "There are no tokens for this address." %></span>
+            <span><%= gettext "There are no token transfers for this address." %></span>
           </div>
         <% end %>
 
-        <div>
-          <%= if @next_page_params do %>
-            <%= link(
-              gettext("Next"),
-              class: "button button-secondary button-sm float-right mt-3",
-              to: address_token_path(
-                @conn,
-                :index,
-                @address,
-                @next_page_params
-              )
-            ) %>
-          <% end %>
-        </div>
+        <%= if @next_page_params do %>
+          <%= link(
+            gettext("Next"),
+            class: "button button-secondary button-sm float-right mt-3",
+            to: address_token_transfers_path(
+              @conn,
+              :index,
+              @address.hash,
+              @token.contract_address_hash,
+              @next_page_params
+            )
+          ) %>
+        <% end %>
       </div>
     </div>
   </section>

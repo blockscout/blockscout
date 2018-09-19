@@ -19,7 +19,8 @@
             <%= link(
                   gettext("Tokens"),
                   class: "nav-link",
-                  to: address_token_path(@conn, :index, @address.hash)
+                  to: address_token_path(@conn, :index, @address.hash),
+                  "data-test": "tokens_tab_link"
                 ) %>
           </li>
           <li class="nav-item">

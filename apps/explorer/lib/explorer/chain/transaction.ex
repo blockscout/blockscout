@@ -513,7 +513,11 @@ defmodule Explorer.Chain.Transaction do
   def transactions_with_token_transfers(address_hash, token_hash) do
     query = transactions_with_token_transfers_query(address_hash, token_hash)
 
-    from(t in subquery(query), order_by: [desc: t.block_number, desc: t.index])
+    from(
+      t in subquery(query),
+      order_by: [desc: t.block_number, desc: t.index],
+      preload: [:from_address, :to_address, :created_contract_address, :block]
+    )
   end
 
   defp transactions_with_token_transfers_query(address_hash, token_hash) do
