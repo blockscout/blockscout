@@ -1384,12 +1384,12 @@ defmodule Explorer.Chain do
     * `:pending` - the transaction has not be confirmed in a block yet.
     * `:awaiting_internal_transactions` - the transaction happened in a pre-Byzantium block or on a chain like Ethereum
       Classic (ETC) that never adopted [EIP-658](https://github.com/Arachnid/EIPs/blob/master/EIPS/eip-658.md), which
-      add transaction status to transaction receipts, so the stats can only be derived whether the last internal
+      add transaction status to transaction receipts, so the status can only be derived whether the first internal
       transaction has an error.
     * `:success` - the transaction has been confirmed in a block
     * `{:error, :awaiting_internal_transactions}` - the transactions happened post-Byzantium, but the error message
        requires the internal transactions.
-    * `{:error, reason}` - the transaction failed due to `reason` in its last internal transaction.
+    * `{:error, reason}` - the transaction failed due to `reason` in its first internal transaction.
 
   """
   @spec transaction_to_status(Transaction.t()) ::

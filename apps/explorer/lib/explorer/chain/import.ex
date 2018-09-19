@@ -868,12 +868,12 @@ defmodule Explorer.Chain.Import do
               ),
             error:
               fragment(
-                "(SELECT it.error FROM internal_transactions AS it WHERE it.transaction_hash = ? ORDER BY it.index DESC LIMIT 1)",
+                "(SELECT it.error FROM internal_transactions AS it WHERE it.transaction_hash = ? ORDER BY it.index ASC LIMIT 1)",
                 t.hash
               ),
             status:
               fragment(
-                "COALESCE(?, CASE WHEN (SELECT it.error FROM internal_transactions AS it WHERE it.transaction_hash = ? ORDER BY it.index DESC LIMIT 1) IS NULL THEN ? ELSE ? END)",
+                "COALESCE(?, CASE WHEN (SELECT it.error FROM internal_transactions AS it WHERE it.transaction_hash = ? ORDER BY it.index ASC LIMIT 1) IS NULL THEN ? ELSE ? END)",
                 t.status,
                 t.hash,
                 type(^:ok, t.status),
