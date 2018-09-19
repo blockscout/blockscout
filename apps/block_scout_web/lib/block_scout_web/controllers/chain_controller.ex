@@ -7,8 +7,6 @@ defmodule BlockScoutWeb.ChainController do
   alias Explorer.Market
 
   def show(conn, _params) do
-    address_count_module = Application.get_env(:block_scout_web, :fake_adapter) || Chain
-
     blocks =
       [paging_options: %PagingOptions{page_size: 4}]
       |> Chain.list_blocks()
@@ -38,7 +36,7 @@ defmodule BlockScoutWeb.ChainController do
     render(
       conn,
       "show.html",
-      address_estimated_count: address_count_module.address_estimated_count(),
+      address_estimated_count: Chain.address_estimated_count(),
       average_block_time: Chain.average_block_time(),
       blocks: blocks,
       exchange_rate: exchange_rate,

@@ -1,15 +1,13 @@
 defmodule BlockScoutWeb.ViewingAddressesTest do
   use BlockScoutWeb.FeatureCase, async: true
 
-  alias Explorer.Chain.Wei
   alias BlockScoutWeb.{AddressPage, AddressView, Notifier}
 
   setup do
     block = insert(:block)
 
-    {:ok, balance} = Wei.cast(5)
-    lincoln = insert(:address, fetched_coin_balance: balance)
-    taft = insert(:address)
+    lincoln = insert(:address, fetched_coin_balance: 5)
+    taft = insert(:address, fetched_coin_balance: 5)
 
     from_taft =
       :transaction
@@ -27,6 +25,24 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
        block: block,
        transactions: %{from_lincoln: from_lincoln, from_taft: from_taft}
      }}
+  end
+
+  describe "viewing top addresses" do
+    setup do
+      addresses = Enum.map(150..101, &insert(:address, fetched_coin_balance: &1))
+
+      {:ok, %{addresses: addresses}}
+    end
+
+    test "lists top addresses", %{session: session, addresses: addresses} do
+      [first_address | _] = addresses
+      [last_address | _] = Enum.reverse(addresses)
+
+      session
+      |> AddressPage.visit_page()
+      |> assert_has(AddressPage.address(first_address))
+      |> assert_has(AddressPage.address(last_address))
+    end
   end
 
   test "viewing address overview information", %{session: session} do

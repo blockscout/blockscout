@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.AddressChannelTest do
     Notifier.handle_event({:chain_event, :addresses, [address]})
 
     receive do
-      %Phoenix.Socket.Broadcast{topic: ^topic, event: "count", payload: %{count: 1}} ->
+      %Phoenix.Socket.Broadcast{topic: ^topic, event: "count", payload: %{count: _}} ->
         assert true
     after
       5_000 ->

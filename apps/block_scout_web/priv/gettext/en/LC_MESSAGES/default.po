@@ -45,6 +45,7 @@ msgstr "Height"
 msgid "BlockScout"
 msgstr "BlockScout"
 
+#: lib/block_scout_web/templates/address/index.html.eex:28
 #: lib/block_scout_web/templates/address/overview.html.eex:28
 #: lib/block_scout_web/templates/address_contract/index.html.eex:12
 #: lib/block_scout_web/templates/address_contract/index.html.eex:65
@@ -150,7 +151,7 @@ msgid "%{count} transactions in this block"
 msgstr "%{count} transactions in this block"
 
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:70
-#: lib/block_scout_web/views/address_view.ex:74
+#: lib/block_scout_web/views/address_view.ex:79
 msgid "Address"
 msgstr "Address"
 
@@ -343,7 +344,7 @@ msgstr ""
 msgid "Internal Transactions"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:29
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:34
 msgid "Search by address, transaction hash, or block number"
 msgstr ""
 
@@ -416,6 +417,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/chain/show.html.eex:17
 #: lib/block_scout_web/templates/layout/app.html.eex:24
+#: lib/block_scout_web/views/address_view.ex:99
 msgid "Market Cap"
 msgstr ""
 
@@ -499,7 +501,7 @@ msgid "Contract"
 msgstr ""
 
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:12
-#: lib/block_scout_web/views/address_view.ex:72
+#: lib/block_scout_web/views/address_view.ex:77
 msgid "Contract Address"
 msgstr ""
 
@@ -571,17 +573,17 @@ msgid "Contract Creation"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:39
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:44
 msgid "Mainnet"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:43
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:48
 msgid "POA Core"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:42
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:47
 msgid "POA Sokol"
 msgstr ""
 
@@ -661,8 +663,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:64
-#: lib/block_scout_web/views/address_view.ex:16
-#: lib/block_scout_web/views/address_view.ex:50
+#: lib/block_scout_web/views/address_view.ex:21
+#: lib/block_scout_web/views/address_view.ex:55
 msgid "Contract Address Pending"
 msgstr ""
 
@@ -858,7 +860,7 @@ msgid "Total Supply"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:23
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:28
 msgid "API"
 msgstr ""
 
@@ -1181,8 +1183,8 @@ msgid "Reset"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:29
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:34
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:39
 msgid "Search"
 msgstr ""
 
@@ -1238,7 +1240,7 @@ msgstr ""
 msgid "Copy Code"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/address_contract/index.html.eex:103
 msgid "Verify & Publish"
 msgstr ""
@@ -1246,4 +1248,24 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:59
 msgid "Verify & publish"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:23
+msgid "Accounts"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/index.html.eex:4
+msgid "Addresses"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/index.html.eex:6
+msgid "Showing 250 addresses of"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/index.html.eex:8
+msgid "total addresses with a balance"
 msgstr ""

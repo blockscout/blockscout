@@ -115,6 +115,21 @@ defmodule BlockScoutWeb.AddressViewTest do
     end
   end
 
+  describe "balance_block_number/1" do
+    test "gives empty string with no fetched balance block number present" do
+      assert AddressView.balance_block_number(%Address{}) == ""
+    end
+
+    test "gives block number when fetched balance block number is non-nil" do
+      assert AddressView.balance_block_number(%Address{fetched_coin_balance_block_number: 1_000_000}) == "1000000"
+    end
+  end
+
+  test "balance_percentage/1" do
+    address = insert(:address, fetched_coin_balance: 2_524_608_000_000_000_000_000_000)
+    assert "1.0000% Market Cap" = AddressView.balance_percentage(address)
+  end
+
   describe "contract?/1" do
     test "with a smart contract" do
       {:ok, code} = Data.cast("0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef")
@@ -129,6 +144,39 @@ defmodule BlockScoutWeb.AddressViewTest do
 
     test "with nil address" do
       assert AddressView.contract?(nil)
+    end
+  end
+
+  describe "hash/1" do
+    test "gives a string version of an address's hash" do
+      address = %Address{
+        hash: %Hash{
+          byte_count: 20,
+          bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179, 223, 65, 91>>
+        }
+      }
+
+      assert AddressView.hash(address) == "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
+    end
+  end
+
+  describe "primary_name/1" do
+    test "gives an address's primary name when present" do
+      address = insert(:address)
+
+      address_name = insert(:address_name, address: address, primary: true, name: "POA Foundation Wallet")
+      insert(:address_name, address: address, name: "POA Wallet")
+
+      preloaded_address = Explorer.Repo.preload(address, :names)
+
+      assert AddressView.primary_name(preloaded_address) == address_name.name
+    end
+
+    test "returns nil when no primary available" do
+      address_name = insert(:address_name, name: "POA Wallet")
+      preloaded_address = Explorer.Repo.preload(address_name.address, :names)
+
+      refute AddressView.primary_name(preloaded_address)
     end
   end
 
@@ -239,49 +287,6 @@ defmodule BlockScoutWeb.AddressViewTest do
       token = insert(:token, name: "super token money", symbol: "ST$")
 
       assert AddressView.token_title(token) == "super token money (ST$)"
-    end
-  end
-
-  describe "hash/1" do
-    test "gives a string version of an address's hash" do
-      address = %Address{
-        hash: %Hash{
-          byte_count: 20,
-          bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179, 223, 65, 91>>
-        }
-      }
-
-      assert AddressView.hash(address) == "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
-    end
-  end
-
-  describe "balance_block_number/1" do
-    test "gives empty string with no fetched balance block number present" do
-      assert AddressView.balance_block_number(%Address{}) == ""
-    end
-
-    test "gives block number when fetched balance block number is non-nil" do
-      assert AddressView.balance_block_number(%Address{fetched_coin_balance_block_number: 1_000_000}) == "1000000"
-    end
-  end
-
-  describe "primary_name/1" do
-    test "gives an address's primary name when present" do
-      address = insert(:address)
-
-      address_name = insert(:address_name, address: address, primary: true, name: "POA Foundation Wallet")
-      insert(:address_name, address: address, name: "POA Wallet")
-
-      preloaded_address = Explorer.Repo.preload(address, :names)
-
-      assert AddressView.primary_name(preloaded_address) == address_name.name
-    end
-
-    test "returns nil when no primary available" do
-      address_name = insert(:address_name, name: "POA Wallet")
-      preloaded_address = Explorer.Repo.preload(address_name.address, :names)
-
-      refute AddressView.primary_name(preloaded_address)
     end
   end
 end
