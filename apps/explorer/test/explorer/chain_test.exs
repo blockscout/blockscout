@@ -2602,6 +2602,20 @@ defmodule Explorer.ChainTest do
       Chain.update_token(token, update_params)
       refute Repo.get_by(Address.Name, address_hash: token.contract_address_hash)
     end
+
+    test "stores token with big 'decimals' values" do
+      token = insert(:token, name: nil, symbol: nil, total_supply: nil, decimals: nil, cataloged: false)
+
+      update_params = %{
+        name: "Hodl Token",
+        symbol: "HT",
+        total_supply: 10,
+        decimals: 1_000_000_000_000_000_000,
+        cataloged: true
+      }
+
+      assert {:ok, updated_token} = Chain.update_token(token, update_params)
+    end
   end
 
   describe "fetch_last_token_balances/1" do
