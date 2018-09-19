@@ -58,6 +58,24 @@ if ($blockListPage.length) {
 
       if (state.channelDisconnected) $channelDisconnected.show()
       if (oldState.newBlock !== state.newBlock) {
+        const fromBottom = document.body.scrollHeight - window.scrollY
+        let clingBottomAnimationFrame
+        let expectedScrollPosition = window.scrollY
+        function clingBottom () {
+          if (expectedScrollPosition !== window.scrollY) return stopCling()
+
+          expectedScrollPosition = document.body.scrollHeight - fromBottom
+          $(window).scrollTop(expectedScrollPosition)
+          clingBottomAnimationFrame = requestAnimationFrame(clingBottom)
+        }
+        function stopCling () {
+          cancelAnimationFrame(clingBottomAnimationFrame)
+          $blocksList.off('animationend animationcancel', stopCling)
+        }
+        if (window.scrollY > $blocksList.offset().top) {
+          clingBottomAnimationFrame = requestAnimationFrame(clingBottom)
+          $blocksList.on('animationend animationcancel', stopCling)
+        }
         $blocksList.prepend(state.newBlock)
         updateAllAges()
       }
