@@ -1,5 +1,5 @@
 <nav class="navbar navbar-dark navbar-expand-lg navbar-primary">
-  <div class="container">
+  <div class="container-fluid">
     <%= link to: chain_path(@conn, :show), class: "navbar-brand", "data-test": "header_logo" do %>
       <img class="navbar-logo" src="<%= Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:logo] %>" />
     <% end %>
@@ -69,7 +69,7 @@
             <!-- <span class="nav-link-icon">
               <%= render BlockScoutWeb.IconsView, "_test_network_icon.html" %>
             </span> -->
-            <%= gettext("Mainnet") %>
+            <%= gettext("POA Core") %>
           </a>
           <div class="dropdown-menu" aria-labelledby="navbarDropdown">
             <a class="dropdown-item" href="https://sokol.blockscout.com/"><%= gettext("POA Sokol") %></a>
