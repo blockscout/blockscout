@@ -26,6 +26,9 @@
         </li>
         <li class="nav-item">
           <%= link to: address_path(@conn, :index), class: "nav-link topnav-nav-link" do %>
+            <span class="nav-link-icon">
+              <%= render BlockScoutWeb.IconsView, "_accounts_icon.html" %>
+            </span>
             <%= gettext("Accounts") %>
           <% end %>
         </li>
@@ -36,15 +39,6 @@
             </span>
             <%= gettext("API") %>
           <% end %>
-        </li>
-        <li class="nav-item">
-          <!-- INSERT LINK TO ACCOUNTS PAGE HERE -->
-          <a href="#" class="nav-link topnav-nav-link">
-            <span class="nav-link-icon">
-              <%= render BlockScoutWeb.IconsView, "_accounts_icon.html" %>
-            </span>
-            <%= gettext("Accounts") %>
-          </a>
         </li>
       </ul>
       <%= form_for @conn, chain_path(@conn, :search), [class: "form-inline my-2 my-lg-0", method: :get, enforce_utf8: false], fn f -> %>
