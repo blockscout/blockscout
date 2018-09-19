@@ -8,7 +8,7 @@ msgstr ""
 
 #: lib/block_scout_web/templates/block/index.html.eex:10
 #: lib/block_scout_web/templates/chain/show.html.eex:56
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:13
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:16
 msgid "Blocks"
 msgstr ""
 
@@ -52,7 +52,7 @@ msgstr ""
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:26
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:36
 #: lib/block_scout_web/templates/chain/show.html.eex:73
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:18
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:24
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:46
 #: lib/block_scout_web/templates/transaction/index.html.eex:56
 msgid "Transactions"
@@ -332,7 +332,7 @@ msgstr ""
 msgid "Internal Transactions"
 msgstr ""
 
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:34
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:46
 msgid "Search by address, transaction hash, or block number"
 msgstr ""
 
@@ -561,17 +561,13 @@ msgid "Contract Creation"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:44
-msgid "Mainnet"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:48
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:66
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:70
 msgid "POA Core"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:47
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:69
 msgid "POA Sokol"
 msgstr ""
 
@@ -848,7 +844,7 @@ msgid "Total Supply"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:28
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:40
 msgid "API"
 msgstr ""
 
@@ -1171,8 +1167,8 @@ msgid "Reset"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:34
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:39
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:46
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:53
 msgid "Search"
 msgstr ""
 
@@ -1239,7 +1235,7 @@ msgid "Verify & publish"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:23
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:32
 msgid "Accounts"
 msgstr ""
 
