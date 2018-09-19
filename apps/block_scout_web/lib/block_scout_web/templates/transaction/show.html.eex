@@ -1,0 +1,4 @@
+<section class="container">
+  <%= render BlockScoutWeb.TransactionView, "overview.html", assigns %>
+  <%= render BlockScoutWeb.TransactionView, "_tabs.html", assigns %>
+</section>

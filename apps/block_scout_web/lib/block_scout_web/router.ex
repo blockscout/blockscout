@@ -6,9 +6,7 @@ defmodule BlockScoutWeb.Router do
     plug(:fetch_session)
     plug(:fetch_flash)
     plug(:protect_from_forgery)
-    plug(BlockScoutWeb.CSPHeader)
-  end
-
+    plug(BlockScoutWeb.CSPHeader) end
   pipeline :api do
     plug(:accepts, ["json"])
   end
@@ -47,19 +45,25 @@ defmodule BlockScoutWeb.Router do
     resources("/pending_transactions", PendingTransactionController, only: [:index])
 
     get("/txs", TransactionController, :index)
+    get("/tx/:id", TransactionController, :show)
+    get("/tx/:id/token_transfers", TransactionController, :show, as: :transaction_token_transfer)
+    get("/tx/:id/internal_transactions", TransactionController, :show, as: :transaction_internal_transaction)
+    get("/tx/:id/logs", TransactionController, :show, as: :transaction_log)
 
-    resources "/tx", TransactionController, only: [:show] do
-      resources(
-        "/internal_transactions",
-        TransactionInternalTransactionController,
-        only: [:index],
-        as: :internal_transaction
-      )
+    #resources "/tx", TransactionController, only: [:show] do
+    #  resources(
+    #    "/internal_transactions",
+    #    TransactionController,
+    #    only: [:show],
+    #    as: :internal_transaction
+    #  )
 
-      resources("/logs", TransactionLogController, only: [:index], as: :log)
+    #  resources("/logs", TransactionController, only: [:show], as: :log)
 
-      resources("/token_transfers", TransactionTokenTransferController, only: [:index], as: :token_transfer)
-    end
+    #  resources("/token_transfers", TransactionController, only: [:show], as: :token_transfer)
+    #end
+
+
 
     get("/address/:id/transactions", AddressController, :show, as: :address_transaction)
     resources "/address", AddressController, only: [:show] do

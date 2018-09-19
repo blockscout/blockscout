@@ -1,0 +1,24 @@
+<h2 class="card-title"><%= gettext "Internal Transactions" %></h2>
+<%= if Enum.count(@internal_transactions) > 0 do %>
+  <%= for internal_transaction <- @internal_transactions do %>
+    <%= render "_internal_transaction.html", internal_transaction: internal_transaction %>
+  <% end %>
+<% else %>
+  <div class="tile tile-muted text-center">
+    <span><%= gettext "There are no internal transactions for this transaction." %></span>
+  </div>
+<% end %>
+
+<%= if @next_page_params do %>
+  <%= link(
+    gettext("Newer"),
+    class: "button button-secondary button-sm float-right mt-3",
+    to: transaction_internal_transaction_path(
+      @conn,
+      :show,
+      @transaction,
+      @next_page_params
+    )
+  ) %>
+<% end %>
+
