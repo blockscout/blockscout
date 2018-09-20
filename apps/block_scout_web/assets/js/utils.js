@@ -1,3 +1,4 @@
+import $ from 'jquery'
 import _ from 'lodash'
 import { createStore } from 'redux'
 
@@ -31,4 +32,41 @@ export function initRedux (reducer, { main, render, debug } = {}) {
     })
   }
   if (main) main(store)
+}
+
+export function prependWithClingBottom ($el, content) {
+  function userAtTop () {
+    return window.scrollY < $el.offset().top
+  }
+  if (userAtTop()) return $el.prepend(content)
+
+  let isAnimating
+  function setIsAnimating () {
+    isAnimating = true
+  }
+  $el.on('animationstart', setIsAnimating)
+
+  let expectedScrollPosition = window.scrollY
+  function userIsScrolling () {
+    return expectedScrollPosition !== window.scrollY
+  }
+
+  const clingDistanceFromBottom = document.body.scrollHeight - window.scrollY
+  let clingBottomLoop = window.requestAnimationFrame(function clingBottom () {
+    if (userIsScrolling()) return stopClinging()
+
+    expectedScrollPosition = document.body.scrollHeight - clingDistanceFromBottom
+    $(window).scrollTop(expectedScrollPosition)
+    clingBottomLoop = window.requestAnimationFrame(clingBottom)
+  })
+
+  function stopClinging () {
+    window.cancelAnimationFrame(clingBottomLoop)
+    $el.off('animationstart', setIsAnimating)
+    $el.off('animationend animationcancel', stopClinging)
+  }
+  $el.on('animationend animationcancel', stopClinging)
+  setTimeout(() => !isAnimating && stopClinging(), 100)
+
+  return $el.prepend(content)
 }

@@ -3,7 +3,7 @@ import URI from 'urijs'
 import humps from 'humps'
 import socket from '../socket'
 import { updateAllAges } from '../lib/from_now'
-import { initRedux } from '../utils'
+import { initRedux, prependWithClingBottom } from '../utils'
 
 export const initialState = {
   beyondPageOne: null,
@@ -58,25 +58,7 @@ if ($blockListPage.length) {
 
       if (state.channelDisconnected) $channelDisconnected.show()
       if (oldState.newBlock !== state.newBlock) {
-        const fromBottom = document.body.scrollHeight - window.scrollY
-        let clingBottomAnimationFrame
-        let expectedScrollPosition = window.scrollY
-        function clingBottom () {
-          if (expectedScrollPosition !== window.scrollY) return stopCling()
-
-          expectedScrollPosition = document.body.scrollHeight - fromBottom
-          $(window).scrollTop(expectedScrollPosition)
-          clingBottomAnimationFrame = requestAnimationFrame(clingBottom)
-        }
-        function stopCling () {
-          cancelAnimationFrame(clingBottomAnimationFrame)
-          $blocksList.off('animationend animationcancel', stopCling)
-        }
-        if (window.scrollY > $blocksList.offset().top) {
-          clingBottomAnimationFrame = requestAnimationFrame(clingBottom)
-          $blocksList.on('animationend animationcancel', stopCling)
-        }
-        $blocksList.prepend(state.newBlock)
+        prependWithClingBottom($blocksList, state.newBlock)
         updateAllAges()
       }
     }
