@@ -4,7 +4,7 @@ import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
 import { updateAllAges } from '../lib/from_now'
-import { batchChannel, initRedux } from '../utils'
+import { batchChannel, initRedux, prependWithClingBottom } from '../utils'
 
 const BATCH_THRESHOLD = 10
 
@@ -125,7 +125,7 @@ if ($transactionListPage.length) {
           .children()
           .slice($transactionsList.children().length - newTransactionsToInsert.length, $transactionsList.children().length)
           .remove()
-        $transactionsList.prepend(newTransactionsToInsert.reverse().join(''))
+        prependWithClingBottom($transactionsList, newTransactionsToInsert.reverse().join(''))
 
         updateAllAges()
       }
