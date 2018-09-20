@@ -46,17 +46,19 @@ export function prependWithClingBottom ($el, content) {
   }
   $el.on('animationstart', setIsAnimating)
 
-  let expectedScrollPosition = window.scrollY
+  let startingScrollPosition = window.scrollY
+  let endingScrollPosition = window.scrollY
   function userIsScrolling () {
-    return expectedScrollPosition !== window.scrollY
+    return window.scrollY < startingScrollPosition || endingScrollPosition < window.scrollY
   }
 
   const clingDistanceFromBottom = document.body.scrollHeight - window.scrollY
   let clingBottomLoop = window.requestAnimationFrame(function clingBottom () {
     if (userIsScrolling()) return stopClinging()
 
-    expectedScrollPosition = document.body.scrollHeight - clingDistanceFromBottom
-    $(window).scrollTop(expectedScrollPosition)
+    startingScrollPosition = window.scrollY
+    endingScrollPosition = document.body.scrollHeight - clingDistanceFromBottom
+    $(window).scrollTop(endingScrollPosition)
     clingBottomLoop = window.requestAnimationFrame(clingBottom)
   })
 
