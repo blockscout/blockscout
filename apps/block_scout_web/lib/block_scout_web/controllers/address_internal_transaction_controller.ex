@@ -5,11 +5,10 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
 
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.AddressController, only: [transaction_count: 1]
-  import BlockScoutWeb.Chain, only: [current_filter: 1, paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+  import BlockScoutWeb.Chain,
+    only: [current_filter: 1, paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
-  alias Explorer.{Chain, Market}
-  alias Explorer.ExchangeRates.Token
+  alias Explorer.{Chain}
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
@@ -25,26 +24,19 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
 
-      internal_transactions_plus_one = Chain.address_to_internal_transactions(address, full_options)
+      internal_transactions_plus_one =
+        Chain.address_to_internal_transactions(address, full_options)
 
       {internal_transactions, next_page} = split_list_by_page(internal_transactions_plus_one)
 
-      render(
-        conn,
-        "index.html",
+      assigns = %{
         address: address,
         next_page_params: next_page_params(next_page, internal_transactions, params),
-        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
-        internal_transactions: internal_transactions,
-        transaction_count: transaction_count(address)
-      )
-    else
-      :error ->
-        not_found(conn)
+        internal_transactions: internal_transactions
+      }
 
-      {:error, :not_found} ->
-        not_found(conn)
+      render(conn, "index.html", AddressPage.build_params(assigns))
     end
   end
 end
