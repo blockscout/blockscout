@@ -8,6 +8,7 @@ defmodule Indexer.TokenBalancesTest do
   alias Explorer.Chain.Hash
 
   import Mox
+  import ExUnit.CaptureLog
 
   setup :verify_on_exit!
   setup :set_mox_global
@@ -85,6 +86,66 @@ defmodule Indexer.TokenBalancesTest do
       {:ok, result} = TokenBalances.fetch_token_balances_from_blockchain(token_balance_params)
 
       assert length(result) == 1
+    end
+  end
+
+  describe "log_fetching_errors" do
+    test "logs the given from argument in final message" do
+      token_balance_params_with_error = Map.put(build(:token_balance), :error, "Error")
+      params = [token_balance_params_with_error]
+      from = "Tests"
+
+      log_message_response =
+        capture_log(fn ->
+          TokenBalances.log_fetching_errors(from, params)
+        end)
+
+      assert log_message_response =~ "<Tests"
+    end
+
+    test "log when there is a token_balance param with errors" do
+      from = "Tests"
+      token_balance_params_with_error = Map.put(build(:token_balance), :error, "Error")
+      params = [token_balance_params_with_error]
+
+      log_message_response =
+        capture_log(fn ->
+          TokenBalances.log_fetching_errors(from, params)
+        end)
+
+      assert log_message_response =~ "Error"
+    end
+
+    test "log multiple token balances params with errors" do
+      from = "Tests"
+      error_1 = "Error"
+      error_2 = "BadGateway"
+
+      params = [
+        Map.put(build(:token_balance), :error, error_1),
+        Map.put(build(:token_balance), :error, error_2)
+      ]
+
+      log_message_response =
+        capture_log(fn ->
+          TokenBalances.log_fetching_errors(from, params)
+        end)
+
+      assert log_message_response =~ error_1
+      assert log_message_response =~ error_2
+    end
+
+    test "doesn't log when there aren't errors after fetching token balances" do
+      from = "Tests"
+      token_balance_params = Map.put(build(:token_balance), :error, nil)
+      params = [token_balance_params]
+
+      log_message_response =
+        capture_log(fn ->
+          TokenBalances.log_fetching_errors(from, params)
+        end)
+
+      assert log_message_response == ""
     end
   end
 
