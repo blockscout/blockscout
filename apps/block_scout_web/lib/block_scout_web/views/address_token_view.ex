@@ -4,6 +4,6 @@ defmodule BlockScoutWeb.AddressTokenView do
   alias BlockScoutWeb.AddressView
 
   def number_of_transfers(token) do
-    ngettext("%{count} transfer", "%{count} transfers", token.number_of_transfers)
+    ngettext("%{count} transfer", "%{count} transfers", token.transfers_count)
   end
 end

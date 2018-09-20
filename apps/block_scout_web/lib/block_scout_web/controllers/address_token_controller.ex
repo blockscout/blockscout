@@ -10,7 +10,7 @@ defmodule BlockScoutWeb.AddressTokenController do
   def index(conn, %{"address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash) do
-      tokens_plus_one = Chain.tokens_with_number_of_transfers_from_address(address_hash, paging_options(params))
+      tokens_plus_one = Chain.address_tokens_with_balance(address_hash, paging_options(params))
       {tokens, next_page} = split_list_by_page(tokens_plus_one)
 
       render(
