@@ -28,6 +28,7 @@ defmodule BlockScoutWeb.TransactionChannel do
       )
 
     push(socket, "new_transaction", %{
+      transaction_hash: Explorer.Chain.Hash.to_string(transaction.hash),
       transaction_html: rendered_transaction
     })
 
