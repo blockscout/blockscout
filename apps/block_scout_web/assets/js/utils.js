@@ -36,7 +36,7 @@ export function initRedux (reducer, { main, render, debug } = {}) {
 
 export function prependWithClingBottom ($el, content) {
   function userAtTop () {
-    return window.scrollY < $el.offset().top
+    return window.scrollY < $('[data-selector="navbar"]').outerHeight()
   }
   if (userAtTop()) return $el.prepend(content)
 
