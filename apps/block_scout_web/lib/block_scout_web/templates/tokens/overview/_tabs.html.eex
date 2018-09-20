@@ -25,6 +25,16 @@
           to: token_holder_path(@conn, :index, @token.contract_address_hash)
         ) %>
   </li>
+
+  <%= if display_inventory?(@token) do %>
+    <li class="nav-item">
+      <%= link(
+            gettext("Inventory"),
+            class: "nav-link #{tab_status("inventory", @conn.request_path)}",
+            to: token_inventory_path(@conn, :index, @token.contract_address_hash)
+          ) %>
+    </li>
+  <% end %>
 </ul>
 
 <!-- MOBILE DROPDOWN NAV -->
@@ -56,6 +66,14 @@
           class: "dropdown-item #{tab_status("token_holders", @conn.request_path)}",
           to: token_holder_path(@conn, :index, @token.contract_address_hash)
         ) %>
+
+      <%= if display_inventory?(@token) do %>
+        <%= link(
+              gettext("Inventory"),
+              class: "dropdown-item #{tab_status("inventory", @conn.request_path)}",
+              to: token_inventory_path(@conn, :index, @token.contract_address_hash)
+            ) %>
+      <% end %>
     </div>
   </li>
 </ul>

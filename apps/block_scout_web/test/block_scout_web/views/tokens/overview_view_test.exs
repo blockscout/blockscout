@@ -64,4 +64,18 @@ defmodule BlockScoutWeb.Tokens.OverviewViewTest do
       assert OverviewView.current_tab_name(read_contract_path) == "Read Contract"
     end
   end
+
+  describe "display_inventory?/1" do
+    test "returns true when token is unique" do
+      token = insert(:token, type: "ERC-721")
+
+      assert OverviewView.display_inventory?(token) == true
+    end
+
+    test "returns false when token is not unique" do
+      token = insert(:token, type: "ERC-20")
+
+      assert OverviewView.display_inventory?(token) == false
+    end
+  end
 end

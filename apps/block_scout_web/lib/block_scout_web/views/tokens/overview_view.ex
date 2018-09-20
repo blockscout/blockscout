@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
   alias Explorer.Chain.Token
   alias BlockScoutWeb.Tokens.TransferView
 
-  @tabs ["token_transfers", "token_holders", "read_contract"]
+  @tabs ["token_transfers", "token_holders", "read_contract", "inventory"]
 
   def decimals?(%Token{decimals: nil}), do: false
   def decimals?(%Token{decimals: _}), do: true
@@ -34,4 +34,8 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
   defp tab_name(["token_transfers"]), do: gettext("Token Transfers")
   defp tab_name(["token_holders"]), do: gettext("Token Holders")
   defp tab_name(["read_contract"]), do: gettext("Read Contract")
+  defp tab_name(["inventory"]), do: gettext("Inventory")
+
+  def display_inventory?(%Token{type: "ERC-721"}), do: true
+  def display_inventory?(_), do: false
 end
