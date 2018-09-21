@@ -24,17 +24,24 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
 
   defp prepare_tx_receipt_status(_), do: "0"
 
-  defp prepare_error(nil) do
+  defp prepare_error("") do
     %{
       "isError" => "0",
       "errDescription" => ""
     }
   end
 
-  defp prepare_error(error) do
+  defp prepare_error(error) when is_binary(error) do
     %{
       "isError" => "1",
       "errDescription" => error
+    }
+  end
+
+  defp prepare_error(error) when is_atom(error) do
+    %{
+      "isError" => "1",
+      "errDescription" => error |> Atom.to_string() |> String.replace("_", " ")
     }
   end
 end
