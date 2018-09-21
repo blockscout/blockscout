@@ -36,6 +36,8 @@
 }
 
 .nav-link-icon {
+  display: flex;
+  align-items: center;
   position: relative;
   top: -2px;
   height: 1em;
