@@ -146,4 +146,16 @@ defmodule BlockScoutWeb.TransactionViewTest do
       assert TransactionView.to_address(transaction) == transaction.to_address
     end
   end
+
+  describe "current_tab_name/1" do
+    test "generates the correct tab name" do
+      token_transfers_path = "/page/0xSom3tH1ng/token_transfers/?additional_params=blah"
+      internal_transactions_path = "/page/0xSom3tH1ng/internal_transactions/?additional_params=blah"
+      logs_path = "/page/0xSom3tH1ng/logs/?additional_params=blah"
+
+      assert TransactionView.current_tab_name(token_transfers_path) == "Token Transfers"
+      assert TransactionView.current_tab_name(internal_transactions_path) == "Internal Transactions"
+      assert TransactionView.current_tab_name(logs_path) == "Logs"
+    end
+  end
 end
