@@ -72,7 +72,8 @@
 }
 
 .fade-in {
-  animation: fade-in 0.6s ease-out forwards;
+  opacity: 0;
+  animation: fade-in 0.6s ease-out 0.4s forwards;
 }
 
 .fade-up-blocks-chain {

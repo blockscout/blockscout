@@ -34,11 +34,16 @@ export function initRedux (reducer, { main, render, debug } = {}) {
   if (main) main(store)
 }
 
+export function slideDownPrepend ($el, content, callback) {
+  const $content = $(content)
+  $el.prepend($content.hide())
+  $content.slideDown({ complete: callback })
+}
 export function prependWithClingBottom ($el, content) {
   function userAtTop () {
     return window.scrollY < $('[data-selector="navbar"]').outerHeight()
   }
-  if (userAtTop()) return $el.prepend(content)
+  if (userAtTop()) return slideDownPrepend($el, content)
 
   let isAnimating
   function setIsAnimating () {
@@ -67,8 +72,9 @@ export function prependWithClingBottom ($el, content) {
     $el.off('animationstart', setIsAnimating)
     $el.off('animationend animationcancel', stopClinging)
   }
-  $el.on('animationend animationcancel', stopClinging)
-  setTimeout(() => !isAnimating && stopClinging(), 100)
 
-  return $el.prepend(content)
+  return slideDownPrepend($el, content, () => {
+    $el.on('animationend animationcancel', stopClinging)
+    setTimeout(() => !isAnimating && stopClinging(), 100)
+  })
 }
