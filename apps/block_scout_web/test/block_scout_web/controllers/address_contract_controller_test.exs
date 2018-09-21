@@ -3,15 +3,15 @@ defmodule BlockScoutWeb.AddressContractControllerTest do
 
   import BlockScoutWeb.Router.Helpers, only: [address_contract_path: 3]
 
-  alias Explorer.Factory
   alias Explorer.Chain.Hash
   alias Explorer.ExchangeRates.Token
+  alias Explorer.Factory
 
   describe "GET index/3" do
-    test "returns not found for unexistent address", %{conn: conn} do
-      unexistent_address_hash = Hash.to_string(Factory.address_hash())
+    test "returns not found for nonexistent address", %{conn: conn} do
+      nonexistent_address_hash = Hash.to_string(Factory.address_hash())
 
-      conn = get(conn, address_contract_path(BlockScoutWeb.Endpoint, :index, unexistent_address_hash))
+      conn = get(conn, address_contract_path(BlockScoutWeb.Endpoint, :index, nonexistent_address_hash))
 
       assert html_response(conn, 404)
     end

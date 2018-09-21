@@ -143,7 +143,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert(to_address: build(:address), created_contract_address: nil)
         |> Repo.preload([:created_contract_address, :to_address])
 
-      assert TransactionView.to_address(transaction) == transaction.to_address
+      assert TransactionView.to_address_hash(transaction) == transaction.to_address_hash
     end
   end
 

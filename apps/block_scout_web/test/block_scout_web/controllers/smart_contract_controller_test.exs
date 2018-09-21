@@ -3,15 +3,33 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
 
   import Mox
 
+  alias Explorer.Chain.Hash
+  alias Explorer.Factory
+
   setup :verify_on_exit!
 
   describe "GET index/3" do
-    test "error for invalid address", %{conn: conn} do
+    test "returns not found for nonexistent address" do
+      nonexistent_address_hash = Hash.to_string(Factory.address_hash())
+      path = smart_contract_path(BlockScoutWeb.Endpoint, :index, hash: nonexistent_address_hash)
+
+      conn =
+        build_conn()
+        |> put_req_header("x-requested-with", "xmlhttprequest")
+        |> get(path)
+
+      assert html_response(conn, 404)
+    end
+
+    test "error for invalid address" do
       path = smart_contract_path(BlockScoutWeb.Endpoint, :index, hash: "0x00")
 
-      conn = get(conn, path)
+      conn =
+        build_conn()
+        |> put_req_header("x-requested-with", "xmlhttprequest")
+        |> get(path)
 
-      assert conn.status == 404
+      assert conn.status == 422
     end
 
     test "only responds to ajax requests", %{conn: conn} do
@@ -44,7 +62,27 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
   end
 
   describe "GET show/3" do
-    test "error for invalid address", %{conn: conn} do
+    test "returns not found for nonexistent address" do
+      nonexistent_address_hash = Hash.to_string(Factory.address_hash())
+
+      path =
+        smart_contract_path(
+          BlockScoutWeb.Endpoint,
+          :show,
+          nonexistent_address_hash,
+          function_name: "get",
+          args: []
+        )
+
+      conn =
+        build_conn()
+        |> put_req_header("x-requested-with", "xmlhttprequest")
+        |> get(path)
+
+      assert html_response(conn, 404)
+    end
+
+    test "error for invalid address" do
       path =
         smart_contract_path(
           BlockScoutWeb.Endpoint,
@@ -54,9 +92,12 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
           args: []
         )
 
-      conn = get(conn, path)
+      conn =
+        build_conn()
+        |> put_req_header("x-requested-with", "xmlhttprequest")
+        |> get(path)
 
-      assert conn.status == 404
+      assert conn.status == 422
     end
 
     test "only responds to ajax requests", %{conn: conn} do
@@ -77,7 +118,8 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
     end
 
     test "fetch the function value from the blockchain" do
-      smart_contract = insert(:smart_contract)
+      address = insert(:contract_address)
+      smart_contract = insert(:smart_contract, address_hash: address.hash)
 
       blockchain_get_function_mock()
 
