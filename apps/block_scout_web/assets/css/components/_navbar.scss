@@ -8,17 +8,17 @@
 }
 
 .navbar-brand {
-  margin-left: 10px;
+  margin-left: 0;
 }
 
 .navbar-logo {
-  height: 36px;
+  height: 1.5em;
 }
 
 @include media-breakpoint-up(md) {
   .navbar-expand-lg .navbar-nav .nav-link {
-    padding-left: 1.25rem;
-    padding-right: 1.25rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
   }
 }
 
@@ -26,8 +26,27 @@
   font-size: 14px;
 }
 
-.navbar .nav-link {
+.navbar-dark .navbar-nav .nav-link {
   color: $white;
+}
+
+.navbar-nav .nav-link {
+  display: flex;
+  align-items: center;
+}
+
+.nav-link-icon {
+  display: flex;
+  align-items: center;
+  position: relative;
+  top: -2px;
+  height: 1em;
+  width: 1em;
+  margin-right: 0.5em;
+
+  path {
+    fill: $secondary;
+  }
 }
 
 .navbar .form-control {
@@ -70,10 +89,10 @@
 
 .input-group-append {
   margin-left: 0px;
-}
 
-.fa-search {
-  color: $white;
+  path {
+    fill: $secondary;
+  }
 }
 
 .topnav-nav-link {
@@ -84,32 +103,26 @@
     content: "";
     position: absolute;
     display: block;
-    bottom: 0;
+    bottom: -10px;
     left: 50%;
-    width: 100%;
+    width: 75%;
     height: 0.2rem;
-    background-color: $white;
+    background-color: $secondary;
+    border-radius: 4px 4px 0 0;
     opacity: 0;
-    transform: translateX(-50%) translateY(-0.5rem);
-    transition: all 0.3s ease;
+    transform: translateX(-50%);
+    transition: all 0.2s ease;
   }
 
   &:hover {
-    color: $white;
-
-    &:before {
-      transform: translateX(-50%) translateY(-0.25rem);
+    &:before{
       opacity: 1;
     }
   }
+}
 
-  &:active {
-
-    &:before {
-      transition: all 0.1s ease-out;
-      transform: translateX(-50%) translateY(-0.5rem);
-    }
-  }
+.dropdown-toggle {
+  padding-right: 0 !important;
 }
 
 .dropdown-menu {
@@ -120,7 +133,7 @@
   padding: 10px 20px;
 
   &:hover {
-    background-color: $secondary;
+    background-color: $tertiary;
     color: $white;
   }
 }

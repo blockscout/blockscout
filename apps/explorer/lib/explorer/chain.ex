@@ -223,6 +223,27 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Finds all `t:Explorer.Chain.Transaction.t/0`s given the address_hash and the token contract
+  address hash.
+
+  ## Options
+
+    * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
+      `:key` (in the form of `%{"inserted_at" => inserted_at}`). Results will be the transactions
+      older than the `index` that are passed.
+  """
+  @spec address_to_transactions_with_token_tranfers(Hash.t(), Hash.t(), [paging_options]) :: [Transaction.t()]
+  def address_to_transactions_with_token_tranfers(address_hash, token_hash, options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    address_hash
+    |> Transaction.transactions_with_token_transfers(token_hash)
+    |> Transaction.preload_token_transfers(address_hash)
+    |> handle_paging_options(paging_options)
+    |> Repo.all()
+  end
+
+  @doc """
   The average time it took to mine/validate the last <= 100 `t:Explorer.Chain.Block.t/0`
   """
   @spec average_block_time :: %Timex.Duration{}

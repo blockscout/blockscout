@@ -3,7 +3,7 @@ defmodule Explorer.Chain.Transaction do
 
   use Explorer.Schema
 
-  import Ecto.Query, only: [from: 2, preload: 3, where: 3]
+  import Ecto.Query, only: [from: 2, preload: 3, where: 3, subquery: 1]
 
   alias Ecto.Changeset
 
@@ -16,6 +16,7 @@ defmodule Explorer.Chain.Transaction do
     InternalTransaction,
     Log,
     TokenTransfer,
+    Transaction,
     Wei
   }
 
@@ -502,5 +503,31 @@ defmodule Explorer.Chain.Transaction do
     else
       changeset
     end
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch transactions with token transfers from the give address hash.
+
+  The results will be ordered by block number and index DESC.
+  """
+  def transactions_with_token_transfers(address_hash, token_hash) do
+    query = transactions_with_token_transfers_query(address_hash, token_hash)
+
+    from(
+      t in subquery(query),
+      order_by: [desc: t.block_number, desc: t.index],
+      preload: [:from_address, :to_address, :created_contract_address, :block]
+    )
+  end
+
+  defp transactions_with_token_transfers_query(address_hash, token_hash) do
+    from(
+      t in Transaction,
+      inner_join: tt in TokenTransfer,
+      on: t.hash == tt.transaction_hash,
+      where: tt.token_contract_address_hash == ^token_hash,
+      where: tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash,
+      distinct: :hash
+    )
   end
 end

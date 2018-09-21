@@ -1,7 +1,11 @@
 <div class="tile tile-type-token">
   <div class="row justify-content align-items-center">
     <div class="col-md-7 d-flex flex-column mt-3 mt-md-0">
-      <%= link(to: token_path(@conn, :show, @token.contract_address_hash), class: "tile-title-lg") do %>
+      <%= link(
+            to: address_token_transfers_path(@conn, :index, @address.hash, @token.contract_address_hash),
+            class: "tile-title-lg",
+            "data-test": "token_transfers_#{@token.contract_address_hash}"
+        ) do %>
         <%= token_name(@token) %>
       <% end %>
       <span><%= @token.type %> - <%= number_of_transfers(@token) %></span>
