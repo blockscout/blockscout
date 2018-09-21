@@ -16,6 +16,7 @@
 
 <div class="dropdown-menu dropdown-menu-right token-balance-dropdown p-0" aria-labelledby="dropdown-tokens">
   <div data-dropdown-items class="dropdown-items">
+    <%= text_input(:token_search, :name, 'data-filter-dropdown-tokens': true) %>
     <%= if Enum.any?(@token_balances, & &1.token.type == "ERC-721") do %>
       <%= render(
             "_tokens.html",
