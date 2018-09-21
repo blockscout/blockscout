@@ -71,7 +71,7 @@
 
         <%= if Enum.any?(@transfers) do %>
           <%= for transfer <- @transfers do %>
-            <%= render("_token_transfer.html", token: @token, transfer: transfer) %>
+            <%= render("_token_transfer.html", conn: @conn, token: @token, transfer: transfer) %>
           <% end %>
         <% else %>
           <div class="tile tile-muted text-center">

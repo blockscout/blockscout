@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.AddressPage do
 
   use Wallaby.DSL
   import Wallaby.Query, only: [css: 1, css: 2]
-  alias Explorer.Chain.{Address, InternalTransaction, Hash, Transaction}
+  alias Explorer.Chain.{Address, InternalTransaction, Hash, Transaction, Token}
 
   def apply_filter(session, direction) do
     session
@@ -25,6 +25,14 @@ defmodule BlockScoutWeb.AddressPage do
 
   def click_internal_transactions(session) do
     click(session, css("[data-test='internal_transactions_tab_link']"))
+  end
+
+  def click_tokens(session) do
+    click(session, css("[data-test='tokens_tab_link']"))
+  end
+
+  def click_token_transfers(session, %Token{contract_address_hash: contract_address_hash}) do
+    click(session, css("[data-test='token_transfers_#{contract_address_hash}']"))
   end
 
   def contract_creation(%InternalTransaction{created_contract_address_hash: hash}) do

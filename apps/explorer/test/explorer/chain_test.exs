@@ -2716,4 +2716,80 @@ defmodule Explorer.ChainTest do
       assert Chain.count_token_holders_from_token_hash(contract_address_hash) == 0
     end
   end
+
+  describe "address_to_transactions_with_token_tranfers/2" do
+    test "paginates transactions by the block number" do
+      address = insert(:address)
+      token = insert(:token)
+
+      first_page =
+        :transaction
+        |> insert()
+        |> with_block(insert(:block, number: 1000))
+
+      second_page =
+        :transaction
+        |> insert()
+        |> with_block(insert(:block, number: 999))
+
+      insert(
+        :token_transfer,
+        to_address: address,
+        transaction: first_page,
+        token_contract_address: token.contract_address
+      )
+
+      insert(
+        :token_transfer,
+        to_address: address,
+        transaction: second_page,
+        token_contract_address: token.contract_address
+      )
+
+      paging_options = %PagingOptions{
+        key: {first_page.block_number, first_page.index},
+        page_size: 2
+      }
+
+      result =
+        address.hash
+        |> Chain.address_to_transactions_with_token_tranfers(token.contract_address_hash, paging_options: paging_options)
+        |> Enum.map(& &1.hash)
+
+      assert result == [second_page.hash]
+    end
+
+    test "doesn't duplicate the transaction when there are multiple transfers for it" do
+      address = insert(:address)
+      token = insert(:token)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(
+        :token_transfer,
+        amount: 2,
+        to_address: address,
+        token_contract_address: token.contract_address,
+        transaction: transaction
+      )
+
+      insert(
+        :token_transfer,
+        amount: 1,
+        to_address: address,
+        token_contract_address: token.contract_address,
+        transaction: transaction
+      )
+
+      result =
+        address.hash
+        |> Chain.address_to_transactions_with_token_tranfers(token.contract_address_hash)
+        |> Enum.map(& &1.hash)
+
+      assert result == [transaction.hash]
+    end
+  end
 end
