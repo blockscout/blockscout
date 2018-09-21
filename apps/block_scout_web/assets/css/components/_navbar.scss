@@ -8,17 +8,17 @@
 }
 
 .navbar-brand {
-  margin-left: 10px;
+  margin-left: 0;
 }
 
 .navbar-logo {
-  height: 36px;
+  height: 1.5em;
 }
 
 @include media-breakpoint-up(md) {
   .navbar-expand-lg .navbar-nav .nav-link {
-    padding-left: 1.25rem;
-    padding-right: 1.25rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
   }
 }
 
@@ -36,9 +36,11 @@
 }
 
 .nav-link-icon {
-  height: 1.5em;
-  width: 1.5em;
-  margin-right: 0.75em;
+  position: relative;
+  top: -2px;
+  height: 1em;
+  width: 1em;
+  margin-right: 0.5em;
 
   path {
     fill: $secondary;
@@ -99,7 +101,7 @@
     content: "";
     position: absolute;
     display: block;
-    bottom: -13px;
+    bottom: -10px;
     left: 50%;
     width: 75%;
     height: 0.2rem;
@@ -115,6 +117,10 @@
       opacity: 1;
     }
   }
+}
+
+.dropdown-toggle {
+  padding-right: 0 !important;
 }
 
 .dropdown-menu {
