@@ -165,8 +165,10 @@ if ($transactionPendingListPage.length) {
       if (oldState.transactionCount !== state.transactionCount) {
         $pendingTransactionsCount.empty().append(numeral(state.transactionCount).format())
       }
-      if (oldState.pendingTransactionHashes !== state.pendingTransactionHashes && state.newTransactions.length > 0) {
-        $('[data-transaction-hash="' + state.newTransactions[0] + '"]').remove()
+      if (oldState.newTransactions !== state.newTransactions && state.newTransactions.length > 0) {
+        const $transaction = $(`[data-transaction-hash="${state.newTransactions[0]}"]`)
+        $transaction.addClass('shrink-out')
+        setTimeout(() => $transaction.slideUp({ complete: () => $transaction.remove() }), 400)
       }
       if (state.batchCountAccumulator) {
         $channelBatching.show()
