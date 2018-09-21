@@ -83,6 +83,17 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
       |> assert_has(TransactionListPage.transaction_status(pending_contract))
     end
 
+    test "live update pending transaction", %{session: session} do
+      session
+      |> TransactionListPage.visit_page()
+      |> TransactionListPage.click_pending()
+
+      pending = insert(:transaction)
+      Notifier.handle_event({:chain_event, :transactions, [pending.hash]})
+
+      assert_has(session, TransactionListPage.transaction(pending))
+    end
+
     test "live remove collated pending transaction", %{pending: pending, session: session} do
       session
       |> TransactionListPage.visit_page()
