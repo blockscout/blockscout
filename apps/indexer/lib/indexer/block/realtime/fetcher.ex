@@ -13,11 +13,12 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias EthereumJSONRPC.Subscription
   alias Explorer.Chain
   alias Indexer.{AddressExtraction, Block, Token, TokenBalances}
+  alias Indexer.Block.Realtime.TaskSupervisor
 
   @behaviour Block.Fetcher
 
   @enforce_keys ~w(block_fetcher)a
-  defstruct ~w(block_fetcher subscription)a
+  defstruct ~w(block_fetcher subscription previous_number)a
 
   @type t :: %__MODULE__{
           block_fetcher: %Block.Fetcher{
@@ -27,7 +28,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
             receipts_batch_size: pos_integer(),
             receipts_concurrency: pos_integer()
           },
-          subscription: Subscription.t()
+          subscription: Subscription.t(),
+          previous_number: pos_integer() | nil
         }
 
   def start_link([arguments, gen_server_options]) do
@@ -55,58 +57,18 @@ defmodule Indexer.Block.Realtime.Fetcher do
         {subscription, {:ok, %{"number" => quantity}}},
         %__MODULE__{
           block_fetcher: %Block.Fetcher{} = block_fetcher,
-          subscription: %Subscription{} = subscription
+          subscription: %Subscription{} = subscription,
+          previous_number: previous_number
         } = state
       )
       when is_binary(quantity) do
     number = quantity_to_integer(quantity)
 
-    # Subscriptions don't support getting all the blocks and transactions data, so we need to go back and get the full block
-    case fetch_and_import_range(block_fetcher, number..number) do
-      {:ok, {_inserted, _next}} ->
-        Logger.debug(fn ->
-          ["realtime indexer fetched and imported block ", to_string(number)]
-        end)
+    # Subscriptions don't support getting all the blocks and transactions data,
+    # so we need to go back and get the full block
+    start_fetch_and_import(number, block_fetcher, previous_number)
 
-      {:error, {step, reason}} ->
-        Logger.error(fn ->
-          [
-            "realtime indexer failed to fetch ",
-            to_string(step),
-            " for block ",
-            to_string(number),
-            ": ",
-            inspect(reason),
-            ".  Block will be retried by catchup indexer."
-          ]
-        end)
-
-      {:error, changesets} when is_list(changesets) ->
-        Logger.error(fn ->
-          [
-            "realtime indexer failed to validate for block ",
-            to_string(number),
-            ": ",
-            inspect(changesets),
-            ".  Block will be retried by catchup indexer."
-          ]
-        end)
-
-      {:error, {step, failed_value, _changes_so_far}} ->
-        Logger.error(fn ->
-          [
-            "realtime indexer failed to insert ",
-            to_string(step),
-            " for block ",
-            to_string(number),
-            ": ",
-            inspect(failed_value),
-            ".  Block will be retried by catchup indexer."
-          ]
-        end)
-    end
-
-    {:noreply, state}
+    {:noreply, %{state | previous_number: number}}
   end
 
   @import_options ~w(address_hash_to_fetched_balance_block_number transaction_hash_to_block_number)a
@@ -149,6 +111,61 @@ defmodule Indexer.Block.Realtime.Fetcher do
       TokenBalances.log_fetching_errors(__MODULE__, token_balances)
       async_import_remaining_block_data(results)
       ok
+    end
+  end
+
+  defp start_fetch_and_import(number, block_fetcher, previous_number) do
+    start_at = if is_integer(previous_number), do: previous_number + 1, else: number
+
+    for block_number_to_fetch <- start_at..number do
+      args = [block_number_to_fetch, block_fetcher]
+      Task.Supervisor.start_child(TaskSupervisor, __MODULE__, :fetch_and_import_block, args)
+    end
+  end
+
+  def fetch_and_import_block(block_number_to_fetch, block_fetcher) do
+    case fetch_and_import_range(block_fetcher, block_number_to_fetch..block_number_to_fetch) do
+      {:ok, {_inserted, _next}} ->
+        Logger.debug(fn ->
+          ["realtime indexer fetched and imported block ", to_string(block_number_to_fetch)]
+        end)
+
+      {:error, {step, reason}} ->
+        Logger.error(fn ->
+          [
+            "realtime indexer failed to fetch ",
+            to_string(step),
+            " for block ",
+            to_string(block_number_to_fetch),
+            ": ",
+            inspect(reason),
+            ".  Block will be retried by catchup indexer."
+          ]
+        end)
+
+      {:error, changesets} when is_list(changesets) ->
+        Logger.error(fn ->
+          [
+            "realtime indexer failed to validate for block ",
+            to_string(block_number_to_fetch),
+            ": ",
+            inspect(changesets),
+            ".  Block will be retried by catchup indexer."
+          ]
+        end)
+
+      {:error, {step, failed_value, _changes_so_far}} ->
+        Logger.error(fn ->
+          [
+            "realtime indexer failed to insert ",
+            to_string(step),
+            " for block ",
+            to_string(block_number_to_fetch),
+            ": ",
+            inspect(failed_value),
+            ".  Block will be retried by catchup indexer."
+          ]
+        end)
     end
   end
 
