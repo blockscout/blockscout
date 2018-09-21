@@ -209,17 +209,25 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
       assert response["message"] == "OK"
     end
 
-    test "with a txhash with error status", %{conn: conn} do
+    test "with a txhash with error", %{conn: conn} do
+      error = "some error"
+
+      transaction_details = [
+        status: :error,
+        error: error,
+        internal_transactions_indexed_at: DateTime.utc_now()
+      ]
+
       transaction =
         :transaction
         |> insert()
-        |> with_block(status: :error)
+        |> with_block(transaction_details)
 
       internal_transaction_details = [
         transaction: transaction,
         index: 0,
         type: :reward,
-        error: "some error"
+        error: error
       ]
 
       insert(:internal_transaction, internal_transaction_details)
@@ -232,7 +240,40 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
 
       expected_result = %{
         "isError" => "1",
-        "errDescription" => "some error"
+        "errDescription" => error
+      }
+
+      response =
+        conn
+        |> get("/api", params)
+        |> json_response(200)
+
+      assert response["result"] == expected_result
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "with a txhash with failed status but awaiting internal transactions", %{conn: conn} do
+      transaction_details = [
+        status: :error,
+        error: nil,
+        internal_transactions_indexed_at: nil
+      ]
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(transaction_details)
+
+      params = %{
+        "module" => "transaction",
+        "action" => "getstatus",
+        "txhash" => "#{transaction.hash}"
+      }
+
+      expected_result = %{
+        "isError" => "1",
+        "errDescription" => "awaiting internal transactions"
       }
 
       assert response =

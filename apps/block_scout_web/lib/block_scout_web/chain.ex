@@ -18,7 +18,6 @@ defmodule BlockScoutWeb.Chain do
     Block,
     InternalTransaction,
     Log,
-    Token,
     TokenTransfer,
     Transaction
   }
@@ -184,7 +183,7 @@ defmodule BlockScoutWeb.Chain do
     %{"inserted_at" => inserted_at_datetime}
   end
 
-  defp paging_params(%Token{name: name, type: type, inserted_at: inserted_at}) do
+  defp paging_params(%Address.Token{name: name, type: type, inserted_at: inserted_at}) do
     inserted_at_datetime =
       inserted_at
       |> DateTime.from_naive!("Etc/UTC")

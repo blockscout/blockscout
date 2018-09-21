@@ -20,10 +20,7 @@ defmodule Explorer.Chain.Token do
   use Ecto.Schema
 
   import Ecto.{Changeset, Query}
-  alias Explorer.PagingOptions
   alias Explorer.Chain.{Address, Hash, Token, TokenTransfer}
-
-  @default_paging_options %PagingOptions{page_size: 50}
 
   @typedoc """
   * `:name` - Name of the token
@@ -45,8 +42,6 @@ defmodule Explorer.Chain.Token do
           contract_address: %Ecto.Association.NotLoaded{} | Address.t(),
           contract_address_hash: Hash.Address.t()
         }
-
-  @typep paging_options :: {:paging_options, PagingOptions.t()}
 
   @primary_key false
   schema "tokens" do
@@ -80,54 +75,11 @@ defmodule Explorer.Chain.Token do
     |> unique_constraint(:contract_address_hash)
   end
 
-  @doc """
-  Builds an `Ecto.Query` to fetch tokens that the given address has interacted with.
-
-  In order to fetch a token, the given address must have transfered tokens to or received tokens
-  from another address. This quey orders by the token type and name.
-  """
-  @spec with_transfers_by_address(Hash.t(), [paging_options()]) :: %Ecto.Query{}
-  def with_transfers_by_address(address_hash, options \\ []) do
-    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
-
-    subquery =
-      from(
-        token in Token,
-        join: tt in TokenTransfer,
-        on: tt.token_contract_address_hash == token.contract_address_hash,
-        where: tt.to_address_hash == ^address_hash or tt.from_address_hash == ^address_hash,
-        distinct: [:contract_address_hash]
-      )
-
-    query = from(t in subquery(subquery), order_by: [desc: :type, asc: :name])
-
-    query
-    |> page_token(paging_options)
-    |> limit(^paging_options.page_size)
-  end
-
-  @doc """
-  Builds an `Ecto.Query` to fetch the transactions between a token and an address.
-  """
-  def interactions_with_address(token_hash, address_hash) do
+  def join_with_transfers(queryable \\ Token) do
     from(
-      t in Token,
+      t in queryable,
       join: tt in TokenTransfer,
-      on: tt.token_contract_address_hash == t.contract_address_hash,
-      where: t.contract_address_hash == ^token_hash,
-      where: tt.to_address_hash == ^address_hash or tt.from_address_hash == ^address_hash,
-      select: tt
-    )
-  end
-
-  def page_token(query, %PagingOptions{key: nil}), do: query
-
-  def page_token(query, %PagingOptions{key: {name, type, inserted_at}}) do
-    where(
-      query,
-      [token],
-      token.type < ^type or (token.type == ^type and token.name > ^name) or
-        (token.type == ^type and token.name == ^name and token.inserted_at < ^inserted_at)
+      on: tt.token_contract_address_hash == t.contract_address_hash
     )
   end
 end

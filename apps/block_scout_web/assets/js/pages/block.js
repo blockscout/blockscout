@@ -3,7 +3,7 @@ import URI from 'urijs'
 import humps from 'humps'
 import socket from '../socket'
 import { updateAllAges } from '../lib/from_now'
-import { initRedux } from '../utils'
+import { initRedux, prependWithClingBottom } from '../utils'
 
 export const initialState = {
   beyondPageOne: null,
@@ -58,7 +58,7 @@ if ($blockListPage.length) {
 
       if (state.channelDisconnected) $channelDisconnected.show()
       if (oldState.newBlock !== state.newBlock) {
-        $blocksList.prepend(state.newBlock)
+        prependWithClingBottom($blocksList, state.newBlock)
         updateAllAges()
       }
     }
