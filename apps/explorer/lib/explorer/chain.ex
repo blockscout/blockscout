@@ -826,6 +826,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+<<<<<<< HEAD
   Lists the top 250 `t:Explorer.Chain.Address.t/0`'s' in descending order based on coin balance.
 
   """
@@ -839,6 +840,8 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+=======
+>>>>>>> Fix queries.
   Finds all Blocks validated by the address given.
 
     ## Options

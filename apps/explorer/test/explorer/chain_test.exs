@@ -1033,6 +1033,82 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "get_blocks_validated_by_address/2" do
+    test "without blocks" do
+      address = insert(:address)
+
+      assert [] = Chain.get_blocks_validated_by_address([], address)
+    end
+    
+    test "with blocks" do
+      address = insert(:address)
+      address2 = insert(:address)
+
+      %Block{hash: hash, miner_hash: miner_hash} = 
+        insert(:block, miner: address, miner_hash: adress.hash)
+
+      %Block{hash: hash, miner_hash: miner_hash} = 
+        insert(:block, miner: address2, miner_hash: adress2.hash)
+
+      assert [%Block{hash: ^hash, miner: ^address, miner_hash: ^address.hash}] == 
+        Chain.get_blocks_validated_by_address([], address)
+
+      assert [%Block{hash: ^hash, miner: ^address, miner_hash: ^address.hash}] == 
+        Chain.get_blocks_validated_by_address([], address2)
+    end
+
+    test "with blocks can be paginated" do
+      address = insert(:address)
+      address2 = insert(:address)
+
+      second_page_hashes =
+        50
+        |> insert_list(:block, miner: address, miner_hash: adress.hash)
+        |> Enum.map(& &1.hash)
+
+      second_page_hashes2 =
+        50
+        |> insert_list(:block, miner: address2, miner_hash: adress.hash2)
+        |> Enum.map(& &1.hash)
+
+      assert second_page_hashes ==
+        [paging_options: %PagingOptions{key: {inserted_at, hash}, page_size: 50}]
+        |> Chain.get_blocks_validated_by_address([], address)
+        |> Enum.map(& &1.hash)
+        |> Enum.reverse()
+
+      assert second_page_hashes2 ==
+        [paging_options: %PagingOptions{key: {inserted_at, hash}, page_size: 50}]
+        |> Chain.get_blocks_validated_by_address([], address2)
+        |> Enum.map(& &1.hash)
+        |> Enum.reverse()
+    end
+  end
+
+  describe "address_to_validation_count/1" do
+    test "without blocks" do
+      address = insert(:address)
+
+      assert 0 = Chain.address_to_validation_count(address)
+    end
+
+    test "with blocks" do
+      address = insert(:address)
+      address2 = insert(:address)
+
+      %Block{hash: hash, miner_hash: miner_hash} = 
+        insert(:block, miner: address, miner_hash: adress.hash)
+
+      %Block{hash: hash, miner_hash: miner_hash} = 
+        insert(:block, miner: address2, miner_hash: adress2.hash)
+      %Block{hash: hash, miner_hash: miner_hash} = 
+        insert(:block, miner: address2, miner_hash: adress2.hash)
+
+      assert 1 = Chain.address_to_validation_count(address)
+      assert 2 = Chain.address_to_validation_count(address)
+    end
+  end
+
   describe "number_to_block/1" do
     test "without block" do
       assert {:error, :not_found} = Chain.number_to_block(-1)
