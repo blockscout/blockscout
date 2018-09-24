@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
   use BlockScoutWeb.FeatureCase, async: true
 
   alias Explorer.Chain.Wei
-  alias BlockScoutWeb.{AddressPage, TransactionListPage, TransactionLogsPage, TransactionPage}
+  alias BlockScoutWeb.{AddressPage, Notifier, TransactionListPage, TransactionLogsPage, TransactionPage}
 
   setup do
     block =
@@ -99,6 +99,27 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
       session
       |> TransactionListPage.visit_page()
       |> assert_has(TransactionListPage.contract_creation(transaction))
+    end
+  end
+
+  describe "viewing a pending transaction page" do
+    test "can see a pending transaction's details", %{session: session, pending: pending} do
+      session
+      |> TransactionPage.visit_page(pending)
+      |> assert_has(TransactionPage.detail_hash(pending))
+      |> assert_has(TransactionPage.is_pending())
+    end
+
+    test "pending transactions live update once collated", %{session: session, pending: pending} do
+      session
+      |> TransactionPage.visit_page(pending)
+
+      transaction = with_block(pending)
+
+      Notifier.handle_event({:chain_event, :transactions, [transaction.hash]})
+
+      session
+      |> refute_has(TransactionPage.is_pending())
     end
   end
 

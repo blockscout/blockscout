@@ -36,3 +36,6 @@ screenshots/
 
 # Sobelow
 .sobelow
+
+# osx 
+.DS_Store

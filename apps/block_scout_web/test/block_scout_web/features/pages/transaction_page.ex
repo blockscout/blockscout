@@ -15,6 +15,10 @@ defmodule BlockScoutWeb.TransactionPage do
     css("[data-test='transaction_detail_hash']", text: Hash.to_string(transaction_hash))
   end
 
+  def is_pending() do
+    css("[data-selector='block-number']", text: "Pending")
+  end
+
   def visit_page(session, %Transaction{hash: transaction_hash}) do
     visit(session, "/tx/#{transaction_hash}")
   end

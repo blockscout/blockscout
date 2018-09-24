@@ -80,6 +80,7 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/address-overview";
 @import "components/token_tile_view_more";
 @import "components/dropdown";
+@import "components/loading-spinner";
 
 :export {
   primary: $primary;
