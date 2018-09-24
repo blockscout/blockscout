@@ -558,6 +558,14 @@ msgstr ""
 msgid "Last Updated In Block"
 msgstr ""
 
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:51
+msgid "WEI"
+msgstr ""
+
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:52
+msgid "ETH"
+msgstr ""
+
 #, elixir-format
 #:
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:77
@@ -1272,14 +1280,3 @@ msgstr ""
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:128
 msgid "There are no token transfers for this address."
 msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:51
-msgid "WEI"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:52
-msgid "ETH"
-msgstr ""
-
