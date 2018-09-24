@@ -6,6 +6,26 @@ defmodule BlockScoutWeb.Tokens.HolderViewTest do
 
   doctest BlockScoutWeb.Tokens.HolderView, import: true
 
+  describe "show_total_supply_percentage?/1" do
+    test "returns false when the total supply is nil" do
+      %Token{total_supply: total_supply} = build(:token, total_supply: nil)
+
+      refute HolderView.show_total_supply_percentage?(total_supply)
+    end
+
+    test "returns false when the total supply is 0" do
+      %Token{total_supply: total_supply} = build(:token, total_supply: 0)
+
+      refute HolderView.show_total_supply_percentage?(total_supply)
+    end
+
+    test "returns true when the total supply is greater than 0" do
+      %Token{total_supply: total_supply} = build(:token, total_supply: 1000)
+
+      assert HolderView.show_total_supply_percentage?(total_supply)
+    end
+  end
+
   describe "total_supply_percentage/2" do
     test "returns the percentage of the Token total supply" do
       %Token{total_supply: total_supply} = build(:token, total_supply: 1000)
