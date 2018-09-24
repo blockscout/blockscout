@@ -865,6 +865,19 @@ defmodule Explorer.Chain.Import do
                 "(SELECT it.created_contract_address_hash FROM internal_transactions AS it WHERE it.transaction_hash = ? and it.type = 'create' and ? IS NULL)",
                 t.hash,
                 t.to_address_hash
+              ),
+            error:
+              fragment(
+                "(SELECT it.error FROM internal_transactions AS it WHERE it.transaction_hash = ? ORDER BY it.index ASC LIMIT 1)",
+                t.hash
+              ),
+            status:
+              fragment(
+                "COALESCE(?, CASE WHEN (SELECT it.error FROM internal_transactions AS it WHERE it.transaction_hash = ? ORDER BY it.index ASC LIMIT 1) IS NULL THEN ? ELSE ? END)",
+                t.status,
+                t.hash,
+                type(^:ok, t.status),
+                type(^:error, t.status)
               )
           ]
         ]

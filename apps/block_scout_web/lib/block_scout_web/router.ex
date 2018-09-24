@@ -58,8 +58,13 @@ defmodule BlockScoutWeb.Router do
 
       resources("/logs", TransactionLogController, only: [:index], as: :log)
 
-      resources("/token_transfers", TransactionTokenTransferController, only: [:index], as: :token_transfer)
+      resources("/token_transfers", TransactionTokenTransferController,
+        only: [:index],
+        as: :token_transfer
+      )
     end
+
+    resources("/accounts", AddressController, only: [:index])
 
     resources "/address", AddressController, only: [:show] do
       resources("/transactions", AddressTransactionController, only: [:index], as: :transaction)
@@ -92,12 +97,14 @@ defmodule BlockScoutWeb.Router do
         as: :read_contract
       )
 
-      resources(
-        "/tokens",
-        AddressTokenController,
-        only: [:index],
-        as: :token
-      )
+      resources("/tokens", AddressTokenController, only: [:index], as: :token) do
+        resources(
+          "/token_transfers",
+          AddressTokenTransferController,
+          only: [:index],
+          as: :transfers
+        )
+      end
 
       resources(
         "/token_balances",

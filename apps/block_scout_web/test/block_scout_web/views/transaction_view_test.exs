@@ -72,27 +72,15 @@ defmodule BlockScoutWeb.TransactionViewTest do
       assert TransactionView.formatted_status(transaction) == "Pending"
     end
 
-    test "with block with status :error with gas_used < gas" do
-      gas = 2
+    test "with block without status (pre-Byzantium/Ethereum Class)" do
       block = insert(:block)
 
       transaction =
         :transaction
-        |> insert(gas: gas)
-        |> with_block(block, gas_used: gas - 1, status: :error)
+        |> insert()
+        |> with_block(block, status: nil)
 
-      assert TransactionView.formatted_status(transaction) == "Failed"
-    end
-
-    test "with block with status :error with gas <= gas_used" do
-      gas = 2
-
-      transaction =
-        :transaction
-        |> insert(gas: gas)
-        |> with_block(gas_used: gas, status: :error)
-
-      assert TransactionView.formatted_status(transaction) == "Out of Gas"
+      assert TransactionView.formatted_status(transaction) == "(Awaiting internal transactions for status)"
     end
 
     test "with receipt with status :ok" do
@@ -104,6 +92,26 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> with_block(gas_used: gas - 1, status: :ok)
 
       assert TransactionView.formatted_status(transaction) == "Success"
+    end
+
+    test "with block with status :error without internal transactions indexed" do
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block, status: :error)
+
+      assert TransactionView.formatted_status(transaction) == "Error: (Awaiting internal transactions for reason)"
+    end
+
+    test "with block with status :error with internal transactions indexed uses `error`" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(status: :error, internal_transactions_indexed_at: DateTime.utc_now(), error: "Out of Gas")
+
+      assert TransactionView.formatted_status(transaction) == "Error: Out of Gas"
     end
   end
 

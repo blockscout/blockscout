@@ -50,10 +50,12 @@ defmodule BlockScoutWeb.TransactionView do
     transaction
     |> Chain.transaction_to_status()
     |> case do
-      :failed -> gettext("Failed")
-      :out_of_gas -> gettext("Out of Gas")
       :pending -> gettext("Pending")
+      :awaiting_internal_transactions -> gettext("(Awaiting internal transactions for status)")
       :success -> gettext("Success")
+      {:error, :awaiting_internal_transactions} -> gettext("Error: (Awaiting internal transactions for reason)")
+      # The pool of possible error reasons is unknown or even if it is enumerable, so we can't translate them
+      {:error, reason} when is_binary(reason) -> gettext("Error: %{reason}", reason: reason)
     end
   end
 
@@ -98,8 +100,14 @@ defmodule BlockScoutWeb.TransactionView do
     |> Base.encode64()
   end
 
-  def status(transaction) do
-    Chain.transaction_to_status(transaction)
+  def status_class(transaction) do
+    case Chain.transaction_to_status(transaction) do
+      :pending -> "tile-status--pending"
+      :awaiting_internal_transactions -> "tile-status--awaiting-internal-transactions"
+      :success -> "tile-status--success"
+      {:error, :awaiting_internal_transactions} -> "tile-status--error--awaiting-internal-transactions"
+      {:error, reason} when is_binary(reason) -> "tile-status--error--reason"
+    end
   end
 
   # This is the address to be shown in the to field

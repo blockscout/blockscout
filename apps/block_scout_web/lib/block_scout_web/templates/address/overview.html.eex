@@ -17,24 +17,23 @@
           </div>
           <h1 class="card-title"><%= address_title(@address) %> <%= gettext "Details" %> </h1>
           <h3 class="<%= if BlockScoutWeb.AddressView.contract?(@address) do %>contract-address<% end %>" data-test="address_detail_hash"><%= @address.hash %></h3>
-          <div class="d-flex flex-row flex-md-column justify-content-start text-muted">
-            <div class="d-flex flex-row justify-content-start text-muted mr-4 mb-md-2">
 
-              <span class="mr-4 mb-md-2">
-                <%= if address_name = primary_name(@address) do %>
-                  <strong class="mr-4 mb-md-2 text-primary"><%= address_name %></strong>
-                <% end %>
-                <span data-selector="transaction-count"><%= Cldr.Number.to_string!(@transaction_count, format: "#,###") %></span> <%= gettext "Transactions" %>
+          <div class="d-flex flex-column flex-lg-row justify-content-start text-muted">
+            <%= if address_name = primary_name(@address) do %>
+              <strong class="mr-4 mb-2 text-primary"><%= address_name %></strong>
+            <% end %>
+            <span class="mr-4 mb-2">
+              <span data-selector="transaction-count"><%= Cldr.Number.to_string!(@transaction_count, format: "#,###") %></span>
+
+              <%= gettext "Transactions" %>
+            </span>
+            <%= if @address.token do %>
+              <span class="mr-4 mb-2">
+                <%= link(token_title(@address.token), to: token_path(@conn, :show, @address.hash), "data-test": "token_hash_link" ) %>
               </span>
-
-              <%= if @address.token do %>
-                <span class="mb-md-2">
-                  <%= link(token_title(@address.token), to: token_path(@conn, :show, @address.hash), "data-test": "token_hash_link" ) %>
-                </span>
-              <% end %>
-            </div>
+            <% end %>
             <%= if contract?(@address) do %>
-              <span class="mr-4" data-test="address_contract_creator">
+              <span data-test="address_contract_creator">
                 <%= gettext "Contract created by" %>
                 <%= link(
                   trimmed_hash(@address.contracts_creation_internal_transaction.from_address_hash),

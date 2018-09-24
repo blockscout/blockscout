@@ -1,4 +1,4 @@
-<div class="tile fade-up">
+<div class="tile tile-type-block fade-up">
   <div class="row">
     <div class="col-md-8 col-lg-9">
       <!-- block height -->
@@ -35,12 +35,12 @@
       <!-- Gas Used -->
       <div class="mr-3 mr-md-0">
         <%= formatted_gas(@block.gas_used) %>
-        (<%= formatted_gas(@block.gas_used / @block.gas_limit, format: "#.#%") %>)
+        (<%= formatted_gas(Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit), format: "#.#%") %>)
         <%= gettext "Gas Used" %>
       </div>
       <!-- Progress bar -->
       <div class="progress w-100 mt-3 mt-md-0">
-        <div class="progress-bar" role="progressbar" style="width: <%= formatted_gas(@block.gas_used / @block.gas_limit, format: "#.#%") %>;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
+        <div class="progress-bar" role="progressbar" style="width: <%= formatted_gas(Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit), format: "#.#%") %>;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
         </div>
       </div>
     </div>

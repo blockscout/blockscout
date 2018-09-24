@@ -1,5 +1,5 @@
 <div class="col-sm-3 fade-up-blocks-chain mb-3 mb-sm-0" data-selector="chain-block" data-block-number="<%= @block.number %>">
-  <div class="tile d-flex flex-column">
+  <div class="tile tile-type-block d-flex flex-column">
     <%= link(@block, to: block_path(BlockScoutWeb.Endpoint, :show, @block), class: "tile-title") %>
     <div>
       <span class="mr-2"> <%= Enum.count(@block.transactions) %> Transactions </span>

@@ -1,7 +1,8 @@
 defmodule BlockScoutWeb.API.RPC.StatsController do
   use BlockScoutWeb, :controller
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, ExchangeRates}
+  alias Explorer.Chain.Wei
 
   def tokensupply(conn, params) do
     with {:contractaddress_param, {:ok, contractaddress_param}} <- fetch_contractaddress(params),
@@ -18,6 +19,24 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
       {:token, {:error, :not_found}} ->
         render(conn, :error, error: "contractaddress not found")
     end
+  end
+
+  def ethsupply(conn, _params) do
+    wei_total_supply =
+      Chain.total_supply()
+      |> Decimal.new()
+      |> Wei.from(:ether)
+      |> Wei.to(:wei)
+      |> Decimal.to_string()
+
+    render(conn, "ethsupply.json", total_supply: wei_total_supply)
+  end
+
+  def ethprice(conn, _params) do
+    symbol = Application.get_env(:explorer, :coin)
+    rates = ExchangeRates.lookup(symbol)
+
+    render(conn, "ethprice.json", rates: rates)
   end
 
   defp fetch_contractaddress(params) do

@@ -86,7 +86,7 @@
             <!-- Gas Used -->
             <h3>
               <%= @block.gas_used |> Cldr.Number.to_string! %>
-              <span class="text-muted"> (<%= (@block.gas_used / @block.gas_limit) |> Cldr.Number.to_string!(format: "#.#%") %>) </span>
+              <span class="text-muted"> (<%= (Decimal.to_integer(@block.gas_used) / Decimal.to_integer(@block.gas_limit)) |> Cldr.Number.to_string!(format: "#.#%") %>) </span>
             </h3>
             <!-- Gas Limit -->
             <span class="text-muted"> <%= @block.gas_limit |> Cldr.Number.to_string! %> <%= gettext "Gas Limit" %> </span>

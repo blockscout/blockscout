@@ -69,16 +69,18 @@ defmodule Explorer.Chain do
   @typep paging_options :: {:paging_options, PagingOptions.t()}
 
   @doc """
-  Estimated count of `t:Explorer.Chain.Address.t/0`.
-
-  Estimated count of addresses
+  Gets an estimated count of `t:Explorer.Chain.Address.t/0`'s where the `fetched_coin_balance` is > 0
   """
   @spec address_estimated_count :: non_neg_integer()
   def address_estimated_count do
-    %Postgrex.Result{rows: [[rows]]} =
-      SQL.query!(Repo, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='addresses'")
+    {:ok, %Postgrex.Result{rows: result}} =
+      Repo.query("""
+      EXPLAIN SELECT COUNT(a0.hash) FROM addresses AS a0 WHERE (a0.fetched_coin_balance > 0)
+      """)
 
-    rows
+    {[explain], _} = List.pop_at(result, 1)
+    [[_ | [rows]]] = Regex.scan(~r/rows=(\d+)/, explain)
+    String.to_integer(rows)
   end
 
   @doc """
@@ -132,33 +134,35 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Counts the number of `t:Explorer.Chain.Transaction.t/0` to or from the `address`.
+  Gets an estimated count of `t:Explorer.Chain.Transaction.t/0` to or from the `address` based on the estimated rows
+  resulting in an EXPLAIN of the query plan for the count query.
   """
-  @spec address_to_transaction_count(Address.t()) :: non_neg_integer()
-  def address_to_transaction_count(%Address{hash: hash}) do
-    {:ok, %{rows: [[result]]}} =
-      SQL.query(
-        Repo,
+  @spec address_to_transactions_estimated_count(Address.t()) :: non_neg_integer()
+  def address_to_transactions_estimated_count(%Address{hash: address_hash}) do
+    {:ok, %Postgrex.Result{rows: result}} =
+      Repo.query(
         """
-          SELECT COUNT(hash) from
-          (
-            SELECT t0."hash" address
-            FROM "transactions" AS t0
-            LEFT OUTER JOIN "internal_transactions" AS i1 ON (i1."transaction_hash" = t0."hash") AND (i1."type" = 'create')
-            WHERE (i1."created_contract_address_hash" = $1 AND t0."to_address_hash" IS NULL)
-
-            UNION
-
-            SELECT t0."hash" address
-            FROM "transactions" AS t0
-            WHERE (t0."to_address_hash" = $1)
-            OR (t0."from_address_hash" = $1)
-          ) AS hash
+        EXPLAIN SELECT COUNT(DISTINCT t.hash) FROM
+        (
+          SELECT t0.hash FROM transactions AS t0 WHERE t0.from_address_hash = $1
+          UNION
+          SELECT t0.hash FROM transactions AS t0 WHERE t0.to_address_hash = $1
+          UNION
+          SELECT t0.hash FROM transactions AS t0 WHERE t0.created_contract_address_hash = $1
+          UNION
+          SELECT tt.transaction_hash AS hash FROM token_transfers AS tt
+          WHERE tt.from_address_hash = $1
+          UNION
+          SELECT tt.transaction_hash AS hash FROM token_transfers AS tt
+          WHERE tt.to_address_hash = $1
+        ) as t
         """,
-        [hash.bytes]
+        [address_hash.bytes]
       )
 
-    result
+    {[unique_explain], _} = List.pop_at(result, 1)
+    [[_ | [rows]]] = Regex.scan(~r/rows=(\d+)/, unique_explain)
+    String.to_integer(rows)
   end
 
   @doc """
@@ -182,13 +186,60 @@ defmodule Explorer.Chain do
       when is_list(options) do
     direction = Keyword.get(options, :direction)
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    options
-    |> Keyword.get(:paging_options, @default_paging_options)
-    |> fetch_transactions()
-    |> Transaction.where_address_fields_match(address_hash, direction)
-    |> join_associations(necessity_by_association)
+    transaction_matches =
+      direction
+      |> case do
+        :from -> [:from_address_hash]
+        :to -> [:to_address_hash, :created_contract_address_hash]
+        _ -> [:from_address_hash, :to_address_hash, :created_contract_address_hash]
+      end
+      |> Enum.map(fn address_field ->
+        paging_options
+        |> fetch_transactions()
+        |> Transaction.where_address_fields_match(address_hash, address_field)
+        |> join_associations(necessity_by_association)
+        |> Transaction.preload_token_transfers(address_hash)
+        |> Repo.all()
+        |> MapSet.new()
+      end)
+
+    token_transfer_matches =
+      paging_options
+      |> fetch_transactions()
+      |> TokenTransfer.where_address_fields_match(address_hash, direction)
+      |> join_associations(necessity_by_association)
+      |> Transaction.preload_token_transfers(address_hash)
+      |> Repo.all()
+      |> MapSet.new()
+
+    transaction_matches
+    |> Enum.reduce(token_transfer_matches, &MapSet.union/2)
+    |> MapSet.to_list()
+    |> Enum.sort_by(& &1.index, &>=/2)
+    |> Enum.sort_by(& &1.block_number, &>=/2)
+    |> Enum.slice(0..paging_options.page_size)
+  end
+
+  @doc """
+  Finds all `t:Explorer.Chain.Transaction.t/0`s given the address_hash and the token contract
+  address hash.
+
+  ## Options
+
+    * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
+      `:key` (in the form of `%{"inserted_at" => inserted_at}`). Results will be the transactions
+      older than the `index` that are passed.
+  """
+  @spec address_to_transactions_with_token_tranfers(Hash.t(), Hash.t(), [paging_options]) :: [Transaction.t()]
+  def address_to_transactions_with_token_tranfers(address_hash, token_hash, options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    address_hash
+    |> Transaction.transactions_with_token_transfers(token_hash)
     |> Transaction.preload_token_transfers(address_hash)
+    |> handle_paging_options(paging_options)
     |> Repo.all()
   end
 
@@ -712,7 +763,7 @@ defmodule Explorer.Chain do
         `:required`, and the `t:Explorer.Chain.Block.t/0` has no associated record for that association, then the
         `t:Explorer.Chain.Block.t/0` will not be included in the page `entries`.
     * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
-      `:key` (a tuple of the lowest/oldest `{block_number}`) and. Results will be the internal
+      `:key` (a tuple of the lowest/oldest `{block_number}`). Results will be the internal
       transactions older than the `block_number` that are passed.
 
   """
@@ -726,6 +777,19 @@ defmodule Explorer.Chain do
     |> page_blocks(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by(desc: :number)
+    |> Repo.all()
+  end
+
+  @doc """
+  Lists the top 250 `t:Explorer.Chain.Address.t/0`'s' in descending order based on coin balance.
+
+  """
+  @spec list_top_addresses :: [Address.t()]
+  def list_top_addresses do
+    Address
+    |> limit(250)
+    |> order_by(desc: :fetched_coin_balance, asc: :hash)
+    |> where([address], address.fetched_coin_balance > ^0)
     |> Repo.all()
   end
 
@@ -1263,6 +1327,7 @@ defmodule Explorer.Chain do
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by([internal_transaction], asc: internal_transaction.index)
+    |> preload(transaction: :block)
     |> Repo.all()
   end
 
@@ -1337,21 +1402,31 @@ defmodule Explorer.Chain do
 
   ## Returns
 
-    * `:failed` - the transaction failed without running out of gas
-    * `:pending` - the transaction has not be confirmed in a block yet
-    * `:out_of_gas` - the transaction failed because it ran out of gas
+    * `:pending` - the transaction has not be confirmed in a block yet.
+    * `:awaiting_internal_transactions` - the transaction happened in a pre-Byzantium block or on a chain like Ethereum
+      Classic (ETC) that never adopted [EIP-658](https://github.com/Arachnid/EIPs/blob/master/EIPS/eip-658.md), which
+      add transaction status to transaction receipts, so the status can only be derived whether the first internal
+      transaction has an error.
     * `:success` - the transaction has been confirmed in a block
+    * `{:error, :awaiting_internal_transactions}` - the transactions happened post-Byzantium, but the error message
+       requires the internal transactions.
+    * `{:error, reason}` - the transaction failed due to `reason` in its first internal transaction.
 
   """
-  @spec transaction_to_status(Transaction.t()) :: :failed | :pending | :out_of_gas | :success
-  def transaction_to_status(%Transaction{status: nil}), do: :pending
+  @spec transaction_to_status(Transaction.t()) ::
+          :pending
+          | :awaiting_internal_transactions
+          | :success
+          | {:error, :awaiting_internal_transactions}
+          | {:error, reason :: String.t()}
+  def transaction_to_status(%Transaction{block_hash: nil, status: nil}), do: :pending
+  def transaction_to_status(%Transaction{status: nil}), do: :awaiting_internal_transactions
   def transaction_to_status(%Transaction{status: :ok}), do: :success
 
-  def transaction_to_status(%Transaction{gas: gas, gas_used: gas_used, status: :error}) when gas_used >= gas do
-    :out_of_gas
-  end
+  def transaction_to_status(%Transaction{status: :error, internal_transactions_indexed_at: nil, error: nil}),
+    do: {:error, :awaiting_internal_transactions}
 
-  def transaction_to_status(%Transaction{status: :error}), do: :failed
+  def transaction_to_status(%Transaction{status: :error, error: error}) when is_binary(error), do: {:error, error}
 
   @doc """
   The `t:Explorer.Chain.Transaction.t/0` or `t:Explorer.Chain.InternalTransaction.t/0` `value` of the `transaction` in
@@ -1658,36 +1733,11 @@ defmodule Explorer.Chain do
     Repo.one(query) != nil
   end
 
-  @spec tokens_with_number_of_transfers_from_address(Hash.Address.t(), [any()]) :: []
-  def tokens_with_number_of_transfers_from_address(address_hash, paging_options \\ []) do
+  @spec address_tokens_with_balance(Hash.Address.t(), [any()]) :: []
+  def address_tokens_with_balance(address_hash, paging_options \\ []) do
     address_hash
-    |> fetch_tokens_from_address_hash(paging_options)
-    |> add_number_of_transfers_to_tokens_from_address(address_hash)
-  end
-
-  @spec fetch_tokens_from_address_hash(Hash.Address.t(), [any()]) :: []
-  def fetch_tokens_from_address_hash(address_hash, paging_options \\ []) do
-    address_hash
-    |> Token.with_transfers_by_address(paging_options)
+    |> Address.Token.list_address_tokens_with_balance(paging_options)
     |> Repo.all()
-  end
-
-  @spec add_number_of_transfers_to_tokens_from_address([Token], Hash.Address.t()) :: []
-  defp add_number_of_transfers_to_tokens_from_address(tokens, address_hash) do
-    Enum.map(tokens, fn token ->
-      Map.put(
-        token,
-        :number_of_transfers,
-        count_token_transfers_from_address_hash(token.contract_address_hash, address_hash)
-      )
-    end)
-  end
-
-  @spec count_token_transfers_from_address_hash(Hash.Address.t(), Hash.Address.t()) :: []
-  def count_token_transfers_from_address_hash(token_hash, address_hash) do
-    token_hash
-    |> Token.interactions_with_address(address_hash)
-    |> Repo.aggregate(:count, :name)
   end
 
   @doc """

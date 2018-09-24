@@ -16,10 +16,8 @@ defmodule BlockScoutWeb.Chain do
     Address,
     Address.TokenBalance,
     Block,
-    Hash,
     InternalTransaction,
     Log,
-    Token,
     TokenTransfer,
     Transaction
   }
@@ -185,7 +183,7 @@ defmodule BlockScoutWeb.Chain do
     %{"inserted_at" => inserted_at_datetime}
   end
 
-  defp paging_params(%Token{name: name, type: type, inserted_at: inserted_at}) do
+  defp paging_params(%Address.Token{name: name, type: type, inserted_at: inserted_at}) do
     inserted_at_datetime =
       inserted_at
       |> DateTime.from_naive!("Etc/UTC")
@@ -195,7 +193,7 @@ defmodule BlockScoutWeb.Chain do
   end
 
   defp paging_params(%TokenBalance{address_hash: address_hash, value: value}) do
-    %{"address_hash" => Hash.to_string(address_hash), "value" => Decimal.to_integer(value)}
+    %{"address_hash" => to_string(address_hash), "value" => Decimal.to_integer(value)}
   end
 
   defp transaction_from_param(param) do

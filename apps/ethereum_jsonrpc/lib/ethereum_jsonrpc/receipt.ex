@@ -10,11 +10,6 @@ defmodule EthereumJSONRPC.Receipt do
   alias EthereumJSONRPC
   alias EthereumJSONRPC.Logs
 
-  # > 21000 gas is charged for any transaction as a "base fee". This covers the cost of an elliptic curve operation to
-  # > recover the sender address from the signature as well as the disk and bandwidth space of storing the transaction.
-  # -- https://github.com/ethereum/wiki/wiki/Design-Rationale
-  @base_fee_gas 21_000
-
   @type elixir :: %{String.t() => String.t() | non_neg_integer}
 
   @typedoc """
@@ -81,10 +76,8 @@ defmodule EthereumJSONRPC.Receipt do
   the [status](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-658.md) as that was a post-Byzantium
   [EIP](https://github.com/ethereum/EIPs/tree/master/EIPS).
 
-  Pre-Byzantium receipts are given a derived `:status`:
-
-    * If `"gas"` (supplied by caller from `EthereumJSONRPC.Transaction.elixir`) `==` `"gasUsed"`, then `:status` is
-      `:error`
+  Pre-Byzantium receipts are given a `:status` of `nil`.  The `:status` can only be derived from looking at the internal
+  transactions to see if there was an error.
 
       iex> EthereumJSONRPC.Receipt.elixir_to_params(
       ...>   %{
@@ -106,84 +99,10 @@ defmodule EthereumJSONRPC.Receipt do
       %{
         cumulative_gas_used: 21001,
         gas_used: 21001,
-        status: :error,
+        status: nil,
         transaction_hash: "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
         transaction_index: 0
       }
-
-    * Except, when it is the base transaction fee (21,000 gas)
-
-      iex> EthereumJSONRPC.Receipt.elixir_to_params(
-      ...>   %{
-      ...>     "blockHash" => "0x4e3a3754410177e6937ef1f84bba68ea139e8d1a2258c5f85db9f1cd715a1bdd",
-      ...>     "blockNumber" => 46147,
-      ...>     "contractAddress" => nil,
-      ...>     "cumulativeGasUsed" => 21000,
-      ...>     "from" => "0xa1e4380a3b1f749673e270229993ee55f35663b4",
-      ...>     "gas" => 21000,
-      ...>     "gasUsed" => 21000,
-      ...>     "logs" => [],
-      ...>     "logsBloom" => "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-      ...>     "root" => "0x96a8e009d2b88b1483e6941e6812e32263b05683fac202abc622a3e31aed1957",
-      ...>     "to" => "0x5df9b87991262f6ba471f09758cde1c0fc1de734",
-      ...>     "transactionHash" => "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
-      ...>     "transactionIndex" => 0
-      ...>   }
-      ...> )
-      %{
-        cumulative_gas_used: 21000,
-        gas_used: 21000,
-        status: :ok,
-        transaction_hash: "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
-        transaction_index: 0
-      }
-
-    * Otherwise, `:status` is `:ok`
-
-      iex> EthereumJSONRPC.Receipt.elixir_to_params(
-      ...>   %{
-      ...>     "blockHash" => "0x4e3a3754410177e6937ef1f84bba68ea139e8d1a2258c5f85db9f1cd715a1bdd",
-      ...>     "blockNumber" => 46147,
-      ...>     "contractAddress" => nil,
-      ...>     "cumulativeGasUsed" => 21000,
-      ...>     "from" => "0xa1e4380a3b1f749673e270229993ee55f35663b4",
-      ...>     "gas" => 40000,
-      ...>     "gasUsed" => 21000,
-      ...>     "logs" => [],
-      ...>     "logsBloom" => "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-      ...>     "root" => "0x96a8e009d2b88b1483e6941e6812e32263b05683fac202abc622a3e31aed1957",
-      ...>     "to" => "0x5df9b87991262f6ba471f09758cde1c0fc1de734",
-      ...>     "transactionHash" => "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
-      ...>     "transactionIndex" => 0
-      ...>   }
-      ...> )
-      %{
-        cumulative_gas_used: 21000,
-        gas_used: 21000,
-        status: :ok,
-        transaction_hash: "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
-        transaction_index: 0
-      }
-
-  It is a developer error if the budgeted `"gas"` is not supplied for deriving the pre-Byzantium `:status`.
-
-      iex> EthereumJSONRPC.Receipt.elixir_to_params(
-      ...>   %{
-      ...>     "blockHash" => "0x4e3a3754410177e6937ef1f84bba68ea139e8d1a2258c5f85db9f1cd715a1bdd",
-      ...>     "blockNumber" => 46147,
-      ...>     "contractAddress" => nil,
-      ...>     "cumulativeGasUsed" => 21000,
-      ...>     "from" => "0xa1e4380a3b1f749673e270229993ee55f35663b4",
-      ...>     "gasUsed" => 21000,
-      ...>     "logs" => [],
-      ...>     "logsBloom" => "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-      ...>     "root" => "0x96a8e009d2b88b1483e6941e6812e32263b05683fac202abc622a3e31aed1957",
-      ...>     "to" => "0x5df9b87991262f6ba471f09758cde1c0fc1de734",
-      ...>     "transactionHash" => "0x5c504ed432cb51138bcf09aa5e8a410dd4a1e204ef84bfed1be16dfba1b22060",
-      ...>     "transactionIndex" => 0
-      ...>   }
-      ...> )
-      ** (ArgumentError) Pre-Byzantium transaction receipts require the transaction gas to be given to derive their status
 
   """
   @spec elixir_to_params(elixir) :: %{
@@ -317,31 +236,8 @@ defmodule EthereumJSONRPC.Receipt do
           """
   end
 
-  defp elixir_to_status(elixir) do
-    case elixir do
-      %{"status" => status} ->
-        status
-
-      %{"gas" => gas, "gasUsed" => gas_used} ->
-        pre_byzantium_status(gas, gas_used)
-
-      _ ->
-        raise ArgumentError,
-              "Pre-Byzantium transaction receipts require the transaction gas to be given to derive their status"
-    end
-  end
-
-  # Temporary fix for https://github.com/poanetwork/blockscout/issues/673 as this is the most common gas == gas_used,
-  # but not failed scenario.  Only internal transactions can prove if gas == gas_used means failure pre-Byzantium.
-  defp pre_byzantium_status(@base_fee_gas, @base_fee_gas), do: :ok
-
-  defp pre_byzantium_status(gas, gas_used) when is_integer(gas) and is_integer(gas_used) do
-    if gas_used < gas do
-      :ok
-    else
-      :error
-    end
-  end
+  defp elixir_to_status(%{"status" => status}), do: status
+  defp elixir_to_status(_), do: nil
 
   # double check that no new keys are being missed by requiring explicit match for passthrough
   # `t:EthereumJSONRPC.address/0` and `t:EthereumJSONRPC.hash/0` pass through as `Explorer.Chain` can verify correct

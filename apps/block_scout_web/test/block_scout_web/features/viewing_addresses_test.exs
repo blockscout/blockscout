@@ -1,15 +1,13 @@
 defmodule BlockScoutWeb.ViewingAddressesTest do
   use BlockScoutWeb.FeatureCase, async: true
 
-  alias Explorer.Chain.Wei
   alias BlockScoutWeb.{AddressPage, AddressView, Notifier}
 
   setup do
     block = insert(:block)
 
-    {:ok, balance} = Wei.cast(5)
-    lincoln = insert(:address, fetched_coin_balance: balance)
-    taft = insert(:address)
+    lincoln = insert(:address, fetched_coin_balance: 5)
+    taft = insert(:address, fetched_coin_balance: 5)
 
     from_taft =
       :transaction
@@ -27,6 +25,24 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
        block: block,
        transactions: %{from_lincoln: from_lincoln, from_taft: from_taft}
      }}
+  end
+
+  describe "viewing top addresses" do
+    setup do
+      addresses = Enum.map(150..101, &insert(:address, fetched_coin_balance: &1))
+
+      {:ok, %{addresses: addresses}}
+    end
+
+    test "lists top addresses", %{session: session, addresses: addresses} do
+      [first_address | _] = addresses
+      [last_address | _] = Enum.reverse(addresses)
+
+      session
+      |> AddressPage.visit_page()
+      |> assert_has(AddressPage.address(first_address))
+      |> assert_has(AddressPage.address(last_address))
+    end
   end
 
   test "viewing address overview information", %{session: session} do
@@ -241,14 +257,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
     end
   end
 
-  test "viewing transaction count", %{addresses: addresses, session: session} do
-    insert_list(1000, :transaction, to_address: addresses.lincoln)
-
-    session
-    |> AddressPage.visit_page(addresses.lincoln)
-    |> assert_text(AddressPage.transaction_count(), "1,002")
-  end
-
   test "contract creation is shown for to_address on list page", %{
     addresses: addresses,
     block: block,
@@ -412,6 +420,44 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> AddressPage.visit_page(lincoln)
       |> click(AddressPage.token_transfers_expansion(transaction))
       |> assert_has(AddressPage.token_transfers(transaction, count: 3))
+    end
+  end
+
+  describe "viewing token transfers from a specific token" do
+    test "list token transfers related to the address", %{
+      addresses: addresses,
+      block: block,
+      session: session
+    } do
+      lincoln = addresses.lincoln
+      taft = addresses.taft
+
+      contract_address = insert(:contract_address)
+      token = insert(:token, contract_address: contract_address)
+
+      transaction =
+        :transaction
+        |> insert(from_address: lincoln, to_address: contract_address)
+        |> with_block(block)
+
+      insert(
+        :token_transfer,
+        from_address: lincoln,
+        to_address: taft,
+        transaction: transaction,
+        token_contract_address: contract_address
+      )
+
+      insert(:token_balance, address: lincoln, token_contract_address_hash: contract_address.hash)
+
+      session
+      |> AddressPage.visit_page(lincoln)
+      |> AddressPage.click_tokens()
+      |> AddressPage.click_token_transfers(token)
+      |> assert_has(AddressPage.token_transfers(transaction, count: 1))
+      |> assert_has(AddressPage.token_transfer(transaction, lincoln, count: 1))
+      |> assert_has(AddressPage.token_transfer(transaction, taft, count: 1))
+      |> refute_has(AddressPage.token_transfers_expansion(transaction))
     end
   end
 end

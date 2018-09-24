@@ -29,54 +29,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "address_to_transaction_count/1" do
-    test "without transactions" do
-      address = insert(:address)
-
-      assert Chain.address_to_transaction_count(address) == 0
-    end
-
-    test "with transactions" do
-      %Transaction{from_address: address} = insert(:transaction) |> Repo.preload(:from_address)
-      insert(:transaction, to_address: address)
-
-      assert Chain.address_to_transaction_count(address) == 2
-    end
-
-    test "with contract creation transactions the contract address is counted" do
-      address = insert(:address)
-
-      insert(
-        :internal_transaction_create,
-        created_contract_address: address,
-        index: 0,
-        transaction: insert(:transaction, to_address: nil)
-      )
-
-      assert Chain.address_to_transaction_count(address) == 1
-    end
-
-    test "doesn't double count addresses when to_address = from_address" do
-      %Transaction{from_address: address} = insert(:transaction) |> Repo.preload(:from_address)
-      insert(:transaction, to_address: address, from_address: address)
-
-      assert Chain.address_to_transaction_count(address) == 2
-    end
-
-    test "does not count non-contract-creation parent transactions" do
-      transaction_with_to_address =
-        %Transaction{} =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      %InternalTransaction{created_contract_address: address} =
-        insert(:internal_transaction_create, transaction: transaction_with_to_address, index: 0)
-
-      assert Chain.address_to_transaction_count(address) == 0
-    end
-  end
-
   describe "address_to_transactions/2" do
     test "without transactions" do
       address = insert(:address)
@@ -274,6 +226,60 @@ defmodule Explorer.ChainTest do
                )
                |> Enum.map(& &1.hash)
                |> Enum.reverse()
+    end
+
+    test "returns results in reverse chronological order by block number and transaction index" do
+      address = insert(:address)
+
+      %Transaction{hash: first_pending} = insert(:transaction, to_address: address)
+      %Transaction{hash: second_pending} = insert(:transaction, to_address: address)
+
+      a_block = insert(:block, number: 6000)
+
+      %Transaction{hash: first} =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block(a_block)
+
+      %Transaction{hash: second} =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block(a_block)
+
+      %Transaction{hash: third} =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block(a_block)
+
+      %Transaction{hash: fourth} =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block(a_block)
+
+      b_block = insert(:block, number: 2000)
+
+      %Transaction{hash: fifth} =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block(b_block)
+
+      %Transaction{hash: sixth} =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block(b_block)
+
+      result =
+        address
+        |> Chain.address_to_transactions()
+        |> Enum.map(& &1.hash)
+
+      assert [first_pending, second_pending, fourth, third, second, first, sixth, fifth] == result
+    end
+  end
+
+  describe "address_to_transactions_estimated_count/1" do
+    test "returns integer" do
+      assert is_integer(Chain.address_to_transactions_estimated_count(build(:address)))
     end
   end
 
@@ -773,6 +779,8 @@ defmodule Explorer.ChainTest do
       difficulty = Decimal.new(340_282_366_920_938_463_463_374_607_431_768_211_454)
       total_difficulty = Decimal.new(12_590_447_576_074_723_148_144_860_474_975_121_280_509)
       token_transfer_amount = Decimal.new(1_000_000_000_000_000_000)
+      gas_limit = Decimal.new(6_946_336)
+      gas_used = Decimal.new(50450)
 
       assert {:ok,
               %{
@@ -810,8 +818,8 @@ defmodule Explorer.ChainTest do
                 blocks: [
                   %Block{
                     difficulty: ^difficulty,
-                    gas_limit: 6_946_336,
-                    gas_used: 50450,
+                    gas_limit: ^gas_limit,
+                    gas_used: ^gas_used,
                     hash: %Hash{
                       byte_count: 32,
                       bytes:
@@ -974,6 +982,41 @@ defmodule Explorer.ChainTest do
                |> Chain.list_blocks()
                |> Enum.map(& &1.number)
                |> Enum.reverse()
+    end
+  end
+
+  describe "list_top_addresses/0" do
+    test "without addresses with balance > 0" do
+      insert(:address, fetched_coin_balance: 0)
+      assert [] = Chain.list_top_addresses()
+    end
+
+    test "with top addresses in order" do
+      address_hashes =
+        4..1
+        |> Enum.map(&insert(:address, fetched_coin_balance: &1))
+        |> Enum.map(& &1.hash)
+
+      assert address_hashes == Enum.map(Chain.list_top_addresses(), & &1.hash)
+    end
+
+    test "with top addresses in order with matching value" do
+      test_hashes =
+        4..0
+        |> Enum.map(&Explorer.Chain.Hash.cast(Explorer.Chain.Hash.Address, &1))
+        |> Enum.map(&elem(&1, 1))
+
+      tail =
+        4..1
+        |> Enum.map(&insert(:address, fetched_coin_balance: &1, hash: Enum.fetch!(test_hashes, &1 - 1)))
+        |> Enum.map(& &1.hash)
+
+      first_result_hash =
+        :address
+        |> insert(fetched_coin_balance: 4, hash: Enum.fetch!(test_hashes, 4))
+        |> Map.fetch!(:hash)
+
+      assert [first_result_hash | tail] == Enum.map(Chain.list_top_addresses(), & &1.hash)
     end
   end
 
@@ -1330,18 +1373,21 @@ defmodule Explorer.ChainTest do
     end
 
     test "with transaction with internal transactions returns all internal transactions for a given transaction hash" do
-      transaction = insert(:transaction)
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
       first = insert(:internal_transaction, transaction: transaction, index: 0)
       second = insert(:internal_transaction, transaction: transaction, index: 1)
 
-      results =
-        transaction
-        |> Chain.transaction_to_internal_transactions()
-        |> Enum.map(& &1.id)
+      results = [internal_transaction | _] = Chain.transaction_to_internal_transactions(transaction)
 
       assert 2 == length(results)
-      assert Enum.member?(results, first.id)
-      assert Enum.member?(results, second.id)
+      assert Enum.all?(results, &(&1.id in [first.id, second.id]))
+      assert internal_transaction.transaction.block.number == block.number
     end
 
     test "with transaction with internal transactions loads associations with in necessity_by_association" do
@@ -1352,7 +1398,7 @@ defmodule Explorer.ChainTest do
                %InternalTransaction{
                  from_address: %Ecto.Association.NotLoaded{},
                  to_address: %Ecto.Association.NotLoaded{},
-                 transaction: %Ecto.Association.NotLoaded{}
+                 transaction: %Transaction{}
                }
              ] = Chain.transaction_to_internal_transactions(transaction)
 
@@ -2273,285 +2319,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "tokens_with_number_of_transfers_from_address/2" do
-    test "returns tokens with number of transfers attached" do
-      address = insert(:address)
-
-      token =
-        :token
-        |> insert(name: "token-c", type: "ERC-721")
-        |> Repo.preload(:contract_address)
-
-      insert(
-        :token_transfer,
-        token_contract_address: token.contract_address,
-        from_address: address,
-        to_address: build(:address)
-      )
-
-      insert(
-        :token_transfer,
-        token_contract_address: token.contract_address,
-        from_address: build(:address),
-        to_address: address
-      )
-
-      fetched_token =
-        address.hash
-        |> Chain.tokens_with_number_of_transfers_from_address()
-        |> List.first()
-
-      assert fetched_token.name == "token-c"
-      assert fetched_token.number_of_transfers == 2
-    end
-  end
-
-  describe "fetch_tokens_from_address_hash/1" do
-    test "only returns tokens that a given address has interacted with" do
-      alice = insert(:address)
-
-      token_a =
-        :token
-        |> insert(name: "token-1")
-        |> Repo.preload(:contract_address)
-
-      token_b =
-        :token
-        |> insert(name: "token-2")
-        |> Repo.preload(:contract_address)
-
-      token_c =
-        :token
-        |> insert(name: "token-3")
-        |> Repo.preload(:contract_address)
-
-      insert(
-        :token_transfer,
-        token_contract_address: token_a.contract_address,
-        from_address: alice,
-        to_address: build(:address)
-      )
-
-      insert(
-        :token_transfer,
-        token_contract_address: token_b.contract_address,
-        from_address: build(:address),
-        to_address: alice
-      )
-
-      insert(
-        :token_transfer,
-        token_contract_address: token_c.contract_address,
-        from_address: build(:address),
-        to_address: build(:address)
-      )
-
-      expected_tokens =
-        alice.hash
-        |> Chain.fetch_tokens_from_address_hash()
-        |> Enum.map(& &1.name)
-
-      assert expected_tokens == [token_a.name, token_b.name]
-    end
-
-    test "returns an empty list when the given address hasn't interacted with any tokens" do
-      alice = insert(:address)
-
-      token =
-        :token
-        |> insert(name: "token-1")
-        |> Repo.preload(:contract_address)
-
-      insert(
-        :token_transfer,
-        token_contract_address: token.contract_address,
-        from_address: build(:address),
-        to_address: build(:address)
-      )
-
-      assert Chain.fetch_tokens_from_address_hash(alice.hash) == []
-    end
-
-    test "distinct tokens by contract_address_hash" do
-      alice = insert(:address)
-
-      token =
-        :token
-        |> insert(name: "token-1")
-        |> Repo.preload(:contract_address)
-
-      insert(
-        :token_transfer,
-        token_contract_address: token.contract_address,
-        from_address: alice,
-        to_address: build(:address)
-      )
-
-      insert(
-        :token_transfer,
-        token_contract_address: token.contract_address,
-        from_address: build(:address),
-        to_address: alice
-      )
-
-      expected_tokens =
-        alice.hash
-        |> Chain.fetch_tokens_from_address_hash()
-        |> Enum.map(& &1.name)
-
-      assert expected_tokens == [token.name]
-    end
-
-    test "orders by type, name and inserted_at time" do
-      address = insert(:address)
-
-      first_token =
-        :token
-        |> insert(name: "token-c", type: "ERC-721")
-        |> Repo.preload(:contract_address)
-
-      second_token =
-        :token
-        |> insert(name: "token-a", type: "ERC-20")
-        |> Repo.preload(:contract_address)
-
-      third_token =
-        :token
-        |> insert(name: "token-b", type: "ERC-20")
-        |> Repo.preload(:contract_address)
-
-      fourth_token =
-        :token
-        |> insert(name: "token-b", type: "ERC-20", inserted_at: third_token.inserted_at)
-        |> Repo.preload(:contract_address)
-
-      insert(
-        :token_transfer,
-        token_contract_address: first_token.contract_address,
-        from_address: address,
-        to_address: build(:address)
-      )
-
-      insert(
-        :token_transfer,
-        token_contract_address: second_token.contract_address,
-        from_address: address,
-        to_address: build(:address)
-      )
-
-      insert(
-        :token_transfer,
-        token_contract_address: third_token.contract_address,
-        from_address: build(:address),
-        to_address: address
-      )
-
-      insert(
-        :token_transfer,
-        token_contract_address: fourth_token.contract_address,
-        from_address: build(:address),
-        to_address: address
-      )
-
-      fetched_tokens =
-        address.hash
-        |> Chain.fetch_tokens_from_address_hash()
-        |> Enum.map(&Repo.preload(&1, :contract_address))
-
-      assert fetched_tokens == [first_token, second_token, third_token, fourth_token]
-    end
-
-    test "supports pagination" do
-      address = insert(:address)
-
-      first_token =
-        :token
-        |> insert(name: "token-c", type: "ERC-721")
-        |> Repo.preload(:contract_address)
-
-      second_token =
-        :token
-        |> insert(name: "token-a", type: "ERC-20")
-        |> Repo.preload(:contract_address)
-
-      third_token =
-        :token
-        |> insert(name: "token-b", type: "ERC-20")
-        |> Repo.preload(:contract_address)
-
-      paging_options = %PagingOptions{
-        page_size: 1,
-        key: {first_token.name, first_token.type, first_token.inserted_at}
-      }
-
-      insert(
-        :token_transfer,
-        token_contract_address: first_token.contract_address,
-        from_address: address,
-        to_address: build(:address)
-      )
-
-      insert(
-        :token_transfer,
-        token_contract_address: second_token.contract_address,
-        from_address: address,
-        to_address: build(:address)
-      )
-
-      insert(
-        :token_transfer,
-        token_contract_address: third_token.contract_address,
-        from_address: build(:address),
-        to_address: address
-      )
-
-      fetched_tokens =
-        address.hash
-        |> Chain.fetch_tokens_from_address_hash(paging_options: paging_options)
-        |> Enum.map(& &1.name)
-
-      assert fetched_tokens == [second_token.name]
-    end
-  end
-
-  describe "count_token_transfers_from_address_hash/2" do
-    test "returns the number of times an address has interacted with a token" do
-      address = insert(:address)
-
-      token =
-        :token
-        |> insert(name: "token")
-        |> Repo.preload(:contract_address)
-
-      insert(
-        :token_transfer,
-        token_contract_address: token.contract_address,
-        from_address: address,
-        to_address: build(:address)
-      )
-
-      insert(
-        :token_transfer,
-        token_contract_address: token.contract_address,
-        from_address: build(:address),
-        to_address: address
-      )
-
-      assert Chain.count_token_transfers_from_address_hash(token.contract_address.hash, address.hash) == 2
-    end
-
-    test "returns 0 if no interaction is found" do
-      address = insert(:address)
-
-      token =
-        :token
-        |> insert(name: "token")
-        |> Repo.preload(:contract_address)
-
-      assert Chain.count_token_transfers_from_address_hash(token.contract_address.hash, address.hash) == 0
-    end
-  end
-
   describe "update_token/2" do
     test "updates a token's values" do
       token = insert(:token, name: nil, symbol: nil, total_supply: nil, decimals: nil, cataloged: false)
@@ -2596,6 +2363,20 @@ defmodule Explorer.ChainTest do
 
       Chain.update_token(token, update_params)
       refute Repo.get_by(Address.Name, address_hash: token.contract_address_hash)
+    end
+
+    test "stores token with big 'decimals' values" do
+      token = insert(:token, name: nil, symbol: nil, total_supply: nil, decimals: nil, cataloged: false)
+
+      update_params = %{
+        name: "Hodl Token",
+        symbol: "HT",
+        total_supply: 10,
+        decimals: 1_000_000_000_000_000_000,
+        cataloged: true
+      }
+
+      assert {:ok, updated_token} = Chain.update_token(token, update_params)
     end
   end
 
@@ -2933,6 +2714,82 @@ defmodule Explorer.ChainTest do
       )
 
       assert Chain.count_token_holders_from_token_hash(contract_address_hash) == 0
+    end
+  end
+
+  describe "address_to_transactions_with_token_tranfers/2" do
+    test "paginates transactions by the block number" do
+      address = insert(:address)
+      token = insert(:token)
+
+      first_page =
+        :transaction
+        |> insert()
+        |> with_block(insert(:block, number: 1000))
+
+      second_page =
+        :transaction
+        |> insert()
+        |> with_block(insert(:block, number: 999))
+
+      insert(
+        :token_transfer,
+        to_address: address,
+        transaction: first_page,
+        token_contract_address: token.contract_address
+      )
+
+      insert(
+        :token_transfer,
+        to_address: address,
+        transaction: second_page,
+        token_contract_address: token.contract_address
+      )
+
+      paging_options = %PagingOptions{
+        key: {first_page.block_number, first_page.index},
+        page_size: 2
+      }
+
+      result =
+        address.hash
+        |> Chain.address_to_transactions_with_token_tranfers(token.contract_address_hash, paging_options: paging_options)
+        |> Enum.map(& &1.hash)
+
+      assert result == [second_page.hash]
+    end
+
+    test "doesn't duplicate the transaction when there are multiple transfers for it" do
+      address = insert(:address)
+      token = insert(:token)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(
+        :token_transfer,
+        amount: 2,
+        to_address: address,
+        token_contract_address: token.contract_address,
+        transaction: transaction
+      )
+
+      insert(
+        :token_transfer,
+        amount: 1,
+        to_address: address,
+        token_contract_address: token.contract_address,
+        transaction: transaction
+      )
+
+      result =
+        address.hash
+        |> Chain.address_to_transactions_with_token_tranfers(token.contract_address_hash)
+        |> Enum.map(& &1.hash)
+
+      assert result == [transaction.hash]
     end
   end
 end

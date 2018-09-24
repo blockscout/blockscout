@@ -9,8 +9,7 @@ defmodule BlockScoutWeb.Notifier do
   alias BlockScoutWeb.Endpoint
 
   def handle_event({:chain_event, :addresses, addresses}) do
-    address_count_module = Application.get_env(:block_scout_web, :fake_adapter) || Chain
-    Endpoint.broadcast("addresses:new_address", "count", %{count: address_count_module.address_estimated_count()})
+    Endpoint.broadcast("addresses:new_address", "count", %{count: Chain.address_estimated_count()})
 
     addresses
     |> Stream.reject(fn %Address{fetched_coin_balance: fetched_coin_balance} -> is_nil(fetched_coin_balance) end)
@@ -38,7 +37,11 @@ defmodule BlockScoutWeb.Notifier do
 
   def handle_event({:chain_event, :internal_transactions, internal_transactions}) do
     internal_transactions
-    |> Stream.map(&(InternalTransaction |> Repo.get(&1.id) |> Repo.preload([:from_address, :to_address])))
+    |> Stream.map(
+      &(InternalTransaction
+        |> Repo.get(&1.id)
+        |> Repo.preload([:from_address, :to_address, transaction: :block]))
+    )
     |> Enum.each(&broadcast_internal_transaction/1)
   end
 
@@ -47,6 +50,7 @@ defmodule BlockScoutWeb.Notifier do
     |> Chain.hashes_to_transactions(
       necessity_by_association: %{
         :block => :required,
+        [created_contract_address: :names] => :optional,
         [from_address: :names] => :optional,
         [to_address: :names] => :optional,
         :token_transfers => :optional
