@@ -5,6 +5,24 @@ defmodule BlockScoutWeb.Tokens.HolderView do
   alias Explorer.Chain.{Token}
 
   @doc """
+  Checks if the total supply percentage must be shown.
+
+  ## Examples
+
+    iex> BlockScoutWeb.Tokens.HolderView.show_total_supply_percentage?(nil)
+    false
+
+    iex> BlockScoutWeb.Tokens.HolderView.show_total_supply_percentage?(0)
+    false
+
+    iex> BlockScoutWeb.Tokens.HolderView.show_total_supply_percentage?(100)
+    true
+
+  """
+  def show_total_supply_percentage?(nil), do: false
+  def show_total_supply_percentage?(total_supply), do: total_supply > 0
+
+  @doc """
   Calculates the percentage of the value from the given total supply.
 
   ## Examples
