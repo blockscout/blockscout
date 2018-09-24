@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.TransactionView do
 
   alias Cldr.Number
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, InternalTransaction, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
   alias BlockScoutWeb.{AddressView, BlockView, TabHelpers}
 
   import BlockScoutWeb.Gettext
@@ -13,6 +13,12 @@ defmodule BlockScoutWeb.TransactionView do
   defguardp is_transaction_type(mod) when mod in [InternalTransaction, Transaction]
 
   defdelegate formatted_timestamp(block), to: BlockView
+
+  def block_number(%Transaction{block_number: nil}), do: gettext("Block Pending")
+  def block_number(%Transaction{block: block}), do: [view_module: BlockView, partial: "_link.html", block: block]
+
+  def block_timestamp(%Transaction{block_number: nil, inserted_at: time}), do: time
+  def block_timestamp(%Transaction{block: %Block{timestamp: time}}), do: time
 
   def confirmations(%Transaction{block: block}, named_arguments) when is_list(named_arguments) do
     case block do

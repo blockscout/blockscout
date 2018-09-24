@@ -1,4 +1,5 @@
 import $ from 'jquery'
+import _ from 'lodash'
 import URI from 'urijs'
 import humps from 'humps'
 import numeral from 'numeral'
@@ -12,13 +13,17 @@ const BATCH_THRESHOLD = 10
 
 export const initialState = {
   addressHash: null,
+  balance: null,
   batchCountAccumulator: 0,
+  batchPendingCountAccumulator: 0,
   beyondPageOne: null,
   channelDisconnected: false,
   filter: null,
   newInternalTransactions: [],
+  newPendingTransactions: [],
   newTransactions: [],
-  balance: null,
+  newTransactionHashes: [],
+  pendingTransactionHashes: [],
   transactionCount: null
 }
 
@@ -29,6 +34,7 @@ export function reducer (state = initialState, action) {
         addressHash: action.addressHash,
         beyondPageOne: action.beyondPageOne,
         filter: action.filter,
+        pendingTransactionHashes: action.pendingTransactionHashes,
         transactionCount: numeral(action.transactionCount).value()
       })
     }
@@ -59,12 +65,42 @@ export function reducer (state = initialState, action) {
         return Object.assign({}, state, {
           newInternalTransactions: [
             ...state.newInternalTransactions,
-            ...incomingInternalTransactions.map(({internalTransactionHtml}) => internalTransactionHtml)
+            ..._.map(incomingInternalTransactions, 'internalTransactionHtml')
           ]
         })
       } else {
         return Object.assign({}, state, {
           batchCountAccumulator: state.batchCountAccumulator + action.msgs.length
+        })
+      }
+    }
+    case 'RECEIVED_NEW_PENDING_TRANSACTION_BATCH': {
+      if (state.channelDisconnected || state.beyondPageOne) return state
+
+      const incomingPendingTransactions = humps.camelizeKeys(action.msgs)
+        .filter(({toAddressHash, fromAddressHash}) => (
+          !state.filter ||
+          (state.filter === 'to' && toAddressHash === state.addressHash) ||
+          (state.filter === 'from' && fromAddressHash === state.addressHash)
+        ))
+      if (!state.batchPendingCountAccumulator && action.msgs.length < BATCH_THRESHOLD) {
+        return Object.assign({}, state, {
+          newPendingTransactions: [
+            ...state.newPendingTransactions,
+            ..._.map(incomingPendingTransactions, 'transactionHtml')
+          ],
+          pendingTransactionHashes: [
+            ...state.pendingTransactionHashes,
+            ..._.map(incomingPendingTransactions, 'transactionHash')
+          ]
+        })
+      } else {
+        return Object.assign({}, state, {
+          batchPendingCountAccumulator: state.batchPendingCountAccumulator + action.msgs.length,
+          pendingTransactionHashes: [
+            ...state.pendingTransactionHashes,
+            ..._.map(incomingPendingTransactions, 'transactionHash')
+          ]
         })
       }
     }
@@ -78,17 +114,26 @@ export function reducer (state = initialState, action) {
           (state.filter === 'from' && fromAddressHash === state.addressHash)
         ))
 
+      const updatePendingTransactionHashes =
+        _.difference(state.pendingTransactionHashes, _.map(incomingTransactions, 'transactionHash'))
+
       if (!state.batchCountAccumulator && action.msgs.length < BATCH_THRESHOLD) {
         return Object.assign({}, state, {
+          batchPendingCountAccumulator: state.batchPendingCountAccumulator - action.msgs.length,
           newTransactions: [
             ...state.newTransactions,
-            ...incomingTransactions.map(({transactionHtml}) => transactionHtml)
+            ..._.map(incomingTransactions, 'transactionHtml')
           ],
+          newTransactionHashes: _.map(incomingTransactions, 'transactionHash'),
+          pendingTransactionHashes: updatePendingTransactionHashes,
           transactionCount: state.transactionCount + action.msgs.length
         })
       } else {
         return Object.assign({}, state, {
           batchCountAccumulator: state.batchCountAccumulator + action.msgs.length,
+          batchPendingCountAccumulator: state.batchPendingCountAccumulator - action.msgs.length,
+          newTransactionHashes: _.map(incomingTransactions, 'transactionHash'),
+          pendingTransactionHashes: updatePendingTransactionHashes,
           transactionCount: state.transactionCount + action.msgs.length
         })
       }
@@ -116,8 +161,12 @@ if ($addressDetailsPage.length) {
       const state = store.dispatch({
         type: 'PAGE_LOAD',
         addressHash,
-        filter,
         beyondPageOne: !!blockNumber,
+        filter,
+        pendingTransactionHashes:
+          $('[data-selector="pending-transactions-list"] [data-transaction-hash]').map((index, el) =>
+            el.attributes['data-transaction-hash'].nodeValue
+          ).toArray(),
         transactionCount: $('[data-selector="transaction-count"]').text()
       })
       addressChannel.join()
@@ -137,16 +186,25 @@ if ($addressDetailsPage.length) {
         addressChannel.on('internal_transaction', batchChannel((msgs) =>
           store.dispatch({ type: 'RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH', msgs })
         ))
+        addressChannel.on('pending_transaction', batchChannel((msgs) =>
+          store.dispatch({ type: 'RECEIVED_NEW_PENDING_TRANSACTION_BATCH', msgs })
+        ))
+        addressChannel.on('transaction', batchChannel((msgs) =>
+          store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION_BATCH', msgs })
+        ))
       }
     },
     render (state, oldState) {
       const $balance = $('[data-selector="balance-card"]')
       const $channelBatching = $('[data-selector="channel-batching-message"]')
       const $channelBatchingCount = $('[data-selector="channel-batching-count"]')
+      const $channelPendingBatching = $('[data-selector="channel-pending-batching-message"]')
+      const $channelPendingBatchingCount = $('[data-selector="channel-pending-batching-count"]')
       const $channelDisconnected = $('[data-selector="channel-disconnected-message"]')
       const $emptyInternalTransactionsList = $('[data-selector="empty-internal-transactions-list"]')
       const $emptyTransactionsList = $('[data-selector="empty-transactions-list"]')
       const $internalTransactionsList = $('[data-selector="internal-transactions-list"]')
+      const $pendingTransactionsList = $('[data-selector="pending-transactions-list"]')
       const $transactionCount = $('[data-selector="transaction-count"]')
       const $transactionsList = $('[data-selector="transactions-list"]')
       const $validationsList = $('[data-selector="validations-list"]')
@@ -166,8 +224,26 @@ if ($addressDetailsPage.length) {
       } else {
         $channelBatching.hide()
       }
+      if (state.batchPendingCountAccumulator > 0) {
+        $channelPendingBatching.show()
+        $channelPendingBatchingCount[0].innerHTML = numeral(state.batchPendingCountAccumulator).format()
+      } else {
+        $channelPendingBatching.hide()
+      }
+      if (oldState.pendingTransactionHashes !== state.pendingTransactionHashes && state.newTransactionHashes.length > 0) {
+        let $transaction
+        _.each(state.newTransactionHashes, (hash) => {
+          $transaction = $(`[data-selector="pending-transactions-list"] [data-transaction-hash="${hash}"]`)
+          $transaction.addClass('shrink-out')
+          setTimeout(() => $transaction.slideUp({ complete: () => $transaction.remove() }), 400)
+        })
+      }
       if (oldState.newInternalTransactions !== state.newInternalTransactions && $internalTransactionsList.length) {
         prependWithClingBottom($internalTransactionsList, state.newInternalTransactions.slice(oldState.newInternalTransactions.length).reverse().join(''))
+        updateAllAges()
+      }
+      if (oldState.newPendingTransactions !== state.newPendingTransactions && $pendingTransactionsList.length) {
+        prependWithClingBottom($pendingTransactionsList, state.newPendingTransactions.slice(oldState.newPendingTransactions.length).reverse().join(''))
         updateAllAges()
       }
       if (oldState.newTransactions !== state.newTransactions && $transactionsList.length) {

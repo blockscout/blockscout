@@ -94,25 +94,27 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   defp broadcast_transaction(%Transaction{block_number: nil} = pending) do
-    Endpoint.broadcast("transactions:new_pending_transaction", "new_pending_transaction", %{
-      transaction: pending
-    })
+    broadcast_transaction(pending, "transactions:new_pending_transaction", "pending_transaction")
   end
 
   defp broadcast_transaction(transaction) do
-    Endpoint.broadcast("transactions:new_transaction", "new_transaction", %{
+    broadcast_transaction(transaction, "transactions:new_transaction", "transaction")
+  end
+
+  defp broadcast_transaction(transaction, transaction_channel, event) do
+    Endpoint.broadcast("transactions:#{transaction.hash}", "collated", %{})
+
+    Endpoint.broadcast(transaction_channel, event, %{
       transaction: transaction
     })
 
-    Endpoint.broadcast("transactions:#{transaction.hash}", "collated", %{})
-
-    Endpoint.broadcast("addresses:#{transaction.from_address_hash}", "transaction", %{
+    Endpoint.broadcast("addresses:#{transaction.from_address_hash}", event, %{
       address: transaction.from_address,
       transaction: transaction
     })
 
     if transaction.to_address_hash != transaction.from_address_hash do
-      Endpoint.broadcast("addresses:#{transaction.to_address_hash}", "transaction", %{
+      Endpoint.broadcast("addresses:#{transaction.to_address_hash}", event, %{
         address: transaction.to_address,
         transaction: transaction
       })

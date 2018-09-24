@@ -28,7 +28,7 @@ defmodule BlockScoutWeb.TransactionChannel do
     rendered_transaction =
       View.render_to_string(
         TransactionView,
-        "_pending_tile.html",
+        "_tile.html",
         transaction: transaction
       )
 

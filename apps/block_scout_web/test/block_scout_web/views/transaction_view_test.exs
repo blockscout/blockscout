@@ -3,7 +3,49 @@ defmodule BlockScoutWeb.TransactionViewTest do
 
   alias Explorer.Chain.Wei
   alias Explorer.Repo
-  alias BlockScoutWeb.TransactionView
+  alias BlockScoutWeb.{BlockView, TransactionView}
+
+  describe "block_number/1" do
+    test "returns pending text for pending transaction" do
+      pending = insert(:transaction)
+
+      assert "Block Pending" == TransactionView.block_number(pending)
+    end
+
+    test "returns block number for collated transaction" do
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      assert [
+               view_module: BlockView,
+               partial: "_link.html",
+               block: _block
+             ] = TransactionView.block_number(transaction)
+    end
+  end
+
+  describe "block_timestamp/1" do
+    test "returns timestamp of transaction for pending transaction" do
+      pending = insert(:transaction)
+
+      assert pending.inserted_at == TransactionView.block_timestamp(pending)
+    end
+
+    test "returns timestamp for block for collacted transaction" do
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      assert block.timestamp == TransactionView.block_timestamp(transaction)
+    end
+  end
 
   describe "confirmations/2" do
     test "returns 0 if pending transaction" do

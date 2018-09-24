@@ -55,8 +55,15 @@
             ) %>
           </div>
         </div>
-        <%= if Enum.count(@transactions) > 0 do %>
+        <%= if Enum.count(@transactions) > 0 or Enum.count(@pending_transactions) > 0 do %>
           <h2 class="card-title"><%= gettext "Transactions" %></h2>
+        <% end %>
+        <div class="mb-3" data-selector="pending-transactions-list">
+          <%= for pending_transaction <- @pending_transactions do %>
+            <%= render(BlockScoutWeb.TransactionView, "_tile.html", current_address: @address, transaction: pending_transaction) %>
+          <% end %>
+        </div>
+        <%= if Enum.count(@transactions) > 0 do %>
           <span data-selector="transactions-list">
             <%= for transaction <- @transactions do %>
               <%= render(BlockScoutWeb.TransactionView, "_tile.html", current_address: @address, transaction: transaction) %>

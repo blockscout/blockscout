@@ -45,18 +45,20 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       assert Enum.member?(actual_transaction_hashes, to_transaction.hash)
     end
 
-    test "does not return related transactions without a block", %{conn: conn} do
+    test "returns pending related transactions", %{conn: conn} do
       address = insert(:address)
 
-      insert(:transaction, from_address: address, to_address: address)
+      pending = insert(:transaction, from_address: address, to_address: address)
 
       conn = get(conn, address_transaction_path(BlockScoutWeb.Endpoint, :index, address))
 
+      actual_pending_transaction_hashes =
+        conn.assigns.pending_transactions
+        |> Enum.map(& &1.hash)
+
       assert html_response(conn, 200)
       assert conn.status == 200
-      assert Enum.empty?(conn.assigns.transactions)
-      assert conn.status == 200
-      assert Enum.empty?(conn.assigns.transactions)
+      assert Enum.member?(actual_pending_transaction_hashes, pending.hash)
     end
 
     test "includes USD exchange rate value for address in assigns", %{conn: conn} do

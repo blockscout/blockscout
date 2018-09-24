@@ -91,7 +91,7 @@ export function reducer (state = initialState, action) {
         return Object.assign({}, state, {
           newTransactions: [
             ...state.newTransactions,
-            ...action.msgs.map(({transactionHtml}) => transactionHtml)
+            ..._.map(action.msgs, 'transactionHtml')
           ],
           transactionCount
         })
@@ -147,7 +147,7 @@ if ($transactionPendingListPage.length) {
       const transactionsChannel = socket.channel(`transactions:new_transaction`)
       transactionsChannel.join()
       transactionsChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
-      transactionsChannel.on('new_transaction', (msg) =>
+      transactionsChannel.on('transaction', (msg) =>
         store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION', msg: humps.camelizeKeys(msg) })
       )
       const pendingTransactionsChannel = socket.channel(`transactions:new_pending_transaction`)
