@@ -60,6 +60,17 @@
   }
 }
 
+@keyframes shrink-out {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+}
+
 .fade-in {
   animation: fade-in 0.6s ease-out forwards;
 }
@@ -83,4 +94,8 @@
     max-height: 202px;
     animation: fade-up--mobile 0.6s cubic-bezier(0.455, 0.03, 0.515, 0.955);
   }
+}
+
+.shrink-out {
+  animation: shrink-out 0.45s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
 }
