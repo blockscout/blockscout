@@ -98,6 +98,8 @@ defmodule BlockScoutWeb.Notifier do
       transaction: transaction
     })
 
+    Endpoint.broadcast("transactions:#{transaction.hash}", "collated", %{})
+
     Endpoint.broadcast("addresses:#{transaction.from_address_hash}", "transaction", %{
       address: transaction.from_address,
       transaction: transaction

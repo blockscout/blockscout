@@ -75,6 +75,11 @@ if ($transactionDetailsPage.length) {
       })
       blocksChannel.join()
       blocksChannel.on('new_block', (msg) => store.dispatch({ type: 'RECEIVED_NEW_BLOCK', msg: humps.camelizeKeys(msg) }))
+
+      const transactionHash = $transactionDetailsPage[0].dataset.pageTransactionHash
+      const transactionChannel = socket.channel(`transactions:${transactionHash}`, {})
+      transactionChannel.join()
+      transactionChannel.on('collated', () => window.location.reload())
     },
     render (state, oldState) {
       const $blockConfirmations = $('[data-selector="block-confirmations"]')
