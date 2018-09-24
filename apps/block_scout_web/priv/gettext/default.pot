@@ -558,13 +558,11 @@ msgstr ""
 msgid "Last Updated In Block"
 msgstr ""
 
-#, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:51
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:49
 msgid "WEI"
 msgstr ""
 
-#, elixir-format
-#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:52
+#: lib/block_scout_web/templates/smart_contract/_functions.html.eex:50
 msgid "ETH"
 msgstr ""
 
