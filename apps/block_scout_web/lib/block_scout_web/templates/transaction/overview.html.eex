@@ -12,8 +12,19 @@
               </button>
             </span>
           </div>
-          <h1 class="card-title"><%= gettext "Transaction Details" %></h1>
-          <h3 data-test="transaction_detail_hash"><%= @transaction %></h3>
+          <h1 class="card-title"><%= gettext "Transaction Details" %> </h1>
+
+          <%= if !block do %>
+            <div class="tile tile-muted d-flex justify-content-center align-items-center mb-4">
+              <div class="loading-spinner">
+                <span class="loading-spinner-block-1"></span>
+                <span class="loading-spinner-block-2"></span>
+              </div>
+              <%= gettext("This transaction is pending confirmation.") %>
+            </div>
+          <% end %>
+
+          <h3 data-test="transaction_detail_hash"><%= @transaction %> </h3>
           <span class="d-block mb-2 text-muted">
             <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:from, nil) |> BlockScoutWeb.AddressView.render_partial() %>
             <span class="text-muted">  &rarr; </span>
@@ -86,7 +97,9 @@
         <div class="card-body">
           <h2 class="card-title text-white"><%= gettext "Ether" %> <%= gettext "Value" %></h2>
           <div class="text-right">
-            <h3 class="text-white"> <%= value(@transaction) %></h3>
+            <h3 class="text-white">
+              <%= value(@transaction) %>
+            </h3>
             <span class="text-light" data-wei-value=<%= @transaction.value.value %> data-usd-exchange-rate=<%= @exchange_rate.usd_value %>></span>
           </div>
         </div>
