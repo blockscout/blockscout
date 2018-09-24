@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Tokens.TokenView do
+defmodule BlockScoutWeb.Tokens.TransferView do
   use BlockScoutWeb, :view
 
   alias Explorer.Chain.{Address, SmartContract, Token}

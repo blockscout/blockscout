@@ -1,7 +1,7 @@
-defmodule BlockScoutWeb.Tokens.TokenViewTest do
+defmodule BlockScoutWeb.Tokens.TransferViewTest do
   use BlockScoutWeb.ConnCase, async: true
 
-  alias BlockScoutWeb.Tokens.TokenView
+  alias BlockScoutWeb.Tokens.TransferView
 
   describe "smart_contract_with_read_only_functions?/1" do
     test "returns true when abi has read only functions" do
@@ -25,7 +25,7 @@ defmodule BlockScoutWeb.Tokens.TokenViewTest do
 
       token = insert(:token, contract_address: address)
 
-      assert TokenView.smart_contract_with_read_only_functions?(token)
+      assert TransferView.smart_contract_with_read_only_functions?(token)
     end
 
     test "returns false when there is no read only functions" do
@@ -49,7 +49,7 @@ defmodule BlockScoutWeb.Tokens.TokenViewTest do
 
       token = insert(:token, contract_address: address)
 
-      refute TokenView.smart_contract_with_read_only_functions?(token)
+      refute TransferView.smart_contract_with_read_only_functions?(token)
     end
 
     test "returns false when smart contract is not verified" do
@@ -57,7 +57,7 @@ defmodule BlockScoutWeb.Tokens.TokenViewTest do
 
       token = insert(:token, contract_address: address)
 
-      refute TokenView.smart_contract_with_read_only_functions?(token)
+      refute TransferView.smart_contract_with_read_only_functions?(token)
     end
   end
 end

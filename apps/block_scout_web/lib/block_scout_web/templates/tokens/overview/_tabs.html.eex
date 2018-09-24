@@ -8,7 +8,7 @@
         ) %>
   </li>
 
-  <%= if TokenView.smart_contract_with_read_only_functions?(@token) do %>
+  <%= if TransferView.smart_contract_with_read_only_functions?(@token) do %>
     <li class="nav-item">
       <%= link(
           gettext("Read Contract"),
@@ -45,7 +45,7 @@
             class: "dropdown-item #{tab_status("token_transfers", @conn.request_path)}",
             to: token_path(@conn, :show, @token.contract_address_hash)
           ) %>
-      <%= if TokenView.smart_contract_with_read_only_functions?(@token) do %>
+      <%= if TransferView.smart_contract_with_read_only_functions?(@token) do %>
           <%= link(
               gettext("Read Contract"),
               to: "#",

@@ -116,6 +116,13 @@ defmodule BlockScoutWeb.Router do
 
     resources "/tokens", Tokens.TokenController, only: [:show], as: :token do
       resources(
+        "/token_transfers",
+        Tokens.TransferController,
+        only: [:index],
+        as: :transfer
+      )
+
+      resources(
         "/read_contract",
         Tokens.ReadContractController,
         only: [:index],
