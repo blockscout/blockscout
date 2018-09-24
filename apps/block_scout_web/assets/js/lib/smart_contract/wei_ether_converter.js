@@ -16,6 +16,7 @@ const weiToEtherConverter = (element, event) => {
     unitVal = unitVal.dividedBy(weiUnit)
     $conversionUnit.html(unitVal.toFixed() > 0 ? unitVal.toFixed() : numeral(unitVal).format('0[.000000000000000000]'))
   } else {
+    $conversionTextWei.removeAttr('style')
     $conversionTextWei.addClass('d-inline-block')
     $conversionTextEth.addClass('d-none')
     unitVal = unitVal.multipliedBy(weiUnit)
