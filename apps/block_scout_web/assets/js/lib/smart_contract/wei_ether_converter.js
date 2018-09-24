@@ -11,17 +11,13 @@ const weiToEtherConverter = (element, event) => {
   let unitVal = new BigNumber(numeral($conversionUnit.html()).value())
 
   if (event.target.checked) {
-    $conversionTextWei.addClass('d-none')
-    $conversionTextEth.addClass('d-inline-block')
-    $conversionTextWei.removeClass('d-inline-block')
-    $conversionTextEth.removeClass('d-none')
+    $conversionTextWei.removeClass('d-inline-block').addClass('d-none')
+    $conversionTextEth.removeClass('d-none').addClass('d-inline-block')
     unitVal = unitVal.dividedBy(weiUnit)
     $conversionUnit.html(unitVal.toFixed() > 0 ? String(unitVal.toFixed()) : numeral(unitVal).format('0[.000000000000000000]'))
   } else {
-    $conversionTextWei.addClass('d-inline-block')
-    $conversionTextEth.addClass('d-none')
-    $conversionTextWei.removeClass('d-none')
-    $conversionTextEth.removeClass('d-inline-block')
+    $conversionTextWei.removeClass('d-none').addClass('d-inline-block')
+    $conversionTextEth.removeClass('d-inline-block').addClass('d-none')
     unitVal = unitVal.multipliedBy(weiUnit)
     $conversionUnit.html(String(unitVal.toFixed()))
   }
