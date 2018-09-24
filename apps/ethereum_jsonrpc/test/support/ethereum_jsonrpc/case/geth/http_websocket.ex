@@ -6,7 +6,8 @@ defmodule EthereumJSONRPC.Case.Geth.HTTPWebSocket do
 
   def setup do
     EthereumJSONRPC.WebSocket.Case.Geth.setup()
-    |> Map.put(:json_rpc_named_arguments,
+    |> Map.put(
+      :json_rpc_named_arguments,
       transport: EthereumJSONRPC.HTTP,
       transport_options: [
         http: EthereumJSONRPC.HTTP.HTTPoison,

@@ -4,7 +4,8 @@
     "_details.html",
     token: @token,
     total_token_transfers: @total_token_transfers,
-    total_address_in_token_transfers: @total_address_in_token_transfers
+    total_token_holders: @total_token_holders,
+    conn: @conn
   ) %>
 
   <section>
@@ -24,10 +25,19 @@
             <li class="nav-item">
               <%= link(
                   gettext("Read Contract"),
-                  to: token_read_contract_path(@conn, :index, @conn.params["id"]),
+                  to: token_read_contract_path(@conn, :index, @token.contract_address_hash),
                   class: "nav-link")%>
             </li>
           <% end %>
+
+          <li class="nav-item"i>
+            <%= link(
+                  gettext("Token Holders"),
+                  class: "nav-link",
+                  "data-test": "token_holders_tab",
+                  to: token_holder_path(@conn, :index, @token.contract_address_hash)
+                ) %>
+          </li>
         </ul>
 
         <!-- MOBILE DROPDOWN NAV -->
@@ -37,15 +47,20 @@
             <div class="dropdown-menu">
               <%= link(
                     gettext("Token Transfers"),
-                    class: "nav-link active",
+                    class: "dropdown-item",
                     to: token_path(@conn, :show, @token.contract_address_hash)
                   ) %>
               <%= if smart_contract_with_read_only_functions?(@token) do %>
                   <%= link(
                       gettext("Read Contract"),
                       to: "#",
-                      class: "nav-link")%>
+                      class: "dropdown-item")%>
               <% end %>
+              <%= link(
+                    gettext("Token Holders"),
+                    class: "dropdown-item",
+                    to: token_holder_path(@conn, :index, @token.contract_address_hash)
+                  ) %>
             </div>
           </li>
         </ul>

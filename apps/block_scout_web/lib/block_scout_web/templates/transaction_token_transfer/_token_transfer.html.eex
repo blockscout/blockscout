@@ -1,4 +1,4 @@
-<div class="tile tile-type-token fade-in">
+<div class="tile tile-type-token-transfer fade-in">
   <div class="row justify-content-end">
     <div class="col-12 col-md-4 col-lg-2 d-flex align-items-center justify-content-start justify-content-lg-center tile-label">
       <%=  gettext("Token Transfer") %>
@@ -7,9 +7,9 @@
     <div class="col-12 col-md-8 col-lg-10 d-flex flex-column text-nowrap">
       <%= render BlockScoutWeb.TransactionView, "_link.html", transaction_hash: @token_transfer.transaction_hash %>
       <span class="text-nowrap">
-        <%= render BlockScoutWeb.AddressView, "_link.html", address_hash: @token_transfer.from_address_hash, contract: BlockScoutWeb.AddressView.contract?(@token_transfer.from_address) %>
+        <%= render BlockScoutWeb.AddressView, "_link.html", address: @token_transfer.from_address, contract: BlockScoutWeb.AddressView.contract?(@token_transfer.from_address) %>
         &rarr;
-        <%= render BlockScoutWeb.AddressView, "_link.html", address_hash: @token_transfer.to_address_hash, contract: BlockScoutWeb.AddressView.contract?(@token_transfer.to_address) %>
+        <%= render BlockScoutWeb.AddressView, "_link.html", address: @token_transfer.to_address, contract: BlockScoutWeb.AddressView.contract?(@token_transfer.to_address) %>
       </span>
 
       <span class="tile-title text-truncate">

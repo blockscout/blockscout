@@ -9,7 +9,14 @@
           <%= link(
                 gettext("Transactions"),
                 class: "nav-link",
-                to: address_transaction_path(@conn, :index, @conn.params["address_id"])
+                to: address_transaction_path(@conn, :index, @address.hash)
+              ) %>
+        </li>
+        <li class="nav-item">
+          <%= link(
+                gettext("Tokens"),
+                class: "nav-link",
+                to: address_token_path(@conn, :index, @address.hash)
               ) %>
         </li>
         <li class="nav-item">
@@ -17,12 +24,12 @@
                 gettext("Internal Transactions"),
                 class: "nav-link",
                 "data-test": "internal_transactions_tab_link",
-                to: address_internal_transaction_path(@conn, :index, @conn.params["address_id"])
+                to: address_internal_transaction_path(@conn, :index, @address.hash)
               ) %>
         </li>
         <li class="nav-item">
           <%= link(
-              to: address_contract_path(@conn, :index, @conn.params["address_id"]),
+              to: address_contract_path(@conn, :index, @address.hash),
               class: "nav-link active") do %>
             <%= gettext("Code") %>
 
@@ -35,7 +42,7 @@
           <li class="nav-item">
             <%= link(
                 gettext("Read Contract"),
-                to: address_read_contract_path(@conn, :index, @conn.params["address_id"]),
+                to: address_read_contract_path(@conn, :index, @address.hash),
                 class: "nav-link")%>
           </li>
         <% end %>
@@ -46,7 +53,7 @@
       <%= if !smart_contract_verified?(@address) do %>
         <%= link(
               gettext("Verify and Publish"),
-              to: address_verify_contract_path(@conn, :new, @conn.params["address_id"]),
+              to: address_verify_contract_path(@conn, :new, @address.hash),
               class: "button button-primary button-sm float-right ml-3",
               "data-test": "verify_and_publish"
             ) %>
@@ -55,25 +62,25 @@
       <%= if smart_contract_verified?(@address) do %>
         <div class="mb-4">
           <dl class="row">
-            <dt class="col-sm-4 col-md-2 text-muted">Contract name:</dt>
+            <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "Contract name:" %></dt>
             <dd class="col-sm-8 col-md-10"><%= @address.smart_contract.name %></dd>
           </dl>
           <dl class="row">
-            <dt class="col-sm-4 col-md-2 text-muted">Optimization enabled</dt>
+            <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "Optimization enabled" %></dt>
             <dd class="col-sm-8 col-md-10"><%= format_optimization(@address.smart_contract.optimization) %></dd>
           </dl>
           <dl class="row">
-            <dt class="col-sm-4 col-md-2 text-muted">Compiler version</dt>
+            <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "Compiler version" %></dt>
             <dd class="col-sm-8 col-md-10"><%= @address.smart_contract.compiler_version %></dd>
           </dl>
         </div>
         <hr/>
         <section>
           <div class="d-flex justify-content-between align-items-baseline">
-            <h3>Contract source code</h3>
+            <h3><%= gettext "Contract source code" %></h3>
             <span class="icon-links" data-clipboard-text="<%= @address.smart_contract.contract_source_code %>">
               <button type="button" class="button button-secondary button-sm" id="button" data-toggle="tooltip" data-placement="top">
-                Copy Contract Source Code
+                <%= gettext "Copy Contract Source Code" %>
               </button>
             </span>
           </div>
@@ -88,10 +95,10 @@
 
         <section>
           <div class="d-flex justify-content-between align-items-baseline">
-            <h3>Contract ABI</h3>
+            <h3><%= gettext "Contract ABI" %></h3>
             <span class="icon-links" data-clipboard-text="<%= format_smart_contract_abi(@address.smart_contract.abi) %>">
               <button type="button" class="button button-secondary button-sm" id="button">
-                Copy Contract ABI
+                <%= gettext "Copy Contract ABI" %>
               </button>
             </span>
           </div>
@@ -108,10 +115,10 @@
       <% end %>
       <section>
         <div class="d-flex justify-content-between align-items-baseline">
-          <h3>Contract creation code</h3>
+          <h3><%= gettext "Contract creation code" %></h3>
           <span class="icon-links" data-clipboard-text="<%= @address.contract_code %>">
             <button type="button" class="button button-secondary button-sm" id="button">
-              Copy Contract Creation Code
+              <%= gettext "Copy Contract Creation Code" %>
             </button>
           </span>
         </div>

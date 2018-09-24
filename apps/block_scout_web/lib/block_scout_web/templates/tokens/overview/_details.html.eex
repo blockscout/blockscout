@@ -5,12 +5,12 @@
         <div class="card-body">
           <div class="icon-links float-right">
             <span data-clipboard-text="<%= @token.contract_address_hash %>">
-              <button type="button" class="icon-link" id="button" data-toggle="tooltip" data-placement="top" title="<%= gettext("Copy Address") %>" aria-label="Copy Address">
+              <button type="button" class="icon-link" id="button" data-toggle="tooltip" data-placement="top" title="<%= gettext("Copy Address") %>" aria-label="<%= gettext("Copy Address") %>">
                 <i class="fas fa-clone"></i>
               </button>
             </span>
             <span data-toggle="modal" data-target="#qrModal">
-              <button type="button" class="icon-link"  data-toggle="tooltip" data-placement="top" title="<%= gettext("QR Code") %>" aria-label="Show QR Code">
+              <button type="button" class="icon-link"  data-toggle="tooltip" data-placement="top" title="<%= gettext("QR Code") %>" aria-label="<%= gettext("QR Code") %>">
                 <i class="fas fa-qrcode"></i>
               </button>
             </span>
@@ -23,17 +23,25 @@
             <% end %>
           </h1>
 
-
-
           <h3><%= to_string(@token.contract_address_hash) %></h3>
 
-          <div class="d-flex flex-row justify-content-start text-muted">
-            <span class="mr-4"> <%= @token.type %> </span>
-            <span class="mr-4"><%= @total_address_in_token_transfers %>  <%= gettext "addresses" %></span>
-            <span class="mr-4"><%= @total_token_transfers %> <%= gettext "Transfers" %></span>
-            <%= if decimals?(@token) do %>
-              <span class="mr-4"><%= @token.decimals %> <%= gettext "decimals" %></span>
-            <% end %>
+          <div class="d-flex flex-column flex-md-row justify-content-start text-muted">
+            <span class="mr-4 mb-3 mb-md-0">
+              <%= link to:
+                  address_path(@conn, :show, @token.contract_address_hash),
+                  "data-test": "token_contract_address"
+              do %>
+                <%=  gettext "View Contract" %>
+              <% end %>
+            </span>
+            <div class="d-flex flex-row justify-content-start text-muted">
+              <span class="mr-4"> <%= @token.type %> </span>
+              <span class="mr-4"><%= @total_token_holders %>  <%= gettext "addresses" %></span>
+              <span class="mr-4"><%= @total_token_transfers %> <%= gettext "Transfers" %></span>
+              <%= if decimals?(@token) do %>
+                <span class="mr-4"><%= @token.decimals %> <%= gettext "decimals" %></span>
+              <% end %>
+            </div>
           </div>
         </div>
       </div>
@@ -71,7 +79,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h2 class="modal-title" id="qrModalLabel"><%= gettext "QR Code" %></h2>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+        <button type="button" class="close" data-dismiss="modal" aria-label="<%= gettext("Close") %>">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>

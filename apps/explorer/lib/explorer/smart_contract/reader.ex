@@ -107,16 +107,20 @@ defmodule Explorer.SmartContract.Reader do
     json_rpc_named_arguments =
       Keyword.get(opts, :json_rpc_named_arguments) || Application.get_env(:explorer, :json_rpc_named_arguments)
 
-    blockchain_result =
-      abi
-      |> Encoder.encode_abi(functions)
-      |> Enum.map(&setup_call_payload(&1, contract_address))
-      |> EthereumJSONRPC.execute_contract_functions(json_rpc_named_arguments, opts)
-
-    Encoder.decode_abi_results(blockchain_result, abi, functions)
+    abi
+    |> Encoder.encode_abi(functions)
+    |> Enum.map(&setup_call_payload(&1, contract_address))
+    |> EthereumJSONRPC.execute_contract_functions(json_rpc_named_arguments, opts)
+    |> decode_results(abi, functions)
   rescue
     error ->
       format_error(functions, error.message)
+  end
+
+  defp decode_results({:ok, results}, abi, functions), do: Encoder.decode_abi_results(results, abi, functions)
+
+  defp decode_results({:error, {:bad_gateway, _request_url}}, _abi, functions) do
+    format_error(functions, "Bad Gateway")
   end
 
   defp format_error(functions, message) do
@@ -260,21 +264,25 @@ defmodule Explorer.SmartContract.Reader do
   def link_outputs_and_values(blockchain_values, outputs, function_name) do
     {_, value} = Map.get(blockchain_values, function_name, {:ok, [""]})
 
-    for output <- outputs do
-      new_value(output, List.wrap(value))
+    for {output, index} <- Enum.with_index(outputs) do
+      new_value(output, List.wrap(value), index)
     end
   end
 
-  defp new_value(%{"type" => "address"} = output, [value]) do
+  defp new_value(%{"type" => "address"} = output, [value], _index) do
     Map.put_new(output, "value", bytes_to_string(value))
   end
 
-  defp new_value(%{"type" => "bytes" <> _number} = output, [value]) do
+  defp new_value(%{"type" => "bytes" <> _number} = output, [value], _index) do
     Map.put_new(output, "value", bytes_to_string(value))
   end
 
-  defp new_value(output, [value]) do
+  defp new_value(output, [value], _index) do
     Map.put_new(output, "value", value)
+  end
+
+  defp new_value(output, values, index) do
+    Map.put_new(output, "value", Enum.at(values, index))
   end
 
   @spec bytes_to_string(<<_::_*8>>) :: String.t()

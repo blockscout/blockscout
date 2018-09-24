@@ -29,7 +29,9 @@ defmodule BlockScoutWeb.Router do
       "account" => RPC.AddressController,
       "logs" => RPC.LogsController,
       "token" => RPC.TokenController,
-      "stats" => RPC.StatsController
+      "stats" => RPC.StatsController,
+      "contract" => RPC.ContractController,
+      "transaction" => RPC.TransactionController
     })
   end
 
@@ -91,6 +93,13 @@ defmodule BlockScoutWeb.Router do
       )
 
       resources(
+        "/tokens",
+        AddressTokenController,
+        only: [:index],
+        as: :token
+      )
+
+      resources(
         "/token_balances",
         AddressTokenBalanceController,
         only: [:index],
@@ -104,6 +113,13 @@ defmodule BlockScoutWeb.Router do
         Tokens.ReadContractController,
         only: [:index],
         as: :read_contract
+      )
+
+      resources(
+        "/token_holders",
+        Tokens.HolderController,
+        only: [:index],
+        as: :holder
       )
     end
 

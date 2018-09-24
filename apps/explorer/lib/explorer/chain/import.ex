@@ -195,6 +195,9 @@ defmodule Explorer.Chain.Import do
       * `:timeout` - the timeout for inserting all transactions found in the params lists across all
         types. Defaults to `#{@insert_transactions_timeout}` milliseconds.
       * `:with` - the changeset function on `Explorer.Chain.Transaction` to use validate `:params`.
+    * `:token_balances`
+      * `:params` - `list` of params for `Explorer.Chain.TokenBalance.changeset/2`
+    * `:timeout` - the timeout for `Repo.transaction`. Defaults to `#{@transaction_timeout}` milliseconds.
   """
   @spec all(all_options()) :: all_result()
   def all(options) when is_map(options) do

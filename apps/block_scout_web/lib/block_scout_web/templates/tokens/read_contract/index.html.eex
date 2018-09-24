@@ -4,7 +4,8 @@
     "_details.html",
     token: @token,
     total_token_transfers: @total_token_transfers,
-    total_address_in_token_transfers: @total_address_in_token_transfers
+    total_token_holders: @total_token_holders,
+    conn: @conn
   ) %>
 
   <section>
@@ -26,6 +27,15 @@
                 to: token_read_contract_path(@conn, :index, @conn.params["token_id"]),
                 class: "nav-link active")%>
           </li>
+
+          <li class="nav-item">
+            <%= link(
+                  gettext("Token Holders"),
+                  class: "nav-link",
+                  "data-test": "token_holders_tab",
+                  to: token_holder_path(@conn, :index, @token.contract_address_hash)
+                ) %>
+          </li>
         </ul>
 
         <!-- MOBILE DROPDOWN NAV -->
@@ -42,6 +52,11 @@
                   gettext("Read Contract"),
                   to: "#",
                   class: "nav-link")%>
+              <%= link(
+                  gettext("Token Holders"),
+                  class: "nav-link",
+                  to: token_holder_path(@conn, :index, @token.contract_address_hash)
+                ) %>
             </div>
           </li>
         </ul>

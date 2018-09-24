@@ -1,4 +1,4 @@
-<div class="tile tile-type-token fade-in mb-10">
+<div class="tile tile-type-token-transfer fade-in">
   <div class="row">
     <div class="pl-5 col-md-2 d-flex flex-column align-items-left justify-content-start justify-content-lg-center">
       <span class="tile-label"><%= gettext "Token Transfer" %></span>
@@ -11,14 +11,14 @@
       <span>
         <%= render BlockScoutWeb.AddressView,
           "_link.html",
-          address_hash: to_string(@transfer.from_address_hash),
+          address: @transfer.from_address,
           contract: BlockScoutWeb.AddressView.contract?(@transfer.from_address) %>
 
         &rarr;
 
         <%= render BlockScoutWeb.AddressView,
           "_link.html",
-          address_hash: to_string(@transfer.to_address_hash),
+          address: @transfer.to_address,
           contract: BlockScoutWeb.AddressView.contract?(@transfer.to_address) %>
       </span>
 

@@ -507,28 +507,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "count_addresses_in_token_transfers_from_token_hash/1" do
-    test "without token transfers" do
-      %Token{contract_address_hash: contract_address_hash} = insert(:token)
-
-      assert Chain.count_addresses_in_token_transfers_from_token_hash(contract_address_hash) == 0
-    end
-
-    test "with token transfers" do
-      address = insert(:address)
-
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      %TokenTransfer{token_contract_address_hash: token_contract_address_hash} =
-        insert(:token_transfer, to_address: address, transaction: transaction)
-
-      assert Chain.count_addresses_in_token_transfers_from_token_hash(token_contract_address_hash) == 2
-    end
-  end
-
   describe "gas_price/2" do
     test ":wei unit" do
       assert Chain.gas_price(%Transaction{gas_price: %Wei{value: Decimal.new(1)}}, :wei) == Decimal.new(1)
@@ -1053,9 +1031,9 @@ defmodule Explorer.ChainTest do
                Chain.address_to_internal_transactions(
                  address,
                  necessity_by_association: %{
-                   from_address: :optional,
-                   to_address: :optional,
-                   transaction: :optional
+                   [from_address: :names] => :optional,
+                   [to_address: :names] => :optional,
+                   :transaction => :optional
                  }
                )
     end
@@ -1648,8 +1626,8 @@ defmodule Explorer.ChainTest do
 
     test "finds an contract address" do
       address =
-        insert(:address, contract_code: Factory.data("contract_code"), smart_contract: nil)
-        |> Repo.preload(:contracts_creation_internal_transaction)
+        insert(:address, contract_code: Factory.data("contract_code"), smart_contract: nil, names: [])
+        |> Repo.preload([:contracts_creation_internal_transaction, :token])
 
       response = Chain.find_contract_address(address.hash)
 
@@ -1829,7 +1807,8 @@ defmodule Explorer.ChainTest do
       assert smart_contract.contract_source_code != ""
       assert smart_contract.abi != ""
 
-      assert Repo.get_by(Address.Name,
+      assert Repo.get_by(
+               Address.Name,
                address_hash: smart_contract.address_hash,
                name: smart_contract.name,
                primary: true
@@ -1840,7 +1819,8 @@ defmodule Explorer.ChainTest do
       insert(:address_name, address: address, primary: true)
       assert {:ok, %SmartContract{} = smart_contract} = Chain.create_smart_contract(valid_attrs)
 
-      assert Repo.get_by(Address.Name,
+      assert Repo.get_by(
+               Address.Name,
                address_hash: smart_contract.address_hash,
                name: smart_contract.name,
                primary: true
@@ -2293,6 +2273,39 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "tokens_with_number_of_transfers_from_address/2" do
+    test "returns tokens with number of transfers attached" do
+      address = insert(:address)
+
+      token =
+        :token
+        |> insert(name: "token-c", type: "ERC-721")
+        |> Repo.preload(:contract_address)
+
+      insert(
+        :token_transfer,
+        token_contract_address: token.contract_address,
+        from_address: address,
+        to_address: build(:address)
+      )
+
+      insert(
+        :token_transfer,
+        token_contract_address: token.contract_address,
+        from_address: build(:address),
+        to_address: address
+      )
+
+      fetched_token =
+        address.hash
+        |> Chain.tokens_with_number_of_transfers_from_address()
+        |> List.first()
+
+      assert fetched_token.name == "token-c"
+      assert fetched_token.number_of_transfers == 2
+    end
+  end
+
   describe "fetch_tokens_from_address_hash/1" do
     test "only returns tokens that a given address has interacted with" do
       alice = insert(:address)
@@ -2341,7 +2354,7 @@ defmodule Explorer.ChainTest do
       assert expected_tokens == [token_a.name, token_b.name]
     end
 
-    test "returns a empty list when the given address hasn't interacted with one" do
+    test "returns an empty list when the given address hasn't interacted with any tokens" do
       alice = insert(:address)
 
       token =
@@ -2388,6 +2401,155 @@ defmodule Explorer.ChainTest do
 
       assert expected_tokens == [token.name]
     end
+
+    test "orders by type, name and inserted_at time" do
+      address = insert(:address)
+
+      first_token =
+        :token
+        |> insert(name: "token-c", type: "ERC-721")
+        |> Repo.preload(:contract_address)
+
+      second_token =
+        :token
+        |> insert(name: "token-a", type: "ERC-20")
+        |> Repo.preload(:contract_address)
+
+      third_token =
+        :token
+        |> insert(name: "token-b", type: "ERC-20")
+        |> Repo.preload(:contract_address)
+
+      fourth_token =
+        :token
+        |> insert(name: "token-b", type: "ERC-20", inserted_at: third_token.inserted_at)
+        |> Repo.preload(:contract_address)
+
+      insert(
+        :token_transfer,
+        token_contract_address: first_token.contract_address,
+        from_address: address,
+        to_address: build(:address)
+      )
+
+      insert(
+        :token_transfer,
+        token_contract_address: second_token.contract_address,
+        from_address: address,
+        to_address: build(:address)
+      )
+
+      insert(
+        :token_transfer,
+        token_contract_address: third_token.contract_address,
+        from_address: build(:address),
+        to_address: address
+      )
+
+      insert(
+        :token_transfer,
+        token_contract_address: fourth_token.contract_address,
+        from_address: build(:address),
+        to_address: address
+      )
+
+      fetched_tokens =
+        address.hash
+        |> Chain.fetch_tokens_from_address_hash()
+        |> Enum.map(&Repo.preload(&1, :contract_address))
+
+      assert fetched_tokens == [first_token, second_token, third_token, fourth_token]
+    end
+
+    test "supports pagination" do
+      address = insert(:address)
+
+      first_token =
+        :token
+        |> insert(name: "token-c", type: "ERC-721")
+        |> Repo.preload(:contract_address)
+
+      second_token =
+        :token
+        |> insert(name: "token-a", type: "ERC-20")
+        |> Repo.preload(:contract_address)
+
+      third_token =
+        :token
+        |> insert(name: "token-b", type: "ERC-20")
+        |> Repo.preload(:contract_address)
+
+      paging_options = %PagingOptions{
+        page_size: 1,
+        key: {first_token.name, first_token.type, first_token.inserted_at}
+      }
+
+      insert(
+        :token_transfer,
+        token_contract_address: first_token.contract_address,
+        from_address: address,
+        to_address: build(:address)
+      )
+
+      insert(
+        :token_transfer,
+        token_contract_address: second_token.contract_address,
+        from_address: address,
+        to_address: build(:address)
+      )
+
+      insert(
+        :token_transfer,
+        token_contract_address: third_token.contract_address,
+        from_address: build(:address),
+        to_address: address
+      )
+
+      fetched_tokens =
+        address.hash
+        |> Chain.fetch_tokens_from_address_hash(paging_options: paging_options)
+        |> Enum.map(& &1.name)
+
+      assert fetched_tokens == [second_token.name]
+    end
+  end
+
+  describe "count_token_transfers_from_address_hash/2" do
+    test "returns the number of times an address has interacted with a token" do
+      address = insert(:address)
+
+      token =
+        :token
+        |> insert(name: "token")
+        |> Repo.preload(:contract_address)
+
+      insert(
+        :token_transfer,
+        token_contract_address: token.contract_address,
+        from_address: address,
+        to_address: build(:address)
+      )
+
+      insert(
+        :token_transfer,
+        token_contract_address: token.contract_address,
+        from_address: build(:address),
+        to_address: address
+      )
+
+      assert Chain.count_token_transfers_from_address_hash(token.contract_address.hash, address.hash) == 2
+    end
+
+    test "returns 0 if no interaction is found" do
+      address = insert(:address)
+
+      token =
+        :token
+        |> insert(name: "token")
+        |> Repo.preload(:contract_address)
+
+      assert Chain.count_token_transfers_from_address_hash(token.contract_address.hash, address.hash) == 0
+    end
   end
 
   describe "update_token/2" do
@@ -2409,32 +2571,32 @@ defmodule Explorer.ChainTest do
       assert updated_token.decimals == update_params.decimals
       assert updated_token.cataloged
     end
-  end
 
-  test "inserts an address name record when token has a name in params" do
-    token = insert(:token, name: nil, symbol: nil, total_supply: nil, decimals: nil, cataloged: false)
+    test "inserts an address name record when token has a name in params" do
+      token = insert(:token, name: nil, symbol: nil, total_supply: nil, decimals: nil, cataloged: false)
 
-    update_params = %{
-      name: "Hodl Token",
-      symbol: "HT",
-      total_supply: 10,
-      decimals: 1,
-      cataloged: true
-    }
+      update_params = %{
+        name: "Hodl Token",
+        symbol: "HT",
+        total_supply: 10,
+        decimals: 1,
+        cataloged: true
+      }
 
-    Chain.update_token(token, update_params)
-    assert Repo.get_by(Address.Name, name: update_params.name, address_hash: token.contract_address_hash)
-  end
+      Chain.update_token(token, update_params)
+      assert Repo.get_by(Address.Name, name: update_params.name, address_hash: token.contract_address_hash)
+    end
 
-  test "does not insert address name record when token doesn't have name in params" do
-    token = insert(:token, name: nil, symbol: nil, total_supply: nil, decimals: nil, cataloged: false)
+    test "does not insert address name record when token doesn't have name in params" do
+      token = insert(:token, name: nil, symbol: nil, total_supply: nil, decimals: nil, cataloged: false)
 
-    update_params = %{
-      cataloged: true
-    }
+      update_params = %{
+        cataloged: true
+      }
 
-    Chain.update_token(token, update_params)
-    refute Repo.get_by(Address.Name, address_hash: token.contract_address_hash)
+      Chain.update_token(token, update_params)
+      refute Repo.get_by(Address.Name, address_hash: token.contract_address_hash)
+    end
   end
 
   describe "fetch_last_token_balances/1" do
@@ -2502,6 +2664,275 @@ defmodule Explorer.ChainTest do
       insert(:token_balance, address: build(:address))
 
       assert Chain.fetch_last_token_balances(address.hash) == []
+    end
+
+    test "does not consider other blocks when the last block has the value 0" do
+      address = insert(:address)
+      token = insert(:token, contract_address: build(:contract_address))
+
+      insert(
+        :token_balance,
+        address: address,
+        block_number: 1000,
+        token_contract_address_hash: token.contract_address_hash,
+        value: 5000
+      )
+
+      insert(
+        :token_balance,
+        address: address,
+        block_number: 1001,
+        token_contract_address_hash: token.contract_address_hash,
+        value: 0
+      )
+
+      assert Chain.fetch_last_token_balances(address.hash) == []
+    end
+  end
+
+  describe "fetch_token_holders_from_token_hash/2" do
+    test "returns the last value for each address" do
+      %Token{contract_address_hash: contract_address_hash} = insert(:token)
+      address = insert(:address)
+
+      insert(
+        :token_balance,
+        address: address,
+        block_number: 1000,
+        token_contract_address_hash: contract_address_hash,
+        value: 5000
+      )
+
+      insert(
+        :token_balance,
+        block_number: 1001,
+        token_contract_address_hash: contract_address_hash,
+        value: 4000
+      )
+
+      insert(
+        :token_balance,
+        address: address,
+        block_number: 1002,
+        token_contract_address_hash: contract_address_hash,
+        value: 2000
+      )
+
+      values =
+        contract_address_hash
+        |> Chain.fetch_token_holders_from_token_hash([])
+        |> Enum.map(&Decimal.to_integer(&1.value))
+
+      assert values == [4000, 2000]
+    end
+
+    test "sort by the hightest value" do
+      %Token{contract_address_hash: contract_address_hash} = insert(:token)
+
+      insert(
+        :token_balance,
+        block_number: 1000,
+        token_contract_address_hash: contract_address_hash,
+        value: 2000
+      )
+
+      insert(
+        :token_balance,
+        block_number: 1001,
+        token_contract_address_hash: contract_address_hash,
+        value: 1000
+      )
+
+      insert(
+        :token_balance,
+        block_number: 1002,
+        token_contract_address_hash: contract_address_hash,
+        value: 4000
+      )
+
+      insert(
+        :token_balance,
+        block_number: 1002,
+        token_contract_address_hash: contract_address_hash,
+        value: 3000
+      )
+
+      values =
+        contract_address_hash
+        |> Chain.fetch_token_holders_from_token_hash([])
+        |> Enum.map(&Decimal.to_integer(&1.value))
+
+      assert values == [4000, 3000, 2000, 1000]
+    end
+
+    test "returns only token balances that have value" do
+      %Token{contract_address_hash: contract_address_hash} = insert(:token)
+
+      insert(
+        :token_balance,
+        token_contract_address_hash: contract_address_hash,
+        value: 0
+      )
+
+      assert Chain.fetch_token_holders_from_token_hash(contract_address_hash, []) == []
+    end
+
+    test "returns an empty list when there are no address with value greater than 0" do
+      %Token{contract_address_hash: contract_address_hash} = insert(:token)
+
+      insert(:token_balance, value: 1000)
+
+      assert Chain.fetch_token_holders_from_token_hash(contract_address_hash, []) == []
+    end
+
+    test "ignores the burn address" do
+      {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+
+      burn_address = insert(:address, hash: burn_address_hash)
+
+      %Token{contract_address_hash: contract_address_hash} = insert(:token)
+
+      insert(
+        :token_balance,
+        address: burn_address,
+        token_contract_address_hash: contract_address_hash,
+        value: 1000
+      )
+
+      assert Chain.fetch_token_holders_from_token_hash(contract_address_hash, []) == []
+    end
+
+    test "paginates the result by value and different address" do
+      address_a = build(:address, hash: "0xcb2cf1fd3199584ac5faa16c6aca49472dc6495a")
+      address_b = build(:address, hash: "0x5f26097334b6a32b7951df61fd0c5803ec5d8354")
+
+      %Token{contract_address_hash: contract_address_hash} = insert(:token)
+
+      first_page =
+        insert(
+          :token_balance,
+          address: address_a,
+          token_contract_address_hash: contract_address_hash,
+          value: 4000
+        )
+
+      second_page =
+        insert(
+          :token_balance,
+          address: address_b,
+          token_contract_address_hash: contract_address_hash,
+          value: 4000
+        )
+
+      paging_options = %PagingOptions{
+        key: {first_page.value, first_page.address_hash},
+        page_size: 2
+      }
+
+      holders_paginated =
+        contract_address_hash
+        |> Chain.fetch_token_holders_from_token_hash(paging_options: paging_options)
+        |> Enum.map(& &1.address_hash)
+
+      assert holders_paginated == [second_page.address_hash]
+    end
+
+    test "considers the last block only if it has value" do
+      address = insert(:address, hash: "0x5f26097334b6a32b7951df61fd0c5803ec5d8354")
+      %Token{contract_address_hash: contract_address_hash} = insert(:token)
+
+      insert(
+        :token_balance,
+        address: address,
+        block_number: 1000,
+        token_contract_address_hash: contract_address_hash,
+        value: 5000
+      )
+
+      insert(
+        :token_balance,
+        address: address,
+        block_number: 1002,
+        token_contract_address_hash: contract_address_hash,
+        value: 0
+      )
+
+      assert Chain.fetch_token_holders_from_token_hash(contract_address_hash, []) == []
+    end
+  end
+
+  describe "count_token_holders_from_token_hash" do
+    test "counts different addresses that have the token" do
+      address_a = insert(:address, hash: "0xe49fedd93960a0267b3c3b2c1e2d66028e013fee")
+      address_b = insert(:address, hash: "0x5f26097334b6a32b7951df61fd0c5803ec5d8354")
+
+      %Token{contract_address_hash: contract_address_hash} = insert(:token)
+
+      insert(
+        :token_balance,
+        address: address_a,
+        block_number: 1000,
+        token_contract_address_hash: contract_address_hash,
+        value: 5000
+      )
+
+      insert(
+        :token_balance,
+        address: address_b,
+        block_number: 1002,
+        token_contract_address_hash: contract_address_hash,
+        value: 1000
+      )
+
+      assert Chain.count_token_holders_from_token_hash(contract_address_hash) == 2
+    end
+
+    test "counts only the last block" do
+      address = insert(:address, hash: "0xe49fedd93960a0267b3c3b2c1e2d66028e013fee")
+
+      %Token{contract_address_hash: contract_address_hash} = insert(:token)
+
+      insert(
+        :token_balance,
+        address: address,
+        block_number: 1000,
+        token_contract_address_hash: contract_address_hash,
+        value: 5000
+      )
+
+      insert(
+        :token_balance,
+        address: address,
+        block_number: 1002,
+        token_contract_address_hash: contract_address_hash,
+        value: 1000
+      )
+
+      assert Chain.count_token_holders_from_token_hash(contract_address_hash) == 1
+    end
+
+    test "counts only the last block that has value greater than 0" do
+      address = insert(:address, hash: "0xe49fedd93960a0267b3c3b2c1e2d66028e013fee")
+
+      %Token{contract_address_hash: contract_address_hash} = insert(:token)
+
+      insert(
+        :token_balance,
+        address: address,
+        block_number: 1000,
+        token_contract_address_hash: contract_address_hash,
+        value: 5000
+      )
+
+      insert(
+        :token_balance,
+        address: address,
+        block_number: 1002,
+        token_contract_address_hash: contract_address_hash,
+        value: 0
+      )
+
+      assert Chain.count_token_holders_from_token_hash(contract_address_hash) == 0
     end
   end
 end

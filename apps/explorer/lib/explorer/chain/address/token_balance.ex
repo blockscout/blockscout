@@ -5,10 +5,13 @@ defmodule Explorer.Chain.Address.TokenBalance do
 
   use Ecto.Schema
   import Ecto.Changeset
-  import Ecto.Query, only: [from: 2]
+  import Ecto.Query, only: [from: 2, limit: 2, where: 3, subquery: 1, order_by: 3, preload: 2]
 
+  alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.Address.TokenBalance
   alias Explorer.Chain.{Address, Block, Hash, Token}
+
+  @default_paging_options %PagingOptions{page_size: 50}
 
   @typedoc """
    *  `address` - The `t:Explorer.Chain.Address.t/0` that is the balance's owner.
@@ -62,17 +65,68 @@ defmodule Explorer.Chain.Address.TokenBalance do
   end
 
   @doc """
-  Builds an `Ecto.Query` to fetch the last token balances.
+  Builds an `Ecto.Query` to fetch the last token balances that have value greater than 0.
 
   The last token balances from an Address is the last block indexed.
   """
   def last_token_balances(address_hash) do
+    query =
+      from(
+        tb in TokenBalance,
+        where: tb.address_hash == ^address_hash,
+        distinct: :token_contract_address_hash,
+        order_by: [desc: :block_number]
+      )
+
+    from(tb in subquery(query), where: tb.value > 0, preload: :token)
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch the token holders from the given token contract address hash.
+
+  The Token Holders are the addresses that own a positive amount of the Token. So this query is
+  considering the following conditions:
+
+  * The token balance from the last block.
+  * Balances greater than 0.
+  * Excluding the burn address (0x0000000000000000000000000000000000000000).
+
+  """
+  def token_holders_from_token_hash(token_contract_address_hash) do
+    query = token_holders_query(token_contract_address_hash)
+
+    from(tb in subquery(query), where: tb.value > 0)
+  end
+
+  def token_holders_ordered_by_value(token_contract_address_hash, options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    token_contract_address_hash
+    |> token_holders_from_token_hash()
+    |> order_by([tb], desc: tb.value, desc: tb.address_hash)
+    |> preload(:address)
+    |> page_token_balances(paging_options)
+    |> limit(^paging_options.page_size)
+  end
+
+  defp token_holders_query(contract_address_hash) do
+    {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+
     from(
       tb in TokenBalance,
-      where: tb.address_hash == ^address_hash and tb.value > 0,
-      distinct: :token_contract_address_hash,
-      order_by: [desc: :block_number],
-      preload: :token
+      distinct: :address_hash,
+      where: tb.token_contract_address_hash == ^contract_address_hash and tb.address_hash != ^burn_address_hash,
+      order_by: [desc: :block_number]
+    )
+  end
+
+  defp page_token_balances(query, %PagingOptions{key: nil}), do: query
+
+  defp page_token_balances(query, %PagingOptions{key: {value, address_hash}}) do
+    where(
+      query,
+      [tb],
+      tb.value < ^value or (tb.value == ^value and tb.address_hash < ^address_hash)
     )
   end
 end

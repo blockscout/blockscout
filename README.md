@@ -46,6 +46,7 @@ The [development stack page](https://github.com/poanetwork/blockscout/wiki/Devel
 * [Libtool](https://www.gnu.org/software/libtool/)
   * For Mac OSX users: `brew install libtool`
 * GitHub for code storage
+* [Inotify-tools](https://github.com/rvoicilas/inotify-tools/wiki) for Linux users only
 
 ### Build and Run
 
@@ -57,7 +58,9 @@ The [development stack page](https://github.com/poanetwork/blockscout/wiki/Devel
 
   3. Set up default configurations.  
   `cp apps/explorer/config/dev.secret.exs.example apps/explorer/config/dev.secret.exs`  
-  `cp apps/block_scout_web/config/dev.secret.exs.example apps/block_scout_web/config/dev.secret.exs`  
+  `cp apps/block_scout_web/config/dev.secret.exs.example apps/block_scout_web/config/dev.secret.exs`
+  <br />Linux: Update the database username and password configuration in `apps/explorer/config/dev.secret.exs`
+  <br />Mac: Remove the `username` and `password` fields from `apps/explorer/config/dev.secret.exs`  
   <br />Optional: Set up default configuration for testing.  
   `cp apps/explorer/config/test.secret.exs.example apps/explorer/config/test.secret.exs`  
   Example usage: Changing the default Postgres port from localhost:15432 if [Boxen](https://github.com/boxen/boxen) is installed.
@@ -91,6 +94,25 @@ _Additional runtime options:_
 
 ![BlockScout Example](explorer_example.gif)
 
+### Configuring Ethereum Classic and other EVM Chains
+**Note: Most of these modifications will be consolidated into a single file in the future.**
+  
+  1. Update the import file in `apps/block_scout_web/assets/css/theme/_variables.scss`. There are several preset css files for our supported chains which include Ethereum Classic, Ethereum Mainnet, Ropsten Testnet, Kovan Testnet, POA Core, and POA Sokol. To deploy Ethereum Classic, change the import to `ethereum_classic_variables`.
+  
+  2. Update the logo file in `apps/block_scout_web/config/config.exs`. To deploy Ethereum Classic, change this file to `classic_ethereum_logo.svg`.
+  
+  3. Update the `check_origin` configuration in `apps/block_scout_web/config/prod.exs`. This allows realtime events to occur on your endpoint.
+  
+  4. Update the node configuration. You will need a full tracing node with WebSockets enabled. Make the changes in the following files (dev/prod):
+  
+   * `apps/explorer/config/dev/parity.exs`
+   * `apps/explorer/config/prod/parity.exs`
+   * `apps/indexer/config/dev/parity.exs`
+   * `apps/indexer/config/prod/parity.exs`
+  
+  5. Update the dropdown menu in the main navigation `apps/block_scout_web/lib/block_scout_web/templates/layout/_topnav.html.eex`
+
+  6. Update the coin in `apps/explorer/config/config.exs`. This will pull relevant information from Coinmarketcap.com.
 
 ### Umbrella Project Organization
 

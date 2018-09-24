@@ -1,6 +1,8 @@
 defmodule Indexer.TokenTransfersTest do
   use ExUnit.Case
 
+  import ExUnit.CaptureLog
+
   alias Indexer.TokenTransfers
 
   describe "from_log_params/2" do
@@ -79,6 +81,62 @@ defmodule Indexer.TokenTransfersTest do
       }
 
       assert TokenTransfers.from_log_params(logs) == expected
+    end
+
+    test "parses ERC-721 transfer with addresses in data field" do
+      log = %{
+        address_hash: "0x58Ab73CB79c8275628E0213742a85B163fE0A9Fb",
+        block_number: 8_683_457,
+        data:
+          "0x00000000000000000000000058ab73cb79c8275628e0213742a85b163fe0a9fb000000000000000000000000be8cdfc13ffda20c844ac3da2b53a23ac5787f1e0000000000000000000000000000000000000000000000000000000000003a5b",
+        first_topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+        fourth_topic: nil,
+        index: 2,
+        second_topic: nil,
+        third_topic: nil,
+        transaction_hash: "0x6d2dd62c178e55a13b65601f227c4ffdd8aa4e3bcb1f24731363b4f7619e92c8",
+        type: "mined"
+      }
+
+      expected = %{
+        tokens: [
+          %{
+            contract_address_hash: "0x58Ab73CB79c8275628E0213742a85B163fE0A9Fb",
+            type: "ERC-721"
+          }
+        ],
+        token_transfers: [
+          %{
+            block_number: log.block_number,
+            log_index: log.index,
+            from_address_hash: "0x58ab73cb79c8275628e0213742a85b163fe0a9fb",
+            to_address_hash: "0xbe8cdfc13ffda20c844ac3da2b53a23ac5787f1e",
+            token_contract_address_hash: log.address_hash,
+            token_id: 14_939,
+            transaction_hash: log.transaction_hash
+          }
+        ]
+      }
+
+      assert TokenTransfers.from_log_params([log]) == expected
+    end
+
+    test "logs error with unrecognized token transfer format" do
+      log = %{
+        address_hash: "0x58Ab73CB79c8275628E0213742a85B163fE0A9Fb",
+        block_number: 8_683_457,
+        data: "0x",
+        first_topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+        fourth_topic: nil,
+        index: 2,
+        second_topic: nil,
+        third_topic: nil,
+        transaction_hash: "0x6d2dd62c178e55a13b65601f227c4ffdd8aa4e3bcb1f24731363b4f7619e92c8",
+        type: "mined"
+      }
+
+      error = capture_log(fn -> %{tokens: [], token_transfers: []} = TokenTransfers.from_log_params([log]) end)
+      assert error =~ ~r"unknown token transfer"i
     end
   end
 

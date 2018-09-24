@@ -488,7 +488,7 @@ defmodule Explorer.Chain do
     query =
       from(
         address in Address,
-        preload: [:smart_contract, :contracts_creation_internal_transaction],
+        preload: [:contracts_creation_internal_transaction, :names, :smart_contract, :token],
         where: address.hash == ^hash
       )
 
@@ -521,7 +521,7 @@ defmodule Explorer.Chain do
     query =
       from(
         address in Address,
-        preload: [:smart_contract, :contracts_creation_internal_transaction],
+        preload: [:contracts_creation_internal_transaction, :names, :smart_contract, :token],
         where: address.hash == ^hash and not is_nil(address.contract_code)
       )
 
@@ -1407,7 +1407,8 @@ defmodule Explorer.Chain do
 
   defp clear_primary_address_names(%{smart_contract: %SmartContract{address_hash: address_hash}}) do
     clear_primary_query =
-      from(address_name in Address.Name,
+      from(
+        address_name in Address.Name,
         where: address_name.address_hash == ^address_hash,
         update: [set: [primary: false]]
       )
@@ -1429,7 +1430,7 @@ defmodule Explorer.Chain do
     |> Repo.insert(on_conflict: :nothing, conflict_target: [:address_hash, :name])
   end
 
-  @spec address_hash_to_smart_contract(%Explorer.Chain.Hash{}) :: %Explorer.Chain.SmartContract{}
+  @spec address_hash_to_smart_contract(%Explorer.Chain.Hash{}) :: %Explorer.Chain.SmartContract{} | nil
   def address_hash_to_smart_contract(%Explorer.Chain.Hash{} = address_hash) do
     query =
       from(
@@ -1460,6 +1461,21 @@ defmodule Explorer.Chain do
     query
     |> page_transaction(paging_options)
     |> limit(^paging_options.page_size)
+  end
+
+  defp join_association(query, [{association, nested_preload}], necessity)
+       when is_atom(association) and is_atom(nested_preload) do
+    case necessity do
+      :optional ->
+        preload(query, [{^association, ^nested_preload}])
+
+      :required ->
+        from(q in query,
+          inner_join: a in assoc(q, ^association),
+          left_join: b in assoc(a, ^nested_preload),
+          preload: [{^association, {a, [{^nested_preload, b}]}}]
+        )
+    end
   end
 
   defp join_association(query, association, necessity) when is_atom(association) do
@@ -1635,11 +1651,6 @@ defmodule Explorer.Chain do
     TokenTransfer.count_token_transfers_from_token_hash(token_address_hash)
   end
 
-  @spec count_addresses_in_token_transfers_from_token_hash(Hash.t()) :: non_neg_integer()
-  def count_addresses_in_token_transfers_from_token_hash(token_address_hash) do
-    TokenTransfer.count_addresses_in_token_transfers_from_token_hash(token_address_hash)
-  end
-
   @spec transaction_has_token_transfers?(Hash.t()) :: boolean()
   def transaction_has_token_transfers?(transaction_hash) do
     query = from(tt in TokenTransfer, where: tt.transaction_hash == ^transaction_hash, limit: 1, select: 1)
@@ -1647,11 +1658,36 @@ defmodule Explorer.Chain do
     Repo.one(query) != nil
   end
 
-  @spec fetch_tokens_from_address_hash(Hash.Address.t()) :: []
-  def fetch_tokens_from_address_hash(address_hash) do
+  @spec tokens_with_number_of_transfers_from_address(Hash.Address.t(), [any()]) :: []
+  def tokens_with_number_of_transfers_from_address(address_hash, paging_options \\ []) do
     address_hash
-    |> Token.with_transfers_by_address()
+    |> fetch_tokens_from_address_hash(paging_options)
+    |> add_number_of_transfers_to_tokens_from_address(address_hash)
+  end
+
+  @spec fetch_tokens_from_address_hash(Hash.Address.t(), [any()]) :: []
+  def fetch_tokens_from_address_hash(address_hash, paging_options \\ []) do
+    address_hash
+    |> Token.with_transfers_by_address(paging_options)
     |> Repo.all()
+  end
+
+  @spec add_number_of_transfers_to_tokens_from_address([Token], Hash.Address.t()) :: []
+  defp add_number_of_transfers_to_tokens_from_address(tokens, address_hash) do
+    Enum.map(tokens, fn token ->
+      Map.put(
+        token,
+        :number_of_transfers,
+        count_token_transfers_from_address_hash(token.contract_address_hash, address_hash)
+      )
+    end)
+  end
+
+  @spec count_token_transfers_from_address_hash(Hash.Address.t(), Hash.Address.t()) :: []
+  def count_token_transfers_from_address_hash(token_hash, address_hash) do
+    token_hash
+    |> Token.interactions_with_address(address_hash)
+    |> Repo.aggregate(:count, :name)
   end
 
   @doc """
@@ -1692,5 +1728,19 @@ defmodule Explorer.Chain do
     address_hash
     |> TokenBalance.last_token_balances()
     |> Repo.all()
+  end
+
+  @spec fetch_token_holders_from_token_hash(Hash.Address.t(), [paging_options]) :: [TokenBalance.t()]
+  def fetch_token_holders_from_token_hash(contract_address_hash, options) do
+    contract_address_hash
+    |> TokenBalance.token_holders_ordered_by_value(options)
+    |> Repo.all()
+  end
+
+  @spec count_token_holders_from_token_hash(Hash.Address.t()) :: non_neg_integer()
+  def count_token_holders_from_token_hash(contract_address_hash) do
+    contract_address_hash
+    |> TokenBalance.token_holders_from_token_hash()
+    |> Repo.aggregate(:count, :address_hash)
   end
 end

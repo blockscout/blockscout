@@ -9,7 +9,7 @@
     </div>
 
     <%= if queryable?(function["inputs"]) do %>
-      <div class="">
+      <div>
         <form class="form-inline" data-function-form data-url="<%= smart_contract_path(@conn, :show, @address.hash) %>">
           <input type="hidden" name="function_name" value='<%= function["name"] %>' />
 
@@ -50,7 +50,6 @@
                     <input class="wei-ether" type="checkbox" autocomplete="off"> 
                     <span class="d-inline-block" data-conversion-text-wei><%= gettext("WEI")%></span>
                     <span class="d-inline-block" data-conversion-text-eth><%= gettext("ETH")%></span>
-                  <span>
                 </div>
               <% else %>
                 <%= output["value"] %>

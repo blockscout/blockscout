@@ -46,10 +46,10 @@ defmodule BlockScoutWeb.Notifier do
     transaction_hashes
     |> Chain.hashes_to_transactions(
       necessity_by_association: %{
-        block: :required,
-        from_address: :optional,
-        to_address: :optional,
-        token_transfers: :optional
+        :block => :required,
+        [from_address: :names] => :optional,
+        [to_address: :names] => :optional,
+        :token_transfers => :optional
       }
     )
     |> Enum.each(&broadcast_transaction/1)

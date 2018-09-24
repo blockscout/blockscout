@@ -1,21 +1,21 @@
 <div class="tile tile-type-internal-transaction fade-in" data-test="internal_transaction" data-internal-transaction-id="<%= @internal_transaction.id %>">
   <div class="row">
     <div class="col-md-2 d-flex flex-column align-items-left justify-content-start justify-content-lg-center tile-label  mb-1 mb-md-0 pl-md-4">
-      <%=  gettext("Internal Transaction") %>
+      <%= gettext("Internal Transaction") %>
     </div>
     <div class="col-md-8 col-lg-8 d-flex flex-column text-nowrap pr-2 pr-sm-2 pr-md-0">
       <%= render BlockScoutWeb.TransactionView, "_link.html", transaction_hash: @internal_transaction.transaction_hash %>
       <span class="text-nowrap">
         <%= if @address.hash == @internal_transaction.from_address_hash do %>
-          <%= render BlockScoutWeb.AddressView, "_responsive_hash.html", address_hash: @internal_transaction.from_address_hash, contract: BlockScoutWeb.AddressView.contract?(@internal_transaction.from_address) %>
+          <%= render BlockScoutWeb.AddressView, "_responsive_hash.html", address: @internal_transaction.from_address, contract: BlockScoutWeb.AddressView.contract?(@internal_transaction.from_address) %>
         <% else %>
-          <%= render BlockScoutWeb.AddressView, "_link.html", address_hash: @internal_transaction.from_address_hash, contract: BlockScoutWeb.AddressView.contract?(@internal_transaction.from_address) %>
+          <%= render BlockScoutWeb.AddressView, "_link.html", address: @internal_transaction.from_address, contract: BlockScoutWeb.AddressView.contract?(@internal_transaction.from_address) %>
         <% end %>
         &rarr;
         <%= if @address.hash == BlockScoutWeb.InternalTransactionView.to_address_hash(@internal_transaction) do %>
-          <%= render BlockScoutWeb.AddressView, "_responsive_hash.html", address_hash: BlockScoutWeb.InternalTransactionView.to_address_hash(@internal_transaction), contract: BlockScoutWeb.AddressView.contract?(@internal_transaction.to_address) %>
+          <%= render BlockScoutWeb.AddressView, "_responsive_hash.html", address: BlockScoutWeb.InternalTransactionView.to_address(@internal_transaction), contract: BlockScoutWeb.AddressView.contract?(@internal_transaction.to_address) %>
         <% else %>
-          <%= render BlockScoutWeb.AddressView, "_link.html", address_hash: BlockScoutWeb.InternalTransactionView.to_address_hash(@internal_transaction), contract: BlockScoutWeb.AddressView.contract?(@internal_transaction.to_address) %>
+          <%= render BlockScoutWeb.AddressView, "_link.html", address: BlockScoutWeb.InternalTransactionView.to_address(@internal_transaction), contract: BlockScoutWeb.AddressView.contract?(@internal_transaction.to_address) %>
         <% end %>
       </span>
       <span class="tile-title text-truncate mt-3 mt-md-0">

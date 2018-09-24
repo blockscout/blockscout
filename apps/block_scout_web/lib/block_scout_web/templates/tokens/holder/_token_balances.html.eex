@@ -1,0 +1,19 @@
+<div class="tile tile-type-token fade-in mb-10" data-test="token_holders">
+  <div class="row">
+    <div class="col-md-7 col-lg-8 d-flex flex-column">
+      <span>
+        <%= render BlockScoutWeb.AddressView, "_link.html", address: @token_balance.address, contract: BlockScoutWeb.AddressView.contract?(@token_balance.address) %>
+      </span>
+
+      <span>
+        <span class="text-dark">
+          <%= format_token_balance_value(@token_balance.value, @token) %> <%= @token.symbol %>
+        </span>
+
+        <%= if @token.total_supply > 0 do %>
+          (<%= total_supply_percentage(@token_balance.value, @token.total_supply) %>)
+        <% end %>
+      </span>
+    </div>
+  </div>
+</div>

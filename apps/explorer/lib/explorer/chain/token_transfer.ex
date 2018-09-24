@@ -28,7 +28,6 @@ defmodule Explorer.Chain.TokenTransfer do
 
   alias Explorer.Chain.{Address, Block, Hash, Transaction, TokenTransfer}
   alias Explorer.{PagingOptions, Repo}
-  alias Ecto.Adapters.SQL
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -138,32 +137,6 @@ defmodule Explorer.Chain.TokenTransfer do
       )
 
     Repo.one(query)
-  end
-
-  @spec count_addresses_in_token_transfers_from_token_hash(Hash.t()) :: non_neg_integer()
-  def count_addresses_in_token_transfers_from_token_hash(token_address_hash) do
-    {:ok, %{rows: [[result]]}} =
-      SQL.query(
-        Repo,
-        """
-          select count(*) as "addresses"
-          from
-          (
-            select to_address_hash as "address_hash"
-            from token_transfers tt1
-            where tt1.token_contract_address_hash = $1
-
-            union
-
-            select from_address_hash as "address_hash"
-            from token_transfers tt2
-            where tt2.token_contract_address_hash = $1
-          ) as addresses_count
-        """,
-        [token_address_hash.bytes]
-      )
-
-    result
   end
 
   def page_token_transfer(query, %PagingOptions{key: nil}), do: query

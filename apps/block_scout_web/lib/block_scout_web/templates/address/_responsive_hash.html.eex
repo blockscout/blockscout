@@ -1,8 +1,13 @@
-<span class="<%= if @contract do %>contract-address<% end %>" data-address-hash="<%= @address_hash %>">
-  <%= if assigns[:truncate] do %>
-    <%= BlockScoutWeb.AddressView.trimmed_hash(@address_hash) %>
+<span class="<%= if @contract do %>contract-address<% end %>" data-address-hash="<%= @address.hash %>">
+  <%= if name = primary_name(@address) do %>
+    <span class="d-none d-md-none d-lg-inline" title="<%= @address.hash %>"><%= name %></span>
+    <span class="d-md-inline-block d-lg-none " title="<%= @address.hash %>"><%= name %></span>
   <% else %>
-    <span class="d-none d-md-none d-lg-inline"><%= @address_hash %></span>
-    <span class="d-md-inline-block d-lg-none"><%= BlockScoutWeb.AddressView.trimmed_hash(@address_hash) %></span>
-  <% end%>
+    <%= if assigns[:truncate] do %>
+      <%= BlockScoutWeb.AddressView.trimmed_hash(@address.hash) %>
+    <% else %>
+      <span class="d-none d-md-none d-lg-inline"><%= @address.hash %></span>
+      <span class="d-md-inline-block d-lg-none"><%= BlockScoutWeb.AddressView.trimmed_hash(@address.hash) %></span>
+    <% end %>
+  <% end %>
 </span>
