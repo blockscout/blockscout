@@ -4,3 +4,14 @@
   width: 100%;
   box-shadow: $box-shadow;
 }
+
+.dropdown-search-icon {
+  top: 0.5rem;
+  left: 0.625rem;
+  pointer-events: none;
+  color: $gray-300;
+}
+
+.dropdown-search-field {
+  padding-left: 2rem;
+}
