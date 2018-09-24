@@ -23,6 +23,7 @@ defmodule Indexer.Block.Realtime.Supervisor do
             put_in(subscribe_named_arguments[:transport_options][:web_socket_options], %{web_socket: web_socket})
 
           [
+            {Task.Supervisor, name: Indexer.Block.Realtime.TaskSupervisor},
             {web_socket_module, [url, [name: web_socket]]},
             {Indexer.Block.Realtime.Fetcher,
              [
