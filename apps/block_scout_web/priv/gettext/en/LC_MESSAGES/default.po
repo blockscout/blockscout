@@ -411,13 +411,13 @@ msgid "Avg Block Time"
 msgstr ""
 
 #: lib/block_scout_web/templates/chain/show.html.eex:17
-#: lib/block_scout_web/templates/layout/app.html.eex:24
+#: lib/block_scout_web/templates/layout/app.html.eex:34
 #: lib/block_scout_web/views/address_view.ex:99
 msgid "Market Cap"
 msgstr ""
 
 #: lib/block_scout_web/templates/chain/show.html.eex:10
-#: lib/block_scout_web/templates/layout/app.html.eex:25
+#: lib/block_scout_web/templates/layout/app.html.eex:35
 msgid "Price"
 msgstr ""
 
@@ -1050,7 +1050,7 @@ msgid "View Less Transfers"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:23
+#: lib/block_scout_web/templates/layout/app.html.eex:33
 msgid "Less than"
 msgstr ""
 
