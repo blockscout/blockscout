@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 set -e
-
 # Timeout after 2 min if we still haven't gotten a response
 timeout 120s bash <<EOT
 # Wait until an HTTP request succeeds against localhost:PORT

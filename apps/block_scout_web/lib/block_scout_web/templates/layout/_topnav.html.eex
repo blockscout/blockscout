@@ -57,13 +57,13 @@
           <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <!-- ICON FOR MAINNET -->
             <span class="nav-link-icon">
-              <%= render BlockScoutWeb.IconsView, "_network_icon.html" %>
+              <%= render BlockScoutWeb.IconsView, Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:network_icon] %>
             </span>
             <!-- ICON FOR TESTNET -->
             <!-- <span class="nav-link-icon">
               <%= render BlockScoutWeb.IconsView, "_test_network_icon.html" %>
             </span> -->
-            <%= gettext("POA Core") %>
+            <%= Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:subnetwork] %>
           </a>
           <div class="dropdown-menu" aria-labelledby="navbarDropdown">
             <a class="dropdown-item" href="https://sokol.blockscout.com/"><%= gettext("POA Sokol") %></a>
