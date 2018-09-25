@@ -428,6 +428,14 @@ defmodule Explorer.Factory do
     data(:transaction_input)
   end
 
+  def transaction_fork_factory do
+    %Transaction.Fork{
+      hash: transaction_hash(),
+      index: 0,
+      uncle_hash: block_hash()
+    }
+  end
+
   def smart_contract_factory() do
     %SmartContract{
       address_hash: insert(:address).hash,

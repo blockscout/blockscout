@@ -1054,5 +1054,70 @@ defmodule Explorer.Chain.ImportTest do
       assert %Transaction{status: :error, error: "Out of gas"} =
                Repo.get(Transaction, "0xab349efbe1ddc6d85d84a993aa52bdaadce66e8ee166dd10013ce3f2a94ca724")
     end
+
+    test "uncles record their transaction indexes in transactions_forks" do
+      miner_hash = address_hash()
+      from_address_hash = address_hash()
+      transaction_hash = transaction_hash()
+      uncle_hash = block_hash()
+
+      assert {:ok, _} =
+               Import.all(%{
+                 addresses: %{
+                   params: [
+                     %{hash: miner_hash},
+                     %{hash: from_address_hash}
+                   ]
+                 },
+                 blocks: %{
+                   params: [
+                     %{
+                       consensus: false,
+                       difficulty: 0,
+                       gas_limit: 21_000,
+                       gas_used: 21_000,
+                       hash: uncle_hash,
+                       miner_hash: miner_hash,
+                       nonce: 0,
+                       number: 0,
+                       parent_hash: block_hash(),
+                       size: 0,
+                       timestamp: DateTime.utc_now(),
+                       total_difficulty: 0
+                     }
+                   ]
+                 },
+                 transactions: %{
+                   params: [
+                     %{
+                       block_hash: nil,
+                       block_number: nil,
+                       from_address_hash: from_address_hash,
+                       gas: 21_000,
+                       gas_price: 1,
+                       hash: transaction_hash,
+                       input: "0x",
+                       nonce: 0,
+                       r: 0,
+                       s: 0,
+                       v: 0,
+                       value: 0
+                     }
+                   ],
+                   on_conflict: :replace_all
+                 },
+                 transaction_forks: %{
+                   params: [
+                     %{
+                       uncle_hash: uncle_hash,
+                       index: 0,
+                       hash: transaction_hash
+                     }
+                   ]
+                 }
+               })
+
+      assert Repo.aggregate(Transaction.Fork, :count, :hash) == 1
+    end
   end
 end

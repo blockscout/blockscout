@@ -70,6 +70,10 @@ defmodule Explorer.Chain.Import do
           optional(:on_conflict) => :nothing | :replace_all,
           optional(:timeout) => timeout
         }
+  @type transaction_forks_options :: %{
+          required(:params) => params,
+          optional(:timeout) => timeout
+        }
   @type token_balances_options :: %{
           required(:params) => params,
           optional(:timeout) => timeout
@@ -87,7 +91,8 @@ defmodule Explorer.Chain.Import do
           optional(:token_transfers) => token_transfers_options,
           optional(:tokens) => tokens_options,
           optional(:token_balances) => token_balances_options,
-          optional(:transactions) => transactions_options
+          optional(:transactions) => transactions_options,
+          optional(:transaction_forks) => transaction_forks_options
         }
   @type all_result ::
           {:ok,
@@ -108,7 +113,10 @@ defmodule Explorer.Chain.Import do
              optional(:token_transfers) => [TokenTransfer.t()],
              optional(:tokens) => [Token.t()],
              optional(:token_balances) => [TokenBalance.t()],
-             optional(:transactions) => [Hash.Full.t()]
+             optional(:transactions) => [Hash.Full.t()],
+             optional(:transaction_forks) => [
+               %{required(:uncle_hash) => Hash.Full.t(), required(:hash) => Hash.Full.t()}
+             ]
            }}
           | {:error, [Changeset.t()]}
           | {:error, step :: Ecto.Multi.name(), failed_value :: any(),
@@ -130,23 +138,25 @@ defmodule Explorer.Chain.Import do
   @insert_token_balances_timeout 60_000
   @insert_tokens_timeout 60_000
   @insert_transactions_timeout 60_000
+  @insert_transaction_forks_timeout 60_000
 
   @doc """
   Bulk insert all data stored in the `Explorer`.
 
   The import returns the unique key(s) for each type of record inserted.
 
-  | Key                              | Value Type                                                                                      | Value Description                                                                             |
-  |----------------------------------|-------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
-  | `:addresses`                     | `[Explorer.Chain.Address.t()]`                                                                  | List of `t:Explorer.Chain.Address.t/0`s                                                       |
-  | `:balances`                      | `[%{address_hash: Explorer.Chain.Hash.t(), block_number: Explorer.Chain.Block.block_number()}]` | List of `t:Explorer.Chain.Address.t/0`s                                                       |
-  | `:blocks`                        | `[Explorer.Chain.Block.t()]`                                                                    | List of `t:Explorer.Chain.Block.t/0`s                                                         |
-  | `:internal_transactions`         | `[%{index: non_neg_integer(), transaction_hash: Explorer.Chain.Hash.t()}]`                      | List of maps of the `t:Explorer.Chain.InternalTransaction.t/0` `index` and `transaction_hash` |
-  | `:logs`                          | `[Explorer.Chain.Log.t()]`                                                                      | List of `t:Explorer.Chain.Log.t/0`s                                                           |
-  | `:token_transfers`               | `[Explorer.Chain.TokenTransfer.t()]`                                                            | List of `t:Explor.Chain.TokenTransfer.t/0`s                                                   |
-  | `:tokens`                        | `[Explorer.Chain.Token.t()]`                                                                    | List of `t:Explorer.Chain.token.t/0`s                                                         |
-  | `:transactions`                  | `[Explorer.Chain.Hash.t()]`                                                                     | List of `t:Explorer.Chain.Transaction.t/0` `hash`                                             |
-  | `:block_second_degree_relations` | `[%{uncle_hash: Explorer.Chain.Hash.t(), nephew_hash: Explorer.Chain.Hash.t()]`                 | List of maps `t:Explorer.Chain.Block.SecondDegreeRelation.t/0` `uncle_hash` and `nephew_hash` |
+  | Key                              | Value Type                                                                                      | Value Description                                                                                    |
+  |----------------------------------|-------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
+  | `:addresses`                     | `[Explorer.Chain.Address.t()]`                                                                  | List of `t:Explorer.Chain.Address.t/0`s                                                              |
+  | `:balances`                      | `[%{address_hash: Explorer.Chain.Hash.t(), block_number: Explorer.Chain.Block.block_number()}]` | List of `t:Explorer.Chain.Address.t/0`s                                                              |
+  | `:blocks`                        | `[Explorer.Chain.Block.t()]`                                                                    | List of `t:Explorer.Chain.Block.t/0`s                                                                |
+  | `:internal_transactions`         | `[%{index: non_neg_integer(), transaction_hash: Explorer.Chain.Hash.t()}]`                      | List of maps of the `t:Explorer.Chain.InternalTransaction.t/0` `index` and `transaction_hash`        |
+  | `:logs`                          | `[Explorer.Chain.Log.t()]`                                                                      | List of `t:Explorer.Chain.Log.t/0`s                                                                  |
+  | `:token_transfers`               | `[Explorer.Chain.TokenTransfer.t()]`                                                            | List of `t:Explor.Chain.TokenTransfer.t/0`s                                                          |
+  | `:tokens`                        | `[Explorer.Chain.Token.t()]`                                                                    | List of `t:Explorer.Chain.token.t/0`s                                                                |
+  | `:transactions`                  | `[Explorer.Chain.Hash.t()]`                                                                     | List of `t:Explorer.Chain.Transaction.t/0` `hash`                                                    |
+  | `:transaction_forks`             | `[%{uncle_hash: Explorer.Chain.Hash.t(), hash: Explorer.Chain.Hash.t()}]`                       | List of maps of the `t:Explorer.Chain.Transaction.Fork.t/0` `uncle_hash` and `hash`                  |
+  | `:block_second_degree_relations` | `[%{uncle_hash: Explorer.Chain.Hash.t(), nephew_hash: Explorer.Chain.Hash.t()]`                 | List of maps of the `t:Explorer.Chain.Block.SecondDegreeRelation.t/0` `uncle_hash` and `nephew_hash` |
 
   The params for each key are validated using the corresponding `Ecto.Schema` module's `changeset/2` function.  If there
   are errors, they are returned in `Ecto.Changeset.t`s, so that the original, invalid value can be reconstructed for any
@@ -297,7 +307,8 @@ defmodule Explorer.Chain.Import do
     token_transfers: TokenTransfer,
     token_balances: TokenBalance,
     tokens: Token,
-    transactions: Transaction
+    transactions: Transaction,
+    transaction_forks: Transaction.Fork
   }
 
   defp ecto_schema_module_to_changes_list_map_to_multi(ecto_schema_module_to_changes_list_map, options)
@@ -311,6 +322,7 @@ defmodule Explorer.Chain.Import do
     |> run_blocks(ecto_schema_module_to_changes_list_map, full_options)
     |> run_block_second_degree_relations(ecto_schema_module_to_changes_list_map, full_options)
     |> run_transactions(ecto_schema_module_to_changes_list_map, full_options)
+    |> run_transaction_forks(ecto_schema_module_to_changes_list_map, full_options)
     |> run_internal_transactions(ecto_schema_module_to_changes_list_map, full_options)
     |> run_logs(ecto_schema_module_to_changes_list_map, full_options)
     |> run_tokens(ecto_schema_module_to_changes_list_map, full_options)
@@ -394,6 +406,27 @@ defmodule Explorer.Chain.Import do
             %{
               on_conflict: on_conflict,
               timeout: transactions_options[:timeout] || @insert_transactions_timeout,
+              timestamps: timestamps
+            }
+          )
+        end)
+
+      _ ->
+        multi
+    end
+  end
+
+  defp run_transaction_forks(multi, ecto_schema_module_to_changes_list_map, options)
+       when is_map(ecto_schema_module_to_changes_list_map) and is_map(options) do
+    case ecto_schema_module_to_changes_list_map do
+      %{Transaction.Fork => transaction_fork_changes} ->
+        %{timestamps: timestamps} = options
+
+        Multi.run(multi, :transaction_forks, fn _ ->
+          insert_transaction_forks(
+            transaction_fork_changes,
+            %{
+              timeout: options[:transaction_forks][:timeout] || @insert_transaction_forks_timeout,
               timestamps: timestamps
             }
           )
@@ -887,6 +920,34 @@ defmodule Explorer.Chain.Import do
       )
 
     {:ok, for(transaction <- transactions, do: transaction.hash)}
+  end
+
+  @spec insert_transaction_forks([map()], %{
+          required(:timeout) => timeout,
+          required(:timestamps) => timestamps
+        }) :: {:ok, [%{uncle_hash: Hash.t(), hash: Hash.t()}]}
+  defp insert_transaction_forks(changes_list, %{timeout: timeout, timestamps: timestamps})
+       when is_list(changes_list) do
+    # order so that row ShareLocks are grabbed in a consistent order
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.uncle_hash, &1.hash})
+
+    insert_changes_list(
+      ordered_changes_list,
+      conflict_target: [:uncle_hash, :index],
+      on_conflict:
+        from(
+          transaction_fork in Transaction.Fork,
+          update: [
+            set: [
+              hash: fragment("EXCLUDED.hash")
+            ]
+          ]
+        ),
+      for: Transaction.Fork,
+      returning: [:uncle_hash, :hash],
+      timeout: timeout,
+      timestamps: timestamps
+    )
   end
 
   defp insert_changes_list(changes_list, options) when is_list(changes_list) do
