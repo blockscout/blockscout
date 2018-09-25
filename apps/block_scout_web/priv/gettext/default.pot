@@ -667,12 +667,7 @@ msgid "Contract Call"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:37
-msgid "Contract created by"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:43
+#: lib/block_scout_web/templates/address/overview.html.eex:44
 msgid "at"
 msgstr ""
 
@@ -1259,4 +1254,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:23
 msgid "This transaction is pending confirmation."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/overview.html.eex:38
+msgid "Created by"
 msgstr ""
