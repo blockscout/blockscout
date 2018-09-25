@@ -1,8 +1,7 @@
 defmodule BlockScoutWeb.Tokens.OverviewView do
   use BlockScoutWeb, :view
 
-  alias Explorer.Chain.Token
-  alias BlockScoutWeb.Tokens.TransferView
+  alias Explorer.Chain.{Address, SmartContract, Token}
 
   @tabs ["token_transfers", "token_holders", "read_contract", "inventory"]
 
@@ -38,4 +37,12 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
 
   def display_inventory?(%Token{type: "ERC-721"}), do: true
   def display_inventory?(_), do: false
+
+  def smart_contract_with_read_only_functions?(
+        %Token{contract_address: %Address{smart_contract: %SmartContract{}}} = token
+      ) do
+    Enum.any?(token.contract_address.smart_contract.abi, & &1["constant"])
+  end
+
+  def smart_contract_with_read_only_functions?(%Token{contract_address: %Address{smart_contract: nil}}), do: false
 end
