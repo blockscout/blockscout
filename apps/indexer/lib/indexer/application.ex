@@ -14,6 +14,8 @@ defmodule Indexer.Application do
     TokenBalance
   }
 
+  alias Indexer.TokenTransfer.Uncataloged
+
   @impl Application
   def start(_type, _args) do
     json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
@@ -36,7 +38,13 @@ defmodule Indexer.Application do
       {Token.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments], [name: Token.Supervisor]]},
       {TokenBalance.Supervisor,
        [[json_rpc_named_arguments: json_rpc_named_arguments], [name: TokenBalance.Supervisor]]},
-      {Block.Supervisor, [block_fetcher_supervisor_named_arguments, [name: Block.Supervisor]]}
+      {Block.Supervisor, [block_fetcher_supervisor_named_arguments, [name: Block.Supervisor]]},
+      %{
+        id: Uncataloged.Supervisor,
+        start: {Uncataloged.Supervisor, :start_link, [[]]},
+        restart: :transient,
+        type: :supervisor
+      }
     ]
 
     opts = [strategy: :one_for_one, name: Indexer.Supervisor]

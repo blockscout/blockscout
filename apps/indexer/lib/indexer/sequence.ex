@@ -58,14 +58,15 @@ defmodule Indexer.Sequence do
   """
   @spec start_link(options) :: GenServer.on_start()
   def start_link(options) when is_list(options) do
-    GenServer.start_link(__MODULE__, options)
+    {gen_server_options, init_options} = Keyword.split(options, [:name])
+    GenServer.start_link(__MODULE__, init_options, gen_server_options)
   end
 
   @doc """
   Builds an enumerable stream using a sequencer agent.
   """
-  @spec build_stream(pid()) :: Enumerable.t()
-  def build_stream(sequencer) when is_pid(sequencer) do
+  @spec build_stream(pid() | atom()) :: Enumerable.t()
+  def build_stream(sequencer) when is_pid(sequencer) or is_atom(sequencer) do
     Stream.resource(
       fn -> sequencer end,
       fn seq ->
@@ -81,24 +82,24 @@ defmodule Indexer.Sequence do
   @doc """
   Changes the mode for the sequence to finite.
   """
-  @spec cap(pid()) :: mode
-  def cap(sequence) when is_pid(sequence) do
+  @spec cap(pid() | atom()) :: mode
+  def cap(sequence) when is_pid(sequence) or is_atom(sequence) do
     GenServer.call(sequence, :cap)
   end
 
   @doc """
   Adds a range of block numbers to the end of sequence.
   """
-  @spec queue(pid(), Range.t()) :: :ok
-  def queue(sequence, _first.._last = range) when is_pid(sequence) do
+  @spec queue(pid() | atom(), Range.t()) :: :ok | {:error, String.t()}
+  def queue(sequence, _first.._last = range) when is_pid(sequence) or is_atom(sequence) do
     GenServer.call(sequence, {:queue, range})
   end
 
   @doc """
   Pops the next block range from the sequence.
   """
-  @spec pop(pid()) :: Range.t() | :halt
-  def pop(sequence) when is_pid(sequence) do
+  @spec pop(pid() | atom()) :: Range.t() | :halt
+  def pop(sequence) when is_pid(sequence) or is_atom(sequence) do
     GenServer.call(sequence, :pop)
   end
 

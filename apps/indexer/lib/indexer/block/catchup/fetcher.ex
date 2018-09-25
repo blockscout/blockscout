@@ -25,6 +25,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   @blocks_batch_size 10
   @blocks_concurrency 10
+  @sequence_name :block_catchup_sequencer
 
   defstruct blocks_batch_size: @blocks_batch_size,
             blocks_concurrency: @blocks_concurrency,
@@ -88,7 +89,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
             :ok
 
           _ ->
-            {:ok, sequence} = Sequence.start_link(ranges: missing_ranges, step: -1 * blocks_batch_size)
+            sequence_opts = [ranges: missing_ranges, step: -1 * blocks_batch_size, name: @sequence_name]
+            {:ok, sequence} = Sequence.start_link(sequence_opts)
             Sequence.cap(sequence)
 
             stream_fetch_and_import(state, sequence)
@@ -211,6 +213,14 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
       :end_of_chain ->
         Sequence.cap(seq)
+    end
+
+    :ok
+  end
+
+  def enqueue(block_numbers) do
+    for block_number <- block_numbers do
+      Sequence.queue(@sequence_name, block_number..block_number)
     end
 
     :ok
