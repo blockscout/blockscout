@@ -6,6 +6,7 @@
   <%= for token_balance <- sort_by_name(@token_balances) do %>
     <div
       class="border-bottom"
+      data-dropdown-token-balance-test
       data-token-name="<%= token_name(token_balance.token) %>"
       data-token-symbol="<%= token_balance.token.symbol %>"
     >

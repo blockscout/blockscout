@@ -460,4 +460,82 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> refute_has(AddressPage.token_transfers_expansion(transaction))
     end
   end
+
+  describe "viewing token balances" do
+    setup do
+      block = insert(:block)
+      lincoln = insert(:address, fetched_coin_balance: 5)
+      taft = insert(:address, fetched_coin_balance: 5)
+
+      contract_address = insert(:contract_address)
+      insert(:token, name: "atoken", symbol: "AT", contract_address: contract_address, type: "ERC-721")
+
+      transaction =
+        :transaction
+        |> insert(from_address: lincoln, to_address: contract_address)
+        |> with_block(block)
+
+      insert(
+        :token_transfer,
+        from_address: lincoln,
+        to_address: taft,
+        transaction: transaction,
+        token_contract_address: contract_address
+      )
+
+      insert(:token_balance, address: lincoln, token_contract_address_hash: contract_address.hash)
+
+      contract_address_2 = insert(:contract_address)
+      insert(:token, name: "token2", symbol: "T2", contract_address: contract_address_2, type: "ERC-20")
+
+      transaction_2 =
+        :transaction
+        |> insert(from_address: lincoln, to_address: contract_address_2)
+        |> with_block(block)
+
+      insert(
+        :token_transfer,
+        from_address: lincoln,
+        to_address: taft,
+        transaction: transaction_2,
+        token_contract_address: contract_address_2
+      )
+
+      insert(:token_balance, address: lincoln, token_contract_address_hash: contract_address_2.hash)
+
+      {:ok, lincoln: lincoln}
+    end
+
+    test "filter tokens balances by token name", %{session: session, lincoln: lincoln} do
+      session
+      |> AddressPage.visit_page(lincoln)
+      |> AddressPage.click_balance_dropdown_toggle()
+      |> AddressPage.fill_balance_dropdown_search("ato")
+      |> assert_has(AddressPage.token_balance(count: 1))
+      |> assert_has(AddressPage.token_type(count: 1))
+      |> assert_has(AddressPage.token_type_count(type: "ERC-721", text: "1"))
+      |> assert_has(AddressPage.token_balance_counter("1"))
+    end
+
+    test "filter token balances by token symbol", %{session: session, lincoln: lincoln} do
+      session
+      |> AddressPage.visit_page(lincoln)
+      |> AddressPage.click_balance_dropdown_toggle()
+      |> AddressPage.fill_balance_dropdown_search("T2")
+      |> assert_has(AddressPage.token_balance(count: 1))
+      |> assert_has(AddressPage.token_type(count: 1))
+      |> assert_has(AddressPage.token_type_count(type: "ERC-20", text: "1"))
+      |> assert_has(AddressPage.token_balance_counter("1"))
+    end
+
+    test "reset token balances filter when dropdown closes", %{session: session, lincoln: lincoln} do
+      session
+      |> AddressPage.visit_page(lincoln)
+      |> AddressPage.click_balance_dropdown_toggle()
+      |> AddressPage.fill_balance_dropdown_search("ato")
+      |> assert_has(AddressPage.token_balance_counter("1"))
+      |> AddressPage.click_outside_of_the_dropdown()
+      |> assert_has(AddressPage.token_balance_counter("2"))
+    end
+  end
 end
