@@ -61,7 +61,7 @@ export function reducer (state = initialState, action) {
           (state.filter === 'from' && fromAddressHash === state.addressHash)
         ))
 
-      if (!state.batchCountAccumulator && action.msgs.length < BATCH_THRESHOLD) {
+      if (!state.batchCountAccumulator && incomingInternalTransactions.length < BATCH_THRESHOLD) {
         return Object.assign({}, state, {
           newInternalTransactions: [
             ...state.newInternalTransactions,
@@ -70,7 +70,7 @@ export function reducer (state = initialState, action) {
         })
       } else {
         return Object.assign({}, state, {
-          batchCountAccumulator: state.batchCountAccumulator + action.msgs.length
+          batchCountAccumulator: state.batchCountAccumulator + incomingInternalTransactions.length
         })
       }
     }
@@ -83,7 +83,7 @@ export function reducer (state = initialState, action) {
           (state.filter === 'to' && toAddressHash === state.addressHash) ||
           (state.filter === 'from' && fromAddressHash === state.addressHash)
         ))
-      if (!state.batchPendingCountAccumulator && action.msgs.length < BATCH_THRESHOLD) {
+      if (!state.batchPendingCountAccumulator && incomingPendingTransactions.length < BATCH_THRESHOLD) {
         return Object.assign({}, state, {
           newPendingTransactions: [
             ...state.newPendingTransactions,
@@ -96,7 +96,7 @@ export function reducer (state = initialState, action) {
         })
       } else {
         return Object.assign({}, state, {
-          batchPendingCountAccumulator: state.batchPendingCountAccumulator + action.msgs.length,
+          batchPendingCountAccumulator: state.batchPendingCountAccumulator + incomingPendingTransactions.length,
           pendingTransactionHashes: [
             ...state.pendingTransactionHashes,
             ..._.map(incomingPendingTransactions, 'transactionHash')
@@ -117,9 +117,9 @@ export function reducer (state = initialState, action) {
       const updatePendingTransactionHashes =
         _.difference(state.pendingTransactionHashes, _.map(incomingTransactions, 'transactionHash'))
 
-      if (!state.batchCountAccumulator && action.msgs.length < BATCH_THRESHOLD) {
+      if (!state.batchCountAccumulator && incomingTransactions.length < BATCH_THRESHOLD) {
         return Object.assign({}, state, {
-          batchPendingCountAccumulator: state.batchPendingCountAccumulator - action.msgs.length,
+          batchPendingCountAccumulator: state.batchPendingCountAccumulator - incomingTransactions.length,
           newTransactions: [
             ...state.newTransactions,
             ..._.map(incomingTransactions, 'transactionHtml')
@@ -130,8 +130,8 @@ export function reducer (state = initialState, action) {
         })
       } else {
         return Object.assign({}, state, {
-          batchCountAccumulator: state.batchCountAccumulator + action.msgs.length,
-          batchPendingCountAccumulator: state.batchPendingCountAccumulator - action.msgs.length,
+          batchCountAccumulator: state.batchCountAccumulator + incomingTransactions.length,
+          batchPendingCountAccumulator: state.batchPendingCountAccumulator - incomingTransactions.length,
           newTransactionHashes: _.map(incomingTransactions, 'transactionHash'),
           pendingTransactionHashes: updatePendingTransactionHashes,
           transactionCount: state.transactionCount + action.msgs.length
