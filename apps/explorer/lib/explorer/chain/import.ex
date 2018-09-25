@@ -378,11 +378,22 @@ defmodule Explorer.Chain.Import do
       %{Block => blocks_changes} ->
         timestamps = Map.fetch!(options, :timestamps)
 
-        Multi.run(multi, :blocks, fn _ ->
+        multi
+        |> Multi.run(:blocks, fn _ ->
           insert_blocks(
             blocks_changes,
             %{
               timeout: options[:blocks][:timeout] || @insert_blocks_timeout,
+              timestamps: timestamps
+            }
+          )
+        end)
+        |> Multi.run(:uncle_fetched_block_second_degree_relations, fn %{blocks: blocks} when is_list(blocks) ->
+          update_block_second_degree_relations(
+            blocks,
+            %{
+              timeout:
+                options[:block_second_degree_relations][:timeout] || @insert_block_second_degree_relations_timeout,
               timestamps: timestamps
             }
           )
@@ -963,6 +974,34 @@ defmodule Explorer.Chain.Import do
       )
 
     {:ok, inserted}
+  end
+
+  defp update_block_second_degree_relations(blocks, %{timeout: timeout, timestamps: %{updated_at: updated_at}})
+       when is_list(blocks) do
+    ordered_uncle_hashes =
+      blocks
+      |> MapSet.new(& &1.hash)
+      |> Enum.sort()
+
+    query =
+      from(
+        bsdr in Block.SecondDegreeRelation,
+        where: bsdr.uncle_hash in ^ordered_uncle_hashes,
+        update: [
+          set: [
+            uncle_fetched_at: ^updated_at
+          ]
+        ]
+      )
+
+    try do
+      {_, result} = Repo.update_all(query, [], timeout: timeout)
+
+      {:ok, result}
+    rescue
+      postgrex_error in Postgrex.Error ->
+        {:error, %{exception: postgrex_error, uncle_hashes: ordered_uncle_hashes}}
+    end
   end
 
   defp update_transactions(internal_transactions, %{
