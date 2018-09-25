@@ -104,6 +104,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
            options
            |> Map.drop(@import_options)
            |> put_in([:addresses, :params], balances_addresses_params)
+           |> put_in([:blocks, :params, Access.all(), :consensus], true)
            |> put_in([Access.key(:balances, %{}), :params], balances_params)
            |> put_in([Access.key(:internal_transactions, %{}), :params], internal_transactions_params)
            |> put_in([Access.key(:token_balances), :params], token_balances),

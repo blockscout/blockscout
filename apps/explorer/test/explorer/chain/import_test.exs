@@ -24,6 +24,7 @@ defmodule Explorer.Chain.ImportTest do
       blocks: %{
         params: [
           %{
+            consensus: true,
             difficulty: 340_282_366_920_938_463_463_374_607_431_768_211_454,
             gas_limit: 6_946_336,
             gas_used: 50450,
@@ -516,6 +517,7 @@ defmodule Explorer.Chain.ImportTest do
         blocks: %{
           params: [
             %{
+              consensus: true,
               difficulty: 340_282_366_920_938_463_463_374_607_431_768_211_454,
               gas_limit: 6_926_030,
               gas_used: 269_607,
@@ -605,6 +607,7 @@ defmodule Explorer.Chain.ImportTest do
         blocks: %{
           params: [
             %{
+              consensus: true,
               difficulty: 340_282_366_920_938_463_463_374_607_431_768_211_454,
               gas_limit: 6_926_030,
               gas_used: 269_607,
@@ -698,6 +701,7 @@ defmodule Explorer.Chain.ImportTest do
         blocks: %{
           params: [
             %{
+              consensus: true,
               difficulty: 340_282_366_920_938_463_463_374_607_431_768_211_454,
               gas_limit: 6_926_030,
               gas_used: 269_607,
@@ -788,6 +792,7 @@ defmodule Explorer.Chain.ImportTest do
                  blocks: %{
                    params: [
                      %{
+                       consensus: true,
                        difficulty: 340_282_366_920_938_463_463_374_607_431_768_211_454,
                        gas_limit: 6_946_336,
                        gas_used: 50450,
@@ -911,6 +916,7 @@ defmodule Explorer.Chain.ImportTest do
                  blocks: %{
                    params: [
                      %{
+                       consensus: true,
                        difficulty: 242_354_495_292_210,
                        gas_limit: 4_703_218,
                        gas_used: 1_009_480,
@@ -924,6 +930,7 @@ defmodule Explorer.Chain.ImportTest do
                        total_difficulty: 415_641_295_487_918_824_165
                      },
                      %{
+                       consensus: true,
                        difficulty: 247_148_243_947_046,
                        gas_limit: 4_704_624,
                        gas_used: 363_000,

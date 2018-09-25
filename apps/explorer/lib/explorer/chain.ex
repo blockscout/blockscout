@@ -1062,7 +1062,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Finds `t:Explorer.Chain.Block.t/0` with `number`
+  Finds consensus `t:Explorer.Chain.Block.t/0` with `number`.
 
   ## Options
 
@@ -1077,7 +1077,7 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     Block
-    |> where(number: ^number)
+    |> where(consensus: true, number: ^number)
     |> join_associations(necessity_by_association)
     |> Repo.one()
     |> case do

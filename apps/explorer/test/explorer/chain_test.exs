@@ -1,6 +1,9 @@
 defmodule Explorer.ChainTest do
   use Explorer.DataCase
 
+  require Ecto.Query
+
+  import Ecto.Query
   import Explorer.Factory
 
   alias Explorer.{Chain, Factory, PagingOptions, Repo}
@@ -670,6 +673,7 @@ defmodule Explorer.ChainTest do
       blocks: %{
         params: [
           %{
+            consensus: true,
             difficulty: 340_282_366_920_938_463_463_374_607_431_768_211_454,
             gas_limit: 6_946_336,
             gas_used: 50450,
@@ -825,6 +829,7 @@ defmodule Explorer.ChainTest do
                 ],
                 blocks: [
                   %Block{
+                    consensus: true,
                     difficulty: ^difficulty,
                     gas_limit: ^gas_limit,
                     gas_used: ^gas_used,

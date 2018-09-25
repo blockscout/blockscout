@@ -10,7 +10,7 @@ defmodule Indexer.Block.FetcherTest do
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Log, Transaction, Wei}
   alias Indexer.{CoinBalance, BufferedTask, InternalTransaction, Token, TokenBalance}
-  alias Indexer.Block.Fetcher
+  alias Indexer.Block.{Fetcher, Uncle}
 
   @moduletag capture_log: true
 
@@ -44,6 +44,10 @@ defmodule Indexer.Block.FetcherTest do
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      Uncle.Supervisor.Case.start_supervised!(
+        block_fetcher: %Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
+      )
 
       %{
         block_fetcher: %Fetcher{

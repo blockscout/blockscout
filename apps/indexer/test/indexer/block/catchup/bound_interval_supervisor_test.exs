@@ -8,7 +8,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
 
   alias Explorer.Chain.Block
   alias Indexer.{BoundInterval, CoinBalance, InternalTransaction, Token, TokenBalance}
-  alias Indexer.Block.Catchup
+  alias Indexer.Block.{Catchup, Uncle}
 
   @moduletag capture_log: true
 
@@ -202,6 +202,10 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
+      Uncle.Supervisor.Case.start_supervised!(
+        block_fetcher: %Indexer.Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
+      )
+
       Catchup.Supervisor.Case.start_supervised!(%{
         block_fetcher: %Indexer.Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
       })
@@ -323,6 +327,10 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      Uncle.Supervisor.Case.start_supervised!(
+        block_fetcher: %Indexer.Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
+      )
 
       # from `setup :state`
       assert_received :catchup_index

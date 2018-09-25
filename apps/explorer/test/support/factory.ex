@@ -105,6 +105,7 @@ defmodule Explorer.Factory do
 
   def block_factory do
     %Block{
+      consensus: true,
       number: block_number(),
       hash: block_hash(),
       parent_hash: block_hash(),
