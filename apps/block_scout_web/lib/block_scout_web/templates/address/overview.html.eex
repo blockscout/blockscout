@@ -32,24 +32,24 @@
                 <%= link(token_title(@address.token), to: token_path(@conn, :show, @address.hash), "data-test": "token_hash_link" ) %>
               </span>
             <% end %>
-            <%= if contract?(@address) do %>
-              <span data-test="address_contract_creator">
-                <%= gettext "Contract created by" %>
-                <%= link(
-                  trimmed_hash(@address.contracts_creation_internal_transaction.from_address_hash),
-                  to: address_path(@conn, :show, @address.contracts_creation_internal_transaction.from_address_hash)
-                ) %>
-
-                <%= gettext "at" %>
-
-                <%= link(
-                  trimmed_hash(@address.contracts_creation_internal_transaction.transaction_hash),
-                  to: transaction_path(@conn, :show, @address.contracts_creation_internal_transaction.transaction_hash),
-                  "data-test": "transaction_hash_link"
-                ) %>
-              </span>
-            <% end %>
           </div>
+          <%= if contract?(@address) do %>
+            <span class="text-muted" data-test="address_contract_creator">
+              <%= gettext "Created by" %>
+              <%= link(
+                trimmed_hash(@address.contracts_creation_internal_transaction.from_address_hash),
+                to: address_path(@conn, :show, @address.contracts_creation_internal_transaction.from_address_hash)
+              ) %>
+
+              <%= gettext "at" %>
+
+              <%= link(
+                trimmed_hash(@address.contracts_creation_internal_transaction.transaction_hash),
+                to: transaction_path(@conn, :show, @address.contracts_creation_internal_transaction.transaction_hash),
+                "data-test": "transaction_hash_link"
+              ) %>
+            </span>
+          <% end %>
         </div>
       </div>
     </div>
