@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
   use BlockScoutWeb.FeatureCase, async: true
 
   alias Explorer.Chain.Wei
-  alias BlockScoutWeb.{AddressPage, Notifier, TransactionListPage, TransactionLogsPage, TransactionPage}
+  alias BlockScoutWeb.{AddressPage, TransactionListPage, TransactionLogsPage, TransactionPage}
 
   setup do
     block =
@@ -83,29 +83,6 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
       |> assert_has(TransactionListPage.transaction_status(pending_contract))
     end
 
-    test "live update pending transaction", %{session: session} do
-      session
-      |> TransactionListPage.visit_page()
-      |> TransactionListPage.click_pending()
-
-      pending = insert(:transaction)
-      Notifier.handle_event({:chain_event, :transactions, [pending.hash]})
-
-      assert_has(session, TransactionListPage.transaction(pending))
-    end
-
-    test "live remove collated pending transaction", %{pending: pending, session: session} do
-      session
-      |> TransactionListPage.visit_page()
-      |> TransactionListPage.click_pending()
-      |> assert_has(TransactionListPage.transaction(pending))
-
-      transaction = with_block(pending)
-      Notifier.handle_event({:chain_event, :transactions, [transaction.hash]})
-
-      refute_has(session, TransactionListPage.transaction(pending))
-    end
-
     test "contract creation is shown for to_address on list page", %{session: session} do
       contract_address = insert(:contract_address)
 
@@ -131,18 +108,6 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
       |> TransactionPage.visit_page(pending)
       |> assert_has(TransactionPage.detail_hash(pending))
       |> assert_has(TransactionPage.is_pending())
-    end
-
-    test "pending transactions live update once collated", %{session: session, pending: pending} do
-      session
-      |> TransactionPage.visit_page(pending)
-
-      transaction = with_block(pending)
-
-      Notifier.handle_event({:chain_event, :transactions, [transaction.hash]})
-
-      session
-      |> refute_has(TransactionPage.is_pending())
     end
   end
 
