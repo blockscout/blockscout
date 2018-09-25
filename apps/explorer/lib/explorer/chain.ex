@@ -586,6 +586,41 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Converts `t:Explorer.Chain.Block.t/0` `hash` to the `t:Explorer.Chain.Block.t/0` with that `hash`.
+
+  Unlike `number_to_block/1`, both consensus and non-consensus blocks can be returned when looked up by `hash`.
+
+  Returns `{:ok, %Explorer.Chain.Block{}}` if found
+
+      iex> %Block{hash: hash} = insert(:block, consensus: false)
+      iex> {:ok, %Explorer.Chain.Block{hash: found_hash}} = Explorer.Chain.hash_to_block(hash)
+      iex> found_hash == hash
+      true
+
+  Returns `{:error, :not_found}` if not found
+
+      iex> {:ok, hash} = Explorer.Chain.string_to_block_hash(
+      ...>   "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
+      ...> )
+      iex> Explorer.Chain.hash_to_block(hash)
+      {:error, :not_found}
+
+  """
+  @spec hash_to_block(Hash.Full.t()) :: {:ok, Block.t()} | {:error, :not_found}
+  def hash_to_block(%Hash{byte_count: unquote(Hash.Full.byte_count())} = hash) do
+    Block
+    |> where(hash: ^hash)
+    |> Repo.one()
+    |> case do
+      nil ->
+        {:error, :not_found}
+
+      block ->
+        {:ok, block}
+    end
+  end
+
+  @doc """
   Converts the `Explorer.Chain.Hash.t:t/0` to `iodata` representation that can be written efficiently to users.
 
       iex> %Explorer.Chain.Hash{

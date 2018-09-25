@@ -81,6 +81,14 @@ defmodule BlockScoutWeb.ChainControllerTest do
       assert conn.status == 404
     end
 
+    test "finds non-consensus block by hash", %{conn: conn} do
+      %Block{hash: hash} = insert(:block, consensus: false)
+
+      conn = get(conn, "/search?q=#{hash}")
+
+      assert redirected_to(conn) == block_path(conn, :show, hash)
+    end
+
     test "finds a transaction by hash", %{conn: conn} do
       transaction =
         :transaction
