@@ -6,6 +6,8 @@ defmodule BlockScoutWeb.AddressView do
 
   @dialyzer :no_match
 
+  @tabs ["tokens", "transactions", "internal_transactions", "contracts", "read_contract"]
+
   def address_partial_selector(struct_to_render_from, direction, current_address, truncate \\ false)
 
   def address_partial_selector(%Address{} = address, _, current_address, truncate) do
@@ -195,4 +197,26 @@ defmodule BlockScoutWeb.AddressView do
       truncate: truncate
     }
   end
+
+  @doc """
+  Get the current tab name/title from the request path and possible tab names.
+
+  The tabs on mobile are represented by a dropdown list, which has a title. This title is the
+  currently selected tab name. This function returns that name, properly gettext'ed.
+
+  The list of possible tab names for this page is repesented by the attribute @tab.
+
+  Raises error if there is no match, so a developer of a new tab must include it in the list.
+  """
+  def current_tab_name(request_path) do
+    @tabs
+    |> Enum.filter(&tab_active?(&1, request_path))
+    |> tab_name()
+  end
+
+  defp tab_name(["tokens"]), do: gettext("Tokens")
+  defp tab_name(["transactions"]), do: gettext("Transactions")
+  defp tab_name(["internal_transactions"]), do: gettext("Internal Transactions")
+  defp tab_name(["contracts"]), do: gettext("Code")
+  defp tab_name(["read_contract"]), do: gettext("Read Contract")
 end
