@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.Tokens.HolderView do
   use BlockScoutWeb, :view
 
-  alias BlockScoutWeb.Tokens.{OverviewView, TokenView}
+  alias BlockScoutWeb.Tokens.OverviewView
   alias Explorer.Chain.{Token}
 
   @doc """

@@ -269,7 +269,7 @@ msgstr ""
 msgid "TPM"
 msgstr ""
 
-#: lib/block_scout_web/templates/tokens/holder/index.html.eex:87
+#: lib/block_scout_web/templates/tokens/holder/index.html.eex:35
 msgid "Next Page"
 msgstr ""
 
@@ -505,7 +505,7 @@ msgstr ""
 #: lib/block_scout_web/templates/block/index.html.eex:20
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:50
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:78
-#: lib/block_scout_web/templates/tokens/token/show.html.eex:86
+#: lib/block_scout_web/templates/tokens/transfer/index.html.eex:34
 #: lib/block_scout_web/templates/transaction/index.html.eex:66
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:24
 msgid "Older"
@@ -678,7 +678,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:21
-#: lib/block_scout_web/templates/tokens/token/_token_transfer.html.eex:44
+#: lib/block_scout_web/templates/tokens/transfer/_token_transfer.html.eex:44
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:30
 msgid "Block #%{number}"
 msgstr ""
@@ -716,13 +716,9 @@ msgstr ""
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:100
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:50
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:91
-#: lib/block_scout_web/templates/tokens/holder/index.html.eex:27
-#: lib/block_scout_web/templates/tokens/holder/index.html.eex:55
-#: lib/block_scout_web/templates/tokens/read_contract/index.html.eex:26
-#: lib/block_scout_web/templates/tokens/read_contract/index.html.eex:44
-#: lib/block_scout_web/templates/tokens/read_contract/index.html.eex:52
-#: lib/block_scout_web/templates/tokens/token/show.html.eex:27
-#: lib/block_scout_web/templates/tokens/token/show.html.eex:55
+#: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:14
+#: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:50
+#: lib/block_scout_web/views/tokens/overview_view.ex:36
 msgid "Read Contract"
 msgstr ""
 
@@ -776,7 +772,7 @@ msgid "Used"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/token/_token_transfer.html.eex:4
+#: lib/block_scout_web/templates/tokens/transfer/_token_transfer.html.eex:4
 #: lib/block_scout_web/templates/transaction_token_transfer/_token_transfer.html.eex:4
 #: lib/block_scout_web/views/transaction_view.ex:123
 msgid "Token Transfer"
@@ -811,7 +807,7 @@ msgstr ""
 msgid "Validated Transactions"
 msgstr ""
 
-#: lib/block_scout_web/templates/tokens/token/show.html.eex:79
+#: lib/block_scout_web/templates/tokens/transfer/index.html.eex:27
 msgid "There are no transfers for this Token."
 msgstr ""
 
@@ -821,17 +817,13 @@ msgid "Token Details"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/holder/index.html.eex:18
-#: lib/block_scout_web/templates/tokens/holder/index.html.eex:49
-#: lib/block_scout_web/templates/tokens/read_contract/index.html.eex:18
-#: lib/block_scout_web/templates/tokens/read_contract/index.html.eex:47
-#: lib/block_scout_web/templates/tokens/token/show.html.eex:18
-#: lib/block_scout_web/templates/tokens/token/show.html.eex:46
-#: lib/block_scout_web/templates/tokens/token/show.html.eex:49
-#: lib/block_scout_web/templates/tokens/token/show.html.eex:70
+#: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:5
+#: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:44
+#: lib/block_scout_web/templates/tokens/transfer/index.html.eex:18
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:6
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:36
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:10
+#: lib/block_scout_web/views/tokens/overview_view.ex:34
 #: lib/block_scout_web/views/transaction_view.ex:173
 msgid "Token Transfers"
 msgstr ""
@@ -863,7 +855,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_read_contract/index.html.eex:94
-#: lib/block_scout_web/templates/tokens/read_contract/index.html.eex:67
+#: lib/block_scout_web/templates/tokens/read_contract/index.html.eex:19
 msgid "loading..."
 msgstr ""
 
@@ -1094,19 +1086,15 @@ msgid "There are no tokens for this address."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/holder/index.html.eex:80
+#: lib/block_scout_web/templates/tokens/holder/index.html.eex:28
 msgid "There are no holders for this Token."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/holder/index.html.eex:35
-#: lib/block_scout_web/templates/tokens/holder/index.html.eex:46
-#: lib/block_scout_web/templates/tokens/holder/index.html.eex:60
-#: lib/block_scout_web/templates/tokens/holder/index.html.eex:71
-#: lib/block_scout_web/templates/tokens/read_contract/index.html.eex:33
-#: lib/block_scout_web/templates/tokens/read_contract/index.html.eex:56
-#: lib/block_scout_web/templates/tokens/token/show.html.eex:35
-#: lib/block_scout_web/templates/tokens/token/show.html.eex:60
+#: lib/block_scout_web/templates/tokens/holder/index.html.eex:19
+#: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:22
+#: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:55
+#: lib/block_scout_web/views/tokens/overview_view.ex:35
 msgid "Token Holders"
 msgstr ""
 

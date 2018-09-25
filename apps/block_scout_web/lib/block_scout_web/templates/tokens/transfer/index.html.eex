@@ -14,27 +14,26 @@
         <%= render OverviewView, "_tabs.html", assigns %>
       </div>
 
-      <!-- Token Holders -->
       <div class="card-body">
-        <h2 class="card-title"><%= gettext "Token Holders" %></h2>
+        <h2 class="card-title"><%= gettext "Token Transfers" %></h2>
 
-        <%= if Enum.any?(@token_balances) do %>
-          <%= for token_balance <- @token_balances do %>
-            <%= render "_token_balances.html", token: @token, token_balance: token_balance %>
+        <%= if Enum.any?(@transfers) do %>
+          <%= for transfer <- @transfers do %>
+            <%= render("_token_transfer.html", conn: @conn, token: @token, transfer: transfer) %>
           <% end %>
         <% else %>
           <div class="tile tile-muted text-center">
             <span data-selector="empty-transactions-list">
-              <%= gettext "There are no holders for this Token." %>
+              <%= gettext "There are no transfers for this Token." %>
             </span>
           </div>
         <% end %>
 
         <%= if @next_page_params do %>
           <%= link(
-            gettext("Next Page"),
+            gettext("Older"),
             class: "button button-secondary button-small float-right mt-4",
-            to: token_holder_path(@conn, :index, @token.contract_address_hash, @next_page_params)
+            to: token_path(@conn, :show, @token.contract_address_hash, @next_page_params)
           ) %>
         <% end %>
       </div>
