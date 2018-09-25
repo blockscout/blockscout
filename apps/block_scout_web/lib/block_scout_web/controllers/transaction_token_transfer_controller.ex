@@ -44,6 +44,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
         max_block_number: max_block_number,
         next_page_params: next_page_params(next_page, token_transfers, params),
         token_transfers: token_transfers,
+        show_token_transfers: true,
         transaction: transaction
       )
     else
