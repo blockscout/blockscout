@@ -4,9 +4,11 @@ defmodule BlockScoutWeb.TransactionView do
   alias Cldr.Number
   alias Explorer.Chain
   alias Explorer.Chain.{Address, InternalTransaction, Transaction, Wei}
-  alias BlockScoutWeb.{AddressView, BlockView}
+  alias BlockScoutWeb.{AddressView, BlockView, TabHelpers}
 
   import BlockScoutWeb.Gettext
+
+  @tabs ["token_transfers", "internal_transactions", "logs"]
 
   defguardp is_transaction_type(mod) when mod in [InternalTransaction, Transaction]
 
@@ -151,4 +153,24 @@ defmodule BlockScoutWeb.TransactionView do
     include_label? = Keyword.get(opts, :include_label, true)
     {fee_type, format_wei_value(Wei.from(fee, :wei), denomination, include_unit_label: include_label?)}
   end
+
+  @doc """
+  Get the current tab name/title from the request path and possible tab names.
+
+  The tabs on mobile are represented by a dropdown list, which has a title. This title is the currently selected tab name. This function returns that name, properly gettext'ed.
+
+  The list of possible tab names for this page is repesented by the attribute @tab.
+
+  Raises an error if there is no match, so a developer of a new tab must include it in the list.
+
+  """
+  def current_tab_name(request_path) do
+    @tabs
+    |> Enum.filter(&TabHelpers.tab_active?(&1, request_path))
+    |> tab_name()
+  end
+
+  defp tab_name(["token_transfers"]), do: gettext("Token Transfers")
+  defp tab_name(["internal_transactions"]), do: gettext("Internal Transactions")
+  defp tab_name(["logs"]), do: gettext("Logs")
 end
