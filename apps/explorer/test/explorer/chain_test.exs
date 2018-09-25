@@ -2272,6 +2272,20 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "stream_unfetched_uncle_hashes/2" do
+    test "does not return uncle hashes where t:Explorer.Chain.Block.SecondDegreeRelation.t/0 unclue_fetched_at is not nil" do
+      %Block.SecondDegreeRelation{nephew: %Block{}, uncle_hash: uncle_hash} = insert(:block_second_degree_relation)
+
+      assert {:ok, [^uncle_hash]} = Explorer.Chain.stream_unfetched_uncle_hashes([], &[&1 | &2])
+
+      query = from(bsdr in Block.SecondDegreeRelation, where: bsdr.uncle_hash == ^uncle_hash)
+
+      assert {1, _} = Repo.update_all(query, set: [uncle_fetched_at: DateTime.utc_now()])
+
+      assert {:ok, []} = Explorer.Chain.stream_unfetched_uncle_hashes([], &[&1 | &2])
+    end
+  end
+
   test "total_supply/0" do
     height = 2_000_000
     insert(:block, number: height)
