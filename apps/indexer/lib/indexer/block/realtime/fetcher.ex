@@ -173,10 +173,14 @@ defmodule Indexer.Block.Realtime.Fetcher do
     end
   end
 
-  defp async_import_remaining_block_data(%{tokens: tokens}) do
+  defp async_import_remaining_block_data(%{block_second_degree_relations: block_second_degree_relations, tokens: tokens}) do
     tokens
     |> Enum.map(& &1.contract_address_hash)
     |> Token.Fetcher.async_fetch()
+
+    block_second_degree_relations
+    |> Enum.map(& &1.uncle_hash)
+    |> Block.Uncle.Fetcher.async_fetch_blocks()
   end
 
   defp internal_transactions(
