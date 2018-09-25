@@ -724,7 +724,7 @@ defmodule Explorer.Chain.Import do
     {:ok, blocks} =
       insert_changes_list(
         ordered_changes_list,
-        conflict_target: :number,
+        conflict_target: :hash,
         on_conflict: :replace_all,
         for: Block,
         returning: true,
