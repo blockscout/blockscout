@@ -605,11 +605,20 @@ defmodule Explorer.Chain do
       iex> Explorer.Chain.hash_to_block(hash)
       {:error, :not_found}
 
+  ## Options
+
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+      `:required`, and the `t:Explorer.Chain.Block.t/0` has no associated record for that association, then the
+      `t:Explorer.Chain.Block.t/0` will not be included in the page `entries`.
+
   """
-  @spec hash_to_block(Hash.Full.t()) :: {:ok, Block.t()} | {:error, :not_found}
-  def hash_to_block(%Hash{byte_count: unquote(Hash.Full.byte_count())} = hash) do
+  @spec hash_to_block(Hash.Full.t(), [necessity_by_association_option]) :: {:ok, Block.t()} | {:error, :not_found}
+  def hash_to_block(%Hash{byte_count: unquote(Hash.Full.byte_count())} = hash, options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
     Block
     |> where(hash: ^hash)
+    |> join_associations(necessity_by_association)
     |> Repo.one()
     |> case do
       nil ->
