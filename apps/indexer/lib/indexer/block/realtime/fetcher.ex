@@ -104,6 +104,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
            options
            |> Map.drop(@import_options)
            |> put_in([:addresses, :params], balances_addresses_params)
+           |> put_in([:blocks, :params, Access.all(), :consensus], true)
            |> put_in([Access.key(:balances, %{}), :params], balances_params)
            |> put_in([Access.key(:internal_transactions, %{}), :params], internal_transactions_params)
            |> put_in([Access.key(:token_balances), :params], token_balances),
@@ -124,6 +125,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
   end
 
   def fetch_and_import_block(block_number_to_fetch, block_fetcher) do
+    # Wait half a second to give Parity/Geth time to sync.
+    :timer.sleep(500)
+
     case fetch_and_import_range(block_fetcher, block_number_to_fetch..block_number_to_fetch) do
       {:ok, {_inserted, _next}} ->
         Logger.debug(fn ->
@@ -169,10 +173,14 @@ defmodule Indexer.Block.Realtime.Fetcher do
     end
   end
 
-  defp async_import_remaining_block_data(%{tokens: tokens}) do
+  defp async_import_remaining_block_data(%{block_second_degree_relations: block_second_degree_relations, tokens: tokens}) do
     tokens
     |> Enum.map(& &1.contract_address_hash)
     |> Token.Fetcher.async_fetch()
+
+    block_second_degree_relations
+    |> Enum.map(& &1.uncle_hash)
+    |> Block.Uncle.Fetcher.async_fetch_blocks()
   end
 
   defp internal_transactions(

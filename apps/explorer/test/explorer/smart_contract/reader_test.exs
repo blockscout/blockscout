@@ -82,6 +82,24 @@ defmodule Explorer.SmartContract.ReaderTest do
 
       assert %{"get" => {:error, "Bad Gateway"}} = response
     end
+
+    test "handles other types of errors" do
+      smart_contract = build(:smart_contract)
+      contract_address_hash = Hash.to_string(smart_contract.address_hash)
+      abi = smart_contract.abi
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: _, method: _, params: [%{data: _, to: _}]}], _options ->
+          raise FunctionClauseError
+        end
+      )
+
+      response = Reader.query_contract(contract_address_hash, abi, %{"get" => []})
+
+      assert %{"get" => {:error, "no function clause matches"}} = response
+    end
   end
 
   describe "query_verified_contract/2" do

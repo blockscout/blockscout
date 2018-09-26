@@ -216,7 +216,8 @@ defmodule EthereumJSONRPCTest do
                      "v" => "0x0",
                      "value" => "0x0"
                    }
-                 ]
+                 ],
+                 "uncles" => []
                }
              }
            ]}
@@ -358,7 +359,8 @@ defmodule EthereumJSONRPCTest do
                "size" => "0x0",
                "timestamp" => "0x0",
                "totalDifficulty" => "0x0",
-               "transactions" => []
+               "transactions" => [],
+               "uncles" => []
              },
              jsonrpc: "2.0"
            },

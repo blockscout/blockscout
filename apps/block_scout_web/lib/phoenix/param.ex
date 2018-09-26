@@ -7,8 +7,12 @@ defimpl Phoenix.Param, for: [Address, Transaction] do
 end
 
 defimpl Phoenix.Param, for: Block do
-  def to_param(%@for{number: number}) do
+  def to_param(%@for{consensus: true, number: number}) do
     to_string(number)
+  end
+
+  def to_param(%@for{consensus: false, hash: hash}) do
+    to_string(hash)
   end
 end
 

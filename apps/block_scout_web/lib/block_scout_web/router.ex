@@ -40,7 +40,7 @@ defmodule BlockScoutWeb.Router do
 
     resources("/", ChainController, only: [:show], singleton: true, as: :chain)
 
-    resources "/blocks", BlockController, only: [:index, :show] do
+    resources "/blocks", BlockController, only: [:index, :show], param: "hash_or_number" do
       resources("/transactions", BlockTransactionController, only: [:index], as: :transaction)
     end
 

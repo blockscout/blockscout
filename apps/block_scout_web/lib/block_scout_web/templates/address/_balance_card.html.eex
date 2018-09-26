@@ -1,4 +1,4 @@
-<div class="card card-primary">
+<div class="card card-primary" data-test="outside_of_dropdown">
   <div class="card-body">
     <h2 class="card-title text-white"><%= gettext "Balance" %></h2>
     <span></span>

@@ -3,6 +3,7 @@ defmodule Explorer.Repo.Migrations.CreateBlocks do
 
   def change do
     create table(:blocks, primary_key: false) do
+      add(:consensus, :boolean, null: false)
       add(:difficulty, :numeric, precision: 50)
       add(:gas_limit, :numeric, precision: 100, null: false)
       add(:gas_used, :numeric, precision: 100, null: false)
@@ -22,7 +23,7 @@ defmodule Explorer.Repo.Migrations.CreateBlocks do
     end
 
     create(index(:blocks, [:timestamp]))
-    create(unique_index(:blocks, [:parent_hash]))
-    create(unique_index(:blocks, [:number]))
+    create(index(:blocks, [:parent_hash], unique: true, where: ~s(consensus), name: :one_consensus_child_per_parent))
+    create(index(:blocks, [:number], unique: true, where: ~s(consensus), name: :one_consensus_block_at_height))
   end
 end

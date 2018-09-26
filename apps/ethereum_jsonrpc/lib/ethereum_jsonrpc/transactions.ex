@@ -8,6 +8,7 @@ defmodule EthereumJSONRPC.Transactions do
   alias EthereumJSONRPC.Transaction
 
   @type elixir :: [Transaction.elixir()]
+  @type params :: [Transaction.params()]
   @type t :: [Transaction.t()]
 
   @doc """

@@ -4,9 +4,10 @@ defmodule EthereumJSONRPC.Blocks do
   and [`eth_getBlockByNumber`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbynumber) from batch requests.
   """
 
-  alias EthereumJSONRPC.{Block, Transactions}
+  alias EthereumJSONRPC.{Block, Transactions, Uncles}
 
   @type elixir :: [Block.elixir()]
+  @type params :: [Block.params()]
   @type t :: [Block.t()]
 
   @doc """
@@ -37,7 +38,7 @@ defmodule EthereumJSONRPC.Blocks do
       ...>       "totalDifficulty" => 131072,
       ...>       "transactions" => [],
       ...>       "transactionsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-      ...>       "uncles" => []
+      ...>       "uncles" => ["0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d15273311"]
       ...>     }
       ...>   ]
       ...> )
@@ -53,12 +54,13 @@ defmodule EthereumJSONRPC.Blocks do
           parent_hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
           size: 533,
           timestamp: Timex.parse!("1970-01-01T00:00:00Z", "{ISO:Extended:Z}"),
-          total_difficulty: 131072
+          total_difficulty: 131072,
+          uncles: ["0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d15273311"]
         }
       ]
 
   """
-  @spec elixir_to_params(elixir) :: [map]
+  @spec elixir_to_params(elixir) :: params()
   def elixir_to_params(elixir) when is_list(elixir) do
     Enum.map(elixir, &Block.elixir_to_params/1)
   end
@@ -142,9 +144,75 @@ defmodule EthereumJSONRPC.Blocks do
       ]
 
   """
-  @spec elixir_to_transactions(t) :: Transactions.elixir()
+  @spec elixir_to_transactions(elixir) :: Transactions.elixir()
   def elixir_to_transactions(elixir) when is_list(elixir) do
     Enum.flat_map(elixir, &Block.elixir_to_transactions/1)
+  end
+
+  @doc """
+  Extracts the `t:EthereumJSONRPC.Uncles.elixir/0` from the `t:elixir/0`.
+
+      iex> EthereumJSONRPC.Blocks.elixir_to_uncles([
+      ...>   %{
+      ...>     "author" => "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>     "difficulty" => 340282366920938463463374607431768211454,
+      ...>     "extraData" => "0xd5830108048650617269747986312e32322e31826c69",
+      ...>     "gasLimit" => 6926030,
+      ...>     "gasUsed" => 269607,
+      ...>     "hash" => "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47",
+      ...>     "logsBloom" => "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      ...>     "miner" => "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>     "number" => 34,
+      ...>     "parentHash" => "0x106d528393159b93218dd410e2a778f083538098e46f1a44902aa67a164aed0b",
+      ...>     "receiptsRoot" => "0xf45ed4ab910504ffe231230879c86e32b531bb38a398a7c9e266b4a992e12dfb",
+      ...>     "sealFields" => ["0x84120a71db",
+      ...>      "0xb8417ad0ecca535f81e1807dac338a57c7ccffd05d3e7f0687944650cd005360a192205df306a68eddfe216e0674c6b113050d90eff9b627c1762d43657308f986f501"],
+      ...>     "sha3Uncles" => "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+      ...>     "signature" => "7ad0ecca535f81e1807dac338a57c7ccffd05d3e7f0687944650cd005360a192205df306a68eddfe216e0674c6b113050d90eff9b627c1762d43657308f986f501",
+      ...>     "size" => 1493,
+      ...>     "stateRoot" => "0x6eaa6281df37b9b010f4779affc25ee059088240547ce86cf7ca7b7acd952d4f",
+      ...>     "step" => "302674395",
+      ...>     "timestamp" => Timex.parse!("2017-12-15T21:06:15Z", "{ISO:Extended:Z}"),
+      ...>     "totalDifficulty" => 11569600475311907757754736652679816646147,
+      ...>     "transactions" => [
+      ...>       %{
+      ...>         "blockHash" => "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47",
+      ...>         "blockNumber" => 34,
+      ...>         "chainId" => 77,
+      ...>         "condition" => nil,
+      ...>         "creates" => "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb4",
+      ...>         "from" => "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>         "gas" => 4700000,
+      ...>         "gasPrice" => 100000000000,
+      ...>         "hash" => "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
+      ...>         "input" => "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
+      ...>         "nonce" => 0,
+      ...>         "publicKey" => "0xe5d196ad4ceada719d9e592f7166d0c75700f6eab2e3c3de34ba751ea786527cb3f6eb96ad9fdfdb9989ff572df50f1c42ef800af9c5207a38b929aff969b5c9",
+      ...>         "r" => "0xad3733df250c87556335ffe46c23e34dbaffde93097ef92f52c88632a40f0c75",
+      ...>         "raw" => "0xf9038d8085174876e8008347b7608080b903396060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b002981bda0ad3733df250c87556335ffe46c23e34dbaffde93097ef92f52c88632a40f0c75a072caddc0371451a58de2ca6ab64e0f586ccdb9465ff54e1c82564940e89291e3",
+      ...>         "s" => "0x72caddc0371451a58de2ca6ab64e0f586ccdb9465ff54e1c82564940e89291e3",
+      ...>         "standardV" => "0x0",
+      ...>         "to" => nil,
+      ...>         "transactionIndex" => 0,
+      ...>         "v" => "0xbd",
+      ...>         "value" => 0
+      ...>       }
+      ...>     ],
+      ...>     "transactionsRoot" => "0x2c2e243e9735f6d0081ffe60356c0e4ec4c6a9064c68d10bf8091ff896f33087",
+      ...>     "uncles" => ["0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d15273311"]
+      ...>   }
+      ...> ])
+      [
+        %{
+          "hash" => "0xe670ec64341771606e55d6b4ca35a1a6b75ee3d5145a99d05921026d15273311",
+          "nephewHash" => "0xe52d77084cab13a4e724162bcd8c6028e5ecfaa04d091ee476e96b9958ed6b47"
+        }
+      ]
+
+  """
+  @spec elixir_to_uncles(elixir) :: Uncles.elixir()
+  def elixir_to_uncles(elixir) do
+    Enum.flat_map(elixir, &Block.elixir_to_uncles/1)
   end
 
   @doc """

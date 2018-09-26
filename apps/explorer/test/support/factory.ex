@@ -105,6 +105,7 @@ defmodule Explorer.Factory do
 
   def block_factory do
     %Block{
+      consensus: true,
       number: block_number(),
       hash: block_hash(),
       parent_hash: block_hash(),
@@ -130,6 +131,13 @@ defmodule Explorer.Factory do
 
   def block_number do
     sequence("block_number", & &1)
+  end
+
+  def block_second_degree_relation_factory do
+    %Block.SecondDegreeRelation{
+      uncle_hash: block_hash(),
+      nephew: build(:block)
+    }
   end
 
   def with_block(%Transaction{index: nil} = transaction) do
@@ -418,6 +426,14 @@ defmodule Explorer.Factory do
 
   def transaction_input do
     data(:transaction_input)
+  end
+
+  def transaction_fork_factory do
+    %Transaction.Fork{
+      hash: transaction_hash(),
+      index: 0,
+      uncle_hash: block_hash()
+    }
   end
 
   def smart_contract_factory() do
