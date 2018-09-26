@@ -16,6 +16,16 @@
 
 <div class="dropdown-menu dropdown-menu-right token-balance-dropdown p-0" aria-labelledby="dropdown-tokens">
   <div data-dropdown-items class="dropdown-items">
+    <div class="m-3 position-relative">
+      <i class="fas fa-search position-absolute dropdown-search-icon"></i>
+      <%= text_input(
+            :token_search,
+            :name,
+            class: "w-100 dropdown-search-field",
+            'data-filter-dropdown-tokens': true,
+            placeholder: gettext("Search tokens")
+          ) %>
+    </div>
     <%= if Enum.any?(@token_balances, & &1.token.type == "ERC-721") do %>
       <%= render(
             "_tokens.html",
