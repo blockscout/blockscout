@@ -31,6 +31,12 @@ defmodule BlockScoutWeb.AddressTransactionController do
       transactions_plus_one = Chain.address_to_transactions(address, full_options)
       {transactions, next_page} = split_list_by_page(transactions_plus_one)
 
+      pending_transactions =
+        case Map.has_key?(params, "block_number") do
+          true -> []
+          false -> Chain.address_to_pending_transactions(address, pending_options)
+        end
+
       render(
         conn,
         "index.html",
@@ -38,7 +44,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
         next_page_params: next_page_params(next_page, transactions, params),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
-        pending_transactions: Chain.address_to_pending_transactions(address, pending_options),
+        pending_transactions: pending_transactions,
         transactions: transactions,
         transaction_count: transaction_count(address),
         validation_count: validation_count(address)

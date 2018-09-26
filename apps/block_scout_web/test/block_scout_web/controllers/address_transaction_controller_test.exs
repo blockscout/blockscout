@@ -97,6 +97,35 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       assert second_page_hashes == actual_hashes
     end
 
+    test "does not return pending transactions if beyond page one", %{conn: conn} do
+      address = insert(:address)
+
+      50
+      |> insert_list(:transaction, from_address: address)
+      |> with_block()
+      |> Enum.map(& &1.hash)
+
+      %Transaction{block_number: block_number, index: index} =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block()
+
+      pending = insert(:transaction, from_address: address, to_address: address)
+
+      conn =
+        get(conn, address_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash), %{
+          "block_number" => Integer.to_string(block_number),
+          "index" => Integer.to_string(index)
+        })
+
+      actual_pending_hashes =
+        conn.assigns.pending_transactions
+        |> Enum.map(& &1.hash)
+        |> Enum.reverse()
+
+      refute Enum.member?(actual_pending_hashes, pending.hash)
+    end
+
     test "next_page_params exist if not on last page", %{conn: conn} do
       address = insert(:address)
       block = %Block{number: number} = insert(:block)
