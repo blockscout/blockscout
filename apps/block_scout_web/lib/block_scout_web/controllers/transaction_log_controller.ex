@@ -13,6 +13,7 @@ defmodule BlockScoutWeb.TransactionLogController do
              transaction_hash,
              necessity_by_association: %{
                :block => :optional,
+               [created_contract_address: :names] => :optional,
                [from_address: :names] => :required,
                [to_address: :names] => :optional,
                :token_transfers => :optional
