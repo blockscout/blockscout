@@ -3,6 +3,12 @@ defmodule Indexer.TokenTransfer.Uncataloged.WorkerTest do
 
   alias Indexer.TokenTransfer.Uncataloged.{Worker, TaskSupervisor}
 
+  describe "start_link/1" do
+    test "starts the worker" do
+      assert {:ok, _pid} = Worker.start_link([supervisor: self()])
+    end
+  end
+
   describe "init/1" do
     test "sends message to self" do
       pid = self()
