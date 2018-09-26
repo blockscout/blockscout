@@ -62,8 +62,8 @@ defmodule Indexer.TokenBalances do
       token_balances_params
       |> Stream.filter(fn token_balance -> token_balance.error != nil end)
       |> Enum.map(fn token_balance ->
-        "<address_hash: #{token_balance.token_contract_address_hash}, " <>
-          "contract_address_hash: #{token_balance.address_hash}, " <>
+        "<address_hash: #{token_balance.address_hash}, " <>
+          "contract_address_hash: #{token_balance.token_contract_address_hash}, " <>
           "block_number: #{token_balance.block_number}, " <> "error: #{token_balance.error}> \n"
       end)
 
