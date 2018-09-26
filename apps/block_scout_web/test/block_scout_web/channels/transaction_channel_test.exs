@@ -22,4 +22,21 @@ defmodule BlockScoutWeb.TransactionChannelTest do
         assert false, "Expected message received nothing."
     end
   end
+
+  test "subscribed user is notified of new_pending_transaction event" do
+    topic = "transactions:new_pending_transaction"
+    @endpoint.subscribe(topic)
+
+    pending = insert(:transaction)
+
+    Notifier.handle_event({:chain_event, :transactions, [pending.hash]})
+
+    receive do
+      %Phoenix.Socket.Broadcast{topic: ^topic, event: "new_pending_transaction", payload: payload} ->
+        assert payload.transaction.hash == pending.hash
+    after
+      5_000 ->
+        assert false, "Expected message received nothing."
+    end
+  end
 end

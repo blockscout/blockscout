@@ -165,7 +165,7 @@ defmodule Explorer.Chain.Import do
     * `:blocks`
       * `:params` - `list` of params for `Explorer.Chain.Block.changeset/2`.
       * `:timeout` - the timeout for inserting all blocks. Defaults to `#{@insert_blocks_timeout}` milliseconds.
-    * `:broacast` - Boolean flag indicating whether or not to broadcast the event.
+    * `:broadcast` - Boolean flag indicating whether or not to broadcast the event.
     * `:internal_transactions`
       * `:params` - `list` of params for `Explorer.Chain.InternalTransaction.changeset/2`.
       * `:timeout` - the timeout for inserting all internal transactions. Defaults to

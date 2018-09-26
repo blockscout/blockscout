@@ -4,7 +4,7 @@ import numeral from 'numeral'
 import socket from '../socket'
 import { updateAllAges } from '../lib/from_now'
 import { exchangeRateChannel, formatUsdValue } from '../lib/currency'
-import { batchChannel, initRedux } from '../utils'
+import { batchChannel, initRedux, slideDownPrepend } from '../utils'
 import { createMarketHistoryChart } from '../lib/market_history_chart'
 
 const BATCH_THRESHOLD = 10
@@ -131,7 +131,7 @@ if ($chainDetailsPage.length) {
           .children()
           .slice($transactionsList.children().length - newTransactionsToInsert.length, $transactionsList.children().length)
           .remove()
-        $transactionsList.prepend(newTransactionsToInsert.reverse().join(''))
+        slideDownPrepend($transactionsList, newTransactionsToInsert.reverse().join(''))
 
         updateAllAges()
       }
