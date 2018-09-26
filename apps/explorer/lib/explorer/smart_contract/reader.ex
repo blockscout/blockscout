@@ -114,7 +114,7 @@ defmodule Explorer.SmartContract.Reader do
     |> decode_results(abi, functions)
   rescue
     error ->
-      format_error(functions, error.message)
+      format_error(functions, error)
   end
 
   defp decode_results({:ok, results}, abi, functions), do: Encoder.decode_abi_results(results, abi, functions)
@@ -123,12 +123,20 @@ defmodule Explorer.SmartContract.Reader do
     format_error(functions, "Bad Gateway")
   end
 
-  defp format_error(functions, message) do
+  defp format_error(functions, message) when is_binary(message) do
     functions
     |> Enum.map(fn {function_name, _args} ->
       %{function_name => {:error, message}}
     end)
     |> List.first()
+  end
+
+  defp format_error(functions, %{message: error_message}) do
+    format_error(functions, error_message)
+  end
+
+  defp format_error(functions, error) do
+    format_error(functions, Exception.message(error))
   end
 
   @doc """
