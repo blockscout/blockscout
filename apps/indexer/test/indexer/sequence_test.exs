@@ -116,6 +116,45 @@ defmodule Indexer.SequenceTest do
     end
   end
 
+  describe "queue_front/2" do
+    test "with finite mode range is chunked" do
+      {:ok, pid} = Sequence.start_link(ranges: [1..0], step: -1)
+
+      assert Sequence.pop(pid) == 1..1
+      assert Sequence.pop(pid) == 0..0
+
+      assert Sequence.queue_front(pid, 1..0) == :ok
+
+      assert Sequence.pop(pid) == 0..0
+      assert Sequence.pop(pid) == 1..1
+      assert Sequence.pop(pid) == :halt
+      assert Sequence.pop(pid) == :halt
+    end
+
+    test "with finite mode with range in wrong direction returns error" do
+      {:ok, ascending} = Sequence.start_link(first: 0, step: 1)
+
+      assert Sequence.queue_front(ascending, 1..0) == {:error, "Range (1..0) direction is opposite step (1) direction"}
+
+      {:ok, descending} = Sequence.start_link(ranges: [1..0], step: -1)
+
+      assert Sequence.queue_front(descending, 0..1) ==
+               {:error, "Range (0..1) direction is opposite step (-1) direction"}
+    end
+
+    test "with infinite mode range is chunked and is returned prior to calculated ranges" do
+      {:ok, pid} = Sequence.start_link(first: 5, step: 1)
+
+      assert :ok = Sequence.queue_front(pid, 3..4)
+
+      assert Sequence.pop(pid) == 4..4
+      assert Sequence.pop(pid) == 3..3
+      # infinite sequence takes over
+      assert Sequence.pop(pid) == 5..5
+      assert Sequence.pop(pid) == 6..6
+    end
+  end
+
   describe "cap/1" do
     test "returns previous mode" do
       {:ok, pid} = Sequence.start_link(first: 5, step: 1)

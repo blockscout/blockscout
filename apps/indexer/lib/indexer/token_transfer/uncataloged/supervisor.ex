@@ -7,6 +7,8 @@ defmodule Indexer.TokenTransfer.Uncataloged.Supervisor do
 
   alias Indexer.TokenTransfer.Uncataloged.Worker
 
+  @dialyzer {:no_return, init: 1}
+
   def start_link(opts) do
     Supervisor.start_link(__MODULE__, opts)
   end

@@ -5,7 +5,7 @@ defmodule Indexer.TokenTransfer.Uncataloged.WorkerTest do
 
   describe "start_link/1" do
     test "starts the worker" do
-      assert {:ok, _pid} = Worker.start_link([supervisor: self()])
+      assert {:ok, _pid} = Worker.start_link(supervisor: self())
     end
   end
 

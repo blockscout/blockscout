@@ -38,6 +38,8 @@ defmodule Indexer.Sequence do
 
   @type options :: [ranges_option | first_option | step_named_argument]
 
+  @typep edge :: :front | :back
+
   @typep t :: %__MODULE__{
            queue: :queue.queue(Range.t()),
            current: nil | integer(),
@@ -88,11 +90,19 @@ defmodule Indexer.Sequence do
   end
 
   @doc """
-  Adds a range of block numbers to the end of sequence.
+  Adds a range of block numbers to the end of the sequence.
   """
   @spec queue(pid() | atom(), Range.t()) :: :ok | {:error, String.t()}
   def queue(sequence, _first.._last = range) when is_pid(sequence) or is_atom(sequence) do
     GenServer.call(sequence, {:queue, range})
+  end
+
+  @doc """
+  Adds a range of block numbers to the front of the sequence.
+  """
+  @spec queue_front(pid() | atom(), Range.t()) :: {:ok, {:error, String.t()}}
+  def queue_front(sequence, _first.._last = range) when is_pid(sequence) or is_atom(sequence) do
+    GenServer.call(sequence, {:queue_front, range})
   end
 
   @doc """
@@ -144,6 +154,17 @@ defmodule Indexer.Sequence do
     end
   end
 
+  @spec handle_call({:queue_front, Range.t()}, GenServer.from(), t()) :: {:reply, :ok | {:error, String.t()}, t()}
+  def handle_call({:queue_front, _first.._last = range}, _from, %__MODULE__{queue: queue, step: step} = state) do
+    case queue_chunked_range(queue, step, range, :front) do
+      {:ok, updated_queue} ->
+        {:reply, :ok, %__MODULE__{state | queue: updated_queue}}
+
+      {:error, _} = error ->
+        {:reply, error, state}
+    end
+  end
+
   @spec handle_call(:pop, GenServer.from(), t()) :: {:reply, Range.t() | :halt, t()}
   def handle_call(:pop, _from, %__MODULE__{queue: queue, current: current, step: step} = state) do
     {reply, new_state} =
@@ -165,18 +186,26 @@ defmodule Indexer.Sequence do
     {:reply, reply, new_state}
   end
 
-  @spec queue_chunked_range(:queue.queue(Range.t()), step, Range.t()) ::
+  @spec queue_chunked_range(:queue.queue(Range.t()), step, Range.t(), edge()) ::
           {:ok, :queue.queue(Range.t())} | {:error, reason :: String.t()}
-  defp queue_chunked_range(queue, step, _.._ = range) when is_integer(step) do
-    with {:error, [reason]} <- queue_chunked_ranges(queue, step, [range]) do
+  defp queue_chunked_range(queue, step, _.._ = range, edge \\ :back)
+       when is_integer(step) and edge in [:back, :front] do
+    with {:error, [reason]} <- queue_chunked_ranges(queue, step, [range], edge) do
       {:error, reason}
     end
   end
 
-  @spec queue_chunked_range(:queue.queue(Range.t()), step, [Range.t()]) ::
+  @spec queue_chunked_range(:queue.queue(Range.t()), step, [Range.t()], edge()) ::
           {:ok, :queue.queue(Range.t())} | {:error, reasons :: [String.t()]}
-  defp queue_chunked_ranges(queue, step, ranges) when is_integer(step) and is_list(ranges) do
-    reduce_chunked_ranges(ranges, step, queue, &:queue.in/2)
+  defp queue_chunked_ranges(queue, step, ranges, edge \\ :back)
+       when is_integer(step) and is_list(ranges) and edge in [:back, :front] do
+    reducer =
+      case edge do
+        :back -> &:queue.in/2
+        :front -> &:queue.in_r/2
+      end
+
+    reduce_chunked_ranges(ranges, step, queue, reducer)
   end
 
   defp reduce_chunked_ranges(ranges, step, initial, reducer)

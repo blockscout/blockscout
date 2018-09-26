@@ -226,9 +226,12 @@ defmodule Indexer.Block.Catchup.Fetcher do
     :ok
   end
 
+  @doc """
+  Puts a list of block numbers to the front of the sequencing queue.
+  """
   def enqueue(block_numbers) do
     for block_number <- block_numbers do
-      Sequence.queue(@sequence_name, block_number..block_number)
+      Sequence.queue_front(@sequence_name, block_number..block_number)
     end
 
     :ok
