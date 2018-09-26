@@ -302,7 +302,6 @@ describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
   })
   test('single transaction after large batch of transactions', () => {
     const state = Object.assign({}, initialState, {
-      newTransactions: [],
       batchCountAccumulator: 11
     })
     const action = {
@@ -318,7 +317,6 @@ describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
   })
   test('large batch of transactions after large batch of transactions', () => {
     const state = Object.assign({}, initialState, {
-      newTransactions: [],
       batchCountAccumulator: 11
     })
     const action = {
@@ -369,7 +367,8 @@ describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
   })
   test('on page 2+', () => {
     const state = Object.assign({}, initialState, {
-      beyondPageOne: true
+      beyondPageOne: true,
+      transactionCount: 1
     })
     const action = {
       type: 'RECEIVED_NEW_TRANSACTION_BATCH',
@@ -381,5 +380,6 @@ describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
 
     expect(output.newTransactions).toEqual([])
     expect(output.batchCountAccumulator).toEqual(0)
+    expect(output.transactionCount).toEqual(2)
   })
 })

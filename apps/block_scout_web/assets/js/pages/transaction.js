@@ -81,7 +81,11 @@ export function reducer (state = initialState, action) {
       }
     }
     case 'RECEIVED_NEW_TRANSACTION_BATCH': {
-      if (state.channelDisconnected || state.beyondPageOne) return state
+      if (state.channelDisconnected) return state
+
+      const transactionCount = state.transactionCount + action.msgs.length
+
+      if (state.beyondPageOne) return Object.assign({}, state, { transactionCount })
 
       if (!state.batchCountAccumulator && action.msgs.length < BATCH_THRESHOLD) {
         return Object.assign({}, state, {
@@ -89,12 +93,12 @@ export function reducer (state = initialState, action) {
             ...state.newTransactions,
             ...action.msgs.map(({transactionHtml}) => transactionHtml)
           ],
-          transactionCount: state.transactionCount + action.msgs.length
+          transactionCount
         })
       } else {
         return Object.assign({}, state, {
           batchCountAccumulator: state.batchCountAccumulator + action.msgs.length,
-          transactionCount: state.transactionCount + action.msgs.length
+          transactionCount
         })
       }
     }
@@ -203,19 +207,17 @@ const $transactionListPage = $('[data-page="transaction-list"]')
 if ($transactionListPage.length) {
   initRedux(reducer, {
     main (store) {
-      const state = store.dispatch({
+      store.dispatch({
         type: 'PAGE_LOAD',
         transactionCount: $('[data-selector="transaction-count"]').text(),
         beyondPageOne: !!humps.camelizeKeys(URI(window.location).query(true)).index
       })
-      if (!state.beyondPageOne) {
-        const transactionsChannel = socket.channel(`transactions:new_transaction`)
-        transactionsChannel.join()
-        transactionsChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
-        transactionsChannel.on('new_transaction', batchChannel((msgs) =>
-          store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION_BATCH', msgs: humps.camelizeKeys(msgs) }))
-        )
-      }
+      const transactionsChannel = socket.channel(`transactions:new_transaction`)
+      transactionsChannel.join()
+      transactionsChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
+      transactionsChannel.on('new_transaction', batchChannel((msgs) =>
+        store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION_BATCH', msgs: humps.camelizeKeys(msgs) }))
+      )
     },
     render (state, oldState) {
       const $channelBatching = $('[data-selector="channel-batching-message"]')
