@@ -6,9 +6,11 @@ defmodule BlockScoutWeb.Chain do
   import Explorer.Chain,
     only: [
       hash_to_address: 1,
+      hash_to_block: 1,
       hash_to_transaction: 1,
       number_to_block: 1,
       string_to_address_hash: 1,
+      string_to_block_hash: 1,
       string_to_transaction_hash: 1
     ]
 
@@ -53,7 +55,7 @@ defmodule BlockScoutWeb.Chain do
   def from_param("0x" <> number_string = param) do
     case String.length(number_string) do
       40 -> address_from_param(param)
-      64 -> transaction_from_param(param)
+      64 -> block_or_transaction_from_param(param)
       _ -> {:error, :not_found}
     end
   end
@@ -196,9 +198,23 @@ defmodule BlockScoutWeb.Chain do
     %{"address_hash" => to_string(address_hash), "value" => Decimal.to_integer(value)}
   end
 
+  defp block_or_transaction_from_param(param) do
+    with {:error, :not_found} <- transaction_from_param(param) do
+      hash_string_to_block(param)
+    end
+  end
+
   defp transaction_from_param(param) do
     with {:ok, hash} <- string_to_transaction_hash(param) do
       hash_to_transaction(hash)
+    else
+      :error -> {:error, :not_found}
+    end
+  end
+
+  defp hash_string_to_block(hash_string) do
+    with {:ok, hash} <- string_to_block_hash(hash_string) do
+      hash_to_block(hash)
     else
       :error -> {:error, :not_found}
     end

@@ -11,10 +11,20 @@ defmodule Indexer.Address.CoinBalancesTest do
         |> to_string()
 
       block_number = 1
+
       params_set = CoinBalances.params_set(%{blocks_params: [%{miner_hash: miner_hash, number: block_number}]})
 
       assert MapSet.size(params_set) == 1
       assert %{address_hash: miner_hash, block_number: block_number}
+    end
+
+    test "with block second degree relations extracts nothing" do
+      params_set =
+        CoinBalances.params_set(%{
+          block_second_degree_relations_params: [%{nephew_hash: Factory.block_hash(), uncle_hash: Factory.block_hash()}]
+        })
+
+      assert MapSet.size(params_set) == 0
     end
 
     test "with call internal transaction extracts nothing" do

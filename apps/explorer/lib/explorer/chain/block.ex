@@ -7,9 +7,9 @@ defmodule Explorer.Chain.Block do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, Gas, Hash, Transaction}
+  alias Explorer.Chain.{Address, Block.SecondDegreeRelation, Gas, Hash, Transaction}
 
-  @required_attrs ~w(difficulty gas_limit gas_used hash miner_hash nonce number parent_hash size timestamp
+  @required_attrs ~w(consensus difficulty gas_limit gas_used hash miner_hash nonce number parent_hash size timestamp
                      total_difficulty)a
 
   @typedoc """
@@ -25,6 +25,9 @@ defmodule Explorer.Chain.Block do
   @type block_number :: non_neg_integer()
 
   @typedoc """
+   * `consensus`
+     * `true` - this is a block on the longest consensus agreed upon chain.
+     * `false` - this is an uncle block from a fork.
    * `difficulty` - how hard the block was to mine.
    * `gas_limit` - If the total number of gas used by the computation spawned by the transaction, including the
      original message and any sub-messages that may be triggered, is less than or equal to the gas limit, then the
@@ -43,6 +46,7 @@ defmodule Explorer.Chain.Block do
    * `transactions` - the `t:Explorer.Chain.Transaction.t/0` in this block.
   """
   @type t :: %__MODULE__{
+          consensus: boolean(),
           difficulty: difficulty(),
           gas_limit: Gas.t(),
           gas_used: Gas.t(),
@@ -60,6 +64,7 @@ defmodule Explorer.Chain.Block do
 
   @primary_key {:hash, Hash.Full, autogenerate: false}
   schema "blocks" do
+    field(:consensus, :boolean)
     field(:difficulty, :decimal)
     field(:gas_limit, :decimal)
     field(:gas_used, :decimal)
@@ -72,7 +77,15 @@ defmodule Explorer.Chain.Block do
     timestamps()
 
     belongs_to(:miner, Address, foreign_key: :miner_hash, references: :hash, type: Hash.Address)
+
+    has_many(:nephew_relations, SecondDegreeRelation, foreign_key: :uncle_hash)
+    has_many(:nephews, through: [:nephew_relations, :nephew])
+
     belongs_to(:parent, __MODULE__, foreign_key: :parent_hash, references: :hash, type: Hash.Full)
+
+    has_many(:uncle_relations, SecondDegreeRelation, foreign_key: :nephew_hash)
+    has_many(:uncles, through: [:uncle_relations, :uncle])
+
     has_many(:transactions, Transaction)
   end
 

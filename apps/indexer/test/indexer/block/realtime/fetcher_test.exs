@@ -1,4 +1,4 @@
-defmodule Indexer.BlockFetcher.RealtimeTest do
+defmodule Indexer.Block.Realtime.FetcherTest do
   use EthereumJSONRPC.Case, async: false
   use Explorer.DataCase
 
@@ -7,7 +7,7 @@ defmodule Indexer.BlockFetcher.RealtimeTest do
   alias Explorer.Chain
   alias Explorer.Chain.Address
   alias Indexer.{Sequence, Token}
-  alias Indexer.Block.Realtime
+  alias Indexer.Block.{Realtime, Uncle}
 
   @moduletag capture_log: true
 
@@ -36,7 +36,7 @@ defmodule Indexer.BlockFetcher.RealtimeTest do
     %{block_fetcher: block_fetcher, json_rpc_named_arguments: core_json_rpc_named_arguments}
   end
 
-  describe "Indexer.BlockFetcher.stream_import/1" do
+  describe "Indexer.Block.Fetcher.fetch_and_import_range/1" do
     @tag :no_geth
     test "in range with internal transactions", %{
       block_fetcher: %Indexer.Block.Fetcher{} = block_fetcher,
@@ -46,6 +46,10 @@ defmodule Indexer.BlockFetcher.RealtimeTest do
       Sequence.cap(sequence)
 
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      Uncle.Supervisor.Case.start_supervised!(
+        block_fetcher: %Indexer.Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
+      )
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         EthereumJSONRPC.Mox
@@ -122,7 +126,7 @@ defmodule Indexer.BlockFetcher.RealtimeTest do
                    }
                  ],
                  "transactionsRoot" => "0xd7c39a93eafe0bdcbd1324c13dcd674bed8c9fa8adbf8f95bf6a59788985da6f",
-                 "uncles" => []
+                 "uncles" => ["0xa4ec735cabe1510b5ae081b30f17222580b4588dbec52830529753a688b046cd"]
                }
              },
              %{

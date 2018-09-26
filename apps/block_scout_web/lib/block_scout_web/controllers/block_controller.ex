@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.BlockController do
     render(conn, "index.html", blocks: blocks, next_page_params: next_page_params(next_page, blocks, params))
   end
 
-  def show(conn, %{"id" => number}) do
-    redirect(conn, to: block_transaction_path(conn, :index, number))
+  def show(conn, %{"hash_or_number" => hash_or_number}) do
+    redirect(conn, to: block_transaction_path(conn, :index, hash_or_number))
   end
 end

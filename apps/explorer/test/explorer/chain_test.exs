@@ -1,6 +1,9 @@
 defmodule Explorer.ChainTest do
   use Explorer.DataCase
 
+  require Ecto.Query
+
+  import Ecto.Query
   import Explorer.Factory
 
   alias Explorer.{Chain, Factory, PagingOptions, Repo}
@@ -670,6 +673,7 @@ defmodule Explorer.ChainTest do
       blocks: %{
         params: [
           %{
+            consensus: true,
             difficulty: 340_282_366_920_938_463_463_374_607_431_768_211_454,
             gas_limit: 6_946_336,
             gas_used: 50450,
@@ -681,6 +685,14 @@ defmodule Explorer.ChainTest do
             size: 719,
             timestamp: Timex.parse!("2017-12-15T21:06:30.000000Z", "{ISO:Extended:Z}"),
             total_difficulty: 12_590_447_576_074_723_148_144_860_474_975_121_280_509
+          }
+        ]
+      },
+      block_second_degree_relations: %{
+        params: [
+          %{
+            nephew_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+            uncle_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471be"
           }
         ]
       },
@@ -817,6 +829,7 @@ defmodule Explorer.ChainTest do
                 ],
                 blocks: [
                   %Block{
+                    consensus: true,
                     difficulty: ^difficulty,
                     gas_limit: ^gas_limit,
                     gas_used: ^gas_used,
@@ -2256,6 +2269,20 @@ defmodule Explorer.ChainTest do
       insert(:token_balance)
 
       assert Chain.stream_unfetched_token_balances([], &[&1.block_number | &2]) == {:ok, [token_balance.block_number]}
+    end
+  end
+
+  describe "stream_unfetched_uncle_hashes/2" do
+    test "does not return uncle hashes where t:Explorer.Chain.Block.SecondDegreeRelation.t/0 unclue_fetched_at is not nil" do
+      %Block.SecondDegreeRelation{nephew: %Block{}, uncle_hash: uncle_hash} = insert(:block_second_degree_relation)
+
+      assert {:ok, [^uncle_hash]} = Explorer.Chain.stream_unfetched_uncle_hashes([], &[&1 | &2])
+
+      query = from(bsdr in Block.SecondDegreeRelation, where: bsdr.uncle_hash == ^uncle_hash)
+
+      assert {1, _} = Repo.update_all(query, set: [uncle_fetched_at: DateTime.utc_now()])
+
+      assert {:ok, []} = Explorer.Chain.stream_unfetched_uncle_hashes([], &[&1 | &2])
     end
   end
 
