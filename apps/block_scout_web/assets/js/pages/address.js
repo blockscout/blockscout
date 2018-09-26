@@ -15,7 +15,6 @@ export const initialState = {
   addressHash: null,
   balance: null,
   batchCountAccumulator: 0,
-  batchPendingCountAccumulator: 0,
   beyondPageOne: null,
   channelDisconnected: false,
   filter: null,
@@ -23,7 +22,7 @@ export const initialState = {
   newPendingTransactions: [],
   newTransactions: [],
   newTransactionHashes: [],
-  pendingTransactionHashes: [],
+  newPendingTransactionHashesBatch: [],
   transactionCount: null
 }
 
@@ -34,7 +33,6 @@ export function reducer (state = initialState, action) {
         addressHash: action.addressHash,
         beyondPageOne: action.beyondPageOne,
         filter: action.filter,
-        pendingTransactionHashes: action.pendingTransactionHashes,
         transactionCount: numeral(action.transactionCount).value()
       })
     }
@@ -83,29 +81,28 @@ export function reducer (state = initialState, action) {
           (state.filter === 'to' && toAddressHash === state.addressHash) ||
           (state.filter === 'from' && fromAddressHash === state.addressHash)
         ))
-      if (!state.batchPendingCountAccumulator && incomingPendingTransactions.length < BATCH_THRESHOLD) {
+      if (!state.newPendingTransactionHashesBatch.length && incomingPendingTransactions.length < BATCH_THRESHOLD) {
         return Object.assign({}, state, {
           newPendingTransactions: [
             ...state.newPendingTransactions,
             ..._.map(incomingPendingTransactions, 'transactionHtml')
-          ],
-          pendingTransactionHashes: [
-            ...state.pendingTransactionHashes,
-            ..._.map(incomingPendingTransactions, 'transactionHash')
           ]
         })
       } else {
         return Object.assign({}, state, {
-          batchPendingCountAccumulator: state.batchPendingCountAccumulator + incomingPendingTransactions.length,
-          pendingTransactionHashes: [
-            ...state.pendingTransactionHashes,
+          newPendingTransactionHashesBatch: [
+            ...state.newPendingTransactionHashesBatch,
             ..._.map(incomingPendingTransactions, 'transactionHash')
           ]
         })
       }
     }
     case 'RECEIVED_NEW_TRANSACTION_BATCH': {
-      if (state.channelDisconnected || state.beyondPageOne) return state
+      if (state.channelDisconnected) return state
+
+      const transactionCount = state.transactionCount + action.msgs.length
+
+      if (state.beyondPageOne) return Object.assign({}, state, { transactionCount })
 
       const incomingTransactions = humps.camelizeKeys(action.msgs)
         .filter(({toAddressHash, fromAddressHash}) => (
@@ -114,27 +111,25 @@ export function reducer (state = initialState, action) {
           (state.filter === 'from' && fromAddressHash === state.addressHash)
         ))
 
-      const updatePendingTransactionHashes =
-        _.difference(state.pendingTransactionHashes, _.map(incomingTransactions, 'transactionHash'))
+      const updatedPendingTransactionHashesBatch =
+        _.difference(state.newPendingTransactionHashesBatch, _.map(incomingTransactions, 'transactionHash'))
 
       if (!state.batchCountAccumulator && incomingTransactions.length < BATCH_THRESHOLD) {
         return Object.assign({}, state, {
-          batchPendingCountAccumulator: state.batchPendingCountAccumulator - incomingTransactions.length,
           newTransactions: [
             ...state.newTransactions,
             ..._.map(incomingTransactions, 'transactionHtml')
           ],
           newTransactionHashes: _.map(incomingTransactions, 'transactionHash'),
-          pendingTransactionHashes: updatePendingTransactionHashes,
-          transactionCount: state.transactionCount + action.msgs.length
+          newPendingTransactionHashesBatch: updatedPendingTransactionHashesBatch,
+          transactionCount: transactionCount
         })
       } else {
         return Object.assign({}, state, {
           batchCountAccumulator: state.batchCountAccumulator + incomingTransactions.length,
-          batchPendingCountAccumulator: state.batchPendingCountAccumulator - incomingTransactions.length,
           newTransactionHashes: _.map(incomingTransactions, 'transactionHash'),
-          pendingTransactionHashes: updatePendingTransactionHashes,
-          transactionCount: state.transactionCount + action.msgs.length
+          newPendingTransactionHashesBatch: updatedPendingTransactionHashesBatch,
+          transactionCount: transactionCount
         })
       }
     }
@@ -158,15 +153,11 @@ if ($addressDetailsPage.length) {
       const addressHash = $addressDetailsPage[0].dataset.pageAddressHash
       const addressChannel = socket.channel(`addresses:${addressHash}`, {})
       const { filter, blockNumber } = humps.camelizeKeys(URI(window.location).query(true))
-      const state = store.dispatch({
+      store.dispatch({
         type: 'PAGE_LOAD',
         addressHash,
         beyondPageOne: !!blockNumber,
         filter,
-        pendingTransactionHashes:
-          $('[data-selector="pending-transactions-list"] [data-transaction-hash]').map((index, el) =>
-            el.attributes['data-transaction-hash'].nodeValue
-          ).toArray(),
         transactionCount: $('[data-selector="transaction-count"]').text()
       })
       addressChannel.join()
@@ -224,13 +215,13 @@ if ($addressDetailsPage.length) {
       } else {
         $channelBatching.hide()
       }
-      if (state.batchPendingCountAccumulator > 0) {
+      if (oldState.newPendingTransactionHashesBatch !== state.newPendingTransactionHashesBatch && state.newPendingTransactionHashesBatch.length > 0) {
         $channelPendingBatching.show()
-        $channelPendingBatchingCount[0].innerHTML = numeral(state.batchPendingCountAccumulator).format()
+        $channelPendingBatchingCount[0].innerHTML = numeral(state.newPendingTransactionHashesBatch.length).format()
       } else {
         $channelPendingBatching.hide()
       }
-      if (oldState.pendingTransactionHashes !== state.pendingTransactionHashes && state.newTransactionHashes.length > 0) {
+      if (oldState.newTransactionHashes !== state.newTransactionHashes && state.newTransactionHashes.length > 0) {
         let $transaction
         _.each(state.newTransactionHashes, (hash) => {
           $transaction = $(`[data-selector="pending-transactions-list"] [data-transaction-hash="${hash}"]`)
