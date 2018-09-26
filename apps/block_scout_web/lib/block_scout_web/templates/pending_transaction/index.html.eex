@@ -56,7 +56,7 @@
       <h2 class="card-title mb-0"><%= gettext "Transactions" %></h2>
       <p>
         <%= gettext("Showing") %>
-        <span data-selector="transaction-count"><%= Cldr.Number.to_string!(@pending_transaction_count, format: "#,###") %></span>
+        <span data-selector="transaction-pending-count"><%= Cldr.Number.to_string!(@pending_transaction_count, format: "#,###") %></span>
         <%= gettext("Pending Transactions") %>
       </p>
       <span data-selector="transactions-pending-list">
