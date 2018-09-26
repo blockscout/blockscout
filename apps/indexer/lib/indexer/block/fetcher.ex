@@ -26,6 +26,7 @@ defmodule Indexer.Block.Fetcher do
                 addresses: Import.addresses_options(),
                 balances: Import.balances_options(),
                 blocks: Import.blocks_options(),
+                block_second_degree_relations: Import.block_second_degree_relations_options(),
                 broadcast: boolean,
                 logs: Import.logs_options(),
                 receipts: Import.receipts_options(),
@@ -91,7 +92,11 @@ defmodule Indexer.Block.Fetcher do
       when broadcast in ~w(true false)a and callback_module != nil do
     with {:blocks, {:ok, next, result}} <-
            {:blocks, EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments)},
-         %{blocks: blocks, transactions: transactions_without_receipts} = result,
+         %{
+           blocks: blocks,
+           transactions: transactions_without_receipts,
+           block_second_degree_relations: block_second_degree_relations
+         } = result,
          {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_without_receipts)},
          %{logs: logs, receipts: receipts} = receipt_params,
          transactions_with_receipts = Receipts.put(transactions_without_receipts, receipts),
@@ -111,14 +116,14 @@ defmodule Indexer.Block.Fetcher do
            }),
          token_balances = TokenBalances.params_set(%{token_transfers_params: token_transfers}),
          {:ok, inserted} <-
-           import_range(
+           __MODULE__.import(
              state,
              %{
-               range: range,
                addresses: %{params: addresses},
                balances: %{params: coin_balances_params_set},
                token_balances: %{params: token_balances},
                blocks: %{params: blocks},
+               block_second_degree_relations: %{params: block_second_degree_relations},
                logs: %{params: logs},
                receipts: %{params: receipts},
                token_transfers: %{params: token_transfers},
@@ -134,11 +139,11 @@ defmodule Indexer.Block.Fetcher do
     end
   end
 
-  defp import_range(
-         %__MODULE__{broadcast: broadcast, callback_module: callback_module} = state,
-         options
-       )
-       when is_map(options) do
+  def import(
+        %__MODULE__{broadcast: broadcast, callback_module: callback_module} = state,
+        options
+      )
+      when is_map(options) do
     {address_hash_to_fetched_balance_block_number, import_options} =
       pop_address_hash_to_fetched_balance_block_number(options)
 

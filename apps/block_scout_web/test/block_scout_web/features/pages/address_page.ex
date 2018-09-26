@@ -15,6 +15,22 @@ defmodule BlockScoutWeb.AddressPage do
     css("[data-test='address_balance']")
   end
 
+  def token_balance(count: count) do
+    css("[data-dropdown-token-balance-test]", count: count)
+  end
+
+  def token_balance_counter(text) do
+    css("[data-tokens-count]", text: "#{text} tokens")
+  end
+
+  def token_type(count: count) do
+    css("[data-token-type]", count: count)
+  end
+
+  def token_type_count(type: type, text: text) do
+    css("[data-number-of-tokens-by-type='#{type}']", text: text)
+  end
+
   def address(%Address{hash: hash}) do
     css("[data-address-hash='#{hash}']", text: to_string(hash))
   end
@@ -29,6 +45,18 @@ defmodule BlockScoutWeb.AddressPage do
 
   def click_tokens(session) do
     click(session, css("[data-test='tokens_tab_link']"))
+  end
+
+  def click_balance_dropdown_toggle(session) do
+    click(session, css("[data-dropdown-toggle]"))
+  end
+
+  def fill_balance_dropdown_search(session, text) do
+    fill_in(session, css("[data-filter-dropdown-tokens]"), with: text)
+  end
+
+  def click_outside_of_the_dropdown(session) do
+    click(session, css("[data-test='outside_of_dropdown']"))
   end
 
   def click_token_transfers(session, %Token{contract_address_hash: contract_address_hash}) do

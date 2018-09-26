@@ -17,7 +17,7 @@ defmodule EthereumJSONRPC do
   """
 
   alias Explorer.Chain.Block
-  alias EthereumJSONRPC.{Blocks, Receipts, Subscription, Transactions, Transport, Variant}
+  alias EthereumJSONRPC.{Blocks, Receipts, Subscription, Transactions, Transport, Uncles, Variant}
 
   @typedoc """
   Truncated 20-byte [KECCAK-256](https://en.wikipedia.org/wiki/SHA-3) hash encoded as a hexadecimal number in a
@@ -62,6 +62,11 @@ defmodule EthereumJSONRPC do
   @type subscribe_named_arguments :: [
           {:transport, Transport.t()} | {:transport_options, Transport.options()} | {:variant, Variant.t()}
         ]
+
+  @typedoc """
+  If there are more blocks.
+  """
+  @type next :: :end_of_chain | :more
 
   @typedoc """
   8 byte [KECCAK-256](https://en.wikipedia.org/wiki/SHA-3) hash of the proof-of-work.
@@ -206,6 +211,14 @@ defmodule EthereumJSONRPC do
   @doc """
   Fetches blocks by block number range.
   """
+  @spec fetch_blocks_by_range(Range.t(), json_rpc_named_arguments) ::
+          {:ok, next,
+           %{
+             blocks: Blocks.params(),
+             block_second_degree_relations: Uncles.params(),
+             transactions: Transactions.params()
+           }}
+          | {:error, [reason :: term, ...]}
   def fetch_blocks_by_range(_first.._last = range, json_rpc_named_arguments) do
     id_to_params =
       range
@@ -482,13 +495,18 @@ defmodule EthereumJSONRPC do
   defp handle_get_blocks({:ok, results}, id_to_params) when is_list(results) do
     with {:ok, next, blocks} <- reduce_results(results, id_to_params) do
       elixir_blocks = Blocks.to_elixir(blocks)
+
+      elixir_uncles = Blocks.elixir_to_uncles(elixir_blocks)
       elixir_transactions = Blocks.elixir_to_transactions(elixir_blocks)
-      blocks_params = Blocks.elixir_to_params(elixir_blocks)
+
+      block_second_degree_relations_params = Uncles.elixir_to_params(elixir_uncles)
       transactions_params = Transactions.elixir_to_params(elixir_transactions)
+      blocks_params = Blocks.elixir_to_params(elixir_blocks)
 
       {:ok, next,
        %{
          blocks: blocks_params,
+         block_second_degree_relations: block_second_degree_relations_params,
          transactions: transactions_params
        }}
     end

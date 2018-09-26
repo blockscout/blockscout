@@ -107,7 +107,10 @@ defmodule Indexer.Block.Catchup.Fetcher do
     {async_import_remaning_block_data_options, chain_import_options} =
       Map.split(options, @async_import_remaning_block_data_options)
 
-    with {:ok, results} = ok <- Chain.import(chain_import_options) do
+    with {:ok, results} = ok <-
+           chain_import_options
+           |> put_in([:blocks, :params, Access.all(), :consensus], true)
+           |> Chain.import() do
       async_import_remaining_block_data(
         results,
         async_import_remaning_block_data_options
@@ -119,6 +122,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   defp async_import_remaining_block_data(
          %{
+           block_second_degree_relations: block_second_degree_relations,
            transactions: transaction_hashes,
            addresses: address_hashes,
            tokens: tokens,
@@ -148,6 +152,10 @@ defmodule Indexer.Block.Catchup.Fetcher do
     |> Token.Fetcher.async_fetch()
 
     TokenBalance.Fetcher.async_fetch(token_balances)
+
+    block_second_degree_relations
+    |> Enum.map(& &1.uncle_hash)
+    |> Block.Uncle.Fetcher.async_fetch_blocks()
   end
 
   defp stream_fetch_and_import(%__MODULE__{blocks_concurrency: blocks_concurrency} = state, sequence)

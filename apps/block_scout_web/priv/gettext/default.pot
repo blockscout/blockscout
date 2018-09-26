@@ -1273,3 +1273,9 @@ msgstr ""
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:60
 msgid "Pending Transactions"
 msgstr ""
+
+#, elixir-format
+#:
+#: lib/block_scout_web/templates/address_token_balance/_token_balances.html.eex:26
+msgid "Search tokens"
+msgstr ""

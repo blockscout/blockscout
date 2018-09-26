@@ -3,6 +3,8 @@ defmodule BlockScoutWeb.ChainControllerTest do
 
   import BlockScoutWeb.Router.Helpers, only: [chain_path: 2, block_path: 3, transaction_path: 3, address_path: 3]
 
+  alias Explorer.Chain.Block
+
   describe "GET index/2" do
     test "returns a welcome message", %{conn: conn} do
       conn = get(conn, chain_path(BlockScoutWeb.Endpoint, :show))
@@ -64,11 +66,27 @@ defmodule BlockScoutWeb.ChainControllerTest do
   end
 
   describe "GET q/2" do
-    test "finds a block by block number", %{conn: conn} do
+    test "finds a consensus block by block number", %{conn: conn} do
       insert(:block, number: 37)
       conn = get(conn, "/search?q=37")
 
       assert redirected_to(conn) == block_path(conn, :show, "37")
+    end
+
+    test "does not find non-consensus block by number", %{conn: conn} do
+      %Block{number: number} = insert(:block, consensus: false)
+
+      conn = get(conn, "/search?q=#{number}")
+
+      assert conn.status == 404
+    end
+
+    test "finds non-consensus block by hash", %{conn: conn} do
+      %Block{hash: hash} = insert(:block, consensus: false)
+
+      conn = get(conn, "/search?q=#{hash}")
+
+      assert redirected_to(conn) == block_path(conn, :show, hash)
     end
 
     test "finds a transaction by hash", %{conn: conn} do

@@ -20,7 +20,7 @@ defmodule Explorer.Chain.Transaction do
     Wei
   }
 
-  alias Explorer.Chain.Transaction.Status
+  alias Explorer.Chain.Transaction.{Fork, Status}
 
   @optional_attrs ~w(block_hash block_number created_contract_address_hash cumulative_gas_used error gas_used index
                      internal_transactions_indexed_at status to_address_hash)a
@@ -66,9 +66,12 @@ defmodule Explorer.Chain.Transaction do
   @type wei_per_gas :: Wei.t()
 
   @typedoc """
-   * `block` - the block in which this transaction was mined/validated.  `nil` when transaction is pending.
-   * `block_hash` - `block` foreign key. `nil` when transaction is pending.
-   * `block_number` - Denormalized `block` `number`. `nil` when transaction is pending.
+   * `block` - the block in which this transaction was mined/validated.  `nil` when transaction is pending or has only
+     been collated into one of the `uncles` in one of the `forks`.
+   * `block_hash` - `block` foreign key. `nil` when transaction is pending or has only been collated into one of the
+     `uncles` in one of the `forks`.
+   * `block_number` - Denormalized `block` `number`. `nil` when transaction is pending or has only been collated into
+     one of the `uncles` in one of the `forks`.
    * `created_contract_address` - belongs_to association to `address` corresponding to `created_contract_address_hash`.
    * `created_contract_address_hash` - Denormalized `internal_transaction` `created_contract_address_hash`
      populated only when `to_address_hash` is nil.
@@ -76,13 +79,16 @@ defmodule Explorer.Chain.Transaction do
      `transaction`'s `index`.  `nil` when transaction is pending.
    * `error` - the `error` from the last `t:Explorer.Chain.InternalTransaction.t/0` in `internal_transactions` that
      caused `status` to be `:error`.  Only set after `internal_transactions_index_at` is set AND if there was an error.
+   * `forks` - copies of this transactions that were collated into `uncles` not on the primary consensus of the chain.
    * `from_address` - the source of `value`
    * `from_address_hash` - foreign key of `from_address`
    * `gas` - Gas provided by the sender
    * `gas_price` - How much the sender is willing to pay for `gas`
-   * `gas_used` - the gas used for just `transaction`.  `nil` when transaction is pending.
+   * `gas_used` - the gas used for just `transaction`.  `nil` when transaction is pending or has only been collated into
+     one of the `uncles` in one of the `forks`.
    * `hash` - hash of contents of this transaction
-   * `index` - index of this transaction in `block`.  `nil` when transaction is pending.
+   * `index` - index of this transaction in `block`.  `nil` when transaction is pending or has only been collated into
+     one of the `uncles` in one of the `forks`.
    * `input`- data sent along with the transaction
    * `internal_transactions` - transactions (value transfers) created while executing contract used for this
      transaction
@@ -93,9 +99,11 @@ defmodule Explorer.Chain.Transaction do
        the X coordinate of a point R, modulo the curve order n.
    * `s` - The S field of the signature.  The (r, s) is the normal output of an ECDSA signature, where r is computed as
        the X coordinate of a point R, modulo the curve order n.
-   * `status` - whether the transaction was successfully mined or failed.  `nil` when transaction is pending.
+   * `status` - whether the transaction was successfully mined or failed.  `nil` when transaction is pending or has only
+     been collated into one of the `uncles` in one of the `forks.
    * `to_address` - sink of `value`
    * `to_address_hash` - `to_address` foreign key
+   * `uncles` - uncle blocks where `forks` were collated
    * `v` - The V field of the signature.
    * `value` - wei transferred from `from_address` to `to_address`
   """
@@ -107,6 +115,7 @@ defmodule Explorer.Chain.Transaction do
           created_contract_address_hash: Hash.Address.t() | nil,
           cumulative_gas_used: Gas.t() | nil,
           error: String.t() | nil,
+          forks: %Ecto.Association.NotLoaded{} | [Fork.t()],
           from_address: %Ecto.Association.NotLoaded{} | Address.t(),
           from_address_hash: Hash.Address.t(),
           gas: Gas.t(),
@@ -124,6 +133,7 @@ defmodule Explorer.Chain.Transaction do
           status: Status.t() | nil,
           to_address: %Ecto.Association.NotLoaded{} | Address.t() | nil,
           to_address_hash: Hash.Address.t() | nil,
+          uncles: %Ecto.Association.NotLoaded{} | [Block.t()],
           v: v(),
           value: Wei.t()
         }
@@ -149,6 +159,7 @@ defmodule Explorer.Chain.Transaction do
     timestamps()
 
     belongs_to(:block, Block, foreign_key: :block_hash, references: :hash, type: Hash.Full)
+    has_many(:forks, Fork, foreign_key: :hash)
 
     belongs_to(
       :from_address,
@@ -169,6 +180,8 @@ defmodule Explorer.Chain.Transaction do
       references: :hash,
       type: Hash.Address
     )
+
+    has_many(:uncles, through: [:forks, :uncle])
 
     belongs_to(
       :created_contract_address,

@@ -32,6 +32,10 @@ defmodule Indexer.Address.CoinBalances do
     Enum.reduce(transactions_params, initial, &transactions_params_reducer/2)
   end
 
+  defp reducer({:block_second_degree_relations_params, block_second_degree_relations_params}, initial)
+       when is_list(block_second_degree_relations_params),
+       do: initial
+
   defp internal_transactions_params_reducer(%{block_number: block_number} = internal_transaction_params, acc)
        when is_integer(block_number) do
     case internal_transaction_params do

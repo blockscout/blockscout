@@ -586,6 +586,50 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Converts `t:Explorer.Chain.Block.t/0` `hash` to the `t:Explorer.Chain.Block.t/0` with that `hash`.
+
+  Unlike `number_to_block/1`, both consensus and non-consensus blocks can be returned when looked up by `hash`.
+
+  Returns `{:ok, %Explorer.Chain.Block{}}` if found
+
+      iex> %Block{hash: hash} = insert(:block, consensus: false)
+      iex> {:ok, %Explorer.Chain.Block{hash: found_hash}} = Explorer.Chain.hash_to_block(hash)
+      iex> found_hash == hash
+      true
+
+  Returns `{:error, :not_found}` if not found
+
+      iex> {:ok, hash} = Explorer.Chain.string_to_block_hash(
+      ...>   "0x9fc76417374aa880d4449a1f7f31ec597f00b1f6f3dd2d66f4c9c6c445836d8b"
+      ...> )
+      iex> Explorer.Chain.hash_to_block(hash)
+      {:error, :not_found}
+
+  ## Options
+
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+      `:required`, and the `t:Explorer.Chain.Block.t/0` has no associated record for that association, then the
+      `t:Explorer.Chain.Block.t/0` will not be included in the page `entries`.
+
+  """
+  @spec hash_to_block(Hash.Full.t(), [necessity_by_association_option]) :: {:ok, Block.t()} | {:error, :not_found}
+  def hash_to_block(%Hash{byte_count: unquote(Hash.Full.byte_count())} = hash, options \\ []) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    Block
+    |> where(hash: ^hash)
+    |> join_associations(necessity_by_association)
+    |> Repo.one()
+    |> case do
+      nil ->
+        {:error, :not_found}
+
+      block ->
+        {:ok, block}
+    end
+  end
+
+  @doc """
   Converts the `Explorer.Chain.Hash.t:t/0` to `iodata` representation that can be written efficiently to users.
 
       iex> %Explorer.Chain.Hash{
@@ -933,6 +977,37 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Returns a stream of all `t:Explorer.Chain.Block.t/0` `hash`es that are marked as unfetched in
+  `t:Explorer.Chain.Block.SecondDegreeRelation.t/0`.
+
+  When a block is fetched, its uncles are transformed into `t:Explorer.Chain.Block.SecondDegreeRelation.t/0` and can be
+  returned.  Once the uncle is imported its corresponding `t:Explorer.Chain.Block.SecondDegreeRelation.t/0`
+  `uncle_fetched_at` will be set and it won't be returned anymore.
+  """
+  @spec stream_unfetched_uncle_hashes(
+          initial :: accumulator,
+          reducer :: (entry :: Hash.Full.t(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_unfetched_uncle_hashes(initial, reducer) when is_function(reducer, 2) do
+    Repo.transaction(
+      fn ->
+        query =
+          from(bsdr in Block.SecondDegreeRelation,
+            where: is_nil(bsdr.uncle_fetched_at),
+            select: bsdr.uncle_hash,
+            group_by: bsdr.uncle_hash
+          )
+
+        query
+        |> Repo.stream(timeout: :infinity)
+        |> Enum.reduce(initial, reducer)
+      end,
+      timeout: :infinity
+    )
+  end
+
+  @doc """
   The number of `t:Explorer.Chain.Log.t/0`.
 
       iex> transaction = :transaction |> insert() |> with_block()
@@ -1062,7 +1137,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Finds `t:Explorer.Chain.Block.t/0` with `number`
+  Finds consensus `t:Explorer.Chain.Block.t/0` with `number`.
 
   ## Options
 
@@ -1077,7 +1152,7 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     Block
-    |> where(number: ^number)
+    |> where(consensus: true, number: ^number)
     |> join_associations(necessity_by_association)
     |> Repo.one()
     |> case do

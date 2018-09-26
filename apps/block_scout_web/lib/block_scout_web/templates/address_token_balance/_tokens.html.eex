@@ -1,16 +1,24 @@
-<h6 class="dropdown-header">
-  <%= @type %> (<%= Enum.count(@token_balances)%>)
-</h6>
-<%= for token_balance <- sort_by_name(@token_balances) do %>
-  <div class="border-bottom">
-    <%= link(
-          to: token_path(@conn, :show, token_balance.token.contract_address_hash),
-          class: "dropdown-item"
-        ) do %>
-      <p class="mb-0"><%= token_name(token_balance.token) %></p>
-      <p class="mb-0">
-        <%= format_according_to_decimals(token_balance.value, token_balance.token.decimals) %> <%= token_balance.token.symbol %>
-      </p>
-    <% end %>
-  </div>
-<% end %>
+<div data-token-type="<%= @type %>">
+  <h6 class="dropdown-header">
+    <%= @type %> (<span data-number-of-tokens-by-type="<%= @type %>"><%= Enum.count(@token_balances)%></span>)
+  </h6>
+
+  <%= for token_balance <- sort_by_name(@token_balances) do %>
+    <div
+      class="border-bottom"
+      data-dropdown-token-balance-test
+      data-token-name="<%= token_name(token_balance.token) %>"
+      data-token-symbol="<%= token_balance.token.symbol %>"
+    >
+      <%= link(
+            to: token_path(@conn, :show, token_balance.token.contract_address_hash),
+            class: "dropdown-item"
+          ) do %>
+        <p class="mb-0"><%= token_name(token_balance.token) %></p>
+        <p class="mb-0">
+          <%= format_according_to_decimals(token_balance.value, token_balance.token.decimals) %> <%= token_balance.token.symbol %>
+        </p>
+      <% end %>
+    </div>
+  <% end %>
+</div>

@@ -35,6 +35,50 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
       assert 2 == Enum.count(conn.assigns.transactions)
     end
 
+    test "does not return transactions for non-consensus block number", %{conn: conn} do
+      block = insert(:block, consensus: false)
+
+      :transaction
+      |> insert()
+      |> with_block(block)
+
+      conn = get(conn, block_transaction_path(conn, :index, block.number))
+
+      assert html_response(conn, 404)
+    end
+
+    test "returns transactions for consensus block hash", %{conn: conn} do
+      block = insert(:block, consensus: true)
+
+      :transaction
+      |> insert()
+      |> with_block(block)
+
+      conn = get(conn, block_transaction_path(conn, :index, block.hash))
+
+      assert html_response(conn, 200)
+      assert Enum.count(conn.assigns.transactions) == 1
+    end
+
+    test "returns transactions for non-consensus block hash", %{conn: conn} do
+      block = insert(:block, consensus: false)
+
+      :transaction
+      |> insert()
+      |> with_block(block)
+
+      conn = get(conn, block_transaction_path(conn, :index, block.hash))
+
+      assert html_response(conn, 200)
+      assert Enum.count(conn.assigns.transactions) == 1
+    end
+
+    test "does not return transactions for invalid block hash", %{conn: conn} do
+      conn = get(conn, block_transaction_path(conn, :index, "0x0"))
+
+      assert html_response(conn, 404)
+    end
+
     test "does not return unrelated transactions", %{conn: conn} do
       insert(:transaction)
       block = insert(:block)
