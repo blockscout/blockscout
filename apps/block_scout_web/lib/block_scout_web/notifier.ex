@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.Notifier do
   """
 
   alias Explorer.{Chain, Market, Repo}
-  alias Explorer.Chain.{Address, InternalTransaction}
+  alias Explorer.Chain.{Address, InternalTransaction, Transaction}
   alias Explorer.ExchangeRates.Token
   alias BlockScoutWeb.Endpoint
 
@@ -49,7 +49,7 @@ defmodule BlockScoutWeb.Notifier do
     transaction_hashes
     |> Chain.hashes_to_transactions(
       necessity_by_association: %{
-        :block => :required,
+        :block => :optional,
         [created_contract_address: :names] => :optional,
         [from_address: :names] => :optional,
         [to_address: :names] => :optional,
@@ -91,6 +91,12 @@ defmodule BlockScoutWeb.Notifier do
         internal_transaction: internal_transaction
       })
     end
+  end
+
+  defp broadcast_transaction(%Transaction{block_number: nil} = pending) do
+    Endpoint.broadcast("transactions:new_pending_transaction", "new_pending_transaction", %{
+      transaction: pending
+    })
   end
 
   defp broadcast_transaction(transaction) do

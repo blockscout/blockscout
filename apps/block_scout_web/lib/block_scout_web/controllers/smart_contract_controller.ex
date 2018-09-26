@@ -33,6 +33,7 @@ defmodule BlockScoutWeb.SmartContractController do
   def show(conn, params) do
     with true <- ajax?(conn),
          {:ok, address_hash} <- Chain.string_to_address_hash(params["id"]),
+         {:ok, _address} <- Chain.find_contract_address(address_hash),
          outputs =
            Reader.query_function(
              address_hash,
