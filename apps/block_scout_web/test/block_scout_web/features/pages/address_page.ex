@@ -71,14 +71,6 @@ defmodule BlockScoutWeb.AddressPage do
     css("[data-test='address_detail_hash']", text: to_string(address_hash))
   end
 
-  def first_transaction_hash(session) do
-    session
-    |> find(css("[data-transaction-hash]", count: :any))
-    |> hd
-    |> find(css("[data-test='transaction_hash_link']"))
-    |> Element.text()
-  end
-
   def internal_transaction(%InternalTransaction{id: id}) do
     css("[data-test='internal_transaction'][data-internal-transaction-id='#{id}']")
   end

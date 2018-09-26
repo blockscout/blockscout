@@ -123,7 +123,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> assert_has(AddressPage.transaction_status(transactions.from_lincoln))
     end
 
-    test "sees pending transactions above collated", %{
+    test "sees pending transactions", %{
       addresses: addresses,
       session: session,
       transactions: transactions
@@ -136,8 +136,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> assert_has(AddressPage.transaction(transactions.from_taft))
       |> assert_has(AddressPage.transaction(transactions.from_lincoln))
       |> assert_has(AddressPage.transaction_status(transactions.from_lincoln))
-
-      assert AddressPage.first_transaction_hash(session) == to_string(pending.hash)
     end
 
     test "viewing new pending transactions via live update", %{addresses: addresses, session: session} do
