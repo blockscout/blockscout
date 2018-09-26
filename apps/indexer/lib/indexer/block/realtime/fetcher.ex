@@ -124,6 +124,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
   end
 
   def fetch_and_import_block(block_number_to_fetch, block_fetcher) do
+    # Wait half a second to give Parity/Geth time to sync.
+    :timer.sleep(500)
+
     case fetch_and_import_range(block_fetcher, block_number_to_fetch..block_number_to_fetch) do
       {:ok, {_inserted, _next}} ->
         Logger.debug(fn ->
