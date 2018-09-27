@@ -63,6 +63,28 @@
       }
     }
 
+    &-unique-token {
+      border-left: 4px solid $orange;
+      padding: 35px 0;
+
+      .tile-label {
+        color: $orange;
+      }
+    }
+
+    &-unique-token-image{
+      border-left: 4px solid $orange;
+      padding: 0;
+
+      .tile-label {
+        color: $orange;
+      }
+
+      & .tile-content {
+        padding: 45px 0;
+      }
+    }
+
     &-internal-transaction {
       border-left: 4px solid $teal;
 
@@ -149,4 +171,9 @@
   p {
     margin: 0;
   }
+}
+
+.tile-image {
+  max-width: 140px;
+  max-height: 140px;
 }

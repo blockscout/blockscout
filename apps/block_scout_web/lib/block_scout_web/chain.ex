@@ -29,6 +29,10 @@ defmodule BlockScoutWeb.Chain do
   @page_size 50
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
 
+  def default_paging_options do
+    @default_paging_options
+  end
+
   def current_filter(%{paging_options: paging_options} = params) do
     params
     |> Map.get("filter")

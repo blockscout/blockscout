@@ -26,7 +26,7 @@ defmodule Explorer.Chain.TokenTransfer do
 
   import Ecto.{Changeset, Query}
 
-  alias Explorer.Chain.{Address, Block, Hash, Transaction, TokenTransfer}
+  alias Explorer.Chain.{Address, Block, Hash, Transaction, Token, TokenTransfer}
   alias Explorer.{PagingOptions, Repo}
 
   @default_paging_options %PagingOptions{page_size: 50}
@@ -141,6 +141,14 @@ defmodule Explorer.Chain.TokenTransfer do
 
   def page_token_transfer(query, %PagingOptions{key: nil}), do: query
 
+  def page_token_transfer(query, %PagingOptions{key: {token_id}}) do
+    where(
+      query,
+      [token_transfer],
+      token_transfer.token_id > ^token_id
+    )
+  end
+
   def page_token_transfer(query, %PagingOptions{key: inserted_at}) do
     where(
       query,
@@ -165,5 +173,28 @@ defmodule Explorer.Chain.TokenTransfer do
     query
     |> join(:left, [transaction], tt in assoc(transaction, :token_transfers))
     |> where([_transaction, tt], tt.to_address_hash == ^address_hash or tt.from_address_hash == ^address_hash)
+  end
+
+  @doc """
+  A token ERC-721 is considered unique because it corresponds to the possession
+  of a specific asset.
+
+  To find out its current owner, it is necessary to look at the token last
+  transfer.
+  """
+  @spec address_to_unique_tokens(Hash.Address.t()) :: %Ecto.Query{}
+  def address_to_unique_tokens(contract_address_hash) do
+    from(
+      tt in TokenTransfer,
+      join: t in Token,
+      on: tt.token_contract_address_hash == t.contract_address_hash,
+      join: ts in Transaction,
+      on: tt.transaction_hash == ts.hash,
+      where: t.contract_address_hash == ^contract_address_hash and t.type == "ERC-721",
+      order_by: [desc: ts.block_number],
+      distinct: tt.token_id,
+      preload: [:to_address],
+      select: tt
+    )
   end
 end
