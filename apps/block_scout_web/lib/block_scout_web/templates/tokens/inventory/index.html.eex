@@ -1,0 +1,42 @@
+<section class="container">
+  <%= render(
+    OverviewView,
+    "_details.html",
+    token: @token,
+    total_token_transfers: @total_token_transfers,
+    total_token_holders: @total_token_holders,
+    conn: @conn
+  ) %>
+
+  <section>
+    <div class="card">
+      <div class="card-header">
+        <%= render OverviewView, "_tabs.html", assigns %>
+      </div>
+
+      <div class="card-body">
+        <h2 class="card-title"><%= gettext "Inventory" %></h2>
+
+        <%= if Enum.any?(@unique_tokens) do %>
+          <%= for token_transfer <- @unique_tokens do %>
+            <%= render "_token.html", token_transfer: token_transfer %>
+          <% end %>
+        <% else %>
+          <div class="tile tile-muted text-center">
+            <span data-selector="empty-transactions-list">
+              <%= gettext "There are no tokens." %>
+            </span>
+          </div>
+        <% end %>
+
+        <%= if @next_page_params do %>
+          <%= link(
+            gettext("Next Page"),
+            class: "button button-secondary button-small float-right mt-4",
+            to: token_inventory_path(@conn, :index, @token.contract_address_hash, @next_page_params)
+          ) %>
+        <% end %>
+      </div>
+    </div>
+  </section>
+</section>

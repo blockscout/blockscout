@@ -1894,4 +1894,15 @@ defmodule Explorer.Chain do
     |> TokenBalance.token_holders_from_token_hash()
     |> Repo.aggregate(:count, :address_hash)
   end
+
+  @spec address_to_unique_tokens(Hash.Address.t(), [paging_options]) :: [TokenTransfer.t()]
+  def address_to_unique_tokens(contract_address_hash, options \\ []) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    contract_address_hash
+    |> TokenTransfer.address_to_unique_tokens()
+    |> TokenTransfer.page_token_transfer(paging_options)
+    |> limit(^paging_options.page_size)
+    |> Repo.all()
+  end
 end

@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Tokens.TransferView do
+defmodule BlockScoutWeb.Tokens.InventoryView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.Tokens.OverviewView

@@ -1,0 +1,28 @@
+<!-- use "tile-type-unique-token-image" to token with images -->
+<div class="tile tile-type-unique-token fade-in">
+  <div class="row">
+    <div class="pl-5 col-md-2 d-flex flex-column align-items-left justify-content-start justify-content-lg-center">
+      <!-- substitute the span with <img class="tile-image" /> to token with images -->
+      <span class="tile-label"><%= gettext "Unique Token" %></span>
+    </div>
+
+    <div class="tile-content col-md-7 col-lg-8 d-flex flex-column">
+      <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
+        <span class="mr-1"><%= gettext "Token ID" %>:</span>
+        <span class="tile-title">
+          <%= @token_transfer.token_id %>
+        </span>
+      </span>
+
+      <span class="d-flex flex-md-row flex-column mt-3 mt-md-0">
+        <span class="mr-1"><%= gettext "Owner Address" %>:</span>
+        <span class="tile-title">
+          <%= render BlockScoutWeb.AddressView,
+            "_link.html",
+            address: @token_transfer.to_address,
+            contract: false %>
+        </span>
+      </span>
+    </div>
+  </div>
+</div>

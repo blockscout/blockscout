@@ -2820,6 +2820,49 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "address_to_unique_tokens/2" do
+    test "unique tokens can be paginated through token_id" do
+      token_contract_address = insert(:contract_address)
+      token = insert(:token, contract_address: token_contract_address, type: "ERC-721")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(insert(:block, number: 1))
+
+      first_page =
+        insert(
+          :token_transfer,
+          to_address: build(:address),
+          transaction: transaction,
+          token_contract_address: token_contract_address,
+          token: token,
+          token_id: 11
+        )
+
+      second_page =
+        insert(
+          :token_transfer,
+          to_address: build(:address),
+          transaction: transaction,
+          token_contract_address: token_contract_address,
+          token: token,
+          token_id: 29
+        )
+
+      paging_options = %PagingOptions{key: {first_page.token_id}, page_size: 1}
+
+      unique_tokens_ids_paginated =
+        Chain.address_to_unique_tokens(
+          token_contract_address.hash,
+          paging_options: paging_options
+        )
+        |> Enum.map(& &1.token_id)
+
+      assert unique_tokens_ids_paginated == [second_page.token_id]
+    end
+  end
+
   describe "uncataloged_token_transfer_block_numbers/0" do
     test "returns a list of block numbers" do
       log = insert(:token_transfer_log)

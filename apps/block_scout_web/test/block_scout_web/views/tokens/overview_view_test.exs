@@ -64,4 +64,76 @@ defmodule BlockScoutWeb.Tokens.OverviewViewTest do
       assert OverviewView.current_tab_name(read_contract_path) == "Read Contract"
     end
   end
+
+  describe "display_inventory?/1" do
+    test "returns true when token is unique" do
+      token = insert(:token, type: "ERC-721")
+
+      assert OverviewView.display_inventory?(token) == true
+    end
+
+    test "returns false when token is not unique" do
+      token = insert(:token, type: "ERC-20")
+
+      assert OverviewView.display_inventory?(token) == false
+    end
+  end
+
+  describe "smart_contract_with_read_only_functions?/1" do
+    test "returns true when abi has read only functions" do
+      smart_contract =
+        insert(
+          :smart_contract,
+          abi: [
+            %{
+              "constant" => true,
+              "inputs" => [],
+              "name" => "get",
+              "outputs" => [%{"name" => "", "type" => "uint256"}],
+              "payable" => false,
+              "stateMutability" => "view",
+              "type" => "function"
+            }
+          ]
+        )
+
+      address = insert(:address, smart_contract: smart_contract)
+
+      token = insert(:token, contract_address: address)
+
+      assert OverviewView.smart_contract_with_read_only_functions?(token)
+    end
+
+    test "returns false when there is no read only functions" do
+      smart_contract =
+        insert(
+          :smart_contract,
+          abi: [
+            %{
+              "constant" => false,
+              "inputs" => [%{"name" => "x", "type" => "uint256"}],
+              "name" => "set",
+              "outputs" => [],
+              "payable" => false,
+              "stateMutability" => "nonpayable",
+              "type" => "function"
+            }
+          ]
+        )
+
+      address = insert(:address, smart_contract: smart_contract)
+
+      token = insert(:token, contract_address: address)
+
+      refute OverviewView.smart_contract_with_read_only_functions?(token)
+    end
+
+    test "returns false when smart contract is not verified" do
+      address = insert(:address, smart_contract: nil)
+
+      token = insert(:token, contract_address: address)
+
+      refute OverviewView.smart_contract_with_read_only_functions?(token)
+    end
+  end
 end
