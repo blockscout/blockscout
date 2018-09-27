@@ -183,6 +183,31 @@ defmodule Explorer.Etherscan do
     Repo.one(query)
   end
 
+  @doc """
+  Gets a list of tokens owned by the given address hash.
+
+  """
+  @spec list_tokens(Hash.Address.t()) :: map() | []
+  def list_tokens(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash) do
+    query =
+      from(
+        tb in TokenBalance,
+        inner_join: t in assoc(tb, :token),
+        where: tb.address_hash == ^address_hash,
+        distinct: :token_contract_address_hash,
+        order_by: [desc: :block_number],
+        select: %{
+          balance: tb.value,
+          contract_address_hash: tb.token_contract_address_hash,
+          name: t.name,
+          decimals: t.decimals,
+          symbol: t.symbol
+        }
+      )
+
+    Repo.all(query)
+  end
+
   @transaction_fields ~w(
     block_hash
     block_number
