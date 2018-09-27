@@ -6,7 +6,7 @@
             @block,
             class: "tile-title",
             to: block_path(BlockScoutWeb.Endpoint, :show, @block),
-            "data-test": "block_number",
+            "data-selector": "block-number",
             "data-block-number": to_string(@block.number)
           ) %>
       <div>
