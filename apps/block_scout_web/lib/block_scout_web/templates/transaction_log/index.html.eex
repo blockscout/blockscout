@@ -43,6 +43,12 @@
                     <%= log.third_topic %>
                   </div>
                 <% end %>
+                <%= unless is_nil(log.fourth_topic) do %>
+                  <div class="text-dark">
+                    <span>[3]</span>
+                    <%= log.fourth_topic %>
+                  </div>
+                <% end %>
               </dd>
               <dt class="col-md-1">
                 <%= gettext "Data" %>

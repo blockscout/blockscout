@@ -79,4 +79,5 @@
   "unicode_util_compat": {:hex, :unicode_util_compat, "0.3.1", "a1f612a7b512638634a603c8f401892afbf99b8ce93a45041f8aaca99cadb85e", [:rebar3], []},
   "wallaby": {:hex, :wallaby, "0.20.0", "cc6663555ff7b05afbebb2a8b461d18a5b321658b9017f7bc77d494b7063266a", [:mix], [{:httpoison, "~> 0.12", [hex: :httpoison, optional: false]}, {:poison, ">= 1.4.0", [hex: :poison, optional: false]}, {:poolboy, "~> 1.5", [hex: :poolboy, optional: false]}]},
   "websocket_client": {:hex, :websocket_client, "1.3.0", "2275d7daaa1cdacebf2068891c9844b15f4fdc3de3ec2602420c2fb486db59b6", [:rebar3], [], "hexpm"},
+  "wobserver": {:hex, :wobserver, "0.1.8", "3ed5ea55478627f0593800ab83919b71f41fd426ec344e71cf1d975e6d2065b8", [:mix], [{:cowboy, "~> 1.1", [hex: :cowboy, repo: "hexpm", optional: false]}, {:httpoison, "~> 0.11 or ~> 0.12", [hex: :httpoison, repo: "hexpm", optional: false]}, {:plug, "~> 1.3 or ~> 1.4", [hex: :plug, repo: "hexpm", optional: false]}, {:poison, "~> 2.0 or ~> 3.1", [hex: :poison, repo: "hexpm", optional: false]}, {:websocket_client, "~> 1.2", [hex: :websocket_client, repo: "hexpm", optional: false]}], "hexpm"},
 }
