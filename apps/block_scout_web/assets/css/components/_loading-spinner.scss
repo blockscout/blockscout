@@ -35,10 +35,10 @@
   }
 }
 
-
 .loading-spinner-small {
   display: inline-block;
-  top: -0.125em;
+  position: relative;
+  top: -0.05em;
   margin: auto 0.5em auto 0;
   width: 1em;
   height: 1em;

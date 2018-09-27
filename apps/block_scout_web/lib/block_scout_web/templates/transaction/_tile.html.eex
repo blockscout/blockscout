@@ -1,10 +1,16 @@
 <div class="tile tile-type-<%= type_suffix(@transaction) %> fade-in <%= status_class(@transaction) %>" data-test="<%= type_suffix(@transaction) %>" data-transaction-hash="<%= @transaction.hash %>">
-  <div class="row" data-selector="token-transfers-toggle" data-test="chain_transaction">
+  <div class="row tile-body" data-selector="token-transfers-toggle" data-test="chain_transaction">
     <div class="col-md-2 d-flex flex-row flex-md-column align-items-left justify-content-start justify-content-lg-center mb-1 mb-md-0 pl-md-4">
       <span class="tile-label" data-test="transaction_type">
         <%= transaction_display_type(@transaction) %>
       </span>
       <span class="tile-status-label ml-2 ml-md-0" data-test="transaction_status">
+        <%= if status_class(@transaction) == "tile-status--pending" do %>
+          <div class="loading-spinner-small">
+            <span class="loading-spinner-block-1"></span>
+            <span class="loading-spinner-block-2"></span>
+          </div>
+        <% end %>
         <%= formatted_status(@transaction) %>
       </span>
     </div>
