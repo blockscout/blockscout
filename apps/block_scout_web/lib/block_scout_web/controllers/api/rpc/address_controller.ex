@@ -50,20 +50,40 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   end
 
   def txlistinternal(conn, params) do
-    with {:txhash_param, {:ok, txhash_param}} <- fetch_txhash(params),
-         {:format, {:ok, transaction_hash}} <- to_transaction_hash(txhash_param),
+    case {Map.fetch(params, "txhash"), Map.fetch(params, "address")} do
+      {:error, :error} ->
+        render(conn, :error, error: "Query parameter txhash or address is required")
+
+      {{:ok, txhash_param}, :error} ->
+        txlistinternal(conn, txhash_param, :txhash)
+
+      {:error, {:ok, address_param}} ->
+        txlistinternal(conn, params, address_param, :address)
+    end
+  end
+
+  def txlistinternal(conn, txhash_param, :txhash) do
+    with {:format, {:ok, transaction_hash}} <- to_transaction_hash(txhash_param),
          {:ok, internal_transactions} <- list_internal_transactions(transaction_hash) do
       render(conn, :txlistinternal, %{internal_transactions: internal_transactions})
     else
-      {:txhash_param, :error} ->
-        conn
-        |> put_status(200)
-        |> render(:error, error: "Query parameter txhash is required")
-
       {:format, :error} ->
-        conn
-        |> put_status(200)
-        |> render(:error, error: "Invalid txhash format")
+        render(conn, :error, error: "Invalid txhash format")
+
+      {:error, :not_found} ->
+        render(conn, :error, error: "No internal transactions found", data: [])
+    end
+  end
+
+  def txlistinternal(conn, params, address_param, :address) do
+    options = optional_params(params)
+
+    with {:format, {:ok, address_hash}} <- to_address_hash(address_param),
+         {:ok, internal_transactions} <- list_internal_transactions(address_hash, options) do
+      render(conn, :txlistinternal, %{internal_transactions: internal_transactions})
+    else
+      {:format, :error} ->
+        render(conn, :error, error: "Invalid address format")
 
       {:error, :not_found} ->
         render(conn, :error, error: "No internal transactions found", data: [])
@@ -206,10 +226,6 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
 
   defp fetch_address(params) do
     {:address_param, Map.fetch(params, "address")}
-  end
-
-  defp fetch_txhash(params) do
-    {:txhash_param, Map.fetch(params, "txhash")}
   end
 
   defp to_address_hashes(address_param) when is_binary(address_param) do
@@ -356,6 +372,13 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
 
   defp list_internal_transactions(transaction_hash) do
     case Etherscan.list_internal_transactions(transaction_hash) do
+      [] -> {:error, :not_found}
+      internal_transactions -> {:ok, internal_transactions}
+    end
+  end
+
+  defp list_internal_transactions(transaction_hash, options) do
+    case Etherscan.list_internal_transactions(transaction_hash, options) do
       [] -> {:error, :not_found}
       internal_transactions -> {:ok, internal_transactions}
     end

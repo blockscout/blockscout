@@ -98,6 +98,49 @@ defmodule Explorer.Etherscan do
   end
 
   @doc """
+  Gets a list of internal transactions for a given address hash
+  (`t:Explorer.Chain.Hash.Address.t/0`).
+
+  Note that this function relies on `Explorer.Chain` to exclude/include
+  internal transactions as follows:
+
+    * exclude internal transactions of type call with no siblings in the
+      transaction
+    * include internal transactions of type create, reward, or suicide
+      even when they are alone in the parent transaction
+
+  """
+  @spec list_internal_transactions(Hash.Address.t(), map()) :: [map()]
+  def list_internal_transactions(
+        %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash,
+        raw_options \\ %{}
+      ) do
+    options = Map.merge(@default_options, raw_options)
+
+    query =
+      from(
+        it in InternalTransaction,
+        inner_join: t in assoc(it, :transaction),
+        inner_join: b in assoc(t, :block),
+        order_by: [{^options.order_by_direction, t.block_number}],
+        limit: ^options.page_size,
+        offset: ^offset(options),
+        select:
+          merge(map(it, ^@internal_transaction_fields), %{
+            block_timestamp: b.timestamp,
+            block_number: b.number
+          })
+      )
+
+    query
+    |> Chain.where_transaction_has_multiple_internal_transactions()
+    |> where_address_match(address_hash, options)
+    |> where_start_block_match(options)
+    |> where_end_block_match(options)
+    |> Repo.all()
+  end
+
+  @doc """
   Gets a list of token transfers for a given `t:Explorer.Chain.Hash.Address.t/0`.
 
   """
@@ -276,9 +319,9 @@ defmodule Explorer.Etherscan do
     query =
       from(
         t in Transaction,
-        inner_join: b in assoc(t, :block),
         inner_join: tt in assoc(t, :token_transfers),
         inner_join: tkn in assoc(tt, :token),
+        inner_join: b in assoc(t, :block),
         where: tt.from_address_hash == ^address_hash,
         or_where: tt.to_address_hash == ^address_hash,
         order_by: [{^options.order_by_direction, t.block_number}],
@@ -313,19 +356,19 @@ defmodule Explorer.Etherscan do
   defp where_start_block_match(query, %{start_block: nil}), do: query
 
   defp where_start_block_match(query, %{start_block: start_block}) do
-    where(query, [t], t.block_number >= ^start_block)
+    where(query, [..., block], block.number >= ^start_block)
   end
 
   defp where_end_block_match(query, %{end_block: nil}), do: query
 
   defp where_end_block_match(query, %{end_block: end_block}) do
-    where(query, [t], t.block_number <= ^end_block)
+    where(query, [..., block], block.number <= ^end_block)
   end
 
   defp where_contract_address_match(query, nil), do: query
 
   defp where_contract_address_match(query, contract_address_hash) do
-    where(query, [_, _, tt], tt.token_contract_address_hash == ^contract_address_hash)
+    where(query, [_, tt], tt.token_contract_address_hash == ^contract_address_hash)
   end
 
   defp offset(options), do: (options.page_number - 1) * options.page_size
