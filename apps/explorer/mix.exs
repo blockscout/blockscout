@@ -9,6 +9,7 @@ defmodule Explorer.Mixfile do
       config_path: "../../config/config.exs",
       deps: deps(),
       deps_path: "../../deps",
+      description: "Read-access to indexed block chain data.",
       dialyzer: [
         plt_add_deps: :transitive,
         plt_add_apps: ~w(ex_unit mix)a,
@@ -70,9 +71,12 @@ defmodule Explorer.Mixfile do
       {:comeonin, "~> 4.0"},
       {:credo, "0.9.2", only: [:dev, :test], runtime: false},
       {:crontab, "~> 1.1"},
+      {:decimal, "~> 1.0"},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       # Casting Ethereum-native types to Elixir-native types
       {:ecto, "~> 2.2"},
+      # JSONRPC access to query smart contracts
+      {:ethereum_jsonrpc, in_umbrella: true},
       # Data factory for testing
       {:ex_machina, "~> 2.1", only: [:test]},
       # Code coverage
@@ -89,10 +93,7 @@ defmodule Explorer.Mixfile do
       {:postgrex, ">= 0.0.0"},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
       {:timex, "~> 3.1.24"},
-      {:timex_ecto, "~> 3.2.1"},
-      # JSONRPC access to query smart contracts
-      {:ethereum_jsonrpc, in_umbrella: true},
-      {:decimal, "~> 1.0"}
+      {:timex_ecto, "~> 3.2.1"}
     ]
   end
 
