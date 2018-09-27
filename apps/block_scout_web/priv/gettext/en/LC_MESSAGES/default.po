@@ -573,7 +573,7 @@ msgstr ""
 #, elixir-format
 #:
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:23
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:68
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:74
 msgid "Newer"
 msgstr ""
 
@@ -771,7 +771,7 @@ msgid "There are no internal transactions for this transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:62
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:68
 msgid "There are no logs for this transaction."
 msgstr ""
 
@@ -1145,7 +1145,7 @@ msgid "Contract source code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:48
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:54
 msgid "Data"
 msgstr ""
 
