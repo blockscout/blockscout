@@ -377,16 +377,14 @@ defmodule Explorer.Chain.Import do
     case ecto_schema_module_to_changes_list_map do
       %{Block => blocks_changes} ->
         timestamps = Map.fetch!(options, :timestamps)
+        blocks_timeout = options[:blocks][:timeout] || @insert_blocks_timeout
 
         multi
+        |> Multi.run(:lose_consenus, fn _ ->
+          lose_consensus(blocks_changes, %{timeout: blocks_timeout, timestamps: timestamps})
+        end)
         |> Multi.run(:blocks, fn _ ->
-          insert_blocks(
-            blocks_changes,
-            %{
-              timeout: options[:blocks][:timeout] || @insert_blocks_timeout,
-              timestamps: timestamps
-            }
-          )
+          insert_blocks(blocks_changes, %{timeout: blocks_timeout, timestamps: timestamps})
         end)
         |> Multi.run(:uncle_fetched_block_second_degree_relations, fn %{blocks: blocks} when is_list(blocks) ->
           update_block_second_degree_relations(
@@ -974,6 +972,35 @@ defmodule Explorer.Chain.Import do
       )
 
     {:ok, inserted}
+  end
+
+  defp lose_consensus(blocks_changes, %{timeout: timeout, timestamps: %{updated_at: updated_at}})
+       when is_list(blocks_changes) do
+    ordered_block_number =
+      blocks_changes
+      |> MapSet.new(& &1.number)
+      |> Enum.sort()
+
+    query =
+      from(
+        block in Block,
+        where: block.number in ^ordered_block_number,
+        update: [
+          set: [
+            consensus: false,
+            updated_at: ^updated_at
+          ]
+        ]
+      )
+
+    try do
+      {_, result} = Repo.update_all(query, [], timeout: timeout, returning: [:hash, :number])
+
+      {:ok, result}
+    rescue
+      postgrex_error in Postgrex.Error ->
+        {:error, %{exception: postgrex_error, block_numbers: ordered_block_number}}
+    end
   end
 
   defp update_block_second_degree_relations(blocks, %{timeout: timeout, timestamps: %{updated_at: updated_at}})
