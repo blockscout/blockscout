@@ -93,6 +93,14 @@ export function reducer (state = initialState, action) {
         })
       }
     }
+    case 'RECEIVED_NEW_BLOCK': {
+      if (state.channelDisconnected || state.beyondPageOne) return state
+
+      return Object.assign({}, state, {
+        newBlock: action.msg.blockHtml,
+        minerHash: action.msg.blockMinerHash
+      })
+    }
     default:
       return state
   }
@@ -116,6 +124,12 @@ if ($addressDetailsPage.length) {
       addressChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
       addressChannel.on('balance', (msg) => store.dispatch({ type: 'RECEIVED_UPDATED_BALANCE', msg }))
       if (!state.beyondPageOne) {
+        const blocksChannel = socket.channel(`blocks:new_block`, {})
+        blocksChannel.join()
+        blocksChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
+        blocksChannel.on('new_block', (msg) => {
+          store.dispatch({ type: 'RECEIVED_NEW_BLOCK', msg: humps.camelizeKeys(msg) })
+        })
         addressChannel.on('transaction', batchChannel((msgs) =>
           store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION_BATCH', msgs })
         ))
@@ -135,6 +149,7 @@ if ($addressDetailsPage.length) {
       const $internalTransactionsList = $('[data-selector="internal-transactions-list"]')
       const $transactionCount = $('[data-selector="transaction-count"]')
       const $transactionsList = $('[data-selector="transactions-list"]')
+      const $validationsList = $('[data-selector="validations-list"]')
 
       if ($emptyInternalTransactionsList.length && state.newInternalTransactions.length) window.location.reload()
       if ($emptyTransactionsList.length && state.newTransactions.length) window.location.reload()
@@ -158,6 +173,15 @@ if ($addressDetailsPage.length) {
       if (oldState.newTransactions !== state.newTransactions && $transactionsList.length) {
         prependWithClingBottom($transactionsList, state.newTransactions.slice(oldState.newTransactions.length).reverse().join(''))
         updateAllAges()
+      }
+      if (oldState.newBlock !== state.newBlock && state.minerHash === state.addressHash) {
+        const len = $validationsList.children().length
+        $validationsList
+          .children()
+          .slice(len - 1, len)
+          .remove()
+
+        $validationsList.prepend(state.newBlock)
       }
     }
   })

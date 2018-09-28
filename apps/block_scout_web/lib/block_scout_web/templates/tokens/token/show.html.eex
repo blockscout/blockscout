@@ -1,0 +1,94 @@
+<section class="container">
+  <%= render(
+    OverviewView,
+    "_details.html",
+    token: @token,
+    total_token_transfers: @total_token_transfers,
+    total_token_holders: @total_token_holders,
+    conn: @conn
+  ) %>
+
+  <section>
+    <div class="card">
+      <div class="card-header">
+        <!-- DESKTOP TAB NAV -->
+        <ul class="nav nav-tabs card-header-tabs d-none d-md-inline-flex">
+          <li class="nav-item">
+            <%= link(
+                  gettext("Token Transfers"),
+                  class: "nav-link active",
+                  to: token_path(@conn, :show, @token.contract_address_hash)
+                ) %>
+          </li>
+
+          <%= if smart_contract_with_read_only_functions?(@token) do %>
+            <li class="nav-item">
+              <%= link(
+                  gettext("Read Contract"),
+                  to: token_read_contract_path(@conn, :index, @conn.params["id"]),
+                  class: "nav-link")%>
+            </li>
+          <% end %>
+
+          <li class="nav-item"i>
+            <%= link(
+                  gettext("Token Holders"),
+                  class: "nav-link",
+                  "data-test": "token_holders_tab",
+                  to: token_holder_path(@conn, :index, @token.contract_address_hash)
+                ) %>
+          </li>
+        </ul>
+
+        <!-- MOBILE DROPDOWN NAV -->
+        <ul class="nav nav-tabs card-header-tabs d-md-none">
+          <li class="nav-item dropdown flex-fill text-center">
+            <a class="nav-link active dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false"><%= gettext("Token Transfers") %></a>
+            <div class="dropdown-menu">
+              <%= link(
+                    gettext("Token Transfers"),
+                    class: "dropdown-item active",
+                    to: token_path(@conn, :show, @token.contract_address_hash)
+                  ) %>
+              <%= if smart_contract_with_read_only_functions?(@token) do %>
+                  <%= link(
+                      gettext("Read Contract"),
+                      to: "#",
+                      class: "dropdown-item")%>
+              <% end %>
+              <%= link(
+                    gettext("Token Holders"),
+                    class: "dropdown-item",
+                    to: token_holder_path(@conn, :index, @token.contract_address_hash)
+                  ) %>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="card-body">
+        <h2 class="card-title"><%= gettext "Token Transfers" %></h2>
+
+        <%= if Enum.any?(@transfers) do %>
+          <%= for transfer <- @transfers do %>
+            <%= render("_token_transfer.html", token: @token, transfer: transfer) %>
+          <% end %>
+        <% else %>
+          <div class="tile tile-muted text-center">
+            <span data-selector="empty-transactions-list">
+              <%= gettext "There are no transfers for this Token." %>
+            </span>
+          </div>
+        <% end %>
+
+        <%= if @next_page_params do %>
+          <%= link(
+            gettext("Older"),
+            class: "button button-secondary button-small float-right mt-4",
+            to: token_path(@conn, :show, @token.contract_address_hash, @next_page_params)
+          ) %>
+        <% end %>
+      </div>
+    </div>
+  </section>
+</section>

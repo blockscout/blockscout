@@ -111,6 +111,10 @@ defmodule BlockScoutWeb.AddressView do
 
   def contract?(nil), do: true
 
+  def validator?(val) when val > 0, do: true
+
+  def validator?(_), do: false
+
   def hash(%Address{hash: hash}) do
     to_string(hash)
   end
