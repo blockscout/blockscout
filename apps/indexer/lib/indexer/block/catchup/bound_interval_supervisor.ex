@@ -11,6 +11,8 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
   alias Indexer.{Block, BoundInterval}
   alias Indexer.Block.Catchup
 
+  @type named_arguments :: %{required(:block_fetcher) => Block.Fetcher.t(), optional(:block_interval) => pos_integer}
+
   # milliseconds
   @block_interval 5_000
 
@@ -19,10 +21,17 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
             fetcher: %Catchup.Fetcher{},
             task: nil
 
-  def child_spec(arg) do
+  @spec child_spec([named_arguments | GenServer.options(), ...]) :: Supervisor.child_spec()
+  def child_spec([named_arguments]) when is_map(named_arguments), do: child_spec([named_arguments, []])
+
+  def child_spec([named_arguments, gen_server_options] = start_link_arguments)
+      when is_map(named_arguments) and is_list(gen_server_options) do
     # The `child_spec` from `use Supervisor` because the one from `use GenServer` will set the `type` to `:worker`
     # instead of `:supervisor` and use the wrong shutdown timeout
-    Supervisor.child_spec(%{id: __MODULE__, start: {__MODULE__, :start_link, [arg]}, type: :supervisor}, [])
+    Supervisor.child_spec(
+      %{id: __MODULE__, start: {__MODULE__, :start_link, start_link_arguments}, type: :supervisor},
+      []
+    )
   end
 
   @doc """
@@ -30,8 +39,10 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
 
   For `named_arguments` see `Indexer.BlockFetcher.new/1`.  For `t:GenServer.options/0` see `GenServer.start_link/3`.
   """
-  @spec start_link([named_arguments :: list() | GenServer.options()]) :: {:ok, pid}
-  def start_link([named_arguments, gen_server_options]) when is_map(named_arguments) and is_list(gen_server_options) do
+  @spec start_link(named_arguments :: map()) :: {:ok, pid}
+  @spec start_link(named_arguments :: %{}, GenServer.options()) :: {:ok, pid}
+  def start_link(named_arguments, gen_server_options \\ [])
+      when is_map(named_arguments) and is_list(gen_server_options) do
     GenServer.start_link(__MODULE__, named_arguments, gen_server_options)
   end
 
@@ -55,6 +66,108 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
       fetcher: %Catchup.Fetcher{block_fetcher: block_fetcher},
       bound_interval: bound_interval
     }
+  end
+
+  @impl GenServer
+  def handle_call(:count_children, _from, %__MODULE__{task: task} = state) do
+    active =
+      case task do
+        nil -> 0
+        %Task{} -> 1
+      end
+
+    {:reply, [specs: 1, active: active, supervisors: 0, workers: 1], state}
+  end
+
+  def handle_call({:delete_child, :task}, _from, %__MODULE__{task: task} = state) do
+    reason =
+      case task do
+        nil -> :restarting
+        %Task{} -> :running
+      end
+
+    {:reply, {:error, reason}, state}
+  end
+
+  def handle_call({:delete_child, _}, _from, %__MODULE__{} = state) do
+    {:reply, {:error, :not_found}, state}
+  end
+
+  @task_shutdown_timeout 5_000
+
+  def handle_call({:get_childspec, :task}, _from, %__MODULE__{fetcher: %Catchup.Fetcher{} = catchup} = state) do
+    {:reply,
+     {:ok,
+      %{
+        id: :task,
+        start: {Catchup.Fetcher, :task, [catchup]},
+        restart: :transient,
+        shutdown: @task_shutdown_timeout,
+        type: :worker,
+        modules: [Catchup.Fetcher]
+      }}, state}
+  end
+
+  def handle_call({:get_childspec, _}, _from, %__MODULE__{} = state) do
+    {:reply, {:error, :not_found}, state}
+  end
+
+  def handle_call({:restart_child, :task}, _from, %__MODULE__{fetcher: %Catchup.Fetcher{} = catchup, task: nil} = state) do
+    %Task{pid: pid} = task = Task.Supervisor.async_nolink(Catchup.TaskSupervisor, Catchup.Fetcher, :task, [catchup])
+
+    {:reply, {:ok, pid}, %__MODULE__{state | task: task}}
+  end
+
+  def handle_call({:restart_child, :task}, _from, %__MODULE__{task: %Task{}} = state) do
+    {:reply, {:error, :running}, state}
+  end
+
+  def handle_call({:restart_child, _}, _from, %__MODULE__{} = state) do
+    {:reply, {:error, :not_found}, state}
+  end
+
+  def handle_call({:start_child, %{id: :task}}, _from, %__MODULE__{task: nil} = state) do
+    {:reply, {:error, :already_present}, state}
+  end
+
+  def handle_call({:start_child, %{id: :task}}, _from, %__MODULE__{task: %Task{pid: pid}} = state) do
+    {:reply, {:error, :already_present, pid}, state}
+  end
+
+  def handle_call({:start_child, {:task, _, _, _, _, _}}, _from, %__MODULE__{task: nil} = state) do
+    {:reply, {:error, :already_present}, state}
+  end
+
+  def handle_call({:start_child, {:task, _, _, _, _, _}}, _from, %__MODULE__{task: %Task{pid: pid}} = state) do
+    {:reply, {:error, :already_present, pid}, state}
+  end
+
+  def handle_call({:start_child, _}, _from, %__MODULE__{} = state) do
+    {:reply, {:error, :not_supported}, state}
+  end
+
+  def handle_call({:terminate_child, :task}, _from, %__MODULE__{task: nil} = state) do
+    {:reply, :ok, state}
+  end
+
+  def handle_call({:terminate_child, :task}, _from, %__MODULE__{task: %Task{} = task} = state) do
+    Task.shutdown(task, @task_shutdown_timeout)
+
+    {:reply, :ok, %__MODULE__{state | task: nil}}
+  end
+
+  def handle_call({:terminate_child, _}, _from, %__MODULE__{} = state) do
+    {:reply, {:error, :not_found}, state}
+  end
+
+  def handle_call(:which_children, _from, %__MODULE__{task: task} = state) do
+    child =
+      case task do
+        nil -> :restarting
+        %Task{pid: pid} -> pid
+      end
+
+    {:reply, [{:task, child, :worker, [Catchup.Fetcher]}], state}
   end
 
   @impl GenServer
