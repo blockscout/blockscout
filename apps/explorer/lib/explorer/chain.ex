@@ -938,7 +938,7 @@ defmodule Explorer.Chain do
   def stream_unfetched_token_balances(initial, reducer) when is_function(reducer, 2) do
     Repo.transaction(
       fn ->
-        query = from(tb in TokenBalance, where: is_nil(tb.value_fetched_at))
+        query = TokenBalance.unfetched_token_balances()
 
         query
         |> Repo.stream(timeout: :infinity)
