@@ -25,7 +25,7 @@
               <span data-selector="transaction-count">
                 <%= Cldr.Number.to_string!(@transaction_count, format: "#,###") %>    
               </span> <%= gettext("Transactions") %>
-              <%= if @validation_count > 0 do %>
+              <%= if validator?(@validation_count) do %>
                 <span data-selector="validation-count">
                   <%= Cldr.Number.to_string!(@validation_count, format: "#,###") %>
                 </span> <%= gettext("Blocks Validated") %>

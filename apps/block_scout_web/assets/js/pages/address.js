@@ -174,7 +174,7 @@ if ($addressDetailsPage.length) {
         prependWithClingBottom($transactionsList, state.newTransactions.slice(oldState.newTransactions.length).reverse().join(''))
         updateAllAges()
       }
-      if (oldState.newBlock !== state.newBlock && state.minerHash == state.addressHash) {
+      if (oldState.newBlock !== state.newBlock && state.minerHash === state.addressHash) {
         const len = $validationsList.children().length
         $validationsList
           .children()

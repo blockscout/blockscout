@@ -1,6 +1,6 @@
 defmodule BlockScoutWeb.AddressValidationController do
   @moduledoc """
-    Display all the blocks that this address validates.
+  Display all the blocks that this address validates.
   """
   use BlockScoutWeb, :controller
 
