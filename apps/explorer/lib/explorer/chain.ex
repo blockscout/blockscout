@@ -12,7 +12,8 @@ defmodule Explorer.Chain do
       order_by: 3,
       preload: 2,
       where: 2,
-      where: 3
+      where: 3,
+      select: 3
     ]
 
   alias Ecto.Adapters.SQL
@@ -131,6 +132,25 @@ defmodule Explorer.Chain do
     |> preload(transaction: :block)
     |> join_associations(necessity_by_association)
     |> Repo.all()
+  end
+
+  @doc """
+  `The count of t:Explorer.Chain.InternalTransaction/0`s from `address`.
+
+  This function excludes any internal transactions in the results where the internal transaction has no siblings within
+  the parent transaction.
+  """
+  def address_to_internal_transaction_count(%Address{hash: hash}) do
+    InternalTransaction
+    |> join(
+      :inner,
+      [internal_transaction],
+      transaction in assoc(internal_transaction, :transaction)
+    )
+    |> join(:left, [internal_transaction, transaction], block in assoc(transaction, :block))
+    |> where_transaction_has_multiple_internal_transactions()
+    |> select([t], t.transaction_hash)
+    |> Repo.one()
   end
 
   @doc """
@@ -1813,6 +1833,17 @@ defmodule Explorer.Chain do
     address_hash
     |> Address.Token.list_address_tokens_with_balance(paging_options)
     |> Repo.all()
+  end
+
+  @doc """
+  `Returns `t:Address.Token/0`s owned by `address`.
+  
+  Excludes tokens that have a balance of 0.
+  """
+  def address_to_tokens_with_balance_count(address_hash) do
+    address_hash
+    |> Address.Token.select_count_address_tokens_with_balance()  
+    |> Repo.one()
   end
 
   @doc """

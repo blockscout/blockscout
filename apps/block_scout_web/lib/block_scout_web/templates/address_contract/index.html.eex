@@ -21,14 +21,16 @@
                 to: address_token_path(@conn, :index, @address.hash)
               ) %>
         </li>
-        <li class="nav-item">
-          <%= link(
-                gettext("Internal Transactions"),
-                class: "nav-link",
-                "data-test": "internal_transactions_tab_link",
-                to: address_internal_transaction_path(@conn, :index, @address.hash)
-              ) %>
-        </li>
+        <% if BlockscoutWeb.AddressView.has_internal_transactions?(@internal_transcation_count) do %>
+          <li class="nav-item">
+            <%= link(
+                  gettext("Internal Transactions"),
+                  class: "nav-link",
+                  "data-test": "internal_transactions_tab_link",
+                  to: address_internal_transaction_path(@conn, :index, @address.hash)
+                ) %>
+          </li>
+        <% end %>
         <li class="nav-item">
           <%= link(
               to: address_contract_path(@conn, :index, @address.hash),
@@ -71,12 +73,14 @@
                   class: "dropdown-item",
                   to: address_token_path(@conn, :index, @address.hash)
                 ) %>
-            <%= link(
-                  gettext("Internal Transactions"),
-                  class: "dropdown-item",
-                  "data-test": "internal_transactions_tab_link",
-                  to: address_internal_transaction_path(@conn, :index, @address.hash)
-                ) %>
+            <% if BlockscoutWeb.AddressView.has_internal_transactions?(@internal_transcation_count) do %>
+              <%= link(
+                    gettext("Internal Transactions"),
+                    class: "dropdown-item",
+                    "data-test": "internal_transactions_tab_link",
+                    to: address_internal_transaction_path(@conn, :index, @address.hash)
+                  ) %>
+            <% end %>
             <%= link(
                 to: address_contract_path(@conn, :index, @address.hash),
                 class: "dropdown-item active") do %>

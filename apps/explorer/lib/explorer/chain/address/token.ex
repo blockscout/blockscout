@@ -38,6 +38,17 @@ defmodule Explorer.Chain.Address.Token do
     |> limit(^paging_options.page_size)
   end
 
+  @doc """
+  It builds a query of Address.Tokens that have a balance higher to get their count.
+  """
+  def select_count_address_tokens_with_balance(address_hash) do
+    Chain.Token
+    |> Chain.Token.join_with_transfers()
+    |> join_with_last_balance(address_hash)
+    |> order_filter_and_group(address_hash)
+    |> select([t], count(t.contract_address_hash))
+  end
+
   defp order_filter_and_group(query, address_hash) do
     from(
       [token, transfer, balance] in query,

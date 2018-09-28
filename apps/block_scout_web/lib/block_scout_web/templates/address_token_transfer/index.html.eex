@@ -13,7 +13,6 @@
                   to: address_transaction_path(@conn, :index, @address.hash)
                 ) %>
           </li>
-
           <li class="nav-item">
             <%= link(
                   gettext("Tokens"),
@@ -21,16 +20,16 @@
                   to: address_token_path(@conn, :index, @address.hash)
                 ) %>
           </li>
-
-          <li class="nav-item">
-            <%= link(
-                  gettext("Internal Transactions"),
-                  class: "nav-link",
-                  "data-test": "internal_transactions_tab_link",
-                  to: address_internal_transaction_path(@conn, :index, @address.hash)
-                ) %>
-          </li>
-
+          <% if AddressView.has_internal_transactions?(@internal_transaction_count) do %>
+            <li class="nav-item">
+              <%= link(
+                    gettext("Internal Transactions"),
+                    class: "nav-link",
+                    "data-test": "internal_transactions_tab_link",
+                    to: address_internal_transaction_path(@conn, :index, @address.hash)
+                  ) %>
+            </li>
+          <% end %>
           <%= if AddressView.contract?(@address) do %>
             <li class="nav-item">
               <%= link(
@@ -44,7 +43,6 @@
               <% end %>
             </li>
           <% end %>
-
           <%= if AddressView.smart_contract_with_read_only_functions?(@address) do %>
             <li class="nav-item">
               <%= link(
@@ -80,12 +78,14 @@
                     class: "dropdown-item active",
                     to: address_token_path(@conn, :index, @address.hash)
                   ) %>
-              <%= link(
-                    gettext("Internal Transactions"),
-                    class: "dropdown-item",
-                    "data-test": "internal_transactions_tab_link",
-                    to: address_internal_transaction_path(@conn, :index, @address.hash)
-                  ) %>
+              <%= if AddressView.has_internal_transactions?(@internal_transaction_count) do %>
+                <%= link(
+                  gettext("Internal Transactions"),
+                  class: "dropdown-item",
+                  "data-test": "internal_transactions_tab_link",
+                  to: address_internal_transaction_path(@conn, :index, @address.hash)
+                ) %>
+              <% end %>
               <%= link(
                   to: address_contract_path(@conn, :index, @address.hash),
                   class: "dropdown-item") do %>

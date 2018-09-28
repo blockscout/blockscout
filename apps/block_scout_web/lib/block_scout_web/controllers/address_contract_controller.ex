@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.AddressContractController do
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.AddressController, only: [transaction_count: 1]
+  import BlockScoutWeb.AddressController, only: [transaction_count: 1, internal_transaction_count: 1]
 
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
@@ -14,7 +14,8 @@ defmodule BlockScoutWeb.AddressContractController do
         "index.html",
         address: address,
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-        transaction_count: transaction_count(address)
+        transaction_count: transaction_count(address),
+        internal_transaction_count: internal_transaction_count(address)
       )
     else
       :error ->

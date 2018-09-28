@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.AddressReadContractController do
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
 
-  import BlockScoutWeb.AddressController, only: [transaction_count: 1]
+  import BlockScoutWeb.AddressController, only: [transaction_count: 1, internal_transaction_count: 1]
 
   def index(conn, %{"address_id" => address_hash_string}) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
@@ -21,7 +21,8 @@ defmodule BlockScoutWeb.AddressReadContractController do
         "index.html",
         address: address,
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-        transaction_count: transaction_count(address)
+        transaction_count: transaction_count(address),
+        internal_transaction_count: internal_transaction_count(address)
       )
     else
       :error ->

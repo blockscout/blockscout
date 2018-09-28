@@ -1345,6 +1345,28 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "address_to_internal_transaction_count/1" do
+    test "returns 0 when there are no internal transactions" do
+      address = insert(:address)
+
+      assert 0 = Chain.address_to_internal_transaction_count(address)
+    end
+
+    test "returns the number of internal transactions by a specified address" do
+      address = insert(:address)
+      another_address = insert(:address)
+
+      transaction = insert(:transaction)
+
+      insert(:internal_transaction, transaction: transaction, to_address: address)
+      insert(:internal_transaction, transaction: transaction, to_address: address)
+      insert(:internal_transaction, transaction: transaction, to_address: another_address)
+
+      assert 2 = Chain.address_to_internal_transaction_count(address)
+      assert 1 = Chain.address_to_internal_transaction_count(another_address)
+    end
+  end
+
   describe "pending_transactions/0" do
     test "without transactions" do
       assert [] = Chain.recent_pending_transactions()
@@ -2860,6 +2882,49 @@ defmodule Explorer.ChainTest do
         |> Enum.map(& &1.token_id)
 
       assert unique_tokens_ids_paginated == [second_page.token_id]
+    end
+  end
+
+  describe "address_to_tokens_with_balance_count/1" do
+    test "returns 0 when the specified address has no tokens" do
+      address = insert(:address)
+
+      assert 0 = Chain.address_to_tokens_with_balance_count(address.hash)
+    end
+
+    test "returns the amount of tokens held by the specified address" do
+      address = insert(:address)
+      another_address = insert(:address)
+      token = insert(:token)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      another_transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(
+        :token_transfer,
+        amount: 2,
+        to_address: address,
+        token_contract_address: token.contract_address,
+        transaction: transaction
+      )
+
+      insert(
+        :token_transfer,
+        amount: 1,
+        to_address: another_address,
+        token_contract_address: token.contract_address,
+        transaction: another_transaction
+      )
+
+      assert 2 = Chain.address_to_tokens_with_balance_count(address.hash)
+      assert 1 = Chain.address_to_tokens_with_balance_count(another_address.hash)
     end
   end
 end
