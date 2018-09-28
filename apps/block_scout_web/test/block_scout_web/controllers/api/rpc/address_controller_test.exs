@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias Explorer.Chain
+  alias Explorer.Repo
   alias Explorer.Chain.{Transaction, Wei}
   alias BlockScoutWeb.API.RPC.AddressController
 
@@ -1535,6 +1536,131 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
                |> json_response(200)
 
       assert response["result"] == to_string(token_balance.value)
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+  end
+
+  describe "tokenlist" do
+    test "without address param", %{conn: conn} do
+      params = %{
+        "module" => "account",
+        "action" => "tokenlist"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["message"] =~ "address is required"
+      assert response["status"] == "0"
+      assert Map.has_key?(response, "result")
+      refute response["result"]
+    end
+
+    test "with an invalid address hash", %{conn: conn} do
+      params = %{
+        "module" => "account",
+        "action" => "tokenlist",
+        "address" => "badhash"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["message"] =~ "Invalid address format"
+      assert response["status"] == "0"
+      assert Map.has_key?(response, "result")
+      refute response["result"]
+    end
+
+    test "with an address that doesn't exist", %{conn: conn} do
+      params = %{
+        "module" => "account",
+        "action" => "tokenlist",
+        "address" => "0x9bf38d4764929064f2d4d3a56520a76ab3df415b"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == []
+      assert response["status"] == "0"
+      assert response["message"] == "No tokens found"
+    end
+
+    test "with an address without row in token_balances table", %{conn: conn} do
+      address = insert(:address)
+
+      params = %{
+        "module" => "account",
+        "action" => "tokenlist",
+        "address" => to_string(address.hash)
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == []
+      assert response["status"] == "0"
+      assert response["message"] == "No tokens found"
+    end
+
+    test "with address with existing balance in token_balances table", %{conn: conn} do
+      token_balance = :token_balance |> insert() |> Repo.preload(:token)
+
+      params = %{
+        "module" => "account",
+        "action" => "tokenlist",
+        "address" => to_string(token_balance.address_hash)
+      }
+
+      expected_result = [
+        %{
+          "balance" => to_string(token_balance.value),
+          "contractAddress" => to_string(token_balance.token_contract_address_hash),
+          "name" => token_balance.token.name,
+          "decimals" => to_string(token_balance.token.decimals),
+          "symbol" => token_balance.token.symbol
+        }
+      ]
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == expected_result
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "with address with multiple tokens", %{conn: conn} do
+      address = insert(:address)
+      other_address = insert(:address)
+      insert(:token_balance, address: address)
+      insert(:token_balance, address: address)
+      insert(:token_balance, address: other_address)
+
+      params = %{
+        "module" => "account",
+        "action" => "tokenlist",
+        "address" => to_string(address.hash)
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert length(response["result"]) == 2
       assert response["status"] == "1"
       assert response["message"] == "OK"
     end
