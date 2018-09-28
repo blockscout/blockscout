@@ -110,6 +110,23 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     end
   end
 
+  def tokenlist(conn, params) do
+    with {:address_param, {:ok, address_param}} <- fetch_address(params),
+         {:format, {:ok, address_hash}} <- to_address_hash(address_param),
+         {:ok, token_list} <- list_tokens(address_hash) do
+      render(conn, :token_list, %{token_list: token_list})
+    else
+      {:address_param, :error} ->
+        render(conn, :error, error: "Query parameter address is required")
+
+      {:format, :error} ->
+        render(conn, :error, error: "Invalid address format")
+
+      {:error, :not_found} ->
+        render(conn, :error, error: "No tokens found", data: [])
+    end
+  end
+
   def getminedblocks(conn, params) do
     options = put_pagination_options(%{}, params)
 
@@ -362,6 +379,13 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     case Etherscan.get_token_balance(contract_address_hash, address_hash) do
       nil -> 0
       token_balance -> token_balance.value
+    end
+  end
+
+  defp list_tokens(address_hash) do
+    case Etherscan.list_tokens(address_hash) do
+      [] -> {:error, :not_found}
+      token_list -> {:ok, token_list}
     end
   end
 end

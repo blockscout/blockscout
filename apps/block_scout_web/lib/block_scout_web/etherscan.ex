@@ -142,6 +142,20 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => nil
   }
 
+  @account_tokenlist_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => [
+      %{
+        "balance" => "135499",
+        "contractAddress" => "0x0000000000000000000000000000000000000000",
+        "name" => "Example Token",
+        "decimals" => "18",
+        "symbol" => "ET"
+      }
+    ]
+  }
+
   @account_getminedblocks_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -625,6 +639,21 @@ defmodule BlockScoutWeb.Etherscan do
     }
   }
 
+  @token_balance_model %{
+    name: "TokenBalance",
+    fields: %{
+      balance: %{
+        type: "integer",
+        definition: "The token account balance.",
+        example: ~s("135499")
+      },
+      name: @token_name_type,
+      symbol: @token_symbol_type,
+      decimals: @token_decimal_type,
+      contractAddress: @address_hash_type
+    }
+  }
+
   @block_reward_model %{
     name: "BlockReward",
     fields: %{
@@ -1035,6 +1064,43 @@ defmodule BlockScoutWeb.Etherscan do
               type: "integer",
               definition: "The token account balance for the contract address.",
               example: ~s("135499")
+            }
+          }
+        }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@account_tokenbalance_example_value_error)
+      }
+    ]
+  }
+
+  @account_tokenlist_action %{
+    name: "tokenlist",
+    description: "Get list of tokens owned by address.",
+    required_params: [
+      %{
+        key: "address",
+        placeholder: "addressHash",
+        type: "string",
+        description: "A 160-bit code used for identifying accounts."
+      }
+    ],
+    optional_params: [],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@account_tokenlist_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "array",
+              array_type: @token_balance_model
             }
           }
         }
@@ -1537,6 +1603,7 @@ defmodule BlockScoutWeb.Etherscan do
       @account_txlistinternal_action,
       @account_tokentx_action,
       @account_tokenbalance_action,
+      @account_tokenlist_action,
       @account_getminedblocks_action
     ]
   }

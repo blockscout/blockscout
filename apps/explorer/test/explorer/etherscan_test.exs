@@ -1103,4 +1103,86 @@ defmodule Explorer.EtherscanTest do
       assert found_token_balance.id == token_balance2.id
     end
   end
+
+  describe "list_tokens/1" do
+    test "returns the tokens owned by an address hash" do
+      address = insert(:address)
+
+      token_balance =
+        :token_balance
+        |> insert(address: address)
+        |> Repo.preload(:token)
+
+      insert(:token_balance, address: build(:address))
+
+      token_list = Etherscan.list_tokens(address.hash)
+
+      expected_tokens = [
+        %{
+          balance: token_balance.value,
+          contract_address_hash: token_balance.token_contract_address_hash,
+          name: token_balance.token.name,
+          decimals: token_balance.token.decimals,
+          symbol: token_balance.token.symbol
+        }
+      ]
+
+      assert token_list == expected_tokens
+    end
+
+    test "returns the latest known balance per token" do
+      # The latest balance is the one with the latest block number
+      address = insert(:address)
+      token = insert(:token)
+
+      token_balance_details1 = %{
+        address: address,
+        token_contract_address_hash: token.contract_address.hash,
+        block_number: 1
+      }
+
+      token_balance_details2 = %{
+        address: address,
+        token_contract_address_hash: token.contract_address.hash,
+        block_number: 2
+      }
+
+      token_balance_details3 = %{
+        address: address,
+        token_contract_address_hash: token.contract_address.hash,
+        block_number: 3
+      }
+
+      insert(:token_balance, token_balance_details1)
+
+      token_balance =
+        :token_balance
+        |> insert(token_balance_details3)
+        |> Repo.preload(:token)
+
+      insert(:token_balance, token_balance_details2)
+
+      token_list = Etherscan.list_tokens(address.hash)
+
+      expected_tokens = [
+        %{
+          balance: token_balance.value,
+          contract_address_hash: token_balance.token_contract_address_hash,
+          name: token_balance.token.name,
+          decimals: token_balance.token.decimals,
+          symbol: token_balance.token.symbol
+        }
+      ]
+
+      assert token_list == expected_tokens
+    end
+
+    test "returns an empty list when there are no token balances" do
+      address = insert(:address)
+
+      insert(:token_balance, address: build(:address))
+
+      assert Etherscan.list_tokens(address.hash) == []
+    end
+  end
 end
