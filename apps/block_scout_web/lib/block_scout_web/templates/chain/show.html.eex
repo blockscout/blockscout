@@ -64,7 +64,7 @@
 
   <div class="card card-chain-transactions">
     <div class="card-body">
-      <div data-selector="channel-batching-message" style="display:none;">
+      <div data-selector="channel-batching-message" class="d-none">
         <div data-selector="reload-button" class="alert alert-info">
           <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>
         </div>

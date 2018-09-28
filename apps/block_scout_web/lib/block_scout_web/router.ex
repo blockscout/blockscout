@@ -79,6 +79,13 @@ defmodule BlockScoutWeb.Router do
       )
 
       resources(
+        "/validations",
+        AddressValidationController,
+        only: [:index],
+        as: :validation
+      )
+
+      resources(
         "/contracts",
         AddressContractController,
         only: [:index],

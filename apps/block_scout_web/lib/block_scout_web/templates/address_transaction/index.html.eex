@@ -10,27 +10,37 @@
         <ul class="nav nav-tabs card-header-tabs d-none d-lg-inline-flex">
           <li class="nav-item">
             <%= link(
-                  gettext("Transactions"),
-                  class: "nav-link active",
-                  to: address_transaction_path(@conn, :index, @address.hash)
-                ) %>
+              gettext("Transactions"),
+              class: "nav-link active",
+              to: address_transaction_path(@conn, :index, @address.hash)
+            ) %>
           </li>
           <li class="nav-item">
             <%= link(
-                  gettext("Tokens"),
-                  class: "nav-link",
-                  to: address_token_path(@conn, :index, @address.hash),
-                  "data-test": "tokens_tab_link"
-                ) %>
+              gettext("Tokens"),
+              class: "nav-link",
+              to: address_token_path(@conn, :index, @address.hash),
+              "data-test": "tokens_tab_link"
+            ) %>
           </li>
           <li class="nav-item">
             <%= link(
-                  gettext("Internal Transactions"),
-                  class: "nav-link",
-                  "data-test": "internal_transactions_tab_link",
-                  to: address_internal_transaction_path(@conn, :index, @address.hash)
-                ) %>
+              gettext("Internal Transactions"),
+              class: "nav-link",
+              "data-test": "internal_transactions_tab_link",
+              to: address_internal_transaction_path(@conn, :index, @address.hash)
+            ) %>
           </li>
+          <%= if validator?(@validation_count) do %>
+            <li class="nav-item">
+              <%= link(
+                gettext("Blocks Validated"),
+                class: "nav-link",
+                "data-test": "validations_tab_link",
+                to: address_validation_path(@conn, :index, @address.hash)
+              ) %>
+            </li>
+          <% end %>
           <%= if contract?(@address) do %>
             <li class="nav-item">
               <%= link(
@@ -47,9 +57,10 @@
           <%= if smart_contract_with_read_only_functions?(@address) do %>
             <li class="nav-item">
               <%= link(
-                  gettext("Read Contract"),
-                  to: address_read_contract_path(@conn, :index, @address.hash),
-                  class: "nav-link")%>
+                gettext("Read Contract"),
+                to: address_read_contract_path(@conn, :index, @address.hash),
+                class: "nav-link"
+              )%>
             </li>
           <% end %>
         </ul>
@@ -60,21 +71,29 @@
             <a class="nav-link active dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false"><%= gettext "Transactions" %></a>
             <div class="dropdown-menu">
               <%= link(
-                    gettext("Transactions"),
-                    class: "dropdown-item active",
-                    to: address_transaction_path(@conn, :index, @address.hash)
-                  ) %>
+                gettext("Transactions"),
+                class: "dropdown-item active",
+                to: address_transaction_path(@conn, :index, @address.hash)
+              ) %>
               <%= link(
-                    gettext("Tokens"),
-                    class: "dropdown-item",
-                    to: address_token_path(@conn, :index, @address.hash)
-                  ) %>
+                gettext("Tokens"),
+                class: "dropdown-item",
+                to: address_token_path(@conn, :index, @address.hash)
+              ) %>
               <%= link(
-                    gettext("Internal Transactions"),
-                    class: "dropdown-item",
-                    "data-test": "internal_transactions_tab_link",
-                    to: address_internal_transaction_path(@conn, :index, @address.hash)
-                  ) %>
+                gettext("Internal Transactions"),
+                class: "dropdown-item",
+                "data-test": "internal_transactions_tab_link",
+                to: address_internal_transaction_path(@conn, :index, @address.hash)
+              ) %>
+              <%= if validator?(@validation_count) do %>
+                <%= link(
+                  gettext("Blocks Validated"),
+                  class: "dropdown-item",
+                  "data-test": "validations_tab_link",
+                  to: address_validation_path(@conn, :index, @address.hash)
+                ) %>
+              <% end %>
               <%= if contract?(@address) do %>
                 <%= link(
                     to: address_contract_path(@conn, :index, @address.hash),
@@ -90,7 +109,7 @@
                 <%= link(
                     gettext("Read Contract"),
                     to: address_read_contract_path(@conn, :index, @address.hash),
-                    class: "dropdown-item")%>
+                    class: "dropdown-item") %>
               <% end %>
             </div>
           </li>
@@ -98,12 +117,12 @@
       </div>
 
       <div class="card-body">
-        <div data-selector="channel-batching-message" style="display:none;">
+        <div data-selector="channel-batching-message" class="d-none">
           <div data-selector="reload-button" class="alert alert-info">
             <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>
           </div>
         </div>
-        <div data-selector="channel-disconnected-message" style="display:none;">
+        <div data-selector="channel-disconnected-message" class="d-none">
           <div data-selector="reload-button" class="alert alert-danger">
             <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer transactions" %></a>
           </div>

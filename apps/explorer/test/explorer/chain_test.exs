@@ -1033,6 +1033,68 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "get_blocks_validated_by_address/2" do
+    test "returns nothing when there are no blocks" do
+      address = insert(:address)
+
+      assert [] = Chain.get_blocks_validated_by_address(address)
+    end
+
+    test "returns the blocks validated by a specified address" do
+      address = insert(:address)
+      another_address = insert(:address)
+
+      block = insert(:block, miner: address, miner_hash: address.hash)
+      insert(:block, miner: another_address, miner_hash: another_address.hash)
+
+      results =
+        address
+        |> Chain.get_blocks_validated_by_address()
+        |> Enum.map(& &1.hash)
+
+      assert results == [block.hash]
+    end
+
+    test "with blocks can be paginated" do
+      address = insert(:address)
+
+      first_page_block = insert(:block, miner: address, miner_hash: address.hash, number: 0)
+      second_page_block = insert(:block, miner: address, miner_hash: address.hash, number: 2)
+
+      assert [first_page_block.number] ==
+               [paging_options: %PagingOptions{key: {1}, page_size: 1}]
+               |> Chain.get_blocks_validated_by_address(address)
+               |> Enum.map(& &1.number)
+               |> Enum.reverse()
+
+      assert [second_page_block.number] ==
+               [paging_options: %PagingOptions{key: {3}, page_size: 1}]
+               |> Chain.get_blocks_validated_by_address(address)
+               |> Enum.map(& &1.number)
+               |> Enum.reverse()
+    end
+  end
+
+  describe "address_to_validation_count/1" do
+    test "returns 0 when there aren't any blocks" do
+      address = insert(:address)
+
+      assert 0 = Chain.address_to_validation_count(address)
+    end
+
+    test "returns the number of blocks mined by addres" do
+      address = insert(:address)
+      another_address = insert(:address)
+
+      insert(:block, miner: address, miner_hash: address.hash)
+      insert(:block, miner: another_address, miner_hash: another_address.hash)
+      insert(:block, miner: another_address, miner_hash: another_address.hash)
+
+      assert 1 = Chain.address_to_validation_count(address)
+      assert 2 = Chain.address_to_validation_count(another_address)
+    end
+  end
+
   describe "number_to_block/1" do
     test "without block" do
       assert {:error, :not_found} = Chain.number_to_block(-1)
