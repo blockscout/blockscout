@@ -13,6 +13,10 @@ defmodule BlockScoutWeb.BlockChannel do
     {:ok, %{}, socket}
   end
 
+  def join("blocks:" <> _miner_address, _params, socket) do
+    {:ok, %{}, socket}
+  end
+
   def handle_out("new_block", %{block: block, average_block_time: average_block_time}, socket) do
     Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
 

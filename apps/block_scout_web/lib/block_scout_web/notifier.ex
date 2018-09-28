@@ -68,10 +68,16 @@ defmodule BlockScoutWeb.Notifier do
 
   defp broadcast_block(block) do
     preloaded_block = Repo.preload(block, [[miner: :names], :transactions])
+    average_block_time = Chain.average_block_time()
 
     Endpoint.broadcast("blocks:new_block", "new_block", %{
       block: preloaded_block,
-      average_block_time: Chain.average_block_time()
+      average_block_time: average_block_time
+    })
+
+    Endpoint.broadcast("blocks:#{to_string(block.miner_hash)}", "new_block", %{
+      block: preloaded_block,
+      average_block_time: average_block_time
     })
   end
 

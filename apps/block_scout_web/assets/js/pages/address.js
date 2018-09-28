@@ -18,12 +18,14 @@ export const initialState = {
   beyondPageOne: null,
   channelDisconnected: false,
   filter: null,
+  newBlock: null,
   newInternalTransactions: [],
   newPendingTransactions: [],
   newTransactions: [],
   newTransactionHashes: [],
   newPendingTransactionHashesBatch: [],
-  transactionCount: null
+  transactionCount: null,
+  validationCount: null
 }
 
 export function reducer (state = initialState, action) {
@@ -33,7 +35,8 @@ export function reducer (state = initialState, action) {
         addressHash: action.addressHash,
         beyondPageOne: action.beyondPageOne,
         filter: action.filter,
-        transactionCount: numeral(action.transactionCount).value()
+        transactionCount: numeral(action.transactionCount).value(),
+        validationCount: action.transactionCount ? numeral(action.transactionCount).value() : null
       })
     }
     case 'CHANNEL_DISCONNECTED': {
@@ -44,9 +47,15 @@ export function reducer (state = initialState, action) {
         batchCountAccumulator: 0
       })
     }
-    case 'RECEIVED_UPDATED_BALANCE': {
+    case 'RECEIVED_NEW_BLOCK': {
+      if (state.channelDisconnected) return state
+
+      const validationCount = state.validationCount + 1
+
+      if (state.beyondPageOne) return Object.assign({}, state, { validationCount })
       return Object.assign({}, state, {
-        balance: action.msg.balance
+        newBlock: action.msg.blockHtml,
+        validationCount
       })
     }
     case 'RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH': {
@@ -133,12 +142,9 @@ export function reducer (state = initialState, action) {
         })
       }
     }
-    case 'RECEIVED_NEW_BLOCK': {
-      if (state.channelDisconnected || state.beyondPageOne) return state
-
+    case 'RECEIVED_UPDATED_BALANCE': {
       return Object.assign({}, state, {
-        newBlock: action.msg.blockHtml,
-        minerHash: action.msg.blockMinerHash
+        balance: action.msg.balance
       })
     }
     default:
@@ -158,32 +164,31 @@ if ($addressDetailsPage.length) {
         addressHash,
         beyondPageOne: !!blockNumber,
         filter,
-        transactionCount: $('[data-selector="transaction-count"]').text()
+        transactionCount: $('[data-selector="transaction-count"]').text(),
+        validationCount: $('[data-selector="validation-count"]') ? $('[data-selector="validation-count"]').text() : null
       })
       addressChannel.join()
       addressChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
       addressChannel.on('balance', (msg) => store.dispatch({ type: 'RECEIVED_UPDATED_BALANCE', msg }))
-      if (!state.beyondPageOne) {
-        const blocksChannel = socket.channel(`blocks:new_block`, {})
-        blocksChannel.join()
-        blocksChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
-        blocksChannel.on('new_block', (msg) => {
-          store.dispatch({ type: 'RECEIVED_NEW_BLOCK', msg: humps.camelizeKeys(msg) })
-        })
-        addressChannel.on('transaction', batchChannel((msgs) =>
-          store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION_BATCH', msgs })
-        ))
+      addressChannel.on('transaction', batchChannel((msgs) =>
+        store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION_BATCH', msgs })
+      ))
 
-        addressChannel.on('internal_transaction', batchChannel((msgs) =>
-          store.dispatch({ type: 'RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH', msgs })
-        ))
-        addressChannel.on('pending_transaction', batchChannel((msgs) =>
-          store.dispatch({ type: 'RECEIVED_NEW_PENDING_TRANSACTION_BATCH', msgs })
-        ))
-        addressChannel.on('transaction', batchChannel((msgs) =>
-          store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION_BATCH', msgs })
-        ))
-      }
+      addressChannel.on('internal_transaction', batchChannel((msgs) =>
+        store.dispatch({ type: 'RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH', msgs })
+      ))
+      addressChannel.on('pending_transaction', batchChannel((msgs) =>
+        store.dispatch({ type: 'RECEIVED_NEW_PENDING_TRANSACTION_BATCH', msgs })
+      ))
+      addressChannel.on('transaction', batchChannel((msgs) =>
+        store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION_BATCH', msgs })
+      ))
+      const blocksChannel = socket.channel(`blocks:${addressHash}`, {})
+      blocksChannel.join()
+      blocksChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
+      blocksChannel.on('new_block', (msg) => {
+        store.dispatch({ type: 'RECEIVED_NEW_BLOCK', msg: humps.camelizeKeys(msg) })
+      })
     },
     render (state, oldState) {
       const $balance = $('[data-selector="balance-card"]')
@@ -198,6 +203,7 @@ if ($addressDetailsPage.length) {
       const $pendingTransactionsList = $('[data-selector="pending-transactions-list"]')
       const $transactionCount = $('[data-selector="transaction-count"]')
       const $transactionsList = $('[data-selector="transactions-list"]')
+      const $validationCount = $('[data-selector="validation-count"]')
       const $validationsList = $('[data-selector="validations-list"]')
 
       if ($emptyInternalTransactionsList.length && state.newInternalTransactions.length) window.location.reload()
@@ -209,6 +215,7 @@ if ($addressDetailsPage.length) {
         updateAllCalculatedUsdValues()
       }
       if (oldState.transactionCount !== state.transactionCount) $transactionCount.empty().append(numeral(state.transactionCount).format())
+      if (oldState.validationCount !== state.validationCount) $validationCount.empty().append(numeral(state.validationCount).format())
       if (state.batchCountAccumulator) {
         $channelBatching.show()
         $channelBatchingCount[0].innerHTML = numeral(state.batchCountAccumulator).format()
@@ -241,14 +248,9 @@ if ($addressDetailsPage.length) {
         prependWithClingBottom($transactionsList, state.newTransactions.slice(oldState.newTransactions.length).reverse().join(''))
         updateAllAges()
       }
-      if (oldState.newBlock !== state.newBlock && state.minerHash === state.addressHash) {
-        const len = $validationsList.children().length
-        $validationsList
-          .children()
-          .slice(len - 1, len)
-          .remove()
-
-        $validationsList.prepend(state.newBlock)
+      if (oldState.newBlock !== state.newBlock) {
+        prependWithClingBottom($validationsList, state.newBlock)
+        updateAllAges()
       }
     }
   })
