@@ -110,13 +110,15 @@ if ($blockListPage.length) {
 function placeHolderBlock(blockNumber) {
   return `
     <div class="tile tile-type-block fade-up" data-selector="place-holder" data-block-number="${blockNumber}">
-      <div class="row">
-        <div class="col-md-6">
-          <span>${blockNumber}</span>
+      <div class="d-flex">
+        <span class="loading-spinner-small ml-1 mr-4">
+          <span class="loading-spinner-block-1"></span>
+          <span class="loading-spinner-block-2"></span>
+        </span>
         <div>
-        <div class="col-md-6">
-          Block Mined, awaiting import...
-        <div>
+          <div class="tile-title">${blockNumber}</div>
+          <div> Block Mined, awaiting import...</div>
+        </div>
       </div>
     </div>
   `
