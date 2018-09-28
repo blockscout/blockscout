@@ -21,6 +21,7 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
   http: [port: System.get_env("PORT")],
   url: [
     scheme: "http",
+    path: "/#{System.get_env("network_path")}/#{System.get_env("subnetwork_path")}",
     port: System.get_env("PORT")
   ]
 
