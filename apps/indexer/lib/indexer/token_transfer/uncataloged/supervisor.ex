@@ -7,19 +7,33 @@ defmodule Indexer.TokenTransfer.Uncataloged.Supervisor do
 
   alias Indexer.TokenTransfer.Uncataloged.Worker
 
-  @dialyzer {:no_return, init: 1}
-
-  def start_link(opts) do
-    Supervisor.start_link(__MODULE__, opts)
+  def child_spec([]) do
+    child_spec([[], []])
   end
 
+  def child_spec([init_arguments]) do
+    child_spec([init_arguments, []])
+  end
+
+  def child_spec([_init_arguments, _gen_server_options] = start_link_arguments) do
+    spec = %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, start_link_arguments},
+      restart: :transient,
+      type: :supervisor
+    }
+
+    Supervisor.child_spec(spec, [])
+  end
+
+  def start_link(init_arguments, gen_server_options \\ []) do
+    Supervisor.start_link(__MODULE__, init_arguments, gen_server_options)
+  end
+
+  @impl Supervisor
   def init(_) do
     children = [
-      %{
-        id: Worker,
-        start: {Worker, :start_link, [[supervisor: self()]]},
-        restart: :transient
-      },
+      {Worker, [[supervisor: self()]]},
       {Task.Supervisor, name: Indexer.TokenTransfer.Uncataloged.TaskSupervisor}
     ]
 

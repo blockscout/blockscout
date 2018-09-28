@@ -11,10 +11,9 @@ defmodule Indexer.Application do
     InternalTransaction,
     PendingTransaction,
     Token,
-    TokenBalance
+    TokenBalance,
+    TokenTransfer
   }
-
-  alias Indexer.TokenTransfer.Uncataloged
 
   @impl Application
   def start(_type, _args) do
@@ -39,12 +38,7 @@ defmodule Indexer.Application do
       {TokenBalance.Supervisor,
        [[json_rpc_named_arguments: json_rpc_named_arguments], [name: TokenBalance.Supervisor]]},
       {Block.Supervisor, [block_fetcher_supervisor_named_arguments, [name: Block.Supervisor]]},
-      %{
-        id: Uncataloged.Supervisor,
-        start: {Uncataloged.Supervisor, :start_link, [[]]},
-        restart: :transient,
-        type: :supervisor
-      }
+      TokenTransfer.Uncataloged.Supervisor
     ]
 
     opts = [strategy: :one_for_one, name: Indexer.Supervisor]

@@ -13,8 +13,23 @@ defmodule Indexer.TokenTransfer.Uncataloged.Worker do
   alias Indexer.Block.Catchup.Fetcher
   alias Indexer.TokenTransfer.Uncataloged
 
-  def start_link(opts) do
-    GenServer.start_link(__MODULE__, opts)
+  def child_spec([init_arguments]) do
+    child_spec([init_arguments, []])
+  end
+
+  def child_spec([_init_arguments, _gen_server_options] = start_link_arguments) do
+    spec = %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, start_link_arguments},
+      restart: :transient,
+      type: :worker
+    }
+
+    Supervisor.child_spec(spec, [])
+  end
+
+  def start_link(init_arguments, gen_server_options \\ []) do
+    GenServer.start_link(__MODULE__, init_arguments, gen_server_options)
   end
 
   def init(opts) do

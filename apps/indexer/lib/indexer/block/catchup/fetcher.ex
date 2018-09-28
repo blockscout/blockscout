@@ -89,8 +89,9 @@ defmodule Indexer.Block.Catchup.Fetcher do
             :ok
 
           _ ->
-            sequence_opts = [ranges: missing_ranges, step: -1 * blocks_batch_size, name: @sequence_name]
-            {:ok, sequence} = Sequence.start_link(sequence_opts)
+            sequence_opts = [ranges: missing_ranges, step: -1 * blocks_batch_size]
+            gen_server_opts = [name: @sequence_name]
+            {:ok, sequence} = Sequence.start_link(sequence_opts, gen_server_opts)
             Sequence.cap(sequence)
 
             stream_fetch_and_import(state, sequence)
