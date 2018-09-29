@@ -70,7 +70,7 @@
                   class: "dropdown-item",
                   to: address_transaction_path(@conn, :index, @address.hash)
                 ) %>
-            <%= BlockScoutWeb.AddressView.has_tokens?(@address) do %>
+            <%= if BlockScoutWeb.AddressView.has_tokens?(@address) do %>
               <%= link(
                 gettext("Tokens"),
                 class: "dropdown-item",

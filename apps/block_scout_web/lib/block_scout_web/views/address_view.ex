@@ -115,6 +115,7 @@ defmodule BlockScoutWeb.AddressView do
     case Chain.address_to_internal_transaction_count(address) do
       0 ->
         false
+
       _ ->
         true
     end
@@ -124,6 +125,7 @@ defmodule BlockScoutWeb.AddressView do
     case Chain.address_to_tokens_with_balance_count(address.hash) do
       0 ->
         false
+
       _ ->
         true
     end

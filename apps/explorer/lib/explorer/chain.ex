@@ -1838,12 +1838,12 @@ defmodule Explorer.Chain do
 
   @doc """
   Returns `t:Address.Token/0`s owned by `address`.
-  
+
   Excludes tokens that have a balance of 0.
   """
   def address_to_tokens_with_balance_count(address_hash) do
     address_hash
-    |> Address.Token.select_count_address_tokens_with_balance()  
+    |> Address.Token.select_count_address_tokens_with_balance()
     |> Repo.one()
   end
 
