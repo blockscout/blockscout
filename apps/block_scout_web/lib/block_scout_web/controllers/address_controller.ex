@@ -22,6 +22,6 @@ defmodule BlockScoutWeb.AddressController do
   end
 
   def internal_transaction_count(%Address{} = address) do
-    Chain.address_to_internal_transaction_count(address.hash)
+    Chain.address_to_internal_transaction_count(address)
   end
 end

@@ -29,6 +29,8 @@ defmodule BlockScoutWeb.AddressTransactionController do
       transactions_plus_one = Chain.address_to_transactions(address, full_options)
       {transactions, next_page} = split_list_by_page(transactions_plus_one)
 
+      IO.inspect internal_transaction_count(address), label: "Internal Transaction Count"
+
       render(
         conn,
         "index.html",

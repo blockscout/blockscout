@@ -149,7 +149,8 @@ defmodule Explorer.Chain do
     )
     |> join(:left, [internal_transaction, transaction], block in assoc(transaction, :block))
     |> where_transaction_has_multiple_internal_transactions()
-    |> select([t], t.transaction_hash)
+    |> InternalTransaction.where_address_fields_match(hash, nil)
+    |> select([t], count(t.transaction_hash))
     |> Repo.one()
   end
 
@@ -1836,7 +1837,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  `Returns `t:Address.Token/0`s owned by `address`.
+  Returns `t:Address.Token/0`s owned by `address`.
   
   Excludes tokens that have a balance of 0.
   """
