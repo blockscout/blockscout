@@ -1358,9 +1358,9 @@ defmodule Explorer.ChainTest do
 
       transaction = insert(:transaction)
 
-      insert(:internal_transaction, transaction: transaction, to_address: address)
-      insert(:internal_transaction, transaction: transaction, to_address: address)
-      insert(:internal_transaction, transaction: transaction, to_address: another_address)
+      insert(:internal_transaction, index: 0, transaction: transaction, to_address: address)
+      insert(:internal_transaction, index: 1, transaction: transaction, to_address: address)
+      insert(:internal_transaction, index: 2, transaction: transaction, to_address: another_address)
 
       assert 2 = Chain.address_to_internal_transaction_count(address)
       assert 1 = Chain.address_to_internal_transaction_count(another_address)
@@ -2895,36 +2895,59 @@ defmodule Explorer.ChainTest do
     test "returns the amount of tokens held by the specified address" do
       address = insert(:address)
       another_address = insert(:address)
-      token = insert(:token)
 
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
+      token = insert(:token, contract_address: build(:contract_address))
+      another_token = insert(:token, contract_address: build(:contract_address))
 
-      another_transaction =
-        :transaction
-        |> insert()
-        |> with_block()
+      transaction = insert(:transaction)
 
       insert(
         :token_transfer,
-        amount: 2,
         to_address: address,
+        transaction: transaction,
         token_contract_address: token.contract_address,
-        transaction: transaction
+        token: token
       )
 
       insert(
         :token_transfer,
-        amount: 1,
         to_address: another_address,
+        transaction: transaction,
         token_contract_address: token.contract_address,
-        transaction: another_transaction
+        token: token
       )
 
-      assert 2 = Chain.address_to_tokens_with_balance_count(address.hash)
-      assert 1 = Chain.address_to_tokens_with_balance_count(another_address.hash)
+      insert(
+        :token_transfer,
+        to_address: another_address,
+        transaction: transaction,
+        token_contract_address: another_token.contract_address,
+        token: another_token
+      )
+
+      insert(
+        :token_balance,
+        address: address,
+        token_contract_address_hash: token.contract_address_hash,
+        value: 1
+      )
+
+      insert(
+        :token_balance,
+        address: another_address,
+        token_contract_address_hash: token.contract_address_hash,
+        value: 2
+      )
+
+      insert(
+        :token_balance,
+        address: another_address,
+        token_contract_address_hash: another_token.contract_address_hash,
+        value: 1
+      )
+
+      assert 1 = Chain.address_to_tokens_with_balance_count(address.hash)
+      assert 2 = Chain.address_to_tokens_with_balance_count(another_address.hash)
     end
   end
 end
