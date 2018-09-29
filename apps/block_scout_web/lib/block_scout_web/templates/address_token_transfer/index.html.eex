@@ -13,21 +13,23 @@
                   to: address_transaction_path(@conn, :index, @address.hash)
                 ) %>
           </li>
-          <li class="nav-item">
-            <%= link(
-                  gettext("Tokens"),
-                  class: "nav-link active",
-                  to: address_token_path(@conn, :index, @address.hash)
-                ) %>
-          </li>
-          <% if AddressView.has_internal_transactions?(@internal_transaction_count) do %>
+          <%= if AddressView.has_tokens?(@address) do %>
             <li class="nav-item">
               <%= link(
-                    gettext("Internal Transactions"),
-                    class: "nav-link",
-                    "data-test": "internal_transactions_tab_link",
-                    to: address_internal_transaction_path(@conn, :index, @address.hash)
-                  ) %>
+                gettext("Tokens"),
+                class: "nav-link active",
+                to: address_token_path(@conn, :index, @address.hash)
+              ) %>
+            </li>
+          <% end %>
+          <% if AddressView.has_internal_transactions?(@address) do %>
+            <li class="nav-item">
+              <%= link(
+                gettext("Internal Transactions"),
+                class: "nav-link",
+                "data-test": "internal_transactions_tab_link",
+                to: address_internal_transaction_path(@conn, :index, @address.hash)
+              ) %>
             </li>
           <% end %>
           <%= if AddressView.contract?(@address) do %>
@@ -73,12 +75,14 @@
                     class: "dropdown-item",
                     to: address_transaction_path(@conn, :index, @address.hash)
                   ) %>
-              <%= link(
-                    gettext("Tokens"),
-                    class: "dropdown-item active",
-                    to: address_token_path(@conn, :index, @address.hash)
-                  ) %>
-              <%= if AddressView.has_internal_transactions?(@internal_transaction_count) do %>
+              <%= if AddressView.has_tokens?(@address) do %>
+                <%= link(
+                  gettext("Tokens"),
+                  class: "dropdown-item active",
+                  to: address_token_path(@conn, :index, @address.hash)
+                ) %>
+              <% end %>
+              <%= if AddressView.has_internal_transactions?(@address) do %>
                 <%= link(
                   gettext("Internal Transactions"),
                   class: "dropdown-item",

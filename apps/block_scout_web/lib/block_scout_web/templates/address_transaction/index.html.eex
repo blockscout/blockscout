@@ -15,15 +15,17 @@
                   to: address_transaction_path(@conn, :index, @address.hash)
                 ) %>
           </li>
-          <li class="nav-item">
-            <%= link(
-                  gettext("Tokens"),
-                  class: "nav-link",
-                  to: address_token_path(@conn, :index, @address.hash),
-                  "data-test": "tokens_tab_link"
-                ) %>
-          </li>
-          <%= if has_internal_transactions?(@internal_transaction_count) do %>
+          <%= if has_tokens?(@address) do %>
+            <li class="nav-item">
+              <%= link(
+                    gettext("Tokens"),
+                    class: "nav-link",
+                    to: address_token_path(@conn, :index, @address.hash),
+                    "data-test": "tokens_tab_link"
+                  ) %>
+            </li>
+          <% end %>
+          <%= if has_internal_transactions?(@address) do %>
             <li class="nav-item">
               <%= link(
                 gettext("Internal Transactions"),
@@ -66,12 +68,14 @@
                     class: "dropdown-item active",
                     to: address_transaction_path(@conn, :index, @address.hash)
                   ) %>
-              <%= link(
-                    gettext("Tokens"),
-                    class: "dropdown-item",
-                    to: address_token_path(@conn, :index, @address.hash)
-                  ) %>
-              <%= if has_internal_transactions?(@internal_transaction_count) do %>
+              <%= if has_tokens?(@address) do %>
+                <%= link(
+                  gettext("Tokens"),
+                  class: "dropdown-item",
+                  to: address_token_path(@conn, :index, @address.hash)
+                ) %>
+              <% end %>
+              <%= if has_internal_transactions?(@address) do %>
                 <%= link(
                   gettext("Internal Transactions"),
                   class: "dropdown-item",

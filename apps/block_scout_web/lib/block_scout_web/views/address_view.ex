@@ -111,9 +111,23 @@ defmodule BlockScoutWeb.AddressView do
 
   def contract?(nil), do: true
 
-  def has_internal_transactions?(internal_ts) when internal_ts > 0, do: true
+  def has_internal_transactions?(%Address{} = address) do
+    case Chain.address_to_internal_transaction_count(address) do
+      0 ->
+        false
+      _ ->
+        true
+    end
+  end
 
-  def has_internal_transactions?(_), do: false
+  def has_tokens?(%Address{} = address) do
+    case Chain.address_to_tokens_with_balance_count(address.hash) do
+      0 ->
+        false
+      _ ->
+        true
+    end
+  end
 
   def hash(%Address{hash: hash}) do
     to_string(hash)

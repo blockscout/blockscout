@@ -14,14 +14,16 @@
                 to: address_transaction_path(@conn, :index, @address.hash)
               ) %>
         </li>
-        <li class="nav-item">
-          <%= link(
-                gettext("Tokens"),
-                class: "nav-link",
-                to: address_token_path(@conn, :index, @address.hash)
-              ) %>
-        </li>
-        <% if BlockScoutWeb.AddressView.has_internal_transactions?(@internal_transcation_count) do %>
+        <%= if BlockScoutWeb.AddressView.has_tokens?(@address) do %>
+          <li class="nav-item">
+            <%= link(
+              gettext("Tokens"),
+              class: "nav-link",
+              to: address_token_path(@conn, :index, @address.hash)
+            ) %>
+          </li>
+        <% end %>
+        <% if BlockScoutWeb.AddressView.has_internal_transactions?(@address) do %>
           <li class="nav-item">
             <%= link(
                   gettext("Internal Transactions"),
@@ -68,12 +70,14 @@
                   class: "dropdown-item",
                   to: address_transaction_path(@conn, :index, @address.hash)
                 ) %>
-            <%= link(
-                  gettext("Tokens"),
-                  class: "dropdown-item",
-                  to: address_token_path(@conn, :index, @address.hash)
-                ) %>
-            <% if BlockScoutWeb.AddressView.has_internal_transactions?(@internal_transcation_count) do %>
+            <%= BlockScoutWeb.AddressView.has_tokens?(@address) do %>
+              <%= link(
+                gettext("Tokens"),
+                class: "dropdown-item",
+                to: address_token_path(@conn, :index, @address.hash)
+              ) %>
+            <% end %>
+            <% if BlockScoutWeb.AddressView.has_internal_transactions?(@address) do %>
               <%= link(
                     gettext("Internal Transactions"),
                     class: "dropdown-item",

@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.AddressController, only: [transaction_count: 1, internal_transaction_count: 1]
+  import BlockScoutWeb.AddressController, only: [transaction_count: 1]
   import BlockScoutWeb.Chain, only: [current_filter: 1, paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias Explorer.{Chain, Market}
@@ -29,8 +29,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
       transactions_plus_one = Chain.address_to_transactions(address, full_options)
       {transactions, next_page} = split_list_by_page(transactions_plus_one)
 
-      IO.inspect internal_transaction_count(address), label: "Internal Transaction Count"
-
       render(
         conn,
         "index.html",
@@ -39,8 +37,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
         transactions: transactions,
-        transaction_count: transaction_count(address),
-        internal_transaction_count: internal_transaction_count(address)
+        transaction_count: transaction_count(address)
       )
     else
       :error ->

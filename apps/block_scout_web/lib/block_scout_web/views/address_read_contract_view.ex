@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.AddressReadContractView do
   use BlockScoutWeb, :view
 
-  import BlockScoutWeb.AddressView, only: [smart_contract_verified?: 1, has_internal_transactions?: 1]
+  import BlockScoutWeb.AddressView, only: [smart_contract_verified?: 1, has_internal_transactions?: 1, has_tokens?: 1]
 
   def queryable?(inputs), do: Enum.any?(inputs)
 

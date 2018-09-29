@@ -45,8 +45,15 @@ defmodule Explorer.Chain.Address.Token do
     Chain.Token
     |> Chain.Token.join_with_transfers()
     |> join_with_last_balance(address_hash)
-    |> order_filter_and_group(address_hash)
-    |> select([t], count(t.contract_address_hash))
+    |> filter_and_count(address_hash)
+  end
+
+  defp filter_and_count(query, address_hash) do
+    from([token, transfer, balance] in query,
+      where:
+        (transfer.to_address_hash == ^address_hash or transfer.from_address_hash == ^address_hash) and balance.value > 0,
+      select: count(token.contract_address_hash)
+    )
   end
 
   defp order_filter_and_group(query, address_hash) do

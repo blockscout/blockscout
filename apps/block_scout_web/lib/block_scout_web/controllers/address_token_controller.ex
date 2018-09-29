@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.AddressTokenController do
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
 
-  import BlockScoutWeb.AddressController, only: [transaction_count: 1, internal_transaction_count: 1]
+  import BlockScoutWeb.AddressController, only: [transaction_count: 1]
   import BlockScoutWeb.Chain, only: [next_page_params: 3, paging_options: 1, split_list_by_page: 1]
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
@@ -19,7 +19,6 @@ defmodule BlockScoutWeb.AddressTokenController do
         address: address,
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         transaction_count: transaction_count(address),
-        internal_transaction_count: internal_transaction_count(address), 
         next_page_params: next_page_params(next_page, tokens, params),
         tokens: tokens
       )

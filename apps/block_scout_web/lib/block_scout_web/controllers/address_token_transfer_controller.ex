@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
 
-  import BlockScoutWeb.AddressController, only: [transaction_count: 1, internal_transaction_count: 1]
+  import BlockScoutWeb.AddressController, only: [transaction_count: 1]
 
   import BlockScoutWeb.Chain,
     only: [next_page_params: 3, paging_options: 1, split_list_by_page: 1]
@@ -34,7 +34,6 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
         next_page_params: next_page_params(next_page, transactions_paginated, params),
         token: token,
         transaction_count: transaction_count(address),
-        internal_transaction_count: internal_transaction_count(address), 
         transactions: transactions_paginated
       )
     else
