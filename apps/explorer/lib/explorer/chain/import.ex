@@ -3,7 +3,7 @@ defmodule Explorer.Chain.Import do
   Bulk importing of data into `Explorer.Repo`
   """
 
-  import Ecto.Query, only: [from: 2]
+  import Ecto.Query, only: [from: 2, update: 2]
 
   alias Ecto.{Changeset, Multi}
 
@@ -380,6 +380,12 @@ defmodule Explorer.Chain.Import do
         blocks_timeout = options[:blocks][:timeout] || @insert_blocks_timeout
 
         multi
+        |> Multi.run(:fork_transactions, fn _ ->
+          fork_transactions(blocks_changes, %{
+            timeout: options[:transactions][:timeout] || @insert_transactions_timeout,
+            timestamps: timestamps
+          })
+        end)
         |> Multi.run(:lose_consenus, fn _ ->
           lose_consensus(blocks_changes, %{timeout: blocks_timeout, timestamps: timestamps})
         end)
@@ -972,6 +978,49 @@ defmodule Explorer.Chain.Import do
       )
 
     {:ok, inserted}
+  end
+
+  defp fork_transactions(blocks_changes, %{
+         timeout: timeout,
+         timestamps: %{updated_at: updated_at}
+       })
+       when is_list(blocks_changes) do
+    query =
+      Transaction
+      |> where_forked(blocks_changes)
+      |> update(
+        set: [
+          block_hash: nil,
+          block_number: nil,
+          gas_used: nil,
+          cumulative_gas_used: nil,
+          index: nil,
+          internal_transactions_indexed_at: nil,
+          status: nil,
+          updated_at: ^updated_at
+        ]
+      )
+
+    try do
+      {_, result} = Repo.update_all(query, [], timeout: timeout, returning: [:hash])
+
+      {:ok, result}
+    rescue
+      postgrex_error in Postgrex.Error ->
+        {:error, %{exception: postgrex_error, blocks_changes: blocks_changes}}
+    end
+  end
+
+  defp where_forked(query, blocks_changes) when is_list(blocks_changes) do
+    Enum.reduce(blocks_changes, query, fn %{consensus: consensus, hash: hash, number: number}, acc ->
+      case consensus do
+        false ->
+          from(transaction in acc, or_where: transaction.block_hash == ^hash and transaction.block_number == ^number)
+
+        true ->
+          from(transaction in acc, or_where: transaction.block_hash != ^hash and transaction.block_number == ^number)
+      end
+    end)
   end
 
   defp lose_consensus(blocks_changes, %{timeout: timeout, timestamps: %{updated_at: updated_at}})
