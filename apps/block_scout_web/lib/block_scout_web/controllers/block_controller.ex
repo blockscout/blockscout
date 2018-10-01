@@ -10,7 +10,8 @@ defmodule BlockScoutWeb.BlockController do
       Keyword.merge(
         [
           necessity_by_association: %{
-            transactions: :optional
+            :transactions => :optional,
+            [miner: :names] => :optional
           }
         ],
         paging_options(params)

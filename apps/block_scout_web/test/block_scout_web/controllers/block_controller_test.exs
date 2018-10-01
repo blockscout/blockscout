@@ -74,5 +74,15 @@ defmodule BlockScoutWeb.BlockControllerTest do
 
       refute conn.assigns.next_page_params
     end
+
+    test "displays miner primary address name", %{conn: conn} do
+      miner_name = "POA Miner Pool"
+      %{address: miner_address} = insert(:address_name, name: miner_name, primary: true)
+
+      insert(:block, miner: miner_address, miner_hash: nil)
+
+      conn = get(conn, block_path(conn, :index))
+      assert html_response(conn, 200) =~ miner_name
+    end
   end
 end
