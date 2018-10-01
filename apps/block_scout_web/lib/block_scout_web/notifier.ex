@@ -71,7 +71,7 @@ defmodule BlockScoutWeb.Notifier do
 
     Endpoint.broadcast("blocks:new_block", "new_block", %{
       block: preloaded_block,
-      average_block_time: Chain.average_block_time()
+      average_block_time: 5
     })
   end
 

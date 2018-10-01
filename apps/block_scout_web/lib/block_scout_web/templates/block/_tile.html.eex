@@ -2,13 +2,7 @@
   <div class="row">
     <div class="col-md-8 col-lg-9">
       <!-- block height -->
-      <%= link(
-            @block,
-            class: "tile-title",
-            to: block_path(BlockScoutWeb.Endpoint, :show, @block),
-            "data-selector": "block-number",
-            "data-block-number": to_string(@block.number)
-          ) %>
+      <span data-selector="block-number"><%= to_string(@block.number) %></span>
       <div>
         <!-- transactions -->
         <span class="mr-2">
@@ -23,9 +17,7 @@
         <!-- validator -->
         <%= gettext "Miner" %>
         <span class="ml-2">
-          <%= link to: address_path(BlockScoutWeb.Endpoint, :show, @block.miner_hash) do %>
-            <%= @block.miner_hash %>
-          <% end %>
+          <%= @block.miner_hash %>
         </span>
       </div>
     </div>
