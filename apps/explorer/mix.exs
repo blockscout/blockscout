@@ -91,6 +91,8 @@ defmodule Explorer.Mixfile do
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:mox, "~> 0.4", only: [:test]},
       {:postgrex, ">= 0.0.0"},
+      # For compatibility with `prometheus_process_collector`, which hasn't been updated yet
+      {:prometheus, "~> 4.0", override: true},
       # Prometheus metrics for query duration
       {:prometheus_ecto, "~> 1.3"},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
