@@ -61,7 +61,7 @@ export function reducer (state = initialState, action) {
     case 'RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH': {
       if (state.channelDisconnected || state.beyondPageOne) return state
 
-      const incomingInternalTransactions = humps.camelizeKeys(action.msgs)
+      const incomingInternalTransactions = action.msgs
         .filter(({toAddressHash, fromAddressHash}) => (
           !state.filter ||
           (state.filter === 'to' && toAddressHash === state.addressHash) ||
@@ -84,7 +84,7 @@ export function reducer (state = initialState, action) {
     case 'RECEIVED_NEW_PENDING_TRANSACTION_BATCH': {
       if (state.channelDisconnected || state.beyondPageOne) return state
 
-      const incomingPendingTransactions = humps.camelizeKeys(action.msgs)
+      const incomingPendingTransactions = action.msgs
         .filter(({toAddressHash, fromAddressHash}) => (
           !state.filter ||
           (state.filter === 'to' && toAddressHash === state.addressHash) ||
@@ -113,7 +113,7 @@ export function reducer (state = initialState, action) {
 
       if (state.beyondPageOne) return Object.assign({}, state, { transactionCount })
 
-      const incomingTransactions = humps.camelizeKeys(action.msgs)
+      const incomingTransactions = action.msgs
         .filter(({toAddressHash, fromAddressHash}) => (
           !state.filter ||
           (state.filter === 'to' && toAddressHash === state.addressHash) ||
@@ -169,19 +169,17 @@ if ($addressDetailsPage.length) {
       })
       addressChannel.join()
       addressChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
-      addressChannel.on('balance', (msg) => store.dispatch({ type: 'RECEIVED_UPDATED_BALANCE', msg }))
-      addressChannel.on('transaction', batchChannel((msgs) =>
-        store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION_BATCH', msgs })
-      ))
-
+      addressChannel.on('balance', (msg) => {
+        store.dispatch({ type: 'RECEIVED_UPDATED_BALANCE', msg: humps.camelizeKeys(msg) })
+      })
       addressChannel.on('internal_transaction', batchChannel((msgs) =>
-        store.dispatch({ type: 'RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH', msgs })
+        store.dispatch({ type: 'RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH', msgs: humps.camelizeKeys(msgs) })
       ))
       addressChannel.on('pending_transaction', batchChannel((msgs) =>
-        store.dispatch({ type: 'RECEIVED_NEW_PENDING_TRANSACTION_BATCH', msgs })
+        store.dispatch({ type: 'RECEIVED_NEW_PENDING_TRANSACTION_BATCH', msgs: humps.camelizeKeys(msgs) })
       ))
       addressChannel.on('transaction', batchChannel((msgs) =>
-        store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION_BATCH', msgs })
+        store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION_BATCH', msgs: humps.camelizeKeys(msgs) })
       ))
       const blocksChannel = socket.channel(`blocks:${addressHash}`, {})
       blocksChannel.join()
