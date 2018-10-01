@@ -228,6 +228,159 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
     end
   end
 
+  describe "Supervisor.count_children/1" do
+    setup :supervisor
+
+    test "without task running returns 0 active", %{pid: pid} do
+      Supervisor.terminate_child(pid, :task)
+
+      assert Supervisor.count_children(pid) == %{active: 0, specs: 1, supervisors: 0, workers: 1}
+    end
+
+    test "with task running returns 1 active", %{pid: pid} do
+      assert Supervisor.count_children(pid) == %{active: 1, specs: 1, supervisors: 0, workers: 1}
+    end
+  end
+
+  describe "Supervisor.delete_child/2" do
+    setup :supervisor
+
+    test "with task running returns {:error, :running}", %{pid: pid} do
+      assert {:error, :running} = Supervisor.delete_child(pid, :task)
+    end
+
+    test "without task running returns {:error, :restarting}", %{pid: pid} do
+      Supervisor.terminate_child(pid, :task)
+
+      assert {:error, :restarting} = Supervisor.delete_child(pid, :task)
+    end
+
+    test "with unknown child_id returns {:error, :not_found}", %{pid: pid} do
+      assert {:error, :not_found} = Supervisor.delete_child(pid, :other)
+    end
+  end
+
+  describe ":supervisor.get_childspec/2" do
+    setup :supervisor
+
+    test "with :task", %{pid: pid} do
+      assert {:ok, %{id: :task, modules: [Catchup.Fetcher], restart: _, shutdown: _, start: _, type: :worker}} =
+               :supervisor.get_childspec(pid, :task)
+    end
+
+    test "with unknown child_id returns {:error, :not_found}", %{pid: pid} do
+      assert {:error, :not_found} = :supervisor.get_childspec(pid, :other)
+    end
+  end
+
+  describe "Supervisor.restart_child/2" do
+    setup :supervisor
+
+    test "without :task running restarts task", %{pid: pid} do
+      Supervisor.terminate_child(pid, :task)
+
+      assert {:ok, child_pid} = Supervisor.restart_child(pid, :task)
+
+      assert is_pid(child_pid)
+    end
+
+    test "with :task running returns {:error, :running}", %{pid: pid} do
+      assert {:error, :running} = Supervisor.restart_child(pid, :task)
+    end
+
+    test "with unknown child_id returns {:error, :not_found}", %{pid: pid} do
+      assert {:error, :not_found} = Supervisor.restart_child(pid, :other)
+    end
+  end
+
+  describe "Supervisor.start_child/2" do
+    setup :supervisor
+
+    test "with map with :task without running returns {:error, :already_present}", %{pid: pid} do
+      Supervisor.terminate_child(pid, :task)
+
+      {:ok, child_spec} = :supervisor.get_childspec(pid, :task)
+
+      assert is_map(child_spec)
+
+      assert {:error, :already_present} = Supervisor.start_child(pid, child_spec)
+    end
+
+    test "with map with :task with running returns {:error, :already_present, pid}", %{pid: pid} do
+      {:ok, child_spec} = :supervisor.get_childspec(pid, :task)
+
+      assert is_map(child_spec)
+
+      assert {:error, :already_present, child_pid} = Supervisor.start_child(pid, child_spec)
+      assert is_pid(child_pid)
+    end
+
+    test "with tuple with :task without running returns {:error, :already_present}", %{pid: pid} do
+      Supervisor.terminate_child(pid, :task)
+
+      {:ok, %{id: id, start: start, restart: restart, shutdown: shutdown, type: type, modules: modules}} =
+        :supervisor.get_childspec(pid, :task)
+
+      assert {:error, :already_present} = Supervisor.start_child(pid, {id, start, restart, shutdown, type, modules})
+    end
+
+    test "with tuple with :task with running returns {:error, :already_present, pid}", %{pid: pid} do
+      {:ok, %{id: id, start: start, restart: restart, shutdown: shutdown, type: type, modules: modules}} =
+        :supervisor.get_childspec(pid, :task)
+
+      assert {:error, :already_present, child_pid} =
+               Supervisor.start_child(pid, {id, start, restart, shutdown, type, modules})
+
+      assert is_pid(child_pid)
+    end
+
+    test "with other child_spec returns {:error, :not_supported}", %{pid: pid} do
+      assert {:error, :not_supported} = Supervisor.start_child(pid, %{})
+    end
+  end
+
+  describe "Supervisor.terminate_child/2" do
+    setup :supervisor
+
+    test "with :task without running returns :ok", %{pid: pid} do
+      Supervisor.terminate_child(pid, :task)
+
+      assert :ok = Supervisor.terminate_child(pid, :task)
+    end
+
+    test "with :task running returns :ok after shutting down child", %{pid: pid} do
+      [{:task, child_pid, _, _}] = Supervisor.which_children(pid)
+
+      assert is_pid(child_pid)
+
+      reference = Process.monitor(child_pid)
+
+      assert :ok = Supervisor.terminate_child(pid, :task)
+
+      assert_receive {:DOWN, ^reference, :process, ^child_pid, :shutdown}
+    end
+
+    test "with other child_id returns {:error, :not_found}", %{pid: pid} do
+      assert {:error, :not_found} = Supervisor.terminate_child(pid, :other)
+    end
+  end
+
+  describe "Supervisor.which_children/1" do
+    setup :supervisor
+
+    test "without task running returns child as :restarting", %{pid: pid} do
+      Supervisor.terminate_child(pid, :task)
+
+      assert [{:task, :restarting, :worker, [Catchup.Fetcher]}] = Supervisor.which_children(pid)
+    end
+
+    test "with task running returns child as pid", %{pid: pid} do
+      assert [{:task, child_pid, :worker, [Catchup.Fetcher]}] = Supervisor.which_children(pid)
+
+      assert is_pid(child_pid)
+    end
+  end
+
   describe "handle_info(:catchup_index, state)" do
     setup context do
       # force to use `Mox`, so we can manipulate `lastest_block_number`
@@ -375,5 +528,17 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
       })
 
     %{state: state}
+  end
+
+  defp supervisor(%{json_rpc_named_arguments: json_rpc_named_arguments}) do
+    start_supervised!({Task.Supervisor, name: Indexer.Block.Catchup.TaskSupervisor})
+
+    pid =
+      start_supervised!(
+        {Catchup.BoundIntervalSupervisor,
+         [%{block_fetcher: %Indexer.Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}}]}
+      )
+
+    {:ok, %{pid: pid}}
   end
 end

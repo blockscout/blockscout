@@ -66,7 +66,8 @@ defmodule Indexer.TokenTransfer.ParserTest do
             to_address_hash: truncated_hash(log_3.third_topic),
             token_contract_address_hash: log_3.address_hash,
             token_id: 183,
-            transaction_hash: log_3.transaction_hash
+            transaction_hash: log_3.transaction_hash,
+            token_type: "ERC-721"
           },
           %{
             amount: Decimal.new(17_000_000_000_000_000_000),
@@ -75,7 +76,8 @@ defmodule Indexer.TokenTransfer.ParserTest do
             from_address_hash: truncated_hash(log_1.second_topic),
             to_address_hash: truncated_hash(log_1.third_topic),
             token_contract_address_hash: log_1.address_hash,
-            transaction_hash: log_1.transaction_hash
+            transaction_hash: log_1.transaction_hash,
+            token_type: "ERC-20"
           }
         ]
       }
@@ -113,7 +115,8 @@ defmodule Indexer.TokenTransfer.ParserTest do
             to_address_hash: "0xbe8cdfc13ffda20c844ac3da2b53a23ac5787f1e",
             token_contract_address_hash: log.address_hash,
             token_id: 14_939,
-            transaction_hash: log.transaction_hash
+            transaction_hash: log.transaction_hash,
+            token_type: "ERC-721"
           }
         ]
       }
