@@ -1351,5 +1351,113 @@ defmodule Explorer.Chain.ImportTest do
       assert transaction_after.index == nil
       assert transaction_after.status == nil
     end
+
+    test "reorganizations fork transactions that end up in non-consensus blocks" do
+      block_number = 0
+
+      miner_hash_before = address_hash()
+      from_address_hash_before = address_hash()
+      block_hash_before = block_hash()
+      index_before = 0
+
+      transaction_hash = transaction_hash()
+
+      assert {:ok, _} =
+               Import.all(%{
+                 addresses: %{
+                   params: [
+                     %{hash: miner_hash_before},
+                     %{hash: from_address_hash_before}
+                   ]
+                 },
+                 blocks: %{
+                   params: [
+                     %{
+                       consensus: true,
+                       difficulty: 0,
+                       gas_limit: 0,
+                       gas_used: 0,
+                       hash: block_hash_before,
+                       miner_hash: miner_hash_before,
+                       nonce: 0,
+                       number: block_number,
+                       parent_hash: block_hash(),
+                       size: 0,
+                       timestamp: Timex.parse!("2019-01-01T01:00:00Z", "{ISO:Extended:Z}"),
+                       total_difficulty: 0
+                     }
+                   ]
+                 },
+                 transactions: %{
+                   params: [
+                     %{
+                       block_hash: block_hash_before,
+                       block_number: block_number,
+                       from_address_hash: from_address_hash_before,
+                       gas: 21_000,
+                       gas_price: 1,
+                       gas_used: 21_000,
+                       cumulative_gas_used: 21_000,
+                       hash: transaction_hash,
+                       index: index_before,
+                       input: "0x",
+                       nonce: 0,
+                       r: 0,
+                       s: 0,
+                       v: 0,
+                       value: 0,
+                       status: :ok
+                     }
+                   ],
+                   on_conflict: :replace_all
+                 }
+               })
+
+      %Block{consensus: true, number: ^block_number} = Repo.get(Block, block_hash_before)
+
+      assert Repo.one!(from(transaction_fork in Transaction.Fork, select: fragment("COUNT(*)"))) == 0
+
+      miner_hash_after = address_hash()
+      from_address_hash_after = address_hash()
+      block_hash_after = block_hash()
+
+      assert {:ok, _} =
+               Import.all(%{
+                 addresses: %{
+                   params: [
+                     %{hash: miner_hash_after},
+                     %{hash: from_address_hash_after}
+                   ]
+                 },
+                 blocks: %{
+                   params: [
+                     %{
+                       consensus: true,
+                       difficulty: 1,
+                       gas_limit: 1,
+                       gas_used: 1,
+                       hash: block_hash_after,
+                       miner_hash: miner_hash_after,
+                       nonce: 1,
+                       number: block_number,
+                       parent_hash: block_hash(),
+                       size: 1,
+                       timestamp: Timex.parse!("2019-01-01T02:00:00Z", "{ISO:Extended:Z}"),
+                       total_difficulty: 1
+                     }
+                   ]
+                 }
+               })
+
+      assert Repo.one!(from(transaction_fork in Transaction.Fork, select: fragment("COUNT(*)"))) == 1
+
+      assert %Transaction.Fork{index: ^index_before} =
+               Repo.one(
+                 from(transaction_fork in Transaction.Fork,
+                   where:
+                     transaction_fork.uncle_hash == ^block_hash_before and transaction_fork.hash == ^transaction_hash
+                 )
+               )
+    end
   end
 end
