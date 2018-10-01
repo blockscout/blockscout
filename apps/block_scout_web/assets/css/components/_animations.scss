@@ -67,7 +67,7 @@
   }
   100% {
     opacity: 0;
-    transform: scale(0.5);
+    transform: scale(0.75);
   }
 }
 
@@ -98,5 +98,6 @@
 }
 
 .shrink-out {
-  animation: shrink-out 0.45s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
+  transform-origin: bottom center;
+  animation: shrink-out 0.3s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
 }
