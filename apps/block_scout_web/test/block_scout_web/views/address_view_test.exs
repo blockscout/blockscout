@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.AddressViewTest do
   use BlockScoutWeb.ConnCase, async: true
 
   alias Explorer.Chain.{Address, Data, Hash, Transaction}
-  alias BlockScoutWeb.AddressView
+  alias BlockScoutWeb.{AddressView, Endpoint}
 
   describe "address_partial_selector/4" do
     test "for a pending transaction contract creation to address" do
@@ -287,6 +287,38 @@ defmodule BlockScoutWeb.AddressViewTest do
       token = insert(:token, name: "super token money", symbol: "ST$")
 
       assert AddressView.token_title(token) == "super token money (ST$)"
+    end
+  end
+
+  describe "current_tab_name/1" do
+    test "generates the correct tab name for the token path" do
+      path = address_token_path(Endpoint, :index, "0x4ddr3s")
+
+      assert AddressView.current_tab_name(path) == "Tokens"
+    end
+
+    test "generates the correct tab name for the transactions path" do
+      path = address_transaction_path(Endpoint, :index, "0x4ddr3s")
+
+      assert AddressView.current_tab_name(path) == "Transactions"
+    end
+
+    test "generates the correct tab name for the internal transactions path" do
+      path = address_internal_transaction_path(Endpoint, :index, "0x4ddr3s")
+
+      assert AddressView.current_tab_name(path) == "Internal Transactions"
+    end
+
+    test "generates the correct tab name for the contracts path" do
+      path = address_contract_path(Endpoint, :index, "0x4ddr3s")
+
+      assert AddressView.current_tab_name(path) == "Code"
+    end
+
+    test "generates the correct tab name for the read_contract path" do
+      path = address_read_contract_path(Endpoint, :index, "0x4ddr3s")
+
+      assert AddressView.current_tab_name(path) == "Read Contract"
     end
   end
 end
