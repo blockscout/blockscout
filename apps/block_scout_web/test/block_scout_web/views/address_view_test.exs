@@ -321,4 +321,12 @@ defmodule BlockScoutWeb.AddressViewTest do
       assert AddressView.current_tab_name(path) == "Read Contract"
     end
   end
+
+  describe "short_hash/1" do
+    test "returns a shortened hash of 6 hex characters" do
+      address = insert(:address)
+      assert "0x" <> short_hash = AddressView.short_hash(address)
+      assert String.length(short_hash) == 6
+    end
+  end
 end

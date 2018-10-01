@@ -219,4 +219,14 @@ defmodule BlockScoutWeb.AddressView do
   defp tab_name(["internal_transactions"]), do: gettext("Internal Transactions")
   defp tab_name(["contracts"]), do: gettext("Code")
   defp tab_name(["read_contract"]), do: gettext("Read Contract")
+
+  def short_hash(%Address{hash: hash}) do
+    <<
+      "0x",
+      short_address::binary-size(6),
+      _rest::binary
+    >> = to_string(hash)
+
+    "0x" <> short_address
+  end
 end
