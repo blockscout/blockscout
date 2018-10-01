@@ -7,12 +7,11 @@
     </div>
     <span class="text-truncate">
       <%= gettext "Miner" %>
-      <%= link to: address_path(BlockScoutWeb.Endpoint, :show, @block.miner),
-        "data-toggle": "tooltip",
-        "data-placement": "top",
-        title: @block.miner do %>
-        <%= @block.miner %>
-      <% end %>
+
+      <%= render BlockScoutWeb.AddressView,
+        "_link.html",
+        address: @block.miner,
+        contract: false %>
     </span>
   </div>
 </div>
