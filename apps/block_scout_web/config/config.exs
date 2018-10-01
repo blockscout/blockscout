@@ -14,6 +14,7 @@ config :block_scout_web, BlockScoutWeb.Chain, logo: "/images/poa_logo.svg"
 
 # Configures the endpoint
 config :block_scout_web, BlockScoutWeb.Endpoint,
+  instrumenters: [BlockScoutWeb.Prometheus.Instrumenter],
   url: [host: "localhost"],
   render_errors: [view: BlockScoutWeb.ErrorView, accepts: ~w(html json)],
   pubsub: [name: BlockScoutWeb.PubSub, adapter: Phoenix.PubSub.PG2]
