@@ -55,6 +55,14 @@ defmodule Indexer.TokenTransfer.Uncataloged.WorkerTest do
       Task.async(fn -> assert Worker.handle_info({ref, :ok}, state) end)
       assert_receive {_, _, {:terminate, :normal}}
     end
+
+    test "sends message to self to try again on failure" do
+      ref = Process.monitor(self())
+      state = %{task_ref: ref, block_numbers: [1], sup_pid: self(), retry_interval: 1}
+      expected_state = %{state | task_ref: nil}
+      assert {:noreply, ^expected_state} = Worker.handle_info({ref, {:error, :queue_unavailable}}, state)
+      assert_receive :enqueue_blocks
+    end
   end
 
   describe "handle_info with failed task" do

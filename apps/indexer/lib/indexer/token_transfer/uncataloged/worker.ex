@@ -34,7 +34,7 @@ defmodule Indexer.TokenTransfer.Uncataloged.Worker do
 
   def init(opts) do
     sup_pid = Keyword.fetch!(opts, :supervisor)
-    retry_interval = Keyword.get(opts, :retry_interval, 30_000)
+    retry_interval = Keyword.get(opts, :retry_interval, 10_000)
 
     send(self(), :scan)
 
@@ -71,6 +71,12 @@ defmodule Indexer.TokenTransfer.Uncataloged.Worker do
     Process.demonitor(ref, [:flush])
     Supervisor.stop(sup_pid, :normal)
     {:stop, :shutdown}
+  end
+
+  def handle_info({ref, {:error, :queue_unavailable}}, %{task_ref: ref, retry_interval: millis} = state) do
+    Process.demonitor(ref, [:flush])
+    Process.send_after(self(), :enqueue_blocks, millis)
+    {:noreply, %{state | task_ref: nil}}
   end
 
   def handle_info({:DOWN, ref, :process, _, _}, %{task_ref: ref, retry_interval: millis} = state) do

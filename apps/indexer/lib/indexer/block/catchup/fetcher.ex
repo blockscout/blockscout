@@ -230,11 +230,16 @@ defmodule Indexer.Block.Catchup.Fetcher do
   @doc """
   Puts a list of block numbers to the front of the sequencing queue.
   """
+  @spec enqueue([non_neg_integer()]) :: :ok | {:error, :queue_unavailable}
   def enqueue(block_numbers) do
-    for block_number <- block_numbers do
-      Sequence.queue_front(@sequence_name, block_number..block_number)
-    end
+    if Process.whereis(@sequence_name) do
+      for block_number <- block_numbers do
+        Sequence.queue_front(@sequence_name, block_number..block_number)
+      end
 
-    :ok
+      :ok
+    else
+      {:error, :queue_unavailable}
+    end
   end
 end
