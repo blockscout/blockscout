@@ -23,9 +23,10 @@
         <!-- validator -->
         <%= gettext "Miner" %>
         <span class="ml-2">
-          <%= link to: address_path(BlockScoutWeb.Endpoint, :show, @block.miner_hash) do %>
-            <%= @block.miner_hash %>
-          <% end %>
+          <%= render BlockScoutWeb.AddressView,
+            "_link.html",
+            address: @block.miner,
+            contract: false %>
         </span>
       </div>
     </div>

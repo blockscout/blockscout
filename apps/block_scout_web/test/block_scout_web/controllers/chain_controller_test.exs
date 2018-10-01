@@ -63,6 +63,16 @@ defmodule BlockScoutWeb.ChainControllerTest do
       assert Map.has_key?(conn.assigns, :market_history_data)
       assert length(conn.assigns.market_history_data) == 30
     end
+
+    test "displays miner primary address names", %{conn: conn} do
+      miner_name = "POA Miner Pool"
+      %{address: miner_address} = insert(:address_name, name: miner_name, primary: true)
+
+      insert(:block, miner: miner_address, miner_hash: nil)
+
+      conn = get(conn, chain_path(conn, :show))
+      assert html_response(conn, 200) =~ miner_name
+    end
   end
 
   describe "GET q/2" do
