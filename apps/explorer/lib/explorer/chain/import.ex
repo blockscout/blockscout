@@ -520,9 +520,7 @@ defmodule Explorer.Chain.Import do
        when is_map(ecto_schema_module_to_changes_list) and is_map(options) do
     case ecto_schema_module_to_changes_list do
       %{Token => tokens_changes} ->
-        tokens_options = Map.fetch!(options, :tokens)
-        timestamps = Map.fetch!(options, :timestamps)
-        on_conflict = Map.fetch!(tokens_options, :on_conflict)
+        %{timestamps: timestamps, tokens: %{on_conflict: on_conflict}} = options
 
         Multi.run(multi, :tokens, fn _ ->
           insert_tokens(

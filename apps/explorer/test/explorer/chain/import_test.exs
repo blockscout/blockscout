@@ -1459,5 +1459,57 @@ defmodule Explorer.Chain.ImportTest do
                  )
                )
     end
+
+    test "timeouts can be overridden" do
+      assert {:ok, _} =
+               Import.all(%{
+                 addresses: %{
+                   params: [],
+                   timeout: 1
+                 },
+                 balances: %{
+                   params: [],
+                   timeout: 1
+                 },
+                 blocks: %{
+                   params: [],
+                   timeout: 1
+                 },
+                 block_second_degree_relations: %{
+                   params: [],
+                   timeout: 1
+                 },
+                 internal_transactions: %{
+                   params: [],
+                   timeout: 1
+                 },
+                 logs: %{
+                   params: [],
+                   timeout: 1
+                 },
+                 token_transfers: %{
+                   params: [],
+                   timeout: 1
+                 },
+                 tokens: %{
+                   params: [],
+                   on_conflict: :replace_all,
+                   timeout: 1
+                 },
+                 transactions: %{
+                   params: [],
+                   on_conflict: :replace_all,
+                   timeout: 1
+                 },
+                 transaction_forks: %{
+                   params: [],
+                   timeout: 1
+                 },
+                 token_balances: %{
+                   params: [],
+                   timeout: 1
+                 }
+               })
+    end
   end
 end
