@@ -33,7 +33,7 @@ defmodule Indexer.TokenTransfer.Uncataloged.Supervisor do
   @impl Supervisor
   def init(_) do
     children = [
-      {Worker, [[supervisor: self()]]},
+      {Worker, [[supervisor: self()], [name: Worker]]},
       {Task.Supervisor, name: Indexer.TokenTransfer.Uncataloged.TaskSupervisor}
     ]
 
