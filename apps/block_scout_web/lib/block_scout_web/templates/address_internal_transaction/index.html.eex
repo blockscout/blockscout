@@ -1,118 +1,12 @@
 <section class="container">
-
   <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
 
   <section>
     <div class="card">
       <div class="card-header">
-
-        <!-- DESKTOP TAB NAV -->
-        <ul class="nav nav-tabs card-header-tabs d-none d-lg-inline-flex">
-          <li class="nav-item">
-            <%= link(
-              gettext("Transactions"),
-              class: "nav-link",
-              to: address_transaction_path(@conn, :index, @address.hash)
-            ) %>
-          </li>
-          <li class="nav-item">
-            <%= link(
-              gettext("Tokens"),
-              class: "nav-link",
-              to: address_token_path(@conn, :index, @address.hash)
-            ) %>
-          </li>
-          <li class="nav-item">
-            <%= link(
-              gettext("Internal Transactions"),
-              class: "nav-link active",
-              "data-test": "internal_transactions_tab_link",
-              to: address_internal_transaction_path(@conn, :index, @address.hash)
-            ) %>
-          </li>
-          <%= if validator?(@validation_count) do %>
-            <li class="nav-item">
-              <%= link(
-                gettext("Blocks Validated"),
-                class: "nav-link",
-                "data-test": "validations_tab_link",
-                to: address_validation_path(@conn, :index, @address.hash)
-              ) %>
-            </li>
-          <% end %>
-          <%= if contract?(@address) do %>
-            <li class="nav-item">
-              <%= link(
-                  to: address_contract_path(@conn, :index, @address.hash),
-                  class: "nav-link") do %>
-                <%= gettext("Code") %>
-
-                <%= if smart_contract_verified?(@address) do %>
-                  <i class="far fa-check-circle"></i>
-                <% end %>
-              <% end %>
-            </li>
-          <% end %>
-          <%= if smart_contract_with_read_only_functions?(@address) do %>
-            <li class="nav-item">
-              <%= link(
-                  gettext("Read Contract"),
-                  to: address_read_contract_path(@conn, :index, @address.hash),
-                  class: "nav-link")%>
-            </li>
-          <% end %>
-        </ul>
-
-        <!-- MOBILE DROPDOWN NAV -->
-        <ul class="nav nav-tabs card-header-tabs d-lg-none">
-          <li class="nav-item dropdown flex-fill text-center">
-            <a class="nav-link active dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
-              <%= gettext("Internal Transactions") %>
-            </a>
-            <div class="dropdown-menu">
-              <%= link(
-                gettext("Transactions"),
-                class: "dropdown-item",
-                to: address_transaction_path(@conn, :index, @address.hash)
-              ) %>
-              <%= link(
-                gettext("Tokens"),
-                class: "dropdown-item",
-                to: address_token_path(@conn, :index, @address.hash)
-              ) %>
-              <%= link(
-                gettext("Internal Transactions"),
-                class: "dropdown-item active",
-                "data-test": "internal_transactions_tab_link",
-                to: address_internal_transaction_path(@conn, :index, @address.hash)
-              ) %>
-              <%= if validator?(@validation_count) do %>
-                <%= link(
-                  gettext("Blocks Validated"),
-                  class: "dropdown-item",
-                  "data-test": "validations_tab_link",
-                  to: address_validation_path(@conn, :index, @address.hash)
-                ) %>
-              <% end %>
-              <%= if contract?(@address) do %>
-                <%= link(
-                    to: address_contract_path(@conn, :index, @address.hash),
-                    class: "dropdown-item") do %>
-                  <%= gettext("Code") %>
-
-                  <%= if smart_contract_verified?(@address) do %>
-                    <i class="far fa-check-circle"></i>
-                  <% end %>
-                <% end %>
-              <% end %>
-              <%= link(
-                  gettext("Read Contract"),
-                  to: address_read_contract_path(@conn, :index, @address.hash),
-                  class: "dropdown-item")%>
-            </div>
-          </li>
-        </ul>
+        <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
       </div>
+
       <div class="card-body">
         <div data-selector="channel-batching-message" class="d-none">
           <div data-selector="reload-button" class="alert alert-info">
