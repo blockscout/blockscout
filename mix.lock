@@ -1,6 +1,7 @@
 %{
   "abi": {:hex, :abi, "0.1.12", "87ae04cb09e2308db7b3c350584dc3934de0e308f6a056ba82be5756b081a1ca", [:mix], [{:exth_crypto, "~> 0.1.4", [hex: :exth_crypto, repo: "hexpm", optional: false]}], "hexpm"},
   "abnf2": {:hex, :abnf2, "0.1.2", "6f8792b8ac3288dba5fc889c2bceae9fe78f74e1a7b36bea9726ffaa9d7bef95", [:mix], []},
+  "accept": {:hex, :accept, "0.3.3", "548ebb6fb2e8b0d170e75bb6123aea6ceecb0189bb1231eeadf52eac08384a97", [:rebar3], [], "hexpm"},
   "bcrypt_elixir": {:hex, :bcrypt_elixir, "1.0.6", "58a865939b3106d5ad4841f660955b958be6db955dda034fbbc1069dbacb97fa", [:make, :mix], [{:elixir_make, "~> 0.4", [hex: :elixir_make, optional: false]}]},
   "benchee": {:hex, :benchee, "0.13.1", "bd93ca05be78bcb6159c7176230efeda2f724f7ffd485515175ca411dff4893e", [:mix], [{:deep_merge, "~> 0.1", [hex: :deep_merge, optional: false]}]},
   "benchee_csv": {:hex, :benchee_csv, "0.8.0", "0ca094677d6e2b2f601b7ee7864b754789ef9d24d079432e5e3d6f4fb83a4d80", [:mix], [{:benchee, "~> 0.12", [hex: :benchee, optional: false]}, {:csv, "~> 2.0", [hex: :csv, optional: false]}]},
@@ -68,6 +69,9 @@
   "poison": {:hex, :poison, "3.1.0", "d9eb636610e096f86f25d9a46f35a9facac35609a7591b3be3326e99a0484665", [:mix], []},
   "poolboy": {:hex, :poolboy, "1.5.1", "6b46163901cfd0a1b43d692657ed9d7e599853b3b21b95ae5ae0a777cf9b6ca8", [:rebar], []},
   "postgrex": {:hex, :postgrex, "0.13.5", "3d931aba29363e1443da167a4b12f06dcd171103c424de15e5f3fc2ba3e6d9c5", [:mix], [{:connection, "~> 1.0", [hex: :connection, optional: false]}, {:db_connection, "~> 1.1", [hex: :db_connection, optional: false]}, {:decimal, "~> 1.0", [hex: :decimal, optional: false]}]},
+  "prometheus": {:hex, :prometheus, "4.2.0", "06c58bfdfe28d3168b926da614cb9a6d39593deebde648a5480e32dfa3c370e9", [:mix, :rebar3], [], "hexpm"},
+  "prometheus_ex": {:hex, :prometheus_ex, "3.0.3", "5d722263bb1f7a9b1d02554de42e61ea672b4e3c07c3f74e23ce35ab5e111cfa", [:mix], [{:prometheus, "~> 4.0", [hex: :prometheus, repo: "hexpm", optional: false]}], "hexpm"},
+  "prometheus_plugs": {:hex, :prometheus_plugs, "1.1.5", "25933d48f8af3a5941dd7b621c889749894d8a1082a6ff7c67cc99dec26377c5", [:mix], [{:accept, "~> 0.1", [hex: :accept, repo: "hexpm", optional: false]}, {:plug, "~> 1.0", [hex: :plug, repo: "hexpm", optional: false]}, {:prometheus_ex, "~> 1.1 or ~> 2.0 or ~> 3.0", [hex: :prometheus_ex, repo: "hexpm", optional: false]}, {:prometheus_process_collector, "~> 1.1", [hex: :prometheus_process_collector, repo: "hexpm", optional: true]}], "hexpm"},
   "qrcode": {:hex, :qrcode, "0.1.1", "9ca0d512a3c69a07d28e7660b046f8f3d835ef5462063814a7639a27302f7213", [:mix], []},
   "ranch": {:hex, :ranch, "1.3.2", "e4965a144dc9fbe70e5c077c65e73c57165416a901bd02ea899cfd95aa890986", [:rebar3], []},
   "set_locale": {:git, "https://github.com/minifast/set_locale.git", "da9ae029642bc0fbd9212c2aaf86c0adca70c084", [branch: "master"]},

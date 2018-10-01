@@ -93,6 +93,8 @@ defmodule BlockScoutWeb.Mixfile do
       # https://github.com/michalmuskala/jason/issues/15
       {:poison, "~> 3.1"},
       {:postgrex, ">= 0.0.0"},
+      # Expose metrics from URL Prometheus server can scrape
+      {:prometheus_plugs, "~> 1.1"},
       {:qrcode, "~> 0.1.0"},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
       {:timex, "~> 3.1.24"},

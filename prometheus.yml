@@ -1,0 +1,5 @@
+scrape_configs:
+  - job_name: block_scout
+    scheme: 'http'
+    static_configs:
+        - targets: ['localhost:4000']

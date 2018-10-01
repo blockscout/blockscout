@@ -5,10 +5,12 @@ defmodule BlockScoutWeb.Application do
 
   use Application
 
-  alias BlockScoutWeb.{Endpoint, EventHandler}
+  alias BlockScoutWeb.{Endpoint, EventHandler, PrometheusExporter}
 
   def start(_type, _args) do
     import Supervisor.Spec
+
+    PrometheusExporter.setup()
 
     # Define workers and child supervisors to be supervised
     children = [
