@@ -15,7 +15,7 @@ defmodule Explorer.Market.History.Cataloger do
       config :explorer, Explorer.Market.History.Cataloger,
         # fetch interval in milliseconds
         history_fetch_interval: :timer.minutes(60),
-        # Base backoff in milliseconds for failed requets to history API
+        # Base backoff in milliseconds for failed requests to history API
         base_backoff: 100
 
   """
