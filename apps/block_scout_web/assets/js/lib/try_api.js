@@ -104,7 +104,7 @@ $('input[data-selector*="try-api-ui"][data-required="true"]').on('keyup', (event
 // parameters. The following related information is subsequently rendered below
 // the execute button:
 //
-//   * curl commmand
+//   * curl command
 //   * requuest URL
 //   * server response
 //
