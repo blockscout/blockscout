@@ -383,7 +383,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
 
   describe "handle_info(:catchup_index, state)" do
     setup context do
-      # force to use `Mox`, so we can manipulate `lastest_block_number`
+      # force to use `Mox`, so we can manipulate `latest_block_number`
       put_in(context.json_rpc_named_arguments[:transport], EthereumJSONRPC.Mox)
     end
 
