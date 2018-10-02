@@ -563,7 +563,9 @@ defmodule Explorer.Chain do
     query =
       from(
         address in Address,
-        where: address.hash in ^hashes
+        where: address.hash in ^hashes,
+        # https://stackoverflow.com/a/29598910/470451
+        order_by: fragment("array_position(?, ?)", type(^hashes, {:array, Hash.Address}), address.hash)
       )
 
     Repo.all(query)
