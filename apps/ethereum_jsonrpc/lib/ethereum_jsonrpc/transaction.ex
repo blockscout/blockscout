@@ -39,7 +39,7 @@ defmodule EthereumJSONRPC.Transaction do
    * `"transactionIndex"` - `t:EthereumJSONRPC.quantity/0` for the index of the transaction in the block.  `nil` when
      transaction is pending.
    * `"v"` - `t:EthereumJSONRPC.quantity/0` for the V field of the signature.
-   * `"value"` - `t:EthereumJSONRPC.quantity/0` of wei transfered
+   * `"value"` - `t:EthereumJSONRPC.quantity/0` of wei transferred
   """
   @type t :: %{
           String.t() =>
@@ -242,10 +242,10 @@ defmodule EthereumJSONRPC.Transaction do
   end
 
   # chainId is *sometimes* nil
-  defp entry_to_elixir({"chainId" = key, chainId}) do
-    case chainId do
-      nil -> {key, chainId}
-      _ -> {key, quantity_to_integer(chainId)}
+  defp entry_to_elixir({"chainId" = key, chain_id}) do
+    case chain_id do
+      nil -> {key, chain_id}
+      _ -> {key, quantity_to_integer(chain_id)}
     end
   end
 end

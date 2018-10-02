@@ -153,7 +153,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           "ContractName" => contract.name,
           "CompilerVersion" => contract.compiler_version,
           # The contract's optimization value is true, so the expected value
-          # for `OptimzationUsed` is "1". If it was false, the expected value
+          # for `OptimizationUsed` is "1". If it was false, the expected value
           # would be "0".
           "OptimizationUsed" => "1"
         }

@@ -329,7 +329,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_balance_card.html.eex:19
-msgid "Error tryng to fetch balances."
+msgid "Error trying to fetch balances."
 msgstr ""
 
 #, elixir-format

@@ -120,7 +120,7 @@ defmodule BlockScoutWeb.TransactionLogControllerTest do
     assert %Token{} = conn.assigns.exchange_rate
   end
 
-  test "loads for transcations that created a contract", %{conn: conn} do
+  test "loads for transactions that created a contract", %{conn: conn} do
     contract_address = insert(:contract_address)
 
     transaction =

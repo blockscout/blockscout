@@ -152,7 +152,7 @@ defmodule Explorer.Chain.Import do
   | `:blocks`                        | `[Explorer.Chain.Block.t()]`                                                                    | List of `t:Explorer.Chain.Block.t/0`s                                                                |
   | `:internal_transactions`         | `[%{index: non_neg_integer(), transaction_hash: Explorer.Chain.Hash.t()}]`                      | List of maps of the `t:Explorer.Chain.InternalTransaction.t/0` `index` and `transaction_hash`        |
   | `:logs`                          | `[Explorer.Chain.Log.t()]`                                                                      | List of `t:Explorer.Chain.Log.t/0`s                                                                  |
-  | `:token_transfers`               | `[Explorer.Chain.TokenTransfer.t()]`                                                            | List of `t:Explor.Chain.TokenTransfer.t/0`s                                                          |
+  | `:token_transfers`               | `[Explorer.Chain.TokenTransfer.t()]`                                                            | List of `t:Explorer.Chain.TokenTransfer.t/0`s                                                          |
   | `:tokens`                        | `[Explorer.Chain.Token.t()]`                                                                    | List of `t:Explorer.Chain.token.t/0`s                                                                |
   | `:transactions`                  | `[Explorer.Chain.Hash.t()]`                                                                     | List of `t:Explorer.Chain.Transaction.t/0` `hash`                                                    |
   | `:transaction_forks`             | `[%{uncle_hash: Explorer.Chain.Hash.t(), hash: Explorer.Chain.Hash.t()}]`                       | List of maps of the `t:Explorer.Chain.Transaction.Fork.t/0` `uncle_hash` and `hash`                  |
@@ -211,7 +211,7 @@ defmodule Explorer.Chain.Import do
         with the same hash.
 
         *NOTE*: Because the repository transaction for a pending `Explorer.Chain.Transaction`s could `COMMIT` after the
-        repository transaction for that same transaction being collated into a block, writers, it is recomended to use
+        repository transaction for that same transaction being collated into a block, writers, it is recommended to use
         `:nothing` for pending transactions and `:replace_all` for collated transactions, so that collated transactions
         win.
       * `:params` - `list` of params for `Explorer.Chain.Transaction.changeset/2`.

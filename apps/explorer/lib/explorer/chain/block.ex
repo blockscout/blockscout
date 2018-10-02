@@ -42,7 +42,7 @@ defmodule Explorer.Chain.Block do
    * `parent_hash` - the hash of the parent block, which should have the previous `number`
    * `size` - The size of the block in bytes.
    * `timestamp` - When the block was collated
-   * `total_diffficulty` - the total `difficulty` of the chain until this block.
+   * `total_difficulty` - the total `difficulty` of the chain until this block.
    * `transactions` - the `t:Explorer.Chain.Transaction.t/0` in this block.
   """
   @type t :: %__MODULE__{

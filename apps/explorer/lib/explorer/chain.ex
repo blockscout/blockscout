@@ -233,8 +233,8 @@ defmodule Explorer.Chain do
       `:key` (in the form of `%{"inserted_at" => inserted_at}`). Results will be the transactions
       older than the `index` that are passed.
   """
-  @spec address_to_transactions_with_token_tranfers(Hash.t(), Hash.t(), [paging_options]) :: [Transaction.t()]
-  def address_to_transactions_with_token_tranfers(address_hash, token_hash, options \\ []) do
+  @spec address_to_transactions_with_token_transfers(Hash.t(), Hash.t(), [paging_options]) :: [Transaction.t()]
+  def address_to_transactions_with_token_transfers(address_hash, token_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     address_hash
@@ -414,7 +414,7 @@ defmodule Explorer.Chain do
       ...> to_string(hash)
       "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b"
 
-  A `String.t/0` value for `Explorer.Chain.Addres.t/0` `hash` must have 40 hexadecimal characters after the `0x` prefix
+  A `String.t/0` value for `Explorer.Chain.Address.t/0` `hash` must have 40 hexadecimal characters after the `0x` prefix
   to prevent short- and long-hash transcription errors.
 
       iex> {:error, %Ecto.Changeset{errors: errors}} = Explorer.Chain.create_address(
@@ -437,7 +437,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Converts the `Explorer.Chain.Data.t:t/0` to `iodata` representation that can be written to users effciently.
+  Converts the `Explorer.Chain.Data.t:t/0` to `iodata` representation that can be written to users efficiently.
 
       iex> %Explorer.Chain.Data{
       ...>   bytes: <<>>

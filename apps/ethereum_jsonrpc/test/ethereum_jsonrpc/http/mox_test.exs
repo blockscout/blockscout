@@ -58,7 +58,7 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
 
           {:ok, %{body: body, status_code: 200}}
         end)
-        |> expect(:json_rpc, fn _url, json, _optons ->
+        |> expect(:json_rpc, fn _url, json, _options ->
           json_binary = IO.iodata_to_binary(json)
 
           refute json_binary =~ ":6499"
@@ -147,7 +147,7 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
 
           {:ok, %{body: body, status_code: 200}}
         end)
-        |> expect(:json_rpc, fn _url, json, _optons ->
+        |> expect(:json_rpc, fn _url, json, _options ->
           json_binary = IO.iodata_to_binary(json)
 
           refute json_binary =~ "0x1bdec995deaa0e5b53cc7a0b84eaff39da90f5e507fdb4360881ff31f824d918"

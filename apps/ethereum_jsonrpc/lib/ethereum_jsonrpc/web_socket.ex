@@ -63,7 +63,7 @@ defmodule EthereumJSONRPC.WebSocket do
 
   | Message                                                                           | Description                            |
   |-----------------------------------------------------------------------------------|----------------------------------------|
-  | `{EthereumJSONRPC.Subscription.t(), {:ok, EthreumsJSONRPC.Transport.result.t()}}` | New result in subscription             |
+  | `{EthereumJSONRPC.Subscription.t(), {:ok, EthereumJSONRPC.Transport.result.t()}}` | New result in subscription             |
   | `{EthereumJSONRPC.Subscription.t(), {:error, reason :: term()}}`                  | There was an error in the subscription |
 
   Subscription can be canceled by calling `unsubscribe/1` with the returned `t:EthereumJSONRPC.Subscription.t/0`.

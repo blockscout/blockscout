@@ -34,7 +34,7 @@ defmodule EthereumJSONRPC.Variant do
 
   ## Returns
 
-   * `{:ok, [transaction_params]}` - pending transactions were succucessfully fetched
+   * `{:ok, [transaction_params]}` - pending transactions were successfully fetched
    * `{:error, reason}` - there was one or more errors with `reason` in fetching the pending transactions
    * `:ignore` - the variant does not support fetching pending transactions.
   """

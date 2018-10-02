@@ -16,7 +16,7 @@ defmodule Indexer.BufferedTask do
 
   Options are optional and are passed in the list that is second element of the tuple.
 
-    * `:name` - The registred name for the new process.
+    * `:name` - The registered name for the new process.
 
   ## Callbacks
 
@@ -196,7 +196,7 @@ defmodule Indexer.BufferedTask do
 
   Options are optional and are passed in the list that is second element of the tuple.
 
-    * `:name` - The registred name for the new process.
+    * `:name` - The registered name for the new process.
 
   """
   @spec start_link(

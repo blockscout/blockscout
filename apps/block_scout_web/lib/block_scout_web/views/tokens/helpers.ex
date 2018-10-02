@@ -1,13 +1,13 @@
 defmodule BlockScoutWeb.Tokens.Helpers do
   @moduledoc """
-  Helper functions for intereacting with `t:BlockScoutWeb.Chain.Token` attributes.
+  Helper functions for interacting with `t:BlockScoutWeb.Chain.Token` attributes.
   """
 
   alias Explorer.Chain.{Token, TokenTransfer, Address}
   alias BlockScoutWeb.{CurrencyHelpers}
 
   @doc """
-  Returns the token transfers' amount according to the token's type and decimails.
+  Returns the token transfers' amount according to the token's type and decimals.
 
   When the token's type is ERC-20, then we are going to format the amount according to the token's
   decimals considering 0 when the decimals is nil. Case the amount is nil, this function will

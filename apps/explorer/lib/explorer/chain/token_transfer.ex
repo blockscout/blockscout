@@ -35,7 +35,7 @@ defmodule Explorer.Chain.TokenTransfer do
   * `:amount` - The token transferred amount
   * `:from_address` - The `t:Explorer.Chain.Address.t/0` that sent the tokens
   * `:from_address_hash` - Address hash foreign key
-  * `:to_address` - The `t:Explorer.Chain.Address.t/0` that recieved the tokens
+  * `:to_address` - The `t:Explorer.Chain.Address.t/0` that received the tokens
   * `:to_address_hash` - Address hash foreign key
   * `:token_contract_address` - The `t:Explorer.Chain.Address.t/0` of the token's contract.
   * `:token_contract_address_hash` - Address hash foreign key

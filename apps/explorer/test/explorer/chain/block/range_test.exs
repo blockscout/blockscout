@@ -88,7 +88,7 @@ defmodule Explorer.Chain.Block.RangeTest do
       assert Range.dump(%Range{from: :negative_infinity, to: :infinity}) == {:ok, expected}
     end
 
-    test "with fininte bounds" do
+    test "with finite bounds" do
       expected = %PGRange{
         lower: 2,
         lower_inclusive: true,

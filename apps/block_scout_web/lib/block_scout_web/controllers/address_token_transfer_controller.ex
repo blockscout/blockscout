@@ -18,7 +18,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
          {:ok, address} <- Chain.hash_to_address(address_hash),
          {:ok, token} <- Chain.token_from_address_hash(token_hash) do
       transactions =
-        Chain.address_to_transactions_with_token_tranfers(
+        Chain.address_to_transactions_with_token_transfers(
           address_hash,
           token_hash,
           paging_options(params)

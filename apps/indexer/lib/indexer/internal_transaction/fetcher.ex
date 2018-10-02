@@ -143,11 +143,11 @@ defmodule Indexer.InternalTransaction.Fetcher do
 
   # Protection and improved reporting for https://github.com/poanetwork/blockscout/issues/289
   defp unique_transactions_params(transactions_params) do
-    transaactions_params_by_hash_data = Enum.group_by(transactions_params, fn %{hash_data: hash_data} -> hash_data end)
+    transactions_params_by_hash_data = Enum.group_by(transactions_params, fn %{hash_data: hash_data} -> hash_data end)
 
-    if map_size(transaactions_params_by_hash_data) < length(transactions_params) do
+    if map_size(transactions_params_by_hash_data) < length(transactions_params) do
       {unique_transactions_params, duplicate_transactions_params} =
-        transaactions_params_by_hash_data
+        transactions_params_by_hash_data
         |> Map.values()
         |> uniques_and_duplicates()
 

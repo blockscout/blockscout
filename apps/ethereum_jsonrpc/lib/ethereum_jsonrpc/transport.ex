@@ -23,7 +23,7 @@ defmodule EthereumJSONRPC.Transport do
   @typedoc """
   [JSONRPC request object](https://www.jsonrpc.org/specification#request_object)
 
-   * `:jsonrpc` - a `t:String.t/0` specifying the JSONR-RPC protocol version.  MUST be exactly `"2.0"`
+   * `:jsonrpc` - a `t:String.t/0` specifying the JSON-RPC protocol version.  MUST be exactly `"2.0"`
    * `:method` - a `t:String.t/0` containing the name of the method to be invoked.
    * `:params` - a `t:list/0` for the positional parameters for the `"method"`.
    * `:id` - a `non_neg_integer` that is unique for in a `t:batch_request/0`.
@@ -43,13 +43,13 @@ defmodule EthereumJSONRPC.Transport do
 
   ## Result
 
-   * `:jsonrpc` - a `t:String.t/0` specifying the JSONR-RPC protocol version.  MUST be exactly `"2.0"`
+   * `:jsonrpc` - a `t:String.t/0` specifying the JSON-RPC protocol version.  MUST be exactly `"2.0"`
    * `:result` - the successful result of the request
    * `:id` - the `"id'` of the `t:request/0` that correlates with this response
 
   ## Error
 
-   * `:jsonrpc` - a `t:String.t/0` specifying the JSONR-RPC protocol version.  MUST be exactly `"2.0"`
+   * `:jsonrpc` - a `t:String.t/0` specifying the JSON-RPC protocol version.  MUST be exactly `"2.0"`
    * `:error:` - the `t:error/0`
    * `:id` - the `"id'` of the `t:request/0` that correlates with this response
 

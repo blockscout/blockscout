@@ -16,7 +16,7 @@
           </p>
 
           <p data-error-message class="mb-0 text-light" style="display: none;">
-            <%= gettext("Error tryng to fetch balances.") %>
+            <%= gettext("Error trying to fetch balances.") %>
           </p>
       </div>
     </div>

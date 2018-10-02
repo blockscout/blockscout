@@ -32,8 +32,8 @@ defmodule BlockScoutWeb.Tokens.HelpersTest do
       assert Helpers.token_transfer_amount(token_transfer) == "TokenID [1]"
     end
 
-    test "returns nothing for unknow token's type" do
-      token = build(:token, type: "unknow")
+    test "returns nothing for unknown token's type" do
+      token = build(:token, type: "unknown")
       token_transfer = build(:token_transfer, token: token)
 
       assert Helpers.token_transfer_amount(token_transfer) == nil

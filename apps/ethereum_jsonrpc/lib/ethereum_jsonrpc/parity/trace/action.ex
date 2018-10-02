@@ -1,6 +1,6 @@
 defmodule EthereumJSONRPC.Parity.Trace.Action do
   @moduledoc """
-  The action that was peformed in a `t:EthereumJSONRPC.Parity.Trace.t/0`
+  The action that was performed in a `t:EthereumJSONRPC.Parity.Trace.t/0`
   """
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]

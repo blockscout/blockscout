@@ -21,7 +21,7 @@ defmodule EthereumJSONRPC.Parity.Trace.Result do
         "gasUsed" => 166651
       }
 
-  `nil` resultscan occur for suicide type traces.
+  `nil` results can occur for suicide type traces.
 
       iex> EthereumJSONRPC.Parity.Trace.Result.to_elixir(nil)
       nil

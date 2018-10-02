@@ -1747,10 +1747,10 @@ defmodule Explorer.ChainTest do
       assert {:error, :not_found} == response
     end
 
-    test "doesn't find a unexistent address" do
-      unexistent_address_hash = Factory.address_hash()
+    test "doesn't find a nonexistent address" do
+      nonexistent_address_hash = Factory.address_hash()
 
-      response = Chain.find_contract_address(unexistent_address_hash)
+      response = Chain.find_contract_address(nonexistent_address_hash)
 
       assert {:error, :not_found} == response
     end
@@ -2346,7 +2346,7 @@ defmodule Explorer.ChainTest do
   end
 
   describe "stream_unfetched_uncle_hashes/2" do
-    test "does not return uncle hashes where t:Explorer.Chain.Block.SecondDegreeRelation.t/0 unclue_fetched_at is not nil" do
+    test "does not return uncle hashes where t:Explorer.Chain.Block.SecondDegreeRelation.t/0 uncle_fetched_at is not nil" do
       %Block.SecondDegreeRelation{nephew: %Block{}, uncle_hash: uncle_hash} = insert(:block_second_degree_relation)
 
       assert {:ok, [^uncle_hash]} = Explorer.Chain.stream_unfetched_uncle_hashes([], &[&1 | &2])
@@ -2607,7 +2607,7 @@ defmodule Explorer.ChainTest do
       assert values == [4000, 2000]
     end
 
-    test "sort by the hightest value" do
+    test "sort by the highest value" do
       %Token{contract_address_hash: contract_address_hash} = insert(:token)
 
       insert(
@@ -2817,7 +2817,7 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "address_to_transactions_with_token_tranfers/2" do
+  describe "address_to_transactions_with_token_transfers/2" do
     test "paginates transactions by the block number" do
       address = insert(:address)
       token = insert(:token)
@@ -2853,7 +2853,9 @@ defmodule Explorer.ChainTest do
 
       result =
         address.hash
-        |> Chain.address_to_transactions_with_token_tranfers(token.contract_address_hash, paging_options: paging_options)
+        |> Chain.address_to_transactions_with_token_transfers(token.contract_address_hash,
+          paging_options: paging_options
+        )
         |> Enum.map(& &1.hash)
 
       assert result == [second_page.hash]
@@ -2886,7 +2888,7 @@ defmodule Explorer.ChainTest do
 
       result =
         address.hash
-        |> Chain.address_to_transactions_with_token_tranfers(token.contract_address_hash)
+        |> Chain.address_to_transactions_with_token_transfers(token.contract_address_hash)
         |> Enum.map(& &1.hash)
 
       assert result == [transaction.hash]

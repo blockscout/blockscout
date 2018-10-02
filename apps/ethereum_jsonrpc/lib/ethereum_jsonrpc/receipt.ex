@@ -16,7 +16,7 @@ defmodule EthereumJSONRPC.Receipt do
    * `"contractAddress"` - The contract `t:EthereumJSONRPC.address/0` created, if the transaction was a contract
      creation, otherwise `nil`.
    * `"blockHash"` - `t:EthereumJSONRPC.hash/0` of the block where `"transactionHash"` was in.
-   * `"blockNumber"` - The block number `t:EthereumJSONRPC.quanity/0`.
+   * `"blockNumber"` - The block number `t:EthereumJSONRPC.quantity/0`.
    * `"cumulativeGasUsed"` - `t:EthereumJSONRPC.quantity/0` of gas used when this transaction was executed in the
      block.
    * `"from"` - The `EthereumJSONRPC.Transaction.t/0` `"from"` address hash.  **Geth-only.**
@@ -242,7 +242,7 @@ defmodule EthereumJSONRPC.Receipt do
   # double check that no new keys are being missed by requiring explicit match for passthrough
   # `t:EthereumJSONRPC.address/0` and `t:EthereumJSONRPC.hash/0` pass through as `Explorer.Chain` can verify correct
   # hash format
-  # gas is passsed in from the `t:EthereumJSONRPC.Transaction.params/0` to allow pre-Byzantium status to be derived
+  # gas is passed in from the `t:EthereumJSONRPC.Transaction.params/0` to allow pre-Byzantium status to be derived
   defp entry_to_elixir({key, _} = entry)
        when key in ~w(blockHash contractAddress from gas logsBloom root to transactionHash),
        do: {:ok, entry}
