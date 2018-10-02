@@ -34,5 +34,5 @@
 .card-chain-blocks {
   height: auto;
 
-  @media (max-width: 767px) { height: 595px; }
+  @include media-breakpoint-down(md) { height: 595px; }
 }
