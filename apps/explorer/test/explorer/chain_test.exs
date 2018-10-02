@@ -2607,7 +2607,7 @@ defmodule Explorer.ChainTest do
       assert values == [4000, 2000]
     end
 
-    test "sort by the hightest value" do
+    test "sort by the highest value" do
       %Token{contract_address_hash: contract_address_hash} = insert(:token)
 
       insert(
