@@ -7,9 +7,9 @@ import { updateAllAges } from '../lib/from_now'
 import { initRedux, prependWithClingBottom } from '../utils'
 
 export const initialState = {
+  blockNumbers: [],
   beyondPageOne: null,
   channelDisconnected: false,
-  currentBlockNumber: null,
   newBlock: null,
   replaceBlock: null,
   skippedBlockNumbers: []
@@ -18,13 +18,9 @@ export const initialState = {
 export function reducer (state = initialState, action) {
   switch (action.type) {
     case 'PAGE_LOAD': {
-      let blockNumber = parseInt(state.currentBlockNumber)
-      if (!action.beyondPageOne) {
-        blockNumber = parseInt(action.highestBlockNumber)
-      }
       return Object.assign({}, state, {
         beyondPageOne: action.beyondPageOne,
-        currentBlockNumber: blockNumber
+        blockNumbers: action.blockNumbers
       })
     }
     case 'CHANNEL_DISCONNECTED': {
@@ -35,23 +31,29 @@ export function reducer (state = initialState, action) {
     case 'RECEIVED_NEW_BLOCK': {
       if (state.channelDisconnected || state.beyondPageOne) return state
 
-      let skippedBlockNumbers = state.skippedBlockNumbers.slice(0)
-      let replaceBlock = null
       const blockNumber = parseInt(action.msg.blockNumber)
-      if (blockNumber > state.currentBlockNumber + 1) {
-        for (let i = state.currentBlockNumber + 1; i < action.msg.blockNumber; i++) {
-          skippedBlockNumbers.push(i)
+      if (_.includes(state.blockNumbers, blockNumber)) {
+        return Object.assign({}, state, {
+          newBlock: action.msg.blockHtml,
+          replaceBlock: blockNumber,
+          skippedBlockNumbers: _.without(state.skippedBlockNumbers, blockNumber)
+        })
+      } else if (blockNumber < _.last(state.blockNumbers)){
+        return state
+      } else {
+        let skippedBlockNumbers = state.skippedBlockNumbers.slice(0)
+        if (blockNumber > state.blockNumbers[0] + 1) {
+          for (let i = state.blockNumbers[0] + 1; i < blockNumber; i++) {
+            skippedBlockNumbers.push(i)
+          }
         }
-      } else if (_.indexOf(skippedBlockNumbers, blockNumber) != -1) {
-        skippedBlockNumbers = _.without(skippedBlockNumbers, blockNumber)
-        replaceBlock = blockNumber
+        return Object.assign({}, state, {
+          blockNumbers: _.chain([blockNumber]).union(skippedBlockNumbers, state.blockNumbers).orderBy([],['desc']).value(),
+          newBlock: action.msg.blockHtml,
+          replaceBlock: null,
+          skippedBlockNumbers
+        })
       }
-      return Object.assign({}, state, {
-        currentBlockNumber: blockNumber > state.currentBlockNumber ? blockNumber : state.currentBlockNumber,
-        newBlock: action.msg.blockHtml,
-        replaceBlock,
-        skippedBlockNumbers
-      })
     }
     default:
       return state
@@ -65,7 +67,7 @@ if ($blockListPage.length) {
       const state = store.dispatch({
         type: 'PAGE_LOAD',
         beyondPageOne: !!humps.camelizeKeys(URI(window.location).query(true)).blockNumber,
-        highestBlockNumber: $('[data-selector="block-number"]').filter(':first').text()
+        blockNumbers: $('[data-selector="block-number"]').map((index, el) => parseInt(el.innerText)).toArray()
       })
       if (!state.beyondPageOne) {
         const blocksChannel = socket.channel(`blocks:new_block`, {})
@@ -81,20 +83,18 @@ if ($blockListPage.length) {
       const $blocksList = $('[data-selector="blocks-list"]')
 
       if (state.channelDisconnected) $channelDisconnected.show()
-      if (oldState.newBlock !== state.newBlock) {
-        if (oldState.skippedBlockNumbers !== state.skippedBlockNumbers) {
-          const newSkippedBlockNumbers = _.difference(state.skippedBlockNumbers, oldState.skippedBlockNumbers)
-          if (state.replaceBlock) {
-            const $placeHolder = $(`[data-selector="place-holder"][data-block-number="${state.replaceBlock}"] div.tile`)
-            $placeHolder.addClass('shrink-out')
-            setTimeout(() => $placeHolder.replaceWith(state.newBlock), 400)
-          } else {
+      if (oldState.newBlock !== state.newBlock || (state.replaceBlock && oldState.replaceBlock !== state.replaceBlock)) {
+        if (state.replaceBlock && oldState.replaceBlock !== state.replaceBlock) {
+          const $replaceBlock = $(`[data-block-number="${state.replaceBlock}"]`)
+          $replaceBlock.addClass('shrink-out')
+          setTimeout(() => $replaceBlock.replaceWith(state.newBlock), 400)
+        } else {
+          if (oldState.skippedBlockNumbers !== state.skippedBlockNumbers) {
+            const newSkippedBlockNumbers = _.difference(state.skippedBlockNumbers, oldState.skippedBlockNumbers)
             _.map(newSkippedBlockNumbers, (skippedBlockNumber) => {
               prependWithClingBottom($blocksList, placeHolderBlock(skippedBlockNumber))
             })
-            prependWithClingBottom($blocksList, state.newBlock)
           }
-        } else {
           prependWithClingBottom($blocksList, state.newBlock)
         }
         updateAllAges()
