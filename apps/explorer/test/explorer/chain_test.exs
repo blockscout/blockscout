@@ -1747,10 +1747,10 @@ defmodule Explorer.ChainTest do
       assert {:error, :not_found} == response
     end
 
-    test "doesn't find a unexistent address" do
-      unexistent_address_hash = Factory.address_hash()
+    test "doesn't find a nonexistent address" do
+      nonexistent_address_hash = Factory.address_hash()
 
-      response = Chain.find_contract_address(unexistent_address_hash)
+      response = Chain.find_contract_address(nonexistent_address_hash)
 
       assert {:error, :not_found} == response
     end
