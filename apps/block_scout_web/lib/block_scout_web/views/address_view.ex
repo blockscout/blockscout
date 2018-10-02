@@ -181,21 +181,23 @@ defmodule BlockScoutWeb.AddressView do
   def trimmed_hash(_), do: ""
 
   defp matching_address_check(%Address{hash: hash} = current_address, %Address{hash: hash}, contract?, truncate) do
-    %{
+    [
+      view_module: __MODULE__,
       partial: "_responsive_hash.html",
       address: current_address,
       contract: contract?,
       truncate: truncate
-    }
+    ]
   end
 
   defp matching_address_check(_current_address, %Address{} = address, contract?, truncate) do
-    %{
+    [
+      view_module: __MODULE__,
       partial: "_link.html",
       address: address,
       contract: contract?,
       truncate: truncate
-    }
+    ]
   end
 
   @doc """

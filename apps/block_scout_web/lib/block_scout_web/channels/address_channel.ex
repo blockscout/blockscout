@@ -4,10 +4,11 @@ defmodule BlockScoutWeb.AddressChannel do
   """
   use BlockScoutWeb, :channel
 
+  alias Explorer.Chain.Hash
   alias BlockScoutWeb.{InternalTransactionView, AddressView, TransactionView}
   alias Phoenix.View
 
-  intercept(["balance_update", "count", "internal_transaction", "transaction"])
+  intercept(["balance_update", "count", "internal_transaction", "pending_transaction", "transaction"])
 
   def join("addresses:" <> _address_hash, _params, socket) do
     {:ok, %{}, socket}
@@ -60,7 +61,10 @@ defmodule BlockScoutWeb.AddressChannel do
     {:noreply, socket}
   end
 
-  def handle_out("transaction", %{address: address, transaction: transaction}, socket) do
+  def handle_out("transaction", data, socket), do: handle_transaction(data, socket, "transaction")
+  def handle_out("pending_transaction", data, socket), do: handle_transaction(data, socket, "pending_transaction")
+
+  def handle_transaction(%{address: address, transaction: transaction}, socket, event) do
     Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
 
     rendered =
@@ -71,9 +75,10 @@ defmodule BlockScoutWeb.AddressChannel do
         transaction: transaction
       )
 
-    push(socket, "transaction", %{
+    push(socket, event, %{
       to_address_hash: to_string(transaction.to_address_hash),
       from_address_hash: to_string(transaction.from_address_hash),
+      transaction_hash: Hash.to_string(transaction.hash),
       transaction_html: rendered
     })
 

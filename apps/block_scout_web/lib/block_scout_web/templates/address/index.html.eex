@@ -21,7 +21,7 @@
               <div class="col-10 col-md-11">
                 <div class="row">
                   <div class="col-md-7 d-flex flex-column mt-3 mt-md-0">
-                    <%= address |> BlockScoutWeb.AddressView.address_partial_selector(nil, nil) |> BlockScoutWeb.AddressView.render_partial() %>
+                    <%= address |> BlockScoutWeb.AddressView.address_partial_selector(nil, nil) |> BlockScoutWeb.RenderHelpers.render_partial() %>
                     <!-- number of txns for this address -->
                     <span>
                       <span data-test="transaction_count"><%= transaction_count(address) %></span>

@@ -32,8 +32,8 @@
         </ul>
       </div>
       <div class="card-body">
+        <h2 class="card-title"><%= gettext "Transactions" %></h2>
         <%= if Enum.count(@transactions) > 0 do %>
-          <h2 class="card-title"><%= gettext "Transactions" %></h2>
           <span data-selector="transactions-list">
             <%= for transaction <- @transactions do %>
               <%= render BlockScoutWeb.TransactionView, "_tile.html", transaction: transaction %>

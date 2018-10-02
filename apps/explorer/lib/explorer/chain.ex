@@ -135,6 +135,44 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Pending `t:Explorer.Chain.Transaction/0`s from `address`.
+
+  ## Options
+
+    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+      `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association, then the
+      `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
+
+  """
+  @spec address_to_pending_transactions(Address.t(), [necessity_by_association_option]) :: [Transaction.t()]
+  def address_to_pending_transactions(
+        %Address{hash: %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash},
+        options \\ []
+      )
+      when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    options
+    |> Keyword.get(:direction)
+    |> case do
+      :from -> [:from_address_hash]
+      :to -> [:to_address_hash]
+      _ -> [:from_address_hash, :to_address_hash]
+    end
+    |> Enum.map(fn address_field ->
+      Transaction
+      |> Transaction.where_address_fields_match(address_hash, address_field)
+      |> join_associations(necessity_by_association)
+      |> where([transaction], is_nil(transaction.block_number))
+      |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
+      |> Repo.all()
+      |> MapSet.new()
+    end)
+    |> Enum.reduce(MapSet.new(), &MapSet.union/2)
+    |> MapSet.to_list()
+  end
+
+  @doc """
   Gets an estimated count of `t:Explorer.Chain.Transaction.t/0` to or from the `address` based on the estimated rows
   resulting in an EXPLAIN of the query plan for the count query.
   """

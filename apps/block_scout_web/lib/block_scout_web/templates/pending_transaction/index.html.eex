@@ -61,7 +61,7 @@
       </p>
       <span data-selector="transactions-pending-list">
         <%= for transaction <- @transactions do %>
-          <%= render BlockScoutWeb.TransactionView, "_pending_tile.html", transaction: transaction %>
+          <%= render BlockScoutWeb.TransactionView, "_tile.html", transaction: transaction %>
         <% end %>
       </span>
 

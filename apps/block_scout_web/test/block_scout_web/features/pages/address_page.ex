@@ -87,6 +87,12 @@ defmodule BlockScoutWeb.AddressPage do
     css("[data-internal-transaction-id='#{id}'] [data-test='address_hash_link'] [data-address-hash='#{address_hash}']")
   end
 
+  def pending_transaction(%Transaction{hash: transaction_hash}), do: pending_transaction(transaction_hash)
+
+  def pending_transaction(transaction_hash) do
+    css("[data-selector='pending-transactions-list'] [data-transaction-hash='#{transaction_hash}']")
+  end
+
   def transaction(%Transaction{hash: transaction_hash}), do: transaction(transaction_hash)
 
   def transaction(%Hash{} = hash) do

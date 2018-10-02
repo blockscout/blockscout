@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.TransactionChannel do
   alias Explorer.Chain.Hash
   alias Phoenix.View
 
-  intercept(["new_pending_transaction", "new_transaction"])
+  intercept(["pending_transaction", "transaction"])
 
   def join("transactions:new_transaction", _params, socket) do
     {:ok, %{}, socket}
@@ -22,25 +22,7 @@ defmodule BlockScoutWeb.TransactionChannel do
     {:ok, %{}, socket}
   end
 
-  def handle_out("new_pending_transaction", %{transaction: transaction}, socket) do
-    Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
-
-    rendered_transaction =
-      View.render_to_string(
-        TransactionView,
-        "_pending_tile.html",
-        transaction: transaction
-      )
-
-    push(socket, "new_pending_transaction", %{
-      transaction_hash: Hash.to_string(transaction.hash),
-      transaction_html: rendered_transaction
-    })
-
-    {:noreply, socket}
-  end
-
-  def handle_out("new_transaction", %{transaction: transaction}, socket) do
+  def handle_out("pending_transaction", %{transaction: transaction}, socket) do
     Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
 
     rendered_transaction =
@@ -50,7 +32,25 @@ defmodule BlockScoutWeb.TransactionChannel do
         transaction: transaction
       )
 
-    push(socket, "new_transaction", %{
+    push(socket, "pending_transaction", %{
+      transaction_hash: Hash.to_string(transaction.hash),
+      transaction_html: rendered_transaction
+    })
+
+    {:noreply, socket}
+  end
+
+  def handle_out("transaction", %{transaction: transaction}, socket) do
+    Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
+
+    rendered_transaction =
+      View.render_to_string(
+        TransactionView,
+        "_tile.html",
+        transaction: transaction
+      )
+
+    push(socket, "transaction", %{
       transaction_hash: Hash.to_string(transaction.hash),
       transaction_html: rendered_transaction
     })

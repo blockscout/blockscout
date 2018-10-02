@@ -51,6 +51,21 @@ defmodule BlockScoutWeb.AddressChannelTest do
       end
     end
 
+    test "notified of new_pending_transaction for matching from_address", %{address: address, topic: topic} do
+      pending = insert(:transaction, from_address: address)
+
+      Notifier.handle_event({:chain_event, :transactions, [pending.hash]})
+
+      receive do
+        %Phoenix.Socket.Broadcast{topic: ^topic, event: "pending_transaction", payload: payload} ->
+          assert payload.address.hash == address.hash
+          assert payload.transaction.hash == pending.hash
+      after
+        5_000 ->
+          assert false, "Expected message received nothing."
+      end
+    end
+
     test "notified of new_transaction for matching from_address", %{address: address, topic: topic} do
       transaction =
         :transaction
