@@ -1164,6 +1164,14 @@ defmodule Explorer.Chain do
       iex> Explorer.Chain.missing_block_number_ranges(5..0)
       [4..3, 1..1]
 
+  If only non-consensus blocks exist for a number, the number still counts as missing.
+
+      iex> insert(:block, number: 0)
+      iex> insert(:block, number: 1, consensus: false)
+      iex> insert(:block, number: 2)
+      iex> Explorer.Chain.missing_block_number_ranges(2..0)
+      [1..1]
+
   """
   @spec missing_block_number_ranges(Range.t()) :: [Range.t()]
   def missing_block_number_ranges(range)
