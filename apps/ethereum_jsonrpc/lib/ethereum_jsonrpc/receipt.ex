@@ -242,7 +242,7 @@ defmodule EthereumJSONRPC.Receipt do
   # double check that no new keys are being missed by requiring explicit match for passthrough
   # `t:EthereumJSONRPC.address/0` and `t:EthereumJSONRPC.hash/0` pass through as `Explorer.Chain` can verify correct
   # hash format
-  # gas is passsed in from the `t:EthereumJSONRPC.Transaction.params/0` to allow pre-Byzantium status to be derived
+  # gas is passed in from the `t:EthereumJSONRPC.Transaction.params/0` to allow pre-Byzantium status to be derived
   defp entry_to_elixir({key, _} = entry)
        when key in ~w(blockHash contractAddress from gas logsBloom root to transactionHash),
        do: {:ok, entry}
