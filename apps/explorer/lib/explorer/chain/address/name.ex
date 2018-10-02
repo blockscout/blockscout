@@ -3,8 +3,11 @@ defmodule Explorer.Chain.Address.Name do
   Represents a name for an Address.
   """
 
-  use Explorer.Schema
+  use Ecto.Schema
 
+  import Ecto.Changeset
+
+  alias Ecto.Changeset
   alias Explorer.Chain.{Address, Hash}
 
   @typedoc """
@@ -37,6 +40,16 @@ defmodule Explorer.Chain.Address.Name do
     struct
     |> cast(params, @allowed_fields)
     |> validate_required(@required_fields)
+    |> trim_name()
     |> foreign_key_constraint(:address_hash)
+  end
+
+  defp trim_name(%Changeset{valid?: false} = changeset), do: changeset
+
+  defp trim_name(%Changeset{valid?: true} = changeset) do
+    case get_change(changeset, :name) do
+      nil -> changeset
+      name -> put_change(changeset, :name, String.trim(name))
+    end
   end
 end

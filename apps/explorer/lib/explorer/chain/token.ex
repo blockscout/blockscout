@@ -20,6 +20,8 @@ defmodule Explorer.Chain.Token do
   use Ecto.Schema
 
   import Ecto.{Changeset, Query}
+
+  alias Ecto.Changeset
   alias Explorer.Chain.{Address, Hash, Token, TokenTransfer}
 
   @typedoc """
@@ -72,7 +74,17 @@ defmodule Explorer.Chain.Token do
     |> cast(params, @required_attrs ++ @optional_attrs)
     |> validate_required(@required_attrs)
     |> foreign_key_constraint(:contract_address)
+    |> trim_name()
     |> unique_constraint(:contract_address_hash)
+  end
+
+  defp trim_name(%Changeset{valid?: false} = changeset), do: changeset
+
+  defp trim_name(%Changeset{valid?: true} = changeset) do
+    case get_change(changeset, :name) do
+      nil -> changeset
+      name -> put_change(changeset, :name, String.trim(name))
+    end
   end
 
   def join_with_transfers(queryable \\ Token) do

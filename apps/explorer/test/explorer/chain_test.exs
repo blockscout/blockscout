@@ -1957,6 +1957,12 @@ defmodule Explorer.ChainTest do
                primary: true
              )
     end
+
+    test "trims whitespace from address name", %{valid_attrs: valid_attrs} do
+      attrs = %{valid_attrs | name: "     SimpleStorage     "}
+      assert {:ok, _} = Chain.create_smart_contract(attrs)
+      assert Repo.get_by(Address.Name, name: "SimpleStorage")
+    end
   end
 
   describe "stream_unfetched_balances/2" do
@@ -2437,6 +2443,22 @@ defmodule Explorer.ChainTest do
       assert updated_token.total_supply == Decimal.new(update_params.total_supply)
       assert updated_token.decimals == update_params.decimals
       assert updated_token.cataloged
+    end
+
+    test "trims names of whitespace" do
+      token = insert(:token, name: nil, symbol: nil, total_supply: nil, decimals: nil, cataloged: false)
+
+      update_params = %{
+        name: "      Hodl Token     ",
+        symbol: "HT",
+        total_supply: 10,
+        decimals: 1,
+        cataloged: true
+      }
+
+      assert {:ok, updated_token} = Chain.update_token(token, update_params)
+      assert updated_token.name == "Hodl Token"
+      assert Repo.get_by(Address.Name, name: "Hodl Token")
     end
 
     test "inserts an address name record when token has a name in params" do
