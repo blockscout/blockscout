@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.BlockListPage do
   end
 
   def block(%Block{number: block_number}) do
-    css("[data-selector='block-number'][data-block-number='#{block_number}']")
+    css("[data-block-number='#{block_number}']")
   end
 
   def place_holder_blocks(count) do
