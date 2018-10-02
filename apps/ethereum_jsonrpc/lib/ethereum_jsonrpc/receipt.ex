@@ -16,7 +16,7 @@ defmodule EthereumJSONRPC.Receipt do
    * `"contractAddress"` - The contract `t:EthereumJSONRPC.address/0` created, if the transaction was a contract
      creation, otherwise `nil`.
    * `"blockHash"` - `t:EthereumJSONRPC.hash/0` of the block where `"transactionHash"` was in.
-   * `"blockNumber"` - The block number `t:EthereumJSONRPC.quanity/0`.
+   * `"blockNumber"` - The block number `t:EthereumJSONRPC.quantity/0`.
    * `"cumulativeGasUsed"` - `t:EthereumJSONRPC.quantity/0` of gas used when this transaction was executed in the
      block.
    * `"from"` - The `EthereumJSONRPC.Transaction.t/0` `"from"` address hash.  **Geth-only.**
