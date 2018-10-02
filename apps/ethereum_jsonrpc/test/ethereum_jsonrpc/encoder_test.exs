@@ -157,7 +157,7 @@ defmodule EthereumJSONRPC.EncoderTest do
   end
 
   describe "decode_result/1" do
-    test "correclty decodes the blockchain result" do
+    test "correctly decodes the blockchain result" do
       result = %{
         id: "sum",
         jsonrpc: "2.0",
@@ -173,7 +173,7 @@ defmodule EthereumJSONRPC.EncoderTest do
       assert Encoder.decode_result({result, selector}) == {"sum", {:ok, [42]}}
     end
 
-    test "correclty handles the blockchain error response" do
+    test "correctly handles the blockchain error response" do
       result = %{
         error: %{
           code: -32602,
@@ -193,7 +193,7 @@ defmodule EthereumJSONRPC.EncoderTest do
                {"sum", {:error, "(-32602) Invalid params: Invalid hex: Invalid character 'x' at position 134."}}
     end
 
-    test "correclty decodes string types" do
+    test "correctly decodes string types" do
       result =
         "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000441494f4e00000000000000000000000000000000000000000000000000000000"
 
