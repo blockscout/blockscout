@@ -1132,7 +1132,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Calculates the ranges of missing blocks in `range`.
+  Calculates the ranges of missing consensus blocks in `range`.
 
   When there are no blocks, the entire range is missing.
 
@@ -1164,6 +1164,14 @@ defmodule Explorer.Chain do
       iex> Explorer.Chain.missing_block_number_ranges(5..0)
       [4..3, 1..1]
 
+  If only non-consensus blocks exist for a number, the number still counts as missing.
+
+      iex> insert(:block, number: 0)
+      iex> insert(:block, number: 1, consensus: false)
+      iex> insert(:block, number: 2)
+      iex> Explorer.Chain.missing_block_number_ranges(2..0)
+      [1..1]
+
   """
   @spec missing_block_number_ranges(Range.t()) :: [Range.t()]
   def missing_block_number_ranges(range)
@@ -1188,7 +1196,8 @@ defmodule Explorer.Chain do
                   FROM generate_series(? :: bigint, ? :: bigint, ? :: bigint) AS number
                   EXCEPT
                   SELECT blocks.number
-                  FROM blocks)
+                  FROM blocks
+                  WHERE blocks.consensus = true)
             SELECT no_previous.number AS minimum,
                    (SELECT MIN(no_next.number)
                     FROM missing_blocks AS no_next
