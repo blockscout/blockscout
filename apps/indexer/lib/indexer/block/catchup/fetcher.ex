@@ -101,12 +101,12 @@ defmodule Indexer.Block.Catchup.Fetcher do
     end
   end
 
-  @async_import_remaning_block_data_options ~w(address_hash_to_fetched_balance_block_number transaction_hash_to_block_number)a
+  @async_import_remaining_block_data_options ~w(address_hash_to_fetched_balance_block_number transaction_hash_to_block_number)a
 
   @impl Block.Fetcher
   def import(_, options) when is_map(options) do
-    {async_import_remaning_block_data_options, chain_import_options} =
-      Map.split(options, @async_import_remaning_block_data_options)
+    {async_import_remaining_block_data_options, chain_import_options} =
+      Map.split(options, @async_import_remaining_block_data_options)
 
     with {:ok, results} = ok <-
            chain_import_options
@@ -114,7 +114,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
            |> Chain.import() do
       async_import_remaining_block_data(
         results,
-        async_import_remaning_block_data_options
+        async_import_remaining_block_data_options
       )
 
       ok
