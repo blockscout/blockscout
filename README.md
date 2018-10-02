@@ -96,20 +96,20 @@ _Additional runtime options:_
 
 ### Configuring Ethereum Classic and other EVM Chains
 **Note: Most of these modifications will be consolidated into a single file in the future.**
-  
+
   1. Update the import file in `apps/block_scout_web/assets/css/theme/_variables.scss`. There are several preset css files for our supported chains which include Ethereum Classic, Ethereum Mainnet, Ropsten Testnet, Kovan Testnet, POA Core, and POA Sokol. To deploy Ethereum Classic, change the import to `ethereum_classic_variables`.
-  
+
   2. Update the logo file in `apps/block_scout_web/config/config.exs`. To deploy Ethereum Classic, change this file to `classic_ethereum_logo.svg`.
-  
+
   3. Update the `check_origin` configuration in `apps/block_scout_web/config/prod.exs`. This allows realtime events to occur on your endpoint.
-  
+
   4. Update the node configuration. You will need a full tracing node with WebSockets enabled. Make the changes in the following files (dev/prod):
-  
+
    * `apps/explorer/config/dev/parity.exs`
    * `apps/explorer/config/prod/parity.exs`
    * `apps/indexer/config/dev/parity.exs`
    * `apps/indexer/config/prod/parity.exs`
-  
+
   5. Update the dropdown menu in the main navigation `apps/block_scout_web/lib/block_scout_web/templates/layout/_topnav.html.eex`
 
   6. Update the coin in `apps/explorer/config/config.exs`. This will pull relevant information from Coinmarketcap.com.
@@ -231,6 +231,35 @@ The app is currently internationalized. It is only localized to U.S. English. To
 1. To setup translation file.  
 `cd apps/block_scout_web; mix gettext.extract --merge; cd -`
 2. To edit the new strings, go to `apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po`.
+
+## Metrics
+
+BlockScout is setup to export [Prometheus](https://prometheus.io/) metrics at `/metrics`.
+
+### Prometheus
+
+1. Install prometheus: `brew install prometheus`
+2. Start the web server `iex -S mix phx.server`
+3. Start prometheus: `prometheus --config.file=prometheus.yml`
+
+### Grafana
+
+1. Install grafana: `brew install grafana`
+2. Install Pie Chart panel plugin: `grafana-cli plugins install grafana-piechart-panel`
+3. Start grafana: `brew services start grafana`
+4. Add Prometheus as a Data Source
+   1. `open http://localhost:3000/datasources`
+   2. Click "+ Add data source"
+   3. Put "Prometheus" for "Name"
+   4. Change "Type" to "Prometheus"
+   5. Set "URL" to "http://localhost:9090"
+   6. Set "Scrape Interval" to "10s"
+5. Add the dashboards from https://github.com/deadtrickster/beam-dashboards:
+   For each `*.json` file in the repo.
+   1. `open http://localhost:3000/dashboard/import`
+   2. Copy the contents of the JSON file in the "Or paste JSON" entry
+   3. Click "Load"
+6. View the dashboards.  (You will need to click-around and use BlockScout for the web-related metrics to show up.)
 
 ## Acknowledgements
 

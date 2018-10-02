@@ -51,6 +51,8 @@ defmodule BlockScoutWeb.Endpoint do
     signing_salt: "iC2ksJHS"
   )
 
+  plug(BlockScoutWeb.Prometheus.Exporter)
+
   plug(BlockScoutWeb.Router)
 
   def init(_key, config) do
