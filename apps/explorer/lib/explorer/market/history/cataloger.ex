@@ -3,7 +3,7 @@ defmodule Explorer.Market.History.Cataloger do
   Fetches the daily market history.
 
   Market grabs the last 365 day's worth of market history for the configured
-  coin in the explorer. Once that data is fectched, current day's values are
+  coin in the explorer. Once that data is fetched, current day's values are
   checked every 60 minutes. Additionally, failed requests to the history
   source will follow exponential backoff `100ms * 2^(n+1)` where `n` is the
   number of failed requests.
