@@ -39,7 +39,7 @@ defmodule EthereumJSONRPC.Transaction do
    * `"transactionIndex"` - `t:EthereumJSONRPC.quantity/0` for the index of the transaction in the block.  `nil` when
      transaction is pending.
    * `"v"` - `t:EthereumJSONRPC.quantity/0` for the V field of the signature.
-   * `"value"` - `t:EthereumJSONRPC.quantity/0` of wei transfered
+   * `"value"` - `t:EthereumJSONRPC.quantity/0` of wei transferred
   """
   @type t :: %{
           String.t() =>
