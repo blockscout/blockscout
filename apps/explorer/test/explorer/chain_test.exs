@@ -536,10 +536,20 @@ defmodule Explorer.ChainTest do
 
   describe "hashes_to_addresses/1" do
     test "with existing addresses" do
-      address1_attrs = %{hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"}
-      address2_attrs = %{hash: "0x6aaeb6053f3e94c9b9a09f33669435e7ef1beaed"}
-      address1 = insert(:address, address1_attrs)
-      address2 = insert(:address, address2_attrs)
+      address1 = insert(:address, hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
+      address2 = insert(:address, hash: "0x6aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
+      # in opposite of insertion order, to check that ordering matches ordering of arguments
+      # regression test for https://github.com/poanetwork/blockscout/issues/843
+      hashes = [address2.hash, address1.hash]
+
+      [found_address1, found_address2] = Explorer.Chain.hashes_to_addresses(hashes)
+
+      %Explorer.Chain.Address{hash: found_hash1} = found_address1
+      %Explorer.Chain.Address{hash: found_hash2} = found_address2
+
+      assert found_hash1 == address2.hash
+      assert found_hash2 == address1.hash
+
       hashes = [address1.hash, address2.hash]
 
       [found_address1, found_address2] = Explorer.Chain.hashes_to_addresses(hashes)
