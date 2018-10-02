@@ -210,7 +210,7 @@ function placeHolderBlock(blockNumber) {
         </span>
         <div>
           <div class="tile-title">${blockNumber}</div>
-          <div> Block Mined, awaiting import...</div>
+          <div>${window.localized['Block Processing']}</div>
         </div>
       </div>
     </div>
