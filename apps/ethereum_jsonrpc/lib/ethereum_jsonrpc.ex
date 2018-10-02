@@ -294,7 +294,7 @@ defmodule EthereumJSONRPC do
   ## Returns
 
     * Handled response
-    * `{:error, reason}` if POST failes
+    * `{:error, reason}` if POST fails
   """
   @spec json_rpc(Transport.request(), json_rpc_named_arguments) ::
           {:ok, Transport.result()} | {:error, reason :: term()}
