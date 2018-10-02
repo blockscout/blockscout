@@ -4,7 +4,7 @@ defmodule Explorer.Chain.Wei do
   floats.
 
   All values represented by the `Wei` struct are assumed to measured in the base unit of wei.
-  See [Etherum Homestead Documentation](http://ethdocs.org/en/latest/ether.html) for examples of various denominations of wei.
+  See [Ethereum Homestead Documentation](http://ethdocs.org/en/latest/ether.html) for examples of various denominations of wei.
 
   Etymology of "wei" comes from [Wei Dai (戴維)](https://en.wikipedia.org/wiki/Wei_Dai), a
   [cypherpunk](https://en.wikipedia.org/wiki/Cypherpunk) who came up with b-money, which outlined modern
