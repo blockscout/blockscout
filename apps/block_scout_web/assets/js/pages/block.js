@@ -105,7 +105,7 @@ if ($blockListPage.length) {
 
 function placeHolderBlock(blockNumber) {
   return `
-    <div class="my-3" style="height: 98px;">
+    <div class="my-3" style="min-height: 98px;">
       <div
         class="tile tile-type-block d-flex align-items-center fade-up"
         data-selector="place-holder"
