@@ -9,7 +9,7 @@ defmodule EthereumJSONRPC.Subscription do
   defstruct ~w(id subscriber_pid transport transport_options)a
 
   @typedoc """
-  An event that can be suscribed to.
+  An event that can be subscribed to.
 
    * `"newHeads"` - when new blocks are added to chain including during reorgs.
   """
