@@ -1,4 +1,5 @@
 import $ from 'jquery'
+import _ from 'lodash'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
@@ -14,9 +15,12 @@ export const initialState = {
   availableSupply: null,
   averageBlockTime: null,
   batchCountAccumulator: 0,
+  blockNumbers: [],
   marketHistoryData: null,
   newBlock: null,
   newTransactions: [],
+  replaceBlock: null,
+  skippedBlockNumbers: [],
   transactionCount: null,
   usdMarketCap: null
 }
@@ -25,6 +29,7 @@ export function reducer (state = initialState, action) {
   switch (action.type) {
     case 'PAGE_LOAD': {
       return Object.assign({}, state, {
+        blockNumbers: action.blockNumbers,
         transactionCount: numeral(action.transactionCount).value()
       })
     }
@@ -34,10 +39,45 @@ export function reducer (state = initialState, action) {
       })
     }
     case 'RECEIVED_NEW_BLOCK': {
-      return Object.assign({}, state, {
-        averageBlockTime: action.msg.averageBlockTime,
-        newBlock: action.msg.chainBlockHtml
-      })
+      const blockNumber = parseInt(action.msg.blockNumber)
+      if (_.includes(state.blockNumbers, blockNumber)) {
+        return Object.assign({}, state, {
+          averageBlockTime: action.msg.averageBlockTime,
+          newBlock: action.msg.chainBlockHtml,
+          replaceBlock: blockNumber,
+          skippedBlockNumbers: _.without(state.skippedBlockNumbers, blockNumber)
+        })
+      } else if (blockNumber < _.last(state.blockNumbers)){
+        return Object.assign({}, state, { newBlock: null })
+      } else {
+        // let blockNumbers = state.blockNumbers.slice(0)
+        let skippedBlockNumbers = state.skippedBlockNumbers.slice(0)
+        if (blockNumber > state.blockNumbers[0] + 1) {
+          let last_placeholder = state.blockNumbers[0] + 1
+          if (blockNumber - last_placeholder > 3) {
+            last_placeholder = blockNumber - 3
+            skippedBlockNumbers = []
+            // blockNumbers = []
+          }
+          for (let i = last_placeholder; i < blockNumber; i++) {
+            skippedBlockNumbers.push(i)
+          }
+        }
+        const newBlockNumbers = _.chain([blockNumber])
+          .union(skippedBlockNumbers, state.blockNumbers)
+          .orderBy([],['desc'])
+          .slice(0, 4)
+          .value()
+
+        const newSkippedBlockNumbers = _.intersection(skippedBlockNumbers, newBlockNumbers)
+        return Object.assign({}, state, {
+          averageBlockTime: action.msg.averageBlockTime,
+          blockNumbers: newBlockNumbers,
+          newBlock: action.msg.chainBlockHtml,
+          replaceBlock: null,
+          skippedBlockNumbers: newSkippedBlockNumbers
+        })
+      }
     }
     case 'RECEIVED_NEW_EXCHANGE_RATE': {
       return Object.assign({}, state, {
@@ -79,6 +119,7 @@ if ($chainDetailsPage.length) {
       const blocksChannel = socket.channel(`blocks:new_block`)
       store.dispatch({
         type: 'PAGE_LOAD',
+        blockNumbers: $('[data-selector="block-number"]').map((index, el) => parseInt(el.innerText)).toArray(),
         transactionCount: $('[data-selector="transaction-count"]').text()
       })
       blocksChannel.join()
@@ -113,9 +154,25 @@ if ($chainDetailsPage.length) {
       if (oldState.usdMarketCap !== state.usdMarketCap) {
         $marketCap.empty().append(formatUsdValue(state.usdMarketCap))
       }
-      if (oldState.newBlock !== state.newBlock) {
-        $blockList.children().last().remove()
-        $blockList.prepend(state.newBlock)
+      if (state.newBlock && oldState.newBlock !== state.newBlock) {
+        if (state.replaceBlock && oldState.replaceBlock !== state.replaceBlock) {
+          const $replaceBlock = $(`[data-block-number="${state.replaceBlock}"]`)
+          $replaceBlock.addClass('shrink-out')
+          setTimeout(() => $replaceBlock.replaceWith(state.newBlock), 400)
+        } else {
+          if (oldState.skippedBlockNumbers !== state.skippedBlockNumbers) {
+            const newSkippedBlockNumbers = _.chain(state.skippedBlockNumbers)
+              .difference(oldState.skippedBlockNumbers)
+              .intersection(state.blockNumbers)
+              .value()
+            _.map(newSkippedBlockNumbers, (skippedBlockNumber) => {
+              $blockList.children().last().remove()
+              $blockList.prepend(placeHolderBlock(skippedBlockNumber))
+            })
+          }
+          $blockList.children().last().remove()
+          $blockList.prepend(state.newBlock)
+        }
         updateAllAges()
       }
       if (oldState.transactionCount !== state.transactionCount) $transactionCount.empty().append(numeral(state.transactionCount).format())
@@ -141,4 +198,21 @@ if ($chainDetailsPage.length) {
       }
     }
   })
+}
+
+function placeHolderBlock(blockNumber) {
+  return `
+    <div class="col-sm-3 fade-up-blocks-chain mb-3 mb-sm-0" data-selector="place-holder" data-block-number="${blockNumber}">
+      <div class="tile tile-type-block d-flex flex-column">
+        <span class="loading-spinner-small ml-1 mr-4">
+          <span class="loading-spinner-block-1"></span>
+          <span class="loading-spinner-block-2"></span>
+        </span>
+        <div>
+          <div class="tile-title">${blockNumber}</div>
+          <div> Block Mined, awaiting import...</div>
+        </div>
+      </div>
+    </div>
+  `
 }
