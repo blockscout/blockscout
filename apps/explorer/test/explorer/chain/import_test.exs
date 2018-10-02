@@ -16,6 +16,8 @@ defmodule Explorer.Chain.ImportTest do
     Transaction
   }
 
+  @moduletag :capturelog
+
   doctest Import
 
   describe "all/1" do
@@ -1118,6 +1120,514 @@ defmodule Explorer.Chain.ImportTest do
                })
 
       assert Repo.aggregate(Transaction.Fork, :count, :hash) == 1
+    end
+
+    test "reorganizations can switch blocks to non-consensus with new block taking the consensus spot for the number" do
+      block_number = 0
+
+      miner_hash_before = address_hash()
+      from_address_hash_before = address_hash()
+      block_hash_before = block_hash()
+      difficulty_before = Decimal.new(0)
+      gas_limit_before = Decimal.new(0)
+      gas_used_before = Decimal.new(0)
+      {:ok, nonce_before} = Hash.Nonce.cast(0)
+      parent_hash_before = block_hash()
+      size_before = 0
+      timestamp_before = Timex.parse!("2019-01-01T01:00:00Z", "{ISO:Extended:Z}")
+      total_difficulty_before = Decimal.new(0)
+
+      assert {:ok, _} =
+               Import.all(%{
+                 addresses: %{
+                   params: [
+                     %{hash: miner_hash_before},
+                     %{hash: from_address_hash_before}
+                   ]
+                 },
+                 blocks: %{
+                   params: [
+                     %{
+                       consensus: true,
+                       difficulty: difficulty_before,
+                       gas_limit: gas_limit_before,
+                       gas_used: gas_used_before,
+                       hash: block_hash_before,
+                       miner_hash: miner_hash_before,
+                       nonce: nonce_before,
+                       number: block_number,
+                       parent_hash: parent_hash_before,
+                       size: size_before,
+                       timestamp: timestamp_before,
+                       total_difficulty: total_difficulty_before
+                     }
+                   ]
+                 }
+               })
+
+      %Block{consensus: true, number: ^block_number} = Repo.get(Block, block_hash_before)
+
+      miner_hash_after = address_hash()
+      from_address_hash_after = address_hash()
+      block_hash_after = block_hash()
+
+      assert {:ok, _} =
+               Import.all(%{
+                 addresses: %{
+                   params: [
+                     %{hash: miner_hash_after},
+                     %{hash: from_address_hash_after}
+                   ]
+                 },
+                 blocks: %{
+                   params: [
+                     %{
+                       consensus: true,
+                       difficulty: 1,
+                       gas_limit: 1,
+                       gas_used: 1,
+                       hash: block_hash_after,
+                       miner_hash: miner_hash_after,
+                       nonce: 1,
+                       number: block_number,
+                       parent_hash: block_hash(),
+                       size: 1,
+                       timestamp: Timex.parse!("2019-01-01T02:00:00Z", "{ISO:Extended:Z}"),
+                       total_difficulty: 1
+                     }
+                   ]
+                 }
+               })
+
+      # new block grabs `consensus`
+      assert %Block{
+               consensus: true,
+               difficulty: difficulty_after,
+               gas_limit: gas_limit_after,
+               gas_used: gas_used_after,
+               nonce: nonce_after,
+               number: ^block_number,
+               parent_hash: parent_hash_after,
+               size: size_after,
+               timestamp: timestamp_after,
+               total_difficulty: total_difficulty_after
+             } = Repo.get(Block, block_hash_after)
+
+      refute difficulty_after == difficulty_before
+      refute gas_limit_after == gas_limit_before
+      refute gas_used_after == gas_used_before
+      refute nonce_after == nonce_before
+      refute parent_hash_after == parent_hash_before
+      refute size_after == size_before
+      refute timestamp_after == timestamp_before
+      refute total_difficulty_after == total_difficulty_before
+
+      # only `consensus` changes in original block
+      assert %Block{
+               consensus: false,
+               difficulty: ^difficulty_before,
+               gas_limit: ^gas_limit_before,
+               gas_used: ^gas_used_before,
+               nonce: ^nonce_before,
+               number: ^block_number,
+               parent_hash: ^parent_hash_before,
+               size: ^size_before,
+               timestamp: timestamp,
+               total_difficulty: ^total_difficulty_before
+             } = Repo.get(Block, block_hash_before)
+
+      assert DateTime.compare(timestamp, timestamp_before) == :eq
+    end
+
+    test "reorganizations nils transaction receipt fields for transactions that end up in non-consensus blocks" do
+      block_number = 0
+
+      miner_hash_before = address_hash()
+      from_address_hash_before = address_hash()
+      block_hash_before = block_hash()
+      index_before = 0
+
+      transaction_hash = transaction_hash()
+
+      assert {:ok, _} =
+               Import.all(%{
+                 addresses: %{
+                   params: [
+                     %{hash: miner_hash_before},
+                     %{hash: from_address_hash_before}
+                   ]
+                 },
+                 blocks: %{
+                   params: [
+                     %{
+                       consensus: true,
+                       difficulty: 0,
+                       gas_limit: 0,
+                       gas_used: 0,
+                       hash: block_hash_before,
+                       miner_hash: miner_hash_before,
+                       nonce: 0,
+                       number: block_number,
+                       parent_hash: block_hash(),
+                       size: 0,
+                       timestamp: Timex.parse!("2019-01-01T01:00:00Z", "{ISO:Extended:Z}"),
+                       total_difficulty: 0
+                     }
+                   ]
+                 },
+                 transactions: %{
+                   params: [
+                     %{
+                       block_hash: block_hash_before,
+                       block_number: block_number,
+                       from_address_hash: from_address_hash_before,
+                       gas: 21_000,
+                       gas_price: 1,
+                       gas_used: 21_000,
+                       cumulative_gas_used: 21_000,
+                       hash: transaction_hash,
+                       index: index_before,
+                       input: "0x",
+                       nonce: 0,
+                       r: 0,
+                       s: 0,
+                       v: 0,
+                       value: 0,
+                       status: :ok
+                     }
+                   ],
+                   on_conflict: :replace_all
+                 }
+               })
+
+      %Block{consensus: true, number: ^block_number} = Repo.get(Block, block_hash_before)
+      transaction_before = Repo.get!(Transaction, transaction_hash)
+
+      refute transaction_before.block_hash == nil
+      refute transaction_before.block_number == nil
+      refute transaction_before.gas_used == nil
+      refute transaction_before.cumulative_gas_used == nil
+      refute transaction_before.index == nil
+      refute transaction_before.status == nil
+
+      miner_hash_after = address_hash()
+      from_address_hash_after = address_hash()
+      block_hash_after = block_hash()
+
+      assert {:ok, _} =
+               Import.all(%{
+                 addresses: %{
+                   params: [
+                     %{hash: miner_hash_after},
+                     %{hash: from_address_hash_after}
+                   ]
+                 },
+                 blocks: %{
+                   params: [
+                     %{
+                       consensus: true,
+                       difficulty: 1,
+                       gas_limit: 1,
+                       gas_used: 1,
+                       hash: block_hash_after,
+                       miner_hash: miner_hash_after,
+                       nonce: 1,
+                       number: block_number,
+                       parent_hash: block_hash(),
+                       size: 1,
+                       timestamp: Timex.parse!("2019-01-01T02:00:00Z", "{ISO:Extended:Z}"),
+                       total_difficulty: 1
+                     }
+                   ]
+                 }
+               })
+
+      transaction_after = Repo.get!(Transaction, transaction_hash)
+
+      assert transaction_after.block_hash == nil
+      assert transaction_after.block_number == nil
+      assert transaction_after.gas_used == nil
+      assert transaction_after.cumulative_gas_used == nil
+      assert transaction_after.index == nil
+      assert transaction_after.status == nil
+    end
+
+    test "reorganizations fork transactions that end up in non-consensus blocks" do
+      block_number = 0
+
+      miner_hash_before = address_hash()
+      from_address_hash_before = address_hash()
+      block_hash_before = block_hash()
+      index_before = 0
+
+      transaction_hash = transaction_hash()
+
+      assert {:ok, _} =
+               Import.all(%{
+                 addresses: %{
+                   params: [
+                     %{hash: miner_hash_before},
+                     %{hash: from_address_hash_before}
+                   ]
+                 },
+                 blocks: %{
+                   params: [
+                     %{
+                       consensus: true,
+                       difficulty: 0,
+                       gas_limit: 0,
+                       gas_used: 0,
+                       hash: block_hash_before,
+                       miner_hash: miner_hash_before,
+                       nonce: 0,
+                       number: block_number,
+                       parent_hash: block_hash(),
+                       size: 0,
+                       timestamp: Timex.parse!("2019-01-01T01:00:00Z", "{ISO:Extended:Z}"),
+                       total_difficulty: 0
+                     }
+                   ]
+                 },
+                 transactions: %{
+                   params: [
+                     %{
+                       block_hash: block_hash_before,
+                       block_number: block_number,
+                       from_address_hash: from_address_hash_before,
+                       gas: 21_000,
+                       gas_price: 1,
+                       gas_used: 21_000,
+                       cumulative_gas_used: 21_000,
+                       hash: transaction_hash,
+                       index: index_before,
+                       input: "0x",
+                       nonce: 0,
+                       r: 0,
+                       s: 0,
+                       v: 0,
+                       value: 0,
+                       status: :ok
+                     }
+                   ],
+                   on_conflict: :replace_all
+                 }
+               })
+
+      %Block{consensus: true, number: ^block_number} = Repo.get(Block, block_hash_before)
+
+      assert Repo.one!(from(transaction_fork in Transaction.Fork, select: fragment("COUNT(*)"))) == 0
+
+      miner_hash_after = address_hash()
+      from_address_hash_after = address_hash()
+      block_hash_after = block_hash()
+
+      assert {:ok, _} =
+               Import.all(%{
+                 addresses: %{
+                   params: [
+                     %{hash: miner_hash_after},
+                     %{hash: from_address_hash_after}
+                   ]
+                 },
+                 blocks: %{
+                   params: [
+                     %{
+                       consensus: true,
+                       difficulty: 1,
+                       gas_limit: 1,
+                       gas_used: 1,
+                       hash: block_hash_after,
+                       miner_hash: miner_hash_after,
+                       nonce: 1,
+                       number: block_number,
+                       parent_hash: block_hash(),
+                       size: 1,
+                       timestamp: Timex.parse!("2019-01-01T02:00:00Z", "{ISO:Extended:Z}"),
+                       total_difficulty: 1
+                     }
+                   ]
+                 }
+               })
+
+      assert Repo.one!(from(transaction_fork in Transaction.Fork, select: fragment("COUNT(*)"))) == 1
+
+      assert %Transaction.Fork{index: ^index_before} =
+               Repo.one(
+                 from(transaction_fork in Transaction.Fork,
+                   where:
+                     transaction_fork.uncle_hash == ^block_hash_before and transaction_fork.hash == ^transaction_hash
+                 )
+               )
+    end
+
+    test "timeouts can be overridden" do
+      assert {:ok, _} =
+               Import.all(%{
+                 addresses: %{
+                   params: [],
+                   timeout: 1
+                 },
+                 balances: %{
+                   params: [],
+                   timeout: 1
+                 },
+                 blocks: %{
+                   params: [],
+                   timeout: 1
+                 },
+                 block_second_degree_relations: %{
+                   params: [],
+                   timeout: 1
+                 },
+                 internal_transactions: %{
+                   params: [],
+                   timeout: 1
+                 },
+                 logs: %{
+                   params: [],
+                   timeout: 1
+                 },
+                 token_transfers: %{
+                   params: [],
+                   timeout: 1
+                 },
+                 tokens: %{
+                   params: [],
+                   on_conflict: :replace_all,
+                   timeout: 1
+                 },
+                 transactions: %{
+                   params: [],
+                   on_conflict: :replace_all,
+                   timeout: 1
+                 },
+                 transaction_forks: %{
+                   params: [],
+                   timeout: 1
+                 },
+                 token_balances: %{
+                   params: [],
+                   timeout: 1
+                 }
+               })
+    end
+
+    # https://github.com/poanetwork/blockscout/pull/833#issuecomment-426102868 regression test
+    test "a non-consensus block being added after a block with same number does not change the consensus block to non-consensus" do
+      block_number = 0
+
+      miner_hash_before = address_hash()
+      from_address_hash_before = address_hash()
+      block_hash_before = block_hash()
+      difficulty_before = Decimal.new(0)
+      gas_limit_before = Decimal.new(0)
+      gas_used_before = Decimal.new(0)
+      {:ok, nonce_before} = Hash.Nonce.cast(0)
+      parent_hash_before = block_hash()
+      size_before = 0
+      timestamp_before = Timex.parse!("2019-01-01T01:00:00Z", "{ISO:Extended:Z}")
+      total_difficulty_before = Decimal.new(0)
+
+      assert {:ok, _} =
+               Import.all(%{
+                 addresses: %{
+                   params: [
+                     %{hash: miner_hash_before},
+                     %{hash: from_address_hash_before}
+                   ]
+                 },
+                 blocks: %{
+                   params: [
+                     %{
+                       consensus: true,
+                       difficulty: difficulty_before,
+                       gas_limit: gas_limit_before,
+                       gas_used: gas_used_before,
+                       hash: block_hash_before,
+                       miner_hash: miner_hash_before,
+                       nonce: nonce_before,
+                       number: block_number,
+                       parent_hash: parent_hash_before,
+                       size: size_before,
+                       timestamp: timestamp_before,
+                       total_difficulty: total_difficulty_before
+                     }
+                   ]
+                 }
+               })
+
+      %Block{consensus: true, number: ^block_number} = Repo.get(Block, block_hash_before)
+
+      miner_hash_after = address_hash()
+      from_address_hash_after = address_hash()
+      block_hash_after = block_hash()
+
+      assert {:ok, _} =
+               Import.all(%{
+                 addresses: %{
+                   params: [
+                     %{hash: miner_hash_after},
+                     %{hash: from_address_hash_after}
+                   ]
+                 },
+                 blocks: %{
+                   params: [
+                     %{
+                       consensus: false,
+                       difficulty: 1,
+                       gas_limit: 1,
+                       gas_used: 1,
+                       hash: block_hash_after,
+                       miner_hash: miner_hash_after,
+                       nonce: 1,
+                       number: block_number,
+                       parent_hash: block_hash(),
+                       size: 1,
+                       timestamp: Timex.parse!("2019-01-01T02:00:00Z", "{ISO:Extended:Z}"),
+                       total_difficulty: 1
+                     }
+                   ]
+                 }
+               })
+
+      # new block does not grab `consensus`
+      assert %Block{
+               consensus: false,
+               difficulty: difficulty_after,
+               gas_limit: gas_limit_after,
+               gas_used: gas_used_after,
+               nonce: nonce_after,
+               number: ^block_number,
+               parent_hash: parent_hash_after,
+               size: size_after,
+               timestamp: timestamp_after,
+               total_difficulty: total_difficulty_after
+             } = Repo.get(Block, block_hash_after)
+
+      refute difficulty_after == difficulty_before
+      refute gas_limit_after == gas_limit_before
+      refute gas_used_after == gas_used_before
+      refute nonce_after == nonce_before
+      refute parent_hash_after == parent_hash_before
+      refute size_after == size_before
+      refute timestamp_after == timestamp_before
+      refute total_difficulty_after == total_difficulty_before
+
+      # nothing changes on the original consensus block
+      assert %Block{
+               consensus: true,
+               difficulty: ^difficulty_before,
+               gas_limit: ^gas_limit_before,
+               gas_used: ^gas_used_before,
+               nonce: ^nonce_before,
+               number: ^block_number,
+               parent_hash: ^parent_hash_before,
+               size: ^size_before,
+               timestamp: timestamp,
+               total_difficulty: ^total_difficulty_before
+             } = Repo.get(Block, block_hash_before)
+
+      assert DateTime.compare(timestamp, timestamp_before) == :eq
     end
   end
 end

@@ -3,9 +3,10 @@ defmodule Explorer.Chain.Import do
   Bulk importing of data into `Explorer.Repo`
   """
 
-  import Ecto.Query, only: [from: 2]
+  import Ecto.Query, only: [from: 2, update: 2]
 
   alias Ecto.{Changeset, Multi}
+  alias Ecto.Adapters.SQL
 
   alias Explorer.Chain.{
     Address,
@@ -218,6 +219,9 @@ defmodule Explorer.Chain.Import do
       * `:timeout` - the timeout for inserting all transactions found in the params lists across all
         types. Defaults to `#{@insert_transactions_timeout}` milliseconds.
       * `:with` - the changeset function on `Explorer.Chain.Transaction` to use validate `:params`.
+    * `:transaction_forks`
+      * `:params` - `list` of params for `Explorer.Chain.Transaction.Fork.changeset/2`.
+      * `:timeout` - the timeout for inserting all transaction forks.
     * `:token_balances`
       * `:params` - `list` of params for `Explorer.Chain.TokenBalance.changeset/2`
     * `:timeout` - the timeout for `Repo.transaction`. Defaults to `#{@transaction_timeout}` milliseconds.
@@ -377,16 +381,30 @@ defmodule Explorer.Chain.Import do
     case ecto_schema_module_to_changes_list_map do
       %{Block => blocks_changes} ->
         timestamps = Map.fetch!(options, :timestamps)
+        blocks_timeout = options[:blocks][:timeout] || @insert_blocks_timeout
+        where_forked = where_forked(blocks_changes)
 
         multi
+        |> Multi.run(:derive_transaction_forks, fn _ ->
+          derive_transaction_forks(%{
+            timeout: options[:transaction_forks][:timeout] || @insert_transaction_forks_timeout,
+            timestamps: timestamps,
+            where_forked: where_forked
+          })
+        end)
+        # MUST be after `:derive_transaction_forks`, which depends on values in `transactions` table
+        |> Multi.run(:fork_transactions, fn _ ->
+          fork_transactions(%{
+            timeout: options[:transactions][:timeout] || @insert_transactions_timeout,
+            timestamps: timestamps,
+            where_forked: where_forked
+          })
+        end)
+        |> Multi.run(:lose_consenus, fn _ ->
+          lose_consensus(blocks_changes, %{timeout: blocks_timeout, timestamps: timestamps})
+        end)
         |> Multi.run(:blocks, fn _ ->
-          insert_blocks(
-            blocks_changes,
-            %{
-              timeout: options[:blocks][:timeout] || @insert_blocks_timeout,
-              timestamps: timestamps
-            }
-          )
+          insert_blocks(blocks_changes, %{timeout: blocks_timeout, timestamps: timestamps})
         end)
         |> Multi.run(:uncle_fetched_block_second_degree_relations, fn %{blocks: blocks} when is_list(blocks) ->
           update_block_second_degree_relations(
@@ -505,9 +523,7 @@ defmodule Explorer.Chain.Import do
        when is_map(ecto_schema_module_to_changes_list) and is_map(options) do
     case ecto_schema_module_to_changes_list do
       %{Token => tokens_changes} ->
-        tokens_options = Map.fetch!(options, :tokens)
-        timestamps = Map.fetch!(options, :timestamps)
-        on_conflict = Map.fetch!(tokens_options, :on_conflict)
+        %{timestamps: timestamps, tokens: %{on_conflict: on_conflict}} = options
 
         Multi.run(multi, :tokens, fn _ ->
           insert_tokens(
@@ -974,6 +990,115 @@ defmodule Explorer.Chain.Import do
       )
 
     {:ok, inserted}
+  end
+
+  defp fork_transactions(%{timeout: timeout, timestamps: %{updated_at: updated_at}, where_forked: where_forked}) do
+    query =
+      where_forked
+      |> update(
+        set: [
+          block_hash: nil,
+          block_number: nil,
+          gas_used: nil,
+          cumulative_gas_used: nil,
+          index: nil,
+          internal_transactions_indexed_at: nil,
+          status: nil,
+          updated_at: ^updated_at
+        ]
+      )
+
+    try do
+      {_, result} = Repo.update_all(query, [], timeout: timeout, returning: [:hash])
+
+      {:ok, result}
+    rescue
+      postgrex_error in Postgrex.Error ->
+        {:error, %{exception: postgrex_error}}
+    end
+  end
+
+  defp where_forked(blocks_changes) when is_list(blocks_changes) do
+    Enum.reduce(blocks_changes, Transaction, fn %{consensus: consensus, hash: hash, number: number}, acc ->
+      case consensus do
+        false ->
+          from(transaction in acc, or_where: transaction.block_hash == ^hash and transaction.block_number == ^number)
+
+        true ->
+          from(transaction in acc, or_where: transaction.block_hash != ^hash and transaction.block_number == ^number)
+      end
+    end)
+  end
+
+  # sobelow_skip ["SQL.Query"]
+  defp derive_transaction_forks(%{
+         timeout: timeout,
+         timestamps: %{inserted_at: inserted_at, updated_at: updated_at},
+         where_forked: where_forked
+       }) do
+    query =
+      from(transaction in where_forked,
+        select: [
+          transaction.block_hash,
+          transaction.index,
+          transaction.hash,
+          type(^inserted_at, transaction.inserted_at),
+          type(^updated_at, transaction.updated_at)
+        ]
+      )
+
+    {sql, parameters} = SQL.to_sql(:all, Repo, query)
+
+    {:ok, %Postgrex.Result{columns: ["uncle_hash", "hash"], command: :insert, rows: rows}} =
+      SQL.query(
+        Repo,
+        """
+        INSERT INTO transaction_forks (uncle_hash, index, hash, inserted_at, updated_at)
+        #{sql}
+        RETURNING uncle_hash, hash
+        """,
+        parameters,
+        timeout: timeout
+      )
+
+    derived_transaction_forks = Enum.map(rows, fn [uncle_hash, hash] -> %{uncle_hash: uncle_hash, hash: hash} end)
+
+    {:ok, derived_transaction_forks}
+  end
+
+  defp lose_consensus(blocks_changes, %{timeout: timeout, timestamps: %{updated_at: updated_at}})
+       when is_list(blocks_changes) do
+    ordered_consensus_block_number =
+      blocks_changes
+      |> Enum.reduce(MapSet.new(), fn
+        %{consensus: true, number: number}, acc ->
+          MapSet.put(acc, number)
+
+        %{consensus: false}, acc ->
+          acc
+      end)
+      |> Enum.sort()
+
+    query =
+      from(
+        block in Block,
+        where: block.number in ^ordered_consensus_block_number,
+        update: [
+          set: [
+            consensus: false,
+            updated_at: ^updated_at
+          ]
+        ]
+      )
+
+    try do
+      {_, result} = Repo.update_all(query, [], timeout: timeout, returning: [:hash, :number])
+
+      {:ok, result}
+    rescue
+      postgrex_error in Postgrex.Error ->
+        {:error, %{exception: postgrex_error, consensus_block_numbers: ordered_consensus_block_number}}
+    end
   end
 
   defp update_block_second_degree_relations(blocks, %{timeout: timeout, timestamps: %{updated_at: updated_at}})

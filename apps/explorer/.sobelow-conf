@@ -1,7 +1,7 @@
 [
   verbose: false,
   private: true,
-  skip: false,
+  skip: true,
   exit: "low",
   format: "compact",
   ignore: ["Config.HTTPS"],
