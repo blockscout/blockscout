@@ -47,10 +47,9 @@ defmodule Explorer.Chain.Address.Name do
   defp trim_name(%Changeset{valid?: false} = changeset), do: changeset
 
   defp trim_name(%Changeset{valid?: true} = changeset) do
-    if name = get_change(changeset, :name) do
-      put_change(changeset, :name, String.trim(name))
-    else
-      changeset
+    case get_change(changeset, :name) do
+      nil -> changeset
+      name -> put_change(changeset, :name, String.trim(name))
     end
   end
 end
