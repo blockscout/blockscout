@@ -106,8 +106,8 @@ defmodule Indexer.CoinBalance.Fetcher do
     |> Enum.group_by(fn %{address_hash: address_hash} -> address_hash end)
     |> Map.values()
     |> Stream.map(&Enum.max_by(&1, fn %{block_number: block_number} -> block_number end))
-    |> Enum.map(fn %{address_hash: addresss_hash, block_number: block_number, value: value} ->
-      %{hash: addresss_hash, fetched_coin_balance_block_number: block_number, fetched_coin_balance: value}
+    |> Enum.map(fn %{address_hash: address_hash, block_number: block_number, value: value} ->
+      %{hash: address_hash, fetched_coin_balance_block_number: block_number, fetched_coin_balance: value}
     end)
   end
 end
