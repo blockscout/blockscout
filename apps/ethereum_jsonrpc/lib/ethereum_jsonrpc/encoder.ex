@@ -37,7 +37,7 @@ defmodule EthereumJSONRPC.Encoder do
   end
 
   @doc """
-  Given a function selector and a list of arguments, returns their econded versions.
+  Given a function selector and a list of arguments, returns their encoded versions.
 
   This is what is expected on the Json RPC data parameter.
   """
