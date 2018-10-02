@@ -925,16 +925,55 @@ defmodule BlockScoutWeb.Etherscan do
 
   @account_txlistinternal_action %{
     name: "txlistinternal",
-    description: "Get internal transactions by transaction hash. Up to a maximum of 10,000 internal transactions.",
+    description:
+      "Get internal transactions by transaction or address hash. Up to a maximum of 10,000 internal transactions.",
     required_params: [
       %{
         key: "txhash",
         placeholder: "transactionHash",
         type: "string",
-        description: "Transaction hash. Hash of contents of the transaction."
+        description:
+          "Transaction hash. Hash of contents of the transaction. A transcation hash or address hash is required."
       }
     ],
-    optional_params: [],
+    optional_params: [
+      %{
+        key: "address",
+        placeholder: "addressHash",
+        type: "string",
+        description: "A 160-bit code used for identifying accounts. An address hash or transaction hash is required."
+      },
+      %{
+        key: "sort",
+        type: "string",
+        description:
+          "A string representing the order by block number direction. Defaults to ascending order. Available values: asc, desc. WARNING: Only available if 'address' is provided."
+      },
+      %{
+        key: "startblock",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the starting block number. WARNING: Only available if 'address' is provided."
+      },
+      %{
+        key: "endblock",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the ending block number. WARNING: Only available if 'address' is provided."
+      },
+      %{
+        key: "page",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the page number to be used for pagination. 'offset' must be provided in conjunction. WARNING: Only available if 'address' is provided."
+      },
+      %{
+        key: "offset",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the maximum number of records to return when paginating. 'page' must be provided in conjunction. WARNING: Only available if 'address' is provided."
+      }
+    ],
     responses: [
       %{
         code: "200",
@@ -1281,7 +1320,7 @@ defmodule BlockScoutWeb.Etherscan do
   @token_gettoken_action %{
     name: "getToken",
     description:
-      "Get <a href='https://github.com/ethereum/EIPs/issues/20'>ERC-20</a>" <>
+      "Get <a href='https://github.com/ethereum/EIPs/issues/20'>ERC-20</a> " <>
         "or <a href='https://github.com/ethereum/EIPs/issues/721'>ERC-721</a> token by contract address.",
     required_params: [
       %{

@@ -414,7 +414,7 @@ defmodule Explorer.EtherscanTest do
     end
   end
 
-  describe "list_internal_transactions/1" do
+  describe "list_internal_transactions/1 with transaction hash" do
     test "with empty db" do
       transaction = build(:transaction)
 
@@ -505,6 +505,189 @@ defmodule Explorer.EtherscanTest do
     end
 
     # Note that `list_internal_transactions/1` relies on
+    # `Chain.where_transaction_has_multiple_transactions/1` to ensure the
+    # following behavior:
+    #
+    # * exclude internal transactions of type call with no siblings in the
+    #   transaction
+    #
+    # * include internal transactions of type create, reward, or suicide
+    #   even when they are alone in the parent transaction
+    #
+    # These two requirements are tested in `Explorer.ChainTest`.
+  end
+
+  describe "list_internal_transactions/2 with address hash" do
+    test "with empty db" do
+      address = build(:address)
+
+      assert Etherscan.list_internal_transactions(address.hash) == []
+    end
+
+    test "response includes all the expected fields" do
+      address = insert(:address)
+      contract_address = insert(:contract_address)
+
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert(from_address: address, to_address: nil)
+        |> with_contract_creation(contract_address)
+        |> with_block(block)
+
+      internal_transaction =
+        :internal_transaction_create
+        |> insert(transaction: transaction, index: 0, from_address: address)
+        |> with_contract_creation(contract_address)
+
+      [found_internal_transaction] = Etherscan.list_internal_transactions(address.hash)
+
+      expected = %{
+        block_number: block.number,
+        block_timestamp: block.timestamp,
+        from_address_hash: internal_transaction.from_address_hash,
+        to_address_hash: internal_transaction.to_address_hash,
+        value: internal_transaction.value,
+        created_contract_address_hash: internal_transaction.created_contract_address_hash,
+        input: internal_transaction.input,
+        type: internal_transaction.type,
+        gas: internal_transaction.gas,
+        gas_used: internal_transaction.gas_used,
+        error: internal_transaction.error
+      }
+
+      assert found_internal_transaction == expected
+    end
+
+    test "with address with 0 internal transactions" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      assert Etherscan.list_internal_transactions(transaction.from_address_hash) == []
+    end
+
+    test "with address with multiple internal transactions" do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      for index <- 0..2 do
+        internal_transaction_details = %{
+          transaction: transaction,
+          index: index,
+          from_address: address
+        }
+
+        insert(:internal_transaction, internal_transaction_details)
+      end
+
+      found_internal_transactions = Etherscan.list_internal_transactions(address.hash)
+
+      assert length(found_internal_transactions) == 3
+    end
+
+    test "only returns internal transactions associated to the given address" do
+      address1 = insert(:address)
+      address2 = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:internal_transaction, transaction: transaction, index: 0, created_contract_address: address1)
+      insert(:internal_transaction, transaction: transaction, index: 1, from_address: address1)
+      insert(:internal_transaction, transaction: transaction, index: 2, to_address: address1)
+      insert(:internal_transaction, transaction: transaction, index: 3, from_address: address2)
+
+      internal_transactions1 = Etherscan.list_internal_transactions(address1.hash)
+
+      assert length(internal_transactions1) == 3
+
+      internal_transactions2 = Etherscan.list_internal_transactions(address2.hash)
+
+      assert length(internal_transactions2) == 1
+    end
+
+    test "with pagination options" do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      for index <- 0..2 do
+        internal_transaction_details = %{
+          transaction: transaction,
+          index: index,
+          from_address: address
+        }
+
+        insert(:internal_transaction, internal_transaction_details)
+      end
+
+      options1 = %{
+        page_number: 1,
+        page_size: 2
+      }
+
+      found_internal_transactions1 = Etherscan.list_internal_transactions(address.hash, options1)
+
+      assert length(found_internal_transactions1) == 2
+
+      options2 = %{
+        page_number: 2,
+        page_size: 2
+      }
+
+      found_internal_transactions2 = Etherscan.list_internal_transactions(address.hash, options2)
+
+      assert length(found_internal_transactions2) == 1
+    end
+
+    test "with start and end block options" do
+      blocks = [_, second_block, third_block, _] = insert_list(4, :block)
+      address = insert(:address)
+
+      for block <- blocks, index <- 0..1 do
+        transaction =
+          :transaction
+          |> insert()
+          |> with_block(block)
+
+        internal_transaction_details = %{
+          transaction: transaction,
+          index: index,
+          from_address: address
+        }
+
+        insert(:internal_transaction, internal_transaction_details)
+      end
+
+      options = %{
+        start_block: second_block.number,
+        end_block: third_block.number
+      }
+
+      found_internal_transactions = Etherscan.list_internal_transactions(address.hash, options)
+
+      expected_block_numbers = [second_block.number, third_block.number]
+
+      assert length(found_internal_transactions) == 4
+
+      for internal_transaction <- found_internal_transactions do
+        assert internal_transaction.block_number in expected_block_numbers
+      end
+    end
+
+    # Note that `list_internal_transactions/2` relies on
     # `Chain.where_transaction_has_multiple_transactions/1` to ensure the
     # following behavior:
     #
