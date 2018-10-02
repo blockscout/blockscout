@@ -2346,7 +2346,7 @@ defmodule Explorer.ChainTest do
   end
 
   describe "stream_unfetched_uncle_hashes/2" do
-    test "does not return uncle hashes where t:Explorer.Chain.Block.SecondDegreeRelation.t/0 unclue_fetched_at is not nil" do
+    test "does not return uncle hashes where t:Explorer.Chain.Block.SecondDegreeRelation.t/0 uncle_fetched_at is not nil" do
       %Block.SecondDegreeRelation{nephew: %Block{}, uncle_hash: uncle_hash} = insert(:block_second_degree_relation)
 
       assert {:ok, [^uncle_hash]} = Explorer.Chain.stream_unfetched_uncle_hashes([], &[&1 | &2])
