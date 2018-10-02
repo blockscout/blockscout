@@ -248,7 +248,7 @@ defmodule Explorer.Factory do
       gas: gas,
       gas_used: gas_used,
       output: %Data{bytes: <<1>>},
-      # caller MUST suppy `index`
+      # caller MUST supply `index`
       trace_address: [],
       # caller MUST supply `transaction` because it can't be built lazily to allow overrides without creating an extra
       # transaction
@@ -269,7 +269,7 @@ defmodule Explorer.Factory do
       from_address: build(:address),
       gas: gas,
       gas_used: gas_used,
-      # caller MUST suppy `index`
+      # caller MUST supply `index`
       init: data(:internal_transaction_init),
       trace_address: [],
       # caller MUST supply `transaction` because it can't be built lazily to allow overrides without creating an extra
