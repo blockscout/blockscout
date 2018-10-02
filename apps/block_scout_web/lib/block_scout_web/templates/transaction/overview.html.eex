@@ -26,9 +26,9 @@
 
           <h3 data-test="transaction_detail_hash"><%= @transaction %> </h3>
           <span class="d-block mb-2 text-muted">
-            <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:from, nil) |> BlockScoutWeb.ViewHelpers.render_partial() %>
+            <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:from, nil) |> BlockScoutWeb.RenderHelpers.render_partial() %>
             <span class="text-muted">  &rarr; </span>
-            <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:to, nil) |> BlockScoutWeb.ViewHelpers.render_partial() %>
+            <%= @transaction |> BlockScoutWeb.AddressView.address_partial_selector(:to, nil) |> BlockScoutWeb.RenderHelpers.render_partial() %>
           </span>
           <div class="d-flex flex-row justify-content-start text-muted">
             <span class="mr-4 text-<%= BlockScoutWeb.TransactionView.type_suffix(@transaction) %>"><%= BlockScoutWeb.TransactionView.transaction_display_type(@transaction) %></span>
