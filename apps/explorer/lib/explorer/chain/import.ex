@@ -211,7 +211,7 @@ defmodule Explorer.Chain.Import do
         with the same hash.
 
         *NOTE*: Because the repository transaction for a pending `Explorer.Chain.Transaction`s could `COMMIT` after the
-        repository transaction for that same transaction being collated into a block, writers, it is recomended to use
+        repository transaction for that same transaction being collated into a block, writers, it is recommended to use
         `:nothing` for pending transactions and `:replace_all` for collated transactions, so that collated transactions
         win.
       * `:params` - `list` of params for `Explorer.Chain.Transaction.changeset/2`.
