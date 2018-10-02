@@ -55,14 +55,14 @@
 
 .dashboard-banner-chart {
   grid-area: chart;
-  // 15px padding matches the Bootstrap conatiner padding.
+  // 15px padding matches the Bootstrap container padding.
   padding: 1rem 1rem 1rem 0;
 }
 
 .dashboard-banner-chart-legend {
   grid-area: legend;
   display: flex;
-  // 15px padding matches the Bootstrap conatiner padding.
+  // 15px padding matches the Bootstrap container padding.
   padding: 1rem 1rem;
 
   &-item {
@@ -93,7 +93,7 @@
   display: flex;
   align-items: center;
   justify-content: space-around;
-  // 15px padding matches the Bootstrap conatiner padding.
+  // 15px padding matches the Bootstrap container padding.
   padding-right: 15px;
   background-color: $primary;
   box-shadow: -10px 0 15px 0 rgba($black, 0.14);
