@@ -437,7 +437,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Converts the `Explorer.Chain.Data.t:t/0` to `iodata` representation that can be written to users effciently.
+  Converts the `Explorer.Chain.Data.t:t/0` to `iodata` representation that can be written to users efficiently.
 
       iex> %Explorer.Chain.Data{
       ...>   bytes: <<>>
