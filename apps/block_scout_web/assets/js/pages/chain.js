@@ -47,23 +47,23 @@ export function reducer (state = initialState, action) {
           replaceBlock: blockNumber,
           skippedBlockNumbers: _.without(state.skippedBlockNumbers, blockNumber)
         })
-      } else if (blockNumber < _.last(state.blockNumbers)){
+      } else if (blockNumber < _.last(state.blockNumbers)) {
         return Object.assign({}, state, { newBlock: null })
       } else {
         let skippedBlockNumbers = state.skippedBlockNumbers.slice(0)
         if (blockNumber > state.blockNumbers[0] + 1) {
-          let last_placeholder = state.blockNumbers[0] + 1
-          if (blockNumber - last_placeholder > 3) {
-            last_placeholder = blockNumber - 3
+          let lastPlaceholder = state.blockNumbers[0] + 1
+          if (blockNumber - lastPlaceholder > 3) {
+            lastPlaceholder = blockNumber - 3
             skippedBlockNumbers = []
           }
-          for (let i = last_placeholder; i < blockNumber; i++) {
+          for (let i = lastPlaceholder; i < blockNumber; i++) {
             skippedBlockNumbers.push(i)
           }
         }
         const newBlockNumbers = _.chain([blockNumber])
           .union(skippedBlockNumbers, state.blockNumbers)
-          .orderBy([],['desc'])
+          .orderBy([], ['desc'])
           .slice(0, 4)
           .value()
 
@@ -198,7 +198,7 @@ if ($chainDetailsPage.length) {
   })
 }
 
-function placeHolderBlock(blockNumber) {
+function placeHolderBlock (blockNumber) {
   return `
     <div class="col-sm-3 fade-up-blocks-chain mb-3 mb-sm-0" data-selector="place-holder" data-block-number="${blockNumber}">
       <div class="tile tile-type-block d-flex flex-column">

@@ -38,7 +38,7 @@ export function reducer (state = initialState, action) {
           replaceBlock: blockNumber,
           skippedBlockNumbers: _.without(state.skippedBlockNumbers, blockNumber)
         })
-      } else if (blockNumber < _.last(state.blockNumbers)){
+      } else if (blockNumber < _.last(state.blockNumbers)) {
         return state
       } else {
         let skippedBlockNumbers = state.skippedBlockNumbers.slice(0)
@@ -47,8 +47,13 @@ export function reducer (state = initialState, action) {
             skippedBlockNumbers.push(i)
           }
         }
+        const newBlockNumbers = _.chain([blockNumber])
+          .union(skippedBlockNumbers, state.blockNumbers)
+          .orderBy([], ['desc'])
+          .value()
+
         return Object.assign({}, state, {
-          blockNumbers: _.chain([blockNumber]).union(skippedBlockNumbers, state.blockNumbers).orderBy([],['desc']).value(),
+          blockNumbers: newBlockNumbers,
           newBlock: action.msg.blockHtml,
           replaceBlock: null,
           skippedBlockNumbers
@@ -103,7 +108,7 @@ if ($blockListPage.length) {
   })
 }
 
-function placeHolderBlock(blockNumber) {
+function placeHolderBlock (blockNumber) {
   return `
     <div class="my-3" style="height: 98px;">
       <div
