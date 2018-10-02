@@ -13,7 +13,7 @@ defmodule EthereumJSONRPC.WebSocket.Registration do
 
     * `:json_rpc` - a generic JSONRPC request that just needs to be returned to the caller based on `id` matching.
     * `:subscribe` - an `eth_subscribe` request will be issued by the caller.  Its response need to be returned to
-      caller **AND** the client needs to `EthereumsJSONRPC.Subscription.publish/2` any `eth_subscription` messages to
+      caller **AND** the client needs to `EthereumJSONRPC.Subscription.publish/2` any `eth_subscription` messages to
       the caller until the `EthereumJSONRPC.WebSocket.Client.unsubscribe/1` is called.
     * `:unsubscribe` - an `eth_unsubscribe` request will be issued by the caller.  Its response needs to be returned to
       caller **AND** the client needs to stop tracking the subscription.
