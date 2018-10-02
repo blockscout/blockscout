@@ -1068,15 +1068,21 @@ defmodule Explorer.Chain.Import do
 
   defp lose_consensus(blocks_changes, %{timeout: timeout, timestamps: %{updated_at: updated_at}})
        when is_list(blocks_changes) do
-    ordered_block_number =
+    ordered_consensus_block_number =
       blocks_changes
-      |> MapSet.new(& &1.number)
+      |> Enum.reduce(MapSet.new(), fn
+        %{consensus: true, number: number}, acc ->
+          MapSet.put(acc, number)
+
+        %{consensus: false}, acc ->
+          acc
+      end)
       |> Enum.sort()
 
     query =
       from(
         block in Block,
-        where: block.number in ^ordered_block_number,
+        where: block.number in ^ordered_consensus_block_number,
         update: [
           set: [
             consensus: false,
@@ -1091,7 +1097,7 @@ defmodule Explorer.Chain.Import do
       {:ok, result}
     rescue
       postgrex_error in Postgrex.Error ->
-        {:error, %{exception: postgrex_error, block_numbers: ordered_block_number}}
+        {:error, %{exception: postgrex_error, consensus_block_numbers: ordered_consensus_block_number}}
     end
   end
 
