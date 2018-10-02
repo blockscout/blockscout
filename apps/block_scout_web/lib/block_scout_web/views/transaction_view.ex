@@ -155,7 +155,7 @@ defmodule BlockScoutWeb.TransactionView do
 
   The tabs on mobile are represented by a dropdown list, which has a title. This title is the currently selected tab name. This function returns that name, properly gettext'ed.
 
-  The list of possible tab names for this page is repesented by the attribute @tab.
+  The list of possible tab names for this page is represented by the attribute @tab.
 
   Raises an error if there is no match, so a developer of a new tab must include it in the list.
 
