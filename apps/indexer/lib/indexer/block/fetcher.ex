@@ -100,7 +100,7 @@ defmodule Indexer.Block.Fetcher do
          {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_without_receipts)},
          %{logs: logs, receipts: receipts} = receipt_params,
          transactions_with_receipts = Receipts.put(transactions_without_receipts, receipts),
-         %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.from_log_params(logs),
+         %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
          addresses =
            AddressExtraction.extract_addresses(%{
              blocks: blocks,

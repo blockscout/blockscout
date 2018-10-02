@@ -1,12 +1,12 @@
-defmodule Indexer.TokenTransfersTest do
+defmodule Indexer.TokenTransfer.ParserTest do
   use ExUnit.Case
 
   import ExUnit.CaptureLog
 
-  alias Indexer.TokenTransfers
+  alias Indexer.TokenTransfer.Parser
 
-  describe "from_log_params/2" do
-    test "from_log_params/2 parses logs for tokens and token transfers" do
+  describe "parse/1" do
+    test "parse/1 parses logs for tokens and token transfers" do
       [log_1, _log_2, log_3] =
         logs = [
           %{
@@ -82,7 +82,7 @@ defmodule Indexer.TokenTransfersTest do
         ]
       }
 
-      assert TokenTransfers.from_log_params(logs) == expected
+      assert Parser.parse(logs) == expected
     end
 
     test "parses ERC-721 transfer with addresses in data field" do
@@ -121,7 +121,7 @@ defmodule Indexer.TokenTransfersTest do
         ]
       }
 
-      assert TokenTransfers.from_log_params([log]) == expected
+      assert Parser.parse([log]) == expected
     end
 
     test "logs error with unrecognized token transfer format" do
@@ -138,7 +138,7 @@ defmodule Indexer.TokenTransfersTest do
         type: "mined"
       }
 
-      error = capture_log(fn -> %{tokens: [], token_transfers: []} = TokenTransfers.from_log_params([log]) end)
+      error = capture_log(fn -> %{tokens: [], token_transfers: []} = Parser.parse([log]) end)
       assert error =~ ~r"unknown token transfer"i
     end
   end

@@ -25,6 +25,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   @blocks_batch_size 10
   @blocks_concurrency 10
+  @sequence_name :block_catchup_sequencer
 
   defstruct blocks_batch_size: @blocks_batch_size,
             blocks_concurrency: @blocks_concurrency,
@@ -88,7 +89,9 @@ defmodule Indexer.Block.Catchup.Fetcher do
             :ok
 
           _ ->
-            {:ok, sequence} = Sequence.start_link(ranges: missing_ranges, step: -1 * blocks_batch_size)
+            sequence_opts = [ranges: missing_ranges, step: -1 * blocks_batch_size]
+            gen_server_opts = [name: @sequence_name]
+            {:ok, sequence} = Sequence.start_link(sequence_opts, gen_server_opts)
             Sequence.cap(sequence)
 
             stream_fetch_and_import(state, sequence)
@@ -222,5 +225,21 @@ defmodule Indexer.Block.Catchup.Fetcher do
     end
 
     :ok
+  end
+
+  @doc """
+  Puts a list of block numbers to the front of the sequencing queue.
+  """
+  @spec enqueue([non_neg_integer()]) :: :ok | {:error, :queue_unavailable}
+  def enqueue(block_numbers) do
+    if Process.whereis(@sequence_name) do
+      for block_number <- block_numbers do
+        Sequence.queue_front(@sequence_name, block_number..block_number)
+      end
+
+      :ok
+    else
+      {:error, :queue_unavailable}
+    end
   end
 end

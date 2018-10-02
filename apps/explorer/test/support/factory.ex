@@ -328,6 +328,7 @@ defmodule Explorer.Factory do
       second_topic: zero_padded_address_hash_string(from_address.hash),
       third_topic: zero_padded_address_hash_string(to_address.hash),
       address_hash: token_contract_address.hash,
+      address: nil,
       data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
       transaction: transaction
     }

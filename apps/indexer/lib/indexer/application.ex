@@ -11,7 +11,8 @@ defmodule Indexer.Application do
     InternalTransaction,
     PendingTransaction,
     Token,
-    TokenBalance
+    TokenBalance,
+    TokenTransfer
   }
 
   @impl Application
@@ -36,7 +37,8 @@ defmodule Indexer.Application do
       {Token.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments], [name: Token.Supervisor]]},
       {TokenBalance.Supervisor,
        [[json_rpc_named_arguments: json_rpc_named_arguments], [name: TokenBalance.Supervisor]]},
-      {Block.Supervisor, [block_fetcher_supervisor_named_arguments, [name: Block.Supervisor]]}
+      {Block.Supervisor, [block_fetcher_supervisor_named_arguments, [name: Block.Supervisor]]},
+      {TokenTransfer.Uncataloged.Supervisor, [[], [name: TokenTransfer.Uncataloged.Supervisor]]}
     ]
 
     opts = [strategy: :one_for_one, name: Indexer.Supervisor]

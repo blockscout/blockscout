@@ -1815,6 +1815,32 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Returns a list of block numbers token transfer `t:Log.t/0`s that don't have an
+  associated `t:TokenTransfer.t/0` record.
+  """
+  def uncataloged_token_transfer_block_numbers do
+    query =
+      from(l in Log,
+        join: t in assoc(l, :transaction),
+        left_join: tf in TokenTransfer,
+        on: tf.transaction_hash == l.transaction_hash and tf.log_index == l.index,
+        where: l.first_topic == unquote(TokenTransfer.constant()),
+        where: is_nil(tf.id),
+        select: t.block_number,
+        distinct: t.block_number
+      )
+
+    Repo.transaction(
+      fn ->
+        query
+        |> Repo.stream(timeout: :infinity)
+        |> Enum.reduce([], &[&1 | &2])
+      end,
+      timeout: :infinity
+    )
+  end
+
+  @doc """
   Fetches a `t:Token.t/0` by an address hash.
   """
   @spec token_from_address_hash(Hash.Address.t()) :: {:ok, Token.t()} | {:error, :not_found}
