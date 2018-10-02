@@ -414,7 +414,7 @@ defmodule Explorer.Chain do
       ...> to_string(hash)
       "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b"
 
-  A `String.t/0` value for `Explorer.Chain.Addres.t/0` `hash` must have 40 hexadecimal characters after the `0x` prefix
+  A `String.t/0` value for `Explorer.Chain.Address.t/0` `hash` must have 40 hexadecimal characters after the `0x` prefix
   to prevent short- and long-hash transcription errors.
 
       iex> {:error, %Ecto.Changeset{errors: errors}} = Explorer.Chain.create_address(
