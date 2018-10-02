@@ -154,7 +154,7 @@ defmodule Explorer.Chain.Hash.Address do
 
   ## Error Descriptions
 
-  * `:invalid_characters` - String used non-hexidecimal characters
+  * `:invalid_characters` - String used non-hexadecimal characters
   * `:invalid_checksum` - Mixed-case string didn't pass [EIP-55 checksum](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-55.md)
   * `:invalid_length` - Addresses are expected to be 40 hex characters long
 
