@@ -242,10 +242,10 @@ defmodule EthereumJSONRPC.Transaction do
   end
 
   # chainId is *sometimes* nil
-  defp entry_to_elixir({"chainId" = key, chainId}) do
-    case chainId do
-      nil -> {key, chainId}
-      _ -> {key, quantity_to_integer(chainId)}
+  defp entry_to_elixir({"chainId" = key, chain_id}) do
+    case chain_id do
+      nil -> {key, chain_id}
+      _ -> {key, quantity_to_integer(chain_id)}
     end
   end
 end
