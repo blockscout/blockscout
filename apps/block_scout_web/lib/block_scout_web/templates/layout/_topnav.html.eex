@@ -1,7 +1,7 @@
 <nav class="navbar navbar-dark navbar-expand-lg navbar-primary" data-selector="navbar">
   <div class="container">
     <%= link to: chain_path(@conn, :show), class: "navbar-brand", "data-test": "header_logo" do %>
-      <img class="navbar-logo" src="<%= Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:logo] %>" />
+      <img class="navbar-logo" src="<%= logo() %>" />
     <% end %>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="<%= gettext("Toggle navigation") %>">
       <span class="navbar-toggler-icon"></span>
@@ -57,13 +57,13 @@
           <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <!-- ICON FOR MAINNET -->
             <span class="nav-link-icon">
-              <%= render BlockScoutWeb.IconsView, "_network_icon.html" %>
+              <%= render BlockScoutWeb.IconsView, network_icon_partial() %>
             </span>
             <!-- ICON FOR TESTNET -->
             <!-- <span class="nav-link-icon">
               <%= render BlockScoutWeb.IconsView, "_test_network_icon.html" %>
             </span> -->
-            <%= gettext("POA Core") %>
+            <%= subnetwork_title() %>
           </a>
           <div class="dropdown-menu" aria-labelledby="navbarDropdown">
             <a class="dropdown-item" href="https://sokol.blockscout.com/"><%= gettext("POA Sokol") %></a>

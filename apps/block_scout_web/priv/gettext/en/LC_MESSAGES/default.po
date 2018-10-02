@@ -124,11 +124,6 @@ msgid "Block Number"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:7
-msgid "BlockScout"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/block/index.html.eex:10
 #: lib/block_scout_web/templates/chain/show.html.eex:56
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:16
@@ -586,7 +581,6 @@ msgid "Owner Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:66
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:70
 msgid "POA Core"
 msgstr ""
@@ -1070,4 +1064,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:14
 msgid "More pending transactions have come in"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/layout_view.ex:21
+msgid "%{subnetwork} %{network} Explorer"
 msgstr ""

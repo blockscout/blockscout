@@ -10,12 +10,19 @@ config :block_scout_web,
   namespace: BlockScoutWeb,
   ecto_repos: [Explorer.Repo]
 
-config :block_scout_web, BlockScoutWeb.Chain, logo: "/images/poa_logo.svg"
+config :block_scout_web, BlockScoutWeb.Chain,
+  network: System.get_env("NETWORK"),
+  subnetwork: System.get_env("SUBNETWORK"),
+  network_icon: System.get_env("NETWORK_ICON"),
+  logo: System.get_env("LOGO")
 
 # Configures the endpoint
 config :block_scout_web, BlockScoutWeb.Endpoint,
   instrumenters: [BlockScoutWeb.Prometheus.Instrumenter],
-  url: [host: "localhost"],
+  url: [
+    host: "localhost",
+    path: System.get_env("NETWORK_PATH") || "/"
+  ],
   render_errors: [view: BlockScoutWeb.ErrorView, accepts: ~w(html json)],
   pubsub: [name: BlockScoutWeb.PubSub, adapter: Phoenix.PubSub.PG2]
 
