@@ -1132,7 +1132,7 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Calculates the ranges of missing blocks in `range`.
+  Calculates the ranges of missing consensus blocks in `range`.
 
   When there are no blocks, the entire range is missing.
 
@@ -1196,7 +1196,8 @@ defmodule Explorer.Chain do
                   FROM generate_series(? :: bigint, ? :: bigint, ? :: bigint) AS number
                   EXCEPT
                   SELECT blocks.number
-                  FROM blocks)
+                  FROM blocks
+                  WHERE blocks.consensus = true)
             SELECT no_previous.number AS minimum,
                    (SELECT MIN(no_next.number)
                     FROM missing_blocks AS no_next
