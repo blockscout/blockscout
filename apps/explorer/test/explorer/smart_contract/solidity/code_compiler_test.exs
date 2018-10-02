@@ -126,11 +126,11 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
       assert contract_inner_info == response
     end
 
-    test "the contract info is returned when the name matches with a `:` sufix" do
+    test "the contract info is returned when the name matches with a `:` suffix" do
       name = "Name"
-      name_with_sufix = ":Name"
+      name_with_suffix = ":Name"
       contract_inner_info = %{"abi" => %{}, "bytecode" => "", "opcodes" => ""}
-      contract_info = %{name_with_sufix => contract_inner_info}
+      contract_info = %{name_with_suffix => contract_inner_info}
 
       response = CodeCompiler.get_contract_info(contract_info, name)
 
