@@ -5,7 +5,7 @@
       <div class="card">
         <div class="card-body">
           <h1 class="card-title"> <%= gettext("Block Details") %> </h1>
-          <!-- Bolck Height -->
+          <!-- Block Height -->
           <h3 data-test="block_detail_number"> <%= gettext "Block Height #%{height}", height: @block.number %> </h3>
           <div class="d-flex flex-row justify-content-start text-muted">
             <!-- # of Transactions -->
