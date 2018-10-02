@@ -5,8 +5,12 @@ defmodule Explorer.Application do
 
   use Application
 
+  alias Explorer.Repo.PrometheusLogger
+
   @impl Application
   def start(_type, _args) do
+    PrometheusLogger.setup()
+
     # Children to start in all environments
     base_children = [
       Explorer.Repo,
