@@ -8,7 +8,7 @@ defmodule Indexer.AddressExtraction do
   above.
 
   This module is responsible for collecting the hashes that are present as attributes in the already
-  strucutured entities and structuring them as a list of unique Addresses.
+  structured entities and structuring them as a list of unique Addresses.
 
   ## Attributes
 
