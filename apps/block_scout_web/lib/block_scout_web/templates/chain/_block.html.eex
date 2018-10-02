@@ -1,12 +1,10 @@
-<div class="col-sm-3 fade-up-blocks-chain mb-3 mb-sm-0" data-selector="chain-block" data-block-number="<%= @block.number %>">
-  <div class="tile tile-type-block d-flex flex-column">
-    <span data-selector="block-number"><%= to_string(@block.number) %></span>
-    <div>
-      <span class="mr-2"> <%= Enum.count(@block.transactions) %> Transactions </span>
-      <span class="text-nowrap" data-from-now="<%= @block.timestamp %>"> </span>
-    </div>
-    <span class="text-truncate">
-      <%= gettext "Miner" %>
-    </span>
+<div class="tile tile-type-block d-flex flex-column fade-up" data-selector="chain-block" data-block-number="<%= @block.number %>">
+  <span data-selector="block-number"><%= to_string(@block.number) %></span>
+  <div>
+    <span class="mr-2"> <%= Enum.count(@block.transactions) %> Transactions </span>
+    <span class="text-nowrap" data-from-now="<%= @block.timestamp %>"> </span>
   </div>
+  <span class="text-truncate">
+    <%= gettext "Miner" %>
+  </span>
 </div>

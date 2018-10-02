@@ -171,7 +171,7 @@ if ($chainDetailsPage.length) {
             })
           }
           $blockList.children().last().remove()
-          $blockList.prepend(state.newBlock)
+          $blockList.prepend(newBlockHtml(state.newBlock))
         }
         updateAllAges()
       }
@@ -200,10 +200,26 @@ if ($chainDetailsPage.length) {
   })
 }
 
-function placeHolderBlock(blockNumber) {
+function newBlockHtml (blockHtml) {
   return `
-    <div class="col-sm-3 fade-up-blocks-chain mb-3 mb-sm-0" data-selector="place-holder" data-block-number="${blockNumber}">
-      <div class="tile tile-type-block d-flex flex-column">
+    <div class="col-lg-3 fade-up-blocks-chain mb-3 mb-lg-0">
+      ${blockHtml}
+    </div>
+  `
+}
+
+function placeHolderBlock (blockNumber) {
+  return `
+    <div
+      class="col-lg-3 fade-up-blocks-chain mb-3 mb-lg-0"
+      style="min-height: 98px;"
+    >
+      <div
+        class="tile tile-type-block d-flex align-items-center fade-up"
+        data-selector="place-holder"
+        data-block-number="${blockNumber}"
+        style="height: 98px;"
+      >
         <span class="loading-spinner-small ml-1 mr-4">
           <span class="loading-spinner-block-1"></span>
           <span class="loading-spinner-block-2"></span>
