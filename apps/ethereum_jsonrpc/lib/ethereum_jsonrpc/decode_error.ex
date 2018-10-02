@@ -8,7 +8,7 @@ defmodule EthereumJSONRPC.DecodeError do
 
   defmodule Request do
     @moduledoc """
-    Ethereum JSONRPC request whose `EthererumJSONRPC.DecodeError.Response` had a decode error.
+    Ethereum JSONRPC request whose `EthereumJSONRPC.DecodeError.Response` had a decode error.
     """
 
     @enforce_keys [:url, :body]
