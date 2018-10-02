@@ -8,11 +8,11 @@ defmodule Indexer.TokenTransfer.Uncataloged.Supervisor do
   alias Indexer.TokenTransfer.Uncataloged.Worker
 
   def child_spec([]) do
-    child_spec([[], []])
+    child_spec([[]])
   end
 
   def child_spec([init_arguments]) do
-    child_spec([init_arguments, []])
+    child_spec([init_arguments, [name: __MODULE__]])
   end
 
   def child_spec([_init_arguments, _gen_server_options] = start_link_arguments) do
@@ -37,7 +37,7 @@ defmodule Indexer.TokenTransfer.Uncataloged.Supervisor do
       {Task.Supervisor, name: Indexer.TokenTransfer.Uncataloged.TaskSupervisor}
     ]
 
-    opts = [strategy: :one_for_all, name: __MODULE__]
+    opts = [strategy: :one_for_all]
 
     Supervisor.init(children, opts)
   end
