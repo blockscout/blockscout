@@ -573,7 +573,7 @@ defmodule Indexer.Block.FetcherTest do
           assert second_address.fetched_coin_balance_block_number == block_number
 
         variant ->
-          raise ArgumentError, "Unsupport variant (#{variant})"
+          raise ArgumentError, "Unsupported variant (#{variant})"
       end
     end
   end
