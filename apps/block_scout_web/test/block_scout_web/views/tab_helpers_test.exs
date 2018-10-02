@@ -29,7 +29,7 @@ defmodule BlockScoutWeb.TabHelpersTest do
       assert TabHelpers.tab_active?(tab_name, request_path)
     end
 
-    test "macthes the tab name at any path level" do
+    test "matches the tab name at any path level" do
       tab_name_1 = "token_transfers"
       tab_name_2 = "tokens"
       request_path = "/page/0xSom3tH1ng/tokens/0xLuc4S/token_transfers/0xd4uMl1Gu1"
