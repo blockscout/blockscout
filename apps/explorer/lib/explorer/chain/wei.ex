@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Wei do
 
   ## Interfacing With Ecto
 
-  You can define a field in a schema to be of type Wei for convinience when dealing with Wei values.
+  You can define a field in a schema to be of type Wei for convenience when dealing with Wei values.
 
       schema "my_schema" do
         field :gas, Explorer.Chain.Wei
