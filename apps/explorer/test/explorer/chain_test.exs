@@ -2817,7 +2817,7 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "address_to_transactions_with_token_tranfers/2" do
+  describe "address_to_transactions_with_token_transfers/2" do
     test "paginates transactions by the block number" do
       address = insert(:address)
       token = insert(:token)
@@ -2853,7 +2853,9 @@ defmodule Explorer.ChainTest do
 
       result =
         address.hash
-        |> Chain.address_to_transactions_with_token_tranfers(token.contract_address_hash, paging_options: paging_options)
+        |> Chain.address_to_transactions_with_token_transfers(token.contract_address_hash,
+          paging_options: paging_options
+        )
         |> Enum.map(& &1.hash)
 
       assert result == [second_page.hash]
@@ -2886,7 +2888,7 @@ defmodule Explorer.ChainTest do
 
       result =
         address.hash
-        |> Chain.address_to_transactions_with_token_tranfers(token.contract_address_hash)
+        |> Chain.address_to_transactions_with_token_transfers(token.contract_address_hash)
         |> Enum.map(& &1.hash)
 
       assert result == [transaction.hash]

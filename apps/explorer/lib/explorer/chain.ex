@@ -233,8 +233,8 @@ defmodule Explorer.Chain do
       `:key` (in the form of `%{"inserted_at" => inserted_at}`). Results will be the transactions
       older than the `index` that are passed.
   """
-  @spec address_to_transactions_with_token_tranfers(Hash.t(), Hash.t(), [paging_options]) :: [Transaction.t()]
-  def address_to_transactions_with_token_tranfers(address_hash, token_hash, options \\ []) do
+  @spec address_to_transactions_with_token_transfers(Hash.t(), Hash.t(), [paging_options]) :: [Transaction.t()]
+  def address_to_transactions_with_token_transfers(address_hash, token_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     address_hash
