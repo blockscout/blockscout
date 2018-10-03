@@ -1019,7 +1019,9 @@ defmodule Explorer.Chain.Import do
   end
 
   defp where_forked(blocks_changes) when is_list(blocks_changes) do
-    Enum.reduce(blocks_changes, Transaction, fn %{consensus: consensus, hash: hash, number: number}, acc ->
+    initial = from(t in Transaction, where: false)
+
+    Enum.reduce(blocks_changes, initial, fn %{consensus: consensus, hash: hash, number: number}, acc ->
       case consensus do
         false ->
           from(transaction in acc, or_where: transaction.block_hash == ^hash and transaction.block_number == ^number)

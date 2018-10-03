@@ -1631,10 +1631,10 @@ defmodule Explorer.Chain.ImportTest do
     end
 
     # https://github.com/poanetwork/blockscout/issues/850 regression test
-    test "derive_transaction_forks returns errors" do
+    test "derive_transaction_forks does not try to fork pending transactions when there are no blocks" do
       _pending_transaction = insert(:transaction)
 
-      {:error, :derive_transaction_forks, %Postgrex.Error{postgres: %{code: :not_null_violation, column: "index"}}, _} =
+      {:ok, %{derive_transaction_forks: []}} =
         Import.all(%{
           blocks: %{
             params: []
