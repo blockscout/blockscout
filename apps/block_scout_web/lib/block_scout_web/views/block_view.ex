@@ -42,4 +42,6 @@ defmodule BlockScoutWeb.BlockView do
   def formatted_timestamp(%Block{timestamp: timestamp}) do
     Timex.format!(timestamp, "%b-%d-%Y %H:%M:%S %p %Z", :strftime)
   end
+
+  def uncle?(%Block{consensus: consensus}), do: !consensus
 end

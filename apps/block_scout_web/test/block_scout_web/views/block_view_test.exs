@@ -26,4 +26,18 @@ defmodule BlockScoutWeb.BlockViewTest do
                BlockView.formatted_timestamp(block)
     end
   end
+
+  describe "uncle?/1" do
+    test "returns true for an uncle block" do
+      uncle = insert(:block, consensus: false)
+
+      assert BlockView.uncle?(uncle)
+    end
+
+    test "returns false for a block" do
+      block = insert(:block)
+
+      refute BlockView.uncle?(block)
+    end
+  end
 end

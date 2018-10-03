@@ -1,8 +1,10 @@
 defmodule BlockScoutWeb.BlockPage do
   @moduledoc false
 
+  use Phoenix.ConnTest
   use Wallaby.DSL
 
+  import BlockScoutWeb.Router.Helpers
   import Wallaby.Query, only: [css: 1, css: 2]
 
   alias Explorer.Chain.{Block, InternalTransaction, Transaction}
@@ -13,6 +15,10 @@ defmodule BlockScoutWeb.BlockPage do
 
   def detail_number(%Block{number: block_number}) do
     css("[data-test='block_detail_number']", text: to_string(block_number))
+  end
+
+  def page_type(type) do
+    css("[data-test='detail_type']", text: type)
   end
 
   def token_transfers(%Transaction{hash: transaction_hash}, count: count) do
@@ -31,7 +37,7 @@ defmodule BlockScoutWeb.BlockPage do
     css("[data-transaction-hash='#{transaction_hash}'] [data-test='transaction_status']")
   end
 
-  def visit_page(session, %Block{number: block_number}) do
-    visit(session, "/blocks/#{block_number}/transactions")
+  def visit_page(session, %Block{} = block) do
+    visit(session, block_path(build_conn(), :show, block))
   end
 end

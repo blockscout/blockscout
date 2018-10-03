@@ -33,6 +33,7 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
       session
       |> BlockPage.visit_page(block)
       |> assert_has(BlockPage.detail_number(block))
+      |> assert_has(BlockPage.page_type("Block Details"))
     end
 
     test "inserts place holder blocks if out of order block received", %{session: session} do
@@ -124,6 +125,15 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
       |> assert_has(BlockPage.token_transfers(transaction, count: 1))
       |> click(BlockPage.token_transfers_expansion(transaction))
       |> assert_has(BlockPage.token_transfers(transaction, count: 3))
+    end
+
+    test "show uncle detail page", %{session: session} do
+      uncle = insert(:block, consensus: false)
+
+      session
+      |> BlockPage.visit_page(uncle)
+      |> assert_has(BlockPage.detail_number(uncle))
+      |> assert_has(BlockPage.page_type("Uncle Details"))
     end
   end
 end
