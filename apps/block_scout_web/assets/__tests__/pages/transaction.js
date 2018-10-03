@@ -1,5 +1,16 @@
 import { reducer, initialState } from '../../js/pages/transaction'
 
+test('CHANNEL_DISCONNECTED', () => {
+  const state = initialState
+  const action = {
+    type: 'CHANNEL_DISCONNECTED'
+  }
+  const output = reducer(state, action)
+
+  expect(output.channelDisconnected).toBe(true)
+  expect(output.batchCountAccumulator).toBe(0)
+})
+
 test('RECEIVED_NEW_BLOCK', () => {
   const state = { ...initialState, blockNumber: 1 }
   const action = {

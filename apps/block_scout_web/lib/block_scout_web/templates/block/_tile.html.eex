@@ -1,4 +1,4 @@
-<div class="tile tile-type-block fade-up">
+<div class="tile tile-type-block fade-up" data-block-number="<%= to_string(@block.number) %>">
   <div class="row">
     <div class="col-md-8 col-lg-9">
       <!-- block height -->
@@ -6,8 +6,7 @@
             @block,
             class: "tile-title",
             to: block_path(BlockScoutWeb.Endpoint, :show, @block),
-            "data-test": "block_number",
-            "data-block-number": to_string(@block.number)
+            "data-selector": "block-number"
           ) %>
       <div>
         <!-- transactions -->

@@ -56,7 +56,9 @@
       <h2 class="card-title"><%= gettext "Blocks" %></h2>
       <div class="row" data-selector="chain-block-list">
         <%= for block <- @blocks do %>
-          <%= render BlockScoutWeb.ChainView, "_block.html", block: block %>
+          <div class="col-lg-3 fade-up-blocks-chain mb-3 mb-lg-0">
+            <%= render BlockScoutWeb.ChainView, "_block.html", block: block %>
+          </div>
         <% end %>
       </div>
     </div>
