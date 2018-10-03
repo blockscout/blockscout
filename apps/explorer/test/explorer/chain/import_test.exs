@@ -1629,5 +1629,17 @@ defmodule Explorer.Chain.ImportTest do
 
       assert DateTime.compare(timestamp, timestamp_before) == :eq
     end
+
+    # https://github.com/poanetwork/blockscout/issues/850 regression test
+    test "derive_transaction_forks returns errors" do
+      _pending_transaction = insert(:transaction)
+
+      {:error, :derive_transaction_forks, %Postgrex.Error{postgres: %{code: :not_null_violation, column: "index"}}, _} =
+        Import.all(%{
+          blocks: %{
+            params: []
+          }
+        })
+    end
   end
 end

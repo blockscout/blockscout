@@ -1047,7 +1047,7 @@ defmodule Explorer.Chain.Import do
         ]
       )
 
-    {sql, parameters} = SQL.to_sql(:all, Repo, query)
+    {sql, parameters} = SQL.to_sql(:all, Repo, query) |> IO.inspect()
 
     {:ok, %Postgrex.Result{columns: ["uncle_hash", "hash"], command: :insert, rows: rows}} =
       SQL.query(
