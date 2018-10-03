@@ -1,0 +1,5 @@
+<title>
+  <%= gettext "API for the %{subnetwork} - BlockScout", subnetwork: LayoutView.subnetwork_title() %>
+</title>
+<meta name="description" content="<%= gettext "API endpoints for the %{subnetwork}", subnetwork: LayoutView.subnetwork_title()%>">
+<meta name="keywords" content="API, Analytics, Balance, transactions, logs, events, internal transactions, <%= LayoutView.subnetwork_title() %>">
