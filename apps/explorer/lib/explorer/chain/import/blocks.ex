@@ -40,7 +40,7 @@ defmodule Explorer.Chain.Import.Blocks do
         # MUST be after `:derive_transaction_forks`, which depends on values in `transactions` table
         |> Multi.run(:fork_transactions, fn _ ->
           fork_transactions(%{
-            timeout: options[:transactions][:timeout] || Import.transactions_timeout(),
+            timeout: options[:transactions][:timeout] || Import.Transactions.timeout(),
             timestamps: timestamps,
             where_forked: where_forked
           })

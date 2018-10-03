@@ -43,7 +43,7 @@ defmodule Explorer.Chain.Import.InternalTransactions do
           update_transactions(
             internal_transactions,
             %{
-              timeout: options[:transactions][:timeout] || Import.transactions_timeout(),
+              timeout: options[:transactions][:timeout] || Import.Transactions.timeout(),
               timestamps: timestamps
             }
           )
