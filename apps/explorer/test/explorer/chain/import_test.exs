@@ -1461,52 +1461,124 @@ defmodule Explorer.Chain.ImportTest do
     end
 
     test "timeouts can be overridden" do
-      assert {:ok, _} =
+      miner_hash = address_hash()
+      uncle_miner_hash = address_hash()
+      block_number = 0
+      block_hash = block_hash()
+      uncle_hash = block_hash()
+      from_address_hash = address_hash()
+      to_address_hash = address_hash()
+      transaction_hash = transaction_hash()
+      token_contract_address_hash = address_hash()
+
+      assert {:ok,
+              %{
+                addresses: _,
+                balances: _,
+                blocks: _,
+                block_second_degree_relations: _,
+                internal_transactions: _,
+                logs: _,
+                token_transfers: _,
+                tokens: _,
+                transactions: _,
+                transaction_forks: _,
+                token_balances: _
+              }} =
                Import.all(%{
                  addresses: %{
-                   params: [],
+                   params: [
+                     %{hash: miner_hash},
+                     %{hash: uncle_miner_hash},
+                     %{hash: to_address_hash},
+                     %{hash: from_address_hash},
+                     %{hash: token_contract_address_hash}
+                   ],
                    timeout: 1
                  },
                  balances: %{
-                   params: [],
+                   params: [
+                     %{address_hash: miner_hash, block_number: block_number, value: nil},
+                     %{address_hash: uncle_miner_hash, block_number: block_number, value: nil}
+                   ],
                    timeout: 1
                  },
                  blocks: %{
-                   params: [],
+                   params: [
+                     params_for(:block, hash: block_hash, consensus: true, miner_hash: miner_hash, number: block_number),
+                     params_for(:block,
+                       hash: uncle_hash,
+                       consensus: false,
+                       miner_hash: uncle_miner_hash,
+                       number: block_number
+                     )
+                   ],
                    timeout: 1
                  },
                  block_second_degree_relations: %{
-                   params: [],
+                   params: [%{nephew_hash: block_hash, uncle_hash: uncle_hash}],
                    timeout: 1
                  },
                  internal_transactions: %{
-                   params: [],
+                   params: [
+                     params_for(:internal_transaction,
+                       transaction_hash: transaction_hash,
+                       index: 0,
+                       from_address_hash: from_address_hash,
+                       to_address_hash: to_address_hash
+                     )
+                   ],
                    timeout: 1
                  },
                  logs: %{
-                   params: [],
+                   params: [params_for(:log, transaction_hash: transaction_hash, address_hash: miner_hash)],
                    timeout: 1
                  },
                  token_transfers: %{
-                   params: [],
+                   params: [
+                     params_for(:token_transfer,
+                       from_address_hash: from_address_hash,
+                       to_address_hash: to_address_hash,
+                       token_contract_address_hash: token_contract_address_hash,
+                       transaction_hash: transaction_hash
+                     )
+                   ],
                    timeout: 1
                  },
                  tokens: %{
-                   params: [],
+                   params: [params_for(:token, contract_address_hash: token_contract_address_hash)],
                    on_conflict: :replace_all,
                    timeout: 1
                  },
                  transactions: %{
-                   params: [],
+                   params: [
+                     params_for(:transaction,
+                       hash: transaction_hash,
+                       block_hash: block_hash,
+                       block_number: block_number,
+                       index: 0,
+                       from_address_hash: from_address_hash,
+                       to_address_hash: to_address_hash,
+                       gas_used: 0,
+                       cumulative_gas_used: 0
+                     )
+                   ],
                    on_conflict: :replace_all,
                    timeout: 1
                  },
                  transaction_forks: %{
-                   params: [],
+                   params: [%{uncle_hash: uncle_hash, hash: transaction_hash, index: 0}],
                    timeout: 1
                  },
                  token_balances: %{
-                   params: [],
+                   params: [
+                     params_for(
+                       :token_balance,
+                       address_hash: to_address_hash,
+                       token_contract_address_hash: token_contract_address_hash,
+                       block_number: block_number
+                     )
+                   ],
                    timeout: 1
                  }
                })
@@ -1628,6 +1700,17 @@ defmodule Explorer.Chain.ImportTest do
              } = Repo.get(Block, block_hash_before)
 
       assert DateTime.compare(timestamp, timestamp_before) == :eq
+    end
+
+    # https://github.com/poanetwork/blockscout/issues/850 regression test
+    test "derive_transaction_forks does not run when there are no blocks" do
+      _pending_transaction = insert(:transaction)
+
+      assert Import.all(%{
+               blocks: %{
+                 params: []
+               }
+             }) == {:ok, %{}}
     end
   end
 end

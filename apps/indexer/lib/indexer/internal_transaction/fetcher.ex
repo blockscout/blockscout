@@ -7,8 +7,10 @@ defmodule Indexer.InternalTransaction.Fetcher do
 
   require Logger
 
+  import Indexer.Block.Fetcher, only: [async_import_coin_balances: 2]
+
   alias Explorer.Chain
-  alias Indexer.{AddressExtraction, BufferedTask, CoinBalance}
+  alias Indexer.{AddressExtraction, BufferedTask}
   alias Explorer.Chain.{Block, Hash}
 
   @behaviour BufferedTask
@@ -99,18 +101,15 @@ defmodule Indexer.InternalTransaction.Fetcher do
             {hash, block_number}
           end)
 
-        with {:ok, %{addresses: address_hashes}} <-
+        with {:ok, imported} <-
                Chain.import(%{
                  addresses: %{params: addresses_params},
                  internal_transactions: %{params: internal_transactions_params},
                  timeout: :infinity
                }) do
-          address_hashes
-          |> Enum.map(fn address_hash ->
-            block_number = Map.fetch!(address_hash_to_block_number, to_string(address_hash))
-            %{address_hash: address_hash, block_number: block_number}
-          end)
-          |> CoinBalance.Fetcher.async_fetch_balances()
+          async_import_coin_balances(imported, %{
+            address_hash_to_fetched_balance_block_number: address_hash_to_block_number
+          })
         else
           {:error, step, reason, _changes_so_far} ->
             Logger.debug(fn ->

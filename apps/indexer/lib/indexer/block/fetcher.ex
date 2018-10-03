@@ -6,7 +6,7 @@ defmodule Indexer.Block.Fetcher do
   require Logger
 
   alias Explorer.Chain.{Block, Import}
-  alias Indexer.{AddressExtraction, TokenTransfers}
+  alias Indexer.{CoinBalance, AddressExtraction, Token, TokenTransfers}
   alias Indexer.Address.{CoinBalances, TokenBalances}
   alias Indexer.Block.Fetcher.Receipts
 
@@ -161,6 +161,35 @@ defmodule Indexer.Block.Fetcher do
 
     callback_module.import(state, options_with_broadcast)
   end
+
+  def async_import_coin_balances(%{addresses: addresses}, %{
+        address_hash_to_fetched_balance_block_number: address_hash_to_block_number
+      }) do
+    addresses
+    |> Enum.map(fn address_hash ->
+      block_number = Map.fetch!(address_hash_to_block_number, to_string(address_hash))
+      %{address_hash: address_hash, block_number: block_number}
+    end)
+    |> CoinBalance.Fetcher.async_fetch_balances()
+  end
+
+  def async_import_coin_balances(_, _), do: :ok
+
+  def async_import_tokens(%{tokens: tokens}) do
+    tokens
+    |> Enum.map(& &1.contract_address_hash)
+    |> Token.Fetcher.async_fetch()
+  end
+
+  def async_import_tokens(_), do: :ok
+
+  def async_import_uncles(%{block_second_degree_relations: block_second_degree_relations}) do
+    block_second_degree_relations
+    |> Enum.map(& &1.uncle_hash)
+    |> Indexer.Block.Uncle.Fetcher.async_fetch_blocks()
+  end
+
+  def async_import_uncles(_), do: :ok
 
   # `fetched_balance_block_number` is needed for the `CoinBalanceFetcher`, but should not be used for `import` because the
   # balance is not known yet.

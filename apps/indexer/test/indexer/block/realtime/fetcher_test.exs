@@ -402,7 +402,6 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                    %{index: 4, transaction_hash: transaction_hash},
                    %{index: 5, transaction_hash: transaction_hash}
                  ],
-                 logs: [],
                  transactions: [transaction_hash]
                }, :more}} = Indexer.Block.Fetcher.fetch_and_import_range(block_fetcher, 3_946_079..3_946_080)
     end

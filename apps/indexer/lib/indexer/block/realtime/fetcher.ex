@@ -8,11 +8,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
   require Logger
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
-  import Indexer.Block.Fetcher, only: [fetch_and_import_range: 2]
+  import Indexer.Block.Fetcher, only: [async_import_tokens: 1, async_import_uncles: 1, fetch_and_import_range: 2]
 
   alias EthereumJSONRPC.Subscription
   alias Explorer.Chain
-  alias Indexer.{AddressExtraction, Block, Token, TokenBalances}
+  alias Indexer.{AddressExtraction, Block, TokenBalances}
   alias Indexer.Block.Realtime.TaskSupervisor
 
   @behaviour Block.Fetcher
@@ -108,9 +108,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
            |> put_in([Access.key(:balances, %{}), :params], balances_params)
            |> put_in([Access.key(:internal_transactions, %{}), :params], internal_transactions_params)
            |> put_in([Access.key(:token_balances), :params], token_balances),
-         {:ok, results} = ok <- Chain.import(chain_import_options) do
+         {:ok, imported} = ok <- Chain.import(chain_import_options) do
       TokenBalances.log_fetching_errors(__MODULE__, token_balances)
-      async_import_remaining_block_data(results)
+      async_import_remaining_block_data(imported)
       ok
     end
   end
@@ -200,14 +200,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
     Enum.any?(changesets, &(Map.get(&1, :message) == "Unknown block number"))
   end
 
-  defp async_import_remaining_block_data(%{block_second_degree_relations: block_second_degree_relations, tokens: tokens}) do
-    tokens
-    |> Enum.map(& &1.contract_address_hash)
-    |> Token.Fetcher.async_fetch()
-
-    block_second_degree_relations
-    |> Enum.map(& &1.uncle_hash)
-    |> Block.Uncle.Fetcher.async_fetch_blocks()
+  defp async_import_remaining_block_data(imported) do
+    async_import_tokens(imported)
+    async_import_uncles(imported)
   end
 
   defp internal_transactions(

@@ -1019,7 +1019,9 @@ defmodule Explorer.Chain.Import do
   end
 
   defp where_forked(blocks_changes) when is_list(blocks_changes) do
-    Enum.reduce(blocks_changes, Transaction, fn %{consensus: consensus, hash: hash, number: number}, acc ->
+    initial = from(t in Transaction, where: false)
+
+    Enum.reduce(blocks_changes, initial, fn %{consensus: consensus, hash: hash, number: number}, acc ->
       case consensus do
         false ->
           from(transaction in acc, or_where: transaction.block_hash == ^hash and transaction.block_number == ^number)
@@ -1047,23 +1049,25 @@ defmodule Explorer.Chain.Import do
         ]
       )
 
-    {sql, parameters} = SQL.to_sql(:all, Repo, query)
+    {select_sql, parameters} = SQL.to_sql(:all, Repo, query)
 
-    {:ok, %Postgrex.Result{columns: ["uncle_hash", "hash"], command: :insert, rows: rows}} =
-      SQL.query(
-        Repo,
-        """
-        INSERT INTO transaction_forks (uncle_hash, index, hash, inserted_at, updated_at)
-        #{sql}
-        RETURNING uncle_hash, hash
-        """,
-        parameters,
-        timeout: timeout
-      )
+    insert_sql = """
+    INSERT INTO transaction_forks (uncle_hash, index, hash, inserted_at, updated_at)
+    #{select_sql}
+    RETURNING uncle_hash, hash
+    """
 
-    derived_transaction_forks = Enum.map(rows, fn [uncle_hash, hash] -> %{uncle_hash: uncle_hash, hash: hash} end)
+    with {:ok, %Postgrex.Result{columns: ["uncle_hash", "hash"], command: :insert, rows: rows}} <-
+           SQL.query(
+             Repo,
+             insert_sql,
+             parameters,
+             timeout: timeout
+           ) do
+      derived_transaction_forks = Enum.map(rows, fn [uncle_hash, hash] -> %{uncle_hash: uncle_hash, hash: hash} end)
 
-    {:ok, derived_transaction_forks}
+      {:ok, derived_transaction_forks}
+    end
   end
 
   defp lose_consensus(blocks_changes, %{timeout: timeout, timestamps: %{updated_at: updated_at}})
@@ -1190,20 +1194,39 @@ defmodule Explorer.Chain.Import do
   end
 
   defp import_options_to_changes_list_arguments_list(options) do
-    Enum.flat_map(@import_option_key_to_ecto_schema_module, fn {option_key, ecto_schema_module} ->
-      case Map.fetch(options, option_key) do
-        {:ok, option_value} when is_map(option_value) ->
-          [
-            [
-              Map.fetch!(option_value, :params),
-              [for: ecto_schema_module, with: Map.get(option_value, :with, :changeset)]
-            ]
-          ]
+    Enum.flat_map(
+      @import_option_key_to_ecto_schema_module,
+      &import_options_to_changes_list_arguments_list_flat_mapper(options, &1)
+    )
+  end
 
-        :error ->
-          []
-      end
-    end)
+  defp import_options_to_changes_list_arguments_list_flat_mapper(options, {option_key, ecto_schema_module}) do
+    case Map.fetch(options, option_key) do
+      {:ok, option_value} ->
+        import_option_to_changes_list_arguments_list_flat_mapper(option_value, ecto_schema_module)
+
+      :error ->
+        []
+    end
+  end
+
+  defp import_option_to_changes_list_arguments_list_flat_mapper(%{params: params} = option_value, ecto_schema_module) do
+    # Use `Enum.empty?` instead of `[_ | _]` as params are allowed to be any collection of maps
+    case Enum.empty?(params) do
+      false ->
+        [
+          [
+            params,
+            [for: ecto_schema_module, with: Map.get(option_value, :with, :changeset)]
+          ]
+        ]
+
+      # filter out empty params as early as possible, so that later stages don't need to deal with empty params
+      # leading to selecting all rows because they produce no where conditions as happened in
+      # https://github.com/poanetwork/blockscout/issues/850
+      true ->
+        []
+    end
   end
 
   defp import_transaction(multi, options) when is_map(options) do
