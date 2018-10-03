@@ -1047,23 +1047,25 @@ defmodule Explorer.Chain.Import do
         ]
       )
 
-    {sql, parameters} = SQL.to_sql(:all, Repo, query) |> IO.inspect()
+    {select_sql, parameters} = SQL.to_sql(:all, Repo, query)
 
-    {:ok, %Postgrex.Result{columns: ["uncle_hash", "hash"], command: :insert, rows: rows}} =
-      SQL.query(
-        Repo,
-        """
-        INSERT INTO transaction_forks (uncle_hash, index, hash, inserted_at, updated_at)
-        #{sql}
-        RETURNING uncle_hash, hash
-        """,
-        parameters,
-        timeout: timeout
-      )
+    insert_sql = """
+    INSERT INTO transaction_forks (uncle_hash, index, hash, inserted_at, updated_at)
+    #{select_sql}
+    RETURNING uncle_hash, hash
+    """
 
-    derived_transaction_forks = Enum.map(rows, fn [uncle_hash, hash] -> %{uncle_hash: uncle_hash, hash: hash} end)
+    with {:ok, %Postgrex.Result{columns: ["uncle_hash", "hash"], command: :insert, rows: rows}} <-
+           SQL.query(
+             Repo,
+             insert_sql,
+             parameters,
+             timeout: timeout
+           ) do
+      derived_transaction_forks = Enum.map(rows, fn [uncle_hash, hash] -> %{uncle_hash: uncle_hash, hash: hash} end)
 
-    {:ok, derived_transaction_forks}
+      {:ok, derived_transaction_forks}
+    end
   end
 
   defp lose_consensus(blocks_changes, %{timeout: timeout, timestamps: %{updated_at: updated_at}})
