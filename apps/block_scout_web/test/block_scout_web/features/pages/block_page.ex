@@ -37,6 +37,10 @@ defmodule BlockScoutWeb.BlockPage do
     css("[data-transaction-hash='#{transaction_hash}'] [data-test='transaction_status']")
   end
 
+  def uncle_link(%Block{hash: hash}) do
+    css("[data-test='uncle_link'][data-uncle-hash='#{hash}']")
+  end
+
   def visit_page(session, %Block{} = block) do
     visit(session, block_path(build_conn(), :show, block))
   end

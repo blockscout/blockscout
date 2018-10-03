@@ -9,7 +9,12 @@
           </h1>
           <!-- Block Height -->
           <h3 data-test="block_detail_number">
-            <%= gettext "%{type} Height #%{height}", type: (if uncle?(@block), do: "Uncle", else: "Block"), height: @block.number %>
+            <%= if uncle?(@block) do %>
+              <%= gettext("Uncle Height:") %>
+              <%= link(@block, to: block_path(BlockScoutWeb.Endpoint, :show, @block.number)) %>
+            <% else %>
+              <%= gettext("Block Height: %{height}", height: @block.number) %>
+            <% end %>
           </h3>
           <div class="d-flex flex-row justify-content-start text-muted">
             <!-- # of Transactions -->
@@ -58,6 +63,24 @@
               <dt class="col-sm-3 text-muted"> <%= gettext "Total Difficulty" %> </dt>
               <dd class="col-sm-9"> <%= @block.total_difficulty |> Cldr.Number.to_string! %> </dd>
             </dl>
+
+            <%= if length(@block.uncle_relations) do %>
+              <!-- Uncles -->
+              <dl class="row">
+                <dt class="col-sm-3 text-muted"> <%= gettext "Uncles" %> </dt>
+                <dd class="col-sm-9">
+                  <%= for {relation, index} <- Enum.with_index(@block.uncle_relations) do %>
+                    <%= link(
+                        gettext("Position %{index}", index: index),
+                        class: "block__link",
+                        "data-test": "uncle_link",
+                        "data-uncle-hash": to_string(relation.uncle_hash),
+                        to: block_path(@conn, :show, relation.uncle_hash)
+                      ) %><%= if index < length(@block.uncle_relations) - 1 do %>,<% end %>
+                  <% end %>
+                </dd>
+              </dl>
+            <% end %>
 
             <!-- Nonce -->
             <dl class="row mb-0">

@@ -129,11 +129,24 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
 
     test "show uncle detail page", %{session: session} do
       uncle = insert(:block, consensus: false)
+      insert(:block_second_degree_relation, uncle_hash: uncle.hash)
 
       session
       |> BlockPage.visit_page(uncle)
       |> assert_has(BlockPage.detail_number(uncle))
       |> assert_has(BlockPage.page_type("Uncle Details"))
+    end
+
+    test "show link to uncle on block detail page", %{session: session} do
+      block = insert(:block)
+      uncle = insert(:block, consensus: false)
+      insert(:block_second_degree_relation, uncle_hash: uncle.hash, nephew: block)
+
+      session
+      |> BlockPage.visit_page(block)
+      |> assert_has(BlockPage.detail_number(block))
+      |> assert_has(BlockPage.page_type("Block Details"))
+      |> assert_has(BlockPage.uncle_link(uncle))
     end
   end
 end
