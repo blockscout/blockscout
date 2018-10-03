@@ -25,7 +25,7 @@ defmodule Indexer.Block.Fetcher do
                 transaction_hash_to_block_number_option: transaction_hash_to_block_number,
                 addresses: Import.Addresses.options(),
                 address_coin_balances: Import.Address.CoinBalances.options(),
-                blocks: Import.blocks_options(),
+                blocks: Import.Blocks.options(),
                 block_second_degree_relations: Import.block_second_degree_relations_options(),
                 broadcast: boolean,
                 logs: Import.logs_options(),
