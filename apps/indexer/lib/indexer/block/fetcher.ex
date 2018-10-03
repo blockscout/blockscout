@@ -30,7 +30,7 @@ defmodule Indexer.Block.Fetcher do
                 broadcast: boolean,
                 logs: Import.Logs.options(),
                 token_balances: Import.token_balances_options(),
-                token_transfers: Import.token_transfers_options(),
+                token_transfers: Import.TokenTransfers.options(),
                 tokens: Import.tokens_options(),
                 transactions: Import.transactions_options()
               }
