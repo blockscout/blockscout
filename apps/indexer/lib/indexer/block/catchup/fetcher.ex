@@ -108,12 +108,12 @@ defmodule Indexer.Block.Catchup.Fetcher do
     {async_import_remaining_block_data_options, chain_import_options} =
       Map.split(options, @async_import_remaining_block_data_options)
 
-    with {:ok, results} = ok <-
+    with {:ok, imported} = ok <-
            chain_import_options
            |> put_in([:blocks, :params, Access.all(), :consensus], true)
            |> Chain.import() do
       async_import_remaining_block_data(
-        results,
+        imported,
         async_import_remaining_block_data_options
       )
 
@@ -122,39 +122,39 @@ defmodule Indexer.Block.Catchup.Fetcher do
   end
 
   defp async_import_remaining_block_data(
-         %{
-           block_second_degree_relations: block_second_degree_relations,
-           transactions: transaction_hashes,
-           addresses: address_hashes,
-           tokens: tokens,
-           token_balances: token_balances
-         },
+         imported,
          %{
            address_hash_to_fetched_balance_block_number: address_hash_to_block_number,
            transaction_hash_to_block_number: transaction_hash_to_block_number
          }
        ) do
-    address_hashes
+    imported
+    |> Map.get(:addresses, [])
     |> Enum.map(fn address_hash ->
       block_number = Map.fetch!(address_hash_to_block_number, to_string(address_hash))
       %{address_hash: address_hash, block_number: block_number}
     end)
     |> CoinBalance.Fetcher.async_fetch_balances()
 
-    transaction_hashes
+    imported
+    |> Map.get(:transactions, [])
     |> Enum.map(fn transaction_hash ->
       block_number = Map.fetch!(transaction_hash_to_block_number, to_string(transaction_hash))
       %{block_number: block_number, hash: transaction_hash}
     end)
     |> InternalTransaction.Fetcher.async_fetch(10_000)
 
-    tokens
+    imported
+    |> Map.get(:tokens, [])
     |> Enum.map(& &1.contract_address_hash)
     |> Token.Fetcher.async_fetch()
 
-    TokenBalance.Fetcher.async_fetch(token_balances)
+    imported
+    |> Map.get(:token_balances, [])
+    |> TokenBalance.Fetcher.async_fetch()
 
-    block_second_degree_relations
+    imported
+    |> Map.get(:block_second_degree_relations, [])
     |> Enum.map(& &1.uncle_hash)
     |> Block.Uncle.Fetcher.async_fetch_blocks()
   end

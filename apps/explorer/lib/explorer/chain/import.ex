@@ -1194,20 +1194,39 @@ defmodule Explorer.Chain.Import do
   end
 
   defp import_options_to_changes_list_arguments_list(options) do
-    Enum.flat_map(@import_option_key_to_ecto_schema_module, fn {option_key, ecto_schema_module} ->
-      case Map.fetch(options, option_key) do
-        {:ok, option_value} when is_map(option_value) ->
-          [
-            [
-              Map.fetch!(option_value, :params),
-              [for: ecto_schema_module, with: Map.get(option_value, :with, :changeset)]
-            ]
-          ]
+    Enum.flat_map(
+      @import_option_key_to_ecto_schema_module,
+      &import_options_to_changes_list_arguments_list_flat_mapper(options, &1)
+    )
+  end
 
-        :error ->
-          []
-      end
-    end)
+  defp import_options_to_changes_list_arguments_list_flat_mapper(options, {option_key, ecto_schema_module}) do
+    case Map.fetch(options, option_key) do
+      {:ok, option_value} ->
+        import_option_to_changes_list_arguments_list_flat_mapper(option_value, ecto_schema_module)
+
+      :error ->
+        []
+    end
+  end
+
+  defp import_option_to_changes_list_arguments_list_flat_mapper(%{params: params} = option_value, ecto_schema_module) do
+    # Use `Enum.empty?` instead of `[_ | _]` as params are allowed to be any collection of maps
+    case Enum.empty?(params) do
+      false ->
+        [
+          [
+            params,
+            [for: ecto_schema_module, with: Map.get(option_value, :with, :changeset)]
+          ]
+        ]
+
+      # filter out empty params as early as possible, so that later stages don't need to deal with empty params
+      # leading to selecting all rows because they produce no where conditions as happened in
+      # https://github.com/poanetwork/blockscout/issues/850
+      true ->
+        []
+    end
   end
 
   defp import_transaction(multi, options) when is_map(options) do

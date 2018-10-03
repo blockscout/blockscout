@@ -213,9 +213,7 @@ defmodule Indexer.Block.FetcherTest do
           assert {:ok,
                   {%{
                      addresses: [%Address{hash: ^address_hash}],
-                     blocks: [%Chain.Block{hash: ^block_hash}],
-                     logs: [],
-                     transactions: []
+                     blocks: [%Chain.Block{hash: ^block_hash}]
                    }, :more}} = result
 
           wait_for_tasks(InternalTransaction.Fetcher)

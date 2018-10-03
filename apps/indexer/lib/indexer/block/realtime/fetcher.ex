@@ -108,9 +108,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
            |> put_in([Access.key(:balances, %{}), :params], balances_params)
            |> put_in([Access.key(:internal_transactions, %{}), :params], internal_transactions_params)
            |> put_in([Access.key(:token_balances), :params], token_balances),
-         {:ok, results} = ok <- Chain.import(chain_import_options) do
+         {:ok, imported} = ok <- Chain.import(chain_import_options) do
       TokenBalances.log_fetching_errors(__MODULE__, token_balances)
-      async_import_remaining_block_data(results)
+      async_import_remaining_block_data(imported)
       ok
     end
   end
@@ -200,12 +200,14 @@ defmodule Indexer.Block.Realtime.Fetcher do
     Enum.any?(changesets, &(Map.get(&1, :message) == "Unknown block number"))
   end
 
-  defp async_import_remaining_block_data(%{block_second_degree_relations: block_second_degree_relations, tokens: tokens}) do
-    tokens
+  defp async_import_remaining_block_data(imported) do
+    imported
+    |> Map.get(:tokens, [])
     |> Enum.map(& &1.contract_address_hash)
     |> Token.Fetcher.async_fetch()
 
-    block_second_degree_relations
+    imported
+    |> Map.get(:block_second_degree_relations, [])
     |> Enum.map(& &1.uncle_hash)
     |> Block.Uncle.Fetcher.async_fetch_blocks()
   end
