@@ -56,7 +56,7 @@ defmodule Explorer.Chain.Import.Blocks do
             blocks,
             %{
               timeout:
-                options[:block_second_degree_relations][:timeout] || Import.block_second_degree_relations_timeout(),
+                options[:block_second_degree_relations][:timeout] || Import.Block.SecondDegreeRelations.timeout(),
               timestamps: timestamps
             }
           )
