@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Import.Addresses do
   require Ecto.Query
 
   alias Ecto.Multi
-  alias Explorer.Chain.{Address, Import}
+  alias Explorer.Chain.{Address, Hash, Import}
 
   import Ecto.Query, only: [from: 2]
 
@@ -21,7 +21,7 @@ defmodule Explorer.Chain.Import.Addresses do
         }
 
   def run(multi, ecto_schema_module_to_changes_list_map, options)
-       when is_map(ecto_schema_module_to_changes_list_map) and is_map(options) do
+      when is_map(ecto_schema_module_to_changes_list_map) and is_map(options) do
     case ecto_schema_module_to_changes_list_map do
       %{Address => addresses_changes} ->
         timestamps = Map.fetch!(options, :timestamps)

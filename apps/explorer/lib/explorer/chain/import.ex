@@ -14,24 +14,19 @@ defmodule Explorer.Chain.Import do
     Address.TokenBalance,
     Block,
     Hash,
+    Import,
     InternalTransaction,
     Log,
     Token,
     TokenTransfer,
-    Transaction,
-    Wei
+    Transaction
   }
-  alias Explorer.Chain.Import.Addresses
 
   alias Explorer.Repo
 
   @type changeset_function_name :: atom
   @type on_conflict :: :nothing | :replace_all
   @type params :: [map()]
-  @type balances_options :: %{
-          required(:params) => params,
-          optional(:timeout) => timeout
-        }
   @type blocks_options :: %{
           required(:params) => params,
           optional(:timeout) => timeout
@@ -76,8 +71,8 @@ defmodule Explorer.Chain.Import do
           optional(:timeout) => timeout
         }
   @type all_options :: %{
-          optional(:addresses) => Addresses.options,
-          optional(:balances) => balances_options,
+          optional(:addresses) => Import.Addresses.options(),
+          optional(:address_coin_balances) => Import.Address.CoinBalances.options(),
           optional(:blocks) => blocks_options,
           optional(:block_second_degree_relations) => block_second_degree_relations_options,
           optional(:broadcast) => boolean,
@@ -94,10 +89,8 @@ defmodule Explorer.Chain.Import do
   @type all_result ::
           {:ok,
            %{
-             optional(:addresses) => Addresses.imported(),
-             optional(:balances) => [
-               %{required(:address_hash) => Hash.Address.t(), required(:block_number) => Block.block_number()}
-             ],
+             optional(:addresses) => Import.Addresses.imported(),
+             optional(:address_coin_balances) => Import.Address.CoinBalances.imported(),
              optional(:blocks) => [Block.t()],
              optional(:block_second_degree_relations) => [
                %{required(:nephew_hash) => Hash.Full.t(), required(:uncle_hash) => Hash.Full.t()}
@@ -125,7 +118,6 @@ defmodule Explorer.Chain.Import do
 
   @transaction_timeout 120_000
 
-  @insert_balances_timeout 60_000
   @insert_blocks_timeout 60_000
   @insert_block_second_degree_relations_timeout 60_000
   @insert_internal_transactions_timeout 60_000
@@ -144,11 +136,11 @@ defmodule Explorer.Chain.Import do
   | Key                              | Value Type                                                                                      | Value Description                                                                                    |
   |----------------------------------|-------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
   | `:addresses`                     | `[Explorer.Chain.Address.t()]`                                                                  | List of `t:Explorer.Chain.Address.t/0`s                                                              |
-  | `:balances`                      | `[%{address_hash: Explorer.Chain.Hash.t(), block_number: Explorer.Chain.Block.block_number()}]` | List of `t:Explorer.Chain.Address.t/0`s                                                              |
+  | `:address_coin_balances`         | `[%{address_hash: Explorer.Chain.Hash.t(), block_number: Explorer.Chain.Block.block_number()}]` | List of  maps of the `t:Explorer.Chain.Address.CoinBalance.t/0` `address_hash` and `block_number`    |
   | `:blocks`                        | `[Explorer.Chain.Block.t()]`                                                                    | List of `t:Explorer.Chain.Block.t/0`s                                                                |
   | `:internal_transactions`         | `[%{index: non_neg_integer(), transaction_hash: Explorer.Chain.Hash.t()}]`                      | List of maps of the `t:Explorer.Chain.InternalTransaction.t/0` `index` and `transaction_hash`        |
   | `:logs`                          | `[Explorer.Chain.Log.t()]`                                                                      | List of `t:Explorer.Chain.Log.t/0`s                                                                  |
-  | `:token_transfers`               | `[Explorer.Chain.TokenTransfer.t()]`                                                            | List of `t:Explorer.Chain.TokenTransfer.t/0`s                                                          |
+  | `:token_transfers`               | `[Explorer.Chain.TokenTransfer.t()]`                                                            | List of `t:Explorer.Chain.TokenTransfer.t/0`s                                                        |
   | `:tokens`                        | `[Explorer.Chain.Token.t()]`                                                                    | List of `t:Explorer.Chain.token.t/0`s                                                                |
   | `:transactions`                  | `[Explorer.Chain.Hash.t()]`                                                                     | List of `t:Explorer.Chain.Transaction.t/0` `hash`                                                    |
   | `:transaction_forks`             | `[%{uncle_hash: Explorer.Chain.Hash.t(), hash: Explorer.Chain.Hash.t()}]`                       | List of maps of the `t:Explorer.Chain.Transaction.Fork.t/0` `uncle_hash` and `hash`                  |
@@ -173,11 +165,12 @@ defmodule Explorer.Chain.Import do
 
     * `:addresses`
       * `:params` - `list` of params for `Explorer.Chain.Address.changeset/2`.
-      * `:timeout` - the timeout for inserting all addresses.  Defaults to `#{Addresses.timeout()}` milliseconds.
+      * `:timeout` - the timeout for inserting all addresses.  Defaults to `#{Import.Addresses.timeout()}` milliseconds.
       * `:with` - the changeset function on `Explorer.Chain.Address` to use validate `:params`.
-    * `:balances`
+    * `:address_coin_balances`
       * `:params` - `list` of params for `Explorer.Chain.Address.CoinBalance.changeset/2`.
-      * `:timeout` - the timeout for inserting all balances.  Defaults to `#{@insert_balances_timeout}` milliseconds.
+      * `:timeout` - the timeout for inserting all balances.  Defaults to `#{Import.Address.CoinBalances.timeout()}`
+        milliseconds.
     * `:blocks`
       * `:params` - `list` of params for `Explorer.Chain.Block.changeset/2`.
       * `:timeout` - the timeout for inserting all blocks. Defaults to `#{@insert_blocks_timeout}` milliseconds.
@@ -236,7 +229,7 @@ defmodule Explorer.Chain.Import do
 
   defp broadcast_events(data) do
     for {event_type, event_data} <- data,
-        event_type in ~w(addresses balances blocks internal_transactions logs transactions)a do
+        event_type in ~w(addresses address_coin_balances blocks internal_transactions logs transactions)a do
       broadcast_event_data(event_type, event_data)
     end
   end
@@ -298,7 +291,7 @@ defmodule Explorer.Chain.Import do
 
   @import_option_key_to_ecto_schema_module %{
     addresses: Address,
-    balances: CoinBalance,
+    address_coin_balances: CoinBalance,
     blocks: Block,
     block_second_degree_relations: Block.SecondDegreeRelation,
     internal_transactions: InternalTransaction,
@@ -316,8 +309,8 @@ defmodule Explorer.Chain.Import do
     full_options = Map.put(options, :timestamps, timestamps)
 
     Multi.new()
-    |> Addresses.run(ecto_schema_module_to_changes_list_map, full_options)
-    |> run_balances(ecto_schema_module_to_changes_list_map, full_options)
+    |> Import.Addresses.run(ecto_schema_module_to_changes_list_map, full_options)
+    |> Import.Address.CoinBalances.run(ecto_schema_module_to_changes_list_map, full_options)
     |> run_blocks(ecto_schema_module_to_changes_list_map, full_options)
     |> run_block_second_degree_relations(ecto_schema_module_to_changes_list_map, full_options)
     |> run_transactions(ecto_schema_module_to_changes_list_map, full_options)
@@ -327,27 +320,6 @@ defmodule Explorer.Chain.Import do
     |> run_tokens(ecto_schema_module_to_changes_list_map, full_options)
     |> run_token_transfers(ecto_schema_module_to_changes_list_map, full_options)
     |> run_token_balances(ecto_schema_module_to_changes_list_map, full_options)
-  end
-
-  defp run_balances(multi, ecto_schema_module_to_changes_list_map, options)
-       when is_map(ecto_schema_module_to_changes_list_map) and is_map(options) do
-    case ecto_schema_module_to_changes_list_map do
-      %{CoinBalance => balances_changes} ->
-        timestamps = Map.fetch!(options, :timestamps)
-
-        Multi.run(multi, :balances, fn _ ->
-          insert_balances(
-            balances_changes,
-            %{
-              timeout: options[:balances][:timeout] || @insert_balances_timeout,
-              timestamps: timestamps
-            }
-          )
-        end)
-
-      _ ->
-        multi
-    end
   end
 
   defp run_blocks(multi, ecto_schema_module_to_changes_list_map, options)
@@ -574,73 +546,6 @@ defmodule Explorer.Chain.Import do
       _ ->
         multi
     end
-  end
-
-  @spec insert_balances(
-          [
-            %{
-              required(:address_hash) => Hash.Address.t(),
-              required(:block_number) => Block.block_number(),
-              required(:value) => Wei.t()
-            }
-          ],
-          %{
-            required(:timeout) => timeout,
-            required(:timestamps) => timestamps
-          }
-        ) ::
-          {:ok, [%{required(:address_hash) => Hash.Address.t(), required(:block_number) => Block.block_number()}]}
-          | {:error, [Changeset.t()]}
-  defp insert_balances(changes_list, %{timeout: timeout, timestamps: timestamps}) when is_list(changes_list) do
-    # order so that row ShareLocks are grabbed in a consistent order
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.address_hash, &1.block_number})
-
-    {:ok, _} =
-      insert_changes_list(
-        ordered_changes_list,
-        conflict_target: [:address_hash, :block_number],
-        on_conflict:
-          from(
-            balance in CoinBalance,
-            update: [
-              set: [
-                inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", balance.inserted_at),
-                updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", balance.updated_at),
-                value:
-                  fragment(
-                    """
-                    CASE WHEN EXCLUDED.value IS NOT NULL AND (? IS NULL OR EXCLUDED.value_fetched_at > ?) THEN
-                           EXCLUDED.value
-                         ELSE
-                           ?
-                    END
-                    """,
-                    balance.value_fetched_at,
-                    balance.value_fetched_at,
-                    balance.value
-                  ),
-                value_fetched_at:
-                  fragment(
-                    """
-                    CASE WHEN EXCLUDED.value IS NOT NULL AND (? IS NULL OR EXCLUDED.value_fetched_at > ?) THEN
-                           EXCLUDED.value_fetched_at
-                         ELSE
-                           ?
-                    END
-                    """,
-                    balance.value_fetched_at,
-                    balance.value_fetched_at,
-                    balance.value_fetched_at
-                  )
-              ]
-            ]
-          ),
-        for: CoinBalance,
-        timeout: timeout,
-        timestamps: timestamps
-      )
-
-    {:ok, Enum.map(ordered_changes_list, &Map.take(&1, ~w(address_hash block_number)a))}
   end
 
   @spec insert_blocks([map()], %{required(:timeout) => timeout, required(:timestamps) => timestamps}) ::

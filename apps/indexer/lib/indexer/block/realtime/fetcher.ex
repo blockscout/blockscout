@@ -78,7 +78,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
         block_fetcher,
         %{
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number,
-          balances: %{params: balance_params},
+          address_coin_balances: %{params: address_coin_balances_params},
           addresses: %{params: addresses_params},
           transactions: %{params: transactions_params},
           token_balances: %{params: token_balances_params}
@@ -97,7 +97,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
            balances(block_fetcher, %{
              address_hash_to_block_number: address_hash_to_block_number,
              addresses_params: internal_transactions_addresses_params,
-             balances_params: balance_params
+             balances_params: address_coin_balances_params
            }),
          {:ok, token_balances} <- TokenBalances.fetch_token_balances_from_blockchain(token_balances_params),
          chain_import_options =
@@ -105,7 +105,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
            |> Map.drop(@import_options)
            |> put_in([:addresses, :params], balances_addresses_params)
            |> put_in([:blocks, :params, Access.all(), :consensus], true)
-           |> put_in([Access.key(:balances, %{}), :params], balances_params)
+           |> put_in([Access.key(:address_coin_balances, %{}), :params], balances_params)
            |> put_in([Access.key(:internal_transactions, %{}), :params], internal_transactions_params)
            |> put_in([Access.key(:token_balances), :params], token_balances),
          {:ok, imported} = ok <- Chain.import(chain_import_options) do
@@ -247,7 +247,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
            |> fetch_balances_params_list()
            |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments) do
       merged_addresses_params =
-        %{balances: fetched_balances_params}
+        %{address_coin_balances: fetched_balances_params}
         |> AddressExtraction.extract_addresses()
         |> Kernel.++(addresses_params)
         |> AddressExtraction.merge_addresses()

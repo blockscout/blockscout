@@ -60,7 +60,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                    ]
                  },
                  address_hash_to_fetched_balance_block_number: %{miner_hash => block_number},
-                 balances: %{
+                 address_coin_balances: %{
                    params: [
                      %{
                        address_hash: miner_hash,

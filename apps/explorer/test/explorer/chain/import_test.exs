@@ -779,7 +779,7 @@ defmodule Explorer.Chain.ImportTest do
                  addresses: %{
                    params: [%{hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"}]
                  },
-                 balances: %{
+                 address_coin_balances: %{
                    params: [%{address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b", block_number: 1}],
                    timeout: 5
                  }
@@ -895,7 +895,7 @@ defmodule Explorer.Chain.ImportTest do
                      %{hash: "0xfa52274dd61e1643d2205169732f29114bc240b3"}
                    ]
                  },
-                 balances: %{
+                 address_coin_balances: %{
                    params: [
                      %{
                        address_hash: "0x1c0fa194a9d3b44313dcd849f3c6be6ad270a0a4",
@@ -1474,7 +1474,7 @@ defmodule Explorer.Chain.ImportTest do
       assert {:ok,
               %{
                 addresses: _,
-                balances: _,
+                address_coin_balances: _,
                 blocks: _,
                 block_second_degree_relations: _,
                 internal_transactions: _,
@@ -1496,7 +1496,7 @@ defmodule Explorer.Chain.ImportTest do
                    ],
                    timeout: 1
                  },
-                 balances: %{
+                 address_coin_balances: %{
                    params: [
                      %{address_hash: miner_hash, block_number: block_number, value: nil},
                      %{address_hash: uncle_miner_hash, block_number: block_number, value: nil}

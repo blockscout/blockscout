@@ -23,8 +23,8 @@ defmodule Indexer.Block.Fetcher do
               %{
                 address_hash_to_fetched_balance_block_number: address_hash_to_fetched_balance_block_number,
                 transaction_hash_to_block_number_option: transaction_hash_to_block_number,
-                addresses: Import.addresses_options(),
-                balances: Import.balances_options(),
+                addresses: Import.Addresses.options(),
+                address_coin_balances: Import.Address.CoinBalances.options(),
                 blocks: Import.blocks_options(),
                 block_second_degree_relations: Import.block_second_degree_relations_options(),
                 broadcast: boolean,
@@ -120,7 +120,7 @@ defmodule Indexer.Block.Fetcher do
              state,
              %{
                addresses: %{params: addresses},
-               balances: %{params: coin_balances_params_set},
+               address_coin_balances: %{params: coin_balances_params_set},
                token_balances: %{params: token_balances},
                blocks: %{params: blocks},
                block_second_degree_relations: %{params: block_second_degree_relations},
