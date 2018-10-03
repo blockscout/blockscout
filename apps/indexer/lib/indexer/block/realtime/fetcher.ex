@@ -8,11 +8,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
   require Logger
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
-  import Indexer.Block.Fetcher, only: [fetch_and_import_range: 2]
+  import Indexer.Block.Fetcher, only: [async_import_tokens: 1, async_import_uncles: 1, fetch_and_import_range: 2]
 
   alias EthereumJSONRPC.Subscription
   alias Explorer.Chain
-  alias Indexer.{AddressExtraction, Block, Token, TokenBalances}
+  alias Indexer.{AddressExtraction, Block, TokenBalances}
   alias Indexer.Block.Realtime.TaskSupervisor
 
   @behaviour Block.Fetcher
@@ -201,15 +201,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
   end
 
   defp async_import_remaining_block_data(imported) do
-    imported
-    |> Map.get(:tokens, [])
-    |> Enum.map(& &1.contract_address_hash)
-    |> Token.Fetcher.async_fetch()
-
-    imported
-    |> Map.get(:block_second_degree_relations, [])
-    |> Enum.map(& &1.uncle_hash)
-    |> Block.Uncle.Fetcher.async_fetch_blocks()
+    async_import_tokens(imported)
+    async_import_uncles(imported)
   end
 
   defp internal_transactions(

@@ -5,18 +5,11 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   require Logger
 
-  import Indexer.Block.Fetcher, only: [fetch_and_import_range: 2]
+  import Indexer.Block.Fetcher,
+    only: [async_import_coin_balances: 2, async_import_tokens: 1, async_import_uncles: 1, fetch_and_import_range: 2]
 
   alias Explorer.Chain
-
-  alias Indexer.{
-    Block,
-    CoinBalance,
-    InternalTransaction,
-    Sequence,
-    Token,
-    TokenBalance
-  }
+  alias Indexer.{Block, InternalTransaction, Sequence, TokenBalance}
 
   @behaviour Block.Fetcher
 
@@ -121,43 +114,32 @@ defmodule Indexer.Block.Catchup.Fetcher do
     end
   end
 
-  defp async_import_remaining_block_data(
-         imported,
-         %{
-           address_hash_to_fetched_balance_block_number: address_hash_to_block_number,
-           transaction_hash_to_block_number: transaction_hash_to_block_number
-         }
-       ) do
-    imported
-    |> Map.get(:addresses, [])
-    |> Enum.map(fn address_hash ->
-      block_number = Map.fetch!(address_hash_to_block_number, to_string(address_hash))
-      %{address_hash: address_hash, block_number: block_number}
-    end)
-    |> CoinBalance.Fetcher.async_fetch_balances()
+  defp async_import_remaining_block_data(imported, options) do
+    async_import_coin_balances(imported, options)
+    async_import_internal_transactions(imported, options)
+    async_import_tokens(imported)
+    async_import_token_balances(imported)
+    async_import_uncles(imported)
+  end
 
-    imported
-    |> Map.get(:transactions, [])
+  defp async_import_internal_transactions(%{transactions: transactions}, %{
+         transaction_hash_to_block_number: transaction_hash_to_block_number
+       }) do
+    transactions
     |> Enum.map(fn transaction_hash ->
       block_number = Map.fetch!(transaction_hash_to_block_number, to_string(transaction_hash))
       %{block_number: block_number, hash: transaction_hash}
     end)
     |> InternalTransaction.Fetcher.async_fetch(10_000)
-
-    imported
-    |> Map.get(:tokens, [])
-    |> Enum.map(& &1.contract_address_hash)
-    |> Token.Fetcher.async_fetch()
-
-    imported
-    |> Map.get(:token_balances, [])
-    |> TokenBalance.Fetcher.async_fetch()
-
-    imported
-    |> Map.get(:block_second_degree_relations, [])
-    |> Enum.map(& &1.uncle_hash)
-    |> Block.Uncle.Fetcher.async_fetch_blocks()
   end
+
+  defp async_import_internal_transactions(_, _), do: :ok
+
+  defp async_import_token_balances(%{token_balances: token_balances}) do
+    TokenBalance.Fetcher.async_fetch(token_balances)
+  end
+
+  defp async_import_token_balances(_), do: :ok
 
   defp stream_fetch_and_import(%__MODULE__{blocks_concurrency: blocks_concurrency} = state, sequence)
        when is_pid(sequence) do
