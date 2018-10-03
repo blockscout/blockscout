@@ -99,7 +99,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                    params: [],
                    on_conflict: :nothing
                  },
-                 token_balances: %{
+                 address_token_balances: %{
                    params: []
                  },
                  transactions: %{

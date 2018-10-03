@@ -363,7 +363,7 @@ defmodule Explorer.Chain.ImportTest do
           ],
           timeout: 5
         },
-        token_balances: %{
+        address_token_balances: %{
           params: [
             %{
               address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
@@ -1483,7 +1483,7 @@ defmodule Explorer.Chain.ImportTest do
                 tokens: _,
                 transactions: _,
                 transaction_forks: _,
-                token_balances: _
+                address_token_balances: _
               }} =
                Import.all(%{
                  addresses: %{
@@ -1570,7 +1570,7 @@ defmodule Explorer.Chain.ImportTest do
                    params: [%{uncle_hash: uncle_hash, hash: transaction_hash, index: 0}],
                    timeout: 1
                  },
-                 token_balances: %{
+                 address_token_balances: %{
                    params: [
                      params_for(
                        :token_balance,

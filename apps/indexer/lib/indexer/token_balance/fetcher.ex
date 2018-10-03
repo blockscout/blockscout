@@ -80,7 +80,7 @@ defmodule Indexer.TokenBalance.Fetcher do
   end
 
   def import_token_balances(token_balances_params) do
-    case Chain.import(%{token_balances: %{params: token_balances_params}, timeout: :infinity}) do
+    case Chain.import(%{address_token_balances: %{params: token_balances_params}, timeout: :infinity}) do
       {:ok, _} ->
         :ok
 

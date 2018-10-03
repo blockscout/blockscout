@@ -25,11 +25,11 @@ defmodule Indexer.Block.Fetcher do
                 transaction_hash_to_block_number_option: transaction_hash_to_block_number,
                 addresses: Import.Addresses.options(),
                 address_coin_balances: Import.Address.CoinBalances.options(),
+                address_token_balances: Import.Address.TokenBalances.options(),
                 blocks: Import.Blocks.options(),
                 block_second_degree_relations: Import.Block.SecondDegreeRelations.options(),
                 broadcast: boolean,
                 logs: Import.Logs.options(),
-                token_balances: Import.token_balances_options(),
                 token_transfers: Import.TokenTransfers.options(),
                 tokens: Import.Tokens.options(),
                 transactions: Import.Transactions.options()
@@ -113,14 +113,14 @@ defmodule Indexer.Block.Fetcher do
              logs_params: logs,
              transactions_params: transactions_with_receipts
            }),
-         token_balances = TokenBalances.params_set(%{token_transfers_params: token_transfers}),
+         address_token_balances = TokenBalances.params_set(%{token_transfers_params: token_transfers}),
          {:ok, inserted} <-
            __MODULE__.import(
              state,
              %{
                addresses: %{params: addresses},
                address_coin_balances: %{params: coin_balances_params_set},
-               token_balances: %{params: token_balances},
+               address_token_balances: %{params: address_token_balances},
                blocks: %{params: blocks},
                block_second_degree_relations: %{params: block_second_degree_relations},
                logs: %{params: logs},

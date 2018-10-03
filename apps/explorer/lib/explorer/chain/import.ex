@@ -3,8 +3,6 @@ defmodule Explorer.Chain.Import do
   Bulk importing of data into `Explorer.Repo`
   """
 
-  import Ecto.Query, only: [from: 2]
-
   alias Ecto.{Changeset, Multi}
 
   alias Explorer.Chain.{
@@ -25,13 +23,10 @@ defmodule Explorer.Chain.Import do
   @type changeset_function_name :: atom
   @type on_conflict :: :nothing | :replace_all
   @type params :: [map()]
-  @type token_balances_options :: %{
-          required(:params) => params,
-          optional(:timeout) => timeout
-        }
   @type all_options :: %{
           optional(:addresses) => Import.Addresses.options(),
           optional(:address_coin_balances) => Import.Address.CoinBalances.options(),
+          optional(:address_token_balances) => Import.Address.TokenBalances.options(),
           optional(:blocks) => Import.Blocks.options(),
           optional(:block_second_degree_relations) => Import.Block.SecondDegreeRelations.options(),
           optional(:broadcast) => boolean,
@@ -40,7 +35,6 @@ defmodule Explorer.Chain.Import do
           optional(:timeout) => timeout,
           optional(:token_transfers) => Import.TokenTransfers.options(),
           optional(:tokens) => Import.Tokens.options(),
-          optional(:token_balances) => token_balances_options,
           optional(:transactions) => Import.Transactions.options(),
           optional(:transaction_forks) => Import.Transaction.Forks.options()
         }
@@ -49,13 +43,13 @@ defmodule Explorer.Chain.Import do
            %{
              optional(:addresses) => Import.Addresses.imported(),
              optional(:address_coin_balances) => Import.Address.CoinBalances.imported(),
+             optional(:address_token_balances) => Import.Address.TokenBalances.imported(),
              optional(:blocks) => Import.Blocks.imported(),
              optional(:block_second_degree_relations) => Import.Block.SecondDegreeRelations.imported(),
              optional(:internal_transactions) => Import.InternalTransactions.imported(),
              optional(:logs) => Import.Logs.imported(),
              optional(:token_transfers) => Import.TokenTransfers.imported(),
              optional(:tokens) => Import.Tokens.imported(),
-             optional(:token_balances) => [TokenBalance.t()],
              optional(:transactions) => Import.Transactions.imported(),
              optional(:transaction_forks) => Import.Transaction.Forks.imported()
            }}
@@ -65,11 +59,8 @@ defmodule Explorer.Chain.Import do
 
   @type timestamps :: %{inserted_at: DateTime.t(), updated_at: DateTime.t()}
 
-  # timeouts all in milliseconds
-
+  # milliseconds
   @transaction_timeout 120_000
-
-  @insert_token_balances_timeout 60_000
 
   @doc """
   Bulk insert all data stored in the `Explorer`.
@@ -114,6 +105,8 @@ defmodule Explorer.Chain.Import do
       * `:params` - `list` of params for `Explorer.Chain.Address.CoinBalance.changeset/2`.
       * `:timeout` - the timeout for inserting all balances.  Defaults to `#{Import.Address.CoinBalances.timeout()}`
         milliseconds.
+    * `:address_token_balances`
+      * `:params` - `list` of params for `Explorer.Chain.TokenBalance.changeset/2`
     * `:blocks`
       * `:params` - `list` of params for `Explorer.Chain.Block.changeset/2`.
       * `:timeout` - the timeout for inserting all blocks. Defaults to `#{Import.Blocks.timeout()}` milliseconds.
@@ -156,8 +149,6 @@ defmodule Explorer.Chain.Import do
       * `:params` - `list` of params for `Explorer.Chain.Transaction.Fork.changeset/2`.
       * `:timeout` - the timeout for inserting all transaction forks.  Defaults to
         `#{Import.Transaction.Forks.timeout()}` milliseconds.
-    * `:token_balances`
-      * `:params` - `list` of params for `Explorer.Chain.TokenBalance.changeset/2`
     * `:timeout` - the timeout for `Repo.transaction`. Defaults to `#{@transaction_timeout}` milliseconds.
 
   """
@@ -238,12 +229,12 @@ defmodule Explorer.Chain.Import do
   @import_option_key_to_ecto_schema_module %{
     addresses: Address,
     address_coin_balances: CoinBalance,
+    address_token_balances: TokenBalance,
     blocks: Block,
     block_second_degree_relations: Block.SecondDegreeRelation,
     internal_transactions: InternalTransaction,
     logs: Log,
     token_transfers: TokenTransfer,
-    token_balances: TokenBalance,
     tokens: Token,
     transactions: Transaction,
     transaction_forks: Transaction.Fork
@@ -265,86 +256,7 @@ defmodule Explorer.Chain.Import do
     |> Import.Logs.run(ecto_schema_module_to_changes_list_map, full_options)
     |> Import.Tokens.run(ecto_schema_module_to_changes_list_map, full_options)
     |> Import.TokenTransfers.run(ecto_schema_module_to_changes_list_map, full_options)
-    |> run_token_balances(ecto_schema_module_to_changes_list_map, full_options)
-  end
-
-  defp run_token_balances(multi, ecto_schema_module_to_changes_list, options)
-       when is_map(ecto_schema_module_to_changes_list) and is_map(options) do
-    case ecto_schema_module_to_changes_list do
-      %{TokenBalance => token_balances_changes} ->
-        timestamps = Map.fetch!(options, :timestamps)
-
-        Multi.run(multi, :token_balances, fn _ ->
-          insert_token_balances(
-            token_balances_changes,
-            %{
-              timeout: options[:token_balances][:timeout] || @insert_token_balances_timeout,
-              timestamps: timestamps
-            }
-          )
-        end)
-
-      _ ->
-        multi
-    end
-  end
-
-  @spec insert_token_balances([map()], %{
-          required(:timeout) => timeout(),
-          required(:timestamps) => timestamps()
-        }) ::
-          {:ok, [TokenBalance.t()]}
-          | {:error, [Changeset.t()]}
-  def insert_token_balances(changes_list, %{timeout: timeout, timestamps: timestamps})
-      when is_list(changes_list) do
-    # order so that row ShareLocks are grabbed in a consistent order
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.address_hash, &1.block_number})
-
-    {:ok, _} =
-      insert_changes_list(
-        ordered_changes_list,
-        conflict_target: ~w(address_hash token_contract_address_hash block_number)a,
-        on_conflict:
-          from(
-            token_balance in TokenBalance,
-            update: [
-              set: [
-                inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", token_balance.inserted_at),
-                updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", token_balance.updated_at),
-                value:
-                  fragment(
-                    """
-                    CASE WHEN EXCLUDED.value IS NOT NULL AND (? IS NULL OR EXCLUDED.value_fetched_at > ?) THEN
-                           EXCLUDED.value
-                         ELSE
-                           ?
-                    END
-                    """,
-                    token_balance.value_fetched_at,
-                    token_balance.value_fetched_at,
-                    token_balance.value
-                  ),
-                value_fetched_at:
-                  fragment(
-                    """
-                    CASE WHEN EXCLUDED.value IS NOT NULL AND (? IS NULL OR EXCLUDED.value_fetched_at > ?) THEN
-                           EXCLUDED.value_fetched_at
-                         ELSE
-                           ?
-                    END
-                    """,
-                    token_balance.value_fetched_at,
-                    token_balance.value_fetched_at,
-                    token_balance.value_fetched_at
-                  )
-              ]
-            ]
-          ),
-        for: TokenBalance,
-        returning: true,
-        timeout: timeout,
-        timestamps: timestamps
-      )
+    |> Import.Address.TokenBalances.run(ecto_schema_module_to_changes_list_map, full_options)
   end
 
   def insert_changes_list(changes_list, options) when is_list(changes_list) do

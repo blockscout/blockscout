@@ -77,11 +77,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
   def import(
         block_fetcher,
         %{
-          address_hash_to_fetched_balance_block_number: address_hash_to_block_number,
           address_coin_balances: %{params: address_coin_balances_params},
+          address_hash_to_fetched_balance_block_number: address_hash_to_block_number,
+          address_token_balances: %{params: address_token_balances_params},
           addresses: %{params: addresses_params},
-          transactions: %{params: transactions_params},
-          token_balances: %{params: token_balances_params}
+          transactions: %{params: transactions_params}
         } = options
       ) do
     with {:ok,
@@ -99,17 +99,18 @@ defmodule Indexer.Block.Realtime.Fetcher do
              addresses_params: internal_transactions_addresses_params,
              balances_params: address_coin_balances_params
            }),
-         {:ok, token_balances} <- TokenBalances.fetch_token_balances_from_blockchain(token_balances_params),
+         {:ok, address_token_balances} <-
+           TokenBalances.fetch_token_balances_from_blockchain(address_token_balances_params),
          chain_import_options =
            options
            |> Map.drop(@import_options)
            |> put_in([:addresses, :params], balances_addresses_params)
            |> put_in([:blocks, :params, Access.all(), :consensus], true)
            |> put_in([Access.key(:address_coin_balances, %{}), :params], balances_params)
-           |> put_in([Access.key(:internal_transactions, %{}), :params], internal_transactions_params)
-           |> put_in([Access.key(:token_balances), :params], token_balances),
+           |> put_in([Access.key(:address_token_balances), :params], address_token_balances)
+           |> put_in([Access.key(:internal_transactions, %{}), :params], internal_transactions_params),
          {:ok, imported} = ok <- Chain.import(chain_import_options) do
-      TokenBalances.log_fetching_errors(__MODULE__, token_balances)
+      TokenBalances.log_fetching_errors(__MODULE__, address_token_balances)
       async_import_remaining_block_data(imported)
       ok
     end
