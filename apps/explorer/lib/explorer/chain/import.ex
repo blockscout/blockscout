@@ -26,10 +26,6 @@ defmodule Explorer.Chain.Import do
   @type changeset_function_name :: atom
   @type on_conflict :: :nothing | :replace_all
   @type params :: [map()]
-  @type receipts_options :: %{
-          required(:params) => params,
-          optional(:timeout) => timeout
-        }
   @type token_transfers_options :: %{
           required(:params) => params,
           optional(:timeout) => timeout
@@ -61,7 +57,6 @@ defmodule Explorer.Chain.Import do
           optional(:broadcast) => boolean,
           optional(:internal_transactions) => Import.InternalTransactions.options(),
           optional(:logs) => Import.Logs.options(),
-          optional(:receipts) => receipts_options,
           optional(:timeout) => timeout,
           optional(:token_transfers) => token_transfers_options,
           optional(:tokens) => tokens_options,
@@ -78,7 +73,6 @@ defmodule Explorer.Chain.Import do
              optional(:block_second_degree_relations) => Import.Block.SecondDegreeRelations.imported(),
              optional(:internal_transactions) => Import.InternalTransactions.imported(),
              optional(:logs) => Import.Logs.imported(),
-             optional(:receipts) => [Hash.Full.t()],
              optional(:token_transfers) => [TokenTransfer.t()],
              optional(:tokens) => [Token.t()],
              optional(:token_balances) => [TokenBalance.t()],
