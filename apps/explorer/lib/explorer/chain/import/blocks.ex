@@ -32,7 +32,7 @@ defmodule Explorer.Chain.Import.Blocks do
         multi
         |> Multi.run(:derive_transaction_forks, fn _ ->
           derive_transaction_forks(%{
-            timeout: options[:transaction_forks][:timeout] || Import.transaction_forks_timeout(),
+            timeout: options[:transaction_forks][:timeout] || Import.Transaction.Forks.timeout(),
             timestamps: timestamps,
             where_forked: where_forked
           })

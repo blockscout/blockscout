@@ -12,7 +12,6 @@ defmodule Explorer.Chain.Import do
     Address.CoinBalance,
     Address.TokenBalance,
     Block,
-    Hash,
     Import,
     InternalTransaction,
     Log,
@@ -26,10 +25,6 @@ defmodule Explorer.Chain.Import do
   @type changeset_function_name :: atom
   @type on_conflict :: :nothing | :replace_all
   @type params :: [map()]
-  @type transaction_forks_options :: %{
-          required(:params) => params,
-          optional(:timeout) => timeout
-        }
   @type token_balances_options :: %{
           required(:params) => params,
           optional(:timeout) => timeout
@@ -47,7 +42,7 @@ defmodule Explorer.Chain.Import do
           optional(:tokens) => Import.Tokens.options(),
           optional(:token_balances) => token_balances_options,
           optional(:transactions) => Import.Transactions.options(),
-          optional(:transaction_forks) => transaction_forks_options
+          optional(:transaction_forks) => Import.Transaction.Forks.options()
         }
   @type all_result ::
           {:ok,
@@ -62,9 +57,7 @@ defmodule Explorer.Chain.Import do
              optional(:tokens) => Import.Tokens.imported(),
              optional(:token_balances) => [TokenBalance.t()],
              optional(:transactions) => Import.Transactions.imported(),
-             optional(:transaction_forks) => [
-               %{required(:uncle_hash) => Hash.Full.t(), required(:hash) => Hash.Full.t()}
-             ]
+             optional(:transaction_forks) => Import.Transaction.Forks.imported()
            }}
           | {:error, [Changeset.t()]}
           | {:error, step :: Ecto.Multi.name(), failed_value :: any(),
@@ -77,9 +70,6 @@ defmodule Explorer.Chain.Import do
   @transaction_timeout 120_000
 
   @insert_token_balances_timeout 60_000
-  @insert_transaction_forks_timeout 60_000
-
-  def transaction_forks_timeout, do: @insert_transaction_forks_timeout
 
   @doc """
   Bulk insert all data stored in the `Explorer`.
@@ -164,7 +154,8 @@ defmodule Explorer.Chain.Import do
       * `:with` - the changeset function on `Explorer.Chain.Transaction` to use validate `:params`.
     * `:transaction_forks`
       * `:params` - `list` of params for `Explorer.Chain.Transaction.Fork.changeset/2`.
-      * `:timeout` - the timeout for inserting all transaction forks.
+      * `:timeout` - the timeout for inserting all transaction forks.  Defaults to
+        `#{Import.Transaction.Forks.timeout()}` milliseconds.
     * `:token_balances`
       * `:params` - `list` of params for `Explorer.Chain.TokenBalance.changeset/2`
     * `:timeout` - the timeout for `Repo.transaction`. Defaults to `#{@transaction_timeout}` milliseconds.
@@ -269,33 +260,12 @@ defmodule Explorer.Chain.Import do
     |> Import.Blocks.run(ecto_schema_module_to_changes_list_map, full_options)
     |> Import.Block.SecondDegreeRelations.run(ecto_schema_module_to_changes_list_map, full_options)
     |> Import.Transactions.run(ecto_schema_module_to_changes_list_map, full_options)
-    |> run_transaction_forks(ecto_schema_module_to_changes_list_map, full_options)
+    |> Import.Transaction.Forks.run(ecto_schema_module_to_changes_list_map, full_options)
     |> Import.InternalTransactions.run(ecto_schema_module_to_changes_list_map, full_options)
     |> Import.Logs.run(ecto_schema_module_to_changes_list_map, full_options)
     |> Import.Tokens.run(ecto_schema_module_to_changes_list_map, full_options)
     |> Import.TokenTransfers.run(ecto_schema_module_to_changes_list_map, full_options)
     |> run_token_balances(ecto_schema_module_to_changes_list_map, full_options)
-  end
-
-  defp run_transaction_forks(multi, ecto_schema_module_to_changes_list_map, options)
-       when is_map(ecto_schema_module_to_changes_list_map) and is_map(options) do
-    case ecto_schema_module_to_changes_list_map do
-      %{Transaction.Fork => transaction_fork_changes} ->
-        %{timestamps: timestamps} = options
-
-        Multi.run(multi, :transaction_forks, fn _ ->
-          insert_transaction_forks(
-            transaction_fork_changes,
-            %{
-              timeout: options[:transaction_forks][:timeout] || @insert_transaction_forks_timeout,
-              timestamps: timestamps
-            }
-          )
-        end)
-
-      _ ->
-        multi
-    end
   end
 
   defp run_token_balances(multi, ecto_schema_module_to_changes_list, options)
@@ -375,34 +345,6 @@ defmodule Explorer.Chain.Import do
         timeout: timeout,
         timestamps: timestamps
       )
-  end
-
-  @spec insert_transaction_forks([map()], %{
-          required(:timeout) => timeout,
-          required(:timestamps) => timestamps
-        }) :: {:ok, [%{uncle_hash: Hash.t(), hash: Hash.t()}]}
-  defp insert_transaction_forks(changes_list, %{timeout: timeout, timestamps: timestamps})
-       when is_list(changes_list) do
-    # order so that row ShareLocks are grabbed in a consistent order
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.uncle_hash, &1.hash})
-
-    insert_changes_list(
-      ordered_changes_list,
-      conflict_target: [:uncle_hash, :index],
-      on_conflict:
-        from(
-          transaction_fork in Transaction.Fork,
-          update: [
-            set: [
-              hash: fragment("EXCLUDED.hash")
-            ]
-          ]
-        ),
-      for: Transaction.Fork,
-      returning: [:uncle_hash, :hash],
-      timeout: timeout,
-      timestamps: timestamps
-    )
   end
 
   def insert_changes_list(changes_list, options) when is_list(changes_list) do

@@ -20,7 +20,7 @@ defmodule Explorer.Chain.Import.Transactions do
   @type imported :: [Hash.Full.t()]
 
   def run(multi, ecto_schema_module_to_changes_list_map, options)
-       when is_map(ecto_schema_module_to_changes_list_map) and is_map(options) do
+      when is_map(ecto_schema_module_to_changes_list_map) and is_map(options) do
     case ecto_schema_module_to_changes_list_map do
       %{Transaction => transactions_changes} ->
         # check required options as early as possible
