@@ -26,11 +26,6 @@ defmodule Explorer.Chain.Import do
   @type changeset_function_name :: atom
   @type on_conflict :: :nothing | :replace_all
   @type params :: [map()]
-  @type tokens_options :: %{
-          required(:params) => params,
-          optional(:on_conflict) => :nothing | :replace_all,
-          optional(:timeout) => timeout
-        }
   @type transactions_options :: %{
           required(:params) => params,
           optional(:with) => changeset_function_name,
@@ -55,7 +50,7 @@ defmodule Explorer.Chain.Import do
           optional(:logs) => Import.Logs.options(),
           optional(:timeout) => timeout,
           optional(:token_transfers) => Import.TokenTransfers.options(),
-          optional(:tokens) => tokens_options,
+          optional(:tokens) => Import.Tokens.options(),
           optional(:token_balances) => token_balances_options,
           optional(:transactions) => transactions_options,
           optional(:transaction_forks) => transaction_forks_options
@@ -70,7 +65,7 @@ defmodule Explorer.Chain.Import do
              optional(:internal_transactions) => Import.InternalTransactions.imported(),
              optional(:logs) => Import.Logs.imported(),
              optional(:token_transfers) => Import.TokenTransfers.imported(),
-             optional(:tokens) => [Token.t()],
+             optional(:tokens) => Import.Tokens.imported(),
              optional(:token_balances) => [TokenBalance.t()],
              optional(:transactions) => [Hash.Full.t()],
              optional(:transaction_forks) => [
@@ -88,7 +83,6 @@ defmodule Explorer.Chain.Import do
   @transaction_timeout 120_000
 
   @insert_token_balances_timeout 60_000
-  @insert_tokens_timeout 60_000
   @insert_transactions_timeout 60_000
   @insert_transaction_forks_timeout 60_000
 
@@ -163,7 +157,7 @@ defmodule Explorer.Chain.Import do
       * `:on_conflict` - Whether to do `:nothing` or `:replace_all` columns when there is a pre-existing token
         with the same contract address hash.
       * `:params` - `list` of params for `Explorer.Chain.Token.changeset/2`
-      * `:timeout` - the timeout for inserting all tokens. Defaults to `#{@insert_tokens_timeout}` milliseconds.
+      * `:timeout` - the timeout for inserting all tokens. Defaults to `#{Import.Tokens.timeout()}` milliseconds.
     * `:transactions`
       * `:on_conflict` - Whether to do `:nothing` or `:replace_all` columns when there is a pre-existing transaction
         with the same hash.
@@ -286,7 +280,7 @@ defmodule Explorer.Chain.Import do
     |> run_transaction_forks(ecto_schema_module_to_changes_list_map, full_options)
     |> Import.InternalTransactions.run(ecto_schema_module_to_changes_list_map, full_options)
     |> Import.Logs.run(ecto_schema_module_to_changes_list_map, full_options)
-    |> run_tokens(ecto_schema_module_to_changes_list_map, full_options)
+    |> Import.Tokens.run(ecto_schema_module_to_changes_list_map, full_options)
     |> Import.TokenTransfers.run(ecto_schema_module_to_changes_list_map, full_options)
     |> run_token_balances(ecto_schema_module_to_changes_list_map, full_options)
   end
@@ -335,28 +329,6 @@ defmodule Explorer.Chain.Import do
     end
   end
 
-  defp run_tokens(multi, ecto_schema_module_to_changes_list, options)
-       when is_map(ecto_schema_module_to_changes_list) and is_map(options) do
-    case ecto_schema_module_to_changes_list do
-      %{Token => tokens_changes} ->
-        %{timestamps: timestamps, tokens: %{on_conflict: on_conflict}} = options
-
-        Multi.run(multi, :tokens, fn _ ->
-          insert_tokens(
-            tokens_changes,
-            %{
-              on_conflict: on_conflict,
-              timeout: options[:tokens][:timeout] || @insert_tokens_timeout,
-              timestamps: timestamps
-            }
-          )
-        end)
-
-      _ ->
-        multi
-    end
-  end
-
   defp run_token_balances(multi, ecto_schema_module_to_changes_list, options)
        when is_map(ecto_schema_module_to_changes_list) and is_map(options) do
     case ecto_schema_module_to_changes_list do
@@ -376,30 +348,6 @@ defmodule Explorer.Chain.Import do
       _ ->
         multi
     end
-  end
-
-  @spec insert_tokens([map()], %{
-          required(:on_conflict) => on_conflict(),
-          required(:timeout) => timeout(),
-          required(:timestamps) => timestamps()
-        }) ::
-          {:ok, [Token.t()]}
-          | {:error, [Changeset.t()]}
-  def insert_tokens(changes_list, %{on_conflict: on_conflict, timeout: timeout, timestamps: timestamps})
-      when is_list(changes_list) do
-    # order so that row ShareLocks are grabbed in a consistent order
-    ordered_changes_list = Enum.sort_by(changes_list, & &1.contract_address_hash)
-
-    {:ok, _} =
-      insert_changes_list(
-        ordered_changes_list,
-        conflict_target: :contract_address_hash,
-        on_conflict: on_conflict,
-        for: Token,
-        returning: true,
-        timeout: timeout,
-        timestamps: timestamps
-      )
   end
 
   @spec insert_token_balances([map()], %{

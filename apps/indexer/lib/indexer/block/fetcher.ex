@@ -31,7 +31,7 @@ defmodule Indexer.Block.Fetcher do
                 logs: Import.Logs.options(),
                 token_balances: Import.token_balances_options(),
                 token_transfers: Import.TokenTransfers.options(),
-                tokens: Import.tokens_options(),
+                tokens: Import.Tokens.options(),
                 transactions: Import.transactions_options()
               }
             ) :: Import.all_result()
