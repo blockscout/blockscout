@@ -28,7 +28,7 @@ defmodule Indexer.Block.Fetcher do
                 blocks: Import.Blocks.options(),
                 block_second_degree_relations: Import.Block.SecondDegreeRelations.options(),
                 broadcast: boolean,
-                logs: Import.logs_options(),
+                logs: Import.Logs.options(),
                 receipts: Import.receipts_options(),
                 token_balances: Import.token_balances_options(),
                 token_transfers: Import.token_transfers_options(),

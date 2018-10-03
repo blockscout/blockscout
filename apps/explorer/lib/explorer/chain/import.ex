@@ -26,10 +26,6 @@ defmodule Explorer.Chain.Import do
   @type changeset_function_name :: atom
   @type on_conflict :: :nothing | :replace_all
   @type params :: [map()]
-  @type logs_options :: %{
-          required(:params) => params,
-          optional(:timeout) => timeout
-        }
   @type receipts_options :: %{
           required(:params) => params,
           optional(:timeout) => timeout
@@ -64,7 +60,7 @@ defmodule Explorer.Chain.Import do
           optional(:block_second_degree_relations) => Import.Block.SecondDegreeRelations.options(),
           optional(:broadcast) => boolean,
           optional(:internal_transactions) => Import.InternalTransactions.options(),
-          optional(:logs) => logs_options,
+          optional(:logs) => Import.Logs.options(),
           optional(:receipts) => receipts_options,
           optional(:timeout) => timeout,
           optional(:token_transfers) => token_transfers_options,
@@ -81,7 +77,7 @@ defmodule Explorer.Chain.Import do
              optional(:blocks) => Import.Blocks.imported(),
              optional(:block_second_degree_relations) => Import.Block.SecondDegreeRelations.imported(),
              optional(:internal_transactions) => Import.InternalTransactions.imported(),
-             optional(:logs) => [Log.t()],
+             optional(:logs) => Import.Logs.imported(),
              optional(:receipts) => [Hash.Full.t()],
              optional(:token_transfers) => [TokenTransfer.t()],
              optional(:tokens) => [Token.t()],
@@ -101,6 +97,7 @@ defmodule Explorer.Chain.Import do
 
   @transaction_timeout 120_000
 
+  @insert_internal_transactions_timeout 60_000
   @insert_logs_timeout 60_000
   @insert_token_transfers_timeout 60_000
   @insert_token_balances_timeout 60_000
@@ -168,7 +165,7 @@ defmodule Explorer.Chain.Import do
         `#{Import.InternalTransactions.timeout()}` milliseconds.
     * `:logs`
       * `:params` - `list` of params for `Explorer.Chain.Log.changeset/2`.
-      * `:timeout` - the timeout for inserting all logs. Defaults to `#{@insert_logs_timeout}` milliseconds.
+      * `:timeout` - the timeout for inserting all logs. Defaults to `#{Import.Logs.timeout()}` milliseconds.
     * `:timeout` - the timeout for the whole `c:Ecto.Repo.transaction/0` call.  Defaults to `#{@transaction_timeout}`
       milliseconds.
     * `:token_transfers`
@@ -300,7 +297,7 @@ defmodule Explorer.Chain.Import do
     |> run_transactions(ecto_schema_module_to_changes_list_map, full_options)
     |> run_transaction_forks(ecto_schema_module_to_changes_list_map, full_options)
     |> Import.InternalTransactions.run(ecto_schema_module_to_changes_list_map, full_options)
-    |> run_logs(ecto_schema_module_to_changes_list_map, full_options)
+    |> Import.Logs.run(ecto_schema_module_to_changes_list_map, full_options)
     |> run_tokens(ecto_schema_module_to_changes_list_map, full_options)
     |> run_token_transfers(ecto_schema_module_to_changes_list_map, full_options)
     |> run_token_balances(ecto_schema_module_to_changes_list_map, full_options)
@@ -340,27 +337,6 @@ defmodule Explorer.Chain.Import do
             transaction_fork_changes,
             %{
               timeout: options[:transaction_forks][:timeout] || @insert_transaction_forks_timeout,
-              timestamps: timestamps
-            }
-          )
-        end)
-
-      _ ->
-        multi
-    end
-  end
-
-  defp run_logs(multi, ecto_schema_module_to_changes_list_map, options)
-       when is_map(ecto_schema_module_to_changes_list_map) and is_map(options) do
-    case ecto_schema_module_to_changes_list_map do
-      %{Log => logs_changes} ->
-        timestamps = Map.fetch!(options, :timestamps)
-
-        Multi.run(multi, :logs, fn _ ->
-          insert_logs(
-            logs_changes,
-            %{
-              timeout: options[:logs][:timeout] || @insert_logs_timeout,
               timestamps: timestamps
             }
           )
@@ -433,26 +409,6 @@ defmodule Explorer.Chain.Import do
       _ ->
         multi
     end
-  end
-
-  @spec insert_logs([map()], %{required(:timeout) => timeout, required(:timestamps) => timestamps}) ::
-          {:ok, [Log.t()]}
-          | {:error, [Changeset.t()]}
-  defp insert_logs(changes_list, %{timeout: timeout, timestamps: timestamps})
-       when is_list(changes_list) do
-    # order so that row ShareLocks are grabbed in a consistent order
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.index})
-
-    {:ok, _} =
-      insert_changes_list(
-        ordered_changes_list,
-        conflict_target: [:transaction_hash, :index],
-        on_conflict: :replace_all,
-        for: Log,
-        returning: true,
-        timeout: timeout,
-        timestamps: timestamps
-      )
   end
 
   @spec insert_tokens([map()], %{
