@@ -127,7 +127,7 @@ if ($chainDetailsPage.length) {
 
       const transactionsChannel = socket.channel(`transactions:new_transaction`)
       transactionsChannel.join()
-      transactionsChannel.on('new_transaction', batchChannel((msgs) =>
+      transactionsChannel.on('transaction', batchChannel((msgs) =>
         store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION_BATCH', msgs: humps.camelizeKeys(msgs) }))
       )
 
