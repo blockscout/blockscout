@@ -316,4 +316,25 @@ defmodule BlockScoutWeb.AddressViewTest do
       assert String.length(short_hash) == 6
     end
   end
+
+  describe "address_page_title/1" do
+    test "uses the Smart Contract name when the contract is verified" do
+      smart_contract = build(:smart_contract, name: "POA")
+      address = build(:address, smart_contract: smart_contract)
+
+      assert AddressView.address_page_title(address) == "POA (#{address.hash})"
+    end
+
+    test "uses the string 'Contract' when it's a contract" do
+      address = build(:contract_address, smart_contract: nil)
+
+      assert AddressView.address_page_title(address) == "Contract #{address.hash}"
+    end
+
+    test "uses the address hash when it is not a contract" do
+      address = build(:address, smart_contract: nil)
+
+      assert AddressView.address_page_title(address) == "#{address.hash}"
+    end
+  end
 end
