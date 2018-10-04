@@ -16,7 +16,7 @@
     <meta name="msapplication-config" content="<%= static_path(@conn, "/browserconfig.xml") %>">
     <meta name="theme-color" content="#ffffff">
 
-    <%= render_existing(@view_module, "_metatags.html") %>
+    <%= render_existing(@view_module, "_metatags.html", assigns) || render("_default_title.html") %>
   </head>
 
   <body>
