@@ -11,11 +11,19 @@ defmodule BlockScoutWeb.BlockListPage do
     visit(session, "/blocks")
   end
 
+  def visit_uncles_page(session) do
+    visit(session, "/uncles")
+  end
+
   def block(%Block{number: block_number}) do
     css("[data-block-number='#{block_number}']")
   end
 
   def place_holder_blocks(count) do
     css("[data-selector='place-holder']", count: count)
+  end
+
+  def blocks(count) do
+    css("[data-selector='block-number']", count: count)
   end
 end

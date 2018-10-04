@@ -149,4 +149,29 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
       |> assert_has(BlockPage.uncle_link(uncle))
     end
   end
+
+  describe "viewing uncle blocks list" do
+    setup do
+      uncles =
+        for _index <- 1..10 do
+          uncle = insert(:block, consensus: false)
+          insert(:block_second_degree_relation, uncle_hash: uncle.hash)
+
+          :transaction
+          |> insert()
+          |> with_block(uncle)
+
+          uncle
+        end
+
+      {:ok, %{uncles: uncles}}
+    end
+
+    test "lists uncle blocks", %{session: session, uncles: [uncle | _]} do
+      session
+      |> BlockListPage.visit_uncles_page()
+      |> assert_has(BlockListPage.block(uncle))
+      |> assert_has(BlockListPage.blocks(10))
+    end
+  end
 end

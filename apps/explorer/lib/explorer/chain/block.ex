@@ -96,4 +96,12 @@ defmodule Explorer.Chain.Block do
     |> foreign_key_constraint(:parent_hash)
     |> unique_constraint(:hash, name: :blocks_pkey)
   end
+
+
+    @doc """
+    Adds to the given block's query a `where` with conditions to filter by the type of block;
+    `Uncle`, `Reorg`, or `Block`.  `Uncle`'s are already filtered based on requiring nephews.
+    """
+    def block_type_filter(query, "Block"), do: where(query, [block], block.consensus == true)
+    def block_type_filter(query, "Uncle"), do: query
 end
