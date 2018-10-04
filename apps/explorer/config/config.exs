@@ -49,6 +49,9 @@ config :logger, :explorer,
   metadata: [:application, :request_id],
   metadata_filter: [application: :explorer]
 
+# import scheduler configs
+import_config "scheduler.exs"
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
