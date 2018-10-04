@@ -42,6 +42,7 @@ defmodule BlockScoutWeb.BlockPage do
   end
 
   def visit_page(session, %Block{} = block) do
-    visit(session, block_path(build_conn(), :show, block))
+    path = block_path(build_conn(), :show, block)
+    visit(session, path)
   end
 end

@@ -6,15 +6,13 @@ defmodule BlockScoutWeb.BlockController do
   alias Explorer.Chain
 
   def index(conn, params) do
-    Keyword.merge(
-      [
-        necessity_by_association: %{
-          :transactions => :optional,
-          [miner: :names] => :optional
-        }
-      ],
-      paging_options(params)
-    )
+    [
+      necessity_by_association: %{
+        :transactions => :optional,
+        [miner: :names] => :optional
+      }
+    ]
+    |> Keyword.merge(paging_options(params))
     |> handle_render(conn, params)
   end
 
@@ -23,31 +21,27 @@ defmodule BlockScoutWeb.BlockController do
   end
 
   def reorg(conn, params) do
-    Keyword.merge(
-      [
-        necessity_by_association: %{
-          :transactions => :optional,
-          [miner: :names] => :optional
-        },
-        block_type: "Reorg"
-      ],
-      paging_options(params)
-    )
+    [
+      necessity_by_association: %{
+        :transactions => :optional,
+        [miner: :names] => :optional
+      },
+      block_type: "Reorg"
+    ]
+    |> Keyword.merge(paging_options(params))
     |> handle_render(conn, params)
   end
 
   def uncle(conn, params) do
-    Keyword.merge(
-      [
-        necessity_by_association: %{
-          :transactions => :optional,
-          [miner: :names] => :optional,
-          :nephews => :required
-        },
-        block_type: "Uncle"
-      ],
-      paging_options(params)
-    )
+    [
+      necessity_by_association: %{
+        :transactions => :optional,
+        [miner: :names] => :optional,
+        :nephews => :required
+      },
+      block_type: "Uncle"
+    ]
+    |> Keyword.merge(paging_options(params))
     |> handle_render(conn, params)
   end
 

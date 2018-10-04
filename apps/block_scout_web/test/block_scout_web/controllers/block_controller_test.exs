@@ -115,6 +115,7 @@ defmodule BlockScoutWeb.BlockControllerTest do
         4
         |> insert_list(:block, consensus: false)
         |> Enum.map(& &1.hash)
+
       conn = get(conn, reorg_path(conn, :reorg))
 
       assert Enum.map(conn.assigns.blocks, & &1.hash) == Enum.reverse(reorg_hashes)
