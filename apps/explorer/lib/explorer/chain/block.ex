@@ -100,7 +100,7 @@ defmodule Explorer.Chain.Block do
 
   @doc """
   Adds to the given block's query a `where` with conditions to filter by the type of block;
-  `Uncle`, `Reorg`, or `Block`.  `Uncle`'s are already filtered based on requiring nephews.
+  `Uncle`, `Reorg`, or `Block`.
   """
   def block_type_filter(query, "Block"), do: where(query, [block], block.consensus == true)
   def block_type_filter(query, "Reorg") do
@@ -108,5 +108,5 @@ defmodule Explorer.Chain.Block do
     |> join(:left, [block], uncles in assoc(block, :nephew_relations))
     |> where([block, uncles], block.consensus == false and is_nil(uncles.uncle_hash))
   end
-  def block_type_filter(query, "Uncle"), do: query
+  def block_type_filter(query, "Uncle"), do: where(query, [block], block.consensus == false)
 end
