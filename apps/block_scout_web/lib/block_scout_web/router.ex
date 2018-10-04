@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.Router do
   use BlockScoutWeb, :router
 
   forward("/wobserver", Wobserver.Web.Router)
+  forward("/admin", BlockScoutWeb.AdminRouter)
 
   pipeline :browser do
     plug(:accepts, ["html"])
