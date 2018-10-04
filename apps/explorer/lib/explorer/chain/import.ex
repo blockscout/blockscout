@@ -129,22 +129,24 @@ defmodule Explorer.Chain.Import do
          {:ok, valid_runner_option_pairs} <- validate_runner_options_pairs(runner_options_pairs),
          {:ok, runner_changes_list_pairs} <- runner_changes_list_pairs(valid_runner_option_pairs),
          {:ok, data} <- insert_runner_changes_list_pairs(runner_changes_list_pairs, options) do
-      if Map.get(options, :broadcast, false), do: broadcast_events(data)
+      broadcast_events(data, Map.get(options, :broadcast, false))
       {:ok, data}
     end
   end
 
-  defp broadcast_events(data) do
+  defp broadcast_events(_data, false), do: nil
+
+  defp broadcast_events(data, broadcast_type) do
     for {event_type, event_data} <- data,
-        event_type in ~w(addresses address_coin_balances blocks internal_transactions logs transactions)a do
-      broadcast_event_data(event_type, event_data)
+        event_type in ~w(addresses address_coin_balances blocks internal_transactions logs token_transfers transactions)a do
+      broadcast_event_data(event_type, broadcast_type, event_data)
     end
   end
 
-  defp broadcast_event_data(event_type, event_data) do
+  defp broadcast_event_data(event_type, broadcast_type, event_data) do
     Registry.dispatch(Registry.ChainEvents, event_type, fn entries ->
       for {pid, _registered_val} <- entries do
-        send(pid, {:chain_event, event_type, event_data})
+        send(pid, {:chain_event, event_type, broadcast_type, event_data})
       end
     end)
   end
