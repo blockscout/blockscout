@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<InitiateMultipartUploadResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+  <Bucket>somebucket</Bucket>
+  <Key>abcd</Key>
+  <UploadId>bUCMhxUCGCA0GiTAhTj6cq2rChItfIMYBgO7To9yiuUyDk4CWqhtHPx8cGkgjzyavE2aW6HvhQgu9pvDB3.oX73RC7N3zM9dSU3mecTndVRHQLJCAsySsT6lXRd2Id2a</UploadId>
+  <ETag>&quot;89asdfasdf0asdfasdfasd&quot;</ETag>
+</InitiateMultipartUploadResult>
+<CompleteMultipartUploadResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/\">
+  <Location>https://google.com</Location>
+  <Bucket>name_of_my_bucket</Bucket>
+  <Key>name_of_my_key.ext</Key>
+  <ETag>&quot;89asdfasdf0asdfasdfasd&quot;</ETag>
+</CompleteMultipartUploadResult>
+<ETag>&quot;89asdfasdf0asdfasdfasd&quot;</ETag>

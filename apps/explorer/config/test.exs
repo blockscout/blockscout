@@ -40,6 +40,12 @@ variant =
     |> String.downcase()
   end
 
+# configure S3 bucket
+config :ex_aws,
+  access_key_id: "<REPLACE WITH YOUR AWS ACCESS KEY ID>",
+  secret_access_key: "<REPLACE WITH YOUR AWS SECRET ACCESS KEY>"
+
+config :explorer, Explorer.Backup.Uploader, dump_bucket: "name"
 # Import variant specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "test/#{variant}.exs"
