@@ -22,6 +22,8 @@ config :explorer, Explorer.Repo,
   loggers: [Explorer.Repo.PrometheusLogger, Ecto.LogEntry],
   migration_timestamps: [type: :utc_datetime]
 
+config :explorer, Explorer.Counters.TokenTransferCounter, enabled: true
+
 config :explorer,
   solc_bin_api_url: "https://solc-bin.ethereum.org"
 

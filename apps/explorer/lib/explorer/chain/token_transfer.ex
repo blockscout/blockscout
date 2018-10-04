@@ -197,4 +197,20 @@ defmodule Explorer.Chain.TokenTransfer do
       select: tt
     )
   end
+
+  @doc """
+  Counts all the token transfers and groups by token contract address hash.
+  """
+  def count_token_transfers do
+    query =
+      from(
+        tt in TokenTransfer,
+        join: t in Token,
+        on: tt.token_contract_address_hash == t.contract_address_hash,
+        select: {tt.token_contract_address_hash, count(tt.id)},
+        group_by: tt.token_contract_address_hash
+      )
+
+    Repo.all(query)
+  end
 end
