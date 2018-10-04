@@ -55,6 +55,22 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
     )
   end
 
+  def start_link(["ws://" <> _ = url, gen_fsm_options]) when is_list(gen_fsm_options) do
+    fsm_name =
+      case Keyword.fetch(gen_fsm_options, :name) do
+        {:ok, name} when is_atom(name) -> {:local, name}
+        :error -> :undefined
+      end
+
+    :websocket_client.start_link(
+      fsm_name,
+      url,
+      __MODULE__,
+      url,
+      []
+    )
+  end
+
   # Client interface
 
   @impl WebSocket
