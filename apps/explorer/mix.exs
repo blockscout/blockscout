@@ -75,6 +75,13 @@ defmodule Explorer.Mixfile do
       {:ethereum_jsonrpc, in_umbrella: true},
       # Data factory for testing
       {:ex_machina, "~> 2.1", only: [:test]},
+      # AWS and S3 apis
+      {:ex_aws, "~> 2.0"},
+      {:ex_aws_s3, "~> 2.0"},
+      {:hackney, "~> 1.9"},
+      {:sweet_xml, "~> 0.6"},
+      # periodic tasks
+      {:quantum, "~> 2.3"},
       # Code coverage
       {:excoveralls, "~> 0.10.0", only: [:test], github: "KronicDeth/excoveralls", branch: "circle-workflows"},
       {:exvcr, "~> 0.10", only: :test},
