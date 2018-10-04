@@ -5,7 +5,7 @@ import numeral from 'numeral'
 import socket from '../socket'
 import { updateAllAges } from '../lib/from_now'
 import { exchangeRateChannel, formatUsdValue } from '../lib/currency'
-import { batchChannel, initRedux, slideDownPrepend } from '../utils'
+import { batchChannel, buildFullBlockList, initRedux, skippedBlockListBuilder, slideDownPrepend } from '../utils'
 import { createMarketHistoryChart } from '../lib/market_history_chart'
 
 const BATCH_THRESHOLD = 10
@@ -28,9 +28,13 @@ export const initialState = {
 export function reducer (state = initialState, action) {
   switch (action.type) {
     case 'PAGE_LOAD': {
+      const fullBlockNumberList = buildFullBlockList(action.blockNumbers)
+      const fullSkippedBlockNumberList = _.difference(fullBlockNumberList, action.blockNumbers)
+      const blockNumbers = fullBlockNumberList.slice(0, 4)
       return Object.assign({}, state, {
-        blockNumbers: action.blockNumbers,
-        transactionCount: numeral(action.transactionCount).value()
+        blockNumbers,
+        transactionCount: numeral(action.transactionCount).value(),
+        skippedBlockNumbers: _.intersection(fullSkippedBlockNumberList, blockNumbers)
       })
     }
     case 'RECEIVED_NEW_ADDRESS_COUNT': {
@@ -52,21 +56,18 @@ export function reducer (state = initialState, action) {
       } else {
         let skippedBlockNumbers = state.skippedBlockNumbers.slice(0)
         if (blockNumber > state.blockNumbers[0] + 1) {
-          let lastPlaceholder = state.blockNumbers[0] + 1
-          if (blockNumber - lastPlaceholder > 3) {
-            lastPlaceholder = blockNumber - 3
+          let oldestBlock = state.blockNumbers[0]
+          if (blockNumber - oldestBlock >= 3) {
             skippedBlockNumbers = []
+            if (blockNumber - oldestBlock > 3) oldestBlock = blockNumber - 4
           }
-          for (let i = lastPlaceholder; i < blockNumber; i++) {
-            skippedBlockNumbers.push(i)
-          }
+          skippedBlockListBuilder(skippedBlockNumbers, blockNumber, oldestBlock)
         }
         const newBlockNumbers = _.chain([blockNumber])
           .union(skippedBlockNumbers, state.blockNumbers)
           .orderBy([], ['desc'])
           .slice(0, 4)
           .value()
-
         const newSkippedBlockNumbers = _.intersection(skippedBlockNumbers, newBlockNumbers)
         return Object.assign({}, state, {
           averageBlockTime: action.msg.averageBlockTime,
@@ -142,6 +143,8 @@ if ($chainDetailsPage.length) {
       const $marketCap = $('[data-selector="market-cap"]')
       const $transactionsList = $('[data-selector="transactions-list"]')
       const $transactionCount = $('[data-selector="transaction-count"]')
+      const newTransactions = _.difference(state.newTransactions, oldState.newTransactions)
+      const skippedBlockNumbers = _.difference(state.skippedBlockNumbers, oldState.skippedBlockNumbers)
 
       if (oldState.addressCount !== state.addressCount) {
         $addressCount.empty().append(state.addressCount)
@@ -152,24 +155,23 @@ if ($chainDetailsPage.length) {
       if (oldState.usdMarketCap !== state.usdMarketCap) {
         $marketCap.empty().append(formatUsdValue(state.usdMarketCap))
       }
-      if (state.newBlock && oldState.newBlock !== state.newBlock) {
+      if ((state.newBlock && oldState.newBlock !== state.newBlock) || skippedBlockNumbers.length) {
         if (state.replaceBlock && oldState.replaceBlock !== state.replaceBlock) {
           const $replaceBlock = $(`[data-block-number="${state.replaceBlock}"]`)
           $replaceBlock.addClass('shrink-out')
           setTimeout(() => $replaceBlock.replaceWith(state.newBlock), 400)
         } else {
-          if (oldState.skippedBlockNumbers !== state.skippedBlockNumbers) {
-            const newSkippedBlockNumbers = _.chain(state.skippedBlockNumbers)
-              .difference(oldState.skippedBlockNumbers)
-              .intersection(state.blockNumbers)
-              .value()
-            _.map(newSkippedBlockNumbers, (skippedBlockNumber) => {
+          if (state.newBlock) {
+            $blockList.children().last().remove()
+            $blockList.prepend(newBlockHtml(state.newBlock))
+          }
+          if (skippedBlockNumbers.length) {
+            const newSkippedBlockNumbers = _.intersection(skippedBlockNumbers, state.blockNumbers)
+            _.each(newSkippedBlockNumbers, (skippedBlockNumber) => {
               $blockList.children().last().remove()
-              $blockList.prepend(placeHolderBlock(skippedBlockNumber))
+              $(`[data-block-number="${skippedBlockNumber + 1}"]`).parent().after(placeHolderBlock(skippedBlockNumber))
             })
           }
-          $blockList.children().last().remove()
-          $blockList.prepend(newBlockHtml(state.newBlock))
         }
         updateAllAges()
       }
@@ -180,7 +182,7 @@ if ($chainDetailsPage.length) {
       } else {
         $channelBatching.hide()
       }
-      if (oldState.newTransactions !== state.newTransactions) {
+      if (newTransactions.length) {
         const newTransactionsToInsert = state.newTransactions.slice(oldState.newTransactions.length)
         $transactionsList
           .children()
@@ -190,7 +192,6 @@ if ($chainDetailsPage.length) {
 
         updateAllAges()
       }
-
       if (oldState.availableSupply !== state.availableSupply || oldState.marketHistoryData !== state.marketHistoryData) {
         chart.update(state.availableSupply, state.marketHistoryData)
       }
@@ -214,9 +215,9 @@ function placeHolderBlock (blockNumber) {
     >
       <div
         class="tile tile-type-block d-flex align-items-center fade-up"
+        style="height: 100px;"
         data-selector="place-holder"
         data-block-number="${blockNumber}"
-        style="height: 100px;"
       >
         <span class="loading-spinner-small ml-1 mr-4">
           <span class="loading-spinner-block-1"></span>

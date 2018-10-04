@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
   use BlockScoutWeb.FeatureCase, async: true
 
   alias BlockScoutWeb.{BlockListPage, BlockPage, Notifier}
+  alias Explorer.Chain.Block
 
   setup do
     timestamp = Timex.now() |> Timex.shift(hours: -1)
@@ -157,6 +158,28 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
 
       session
       |> assert_has(BlockListPage.block(skipped_block))
+      |> assert_has(BlockListPage.place_holder_blocks(2))
+    end
+
+    test "inserts place holder blocks on render for out of order blocks", %{session: session} do
+      insert(:block, number: 315)
+
+      session
+      |> BlockListPage.visit_page()
+      |> assert_has(BlockListPage.block(%Block{number: 314}))
+      |> assert_has(BlockListPage.place_holder_blocks(3))
+    end
+
+    test "replaces rendered place holder block if skipped block received", %{session: session} do
+      insert(:block, number: 315)
+
+      BlockListPage.visit_page(session)
+
+      block = insert(:block, number: 314)
+      Notifier.handle_event({:chain_event, :blocks, [block]})
+
+      session
+      |> assert_has(BlockListPage.block(block))
       |> assert_has(BlockListPage.place_holder_blocks(2))
     end
   end

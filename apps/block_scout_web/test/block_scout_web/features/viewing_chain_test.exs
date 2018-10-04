@@ -3,7 +3,8 @@ defmodule BlockScoutWeb.ViewingChainTest do
 
   use BlockScoutWeb.FeatureCase, async: true
 
-  alias BlockScoutWeb.{AddressPage, BlockPage, ChainPage, TransactionPage}
+  alias BlockScoutWeb.{AddressPage, BlockPage, ChainPage, Notifier, TransactionPage}
+  alias Explorer.Chain.Block
 
   setup do
     Enum.map(401..404, &insert(:block, number: &1))
@@ -49,6 +50,57 @@ defmodule BlockScoutWeb.ViewingChainTest do
       session
       |> ChainPage.visit_page()
       |> assert_has(ChainPage.blocks(count: 4))
+    end
+
+    test "inserts place holder blocks if out of order block received", %{session: session} do
+      ChainPage.visit_page(session)
+
+      block = insert(:block, number: 409)
+      Notifier.handle_event({:chain_event, :blocks, :realtime, [block]})
+
+      session
+      |> assert_has(ChainPage.block(block))
+      |> assert_has(ChainPage.place_holder_blocks(3))
+    end
+
+    test "replaces place holder block if skipped block received", %{session: session} do
+      ChainPage.visit_page(session)
+
+      block = insert(:block, number: 409)
+      Notifier.handle_event({:chain_event, :blocks, :realtime, [block]})
+
+      session
+      |> assert_has(ChainPage.block(block))
+      |> assert_has(ChainPage.place_holder_blocks(3))
+
+      skipped_block = insert(:block, number: 408)
+      Notifier.handle_event({:chain_event, :blocks, :realtime, [skipped_block]})
+
+      session
+      |> assert_has(ChainPage.block(skipped_block))
+      |> assert_has(ChainPage.place_holder_blocks(2))
+    end
+
+    test "inserts place holder blocks on render for out of order blocks", %{session: session} do
+      insert(:block, number: 409)
+
+      session
+      |> ChainPage.visit_page()
+      |> assert_has(ChainPage.block(%Block{number: 408}))
+      |> assert_has(ChainPage.place_holder_blocks(3))
+    end
+
+    test "replaces rendered place holder block if skipped block received", %{session: session} do
+      insert(:block, number: 409)
+
+      ChainPage.visit_page(session)
+
+      block = insert(:block, number: 408)
+      Notifier.handle_event({:chain_event, :blocks, [block]})
+
+      session
+      |> assert_has(ChainPage.block(block))
+      |> assert_has(ChainPage.place_holder_blocks(2))
     end
   end
 

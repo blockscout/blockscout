@@ -4,7 +4,7 @@ import URI from 'urijs'
 import humps from 'humps'
 import socket from '../socket'
 import { updateAllAges } from '../lib/from_now'
-import { initRedux, prependWithClingBottom } from '../utils'
+import { buildFullBlockList, initRedux, beforeWithClingBottom, skippedBlockListBuilder } from '../utils'
 
 export const initialState = {
   blockNumbers: [],
@@ -18,9 +18,12 @@ export const initialState = {
 export function reducer (state = initialState, action) {
   switch (action.type) {
     case 'PAGE_LOAD': {
+      const blockNumbers = buildFullBlockList(action.blockNumbers)
+      const skippedBlockNumbers = _.difference(blockNumbers, action.blockNumbers)
       return Object.assign({}, state, {
         beyondPageOne: action.beyondPageOne,
-        blockNumbers: action.blockNumbers
+        blockNumbers,
+        skippedBlockNumbers
       })
     }
     case 'CHANNEL_DISCONNECTED': {
@@ -43,9 +46,7 @@ export function reducer (state = initialState, action) {
       } else {
         let skippedBlockNumbers = state.skippedBlockNumbers.slice(0)
         if (blockNumber > state.blockNumbers[0] + 1) {
-          for (let i = state.blockNumbers[0] + 1; i < blockNumber; i++) {
-            skippedBlockNumbers.push(i)
-          }
+          skippedBlockListBuilder(skippedBlockNumbers, blockNumber, state.blockNumbers[0])
         }
         const newBlockNumbers = _.chain([blockNumber])
           .union(skippedBlockNumbers, state.blockNumbers)
@@ -85,22 +86,21 @@ if ($blockListPage.length) {
     },
     render (state, oldState) {
       const $channelDisconnected = $('[data-selector="channel-disconnected-message"]')
-      const $blocksList = $('[data-selector="blocks-list"]')
+      const skippedBlockNumbers = _.difference(state.skippedBlockNumbers, oldState.skippedBlockNumbers)
 
       if (state.channelDisconnected) $channelDisconnected.show()
-      if (oldState.newBlock !== state.newBlock || (state.replaceBlock && oldState.replaceBlock !== state.replaceBlock)) {
+      if ((state.newBlock && oldState.newBlock !== state.newBlock) || skippedBlockNumbers.length) {
         if (state.replaceBlock && oldState.replaceBlock !== state.replaceBlock) {
           const $replaceBlock = $(`[data-block-number="${state.replaceBlock}"]`)
           $replaceBlock.addClass('shrink-out')
           setTimeout(() => $replaceBlock.replaceWith(state.newBlock), 400)
         } else {
-          if (oldState.skippedBlockNumbers !== state.skippedBlockNumbers) {
-            const newSkippedBlockNumbers = _.difference(state.skippedBlockNumbers, oldState.skippedBlockNumbers)
-            _.map(newSkippedBlockNumbers, (skippedBlockNumber) => {
-              prependWithClingBottom($blocksList, placeHolderBlock(skippedBlockNumber))
+          if (skippedBlockNumbers.length) {
+            _.forEachRight(skippedBlockNumbers, (skippedBlockNumber) => {
+              beforeWithClingBottom($(`[data-block-number="${skippedBlockNumber - 1}"]`), placeHolderBlock(skippedBlockNumber))
             })
           }
-          prependWithClingBottom($blocksList, state.newBlock)
+          beforeWithClingBottom($(`[data-block-number="${state.blockNumbers[0] - 1}"]`), state.newBlock)
         }
         updateAllAges()
       }
@@ -110,11 +110,10 @@ if ($blockListPage.length) {
 
 function placeHolderBlock (blockNumber) {
   return `
-    <div class="my-3">
+    <div class="my-3" style="height: 98px;" data-selector="place-holder" data-block-number="${blockNumber}">
       <div
         class="tile tile-type-block d-flex align-items-center fade-up"
-        data-selector="place-holder"
-        data-block-number="${blockNumber}"
+        style="height: 98px;"
       >
         <span class="loading-spinner-small ml-1 mr-4">
           <span class="loading-spinner-block-1"></span>
