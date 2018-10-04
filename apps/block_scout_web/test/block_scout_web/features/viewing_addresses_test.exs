@@ -147,7 +147,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
 
       new_pending = insert(:transaction, from_address: addresses.lincoln)
 
-      Notifier.handle_event({:chain_event, :transactions, [new_pending.hash]})
+      Notifier.handle_event({:chain_event, :transactions, :realtime, [new_pending.hash]})
 
       assert_has(session, AddressPage.pending_transaction(new_pending))
     end
@@ -278,7 +278,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       internal_transaction =
         insert(:internal_transaction, transaction: transaction, index: 0, from_address: addresses.lincoln)
 
-      Notifier.handle_event({:chain_event, :internal_transactions, [internal_transaction]})
+      Notifier.handle_event({:chain_event, :internal_transactions, :realtime, [internal_transaction]})
 
       session
       |> assert_has(AddressPage.internal_transactions(count: 3))

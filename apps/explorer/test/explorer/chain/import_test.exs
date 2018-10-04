@@ -42,7 +42,7 @@ defmodule Explorer.Chain.ImportTest do
         ],
         timeout: 5
       },
-      broadcast: true,
+      broadcast: :realtime,
       internal_transactions: %{
         params: [
           %{
@@ -399,7 +399,7 @@ defmodule Explorer.Chain.ImportTest do
     test "publishes data to subscribers on insert" do
       Chain.subscribe_to_events(:logs)
       Import.all(@import_data)
-      assert_received {:chain_event, :logs, [%Log{}]}
+      assert_received {:chain_event, :logs, :realtime, [%Log{}]}
     end
 
     test "with invalid data" do
@@ -413,31 +413,39 @@ defmodule Explorer.Chain.ImportTest do
     test "publishes addresses with updated fetched_coin_balance data to subscribers on insert" do
       Chain.subscribe_to_events(:addresses)
       Import.all(@import_data)
-      assert_received {:chain_event, :addresses, [%Address{}, %Address{}, %Address{}]}
+      assert_received {:chain_event, :addresses, :realtime, [%Address{}, %Address{}, %Address{}]}
     end
 
     test "publishes block data to subscribers on insert" do
       Chain.subscribe_to_events(:blocks)
       Import.all(@import_data)
-      assert_received {:chain_event, :blocks, [%Block{}]}
+      assert_received {:chain_event, :blocks, :realtime, [%Block{}]}
     end
 
     test "publishes internal_transaction data to subscribers on insert" do
       Chain.subscribe_to_events(:internal_transactions)
       Import.all(@import_data)
-      assert_received {:chain_event, :internal_transactions, [%{id: _}, %{id: _}]}
+      assert_received {:chain_event, :internal_transactions, :realtime, [%{id: _}, %{id: _}]}
     end
 
     test "publishes log data to subscribers on insert" do
       Chain.subscribe_to_events(:logs)
       Import.all(@import_data)
-      assert_received {:chain_event, :logs, [%Log{}]}
+      assert_received {:chain_event, :logs, :realtime, [%Log{}]}
     end
 
     test "publishes transaction hashes data to subscribers on insert" do
       Chain.subscribe_to_events(:transactions)
       Import.all(@import_data)
-      assert_received {:chain_event, :transactions, [%Hash{}]}
+      assert_received {:chain_event, :transactions, :realtime, [%Hash{}]}
+    end
+
+    test "publishes token_transfers data to subscribers on insert" do
+      Chain.subscribe_to_events(:token_transfers)
+
+      Import.all(@import_data)
+
+      assert_received {:chain_event, :token_transfers, :realtime, [%TokenTransfer{}]}
     end
 
     test "does not broadcast if broadcast option is false" do
@@ -445,7 +453,7 @@ defmodule Explorer.Chain.ImportTest do
 
       Chain.subscribe_to_events(:logs)
       Import.all(non_broadcast_data)
-      refute_received {:chain_event, :logs, [%Log{}]}
+      refute_received {:chain_event, :logs, :realtime, [%Log{}]}
     end
 
     test "updates address with contract code" do

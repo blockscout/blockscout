@@ -110,7 +110,7 @@ defmodule Indexer.PendingTransaction.Fetcher do
         {:ok, _} =
           Chain.import(%{
             addresses: %{params: addresses_params},
-            broadcast: true,
+            broadcast: :realtime,
             transactions: %{params: transactions_params, on_conflict: :nothing}
           })
 

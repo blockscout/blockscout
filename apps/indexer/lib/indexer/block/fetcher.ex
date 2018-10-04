@@ -28,7 +28,7 @@ defmodule Indexer.Block.Fetcher do
                 address_token_balances: Import.Runner.options(),
                 blocks: Import.Runner.options(),
                 block_second_degree_relations: Import.Runner.options(),
-                broadcast: boolean,
+                broadcast: term(),
                 logs: Import.Runner.options(),
                 token_transfers: Import.Runner.options(),
                 tokens: Import.Runner.options(),
@@ -82,13 +82,13 @@ defmodule Indexer.Block.Fetcher do
              | {step :: atom(), failed_value :: term(), changes_so_far :: term()}}
   def fetch_and_import_range(
         %__MODULE__{
-          broadcast: broadcast,
+          broadcast: _broadcast,
           callback_module: callback_module,
           json_rpc_named_arguments: json_rpc_named_arguments
         } = state,
         _.._ = range
       )
-      when broadcast in ~w(true false)a and callback_module != nil do
+      when callback_module != nil do
     with {:blocks, {:ok, next, result}} <-
            {:blocks, EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments)},
          %{

@@ -22,7 +22,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   @type t :: %__MODULE__{
           block_fetcher: %Block.Fetcher{
-            broadcast: true,
+            broadcast: term(),
             callback_module: __MODULE__,
             json_rpc_named_arguments: EthereumJSONRPC.json_rpc_named_arguments(),
             receipts_batch_size: pos_integer(),
@@ -39,7 +39,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   @impl GenServer
   def init(%{block_fetcher: %Block.Fetcher{} = block_fetcher, subscribe_named_arguments: subscribe_named_arguments})
       when is_list(subscribe_named_arguments) do
-    {:ok, %__MODULE__{block_fetcher: %Block.Fetcher{block_fetcher | broadcast: true, callback_module: __MODULE__}},
+    {:ok, %__MODULE__{block_fetcher: %Block.Fetcher{block_fetcher | broadcast: :realtime, callback_module: __MODULE__}},
      {:continue, {:init, subscribe_named_arguments}}}
   end
 

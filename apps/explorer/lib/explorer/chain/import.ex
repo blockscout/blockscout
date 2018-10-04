@@ -38,7 +38,7 @@ defmodule Explorer.Chain.Import do
     end
 
   @type all_options :: %{
-          optional(:broadcast) => boolean,
+          optional(:broadcast) => atom,
           optional(:timeout) => timeout,
           unquote_splicing(quoted_runner_options)
         }

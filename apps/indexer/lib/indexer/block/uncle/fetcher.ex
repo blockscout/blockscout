@@ -48,7 +48,7 @@ defmodule Indexer.Block.Uncle.Fetcher do
     merged_init_options =
       @defaults
       |> Keyword.merge(mergeable_init_options)
-      |> Keyword.put(:state, %Block.Fetcher{state | broadcast: false, callback_module: __MODULE__})
+      |> Keyword.put(:state, %Block.Fetcher{state | broadcast: :uncle, callback_module: __MODULE__})
 
     Supervisor.child_spec({BufferedTask, [{__MODULE__, merged_init_options}, gen_server_options]}, id: __MODULE__)
   end
