@@ -94,3 +94,11 @@ label, textarea.form-control {
       color: $teal;
     }
 }
+
+[data-transaction-status="Success"] {
+  color: $success;
+}
+
+[data-transaction-status^="Error"] {
+  color: $danger;
+}
