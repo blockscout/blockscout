@@ -1,0 +1,3 @@
+<title>
+  <%= gettext("%{subnetwork} Explorer - BlockScout", subnetwork: subnetwork_title()) %>
+</title>

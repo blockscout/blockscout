@@ -1,0 +1,13 @@
+<%= if assigns[:block] do %>
+  <title>
+    <%= gettext(
+          "Block %{block_number} - %{subnetwork} Explorer",
+          block_number: @block.number,
+          subnetwork: BlockScoutWeb.LayoutView.subnetwork_title()
+        ) %>
+  </title>
+  <meta name="keywords" content="<%= "#{@block.number}, #{BlockScoutWeb.LayoutView.subnetwork_title()} #{@block.number}" %>">
+  <meta name="description" content="<%= gettext "View the transactions, token transfers, and uncles for block number %{block_number}", block_number: @block.number %>">
+<% else %>
+  <%= BlockScoutWeb.LayoutView.render("_default_title.html") %>
+<% end %>
