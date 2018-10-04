@@ -869,11 +869,11 @@ defmodule Explorer.Chain do
     block_type = Keyword.get(options, :block_type, "Block")
 
     Block
-    |> join_associations(necessity_by_association)
-    |> page_blocks(paging_options)
     |> Block.block_type_filter(block_type)
+    |> page_blocks(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by(desc: :number)
+    |> join_associations(necessity_by_association)
     |> Repo.all()
   end
 

@@ -11,6 +11,10 @@ defmodule BlockScoutWeb.BlockListPage do
     visit(session, "/blocks")
   end
 
+  def visit_reorgs_page(session) do
+    visit(session, "/reorgs")
+  end
+
   def visit_uncles_page(session) do
     visit(session, "/uncles")
   end

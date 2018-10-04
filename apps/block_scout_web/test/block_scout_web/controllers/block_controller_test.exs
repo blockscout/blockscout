@@ -109,6 +109,35 @@ defmodule BlockScoutWeb.BlockControllerTest do
     end
   end
 
+  describe "GET reorgs/2" do
+    test "returns all reorgs", %{conn: conn} do
+      reorg_hashes =
+        4
+        |> insert_list(:block, consensus: false)
+        |> Enum.map(& &1.hash)
+      conn = get(conn, reorg_path(conn, :reorg))
+
+      assert Enum.map(conn.assigns.blocks, & &1.hash) == Enum.reverse(reorg_hashes)
+      assert conn.assigns.block_type == "Reorg"
+    end
+
+    test "does not include blocks or uncles", %{conn: conn} do
+      reorg_hashes =
+        4
+        |> insert_list(:block, consensus: false)
+        |> Enum.map(& &1.hash)
+
+      insert(:block)
+      uncle = insert(:block, consensus: false)
+      insert(:block_second_degree_relation, uncle_hash: uncle.hash)
+
+      conn = get(conn, reorg_path(conn, :reorg))
+
+      assert Enum.map(conn.assigns.blocks, & &1.hash) == Enum.reverse(reorg_hashes)
+      assert conn.assigns.block_type == "Reorg"
+    end
+  end
+
   describe "GET uncle/2" do
     test "returns all uncles", %{conn: conn} do
       uncle_hashes =

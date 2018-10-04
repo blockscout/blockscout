@@ -5,15 +5,15 @@
       <div class="card">
         <div class="card-body">
           <h1 class="card-title" data-test="detail_type">
-            <%= gettext("%{type} Details", type: (if uncle?(@block), do: "Uncle", else: "Block")) %>
+            <%= gettext("%{block_type} Details", block_type: block_type(@block)) %>
           </h1>
           <!-- Block Height -->
           <h3 data-test="block_detail_number">
-            <%= if uncle?(@block) do %>
-              <%= gettext("Uncle Height:") %>
-              <%= link(@block, to: block_path(BlockScoutWeb.Endpoint, :show, @block.number)) %>
-            <% else %>
+            <%= if block_type(@block) == "Block" do %>
               <%= gettext("Block Height: %{height}", height: @block.number) %>
+            <% else %>
+              <%= gettext("%{block_type} Height:", block_type: block_type(@block)) %>
+              <%= link(@block, to: block_path(BlockScoutWeb.Endpoint, :show, @block.number)) %>
             <% end %>
           </h3>
           <div class="d-flex flex-row justify-content-start text-muted">
@@ -57,7 +57,7 @@
             </dd>
           </dl>
 
-          <%= if not uncle?(@block) do %>
+          <%= if block_type(@block) == "Block" do %>
             <!-- Total Difficulty -->
             <dl class="row">
               <dt class="col-sm-3 text-muted"> <%= gettext "Total Difficulty" %> </dt>

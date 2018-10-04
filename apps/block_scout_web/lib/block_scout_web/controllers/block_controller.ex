@@ -22,6 +22,20 @@ defmodule BlockScoutWeb.BlockController do
     redirect(conn, to: block_transaction_path(conn, :index, hash_or_number))
   end
 
+  def reorg(conn, params) do
+    Keyword.merge(
+      [
+        necessity_by_association: %{
+          :transactions => :optional,
+          [miner: :names] => :optional
+        },
+        block_type: "Reorg"
+      ],
+      paging_options(params)
+    )
+    |> handle_render(conn, params)
+  end
+
   def uncle(conn, params) do
     Keyword.merge(
       [

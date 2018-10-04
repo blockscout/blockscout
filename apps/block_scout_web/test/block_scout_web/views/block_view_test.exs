@@ -18,26 +18,33 @@ defmodule BlockScoutWeb.BlockViewTest do
     end
   end
 
+  describe "block_type/1" do
+    test "returns Block" do
+      block = insert(:block, nephews: [])
+
+      assert BlockView.block_type(block) == "Block"
+    end
+
+    test "returns Reorg" do
+      reorg = insert(:block, consensus: false, nephews: [])
+
+      assert BlockView.block_type(reorg) == "Reorg"
+    end
+
+    test "returns Uncle" do
+      uncle = insert(:block, consensus: false)
+      insert(:block_second_degree_relation, uncle_hash: uncle.hash)
+
+      assert BlockView.block_type(uncle) == "Uncle"
+    end
+  end
+
   describe "formatted_timestamp/1" do
     test "returns a formatted timestamp string for a block" do
       block = insert(:block)
 
       assert Timex.format!(block.timestamp, "%b-%d-%Y %H:%M:%S %p %Z", :strftime) ==
                BlockView.formatted_timestamp(block)
-    end
-  end
-
-  describe "uncle?/1" do
-    test "returns true for an uncle block" do
-      uncle = insert(:block, consensus: false)
-
-      assert BlockView.uncle?(uncle)
-    end
-
-    test "returns false for a block" do
-      block = insert(:block)
-
-      refute BlockView.uncle?(block)
     end
   end
 end

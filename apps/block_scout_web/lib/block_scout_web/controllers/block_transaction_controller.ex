@@ -11,7 +11,8 @@ defmodule BlockScoutWeb.BlockTransactionController do
            param_block_hash_or_number_to_block(formatted_block_hash_or_number,
              necessity_by_association: %{
                [miner: :names] => :required,
-               :uncles => :optional
+               :uncles => :optional,
+               :nephews => :optional
              }
            ) do
       block_transaction_count = Chain.block_to_transaction_count(block)

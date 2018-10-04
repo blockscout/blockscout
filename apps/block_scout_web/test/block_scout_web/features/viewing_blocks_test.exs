@@ -150,6 +150,17 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
     end
   end
 
+  describe "viewing reorg blocks list" do
+    test "lists uncle blocks", %{session: session} do
+      [reorg | _] = insert_list(10, :block, consensus: false)
+
+      session
+      |> BlockListPage.visit_reorgs_page()
+      |> assert_has(BlockListPage.block(reorg))
+      |> assert_has(BlockListPage.blocks(10))
+    end
+  end
+
   describe "viewing uncle blocks list" do
     setup do
       uncles =
