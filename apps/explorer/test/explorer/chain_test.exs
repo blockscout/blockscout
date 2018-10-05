@@ -558,28 +558,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "count_token_transfers_from_token_hash/1" do
-    test "without token transfers" do
-      %Token{contract_address_hash: contract_address_hash} = insert(:token)
-
-      assert Chain.count_token_transfers_from_token_hash(contract_address_hash) == 0
-    end
-
-    test "with token transfers" do
-      address = insert(:address)
-
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      %TokenTransfer{token_contract_address_hash: token_contract_address_hash} =
-        insert(:token_transfer, to_address: address, transaction: transaction)
-
-      assert Chain.count_token_transfers_from_token_hash(token_contract_address_hash) == 1
-    end
-  end
-
   describe "gas_price/2" do
     test ":wei unit" do
       assert Chain.gas_price(%Transaction{gas_price: %Wei{value: Decimal.new(1)}}, :wei) == Decimal.new(1)
