@@ -98,10 +98,13 @@ defmodule Indexer.Block.Uncle.Fetcher do
     end
   end
 
+  @ignored_options ~w(address_hash_to_fetched_balance_block_number transaction_hash_to_block_number)a
+
   @impl Block.Fetcher
   def import(_, options) when is_map(options) do
     with {:ok, %{block_second_degree_relations: block_second_degree_relations}} = ok <-
            options
+           |> Map.drop(@ignored_options)
            |> uncle_blocks()
            |> fork_transactions()
            |> Chain.import() do

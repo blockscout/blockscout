@@ -8,43 +8,46 @@ defmodule Explorer.Chain.Import.TokenTransfers do
   alias Ecto.{Changeset, Multi}
   alias Explorer.Chain.{Import, TokenTransfer}
 
+  @behaviour Import.Runner
+
   # milliseconds
   @timeout 60_000
 
-  @type options :: %{
-          required(:params) => Import.params(),
-          optional(:timeout) => timeout
-        }
   @type imported :: [TokenTransfer.t()]
 
-  def run(multi, ecto_schema_module_to_changes_list, options)
-      when is_map(ecto_schema_module_to_changes_list) and is_map(options) do
-    case ecto_schema_module_to_changes_list do
-      %{TokenTransfer => token_transfers_changes} ->
-        timestamps = Map.fetch!(options, :timestamps)
+  @impl Import.Runner
+  def ecto_schema_module, do: TokenTransfer
 
-        Multi.run(multi, :token_transfers, fn _ ->
-          insert(
-            token_transfers_changes,
-            %{
-              timeout: options[:token_transfers][:timeout] || @timeout,
-              timestamps: timestamps
-            }
-          )
-        end)
+  @impl Import.Runner
+  def option_key, do: :token_transfers
 
-      _ ->
-        multi
-    end
+  @impl Import.Runner
+  def imported_table_row do
+    %{
+      value_type: "[#{ecto_schema_module()}.t()]",
+      value_description: "List of `t:#{ecto_schema_module()}.t/0`s"
+    }
   end
 
+  @impl Import.Runner
+  def run(multi, changes_list, options) when is_map(options) do
+    timestamps = Map.fetch!(options, :timestamps)
+    timeout = options[option_key()][:timeout] || @timeout
+
+    Multi.run(multi, :token_transfers, fn _ ->
+      insert(changes_list, %{timeout: timeout, timestamps: timestamps})
+    end)
+  end
+
+  @impl Import.Runner
   def timeout, do: @timeout
 
   @spec insert([map()], %{required(:timeout) => timeout(), required(:timestamps) => Import.timestamps()}) ::
           {:ok, [TokenTransfer.t()]}
           | {:error, [Changeset.t()]}
-  def insert(changes_list, %{timeout: timeout, timestamps: timestamps})
-      when is_list(changes_list) do
+  def insert(changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
+    on_conflict = Map.get(options, :on_conflict, :replace_all)
+
     # order so that row ShareLocks are grabbed in a consistent order
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.log_index})
 
@@ -52,7 +55,7 @@ defmodule Explorer.Chain.Import.TokenTransfers do
       Import.insert_changes_list(
         ordered_changes_list,
         conflict_target: [:transaction_hash, :log_index],
-        on_conflict: :replace_all,
+        on_conflict: on_conflict,
         for: TokenTransfer,
         returning: true,
         timeout: timeout,

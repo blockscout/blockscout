@@ -4,55 +4,62 @@ defmodule Explorer.Chain.Import do
   """
 
   alias Ecto.{Changeset, Multi}
-
-  alias Explorer.Chain.{
-    Address,
-    Address.CoinBalance,
-    Address.TokenBalance,
-    Block,
-    Import,
-    InternalTransaction,
-    Log,
-    Token,
-    TokenTransfer,
-    Transaction
-  }
-
+  alias Explorer.Chain.Import
   alias Explorer.Repo
 
-  @type changeset_function_name :: atom
-  @type on_conflict :: :nothing | :replace_all
-  @type params :: [map()]
+  # in order so that foreign keys are inserted before being referenced
+  @runners [
+    Import.Addresses,
+    Import.Address.CoinBalances,
+    Import.Blocks,
+    Import.Block.SecondDegreeRelations,
+    Import.Transactions,
+    Import.Transaction.Forks,
+    Import.InternalTransactions,
+    Import.Logs,
+    Import.Tokens,
+    Import.TokenTransfers,
+    Import.Address.TokenBalances
+  ]
+
+  quoted_runner_option_value =
+    quote do
+      Import.Runner.options()
+    end
+
+  quoted_runner_options =
+    for runner <- @runners do
+      quoted_key =
+        quote do
+          optional(unquote(runner.option_key()))
+        end
+
+      {quoted_key, quoted_runner_option_value}
+    end
+
   @type all_options :: %{
-          optional(:addresses) => Import.Addresses.options(),
-          optional(:address_coin_balances) => Import.Address.CoinBalances.options(),
-          optional(:address_token_balances) => Import.Address.TokenBalances.options(),
-          optional(:blocks) => Import.Blocks.options(),
-          optional(:block_second_degree_relations) => Import.Block.SecondDegreeRelations.options(),
           optional(:broadcast) => boolean,
-          optional(:internal_transactions) => Import.InternalTransactions.options(),
-          optional(:logs) => Import.Logs.options(),
           optional(:timeout) => timeout,
-          optional(:token_transfers) => Import.TokenTransfers.options(),
-          optional(:tokens) => Import.Tokens.options(),
-          optional(:transactions) => Import.Transactions.options(),
-          optional(:transaction_forks) => Import.Transaction.Forks.options()
+          unquote_splicing(quoted_runner_options)
         }
+
+  quoted_runner_imported =
+    for runner <- @runners do
+      quoted_key =
+        quote do
+          optional(unquote(runner.option_key()))
+        end
+
+      quoted_value =
+        quote do
+          unquote(runner).imported()
+        end
+
+      {quoted_key, quoted_value}
+    end
+
   @type all_result ::
-          {:ok,
-           %{
-             optional(:addresses) => Import.Addresses.imported(),
-             optional(:address_coin_balances) => Import.Address.CoinBalances.imported(),
-             optional(:address_token_balances) => Import.Address.TokenBalances.imported(),
-             optional(:blocks) => Import.Blocks.imported(),
-             optional(:block_second_degree_relations) => Import.Block.SecondDegreeRelations.imported(),
-             optional(:internal_transactions) => Import.InternalTransactions.imported(),
-             optional(:logs) => Import.Logs.imported(),
-             optional(:token_transfers) => Import.TokenTransfers.imported(),
-             optional(:tokens) => Import.Tokens.imported(),
-             optional(:transactions) => Import.Transactions.imported(),
-             optional(:transaction_forks) => Import.Transaction.Forks.imported()
-           }}
+          {:ok, %{unquote_splicing(quoted_runner_imported)}}
           | {:error, [Changeset.t()]}
           | {:error, step :: Ecto.Multi.name(), failed_value :: any(),
              changes_so_far :: %{optional(Ecto.Multi.name()) => any()}}
@@ -62,23 +69,37 @@ defmodule Explorer.Chain.Import do
   # milliseconds
   @transaction_timeout 120_000
 
+  @imported_table_rows @runners
+                       |> Stream.map(&Map.put(&1.imported_table_row(), :key, &1.option_key()))
+                       |> Enum.map_join("\n", fn %{
+                                                   key: key,
+                                                   value_type: value_type,
+                                                   value_description: value_description
+                                                 } ->
+                         "| `#{inspect(key)}` | `#{value_type}` | #{value_description} |"
+                       end)
+  @runner_options_doc Enum.map_join(@runners, fn runner ->
+                        ecto_schema_module = runner.ecto_schema_module()
+
+                        """
+                          * `#{runner.option_key() |> inspect()}`
+                            * `:on_conflict` - what to do if a conflict occurs with a pre-existing row: `:nothing`, `:replace_all`, or an
+                              `t:Ecto.Query.t/0` to update specific columns.
+                            * `:params` - `list` of params for changeset function in `#{ecto_schema_module}`.
+                            * `:with` - changeset function to use in `#{ecto_schema_module}`.  Default to `:changeset`.
+                            * `:timeout` - the timeout for inserting each batch of changes from `:params`.
+                              Defaults to `#{runner.timeout()}` milliseconds.
+                        """
+                      end)
+
   @doc """
   Bulk insert all data stored in the `Explorer`.
 
   The import returns the unique key(s) for each type of record inserted.
 
-  | Key                              | Value Type                                                                                      | Value Description                                                                                    |
-  |----------------------------------|-------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
-  | `:addresses`                     | `[Explorer.Chain.Address.t()]`                                                                  | List of `t:Explorer.Chain.Address.t/0`s                                                              |
-  | `:address_coin_balances`         | `[%{address_hash: Explorer.Chain.Hash.t(), block_number: Explorer.Chain.Block.block_number()}]` | List of  maps of the `t:Explorer.Chain.Address.CoinBalance.t/0` `address_hash` and `block_number`    |
-  | `:blocks`                        | `[Explorer.Chain.Block.t()]`                                                                    | List of `t:Explorer.Chain.Block.t/0`s                                                                |
-  | `:internal_transactions`         | `[%{index: non_neg_integer(), transaction_hash: Explorer.Chain.Hash.t()}]`                      | List of maps of the `t:Explorer.Chain.InternalTransaction.t/0` `index` and `transaction_hash`        |
-  | `:logs`                          | `[Explorer.Chain.Log.t()]`                                                                      | List of `t:Explorer.Chain.Log.t/0`s                                                                  |
-  | `:token_transfers`               | `[Explorer.Chain.TokenTransfer.t()]`                                                            | List of `t:Explorer.Chain.TokenTransfer.t/0`s                                                        |
-  | `:tokens`                        | `[Explorer.Chain.Token.t()]`                                                                    | List of `t:Explorer.Chain.token.t/0`s                                                                |
-  | `:transactions`                  | `[Explorer.Chain.Hash.t()]`                                                                     | List of `t:Explorer.Chain.Transaction.t/0` `hash`                                                    |
-  | `:transaction_forks`             | `[%{uncle_hash: Explorer.Chain.Hash.t(), hash: Explorer.Chain.Hash.t()}]`                       | List of maps of the `t:Explorer.Chain.Transaction.Fork.t/0` `uncle_hash` and `hash`                  |
-  | `:block_second_degree_relations` | `[%{uncle_hash: Explorer.Chain.Hash.t(), nephew_hash: Explorer.Chain.Hash.t()]`                 | List of maps of the `t:Explorer.Chain.Block.SecondDegreeRelation.t/0` `uncle_hash` and `nephew_hash` |
+  | Key | Value Type | Value Description |
+  |-----|------------|-------------------|
+  #{@imported_table_rows}
 
   The params for each key are validated using the corresponding `Ecto.Schema` module's `changeset/2` function.  If there
   are errors, they are returned in `Ecto.Changeset.t`s, so that the original, invalid value can be reconstructed for any
@@ -97,68 +118,17 @@ defmodule Explorer.Chain.Import do
 
   ## Options
 
-    * `:addresses`
-      * `:params` - `list` of params for `Explorer.Chain.Address.changeset/2`.
-      * `:timeout` - the timeout for inserting all addresses.  Defaults to `#{Import.Addresses.timeout()}` milliseconds.
-      * `:with` - the changeset function on `Explorer.Chain.Address` to use validate `:params`.
-    * `:address_coin_balances`
-      * `:params` - `list` of params for `Explorer.Chain.Address.CoinBalance.changeset/2`.
-      * `:timeout` - the timeout for inserting all balances.  Defaults to `#{Import.Address.CoinBalances.timeout()}`
-        milliseconds.
-    * `:address_token_balances`
-      * `:params` - `list` of params for `Explorer.Chain.TokenBalance.changeset/2`
-    * `:blocks`
-      * `:params` - `list` of params for `Explorer.Chain.Block.changeset/2`.
-      * `:timeout` - the timeout for inserting all blocks. Defaults to `#{Import.Blocks.timeout()}` milliseconds.
-    * `:block_second_degree_relations`
-      * `:params` - `list` of params `for `Explorer.Chain.Block.SecondDegreeRelation.changeset/2`.
-      * `:timeout` - the timeout for inserting all uncles found in the params list.  Defaults to
-        `#{Import.Block.SecondDegreeRelations.timeout()}` milliseconds.
     * `:broadcast` - Boolean flag indicating whether or not to broadcast the event.
-    * `:internal_transactions`
-      * `:params` - `list` of params for `Explorer.Chain.InternalTransaction.changeset/2`.
-      * `:timeout` - the timeout for inserting all internal transactions. Defaults to
-        `#{Import.InternalTransactions.timeout()}` milliseconds.
-    * `:logs`
-      * `:params` - `list` of params for `Explorer.Chain.Log.changeset/2`.
-      * `:timeout` - the timeout for inserting all logs. Defaults to `#{Import.Logs.timeout()}` milliseconds.
     * `:timeout` - the timeout for the whole `c:Ecto.Repo.transaction/0` call.  Defaults to `#{@transaction_timeout}`
       milliseconds.
-    * `:token_transfers`
-      * `:params` - `list` of params for `Explorer.Chain.TokenTransfer.changeset/2`
-      * `:timeout` - the timeout for inserting all token transfers. Defaults to `#{Import.TokenTransfers.timeout()}`
-        milliseconds.
-    * `:tokens`
-      * `:on_conflict` - Whether to do `:nothing` or `:replace_all` columns when there is a pre-existing token
-        with the same contract address hash.
-      * `:params` - `list` of params for `Explorer.Chain.Token.changeset/2`
-      * `:timeout` - the timeout for inserting all tokens. Defaults to `#{Import.Tokens.timeout()}` milliseconds.
-    * `:transactions`
-      * `:on_conflict` - Whether to do `:nothing` or `:replace_all` columns when there is a pre-existing transaction
-        with the same hash.
-
-        *NOTE*: Because the repository transaction for a pending `Explorer.Chain.Transaction`s could `COMMIT` after the
-        repository transaction for that same transaction being collated into a block, writers, it is recommended to use
-        `:nothing` for pending transactions and `:replace_all` for collated transactions, so that collated transactions
-        win.
-      * `:params` - `list` of params for `Explorer.Chain.Transaction.changeset/2`.
-      * `:timeout` - the timeout for inserting all transactions found in the params lists across all
-        types. Defaults to `#{Import.Transactions.timeout()}` milliseconds.
-      * `:with` - the changeset function on `Explorer.Chain.Transaction` to use validate `:params`.
-    * `:transaction_forks`
-      * `:params` - `list` of params for `Explorer.Chain.Transaction.Fork.changeset/2`.
-      * `:timeout` - the timeout for inserting all transaction forks.  Defaults to
-        `#{Import.Transaction.Forks.timeout()}` milliseconds.
-    * `:timeout` - the timeout for `Repo.transaction`. Defaults to `#{@transaction_timeout}` milliseconds.
-
+  #{@runner_options_doc}
   """
   @spec all(all_options()) :: all_result()
   def all(options) when is_map(options) do
-    changes_list_arguments_list = import_options_to_changes_list_arguments_list(options)
-
-    with {:ok, ecto_schema_module_to_changes_list_map} <-
-           changes_list_arguments_list_to_ecto_schema_module_to_changes_list_map(changes_list_arguments_list),
-         {:ok, data} <- insert_ecto_schema_module_to_changes_list_map(ecto_schema_module_to_changes_list_map, options) do
+    with {:ok, runner_options_pairs} <- validate_options(options),
+         {:ok, valid_runner_option_pairs} <- validate_runner_options_pairs(runner_options_pairs),
+         {:ok, runner_changes_list_pairs} <- runner_changes_list_pairs(valid_runner_option_pairs),
+         {:ok, data} <- insert_runner_changes_list_pairs(runner_changes_list_pairs, options) do
       if Map.get(options, :broadcast, false), do: broadcast_events(data)
       {:ok, data}
     end
@@ -179,84 +149,147 @@ defmodule Explorer.Chain.Import do
     end)
   end
 
-  defp changes_list_arguments_list_to_ecto_schema_module_to_changes_list_map(changes_list_arguments_list) do
-    changes_list_arguments_list
-    |> Stream.map(fn [params_list, options] ->
-      ecto_schema_module = Keyword.fetch!(options, :for)
-      {ecto_schema_module, changes_list(params_list, options)}
-    end)
-    |> Enum.reduce({:ok, %{}}, fn
-      {ecto_schema_module, {:ok, changes_list}}, {:ok, ecto_schema_module_to_changes_list_map} ->
-        {:ok, Map.put(ecto_schema_module_to_changes_list_map, ecto_schema_module, changes_list)}
-
-      {_, {:ok, _}}, {:error, _} = error ->
-        error
-
-      {_, {:error, _} = error}, {:ok, _} ->
-        error
-
-      {_, {:error, changesets}}, {:error, acc_changesets} ->
-        {:error, acc_changesets ++ changesets}
-    end)
-  end
-
-  @spec changes_list(params :: [map], [{:for, module} | {:with, atom}]) :: {:ok, [map]} | {:error, [Changeset.t()]}
-  defp changes_list(params, options) when is_list(options) do
-    ecto_schema_module = Keyword.fetch!(options, :for)
-    changeset_function_name = Keyword.get(options, :with, :changeset)
-    struct = ecto_schema_module.__struct__()
-
-    {status, acc} =
-      params
-      |> Stream.map(&apply(ecto_schema_module, changeset_function_name, [struct, &1]))
+  defp runner_changes_list_pairs(runner_options_pairs) when is_list(runner_options_pairs) do
+    {status, reversed} =
+      runner_options_pairs
+      |> Stream.map(fn {runner, options} -> runner_changes_list(runner, options) end)
       |> Enum.reduce({:ok, []}, fn
-        changeset = %Changeset{valid?: false}, {:ok, _} ->
-          {:error, [changeset]}
+        {:ok, runner_changes_pair}, {:ok, acc_runner_changes_pairs} ->
+          {:ok, [runner_changes_pair | acc_runner_changes_pairs]}
 
-        changeset = %Changeset{valid?: false}, {:error, acc_changesets} ->
-          {:error, [changeset | acc_changesets]}
-
-        %Changeset{changes: changes, valid?: true}, {:ok, acc_changes} ->
-          {:ok, [changes | acc_changes]}
-
-        %Changeset{valid?: true}, {:error, _} = error ->
+        {:ok, _}, {:error, _} = error ->
           error
+
+        {:error, _} = error, {:ok, _} ->
+          error
+
+        {:error, runner_changesets}, {:error, acc_changesets} ->
+          {:error, acc_changesets ++ runner_changesets}
       end)
 
-    {status, Enum.reverse(acc)}
+    {status, Enum.reverse(reversed)}
   end
 
-  @import_option_key_to_ecto_schema_module %{
-    addresses: Address,
-    address_coin_balances: CoinBalance,
-    address_token_balances: TokenBalance,
-    blocks: Block,
-    block_second_degree_relations: Block.SecondDegreeRelation,
-    internal_transactions: InternalTransaction,
-    logs: Log,
-    token_transfers: TokenTransfer,
-    tokens: Token,
-    transactions: Transaction,
-    transaction_forks: Transaction.Fork
-  }
+  defp runner_changes_list(runner, %{params: params} = options) do
+    ecto_schema_module = runner.ecto_schema_module()
+    changeset_function_name = Map.get(options, :with, :changeset)
+    struct = ecto_schema_module.__struct__()
 
-  defp ecto_schema_module_to_changes_list_map_to_multi(ecto_schema_module_to_changes_list_map, options)
-       when is_map(options) do
+    params
+    |> Stream.map(&apply(ecto_schema_module, changeset_function_name, [struct, &1]))
+    |> Enum.reduce({:ok, []}, fn
+      changeset = %Changeset{valid?: false}, {:ok, _} ->
+        {:error, [changeset]}
+
+      changeset = %Changeset{valid?: false}, {:error, acc_changesets} ->
+        {:error, [changeset | acc_changesets]}
+
+      %Changeset{changes: changes, valid?: true}, {:ok, acc_changes} ->
+        {:ok, [changes | acc_changes]}
+
+      %Changeset{valid?: true}, {:error, _} = error ->
+        error
+    end)
+    |> case do
+      {:ok, changes} -> {:ok, {runner, changes}}
+      {:error, _} = error -> error
+    end
+  end
+
+  @global_options ~w(broadcast timeout)a
+
+  defp validate_options(options) when is_map(options) do
+    local_options = Map.drop(options, @global_options)
+
+    {reverse_runner_options_pairs, unknown_options} =
+      Enum.reduce(@runners, {[], local_options}, fn runner, {acc_runner_options_pairs, unknown_options} = acc ->
+        option_key = runner.option_key()
+
+        case local_options do
+          %{^option_key => option_value} ->
+            {[{runner, option_value} | acc_runner_options_pairs], Map.delete(unknown_options, option_key)}
+
+          _ ->
+            acc
+        end
+      end)
+
+    case Enum.empty?(unknown_options) do
+      true -> {:ok, Enum.reverse(reverse_runner_options_pairs)}
+      false -> {:error, {:unknown_options, unknown_options}}
+    end
+  end
+
+  defp validate_runner_options_pairs(runner_options_pairs) when is_list(runner_options_pairs) do
+    {status, reversed} =
+      runner_options_pairs
+      |> Stream.map(fn {runner, options} -> validate_runner_options(runner, options) end)
+      |> Enum.reduce({:ok, []}, fn
+        :ignore, acc ->
+          acc
+
+        {:ok, valid_runner_option_pair}, {:ok, valid_runner_options_pairs} ->
+          {:ok, [valid_runner_option_pair | valid_runner_options_pairs]}
+
+        {:ok, _}, {:error, _} = error ->
+          error
+
+        {:error, reason}, {:ok, _} ->
+          {:error, [reason]}
+
+        {:error, reason}, {:error, reasons} ->
+          {:error, [reason | reasons]}
+      end)
+
+    {status, Enum.reverse(reversed)}
+  end
+
+  defp validate_runner_options(runner, options) when is_map(options) do
+    option_key = runner.option_key()
+
+    case {validate_runner_option_params_required(option_key, options),
+          validate_runner_options_known(option_key, options)} do
+      {:ignore, :ok} -> :ignore
+      {:ignore, {:error, _} = error} -> error
+      {:ok, :ok} -> {:ok, {runner, options}}
+      {:ok, {:error, _} = error} -> error
+      {{:error, reason}, :ok} -> {:error, [reason]}
+      {{:error, reason}, {:error, reasons}} -> {:error, [reason | reasons]}
+    end
+  end
+
+  defp validate_runner_option_params_required(_, %{params: params}) do
+    case Enum.empty?(params) do
+      false -> :ok
+      true -> :ignore
+    end
+  end
+
+  defp validate_runner_option_params_required(runner_option_key, _),
+    do: {:error, {:required, [runner_option_key, :params]}}
+
+  @local_options ~w(on_conflict params with timeout)a
+
+  defp validate_runner_options_known(runner_option_key, options) do
+    unknown_option_keys = Map.keys(options) -- @local_options
+
+    if Enum.empty?(unknown_option_keys) do
+      :ok
+    else
+      reasons = Enum.map(unknown_option_keys, &{:unknown, [runner_option_key, &1]})
+
+      {:error, reasons}
+    end
+  end
+
+  defp runner_changes_list_pairs_to_multi(runner_changes_list_pairs, options)
+       when is_list(runner_changes_list_pairs) and is_map(options) do
     timestamps = timestamps()
     full_options = Map.put(options, :timestamps, timestamps)
 
-    Multi.new()
-    |> Import.Addresses.run(ecto_schema_module_to_changes_list_map, full_options)
-    |> Import.Address.CoinBalances.run(ecto_schema_module_to_changes_list_map, full_options)
-    |> Import.Blocks.run(ecto_schema_module_to_changes_list_map, full_options)
-    |> Import.Block.SecondDegreeRelations.run(ecto_schema_module_to_changes_list_map, full_options)
-    |> Import.Transactions.run(ecto_schema_module_to_changes_list_map, full_options)
-    |> Import.Transaction.Forks.run(ecto_schema_module_to_changes_list_map, full_options)
-    |> Import.InternalTransactions.run(ecto_schema_module_to_changes_list_map, full_options)
-    |> Import.Logs.run(ecto_schema_module_to_changes_list_map, full_options)
-    |> Import.Tokens.run(ecto_schema_module_to_changes_list_map, full_options)
-    |> Import.TokenTransfers.run(ecto_schema_module_to_changes_list_map, full_options)
-    |> Import.Address.TokenBalances.run(ecto_schema_module_to_changes_list_map, full_options)
+    Enum.reduce(runner_changes_list_pairs, Multi.new(), fn {runner, changes_list}, acc ->
+      runner.run(acc, changes_list, full_options)
+    end)
   end
 
   def insert_changes_list(changes_list, options) when is_list(changes_list) do
@@ -282,49 +315,13 @@ defmodule Explorer.Chain.Import do
     Map.merge(changes, timestamps)
   end
 
-  defp import_options_to_changes_list_arguments_list(options) do
-    Enum.flat_map(
-      @import_option_key_to_ecto_schema_module,
-      &import_options_to_changes_list_arguments_list_flat_mapper(options, &1)
-    )
-  end
-
-  defp import_options_to_changes_list_arguments_list_flat_mapper(options, {option_key, ecto_schema_module}) do
-    case Map.fetch(options, option_key) do
-      {:ok, option_value} ->
-        import_option_to_changes_list_arguments_list_flat_mapper(option_value, ecto_schema_module)
-
-      :error ->
-        []
-    end
-  end
-
-  defp import_option_to_changes_list_arguments_list_flat_mapper(%{params: params} = option_value, ecto_schema_module) do
-    # Use `Enum.empty?` instead of `[_ | _]` as params are allowed to be any collection of maps
-    case Enum.empty?(params) do
-      false ->
-        [
-          [
-            params,
-            [for: ecto_schema_module, with: Map.get(option_value, :with, :changeset)]
-          ]
-        ]
-
-      # filter out empty params as early as possible, so that later stages don't need to deal with empty params
-      # leading to selecting all rows because they produce no where conditions as happened in
-      # https://github.com/poanetwork/blockscout/issues/850
-      true ->
-        []
-    end
-  end
-
   defp import_transaction(multi, options) when is_map(options) do
     Repo.transaction(multi, timeout: Map.get(options, :timeout, @transaction_timeout))
   end
 
-  defp insert_ecto_schema_module_to_changes_list_map(ecto_schema_module_to_changes_list_map, options) do
-    ecto_schema_module_to_changes_list_map
-    |> ecto_schema_module_to_changes_list_map_to_multi(options)
+  defp insert_runner_changes_list_pairs(runner_changes_list_pairs, options) do
+    runner_changes_list_pairs
+    |> runner_changes_list_pairs_to_multi(options)
     |> import_transaction(options)
   end
 

@@ -12,61 +12,69 @@ defmodule Explorer.Chain.Import.Blocks do
   alias Explorer.Chain.{Block, Import, Transaction}
   alias Explorer.Repo
 
+  @behaviour Import.Runner
+
   # milliseconds
   @timeout 60_000
 
-  @type options :: %{
-          required(:params) => Import.params(),
-          optional(:timeout) => timeout
-        }
   @type imported :: [Block.t()]
 
-  def run(multi, ecto_schema_module_to_changes_list_map, options)
-      when is_map(ecto_schema_module_to_changes_list_map) and is_map(options) do
-    case ecto_schema_module_to_changes_list_map do
-      %{Block => blocks_changes} ->
-        timestamps = Map.fetch!(options, :timestamps)
-        blocks_timeout = options[:blocks][:timeout] || @timeout
-        where_forked = where_forked(blocks_changes)
+  @impl Import.Runner
+  def ecto_schema_module, do: Block
 
-        multi
-        |> Multi.run(:derive_transaction_forks, fn _ ->
-          derive_transaction_forks(%{
-            timeout: options[:transaction_forks][:timeout] || Import.Transaction.Forks.timeout(),
-            timestamps: timestamps,
-            where_forked: where_forked
-          })
-        end)
-        # MUST be after `:derive_transaction_forks`, which depends on values in `transactions` table
-        |> Multi.run(:fork_transactions, fn _ ->
-          fork_transactions(%{
-            timeout: options[:transactions][:timeout] || Import.Transactions.timeout(),
-            timestamps: timestamps,
-            where_forked: where_forked
-          })
-        end)
-        |> Multi.run(:lose_consenus, fn _ ->
-          lose_consensus(blocks_changes, %{timeout: blocks_timeout, timestamps: timestamps})
-        end)
-        |> Multi.run(:blocks, fn _ ->
-          insert(blocks_changes, %{timeout: blocks_timeout, timestamps: timestamps})
-        end)
-        |> Multi.run(:uncle_fetched_block_second_degree_relations, fn %{blocks: blocks} when is_list(blocks) ->
-          update_block_second_degree_relations(
-            blocks,
-            %{
-              timeout:
-                options[:block_second_degree_relations][:timeout] || Import.Block.SecondDegreeRelations.timeout(),
-              timestamps: timestamps
-            }
-          )
-        end)
+  @impl Import.Runner
+  def option_key, do: :blocks
 
-      _ ->
-        multi
-    end
+  @impl Import.Runner
+  def imported_table_row do
+    %{
+      value_type: "[#{ecto_schema_module()}.t()]",
+      value_description: "List of `t:#{ecto_schema_module()}.t/0`s"
+    }
   end
 
+  @impl Import.Runner
+  def run(multi, changes_list, options) when is_map(options) do
+    timestamps = Map.fetch!(options, :timestamps)
+    blocks_timeout = options[option_key()][:timeout] || @timeout
+    where_forked = where_forked(changes_list)
+
+    multi
+    |> Multi.run(:derive_transaction_forks, fn _ ->
+      derive_transaction_forks(%{
+        timeout: options[Import.Transaction.Forks.option_key()][:timeout] || Import.Transaction.Forks.timeout(),
+        timestamps: timestamps,
+        where_forked: where_forked
+      })
+    end)
+    # MUST be after `:derive_transaction_forks`, which depends on values in `transactions` table
+    |> Multi.run(:fork_transactions, fn _ ->
+      fork_transactions(%{
+        timeout: options[Import.Transactions.option_key()][:timeout] || Import.Transactions.timeout(),
+        timestamps: timestamps,
+        where_forked: where_forked
+      })
+    end)
+    |> Multi.run(:lose_consenus, fn _ ->
+      lose_consensus(changes_list, %{timeout: blocks_timeout, timestamps: timestamps})
+    end)
+    |> Multi.run(:blocks, fn _ ->
+      insert(changes_list, %{timeout: blocks_timeout, timestamps: timestamps})
+    end)
+    |> Multi.run(:uncle_fetched_block_second_degree_relations, fn %{blocks: blocks} when is_list(blocks) ->
+      update_block_second_degree_relations(
+        blocks,
+        %{
+          timeout:
+            options[Import.Block.SecondDegreeRelations.option_key()][:timeout] ||
+              Import.Block.SecondDegreeRelations.timeout(),
+          timestamps: timestamps
+        }
+      )
+    end)
+  end
+
+  @impl Import.Runner
   def timeout, do: @timeout
 
   # sobelow_skip ["SQL.Query"]
@@ -135,23 +143,21 @@ defmodule Explorer.Chain.Import.Blocks do
 
   @spec insert([map()], %{required(:timeout) => timeout, required(:timestamps) => Import.timestamps()}) ::
           {:ok, [Block.t()]} | {:error, [Changeset.t()]}
-  defp insert(changes_list, %{timeout: timeout, timestamps: timestamps})
-       when is_list(changes_list) do
+  defp insert(changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
+    on_conflict = Map.get(options, :on_conflict, :replace_all)
+
     # order so that row ShareLocks are grabbed in a consistent order
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.number, &1.hash})
 
-    {:ok, blocks} =
-      Import.insert_changes_list(
-        ordered_changes_list,
-        conflict_target: :hash,
-        on_conflict: :replace_all,
-        for: Block,
-        returning: true,
-        timeout: timeout,
-        timestamps: timestamps
-      )
-
-    {:ok, blocks}
+    Import.insert_changes_list(
+      ordered_changes_list,
+      conflict_target: :hash,
+      on_conflict: on_conflict,
+      for: Block,
+      returning: true,
+      timeout: timeout,
+      timestamps: timestamps
+    )
   end
 
   defp lose_consensus(blocks_changes, %{timeout: timeout, timestamps: %{updated_at: updated_at}})

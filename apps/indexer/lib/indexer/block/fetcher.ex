@@ -23,16 +23,16 @@ defmodule Indexer.Block.Fetcher do
               %{
                 address_hash_to_fetched_balance_block_number: address_hash_to_fetched_balance_block_number,
                 transaction_hash_to_block_number_option: transaction_hash_to_block_number,
-                addresses: Import.Addresses.options(),
-                address_coin_balances: Import.Address.CoinBalances.options(),
-                address_token_balances: Import.Address.TokenBalances.options(),
-                blocks: Import.Blocks.options(),
-                block_second_degree_relations: Import.Block.SecondDegreeRelations.options(),
+                addresses: Import.Runner.options(),
+                address_coin_balances: Import.Runner.options(),
+                address_token_balances: Import.Runner.options(),
+                blocks: Import.Runner.options(),
+                block_second_degree_relations: Import.Runner.options(),
                 broadcast: boolean,
-                logs: Import.Logs.options(),
-                token_transfers: Import.TokenTransfers.options(),
-                tokens: Import.Tokens.options(),
-                transactions: Import.Transactions.options()
+                logs: Import.Runner.options(),
+                token_transfers: Import.Runner.options(),
+                tokens: Import.Runner.options(),
+                transactions: Import.Runner.options()
               }
             ) :: Import.all_result()
 
@@ -124,7 +124,6 @@ defmodule Indexer.Block.Fetcher do
                blocks: %{params: blocks},
                block_second_degree_relations: %{params: block_second_degree_relations},
                logs: %{params: logs},
-               receipts: %{params: receipts},
                token_transfers: %{params: token_transfers},
                tokens: %{on_conflict: :nothing, params: tokens},
                transactions: %{params: transactions_with_receipts, on_conflict: :replace_all}

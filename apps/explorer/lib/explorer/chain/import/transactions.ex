@@ -5,50 +5,48 @@ defmodule Explorer.Chain.Import.Transactions do
 
   require Ecto.Query
 
-  alias Ecto.{Changeset, Multi}
+  alias Ecto.Multi
   alias Explorer.Chain.{Hash, Import, Transaction}
+
+  @behaviour Import.Runner
 
   # milliseconds
   @timeout 60_000
 
-  @type options :: %{
-          required(:params) => Import.params(),
-          optional(:with) => Import.changeset_function_name(),
-          optional(:on_conflict) => :nothing | :replace_all,
-          optional(:timeout) => timeout
-        }
   @type imported :: [Hash.Full.t()]
 
-  def run(multi, ecto_schema_module_to_changes_list_map, options)
-      when is_map(ecto_schema_module_to_changes_list_map) and is_map(options) do
-    case ecto_schema_module_to_changes_list_map do
-      %{Transaction => transactions_changes} ->
-        # check required options as early as possible
-        %{timestamps: timestamps, transactions: %{on_conflict: on_conflict} = transactions_options} = options
+  @impl Import.Runner
+  def ecto_schema_module, do: Transaction
 
-        Multi.run(multi, :transactions, fn _ ->
-          insert(
-            transactions_changes,
-            %{
-              on_conflict: on_conflict,
-              timeout: transactions_options[:timeout] || @timeout,
-              timestamps: timestamps
-            }
-          )
-        end)
+  @impl Import.Runner
+  def option_key, do: :transactions
 
-      _ ->
-        multi
-    end
+  @impl Import.Runner
+  def imported_table_row do
+    %{
+      value_type: "[#{ecto_schema_module()}.t()]",
+      value_description: "List of `t:#{ecto_schema_module()}.t/0`s"
+    }
   end
 
+  @impl Import.Runner
+  def run(multi, changes_list, options) when is_map(options) do
+    %{timestamps: timestamps, transactions: %{on_conflict: on_conflict} = transactions_options} = options
+    timeout = transactions_options[:timeout] || @timeout
+
+    Multi.run(multi, :transactions, fn _ ->
+      insert(changes_list, %{on_conflict: on_conflict, timeout: timeout, timestamps: timestamps})
+    end)
+  end
+
+  @impl Import.Runner
   def timeout, do: @timeout
 
   @spec insert([map()], %{
-          required(:on_conflict) => Import.on_conflict(),
+          required(:on_conflict) => Import.Runner.on_conflict(),
           required(:timeout) => timeout,
           required(:timestamps) => Import.timestamps()
-        }) :: {:ok, [Hash.t()]} | {:error, [Changeset.t()]}
+        }) :: {:ok, [Hash.t()]}
   defp insert(changes_list, %{on_conflict: on_conflict, timeout: timeout, timestamps: timestamps})
        when is_list(changes_list) do
     # order so that row ShareLocks are grabbed in a consistent order

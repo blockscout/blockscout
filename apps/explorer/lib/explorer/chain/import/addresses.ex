@@ -10,37 +10,38 @@ defmodule Explorer.Chain.Import.Addresses do
 
   import Ecto.Query, only: [from: 2]
 
+  @behaviour Import.Runner
+
   # milliseconds
   @timeout 60_000
 
   @type imported :: [Address.t()]
-  @type options :: %{
-          required(:params) => Import.params(),
-          optional(:timeout) => timeout,
-          optional(:with) => Import.changeset_function_name()
-        }
 
-  def run(multi, ecto_schema_module_to_changes_list_map, options)
-      when is_map(ecto_schema_module_to_changes_list_map) and is_map(options) do
-    case ecto_schema_module_to_changes_list_map do
-      %{Address => addresses_changes} ->
-        timestamps = Map.fetch!(options, :timestamps)
+  @impl Import.Runner
+  def ecto_schema_module, do: Address
 
-        Multi.run(multi, :addresses, fn _ ->
-          insert(
-            addresses_changes,
-            %{
-              timeout: options[:addresses][:timeout] || @timeout,
-              timestamps: timestamps
-            }
-          )
-        end)
+  @impl Import.Runner
+  def option_key, do: :addresses
 
-      _ ->
-        multi
-    end
+  @impl Import.Runner
+  def imported_table_row do
+    %{
+      value_type: "[#{ecto_schema_module()}.t()]",
+      value_description: "List of `t:#{ecto_schema_module()}.t/0`s"
+    }
   end
 
+  @impl Import.Runner
+  def run(multi, changes_list, options) when is_map(options) do
+    timestamps = Map.fetch!(options, :timestamps)
+    timeout = options[:addresses][:timeout] || @timeout
+
+    Multi.run(multi, :addresses, fn _ ->
+      insert(changes_list, %{timeout: timeout, timestamps: timestamps})
+    end)
+  end
+
+  @impl Import.Runner
   def timeout, do: @timeout
 
   ## Private Functions
@@ -48,57 +49,61 @@ defmodule Explorer.Chain.Import.Addresses do
   @spec insert([%{hash: Hash.Address.t()}], %{
           required(:timeout) => timeout,
           required(:timestamps) => Import.timestamps()
-        }) :: {:ok, [Hash.Address.t()]}
-  defp insert(changes_list, %{timeout: timeout, timestamps: timestamps}) when is_list(changes_list) do
+        }) :: {:ok, [Address.t()]}
+  defp insert(changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
+    on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
+
     # order so that row ShareLocks are grabbed in a consistent order
     ordered_changes_list = sort_changes_list(changes_list)
 
     Import.insert_changes_list(
       ordered_changes_list,
       conflict_target: :hash,
-      on_conflict:
-        from(
-          address in Address,
-          update: [
-            set: [
-              contract_code: fragment("COALESCE(?, EXCLUDED.contract_code)", address.contract_code),
-              # ARGMAX on two columns
-              fetched_coin_balance:
-                fragment(
-                  """
-                  CASE WHEN EXCLUDED.fetched_coin_balance_block_number IS NOT NULL AND
-                            (? IS NULL OR
-                             EXCLUDED.fetched_coin_balance_block_number >= ?) THEN
-                              EXCLUDED.fetched_coin_balance
-                       ELSE ?
-                  END
-                  """,
-                  address.fetched_coin_balance_block_number,
-                  address.fetched_coin_balance_block_number,
-                  address.fetched_coin_balance
-                ),
-              # MAX on two columns
-              fetched_coin_balance_block_number:
-                fragment(
-                  """
-                  CASE WHEN EXCLUDED.fetched_coin_balance_block_number IS NOT NULL AND
-                            (? IS NULL OR
-                             EXCLUDED.fetched_coin_balance_block_number >= ?) THEN
-                              EXCLUDED.fetched_coin_balance_block_number
-                       ELSE ?
-                  END
-                  """,
-                  address.fetched_coin_balance_block_number,
-                  address.fetched_coin_balance_block_number,
-                  address.fetched_coin_balance_block_number
-                )
-            ]
-          ]
-        ),
+      on_conflict: on_conflict,
       for: Address,
       returning: true,
       timeout: timeout,
       timestamps: timestamps
+    )
+  end
+
+  defp default_on_conflict do
+    from(address in Address,
+      update: [
+        set: [
+          contract_code: fragment("COALESCE(?, EXCLUDED.contract_code)", address.contract_code),
+          # ARGMAX on two columns
+          fetched_coin_balance:
+            fragment(
+              """
+              CASE WHEN EXCLUDED.fetched_coin_balance_block_number IS NOT NULL AND
+                        (? IS NULL OR
+                         EXCLUDED.fetched_coin_balance_block_number >= ?) THEN
+                          EXCLUDED.fetched_coin_balance
+                   ELSE ?
+              END
+              """,
+              address.fetched_coin_balance_block_number,
+              address.fetched_coin_balance_block_number,
+              address.fetched_coin_balance
+            ),
+          # MAX on two columns
+          fetched_coin_balance_block_number:
+            fragment(
+              """
+              CASE WHEN EXCLUDED.fetched_coin_balance_block_number IS NOT NULL AND
+                        (? IS NULL OR
+                         EXCLUDED.fetched_coin_balance_block_number >= ?) THEN
+                          EXCLUDED.fetched_coin_balance_block_number
+                   ELSE ?
+              END
+              """,
+              address.fetched_coin_balance_block_number,
+              address.fetched_coin_balance_block_number,
+              address.fetched_coin_balance_block_number
+            )
+        ]
+      ]
     )
   end
 
