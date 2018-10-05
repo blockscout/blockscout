@@ -4,7 +4,6 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><%= app_title() %></title>
     <link rel="stylesheet" href="<%= static_path(@conn, "/css/app.css") %>">
 
     <link rel="apple-touch-icon" sizes="180x180" href="<%= static_path(@conn, "/apple-touch-icon.png") %>">
@@ -16,6 +15,8 @@
     <meta name="msapplication-TileColor" content="#7dd79f">
     <meta name="msapplication-config" content="<%= static_path(@conn, "/browserconfig.xml") %>">
     <meta name="theme-color" content="#ffffff">
+
+    <%= render_existing(@view_module, "_metatags.html", assigns) || render("_default_title.html") %>
   </head>
 
   <body>

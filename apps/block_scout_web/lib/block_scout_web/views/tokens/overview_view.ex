@@ -3,6 +3,8 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
 
   alias Explorer.Chain.{Address, SmartContract, Token}
 
+  alias BlockScoutWeb.LayoutView
+
   @tabs ["token_transfers", "token_holders", "read_contract", "inventory"]
 
   def decimals?(%Token{decimals: nil}), do: false
