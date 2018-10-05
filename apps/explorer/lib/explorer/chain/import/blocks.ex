@@ -127,6 +127,7 @@ defmodule Explorer.Chain.Import.Blocks do
           index: nil,
           internal_transactions_indexed_at: nil,
           status: nil,
+          error: nil,
           updated_at: ^updated_at
         ]
       )
