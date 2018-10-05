@@ -100,7 +100,7 @@ defmodule Explorer.Chain.Transaction do
    * `s` - The S field of the signature.  The (r, s) is the normal output of an ECDSA signature, where r is computed as
        the X coordinate of a point R, modulo the curve order n.
    * `status` - whether the transaction was successfully mined or failed.  `nil` when transaction is pending or has only
-     been collated into one of the `uncles` in one of the `forks.
+     been collated into one of the `uncles` in one of the `forks`.
    * `to_address` - sink of `value`
    * `to_address_hash` - `to_address` foreign key
    * `uncles` - uncle blocks where `forks` were collated

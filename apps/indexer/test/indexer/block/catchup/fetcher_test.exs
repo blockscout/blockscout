@@ -60,7 +60,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                    ]
                  },
                  address_hash_to_fetched_balance_block_number: %{miner_hash => block_number},
-                 balances: %{
+                 address_coin_balances: %{
                    params: [
                      %{
                        address_hash: miner_hash,
@@ -99,7 +99,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                    params: [],
                    on_conflict: :nothing
                  },
-                 token_balances: %{
+                 address_token_balances: %{
                    params: []
                  },
                  transactions: %{

@@ -371,7 +371,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                    %Address{hash: fourth_address_hash, fetched_coin_balance_block_number: 3_946_080},
                    %Address{hash: fifth_address_hash, fetched_coin_balance_block_number: 3_946_079}
                  ],
-                 balances: [
+                 address_coin_balances: [
                    %{
                      address_hash: first_address_hash,
                      block_number: 3_946_079

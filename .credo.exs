@@ -75,7 +75,7 @@
         # Priority values are: `low, normal, high, higher`
         #
         {Credo.Check.Design.AliasUsage,
-         excluded_namespaces: ~w(Socket Task),
+         excluded_namespaces: ~w(Import Socket Task),
          excluded_lastnames: ~w(Address DateTime Exporter Fetcher Full Instrumenter Name Number Repo Time Unit),
          priority: :low},
 

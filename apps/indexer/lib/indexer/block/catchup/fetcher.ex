@@ -135,7 +135,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   defp async_import_internal_transactions(_, _), do: :ok
 
-  defp async_import_token_balances(%{token_balances: token_balances}) do
+  defp async_import_token_balances(%{address_token_balances: token_balances}) do
     TokenBalance.Fetcher.async_fetch(token_balances)
   end
 

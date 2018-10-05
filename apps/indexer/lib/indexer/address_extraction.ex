@@ -49,7 +49,7 @@ defmodule Indexer.AddressExtraction do
   """
 
   @entity_to_address_map %{
-    balances: [
+    address_coin_balances: [
       [
         %{from: :address_hash, to: :hash},
         %{from: :block_number, to: :fetched_coin_balance_block_number},
@@ -320,7 +320,7 @@ defmodule Indexer.AddressExtraction do
   cause an error as something has gone terribly wrong with the chain if different code is written to the same address.
   """
   @spec extract_addresses(%{
-          optional(:balances) => [
+          optional(:address_coin_balances) => [
             %{
               required(:address_hash) => String.t(),
               required(:block_number) => non_neg_integer(),
@@ -409,7 +409,7 @@ defmodule Indexer.AddressExtraction do
     end
   end
 
-  # Ensure that when `:addresses` or `:balances` are present, their :fetched_coin_balance will win
+  # Ensure that when `:addresses` or `:address_coin_balances` are present, their :fetched_coin_balance will win
   defp merge_addresses(%{hash: hash} = first, %{hash: hash} = second) do
     case {first[:fetched_coin_balance], second[:fetched_coin_balance]} do
       {nil, nil} ->

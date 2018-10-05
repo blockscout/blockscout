@@ -83,7 +83,7 @@ defmodule Indexer.CoinBalance.Fetcher do
         {:ok, _} =
           Chain.import(%{
             addresses: %{params: addresses_params, with: :balance_changeset},
-            balances: %{params: importable_balances_params}
+            address_coin_balances: %{params: importable_balances_params}
           })
 
         :ok

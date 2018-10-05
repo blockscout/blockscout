@@ -23,17 +23,16 @@ defmodule Indexer.Block.Fetcher do
               %{
                 address_hash_to_fetched_balance_block_number: address_hash_to_fetched_balance_block_number,
                 transaction_hash_to_block_number_option: transaction_hash_to_block_number,
-                addresses: Import.addresses_options(),
-                balances: Import.balances_options(),
-                blocks: Import.blocks_options(),
-                block_second_degree_relations: Import.block_second_degree_relations_options(),
+                addresses: Import.Runner.options(),
+                address_coin_balances: Import.Runner.options(),
+                address_token_balances: Import.Runner.options(),
+                blocks: Import.Runner.options(),
+                block_second_degree_relations: Import.Runner.options(),
                 broadcast: boolean,
-                logs: Import.logs_options(),
-                receipts: Import.receipts_options(),
-                token_balances: Import.token_balances_options(),
-                token_transfers: Import.token_transfers_options(),
-                tokens: Import.tokens_options(),
-                transactions: Import.transactions_options()
+                logs: Import.Runner.options(),
+                token_transfers: Import.Runner.options(),
+                tokens: Import.Runner.options(),
+                transactions: Import.Runner.options()
               }
             ) :: Import.all_result()
 
@@ -114,18 +113,17 @@ defmodule Indexer.Block.Fetcher do
              logs_params: logs,
              transactions_params: transactions_with_receipts
            }),
-         token_balances = TokenBalances.params_set(%{token_transfers_params: token_transfers}),
+         address_token_balances = TokenBalances.params_set(%{token_transfers_params: token_transfers}),
          {:ok, inserted} <-
            __MODULE__.import(
              state,
              %{
                addresses: %{params: addresses},
-               balances: %{params: coin_balances_params_set},
-               token_balances: %{params: token_balances},
+               address_coin_balances: %{params: coin_balances_params_set},
+               address_token_balances: %{params: address_token_balances},
                blocks: %{params: blocks},
                block_second_degree_relations: %{params: block_second_degree_relations},
                logs: %{params: logs},
-               receipts: %{params: receipts},
                token_transfers: %{params: token_transfers},
                tokens: %{on_conflict: :nothing, params: tokens},
                transactions: %{params: transactions_with_receipts, on_conflict: :replace_all}

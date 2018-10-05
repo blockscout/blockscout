@@ -3,161 +3,103 @@ defmodule Explorer.Chain.Import do
   Bulk importing of data into `Explorer.Repo`
   """
 
-  import Ecto.Query, only: [from: 2, update: 2]
-
   alias Ecto.{Changeset, Multi}
-  alias Ecto.Adapters.SQL
-
-  alias Explorer.Chain.{
-    Address,
-    Address.CoinBalance,
-    Address.TokenBalance,
-    Block,
-    Hash,
-    InternalTransaction,
-    Log,
-    Token,
-    TokenTransfer,
-    Transaction,
-    Wei
-  }
-
+  alias Explorer.Chain.Import
   alias Explorer.Repo
 
-  @type changeset_function_name :: atom
-  @type on_conflict :: :nothing | :replace_all
-  @type params :: [map()]
-  @type addresses_options :: %{
-          required(:params) => params,
-          optional(:timeout) => timeout,
-          optional(:with) => changeset_function_name
-        }
-  @type balances_options :: %{
-          required(:params) => params,
-          optional(:timeout) => timeout
-        }
-  @type blocks_options :: %{
-          required(:params) => params,
-          optional(:timeout) => timeout
-        }
-  @type block_second_degree_relations_options :: %{
-          required(:params) => params,
-          optional(:timeout) => timeout
-        }
-  @type internal_transactions_options :: %{
-          required(:params) => params,
-          optional(:timeout) => timeout
-        }
-  @type logs_options :: %{
-          required(:params) => params,
-          optional(:timeout) => timeout
-        }
-  @type receipts_options :: %{
-          required(:params) => params,
-          optional(:timeout) => timeout
-        }
-  @type token_transfers_options :: %{
-          required(:params) => params,
-          optional(:timeout) => timeout
-        }
-  @type tokens_options :: %{
-          required(:params) => params,
-          optional(:on_conflict) => :nothing | :replace_all,
-          optional(:timeout) => timeout
-        }
-  @type transactions_options :: %{
-          required(:params) => params,
-          optional(:with) => changeset_function_name,
-          optional(:on_conflict) => :nothing | :replace_all,
-          optional(:timeout) => timeout
-        }
-  @type transaction_forks_options :: %{
-          required(:params) => params,
-          optional(:timeout) => timeout
-        }
-  @type token_balances_options :: %{
-          required(:params) => params,
-          optional(:timeout) => timeout
-        }
+  # in order so that foreign keys are inserted before being referenced
+  @runners [
+    Import.Addresses,
+    Import.Address.CoinBalances,
+    Import.Blocks,
+    Import.Block.SecondDegreeRelations,
+    Import.Transactions,
+    Import.Transaction.Forks,
+    Import.InternalTransactions,
+    Import.Logs,
+    Import.Tokens,
+    Import.TokenTransfers,
+    Import.Address.TokenBalances
+  ]
+
+  quoted_runner_option_value =
+    quote do
+      Import.Runner.options()
+    end
+
+  quoted_runner_options =
+    for runner <- @runners do
+      quoted_key =
+        quote do
+          optional(unquote(runner.option_key()))
+        end
+
+      {quoted_key, quoted_runner_option_value}
+    end
+
   @type all_options :: %{
-          optional(:addresses) => addresses_options,
-          optional(:balances) => balances_options,
-          optional(:blocks) => blocks_options,
-          optional(:block_second_degree_relations) => block_second_degree_relations_options,
           optional(:broadcast) => boolean,
-          optional(:internal_transactions) => internal_transactions_options,
-          optional(:logs) => logs_options,
-          optional(:receipts) => receipts_options,
           optional(:timeout) => timeout,
-          optional(:token_transfers) => token_transfers_options,
-          optional(:tokens) => tokens_options,
-          optional(:token_balances) => token_balances_options,
-          optional(:transactions) => transactions_options,
-          optional(:transaction_forks) => transaction_forks_options
+          unquote_splicing(quoted_runner_options)
         }
+
+  quoted_runner_imported =
+    for runner <- @runners do
+      quoted_key =
+        quote do
+          optional(unquote(runner.option_key()))
+        end
+
+      quoted_value =
+        quote do
+          unquote(runner).imported()
+        end
+
+      {quoted_key, quoted_value}
+    end
+
   @type all_result ::
-          {:ok,
-           %{
-             optional(:addresses) => [Address.t()],
-             optional(:balances) => [
-               %{required(:address_hash) => Hash.Address.t(), required(:block_number) => Block.block_number()}
-             ],
-             optional(:blocks) => [Block.t()],
-             optional(:block_second_degree_relations) => [
-               %{required(:nephew_hash) => Hash.Full.t(), required(:uncle_hash) => Hash.Full.t()}
-             ],
-             optional(:internal_transactions) => [
-               %{required(:index) => non_neg_integer(), required(:transaction_hash) => Hash.Full.t()}
-             ],
-             optional(:logs) => [Log.t()],
-             optional(:receipts) => [Hash.Full.t()],
-             optional(:token_transfers) => [TokenTransfer.t()],
-             optional(:tokens) => [Token.t()],
-             optional(:token_balances) => [TokenBalance.t()],
-             optional(:transactions) => [Hash.Full.t()],
-             optional(:transaction_forks) => [
-               %{required(:uncle_hash) => Hash.Full.t(), required(:hash) => Hash.Full.t()}
-             ]
-           }}
+          {:ok, %{unquote_splicing(quoted_runner_imported)}}
           | {:error, [Changeset.t()]}
           | {:error, step :: Ecto.Multi.name(), failed_value :: any(),
              changes_so_far :: %{optional(Ecto.Multi.name()) => any()}}
 
-  @typep timestamps :: %{inserted_at: DateTime.t(), updated_at: DateTime.t()}
+  @type timestamps :: %{inserted_at: DateTime.t(), updated_at: DateTime.t()}
 
-  # timeouts all in milliseconds
-
+  # milliseconds
   @transaction_timeout 120_000
 
-  @insert_addresses_timeout 60_000
-  @insert_balances_timeout 60_000
-  @insert_blocks_timeout 60_000
-  @insert_block_second_degree_relations_timeout 60_000
-  @insert_internal_transactions_timeout 60_000
-  @insert_logs_timeout 60_000
-  @insert_token_transfers_timeout 60_000
-  @insert_token_balances_timeout 60_000
-  @insert_tokens_timeout 60_000
-  @insert_transactions_timeout 60_000
-  @insert_transaction_forks_timeout 60_000
+  @imported_table_rows @runners
+                       |> Stream.map(&Map.put(&1.imported_table_row(), :key, &1.option_key()))
+                       |> Enum.map_join("\n", fn %{
+                                                   key: key,
+                                                   value_type: value_type,
+                                                   value_description: value_description
+                                                 } ->
+                         "| `#{inspect(key)}` | `#{value_type}` | #{value_description} |"
+                       end)
+  @runner_options_doc Enum.map_join(@runners, fn runner ->
+                        ecto_schema_module = runner.ecto_schema_module()
+
+                        """
+                          * `#{runner.option_key() |> inspect()}`
+                            * `:on_conflict` - what to do if a conflict occurs with a pre-existing row: `:nothing`, `:replace_all`, or an
+                              `t:Ecto.Query.t/0` to update specific columns.
+                            * `:params` - `list` of params for changeset function in `#{ecto_schema_module}`.
+                            * `:with` - changeset function to use in `#{ecto_schema_module}`.  Default to `:changeset`.
+                            * `:timeout` - the timeout for inserting each batch of changes from `:params`.
+                              Defaults to `#{runner.timeout()}` milliseconds.
+                        """
+                      end)
 
   @doc """
   Bulk insert all data stored in the `Explorer`.
 
   The import returns the unique key(s) for each type of record inserted.
 
-  | Key                              | Value Type                                                                                      | Value Description                                                                                    |
-  |----------------------------------|-------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
-  | `:addresses`                     | `[Explorer.Chain.Address.t()]`                                                                  | List of `t:Explorer.Chain.Address.t/0`s                                                              |
-  | `:balances`                      | `[%{address_hash: Explorer.Chain.Hash.t(), block_number: Explorer.Chain.Block.block_number()}]` | List of `t:Explorer.Chain.Address.t/0`s                                                              |
-  | `:blocks`                        | `[Explorer.Chain.Block.t()]`                                                                    | List of `t:Explorer.Chain.Block.t/0`s                                                                |
-  | `:internal_transactions`         | `[%{index: non_neg_integer(), transaction_hash: Explorer.Chain.Hash.t()}]`                      | List of maps of the `t:Explorer.Chain.InternalTransaction.t/0` `index` and `transaction_hash`        |
-  | `:logs`                          | `[Explorer.Chain.Log.t()]`                                                                      | List of `t:Explorer.Chain.Log.t/0`s                                                                  |
-  | `:token_transfers`               | `[Explorer.Chain.TokenTransfer.t()]`                                                            | List of `t:Explorer.Chain.TokenTransfer.t/0`s                                                          |
-  | `:tokens`                        | `[Explorer.Chain.Token.t()]`                                                                    | List of `t:Explorer.Chain.token.t/0`s                                                                |
-  | `:transactions`                  | `[Explorer.Chain.Hash.t()]`                                                                     | List of `t:Explorer.Chain.Transaction.t/0` `hash`                                                    |
-  | `:transaction_forks`             | `[%{uncle_hash: Explorer.Chain.Hash.t(), hash: Explorer.Chain.Hash.t()}]`                       | List of maps of the `t:Explorer.Chain.Transaction.Fork.t/0` `uncle_hash` and `hash`                  |
-  | `:block_second_degree_relations` | `[%{uncle_hash: Explorer.Chain.Hash.t(), nephew_hash: Explorer.Chain.Hash.t()]`                 | List of maps of the `t:Explorer.Chain.Block.SecondDegreeRelation.t/0` `uncle_hash` and `nephew_hash` |
+  | Key | Value Type | Value Description |
+  |-----|------------|-------------------|
+  #{@imported_table_rows}
 
   The params for each key are validated using the corresponding `Ecto.Schema` module's `changeset/2` function.  If there
   are errors, they are returned in `Ecto.Changeset.t`s, so that the original, invalid value can be reconstructed for any
@@ -176,64 +118,17 @@ defmodule Explorer.Chain.Import do
 
   ## Options
 
-    * `:addresses`
-      * `:params` - `list` of params for `Explorer.Chain.Address.changeset/2`.
-      * `:timeout` - the timeout for inserting all addresses.  Defaults to `#{@insert_addresses_timeout}` milliseconds.
-      * `:with` - the changeset function on `Explorer.Chain.Address` to use validate `:params`.
-    * `:balances`
-      * `:params` - `list` of params for `Explorer.Chain.Address.CoinBalance.changeset/2`.
-      * `:timeout` - the timeout for inserting all balances.  Defaults to `#{@insert_balances_timeout}` milliseconds.
-    * `:blocks`
-      * `:params` - `list` of params for `Explorer.Chain.Block.changeset/2`.
-      * `:timeout` - the timeout for inserting all blocks. Defaults to `#{@insert_blocks_timeout}` milliseconds.
-    * `:block_second_degree_relations`
-      * `:params` - `list` of params `for `Explorer.Chain.Block.SecondDegreeRelation.changeset/2`.
-      * `:timeout` - the timeout for inserting all uncles found in the params list.
     * `:broadcast` - Boolean flag indicating whether or not to broadcast the event.
-    * `:internal_transactions`
-      * `:params` - `list` of params for `Explorer.Chain.InternalTransaction.changeset/2`.
-      * `:timeout` - the timeout for inserting all internal transactions. Defaults to
-        `#{@insert_internal_transactions_timeout}` milliseconds.
-    * `:logs`
-      * `:params` - `list` of params for `Explorer.Chain.Log.changeset/2`.
-      * `:timeout` - the timeout for inserting all logs. Defaults to `#{@insert_logs_timeout}` milliseconds.
     * `:timeout` - the timeout for the whole `c:Ecto.Repo.transaction/0` call.  Defaults to `#{@transaction_timeout}`
       milliseconds.
-    * `:token_transfers`
-      * `:params` - `list` of params for `Explorer.Chain.TokenTransfer.changeset/2`
-      * `:timeout` - the timeout for inserting all token transfers. Defaults to `#{@insert_token_transfers_timeout}` milliseconds.
-    * `:tokens`
-      * `:on_conflict` - Whether to do `:nothing` or `:replace_all` columns when there is a pre-existing token
-        with the same contract address hash.
-      * `:params` - `list` of params for `Explorer.Chain.Token.changeset/2`
-      * `:timeout` - the timeout for inserting all tokens. Defaults to `#{@insert_tokens_timeout}` milliseconds.
-    * `:transactions`
-      * `:on_conflict` - Whether to do `:nothing` or `:replace_all` columns when there is a pre-existing transaction
-        with the same hash.
-
-        *NOTE*: Because the repository transaction for a pending `Explorer.Chain.Transaction`s could `COMMIT` after the
-        repository transaction for that same transaction being collated into a block, writers, it is recommended to use
-        `:nothing` for pending transactions and `:replace_all` for collated transactions, so that collated transactions
-        win.
-      * `:params` - `list` of params for `Explorer.Chain.Transaction.changeset/2`.
-      * `:timeout` - the timeout for inserting all transactions found in the params lists across all
-        types. Defaults to `#{@insert_transactions_timeout}` milliseconds.
-      * `:with` - the changeset function on `Explorer.Chain.Transaction` to use validate `:params`.
-    * `:transaction_forks`
-      * `:params` - `list` of params for `Explorer.Chain.Transaction.Fork.changeset/2`.
-      * `:timeout` - the timeout for inserting all transaction forks.
-    * `:token_balances`
-      * `:params` - `list` of params for `Explorer.Chain.TokenBalance.changeset/2`
-    * `:timeout` - the timeout for `Repo.transaction`. Defaults to `#{@transaction_timeout}` milliseconds.
-
+  #{@runner_options_doc}
   """
   @spec all(all_options()) :: all_result()
   def all(options) when is_map(options) do
-    changes_list_arguments_list = import_options_to_changes_list_arguments_list(options)
-
-    with {:ok, ecto_schema_module_to_changes_list_map} <-
-           changes_list_arguments_list_to_ecto_schema_module_to_changes_list_map(changes_list_arguments_list),
-         {:ok, data} <- insert_ecto_schema_module_to_changes_list_map(ecto_schema_module_to_changes_list_map, options) do
+    with {:ok, runner_options_pairs} <- validate_options(options),
+         {:ok, valid_runner_option_pairs} <- validate_runner_options_pairs(runner_options_pairs),
+         {:ok, runner_changes_list_pairs} <- runner_changes_list_pairs(valid_runner_option_pairs),
+         {:ok, data} <- insert_runner_changes_list_pairs(runner_changes_list_pairs, options) do
       if Map.get(options, :broadcast, false), do: broadcast_events(data)
       {:ok, data}
     end
@@ -241,7 +136,7 @@ defmodule Explorer.Chain.Import do
 
   defp broadcast_events(data) do
     for {event_type, event_data} <- data,
-        event_type in ~w(addresses balances blocks internal_transactions logs transactions)a do
+        event_type in ~w(addresses address_coin_balances blocks internal_transactions logs transactions)a do
       broadcast_event_data(event_type, event_data)
     end
   end
@@ -254,730 +149,150 @@ defmodule Explorer.Chain.Import do
     end)
   end
 
-  defp changes_list_arguments_list_to_ecto_schema_module_to_changes_list_map(changes_list_arguments_list) do
-    changes_list_arguments_list
-    |> Stream.map(fn [params_list, options] ->
-      ecto_schema_module = Keyword.fetch!(options, :for)
-      {ecto_schema_module, changes_list(params_list, options)}
-    end)
-    |> Enum.reduce({:ok, %{}}, fn
-      {ecto_schema_module, {:ok, changes_list}}, {:ok, ecto_schema_module_to_changes_list_map} ->
-        {:ok, Map.put(ecto_schema_module_to_changes_list_map, ecto_schema_module, changes_list)}
-
-      {_, {:ok, _}}, {:error, _} = error ->
-        error
-
-      {_, {:error, _} = error}, {:ok, _} ->
-        error
-
-      {_, {:error, changesets}}, {:error, acc_changesets} ->
-        {:error, acc_changesets ++ changesets}
-    end)
-  end
-
-  @spec changes_list(params :: [map], [{:for, module} | {:with, atom}]) :: {:ok, [map]} | {:error, [Changeset.t()]}
-  defp changes_list(params, options) when is_list(options) do
-    ecto_schema_module = Keyword.fetch!(options, :for)
-    changeset_function_name = Keyword.get(options, :with, :changeset)
-    struct = ecto_schema_module.__struct__()
-
-    {status, acc} =
-      params
-      |> Stream.map(&apply(ecto_schema_module, changeset_function_name, [struct, &1]))
+  defp runner_changes_list_pairs(runner_options_pairs) when is_list(runner_options_pairs) do
+    {status, reversed} =
+      runner_options_pairs
+      |> Stream.map(fn {runner, options} -> runner_changes_list(runner, options) end)
       |> Enum.reduce({:ok, []}, fn
-        changeset = %Changeset{valid?: false}, {:ok, _} ->
-          {:error, [changeset]}
+        {:ok, runner_changes_pair}, {:ok, acc_runner_changes_pairs} ->
+          {:ok, [runner_changes_pair | acc_runner_changes_pairs]}
 
-        changeset = %Changeset{valid?: false}, {:error, acc_changesets} ->
-          {:error, [changeset | acc_changesets]}
-
-        %Changeset{changes: changes, valid?: true}, {:ok, acc_changes} ->
-          {:ok, [changes | acc_changes]}
-
-        %Changeset{valid?: true}, {:error, _} = error ->
+        {:ok, _}, {:error, _} = error ->
           error
+
+        {:error, _} = error, {:ok, _} ->
+          error
+
+        {:error, runner_changesets}, {:error, acc_changesets} ->
+          {:error, acc_changesets ++ runner_changesets}
       end)
 
-    {status, Enum.reverse(acc)}
+    {status, Enum.reverse(reversed)}
   end
 
-  @import_option_key_to_ecto_schema_module %{
-    addresses: Address,
-    balances: CoinBalance,
-    blocks: Block,
-    block_second_degree_relations: Block.SecondDegreeRelation,
-    internal_transactions: InternalTransaction,
-    logs: Log,
-    token_transfers: TokenTransfer,
-    token_balances: TokenBalance,
-    tokens: Token,
-    transactions: Transaction,
-    transaction_forks: Transaction.Fork
-  }
+  defp runner_changes_list(runner, %{params: params} = options) do
+    ecto_schema_module = runner.ecto_schema_module()
+    changeset_function_name = Map.get(options, :with, :changeset)
+    struct = ecto_schema_module.__struct__()
 
-  defp ecto_schema_module_to_changes_list_map_to_multi(ecto_schema_module_to_changes_list_map, options)
-       when is_map(options) do
+    params
+    |> Stream.map(&apply(ecto_schema_module, changeset_function_name, [struct, &1]))
+    |> Enum.reduce({:ok, []}, fn
+      changeset = %Changeset{valid?: false}, {:ok, _} ->
+        {:error, [changeset]}
+
+      changeset = %Changeset{valid?: false}, {:error, acc_changesets} ->
+        {:error, [changeset | acc_changesets]}
+
+      %Changeset{changes: changes, valid?: true}, {:ok, acc_changes} ->
+        {:ok, [changes | acc_changes]}
+
+      %Changeset{valid?: true}, {:error, _} = error ->
+        error
+    end)
+    |> case do
+      {:ok, changes} -> {:ok, {runner, changes}}
+      {:error, _} = error -> error
+    end
+  end
+
+  @global_options ~w(broadcast timeout)a
+
+  defp validate_options(options) when is_map(options) do
+    local_options = Map.drop(options, @global_options)
+
+    {reverse_runner_options_pairs, unknown_options} =
+      Enum.reduce(@runners, {[], local_options}, fn runner, {acc_runner_options_pairs, unknown_options} = acc ->
+        option_key = runner.option_key()
+
+        case local_options do
+          %{^option_key => option_value} ->
+            {[{runner, option_value} | acc_runner_options_pairs], Map.delete(unknown_options, option_key)}
+
+          _ ->
+            acc
+        end
+      end)
+
+    case Enum.empty?(unknown_options) do
+      true -> {:ok, Enum.reverse(reverse_runner_options_pairs)}
+      false -> {:error, {:unknown_options, unknown_options}}
+    end
+  end
+
+  defp validate_runner_options_pairs(runner_options_pairs) when is_list(runner_options_pairs) do
+    {status, reversed} =
+      runner_options_pairs
+      |> Stream.map(fn {runner, options} -> validate_runner_options(runner, options) end)
+      |> Enum.reduce({:ok, []}, fn
+        :ignore, acc ->
+          acc
+
+        {:ok, valid_runner_option_pair}, {:ok, valid_runner_options_pairs} ->
+          {:ok, [valid_runner_option_pair | valid_runner_options_pairs]}
+
+        {:ok, _}, {:error, _} = error ->
+          error
+
+        {:error, reason}, {:ok, _} ->
+          {:error, [reason]}
+
+        {:error, reason}, {:error, reasons} ->
+          {:error, [reason | reasons]}
+      end)
+
+    {status, Enum.reverse(reversed)}
+  end
+
+  defp validate_runner_options(runner, options) when is_map(options) do
+    option_key = runner.option_key()
+
+    case {validate_runner_option_params_required(option_key, options),
+          validate_runner_options_known(option_key, options)} do
+      {:ignore, :ok} -> :ignore
+      {:ignore, {:error, _} = error} -> error
+      {:ok, :ok} -> {:ok, {runner, options}}
+      {:ok, {:error, _} = error} -> error
+      {{:error, reason}, :ok} -> {:error, [reason]}
+      {{:error, reason}, {:error, reasons}} -> {:error, [reason | reasons]}
+    end
+  end
+
+  defp validate_runner_option_params_required(_, %{params: params}) do
+    case Enum.empty?(params) do
+      false -> :ok
+      true -> :ignore
+    end
+  end
+
+  defp validate_runner_option_params_required(runner_option_key, _),
+    do: {:error, {:required, [runner_option_key, :params]}}
+
+  @local_options ~w(on_conflict params with timeout)a
+
+  defp validate_runner_options_known(runner_option_key, options) do
+    unknown_option_keys = Map.keys(options) -- @local_options
+
+    if Enum.empty?(unknown_option_keys) do
+      :ok
+    else
+      reasons = Enum.map(unknown_option_keys, &{:unknown, [runner_option_key, &1]})
+
+      {:error, reasons}
+    end
+  end
+
+  defp runner_changes_list_pairs_to_multi(runner_changes_list_pairs, options)
+       when is_list(runner_changes_list_pairs) and is_map(options) do
     timestamps = timestamps()
     full_options = Map.put(options, :timestamps, timestamps)
 
-    Multi.new()
-    |> run_addresses(ecto_schema_module_to_changes_list_map, full_options)
-    |> run_balances(ecto_schema_module_to_changes_list_map, full_options)
-    |> run_blocks(ecto_schema_module_to_changes_list_map, full_options)
-    |> run_block_second_degree_relations(ecto_schema_module_to_changes_list_map, full_options)
-    |> run_transactions(ecto_schema_module_to_changes_list_map, full_options)
-    |> run_transaction_forks(ecto_schema_module_to_changes_list_map, full_options)
-    |> run_internal_transactions(ecto_schema_module_to_changes_list_map, full_options)
-    |> run_logs(ecto_schema_module_to_changes_list_map, full_options)
-    |> run_tokens(ecto_schema_module_to_changes_list_map, full_options)
-    |> run_token_transfers(ecto_schema_module_to_changes_list_map, full_options)
-    |> run_token_balances(ecto_schema_module_to_changes_list_map, full_options)
+    Enum.reduce(runner_changes_list_pairs, Multi.new(), fn {runner, changes_list}, acc ->
+      runner.run(acc, changes_list, full_options)
+    end)
   end
 
-  defp run_addresses(multi, ecto_schema_module_to_changes_list_map, options)
-       when is_map(ecto_schema_module_to_changes_list_map) and is_map(options) do
-    case ecto_schema_module_to_changes_list_map do
-      %{Address => addresses_changes} ->
-        timestamps = Map.fetch!(options, :timestamps)
-
-        Multi.run(multi, :addresses, fn _ ->
-          insert_addresses(
-            addresses_changes,
-            %{
-              timeout: options[:addresses][:timeout] || @insert_addresses_timeout,
-              timestamps: timestamps
-            }
-          )
-        end)
-
-      _ ->
-        multi
-    end
-  end
-
-  defp run_balances(multi, ecto_schema_module_to_changes_list_map, options)
-       when is_map(ecto_schema_module_to_changes_list_map) and is_map(options) do
-    case ecto_schema_module_to_changes_list_map do
-      %{CoinBalance => balances_changes} ->
-        timestamps = Map.fetch!(options, :timestamps)
-
-        Multi.run(multi, :balances, fn _ ->
-          insert_balances(
-            balances_changes,
-            %{
-              timeout: options[:balances][:timeout] || @insert_balances_timeout,
-              timestamps: timestamps
-            }
-          )
-        end)
-
-      _ ->
-        multi
-    end
-  end
-
-  defp run_blocks(multi, ecto_schema_module_to_changes_list_map, options)
-       when is_map(ecto_schema_module_to_changes_list_map) and is_map(options) do
-    case ecto_schema_module_to_changes_list_map do
-      %{Block => blocks_changes} ->
-        timestamps = Map.fetch!(options, :timestamps)
-        blocks_timeout = options[:blocks][:timeout] || @insert_blocks_timeout
-        where_forked = where_forked(blocks_changes)
-
-        multi
-        |> Multi.run(:derive_transaction_forks, fn _ ->
-          derive_transaction_forks(%{
-            timeout: options[:transaction_forks][:timeout] || @insert_transaction_forks_timeout,
-            timestamps: timestamps,
-            where_forked: where_forked
-          })
-        end)
-        # MUST be after `:derive_transaction_forks`, which depends on values in `transactions` table
-        |> Multi.run(:fork_transactions, fn _ ->
-          fork_transactions(%{
-            timeout: options[:transactions][:timeout] || @insert_transactions_timeout,
-            timestamps: timestamps,
-            where_forked: where_forked
-          })
-        end)
-        |> Multi.run(:lose_consenus, fn _ ->
-          lose_consensus(blocks_changes, %{timeout: blocks_timeout, timestamps: timestamps})
-        end)
-        |> Multi.run(:blocks, fn _ ->
-          insert_blocks(blocks_changes, %{timeout: blocks_timeout, timestamps: timestamps})
-        end)
-        |> Multi.run(:uncle_fetched_block_second_degree_relations, fn %{blocks: blocks} when is_list(blocks) ->
-          update_block_second_degree_relations(
-            blocks,
-            %{
-              timeout:
-                options[:block_second_degree_relations][:timeout] || @insert_block_second_degree_relations_timeout,
-              timestamps: timestamps
-            }
-          )
-        end)
-
-      _ ->
-        multi
-    end
-  end
-
-  defp run_transactions(multi, ecto_schema_module_to_changes_list_map, options)
-       when is_map(ecto_schema_module_to_changes_list_map) and is_map(options) do
-    case ecto_schema_module_to_changes_list_map do
-      %{Transaction => transactions_changes} ->
-        # check required options as early as possible
-        %{timestamps: timestamps, transactions: %{on_conflict: on_conflict} = transactions_options} = options
-
-        Multi.run(multi, :transactions, fn _ ->
-          insert_transactions(
-            transactions_changes,
-            %{
-              on_conflict: on_conflict,
-              timeout: transactions_options[:timeout] || @insert_transactions_timeout,
-              timestamps: timestamps
-            }
-          )
-        end)
-
-      _ ->
-        multi
-    end
-  end
-
-  defp run_transaction_forks(multi, ecto_schema_module_to_changes_list_map, options)
-       when is_map(ecto_schema_module_to_changes_list_map) and is_map(options) do
-    case ecto_schema_module_to_changes_list_map do
-      %{Transaction.Fork => transaction_fork_changes} ->
-        %{timestamps: timestamps} = options
-
-        Multi.run(multi, :transaction_forks, fn _ ->
-          insert_transaction_forks(
-            transaction_fork_changes,
-            %{
-              timeout: options[:transaction_forks][:timeout] || @insert_transaction_forks_timeout,
-              timestamps: timestamps
-            }
-          )
-        end)
-
-      _ ->
-        multi
-    end
-  end
-
-  defp run_internal_transactions(multi, ecto_schema_module_to_changes_list_map, options)
-       when is_map(ecto_schema_module_to_changes_list_map) and is_map(options) do
-    case ecto_schema_module_to_changes_list_map do
-      %{InternalTransaction => internal_transactions_changes} ->
-        timestamps = Map.fetch!(options, :timestamps)
-
-        multi
-        |> Multi.run(:internal_transactions, fn _ ->
-          insert_internal_transactions(
-            internal_transactions_changes,
-            %{
-              timeout: options[:internal_transactions][:timeout] || @insert_internal_transactions_timeout,
-              timestamps: timestamps
-            }
-          )
-        end)
-        |> Multi.run(:internal_transactions_indexed_at_transactions, fn %{internal_transactions: internal_transactions}
-                                                                        when is_list(internal_transactions) ->
-          update_transactions(
-            internal_transactions,
-            %{
-              timeout: options[:transactions][:timeout] || @insert_transactions_timeout,
-              timestamps: timestamps
-            }
-          )
-        end)
-
-      _ ->
-        multi
-    end
-  end
-
-  defp run_logs(multi, ecto_schema_module_to_changes_list_map, options)
-       when is_map(ecto_schema_module_to_changes_list_map) and is_map(options) do
-    case ecto_schema_module_to_changes_list_map do
-      %{Log => logs_changes} ->
-        timestamps = Map.fetch!(options, :timestamps)
-
-        Multi.run(multi, :logs, fn _ ->
-          insert_logs(
-            logs_changes,
-            %{
-              timeout: options[:logs][:timeout] || @insert_logs_timeout,
-              timestamps: timestamps
-            }
-          )
-        end)
-
-      _ ->
-        multi
-    end
-  end
-
-  defp run_tokens(multi, ecto_schema_module_to_changes_list, options)
-       when is_map(ecto_schema_module_to_changes_list) and is_map(options) do
-    case ecto_schema_module_to_changes_list do
-      %{Token => tokens_changes} ->
-        %{timestamps: timestamps, tokens: %{on_conflict: on_conflict}} = options
-
-        Multi.run(multi, :tokens, fn _ ->
-          insert_tokens(
-            tokens_changes,
-            %{
-              on_conflict: on_conflict,
-              timeout: options[:tokens][:timeout] || @insert_tokens_timeout,
-              timestamps: timestamps
-            }
-          )
-        end)
-
-      _ ->
-        multi
-    end
-  end
-
-  defp run_token_transfers(multi, ecto_schema_module_to_changes_list, options)
-       when is_map(ecto_schema_module_to_changes_list) and is_map(options) do
-    case ecto_schema_module_to_changes_list do
-      %{TokenTransfer => token_transfers_changes} ->
-        timestamps = Map.fetch!(options, :timestamps)
-
-        Multi.run(multi, :token_transfers, fn _ ->
-          insert_token_transfers(
-            token_transfers_changes,
-            %{
-              timeout: options[:token_transfers][:timeout] || @insert_token_transfers_timeout,
-              timestamps: timestamps
-            }
-          )
-        end)
-
-      _ ->
-        multi
-    end
-  end
-
-  defp run_token_balances(multi, ecto_schema_module_to_changes_list, options)
-       when is_map(ecto_schema_module_to_changes_list) and is_map(options) do
-    case ecto_schema_module_to_changes_list do
-      %{TokenBalance => token_balances_changes} ->
-        timestamps = Map.fetch!(options, :timestamps)
-
-        Multi.run(multi, :token_balances, fn _ ->
-          insert_token_balances(
-            token_balances_changes,
-            %{
-              timeout: options[:token_balances][:timeout] || @insert_token_balances_timeout,
-              timestamps: timestamps
-            }
-          )
-        end)
-
-      _ ->
-        multi
-    end
-  end
-
-  defp run_block_second_degree_relations(multi, ecto_schema_module_to_changes_list, options)
-       when is_map(ecto_schema_module_to_changes_list) and is_map(options) do
-    case ecto_schema_module_to_changes_list do
-      %{Block.SecondDegreeRelation => block_second_degree_relations_changes} ->
-        Multi.run(multi, :block_second_degree_relations, fn _ ->
-          insert_block_second_degree_relations(
-            block_second_degree_relations_changes,
-            %{
-              timeout:
-                options[:block_second_degree_relations][:timeout] || @insert_block_second_degree_relations_timeout
-            }
-          )
-        end)
-
-      _ ->
-        multi
-    end
-  end
-
-  @spec insert_addresses([%{hash: Hash.Address.t()}], %{
-          required(:timeout) => timeout,
-          required(:timestamps) => timestamps
-        }) :: {:ok, [Hash.Address.t()]}
-  defp insert_addresses(changes_list, %{timeout: timeout, timestamps: timestamps}) when is_list(changes_list) do
-    # order so that row ShareLocks are grabbed in a consistent order
-    ordered_changes_list = sort_address_changes_list(changes_list)
-
-    insert_changes_list(
-      ordered_changes_list,
-      conflict_target: :hash,
-      on_conflict:
-        from(
-          address in Address,
-          update: [
-            set: [
-              contract_code: fragment("COALESCE(?, EXCLUDED.contract_code)", address.contract_code),
-              # ARGMAX on two columns
-              fetched_coin_balance:
-                fragment(
-                  """
-                  CASE WHEN EXCLUDED.fetched_coin_balance_block_number IS NOT NULL AND
-                            (? IS NULL OR
-                             EXCLUDED.fetched_coin_balance_block_number >= ?) THEN
-                              EXCLUDED.fetched_coin_balance
-                       ELSE ?
-                  END
-                  """,
-                  address.fetched_coin_balance_block_number,
-                  address.fetched_coin_balance_block_number,
-                  address.fetched_coin_balance
-                ),
-              # MAX on two columns
-              fetched_coin_balance_block_number:
-                fragment(
-                  """
-                  CASE WHEN EXCLUDED.fetched_coin_balance_block_number IS NOT NULL AND
-                            (? IS NULL OR
-                             EXCLUDED.fetched_coin_balance_block_number >= ?) THEN
-                              EXCLUDED.fetched_coin_balance_block_number
-                       ELSE ?
-                  END
-                  """,
-                  address.fetched_coin_balance_block_number,
-                  address.fetched_coin_balance_block_number,
-                  address.fetched_coin_balance_block_number
-                )
-            ]
-          ]
-        ),
-      for: Address,
-      returning: true,
-      timeout: timeout,
-      timestamps: timestamps
-    )
-  end
-
-  defp sort_address_changes_list(changes_list) do
-    Enum.sort_by(changes_list, & &1.hash)
-  end
-
-  @spec insert_balances(
-          [
-            %{
-              required(:address_hash) => Hash.Address.t(),
-              required(:block_number) => Block.block_number(),
-              required(:value) => Wei.t()
-            }
-          ],
-          %{
-            required(:timeout) => timeout,
-            required(:timestamps) => timestamps
-          }
-        ) ::
-          {:ok, [%{required(:address_hash) => Hash.Address.t(), required(:block_number) => Block.block_number()}]}
-          | {:error, [Changeset.t()]}
-  defp insert_balances(changes_list, %{timeout: timeout, timestamps: timestamps}) when is_list(changes_list) do
-    # order so that row ShareLocks are grabbed in a consistent order
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.address_hash, &1.block_number})
-
-    {:ok, _} =
-      insert_changes_list(
-        ordered_changes_list,
-        conflict_target: [:address_hash, :block_number],
-        on_conflict:
-          from(
-            balance in CoinBalance,
-            update: [
-              set: [
-                inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", balance.inserted_at),
-                updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", balance.updated_at),
-                value:
-                  fragment(
-                    """
-                    CASE WHEN EXCLUDED.value IS NOT NULL AND (? IS NULL OR EXCLUDED.value_fetched_at > ?) THEN
-                           EXCLUDED.value
-                         ELSE
-                           ?
-                    END
-                    """,
-                    balance.value_fetched_at,
-                    balance.value_fetched_at,
-                    balance.value
-                  ),
-                value_fetched_at:
-                  fragment(
-                    """
-                    CASE WHEN EXCLUDED.value IS NOT NULL AND (? IS NULL OR EXCLUDED.value_fetched_at > ?) THEN
-                           EXCLUDED.value_fetched_at
-                         ELSE
-                           ?
-                    END
-                    """,
-                    balance.value_fetched_at,
-                    balance.value_fetched_at,
-                    balance.value_fetched_at
-                  )
-              ]
-            ]
-          ),
-        for: CoinBalance,
-        timeout: timeout,
-        timestamps: timestamps
-      )
-
-    {:ok, Enum.map(ordered_changes_list, &Map.take(&1, ~w(address_hash block_number)a))}
-  end
-
-  @spec insert_blocks([map()], %{required(:timeout) => timeout, required(:timestamps) => timestamps}) ::
-          {:ok, [Block.t()]} | {:error, [Changeset.t()]}
-  defp insert_blocks(changes_list, %{timeout: timeout, timestamps: timestamps})
-       when is_list(changes_list) do
-    # order so that row ShareLocks are grabbed in a consistent order
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.number, &1.hash})
-
-    {:ok, blocks} =
-      insert_changes_list(
-        ordered_changes_list,
-        conflict_target: :hash,
-        on_conflict: :replace_all,
-        for: Block,
-        returning: true,
-        timeout: timeout,
-        timestamps: timestamps
-      )
-
-    {:ok, blocks}
-  end
-
-  @spec insert_block_second_degree_relations([map()], %{required(:timeout) => timeout}) ::
-          {:ok, %{nephew_hash: Hash.Full.t(), uncle_hash: Hash.Full.t()}} | {:error, [Changeset.t()]}
-  defp insert_block_second_degree_relations(changes_list, %{timeout: timeout}) when is_list(changes_list) do
-    # order so that row ShareLocks are grabbed in a consistent order
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.nephew_hash, &1.uncle_hash})
-
-    insert_changes_list(ordered_changes_list,
-      conflict_target: [:nephew_hash, :uncle_hash],
-      on_conflict:
-        from(
-          block_second_degree_relation in Block.SecondDegreeRelation,
-          update: [
-            set: [
-              uncle_fetched_at:
-                fragment("LEAST(?, EXCLUDED.uncle_fetched_at)", block_second_degree_relation.uncle_fetched_at)
-            ]
-          ]
-        ),
-      for: Block.SecondDegreeRelation,
-      returning: [:nephew_hash, :uncle_hash],
-      timeout: timeout,
-      # block_second_degree_relations doesn't have timestamps
-      timestamps: %{}
-    )
-  end
-
-  @spec insert_internal_transactions([map], %{required(:timeout) => timeout, required(:timestamps) => timestamps}) ::
-          {:ok, [%{index: non_neg_integer, transaction_hash: Hash.t()}]}
-          | {:error, [Changeset.t()]}
-  defp insert_internal_transactions(changes_list, %{timeout: timeout, timestamps: timestamps})
-       when is_list(changes_list) do
-    # order so that row ShareLocks are grabbed in a consistent order
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.index})
-
-    {:ok, internal_transactions} =
-      insert_changes_list(
-        ordered_changes_list,
-        conflict_target: [:transaction_hash, :index],
-        for: InternalTransaction,
-        on_conflict: :replace_all,
-        returning: [:id, :index, :transaction_hash],
-        timeout: timeout,
-        timestamps: timestamps
-      )
-
-    {:ok,
-     for(
-       internal_transaction <- internal_transactions,
-       do: Map.take(internal_transaction, [:id, :index, :transaction_hash])
-     )}
-  end
-
-  @spec insert_logs([map()], %{required(:timeout) => timeout, required(:timestamps) => timestamps}) ::
-          {:ok, [Log.t()]}
-          | {:error, [Changeset.t()]}
-  defp insert_logs(changes_list, %{timeout: timeout, timestamps: timestamps})
-       when is_list(changes_list) do
-    # order so that row ShareLocks are grabbed in a consistent order
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.index})
-
-    {:ok, _} =
-      insert_changes_list(
-        ordered_changes_list,
-        conflict_target: [:transaction_hash, :index],
-        on_conflict: :replace_all,
-        for: Log,
-        returning: true,
-        timeout: timeout,
-        timestamps: timestamps
-      )
-  end
-
-  @spec insert_tokens([map()], %{
-          required(:on_conflict) => on_conflict(),
-          required(:timeout) => timeout(),
-          required(:timestamps) => timestamps()
-        }) ::
-          {:ok, [Token.t()]}
-          | {:error, [Changeset.t()]}
-  def insert_tokens(changes_list, %{on_conflict: on_conflict, timeout: timeout, timestamps: timestamps})
-      when is_list(changes_list) do
-    # order so that row ShareLocks are grabbed in a consistent order
-    ordered_changes_list = Enum.sort_by(changes_list, & &1.contract_address_hash)
-
-    {:ok, _} =
-      insert_changes_list(
-        ordered_changes_list,
-        conflict_target: :contract_address_hash,
-        on_conflict: on_conflict,
-        for: Token,
-        returning: true,
-        timeout: timeout,
-        timestamps: timestamps
-      )
-  end
-
-  @spec insert_token_transfers([map()], %{required(:timeout) => timeout(), required(:timestamps) => timestamps()}) ::
-          {:ok, [TokenTransfer.t()]}
-          | {:error, [Changeset.t()]}
-  def insert_token_transfers(changes_list, %{timeout: timeout, timestamps: timestamps})
-      when is_list(changes_list) do
-    # order so that row ShareLocks are grabbed in a consistent order
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.log_index})
-
-    {:ok, _} =
-      insert_changes_list(
-        ordered_changes_list,
-        conflict_target: [:transaction_hash, :log_index],
-        on_conflict: :replace_all,
-        for: TokenTransfer,
-        returning: true,
-        timeout: timeout,
-        timestamps: timestamps
-      )
-  end
-
-  @spec insert_token_balances([map()], %{
-          required(:timeout) => timeout(),
-          required(:timestamps) => timestamps()
-        }) ::
-          {:ok, [TokenBalance.t()]}
-          | {:error, [Changeset.t()]}
-  def insert_token_balances(changes_list, %{timeout: timeout, timestamps: timestamps})
-      when is_list(changes_list) do
-    # order so that row ShareLocks are grabbed in a consistent order
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.address_hash, &1.block_number})
-
-    {:ok, _} =
-      insert_changes_list(
-        ordered_changes_list,
-        conflict_target: ~w(address_hash token_contract_address_hash block_number)a,
-        on_conflict:
-          from(
-            token_balance in TokenBalance,
-            update: [
-              set: [
-                inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", token_balance.inserted_at),
-                updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", token_balance.updated_at),
-                value:
-                  fragment(
-                    """
-                    CASE WHEN EXCLUDED.value IS NOT NULL AND (? IS NULL OR EXCLUDED.value_fetched_at > ?) THEN
-                           EXCLUDED.value
-                         ELSE
-                           ?
-                    END
-                    """,
-                    token_balance.value_fetched_at,
-                    token_balance.value_fetched_at,
-                    token_balance.value
-                  ),
-                value_fetched_at:
-                  fragment(
-                    """
-                    CASE WHEN EXCLUDED.value IS NOT NULL AND (? IS NULL OR EXCLUDED.value_fetched_at > ?) THEN
-                           EXCLUDED.value_fetched_at
-                         ELSE
-                           ?
-                    END
-                    """,
-                    token_balance.value_fetched_at,
-                    token_balance.value_fetched_at,
-                    token_balance.value_fetched_at
-                  )
-              ]
-            ]
-          ),
-        for: TokenBalance,
-        returning: true,
-        timeout: timeout,
-        timestamps: timestamps
-      )
-  end
-
-  @spec insert_transactions([map()], %{
-          required(:on_conflict) => on_conflict,
-          required(:timeout) => timeout,
-          required(:timestamps) => timestamps
-        }) :: {:ok, [Hash.t()]} | {:error, [Changeset.t()]}
-  defp insert_transactions(changes_list, %{on_conflict: on_conflict, timeout: timeout, timestamps: timestamps})
-       when is_list(changes_list) do
-    # order so that row ShareLocks are grabbed in a consistent order
-    ordered_changes_list = Enum.sort_by(changes_list, & &1.hash)
-
-    {:ok, transactions} =
-      insert_changes_list(
-        ordered_changes_list,
-        conflict_target: :hash,
-        on_conflict: on_conflict,
-        for: Transaction,
-        returning: [:hash],
-        timeout: timeout,
-        timestamps: timestamps
-      )
-
-    {:ok, for(transaction <- transactions, do: transaction.hash)}
-  end
-
-  @spec insert_transaction_forks([map()], %{
-          required(:timeout) => timeout,
-          required(:timestamps) => timestamps
-        }) :: {:ok, [%{uncle_hash: Hash.t(), hash: Hash.t()}]}
-  defp insert_transaction_forks(changes_list, %{timeout: timeout, timestamps: timestamps})
-       when is_list(changes_list) do
-    # order so that row ShareLocks are grabbed in a consistent order
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.uncle_hash, &1.hash})
-
-    insert_changes_list(
-      ordered_changes_list,
-      conflict_target: [:uncle_hash, :index],
-      on_conflict:
-        from(
-          transaction_fork in Transaction.Fork,
-          update: [
-            set: [
-              hash: fragment("EXCLUDED.hash")
-            ]
-          ]
-        ),
-      for: Transaction.Fork,
-      returning: [:uncle_hash, :hash],
-      timeout: timeout,
-      timestamps: timestamps
-    )
-  end
-
-  defp insert_changes_list(changes_list, options) when is_list(changes_list) do
+  def insert_changes_list(changes_list, options) when is_list(changes_list) do
     ecto_schema_module = Keyword.fetch!(options, :for)
 
     timestamped_changes_list = timestamp_changes_list(changes_list, Keyword.fetch!(options, :timestamps))
@@ -992,199 +307,6 @@ defmodule Explorer.Chain.Import do
     {:ok, inserted}
   end
 
-  defp fork_transactions(%{timeout: timeout, timestamps: %{updated_at: updated_at}, where_forked: where_forked}) do
-    query =
-      where_forked
-      |> update(
-        set: [
-          block_hash: nil,
-          block_number: nil,
-          gas_used: nil,
-          cumulative_gas_used: nil,
-          index: nil,
-          internal_transactions_indexed_at: nil,
-          status: nil,
-          updated_at: ^updated_at
-        ]
-      )
-
-    try do
-      {_, result} = Repo.update_all(query, [], timeout: timeout, returning: [:hash])
-
-      {:ok, result}
-    rescue
-      postgrex_error in Postgrex.Error ->
-        {:error, %{exception: postgrex_error}}
-    end
-  end
-
-  defp where_forked(blocks_changes) when is_list(blocks_changes) do
-    initial = from(t in Transaction, where: false)
-
-    Enum.reduce(blocks_changes, initial, fn %{consensus: consensus, hash: hash, number: number}, acc ->
-      case consensus do
-        false ->
-          from(transaction in acc, or_where: transaction.block_hash == ^hash and transaction.block_number == ^number)
-
-        true ->
-          from(transaction in acc, or_where: transaction.block_hash != ^hash and transaction.block_number == ^number)
-      end
-    end)
-  end
-
-  # sobelow_skip ["SQL.Query"]
-  defp derive_transaction_forks(%{
-         timeout: timeout,
-         timestamps: %{inserted_at: inserted_at, updated_at: updated_at},
-         where_forked: where_forked
-       }) do
-    query =
-      from(transaction in where_forked,
-        select: [
-          transaction.block_hash,
-          transaction.index,
-          transaction.hash,
-          type(^inserted_at, transaction.inserted_at),
-          type(^updated_at, transaction.updated_at)
-        ]
-      )
-
-    {select_sql, parameters} = SQL.to_sql(:all, Repo, query)
-
-    insert_sql = """
-    INSERT INTO transaction_forks (uncle_hash, index, hash, inserted_at, updated_at)
-    #{select_sql}
-    RETURNING uncle_hash, hash
-    """
-
-    with {:ok, %Postgrex.Result{columns: ["uncle_hash", "hash"], command: :insert, rows: rows}} <-
-           SQL.query(
-             Repo,
-             insert_sql,
-             parameters,
-             timeout: timeout
-           ) do
-      derived_transaction_forks = Enum.map(rows, fn [uncle_hash, hash] -> %{uncle_hash: uncle_hash, hash: hash} end)
-
-      {:ok, derived_transaction_forks}
-    end
-  end
-
-  defp lose_consensus(blocks_changes, %{timeout: timeout, timestamps: %{updated_at: updated_at}})
-       when is_list(blocks_changes) do
-    ordered_consensus_block_number =
-      blocks_changes
-      |> Enum.reduce(MapSet.new(), fn
-        %{consensus: true, number: number}, acc ->
-          MapSet.put(acc, number)
-
-        %{consensus: false}, acc ->
-          acc
-      end)
-      |> Enum.sort()
-
-    query =
-      from(
-        block in Block,
-        where: block.number in ^ordered_consensus_block_number,
-        update: [
-          set: [
-            consensus: false,
-            updated_at: ^updated_at
-          ]
-        ]
-      )
-
-    try do
-      {_, result} = Repo.update_all(query, [], timeout: timeout, returning: [:hash, :number])
-
-      {:ok, result}
-    rescue
-      postgrex_error in Postgrex.Error ->
-        {:error, %{exception: postgrex_error, consensus_block_numbers: ordered_consensus_block_number}}
-    end
-  end
-
-  defp update_block_second_degree_relations(blocks, %{timeout: timeout, timestamps: %{updated_at: updated_at}})
-       when is_list(blocks) do
-    ordered_uncle_hashes =
-      blocks
-      |> MapSet.new(& &1.hash)
-      |> Enum.sort()
-
-    query =
-      from(
-        bsdr in Block.SecondDegreeRelation,
-        where: bsdr.uncle_hash in ^ordered_uncle_hashes,
-        update: [
-          set: [
-            uncle_fetched_at: ^updated_at
-          ]
-        ]
-      )
-
-    try do
-      {_, result} = Repo.update_all(query, [], timeout: timeout)
-
-      {:ok, result}
-    rescue
-      postgrex_error in Postgrex.Error ->
-        {:error, %{exception: postgrex_error, uncle_hashes: ordered_uncle_hashes}}
-    end
-  end
-
-  defp update_transactions(internal_transactions, %{
-         timeout: timeout,
-         timestamps: timestamps
-       })
-       when is_list(internal_transactions) do
-    ordered_transaction_hashes =
-      internal_transactions
-      |> MapSet.new(& &1.transaction_hash)
-      |> Enum.sort()
-
-    query =
-      from(
-        t in Transaction,
-        where: t.hash in ^ordered_transaction_hashes,
-        update: [
-          set: [
-            internal_transactions_indexed_at: ^timestamps.updated_at,
-            created_contract_address_hash:
-              fragment(
-                "(SELECT it.created_contract_address_hash FROM internal_transactions AS it WHERE it.transaction_hash = ? and it.type = 'create' and ? IS NULL)",
-                t.hash,
-                t.to_address_hash
-              ),
-            error:
-              fragment(
-                "(SELECT it.error FROM internal_transactions AS it WHERE it.transaction_hash = ? ORDER BY it.index ASC LIMIT 1)",
-                t.hash
-              ),
-            status:
-              fragment(
-                "COALESCE(?, CASE WHEN (SELECT it.error FROM internal_transactions AS it WHERE it.transaction_hash = ? ORDER BY it.index ASC LIMIT 1) IS NULL THEN ? ELSE ? END)",
-                t.status,
-                t.hash,
-                type(^:ok, t.status),
-                type(^:error, t.status)
-              )
-          ]
-        ]
-      )
-
-    transaction_count = Enum.count(ordered_transaction_hashes)
-
-    try do
-      {^transaction_count, result} = Repo.update_all(query, [], timeout: timeout)
-
-      {:ok, result}
-    rescue
-      postgrex_error in Postgrex.Error ->
-        {:error, %{exception: postgrex_error, transaction_hashes: ordered_transaction_hashes}}
-    end
-  end
-
   defp timestamp_changes_list(changes_list, timestamps) when is_list(changes_list) do
     Enum.map(changes_list, &timestamp_params(&1, timestamps))
   end
@@ -1193,49 +315,13 @@ defmodule Explorer.Chain.Import do
     Map.merge(changes, timestamps)
   end
 
-  defp import_options_to_changes_list_arguments_list(options) do
-    Enum.flat_map(
-      @import_option_key_to_ecto_schema_module,
-      &import_options_to_changes_list_arguments_list_flat_mapper(options, &1)
-    )
-  end
-
-  defp import_options_to_changes_list_arguments_list_flat_mapper(options, {option_key, ecto_schema_module}) do
-    case Map.fetch(options, option_key) do
-      {:ok, option_value} ->
-        import_option_to_changes_list_arguments_list_flat_mapper(option_value, ecto_schema_module)
-
-      :error ->
-        []
-    end
-  end
-
-  defp import_option_to_changes_list_arguments_list_flat_mapper(%{params: params} = option_value, ecto_schema_module) do
-    # Use `Enum.empty?` instead of `[_ | _]` as params are allowed to be any collection of maps
-    case Enum.empty?(params) do
-      false ->
-        [
-          [
-            params,
-            [for: ecto_schema_module, with: Map.get(option_value, :with, :changeset)]
-          ]
-        ]
-
-      # filter out empty params as early as possible, so that later stages don't need to deal with empty params
-      # leading to selecting all rows because they produce no where conditions as happened in
-      # https://github.com/poanetwork/blockscout/issues/850
-      true ->
-        []
-    end
-  end
-
   defp import_transaction(multi, options) when is_map(options) do
     Repo.transaction(multi, timeout: Map.get(options, :timeout, @transaction_timeout))
   end
 
-  defp insert_ecto_schema_module_to_changes_list_map(ecto_schema_module_to_changes_list_map, options) do
-    ecto_schema_module_to_changes_list_map
-    |> ecto_schema_module_to_changes_list_map_to_multi(options)
+  defp insert_runner_changes_list_pairs(runner_changes_list_pairs, options) do
+    runner_changes_list_pairs
+    |> runner_changes_list_pairs_to_multi(options)
     |> import_transaction(options)
   end
 
