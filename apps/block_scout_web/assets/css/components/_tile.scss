@@ -19,6 +19,26 @@
 
     &-block {
       border-left: 4px solid $primary;
+
+      .tile-label {
+        color: $primary;
+      }
+    }
+
+    &-uncle {
+      border-left: 4px solid $secondary;
+
+      .tile-label {
+        color: $secondary;
+      }
+    }
+
+    &-reorg {
+      border-left: 4px solid $tertiary;
+
+      .tile-label {
+        color: $tertiary;
+      }
     }
 
     &-transaction {
