@@ -49,21 +49,15 @@ defmodule BlockScoutWeb.LayoutViewTest do
     end
   end
 
-  describe "app_title/0" do
-    test "use the enviroment subnetwork title when it's configured" do
-      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, subnetwork: "Subnetwork Test")
-
-      assert LayoutView.app_title() == "Subnetwork Test POA Explorer"
-    end
-
+  describe "network_title/0" do
     test "use the enviroment network title when it's configured" do
-      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, network: "Custom")
+      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, network: "Custom Network")
 
-      assert LayoutView.app_title() == "Sokol Testnet Custom Explorer"
+      assert LayoutView.network_title() == "Custom Network"
     end
 
-    test "use the default subnetwork title when there is no env configured for it" do
-      assert LayoutView.app_title() == "Sokol Testnet POA Explorer"
+    test "use the default network title when there is no env configured for it" do
+      assert LayoutView.network_title() == "POA"
     end
   end
 end

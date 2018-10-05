@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.AddressView do
 
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
+  alias BlockScoutWeb.LayoutView
 
   @dialyzer :no_match
 
@@ -230,5 +231,13 @@ defmodule BlockScoutWeb.AddressView do
     >> = to_string(hash)
 
     "0x" <> short_address
+  end
+
+  def address_page_title(address) do
+    cond do
+      smart_contract_verified?(address) -> "#{address.smart_contract.name} (#{to_string(address)})"
+      contract?(address) -> "Contract #{to_string(address)}"
+      true -> "#{to_string(address)}"
+    end
   end
 end

@@ -15,10 +15,8 @@ defmodule BlockScoutWeb.LayoutView do
     Keyword.get(application_config(), :subnetwork) || "Sokol Testnet"
   end
 
-  def app_title do
-    network_title = Keyword.get(application_config(), :network) || "POA"
-
-    gettext("%{subnetwork} %{network} Explorer", subnetwork: subnetwork_title(), network: network_title)
+  def network_title do
+    Keyword.get(application_config(), :network) || "POA"
   end
 
   defp application_config do
