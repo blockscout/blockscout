@@ -110,12 +110,11 @@ if ($blockListPage.length) {
 
 function placeHolderBlock (blockNumber) {
   return `
-    <div class="my-3" style="height: 98px;">
+    <div class="my-3">
       <div
         class="tile tile-type-block d-flex align-items-center fade-up"
         data-selector="place-holder"
         data-block-number="${blockNumber}"
-        style="height: 98px;"
       >
         <span class="loading-spinner-small ml-1 mr-4">
           <span class="loading-spinner-block-1"></span>
