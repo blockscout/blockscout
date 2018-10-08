@@ -1987,6 +1987,9 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
+  # This function is deprecated.
+  #
+  # The code is being treated at https://github.com/poanetwork/blockscout/issues/880
   @spec count_token_holders_from_token_hash(Hash.Address.t()) :: non_neg_integer()
   def count_token_holders_from_token_hash(contract_address_hash) do
     contract_address_hash

@@ -31,7 +31,6 @@ defmodule BlockScoutWeb.Tokens.ReadContractControllerTest do
       assert html_response(conn, 200)
       assert token.contract_address_hash == conn.assigns.token.contract_address_hash
       assert conn.assigns.total_token_transfers
-      assert conn.assigns.total_token_holders
     end
   end
 end
