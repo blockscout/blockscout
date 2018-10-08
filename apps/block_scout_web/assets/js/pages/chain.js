@@ -200,7 +200,7 @@ if ($chainDetailsPage.length) {
 
 function newBlockHtml (blockHtml) {
   return `
-    <div class="col-lg-3 fade-up-blocks-chain mb-3 mb-lg-0">
+    <div class="col-lg-3 fade-up-blocks-chain">
       ${blockHtml}
     </div>
   `
@@ -209,14 +209,14 @@ function newBlockHtml (blockHtml) {
 function placeHolderBlock (blockNumber) {
   return `
     <div
-      class="col-lg-3 fade-up-blocks-chain mb-3 mb-lg-0"
-      style="min-height: 98px;"
+      class="col-lg-3 fade-up-blocks-chain"
+      style="min-height: 100px;"
     >
       <div
         class="tile tile-type-block d-flex align-items-center fade-up"
         data-selector="place-holder"
         data-block-number="${blockNumber}"
-        style="height: 98px;"
+        style="height: 100px;"
       >
         <span class="loading-spinner-small ml-1 mr-4">
           <span class="loading-spinner-block-1"></span>

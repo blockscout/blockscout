@@ -1,0 +1,58 @@
+$primary:       #fec042;
+$secondary:     #53546a;
+$tertiary:      #1755e4;
+
+.navbar.navbar-primary {
+  background-color: #f2f6f8;
+
+  &.navbar-dark .navbar-nav .nav-link {
+    color: $secondary;
+
+    &:hover,
+    &:focus {
+      color: rgba($secondary, 0.75);
+    }
+  }
+
+  .form-control {
+    color: $secondary;
+    border-color: transparentize($secondary, 0.30);
+
+    &::-webkit-input-placeholder { /* Chrome/Opera/Safari */
+      color: transparentize($secondary, 0.5);
+    }
+    &::-moz-placeholder { /* Firefox 19+ */
+      color: transparentize($secondary, 0.5);
+    }
+    &:-ms-input-placeholder { /* IE 10+ */
+      color: transparentize($secondary, 0.5);
+    }
+    &:-moz-placeholder { /* Firefox 18- */
+      color: transparentize($secondary, 0.5);
+    }
+  }
+
+  .input-group-text {
+    border-color: transparentize($secondary, 0.30);
+  }
+}
+
+.navbar.navbar-dark .navbar-toggler {
+  color: $secondary;
+  border-color: $secondary;
+
+  .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='#{transparentize($secondary, 0.5)}' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E"); 
+  }
+}
+
+.button.button-secondary {
+  color: $secondary;
+  border-color: $secondary;
+
+  &:hover,
+  &:focus {
+    background-color: $secondary;
+    border-color: $secondary;
+  }
+}

@@ -7,6 +7,30 @@
   }
 }
 
+.navbar-collapse.collapsing,
+.navbar-collapse.collapse.show {
+  display: flex;
+  flex-direction: column;
+
+  .search-form {
+    order: -1;
+    width: 100%;
+    align-items: center;
+
+    form {
+      flex-grow: 1;
+    }
+  }
+
+  .input-group {
+    width: 100%;
+  }
+
+  .navbar-nav {
+    white-space: nowrap;
+  }
+}
+
 .navbar-brand {
   margin-left: 0;
 }
@@ -39,14 +63,16 @@
   display: flex;
   align-items: center;
   position: relative;
-  top: -2px;
-  height: 1em;
-  width: 1em;
+  top: -1px;
   margin-right: 0.5em;
 
   path {
     fill: $secondary;
   }
+}
+
+.navbar .search-form {
+  display: flex;
 }
 
 .navbar .form-control {
