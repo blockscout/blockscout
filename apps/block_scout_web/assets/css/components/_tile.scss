@@ -17,27 +17,27 @@
 
   &-type {
 
-    &-block {
-      border-left: 4px solid $primary;
+    &-Block {
+      border-left: 4px solid $indigo;
 
       .tile-label {
-        color: $primary;
+        color: $indigo;
       }
     }
 
-    &-uncle {
-      border-left: 4px solid $secondary;
+    &-Uncle {
+      border-left: 4px solid $cyan;
 
       .tile-label {
-        color: $secondary;
+        color: $cyan;
       }
     }
 
-    &-reorg {
-      border-left: 4px solid $tertiary;
+    &-Reorg {
+      border-left: 4px solid $purple;
 
       .tile-label {
-        color: $tertiary;
+        color: $purple;
       }
     }
 
