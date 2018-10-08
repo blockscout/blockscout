@@ -1,4 +1,4 @@
-<section class="container" data-page="block-list">
+<section class="container" data-page="<%= String.downcase(@block_type) %>-list">
   <div class="card">
     <div class="card-body">
       <div data-selector="channel-disconnected-message" style="display:none;">

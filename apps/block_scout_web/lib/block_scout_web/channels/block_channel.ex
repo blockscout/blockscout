@@ -24,7 +24,8 @@ defmodule BlockScoutWeb.BlockChannel do
       View.render_to_string(
         BlockView,
         "_tile.html",
-        block: block
+        block: block,
+        block_type: BlockView.block_type(block)
       )
 
     rendered_chain_block =
