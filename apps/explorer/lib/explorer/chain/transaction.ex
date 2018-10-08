@@ -6,6 +6,7 @@ defmodule Explorer.Chain.Transaction do
   import Ecto.Query, only: [from: 2, preload: 3, where: 3, subquery: 1]
 
   alias Ecto.Changeset
+  alias Explorer.Repo
 
   alias Explorer.Chain.{
     Address,
@@ -542,5 +543,45 @@ defmodule Explorer.Chain.Transaction do
       where: tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash,
       distinct: :hash
     )
+  end
+
+  @doc """
+  Consolidates the transaction count by address.
+
+  As the address can be the to, from or the created_contract, the query is going to group the transactions
+  considering those columns to count how many transactions the address has.
+  """
+  def consolidate_by_address do
+    {:ok, %{rows: result}} =
+      Repo.query("""
+      select
+        address_hash,
+        count(*)
+      from(
+        select to_address_hash as address_hash from transactions where to_address_hash IS NOT NULL
+        union all
+
+        select from_address_hash as address_hash from transactions
+        union all
+
+        select created_contract_address_hash as address_hash from transactions
+          where created_contract_address_hash IS NOT NULL
+      ) addresses
+      group by address_hash
+      """)
+
+    Enum.map(result, fn item ->
+      address_hash =
+        item
+        |> List.first()
+        |> binary_to_address_hash
+
+      {address_hash, Enum.at(item, 1)}
+    end)
+  end
+
+  defp binary_to_address_hash(binary) do
+    {:ok, address_hash} = Hash.Address.load(binary)
+    address_hash
   end
 end
