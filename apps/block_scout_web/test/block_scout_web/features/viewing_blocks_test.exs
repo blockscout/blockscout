@@ -20,12 +20,6 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
     {:ok, first_shown_block: newest_block, last_shown_block: oldest_block}
   end
 
-  test "viewing the blocks index page", %{first_shown_block: block, session: session} do
-    session
-    |> BlockListPage.visit_page()
-    |> assert_has(BlockListPage.block(block))
-  end
-
   describe "block details page" do
     test "show block detail page", %{session: session} do
       block = insert(:block, number: 42)
@@ -34,35 +28,6 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
       |> BlockPage.visit_page(block)
       |> assert_has(BlockPage.detail_number(block))
       |> assert_has(BlockPage.page_type("Block Details"))
-    end
-
-    test "inserts place holder blocks if out of order block received", %{session: session} do
-      BlockListPage.visit_page(session)
-
-      block = insert(:block, number: 315)
-      Notifier.handle_event({:chain_event, :blocks, :realtime, [block]})
-
-      session
-      |> assert_has(BlockListPage.block(block))
-      |> assert_has(BlockListPage.place_holder_blocks(3))
-    end
-
-    test "replaces place holder block if skipped block received", %{session: session} do
-      BlockListPage.visit_page(session)
-
-      block = insert(:block, number: 315)
-      Notifier.handle_event({:chain_event, :blocks, :realtime, [block]})
-
-      session
-      |> assert_has(BlockListPage.block(block))
-      |> assert_has(BlockListPage.place_holder_blocks(3))
-
-      skipped_block = insert(:block, number: 314)
-      Notifier.handle_event({:chain_event, :blocks, :realtime, [skipped_block]})
-
-      session
-      |> assert_has(BlockListPage.block(skipped_block))
-      |> assert_has(BlockListPage.place_holder_blocks(2))
     end
 
     test "block detail page has transactions", %{session: session} do
@@ -127,6 +92,15 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
       |> assert_has(BlockPage.token_transfers(transaction, count: 3))
     end
 
+    test "show reorg detail page", %{session: session} do
+      reorg = insert(:block, consensus: false)
+
+      session
+      |> BlockPage.visit_page(reorg)
+      |> assert_has(BlockPage.detail_number(reorg))
+      |> assert_has(BlockPage.page_type("Reorg Details"))
+    end
+
     test "show uncle detail page", %{session: session} do
       uncle = insert(:block, consensus: false)
       insert(:block_second_degree_relation, uncle_hash: uncle.hash)
@@ -150,14 +124,40 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
     end
   end
 
-  describe "viewing reorg blocks list" do
-    test "lists uncle blocks", %{session: session} do
-      [reorg | _] = insert_list(10, :block, consensus: false)
+  describe "viewing blocks list" do
+    test "viewing the blocks index page", %{first_shown_block: block, session: session} do
+      session
+      |> BlockListPage.visit_page()
+      |> assert_has(BlockListPage.block(block))
+    end
+
+    test "inserts place holder blocks if out of order block received", %{session: session} do
+      BlockListPage.visit_page(session)
+
+      block = insert(:block, number: 315)
+      Notifier.handle_event({:chain_event, :blocks, :realtime, [block]})
 
       session
-      |> BlockListPage.visit_reorgs_page()
-      |> assert_has(BlockListPage.block(reorg))
-      |> assert_has(BlockListPage.blocks(10))
+      |> assert_has(BlockListPage.block(block))
+      |> assert_has(BlockListPage.place_holder_blocks(3))
+    end
+
+    test "replaces place holder block if skipped block received", %{session: session} do
+      BlockListPage.visit_page(session)
+
+      block = insert(:block, number: 315)
+      Notifier.handle_event({:chain_event, :blocks, :realtime, [block]})
+
+      session
+      |> assert_has(BlockListPage.block(block))
+      |> assert_has(BlockListPage.place_holder_blocks(3))
+
+      skipped_block = insert(:block, number: 314)
+      Notifier.handle_event({:chain_event, :blocks, :realtime, [skipped_block]})
+
+      session
+      |> assert_has(BlockListPage.block(skipped_block))
+      |> assert_has(BlockListPage.place_holder_blocks(2))
     end
   end
 
@@ -182,6 +182,17 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
       session
       |> BlockListPage.visit_uncles_page()
       |> assert_has(BlockListPage.block(uncle))
+      |> assert_has(BlockListPage.blocks(10))
+    end
+  end
+
+  describe "viewing reorg blocks list" do
+    test "lists uncle blocks", %{session: session} do
+      [reorg | _] = insert_list(10, :block, consensus: false)
+
+      session
+      |> BlockListPage.visit_reorgs_page()
+      |> assert_has(BlockListPage.block(reorg))
       |> assert_has(BlockListPage.blocks(10))
     end
   end

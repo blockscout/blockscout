@@ -1,10 +1,8 @@
 defmodule BlockScoutWeb.BlockPage do
   @moduledoc false
 
-  use Phoenix.ConnTest
   use Wallaby.DSL
 
-  import BlockScoutWeb.Router.Helpers
   import Wallaby.Query, only: [css: 1, css: 2]
 
   alias Explorer.Chain.{Block, InternalTransaction, Transaction}
@@ -41,8 +39,11 @@ defmodule BlockScoutWeb.BlockPage do
     css("[data-test='uncle_link'][data-uncle-hash='#{hash}']")
   end
 
-  def visit_page(session, %Block{} = block) do
-    path = block_path(build_conn(), :show, block)
-    visit(session, path)
+  def visit_page(session, %Block{number: block_number, consensus: true}) do
+    visit(session, "/blocks/#{block_number}")
+  end
+
+  def visit_page(session, %Block{hash: hash}) do
+    visit(session, "/blocks/#{hash}")
   end
 end
