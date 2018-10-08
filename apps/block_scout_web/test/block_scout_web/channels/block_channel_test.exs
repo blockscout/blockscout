@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.BlockChannelTest do
 
     block = insert(:block, number: 1)
 
-    Notifier.handle_event({:chain_event, :blocks, [block]})
+    Notifier.handle_event({:chain_event, :blocks, :realtime, [block]})
 
     receive do
       %Phoenix.Socket.Broadcast{topic: ^topic, event: "new_block", payload: %{block: _}} ->

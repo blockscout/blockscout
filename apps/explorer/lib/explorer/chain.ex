@@ -38,6 +38,7 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Block.Reward
   alias Explorer.{PagingOptions, Repo}
+  alias Explorer.Counters.TokenTransferCounter
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -57,6 +58,7 @@ defmodule Explorer.Chain do
           | :internal_transactions
           | :logs
           | :transactions
+          | :token_transfers
 
   @type direction :: :from | :to
 
@@ -1449,7 +1451,7 @@ defmodule Explorer.Chain do
   """
   @spec subscribe_to_events(chain_event()) :: :ok
   def subscribe_to_events(event_type)
-      when event_type in ~w(addresses address_coin_balances blocks exchange_rate internal_transactions logs transactions)a do
+      when event_type in ~w(addresses address_coin_balances blocks exchange_rate internal_transactions logs token_transfers transactions)a do
     Registry.register(Registry.ChainEvents, event_type, [])
     :ok
   end
@@ -1921,7 +1923,7 @@ defmodule Explorer.Chain do
 
   @spec count_token_transfers_from_token_hash(Hash.t()) :: non_neg_integer()
   def count_token_transfers_from_token_hash(token_address_hash) do
-    TokenTransfer.count_token_transfers_from_token_hash(token_address_hash)
+    TokenTransferCounter.fetch(token_address_hash)
   end
 
   @spec transaction_has_token_transfers?(Hash.t()) :: boolean()

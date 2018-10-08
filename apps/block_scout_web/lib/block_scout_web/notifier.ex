@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.Notifier do
   alias Explorer.ExchangeRates.Token
   alias BlockScoutWeb.Endpoint
 
-  def handle_event({:chain_event, :addresses, addresses}) do
+  def handle_event({:chain_event, :addresses, :realtime, addresses}) do
     Endpoint.broadcast("addresses:new_address", "count", %{count: Chain.address_estimated_count()})
 
     addresses
@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.Notifier do
     |> Enum.each(&broadcast_balance/1)
   end
 
-  def handle_event({:chain_event, :blocks, blocks}) do
+  def handle_event({:chain_event, :blocks, :realtime, blocks}) do
     Enum.each(blocks, &broadcast_block/1)
   end
 
@@ -35,7 +35,7 @@ defmodule BlockScoutWeb.Notifier do
     })
   end
 
-  def handle_event({:chain_event, :internal_transactions, internal_transactions}) do
+  def handle_event({:chain_event, :internal_transactions, :realtime, internal_transactions}) do
     internal_transactions
     |> Stream.map(
       &(InternalTransaction
@@ -45,7 +45,7 @@ defmodule BlockScoutWeb.Notifier do
     |> Enum.each(&broadcast_internal_transaction/1)
   end
 
-  def handle_event({:chain_event, :transactions, transaction_hashes}) do
+  def handle_event({:chain_event, :transactions, :realtime, transaction_hashes}) do
     transaction_hashes
     |> Chain.hashes_to_transactions(
       necessity_by_association: %{
@@ -58,6 +58,8 @@ defmodule BlockScoutWeb.Notifier do
     )
     |> Enum.each(&broadcast_transaction/1)
   end
+
+  def handle_event(_), do: nil
 
   defp broadcast_balance(%Address{hash: address_hash} = address) do
     Endpoint.broadcast("addresses:#{address_hash}", "balance_update", %{

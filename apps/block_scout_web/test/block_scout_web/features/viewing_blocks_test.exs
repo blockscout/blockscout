@@ -39,7 +39,7 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
       BlockListPage.visit_page(session)
 
       block = insert(:block, number: 315)
-      Notifier.handle_event({:chain_event, :blocks, [block]})
+      Notifier.handle_event({:chain_event, :blocks, :realtime, [block]})
 
       session
       |> assert_has(BlockListPage.block(block))
@@ -50,14 +50,14 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
       BlockListPage.visit_page(session)
 
       block = insert(:block, number: 315)
-      Notifier.handle_event({:chain_event, :blocks, [block]})
+      Notifier.handle_event({:chain_event, :blocks, :realtime, [block]})
 
       session
       |> assert_has(BlockListPage.block(block))
       |> assert_has(BlockListPage.place_holder_blocks(3))
 
       skipped_block = insert(:block, number: 314)
-      Notifier.handle_event({:chain_event, :blocks, [skipped_block]})
+      Notifier.handle_event({:chain_event, :blocks, :realtime, [skipped_block]})
 
       session
       |> assert_has(BlockListPage.block(skipped_block))
