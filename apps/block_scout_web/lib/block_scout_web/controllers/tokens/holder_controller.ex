@@ -21,7 +21,6 @@ defmodule BlockScoutWeb.Tokens.HolderController do
         "index.html",
         token: token,
         token_balances: token_balances_paginated,
-        total_token_holders: Chain.count_token_holders_from_token_hash(address_hash),
         total_token_transfers: Chain.count_token_transfers_from_token_hash(address_hash),
         next_page_params: next_page_params(next_page, token_balances_paginated, params)
       )
