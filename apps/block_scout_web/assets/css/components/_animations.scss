@@ -66,6 +66,11 @@
 .fade-up {
   will-change: transform, opacity, height;
   animation: fade-up 0.6s cubic-bezier(0.455, 0.03, 0.515, 0.955);
+
+  @media (max-width: 767px) {
+    max-height: 234px;
+    animation: fade-up--mobile 0.6s cubic-bezier(0.455, 0.03, 0.515, 0.955);
+  }
 }
 
 .shrink-out {

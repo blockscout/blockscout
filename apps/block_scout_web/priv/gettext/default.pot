@@ -6,7 +6,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/_tile.html.eex:14
+#: lib/block_scout_web/templates/block/_tile.html.eex:28
 msgid "%{count} transaction"
 msgid_plural "%{count} transactions"
 msgstr[0] ""
@@ -20,7 +20,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:12
+#: lib/block_scout_web/templates/block/overview.html.eex:21
 #: lib/block_scout_web/templates/chain/_block.html.eex:9
 msgid "%{count} Transactions"
 msgstr ""
@@ -49,12 +49,12 @@ msgid "A string with the name of the module to be invoked."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:40
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:51
 msgid "API"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:32
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:43
 msgid "Accounts"
 msgstr ""
 
@@ -110,24 +110,14 @@ msgid "Block Confirmations"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:7
-msgid "Block Details"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:9
-msgid "Block Height #%{height}"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:45
 msgid "Block Number"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/index.html.eex:10
 #: lib/block_scout_web/templates/chain/show.html.eex:57
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:16
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:20
 msgid "Blocks"
 msgstr ""
 
@@ -309,7 +299,7 @@ msgid "Details"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:45
+#: lib/block_scout_web/templates/block/overview.html.eex:54
 msgid "Difficulty"
 msgstr ""
 
@@ -381,14 +371,14 @@ msgid "Gas"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/_tile.html.eex:34
-#: lib/block_scout_web/templates/block/overview.html.eex:97
+#: lib/block_scout_web/templates/block/_tile.html.eex:48
+#: lib/block_scout_web/templates/block/overview.html.eex:126
 msgid "Gas Limit"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/_tile.html.eex:39
-#: lib/block_scout_web/templates/block/overview.html.eex:89
+#: lib/block_scout_web/templates/block/_tile.html.eex:53
+#: lib/block_scout_web/templates/block/overview.html.eex:118
 msgid "Gas Used"
 msgstr ""
 
@@ -404,7 +394,7 @@ msgid "Gwei"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:27
+#: lib/block_scout_web/templates/block/overview.html.eex:36
 msgid "Hash"
 msgstr ""
 
@@ -477,8 +467,8 @@ msgid "Max of"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/_tile.html.eex:23
-#: lib/block_scout_web/templates/block/overview.html.eex:70
+#: lib/block_scout_web/templates/block/_tile.html.eex:37
+#: lib/block_scout_web/templates/block/overview.html.eex:99
 #: lib/block_scout_web/templates/chain/_block.html.eex:13
 msgid "Miner"
 msgstr ""
@@ -547,7 +537,7 @@ msgid "No"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:59
+#: lib/block_scout_web/templates/block/overview.html.eex:69
 #: lib/block_scout_web/templates/transaction/overview.html.eex:66
 msgid "Nonce"
 msgstr ""
@@ -582,12 +572,12 @@ msgid "Owner Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:71
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:82
 msgid "POA Core"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:70
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:81
 msgid "POA Sokol"
 msgstr ""
 
@@ -602,7 +592,7 @@ msgid "Parameters"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:33
+#: lib/block_scout_web/templates/block/overview.html.eex:42
 msgid "Parent Hash"
 msgstr ""
 
@@ -676,13 +666,13 @@ msgid "Responses"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:47
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:54
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:58
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:65
 msgid "Search"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:47
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:58
 msgid "Search by address, transaction hash, or block number"
 msgstr ""
 
@@ -773,7 +763,6 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:77
-#: lib/block_scout_web/templates/block_transaction/index.html.eex:44
 msgid "There are no transactions for this address."
 msgstr ""
 
@@ -860,7 +849,7 @@ msgid "Topics"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:53
+#: lib/block_scout_web/templates/block/overview.html.eex:63
 msgid "Total Difficulty"
 msgstr ""
 
@@ -897,7 +886,7 @@ msgstr ""
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:26
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:35
 #: lib/block_scout_web/templates/chain/show.html.eex:76
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:24
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:35
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:56
 #: lib/block_scout_web/templates/transaction/index.html.eex:56
 #: lib/block_scout_web/views/address_view.ex:221
@@ -1130,4 +1119,45 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/_metatags.html.eex:10
 msgid "View transaction %{transaction} on %{subnetwork}"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/block/overview.html.eex:8
+msgid "%{block_type} Details"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/block/overview.html.eex:15
+msgid "%{block_type} Height:"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/block/index.html.eex:10
+msgid "%{block_type}s"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/block/overview.html.eex:13
+msgid "Block Height: %{height}"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:26
+msgid "Forked Blocks (Reorgs)"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/block/overview.html.eex:80
+msgid "Position %{index}"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/block_transaction/index.html.eex:44
+msgid "There are no transactions for this block."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/block/overview.html.eex:76
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:23
+msgid "Uncles"
 msgstr ""

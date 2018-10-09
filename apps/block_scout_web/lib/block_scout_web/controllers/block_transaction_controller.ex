@@ -9,7 +9,11 @@ defmodule BlockScoutWeb.BlockTransactionController do
   def index(conn, %{"block_hash_or_number" => formatted_block_hash_or_number} = params) do
     with {:ok, block} <-
            param_block_hash_or_number_to_block(formatted_block_hash_or_number,
-             necessity_by_association: %{[miner: :names] => :required}
+             necessity_by_association: %{
+               [miner: :names] => :required,
+               :uncles => :optional,
+               :nephews => :optional
+             }
            ) do
       block_transaction_count = Chain.block_to_transaction_count(block)
 

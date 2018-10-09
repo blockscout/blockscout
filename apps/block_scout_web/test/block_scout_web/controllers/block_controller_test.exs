@@ -8,6 +8,13 @@ defmodule BlockScoutWeb.BlockControllerTest do
       conn = get(conn, "/blocks/3")
       assert redirected_to(conn) =~ "/blocks/3/transactions"
     end
+
+    test "with uncle block redirects to block_hash route", %{conn: conn} do
+      uncle = insert(:block, consensus: false)
+
+      conn = get(conn, block_path(conn, :show, uncle))
+      assert redirected_to(conn) =~ "/blocks/#{to_string(uncle.hash)}/transactions"
+    end
   end
 
   describe "GET index/2" do
@@ -15,12 +22,28 @@ defmodule BlockScoutWeb.BlockControllerTest do
       block_ids =
         4
         |> insert_list(:block)
-        |> Stream.map(fn block -> block.number end)
+        |> Stream.map(& &1.number)
         |> Enum.reverse()
 
       conn = get(conn, block_path(conn, :index))
 
-      assert conn.assigns.blocks |> Enum.map(fn block -> block.number end) == block_ids
+      assert Enum.map(conn.assigns.blocks, & &1.number) == block_ids
+    end
+
+    test "does not include uncles", %{conn: conn} do
+      blocks =
+        4
+        |> insert_list(:block)
+        |> Enum.reverse()
+
+      for index <- 0..3 do
+        uncle = insert(:block, consensus: false)
+        insert(:block_second_degree_relation, uncle_hash: uncle.hash, nephew: Enum.at(blocks, index))
+      end
+
+      conn = get(conn, block_path(conn, :index))
+
+      assert Enum.map(conn.assigns.blocks, & &1.number) == Enum.map(blocks, & &1.number)
     end
 
     test "returns a block with two transactions", %{conn: conn} do
@@ -83,6 +106,68 @@ defmodule BlockScoutWeb.BlockControllerTest do
 
       conn = get(conn, block_path(conn, :index))
       assert html_response(conn, 200) =~ miner_name
+    end
+  end
+
+  describe "GET reorgs/2" do
+    test "returns all reorgs", %{conn: conn} do
+      reorg_hashes =
+        4
+        |> insert_list(:block, consensus: false)
+        |> Enum.map(& &1.hash)
+
+      conn = get(conn, reorg_path(conn, :reorg))
+
+      assert Enum.map(conn.assigns.blocks, & &1.hash) == Enum.reverse(reorg_hashes)
+      assert conn.assigns.block_type == "Reorg"
+    end
+
+    test "does not include blocks or uncles", %{conn: conn} do
+      reorg_hashes =
+        4
+        |> insert_list(:block, consensus: false)
+        |> Enum.map(& &1.hash)
+
+      insert(:block)
+      uncle = insert(:block, consensus: false)
+      insert(:block_second_degree_relation, uncle_hash: uncle.hash)
+
+      conn = get(conn, reorg_path(conn, :reorg))
+
+      assert Enum.map(conn.assigns.blocks, & &1.hash) == Enum.reverse(reorg_hashes)
+      assert conn.assigns.block_type == "Reorg"
+    end
+  end
+
+  describe "GET uncle/2" do
+    test "returns all uncles", %{conn: conn} do
+      uncle_hashes =
+        for _index <- 1..4 do
+          uncle = insert(:block, consensus: false)
+          insert(:block_second_degree_relation, uncle_hash: uncle.hash)
+          uncle.hash
+        end
+
+      conn = get(conn, uncle_path(conn, :uncle))
+
+      assert Enum.map(conn.assigns.blocks, & &1.hash) == Enum.reverse(uncle_hashes)
+      assert conn.assigns.block_type == "Uncle"
+    end
+
+    test "does not include blocks or reorgs", %{conn: conn} do
+      uncle_hashes =
+        for _index <- 1..4 do
+          uncle = insert(:block, consensus: false)
+          insert(:block_second_degree_relation, uncle_hash: uncle.hash)
+          uncle.hash
+        end
+
+      insert(:block)
+      insert(:block, consensus: false)
+
+      conn = get(conn, uncle_path(conn, :uncle))
+
+      assert Enum.map(conn.assigns.blocks, & &1.hash) == Enum.reverse(uncle_hashes)
     end
   end
 end

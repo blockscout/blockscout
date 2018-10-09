@@ -8,13 +8,24 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav mr-auto">
-        <li class="nav-item">
-          <%= link to: block_path(@conn, :index), class: "nav-link topnav-nav-link" do %>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarBlocksDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <span class="nav-link-icon">
               <%= render BlockScoutWeb.IconsView, "_block_icon.html" %>
             </span>
             <%= gettext("Blocks") %>
-          <% end %>
+          </a>
+          <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+            <%= link to: block_path(@conn, :index), class: "dropdown-item" do %>
+              <%= gettext("Blocks") %>
+            <% end %>
+            <%= link to: uncle_path(@conn, :uncle), class: "dropdown-item" do %>
+              <%= gettext("Uncles") %>
+            <% end %>
+            <%= link to: reorg_path(@conn, :reorg), class: "dropdown-item" do %>
+              <%= gettext("Forked Blocks (Reorgs)") %>
+            <% end %>
+          </div>
         </li>
         <li class="nav-item">
           <%= link to: transaction_path(@conn, :index), class: "nav-link topnav-nav-link" do %>

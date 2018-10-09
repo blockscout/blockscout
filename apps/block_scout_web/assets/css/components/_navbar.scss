@@ -147,16 +147,13 @@
   }
 }
 
-.nav-link.dropdown-toggle {
-  padding-right: 0 !important;
-}
-
 .dropdown-menu {
   padding: 0px;
 }
 
 .dropdown-item {
   padding: 10px 20px;
+  font-size: 12px;
 
   &:hover {
     background-color: $tertiary;

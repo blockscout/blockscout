@@ -1,4 +1,4 @@
-<section class="container" data-page="block-list">
+<section class="container" data-page="<%= String.downcase(@block_type) %>-list">
   <div class="card">
     <div class="card-body">
       <div data-selector="channel-disconnected-message" style="display:none;">
@@ -7,11 +7,11 @@
         </div>
       </div>
 
-      <h1><%= gettext "Blocks" %></h1>
+      <h1><%= gettext("%{block_type}s", block_type: @block_type) %></h1>
 
       <span data-selector="blocks-list">
         <%= for block <- @blocks do %>
-          <%= render BlockScoutWeb.BlockView, "_tile.html", block: block %>
+          <%= render BlockScoutWeb.BlockView, "_tile.html", block: block, block_type: @block_type %>
         <% end %>
       </span>
 
