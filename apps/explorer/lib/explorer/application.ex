@@ -19,6 +19,9 @@ defmodule Explorer.Application do
       Supervisor.child_spec({Task.Supervisor, name: Explorer.CounterTokenSupervisor},
         id: Explorer.CounterTokenSupervisor
       ),
+      Supervisor.child_spec({Task.Supervisor, name: Explorer.CounterTransactionSupervisor},
+        id: Explorer.CounterTransactionSupervisor
+      ),
       {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents}
     ]
 
@@ -33,7 +36,8 @@ defmodule Explorer.Application do
     [
       configure(Explorer.ExchangeRates),
       configure(Explorer.Market.History.Cataloger),
-      configure(Explorer.Counters.TokenTransferCounter)
+      configure(Explorer.Counters.TokenTransferCounter),
+      configure(Explorer.Counters.TransactionCounter)
     ]
     |> List.flatten()
   end

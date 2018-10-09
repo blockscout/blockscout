@@ -16,6 +16,7 @@ config :explorer, Explorer.Repo,
 config :explorer, Explorer.ExchangeRates, enabled: false
 
 config :explorer, Explorer.Market.History.Cataloger, enabled: false
+config :explorer, Explorer.Counters.TransactionCounter, enabled: false
 
 config :logger, :explorer,
   level: :warn,

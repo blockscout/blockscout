@@ -23,6 +23,7 @@ config :explorer, Explorer.Repo,
   migration_timestamps: [type: :utc_datetime]
 
 config :explorer, Explorer.Counters.TokenTransferCounter, enabled: true
+config :explorer, Explorer.Counters.TransactionCounter, enabled: true
 
 config :explorer,
   solc_bin_api_url: "https://solc-bin.ethereum.org"
