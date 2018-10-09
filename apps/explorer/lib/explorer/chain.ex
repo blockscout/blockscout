@@ -38,7 +38,7 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Block.Reward
   alias Explorer.{PagingOptions, Repo}
-  alias Explorer.Counters.TokenTransferCounter
+  alias Explorer.Counters.{TokenTransferCounter, TransactionCounter}
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -1929,6 +1929,11 @@ defmodule Explorer.Chain do
   @spec count_token_transfers_from_token_hash(Hash.t()) :: non_neg_integer()
   def count_token_transfers_from_token_hash(token_address_hash) do
     TokenTransferCounter.fetch(token_address_hash)
+  end
+
+  @spec count_transactions_by_address_hash(Hash.t()) :: non_neg_integer()
+  def count_transactions_by_address_hash(address_hash) do
+    TransactionCounter.fetch(address_hash)
   end
 
   @spec transaction_has_token_transfers?(Hash.t()) :: boolean()
