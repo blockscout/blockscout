@@ -116,8 +116,6 @@ defmodule BlockScoutWeb.AddressView do
 
   def validator?(val) when val > 0, do: true
 
-  def validator?(%Address{} = address), do: Chain.address_to_validation_count(address)
-  
   def validator?(_), do: false
 
   def hash(%Address{hash: hash}) do
@@ -166,7 +164,9 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def validation_count(%Address{} = address) do
-    Chain.address_to_validation_count(address)
+    count = Chain.address_to_validation_count(address)
+    IO.puts "Got validation count: #{count}"
+    count
   end
 
   def trimmed_hash(%Hash{} = hash) do

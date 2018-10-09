@@ -19,7 +19,7 @@
             </span> <%= gettext "Transactions sent" %>
             <% if validator?(@address) do %>
               <span data-test="validation_count">
-                <%= validation_count(@address) %>
+                <%= @validation_count %>
               </span> <%= gettext "Validations" %>
             <% end %>
           </span>
