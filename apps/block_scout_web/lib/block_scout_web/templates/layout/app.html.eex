@@ -31,7 +31,7 @@
     </div>
     <script>
       window.localized = {
-        'Block Processing': '<%= gettext("Block Mined, awaiting processing...") %>',
+        'Block Processing': '<%= gettext("Block Mined, awaiting import...") %>',
         'Less than': '<%= gettext("Less than") %>',
         'Market Cap': '<%= gettext("Market Cap") %>',
         'Price': '<%= gettext("Price") %>',

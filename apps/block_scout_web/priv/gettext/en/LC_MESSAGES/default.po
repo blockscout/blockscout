@@ -1057,11 +1057,6 @@ msgid "%{subnetwork} %{network} Explorer"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:34
-msgid "Block Mined, awaiting processing..."
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/address/_metatags.html.eex:3
 msgid "%{address} - %{subnetwork} Explorer"
 msgstr ""
@@ -1136,7 +1131,7 @@ msgstr ""
 msgid "%{block_type}s"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:13
 msgid "Block Height: %{height}"
 msgstr ""
@@ -1160,4 +1155,9 @@ msgstr ""
 #: lib/block_scout_web/templates/block/overview.html.eex:76
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:23
 msgid "Uncles"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/layout/app.html.eex:34
+msgid "Block Mined, awaiting import..."
 msgstr ""
