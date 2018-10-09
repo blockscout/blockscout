@@ -13,6 +13,8 @@ hooks:
     - location: bin/deployment/migrate
       runas: ec2-user
       timeout: 300
+    - location: bin/deployment/restore_dump
+      timeout: 300
     - location: bin/deployment/start
       timeout: 3600
   ValidateService:

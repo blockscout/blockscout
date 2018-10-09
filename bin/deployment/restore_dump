@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+set -e
+
+cd /opt/app || exit 1
+
+export HOME=/home/ec2-user
+export MIX_ENV=prod
+
+source /etc/environment
+
+mix restore_user_data_from_dump
+
+exit 0
