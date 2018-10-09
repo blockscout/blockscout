@@ -1816,7 +1816,9 @@ defmodule Explorer.Chain do
           """
           (SELECT COUNT(sibling.id)
           FROM internal_transactions AS sibling
-          WHERE sibling.transaction_hash = ?)
+          WHERE sibling.transaction_hash = ?
+          LIMIT 2
+          )
           """,
           transaction.hash
         ) > 1
