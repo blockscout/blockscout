@@ -181,38 +181,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Gets an estimated count of `t:Explorer.Chain.Transaction.t/0` to or from the `address` based on the estimated rows
-  resulting in an EXPLAIN of the query plan for the count query.
-  """
-  @spec address_to_transactions_estimated_count(Address.t()) :: non_neg_integer()
-  def address_to_transactions_estimated_count(%Address{hash: address_hash}) do
-    {:ok, %Postgrex.Result{rows: result}} =
-      Repo.query(
-        """
-        EXPLAIN SELECT COUNT(DISTINCT t.hash) FROM
-        (
-          SELECT t0.hash FROM transactions AS t0 WHERE t0.from_address_hash = $1
-          UNION
-          SELECT t0.hash FROM transactions AS t0 WHERE t0.to_address_hash = $1
-          UNION
-          SELECT t0.hash FROM transactions AS t0 WHERE t0.created_contract_address_hash = $1
-          UNION
-          SELECT tt.transaction_hash AS hash FROM token_transfers AS tt
-          WHERE tt.from_address_hash = $1
-          UNION
-          SELECT tt.transaction_hash AS hash FROM token_transfers AS tt
-          WHERE tt.to_address_hash = $1
-        ) as t
-        """,
-        [address_hash.bytes]
-      )
-
-    {[unique_explain], _} = List.pop_at(result, 1)
-    [[_ | [rows]]] = Regex.scan(~r/rows=(\d+)/, unique_explain)
-    String.to_integer(rows)
-  end
-
-  @doc """
   `t:Explorer.Chain.Transaction/0`s from `address`.
 
   ## Options
