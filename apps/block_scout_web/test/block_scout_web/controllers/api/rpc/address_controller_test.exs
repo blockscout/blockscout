@@ -986,6 +986,145 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert response["message"] == "OK"
     end
 
+    test "with starttimestamp and endtimestamp params", %{conn: conn} do
+      now = Timex.now()
+      timestamp1 = Timex.shift(now, hours: -6)
+      timestamp2 = Timex.shift(now, hours: -3)
+      timestamp3 = Timex.shift(now, hours: -1)
+      blocks1 = insert_list(2, :block, timestamp: timestamp1)
+      blocks2 = [third_block, fourth_block] = insert_list(2, :block, timestamp: timestamp2)
+      blocks3 = insert_list(2, :block, timestamp: timestamp3)
+      address = insert(:address)
+
+      for block <- Enum.concat([blocks1, blocks2, blocks3]) do
+        2
+        |> insert_list(:transaction, from_address: address)
+        |> with_block(block)
+      end
+
+      start_timestamp = now |> Timex.shift(hours: -4) |> Timex.to_unix()
+      end_timestamp = now |> Timex.shift(hours: -2) |> Timex.to_unix()
+
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "#{address.hash}",
+        "starttimestamp" => "#{start_timestamp}",
+        "endtimestamp" => "#{end_timestamp}"
+      }
+
+      expected_block_numbers = [
+        "#{third_block.number}",
+        "#{fourth_block.number}"
+      ]
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert length(response["result"]) == 4
+
+      for transaction <- response["result"] do
+        assert transaction["blockNumber"] in expected_block_numbers
+      end
+
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "with starttimestamp but without endtimestamp", %{conn: conn} do
+      now = Timex.now()
+      timestamp1 = Timex.shift(now, hours: -6)
+      timestamp2 = Timex.shift(now, hours: -3)
+      timestamp3 = Timex.shift(now, hours: -1)
+      blocks1 = insert_list(2, :block, timestamp: timestamp1)
+      blocks2 = [third_block, fourth_block] = insert_list(2, :block, timestamp: timestamp2)
+      blocks3 = [fifth_block, sixth_block] = insert_list(2, :block, timestamp: timestamp3)
+      address = insert(:address)
+
+      for block <- Enum.concat([blocks1, blocks2, blocks3]) do
+        2
+        |> insert_list(:transaction, from_address: address)
+        |> with_block(block)
+      end
+
+      start_timestamp = now |> Timex.shift(hours: -4) |> Timex.to_unix()
+
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "#{address.hash}",
+        "starttimestamp" => "#{start_timestamp}"
+      }
+
+      expected_block_numbers = [
+        "#{third_block.number}",
+        "#{fourth_block.number}",
+        "#{fifth_block.number}",
+        "#{sixth_block.number}"
+      ]
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert length(response["result"]) == 8
+
+      for transaction <- response["result"] do
+        assert transaction["blockNumber"] in expected_block_numbers
+      end
+
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "with endtimestamp but without starttimestamp", %{conn: conn} do
+      now = Timex.now()
+      timestamp1 = Timex.shift(now, hours: -6)
+      timestamp2 = Timex.shift(now, hours: -3)
+      timestamp3 = Timex.shift(now, hours: -1)
+      blocks1 = [first_block, second_block] = insert_list(2, :block, timestamp: timestamp1)
+      blocks2 = insert_list(2, :block, timestamp: timestamp2)
+      blocks3 = insert_list(2, :block, timestamp: timestamp3)
+      address = insert(:address)
+
+      for block <- Enum.concat([blocks1, blocks2, blocks3]) do
+        2
+        |> insert_list(:transaction, from_address: address)
+        |> with_block(block)
+      end
+
+      end_timestamp = now |> Timex.shift(hours: -5) |> Timex.to_unix()
+
+      params = %{
+        "module" => "account",
+        "action" => "txlist",
+        "address" => "#{address.hash}",
+        "endtimestamp" => "#{end_timestamp}"
+      }
+
+      expected_block_numbers = [
+        "#{first_block.number}",
+        "#{second_block.number}"
+      ]
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert length(response["result"]) == 4
+
+      for transaction <- response["result"] do
+        assert transaction["blockNumber"] in expected_block_numbers
+      end
+
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
     test "with filterby=to option", %{conn: conn} do
       block = insert(:block)
       address = insert(:address)
@@ -2017,10 +2156,15 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         "page" => "1",
         # page size
         "offset" => "2",
-        "filterby" => "to"
+        "filterby" => "to",
+        "starttimestamp" => "1539186474",
+        "endtimestamp" => "1539186474"
       }
 
       optional_params = AddressController.optional_params(params)
+
+      # 1539186474 equals "2018-10-10 15:47:54Z"
+      {:ok, expected_timestamp, _} = DateTime.from_iso8601("2018-10-10 15:47:54Z")
 
       assert optional_params.page_number == 1
       assert optional_params.page_size == 2
@@ -2028,6 +2172,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert optional_params.start_block == 100
       assert optional_params.end_block == 120
       assert optional_params.filter_by == "to"
+      assert optional_params.start_timestamp == expected_timestamp
+      assert optional_params.end_timestamp == expected_timestamp
     end
 
     test "'sort' values can be 'asc' or 'desc'" do
@@ -2076,7 +2222,9 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         "endblock" => "invalid",
         "sort" => "invalid",
         "page" => "invalid",
-        "offset" => "invalid"
+        "offset" => "invalid",
+        "starttimestamp" => "invalid",
+        "endtimestamp" => "invalid"
       }
 
       assert AddressController.optional_params(params1) == %{}
@@ -2086,7 +2234,9 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         "endblock" => "10",
         "sort" => "invalid",
         "page" => "invalid",
-        "offset" => "invalid"
+        "offset" => "invalid",
+        "starttimestamp" => "invalid",
+        "endtimestamp" => "invalid"
       }
 
       optional_params = AddressController.optional_params(params2)

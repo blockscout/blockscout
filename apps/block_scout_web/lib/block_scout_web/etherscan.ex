@@ -896,6 +896,16 @@ defmodule BlockScoutWeb.Etherscan do
         it returns transactions that match to, from, or contract address.
         Available values: to, from
         """
+      },
+      %{
+        key: "starttimestamp",
+        type: "unix timestamp",
+        description: "Represents the starting block timestamp."
+      },
+      %{
+        key: "endtimestamp",
+        type: "unix timestamp",
+        description: "Represents the ending block timestamp."
       }
     ],
     responses: [
