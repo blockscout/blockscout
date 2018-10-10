@@ -17,6 +17,8 @@ config :explorer, Explorer.ExchangeRates, enabled: false
 
 config :explorer, Explorer.Market.History.Cataloger, enabled: false
 
+config :explorer, Explorer.Counters.TokenHoldersCounter, enabled: true, enable_consolidation: false
+
 config :logger, :explorer,
   level: :warn,
   path: Path.absname("logs/test/explorer.log")

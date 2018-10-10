@@ -121,6 +121,29 @@ defmodule Explorer.Chain.Address.TokenBalance do
     )
   end
 
+  @doc """
+  Builds an `Ecto.Query` to group all tokens with their number of holders.
+  """
+  def tokens_grouped_by_number_of_holders do
+    query = unique_holders()
+
+    from(
+      tb in subquery(query),
+      where: tb.value > 0,
+      select: {tb.token_contract_address_hash, count(tb.address_hash)},
+      group_by: tb.token_contract_address_hash
+    )
+  end
+
+  defp unique_holders do
+    from(
+      tb in TokenBalance,
+      distinct: [:address_hash, :token_contract_address_hash],
+      where: tb.address_hash != ^@burn_address_hash,
+      order_by: [desc: :block_number]
+    )
+  end
+
   defp page_token_balances(query, %PagingOptions{key: nil}), do: query
 
   defp page_token_balances(query, %PagingOptions{key: {value, address_hash}}) do
