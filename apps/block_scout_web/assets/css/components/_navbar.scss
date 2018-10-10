@@ -1,6 +1,6 @@
 .navbar {
   position: relative;
-  z-index: 10;
+  z-index: 100;
 
   &-primary {
     background-color: $primary;
@@ -147,16 +147,13 @@
   }
 }
 
-.nav-link.dropdown-toggle {
-  padding-right: 0 !important;
-}
-
 .dropdown-menu {
   padding: 0px;
 }
 
 .dropdown-item {
   padding: 10px 20px;
+  font-size: 12px;
 
   &:hover {
     background-color: $tertiary;

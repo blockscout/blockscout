@@ -17,8 +17,28 @@
 
   &-type {
 
-    &-block {
-      border-left: 4px solid $primary;
+    &-Block {
+      border-left: 4px solid $indigo;
+
+      .tile-label {
+        color: $indigo;
+      }
+    }
+
+    &-Uncle {
+      border-left: 4px solid $cyan;
+
+      .tile-label {
+        color: $cyan;
+      }
+    }
+
+    &-Reorg {
+      border-left: 4px solid $purple;
+
+      .tile-label {
+        color: $purple;
+      }
     }
 
     &-transaction {

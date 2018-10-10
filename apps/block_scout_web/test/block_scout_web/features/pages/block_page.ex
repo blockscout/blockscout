@@ -15,6 +15,10 @@ defmodule BlockScoutWeb.BlockPage do
     css("[data-test='block_detail_number']", text: to_string(block_number))
   end
 
+  def page_type(type) do
+    css("[data-test='detail_type']", text: type)
+  end
+
   def token_transfers(%Transaction{hash: transaction_hash}, count: count) do
     css("[data-transaction-hash='#{transaction_hash}'] [data-test='token_transfer']", count: count)
   end
@@ -31,7 +35,15 @@ defmodule BlockScoutWeb.BlockPage do
     css("[data-transaction-hash='#{transaction_hash}'] [data-test='transaction_status']")
   end
 
-  def visit_page(session, %Block{number: block_number}) do
-    visit(session, "/blocks/#{block_number}/transactions")
+  def uncle_link(%Block{hash: hash}) do
+    css("[data-test='uncle_link'][data-uncle-hash='#{hash}']")
+  end
+
+  def visit_page(session, %Block{number: block_number, consensus: true}) do
+    visit(session, "/blocks/#{block_number}")
+  end
+
+  def visit_page(session, %Block{hash: hash}) do
+    visit(session, "/blocks/#{hash}")
   end
 end

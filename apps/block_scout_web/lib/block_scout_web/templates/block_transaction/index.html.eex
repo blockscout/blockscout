@@ -41,7 +41,7 @@
           </span>
         <% else %>
           <div class="tile tile-muted text-center">
-            <span data-selector="empty-transactions-list"><%= gettext "There are no transactions for this address." %></span>
+            <span data-selector="empty-transactions-list"><%= gettext "There are no transactions for this block." %></span>
           </div>
         <% end %>
 

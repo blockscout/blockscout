@@ -1,13 +1,27 @@
-<div class="tile tile-type-block fade-up" data-block-number="<%= to_string(@block.number) %>">
+<div class="tile tile-type-<%= String.downcase(@block_type) %> fade-up" data-selector="block-tile" data-block-number="<%= to_string(@block.number) %>">
   <div class="row">
-    <div class="col-md-8 col-lg-9">
+    <div class="col-md-2 d-flex flex-row flex-md-column align-items-left justify-content-start justify-content-lg-center mb-1 mb-md-0 pl-md-4">
+      <span class="tile-label" data-test="transaction_type">
+        <%= @block_type %>
+      </span>
+    </div>
+    <div class="col-md-6 col-lg-7">
       <!-- block height -->
-      <%= link(
-            @block,
-            class: "tile-title",
-            to: block_path(BlockScoutWeb.Endpoint, :show, @block),
-            "data-selector": "block-number"
-          ) %>
+      <%= if @block_type == "Block" do %>
+        <%= link(
+              @block,
+              class: "tile-title",
+              to: block_path(BlockScoutWeb.Endpoint, :show, @block),
+              "data-selector": "block-number"
+            ) %>
+      <% else %>
+        <%= link(
+              @block,
+              class: "tile-title",
+              to: block_path(BlockScoutWeb.Endpoint, :show, @block.hash),
+              "data-selector": "block-number"
+            ) %>
+      <% end %>
       <div>
         <!-- transactions -->
         <span class="mr-2">

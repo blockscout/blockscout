@@ -858,18 +858,21 @@ defmodule Explorer.Chain do
     * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
       `:key` (a tuple of the lowest/oldest `{block_number}`). Results will be the internal
       transactions older than the `block_number` that are passed.
+    * ':block_type' - use to filter by type of block; Uncle`, `Reorg`, or `Block` (default).
 
   """
   @spec list_blocks([paging_options | necessity_by_association_option]) :: [Block.t()]
   def list_blocks(options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    block_type = Keyword.get(options, :block_type, "Block")
 
     Block
-    |> join_associations(necessity_by_association)
+    |> Block.block_type_filter(block_type)
     |> page_blocks(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by(desc: :number)
+    |> join_associations(necessity_by_association)
     |> Repo.all()
   end
 

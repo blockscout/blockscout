@@ -4,9 +4,18 @@
       <!-- Block Details -->
       <div class="card">
         <div class="card-body">
-          <h1 class="card-title"> <%= gettext("Block Details") %> </h1>
+          <h1 class="card-title" data-test="detail_type">
+            <%= gettext("%{block_type} Details", block_type: block_type(@block)) %>
+          </h1>
           <!-- Block Height -->
-          <h3 data-test="block_detail_number"> <%= gettext "Block Height #%{height}", height: @block.number %> </h3>
+          <h3 data-test="block_detail_number">
+            <%= if block_type(@block) == "Block" do %>
+              <%= gettext("Block Height: %{height}", height: @block.number) %>
+            <% else %>
+              <%= gettext("%{block_type} Height:", block_type: block_type(@block)) %>
+              <%= link(@block, to: block_path(BlockScoutWeb.Endpoint, :show, @block.number)) %>
+            <% end %>
+          </h3>
           <div class="d-flex flex-row justify-content-start text-muted">
             <!-- # of Transactions -->
             <span class="mr-4"> <%= gettext "%{count} Transactions", count: @block_transaction_count %> </span>
@@ -48,17 +57,37 @@
             </dd>
           </dl>
 
-          <!-- Total Difficulty -->
-          <dl class="row">
-            <dt class="col-sm-3 text-muted"> <%= gettext "Total Difficulty" %> </dt>
-            <dd class="col-sm-9"> <%= @block.total_difficulty |> Cldr.Number.to_string! %> </dd>
-          </dl>
+          <%= if block_type(@block) == "Block" do %>
+            <!-- Total Difficulty -->
+            <dl class="row">
+              <dt class="col-sm-3 text-muted"> <%= gettext "Total Difficulty" %> </dt>
+              <dd class="col-sm-9"> <%= @block.total_difficulty |> Cldr.Number.to_string! %> </dd>
+            </dl>
 
-          <!-- Nonce -->
-          <dl class="row mb-0">
-            <dt class="col-sm-3 text-muted"> <%= gettext "Nonce" %> </dt>
-            <dd class="col-sm-9"> <%= to_string(@block.nonce) %> </dd>
-          </dl>
+            <!-- Nonce -->
+            <dl class="row mb-0">
+              <dt class="col-sm-3 text-muted"> <%= gettext "Nonce" %> </dt>
+              <dd class="col-sm-9"> <%= to_string(@block.nonce) %> </dd>
+            </dl>
+
+            <%= if length(@block.uncle_relations) > 0 do %>
+              <!-- Uncles -->
+              <dl class="row mt-3 mb-0">
+                <dt class="col-sm-3 text-muted"> <%= gettext "Uncles" %> </dt>
+                <dd class="col-sm-9">
+                  <%= for {relation, index} <- Enum.with_index(@block.uncle_relations) do %>
+                    <%= link(
+                        gettext("Position %{index}", index: index),
+                        class: "block__link",
+                        "data-test": "uncle_link",
+                        "data-uncle-hash": to_string(relation.uncle_hash),
+                        to: block_path(@conn, :show, relation.uncle_hash)
+                      ) %><%= if index < length(@block.uncle_relations) - 1 do %>,<% end %>
+                  <% end %>
+                </dd>
+              </dl>
+            <% end %>
+          <% end %>
         </div>
       </div>
     </div>
