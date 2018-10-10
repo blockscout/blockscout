@@ -23,6 +23,10 @@ defmodule BlockScoutWeb.BlockListPage do
     css("[data-block-number='#{block_number}']")
   end
 
+  def loading_percentage(percentage) do
+    css("[data-selector='loading-percentage'][data-loading-percentage='#{percentage}']")
+  end
+
   def place_holder_blocks(count) do
     css("[data-selector='place-holder']", count: count)
   end

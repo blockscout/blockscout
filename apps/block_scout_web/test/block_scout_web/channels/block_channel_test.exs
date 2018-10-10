@@ -19,4 +19,21 @@ defmodule BlockScoutWeb.BlockChannelTest do
         assert false, "Expected message received nothing."
     end
   end
+
+  test "subscribed user is notified of new_block event for catchup" do
+    topic = "blocks:new_block"
+    @endpoint.subscribe(topic)
+
+    block = insert(:block, number: 1)
+
+    Notifier.handle_event({:chain_event, :blocks, :catchup, [block]})
+
+    receive do
+      %Phoenix.Socket.Broadcast{topic: ^topic, event: "new_block", payload: %{block: _}} ->
+        assert true
+    after
+      5_000 ->
+        assert false, "Expected message received nothing."
+    end
+  end
 end

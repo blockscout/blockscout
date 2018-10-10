@@ -177,4 +177,19 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
       |> assert_has(BlockListPage.blocks(10))
     end
   end
+
+  describe "loading bar when indexing" do
+    test "shows blocks indexed percentage", %{
+      first_shown_block: newest_block,
+      last_shown_block: oldest_block,
+      session: session
+    } do
+      indexed_blocks = newest_block.number - oldest_block.number + 1
+      percentage = indexed_blocks / newest_block.number * 100
+
+      session
+      |> BlockListPage.visit_page()
+      |> BlockListPage.loading_percentage(percentage)
+    end
+  end
 end

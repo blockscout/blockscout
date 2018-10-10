@@ -558,6 +558,26 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "finished_indexing?/0"
+    test "finished indexing" do
+      block = insert(:block, number: 1)
+      :transaction
+      |> insert()
+      |> with_block(block)
+
+      assert Chain.finished_indexing?()
+    end
+
+    test "not finished indexing" do
+      block = insert(:block, number: 1)
+      :transaction
+      |> insert(internal_transactions_index_at: nil)
+      |> with_block(block)
+
+      refute Chain.finished_indexing?()
+    end
+  end
+
   describe "gas_price/2" do
     test ":wei unit" do
       assert Chain.gas_price(%Transaction{gas_price: %Wei{value: Decimal.new(1)}}, :wei) == Decimal.new(1)

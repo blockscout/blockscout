@@ -16,6 +16,31 @@ defmodule BlockScoutWeb.Notifier do
     |> Enum.each(&broadcast_balance/1)
   end
 
+  def handle_event({:chain_event, :blocks, :catchup, _blocks}) do
+    min_block_number = Chain.min_block_number()
+
+    percentage =
+      if min_block_number > 1 do
+        max_block_number = Chain.max_block_number()
+        indexed_blocks = max_block_number - min_block_number + 1
+        indexed_blocks / max_block_number * 100
+      else
+        1.0
+      end
+
+    finished? =
+      if percentage < 1 do
+        false
+      else
+        Chain.finished_indexing?()
+      end
+
+    Endpoint.broadcast("blocks:indexing", "block_percentage", %{
+      percentage: percentage,
+      finished: finished?
+    })
+  end
+
   def handle_event({:chain_event, :blocks, :realtime, blocks}) do
     Enum.each(blocks, &broadcast_block/1)
   end
