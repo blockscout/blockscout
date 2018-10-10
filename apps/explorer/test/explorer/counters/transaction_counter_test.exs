@@ -3,11 +3,6 @@ defmodule Explorer.Counters.TransactionCounterTest do
 
   alias Explorer.Counters.TransactionCounter
 
-  setup do
-    TransactionCounter.create_table()
-    :ok
-  end
-
   describe "consolidate/0" do
     test "loads transactions consolidate info" do
       address_a = insert(:address)

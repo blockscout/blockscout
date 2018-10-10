@@ -29,9 +29,26 @@ defmodule Explorer.Counters.TransactionCounter do
 
     Task.start_link(&consolidate/0)
 
-    Chain.subscribe_to_events(:transactions)
+    subscribe_to_events()
 
     {:ok, args}
+  end
+
+  # We don't want to subscribe to events in all environments, for instance, in the test env. Otherwise,
+  # the function that is listening the event will execute every time that the event is triggered by
+  # another test. As this function can perform an Ecto query, we would need to make sure that this
+  # process was finished in every test that can trigger this event.
+  #
+  # By default the event is enabled. For disabling it, you need to config the enviroment like this:
+  #
+  # config :explorer, Explorer.Counters.TransactionCounter, subscribe_events: false
+  defp subscribe_to_events do
+    config = Application.get_env(:explorer, Explorer.Counters.TransactionCounter)
+
+    case Keyword.get(config, :subscribe_events) do
+      false -> nil
+      _ -> Chain.subscribe_to_events(:transactions)
+    end
   end
 
   def create_table do
