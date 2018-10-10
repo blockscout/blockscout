@@ -169,19 +169,6 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
       |> assert_has(BlockListPage.block(%Block{number: 314}))
       |> assert_has(BlockListPage.place_holder_blocks(3))
     end
-
-    test "replaces rendered place holder block if skipped block received", %{session: session} do
-      insert(:block, number: 315)
-
-      BlockListPage.visit_page(session)
-
-      block = insert(:block, number: 314)
-      Notifier.handle_event({:chain_event, :blocks, [block]})
-
-      session
-      |> assert_has(BlockListPage.block(block))
-      |> assert_has(BlockListPage.place_holder_blocks(2))
-    end
   end
 
   describe "viewing uncle blocks list" do

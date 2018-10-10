@@ -89,19 +89,6 @@ defmodule BlockScoutWeb.ViewingChainTest do
       |> assert_has(ChainPage.block(%Block{number: 408}))
       |> assert_has(ChainPage.place_holder_blocks(3))
     end
-
-    test "replaces rendered place holder block if skipped block received", %{session: session} do
-      insert(:block, number: 409)
-
-      ChainPage.visit_page(session)
-
-      block = insert(:block, number: 408)
-      Notifier.handle_event({:chain_event, :blocks, [block]})
-
-      session
-      |> assert_has(ChainPage.block(block))
-      |> assert_has(ChainPage.place_holder_blocks(2))
-    end
   end
 
   describe "viewing transactions" do
