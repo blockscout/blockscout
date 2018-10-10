@@ -37,8 +37,7 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Block.Reward
   alias Explorer.{PagingOptions, Repo}
-  alias Explorer.Counters.TokenTransferCounter
-  alias Explorer.Counters.BlockValidationCounter
+  alias Explorer.Counters.{TokenTransferCounter, BlockValidationCounter}
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -923,7 +922,7 @@ defmodule Explorer.Chain do
   Counts all of the block validations and groups by the `miner_hash`.
   """
   def group_block_validations_by_address do
-    query = 
+    query =
       from(
         b in Block,
         join: addr in Address,

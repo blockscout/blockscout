@@ -63,8 +63,7 @@ defmodule Explorer.Counters.BlockValidationCounter do
   """
   @spec fetch(Hash.Address.t()) :: non_neg_integer
   def fetch(addr_hash) do
-    :ets.lookup(table_name(), to_string(addr_hash))
-    |> do_fetch()
+    do_fetch(:ets.lookup(table_name(), to_string(addr_hash)))
   end
 
   defp do_fetch([{_, result} | _]), do: result

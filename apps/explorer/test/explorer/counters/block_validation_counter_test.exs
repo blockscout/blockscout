@@ -19,14 +19,14 @@ defmodule Explorer.Counters.BlockValidationCounterTest do
       BlockValidationCounter.consolidate_blocks()
 
       assert BlockValidationCounter.fetch(address.hash) == 2
-      assert BlockValidationCounter.fetch(another_address.hash) == 1 
+      assert BlockValidationCounter.fetch(another_address.hash) == 1
     end
   end
 
   describe "fetch/1" do
     test "fetches the total block validations by a given address" do
       BlockValidationCounter.start_link([])
-      
+
       address = insert(:address)
       another_address = insert(:address)
 
@@ -40,5 +40,4 @@ defmodule Explorer.Counters.BlockValidationCounterTest do
       assert BlockValidationCounter.fetch(another_address.hash) == 10
     end
   end
-
 end
