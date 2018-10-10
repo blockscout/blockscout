@@ -112,7 +112,7 @@ defmodule Indexer.InternalTransaction.Fetcher do
           })
         else
           {:error, step, reason, _changes_so_far} ->
-            Logger.debug(fn ->
+            Logger.error(fn ->
               [
                 "failed to import internal transactions for ",
                 to_string(length(transactions_params)),
@@ -128,7 +128,7 @@ defmodule Indexer.InternalTransaction.Fetcher do
         end
 
       {:error, reason} ->
-        Logger.debug(fn ->
+        Logger.error(fn ->
           "failed to fetch internal transactions for #{length(transactions_params)} transactions: #{inspect(reason)}"
         end)
 
