@@ -14,6 +14,12 @@ export function batchChannel (func) {
   }
 }
 
+export function buildFullBlockList (blockNumbers) {
+  const newestBlock = _.first(blockNumbers)
+  const oldestBlock = _.last(blockNumbers)
+  return skippedBlockListBuilder([], newestBlock + 1, oldestBlock - 1)
+}
+
 export function initRedux (reducer, { main, render, debug } = {}) {
   if (!reducer) {
     console.error('initRedux: You need a reducer to initialize Redux.')
@@ -34,16 +40,33 @@ export function initRedux (reducer, { main, render, debug } = {}) {
   if (main) main(store)
 }
 
+export function skippedBlockListBuilder (skippedBlockNumbers, newestBlock, oldestBlock) {
+  for (let i = newestBlock - 1; i > oldestBlock; i--) skippedBlockNumbers.push(i)
+  return skippedBlockNumbers
+}
+
 export function slideDownPrepend ($el, content, callback) {
   const $content = $(content)
   $el.prepend($content.hide())
   $content.slideDown({ complete: callback })
 }
+export function slideDownBefore ($el, content, callback) {
+  const $content = $(content)
+  $el.before($content.hide())
+  $content.slideDown({ complete: callback })
+}
 export function prependWithClingBottom ($el, content) {
+  return slideDownPrepend($el, content, clingBottom($el, content))
+}
+export function beforeWithClingBottom ($el, content) {
+  return slideDownBefore($el, content, clingBottom($el, content))
+}
+
+function clingBottom ($el, content) {
   function userAtTop () {
     return window.scrollY < $('[data-selector="navbar"]').outerHeight()
   }
-  if (userAtTop()) return slideDownPrepend($el, content)
+  if (userAtTop()) return true
 
   let isAnimating
   function setIsAnimating () {
@@ -73,8 +96,10 @@ export function prependWithClingBottom ($el, content) {
     $el.off('animationend animationcancel', stopClinging)
   }
 
-  return slideDownPrepend($el, content, () => {
-    $el.on('animationend animationcancel', stopClinging)
-    setTimeout(() => !isAnimating && stopClinging(), 100)
-  })
+  return {
+    function () {
+      $el.on('animationend animationcancel', stopClinging)
+      setTimeout(() => !isAnimating && stopClinging(), 100)
+    }
+  }
 }

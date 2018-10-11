@@ -17,7 +17,7 @@
 
   &-type {
 
-    &-Block {
+    &-block {
       border-left: 4px solid $indigo;
 
       .tile-label {
@@ -25,7 +25,7 @@
       }
     }
 
-    &-Uncle {
+    &-uncle {
       border-left: 4px solid $cyan;
 
       .tile-label {
@@ -33,7 +33,7 @@
       }
     }
 
-    &-Reorg {
+    &-reorg {
       border-left: 4px solid $purple;
 
       .tile-label {

@@ -1,6 +1,5 @@
 import { reducer, initialState } from '../../js/pages/block'
 
-
 test('CHANNEL_DISCONNECTED', () => {
   const state = initialState
   const action = {
@@ -9,6 +8,61 @@ test('CHANNEL_DISCONNECTED', () => {
   const output = reducer(state, action)
 
   expect(output.channelDisconnected).toBe(true)
+})
+
+describe('PAGE_LOAD', () => {
+  test('page 1 loads block numbers', () => {
+    const state = initialState
+    const action = {
+      type: 'PAGE_LOAD',
+      beyondPageOne: false,
+      blockNumbers: [2, 1]
+    }
+    const output = reducer(state, action)
+
+    expect(output.beyondPageOne).toBe(false)
+    expect(output.blockNumbers).toEqual([2, 1])
+    expect(output.skippedBlockNumbers).toEqual([])
+  })
+  test('page 2 loads block numbers', () => {
+    const state = initialState
+    const action = {
+      type: 'PAGE_LOAD',
+      beyondPageOne: true,
+      blockNumbers: [2, 1]
+    }
+    const output = reducer(state, action)
+
+    expect(output.beyondPageOne).toBe(true)
+    expect(output.blockNumbers).toEqual([2, 1])
+    expect(output.skippedBlockNumbers).toEqual([])
+  })
+  test('page 1 with skipped blocks', () => {
+    const state = initialState
+    const action = {
+      type: 'PAGE_LOAD',
+      beyondPageOne: false,
+      blockNumbers: [4, 1]
+    }
+    const output = reducer(state, action)
+
+    expect(output.beyondPageOne).toBe(false)
+    expect(output.blockNumbers).toEqual([4, 3, 2, 1])
+    expect(output.skippedBlockNumbers).toEqual([3, 2])
+  })
+  test('page 2 with skipped blocks', () => {
+    const state = initialState
+    const action = {
+      type: 'PAGE_LOAD',
+      beyondPageOne: true,
+      blockNumbers: [4, 1]
+    }
+    const output = reducer(state, action)
+
+    expect(output.beyondPageOne).toBe(true)
+    expect(output.blockNumbers).toEqual([4, 3, 2, 1])
+    expect(output.skippedBlockNumbers).toEqual([3, 2])
+  })
 })
 
 describe('RECEIVED_NEW_BLOCK', () => {
@@ -56,12 +110,12 @@ describe('RECEIVED_NEW_BLOCK', () => {
 
     expect(output.newBlock).toBe('test5')
     expect(output.blockNumbers).toEqual([5, 4, 3, 2])
-    expect(output.skippedBlockNumbers).toEqual([3, 4])
+    expect(output.skippedBlockNumbers).toEqual([4, 3])
   })
   test('replaces skipped block', () => {
     const state = Object.assign({}, initialState, {
       blockNumbers: [5, 4, 3, 2, 1],
-      skippedBlockNumbers: [1, 3, 4]
+      skippedBlockNumbers: [4, 3, 1]
     })
     const action = {
       type: 'RECEIVED_NEW_BLOCK',
@@ -74,7 +128,7 @@ describe('RECEIVED_NEW_BLOCK', () => {
 
     expect(output.newBlock).toBe('test3')
     expect(output.blockNumbers).toEqual([5, 4, 3, 2, 1])
-    expect(output.skippedBlockNumbers).toEqual([1, 4])
+    expect(output.skippedBlockNumbers).toEqual([4, 1])
   })
   test('replaces duplicated block', () => {
     const state = Object.assign({}, initialState, {

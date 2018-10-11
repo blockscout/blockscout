@@ -113,10 +113,6 @@ defmodule BlockScoutWeb.AddressPage do
     css("[data-transaction-hash='#{hash}'] [data-test='address_hash_link'] [data-address-hash='#{address_hash}']")
   end
 
-  def transaction_count do
-    css("[data-selector='transaction-count']")
-  end
-
   def transaction_status(%Transaction{hash: transaction_hash}) do
     css("[data-transaction-hash='#{transaction_hash}'] [data-test='transaction_status']")
   end

@@ -141,17 +141,6 @@ defmodule BlockScoutWeb.AddressView do
     |> Base.encode64()
   end
 
-  def render_partial(%{partial: partial, address: address, contract: contract?, truncate: truncate}) do
-    render(
-      partial,
-      address: address,
-      contract: contract?,
-      truncate: truncate
-    )
-  end
-
-  def render_partial(text), do: text
-
   def smart_contract_verified?(%Address{smart_contract: %SmartContract{}}), do: true
 
   def smart_contract_verified?(%Address{smart_contract: nil}), do: false

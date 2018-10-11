@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.ViewingChainTest do
   use BlockScoutWeb.FeatureCase, async: true
 
   alias BlockScoutWeb.{AddressPage, BlockPage, ChainPage, TransactionPage}
+  alias Explorer.Chain.Block
 
   setup do
     Enum.map(401..404, &insert(:block, number: &1))
@@ -49,6 +50,15 @@ defmodule BlockScoutWeb.ViewingChainTest do
       session
       |> ChainPage.visit_page()
       |> assert_has(ChainPage.blocks(count: 4))
+    end
+
+    test "inserts place holder blocks on render for out of order blocks", %{session: session} do
+      insert(:block, number: 409)
+
+      session
+      |> ChainPage.visit_page()
+      |> assert_has(ChainPage.block(%Block{number: 408}))
+      |> assert_has(ChainPage.place_holder_blocks(3))
     end
   end
 

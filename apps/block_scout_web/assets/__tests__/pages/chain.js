@@ -1,5 +1,30 @@
 import { reducer, initialState } from '../../js/pages/chain'
 
+describe('PAGE_LOAD', () => {
+  test('loads block numbers', () => {
+    const state = initialState
+    const action = {
+      type: 'PAGE_LOAD',
+      blockNumbers: [2, 1]
+    }
+    const output = reducer(state, action)
+
+    expect(output.blockNumbers).toEqual([2, 1])
+    expect(output.skippedBlockNumbers).toEqual([])
+  })
+  test('loads with skipped blocks', () => {
+    const state = initialState
+    const action = {
+      type: 'PAGE_LOAD',
+      blockNumbers: [4, 1]
+    }
+    const output = reducer(state, action)
+
+    expect(output.blockNumbers).toEqual([4, 3, 2, 1])
+    expect(output.skippedBlockNumbers).toEqual([3, 2])
+  })
+})
+
 test('RECEIVED_NEW_ADDRESS_COUNT', () => {
   const state = Object.assign({}, initialState, {
     addressCount: '1,000'
@@ -54,12 +79,12 @@ describe('RECEIVED_NEW_BLOCK', () => {
     expect(output.averageBlockTime).toEqual('5 seconds')
     expect(output.newBlock).toBe('test5')
     expect(output.blockNumbers).toEqual([5, 4, 3, 2])
-    expect(output.skippedBlockNumbers).toEqual([3, 4])
+    expect(output.skippedBlockNumbers).toEqual([4, 3])
   })
   test('replaces skipped block', () => {
     const state = Object.assign({}, initialState, {
       blockNumbers: [4, 3, 2, 1],
-      skippedBlockNumbers: [1, 2, 3]
+      skippedBlockNumbers: [3, 2, 1]
     })
     const action = {
       type: 'RECEIVED_NEW_BLOCK',
@@ -74,7 +99,7 @@ describe('RECEIVED_NEW_BLOCK', () => {
     expect(output.averageBlockTime).toEqual('5 seconds')
     expect(output.newBlock).toBe('test2')
     expect(output.blockNumbers).toEqual([4, 3, 2, 1])
-    expect(output.skippedBlockNumbers).toEqual([1, 3])
+    expect(output.skippedBlockNumbers).toEqual([3, 1])
   })
   test('replaces duplicated block', () => {
     const state = Object.assign({}, initialState, {
@@ -116,7 +141,7 @@ describe('RECEIVED_NEW_BLOCK', () => {
   test('only tracks 4 blocks based on page display limit', () => {
     const state = Object.assign({}, initialState, {
       blockNumbers: [5, 4, 3, 2],
-      skippedBlockNumbers: [2, 3, 4]
+      skippedBlockNumbers: [4, 3, 2]
     })
     const action = {
       type: 'RECEIVED_NEW_BLOCK',
@@ -129,12 +154,12 @@ describe('RECEIVED_NEW_BLOCK', () => {
 
     expect(output.newBlock).toBe('test6')
     expect(output.blockNumbers).toEqual([6, 5, 4, 3])
-    expect(output.skippedBlockNumbers).toEqual([3, 4])
+    expect(output.skippedBlockNumbers).toEqual([4, 3])
   })
   test('skipped blocks list replaced when another block comes in with +3 blockheight', () => {
     const state = Object.assign({}, initialState, {
       blockNumbers: [5, 4, 3, 2],
-      skippedBlockNumbers: [2, 3, 4]
+      skippedBlockNumbers: [4, 3, 2]
     })
     const action = {
       type: 'RECEIVED_NEW_BLOCK',
@@ -147,7 +172,7 @@ describe('RECEIVED_NEW_BLOCK', () => {
 
     expect(output.newBlock).toBe('test10')
     expect(output.blockNumbers).toEqual([10, 9, 8, 7])
-    expect(output.skippedBlockNumbers).toEqual([7, 8, 9])
+    expect(output.skippedBlockNumbers).toEqual([9, 8, 7])
   })
 })
 
