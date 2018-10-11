@@ -15,7 +15,13 @@ defmodule BlockScoutWeb.AddressValidationController do
          {:ok, address} <- Chain.hash_to_address(address_hash) do
       full_options =
         Keyword.merge(
-          [necessity_by_association: %{miner: :required, transactions: :optional}],
+          [
+            necessity_by_association: %{
+              miner: :required,
+              nephews: :optional,
+              transactions: :optional
+            }
+          ],
           paging_options(params)
         )
 
