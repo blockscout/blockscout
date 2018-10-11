@@ -75,11 +75,11 @@
     flex-grow: 1;
 
     &:first-of-type {
-      border-left: 4px solid $secondary;
+      border-left: 4px solid $primary;
     }
 
     &:last-of-type {
-      border-left: 4px solid $primary;
+      border-left: 4px solid $secondary;
     }
   }
 
