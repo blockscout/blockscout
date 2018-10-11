@@ -97,20 +97,13 @@ defmodule Indexer.TokenBalance.Fetcher do
          address_hash: address_hash,
          block_number: block_number
        }) do
-    %{
-      token_contract_address_hash_bytes: token_contract_address_hash.bytes,
-      address_hash_bytes: address_hash.bytes,
-      block_number: block_number
-    }
+    {address_hash.bytes, token_contract_address_hash.bytes, block_number}
   end
 
-  defp format_params(%{
-         token_contract_address_hash_bytes: token_contract_address_hash_bytes,
-         address_hash_bytes: address_hash_bytes,
-         block_number: block_number
-       }) do
+  defp format_params({address_hash_bytes, token_contract_address_hash_bytes, block_number}) do
     {:ok, token_contract_address_hash} = Hash.Address.cast(token_contract_address_hash_bytes)
     {:ok, address_hash} = Hash.Address.cast(address_hash_bytes)
+
     %{
       token_contract_address_hash: to_string(token_contract_address_hash),
       address_hash: to_string(address_hash),
