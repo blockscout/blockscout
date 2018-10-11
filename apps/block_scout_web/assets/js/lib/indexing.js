@@ -1,29 +1,25 @@
 import $ from 'jquery'
-import _ from 'lodash'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
 
 function tryUpdateIndexedStatus (el, indexedRatio = el.dataset.indexedRatio, indexingFinished = false) {
   if (indexingFinished) return $("[data-selector='indexed-status']").remove()
+  const blocksPercentComplete = numeral(indexedRatio).format('0%')
   let indexedText
-  if (parseInt(indexedRatio) === 1.0) {
+  if (blocksPercentComplete === '100%') {
     indexedText = window.localized['Indexing Tokens']
   } else {
-    indexedText = `${numeral(indexedRatio).format('0%')} ${window.localized['Blocks Indexed']}`
+    indexedText = `${blocksPercentComplete} ${window.localized['Blocks Indexed']}`
   }
   if (indexedText !== el.innerHTML) el.innerHTML = indexedText
 }
 
-let currentIndexedRatio
-let indexingFinished
-export function updateIndexStatus (msg) {
-  currentIndexedRatio = _.get(msg, 'ratio')
-  indexingFinished = _.get(msg, 'finished')
-  $('[data-indexed-ratio]').each((i, el) => tryUpdateIndexedStatus(el, currentIndexedRatio, indexingFinished))
+export function updateIndexStatus (msg = {}) {
+  $('[data-indexed-ratio]').each((i, el) => tryUpdateIndexedStatus(el, msg.ratio, msg.finished))
 }
 updateIndexStatus()
 
-export const indexingChannel = socket.channel(`blocks:indexing`)
+const indexingChannel = socket.channel(`blocks:indexing`)
 indexingChannel.join()
 indexingChannel.on('index_status', (msg) => updateIndexStatus(humps.camelizeKeys(msg)))
