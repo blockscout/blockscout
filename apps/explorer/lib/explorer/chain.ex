@@ -562,13 +562,18 @@ defmodule Explorer.Chain do
   @spec finished_indexing?() :: boolean()
   def finished_indexing? do
     min_block_number_transaction = Repo.aggregate(Transaction, :min, :block_number)
-    Transaction
-    |> where([t], t.block_number == ^min_block_number_transaction and is_nil(t.internal_transactions_indexed_at))
-    |> limit(1)
-    |> Repo.one()
-    |> case do
-      nil -> true
-      _ -> false
+
+    if min_block_number_transaction do
+      Transaction
+      |> where([t], t.block_number == ^min_block_number_transaction and is_nil(t.internal_transactions_indexed_at))
+      |> limit(1)
+      |> Repo.one()
+      |> case do
+        nil -> true
+        _ -> false
+      end
+    else
+      false
     end
   end
 
@@ -816,6 +821,32 @@ defmodule Explorer.Chain do
   @spec import(Import.all_options()) :: Import.all_result()
   def import(options) do
     Import.all(options)
+  end
+
+  @doc """
+  The percentage of indexed blocks on the chain.
+
+      iex> for index <- 6..10 do
+      ...>   insert(:block, number: index)
+      ...> end
+      iex> Explorer.Chain.indexed_ratio()
+      0.5
+
+  If there are no blocks, the percentage is 0.
+
+      iex> Explorer.Chain.indexed_ratio()
+      0
+
+  """
+  @spec indexed_ratio() :: float()
+  def indexed_ratio do
+    with {:ok, min_block_number} <- min_block_number(),
+         {:ok, max_block_number} <- max_block_number() do
+      indexed_blocks = max_block_number - min_block_number + 1
+      indexed_blocks / max_block_number
+    else
+      {:error, _} -> 0
+    end
   end
 
   @doc """

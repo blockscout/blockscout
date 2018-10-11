@@ -21,15 +21,13 @@ defmodule BlockScoutWeb.BlockChannelTest do
   end
 
   test "subscribed user is notified of new_block event for catchup" do
-    topic = "blocks:new_block"
+    topic = "blocks:indexing"
     @endpoint.subscribe(topic)
 
-    block = insert(:block, number: 1)
-
-    Notifier.handle_event({:chain_event, :blocks, :catchup, [block]})
+    Notifier.handle_event({:chain_event, :blocks, :catchup, []})
 
     receive do
-      %Phoenix.Socket.Broadcast{topic: ^topic, event: "new_block", payload: %{block: _}} ->
+      %Phoenix.Socket.Broadcast{topic: ^topic, event: "index_status", payload: %{}} ->
         assert true
     after
       5_000 ->
