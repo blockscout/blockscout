@@ -21,7 +21,7 @@ defmodule Indexer.TokenBalance.Fetcher do
 
   @spec async_fetch([%TokenBalance{}]) :: :ok
   def async_fetch(token_balances) do
-    formatted_params = Enum.map(token_balances, &format_params/1)
+    formatted_params = Enum.map(token_balances, &entry/1)
     BufferedTask.buffer(__MODULE__, formatted_params, :infinity)
   end
 
@@ -48,7 +48,7 @@ defmodule Indexer.TokenBalance.Fetcher do
     {:ok, final} =
       Chain.stream_unfetched_token_balances(initial, fn token_balance, acc ->
         token_balance
-        |> format_params()
+        |> entry()
         |> reducer.(acc)
       end)
 
@@ -56,18 +56,19 @@ defmodule Indexer.TokenBalance.Fetcher do
   end
 
   @impl BufferedTask
-  def run(params_list, _retries, _json_rpc_named_arguments) do
-    Logger.debug(fn -> "fetching #{length(params_list)} token balances" end)
+  def run(entries, _retries, _json_rpc_named_arguments) do
+    Logger.debug(fn -> "fetching #{length(entries)} token balances" end)
 
     result =
-      params_list
+      entries
+      |> Enum.map(&format_params/1)
       |> fetch_from_blockchain()
       |> import_token_balances()
 
     if result == :ok do
       :ok
     else
-      {:retry, params_list}
+      {:retry, entries}
     end
   end
 
@@ -91,14 +92,28 @@ defmodule Indexer.TokenBalance.Fetcher do
     end
   end
 
-  defp format_params(%TokenBalance{
+  defp entry(%TokenBalance{
          token_contract_address_hash: token_contract_address_hash,
          address_hash: address_hash,
          block_number: block_number
        }) do
     %{
-      token_contract_address_hash: Hash.to_string(token_contract_address_hash),
-      address_hash: Hash.to_string(address_hash),
+      token_contract_address_hash_bytes: token_contract_address_hash.bytes,
+      address_hash_bytes: address_hash.bytes,
+      block_number: block_number
+    }
+  end
+
+  defp format_params(%{
+         token_contract_address_hash_bytes: token_contract_address_hash_bytes,
+         address_hash_bytes: address_hash_bytes,
+         block_number: block_number
+       }) do
+    {:ok, token_contract_address_hash} = Hash.Address.cast(token_contract_address_hash_bytes)
+    {:ok, address_hash} = Hash.Address.cast(address_hash_bytes)
+    %{
+      token_contract_address_hash: to_string(token_contract_address_hash),
+      address_hash: to_string(address_hash),
       block_number: block_number
     }
   end

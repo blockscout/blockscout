@@ -48,6 +48,9 @@ defmodule Explorer.Chain.Hash do
       %__MODULE__{byte_count: ^byte_count, bytes: <<_::big-integer-size(byte_count)-unit(@bits_per_byte)>>} = cast ->
         {:ok, cast}
 
+      <<_::big-integer-size(byte_count)-unit(@bits_per_byte)>> ->
+        {:ok, %__MODULE__{byte_count: byte_count, bytes: term}}
+
       <<"0x", hexadecimal_digits::binary>> ->
         cast_hexadecimal_digits(hexadecimal_digits, byte_count)
 
