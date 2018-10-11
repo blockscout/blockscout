@@ -178,6 +178,8 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     |> put_start_block(params)
     |> put_end_block(params)
     |> put_filter_by(params)
+    |> put_start_timestamp(params)
+    |> put_end_timestamp(params)
   end
 
   @doc """
@@ -358,6 +360,28 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
       %{"filterby" => filter_by} when filter_by in ["from", "to"] ->
         Map.put(options, :filter_by, filter_by)
 
+      _ ->
+        options
+    end
+  end
+
+  defp put_start_timestamp(options, params) do
+    with %{"starttimestamp" => starttimestamp_param} <- params,
+         {unix_timestamp, ""} <- Integer.parse(starttimestamp_param),
+         {:ok, start_timestamp} <- DateTime.from_unix(unix_timestamp) do
+      Map.put(options, :start_timestamp, start_timestamp)
+    else
+      _ ->
+        options
+    end
+  end
+
+  defp put_end_timestamp(options, params) do
+    with %{"endtimestamp" => endtimestamp_param} <- params,
+         {unix_timestamp, ""} <- Integer.parse(endtimestamp_param),
+         {:ok, end_timestamp} <- DateTime.from_unix(unix_timestamp) do
+      Map.put(options, :end_timestamp, end_timestamp)
+    else
       _ ->
         options
     end

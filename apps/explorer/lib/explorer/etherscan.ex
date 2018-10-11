@@ -16,7 +16,9 @@ defmodule Explorer.Etherscan do
     page_number: 1,
     page_size: 10_000,
     start_block: nil,
-    end_block: nil
+    end_block: nil,
+    start_timestamp: nil,
+    end_timestamp: nil
   }
 
   @doc """
@@ -289,6 +291,8 @@ defmodule Explorer.Etherscan do
     |> where_address_match(address_hash, options)
     |> where_start_block_match(options)
     |> where_end_block_match(options)
+    |> where_start_timestamp_match(options)
+    |> where_end_timestamp_match(options)
     |> Repo.all()
   end
 
@@ -363,6 +367,18 @@ defmodule Explorer.Etherscan do
 
   defp where_end_block_match(query, %{end_block: end_block}) do
     where(query, [..., block], block.number <= ^end_block)
+  end
+
+  defp where_start_timestamp_match(query, %{start_timestamp: nil}), do: query
+
+  defp where_start_timestamp_match(query, %{start_timestamp: start_timestamp}) do
+    where(query, [..., block], ^start_timestamp <= block.timestamp)
+  end
+
+  defp where_end_timestamp_match(query, %{end_timestamp: nil}), do: query
+
+  defp where_end_timestamp_match(query, %{end_timestamp: end_timestamp}) do
+    where(query, [..., block], block.timestamp <= ^end_timestamp)
   end
 
   defp where_contract_address_match(query, nil), do: query
