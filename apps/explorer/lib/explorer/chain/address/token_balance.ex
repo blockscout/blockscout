@@ -64,6 +64,9 @@ defmodule Explorer.Chain.Address.TokenBalance do
     |> unique_constraint(:block_number, name: :token_balances_address_hash_block_number_index)
   end
 
+  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
+  @burn_address_hash burn_address_hash
+
   @doc """
   Builds an `Ecto.Query` to fetch the last token balances that have value greater than 0.
 
@@ -110,12 +113,10 @@ defmodule Explorer.Chain.Address.TokenBalance do
   end
 
   defp token_holders_query(contract_address_hash) do
-    {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
-
     from(
       tb in TokenBalance,
       distinct: :address_hash,
-      where: tb.token_contract_address_hash == ^contract_address_hash and tb.address_hash != ^burn_address_hash,
+      where: tb.token_contract_address_hash == ^contract_address_hash and tb.address_hash != ^@burn_address_hash,
       order_by: [desc: :block_number]
     )
   end
@@ -129,9 +130,6 @@ defmodule Explorer.Chain.Address.TokenBalance do
       tb.value < ^value or (tb.value == ^value and tb.address_hash < ^address_hash)
     )
   end
-
-  {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
-  @burn_address_hash burn_address_hash
 
   @doc """
   Builds an `Ecto.Query` to fetch the unfetched token balances.
