@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.LayoutView do
   end
 
   def logo do
-    Keyword.get(application_config(), :logo) || "/images/dai_logo.svg"
+    Keyword.get(application_config(), :logo) || "/images/poa_logo.svg"
   end
 
   def subnetwork_title do
