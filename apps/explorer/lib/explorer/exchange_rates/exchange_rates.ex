@@ -26,12 +26,8 @@ defmodule Explorer.ExchangeRates do
   # Callback for successful fetch
   @impl GenServer
   def handle_info({_ref, {:ok, tokens}}, state) do
-    records =
-      for %Token{symbol: symbol} = token <- tokens do
-        {symbol, token}
-      end
-
     if store() == :ets do
+      records = Enum.map(tokens, &Token.to_tuple/1)
       :ets.insert(table_name(), records)
     end
 
@@ -95,7 +91,7 @@ defmodule Explorer.ExchangeRates do
   def lookup(symbol) do
     if store() == :ets do
       case :ets.lookup(table_name(), symbol) do
-        [{_key, token} | _] -> token
+        [tuple | _] when is_tuple(tuple) -> Token.from_tuple(tuple)
         _ -> nil
       end
     end
@@ -134,7 +130,7 @@ defmodule Explorer.ExchangeRates do
   defp list_from_store(:ets) do
     table_name()
     |> :ets.tab2list()
-    |> Enum.map(fn {_, rate} -> rate end)
+    |> Enum.map(&Token.from_tuple/1)
     |> Enum.sort_by(fn %Token{symbol: symbol} -> symbol end)
   end
 

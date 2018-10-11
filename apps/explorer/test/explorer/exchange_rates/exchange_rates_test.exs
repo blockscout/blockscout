@@ -22,7 +22,7 @@ defmodule Explorer.ExchangeRatesTest do
   end
 
   test "start_link" do
-    stub(TestSource, :fetch_exchange_rates, fn -> {:ok, [%Token{}]} end)
+    stub(TestSource, :fetch_exchange_rates, fn -> {:ok, [Token.null()]} end)
     set_mox_global()
 
     assert {:ok, _} = ExchangeRates.start_link([])
@@ -46,7 +46,7 @@ defmodule Explorer.ExchangeRatesTest do
     ExchangeRates.init([])
     state = %{}
 
-    expect(TestSource, :fetch_exchange_rates, fn -> {:ok, [%Token{}]} end)
+    expect(TestSource, :fetch_exchange_rates, fn -> {:ok, [Token.null()]} end)
     set_mox_global()
 
     assert {:noreply, ^state} = ExchangeRates.handle_info(:update, state)
@@ -63,28 +63,29 @@ defmodule Explorer.ExchangeRatesTest do
       expected_token = %Token{
         available_supply: Decimal.new("1000000.0"),
         btc_value: Decimal.new("1.000"),
-        id: "test",
+        id: "test_id",
         last_updated: DateTime.utc_now(),
         market_cap_usd: Decimal.new("1000000.0"),
-        name: "test",
-        symbol: "test",
+        name: "test_name",
+        symbol: "test_symbol",
         usd_value: Decimal.new("1.0"),
         volume_24h_usd: Decimal.new("1000.0")
       }
 
-      expected_id = expected_token.id
+      expected_symbol = expected_token.symbol
+      expected_tuple = Token.to_tuple(expected_token)
 
       state = %{}
 
       assert {:noreply, ^state} = ExchangeRates.handle_info({nil, {:ok, [expected_token]}}, state)
 
-      assert [{^expected_id, ^expected_token}] = :ets.lookup(ExchangeRates.table_name(), expected_id)
+      assert [^expected_tuple] = :ets.lookup(ExchangeRates.table_name(), expected_symbol)
     end
 
     test "with failed fetch" do
       state = %{}
 
-      expect(TestSource, :fetch_exchange_rates, fn -> {:ok, [%Token{}]} end)
+      expect(TestSource, :fetch_exchange_rates, fn -> {:ok, [Token.null()]} end)
       set_mox_global()
 
       assert {:noreply, ^state} = ExchangeRates.handle_info({nil, {:error, "some error"}}, state)
@@ -97,12 +98,12 @@ defmodule Explorer.ExchangeRatesTest do
     ExchangeRates.init([])
 
     rates = [
-      %Token{symbol: "z"},
-      %Token{symbol: "a"}
+      %Token{Token.null() | symbol: "z"},
+      %Token{Token.null() | symbol: "a"}
     ]
 
     expected_rates = Enum.reverse(rates)
-    for rate <- rates, do: :ets.insert(ExchangeRates.table_name(), {rate.symbol, rate})
+    for rate <- rates, do: :ets.insert(ExchangeRates.table_name(), Token.to_tuple(rate))
 
     assert expected_rates == ExchangeRates.list()
   end
@@ -110,11 +111,11 @@ defmodule Explorer.ExchangeRatesTest do
   test "lookup/1" do
     ExchangeRates.init([])
 
-    z = %Token{symbol: "z"}
+    z = %Token{Token.null() | symbol: "z"}
 
-    rates = [z, %Token{symbol: "a"}]
+    rates = [z, %Token{Token.null() | symbol: "a"}]
 
-    for rate <- rates, do: :ets.insert(ExchangeRates.table_name(), {rate.symbol, rate})
+    for rate <- rates, do: :ets.insert(ExchangeRates.table_name(), Token.to_tuple(rate))
 
     assert z == ExchangeRates.lookup("z")
     assert nil == ExchangeRates.lookup("nope")
