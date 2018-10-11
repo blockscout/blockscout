@@ -177,4 +177,39 @@ defmodule Explorer.Chain.TransactionTest do
       assert result == [transaction_c.block_number, transaction_b.block_number, transaction_a.block_number]
     end
   end
+
+  describe "consolidate_by_address/1" do
+    test "counts transactions and group by addresses" do
+      address_a = insert(:address, hash: "0x0000000000000000000000000000000000000b09")
+      address_b = insert(:address, hash: "0x0000000000000000000000000000000000000b08")
+
+      insert(:transaction, to_address: address_a, from_address: address_b)
+
+      expected = [
+        {address_a.hash, 1},
+        {address_b.hash, 1}
+      ]
+
+      assert Transaction.consolidate_by_address() == expected
+    end
+
+    test "considers the created_contract_address when the to_address is nil" do
+      address_a = insert(:address, hash: "0x0000000000000000000000000000000000000b02")
+      address_b = insert(:contract_address, hash: "0x0000000000000000000000000000000000000b03")
+
+      insert(
+        :transaction,
+        from_address: address_a,
+        to_address: nil,
+        created_contract_address: address_b
+      )
+
+      expected = [
+        {address_a.hash, 1},
+        {address_b.hash, 1}
+      ]
+
+      assert Transaction.consolidate_by_address() == expected
+    end
+  end
 end

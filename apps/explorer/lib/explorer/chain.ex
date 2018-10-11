@@ -38,7 +38,7 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Block.Reward
   alias Explorer.{PagingOptions, Repo}
-  alias Explorer.Counters.TokenTransferCounter
+  alias Explorer.Counters.{TokenTransferCounter}
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -178,38 +178,6 @@ defmodule Explorer.Chain do
     end)
     |> Enum.reduce(MapSet.new(), &MapSet.union/2)
     |> MapSet.to_list()
-  end
-
-  @doc """
-  Gets an estimated count of `t:Explorer.Chain.Transaction.t/0` to or from the `address` based on the estimated rows
-  resulting in an EXPLAIN of the query plan for the count query.
-  """
-  @spec address_to_transactions_estimated_count(Address.t()) :: non_neg_integer()
-  def address_to_transactions_estimated_count(%Address{hash: address_hash}) do
-    {:ok, %Postgrex.Result{rows: result}} =
-      Repo.query(
-        """
-        EXPLAIN SELECT COUNT(DISTINCT t.hash) FROM
-        (
-          SELECT t0.hash FROM transactions AS t0 WHERE t0.from_address_hash = $1
-          UNION
-          SELECT t0.hash FROM transactions AS t0 WHERE t0.to_address_hash = $1
-          UNION
-          SELECT t0.hash FROM transactions AS t0 WHERE t0.created_contract_address_hash = $1
-          UNION
-          SELECT tt.transaction_hash AS hash FROM token_transfers AS tt
-          WHERE tt.from_address_hash = $1
-          UNION
-          SELECT tt.transaction_hash AS hash FROM token_transfers AS tt
-          WHERE tt.to_address_hash = $1
-        ) as t
-        """,
-        [address_hash.bytes]
-      )
-
-    {[unique_explain], _} = List.pop_at(result, 1)
-    [[_ | [rows]]] = Regex.scan(~r/rows=(\d+)/, unique_explain)
-    String.to_integer(rows)
   end
 
   @doc """
@@ -1929,6 +1897,13 @@ defmodule Explorer.Chain do
   @spec count_token_transfers_from_token_hash(Hash.t()) :: non_neg_integer()
   def count_token_transfers_from_token_hash(token_address_hash) do
     TokenTransferCounter.fetch(token_address_hash)
+  end
+
+  @spec count_transactions_by_address_hash(Hash.t()) :: non_neg_integer()
+  def count_transactions_by_address_hash(address_hash) do
+    counter = Repo.get_by(Explorer.Chain.Address.TransactionCounter, address_hash: address_hash)
+
+    counter.transactions_number
   end
 
   @spec transaction_has_token_transfers?(Hash.t()) :: boolean()

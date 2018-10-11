@@ -344,12 +344,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "address_to_transactions_estimated_count/1" do
-    test "returns integer" do
-      assert is_integer(Chain.address_to_transactions_estimated_count(build(:address)))
-    end
-  end
-
   describe "average_block_time/0" do
     test "without blocks duration is 0" do
       assert Chain.average_block_time() == Timex.Duration.parse!("PT0S")
