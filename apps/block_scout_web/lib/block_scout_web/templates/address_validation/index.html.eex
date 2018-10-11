@@ -108,7 +108,7 @@
         <h2 class="card-title"><%=gettext("Blocks Validated")%></h2>
         <span data-selector="validations-list">
           <%= for block <- @blocks do %>
-            <%= render BlockScoutWeb.BlockView, "_tile.html", block: block %>
+            <%= render BlockScoutWeb.BlockView, "_tile.html", block: block, block_type: BlockScoutWeb.BlockView.block_type(block)%>
           <% end %>
         </span>
         <div>
