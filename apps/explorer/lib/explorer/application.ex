@@ -16,9 +16,6 @@ defmodule Explorer.Application do
       Explorer.Repo,
       Supervisor.child_spec({Task.Supervisor, name: Explorer.MarketTaskSupervisor}, id: Explorer.MarketTaskSupervisor),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.TaskSupervisor}, id: Explorer.TaskSupervisor),
-      Supervisor.child_spec({Task.Supervisor, name: Explorer.BlockValidationCounter},
-        id: Explorer.BlockValidationCounter
-      ),
       {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents}
     ]
 

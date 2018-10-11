@@ -5,8 +5,6 @@ defmodule Explorer.Counters.BlockValidationCounterTest do
 
   describe "consolidate/0" do
     test "loads the address' validations consolidated info" do
-      BlockValidationCounter.start_link([])
-
       address = insert(:address)
 
       insert(:block, miner: address, miner_hash: address.hash)
@@ -25,8 +23,6 @@ defmodule Explorer.Counters.BlockValidationCounterTest do
 
   describe "fetch/1" do
     test "fetches the total block validations by a given address" do
-      BlockValidationCounter.start_link([])
-
       address = insert(:address)
       another_address = insert(:address)
 
