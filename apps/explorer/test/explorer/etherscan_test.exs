@@ -344,6 +344,41 @@ defmodule Explorer.EtherscanTest do
       end
     end
 
+    test "with start and end timestamp options" do
+      now = Timex.now()
+      timestamp1 = Timex.shift(now, hours: -1)
+      timestamp2 = Timex.shift(now, hours: -3)
+      timestamp3 = Timex.shift(now, hours: -6)
+      blocks1 = insert_list(2, :block, timestamp: timestamp1)
+      blocks2 = [third_block, fourth_block] = insert_list(2, :block, timestamp: timestamp2)
+      blocks3 = insert_list(2, :block, timestamp: timestamp3)
+      address = insert(:address)
+
+      for block <- Enum.concat([blocks1, blocks2, blocks3]) do
+        2
+        |> insert_list(:transaction, from_address: address)
+        |> with_block(block)
+      end
+
+      start_timestamp = Timex.shift(now, hours: -4)
+      end_timestamp = Timex.shift(now, hours: -2)
+
+      options = %{
+        start_timestamp: start_timestamp,
+        end_timestamp: end_timestamp
+      }
+
+      found_transactions = Etherscan.list_transactions(address.hash, options)
+
+      expected_block_numbers = [third_block.number, fourth_block.number]
+
+      assert length(found_transactions) == 4
+
+      for transaction <- found_transactions do
+        assert transaction.block_number in expected_block_numbers
+      end
+    end
+
     test "with filter_by: 'to' option with one matching transaction" do
       address = insert(:address)
       contract_address = insert(:contract_address)
