@@ -5,6 +5,8 @@ defmodule Indexer.InternalTransaction.FetcherTest do
   import ExUnit.CaptureLog
   import Mox
 
+  alias Explorer.Chain.{Hash, Transaction}
+
   alias Indexer.{CoinBalance, InternalTransaction, PendingTransaction}
 
   # MUST use global mode because we aren't guaranteed to get PendingTransactionFetcher's pid back fast enough to `allow`
@@ -99,9 +101,7 @@ defmodule Indexer.InternalTransaction.FetcherTest do
                [],
                fn hash_string, acc -> [hash_string | acc] end,
                json_rpc_named_arguments
-             ) == [
-               %{block_number: block.number, hash_data: to_string(collated_unfetched_transaction.hash)}
-             ]
+             ) == [{block.number, collated_unfetched_transaction.hash.bytes}]
     end
 
     test "does not buffer collated transactions with fetched internal transactions", %{
@@ -129,14 +129,15 @@ defmodule Indexer.InternalTransaction.FetcherTest do
 
       CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
-      insert(:transaction, hash: "0x03cd5899a63b6f6222afda8705d059fd5a7d126bcabe962fb654d9736e6bcafa")
+      %Transaction{hash: %Hash{bytes: bytes}} =
+        insert(:transaction, hash: "0x03cd5899a63b6f6222afda8705d059fd5a7d126bcabe962fb654d9736e6bcafa")
 
       log =
         capture_log(fn ->
           InternalTransaction.Fetcher.run(
             [
-              %{block_number: 1, hash_data: "0x03cd5899a63b6f6222afda8705d059fd5a7d126bcabe962fb654d9736e6bcafa"},
-              %{block_number: 1, hash_data: "0x03cd5899a63b6f6222afda8705d059fd5a7d126bcabe962fb654d9736e6bcafa"}
+              {1, bytes},
+              {1, bytes}
             ],
             0,
             json_rpc_named_arguments
@@ -145,9 +146,9 @@ defmodule Indexer.InternalTransaction.FetcherTest do
 
       assert log =~
                """
-               Duplicate transaction params being used to fetch internal transactions:
-                 1. %{block_number: 1, hash_data: \"0x03cd5899a63b6f6222afda8705d059fd5a7d126bcabe962fb654d9736e6bcafa\"}
-                 2. %{block_number: 1, hash_data: \"0x03cd5899a63b6f6222afda8705d059fd5a7d126bcabe962fb654d9736e6bcafa\"}
+               Duplicate entries being used to fetch internal transactions:
+                 1. {1, <<3, 205, 88, 153, 166, 59, 111, 98, 34, 175, 218, 135, 5, 208, 89, 253, 90, 125, 18, 107, 202, 190, 150, 47, 182, 84, 217, 115, 110, 107, 202, 250>>}
+                 2. {1, <<3, 205, 88, 153, 166, 59, 111, 98, 34, 175, 218, 135, 5, 208, 89, 253, 90, 125, 18, 107, 202, 190, 150, 47, 182, 84, 217, 115, 110, 107, 202, 250>>}
                """
     end
 
@@ -160,19 +161,18 @@ defmodule Indexer.InternalTransaction.FetcherTest do
 
       CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
-      # not a real transaction hash, so that it fails
-      insert(:transaction, hash: "0x0000000000000000000000000000000000000000000000000000000000000001")
+      # not a real transaction hash, so that fetch fails
+      %Transaction{hash: %Hash{bytes: bytes}} =
+        insert(:transaction, hash: "0x0000000000000000000000000000000000000000000000000000000000000001")
 
       assert InternalTransaction.Fetcher.run(
                [
-                 %{block_number: 1, hash_data: "0x0000000000000000000000000000000000000000000000000000000000000001"},
-                 %{block_number: 1, hash_data: "0x0000000000000000000000000000000000000000000000000000000000000001"}
+                 {1, bytes},
+                 {1, bytes}
                ],
                0,
                json_rpc_named_arguments
-             ) ==
-               {:retry,
-                [%{block_number: 1, hash_data: "0x0000000000000000000000000000000000000000000000000000000000000001"}]}
+             ) == {:retry, [{1, bytes}]}
     end
   end
 end
