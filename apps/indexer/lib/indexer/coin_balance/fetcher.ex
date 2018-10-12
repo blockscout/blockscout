@@ -97,14 +97,13 @@ defmodule Indexer.CoinBalance.Fetcher do
     end
   end
 
-  defp entry_to_params(%{address_hash_bytes: address_hash_bytes, block_number: block_number})
-       when is_integer(block_number) do
+  defp entry_to_params({address_hash_bytes, block_number}) when is_integer(block_number) do
     {:ok, address_hash} = Hash.Address.cast(address_hash_bytes)
     %{block_quantity: integer_to_quantity(block_number), hash_data: to_string(address_hash)}
   end
 
   defp entry(%{address_hash: %Hash{bytes: address_hash_bytes}, block_number: block_number}) do
-    %{address_hash_bytes: address_hash_bytes, block_number: block_number}
+    {address_hash_bytes, block_number}
   end
 
   # We want to record all historical balances for an address, but have the address itself have balance from the

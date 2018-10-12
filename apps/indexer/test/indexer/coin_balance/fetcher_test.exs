@@ -252,7 +252,7 @@ defmodule Indexer.CoinBalance.FetcherTest do
       end
 
       {:ok, %Hash{bytes: address_hash_bytes}} = Hash.Address.cast(hash_data)
-      entries = Enum.map(block_quantities, &%{address_hash_bytes: address_hash_bytes, block_number: quantity_to_integer(&1)})
+      entries = Enum.map(block_quantities, &{address_hash_bytes, quantity_to_integer(&1)})
 
       case CoinBalance.Fetcher.run(entries, 0, json_rpc_named_arguments) do
         :ok ->
@@ -286,32 +286,6 @@ defmodule Indexer.CoinBalance.FetcherTest do
           # won't have historical address balances.
           assert {:retry, ^entries} = other
       end
-    end
-
-    test "duplicate entries retry unique entries", %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      hash_data = "0x0000000000000000000000000000000000000000"
-
-      {:ok, %Hash{bytes: bytes}} = Hash.Address.cast(hash_data)
-
-      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
-        EthereumJSONRPC.Mox
-        |> expect(:json_rpc, fn [%{id: id, method: "eth_getBalance", params: [^hash_data, "0x1"]}], _options ->
-          {:ok, [%{id: id, error: %{code: 404, message: "Not Found"}}]}
-        end)
-      end
-
-      assert CoinBalance.Fetcher.run(
-               [%{address_hash_bytes: bytes, block_number: 1}, %{address_hash_bytes: bytes, block_number: 1}],
-               0,
-               json_rpc_named_arguments
-             ) ==
-               {:retry,
-                [
-                  %{
-                    address_hash_bytes: <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>,
-                    block_number: 1
-                  }
-                ]}
     end
   end
 
