@@ -558,6 +558,28 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "finished_indexing?/0" do
+    test "finished indexing" do
+      block = insert(:block, number: 1)
+
+      :transaction
+      |> insert()
+      |> with_block(block, internal_transactions_indexed_at: DateTime.utc_now())
+
+      assert Chain.finished_indexing?()
+    end
+
+    test "not finished indexing" do
+      block = insert(:block, number: 1)
+
+      :transaction
+      |> insert()
+      |> with_block(block)
+
+      refute Chain.finished_indexing?()
+    end
+  end
+
   describe "gas_price/2" do
     test ":wei unit" do
       assert Chain.gas_price(%Transaction{gas_price: %Wei{value: Decimal.new(1)}}, :wei) == Decimal.new(1)
@@ -716,6 +738,28 @@ defmodule Explorer.ChainTest do
       assert Enum.all?(fetched_transactions, fn transaction ->
                hd(transaction.token_transfers).id in [id1, id2]
              end)
+    end
+  end
+
+  describe "indexed_ratio/0" do
+    test "returns indexed ratio" do
+      for index <- 6..10 do
+        insert(:block, number: index)
+      end
+
+      assert 0.5 == Chain.indexed_ratio()
+    end
+
+    test "returns 0 if no blocks" do
+      assert 0 == Chain.indexed_ratio()
+    end
+
+    test "returns 1.0 if fully indexed blocks" do
+      for index <- 1..10 do
+        insert(:block, number: index)
+      end
+
+      assert 1.0 == Chain.indexed_ratio()
     end
   end
 
@@ -1127,23 +1171,16 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "address_to_validation_count/1" do
-    test "returns 0 when there aren't any blocks" do
+  describe "group_block_validations_by_address/0" do
+    test "returns block validations grouped by the address that validated them (`address_hash`)" do
       address = insert(:address)
-
-      assert 0 = Chain.address_to_validation_count(address)
-    end
-
-    test "returns the number of blocks mined by addres" do
-      address = insert(:address)
-      another_address = insert(:address)
 
       insert(:block, miner: address, miner_hash: address.hash)
-      insert(:block, miner: another_address, miner_hash: another_address.hash)
-      insert(:block, miner: another_address, miner_hash: another_address.hash)
 
-      assert 1 = Chain.address_to_validation_count(address)
-      assert 2 = Chain.address_to_validation_count(another_address)
+      results = Chain.group_block_validations_by_address()
+
+      assert length(results) == 1
+      assert results == [{address.hash, 1}]
     end
   end
 

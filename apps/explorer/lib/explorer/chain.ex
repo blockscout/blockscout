@@ -12,8 +12,7 @@ defmodule Explorer.Chain do
       order_by: 3,
       preload: 2,
       where: 2,
-      where: 3,
-      select: 3
+      where: 3
     ]
 
   alias Ecto.Adapters.SQL
@@ -38,7 +37,7 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Block.Reward
   alias Explorer.{PagingOptions, Repo}
-  alias Explorer.Counters.TokenTransferCounter
+  alias Explorer.Counters.{TokenTransferCounter, BlockValidationCounter}
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -556,6 +555,28 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Checks to see if the chain is down indexing based on the transaction from the oldest block having
+  an `internal_transactions_indexed_at` date.
+  """
+  @spec finished_indexing?() :: boolean()
+  def finished_indexing? do
+    min_block_number_transaction = Repo.aggregate(Transaction, :min, :block_number)
+
+    if min_block_number_transaction do
+      Transaction
+      |> where([t], t.block_number == ^min_block_number_transaction and is_nil(t.internal_transactions_indexed_at))
+      |> limit(1)
+      |> Repo.one()
+      |> case do
+        nil -> true
+        _ -> false
+      end
+    else
+      false
+    end
+  end
+
+  @doc """
   The `t:Explorer.Chain.Transaction.t/0` `gas_price` of the `transaction` in `unit`.
   """
   def gas_price(%Transaction{gas_price: gas_price}, unit) do
@@ -802,6 +823,32 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  The percentage of indexed blocks on the chain.
+
+      iex> for index <- 6..10 do
+      ...>   insert(:block, number: index)
+      ...> end
+      iex> Explorer.Chain.indexed_ratio()
+      0.5
+
+  If there are no blocks, the percentage is 0.
+
+      iex> Explorer.Chain.indexed_ratio()
+      0
+
+  """
+  @spec indexed_ratio() :: float()
+  def indexed_ratio do
+    with {:ok, min_block_number} <- min_block_number(),
+         {:ok, max_block_number} <- max_block_number() do
+      indexed_blocks = max_block_number - min_block_number + 1
+      indexed_blocks / max_block_number
+    else
+      {:error, _} -> 0
+    end
+  end
+
+  @doc """
   The number of `t:Explorer.Chain.InternalTransaction.t/0`.
 
       iex> transaction =
@@ -820,31 +867,6 @@ defmodule Explorer.Chain do
   """
   def internal_transaction_count do
     Repo.aggregate(InternalTransaction, :count, :id)
-  end
-
-  @doc """
-  Finds block with greatest number.
-
-      iex> insert(:block, number: 2)
-      iex> insert(:block, number: 1)
-      iex> {:ok, %Explorer.Chain.Block{number: number}} = Explorer.Chain.max_numbered_block()
-      iex> number
-      2
-
-  If there are no blocks `{:error, :not_found}` is returned.
-
-      iex> Explorer.Chain.max_numbered_block()
-      {:error, :not_found}
-
-  """
-  @spec max_numbered_block() :: {:ok, Block.t()} | {:error, :not_found}
-  def max_numbered_block do
-    query = from(block in Block, order_by: [desc: block.number], limit: 1)
-
-    case Repo.one(query) do
-      nil -> {:error, :not_found}
-      block -> {:ok, block}
-    end
   end
 
   @doc """
@@ -920,14 +942,27 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Counts all of the block validations and groups by the `miner_hash`.
+  """
+  def group_block_validations_by_address do
+    query =
+      from(
+        b in Block,
+        join: addr in Address,
+        where: b.miner_hash == addr.hash,
+        select: {b.miner_hash, count(b.miner_hash)},
+        group_by: b.miner_hash
+      )
+
+    Repo.all(query)
+  end
+
+  @doc """
   Counts the number of `t:Explorer.Chain.Block.t/0` validated by the `address`.
   """
   @spec address_to_validation_count(Address.t()) :: non_neg_integer()
   def address_to_validation_count(%Address{hash: hash}) do
-    Block
-    |> where(miner_hash: ^hash)
-    |> select([b], count(b.hash))
-    |> Repo.one()
+    BlockValidationCounter.fetch(hash)
   end
 
   @doc """
@@ -1137,6 +1172,30 @@ defmodule Explorer.Chain do
   @spec max_block_number() :: {:ok, Block.block_number()} | {:error, :not_found}
   def max_block_number do
     case Repo.aggregate(Block, :max, :number) do
+      nil -> {:error, :not_found}
+      number -> {:ok, number}
+    end
+  end
+
+  @doc """
+  The minimum `t:Explorer.Chain.Block.t/0` `number` (used to show loading status while indexing)
+
+  If blocks are skipped and inserted out of number order, the min number is still returned
+
+      iex> insert(:block, number: 2)
+      iex> insert(:block, number: 1)
+      iex> Explorer.Chain.min_block_number()
+      {:ok, 1}
+
+  If there are no blocks, `{:error, :not_found}` is returned
+
+      iex> Explorer.Chain.min_block_number()
+      {:error, :not_found}
+
+  """
+  @spec min_block_number() :: {:ok, Block.block_number()} | {:error, :not_found}
+  def min_block_number do
+    case Repo.aggregate(Block, :min, :number) do
       nil -> {:error, :not_found}
       number -> {:ok, number}
     end

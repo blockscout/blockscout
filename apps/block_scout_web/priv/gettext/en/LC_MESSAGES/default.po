@@ -437,7 +437,7 @@ msgid "Inventory"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:35
+#: lib/block_scout_web/templates/layout/app.html.eex:48
 msgid "Less than"
 msgstr ""
 
@@ -456,7 +456,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:18
-#: lib/block_scout_web/templates/layout/app.html.eex:36
+#: lib/block_scout_web/templates/layout/app.html.eex:49
 #: lib/block_scout_web/views/address_view.ex:102
 msgid "Market Cap"
 msgstr ""
@@ -615,7 +615,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:11
-#: lib/block_scout_web/templates/layout/app.html.eex:37
+#: lib/block_scout_web/templates/layout/app.html.eex:50
 msgid "Price"
 msgstr ""
 
@@ -1158,6 +1158,21 @@ msgid "Uncles"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:34
+#: lib/block_scout_web/templates/layout/app.html.eex:46
 msgid "Block Mined, awaiting import..."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/app.html.eex:31
+msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/app.html.eex:45
+msgid "Blocks Indexed"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/app.html.eex:47
+msgid "Indexing Tokens"
 msgstr ""
