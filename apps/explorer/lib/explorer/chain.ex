@@ -12,8 +12,7 @@ defmodule Explorer.Chain do
       order_by: 3,
       preload: 2,
       where: 2,
-      where: 3,
-      select: 3
+      where: 3
     ]
 
   alias Ecto.Adapters.SQL
@@ -38,7 +37,7 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Block.Reward
   alias Explorer.{PagingOptions, Repo}
-  alias Explorer.Counters.TokenTransferCounter
+  alias Explorer.Counters.{TokenTransferCounter, BlockValidationCounter}
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -943,14 +942,27 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Counts all of the block validations and groups by the `miner_hash`.
+  """
+  def group_block_validations_by_address do
+    query =
+      from(
+        b in Block,
+        join: addr in Address,
+        where: b.miner_hash == addr.hash,
+        select: {b.miner_hash, count(b.miner_hash)},
+        group_by: b.miner_hash
+      )
+
+    Repo.all(query)
+  end
+
+  @doc """
   Counts the number of `t:Explorer.Chain.Block.t/0` validated by the `address`.
   """
   @spec address_to_validation_count(Address.t()) :: non_neg_integer()
   def address_to_validation_count(%Address{hash: hash}) do
-    Block
-    |> where(miner_hash: ^hash)
-    |> select([b], count(b.hash))
-    |> Repo.one()
+    BlockValidationCounter.fetch(hash)
   end
 
   @doc """
