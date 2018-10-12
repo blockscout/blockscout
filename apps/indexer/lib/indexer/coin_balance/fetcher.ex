@@ -29,9 +29,9 @@ defmodule Indexer.CoinBalance.Fetcher do
           %{required(:address_hash) => Hash.Address.t(), required(:block_number) => Block.block_number()}
         ]) :: :ok
   def async_fetch_balances(balance_fields) when is_list(balance_fields) do
-    params_list = Enum.map(balance_fields, &balance_fields_to_params/1)
+    entries = Enum.map(balance_fields, &entry/1)
 
-    BufferedTask.buffer(__MODULE__, params_list)
+    BufferedTask.buffer(__MODULE__, entries)
   end
 
   @doc false
@@ -57,7 +57,7 @@ defmodule Indexer.CoinBalance.Fetcher do
     {:ok, final} =
       Chain.stream_unfetched_balances(initial, fn address_fields, acc ->
         address_fields
-        |> balance_fields_to_params()
+        |> entry()
         |> reducer.(acc)
       end)
 
@@ -65,14 +65,17 @@ defmodule Indexer.CoinBalance.Fetcher do
   end
 
   @impl BufferedTask
-  def run(params_list, _retries, json_rpc_named_arguments) do
+  def run(entries, _retries, json_rpc_named_arguments) do
     # the same address may be used more than once in the same block, but we only want one `Balance` for a given
     # `{address, block}`, so take unique params only
-    unique_params_list = Enum.uniq(params_list)
+    unique_entries = Enum.uniq(entries)
 
-    Logger.debug(fn -> "fetching #{length(unique_params_list)} balances" end)
+    Logger.debug(fn -> "fetching #{length(unique_entries)} balances" end)
 
-    case EthereumJSONRPC.fetch_balances(unique_params_list, json_rpc_named_arguments) do
+    unique_entries
+    |> Enum.map(&entry_to_params/1)
+    |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments)
+    |> case do
       {:ok, balances_params} ->
         value_fetched_at = DateTime.utc_now()
 
@@ -89,14 +92,19 @@ defmodule Indexer.CoinBalance.Fetcher do
         :ok
 
       {:error, reason} ->
-        Logger.debug(fn -> "failed to fetch #{length(unique_params_list)} balances, #{inspect(reason)}" end)
-        {:retry, unique_params_list}
+        Logger.debug(fn -> "failed to fetch #{length(unique_entries)} balances, #{inspect(reason)}" end)
+        {:retry, unique_entries}
     end
   end
 
-  defp balance_fields_to_params(%{address_hash: address_hash, block_number: block_number})
+  defp entry_to_params(%{address_hash_bytes: address_hash_bytes, block_number: block_number})
        when is_integer(block_number) do
+    {:ok, address_hash} = Hash.Address.cast(address_hash_bytes)
     %{block_quantity: integer_to_quantity(block_number), hash_data: to_string(address_hash)}
+  end
+
+  defp entry(%{address_hash: %Hash{bytes: address_hash_bytes}, block_number: block_number}) do
+    %{address_hash_bytes: address_hash_bytes, block_number: block_number}
   end
 
   # We want to record all historical balances for an address, but have the address itself have balance from the

@@ -251,9 +251,10 @@ defmodule Indexer.CoinBalance.FetcherTest do
         end)
       end
 
-      params_list = Enum.map(block_quantities, &%{block_quantity: &1, hash_data: hash_data})
+      {:ok, %Hash{bytes: address_hash_bytes}} = Hash.Address.cast(hash_data)
+      entries = Enum.map(block_quantities, &%{address_hash_bytes: address_hash_bytes, block_number: quantity_to_integer(&1)})
 
-      case CoinBalance.Fetcher.run(params_list, 0, json_rpc_named_arguments) do
+      case CoinBalance.Fetcher.run(entries, 0, json_rpc_named_arguments) do
         :ok ->
           balances = Repo.all(from(balance in Address.CoinBalance, where: balance.address_hash == ^hash_data))
 
@@ -283,12 +284,14 @@ defmodule Indexer.CoinBalance.FetcherTest do
         other ->
           # not all nodes behind the `https://mainnet.infura.io` pool are fully-synced.  Node that aren't fully-synced
           # won't have historical address balances.
-          assert {:retry, ^params_list} = other
+          assert {:retry, ^entries} = other
       end
     end
 
-    test "duplicate params retry unique params", %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      hash_data = "0x000000000000000000000000000000000"
+    test "duplicate entries retry unique entries", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      hash_data = "0x0000000000000000000000000000000000000000"
+
+      {:ok, %Hash{bytes: bytes}} = Hash.Address.cast(hash_data)
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         EthereumJSONRPC.Mox
@@ -298,15 +301,15 @@ defmodule Indexer.CoinBalance.FetcherTest do
       end
 
       assert CoinBalance.Fetcher.run(
-               [%{block_quantity: "0x1", hash_data: hash_data}, %{block_quantity: "0x1", hash_data: hash_data}],
+               [%{address_hash_bytes: bytes, block_number: 1}, %{address_hash_bytes: bytes, block_number: 1}],
                0,
                json_rpc_named_arguments
              ) ==
                {:retry,
                 [
                   %{
-                    block_quantity: "0x1",
-                    hash_data: "0x000000000000000000000000000000000"
+                    address_hash_bytes: <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>,
+                    block_number: 1
                   }
                 ]}
     end

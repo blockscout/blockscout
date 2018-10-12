@@ -5,7 +5,7 @@ defmodule Indexer.Block.Fetcher do
 
   require Logger
 
-  alias Explorer.Chain.{Block, Import}
+  alias Explorer.Chain.{Address, Block, Import}
   alias Indexer.{CoinBalance, AddressExtraction, Token, TokenTransfers}
   alias Indexer.Address.{CoinBalances, TokenBalances}
   alias Indexer.Block.Fetcher.Receipts
@@ -164,7 +164,7 @@ defmodule Indexer.Block.Fetcher do
         address_hash_to_fetched_balance_block_number: address_hash_to_block_number
       }) do
     addresses
-    |> Enum.map(fn address_hash ->
+    |> Enum.map(fn %Address{hash: address_hash} ->
       block_number = Map.fetch!(address_hash_to_block_number, to_string(address_hash))
       %{address_hash: address_hash, block_number: block_number}
     end)
