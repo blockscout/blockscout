@@ -61,11 +61,26 @@
           </div>
         </div>
         <h2 class="card-title"><%= gettext "Transactions" %></h2>
-        <div class="mb-3" data-selector="pending-transactions-list">
-          <%= for pending_transaction <- @pending_transactions do %>
-            <%= render(BlockScoutWeb.TransactionView, "_tile.html", current_address: @address, transaction: pending_transaction) %>
-          <% end %>
-        </div>
+        <span data-selector="pending-transactions-toggle">
+          <%= link(
+            gettext("Show %{count} Pending Transactions", count: length(@pending_transactions)),
+            to: "#pending-transactions",
+            "data-toggle": "collapse",
+            "data-selector": "pending-transactions-open"
+          ) %>
+          <%= link(
+            gettext("Hide %{count} Pending Transactions", count: length(@pending_transactions)),
+            to: "#pending-transactions",
+            class: "d-none",
+            "data-toggle": "collapse",
+            "data-selector": "pending-transactions-close"
+          ) %>
+          <div class="mb-3 collapse" id="pending-transactions" data-selector="pending-transactions-list">
+            <%= for pending_transaction <- @pending_transactions do %>
+              <%= render(BlockScoutWeb.TransactionView, "_tile.html", current_address: @address, transaction: pending_transaction) %>
+            <% end %>
+          </div>
+        </span>
         <%= if Enum.count(@transactions) > 0 do %>
           <span data-selector="transactions-list">
             <%= for transaction <- @transactions do %>
