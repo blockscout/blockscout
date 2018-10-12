@@ -558,6 +558,28 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "finished_indexing?/0" do
+    test "finished indexing" do
+      block = insert(:block, number: 1)
+
+      :transaction
+      |> insert()
+      |> with_block(block, internal_transactions_indexed_at: DateTime.utc_now())
+
+      assert Chain.finished_indexing?()
+    end
+
+    test "not finished indexing" do
+      block = insert(:block, number: 1)
+
+      :transaction
+      |> insert()
+      |> with_block(block)
+
+      refute Chain.finished_indexing?()
+    end
+  end
+
   describe "gas_price/2" do
     test ":wei unit" do
       assert Chain.gas_price(%Transaction{gas_price: %Wei{value: Decimal.new(1)}}, :wei) == Decimal.new(1)
@@ -716,6 +738,28 @@ defmodule Explorer.ChainTest do
       assert Enum.all?(fetched_transactions, fn transaction ->
                hd(transaction.token_transfers).id in [id1, id2]
              end)
+    end
+  end
+
+  describe "indexed_ratio/0" do
+    test "returns indexed ratio" do
+      for index <- 6..10 do
+        insert(:block, number: index)
+      end
+
+      assert 0.5 == Chain.indexed_ratio()
+    end
+
+    test "returns 0 if no blocks" do
+      assert 0 == Chain.indexed_ratio()
+    end
+
+    test "returns 1.0 if fully indexed blocks" do
+      for index <- 1..10 do
+        insert(:block, number: index)
+      end
+
+      assert 1.0 == Chain.indexed_ratio()
     end
   end
 

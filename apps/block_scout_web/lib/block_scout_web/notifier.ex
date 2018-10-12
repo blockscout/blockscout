@@ -16,6 +16,22 @@ defmodule BlockScoutWeb.Notifier do
     |> Enum.each(&broadcast_balance/1)
   end
 
+  def handle_event({:chain_event, :blocks, :catchup, _blocks}) do
+    ratio = Chain.indexed_ratio()
+
+    finished? =
+      if ratio < 1 do
+        false
+      else
+        Chain.finished_indexing?()
+      end
+
+    Endpoint.broadcast("blocks:indexing", "index_status", %{
+      ratio: ratio,
+      finished: finished?
+    })
+  end
+
   def handle_event({:chain_event, :blocks, :realtime, blocks}) do
     Enum.each(blocks, &broadcast_block/1)
   end
