@@ -3,8 +3,8 @@
   <div>
     <button class="nounderline tile tile-type-api-documentation" data-toggle="collapse" href="#<%= action_tile_id(@module_name, @action.name) %>" role="button" aria-expanded="false" aria-controls="<%= action_tile_id(@module_name, @action.name) %>">
       <h3>
-        <span class="badge badge-secondary tile-badge float-right"><%= gettext "POST" %></span>
-        <span class="badge badge-primary tile-badge float-right mr-1"><%= gettext "GET" %></span>
+        <span class="badge badge-primary tile-badge float-right"><%= gettext "POST" %></span>
+        <span class="badge badge-dark tile-badge float-right mr-1"><%= gettext "GET" %></span>
         <strong class="tile-label"><%= @action.name %></strong>
       </h3>
       <h4 class="text-dark"><span data-selector="stop-propagation"><%= raw @action.description %></span></h4>

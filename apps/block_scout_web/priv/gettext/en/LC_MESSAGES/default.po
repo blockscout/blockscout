@@ -267,7 +267,7 @@ msgid "Copy Txn Hash"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:15
+#: lib/block_scout_web/templates/layout/_footer.html.eex:18
 msgid "Copyright %{year} POA"
 msgstr ""
 
@@ -383,7 +383,7 @@ msgid "Gas Used"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:4
+#: lib/block_scout_web/templates/layout/_footer.html.eex:7
 msgid "Github"
 msgstr ""
 
@@ -716,7 +716,7 @@ msgid "TX Fee"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:10
+#: lib/block_scout_web/templates/layout/_footer.html.eex:13
 msgid "Telegram"
 msgstr ""
 
@@ -904,7 +904,7 @@ msgid "Try it out"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:7
+#: lib/block_scout_web/templates/layout/_footer.html.eex:10
 msgid "Twitter"
 msgstr ""
 

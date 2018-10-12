@@ -23,6 +23,19 @@ $footer-text-color: rgba($white, 0.7);
   position: relative;
 }
 
+.footer-brand {
+  display: block;
+  position: absolute;
+  left: 0;
+  font-size: 1.25rem;
+  line-height: inherit;
+  white-space: nowrap;
+}
+
+.footer-logo {
+  height: 1.5em;
+}
+
 .footer .icon-links {
   position: absolute;
   right: 0;

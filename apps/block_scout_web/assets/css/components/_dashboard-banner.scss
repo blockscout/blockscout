@@ -68,18 +68,18 @@
 .dashboard-banner-chart-legend {
   grid-area: legend;
   display: flex;
-  padding: 1rem 1rem;
+  padding: 1rem 0.3rem;
 
   &-item {
     padding-left: 0.5rem;
     flex-grow: 1;
 
     &:first-of-type {
-      border-left: 4px solid $secondary;
+      border-left: 4px solid $primary;
     }
 
     &:last-of-type {
-      border-left: 4px solid $primary;
+      border-left: 4px solid $secondary;
     }
   }
 

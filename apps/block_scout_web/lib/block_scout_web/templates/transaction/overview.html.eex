@@ -100,7 +100,7 @@
             <h3 class="text-white">
               <%= value(@transaction) %>
             </h3>
-            <span class="text-light" data-wei-value=<%= @transaction.value.value %> data-usd-exchange-rate=<%= @exchange_rate.usd_value %>></span>
+            <span class="text-white text-faded" data-wei-value=<%= @transaction.value.value %> data-usd-exchange-rate=<%= @exchange_rate.usd_value %>></span>
           </div>
         </div>
       </div>

@@ -93,6 +93,10 @@ label, textarea.form-control {
     &-internal-transaction {
       color: $teal;
     }
+
+    &-faded {
+      opacity: 0.7;
+    }
 }
 
 [data-transaction-status="Success"] {
