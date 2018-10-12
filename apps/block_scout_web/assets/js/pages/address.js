@@ -36,7 +36,7 @@ export function reducer (state = initialState, action) {
         beyondPageOne: action.beyondPageOne,
         filter: action.filter,
         transactionCount: numeral(action.transactionCount).value(),
-        validationCount: action.transactionCount ? numeral(action.transactionCount).value() : null
+        validationCount: action.validationCount ? numeral(action.validationCount).value() : null
       })
     }
     case 'CHANNEL_DISCONNECTED': {
