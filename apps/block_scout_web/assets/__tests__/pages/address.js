@@ -6,26 +6,30 @@ describe('PAGE_LOAD', () => {
     const action = {
       type: 'PAGE_LOAD',
       addressHash: '1234',
-      beyondPageOne: false
+      beyondPageOne: false,
+      pendingTransactionHashes: ['1']
     }
     const output = reducer(state, action)
 
     expect(output.addressHash).toBe('1234')
     expect(output.beyondPageOne).toBe(false)
     expect(output.filter).toBe(undefined)
+    expect(output.pendingTransactionHashes).toEqual(['1'])
   })
   test('page 2 without filter', () => {
     const state = initialState
     const action = {
       type: 'PAGE_LOAD',
+      addressHash: '1234',
       beyondPageOne: true,
-      addressHash: '1234'
+      pendingTransactionHashes: ['1']
     }
     const output = reducer(state, action)
 
     expect(output.addressHash).toBe('1234')
-    expect(output.filter).toBe(undefined)
     expect(output.beyondPageOne).toBe(true)
+    expect(output.filter).toBe(undefined)
+    expect(output.pendingTransactionHashes).toEqual(['1'])
   })
   test('page 1 with "to" filter', () => {
     const state = initialState
@@ -38,22 +42,22 @@ describe('PAGE_LOAD', () => {
     const output = reducer(state, action)
 
     expect(output.addressHash).toBe('1234')
-    expect(output.filter).toBe('to')
     expect(output.beyondPageOne).toBe(false)
+    expect(output.filter).toBe('to')
   })
   test('page 2 with "to" filter', () => {
     const state = initialState
     const action = {
       type: 'PAGE_LOAD',
-      beyondPageOne: true,
       addressHash: '1234',
+      beyondPageOne: true,
       filter: 'to'
     }
     const output = reducer(state, action)
 
     expect(output.addressHash).toBe('1234')
-    expect(output.filter).toBe('to')
     expect(output.beyondPageOne).toBe(true)
+    expect(output.filter).toBe('to')
   })
 })
 
@@ -139,7 +143,7 @@ describe('RECEIVED_NEW_PENDING_TRANSACTION_BATCH', () => {
     const output = reducer(state, action)
 
     expect(output.newPendingTransactions).toEqual([])
-    expect(output.newPendingTransactionHashesBatch).toEqual([
+    expect(output.pendingTransactionHashes).toEqual([
       "0x01", "0x02", "0x03", "0x04", "0x05", "0x06", "0x07", "0x08", "0x09", "0x10", "0x11"
     ])
     expect(output.batchCountAccumulator).toEqual(0)
@@ -159,11 +163,11 @@ describe('RECEIVED_NEW_PENDING_TRANSACTION_BATCH', () => {
     const output = reducer(state, action)
 
     expect(output.newPendingTransactions).toEqual(['test 1', 'test 2'])
-    expect(output.newPendingTransactionHashesBatch.length).toEqual(0)
+    expect(output.pendingTransactionHashes.length).toEqual(0)
   })
   test('single transaction after large batch of transactions', () => {
     const state = Object.assign({}, initialState, {
-      newPendingTransactionHashesBatch: [
+      pendingTransactionHashes: [
         "0x01", "0x02", "0x03", "0x04", "0x05", "0x06", "0x07", "0x08", "0x09", "0x10", "0x11"
       ]
     })
@@ -177,12 +181,12 @@ describe('RECEIVED_NEW_PENDING_TRANSACTION_BATCH', () => {
     const output = reducer(state, action)
 
     expect(output.newPendingTransactions).toEqual([])
-    expect(output.newPendingTransactionHashesBatch.length).toEqual(12)
-    expect(output.newPendingTransactionHashesBatch).toContain('0x12')
+    expect(output.pendingTransactionHashes.length).toEqual(12)
+    expect(output.pendingTransactionHashes).toContain('0x12')
   })
   test('large batch of transactions after large batch of transactions', () => {
     const state = Object.assign({}, initialState, {
-      newPendingTransactionHashesBatch: [
+      pendingTransactionHashes: [
         "0x01", "0x02", "0x03", "0x04", "0x05", "0x06", "0x07", "0x08", "0x09", "0x10", "0x11"
       ]
     })
@@ -226,7 +230,7 @@ describe('RECEIVED_NEW_PENDING_TRANSACTION_BATCH', () => {
     const output = reducer(state, action)
 
     expect(output.newPendingTransactions).toEqual([])
-    expect(output.newPendingTransactionHashesBatch.length).toEqual(22)
+    expect(output.pendingTransactionHashes.length).toEqual(22)
   })
   test('after disconnection', () => {
     const state = Object.assign({}, initialState, {
@@ -242,7 +246,7 @@ describe('RECEIVED_NEW_PENDING_TRANSACTION_BATCH', () => {
     const output = reducer(state, action)
 
     expect(output.newPendingTransactions).toEqual([])
-    expect(output.newPendingTransactionHashesBatch).toEqual([])
+    expect(output.pendingTransactionHashes).toEqual([])
   })
   test('on page 2', () => {
     const state = Object.assign({}, initialState, {
@@ -258,7 +262,7 @@ describe('RECEIVED_NEW_PENDING_TRANSACTION_BATCH', () => {
     const output = reducer(state, action)
 
     expect(output.newPendingTransactions).toEqual([])
-    expect(output.newPendingTransactionHashesBatch).toEqual([])
+    expect(output.pendingTransactionHashes).toEqual([])
     expect(output.batchCountAccumulator).toEqual(0)
   })
 })

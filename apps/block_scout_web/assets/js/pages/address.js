@@ -35,7 +35,7 @@ export const initialState = {
   newPendingTransactions: [],
   newTransactions: [],
   newTransactionHashes: [],
-  newPendingTransactionHashesBatch: [],
+  pendingTransactionHashes: [],
   transactionCount: null,
   validationCount: null
 }
@@ -47,6 +47,7 @@ export function reducer (state = initialState, action) {
         addressHash: action.addressHash,
         beyondPageOne: action.beyondPageOne,
         filter: action.filter,
+        pendingTransactionHashes: action.pendingTransactionHashes,
         transactionCount: numeral(action.transactionCount).value(),
         validationCount: action.validationCount ? numeral(action.validationCount).value() : null
       })
@@ -102,7 +103,7 @@ export function reducer (state = initialState, action) {
           (state.filter === 'to' && toAddressHash === state.addressHash) ||
           (state.filter === 'from' && fromAddressHash === state.addressHash)
         ))
-      if (!state.newPendingTransactionHashesBatch.length && incomingPendingTransactions.length < BATCH_THRESHOLD) {
+      if (!state.pendingTransactionHashes.length && incomingPendingTransactions.length < BATCH_THRESHOLD) {
         return Object.assign({}, state, {
           newPendingTransactions: [
             ...state.newPendingTransactions,
@@ -111,8 +112,8 @@ export function reducer (state = initialState, action) {
         })
       } else {
         return Object.assign({}, state, {
-          newPendingTransactionHashesBatch: [
-            ...state.newPendingTransactionHashesBatch,
+          pendingTransactionHashes: [
+            ...state.pendingTransactionHashes,
             ..._.map(incomingPendingTransactions, 'transactionHash')
           ]
         })
@@ -132,8 +133,8 @@ export function reducer (state = initialState, action) {
           (state.filter === 'from' && fromAddressHash === state.addressHash)
         ))
 
-      const updatedPendingTransactionHashesBatch =
-        _.difference(state.newPendingTransactionHashesBatch, _.map(incomingTransactions, 'transactionHash'))
+      const updatedPendingTransactionHashes =
+        _.difference(state.pendingTransactionHashes, _.map(incomingTransactions, 'transactionHash'))
 
       if (!state.batchCountAccumulator && incomingTransactions.length < BATCH_THRESHOLD) {
         return Object.assign({}, state, {
@@ -142,14 +143,14 @@ export function reducer (state = initialState, action) {
             ..._.map(incomingTransactions, 'transactionHtml')
           ],
           newTransactionHashes: _.map(incomingTransactions, 'transactionHash'),
-          newPendingTransactionHashesBatch: updatedPendingTransactionHashesBatch,
+          pendingTransactionHashes: updatedPendingTransactionHashes,
           transactionCount: transactionCount
         })
       } else {
         return Object.assign({}, state, {
           batchCountAccumulator: state.batchCountAccumulator + incomingTransactions.length,
           newTransactionHashes: _.map(incomingTransactions, 'transactionHash'),
-          newPendingTransactionHashesBatch: updatedPendingTransactionHashesBatch,
+          pendingTransactionHashes: updatedPendingTransactionHashes,
           transactionCount: transactionCount
         })
       }
@@ -176,6 +177,8 @@ if ($addressDetailsPage.length) {
         addressHash,
         beyondPageOne: !!blockNumber,
         filter,
+        pendingTransactionHashes: $('[data-selector="pending-transactions-list"]')
+          .map((index, el) => el.dataset.transactionHash).toArray(),
         transactionCount: $('[data-selector="transaction-count"]').text(),
         validationCount: $('[data-selector="validation-count"]') ? $('[data-selector="validation-count"]').text() : null
       })
