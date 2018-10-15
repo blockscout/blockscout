@@ -106,6 +106,10 @@ export function reducer (state = initialState, action) {
         newPendingTransactions: [
           ...state.newPendingTransactions,
           action.msg.transactionHtml
+        ],
+        pendingTransactionHashes: [
+          ...state.pendingTransactionHashes,
+          action.msg.transactionHash
         ]
       })
     }
@@ -155,7 +159,7 @@ if ($addressDetailsPage.length) {
         addressHash,
         beyondPageOne: !!blockNumber,
         filter,
-        pendingTransactionHashes: $('[data-selector="pending-transactions-list"]')
+        pendingTransactionHashes: $('[data-selector="pending-transactions-list"]').children()
           .map((index, el) => el.dataset.transactionHash).toArray(),
         transactionCount: $('[data-selector="transaction-count"]').text(),
         validationCount: $('[data-selector="validation-count"]') ? $('[data-selector="validation-count"]').text() : null
@@ -183,6 +187,7 @@ if ($addressDetailsPage.length) {
       const $emptyInternalTransactionsList = $('[data-selector="empty-internal-transactions-list"]')
       const $emptyTransactionsList = $('[data-selector="empty-transactions-list"]')
       const $internalTransactionsList = $('[data-selector="internal-transactions-list"]')
+      const $pendingTransactionsCount = $('[data-selector="pending-transactions-count"]')
       const $pendingTransactionsList = $('[data-selector="pending-transactions-list"]')
       const $transactionCount = $('[data-selector="transaction-count"]')
       const $transactionsList = $('[data-selector="transactions-list"]')
@@ -213,6 +218,9 @@ if ($addressDetailsPage.length) {
       if (oldState.newInternalTransactions !== state.newInternalTransactions && $internalTransactionsList.length) {
         prependWithClingBottom($internalTransactionsList, state.newInternalTransactions.slice(oldState.newInternalTransactions.length).reverse().join(''))
         updateAllAges()
+      }
+      if (oldState.pendingTransactionHashes.length !== state.pendingTransactionHashes.length && $pendingTransactionsCount.length) {
+        $pendingTransactionsCount[0].innerHTML = numeral(state.pendingTransactionHashes.length).format()
       }
       if (oldState.newPendingTransactions !== state.newPendingTransactions && $pendingTransactionsList.length) {
         prependWithClingBottom($pendingTransactionsList, state.newPendingTransactions.slice(oldState.newPendingTransactions.length).reverse().join(''))

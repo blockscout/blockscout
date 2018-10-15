@@ -52,11 +52,11 @@
         </div>
         <h2 class="card-title"><%= gettext "Transactions" %></h2>
         <span data-selector="pending-transactions-toggle">
+          <span data-selector="pending-transactions-count"><%= length(@pending_transactions) %></span>
+          <%= gettext("Pending Transactions") %>
           <%= link to: "#pending-transactions", "data-toggle": "collapse" do %>
             <span data-selector="pending-transactions-open"><%= gettext("Show") %></span>
             <span data-selector="pending-transactions-close" class="d-none"><%= gettext("Hide") %></span>
-            <span data-selector="pending-transactions-count"><%= length(@pending_transactions) %></span>
-            <%= gettext("Pending Transactions") %>
           <% end %>
           <div class="mb-3 collapse" id="pending-transactions" data-selector="pending-transactions-list">
             <%= for pending_transaction <- @pending_transactions do %>

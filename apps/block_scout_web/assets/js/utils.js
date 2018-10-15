@@ -56,13 +56,13 @@ export function slideDownBefore ($el, content, callback) {
   $content.slideDown({ complete: callback })
 }
 export function prependWithClingBottom ($el, content) {
-  return slideDownPrepend($el, content, clingBottom($el, content))
+  return slideDownPrepend($el, content, clingBottom($el))
 }
 export function beforeWithClingBottom ($el, content) {
-  return slideDownBefore($el, content, clingBottom($el, content))
+  return slideDownBefore($el, content, clingBottom($el))
 }
 
-function clingBottom ($el, content) {
+function clingBottom ($el) {
   function userAtTop () {
     return window.scrollY < $('[data-selector="navbar"]').outerHeight()
   }
