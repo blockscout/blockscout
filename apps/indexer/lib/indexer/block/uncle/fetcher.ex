@@ -82,18 +82,35 @@ defmodule Indexer.Block.Uncle.Fetcher do
         addresses_params =
           AddressExtraction.extract_addresses(%{blocks: blocks_params, transactions: transactions_params})
 
-        {:ok, _} =
-          Block.Fetcher.import(block_fetcher, %{
-            addresses: %{params: addresses_params},
-            blocks: %{params: blocks_params},
-            block_second_degree_relations: %{params: block_second_degree_relations_params},
-            transactions: %{params: transactions_params, on_conflict: :nothing}
-          })
+        case Block.Fetcher.import(block_fetcher, %{
+               addresses: %{params: addresses_params},
+               blocks: %{params: blocks_params},
+               block_second_degree_relations: %{params: block_second_degree_relations_params},
+               transactions: %{params: transactions_params, on_conflict: :nothing}
+             }) do
+          {:ok, _} ->
+            :ok
 
-        :ok
+          {:error, step, failed_value, _changes_so_far} ->
+            Logger.error(fn ->
+              [
+                "failed to import ",
+                unique_hashes |> length() |> to_string(),
+                "uncle blocks in step ",
+                inspect(step),
+                ": ",
+                inspect(failed_value)
+              ]
+            end)
+
+            {:retry, unique_hashes}
+        end
 
       {:error, reason} ->
-        Logger.debug(fn -> "failed to fetch #{length(unique_hashes)} uncle blocks, #{inspect(reason)}" end)
+        Logger.error(fn ->
+          ["failed to fetch ", unique_hashes |> length |> to_string(), " uncle blocks: ", inspect(reason)]
+        end)
+
         {:retry, unique_hashes}
     end
   end
