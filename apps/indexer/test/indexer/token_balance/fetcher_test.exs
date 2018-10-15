@@ -4,26 +4,37 @@ defmodule Indexer.TokenBalance.FetcherTest do
 
   import Mox
 
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, Hash}
   alias Indexer.TokenBalance
+
+  @moduletag :capture_log
 
   setup :verify_on_exit!
   setup :set_mox_global
 
   describe "init/3" do
     test "returns unfetched token balances" do
-      %Address.TokenBalance{address_hash: address_hash} =
-        insert(:token_balance, block_number: 1_000, value_fetched_at: nil)
+      %Address.TokenBalance{
+        address_hash: %Hash{bytes: address_hash_bytes},
+        token_contract_address_hash: %Hash{bytes: token_contract_address_hash_bytes},
+        block_number: block_number
+      } = insert(:token_balance, block_number: 1_000, value_fetched_at: nil)
 
       insert(:token_balance, value_fetched_at: DateTime.utc_now())
 
-      assert TokenBalance.Fetcher.init([], &[&1.address_hash | &2], nil) == [address_hash]
+      assert TokenBalance.Fetcher.init([], &[&1 | &2], nil) == [
+               {address_hash_bytes, token_contract_address_hash_bytes, block_number}
+             ]
     end
   end
 
   describe "run/3" do
     test "imports the given token balances" do
-      token_balance = insert(:token_balance, value_fetched_at: nil, value: nil)
+      %Address.TokenBalance{
+        address_hash: %Hash{bytes: address_hash_bytes} = address_hash,
+        token_contract_address_hash: %Hash{bytes: token_contract_address_hash_bytes},
+        block_number: block_number
+      } = insert(:token_balance, value_fetched_at: nil, value: nil)
 
       expect(
         EthereumJSONRPC.Mox,
@@ -40,11 +51,10 @@ defmodule Indexer.TokenBalance.FetcherTest do
         end
       )
 
-      assert TokenBalance.Fetcher.run([token_balance], 0, nil) == :ok
+      assert TokenBalance.Fetcher.run([{address_hash_bytes, token_contract_address_hash_bytes, block_number}], 0, nil) ==
+               :ok
 
-      token_balance_updated =
-        Address.TokenBalance
-        |> Explorer.Repo.get_by(address_hash: token_balance.address_hash)
+      token_balance_updated = Explorer.Repo.get_by(Address.TokenBalance, address_hash: address_hash)
 
       assert token_balance_updated.value == Decimal.new(1_000_000_000_000_000_000_000_000)
       assert token_balance_updated.value_fetched_at != nil

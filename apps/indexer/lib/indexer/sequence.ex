@@ -182,8 +182,8 @@ defmodule Indexer.Sequence do
   def handle_call(:pop, _from, %__MODULE__{queue: queue, current: current, step: step} = state) do
     {reply, new_state} =
       case {current, :queue.out(queue)} do
-        {_, {{:value, range}, new_queue}} ->
-          {range, %__MODULE__{state | queue: new_queue}}
+        {_, {{:value, {first, last}}, new_queue}} ->
+          {first..last, %__MODULE__{state | queue: new_queue}}
 
         {nil, {:empty, new_queue}} ->
           {:halt, %__MODULE__{state | queue: new_queue}}
@@ -251,8 +251,8 @@ defmodule Indexer.Sequence do
     {:error, "Range (#{inspect(range)}) direction is opposite step (#{step}) direction"}
   end
 
-  defp reduce_chunked_range(_.._ = range, count, step, initial, reducer) when count <= abs(step) do
-    {:ok, reducer.(range, initial)}
+  defp reduce_chunked_range(first..last, count, step, initial, reducer) when count <= abs(step) do
+    {:ok, reducer.({first, last}, initial)}
   end
 
   defp reduce_chunked_range(first..last, _, step, initial, reducer) do
@@ -277,7 +277,7 @@ defmodule Indexer.Sequence do
             {:cont, full_chunk_last}
           end
 
-        {action, reducer.(chunk_first..chunk_last, acc)}
+        {action, reducer.({chunk_first, chunk_last}, acc)}
       end)
 
     {:ok, final}

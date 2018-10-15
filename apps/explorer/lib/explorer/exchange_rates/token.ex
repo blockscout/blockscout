@@ -28,7 +28,50 @@ defmodule Explorer.ExchangeRates.Token do
           volume_24h_usd: Decimal.t()
         }
 
+  @enforce_keys ~w(available_supply btc_value id last_updated market_cap_usd name symbol usd_value volume_24h_usd)a
   defstruct ~w(available_supply btc_value id last_updated market_cap_usd name symbol usd_value volume_24h_usd)a
 
-  def null, do: %__MODULE__{}
+  def null,
+    do: %__MODULE__{
+      symbol: nil,
+      id: nil,
+      name: nil,
+      available_supply: nil,
+      usd_value: nil,
+      volume_24h_usd: nil,
+      market_cap_usd: nil,
+      btc_value: nil,
+      last_updated: nil
+    }
+
+  def to_tuple(%__MODULE__{
+        symbol: symbol,
+        id: id,
+        name: name,
+        available_supply: available_supply,
+        usd_value: usd_value,
+        volume_24h_usd: volume_24h_usd,
+        market_cap_usd: market_cap_usd,
+        btc_value: btc_value,
+        last_updated: last_updated
+      }) do
+    # symbol is first because it is the key used for lookup in `Explorer.ExchangeRates`'s ETS table
+    {symbol, id, name, available_supply, usd_value, volume_24h_usd, market_cap_usd, btc_value, last_updated}
+  end
+
+  def from_tuple(
+        {symbol, id, name, available_supply, usd_value, volume_24h_usd, market_cap_usd, btc_value, last_updated}
+      ) do
+    %__MODULE__{
+      symbol: symbol,
+      id: id,
+      name: name,
+      available_supply: available_supply,
+      usd_value: usd_value,
+      volume_24h_usd: volume_24h_usd,
+      market_cap_usd: market_cap_usd,
+      btc_value: btc_value,
+      last_updated: last_updated
+    }
+  end
 end

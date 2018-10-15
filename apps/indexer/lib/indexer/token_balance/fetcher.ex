@@ -20,8 +20,9 @@ defmodule Indexer.TokenBalance.Fetcher do
   ]
 
   @spec async_fetch([%TokenBalance{}]) :: :ok
-  def async_fetch(token_balances_params) do
-    BufferedTask.buffer(__MODULE__, token_balances_params, :infinity)
+  def async_fetch(token_balances) do
+    formatted_params = Enum.map(token_balances, &entry/1)
+    BufferedTask.buffer(__MODULE__, formatted_params, :infinity)
   end
 
   @doc false
@@ -45,34 +46,34 @@ defmodule Indexer.TokenBalance.Fetcher do
   @impl BufferedTask
   def init(initial, reducer, _) do
     {:ok, final} =
-      Chain.stream_unfetched_token_balances(initial, fn token_balances_params, acc ->
-        reducer.(token_balances_params, acc)
+      Chain.stream_unfetched_token_balances(initial, fn token_balance, acc ->
+        token_balance
+        |> entry()
+        |> reducer.(acc)
       end)
 
     final
   end
 
   @impl BufferedTask
-  def run(token_balances, _retries, _json_rpc_named_arguments) do
-    Logger.debug(fn -> "fetching #{length(token_balances)} token balances" end)
+  def run(entries, _retries, _json_rpc_named_arguments) do
+    Logger.debug(fn -> "fetching #{length(entries)} token balances" end)
 
     result =
-      token_balances
-      |> fetch_from_blockchain
-      |> import_token_balances
+      entries
+      |> Enum.map(&format_params/1)
+      |> fetch_from_blockchain()
+      |> import_token_balances()
 
     if result == :ok do
       :ok
     else
-      {:retry, token_balances}
+      {:retry, entries}
     end
   end
 
-  def fetch_from_blockchain(token_balances) do
-    {:ok, token_balances} =
-      token_balances
-      |> Stream.map(&format_params/1)
-      |> TokenBalances.fetch_token_balances_from_blockchain()
+  def fetch_from_blockchain(params_list) do
+    {:ok, token_balances} = TokenBalances.fetch_token_balances_from_blockchain(params_list)
 
     TokenBalances.log_fetching_errors(__MODULE__, token_balances)
 
@@ -91,14 +92,21 @@ defmodule Indexer.TokenBalance.Fetcher do
     end
   end
 
-  defp format_params(%TokenBalance{
+  defp entry(%TokenBalance{
          token_contract_address_hash: token_contract_address_hash,
          address_hash: address_hash,
          block_number: block_number
        }) do
+    {address_hash.bytes, token_contract_address_hash.bytes, block_number}
+  end
+
+  defp format_params({address_hash_bytes, token_contract_address_hash_bytes, block_number}) do
+    {:ok, token_contract_address_hash} = Hash.Address.cast(token_contract_address_hash_bytes)
+    {:ok, address_hash} = Hash.Address.cast(address_hash_bytes)
+
     %{
-      token_contract_address_hash: Hash.to_string(token_contract_address_hash),
-      address_hash: Hash.to_string(address_hash),
+      token_contract_address_hash: to_string(token_contract_address_hash),
+      address_hash: to_string(address_hash),
       block_number: block_number
     }
   end
