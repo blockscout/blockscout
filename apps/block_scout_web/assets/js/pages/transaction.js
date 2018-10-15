@@ -189,12 +189,6 @@ if ($transactionPendingListPage.length) {
       }
       if (oldState.newPendingTransactions !== state.newPendingTransactions) {
         const newTransactionsToInsert = state.newPendingTransactions.slice(oldState.newPendingTransactions.length)
-        $pendingTransactionsList
-          .children()
-          .slice($pendingTransactionsList.children().length - newTransactionsToInsert.length,
-            $pendingTransactionsList.children().length
-          )
-          .remove()
         prependWithClingBottom($pendingTransactionsList, newTransactionsToInsert.reverse().join(''))
 
         updateAllAges()
@@ -236,10 +230,6 @@ if ($transactionListPage.length) {
       }
       if (oldState.newTransactions !== state.newTransactions) {
         const newTransactionsToInsert = state.newTransactions.slice(oldState.newTransactions.length)
-        $transactionsList
-          .children()
-          .slice($transactionsList.children().length - newTransactionsToInsert.length, $transactionsList.children().length)
-          .remove()
         prependWithClingBottom($transactionsList, newTransactionsToInsert.reverse().join(''))
 
         updateAllAges()
