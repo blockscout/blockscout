@@ -9,16 +9,6 @@
       </div>
 
       <div class="card-body">
-        <div data-selector="channel-pending-batching-message" class="d-none">
-          <div data-selector="reload-button" class="alert alert-info">
-            <a href="#" class="alert-link"><span data-selector="channel-pending-batching-count"></span> <%= gettext "More pending transactions have come in" %></a>
-          </div>
-        </div>
-        <div data-selector="channel-batching-message" class="d-none">
-          <div data-selector="reload-button" class="alert alert-info">
-            <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>
-          </div>
-        </div>
         <div data-selector="channel-disconnected-message" class="d-none">
           <div data-selector="reload-button" class="alert alert-danger">
             <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer transactions" %></a>

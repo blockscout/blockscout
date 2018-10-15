@@ -34,7 +34,7 @@ export const initialState = {
   newInternalTransactions: [],
   newPendingTransactions: [],
   newTransactions: [],
-  newTransactionHashes: [],
+  newTransactionHash: null,
   pendingTransactionHashes: [],
   transactionCount: null,
   validationCount: null
@@ -94,66 +94,44 @@ export function reducer (state = initialState, action) {
         })
       }
     }
-    case 'RECEIVED_NEW_PENDING_TRANSACTION_BATCH': {
+    case 'RECEIVED_NEW_PENDING_TRANSACTION': {
       if (state.channelDisconnected || state.beyondPageOne) return state
 
-      const incomingPendingTransactions = action.msgs
-        .filter(({toAddressHash, fromAddressHash}) => (
-          !state.filter ||
-          (state.filter === 'to' && toAddressHash === state.addressHash) ||
-          (state.filter === 'from' && fromAddressHash === state.addressHash)
-        ))
-      if (!state.pendingTransactionHashes.length && incomingPendingTransactions.length < BATCH_THRESHOLD) {
-        return Object.assign({}, state, {
-          newPendingTransactions: [
-            ...state.newPendingTransactions,
-            ..._.map(incomingPendingTransactions, 'transactionHtml')
-          ]
-        })
-      } else {
-        return Object.assign({}, state, {
-          pendingTransactionHashes: [
-            ...state.pendingTransactionHashes,
-            ..._.map(incomingPendingTransactions, 'transactionHash')
-          ]
-        })
+      if ((state.filter === 'to' && action.msg.toAddressHash !== state.addressHash) ||
+        (state.filter === 'from' && action.msg.fromAddressHash !== state.addressHash)) {
+        return state
       }
+
+      return Object.assign({}, state, {
+        newPendingTransactions: [
+          ...state.newPendingTransactions,
+          action.msg.transactionHtml
+        ]
+      })
     }
-    case 'RECEIVED_NEW_TRANSACTION_BATCH': {
+    case 'RECEIVED_NEW_TRANSACTION': {
       if (state.channelDisconnected) return state
 
-      const transactionCount = incrementTransactionsCount(action.msgs, state.addressHash, state.transactionCount)
+      const transactionCount = state.transactionCount + 1
 
-      if (state.beyondPageOne) return Object.assign({}, state, { transactionCount })
-
-      const incomingTransactions = action.msgs
-        .filter(({toAddressHash, fromAddressHash}) => (
-          !state.filter ||
-          (state.filter === 'to' && toAddressHash === state.addressHash) ||
-          (state.filter === 'from' && fromAddressHash === state.addressHash)
-        ))
+      if (state.beyondPageOne ||
+        (state.filter === 'to' && action.msg.toAddressHash !== state.addressHash) ||
+        (state.filter === 'from' && action.msg.fromAddressHash !== state.addressHash)) {
+        return Object.assign({}, state, { transactionCount })
+      }
 
       const updatedPendingTransactionHashes =
-        _.difference(state.pendingTransactionHashes, _.map(incomingTransactions, 'transactionHash'))
+        _.without(state.pendingTransactionHashes, action.msg.transactionHash)
 
-      if (!state.batchCountAccumulator && incomingTransactions.length < BATCH_THRESHOLD) {
-        return Object.assign({}, state, {
-          newTransactions: [
-            ...state.newTransactions,
-            ..._.map(incomingTransactions, 'transactionHtml')
-          ],
-          newTransactionHashes: _.map(incomingTransactions, 'transactionHash'),
-          pendingTransactionHashes: updatedPendingTransactionHashes,
-          transactionCount: transactionCount
-        })
-      } else {
-        return Object.assign({}, state, {
-          batchCountAccumulator: state.batchCountAccumulator + incomingTransactions.length,
-          newTransactionHashes: _.map(incomingTransactions, 'transactionHash'),
-          pendingTransactionHashes: updatedPendingTransactionHashes,
-          transactionCount: transactionCount
-        })
-      }
+      return Object.assign({}, state, {
+        newTransactions: [
+          ...state.newTransactions,
+          action.msg.transactionHtml
+        ],
+        newTransactionHash: action.msg.transactionHash,
+        pendingTransactionHashes: updatedPendingTransactionHashes,
+        transactionCount: transactionCount
+      })
     }
     case 'RECEIVED_UPDATED_BALANCE': {
       return Object.assign({}, state, {
@@ -190,25 +168,17 @@ if ($addressDetailsPage.length) {
       addressChannel.on('internal_transaction', batchChannel((msgs) =>
         store.dispatch({ type: 'RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH', msgs: humps.camelizeKeys(msgs) })
       ))
-      addressChannel.on('pending_transaction', batchChannel((msgs) =>
-        store.dispatch({ type: 'RECEIVED_NEW_PENDING_TRANSACTION_BATCH', msgs: humps.camelizeKeys(msgs) })
-      ))
-      addressChannel.on('transaction', batchChannel((msgs) =>
-        store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION_BATCH', msgs: humps.camelizeKeys(msgs) })
-      ))
+      addressChannel.on('pending_transaction', (msg) => store.dispatch({ type: 'RECEIVED_NEW_PENDING_TRANSACTION', msg: humps.camelizeKeys(msg) }))
+      addressChannel.on('transaction', (msg) => store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION', msg: humps.camelizeKeys(msg) }))
       const blocksChannel = socket.channel(`blocks:${addressHash}`, {})
       blocksChannel.join()
       blocksChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
-      blocksChannel.on('new_block', (msg) => {
-        store.dispatch({ type: 'RECEIVED_NEW_BLOCK', msg: humps.camelizeKeys(msg) })
-      })
+      blocksChannel.on('new_block', (msg) => store.dispatch({ type: 'RECEIVED_NEW_BLOCK', msg: humps.camelizeKeys(msg) }))
     },
     render (state, oldState) {
       const $balance = $('[data-selector="balance-card"]')
       const $channelBatching = $('[data-selector="channel-batching-message"]')
       const $channelBatchingCount = $('[data-selector="channel-batching-count"]')
-      const $channelPendingBatching = $('[data-selector="channel-pending-batching-message"]')
-      const $channelPendingBatchingCount = $('[data-selector="channel-pending-batching-count"]')
       const $channelDisconnected = $('[data-selector="channel-disconnected-message"]')
       const $emptyInternalTransactionsList = $('[data-selector="empty-internal-transactions-list"]')
       const $emptyTransactionsList = $('[data-selector="empty-transactions-list"]')
@@ -235,19 +205,10 @@ if ($addressDetailsPage.length) {
       } else {
         $channelBatching.hide()
       }
-      if (oldState.newPendingTransactionHashesBatch !== state.newPendingTransactionHashesBatch && state.newPendingTransactionHashesBatch.length > 0) {
-        $channelPendingBatching.show()
-        $channelPendingBatchingCount[0].innerHTML = numeral(state.newPendingTransactionHashesBatch.length).format()
-      } else {
-        $channelPendingBatching.hide()
-      }
-      if (oldState.newTransactionHashes !== state.newTransactionHashes && state.newTransactionHashes.length > 0) {
-        let $transaction
-        _.each(state.newTransactionHashes, (hash) => {
-          $transaction = $(`[data-selector="pending-transactions-list"] [data-transaction-hash="${hash}"]`)
-          $transaction.addClass('shrink-out')
-          setTimeout(() => $transaction.slideUp({ complete: () => $transaction.remove() }), 400)
-        })
+      if (oldState.newTransactionHash !== state.newTransactionHash && state.newTransactionHash) {
+        let $transaction = $(`[data-selector="pending-transactions-list"] [data-transaction-hash="${state.newTransactionHash}"]`)
+        $transaction.addClass('shrink-out')
+        setTimeout(() => $transaction.slideUp({ complete: () => $transaction.remove() }), 400)
       }
       if (oldState.newInternalTransactions !== state.newInternalTransactions && $internalTransactionsList.length) {
         prependWithClingBottom($internalTransactionsList, state.newInternalTransactions.slice(oldState.newInternalTransactions.length).reverse().join(''))
