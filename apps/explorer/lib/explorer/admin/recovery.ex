@@ -36,7 +36,7 @@ defmodule Explorer.Admin.Recovery do
 
     recovery_key =
       case File.read(file_path) do
-        {:ok, <<recovery_key :: binary-size(44)>>} ->
+        {:ok, <<recovery_key::binary-size(44)>>} ->
           recovery_key
 
         _ ->

@@ -5,6 +5,10 @@ defmodule BlockScoutWeb.ErrorHelpers do
 
   use Phoenix.HTML
 
+  alias Ecto.Changeset
+  alias Phoenix.HTML.Form
+  alias Plug.Conn
+
   @doc """
   Generates tag for inlined form input errors.
   """
@@ -12,6 +16,21 @@ defmodule BlockScoutWeb.ErrorHelpers do
     Enum.map(Keyword.get_values(form.errors, field), fn error ->
       content_tag(:span, translate_error(error), Keyword.merge([class: "has-error"], opts))
     end)
+  end
+
+  @doc """
+  Gets the errors for a form's input.
+  """
+  def errors_for_field(%Form{source: %Conn{}}, _), do: []
+
+  def errors_for_field(%Form{source: %Changeset{action: nil}}, _), do: []
+
+  def errors_for_field(%Form{source: %Changeset{action: :ignore}}, _), do: []
+
+  def errors_for_field(%Form{source: %Changeset{errors: errors}}, field) do
+    for error <- Keyword.get_values(errors, field) do
+      translate_error(error)
+    end
   end
 
   @doc """

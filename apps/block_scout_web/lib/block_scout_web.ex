@@ -26,6 +26,8 @@ defmodule BlockScoutWeb do
       import BlockScoutWeb.Gettext
       import BlockScoutWeb.ErrorHelpers
       import Plug.Conn
+
+      alias BlockScoutWeb.AdminRouter.Helpers, as: AdminRoutes
     end
   end
 

@@ -3,9 +3,10 @@ defmodule Explorer.Accounts do
   Entrypoint for modifying user account information.
   """
 
+  alias Comeonin.Bcrypt
   alias Ecto.Changeset
   alias Explorer.Accounts.{User}
-  alias Explorer.Accounts.User.Registration
+  alias Explorer.Accounts.User.{Authenticate, Registration}
   alias Explorer.Repo
 
   @doc """
@@ -13,28 +14,31 @@ defmodule Explorer.Accounts do
   """
   @spec register_new_account(map()) :: {:ok, User.t()} | {:error, Changeset.t()}
   def register_new_account(params) do
-    registration_changeset = Registration.changeset(params)
+    registration =
+      params
+      |> Registration.changeset()
+      |> Changeset.apply_action(:insert)
 
-    with {:registration_valid?, true} <- {:registration_valid?, registration_changeset.valid?},
-         {:ok, user} <- do_register_new_account(registration_changeset) do
+    with {:registration, {:ok, registration}} <- {:registration, registration},
+         {:ok, user} <- do_register_new_account(registration) do
       {:ok, user}
     else
-      {:registration_valid?, false} ->
-        {:error, registration_changeset}
+      {:registration, {:error, _} = error} ->
+        error
 
-      {:error, %Changeset{} = user_changeset} ->
-        {:error, %Changeset{registration_changeset | errors: user_changeset.errors, valid?: false}}
+      {:error, %Changeset{}} = error ->
+        error
     end
   end
 
-  @spec do_register_new_account(Changeset.t()) :: {:ok, User.t()} | {:error, Changeset.t()}
-  defp do_register_new_account(%Changeset{changes: changes}) do
+  @spec do_register_new_account(Registration.t()) :: {:ok, User.t()} | {:error, Changeset.t()}
+  defp do_register_new_account(%Registration{} = registration) do
     new_user_params = %{
-      username: changes.username,
-      password: changes.password,
+      username: registration.username,
+      password: registration.password,
       contacts: [
         %{
-          email: changes.email,
+          email: registration.email,
           primary: true
         }
       ]
@@ -43,5 +47,47 @@ defmodule Explorer.Accounts do
     %User{}
     |> User.changeset(new_user_params)
     |> Repo.insert()
+  end
+
+  @doc """
+  Authenticates a user from a map of authentication params.
+  """
+  @spec authenticate(map()) :: {:ok, User.t()} | {:error, :invalid_credentials | Changeset.t()}
+  def authenticate(user_params) when is_map(user_params) do
+    authentication =
+      user_params
+      |> Authenticate.changeset()
+      |> Changeset.apply_action(:insert)
+
+    with {:ok, authentication} <- authentication,
+         {:user, %User{} = user} <- {:user, Repo.get_by(User, username: authentication.username)},
+         {:password, true} <- {:password, Bcrypt.checkpw(authentication.password, user.password_hash)} do
+      {:ok, user}
+    else
+      {:error, %Changeset{}} = error ->
+        error
+
+      {:user, nil} ->
+        # Run dummy check to mitigate timing attacks
+        Bcrypt.dummy_checkpw()
+        {:error, :invalid_credentials}
+
+      {:password, false} ->
+        {:error, :invalid_credentials}
+    end
+  end
+
+  @doc """
+  Fetches a user by id.
+  """
+  @spec fetch_user(integer()) :: {:ok, User.t()} | {:error, :not_found}
+  def fetch_user(user_id) do
+    case Repo.get(User, user_id) do
+      nil ->
+        {:error, :not_found}
+
+      user ->
+        {:ok, user}
+    end
   end
 end

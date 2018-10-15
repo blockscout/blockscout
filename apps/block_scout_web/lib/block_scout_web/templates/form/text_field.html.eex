@@ -1,0 +1,15 @@
+<div class="form-group">
+  <%= if @label do %>
+    <%= if @id do %>
+      <label for="<%= @id %>"><%= @label %></label>
+    <% else %>
+      <label><%= @label %></label>
+    <% end %>
+  <% end %>
+  <%= @input_field %>
+  <%= for error <- @errors do %>
+    <div class="invalid-feedback">
+      <%= error %>
+    </div>
+  <% end %>
+</div>

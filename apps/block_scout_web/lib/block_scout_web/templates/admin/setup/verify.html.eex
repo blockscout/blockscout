@@ -1,0 +1,25 @@
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col col-8">
+      <div class="card">
+        <div class="card-body">
+          <h2 class="card-title text-center" data-test="administrator_verify">Administrator Setup</h2>
+
+          <p>You have not setup the administrator account for BlockScout. Run the following command in your terminal at the root directory of where your application is deployed. Paste the value inside of the <strong>Recovery Key</strong> field. <strong>Do not share this key!</strong></p>
+
+          <div class="tile tile-muted" style="margin-bottom: 1em;">
+            <pre class="pre-wrap"><code><span class="text-dark">pbcopy &#60; apps/explorer/priv/.recovery</span></code></pre>
+          </div>
+          <%= form_for @conn, setup_path(@conn, :configure_admin), [as: "verify"], fn f -> %>
+            <div class="form-group">
+              <label for="recovery-key"><strong>Recovery Key</strong></label>
+              <%= password_input(f, :recovery_key, class: "form-control", type: "password", id: "recovery-key", placeholder: "JRAJpuEGNKM1XQK3zpWMdAAHVzQtJfDyW/sN/Zn1Ev8=", required: true) %>
+            </div>
+
+            <button class="button button-primary">Continue Setup</button>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -5,8 +5,8 @@ defmodule Explorer.Admin.RecoveryTest do
 
   describe "init/1" do
     test "configures the process" do
-     assert Recovery.init(nil) == {:ok, %{}}
-     assert_received :load_key
+      assert Recovery.init(nil) == {:ok, %{}}
+      assert_received :load_key
     end
   end
 
@@ -40,7 +40,7 @@ defmodule Explorer.Admin.RecoveryTest do
     setup :configure_recovery_file
 
     test "returns the key saved in a process", %{key: key} do
-      pid = start_supervised!({Recovery, [[],[]]})
+      pid = start_supervised!({Recovery, [[], []]})
       assert Recovery.key(pid) == key
       stop_supervised(pid)
     end
@@ -49,9 +49,9 @@ defmodule Explorer.Admin.RecoveryTest do
   def configure_recovery_file(_context) do
     key = write_key()
 
-    on_exit fn ->
+    on_exit(fn ->
       delete_key()
-    end
+    end)
 
     [key: key]
   end

@@ -1,0 +1,18 @@
+
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col col-8">
+      <div class="card">
+        <div class="card-body">
+          <h2 class="card-title text-center" data-test="administrator_login">Administrator Login</h2>
+
+          <%= form_for @changeset, session_path(@conn, :create), fn f -> %>
+            <%= FormView.text_field(f, :username, :text, id: "username", required: true, label: "Username") %>
+            <%= FormView.text_field(f, :password, :password, id: "password", required: true, label: "Password") %>
+            <button class="button button-primary">Login</button>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
