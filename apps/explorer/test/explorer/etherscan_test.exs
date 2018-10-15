@@ -64,7 +64,12 @@ defmodule Explorer.EtherscanTest do
 
       %{created_contract_address_hash: contract_address_hash} =
         :internal_transaction_create
-        |> insert(transaction: transaction, index: 0)
+        |> insert(
+          transaction: transaction,
+          index: 0,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
         |> with_contract_creation(contract_address)
 
       [found_transaction] = Etherscan.list_transactions(contract_address_hash)
@@ -135,7 +140,12 @@ defmodule Explorer.EtherscanTest do
 
       %{created_contract_address_hash: contract_hash} =
         :internal_transaction_create
-        |> insert(transaction: transaction, index: 0)
+        |> insert(
+          transaction: transaction,
+          index: 0,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
         |> with_contract_creation(contract_address)
 
       [found_transaction] = Etherscan.list_transactions(address.hash)
@@ -470,7 +480,13 @@ defmodule Explorer.EtherscanTest do
 
       internal_transaction =
         :internal_transaction_create
-        |> insert(transaction: transaction, index: 0, from_address: address)
+        |> insert(
+          transaction: transaction,
+          index: 0,
+          from_address: address,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
         |> with_contract_creation(contract_address)
 
       [found_internal_transaction] = Etherscan.list_internal_transactions(transaction.hash)
@@ -507,7 +523,12 @@ defmodule Explorer.EtherscanTest do
         |> with_block()
 
       for index <- 0..2 do
-        insert(:internal_transaction, transaction: transaction, index: index)
+        insert(:internal_transaction,
+          transaction: transaction,
+          index: index,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
       end
 
       found_internal_transactions = Etherscan.list_internal_transactions(transaction.hash)
@@ -526,9 +547,27 @@ defmodule Explorer.EtherscanTest do
         |> insert()
         |> with_block()
 
-      insert(:internal_transaction, transaction: transaction1, index: 0)
-      insert(:internal_transaction, transaction: transaction1, index: 1)
-      insert(:internal_transaction, transaction: transaction2, index: 0, type: :reward)
+      insert(:internal_transaction,
+        transaction: transaction1,
+        index: 0,
+        block_number: transaction1.block_number,
+        transaction_index: transaction1.index
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction1,
+        index: 1,
+        block_number: transaction1.block_number,
+        transaction_index: transaction1.index
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction2,
+        index: 0,
+        type: :reward,
+        block_number: transaction2.block_number,
+        transaction_index: transaction2.index
+      )
 
       internal_transactions1 = Etherscan.list_internal_transactions(transaction1.hash)
 
@@ -573,7 +612,13 @@ defmodule Explorer.EtherscanTest do
 
       internal_transaction =
         :internal_transaction_create
-        |> insert(transaction: transaction, index: 0, from_address: address)
+        |> insert(
+          transaction: transaction,
+          index: 0,
+          from_address: address,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
         |> with_contract_creation(contract_address)
 
       [found_internal_transaction] = Etherscan.list_internal_transactions(address.hash)
@@ -616,7 +661,9 @@ defmodule Explorer.EtherscanTest do
         internal_transaction_details = %{
           transaction: transaction,
           index: index,
-          from_address: address
+          from_address: address,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
         }
 
         insert(:internal_transaction, internal_transaction_details)
@@ -636,10 +683,37 @@ defmodule Explorer.EtherscanTest do
         |> insert()
         |> with_block()
 
-      insert(:internal_transaction, transaction: transaction, index: 0, created_contract_address: address1)
-      insert(:internal_transaction, transaction: transaction, index: 1, from_address: address1)
-      insert(:internal_transaction, transaction: transaction, index: 2, to_address: address1)
-      insert(:internal_transaction, transaction: transaction, index: 3, from_address: address2)
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 0,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        created_contract_address: address1
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 1,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        from_address: address1
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 2,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        to_address: address1
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 3,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        from_address: address2
+      )
 
       internal_transactions1 = Etherscan.list_internal_transactions(address1.hash)
 
@@ -662,7 +736,9 @@ defmodule Explorer.EtherscanTest do
         internal_transaction_details = %{
           transaction: transaction,
           index: index,
-          from_address: address
+          from_address: address,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
         }
 
         insert(:internal_transaction, internal_transaction_details)
@@ -700,7 +776,9 @@ defmodule Explorer.EtherscanTest do
         internal_transaction_details = %{
           transaction: transaction,
           index: index,
-          from_address: address
+          from_address: address,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
         }
 
         insert(:internal_transaction, internal_transaction_details)

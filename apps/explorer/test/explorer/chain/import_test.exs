@@ -56,7 +56,9 @@ defmodule Explorer.Chain.ImportTest do
             trace_address: [],
             transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
             type: "call",
-            value: 0
+            value: 0,
+            block_number: 35,
+            transaction_index: 0
           },
           %{
             call_type: "call",
@@ -69,7 +71,9 @@ defmodule Explorer.Chain.ImportTest do
             trace_address: [],
             transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
             type: "call",
-            value: 0
+            value: 0,
+            block_number: 35,
+            transaction_index: 1
           }
         ],
         timeout: 5
@@ -497,7 +501,9 @@ defmodule Explorer.Chain.ImportTest do
               trace_address: [],
               transaction_hash: transaction_string_hash,
               type: "create",
-              value: 0
+              value: 0,
+              block_number: 35,
+              transaction_index: 0
             }
           ]
         }
@@ -580,6 +586,7 @@ defmodule Explorer.Chain.ImportTest do
               transaction_hash: transaction_hash,
               type: "call",
               value: 0,
+              transaction_block_number: 35,
               transaction_index: 0
             }
           ]
@@ -765,7 +772,9 @@ defmodule Explorer.Chain.ImportTest do
                        trace_address: [],
                        transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
                        type: "create",
-                       value: 0
+                       value: 0,
+                       block_number: 35,
+                       transaction_index: 0
                      },
                      %{
                        created_contract_address_hash: "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb5",
@@ -780,7 +789,9 @@ defmodule Explorer.Chain.ImportTest do
                        trace_address: [],
                        transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
                        type: "create",
-                       value: 0
+                       value: 0,
+                       block_number: 35,
+                       transaction_index: 1
                      }
                    ],
                    timeout: 5
@@ -951,7 +962,8 @@ defmodule Explorer.Chain.ImportTest do
                        transaction_hash: "0x1a263224a95275d77bc30a7e131bc64d948777946a790c0915ab293791fbcb61",
                        type: "create",
                        value: 0,
-                       transaction_index: 0
+                       transaction_index: 0,
+                       transaction_block_number: 35
                      },
                      %{
                        block_number: 6_546_180,
@@ -964,7 +976,8 @@ defmodule Explorer.Chain.ImportTest do
                        transaction_hash: "0xab349efbe1ddc6d85d84a993aa52bdaadce66e8ee166dd10013ce3f2a94ca724",
                        type: "create",
                        value: 0,
-                       transaction_index: 0
+                       transaction_index: 0,
+                       transaction_block_number: 35
                      }
                    ]
                  }
@@ -1445,7 +1458,9 @@ defmodule Explorer.Chain.ImportTest do
                        transaction_hash: transaction_hash,
                        index: 0,
                        from_address_hash: from_address_hash,
-                       to_address_hash: to_address_hash
+                       to_address_hash: to_address_hash,
+                       block_number: 35,
+                       transaction_index: 0
                      )
                    ],
                    timeout: 1
@@ -1711,7 +1726,9 @@ defmodule Explorer.Chain.ImportTest do
                        to_address_hash: to_address_hash_before,
                        trace_address: [],
                        value: 0,
-                       error: error
+                       error: error,
+                       block_number: 35,
+                       transaction_index: 0
                      }
                    ]
                  }
