@@ -344,9 +344,25 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "address_to_transactions_estimated_count/1" do
-    test "returns integer" do
-      assert is_integer(Chain.address_to_transactions_estimated_count(build(:address)))
+  describe "total_transactions_sent_by_address/1" do
+    test "increments +1 in the last nonce result" do
+      address = insert(:address)
+
+      :transaction
+      |> insert(nonce: 100, from_address: address)
+      |> with_block(insert(:block, number: 1000))
+
+      assert Chain.total_transactions_sent_by_address(address) == 101
+    end
+
+    test "returns 0 when the address did not send transactions" do
+      address = insert(:address)
+
+      :transaction
+      |> insert(nonce: 100, to_address: address)
+      |> with_block(insert(:block, number: 1000))
+
+      assert Chain.total_transactions_sent_by_address(address) == 0
     end
   end
 
