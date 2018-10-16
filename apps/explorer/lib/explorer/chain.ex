@@ -180,35 +180,22 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Gets an estimated count of `t:Explorer.Chain.Transaction.t/0` to or from the `address` based on the estimated rows
-  resulting in an EXPLAIN of the query plan for the count query.
-  """
-  @spec address_to_transactions_estimated_count(Address.t()) :: non_neg_integer()
-  def address_to_transactions_estimated_count(%Address{hash: address_hash}) do
-    {:ok, %Postgrex.Result{rows: result}} =
-      Repo.query(
-        """
-        EXPLAIN SELECT COUNT(DISTINCT t.hash) FROM
-        (
-          SELECT t0.hash FROM transactions AS t0 WHERE t0.from_address_hash = $1
-          UNION
-          SELECT t0.hash FROM transactions AS t0 WHERE t0.to_address_hash = $1
-          UNION
-          SELECT t0.hash FROM transactions AS t0 WHERE t0.created_contract_address_hash = $1
-          UNION
-          SELECT tt.transaction_hash AS hash FROM token_transfers AS tt
-          WHERE tt.from_address_hash = $1
-          UNION
-          SELECT tt.transaction_hash AS hash FROM token_transfers AS tt
-          WHERE tt.to_address_hash = $1
-        ) as t
-        """,
-        [address_hash.bytes]
-      )
+  Get the total number of transactions sent by the given address according to the last block indexed.
 
-    {[unique_explain], _} = List.pop_at(result, 1)
-    [[_ | [rows]]] = Regex.scan(~r/rows=(\d+)/, unique_explain)
-    String.to_integer(rows)
+  We have to increment +1 in the last nonce result because it works like an array position, the first
+  nonce has the value 0. When last nonce is nil, it considers that the given address has 0 transactions.
+  """
+  @spec total_transactions_sent_by_address(Address.t()) :: non_neg_integer()
+  def total_transactions_sent_by_address(%Address{hash: address_hash}) do
+    last_nonce =
+      address_hash
+      |> Transaction.last_nonce_by_address_query()
+      |> Repo.one()
+
+    case last_nonce do
+      nil -> 0
+      value -> value + 1
+    end
   end
 
   @doc """

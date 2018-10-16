@@ -25,7 +25,7 @@
                     <!-- number of txns for this address -->
                     <span>
                       <span data-test="transaction_count"><%= transaction_count(address) %></span>
-                      <%= gettext "Transactions" %>
+                      <%= gettext "Transactions sent" %>
                     </span>
                   </div>
 

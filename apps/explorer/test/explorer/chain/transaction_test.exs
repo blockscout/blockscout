@@ -177,4 +177,40 @@ defmodule Explorer.Chain.TransactionTest do
       assert result == [transaction_c.block_number, transaction_b.block_number, transaction_a.block_number]
     end
   end
+
+  describe "last_nonce_by_address_query/1" do
+    test "returns the nonce value from the last block" do
+      address = insert(:address)
+
+      :transaction
+      |> insert(nonce: 100, from_address: address)
+      |> with_block(insert(:block, number: 1000))
+
+      :transaction
+      |> insert(nonce: 300, from_address: address)
+      |> with_block(insert(:block, number: 2000))
+
+      last_nonce =
+        address.hash
+        |> Transaction.last_nonce_by_address_query()
+        |> Repo.one()
+
+      assert last_nonce == 300
+    end
+
+    test "considers only from_address in transactions" do
+      address = insert(:address)
+
+      :transaction
+      |> insert(nonce: 100, to_address: address)
+      |> with_block(insert(:block, number: 1000))
+
+      last_nonce =
+        address.hash
+        |> Transaction.last_nonce_by_address_query()
+        |> Repo.one()
+
+      assert last_nonce == nil
+    end
+  end
 end

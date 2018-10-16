@@ -543,4 +543,21 @@ defmodule Explorer.Chain.Transaction do
       distinct: :hash
     )
   end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch the last nonce from the given address hash.
+
+  The last nonce value means the total of transactions that the given address has sent through the
+  chain. Also, the query uses the last `block_number` to get the last nonce because this column is
+  indexed in DB, then the query is faster than ordering by last nonce.
+  """
+  def last_nonce_by_address_query(address_hash) do
+    from(
+      t in Transaction,
+      select: t.nonce,
+      where: t.from_address_hash == ^address_hash,
+      order_by: [desc: :block_number],
+      limit: 1
+    )
+  end
 end

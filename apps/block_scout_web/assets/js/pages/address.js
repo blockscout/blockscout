@@ -11,6 +11,18 @@ import { loadTokenBalanceDropdown } from '../lib/token_balance_dropdown'
 
 const BATCH_THRESHOLD = 10
 
+const incrementTransactionsCount = (transactions, addressHash, currentValue) => {
+  const reducer = (accumulator, {fromAddressHash}) => {
+    if (fromAddressHash === addressHash) {
+      accumulator++
+    }
+
+    return accumulator
+  }
+
+  return transactions.reduce(reducer, currentValue)
+}
+
 export const initialState = {
   addressHash: null,
   balance: null,
@@ -109,7 +121,7 @@ export function reducer (state = initialState, action) {
     case 'RECEIVED_NEW_TRANSACTION_BATCH': {
       if (state.channelDisconnected) return state
 
-      const transactionCount = state.transactionCount + action.msgs.length
+      const transactionCount = incrementTransactionsCount(action.msgs, state.addressHash, state.transactionCount)
 
       if (state.beyondPageOne) return Object.assign({}, state, { transactionCount })
 
