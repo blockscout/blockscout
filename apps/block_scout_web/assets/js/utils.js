@@ -45,61 +45,54 @@ export function skippedBlockListBuilder (skippedBlockNumbers, newestBlock, oldes
   return skippedBlockNumbers
 }
 
-export function slideDownPrepend ($el, content, callback) {
+export function slideDownPrepend ($el, content) {
   const $content = $(content)
   $el.prepend($content.hide())
-  $content.slideDown({ complete: callback })
+  return $content.slideDown()
 }
-export function slideDownBefore ($el, content, callback) {
+export function slideDownBefore ($el, content) {
   const $content = $(content)
   $el.before($content.hide())
-  $content.slideDown({ complete: callback })
-}
-export function prependWithClingBottom ($el, content) {
-  return slideDownPrepend($el, content, clingBottom($el))
-}
-export function beforeWithClingBottom ($el, content) {
-  return slideDownBefore($el, content, clingBottom($el))
+  return $content.slideDown()
 }
 
-function clingBottom ($el) {
+let clingBottomLoop
+export function clingBottom ($el, content) {
+  if (clingBottomLoop) window.cancelAnimationFrame(clingBottomLoop)
+
   function userAtTop () {
     return window.scrollY < $('[data-selector="navbar"]').outerHeight()
   }
-  if (userAtTop()) return true
+  if (userAtTop()) return
 
-  let isAnimating
-  function setIsAnimating () {
-    isAnimating = true
-  }
-  $el.on('animationstart', setIsAnimating)
-
+  let pageHeight = document.body.scrollHeight
   let startingScrollPosition = window.scrollY
   let endingScrollPosition = window.scrollY
   function userIsScrolling () {
-    return window.scrollY < startingScrollPosition || endingScrollPosition < window.scrollY
+    const pageHeightDiff = Math.abs(document.body.scrollHeight - pageHeight)
+    const minScrollPosition = _.min([
+      startingScrollPosition,
+      endingScrollPosition
+    ]) - pageHeightDiff
+    const maxScrollPosition = _.max([
+      startingScrollPosition,
+      endingScrollPosition
+    ]) + pageHeightDiff
+    return window.scrollY < minScrollPosition || maxScrollPosition < window.scrollY
   }
 
   const clingDistanceFromBottom = document.body.scrollHeight - window.scrollY
-  let clingBottomLoop = window.requestAnimationFrame(function clingBottom () {
-    if (userIsScrolling()) return stopClinging()
-
-    startingScrollPosition = window.scrollY
-    endingScrollPosition = document.body.scrollHeight - clingDistanceFromBottom
-    $(window).scrollTop(endingScrollPosition)
-    clingBottomLoop = window.requestAnimationFrame(clingBottom)
-  })
-
-  function stopClinging () {
-    window.cancelAnimationFrame(clingBottomLoop)
-    $el.off('animationstart', setIsAnimating)
-    $el.off('animationend animationcancel', stopClinging)
-  }
-
-  return {
-    function () {
-      $el.on('animationend animationcancel', stopClinging)
-      setTimeout(() => !isAnimating && stopClinging(), 100)
+  clingBottomLoop = window.requestAnimationFrame(function clingBottomFrame () {
+    if (userIsScrolling()) {
+      window.cancelAnimationFrame(clingBottomLoop)
+      clingBottomLoop = null
+      return
     }
-  }
+
+    pageHeight = document.body.scrollHeight
+    startingScrollPosition = window.scrollY
+    endingScrollPosition = pageHeight - clingDistanceFromBottom
+    $(window).scrollTop(endingScrollPosition)
+    clingBottomLoop = window.requestAnimationFrame(clingBottomFrame)
+  })
 }
