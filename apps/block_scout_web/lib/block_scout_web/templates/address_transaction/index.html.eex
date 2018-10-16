@@ -62,6 +62,7 @@
             <%= for pending_transaction <- @pending_transactions do %>
               <%= render(BlockScoutWeb.TransactionView, "_tile.html", current_address: @address, transaction: pending_transaction) %>
             <% end %>
+            <hr />
           </div>
         </span>
         <%= if Enum.count(@transactions) > 0 do %>

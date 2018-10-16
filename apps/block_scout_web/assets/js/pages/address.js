@@ -34,7 +34,6 @@ export const initialState = {
   newInternalTransactions: [],
   newPendingTransactions: [],
   newTransactions: [],
-  newTransactionHash: null,
   pendingTransactionHashes: [],
   transactionCount: null,
   validationCount: null
@@ -130,9 +129,8 @@ export function reducer (state = initialState, action) {
       return Object.assign({}, state, {
         newTransactions: [
           ...state.newTransactions,
-          action.msg.transactionHtml
+          action.msg
         ],
-        newTransactionHash: action.msg.transactionHash,
         pendingTransactionHashes: updatedPendingTransactionHashes,
         transactionCount: transactionCount
       })
@@ -210,11 +208,6 @@ if ($addressDetailsPage.length) {
       } else {
         $channelBatching.hide()
       }
-      if (oldState.newTransactionHash !== state.newTransactionHash && state.newTransactionHash) {
-        let $transaction = $(`[data-selector="pending-transactions-list"] [data-transaction-hash="${state.newTransactionHash}"]`)
-        $transaction.addClass('shrink-out')
-        setTimeout(() => $transaction.slideUp({ complete: () => $transaction.remove() }), 400)
-      }
       if (oldState.newInternalTransactions !== state.newInternalTransactions && $internalTransactionsList.length) {
         prependWithClingBottom($internalTransactionsList, state.newInternalTransactions.slice(oldState.newInternalTransactions.length).reverse().join(''))
         updateAllAges()
@@ -227,7 +220,18 @@ if ($addressDetailsPage.length) {
         updateAllAges()
       }
       if (oldState.newTransactions !== state.newTransactions && $transactionsList.length) {
-        prependWithClingBottom($transactionsList, state.newTransactions.slice(oldState.newTransactions.length).reverse().join(''))
+        const newlyValidatedTransactions = state.newTransactions.slice(oldState.newTransactions.length).reverse()
+        newlyValidatedTransactions.forEach(({ transactionHash, transactionHtml }) => {
+          let $transaction = $(`[data-selector="pending-transactions-list"] [data-transaction-hash="${transactionHash}"]`)
+          $transaction.html($(transactionHtml).html())
+          setTimeout(() => {
+            $transaction.addClass('shrink-out')
+            setTimeout(() => {
+              $transaction.slideUp({ complete: () => $transaction.remove() })
+              prependWithClingBottom($transactionsList, transactionHtml)
+            }, 400)
+          }, 1000)
+        })
         updateAllAges()
       }
       if (oldState.newBlock !== state.newBlock) {
