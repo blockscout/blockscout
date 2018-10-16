@@ -137,6 +137,38 @@ defmodule EthereumJSONRPC.Transaction do
     }
   end
 
+  # Ganache bug. it return `to: "0x0"` except of `to: null`
+  def elixir_to_params(
+        %{
+          "to" => "0x0"
+        } = transaction
+      ) do
+    %{transaction | "to" => nil}
+    |> elixir_to_params()
+  end
+
+  # Ganache bug. It don't send `r,s,v` transaction fields.
+  # Fix is in sources but not released yet
+  def elixir_to_params(
+        %{
+          "blockHash" => _,
+          "blockNumber" => _,
+          "from" => _,
+          "gas" => _,
+          "gasPrice" => _,
+          "hash" => _,
+          "input" => _,
+          "nonce" => _,
+          "to" => _,
+          "transactionIndex" => _,
+          "value" => _
+        } = transaction
+      ) do
+    transaction
+    |> Map.merge(%{"r" => 0, "s" => 0, "v" => 0})
+    |> elixir_to_params()
+  end
+
   @doc """
   Extracts `t:EthereumJSONRPC.hash/0` from transaction `params`
 

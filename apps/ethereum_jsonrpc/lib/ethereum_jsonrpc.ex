@@ -372,8 +372,9 @@ defmodule EthereumJSONRPC do
 
   # We can only depend on implementations supporting 64-bit integers:
   # * Parity only supports u64 (https://github.com/paritytech/jsonrpc-core/blob/f2c61edb817e344d92ab3baf872fa77d1602430a/src/id.rs#L13)
+  # * Ganache only supports u32 (https://github.com/trufflesuite/ganache-core/issues/190)
   def unique_request_id do
-    <<unique_request_id::big-integer-size(8)-unit(8)>> = :crypto.strong_rand_bytes(8)
+    <<unique_request_id::big-integer-size(4)-unit(8)>> = :crypto.strong_rand_bytes(4)
     unique_request_id
   end
 
