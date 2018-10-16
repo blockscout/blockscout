@@ -173,7 +173,9 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
          %__MODULE__{request_id_to_registration: request_id_to_registration} = state
        ) do
     {registration, new_request_id_to_registration} = Map.pop(request_id_to_registration, id)
-    respond_to_registration(registration, new_request_id_to_registration, response, state)
+    new_state = %__MODULE__{state | request_id_to_registration: new_request_id_to_registration}
+
+    respond_to_registration(registration, response, new_state)
   end
 
   defp handle_response(response, %__MODULE__{} = state) do
@@ -248,7 +250,6 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
 
   defp respond_to_registration(
          %Registration{type: :json_rpc, from: from},
-         new_request_id_to_registration,
          response,
          %__MODULE__{} = state
        ) do
@@ -260,14 +261,13 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
 
     GenServer.reply(from, reply)
 
-    {:ok, %__MODULE__{state | request_id_to_registration: new_request_id_to_registration}}
+    {:ok, state}
   end
 
   defp respond_to_registration(
          %Registration{type: :subscribe, from: {subscriber_pid, _} = from},
-         new_request_id_to_registration,
          %{"result" => subscription_id},
-         %__MODULE__{url: url} = state
+         %__MODULE__{subscription_id_to_subscription: subscription_id_to_subscription, url: url} = state
        ) do
     subscription = %Subscription{
       id: subscription_id,
@@ -278,30 +278,28 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
 
     GenServer.reply(from, {:ok, subscription})
 
-    new_state =
+    new_state = %__MODULE__{
       state
-      |> put_in([Access.key!(:request_id_to_registration)], new_request_id_to_registration)
-      |> put_in([Access.key!(:subscription_id_to_subscription), subscription_id], subscription)
+      | subscription_id_to_subscription: Map.put(subscription_id_to_subscription, subscription_id, subscription)
+    }
 
     {:ok, new_state}
   end
 
   defp respond_to_registration(
          %Registration{type: :subscribe, from: from},
-         new_request_id_to_registration,
          %{"error" => error},
          %__MODULE__{} = state
        ) do
     GenServer.reply(from, {:error, error})
 
-    {:ok, %__MODULE__{state | request_id_to_registration: new_request_id_to_registration}}
+    {:ok, state}
   end
 
   defp respond_to_registration(
          %Registration{type: :unsubscribe, from: from, subscription_id: subscription_id},
-         new_request_id_to_registration,
          response,
-         %__MODULE__{} = state
+         %__MODULE__{subscription_id_to_subscription: subscription_id_to_subscription} = state
        ) do
     reply =
       case response do
@@ -313,15 +311,15 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
 
     GenServer.reply(from, reply)
 
-    new_state =
+    new_state = %__MODULE__{
       state
-      |> put_in([Access.key!(:request_id_to_registration)], new_request_id_to_registration)
-      |> update_in([Access.key!(:subscription_id_to_subscription)], &Map.delete(&1, subscription_id))
+      | subscription_id_to_subscription: Map.delete(subscription_id_to_subscription, subscription_id)
+    }
 
     {:ok, new_state}
   end
 
-  defp respond_to_registration(nil, _, response, %__MODULE__{} = state) do
+  defp respond_to_registration(nil, response, %__MODULE__{} = state) do
     Logger.error(fn -> ["Got response for unregistered request ID: ", inspect(response)] end)
 
     {:ok, state}
