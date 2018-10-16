@@ -13,7 +13,12 @@ defmodule EthereumJSONRPC.Transaction do
   alias EthereumJSONRPC
 
   @type elixir :: %{
-          String.t() => EthereumJSONRPC.address() | EthereumJSONRPC.hash() | String.t() | non_neg_integer() | nil
+          String.t() =>
+            EthereumJSONRPC.address()
+            | EthereumJSONRPC.hash()
+            | String.t()
+            | non_neg_integer()
+            | nil
         }
 
   @typedoc """
@@ -43,7 +48,11 @@ defmodule EthereumJSONRPC.Transaction do
   """
   @type t :: %{
           String.t() =>
-            EthereumJSONRPC.address() | EthereumJSONRPC.hash() | EthereumJSONRPC.quantity() | String.t() | nil
+            EthereumJSONRPC.address()
+            | EthereumJSONRPC.hash()
+            | EthereumJSONRPC.quantity()
+            | String.t()
+            | nil
         }
 
   @type params :: %{
@@ -137,6 +146,35 @@ defmodule EthereumJSONRPC.Transaction do
     }
   end
 
+  # Ganache bug. it return `to: "0x0"` except of `to: null`
+  def elixir_to_params(
+        %{
+          "to" => "0x0"
+        } = tr
+      ) do
+    elixir_to_params(%{tr | "to" => nil})
+  end
+
+  # Ganache bug. It don't send `r,s,v` transaction fields.
+  # Fix is in sources but not released yet
+  def elixir_to_params(
+        %{
+          "blockHash" => block_hash,
+          "blockNumber" => block_number,
+          "from" => from_address_hash,
+          "gas" => gas,
+          "gasPrice" => gas_price,
+          "hash" => hash,
+          "input" => input,
+          "nonce" => nonce,
+          "to" => to_address_hash,
+          "transactionIndex" => index,
+          "value" => value
+        } = tr
+      ) do
+    elixir_to_params(%{tr | "r" => 0, "s" => 0, "v" => 0})
+  end
+
   @doc """
   Extracts `t:EthereumJSONRPC.hash/0` from transaction `params`
 
@@ -226,7 +264,8 @@ defmodule EthereumJSONRPC.Transaction do
        when key in ~w(blockHash condition creates from hash input jsonrpc publicKey raw to),
        do: {key, value}
 
-  defp entry_to_elixir({key, quantity}) when key in ~w(gas gasPrice nonce r s standardV v value) and quantity != nil do
+  defp entry_to_elixir({key, quantity})
+       when key in ~w(gas gasPrice nonce r s standardV v value) and quantity != nil do
     {key, quantity_to_integer(quantity)}
   end
 
