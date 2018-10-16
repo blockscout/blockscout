@@ -1,7 +1,6 @@
 defmodule BlockScoutWeb.Admin.SessionController do
   use BlockScoutWeb, :controller
 
-  alias BlockScoutWeb.AdminRouter.Helpers, as: AdminRoutes
   alias Ecto.Changeset
   alias Explorer.{Accounts, Admin}
   alias Explorer.Accounts.User.Authenticate
