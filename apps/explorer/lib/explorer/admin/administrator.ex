@@ -9,6 +9,7 @@ defmodule Explorer.Admin.Administrator do
 
   alias Explorer.Accounts.User
   alias Explorer.Admin.Administrator
+  alias Explorer.Admin.Administrator.Role
 
   @typedoc """
   * `:role` - Administrator's role determining permission level
@@ -16,7 +17,7 @@ defmodule Explorer.Admin.Administrator do
   * `:user_id` - User foreign key
   """
   @type t :: %Administrator{
-          role: String.t(),
+          role: Role.t(),
           user: User.t() | %Ecto.Association.NotLoaded{}
         }
 
@@ -28,14 +29,12 @@ defmodule Explorer.Admin.Administrator do
   end
 
   @required_attrs ~w(role user_id)a
-  @valid_roles ~w(owner)
 
   @doc false
   def changeset(struct, params \\ %{}) do
     struct
     |> cast(params, @required_attrs)
     |> validate_required(@required_attrs)
-    |> validate_inclusion(:role, @valid_roles)
     |> assoc_constraint(:user)
     |> unique_constraint(:role, name: :owner_role_limit)
   end
