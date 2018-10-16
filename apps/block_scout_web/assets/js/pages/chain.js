@@ -52,7 +52,7 @@ export function reducer (state = initialState, action) {
           skippedBlockNumbers: _.without(state.skippedBlockNumbers, blockNumber)
         })
       } else if (blockNumber < _.last(state.blockNumbers)) {
-        return Object.assign({}, state, { newBlock: null })
+        return state
       } else {
         let skippedBlockNumbers = state.skippedBlockNumbers.slice(0)
         if (blockNumber > state.blockNumbers[0] + 1) {
