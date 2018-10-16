@@ -226,14 +226,20 @@ if ($addressDetailsPage.length) {
         newlyValidatedTransactions.forEach(({ transactionHash, transactionHtml }) => {
           let $transaction = $(`[data-selector="pending-transactions-list"] [data-transaction-hash="${transactionHash}"]`)
           $transaction.html($(transactionHtml).html())
-          setTimeout(() => {
-            $transaction.addClass('shrink-out')
+          if ($transaction.is(':visible')) {
             setTimeout(() => {
-              clingBottom()
-              $transaction.slideUp({ complete: () => $transaction.remove() })
-              slideDownPrepend($transactionsList, transactionHtml)
-            }, 400)
-          }, 1000)
+              $transaction.addClass('shrink-out')
+              setTimeout(() => {
+                clingBottom()
+                $transaction.slideUp({ complete: () => $transaction.remove() })
+                slideDownPrepend($transactionsList, transactionHtml)
+              }, 400)
+            }, 1000)
+          } else {
+            clingBottom()
+            $transaction.remove()
+            slideDownPrepend($transactionsList, transactionHtml)
+          }
         })
         updateAllAges()
       }
