@@ -13,13 +13,8 @@ defmodule EthereumJSONRPC.Transaction do
   alias EthereumJSONRPC
 
   @type elixir :: %{
-          String.t() =>
-            EthereumJSONRPC.address()
-            | EthereumJSONRPC.hash()
-            | String.t()
-            | non_neg_integer()
-            | nil
-        }
+    String.t() => EthereumJSONRPC.address() | EthereumJSONRPC.hash() | String.t() | non_neg_integer() | nil
+  }
 
   @typedoc """
    * `"blockHash"` - `t:EthereumJSONRPC.hash/0` of the block this transaction is in.  `nil` when transaction is
@@ -47,13 +42,9 @@ defmodule EthereumJSONRPC.Transaction do
    * `"value"` - `t:EthereumJSONRPC.quantity/0` of wei transferred
   """
   @type t :: %{
-          String.t() =>
-            EthereumJSONRPC.address()
-            | EthereumJSONRPC.hash()
-            | EthereumJSONRPC.quantity()
-            | String.t()
-            | nil
-        }
+    String.t() =>
+      EthereumJSONRPC.address() | EthereumJSONRPC.hash() | EthereumJSONRPC.quantity() | String.t() | nil
+  }
 
   @type params :: %{
           block_hash: EthereumJSONRPC.hash(),
@@ -150,29 +141,32 @@ defmodule EthereumJSONRPC.Transaction do
   def elixir_to_params(
         %{
           "to" => "0x0"
-        } = tr
+        } = transaction
       ) do
-    elixir_to_params(%{tr | "to" => nil})
+    %{ transaction | "to" => nil }
+    |> elixir_to_params()
   end
 
   # Ganache bug. It don't send `r,s,v` transaction fields.
   # Fix is in sources but not released yet
   def elixir_to_params(
         %{
-          "blockHash" => block_hash,
-          "blockNumber" => block_number,
-          "from" => from_address_hash,
-          "gas" => gas,
-          "gasPrice" => gas_price,
-          "hash" => hash,
-          "input" => input,
-          "nonce" => nonce,
-          "to" => to_address_hash,
-          "transactionIndex" => index,
-          "value" => value
-        } = tr
+          "blockHash" => _,
+          "blockNumber" => _,
+          "from" => _,
+          "gas" => _,
+          "gasPrice" => _,
+          "hash" => _,
+          "input" => _,
+          "nonce" => _,
+          "to" => _,
+          "transactionIndex" => _,
+          "value" => _
+        } = transaction
       ) do
-    elixir_to_params(%{tr | "r" => 0, "s" => 0, "v" => 0})
+        transaction
+        |> Map.merge(%{"r" => 0, "s" => 0, "v" => 0})
+        |> elixir_to_params()
   end
 
   @doc """
@@ -264,8 +258,7 @@ defmodule EthereumJSONRPC.Transaction do
        when key in ~w(blockHash condition creates from hash input jsonrpc publicKey raw to),
        do: {key, value}
 
-  defp entry_to_elixir({key, quantity})
-       when key in ~w(gas gasPrice nonce r s standardV v value) and quantity != nil do
+  defp entry_to_elixir({key, quantity}) when key in ~w(gas gasPrice nonce r s standardV v value) and quantity != nil do
     {key, quantity_to_integer(quantity)}
   end
 
