@@ -13,8 +13,8 @@ defmodule EthereumJSONRPC.Transaction do
   alias EthereumJSONRPC
 
   @type elixir :: %{
-    String.t() => EthereumJSONRPC.address() | EthereumJSONRPC.hash() | String.t() | non_neg_integer() | nil
-  }
+          String.t() => EthereumJSONRPC.address() | EthereumJSONRPC.hash() | String.t() | non_neg_integer() | nil
+        }
 
   @typedoc """
    * `"blockHash"` - `t:EthereumJSONRPC.hash/0` of the block this transaction is in.  `nil` when transaction is
@@ -42,9 +42,9 @@ defmodule EthereumJSONRPC.Transaction do
    * `"value"` - `t:EthereumJSONRPC.quantity/0` of wei transferred
   """
   @type t :: %{
-    String.t() =>
-      EthereumJSONRPC.address() | EthereumJSONRPC.hash() | EthereumJSONRPC.quantity() | String.t() | nil
-  }
+          String.t() =>
+            EthereumJSONRPC.address() | EthereumJSONRPC.hash() | EthereumJSONRPC.quantity() | String.t() | nil
+        }
 
   @type params :: %{
           block_hash: EthereumJSONRPC.hash(),
