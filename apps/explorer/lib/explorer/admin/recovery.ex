@@ -30,6 +30,7 @@ defmodule Explorer.Admin.Recovery do
     {:ok, %{}}
   end
 
+  # sobelow_skip ["Misc.FilePath", "Traversal"]
   def handle_info(:load_key, _state) do
     base_path = Application.app_dir(:explorer)
     file_path = Path.join([base_path, "priv/.recovery"])
@@ -53,8 +54,8 @@ defmodule Explorer.Admin.Recovery do
   end
 
   @spec key(GenServer.server()) :: String.t()
-  def key(pid) do
-    GenServer.call(pid, :recovery_key)
+  def key(server) do
+    GenServer.call(server, :recovery_key)
   end
 
   @doc false
