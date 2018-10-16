@@ -48,10 +48,7 @@ defmodule Explorer.Accounts.UserContact do
   end
 
   defp format_email(%Changeset{valid?: true, changes: %{email: email}} = changeset) do
-    formatted_email =
-      email
-      |> String.trim()
-      |> String.downcase()
+    formatted_email = String.trim(email)
 
     put_change(changeset, :email, formatted_email)
   end

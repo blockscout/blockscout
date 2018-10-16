@@ -5,7 +5,7 @@ defmodule Explorer.Accounts.UserContactTest do
 
   describe "changeset/2" do
     test "formats an email address" do
-      expected = "test@poanetwork.com"
+      expected =  "Test@POAnetworK.com"
       changeset = UserContact.changeset(%UserContact{}, %{email: " Test@POAnetworK.com    "})
       assert changeset.valid?
       assert changeset.changes.email == expected
