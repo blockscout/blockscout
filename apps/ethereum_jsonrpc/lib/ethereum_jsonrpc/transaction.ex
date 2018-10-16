@@ -143,7 +143,7 @@ defmodule EthereumJSONRPC.Transaction do
           "to" => "0x0"
         } = transaction
       ) do
-    %{ transaction | "to" => nil }
+    %{transaction | "to" => nil}
     |> elixir_to_params()
   end
 
@@ -164,9 +164,9 @@ defmodule EthereumJSONRPC.Transaction do
           "value" => _
         } = transaction
       ) do
-        transaction
-        |> Map.merge(%{"r" => 0, "s" => 0, "v" => 0})
-        |> elixir_to_params()
+    transaction
+    |> Map.merge(%{"r" => 0, "s" => 0, "v" => 0})
+    |> elixir_to_params()
   end
 
   @doc """
