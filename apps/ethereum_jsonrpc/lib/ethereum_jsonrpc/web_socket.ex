@@ -7,6 +7,9 @@ defmodule EthereumJSONRPC.WebSocket do
 
   @behaviour Transport
 
+  @enforce_keys ~w(url web_socket)a
+  defstruct ~w(url web_socket web_socket_options)a
+
   @typedoc """
   WebSocket name
   """
@@ -20,11 +23,16 @@ defmodule EthereumJSONRPC.WebSocket do
   @type web_socket :: pid() | name() | {atom(), node()}
 
   @typedoc """
+  Options for `web_socket` `t:module/0` in `t:t/0`.
+  """
+  @type web_socket_options :: %{required(:web_socket) => web_socket(), optional(atom()) => term()}
+
+  @typedoc """
   Options passed to `EthereumJSONRPC.Transport` callbacks.
 
   **MUST** contain `t:web_socket/0` referring to `t:pid/0` returned by `c:start_link/2`.
   """
-  @type options :: [{:web_socket, web_socket()} | {:web_socket_options, term()}]
+  @type t :: %__MODULE__{web_socket: module(), web_socket_options: web_socket_options}
 
   @doc """
   Allow `c:start_link/1` to be called as part of a supervision tree.
@@ -33,8 +41,6 @@ defmodule EthereumJSONRPC.WebSocket do
 
   @doc """
   Starts web socket attached to `url` with `options`.
-
-
   """
   # Return is same as `t:GenServer.on_start/0`
   @callback start_link([url :: String.t() | options :: term()]) ::
@@ -83,31 +89,27 @@ defmodule EthereumJSONRPC.WebSocket do
   @callback unsubscribe(web_socket(), Subscription.t()) :: :ok | {:error, reason :: term()}
 
   @impl Transport
-  @spec json_rpc(Transport.request(), options) :: {:ok, Transport.result()} | {:error, reason :: term()}
-  def json_rpc(request, options) do
-    web_socket_module = Keyword.fetch!(options, :web_socket)
-    %{web_socket: web_socket} = Keyword.fetch!(options, :web_socket_options)
-
+  @spec json_rpc(Transport.request(), t()) :: {:ok, Transport.result()} | {:error, reason :: term()}
+  def json_rpc(request, %__MODULE__{web_socket: web_socket_module, web_socket_options: %{web_socket: web_socket}}) do
     web_socket_module.json_rpc(web_socket, request)
   end
 
   @impl Transport
-  @spec subscribe(event :: Subscription.event(), params :: Subscription.params(), options) ::
+  @spec subscribe(event :: Subscription.event(), params :: Subscription.params(), t()) ::
           {:ok, Subscription.t()} | {:error, reason :: term()}
-  def subscribe(event, params, options) when is_binary(event) and is_list(params) do
-    web_socket_module = Keyword.fetch!(options, :web_socket)
-    %{web_socket: web_socket} = Keyword.fetch!(options, :web_socket_options)
-
+  def subscribe(event, params, %__MODULE__{web_socket: web_socket_module, web_socket_options: %{web_socket: web_socket}})
+      when is_binary(event) and is_list(params) do
     web_socket_module.subscribe(web_socket, event, params)
   end
 
   @impl Transport
-  @spec unsubscribe(%Subscription{transport: __MODULE__, transport_options: options}) ::
-          :ok | {:error, reason :: term()}
-  def unsubscribe(%Subscription{transport: __MODULE__, transport_options: transport_options} = subscription) do
-    web_socket_module = Keyword.fetch!(transport_options, :web_socket)
-    %{web_socket: web_socket} = Keyword.fetch!(transport_options, :web_socket_options)
-
+  @spec unsubscribe(%Subscription{transport: __MODULE__, transport_options: t()}) :: :ok | {:error, reason :: term()}
+  def unsubscribe(
+        %Subscription{
+          transport: __MODULE__,
+          transport_options: %__MODULE__{web_socket: web_socket_module, web_socket_options: %{web_socket: web_socket}}
+        } = subscription
+      ) do
     web_socket_module.unsubscribe(web_socket, subscription)
   end
 end

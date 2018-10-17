@@ -5,6 +5,7 @@ defmodule EthereumJSONRPCTest do
   import Mox
 
   alias EthereumJSONRPC.Subscription
+  alias EthereumJSONRPC.WebSocket.WebSocketClient
 
   setup :verify_on_exit!
 
@@ -548,27 +549,36 @@ defmodule EthereumJSONRPCTest do
       transport_options = subscribe_named_arguments[:transport_options]
       subscriber_pid = self()
 
-      if transport == EthereumJSONRPC.Mox do
-        expect(transport, :subscribe, fn _, _, _ ->
-          {:ok,
-           %Subscription{
-             id: "0x1",
-             subscriber_pid: subscriber_pid,
-             transport: transport,
-             transport_options: transport_options
-           }}
-        end)
-      end
+      subscription_transport_options =
+        case transport do
+          EthereumJSONRPC.Mox ->
+            expect(transport, :subscribe, fn "newHeads", [], _ ->
+              {:ok,
+               %Subscription{
+                 reference: make_ref(),
+                 subscriber_pid: subscriber_pid,
+                 transport: transport,
+                 transport_options: transport_options
+               }}
+            end)
+
+            transport_options
+
+          EthereumJSONRPC.WebSocket ->
+            update_in(transport_options.web_socket_options, fn %WebSocketClient.Options{} = web_socket_options ->
+              %WebSocketClient.Options{web_socket_options | event: "newHeads", params: []}
+            end)
+        end
 
       assert {:ok,
               %Subscription{
-                id: subscription_id,
+                reference: subscription_reference,
                 subscriber_pid: ^subscriber_pid,
                 transport: ^transport,
-                transport_options: ^transport_options
+                transport_options: ^subscription_transport_options
               }} = EthereumJSONRPC.subscribe("newHeads", subscribe_named_arguments)
 
-      assert is_binary(subscription_id)
+      assert is_reference(subscription_reference)
     end
 
     # Infura timeouts on 2018-09-12
@@ -584,7 +594,7 @@ defmodule EthereumJSONRPCTest do
       if transport == EthereumJSONRPC.Mox do
         expect(transport, :subscribe, fn _, _, _ ->
           subscription = %Subscription{
-            id: "0x1",
+            reference: make_ref(),
             subscriber_pid: subscriber_pid,
             transport: transport,
             transport_options: transport_options
@@ -612,7 +622,7 @@ defmodule EthereumJSONRPCTest do
 
       if transport == EthereumJSONRPC.Mox do
         subscription = %Subscription{
-          id: "0x1",
+          reference: make_ref(),
           subscriber_pid: subscriber_pid,
           transport: transport,
           transport_options: transport_options
@@ -639,7 +649,7 @@ defmodule EthereumJSONRPCTest do
 
       if transport == EthereumJSONRPC.Mox do
         subscription = %Subscription{
-          id: "0x1",
+          reference: make_ref(),
           subscriber_pid: subscriber_pid,
           transport: transport,
           transport_options: Keyword.fetch!(subscribe_named_arguments, :transport_options)
@@ -685,7 +695,7 @@ defmodule EthereumJSONRPCTest do
 
       if transport == EthereumJSONRPC.Mox do
         subscription = %Subscription{
-          id: "0x1",
+          reference: make_ref(),
           subscriber_pid: subscriber_pid,
           transport: transport,
           transport_options: transport_options
