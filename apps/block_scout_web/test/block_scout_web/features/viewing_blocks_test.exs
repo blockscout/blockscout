@@ -168,7 +168,7 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
   end
 
   describe "viewing reorg blocks list" do
-    test "lists uncle blocks", %{session: session} do
+    test "lists reorg blocks", %{session: session} do
       [reorg | _] = insert_list(10, :block, consensus: false)
 
       session

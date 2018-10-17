@@ -171,6 +171,7 @@ defmodule Explorer.Chain do
       |> Transaction.where_address_fields_match(address_hash, address_field)
       |> join_associations(necessity_by_association)
       |> where([transaction], is_nil(transaction.block_number))
+      |> remove_uncle_and_reorg_transactions()
       |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
       |> Repo.all()
       |> MapSet.new()
@@ -232,6 +233,7 @@ defmodule Explorer.Chain do
         paging_options
         |> fetch_transactions()
         |> Transaction.where_address_fields_match(address_hash, address_field)
+        |> remove_uncle_and_reorg_transactions()
         |> join_associations(necessity_by_association)
         |> Transaction.preload_token_transfers(address_hash)
         |> Repo.all()
@@ -241,6 +243,7 @@ defmodule Explorer.Chain do
     token_transfer_matches =
       paging_options
       |> fetch_transactions()
+      |> remove_uncle_and_reorg_transactions()
       |> TokenTransfer.where_address_fields_match(address_hash, direction)
       |> join_associations(necessity_by_association)
       |> Transaction.preload_token_transfers(address_hash)
@@ -1844,6 +1847,12 @@ defmodule Explorer.Chain do
 
   defp page_transaction(query, %PagingOptions{key: {index}}) do
     where(query, [transaction], transaction.index < ^index)
+  end
+
+  defp remove_uncle_and_reorg_transactions(query) do
+    query
+    |> join(:left, [transaction], f in assoc(transaction, :forks))
+    |> where([_, forks], is_nil(forks.uncle_hash))
   end
 
   @doc """

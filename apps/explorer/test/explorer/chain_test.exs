@@ -43,7 +43,25 @@ defmodule Explorer.ChainTest do
       assert [] == Chain.address_to_pending_transactions(address)
     end
 
-    test "with from pending transactions" do
+    test "excludes collated transaction" do
+      address = insert(:address)
+      :transaction
+      |> insert(from_address: address)
+      |> with_block()
+
+      assert [] == Chain.address_to_pending_transactions(address)
+    end
+
+    test "excludes reorg transaction" do
+      address = insert(:address)
+      block = insert(:block, consensus: false)
+      transaction = insert(:transaction, from_address: address)
+      insert(:transaction_fork, hash: transaction.hash, uncle_hash: block.hash)
+
+      assert [] == Chain.address_to_pending_transactions(address)
+    end
+
+    test "with from transactions" do
       address = insert(:address)
 
       transaction = insert(:transaction, from_address: address)
@@ -103,6 +121,18 @@ defmodule Explorer.ChainTest do
       address = insert(:address)
 
       assert Repo.aggregate(Transaction, :count, :hash) == 0
+
+      assert [] == Chain.address_to_transactions(address)
+    end
+
+    test "excludes reorg transaction" do
+      address = insert(:address)
+      block = insert(:block, consensus: false)
+      transaction =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block(block)
+      insert(:transaction_fork, hash: transaction.hash, uncle_hash: block.hash)
 
       assert [] == Chain.address_to_transactions(address)
     end
@@ -194,6 +224,19 @@ defmodule Explorer.ChainTest do
 
       %InternalTransaction{created_contract_address: address} =
         insert(:internal_transaction_create, transaction: transaction, index: 0)
+
+      assert [] == Chain.address_to_transactions(address)
+    end
+
+    test "excludes reorg transaction that have token transfers for the given address" do
+      address = insert(:address)
+      block = insert(:block, consensus: false)
+      transaction =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block(block)
+      insert(:transaction_fork, hash: transaction.hash, uncle_hash: block.hash)
+      insert(:token_transfer, to_address: address, transaction: transaction)
 
       assert [] == Chain.address_to_transactions(address)
     end

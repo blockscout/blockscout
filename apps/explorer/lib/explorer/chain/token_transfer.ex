@@ -147,20 +147,20 @@ defmodule Explorer.Chain.TokenTransfer do
 
   def where_address_fields_match(query, address_hash, :from) do
     query
-    |> join(:left, [transaction], tt in assoc(transaction, :token_transfers))
-    |> where([_transaction, tt], tt.from_address_hash == ^address_hash)
+    |> join(:left, [transaction, _fork], tt in assoc(transaction, :token_transfers))
+    |> where([_transaction, _fork, tt], tt.from_address_hash == ^address_hash)
   end
 
   def where_address_fields_match(query, address_hash, :to) do
     query
-    |> join(:left, [transaction], tt in assoc(transaction, :token_transfers))
-    |> where([_transaction, tt], tt.to_address_hash == ^address_hash)
+    |> join(:left, [transaction, _fork], tt in assoc(transaction, :token_transfers))
+    |> where([_transaction, _fork, tt], tt.to_address_hash == ^address_hash)
   end
 
   def where_address_fields_match(query, address_hash, _) do
     query
-    |> join(:left, [transaction], tt in assoc(transaction, :token_transfers))
-    |> where([_transaction, tt], tt.to_address_hash == ^address_hash or tt.from_address_hash == ^address_hash)
+    |> join(:left, [transaction, _fork], tt in assoc(transaction, :token_transfers))
+    |> where([_transaction, _fork, tt], tt.to_address_hash == ^address_hash or tt.from_address_hash == ^address_hash)
   end
 
   @doc """
