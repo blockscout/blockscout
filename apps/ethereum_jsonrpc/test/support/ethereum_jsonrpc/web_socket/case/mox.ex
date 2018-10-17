@@ -35,11 +35,11 @@ defmodule EthereumJSONRPC.WebSocket.Case.Mox do
       block_interval: @block_interval,
       subscribe_named_arguments: [
         transport: EthereumJSONRPC.WebSocket,
-        transport_options: [
+        transport_options: %EthereumJSONRPC.WebSocket{
           web_socket: web_socket_module,
           web_socket_options: %{web_socket: web_socket},
           url: url
-        ]
+        }
       ]
     }
   end

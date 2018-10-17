@@ -14,13 +14,16 @@ defmodule Indexer.Block.Realtime.Supervisor do
     children =
       case Keyword.fetch!(subscribe_named_arguments, :transport) do
         EthereumJSONRPC.WebSocket ->
-          transport_options = Keyword.fetch!(subscribe_named_arguments, :transport_options)
-          url = Keyword.fetch!(transport_options, :url)
-          web_socket_module = Keyword.fetch!(transport_options, :web_socket)
+          transport_options =
+            struct!(EthereumJSONRPC.WebSocket, Keyword.fetch!(subscribe_named_arguments, :transport_options))
+
           web_socket = Indexer.Block.Realtime.WebSocket
+          web_socket_options = %EthereumJSONRPC.WebSocket.WebSocketClient.Options{web_socket: web_socket}
+          transport_options = %EthereumJSONRPC.WebSocket{transport_options | web_socket_options: web_socket_options}
+          %EthereumJSONRPC.WebSocket{url: url, web_socket: web_socket_module} = transport_options
 
           block_fetcher_subscribe_named_arguments =
-            put_in(subscribe_named_arguments[:transport_options][:web_socket_options], %{web_socket: web_socket})
+            put_in(subscribe_named_arguments[:transport_options], transport_options)
 
           [
             {Task.Supervisor, name: Indexer.Block.Realtime.TaskSupervisor},

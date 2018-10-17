@@ -5,14 +5,15 @@ defmodule EthereumJSONRPC.WebSocketTest do
   import Mox
 
   alias EthereumJSONRPC.{Subscription, WebSocket}
+  alias EthereumJSONRPC.WebSocket.WebSocketClient
 
   setup :verify_on_exit!
 
   describe "json_rpc/2" do
     test "can get result", %{subscribe_named_arguments: subscribe_named_arguments} do
-      transport_options = subscribe_named_arguments[:transport_options]
+      %WebSocket{web_socket: web_socket} = transport_options = subscribe_named_arguments[:transport_options]
 
-      if transport_options[:web_socket] == EthereumJSONRPC.WebSocket.Mox do
+      if web_socket == EthereumJSONRPC.WebSocket.Mox do
         expect(EthereumJSONRPC.WebSocket.Mox, :json_rpc, fn _, _ ->
           {:ok, %{"number" => "0x0"}}
         end)
@@ -27,9 +28,9 @@ defmodule EthereumJSONRPC.WebSocketTest do
     # Infura timeouts on 2018-09-10
     @tag :no_geth
     test "can get error", %{subscribe_named_arguments: subscribe_named_arguments} do
-      transport_options = subscribe_named_arguments[:transport_options]
+      %WebSocket{web_socket: web_socket} = transport_options = subscribe_named_arguments[:transport_options]
 
-      if transport_options[:web_socket] == EthereumJSONRPC.WebSocket.Mox do
+      if web_socket == EthereumJSONRPC.WebSocket.Mox do
         expect(EthereumJSONRPC.WebSocket.Mox, :json_rpc, fn _, _ ->
           {:error,
            %{
@@ -55,30 +56,39 @@ defmodule EthereumJSONRPC.WebSocketTest do
   describe "subscribe/2" do
     test "can subscribe to newHeads", %{subscribe_named_arguments: subscribe_named_arguments} do
       transport = Keyword.fetch!(subscribe_named_arguments, :transport)
-      transport_options = subscribe_named_arguments[:transport_options]
+      %WebSocket{web_socket: web_socket_module} = transport_options = subscribe_named_arguments[:transport_options]
       subscriber_pid = self()
 
-      if transport_options[:web_socket] == EthereumJSONRPC.WebSocket.Mox do
-        expect(EthereumJSONRPC.WebSocket.Mox, :subscribe, fn _, _, _ ->
-          {:ok,
-           %Subscription{
-             id: "0x1",
-             subscriber_pid: subscriber_pid,
-             transport: transport,
-             transport_options: transport_options
-           }}
-        end)
-      end
+      subscription_transport_options =
+        case web_socket_module do
+          EthereumJSONRPC.WebSocket.Mox ->
+            expect(EthereumJSONRPC.WebSocket.Mox, :subscribe, fn _, "newHeads", [] ->
+              {:ok,
+               %Subscription{
+                 reference: make_ref(),
+                 subscriber_pid: subscriber_pid,
+                 transport: transport,
+                 transport_options: transport_options
+               }}
+            end)
+
+            transport_options
+
+          EthereumJSONRPC.WebSocket.WebSocketClient ->
+            update_in(transport_options.web_socket_options, fn %WebSocketClient.Options{} = web_socket_options ->
+              %WebSocketClient.Options{web_socket_options | event: "newHeads", params: []}
+            end)
+        end
 
       assert {:ok,
               %Subscription{
-                id: subscription_id,
+                reference: subscription_reference,
                 subscriber_pid: ^subscriber_pid,
                 transport: ^transport,
-                transport_options: ^transport_options
+                transport_options: ^subscription_transport_options
               }} = WebSocket.subscribe("newHeads", [], transport_options)
 
-      assert is_binary(subscription_id)
+      assert is_reference(subscription_reference)
     end
 
     # Infura timeouts on 2018-09-10
@@ -87,14 +97,13 @@ defmodule EthereumJSONRPC.WebSocketTest do
       block_interval: block_interval,
       subscribe_named_arguments: subscribe_named_arguments
     } do
-      transport_options = subscribe_named_arguments[:transport_options]
-      web_socket_module = Keyword.fetch!(transport_options, :web_socket)
+      %WebSocket{web_socket: web_socket_module} = transport_options = subscribe_named_arguments[:transport_options]
       subscriber_pid = self()
 
       if web_socket_module == EthereumJSONRPC.WebSocket.Mox do
         expect(web_socket_module, :subscribe, fn _, _, _ ->
           subscription = %Subscription{
-            id: "0x1",
+            reference: make_ref(),
             subscriber_pid: subscriber_pid,
             transport: Keyword.fetch!(subscribe_named_arguments, :transport),
             transport_options: transport_options
@@ -114,13 +123,12 @@ defmodule EthereumJSONRPC.WebSocketTest do
 
   describe "unsubscribe/2" do
     test "can unsubscribe", %{subscribe_named_arguments: subscribe_named_arguments} do
-      transport_options = subscribe_named_arguments[:transport_options]
-      web_socket_module = Keyword.fetch!(transport_options, :web_socket)
+      %WebSocket{web_socket: web_socket_module} = transport_options = subscribe_named_arguments[:transport_options]
       subscriber_pid = self()
 
       if web_socket_module == EthereumJSONRPC.WebSocket.Mox do
         subscription = %Subscription{
-          id: "0x1",
+          reference: make_ref(),
           subscriber_pid: subscriber_pid,
           transport: Keyword.fetch!(subscribe_named_arguments, :transport),
           transport_options: transport_options
@@ -142,13 +150,12 @@ defmodule EthereumJSONRPC.WebSocketTest do
       block_interval: block_interval,
       subscribe_named_arguments: subscribe_named_arguments
     } do
-      transport_options = subscribe_named_arguments[:transport_options]
-      web_socket_module = Keyword.fetch!(transport_options, :web_socket)
+      %WebSocket{web_socket: web_socket_module} = transport_options = subscribe_named_arguments[:transport_options]
       subscriber_pid = self()
 
       if web_socket_module == EthereumJSONRPC.WebSocket.Mox do
         subscription = %Subscription{
-          id: "0x1",
+          reference: make_ref(),
           subscriber_pid: subscriber_pid,
           transport: Keyword.fetch!(subscribe_named_arguments, :transport),
           transport_options: transport_options
@@ -189,13 +196,12 @@ defmodule EthereumJSONRPC.WebSocketTest do
     end
 
     test "return error if already unsubscribed", %{subscribe_named_arguments: subscribe_named_arguments} do
-      transport_options = subscribe_named_arguments[:transport_options]
-      web_socket_module = Keyword.fetch!(transport_options, :web_socket)
+      %WebSocket{web_socket: web_socket_module} = transport_options = subscribe_named_arguments[:transport_options]
       subscriber_pid = self()
 
       if web_socket_module == EthereumJSONRPC.WebSocket.Mox do
         subscription = %Subscription{
-          id: "0x1",
+          reference: make_ref(),
           subscriber_pid: subscriber_pid,
           transport: Keyword.fetch!(subscribe_named_arguments, :transport),
           transport_options: transport_options
