@@ -5,8 +5,8 @@ defmodule EthereumJSONRPC.Subscription do
 
   alias EthereumJSONRPC.Transport
 
-  @enforce_keys ~w(id subscriber_pid transport transport_options)a
-  defstruct ~w(id subscriber_pid transport transport_options)a
+  @enforce_keys ~w(reference subscriber_pid transport transport_options)a
+  defstruct ~w(reference subscriber_pid transport transport_options)a
 
   @typedoc """
   An event that can be subscribed to.
@@ -26,12 +26,17 @@ defmodule EthereumJSONRPC.Subscription do
   @type params :: list()
 
   @typedoc """
-   * `id` - the `t:/id/0` of the subscription on the server
-   * `subscriber_pid` - the `t:pid/0` of process where `transport_pid` should send messages
-   * `transport` - the `t:EthereumJSONRPC.Transport.t/0` callback module
-   * `transport_options` - options passed to `c:EthereumJSONRPC.Transport.json_rpc/2`
+   * `reference` - the `t:reference/0` for referring to the subscription when talking to `transport_pid`.
+   * `subscriber_pid` - the `t:pid/0` of process where `transport_pid` should send messages.
+   * `transport` - the `t:EthereumJSONRPC.Transport.t/0` callback module.
+   * `transport_options` - options passed to `c:EthereumJSONRPC.Transport.json_rpc/2`.
   """
-  @type t :: %__MODULE__{id: id, subscriber_pid: pid, transport: Transport.t(), transport_options: Transport.options()}
+  @type t :: %__MODULE__{
+          reference: reference(),
+          subscriber_pid: pid(),
+          transport: Transport.t(),
+          transport_options: Transport.options()
+        }
 
   @doc """
   Publishes `messages` to all `subscriptions`s' `subscriber_pid`s.

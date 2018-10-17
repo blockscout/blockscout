@@ -58,8 +58,10 @@ defmodule EthereumJsonrpc.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      # CACerts bundle for `EthereumJSONRPC.WebSocket.Client`
+      # CACerts bundle for `EthereumJSONRPC.WebSocket.WebSocketClient`
       {:certifi, "~> 2.3"},
+      # WebSocket-server for testing `EthereumJSONRPC.WebSocket.WebSocketClient`.
+      {:cowboy, "~> 1.1", only: :test},
       # Style Checking
       {:credo, "0.9.2", only: [:dev, :test], runtime: false},
       # Static Type Checking

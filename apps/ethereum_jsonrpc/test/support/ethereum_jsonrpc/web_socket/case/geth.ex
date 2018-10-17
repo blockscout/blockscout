@@ -14,11 +14,11 @@ defmodule EthereumJSONRPC.WebSocket.Case.Geth do
       block_interval: 25_000,
       subscribe_named_arguments: [
         transport: EthereumJSONRPC.WebSocket,
-        transport_options: [
+        transport_options: %EthereumJSONRPC.WebSocket{
           web_socket: web_socket_module,
-          web_socket_options: %{web_socket: web_socket},
+          web_socket_options: %EthereumJSONRPC.WebSocket.WebSocketClient.Options{web_socket: web_socket},
           url: url
-        ]
+        }
       ]
     }
   end

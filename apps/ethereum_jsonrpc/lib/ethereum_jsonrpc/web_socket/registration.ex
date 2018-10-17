@@ -3,10 +3,10 @@ defmodule EthereumJSONRPC.WebSocket.Registration do
   When a caller registers for responses to asynchronous frame responses.
   """
 
-  alias EthereumJSONRPC.Subscription
+  alias EthereumJSONRPC.{Subscription, Transport}
 
-  @enforce_keys ~w(from type)a
-  defstruct ~w(from type subscription_id)a
+  @enforce_keys ~w(from request type)a
+  defstruct ~w(from request type)a
 
   @typedoc """
   What kind of request will be issued by the caller
@@ -20,5 +20,62 @@ defmodule EthereumJSONRPC.WebSocket.Registration do
   """
   @type type :: :json_rpc | :subscribe | :unsubscribe
 
-  @type t :: %__MODULE__{from: GenServer.from(), type: type, subscription_id: Subscription.id()}
+  @typedoc """
+  `"eth_subscribe"`
+  """
+  @type subscribe :: Transport.method()
+
+  @typedoc """
+  The event to `t:subscribe/0` to.
+  """
+  @type event :: String.t()
+
+  @typedoc """
+  Parameters unique to `t:event/0` that customize the `t:subscribe`.
+  """
+  @type event_param :: term()
+
+  @typedoc """
+  Parameters to `t:subscribe/0` `t:EthereumJSONRPC.Transport.request/0`.
+
+  A list that start with the `t:event/0` followed by zero or more `t:event_param/0`.
+  """
+  @type subscribe_params :: [event | event_param, ...]
+
+  @typedoc """
+  `"eth_unsubscribe"`
+  """
+  @type unsubscribe :: Transport.method()
+
+  @typedoc """
+  A list containing the `t:EthereumJSONRPC.Subscription.id/0` that is being unsubscribed.
+  """
+  @type unsubscribe_params :: [Subscription.id(), ...]
+
+  @typedoc """
+   * `from` - used to `GenServer.reply/2` to caller
+   * `type` - the `t:type/0` of request
+   * `request` - the request sent to the server.  Used to replay the request on disconnect.
+  """
+  @type t ::
+          %__MODULE__{
+            from: GenServer.from(),
+            type: :json_rpc,
+            request: %{jsonrpc: String.t(), method: Transport.method(), params: list(), id: non_neg_integer()}
+          }
+          | %__MODULE__{
+              from: GenServer.from(),
+              type: :subscribe,
+              request: %{jsonrpc: String.t(), method: subscribe(), params: subscribe_params(), id: non_neg_integer()}
+            }
+          | %__MODULE__{
+              from: GenServer.from(),
+              type: :unsubscribe,
+              request: %{
+                jsonrpc: String.t(),
+                method: unsubscribe(),
+                params: unsubscribe_params(),
+                id: non_neg_integer()
+              }
+            }
 end
