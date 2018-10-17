@@ -25,18 +25,18 @@ defmodule BlockScoutWeb.AdminRouter do
     plug(RequireAdminRole)
   end
 
-  scope "/", BlockScoutWeb.Admin do
+  scope "/setup", BlockScoutWeb.Admin do
     pipe_through([:browser])
 
-    get("/setup", SetupController, :configure)
-    post("/setup", SetupController, :configure_admin)
+    get("/", SetupController, :configure)
+    post("/", SetupController, :configure_admin)
   end
 
-  scope "/", BlockScoutWeb.Admin do
+  scope "/login", BlockScoutWeb.Admin do
     pipe_through([:browser, :check_configured])
 
-    get("/login", SessionController, :new)
-    post("/login", SessionController, :create)
+    get("/", SessionController, :new)
+    post("/", SessionController, :create)
   end
 
   scope "/", BlockScoutWeb.Admin do
