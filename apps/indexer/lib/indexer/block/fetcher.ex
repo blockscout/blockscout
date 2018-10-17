@@ -6,7 +6,7 @@ defmodule Indexer.Block.Fetcher do
   require Logger
 
   alias Explorer.Chain.{Address, Block, Import}
-  alias Indexer.{CoinBalance, AddressExtraction, Token, TokenTransfers}
+  alias Indexer.{AddressExtraction, CoinBalance, MintTransfer, Token, TokenTransfers}
   alias Indexer.Address.{CoinBalances, TokenBalances}
   alias Indexer.Block.Fetcher.Receipts
 
@@ -100,10 +100,12 @@ defmodule Indexer.Block.Fetcher do
          %{logs: logs, receipts: receipts} = receipt_params,
          transactions_with_receipts = Receipts.put(transactions_without_receipts, receipts),
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
+         %{mint_transfers: mint_transfers} = MintTransfer.parse(logs),
          addresses =
            AddressExtraction.extract_addresses(%{
              blocks: blocks,
              logs: logs,
+             mint_transfers: mint_transfers,
              token_transfers: token_transfers,
              transactions: transactions_with_receipts
            }),
