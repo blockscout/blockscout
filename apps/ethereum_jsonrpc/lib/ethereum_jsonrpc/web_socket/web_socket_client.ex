@@ -195,7 +195,8 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
   end
 
   # Re-run in `onconnect\2`
-  defp disconnect_request_id_registration(%Registration{type: type}, state) when type in ~w(json_rpc subscribe)a do
+  defp disconnect_request_id_registration({_request_id, %Registration{type: type}}, state)
+       when type in ~w(json_rpc subscribe)a do
     state
   end
 
@@ -375,7 +376,11 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
   end
 
   defp respond_to_registration(
-         %Registration{type: :subscribe, from: {subscriber_pid, _} = from, request: %{params: [event | params]}},
+         %Registration{
+           type: :subscribe,
+           from: {subscriber_pid, from_reference} = from,
+           request: %{params: [event | params]}
+         },
          %{"result" => subscription_id},
          %__MODULE__{
            subscription_id_to_subscription_reference: subscription_id_to_subscription_reference,
@@ -384,30 +389,53 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
            url: url
          } = state
        ) do
-    subscription_reference = make_ref()
+    new_state =
+      case subscription_reference_to_subscription do
+        # resubscribe
+        %{
+          ^from_reference => %Subscription{
+            subscriber_pid: ^subscriber_pid,
+            transport_options: %WebSocket{
+              web_socket: __MODULE__,
+              web_socket_options: %Options{event: ^event, params: ^params}
+            }
+          }
+        } ->
+          %__MODULE__{
+            state
+            | subscription_id_to_subscription_reference:
+                Map.put(subscription_id_to_subscription_reference, subscription_id, from_reference),
+              subscription_reference_to_subscription_id:
+                Map.put(subscription_reference_to_subscription_id, from_reference, subscription_id)
+          }
 
-    subscription = %Subscription{
-      reference: subscription_reference,
-      subscriber_pid: subscriber_pid,
-      transport: EthereumJSONRPC.WebSocket,
-      transport_options: %EthereumJSONRPC.WebSocket{
-        web_socket: __MODULE__,
-        web_socket_options: %Options{web_socket: self(), event: event, params: params},
-        url: url
-      }
-    }
+        # new subscription
+        _ ->
+          subscription_reference = make_ref()
 
-    GenServer.reply(from, {:ok, subscription})
+          subscription = %Subscription{
+            reference: subscription_reference,
+            subscriber_pid: subscriber_pid,
+            transport: EthereumJSONRPC.WebSocket,
+            transport_options: %EthereumJSONRPC.WebSocket{
+              web_socket: __MODULE__,
+              web_socket_options: %Options{web_socket: self(), event: event, params: params},
+              url: url
+            }
+          }
 
-    new_state = %__MODULE__{
-      state
-      | subscription_id_to_subscription_reference:
-          Map.put(subscription_id_to_subscription_reference, subscription_id, subscription_reference),
-        subscription_reference_to_subscription:
-          Map.put(subscription_reference_to_subscription, subscription_reference, subscription),
-        subscription_reference_to_subscription_id:
-          Map.put(subscription_reference_to_subscription_id, subscription_reference, subscription_id)
-    }
+          GenServer.reply(from, {:ok, subscription})
+
+          %__MODULE__{
+            state
+            | subscription_reference_to_subscription:
+                Map.put(subscription_reference_to_subscription, subscription_reference, subscription),
+              subscription_id_to_subscription_reference:
+                Map.put(subscription_id_to_subscription_reference, subscription_id, subscription_reference),
+              subscription_reference_to_subscription_id:
+                Map.put(subscription_reference_to_subscription_id, subscription_reference, subscription_id)
+          }
+      end
 
     {:ok, new_state}
   end
@@ -487,6 +515,7 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
        ) do
     Enum.reduce(subscription_reference_to_subscription, initial_state, fn {subscription_reference,
                                                                            %Subscription{
+                                                                             subscriber_pid: subscriber_pid,
                                                                              transport_options: %WebSocket{
                                                                                web_socket: __MODULE__,
                                                                                web_socket_options: %Options{
@@ -508,7 +537,7 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
         acc_state
         | request_id_to_registration:
             Map.put(acc_request_id_to_registration, request_id, %Registration{
-              from: {self(), subscription_reference},
+              from: {subscriber_pid, subscription_reference},
               type: :subscribe,
               request: request
             })
