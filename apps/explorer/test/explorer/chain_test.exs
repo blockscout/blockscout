@@ -1562,6 +1562,14 @@ defmodule Explorer.ChainTest do
       assert [] = Chain.recent_pending_transactions()
     end
 
+    test "excludes reorg transaction" do
+      block = insert(:block, consensus: false)
+      transaction = insert(:transaction)
+      insert(:transaction_fork, hash: transaction.hash, uncle_hash: block.hash)
+
+      assert [] == Chain.recent_pending_transactions()
+    end
+
     test "with transactions" do
       %Transaction{hash: hash} = insert(:transaction)
 
@@ -1947,6 +1955,17 @@ defmodule Explorer.ChainTest do
     test "it excludes pending transactions" do
       insert(:transaction)
       assert [] == Explorer.Chain.recent_collated_transactions()
+    end
+
+    test "excludes reorg transaction" do
+      block = insert(:block, consensus: false)
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+      insert(:transaction_fork, hash: transaction.hash, uncle_hash: block.hash)
+
+      assert [] == Chain.recent_collated_transactions()
     end
 
     test "returns a list of recent collated transactions" do

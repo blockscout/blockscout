@@ -171,7 +171,7 @@ defmodule Explorer.Chain do
       |> Transaction.where_address_fields_match(address_hash, address_field)
       |> join_associations(necessity_by_association)
       |> where([transaction], is_nil(transaction.block_number))
-      |> remove_uncle_and_reorg_transactions()
+      |> remove_reorg_transactions()
       |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
       |> Repo.all()
       |> MapSet.new()
@@ -233,7 +233,7 @@ defmodule Explorer.Chain do
         paging_options
         |> fetch_transactions()
         |> Transaction.where_address_fields_match(address_hash, address_field)
-        |> remove_uncle_and_reorg_transactions()
+        |> remove_reorg_transactions()
         |> join_associations(necessity_by_association)
         |> Transaction.preload_token_transfers(address_hash)
         |> Repo.all()
@@ -243,7 +243,7 @@ defmodule Explorer.Chain do
     token_transfer_matches =
       paging_options
       |> fetch_transactions()
-      |> remove_uncle_and_reorg_transactions()
+      |> remove_reorg_transactions()
       |> TokenTransfer.where_address_fields_match(address_hash, direction)
       |> join_associations(necessity_by_association)
       |> Transaction.preload_token_transfers(address_hash)
@@ -1361,6 +1361,7 @@ defmodule Explorer.Chain do
     |> Keyword.get(:paging_options, @default_paging_options)
     |> fetch_transactions()
     |> where([transaction], not is_nil(transaction.block_number) and not is_nil(transaction.index))
+    |> remove_reorg_transactions()
     |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
     |> join_associations(necessity_by_association)
     |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
@@ -1400,6 +1401,7 @@ defmodule Explorer.Chain do
     |> page_pending_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> where([transaction], is_nil(transaction.block_hash))
+    |> remove_reorg_transactions()
     |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
     |> join_associations(necessity_by_association)
     |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
@@ -1849,7 +1851,7 @@ defmodule Explorer.Chain do
     where(query, [transaction], transaction.index < ^index)
   end
 
-  defp remove_uncle_and_reorg_transactions(query) do
+  defp remove_reorg_transactions(query) do
     query
     |> join(:left, [transaction], f in assoc(transaction, :forks))
     |> where([_, forks], is_nil(forks.uncle_hash))
