@@ -10,6 +10,30 @@ defmodule EthereumJSONRPC.Parity do
 
   @behaviour EthereumJSONRPC.Variant
 
+  @impl EthereumJSONRPC.Variant
+  def fetch_beneficiaries(block_range, json_rpc_named_arguments) do
+    Enum.reduce(
+      Enum.with_index(block_range),
+      {:ok, MapSet.new()},
+      fn
+        {block_number, index}, {:ok, beneficiaries} ->
+          quantity = EthereumJSONRPC.integer_to_quantity(block_number)
+
+          case trace_block(index, quantity, json_rpc_named_arguments) do
+            {:ok, traces} when is_list(traces) ->
+              new_beneficiaries = extract_beneficiaries(traces)
+              {:ok, MapSet.union(new_beneficiaries, beneficiaries)}
+
+            _ ->
+              {:error, "Error fetching block reward contract beneficiaries"}
+          end
+
+        _, {:error, _} = error ->
+          error
+      end
+    )
+  end
+
   @doc """
   Fetches the `t:Explorer.Chain.InternalTransaction.changeset/2` params from the Parity trace URL.
   """
@@ -46,6 +70,27 @@ defmodule EthereumJSONRPC.Parity do
 
       {:ok, transactions_params}
     end
+  end
+
+  defp extract_beneficiaries(traces) when is_list(traces) do
+    Enum.reduce(traces, MapSet.new(), fn
+      %{"action" => %{"rewardType" => "block", "author" => author}, "blockNumber" => block_number}, beneficiaries ->
+        beneficiary = %{
+          block_number: block_number,
+          address_hash: author
+        }
+
+        MapSet.put(beneficiaries, beneficiary)
+
+      _, beneficiaries ->
+        beneficiaries
+    end)
+  end
+
+  defp trace_block(index, quantity, json_rpc_named_arguments) do
+    %{id: index, method: "trace_block", params: [quantity]}
+    |> request()
+    |> json_rpc(json_rpc_named_arguments)
   end
 
   defp trace_replay_transaction_responses_to_internal_transactions_params(responses, id_to_params)

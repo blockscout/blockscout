@@ -188,6 +188,13 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
+  Fetches block reward contract beneficiaries from variant API.
+  """
+  def fetch_beneficiaries(_first.._last = range, json_rpc_named_arguments) do
+    Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_beneficiaries(range, json_rpc_named_arguments)
+  end
+
+  @doc """
   Fetches blocks by block hashes.
 
   Transaction data is included for each block.

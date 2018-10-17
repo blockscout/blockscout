@@ -63,6 +63,9 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
                    "uncles" => []
                  }}
 
+              %{method: "trace_block"}, _options ->
+                {:ok, []}
+
               [%{method: "eth_getBlockByNumber", params: [_, true]} | _] = requests, _options ->
                 {:ok,
                  Enum.map(requests, fn %{id: id, params: [block_quantity, true]} ->
@@ -464,6 +467,17 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
            }
          ]}
       end)
+      |> (fn mock ->
+            case Keyword.fetch!(json_rpc_named_arguments, :variant) do
+              EthereumJSONRPC.Parity ->
+                expect(mock, :json_rpc, fn %{method: "trace_block"}, _options ->
+                  {:ok, []}
+                end)
+
+              _ ->
+                mock
+            end
+          end).()
       |> stub(:json_rpc, fn [
                               %{
                                 id: id,
