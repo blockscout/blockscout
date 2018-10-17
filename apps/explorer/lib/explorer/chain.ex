@@ -125,14 +125,13 @@ defmodule Explorer.Chain do
       [internal_transaction],
       transaction in assoc(internal_transaction, :transaction)
     )
-    |> join(:left, [internal_transaction, transaction], block in assoc(transaction, :block))
     |> InternalTransaction.where_address_fields_match(hash, direction)
-    |> where_transaction_has_multiple_internal_transactions()
+    |> InternalTransaction.where_is_different_from_parent_transaction()
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by(
-      [it, transaction, block],
-      desc: block.number,
+      [it, transaction],
+      desc: transaction.block_number,
       desc: transaction.index,
       desc: it.index
     )
