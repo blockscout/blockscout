@@ -24,6 +24,8 @@ defmodule Explorer.ChainTest do
 
   alias Explorer.Chain.Supply.ProofOfAuthority
 
+  alias Explorer.Counters.TokenHoldersCounter
+
   doctest Explorer.Chain
 
   describe "address_estimated_count/1" do
@@ -2860,7 +2862,7 @@ defmodule Explorer.ChainTest do
   end
 
   describe "count_token_holders_from_token_hash" do
-    test "counts different addresses that have the token" do
+    test "returns the most current count about token holders" do
       address_a = insert(:address, hash: "0xe49fedd93960a0267b3c3b2c1e2d66028e013fee")
       address_b = insert(:address, hash: "0x5f26097334b6a32b7951df61fd0c5803ec5d8354")
 
@@ -2882,55 +2884,9 @@ defmodule Explorer.ChainTest do
         value: 1000
       )
 
+      TokenHoldersCounter.consolidate()
+
       assert Chain.count_token_holders_from_token_hash(contract_address_hash) == 2
-    end
-
-    test "counts only the last block" do
-      address = insert(:address, hash: "0xe49fedd93960a0267b3c3b2c1e2d66028e013fee")
-
-      %Token{contract_address_hash: contract_address_hash} = insert(:token)
-
-      insert(
-        :token_balance,
-        address: address,
-        block_number: 1000,
-        token_contract_address_hash: contract_address_hash,
-        value: 5000
-      )
-
-      insert(
-        :token_balance,
-        address: address,
-        block_number: 1002,
-        token_contract_address_hash: contract_address_hash,
-        value: 1000
-      )
-
-      assert Chain.count_token_holders_from_token_hash(contract_address_hash) == 1
-    end
-
-    test "counts only the last block that has value greater than 0" do
-      address = insert(:address, hash: "0xe49fedd93960a0267b3c3b2c1e2d66028e013fee")
-
-      %Token{contract_address_hash: contract_address_hash} = insert(:token)
-
-      insert(
-        :token_balance,
-        address: address,
-        block_number: 1000,
-        token_contract_address_hash: contract_address_hash,
-        value: 5000
-      )
-
-      insert(
-        :token_balance,
-        address: address,
-        block_number: 1002,
-        token_contract_address_hash: contract_address_hash,
-        value: 0
-      )
-
-      assert Chain.count_token_holders_from_token_hash(contract_address_hash) == 0
     end
   end
 

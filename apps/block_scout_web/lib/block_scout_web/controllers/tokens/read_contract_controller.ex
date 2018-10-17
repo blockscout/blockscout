@@ -10,7 +10,8 @@ defmodule BlockScoutWeb.Tokens.ReadContractController do
         conn,
         "index.html",
         token: token,
-        total_token_transfers: Chain.count_token_transfers_from_token_hash(address_hash)
+        total_token_transfers: Chain.count_token_transfers_from_token_hash(address_hash),
+        total_token_holders: Chain.count_token_holders_from_token_hash(address_hash)
       )
     else
       :error ->
