@@ -123,7 +123,7 @@ defmodule Explorer.Chain do
 
     InternalTransaction
     |> InternalTransaction.where_address_fields_match(hash, direction)
-    |> where_transaction_has_multiple_internal_transactions()
+    |> InternalTransaction.where_is_different_from_parent_transaction()
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by(

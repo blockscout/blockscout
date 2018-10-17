@@ -468,4 +468,12 @@ defmodule Explorer.Chain.InternalTransaction do
         it.created_contract_address_hash == ^address_hash
     )
   end
+
+  def where_is_different_from_parent_transaction(query) do
+    where(
+      query,
+      [it],
+      (it.type == ^:call and it.index > 0) or it.type != ^:call
+    )
+  end
 end
