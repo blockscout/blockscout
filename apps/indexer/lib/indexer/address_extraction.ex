@@ -106,6 +106,16 @@ defmodule Indexer.AddressExtraction do
         %{from: :block_number, to: :fetched_coin_balance_block_number},
         %{from: :token_contract_address_hash, to: :hash}
       ]
+    ],
+    mint_transfers: [
+      [
+        %{from: :block_number, to: :fetched_coin_balance_block_number},
+        %{from: :from_address_hash, to: :hash}
+      ],
+      [
+        %{from: :block_number, to: :fetched_coin_balance_block_number},
+        %{from: :to_address_hash, to: :hash}
+      ]
     ]
   }
 
@@ -360,6 +370,13 @@ defmodule Indexer.AddressExtraction do
               required(:from_address_hash) => String.t(),
               required(:to_address_hash) => String.t(),
               required(:token_contract_address_hash) => String.t(),
+              required(:block_number) => non_neg_integer()
+            }
+          ],
+          optional(:mint_transfers) => [
+            %{
+              required(:from_address_hash) => String.t(),
+              required(:to_address_hash) => String.t(),
               required(:block_number) => non_neg_integer()
             }
           ]
