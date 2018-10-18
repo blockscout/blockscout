@@ -29,7 +29,6 @@ defmodule EthereumJSONRPC.RequestCoordinator do
   waits an amount of time before proceeding based on the count of recent
   failures.
   """
-  @spec perform(term(), )
   def perform(request, named_arguments) do
     transport = Keyword.fetch!(named_arguments, :transport)
     transport_options = Keyword.fetch!(named_arguments, :transport_options)
@@ -53,12 +52,12 @@ defmodule EthereumJSONRPC.RequestCoordinator do
 
     sleep_if_too_many_recent_timeouts(key)
 
-    case request(transport, request, transport_options) do
+    case transport.json_rpc(request, transport_options) do
       {:error, :timeout} = error ->
         increment_recent_timeouts(key)
 
         if retry? do
-          request_with_retry(transport, request, transport_options)
+          request(transport, request, transport_options, true)
         else
           error
         end

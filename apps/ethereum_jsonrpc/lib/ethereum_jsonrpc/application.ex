@@ -7,12 +7,6 @@ defmodule EthereumJSONRPC.Application do
 
   alias EthereumJSONRPC.{RollingWindow, TimeoutCounter, RequestCoordinator}
 
-  @rolling_window_opts [
-    bucket: :ethereum_jsonrpc_bucket,
-    window_length: :timer.seconds(10),
-    window_count: 6
-  ]
-
   @impl Application
   def start(_type, _args) do
     children = [
