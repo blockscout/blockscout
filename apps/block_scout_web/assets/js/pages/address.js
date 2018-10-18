@@ -4,7 +4,7 @@ import URI from 'urijs'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
-import { batchChannel, initRedux, slideDownPrepend, clingBottom } from '../utils'
+import { batchChannel, initRedux, slideDownPrepend, slideUpRemove } from '../utils'
 import { updateAllAges } from '../lib/from_now'
 import { updateAllCalculatedUsdValues } from '../lib/currency.js'
 import { loadTokenBalanceDropdown } from '../lib/token_balance_dropdown'
@@ -209,7 +209,6 @@ if ($addressDetailsPage.length) {
         $channelBatching.hide()
       }
       if (oldState.newInternalTransactions !== state.newInternalTransactions && $internalTransactionsList.length) {
-        clingBottom()
         slideDownPrepend($internalTransactionsList, state.newInternalTransactions.slice(oldState.newInternalTransactions.length).reverse().join(''))
         updateAllAges()
       }
@@ -217,7 +216,6 @@ if ($addressDetailsPage.length) {
         $pendingTransactionsCount[0].innerHTML = numeral(state.pendingTransactionHashes.length).format()
       }
       if (oldState.newPendingTransactions !== state.newPendingTransactions && $pendingTransactionsList.length) {
-        clingBottom()
         slideDownPrepend($pendingTransactionsList, state.newPendingTransactions.slice(oldState.newPendingTransactions.length).reverse().join(''))
         updateAllAges()
       }
@@ -230,13 +228,11 @@ if ($addressDetailsPage.length) {
             setTimeout(() => {
               $transaction.addClass('shrink-out')
               setTimeout(() => {
-                clingBottom()
-                $transaction.slideUp({ complete: () => $transaction.remove() })
+                slideUpRemove($transaction)
                 slideDownPrepend($transactionsList, transactionHtml)
               }, 400)
             }, 1000)
           } else {
-            clingBottom()
             $transaction.remove()
             slideDownPrepend($transactionsList, transactionHtml)
           }
@@ -244,7 +240,6 @@ if ($addressDetailsPage.length) {
         updateAllAges()
       }
       if (oldState.newBlock !== state.newBlock) {
-        clingBottom()
         slideDownPrepend($validationsList, state.newBlock)
         updateAllAges()
       }

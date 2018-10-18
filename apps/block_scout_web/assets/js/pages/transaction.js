@@ -5,7 +5,7 @@ import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
 import { updateAllAges } from '../lib/from_now'
-import { batchChannel, initRedux, slideDownPrepend, clingBottom } from '../utils'
+import { batchChannel, initRedux, slideDownPrepend, slideUpRemove } from '../utils'
 
 const BATCH_THRESHOLD = 10
 
@@ -171,15 +171,13 @@ if ($transactionPendingListPage.length) {
       if (oldState.newTransactionHashes !== state.newTransactionHashes && state.newTransactionHashes.length > 0) {
         const $transaction = $(`[data-transaction-hash="${state.newTransactionHashes[0]}"]`)
         $transaction.addClass('shrink-out')
-        setTimeout(() => $transaction.slideUp({
-          complete: () => {
-            if ($pendingTransactionsList.children().length < 2 && state.pendingTransactionCount > 0) {
-              window.location.href = URI(window.location).removeQuery('inserted_at').removeQuery('hash').toString()
-            } else {
-              $transaction.remove()
-            }
+        setTimeout(() => {
+          if ($transaction.length === 1 && $transaction.siblings().length === 0 && state.pendingTransactionCount > 0) {
+            window.location.href = URI(window.location).removeQuery('inserted_at').removeQuery('hash').toString()
+          } else {
+            slideUpRemove($transaction)
           }
-        }), 400)
+        }, 400)
       }
       if (state.newPendingTransactionHashesBatch.length) {
         $channelBatching.show()
@@ -189,7 +187,6 @@ if ($transactionPendingListPage.length) {
       }
       if (oldState.newPendingTransactions !== state.newPendingTransactions) {
         const newTransactionsToInsert = state.newPendingTransactions.slice(oldState.newPendingTransactions.length)
-        clingBottom()
         slideDownPrepend($pendingTransactionsList, newTransactionsToInsert.reverse().join(''))
 
         updateAllAges()
@@ -231,7 +228,6 @@ if ($transactionListPage.length) {
       }
       if (oldState.newTransactions !== state.newTransactions) {
         const newTransactionsToInsert = state.newTransactions.slice(oldState.newTransactions.length)
-        clingBottom()
         slideDownPrepend($transactionsList, newTransactionsToInsert.reverse().join(''))
 
         updateAllAges()
