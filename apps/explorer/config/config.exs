@@ -26,6 +26,8 @@ config :explorer, Explorer.Repo,
 
 config :explorer, Explorer.Counters.TokenTransferCounter, enabled: true
 
+config :explorer, Explorer.Counters.TokenHoldersCounter, enabled: true, enable_consolidation: true
+
 config :explorer,
   solc_bin_api_url: "https://solc-bin.ethereum.org"
 

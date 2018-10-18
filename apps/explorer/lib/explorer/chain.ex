@@ -37,7 +37,7 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Block.Reward
   alias Explorer.{PagingOptions, Repo}
-  alias Explorer.Counters.{TokenTransferCounter, BlockValidationCounter}
+  alias Explorer.Counters.{TokenHoldersCounter, TokenTransferCounter, BlockValidationCounter}
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -2038,14 +2038,9 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
-  # This function is deprecated.
-  #
-  # The code is being treated at https://github.com/poanetwork/blockscout/issues/880
   @spec count_token_holders_from_token_hash(Hash.Address.t()) :: non_neg_integer()
   def count_token_holders_from_token_hash(contract_address_hash) do
-    contract_address_hash
-    |> TokenBalance.token_holders_from_token_hash()
-    |> Repo.aggregate(:count, :address_hash)
+    TokenHoldersCounter.fetch(contract_address_hash)
   end
 
   @spec address_to_unique_tokens(Hash.Address.t(), [paging_options]) :: [TokenTransfer.t()]
