@@ -63,6 +63,10 @@ defmodule BlockScoutWeb.AddressPage do
     click(session, css("[data-test='token_transfers_#{contract_address_hash}']"))
   end
 
+  def click_show_pending_transactions(session) do
+    click(session, css("[data-selector='pending-transactions-open']"))
+  end
+
   def contract_creation(%InternalTransaction{created_contract_address_hash: hash}) do
     css("[data-address-hash='#{hash}']", text: to_string(hash))
   end
