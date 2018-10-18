@@ -6,6 +6,7 @@ defmodule Explorer.Application do
   use Application
 
   alias Explorer.Repo.PrometheusLogger
+  alias Explorer.Admin
 
   @impl Application
   def start(_type, _args) do
@@ -16,7 +17,8 @@ defmodule Explorer.Application do
       Explorer.Repo,
       Supervisor.child_spec({Task.Supervisor, name: Explorer.MarketTaskSupervisor}, id: Explorer.MarketTaskSupervisor),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.TaskSupervisor}, id: Explorer.TaskSupervisor),
-      {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents}
+      {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
+      {Admin.Recovery, [[], [name: Admin.Recovery]]}
     ]
 
     children = base_children ++ configurable_children()

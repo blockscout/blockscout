@@ -9,6 +9,8 @@ defmodule Explorer.Accounts.User.Registration do
 
   alias Explorer.Accounts.User.Registration
 
+  @type t :: %__MODULE__{}
+
   embedded_schema do
     field(:username, :string)
     field(:email, :string)

@@ -25,6 +25,8 @@ defmodule BlockScoutWeb.ConnCase do
       @endpoint BlockScoutWeb.Endpoint
 
       import Explorer.Factory
+
+      alias BlockScoutWeb.AdminRouter.Helpers, as: AdminRoutes
     end
   end
 

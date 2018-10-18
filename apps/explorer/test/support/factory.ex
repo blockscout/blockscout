@@ -6,6 +6,9 @@ defmodule Explorer.Factory do
   import Ecto.Query
   import Kernel, except: [+: 2]
 
+  alias Comeonin.Bcrypt
+  alias Explorer.Accounts.{User, UserContact}
+  alias Explorer.Admin.Administrator
   alias Explorer.Chain.Block.{Range, Reward}
 
   alias Explorer.Chain.{
@@ -518,5 +521,28 @@ defmodule Explorer.Factory do
   defp address_hash_from_zero_padded_hash_string("0x000000000000000000000000" <> hash_string) do
     {:ok, hash} = Explorer.Chain.Hash.cast(Explorer.Chain.Hash.Address, "0x" <> hash_string)
     hash
+  end
+
+  def user_factory do
+    username = sequence("user", &"user#{&1}")
+
+    %User{
+      username: username,
+      password_hash: Bcrypt.hashpwsalt("password"),
+      contacts: [
+        %UserContact{
+          email: "#{username}@blockscout",
+          primary: true,
+          verified: true
+        }
+      ]
+    }
+  end
+
+  def administrator_factory do
+    %Administrator{
+      role: "owner",
+      user: build(:user)
+    }
   end
 end
