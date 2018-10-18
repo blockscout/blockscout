@@ -71,6 +71,7 @@ defmodule EthereumJSONRPC.RollingWindow do
     default = List.to_tuple([key | windows])
 
     :ets.update_counter(table, key, {2, 1}, default)
+    # TODO consider broadcasting to indexers than some threshold has been met with result of updating the counter
 
     {:noreply, state}
   end

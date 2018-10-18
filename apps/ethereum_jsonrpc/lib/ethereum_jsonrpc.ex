@@ -17,7 +17,16 @@ defmodule EthereumJSONRPC do
   """
 
   alias Explorer.Chain.Block
-  alias EthereumJSONRPC.{Blocks, Receipts, Subscription, Transactions, Transport, Uncles, Variant}
+  alias EthereumJSONRPC.{
+    Blocks,
+    Receipts,
+    RequestCoordinator,
+    Subscription,
+    Transactions,
+    Transport,
+    Uncles,
+    Variant
+  }
 
   @typedoc """
   Truncated 20-byte [KECCAK-256](https://en.wikipedia.org/wiki/SHA-3) hash encoded as a hexadecimal number in a
@@ -49,7 +58,7 @@ defmodule EthereumJSONRPC do
 
   """
   @type json_rpc_named_arguments :: [
-          {:transport, Transport.t()} | {:transport_options, Transport.options()} | {:variant, Variant.t()}
+          {:transport, Transport.t()} | {:transport_options, Transport.options()} | {:variant, Variant.t()} | {:throttle_timeout, non_neg_integer()}
         ]
 
   @typedoc """
@@ -310,8 +319,9 @@ defmodule EthereumJSONRPC do
   def json_rpc(request, named_arguments) when (is_map(request) or is_list(request)) and is_list(named_arguments) do
     transport = Keyword.fetch!(named_arguments, :transport)
     transport_options = Keyword.fetch!(named_arguments, :transport_options)
+    throttle_timeout = Keyword.get(named_arguments, :throttle_timeout, 60_000)
 
-    transport.json_rpc(request, transport_options)
+    RequestCoordinator.perform(request, transport, transport_options, throttle_timeout)
   end
 
   @doc """
