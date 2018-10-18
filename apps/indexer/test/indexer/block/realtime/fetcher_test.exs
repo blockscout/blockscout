@@ -24,7 +24,8 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       |> put_in(
         [:transport_options, :method_to_url],
         eth_getBalance: "https://core-trace.poa.network",
-        trace_replayTransaction: "https://core-trace.poa.network"
+        trace_replayTransaction: "https://core-trace.poa.network",
+        trace_block: "https://core-trace.poa.network"
       )
 
     block_fetcher = %Indexer.Block.Fetcher{
@@ -194,6 +195,9 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                }
              }
            ]}
+        end)
+        |> expect(:json_rpc, 2, fn %{method: "trace_block"}, _options ->
+          {:ok, []}
         end)
         |> expect(:json_rpc, fn [
                                   %{

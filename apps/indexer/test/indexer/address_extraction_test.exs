@@ -107,12 +107,18 @@ defmodule Indexer.AddressExtractionTest do
         token_contract_address_hash: gen_hash()
       }
 
+      beneficiary = %{
+        block_number: 6,
+        address_hash: gen_hash()
+      }
+
       blockchain_data = %{
         blocks: [block],
         internal_transactions: [internal_transaction],
         transactions: [transaction],
         logs: [log],
-        token_transfers: [token_transfer]
+        token_transfers: [token_transfer],
+        block_reward_contract_beneficiaries: [beneficiary]
       }
 
       assert AddressExtraction.extract_addresses(blockchain_data) == [
@@ -144,6 +150,10 @@ defmodule Indexer.AddressExtractionTest do
                %{
                  hash: token_transfer.token_contract_address_hash,
                  fetched_coin_balance_block_number: token_transfer.block_number
+               },
+               %{
+                 hash: beneficiary.address_hash,
+                 fetched_coin_balance_block_number: beneficiary.block_number
                }
              ]
     end

@@ -9,6 +9,7 @@ config :indexer,
       url: "https://sokol.poa.network",
       method_to_url: [
         eth_getBalance: "https://sokol-trace.poa.network",
+        trace_block: "https://sokol-trace.poa.network",
         trace_replayTransaction: "https://sokol-trace.poa.network"
       ],
       http_options: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :ethereum_jsonrpc]]

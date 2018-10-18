@@ -165,6 +165,19 @@ defmodule EthereumJSONRPCTest do
     end
   end
 
+  describe "fetch_beneficiaries/2" do
+    @tag :no_geth
+    test "fetches benefeciaries from variant API", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
+          {:ok, []}
+        end)
+
+        assert EthereumJSONRPC.fetch_beneficiaries(1..1, json_rpc_named_arguments) == {:ok, MapSet.new()}
+      end
+    end
+  end
+
   describe "fetch_block_by_hash/2" do
     test "can fetch blocks", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       %{block_hash: block_hash, transaction_hash: transaction_hash} =
