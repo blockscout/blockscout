@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
   use BlockScoutWeb.FeatureCase, async: true
 
   alias Explorer.Chain.Wei
-  alias BlockScoutWeb.{AddressPage, TransactionListPage, TransactionLogsPage, TransactionPage}
+  alias BlockScoutWeb.{AddressPage, Notifier, TransactionListPage, TransactionLogsPage, TransactionPage}
 
   setup do
     block =
@@ -99,6 +99,22 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
       session
       |> TransactionListPage.visit_page()
       |> assert_has(TransactionListPage.contract_creation(transaction))
+    end
+
+    test "live update replaces reorg transaction", %{session: session} do
+      block = insert(:block, number: 10)
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      session
+      |> TransactionListPage.visit_page()
+      |> assert_has(TransactionListPage.transaction(transaction))
+
+      Notifier.handle_event({:chain_event, :transactions, [%{transaction | block_number: 11}]})
+
+      assert_has(session, TransactionListPage.transaction_block_number(transaction, 11))
     end
   end
 

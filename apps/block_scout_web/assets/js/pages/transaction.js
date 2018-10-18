@@ -18,7 +18,8 @@ export const initialState = {
   confirmations: null,
   newPendingTransactions: [],
   newTransactions: [],
-  newTransactionHashes: [],
+  replaceTransactions: [],
+  transactionHashes: [],
   transactionCount: null,
   pendingTransactionCount: null
 }
@@ -52,7 +53,7 @@ export function reducer (state = initialState, action) {
       return Object.assign({}, state, {
         newPendingTransactionHashesBatch: _.without(state.newPendingTransactionHashesBatch, action.msg.transactionHash),
         pendingTransactionCount: state.pendingTransactionCount - 1,
-        newTransactionHashes: [action.msg.transactionHash]
+        transactionHashes: [action.msg.transactionHash]
       })
     }
     case 'RECEIVED_NEW_PENDING_TRANSACTION_BATCH': {
@@ -83,22 +84,34 @@ export function reducer (state = initialState, action) {
     case 'RECEIVED_NEW_TRANSACTION_BATCH': {
       if (state.channelDisconnected) return state
 
-      const transactionCount = state.transactionCount + action.msgs.length
+      const replaceTransactionHashes = _.intersect(state.transactionHashes, _.map(action.msgs, 'transactionHash'))
+      const newTransactionHashes = _.difference(_.map(action.msgs, 'transactionHash'), replaceTransactionHashes)
+      const transactionHashes = _.union(state.transactionHashes, newTransactionHashes)
+
+      const newTransactions = _filter(({transactionHash}) => {
+          return _.includes(newTransactionHashes, transactionHash)
+        })
+      const replaceTransactions = _.filter(({transactionHash}) => {
+          _.includes(replaceTransactionHashes, transactionHash)
+        })
+
+      const transactionCount = state.transactionCount + newTransactionHashes.length
 
       if (state.beyondPageOne) return Object.assign({}, state, { transactionCount })
 
       if (!state.batchCountAccumulator && action.msgs.length < BATCH_THRESHOLD) {
         return Object.assign({}, state, {
-          newTransactions: [
-            ...state.newTransactions,
-            ..._.map(action.msgs, 'transactionHtml')
-          ],
-          transactionCount
+          newTransactions,
+          replaceTransactions,
+          transactionCount,
+          transactionHashes
         })
       } else {
         return Object.assign({}, state, {
-          batchCountAccumulator: state.batchCountAccumulator + action.msgs.length,
-          transactionCount
+          batchCountAccumulator: state.batchCountAccumulator + newTransactionHashes.length,
+          replaceTransactions,
+          transactionCount,
+          transactionHashes
         })
       }
     }
@@ -168,8 +181,8 @@ if ($transactionPendingListPage.length) {
       if (oldState.pendingTransactionCount !== state.pendingTransactionCount) {
         $pendingTransactionsCount.empty().append(numeral(state.pendingTransactionCount).format())
       }
-      if (oldState.newTransactionHashes !== state.newTransactionHashes && state.newTransactionHashes.length > 0) {
-        const $transaction = $(`[data-transaction-hash="${state.newTransactionHashes[0]}"]`)
+      if (oldState.transactionHashes !== state.transactionHashes && state.transactionHashes.length > 0) {
+        const $transaction = $(`[data-transaction-hash="${state.transactionHashes[0]}"]`)
         $transaction.addClass('shrink-out')
         setTimeout(() => {
           if ($transaction.length === 1 && $transaction.siblings().length === 0 && state.pendingTransactionCount > 0) {
@@ -201,8 +214,9 @@ if ($transactionListPage.length) {
     main (store) {
       store.dispatch({
         type: 'PAGE_LOAD',
-        transactionCount: $('[data-selector="transaction-count"]').text(),
-        beyondPageOne: !!humps.camelizeKeys(URI(window.location).query(true)).index
+        beyondPageOne: !!humps.camelizeKeys(URI(window.location).query(true)).index,
+        transactionHashes: $('[data-selector="transaction-hash"]').map((index, el) => el.dataset.transactionHash).toArray(),
+        transactionCount: $('[data-selector="transaction-count"]').text()
       })
       const transactionsChannel = socket.channel(`transactions:new_transaction`)
       transactionsChannel.join()
@@ -226,10 +240,19 @@ if ($transactionListPage.length) {
       } else {
         $channelBatching.hide()
       }
-      if (oldState.newTransactions !== state.newTransactions) {
-        const newTransactionsToInsert = state.newTransactions.slice(oldState.newTransactions.length)
+      if (oldState.newTransactions !== state.newTransactions && state.newTransactions.length > 0) {
+        const newTransactionsToInsert = _.map(state.newTransactions, 'transactionHtml')
         slideDownPrepend($transactionsList, newTransactionsToInsert.reverse().join(''))
 
+        updateAllAges()
+      }
+      if (oldState.replaceTransactions !== state.replaceTransactions && replaceTransactions.length > 0) {
+        let $replaceBlock
+        _.each(state.replaceTransactions, ({transactionHash, transactionHtml}) => {
+          $replaceTransaction = $(`[data-transaction-hash="${transactionHash}"]`)
+          $replaceTransaction.addClass('shrink-out')
+          setTimeout(() => $replaceTransaction.replaceWith(transactionHtml), 400)
+        })
         updateAllAges()
       }
     }

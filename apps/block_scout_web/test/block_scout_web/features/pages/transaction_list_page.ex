@@ -23,6 +23,10 @@ defmodule BlockScoutWeb.TransactionListPage do
     css("[data-transaction-hash='#{transaction_hash}']")
   end
 
+  def transaction_block_number(%Transaction{hash: transaction_hash}, block_number) do
+    css("[data-transaction-hash='#{transaction_hash}'] [data-test='block_number']", text: "Block ##{block_number}")
+  end
+
   def transaction_status(%Transaction{hash: transaction_hash}) do
     css("[data-transaction-hash='#{transaction_hash}'] [data-test='transaction_status']")
   end

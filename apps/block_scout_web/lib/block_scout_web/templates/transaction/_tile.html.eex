@@ -31,7 +31,7 @@
       </span>
     </div>
     <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column flex-nowrap justify-content-start text-md-right mt-3 mt-md-0">
-      <span class="mr-2 mr-md-0 order-1">
+      <span class="mr-2 mr-md-0 order-1" data-test="block-number">
         <%= @transaction |> block_number() |> BlockScoutWeb.RenderHelpers.render_partial() %>
       </span>
       <span class="mr-2 mr-md-0 order-2" data-from-now="<%= block_timestamp(@transaction) %>"></span>

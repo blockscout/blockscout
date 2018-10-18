@@ -262,6 +262,22 @@ describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
     expect(output.batchCountAccumulator).toEqual(0)
     expect(output.transactionCount).toEqual(1)
   })
+  test('replaces reorg (duplicate) transaction', () => {
+    const state = Object.assign({}, initialState, {
+      transactionHashes: ['1']
+    })
+    const action = {
+      type: 'RECEIVED_NEW_TRANSACTION_BATCH',
+      msg: {
+        transactionHtml: 'test1',
+        transactionHash: '1'
+      }
+    }
+    const output = reducer(state, action)
+
+    expect(output.newTransactions).toEqual(['test1'])
+    expect(output.transactionHashes).toEqual(['1'])
+  })
   test('large batch of transactions', () => {
     const state = initialState
     const action = {
