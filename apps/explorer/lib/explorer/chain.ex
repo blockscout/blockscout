@@ -1930,6 +1930,11 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Calls supply_for_days from the configured supply_module
+  """
+  def supply_for_days(days_count), do: supply_module().supply_for_days(days_count)
+
+  @doc """
   Streams a lists token contract addresses that haven't been cataloged.
   """
   @spec stream_uncataloged_token_contract_address_hashes(
