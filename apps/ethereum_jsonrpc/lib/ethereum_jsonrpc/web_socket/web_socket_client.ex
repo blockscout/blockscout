@@ -265,11 +265,6 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
     respond_to_registration(registration, response, new_state)
   end
 
-  # Sending pong (Ganache requirement)
-  defp handle_response({:ping, ""}, %__MODULE__{} = state) do
-    {:ok, {:pong, ""}, state}
-  end
-
   defp handle_response(response, %__MODULE__{} = state) do
     Logger.error(fn ->
       [
