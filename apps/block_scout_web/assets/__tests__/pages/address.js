@@ -113,7 +113,7 @@ describe('RECEIVED_NEW_PENDING_TRANSACTION', () => {
     const output = reducer(state, action)
 
     expect(output.newPendingTransactions).toEqual(['test 1', 'test 2'])
-    expect(output.pendingTransactionHashes.length).toEqual(0)
+    expect(output.pendingTransactionHashes.length).toEqual(1)
   })
   test('after disconnection', () => {
     const state = Object.assign({}, initialState, {
@@ -162,12 +162,12 @@ describe('RECEIVED_NEW_TRANSACTION', () => {
     }
     const output = reducer(state, action)
 
-    expect(output.newTransactions).toEqual(['test'])
+    expect(output.newTransactions).toEqual([{ transactionHtml: 'test' }])
     expect(output.transactionCount).toEqual(1)
   })
   test('single transaction after single transaction', () => {
     const state = Object.assign({}, initialState, {
-      newTransactions: ['test 1']
+      newTransactions: [{ transactionHtml: 'test 1' }]
     })
     const action = {
       type: 'RECEIVED_NEW_TRANSACTION',
@@ -177,7 +177,10 @@ describe('RECEIVED_NEW_TRANSACTION', () => {
     }
     const output = reducer(state, action)
 
-    expect(output.newTransactions).toEqual(['test 1', 'test 2'])
+    expect(output.newTransactions).toEqual([
+      { transactionHtml: 'test 1' },
+      { transactionHtml: 'test 2' }
+    ])
   })
   test('after disconnection', () => {
     const state = Object.assign({}, initialState, {
@@ -224,7 +227,9 @@ describe('RECEIVED_NEW_TRANSACTION', () => {
     }
     const output = reducer(state, action)
 
-    expect(output.newTransactions).toEqual(['test'])
+    expect(output.newTransactions).toEqual([
+      { fromAddressHash: '1234', transactionHtml: 'test' }
+    ])
   })
   test('transaction from current address with "to" filter', () => {
     const state = Object.assign({}, initialState, {
@@ -256,7 +261,9 @@ describe('RECEIVED_NEW_TRANSACTION', () => {
     }
     const output = reducer(state, action)
 
-    expect(output.newTransactions).toEqual(['test'])
+    expect(output.newTransactions).toEqual([
+      { toAddressHash: '1234', transactionHtml: 'test' }
+    ])
   })
   test('transaction to current address with "from" filter', () => {
     const state = Object.assign({}, initialState, {
@@ -285,7 +292,9 @@ describe('RECEIVED_NEW_TRANSACTION', () => {
     }
     const output = reducer(state, action)
 
-    expect(output.newTransactions).toEqual(['test'])
+    expect(output.newTransactions).toEqual([
+      { transactionHash: '0x00', transactionHtml: 'test' }
+    ])
     expect(output.transactionCount).toEqual(1)
   })
 })
