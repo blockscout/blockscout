@@ -1,6 +1,14 @@
 <section class="container" data-page="transaction-list">
   <div class="card">
     <div class="card-body">
+
+      <h1><%= gettext "Validated Transactions" %></h1>
+      <p>
+        <%= gettext("Showing") %>
+        <span data-selector="transaction-count"><%= Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###") %></span>
+        <%= gettext("Validated Transactions") %>
+      </p>
+
       <div data-selector="channel-batching-message" class="d-none">
         <div data-selector="reload-button" class="alert alert-info">
           <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>
@@ -11,12 +19,7 @@
           <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer transactions" %></a>
         </div>
       </div>
-      <h1><%= gettext "Validated Transactions" %></h1>
-      <p>
-        <%= gettext("Showing") %>
-        <span data-selector="transaction-count"><%= Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###") %></span>
-        <%= gettext("Validated Transactions") %>
-      </p>
+      
       <span data-selector="transactions-list">
         <%= for transaction <- @transactions do %>
           <%= render BlockScoutWeb.TransactionView, "_tile.html", transaction: transaction %>
