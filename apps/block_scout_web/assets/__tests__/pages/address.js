@@ -163,7 +163,7 @@ describe('RECEIVED_NEW_TRANSACTION', () => {
     const output = reducer(state, action)
 
     expect(output.newTransactions).toEqual([{ transactionHtml: 'test' }])
-    expect(output.transactionCount).toEqual(1)
+    expect(output.transactionCount).toEqual(null)
   })
   test('single transaction after single transaction', () => {
     const state = Object.assign({}, initialState, {
@@ -211,7 +211,7 @@ describe('RECEIVED_NEW_TRANSACTION', () => {
     const output = reducer(state, action)
 
     expect(output.newTransactions).toEqual([])
-    expect(output.transactionCount).toEqual(2)
+    expect(output.transactionCount).toEqual(1)
   })
   test('transaction from current address with "from" filter', () => {
     const state = Object.assign({}, initialState, {
@@ -295,6 +295,6 @@ describe('RECEIVED_NEW_TRANSACTION', () => {
     expect(output.newTransactions).toEqual([
       { transactionHash: '0x00', transactionHtml: 'test' }
     ])
-    expect(output.transactionCount).toEqual(1)
+    expect(output.transactionCount).toEqual(null)
   })
 })
