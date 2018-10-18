@@ -6,8 +6,6 @@ const tokenBalanceDropdown = (element) => {
   const $errorMessage = $element.find('[data-error-message]')
   const apiPath = element.dataset.api_path
 
-  $loading.show()
-
   $.get(apiPath)
     .done(response => $element.html(response))
     .fail(() => {
