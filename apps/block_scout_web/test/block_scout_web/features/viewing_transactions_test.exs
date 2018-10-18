@@ -74,10 +74,13 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
       |> refute_has(TransactionListPage.transaction(pending))
     end
 
-    test "viewing the pending tab", %{pending: pending, pending_contract: pending_contract, session: session} do
+    test "viewing the pending tranasctions list", %{
+      pending: pending,
+      pending_contract: pending_contract,
+      session: session
+    } do
       session
-      |> TransactionListPage.visit_page()
-      |> TransactionListPage.click_pending()
+      |> TransactionListPage.visit_pending_transactions_page()
       |> assert_has(TransactionListPage.transaction(pending))
       |> assert_has(TransactionListPage.transaction(pending_contract))
       |> assert_has(TransactionListPage.transaction_status(pending_contract))
