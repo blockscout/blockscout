@@ -52,15 +52,6 @@ defmodule Explorer.ChainTest do
       assert [] == Chain.address_to_pending_transactions(address)
     end
 
-    test "excludes reorg transaction" do
-      address = insert(:address)
-      block = insert(:block, consensus: false)
-      transaction = insert(:transaction, from_address: address)
-      insert(:transaction_fork, hash: transaction.hash, uncle_hash: block.hash)
-
-      assert [] == Chain.address_to_pending_transactions(address)
-    end
-
     test "with from transactions" do
       address = insert(:address)
 
@@ -1557,17 +1548,9 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "pending_transactions/0" do
+  describe "recent_pending_transactions/0" do
     test "without transactions" do
       assert [] = Chain.recent_pending_transactions()
-    end
-
-    test "excludes reorg transaction" do
-      block = insert(:block, consensus: false)
-      transaction = insert(:transaction)
-      insert(:transaction_fork, hash: transaction.hash, uncle_hash: block.hash)
-
-      assert [] == Chain.recent_pending_transactions()
     end
 
     test "with transactions" do
