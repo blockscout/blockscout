@@ -4,7 +4,7 @@ import URI from 'urijs'
 import humps from 'humps'
 import socket from '../socket'
 import { updateAllAges } from '../lib/from_now'
-import { buildFullBlockList, initRedux, beforeWithClingBottom, skippedBlockListBuilder } from '../utils'
+import { buildFullBlockList, initRedux, slideDownBefore, skippedBlockListBuilder } from '../utils'
 
 export const initialState = {
   blockNumbers: [],
@@ -97,10 +97,10 @@ if ($blockListPage.length) {
         } else {
           if (skippedBlockNumbers.length) {
             _.forEachRight(skippedBlockNumbers, (skippedBlockNumber) => {
-              beforeWithClingBottom($(`[data-block-number="${skippedBlockNumber - 1}"]`), placeHolderBlock(skippedBlockNumber))
+              slideDownBefore($(`[data-block-number="${skippedBlockNumber - 1}"]`), placeHolderBlock(skippedBlockNumber))
             })
           }
-          beforeWithClingBottom($(`[data-block-number="${state.blockNumbers[0] - 1}"]`), state.newBlock)
+          slideDownBefore($(`[data-block-number="${state.blockNumbers[0] - 1}"]`), state.newBlock)
         }
         updateAllAges()
       }
