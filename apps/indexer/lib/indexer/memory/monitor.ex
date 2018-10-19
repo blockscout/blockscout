@@ -50,15 +50,15 @@ defmodule Indexer.Memory.Monitor do
   end
 
   @impl GenServer
-  def handle_call(:shinkable, {pid, _}, %__MODULE__{shrinkable_set: shrinkable_set} = state) do
+  def handle_call(:shrinkable, {pid, _}, %__MODULE__{shrinkable_set: shrinkable_set} = state) do
     Process.monitor(pid)
 
     {:reply, :ok, %__MODULE__{state | shrinkable_set: MapSet.put(shrinkable_set, pid)}}
   end
 
   @impl GenServer
-  def handle_info({:DOWN, _, :process, pid, _}, %__MODULE__{shrinkable_set: shrinkable_set}) do
-    {:noreply, %__MODULE__{shrinkable_set: MapSet.delete(shrinkable_set, pid)}}
+  def handle_info({:DOWN, _, :process, pid, _}, %__MODULE__{shrinkable_set: shrinkable_set} = state) do
+    {:noreply, %__MODULE__{state | shrinkable_set: MapSet.delete(shrinkable_set, pid)}}
   end
 
   @impl GenServer
@@ -66,38 +66,8 @@ defmodule Indexer.Memory.Monitor do
     total = :erlang.memory(:total)
 
     if limit < total do
-      case shrinkable_with_most_memory(state) do
-        {:error, :not_found} ->
-          Logger.error(fn ->
-            [
-              prefix(%{total: total, limit: limit}),
-              "  No processes are registered as shrinkable.  Limit will remain surpassed."
-            ]
-          end)
-
-        {:ok, {pid, memory}} ->
-          Logger.warn(fn ->
-            prefix = [
-              prefix(%{total: total, limit: limit}),
-              "  Worst memory usage (",
-              to_string(memory),
-              " bytes) among shrinkable processes is ",
-              inspect(pid)
-            ]
-
-            {:registered_name, registered_name} = Process.info(pid, :registered_name)
-
-            prefix =
-              case registered_name do
-                [] -> [prefix, "."]
-                _ -> [prefix, " (", inspect(registered_name), ")."]
-              end
-
-            [prefix, "  Asking ", inspect(pid), " to shrinkable to drop below limit."]
-          end)
-
-          :ok = Shrinkable.shrink(pid)
-      end
+      log_memory(%{limit: limit, total: total})
+      shrink_or_log(state)
     end
 
     flush(:check)
@@ -122,27 +92,98 @@ defmodule Indexer.Memory.Monitor do
     end
   end
 
-  defp prefix(%{total: total, limit: limit}) do
-    [
-      to_string(total),
-      " / ",
-      to_string(limit),
-      " bytes (",
-      to_string(div(100 * total, limit)),
-      "%) of memory limit used."
-    ]
+  defp log_memory(%{total: total, limit: limit}) do
+    Logger.warn(fn ->
+      [
+        to_string(total),
+        " / ",
+        to_string(limit),
+        " bytes (",
+        to_string(div(100 * total, limit)),
+        "%) of memory limit used."
+      ]
+    end)
   end
 
-  defp shrinkable_with_most_memory(%__MODULE__{shrinkable_set: shrinkable_set}) do
-    if Enum.empty?(shrinkable_set) do
-      {:error, :not_found}
-    else
-      pid_memory =
-        shrinkable_set
-        |> Enum.map(fn pid -> {pid, memory(pid)} end)
-        |> Enum.max_by(&elem(&1, 1))
+  defp shrink_or_log(%__MODULE__{} = state) do
+    case shrink(state) do
+      :ok ->
+        :ok
 
-      {:ok, pid_memory}
+      {:error, :minimum_size} ->
+        Logger.error(fn -> "No processes could be shrunk.  Limit will remain surpassed." end)
     end
+  end
+
+  defp shrink(%__MODULE__{} = state) do
+    state
+    |> shrinkable_memory_pairs()
+    |> shrink()
+  end
+
+  defp shrink([]) do
+    {:error, :minimum_size}
+  end
+
+  defp shrink([{pid, memory} | tail]) do
+    {:registered_name, registered_name} = Process.info(pid, :registered_name)
+
+    Logger.warn(fn ->
+      prefix = [
+        "Worst memory usage (",
+        to_string(memory),
+        " bytes) among remaining shrinkable processes is ",
+        inspect(pid)
+      ]
+
+      prefix =
+        case registered_name do
+          [] -> [prefix, "."]
+          _ -> [prefix, " (", inspect(registered_name), ")."]
+        end
+
+      [prefix, "  Asking ", inspect(pid), " to shrinkable to drop below limit."]
+    end)
+
+    case Shrinkable.shrink(pid) do
+      :ok ->
+        Logger.info(fn ->
+          prefix = [inspect(pid)]
+
+          prefix =
+            case registered_name do
+              [] -> prefix
+              _ -> [prefix, " (", inspect(registered_name), ")"]
+            end
+
+          after_memory = memory(pid)
+
+          [
+            prefix,
+            " shrunk from ",
+            to_string(memory),
+            " bytes to ",
+            to_string(after_memory),
+            " bytes (",
+            to_string(div(100 * after_memory, memory)),
+            "%)."
+          ]
+        end)
+
+        :ok
+
+      {:error, :minimum_size} ->
+        Logger.error(fn ->
+          [inspect(pid), " is at its minimum size and could not shrink."]
+        end)
+
+        shrink(tail)
+    end
+  end
+
+  defp shrinkable_memory_pairs(%__MODULE__{shrinkable_set: shrinkable_set}) do
+    shrinkable_set
+    |> Enum.map(fn pid -> {pid, memory(pid)} end)
+    |> Enum.sort_by(&elem(&1, 1), &>=/2)
   end
 end

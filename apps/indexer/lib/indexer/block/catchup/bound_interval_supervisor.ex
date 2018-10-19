@@ -11,7 +11,11 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
   alias Indexer.{Block, BoundInterval}
   alias Indexer.Block.Catchup
 
-  @type named_arguments :: %{required(:block_fetcher) => Block.Fetcher.t(), optional(:block_interval) => pos_integer}
+  @type named_arguments :: %{
+          required(:block_fetcher) => Block.Fetcher.t(),
+          optional(:block_interval) => pos_integer,
+          optional(:memory_monitor) => GenServer.server()
+        }
 
   # milliseconds
   @block_interval 5_000
@@ -19,6 +23,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
   @enforce_keys ~w(bound_interval fetcher)a
   defstruct bound_interval: nil,
             fetcher: %Catchup.Fetcher{},
+            memory_monitor: nil,
             task: nil
 
   @spec child_spec([named_arguments | GenServer.options(), ...]) :: Supervisor.child_spec()
@@ -63,7 +68,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
     bound_interval = BoundInterval.within(minimum_interval..(minimum_interval * 10))
 
     %__MODULE__{
-      fetcher: %Catchup.Fetcher{block_fetcher: block_fetcher},
+      fetcher: %Catchup.Fetcher{block_fetcher: block_fetcher, memory_monitor: Map.get(named_arguments, :memory_monitor)},
       bound_interval: bound_interval
     }
   end
@@ -177,7 +182,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
   end
 
   def handle_info(
-        {ref, %{first_block_number: first_block_number, missing_block_count: missing_block_count}},
+        {ref, %{first_block_number: first_block_number, missing_block_count: missing_block_count, shrunk: false}},
         %__MODULE__{
           bound_interval: bound_interval,
           task: %Task{ref: ref}
@@ -187,12 +192,20 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
     new_bound_interval =
       case missing_block_count do
         0 ->
-          Logger.info("Index already caught up in #{first_block_number}-0")
+          Logger.info(fn -> ["Index already caught up in ", to_string(first_block_number), "-0."] end)
 
           BoundInterval.increase(bound_interval)
 
         _ ->
-          Logger.info("Index had to catch up #{missing_block_count} blocks in #{first_block_number}-0")
+          Logger.info(fn ->
+            [
+              "Index had to catch up ",
+              to_string(missing_block_count),
+              " blocks in ",
+              to_string(first_block_number),
+              "-0."
+            ]
+          end)
 
           BoundInterval.decrease(bound_interval)
       end
@@ -202,12 +215,36 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
     interval = new_bound_interval.current
 
     Logger.info(fn ->
-      "Checking if index needs to catch up in #{interval}ms"
+      ["Checking if index needs to catch up in ", to_string(interval), "ms."]
     end)
 
     Process.send_after(self(), :catchup_index, interval)
 
     {:noreply, %__MODULE__{state | bound_interval: new_bound_interval, task: nil}}
+  end
+
+  def handle_info(
+        {ref, %{first_block_number: first_block_number, missing_block_count: missing_block_count, shrunk: true}},
+        %__MODULE__{
+          task: %Task{ref: ref}
+        } = state
+      )
+      when is_integer(missing_block_count) do
+    Process.demonitor(ref, [:flush])
+
+    Logger.info(fn ->
+      [
+        "Index had to catch up ",
+        to_string(missing_block_count),
+        " blocks in ",
+        to_string(first_block_number),
+        "-0, but the sequence was shrunk to save memory, so retrying immediately."
+      ]
+    end)
+
+    send(self(), :catchup_index)
+
+    {:noreply, %__MODULE__{state | task: nil}}
   end
 
   def handle_info(

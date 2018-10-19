@@ -12,9 +12,17 @@ defmodule Indexer.Application do
 
   @impl Application
   def start(_type, _args) do
+    memory_monitor_options =
+      case Application.get_env(:indexer, :memory_limit) do
+        nil -> %{}
+        integer when is_integer(integer) -> %{limit: integer}
+      end
+
+    memory_monitor_name = Memory.Monitor
+
     children = [
-      Memory.Monitor,
-      Shrinkable.Supervisor
+      {Memory.Monitor, [memory_monitor_options, [name: memory_monitor_name]]},
+      {Shrinkable.Supervisor, [%{memory_monitor: memory_monitor_name}]}
     ]
 
     opts = [

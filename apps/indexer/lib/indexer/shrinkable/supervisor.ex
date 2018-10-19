@@ -38,7 +38,7 @@ defmodule Indexer.Shrinkable.Supervisor do
   end
 
   @impl Supervisor
-  def init([]) do
+  def init(%{memory_monitor: memory_monitor}) do
     json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
 
     block_fetcher_supervisor_named_arguments =
@@ -49,6 +49,7 @@ defmodule Indexer.Shrinkable.Supervisor do
            receipts_concurrency subscribe_named_arguments)a
       )
       |> Enum.into(%{})
+      |> Map.put(:memory_monitor, memory_monitor)
 
     Supervisor.init(
       [
