@@ -579,7 +579,8 @@ defmodule Explorer.Chain.ImportTest do
               trace_address: [],
               transaction_hash: transaction_hash,
               type: "call",
-              value: 0
+              value: 0,
+              transaction_index: 0
             }
           ]
         }
@@ -672,7 +673,8 @@ defmodule Explorer.Chain.ImportTest do
               trace_address: [],
               transaction_hash: transaction_hash,
               type: "create",
-              value: 0
+              value: 0,
+              transaction_index: 0
             }
           ]
         }
@@ -948,7 +950,8 @@ defmodule Explorer.Chain.ImportTest do
                        trace_address: [],
                        transaction_hash: "0x1a263224a95275d77bc30a7e131bc64d948777946a790c0915ab293791fbcb61",
                        type: "create",
-                       value: 0
+                       value: 0,
+                       transaction_index: 0
                      },
                      %{
                        block_number: 6_546_180,
@@ -960,7 +963,8 @@ defmodule Explorer.Chain.ImportTest do
                        trace_address: [],
                        transaction_hash: "0xab349efbe1ddc6d85d84a993aa52bdaadce66e8ee166dd10013ce3f2a94ca724",
                        type: "create",
-                       value: 0
+                       value: 0,
+                       transaction_index: 0
                      }
                    ]
                  }

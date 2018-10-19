@@ -60,7 +60,8 @@ defmodule EthereumJSONRPC.Transaction do
           s: non_neg_integer(),
           to_address_hash: EthereumJSONRPC.address(),
           v: non_neg_integer(),
-          value: non_neg_integer()
+          value: non_neg_integer(),
+          transaction_index: non_neg_integer()
         }
 
   @doc """
@@ -98,7 +99,8 @@ defmodule EthereumJSONRPC.Transaction do
         s: 31606574786494953692291101914709926755545765281581808821704454381804773090106,
         to_address_hash: "0x5df9b87991262f6ba471f09758cde1c0fc1de734",
         v: 28,
-        value: 31337
+        value: 31337,
+        transaction_index: 0
       }
 
   """
@@ -133,7 +135,8 @@ defmodule EthereumJSONRPC.Transaction do
       s: s,
       to_address_hash: to_address_hash,
       v: v,
-      value: value
+      value: value,
+      transaction_index: index
     }
   end
 

@@ -218,8 +218,8 @@ defmodule Indexer.Block.Fetcher do
   defp get_transaction_hash_to_block_number(options) do
     options
     |> get_in([:transactions, :params, Access.all()])
-    |> Enum.into(%{}, fn %{block_number: block_number, hash: hash} ->
-      {hash, block_number}
+    |> Enum.into(%{}, fn %{block_number: block_number, hash: hash, index: index} ->
+      {hash, %{block_number: block_number, index: index}}
     end)
   end
 

@@ -150,7 +150,8 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     trace_address: [],
       ...>     transaction_hash: "0x3c624bb4852fb5e35a8f45644cec7a486211f6ba89034768a2b763194f22f97d",
       ...>     type: "create",
-      ...>     value: 0
+      ...>     value: 0,
+      ...>     transaction_index: 0
       ...>   }
       iex> )
       iex> changeset.valid?
