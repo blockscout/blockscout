@@ -188,8 +188,8 @@ mix coveralls.html --umbrella --exclude no_parity
 
 | Protocol  | URL                                |
 |:----------|:-----------------------------------|
-| HTTP      | `https://sokol-trace.poa.network`  |
-| WebSocket | `wss://sokol-ws.poa.network/ws`    |
+| HTTP      | `https://foundation-trace-fn4v7.poa.network`  |
+| WebSocket | `wss://foundation-trace-fn4v7.poa.network/ws`    |
 
 ##### Geth
 
