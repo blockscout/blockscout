@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.AddressView do
   use BlockScoutWeb, :view
 
+  import BlockScoutWeb.AddressController, only: [transaction_count: 1, validation_count: 1]
+
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias BlockScoutWeb.LayoutView
@@ -158,10 +160,6 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def token_title(%Token{name: name, symbol: symbol}), do: "#{name} (#{symbol})"
-
-  def transaction_count(%Address{} = address) do
-    Chain.total_transactions_sent_by_address(address)
-  end
 
   def trimmed_hash(%Hash{} = hash) do
     string_hash = to_string(hash)
