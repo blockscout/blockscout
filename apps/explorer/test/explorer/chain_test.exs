@@ -723,8 +723,7 @@ defmodule Explorer.ChainTest do
       hash_str = "0xcbbcd5ac86f9a50e13313633b262e16f695a90c2"
       {:ok, hash} = Chain.string_to_address_hash(hash_str)
 
-      assert {:ok, %Chain.Address{hash: hash}} = 
-        Chain.find_or_insert_address_from_hash(hash)
+      assert {:ok, %Chain.Address{hash: hash}} = Chain.find_or_insert_address_from_hash(hash)
     end
   end
 
