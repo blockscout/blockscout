@@ -45,61 +45,63 @@ export function skippedBlockListBuilder (skippedBlockNumbers, newestBlock, oldes
   return skippedBlockNumbers
 }
 
-export function slideDownPrepend ($el, content, callback) {
-  const $content = $(content)
-  $el.prepend($content.hide())
-  $content.slideDown({ complete: callback })
-}
-export function slideDownBefore ($el, content, callback) {
-  const $content = $(content)
-  $el.before($content.hide())
-  $content.slideDown({ complete: callback })
-}
-export function prependWithClingBottom ($el, content) {
-  return slideDownPrepend($el, content, clingBottom($el, content))
-}
-export function beforeWithClingBottom ($el, content) {
-  return slideDownBefore($el, content, clingBottom($el, content))
-}
-
-function clingBottom ($el, content) {
-  function userAtTop () {
-    return window.scrollY < $('[data-selector="navbar"]').outerHeight()
-  }
-  if (userAtTop()) return true
-
-  let isAnimating
-  function setIsAnimating () {
-    isAnimating = true
-  }
-  $el.on('animationstart', setIsAnimating)
-
-  let startingScrollPosition = window.scrollY
-  let endingScrollPosition = window.scrollY
-  function userIsScrolling () {
-    return window.scrollY < startingScrollPosition || endingScrollPosition < window.scrollY
-  }
-
-  const clingDistanceFromBottom = document.body.scrollHeight - window.scrollY
-  let clingBottomLoop = window.requestAnimationFrame(function clingBottom () {
-    if (userIsScrolling()) return stopClinging()
-
-    startingScrollPosition = window.scrollY
-    endingScrollPosition = document.body.scrollHeight - clingDistanceFromBottom
-    $(window).scrollTop(endingScrollPosition)
-    clingBottomLoop = window.requestAnimationFrame(clingBottom)
-  })
-
-  function stopClinging () {
-    window.cancelAnimationFrame(clingBottomLoop)
-    $el.off('animationstart', setIsAnimating)
-    $el.off('animationend animationcancel', stopClinging)
-  }
-
-  return {
-    function () {
-      $el.on('animationend animationcancel', stopClinging)
-      setTimeout(() => !isAnimating && stopClinging(), 100)
+export function slideDownPrepend ($container, content) {
+  smarterSlideDown($(content), {
+    insert ($el) {
+      $container.prepend($el)
     }
+  })
+}
+export function slideDownBefore ($container, content) {
+  smarterSlideDown($(content), {
+    insert ($el) {
+      $container.before($el)
+    }
+  })
+}
+export function slideUpRemove ($el) {
+  smarterSlideUp($el, {
+    complete () {
+      $el.remove()
+    }
+  })
+}
+
+function smarterSlideDown ($el, { insert = _.noop } = {}) {
+  if (!$el.length) return
+  const originalScrollHeight = document.body.scrollHeight
+  const scrollPosition = window.scrollY
+
+  insert($el)
+
+  const isAboveViewport = $el.offset().top < scrollPosition
+
+  if (isAboveViewport) {
+    const heightDiffAfterInsert = document.body.scrollHeight - originalScrollHeight
+    const scrollPositionToMaintainViewport = scrollPosition + heightDiffAfterInsert
+
+    $(window).scrollTop(scrollPositionToMaintainViewport)
+  } else {
+    $el.hide()
+    $el.slideDown({ easing: 'linear' })
+  }
+}
+
+function smarterSlideUp ($el, { complete = _.noop } = {}) {
+  if (!$el.length) return
+  const originalScrollHeight = document.body.scrollHeight
+  const scrollPosition = window.scrollY
+  const isAboveViewport = $el.offset().top + $el.outerHeight(true) < scrollPosition
+
+  if (isAboveViewport) {
+    $el.hide()
+
+    const heightDiffAfterHide = document.body.scrollHeight - originalScrollHeight
+    const scrollPositionToMaintainViewport = scrollPosition + heightDiffAfterHide
+
+    $(window).scrollTop(scrollPositionToMaintainViewport)
+    complete()
+  } else {
+    $el.slideUp({ complete, easing: 'linear' })
   }
 }

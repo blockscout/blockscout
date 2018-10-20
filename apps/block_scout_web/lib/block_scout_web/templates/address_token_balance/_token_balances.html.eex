@@ -12,6 +12,8 @@
      <i class="fas fa-chevron-down mr-2"></i>
      <h5 data-tokens-count class="d-inline"><%= tokens_count_title(@token_balances) %></h5>
   </a>
+<% else %>
+   <h5 data-tokens-count class="d-inline text-white"><%= tokens_count_title(@token_balances) %></h5>
 <% end %>
 
 <div class="dropdown-menu dropdown-menu-right token-balance-dropdown p-0" aria-labelledby="dropdown-tokens">

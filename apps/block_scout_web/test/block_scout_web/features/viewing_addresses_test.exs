@@ -132,6 +132,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
 
       session
       |> AddressPage.visit_page(addresses.lincoln)
+      |> AddressPage.click_show_pending_transactions()
       |> assert_has(AddressPage.pending_transaction(pending))
       |> assert_has(AddressPage.transaction(transactions.from_taft))
       |> assert_has(AddressPage.transaction(transactions.from_lincoln))
@@ -143,6 +144,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
 
       session
       |> AddressPage.visit_page(addresses.lincoln)
+      |> AddressPage.click_show_pending_transactions()
       |> assert_has(AddressPage.pending_transaction(pending))
 
       new_pending = insert(:transaction, from_address: addresses.lincoln)
