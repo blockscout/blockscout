@@ -637,6 +637,7 @@ defmodule Explorer.Chain do
 
       {:error, :not_found} ->
         Chain.create_address(%{hash: to_string(hash)})
+        Chain.hash_to_address(hash)
     end
   end
 
