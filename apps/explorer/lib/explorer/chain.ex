@@ -628,11 +628,6 @@ defmodule Explorer.Chain do
       iex> {:ok, %Explorer.Chain.Address{hash: found_hash}} = Explorer.Chain.hash_to_address(hash)
       iex> found_hash == hash
       true
-
-  Returns `:error` if it cannot process the value passed in.
-      iex> :error = Explorer.Chain.hash_to_address(:not_a_hash)
-      :error
-
   """
   @spec find_or_insert_address_from_hash(Hash.Address.t()) :: {:ok, Address.t()}
   def find_or_insert_address_from_hash(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash) do

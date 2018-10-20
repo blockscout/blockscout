@@ -697,6 +697,37 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "hash_to_address/1" do
+    test "returns not found if the address doesn't exist" do
+      hash_str = "0xcbbcd5ac86f9a50e13313633b262e16f695a90c2"
+      {:ok, hash} = Chain.string_to_address_hash(hash_str)
+
+      assert {:error, :not_found} = Chain.hash_to_address(hash)
+    end
+
+    test "returns the correct address if it exists" do
+      address = insert(:address)
+
+      assert {:ok, address} = Chain.hash_to_address(address.hash)
+    end
+  end
+
+  describe "find_or_insert_address_from_hash/1" do
+    test "returns an address if it already exists" do
+      address = insert(:address)
+
+      assert {:ok, address} = Chain.find_or_insert_address_from_hash(address.hash)
+    end
+
+    test "returns an address if it doesn't exist" do
+      hash_str = "0xcbbcd5ac86f9a50e13313633b262e16f695a90c2"
+      {:ok, hash} = Chain.string_to_address_hash(hash_str)
+
+      assert {:ok, %Chain.Address{hash: hash}} = 
+        Chain.find_or_insert_address_from_hash(hash)
+    end
+  end
+
   describe "hashes_to_transactions/2" do
     test "with transaction with block required without block returns nil" do
       [%Transaction{hash: hash_with_block1}, %Transaction{hash: hash_with_block2}] =
