@@ -10,7 +10,7 @@ defmodule EthereumJSONRPC.Application do
   @impl Application
   def start(_type, _args) do
     rolling_window_opts =
-      :ethereum_jsonrpc,
+      :ethereum_jsonrpc
       |> Application.fetch_env!(RequestCoordinator)
       |> Keyword.fetch!(:rolling_window_opts)
 

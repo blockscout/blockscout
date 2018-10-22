@@ -10,7 +10,7 @@ config :ethereum_jsonrpc, EthereumJSONRPC.RequestCoordinator,
   rolling_window_opts: [
     window_count: 6,
     window_length: :timer.seconds(10),
-    bucket: EthereumJSONRPC.RequestCoordinator.TimeoutCounter
+    table: EthereumJSONRPC.RequestCoordinator.TimeoutCounter
   ],
   wait_per_timeout: :timer.seconds(10)
 
