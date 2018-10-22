@@ -8,11 +8,12 @@ config :logger, :ethereum_jsonrpc,
 
 config :ethereum_jsonrpc, EthereumJSONRPC.RequestCoordinator,
   rolling_window_opts: [
-    window_count: 6,
-    window_length: :timer.seconds(10),
+    window_count: 12,
+    duration: :timer.minutes(1),
     table: EthereumJSONRPC.RequestCoordinator.TimeoutCounter
   ],
-  wait_per_timeout: :timer.seconds(10)
+  wait_per_timeout: :timer.seconds(20),
+  max_jitter: :timer.seconds(2)
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

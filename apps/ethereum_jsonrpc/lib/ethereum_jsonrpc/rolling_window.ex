@@ -1,9 +1,26 @@
 defmodule EthereumJSONRPC.RollingWindow do
   @moduledoc """
-  TODO
+  Tracker for counting an event that occurs within a moving time window.
+
+  This is an abstraction to keep track of events within a recent time windows
+  group into smaller buckets of time relative to the current time. It gives a
+  better approximation of recent events without needing to constantly check for
+  event timestamps.
+
+  ## Options
+
+  * `:table` - Name of table for direct access
+  * `:duration` - Total amount of time to count events in milliseconds
+  * `:window_count` - Amount of slices to subdivide the total window length
+
+  For example, if you choose a duration of 60,000 milliseconds with a window
+  count of 6, you'll have 6 slices of 10,000 milliseconds event windows.
+
+  NOTE: Duration must be evenly divisible by window_count.
   """
 
   use GenServer
+
   require Logger
 
   def child_spec([init_arguments]) do
@@ -27,8 +44,14 @@ defmodule EthereumJSONRPC.RollingWindow do
 
   def init(opts) do
     table_name = Keyword.fetch!(opts, :table)
-    window_length = Keyword.fetch!(opts, :window_length)
+    duration = Keyword.fetch!(opts, :duration)
     window_count = Keyword.fetch!(opts, :window_count)
+
+    unless rem(duration, window_count) == 0 do
+      raise ArgumentError, "duration must be evenly divisible by window_count"
+    end
+
+    window_length = div(duration, window_count)
 
     table = :ets.new(table_name, [:named_table, :set, :public, read_concurrency: true, write_concurrency: true])
 
@@ -64,7 +87,7 @@ defmodule EthereumJSONRPC.RollingWindow do
     {:noreply, state}
   end
 
-  # This handle_call e
+  # Additional call to sweep to manually invoke sweeping for testing
   def handle_call(
         :sweep,
         _from,
@@ -83,13 +106,13 @@ defmodule EthereumJSONRPC.RollingWindow do
   defp sweep(table, delete_match_spec, replace_match_spec) do
     Logger.debug(fn -> "Sweeping windows" end)
 
-    # Delete any rows wheree all windows empty
+    # Delete any rows where all windows empty
     :ets.match_delete(table, delete_match_spec)
 
     :ets.select_replace(table, replace_match_spec)
   end
 
-  def match_spec(window_count) do
+  defp match_spec(window_count) do
     # This match spec represents this function:
     #
     #  :ets.fun2ms(fn
@@ -173,7 +196,7 @@ defmodule EthereumJSONRPC.RollingWindow do
   end
 
   @doc """
-  Count all events in all windows
+  Count all events in all windows for a given key.
   """
   @spec count(table :: atom, key :: term()) :: non_neg_integer()
   def count(table, key) do
@@ -184,7 +207,7 @@ defmodule EthereumJSONRPC.RollingWindow do
   end
 
   @doc """
-  Display the raw contents of all windows for a given key
+  Display the raw contents of all windows for a given key.
   """
   @spec inspect(table :: atom, key :: term()) :: nonempty_list(non_neg_integer)
   def inspect(table, key) do

@@ -323,7 +323,7 @@ defmodule EthereumJSONRPC do
   def json_rpc(request, named_arguments) when (is_map(request) or is_list(request)) and is_list(named_arguments) do
     transport = Keyword.fetch!(named_arguments, :transport)
     transport_options = Keyword.fetch!(named_arguments, :transport_options)
-    throttle_timeout = Keyword.get(named_arguments, :throttle_timeout, 60_000)
+    throttle_timeout = Keyword.get(named_arguments, :throttle_timeout, :timer.minutes(2))
 
     RequestCoordinator.perform(request, transport, transport_options, throttle_timeout)
   end
