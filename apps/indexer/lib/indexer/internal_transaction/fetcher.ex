@@ -92,7 +92,7 @@ defmodule Indexer.InternalTransaction.Fetcher do
   end
 
   @impl BufferedTask
-  def run(entries, _retries, json_rpc_named_arguments) do
+  def run(entries, json_rpc_named_arguments) do
     unique_entries = unique_entries(entries)
 
     Logger.debug(fn -> "fetching internal transactions for #{length(unique_entries)} transactions" end)

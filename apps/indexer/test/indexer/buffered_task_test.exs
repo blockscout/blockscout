@@ -1,10 +1,20 @@
 defmodule Indexer.BufferedTaskTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
+
+  import Mox
 
   alias Indexer.BufferedTask
+  alias Indexer.BufferedTaskTest.RetryableTask
 
   @max_batch_size 2
   @assert_receive_timeout 200
+
+  @moduletag :capture_log
+
+  # must be global as can't guarantee that `init` can be mocked before `BufferedTask` `start_link` returns
+  setup :set_mox_global
+
+  setup :verify_on_exit!
 
   defp start_buffer(callback_module) do
     start_supervised!({Task.Supervisor, name: BufferedTaskSup})
@@ -32,7 +42,7 @@ defmodule Indexer.BufferedTaskTest do
       Enum.reduce(initial_collection(), initial, fn item, acc -> reducer.(item, acc) end)
     end
 
-    def run(batch, 0, _state) do
+    def run(batch, _state) do
       send(__MODULE__, {:run, batch})
       :ok
     end
@@ -45,41 +55,8 @@ defmodule Indexer.BufferedTaskTest do
       initial
     end
 
-    def run(batch, 0, _state) do
+    def run(batch, _state) do
       send(__MODULE__, {:run, batch})
-      :ok
-    end
-  end
-
-  defmodule RetryableTask do
-    @behaviour BufferedTask
-
-    def init(initial, _reducer, _state) do
-      initial
-    end
-
-    def run([:boom], 0, _state) do
-      send(__MODULE__, {:run, {0, :boom}})
-      raise "boom"
-    end
-
-    def run([:boom], 1, _state) do
-      send(__MODULE__, {:run, {1, :boom}})
-      :ok
-    end
-
-    def run([{:sleep, time}], _, _state) do
-      :timer.sleep(time)
-      :ok
-    end
-
-    def run(batch, retries, _state) when retries < 2 do
-      send(__MODULE__, {:run, {retries, batch}})
-      :retry
-    end
-
-    def run(batch, retries, _state) do
-      send(__MODULE__, {:final_run, {retries, batch}})
       :ok
     end
   end
@@ -121,16 +98,54 @@ defmodule Indexer.BufferedTaskTest do
 
   @tag :capture_log
   test "crashed runs are retried" do
+    RetryableTask
+    |> expect(:init, fn initial, _, _ -> initial end)
+    |> expect(:run, fn [:boom] = batch, _state ->
+      send(RetryableTask, {:run, {0, batch}})
+      raise "boom"
+    end)
+    |> expect(:run, fn [:boom] = batch, _state ->
+      send(RetryableTask, {:run, {1, batch}})
+      :ok
+    end)
+
     Process.register(self(), RetryableTask)
     {:ok, buffer} = start_buffer(RetryableTask)
 
     BufferedTask.buffer(buffer, [:boom])
-    assert_receive {:run, {0, :boom}}, @assert_receive_timeout
-    assert_receive {:run, {1, :boom}}, @assert_receive_timeout
+    assert_receive {:run, {0, [:boom]}}, @assert_receive_timeout
+    assert_receive {:run, {1, [:boom]}}, @assert_receive_timeout
     refute_receive _
   end
 
   test "run/1 allows tasks to be programmatically retried" do
+    RetryableTask
+    |> expect(:init, fn initial, _, _ -> initial end)
+    |> expect(:run, fn [1, 2] = batch, _state ->
+      send(RetryableTask, {:run, {0, batch}})
+      :retry
+    end)
+    |> expect(:run, fn [3] = batch, _state ->
+      send(RetryableTask, {:run, {0, batch}})
+      :retry
+    end)
+    |> expect(:run, fn [1, 2] = batch, _state ->
+      send(RetryableTask, {:run, {1, batch}})
+      :retry
+    end)
+    |> expect(:run, fn [3] = batch, _state ->
+      send(RetryableTask, {:run, {1, batch}})
+      :retry
+    end)
+    |> expect(:run, fn [1, 2] = batch, _state ->
+      send(RetryableTask, {:final_run, {2, batch}})
+      :ok
+    end)
+    |> expect(:run, fn [3] = batch, _state ->
+      send(RetryableTask, {:final_run, {2, batch}})
+      :ok
+    end)
+
     Process.register(self(), RetryableTask)
     {:ok, buffer} = start_buffer(RetryableTask)
 
@@ -145,11 +160,23 @@ defmodule Indexer.BufferedTaskTest do
   end
 
   test "debug_count/1 returns count of buffered entries" do
+    RetryableTask
+    |> expect(:init, fn initial, _, _ -> initial end)
+    |> stub(:run, fn [{:sleep, time}], _state ->
+      :timer.sleep(time)
+      :ok
+    end)
+
     {:ok, buffer} = start_buffer(RetryableTask)
+
     assert %{buffer: 0, tasks: 0} = BufferedTask.debug_count(buffer)
-    BufferedTask.buffer(buffer, [{:sleep, 100}])
-    BufferedTask.buffer(buffer, [{:sleep, 100}])
-    BufferedTask.buffer(buffer, [{:sleep, 100}])
-    assert %{buffer: 3, tasks: 0} = BufferedTask.debug_count(buffer)
+
+    BufferedTask.buffer(buffer, [{:sleep, 1_000}])
+    BufferedTask.buffer(buffer, [{:sleep, 1_000}])
+    BufferedTask.buffer(buffer, [{:sleep, 1_000}])
+    Process.sleep(200)
+
+    assert %{buffer: buffer, tasks: tasks} = BufferedTask.debug_count(buffer)
+    assert buffer + tasks == 3
   end
 end

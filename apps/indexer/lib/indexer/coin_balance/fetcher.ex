@@ -65,7 +65,7 @@ defmodule Indexer.CoinBalance.Fetcher do
   end
 
   @impl BufferedTask
-  def run(entries, _retries, json_rpc_named_arguments) do
+  def run(entries, json_rpc_named_arguments) do
     # the same address may be used more than once in the same block, but we only want one `Balance` for a given
     # `{address, block}`, so take unique params only
     unique_entries = Enum.uniq(entries)

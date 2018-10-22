@@ -35,15 +35,15 @@ defmodule Indexer.BufferedTask do
 
   For example, the `c:run/2` for above `c:init/2` could be written:
 
-      def run(string_hashes, _retries) do
+      def run(string_hashes, _state) do
         case EthereumJSONRPC.fetch_balances_by_hash(string_hashes) do
           {:ok, results} -> :ok = update_balances(results)
           {:error, _reason} -> :retry
         end
       end
 
-  If a task crashes, it will be retried automatically with an increased `retries` count passed in as the second
-  argument. Tasks may also be programmatically retried by returning `:retry` from `c:run/2`.
+  If a task crashes, it will be retried automatically. Tasks may also be programmatically retried by returning `:retry`
+  from `c:run/2`.
   """
 
   use GenServer
@@ -73,7 +73,7 @@ defmodule Indexer.BufferedTask do
             init_chunk_size: nil,
             current_buffer: [],
             buffer: :queue.new(),
-            tasks: %{}
+            task_ref_to_batch: %{}
 
   @typedoc """
   Entry passed to `t:reducer/2` in `c:init/2` and grouped together into a list as `t:entries/0` passed to `c:run/2`.
@@ -131,15 +131,15 @@ defmodule Indexer.BufferedTask do
 
   For example, the `c:run/2` callback for the example `c:init/2` callback could be written:
 
-      def run(string_hashes, _retries) do
+      def run(string_hashes, _state) do
         case EthereumJSONRPC.fetch_balances_by_hash(string_hashes) do
           {:ok, results} -> :ok = update_balances(results)
           {:error, _reason} -> :retry
         end
       end
 
-  If a task crashes, it will be retried automatically with an increased `retries` count passed in as the second
-  argument. Tasks may also be programmatically retried by returning `:retry` from `c:run/2`.
+  If a task crashes, it will be retried automatically. Tasks may also be programmatically retried by returning `:retry`
+  from `c:run/2`.
 
   ## Returns
 
@@ -148,7 +148,7 @@ defmodule Indexer.BufferedTask do
    * `{:retry, new_entries :: list}` - run should be retried with `new_entries`
 
   """
-  @callback run(entries, retries :: pos_integer, state) :: :ok | :retry | {:retry, new_entries :: list}
+  @callback run(entries, state) :: :ok | :retry | {:retry, new_entries :: list}
 
   @doc """
   Buffers list of entries for future async execution.
@@ -280,22 +280,31 @@ defmodule Indexer.BufferedTask do
     {:reply, :ok, buffer_entries(state, entries)}
   end
 
-  def handle_call(:debug_count, _from, state) do
-    count = length(state.current_buffer) + :queue.len(state.buffer) * state.max_batch_size
+  def handle_call(
+        :debug_count,
+        _from,
+        %BufferedTask{
+          current_buffer: current_buffer,
+          buffer: buffer,
+          max_batch_size: max_batch_size,
+          task_ref_to_batch: task_ref_to_batch
+        } = state
+      ) do
+    count = length(current_buffer) + :queue.len(buffer) * max_batch_size
 
-    {:reply, %{buffer: count, tasks: Enum.count(state.tasks)}, state}
+    {:reply, %{buffer: count, tasks: Enum.count(task_ref_to_batch)}, state}
   end
 
   defp drop_task(state, ref) do
-    spawn_next_batch(%BufferedTask{state | tasks: Map.delete(state.tasks, ref)})
+    spawn_next_batch(%BufferedTask{state | task_ref_to_batch: Map.delete(state.task_ref_to_batch, ref)})
   end
 
-  defp drop_task_and_retry(state, ref, new_batch \\ nil) do
-    {batch, retries} = Map.fetch!(state.tasks, ref)
+  defp drop_task_and_retry(%BufferedTask{task_ref_to_batch: task_ref_to_batch} = state, ref, new_batch \\ nil) do
+    batch = Map.fetch!(task_ref_to_batch, ref)
 
     state
     |> drop_task(ref)
-    |> queue_in_state(new_batch || batch, retries + 1)
+    |> queue_in_state(new_batch || batch)
   end
 
   defp buffer_entries(state, []), do: state
@@ -304,12 +313,12 @@ defmodule Indexer.BufferedTask do
     %{state | current_buffer: [entries | state.current_buffer]}
   end
 
-  defp queue_in_state(%BufferedTask{} = state, batch, retries) do
-    %{state | buffer: queue_in_queue(state.buffer, batch, retries)}
+  defp queue_in_state(%BufferedTask{} = state, batch) do
+    %{state | buffer: queue_in_queue(state.buffer, batch)}
   end
 
-  defp queue_in_queue(queue, batch, retries) do
-    :queue.in({batch, retries}, queue)
+  defp queue_in_queue(queue, batch) do
+    :queue.in(batch, queue)
   end
 
   defp do_initial_stream(
@@ -352,7 +361,7 @@ defmodule Indexer.BufferedTask do
     entries
     |> Enum.reverse()
     |> Enum.chunk_every(state.max_batch_size)
-    |> Enum.reduce(:queue.new(), fn batch, acc -> queue_in_queue(acc, batch, 0) end)
+    |> Enum.reduce(:queue.new(), fn batch, acc -> queue_in_queue(acc, batch) end)
   end
 
   defp take_batch(state) do
@@ -372,17 +381,16 @@ defmodule Indexer.BufferedTask do
   end
 
   defp spawn_next_batch(state) do
-    if Enum.count(state.tasks) < state.max_concurrency and :queue.len(state.buffer) > 0 do
-      {{batch, retries}, new_queue} = take_batch(state)
+    if Enum.count(state.task_ref_to_batch) < state.max_concurrency and :queue.len(state.buffer) > 0 do
+      {batch, new_queue} = take_batch(state)
 
       task =
         Task.Supervisor.async_nolink(state.task_supervisor, state.callback_module, :run, [
           batch,
-          retries,
           state.callback_module_state
         ])
 
-      %{state | tasks: Map.put(state.tasks, task.ref, {batch, retries}), buffer: new_queue}
+      %{state | task_ref_to_batch: Map.put(state.task_ref_to_batch, task.ref, batch), buffer: new_queue}
     else
       state
     end
@@ -397,7 +405,7 @@ defmodule Indexer.BufferedTask do
     |> List.flatten()
     |> Enum.chunk_every(state.max_batch_size)
     |> Enum.reduce(%{state | current_buffer: []}, fn batch, state_acc ->
-      queue_in_state(state_acc, batch, 0)
+      queue_in_state(state_acc, batch)
     end)
     |> flush()
   end

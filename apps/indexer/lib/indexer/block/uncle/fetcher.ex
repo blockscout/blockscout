@@ -66,7 +66,7 @@ defmodule Indexer.Block.Uncle.Fetcher do
   end
 
   @impl BufferedTask
-  def run(hashes, _retries, %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher) do
+  def run(hashes, %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher) do
     # the same block could be included as an uncle on multiple blocks, but we only want to fetch it once
     unique_hashes = Enum.uniq(hashes)
 

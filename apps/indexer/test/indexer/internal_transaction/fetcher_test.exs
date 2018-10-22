@@ -73,7 +73,7 @@ defmodule Indexer.InternalTransaction.FetcherTest do
     hash_strings =
       InternalTransaction.Fetcher.init([], fn hash_string, acc -> [hash_string | acc] end, json_rpc_named_arguments)
 
-    assert :ok = InternalTransaction.Fetcher.run(hash_strings, 0, json_rpc_named_arguments)
+    assert :ok = InternalTransaction.Fetcher.run(hash_strings, json_rpc_named_arguments)
   end
 
   describe "init/2" do
@@ -139,7 +139,6 @@ defmodule Indexer.InternalTransaction.FetcherTest do
               {1, bytes, 0},
               {1, bytes, 0}
             ],
-            0,
             json_rpc_named_arguments
           )
         end)
@@ -170,7 +169,6 @@ defmodule Indexer.InternalTransaction.FetcherTest do
                  {1, bytes, 0},
                  {1, bytes, 0}
                ],
-               0,
                json_rpc_named_arguments
              ) == {:retry, [{1, bytes, 0}]}
     end
