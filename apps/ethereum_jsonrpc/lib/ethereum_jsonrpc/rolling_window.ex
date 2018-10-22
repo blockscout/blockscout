@@ -32,12 +32,15 @@ defmodule EthereumJSONRPC.RollingWindow do
 
     table = :ets.new(table_name, [:named_table, :set, :public, read_concurrency: true, write_concurrency: true])
 
-    # TODO: Calculate the match spec for the given window count here, and store it in state
+    replace_match_spec = match_spec(window_count)
+    delete_match_spec = delete_match_spec(window_count)
 
     state = %{
       table: table,
       window_length: window_length,
-      window_count: window_count
+      window_count: window_count,
+      replace_match_spec: replace_match_spec,
+      delete_match_spec: delete_match_spec
     }
 
     schedule_sweep(window_length)
@@ -45,25 +48,48 @@ defmodule EthereumJSONRPC.RollingWindow do
     {:ok, state}
   end
 
-  def handle_info(:sweep, %{window_count: window_count, table: table, window_length: window_length} = state) do
-    Logger.debug(fn -> "Sweeping windows" end)
-    # TODO consider broadcasting to indexers than some threshold has been met with result of updating the counter
-
-    # Delete any rows wheree all windows empty
-    delete_match_spec = delete_match_spec(window_count)
-
-    :ets.match_delete(table, delete_match_spec)
-
-    match_spec = match_spec(window_count)
-
-    :ets.select_replace(table, match_spec)
+  def handle_info(
+        :sweep,
+        %{
+          table: table,
+          window_length: window_length,
+          delete_match_spec: delete_match_spec,
+          replace_match_spec: replace_match_spec
+        } = state
+      ) do
+    sweep(table, delete_match_spec, replace_match_spec)
 
     schedule_sweep(window_length)
 
     {:noreply, state}
   end
 
-  defp match_spec(window_count) do
+  # This handle_call e
+  def handle_call(
+        :sweep,
+        _from,
+        %{
+          table: table,
+          delete_match_spec: delete_match_spec,
+          replace_match_spec: replace_match_spec
+        } = state
+      ) do
+    sweep(table, delete_match_spec, replace_match_spec)
+
+    {:reply, :ok, state}
+  end
+
+  # Public for testing
+  defp sweep(table, delete_match_spec, replace_match_spec) do
+    Logger.debug(fn -> "Sweeping windows" end)
+
+    # Delete any rows wheree all windows empty
+    :ets.match_delete(table, delete_match_spec)
+
+    :ets.select_replace(table, replace_match_spec)
+  end
+
+  def match_spec(window_count) do
     # This match spec represents this function:
     #
     #  :ets.fun2ms(fn

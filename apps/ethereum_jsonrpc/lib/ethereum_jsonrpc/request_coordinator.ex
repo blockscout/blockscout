@@ -73,7 +73,7 @@ defmodule EthereumJSONRPC.RequestCoordinator do
       |> Application.get_env(__MODULE__)
       |> Keyword.fetch!(:wait_per_timeout)
 
-    wait_coefficient * @wait_per_timeout
+    wait_coefficient * wait_per_timeout
   end
 
   defp increment_recent_timeouts do

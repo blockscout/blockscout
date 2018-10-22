@@ -17,6 +17,7 @@ defmodule EthereumJSONRPC do
   """
 
   alias Explorer.Chain.Block
+
   alias EthereumJSONRPC.{
     Blocks,
     Receipts,
@@ -58,7 +59,10 @@ defmodule EthereumJSONRPC do
 
   """
   @type json_rpc_named_arguments :: [
-          {:transport, Transport.t()} | {:transport_options, Transport.options()} | {:variant, Variant.t()} | {:throttle_timeout, non_neg_integer()}
+          {:transport, Transport.t()}
+          | {:transport_options, Transport.options()}
+          | {:variant, Variant.t()}
+          | {:throttle_timeout, non_neg_integer()}
         ]
 
   @typedoc """
