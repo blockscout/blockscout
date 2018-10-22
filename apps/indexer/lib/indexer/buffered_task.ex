@@ -9,7 +9,6 @@ defmodule Indexer.BufferedTask do
     * `:flush_interval` - The interval in milliseconds to flush the buffer.
     * `:max_concurrency` - The maximum number of tasks to run concurrently at any give time.
     * `:max_batch_size` - The maximum batch passed to `c:run/2`.
-    * `:init_chunk_size` - The chunk size to chunk `c:init/2` entries for initial buffer population.
     * `:task_supervisor` - The `Task.Supervisor` name to spawn tasks under.
 
   ## Options
@@ -57,8 +56,7 @@ defmodule Indexer.BufferedTask do
     :callback_module_state,
     :task_supervisor,
     :flush_interval,
-    :max_batch_size,
-    :init_chunk_size
+    :max_batch_size
   ]
   defstruct init_task: nil,
             flush_timer: nil,
@@ -68,7 +66,6 @@ defmodule Indexer.BufferedTask do
             flush_interval: nil,
             max_batch_size: nil,
             max_concurrency: nil,
-            init_chunk_size: nil,
             current_buffer: [],
             buffer: :queue.new(),
             task_ref_to_batch: %{}
@@ -187,7 +184,6 @@ defmodule Indexer.BufferedTask do
     * `:flush_interval` - The interval in milliseconds to flush the buffer.
     * `:max_concurrency` - The maximum number of tasks to run concurrently at any give time.
     * `:max_batch_size` - The maximum batch passed to `c:run/2`.
-    * `:init_chunk_size` - The chunk size to chunk `c:init/2` entries for initial buffer population.
     * `:task_supervisor` - The `Task.Supervisor` name to spawn tasks under.
 
   ## Options
@@ -201,7 +197,6 @@ defmodule Indexer.BufferedTask do
           {callback_module :: module,
            [
              {:flush_interval, timeout()}
-             | {:init_chunk_size, pos_integer()}
              | {:max_batch_size, pos_integer()}
              | {:max_concurrency, pos_integer()}
              | {:name, GenServer.name()}
@@ -225,8 +220,7 @@ defmodule Indexer.BufferedTask do
       task_supervisor: Keyword.fetch!(opts, :task_supervisor),
       flush_interval: Keyword.fetch!(opts, :flush_interval),
       max_batch_size: Keyword.fetch!(opts, :max_batch_size),
-      max_concurrency: Keyword.fetch!(opts, :max_concurrency),
-      init_chunk_size: Keyword.fetch!(opts, :init_chunk_size)
+      max_concurrency: Keyword.fetch!(opts, :max_concurrency)
     }
 
     {:ok, state}
@@ -326,7 +320,6 @@ defmodule Indexer.BufferedTask do
          %BufferedTask{
            callback_module: callback_module,
            callback_module_state: callback_module_state,
-           init_chunk_size: init_chunk_size,
            max_batch_size: max_batch_size,
            task_supervisor: task_supervisor
          } = state
@@ -338,7 +331,7 @@ defmodule Indexer.BufferedTask do
         {0, []}
         |> callback_module.init(
           fn
-            entry, {len, acc} when len + 1 >= init_chunk_size ->
+            entry, {len, acc} when len + 1 >= max_batch_size ->
               entries = Enum.reverse([entry | acc])
               push_back(parent, entries)
 

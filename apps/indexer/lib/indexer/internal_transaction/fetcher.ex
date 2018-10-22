@@ -21,7 +21,6 @@ defmodule Indexer.InternalTransaction.Fetcher do
     flush_interval: :timer.seconds(3),
     max_concurrency: @max_concurrency,
     max_batch_size: @max_batch_size,
-    init_chunk_size: 5000,
     task_supervisor: Indexer.InternalTransaction.TaskSupervisor
   ]
 

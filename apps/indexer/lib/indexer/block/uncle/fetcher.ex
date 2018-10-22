@@ -17,7 +17,6 @@ defmodule Indexer.Block.Uncle.Fetcher do
     flush_interval: :timer.seconds(3),
     max_batch_size: 10,
     max_concurrency: 10,
-    init_chunk_size: 1000,
     task_supervisor: Indexer.Block.Uncle.TaskSupervisor
   ]
 
