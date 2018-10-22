@@ -108,4 +108,27 @@ defmodule Indexer.BoundQueue do
     {:ok, shrunk_bound_queue} = drop_back(bound_queue)
     shrink(shrunk_bound_queue, goal_size)
   end
+
+  defimpl Enumerable do
+    def count(%@for{size: size}), do: {:ok, size}
+
+    def member?(%@for{queue: queue}, element) do
+      {:ok, :queue.member(element, queue)}
+    end
+
+    def reduce(%@for{}, {:halt, acc}, _fun), do: {:halted, acc}
+
+    def reduce(%@for{} = bound_queue, {:suspend, acc}, fun) do
+      {:suspend, acc, &reduce(bound_queue, &1, fun)}
+    end
+
+    def reduce(%@for{size: 0}, {:cont, acc}, _fun), do: {:done, acc}
+
+    def reduce(%@for{} = bound_queue, {:cont, acc}, fun) do
+      {:ok, {head, tail_bound_queue}} = @for.pop_front(bound_queue)
+      reduce(tail_bound_queue, fun.(head, acc), fun)
+    end
+
+    def slice(%@for{}), do: {:error, __MODULE__}
+  end
 end
