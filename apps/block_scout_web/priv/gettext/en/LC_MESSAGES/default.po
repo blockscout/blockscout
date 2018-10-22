@@ -479,6 +479,11 @@ msgid "Hash"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:58
+msgid "Hide"
+msgstr ""
+
+#, elixir-format
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:31
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:46
 msgid "IN"
@@ -774,6 +779,11 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:120
 msgid "Server Response"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:57
+msgid "Show"
 msgstr ""
 
 #, elixir-format
@@ -1183,14 +1193,4 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/views/address_contract_view.ex:15
 msgid "true"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:58
-msgid "Hide"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:57
-msgid "Show"
 msgstr ""
