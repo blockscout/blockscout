@@ -16,7 +16,7 @@ defmodule Indexer.BufferedTaskTest do
 
   setup :verify_on_exit!
 
-  defp start_buffer(callback_module) do
+  defp start_buffer(callback_module, max_batch_size \\ @max_batch_size) do
     start_supervised!({Task.Supervisor, name: BufferedTaskSup})
 
     start_supervised(
@@ -26,9 +26,9 @@ defmodule Indexer.BufferedTaskTest do
           state: nil,
           task_supervisor: BufferedTaskSup,
           flush_interval: 50,
-          max_batch_size: @max_batch_size,
+          max_batch_size: max_batch_size,
           max_concurrency: 2,
-          init_chunk_size: @max_batch_size * 2}
+          init_chunk_size: max_batch_size * 2}
        ]}
     )
   end
@@ -167,7 +167,7 @@ defmodule Indexer.BufferedTaskTest do
       :ok
     end)
 
-    {:ok, buffer} = start_buffer(RetryableTask)
+    {:ok, buffer} = start_buffer(RetryableTask, 1)
 
     assert %{buffer: 0, tasks: 0} = BufferedTask.debug_count(buffer)
 

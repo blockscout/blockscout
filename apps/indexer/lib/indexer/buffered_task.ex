@@ -268,11 +268,6 @@ defmodule Indexer.BufferedTask do
     {:noreply, drop_task_and_retry(state, ref)}
   end
 
-  def handle_call({:async_perform, stream_que}, _from, state) do
-    new_buffer = :queue.join(state.buffer, stream_que)
-    {:reply, :ok, spawn_next_batch(%{state | buffer: new_buffer})}
-  end
-
   def handle_call({:buffer, entries}, _from, state) do
     {:reply, :ok, buffer_entries(state, entries)}
   end
@@ -292,6 +287,15 @@ defmodule Indexer.BufferedTask do
     {:reply, %{buffer: count, tasks: Enum.count(task_ref_to_batch)}, state}
   end
 
+  def handle_call({:push_back, entries}, _from, state) when is_list(entries) do
+    new_state =
+      state
+      |> push_back(entries)
+      |> spawn_next_batch()
+
+    {:reply, :ok, new_state}
+  end
+
   defp drop_task(state, ref) do
     spawn_next_batch(%BufferedTask{state | task_ref_to_batch: Map.delete(state.task_ref_to_batch, ref)})
   end
@@ -301,7 +305,7 @@ defmodule Indexer.BufferedTask do
 
     state
     |> drop_task(ref)
-    |> queue_in_state(new_batch || batch)
+    |> push_back(new_batch || batch)
   end
 
   defp buffer_entries(state, []), do: state
@@ -335,9 +339,8 @@ defmodule Indexer.BufferedTask do
         |> callback_module.init(
           fn
             entry, {len, acc} when len + 1 >= init_chunk_size ->
-              [entry | acc]
-              |> chunk_into_queue(max_batch_size)
-              |> async_perform(parent)
+              entries = Enum.reverse([entry | acc])
+              push_back(parent, entries)
 
               {0, []}
 
@@ -356,29 +359,40 @@ defmodule Indexer.BufferedTask do
 
   defp catchup_remaining({len, batch}, max_batch_size, pid)
        when is_integer(len) and is_list(batch) and is_integer(max_batch_size) and is_pid(pid) do
-    batch
-    |> chunk_into_queue(max_batch_size)
-    |> async_perform(pid)
+    push_back(pid, Enum.reverse(batch))
 
     :ok
   end
 
-  defp chunk_into_queue(entries, max_batch_size) when is_list(entries) and is_integer(max_batch_size) do
-    entries
-    |> Enum.reverse()
-    |> Enum.chunk_every(max_batch_size)
-    |> Enum.reduce(:queue.new(), fn batch, acc -> queue_in_queue(acc, batch) end)
+  defp push_back(pid, entries) when is_pid(pid) and is_list(entries) do
+    GenServer.call(pid, {:push_back, entries})
   end
 
-  defp take_batch(state) do
-    case :queue.out(state.buffer) do
-      {{:value, batch}, new_queue} -> {batch, new_queue}
-      {:empty, new_queue} -> {[], new_queue}
+  defp push_back(%BufferedTask{buffer: buffer} = state, entries) when is_list(entries) do
+    new_buffer =
+      Enum.reduce(entries, buffer, fn entry, acc ->
+        queue_in_queue(acc, entry)
+      end)
+
+    %BufferedTask{state | buffer: new_buffer}
+  end
+
+  defp take_batch(%BufferedTask{buffer: buffer, max_batch_size: max_batch_size} = state) do
+    {batch, new_buffer} = take_batch(buffer, max_batch_size)
+    {batch, %BufferedTask{state | buffer: new_buffer}}
+  end
+
+  defp take_batch(queue, max_batch_size) do
+    take_batch(queue, max_batch_size, [])
+  end
+
+  defp take_batch(queue, 0, acc), do: {Enum.reverse(acc), queue}
+
+  defp take_batch(queue, remaining, acc) do
+    case :queue.out(queue) do
+      {{:value, entry}, new_queue} -> take_batch(new_queue, remaining - 1, [entry | acc])
+      {:empty, new_queue} -> take_batch(new_queue, 0, acc)
     end
-  end
-
-  defp async_perform(entries, dest) do
-    GenServer.call(dest, {:async_perform, entries})
   end
 
   defp schedule_next_buffer_flush(state) do
@@ -386,17 +400,26 @@ defmodule Indexer.BufferedTask do
     %{state | flush_timer: timer}
   end
 
-  defp spawn_next_batch(state) do
-    if Enum.count(state.task_ref_to_batch) < state.max_concurrency and :queue.len(state.buffer) > 0 do
-      {batch, new_queue} = take_batch(state)
+  defp spawn_next_batch(
+         %BufferedTask{
+           buffer: buffer,
+           callback_module: callback_module,
+           callback_module_state: callback_module_state,
+           max_concurrency: max_concurrency,
+           task_ref_to_batch: task_ref_to_batch,
+           task_supervisor: task_supervisor
+         } = state
+       ) do
+    if Enum.count(task_ref_to_batch) < max_concurrency and :queue.len(buffer) > 0 do
+      {batch, new_state} = take_batch(state)
 
-      task =
-        Task.Supervisor.async_nolink(state.task_supervisor, state.callback_module, :run, [
+      %Task{ref: ref} =
+        Task.Supervisor.async_nolink(task_supervisor, callback_module, :run, [
           batch,
-          state.callback_module_state
+          callback_module_state
         ])
 
-      %{state | task_ref_to_batch: Map.put(state.task_ref_to_batch, task.ref, batch), buffer: new_queue}
+      %BufferedTask{new_state | task_ref_to_batch: Map.put(task_ref_to_batch, ref, batch)}
     else
       state
     end
@@ -409,7 +432,6 @@ defmodule Indexer.BufferedTask do
   defp flush(%BufferedTask{current_buffer: current} = state) do
     current
     |> List.flatten()
-    |> Enum.chunk_every(state.max_batch_size)
     |> Enum.reduce(%{state | current_buffer: []}, fn batch, state_acc ->
       queue_in_state(state_acc, batch)
     end)
