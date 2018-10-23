@@ -1,0 +1,10 @@
+version: '3'
+services: 
+  blockscout: 
+    build: .
+    ports: 
+      - "4000:4000"
+    environment:
+      ETHEREUM_JSONRPC_HTTP_URL: "http://host.docker.internal:2000"
+      ETHEREUM_JSONRPC_WEB_SOCKET_URL: "ws://host.docker.internal:2000"
+
