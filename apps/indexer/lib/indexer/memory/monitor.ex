@@ -11,6 +11,7 @@ defmodule Indexer.Memory.Monitor do
   require Logger
 
   import Bitwise
+  import Indexer.Logger, only: [process: 1]
 
   alias Indexer.Memory.Shrinkable
 
@@ -126,40 +127,23 @@ defmodule Indexer.Memory.Monitor do
   end
 
   defp shrink([{pid, memory} | tail]) do
-    {:registered_name, registered_name} = Process.info(pid, :registered_name)
-
     Logger.warn(fn ->
-      prefix = [
+      [
         "Worst memory usage (",
         to_string(memory),
         " bytes) among remaining shrinkable processes is ",
-        inspect(pid)
+        process(pid),
+        ".  Asking process to shrink to drop below limit."
       ]
-
-      prefix =
-        case registered_name do
-          [] -> [prefix, "."]
-          _ -> [prefix, " (", inspect(registered_name), ")."]
-        end
-
-      [prefix, "  Asking ", inspect(pid), " to shrinkable to drop below limit."]
     end)
 
     case Shrinkable.shrink(pid) do
       :ok ->
         Logger.info(fn ->
-          prefix = [inspect(pid)]
-
-          prefix =
-            case registered_name do
-              [] -> prefix
-              _ -> [prefix, " (", inspect(registered_name), ")"]
-            end
-
           after_memory = memory(pid)
 
           [
-            prefix,
+            process(pid),
             " shrunk from ",
             to_string(memory),
             " bytes to ",
@@ -174,7 +158,7 @@ defmodule Indexer.Memory.Monitor do
 
       {:error, :minimum_size} ->
         Logger.error(fn ->
-          [inspect(pid), " is at its minimum size and could not shrink."]
+          [process(pid) | " is at its minimum size and could not shrink."]
         end)
 
         shrink(tail)

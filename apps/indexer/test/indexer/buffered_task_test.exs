@@ -3,10 +3,11 @@ defmodule Indexer.BufferedTaskTest do
 
   import Mox
 
-  alias Indexer.BufferedTask
-  alias Indexer.BufferedTaskTest.RetryableTask
+  alias Indexer.{BoundQueue, BufferedTask}
+  alias Indexer.BufferedTaskTest.{RetryableTask, ShrinkableTask}
 
   @max_batch_size 2
+  @flush_interval 50
   @assert_receive_timeout 200
 
   @moduletag :capture_log
@@ -25,7 +26,7 @@ defmodule Indexer.BufferedTaskTest do
          {callback_module,
           state: nil,
           task_supervisor: BufferedTaskSup,
-          flush_interval: 50,
+          flush_interval: @flush_interval,
           max_batch_size: max_batch_size,
           max_concurrency: 2}
        ]}
@@ -177,5 +178,115 @@ defmodule Indexer.BufferedTaskTest do
 
     assert %{buffer: buffer, tasks: tasks} = BufferedTask.debug_count(buffer)
     assert buffer + tasks == 3
+  end
+
+  describe "handle_info(:flush, state)" do
+    test "without 0 size without maximum size schedules next flush" do
+      {:ok, bound_queue} = BoundQueue.push_back(%BoundQueue{}, 1)
+      start_supervised!({Task.Supervisor, name: BufferedTaskSup})
+
+      refute BoundQueue.shrunk?(bound_queue)
+
+      assert {:noreply, %BufferedTask{flush_timer: flush_timer}} =
+               BufferedTask.handle_info(:flush, %BufferedTask{
+                 callback_module: ShrinkableTask,
+                 callback_module_state: nil,
+                 bound_queue: bound_queue,
+                 flush_interval: 50,
+                 flush_timer: nil,
+                 task_supervisor: BufferedTaskSup,
+                 max_batch_size: 1,
+                 max_concurrency: 1
+               })
+
+      refute flush_timer == nil
+    end
+
+    test "without 0 size with maximum size schedules next flush" do
+      {:ok, bound_queue} = BoundQueue.push_back(%BoundQueue{}, 1)
+      {:ok, bound_queue} = BoundQueue.push_back(bound_queue, 2)
+      {:ok, bound_queue} = BoundQueue.shrink(bound_queue)
+
+      assert BoundQueue.shrunk?(bound_queue)
+
+      start_supervised!({Task.Supervisor, name: BufferedTaskSup})
+
+      assert {:noreply, %BufferedTask{flush_timer: flush_timer}} =
+               BufferedTask.handle_info(:flush, %BufferedTask{
+                 callback_module: ShrinkableTask,
+                 callback_module_state: nil,
+                 bound_queue: bound_queue,
+                 flush_interval: 50,
+                 flush_timer: nil,
+                 task_supervisor: BufferedTaskSup,
+                 max_batch_size: 1,
+                 max_concurrency: 1
+               })
+
+      refute flush_timer == nil
+    end
+
+    test "with 0 size without maximum size schedules next flush" do
+      bound_queue = %BoundQueue{}
+
+      refute BoundQueue.shrunk?(bound_queue)
+
+      start_supervised!({Task.Supervisor, name: BufferedTaskSup})
+
+      assert {:noreply, %BufferedTask{flush_timer: flush_timer}} =
+               BufferedTask.handle_info(:flush, %BufferedTask{
+                 callback_module: ShrinkableTask,
+                 callback_module_state: nil,
+                 bound_queue: bound_queue,
+                 flush_interval: 50,
+                 flush_timer: nil,
+                 task_supervisor: BufferedTaskSup,
+                 max_batch_size: 1,
+                 max_concurrency: 1
+               })
+
+      refute flush_timer == nil
+    end
+
+    test "with 0 size with maximum size calls init/2 to get work that was shed before scheduling next flush" do
+      {:ok, bound_queue} = BoundQueue.push_back(%BoundQueue{}, 1)
+      {:ok, bound_queue} = BoundQueue.push_back(bound_queue, 2)
+      {:ok, bound_queue} = BoundQueue.shrink(bound_queue)
+
+      assert {:ok, {1, bound_queue}} = BoundQueue.pop_front(bound_queue)
+      assert Enum.empty?(bound_queue)
+      assert BoundQueue.shrunk?(bound_queue)
+
+      start_supervised!({Task.Supervisor, name: BufferedTaskSup})
+
+      ShrinkableTask
+      |> expect(:init, fn initial, reducer, _ ->
+        Enum.reduce([2, 3, 4], initial, reducer)
+      end)
+
+      assert {:noreply, %BufferedTask{flush_timer: flush_timer}} =
+               BufferedTask.handle_info(:flush, %BufferedTask{
+                 callback_module: ShrinkableTask,
+                 callback_module_state: nil,
+                 bound_queue: bound_queue,
+                 flush_interval: 50,
+                 flush_timer: nil,
+                 task_supervisor: BufferedTaskSup,
+                 max_batch_size: 2,
+                 max_concurrency: 1
+               })
+
+      refute flush_timer == nil
+
+      assert_receive {:"$gen_call", from1, {:push_back, [2, 3]}}, @assert_receive_timeout
+
+      GenServer.reply(from1, :ok)
+
+      assert_receive {:"$gen_call", from2, {:push_back, [4]}}, @assert_receive_timeout
+
+      GenServer.reply(from2, :ok)
+
+      assert_receive :flush, @assert_receive_timeout
+    end
   end
 end

@@ -9,6 +9,8 @@ defmodule Indexer.BufferedTask do
     * `:flush_interval` - The interval in milliseconds to flush the buffer.
     * `:max_concurrency` - The maximum number of tasks to run concurrently at any give time.
     * `:max_batch_size` - The maximum batch passed to `c:run/2`.
+    * `:memory_monitor` - The `Indexer.Memory.Monitor` `t:GenServer.server/0` to register as
+      `Indexer.Memory.Monitor.shrinkable/0` with.
     * `:task_supervisor` - The `Task.Supervisor` name to spawn tasks under.
 
   ## Options
@@ -49,7 +51,9 @@ defmodule Indexer.BufferedTask do
 
   require Logger
 
-  alias Indexer.BufferedTask
+  import Indexer.Logger, only: [process: 1]
+
+  alias Indexer.{BoundQueue, BufferedTask, Memory}
 
   @enforce_keys [
     :callback_module,
@@ -67,7 +71,7 @@ defmodule Indexer.BufferedTask do
             max_batch_size: nil,
             max_concurrency: nil,
             current_buffer: [],
-            buffer: :queue.new(),
+            bound_queue: %BoundQueue{},
             task_ref_to_batch: %{}
 
   @typedoc """
@@ -199,6 +203,7 @@ defmodule Indexer.BufferedTask do
              {:flush_interval, timeout()}
              | {:max_batch_size, pos_integer()}
              | {:max_concurrency, pos_integer()}
+             | {:memory_monitor, GenServer.name()}
              | {:name, GenServer.name()}
              | {:task_supervisor, GenServer.name()}
              | {:state, state}
@@ -213,6 +218,8 @@ defmodule Indexer.BufferedTask do
 
   def init({callback_module, opts}) do
     send(self(), :initial_stream)
+
+    shrinkable(opts)
 
     state = %BufferedTask{
       callback_module: callback_module,
@@ -271,12 +278,12 @@ defmodule Indexer.BufferedTask do
         _from,
         %BufferedTask{
           current_buffer: current_buffer,
-          buffer: buffer,
+          bound_queue: bound_queue,
           max_batch_size: max_batch_size,
           task_ref_to_batch: task_ref_to_batch
         } = state
       ) do
-    count = length(current_buffer) + :queue.len(buffer) * max_batch_size
+    count = length(current_buffer) + Enum.count(bound_queue) * max_batch_size
 
     {:reply, %{buffer: count, tasks: Enum.count(task_ref_to_batch)}, state}
   end
@@ -288,6 +295,23 @@ defmodule Indexer.BufferedTask do
       |> spawn_next_batch()
 
     {:reply, :ok, new_state}
+  end
+
+  def handle_call(:shrink, _from, %__MODULE__{bound_queue: bound_queue} = state) do
+    {reply, shrunk_state} =
+      case BoundQueue.shrink(bound_queue) do
+        {:error, :minimum_size} = error ->
+          {error, state}
+
+        {:ok, shrunk_bound_queue} ->
+          {:ok, %__MODULE__{state | bound_queue: shrunk_bound_queue}}
+      end
+
+    {:reply, reply, shrunk_state, :hibernate}
+  end
+
+  def handle_call(:shrunk?, _from, %__MODULE__{bound_queue: bound_queue} = state) do
+    {:reply, BoundQueue.shrunk?(bound_queue), state}
   end
 
   defp drop_task(state, ref) do
@@ -306,14 +330,6 @@ defmodule Indexer.BufferedTask do
 
   defp buffer_entries(state, entries) do
     %{state | current_buffer: [entries | state.current_buffer]}
-  end
-
-  defp queue_in_state(%BufferedTask{} = state, batch) do
-    %{state | buffer: queue_in_queue(state.buffer, batch)}
-  end
-
-  defp queue_in_queue(queue, batch) do
-    :queue.in(batch, queue)
   end
 
   defp do_initial_stream(
@@ -361,31 +377,71 @@ defmodule Indexer.BufferedTask do
     GenServer.call(pid, {:push_back, entries})
   end
 
-  defp push_back(%BufferedTask{buffer: buffer} = state, entries) when is_list(entries) do
-    new_buffer =
-      Enum.reduce(entries, buffer, fn entry, acc ->
-        queue_in_queue(acc, entry)
-      end)
+  defp push_back(%BufferedTask{bound_queue: bound_queue} = state, entries) when is_list(entries) do
+    new_bound_queue =
+      case BoundQueue.push_back_until_maximum_size(bound_queue, entries) do
+        {new_bound_queue, []} ->
+          new_bound_queue
 
-    %BufferedTask{state | buffer: new_buffer}
+        {%BoundQueue{maximum_size: maximum_size} = new_bound_queue, remaining_entries} ->
+          Logger.warn(fn ->
+            [
+              "BufferedTask ",
+              process(self()),
+              " bound queue is at maximum size (",
+              to_string(maximum_size),
+              ") and ",
+              remaining_entries |> Enum.count() |> to_string()
+              | " entries could not be added."
+            ]
+          end)
+
+          new_bound_queue
+      end
+
+    %BufferedTask{state | bound_queue: new_bound_queue}
   end
 
-  defp take_batch(%BufferedTask{buffer: buffer, max_batch_size: max_batch_size} = state) do
-    {batch, new_buffer} = take_batch(buffer, max_batch_size)
-    {batch, %BufferedTask{state | buffer: new_buffer}}
+  defp take_batch(%BufferedTask{bound_queue: bound_queue, max_batch_size: max_batch_size} = state) do
+    {batch, new_bound_queue} = take_batch(bound_queue, max_batch_size)
+    {batch, %BufferedTask{state | bound_queue: new_bound_queue}}
   end
 
-  defp take_batch(queue, max_batch_size) do
-    take_batch(queue, max_batch_size, [])
+  defp take_batch(%BoundQueue{} = bound_queue, max_batch_size) do
+    take_batch(bound_queue, max_batch_size, [])
   end
 
-  defp take_batch(queue, 0, acc), do: {Enum.reverse(acc), queue}
+  defp take_batch(%BoundQueue{} = bound_queue, 0, acc) do
+    {Enum.reverse(acc), bound_queue}
+  end
 
-  defp take_batch(queue, remaining, acc) do
-    case :queue.out(queue) do
-      {{:value, entry}, new_queue} -> take_batch(new_queue, remaining - 1, [entry | acc])
-      {:empty, new_queue} -> take_batch(new_queue, 0, acc)
+  defp take_batch(%BoundQueue{} = bound_queue, remaining, acc) do
+    case BoundQueue.pop_front(bound_queue) do
+      {:ok, {entry, new_bound_queue}} ->
+        take_batch(new_bound_queue, remaining - 1, [entry | acc])
+
+      {:error, :empty} ->
+        take_batch(bound_queue, 0, acc)
     end
+  end
+
+  # was shrunk and out of work, get more work from `init/2`
+  defp schedule_next(%BufferedTask{bound_queue: %BoundQueue{size: 0, maximum_size: maximum_size}} = state)
+       when maximum_size != nil do
+    Logger.info(fn ->
+      [
+        "BufferedTask ",
+        process(self())
+        | " ran out of work, but work queue was shrunk to save memory, so restoring lost work from `c:init/2`."
+      ]
+    end)
+
+    do_initial_stream(state)
+  end
+
+  # was not shrunk or not out of work
+  defp schedule_next(%BufferedTask{} = state) do
+    schedule_next_buffer_flush(state)
   end
 
   defp schedule_next_buffer_flush(state) do
@@ -393,9 +449,16 @@ defmodule Indexer.BufferedTask do
     %{state | flush_timer: timer}
   end
 
+  defp shrinkable(options) do
+    case Keyword.get(options, :memory_monitor) do
+      nil -> :ok
+      memory_monitor -> Memory.Monitor.shrinkable(memory_monitor)
+    end
+  end
+
   defp spawn_next_batch(
          %BufferedTask{
-           buffer: buffer,
+           bound_queue: bound_queue,
            callback_module: callback_module,
            callback_module_state: callback_module_state,
            max_concurrency: max_concurrency,
@@ -403,7 +466,7 @@ defmodule Indexer.BufferedTask do
            task_supervisor: task_supervisor
          } = state
        ) do
-    if Enum.count(task_ref_to_batch) < max_concurrency and :queue.len(buffer) > 0 do
+    if Enum.count(task_ref_to_batch) < max_concurrency and not Enum.empty?(bound_queue) do
       {batch, new_state} = take_batch(state)
 
       %Task{ref: ref} =
@@ -419,15 +482,16 @@ defmodule Indexer.BufferedTask do
   end
 
   defp flush(%BufferedTask{current_buffer: []} = state) do
-    state |> spawn_next_batch() |> schedule_next_buffer_flush()
+    state
+    |> spawn_next_batch()
+    |> schedule_next()
   end
 
   defp flush(%BufferedTask{current_buffer: current} = state) do
-    current
-    |> List.flatten()
-    |> Enum.reduce(%{state | current_buffer: []}, fn batch, state_acc ->
-      queue_in_state(state_acc, batch)
-    end)
+    entries = List.flatten(current)
+
+    %BufferedTask{state | current_buffer: []}
+    |> push_back(entries)
     |> flush()
   end
 end

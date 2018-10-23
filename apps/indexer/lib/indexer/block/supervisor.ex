@@ -33,7 +33,7 @@ defmodule Indexer.Block.Supervisor do
            %{block_fetcher: block_fetcher, subscribe_named_arguments: subscribe_named_arguments},
            [name: Realtime.Supervisor]
          ]},
-        {Uncle.Supervisor, [[block_fetcher: block_fetcher], [name: Uncle.Supervisor]]}
+        {Uncle.Supervisor, [[block_fetcher: block_fetcher, memory_monitor: memory_monitor], [name: Uncle.Supervisor]]}
       ],
       strategy: :one_for_one
     )
