@@ -70,7 +70,7 @@ defmodule Indexer.InternalTransaction.Fetcher do
   def init(initial, reducer, _) do
     {:ok, final} =
       Chain.stream_transactions_with_unfetched_internal_transactions(
-        [:block_number, :hash],
+        [:block_number, :hash, :index],
         initial,
         fn transaction_fields, acc ->
           transaction_fields
@@ -82,13 +82,13 @@ defmodule Indexer.InternalTransaction.Fetcher do
     final
   end
 
-  defp entry(%{block_number: block_number, hash: %Hash{bytes: bytes}}) when is_integer(block_number) do
-    {block_number, bytes}
+  defp entry(%{block_number: block_number, hash: %Hash{bytes: bytes}, index: index}) when is_integer(block_number) do
+    {block_number, bytes, index}
   end
 
-  defp params({block_number, hash_bytes}) when is_integer(block_number) do
+  defp params({block_number, hash_bytes, index}) when is_integer(block_number) do
     {:ok, hash} = Hash.Full.cast(hash_bytes)
-    %{block_number: block_number, hash_data: to_string(hash)}
+    %{block_number: block_number, hash_data: to_string(hash), transaction_index: index}
   end
 
   @impl BufferedTask

@@ -175,14 +175,14 @@ defmodule Indexer.Token.Fetcher do
 
   defp handle_invalid_name(name, contract_address_hash) do
     case String.valid?(name) do
-      true -> name
+      true -> remove_null_bytes(name)
       false -> format_according_contract_address_hash(contract_address_hash)
     end
   end
 
   defp handle_invalid_symbol(symbol) do
     case String.valid?(symbol) do
-      true -> symbol
+      true -> remove_null_bytes(symbol)
       false -> nil
     end
   end
@@ -203,4 +203,8 @@ defmodule Indexer.Token.Fetcher do
   defp handle_large_string(string), do: handle_large_string(string, byte_size(string))
   defp handle_large_string(string, size) when size > 255, do: binary_part(string, 0, 255)
   defp handle_large_string(string, _size), do: string
+
+  defp remove_null_bytes(string) do
+    String.replace(string, "\0", "")
+  end
 end
