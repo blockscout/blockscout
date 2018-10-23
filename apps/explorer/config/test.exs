@@ -27,6 +27,9 @@ if File.exists?(file = "test.secret.exs") do
   import_config file
 end
 
+config :explorer, Explorer.ExchangeRates.Source.TransactionAndLog,
+  secondary_source: Explorer.ExchangeRates.Source.OneCoinSource
+
 variant =
   if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do
     "parity"
