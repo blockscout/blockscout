@@ -792,7 +792,7 @@ defmodule EthereumJSONRPCTest do
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
-        fn [%{id: id, method: _, params: [%{data: _, to: _}]}], _options ->
+        fn [%{id: id, method: _, params: [%{data: _, to: _}, "latest"]}], _options ->
           {:ok,
            [
              %{
