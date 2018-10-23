@@ -144,7 +144,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/_link.html.eex:2
-#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:21
+#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:22
 #: lib/block_scout_web/templates/tokens/transfer/_token_transfer.html.eex:44
 msgid "Block #%{number}"
 msgstr ""
@@ -404,7 +404,7 @@ msgid "Error: (Awaiting internal transactions for reason)"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:15
+#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:16
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:19
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:26
 #: lib/block_scout_web/templates/transaction/overview.html.eex:98
@@ -484,7 +484,7 @@ msgid "Hide"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:31
+#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:32
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:46
 msgid "IN"
 msgstr ""
@@ -631,7 +631,7 @@ msgid "Nonce"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:29
+#: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:30
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:42
 msgid "OUT"
 msgstr ""
@@ -1185,4 +1185,29 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/views/address_contract_view.ex:15
 msgid "true"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/internal_transaction_view.ex:29
+msgid "Call"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/internal_transaction_view.ex:31
+msgid "Create"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/internal_transaction_view.ex:30
+msgid "Delegate Call"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/internal_transaction_view.ex:33
+msgid "Reward"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/internal_transaction_view.ex:32
+msgid "Suicide"
 msgstr ""
