@@ -11,7 +11,8 @@ config :explorer, Explorer.Repo,
 
 config :logger, :explorer,
   level: :info,
-  path: Path.absname("logs/prod/explorer.log")
+  path: Path.absname("logs/prod/explorer.log"),
+  rotate: %{max_bytes: 52_428_800, keep: 19}
 
 variant =
   if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do
