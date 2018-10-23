@@ -38,7 +38,7 @@ defmodule EthereumJSONRPC.RollingWindowTest do
     assert RollingWindow.inspect(@table, :foobar) == []
   end
 
-  test "when no increments hafve happened, count returns 0" do
+  test "when no increments have happened, count returns 0" do
     assert RollingWindow.count(@table, :foobar) == 0
   end
 

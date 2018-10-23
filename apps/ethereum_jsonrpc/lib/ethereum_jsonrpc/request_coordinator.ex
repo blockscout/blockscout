@@ -44,7 +44,7 @@ defmodule EthereumJSONRPC.RequestCoordinator do
 
   alias EthereumJSONRPC.{RollingWindow, Transport}
 
-  @timeout_key :timeout
+  @error_key :throttleable_error_count
 
   @doc """
   Performs a JSON RPC request and adds necessary backoff.
@@ -72,19 +72,19 @@ defmodule EthereumJSONRPC.RequestCoordinator do
   end
 
   defp handle_transport_response({:error, {:bad_gateway, _}} = error) do
-    RollingWindow.inc(table(), @timeout_key)
+    RollingWindow.inc(table(), @error_key)
     error
   end
 
   defp handle_transport_response({:error, :timeout} = error) do
-    RollingWindow.inc(table(), @timeout_key)
+    RollingWindow.inc(table(), @error_key)
     error
   end
 
   defp handle_transport_response(response), do: response
 
   defp sleep_time do
-    wait_coefficient = RollingWindow.count(table(), @timeout_key)
+    wait_coefficient = RollingWindow.count(table(), @error_key)
     jitter = :rand.uniform(config(:max_jitter))
     wait_per_timeout = config(:wait_per_timeout)
 

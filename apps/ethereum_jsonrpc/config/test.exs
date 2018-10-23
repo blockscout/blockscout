@@ -7,7 +7,7 @@ config :logger, :ethereum_jsonrpc,
 config :ethereum_jsonrpc, EthereumJSONRPC.RequestCoordinator,
   rolling_window_opts: [
     window_count: 3,
-    window_length: :timer.seconds(5),
+    duration: :timer.seconds(6),
     table: EthereumJSONRPC.RequestCoordinator.TimeoutCounter
   ],
   wait_per_timeout: 2,

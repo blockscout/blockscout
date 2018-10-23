@@ -30,9 +30,9 @@ defmodule EthereumJSONRPC.RequestCoordinatorTest do
   describe "perform/4" do
     test "forwards result whenever a request doesn't timeout", %{table: table} do
       expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _ -> {:ok, %{}} end)
-      assert RollingWindow.count(table, :timeout) == 0
+      assert RollingWindow.count(table, :throttleable_error_count) == 0
       assert {:ok, %{}} == RequestCoordinator.perform(%{}, EthereumJSONRPC.Mox, [], :timer.minutes(60))
-      assert RollingWindow.count(table, :timeout) == 0
+      assert RollingWindow.count(table, :throttleable_error_count) == 0
     end
 
     test "increments counter on certain errors", %{table: table} do
@@ -40,21 +40,21 @@ defmodule EthereumJSONRPC.RequestCoordinatorTest do
       expect(EthereumJSONRPC.Mox, :json_rpc, fn :bad_gateway, _ -> {:error, {:bad_gateway, "message"}} end)
 
       assert {:error, :timeout} == RequestCoordinator.perform(:timeout, EthereumJSONRPC.Mox, [], :timer.minutes(60))
-      assert RollingWindow.count(table, :timeout) == 1
+      assert RollingWindow.count(table, :throttleable_error_count) == 1
 
       assert {:error, {:bad_gateway, "message"}} ==
                RequestCoordinator.perform(:bad_gateway, EthereumJSONRPC.Mox, [], :timer.minutes(60))
 
-      assert RollingWindow.count(table, :timeout) == 2
+      assert RollingWindow.count(table, :throttleable_error_count) == 2
     end
 
     test "waits the configured amount of time per failure", %{table: table} do
-      RollingWindow.inc(table, :timeout)
-      RollingWindow.inc(table, :timeout)
-      RollingWindow.inc(table, :timeout)
-      RollingWindow.inc(table, :timeout)
-      RollingWindow.inc(table, :timeout)
-      RollingWindow.inc(table, :timeout)
+      RollingWindow.inc(table, :throttleable_error_count)
+      RollingWindow.inc(table, :throttleable_error_count)
+      RollingWindow.inc(table, :throttleable_error_count)
+      RollingWindow.inc(table, :throttleable_error_count)
+      RollingWindow.inc(table, :throttleable_error_count)
+      RollingWindow.inc(table, :throttleable_error_count)
 
       test_process = self()
 
@@ -78,7 +78,7 @@ defmodule EthereumJSONRPC.RequestCoordinatorTest do
 
     test "returns timeout error if sleep time will exceed max timeout", %{table: table} do
       expect(EthereumJSONRPC.Mox, :json_rpc, 0, fn _, _ -> :ok end)
-      RollingWindow.inc(table, :timeout)
+      RollingWindow.inc(table, :throttleable_error_count)
       assert {:error, :timeout} == RequestCoordinator.perform(%{}, EthereumJSONRPC.Mox, [], 1)
     end
   end
