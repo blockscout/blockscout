@@ -71,6 +71,11 @@ defmodule EthereumJSONRPC.RequestCoordinator do
     end
   end
 
+  defp handle_transport_response({:error, {:bad_gateway, _}} = error) do
+    RollingWindow.inc(table(), @timeout_key)
+    error
+  end
+
   defp handle_transport_response({:error, :timeout} = error) do
     RollingWindow.inc(table(), @timeout_key)
     error

@@ -35,12 +35,17 @@ defmodule EthereumJSONRPC.RequestCoordinatorTest do
       assert RollingWindow.count(table, :timeout) == 0
     end
 
-    test "increments counter on timeout", %{table: table} do
-      expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _ -> {:error, :timeout} end)
+    test "increments counter on certain errors", %{table: table} do
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn :timeout, _ -> {:error, :timeout} end)
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn :bad_gateway, _ -> {:error, {:bad_gateway, "message"}} end)
 
-      assert {:error, :timeout} == RequestCoordinator.perform(%{}, EthereumJSONRPC.Mox, [], :timer.minutes(60))
-
+      assert {:error, :timeout} == RequestCoordinator.perform(:timeout, EthereumJSONRPC.Mox, [], :timer.minutes(60))
       assert RollingWindow.count(table, :timeout) == 1
+
+      assert {:error, {:bad_gateway, "message"}} ==
+               RequestCoordinator.perform(:bad_gateway, EthereumJSONRPC.Mox, [], :timer.minutes(60))
+
+      assert RollingWindow.count(table, :timeout) == 2
     end
 
     test "waits the configured amount of time per failure", %{table: table} do
