@@ -95,10 +95,11 @@ defmodule Explorer.Mixfile do
       {:prometheus, "~> 4.0", override: true},
       # Prometheus metrics for query duration
       {:prometheus_ecto, "~> 1.3"},
+      # bypass optional dependency
+      {:plug_cowboy, "~> 1.0", only: :test},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
       {:timex, "~> 3.1.24"},
-      {:timex_ecto, "~> 3.2.1"},
-      {:cowboy, "~> 1.0"}
+      {:timex_ecto, "~> 3.2.1"}
     ]
   end
 

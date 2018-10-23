@@ -69,7 +69,6 @@ defmodule BlockScoutWeb.Mixfile do
       # Plug support for Absinthe
       {:absinthe_plug, "~> 1.4"},
       {:bypass, "~> 0.8", only: :test},
-      {:cowboy, "~> 1.0"},
       {:credo, "0.9.2", only: [:dev, :test], runtime: false},
       {:crontab, "~> 1.1"},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
@@ -95,6 +94,8 @@ defmodule BlockScoutWeb.Mixfile do
       {:phoenix_html, "~> 2.10"},
       {:phoenix_live_reload, "~> 1.0", only: [:dev]},
       {:phoenix_pubsub, "~> 1.0"},
+      # use `:cowboy` for WebServer with `:plug`
+      {:plug_cowboy, "~> 1.0"},
       # Waiting for the Pretty Print to be implemented at the Jason lib
       # https://github.com/michalmuskala/jason/issues/15
       {:poison, "~> 3.1"},
