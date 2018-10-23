@@ -15,7 +15,7 @@
             </span>
             <%= gettext("Blocks") %>
           </a>
-          <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+          <div class="dropdown-menu" aria-labelledby="navbarBlocksDropdown">
             <%= link to: block_path(@conn, :index), class: "dropdown-item" do %>
               <%= gettext("Blocks") %>
             <% end %>
@@ -24,13 +24,26 @@
             <% end %>
           </div>
         </li>
-        <li class="nav-item">
-          <%= link to: transaction_path(@conn, :index), class: "nav-link topnav-nav-link" do %>
+        <li class="nav-item dropdown">
+          <a href="#" role="button" id="navbarTransactionsDropdown" class="nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <span class="nav-link-icon">
               <%= render BlockScoutWeb.IconsView, "_transaction_icon.html" %>
             </span>
             <%= gettext("Transactions") %>
-          <% end %>
+          </a>
+          <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
+            <%= link(
+                  gettext("Validated"),
+                  class: "dropdown-item",
+                  to: transaction_path(@conn, :index)
+                ) %>
+            <%= link(
+                  gettext("Pending"),
+                  class: "dropdown-item",
+                  "data-test": "pending_transactions_link",
+                  to: pending_transaction_path(@conn, :index)
+                ) %>
+          </div>
         </li>
         <li class="nav-item">
           <%= link to: api_docs_path(@conn, :index), class: "nav-link topnav-nav-link" do %>

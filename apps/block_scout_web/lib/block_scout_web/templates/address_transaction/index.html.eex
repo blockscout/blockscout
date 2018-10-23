@@ -9,16 +9,6 @@
       </div>
 
       <div class="card-body">
-        <div data-selector="channel-pending-batching-message" class="d-none">
-          <div data-selector="reload-button" class="alert alert-info">
-            <a href="#" class="alert-link"><span data-selector="channel-pending-batching-count"></span> <%= gettext "More pending transactions have come in" %></a>
-          </div>
-        </div>
-        <div data-selector="channel-batching-message" class="d-none">
-          <div data-selector="reload-button" class="alert alert-info">
-            <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>
-          </div>
-        </div>
         <div data-selector="channel-disconnected-message" class="d-none">
           <div data-selector="reload-button" class="alert alert-danger">
             <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer transactions" %></a>
@@ -61,10 +51,20 @@
           </div>
         </div>
         <h2 class="card-title"><%= gettext "Transactions" %></h2>
-        <div class="mb-3" data-selector="pending-transactions-list">
-          <%= for pending_transaction <- @pending_transactions do %>
-            <%= render(BlockScoutWeb.TransactionView, "_tile.html", current_address: @address, transaction: pending_transaction) %>
+        <div data-selector="pending-transactions-toggle">
+          <%= link to: "#pending-transactions", class: "d-inline-block mb-3", "data-toggle": "collapse" do %>
+            <span data-selector="pending-transactions-open">
+            <%= gettext("Show") %></span>
+            <span data-selector="pending-transactions-close" class="d-none"><%= gettext("Hide") %></span>
+            <span data-selector="pending-transactions-count"><%= length(@pending_transactions) %></span>
+            <%= gettext("Pending Transactions") %>
           <% end %>
+          <div class="mb-3 collapse" id="pending-transactions" data-selector="pending-transactions-list">
+            <%= for pending_transaction <- @pending_transactions do %>
+              <%= render(BlockScoutWeb.TransactionView, "_tile.html", current_address: @address, transaction: pending_transaction) %>
+            <% end %>
+            <hr />
+          </div>
         </div>
         <%= if Enum.count(@transactions) > 0 do %>
           <span data-selector="transactions-list">

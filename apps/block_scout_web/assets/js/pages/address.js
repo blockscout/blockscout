@@ -4,24 +4,12 @@ import URI from 'urijs'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
-import { batchChannel, initRedux, prependWithClingBottom } from '../utils'
+import { batchChannel, initRedux, slideDownPrepend, slideUpRemove } from '../utils'
 import { updateAllAges } from '../lib/from_now'
 import { updateAllCalculatedUsdValues } from '../lib/currency.js'
 import { loadTokenBalanceDropdown } from '../lib/token_balance_dropdown'
 
 const BATCH_THRESHOLD = 10
-
-const incrementTransactionsCount = (transactions, addressHash, currentValue) => {
-  const reducer = (accumulator, {fromAddressHash}) => {
-    if (fromAddressHash === addressHash) {
-      accumulator++
-    }
-
-    return accumulator
-  }
-
-  return transactions.reduce(reducer, currentValue)
-}
 
 export const initialState = {
   addressHash: null,
@@ -34,8 +22,7 @@ export const initialState = {
   newInternalTransactions: [],
   newPendingTransactions: [],
   newTransactions: [],
-  newTransactionHashes: [],
-  newPendingTransactionHashesBatch: [],
+  pendingTransactionHashes: [],
   transactionCount: null,
   validationCount: null
 }
@@ -47,6 +34,7 @@ export function reducer (state = initialState, action) {
         addressHash: action.addressHash,
         beyondPageOne: action.beyondPageOne,
         filter: action.filter,
+        pendingTransactionHashes: action.pendingTransactionHashes,
         transactionCount: numeral(action.transactionCount).value(),
         validationCount: action.validationCount ? numeral(action.validationCount).value() : null
       })
@@ -93,66 +81,47 @@ export function reducer (state = initialState, action) {
         })
       }
     }
-    case 'RECEIVED_NEW_PENDING_TRANSACTION_BATCH': {
+    case 'RECEIVED_NEW_PENDING_TRANSACTION': {
       if (state.channelDisconnected || state.beyondPageOne) return state
 
-      const incomingPendingTransactions = action.msgs
-        .filter(({toAddressHash, fromAddressHash}) => (
-          !state.filter ||
-          (state.filter === 'to' && toAddressHash === state.addressHash) ||
-          (state.filter === 'from' && fromAddressHash === state.addressHash)
-        ))
-      if (!state.newPendingTransactionHashesBatch.length && incomingPendingTransactions.length < BATCH_THRESHOLD) {
-        return Object.assign({}, state, {
-          newPendingTransactions: [
-            ...state.newPendingTransactions,
-            ..._.map(incomingPendingTransactions, 'transactionHtml')
-          ]
-        })
-      } else {
-        return Object.assign({}, state, {
-          newPendingTransactionHashesBatch: [
-            ...state.newPendingTransactionHashesBatch,
-            ..._.map(incomingPendingTransactions, 'transactionHash')
-          ]
-        })
+      if ((state.filter === 'to' && action.msg.toAddressHash !== state.addressHash) ||
+        (state.filter === 'from' && action.msg.fromAddressHash !== state.addressHash)) {
+        return state
       }
+
+      return Object.assign({}, state, {
+        newPendingTransactions: [
+          ...state.newPendingTransactions,
+          action.msg.transactionHtml
+        ],
+        pendingTransactionHashes: [
+          ...state.pendingTransactionHashes,
+          action.msg.transactionHash
+        ]
+      })
     }
-    case 'RECEIVED_NEW_TRANSACTION_BATCH': {
+    case 'RECEIVED_NEW_TRANSACTION': {
       if (state.channelDisconnected) return state
 
-      const transactionCount = incrementTransactionsCount(action.msgs, state.addressHash, state.transactionCount)
+      const transactionCount = (action.msg.fromAddressHash === state.addressHash) ? state.transactionCount + 1 : state.transactionCount
 
-      if (state.beyondPageOne) return Object.assign({}, state, { transactionCount })
-
-      const incomingTransactions = action.msgs
-        .filter(({toAddressHash, fromAddressHash}) => (
-          !state.filter ||
-          (state.filter === 'to' && toAddressHash === state.addressHash) ||
-          (state.filter === 'from' && fromAddressHash === state.addressHash)
-        ))
-
-      const updatedPendingTransactionHashesBatch =
-        _.difference(state.newPendingTransactionHashesBatch, _.map(incomingTransactions, 'transactionHash'))
-
-      if (!state.batchCountAccumulator && incomingTransactions.length < BATCH_THRESHOLD) {
-        return Object.assign({}, state, {
-          newTransactions: [
-            ...state.newTransactions,
-            ..._.map(incomingTransactions, 'transactionHtml')
-          ],
-          newTransactionHashes: _.map(incomingTransactions, 'transactionHash'),
-          newPendingTransactionHashesBatch: updatedPendingTransactionHashesBatch,
-          transactionCount: transactionCount
-        })
-      } else {
-        return Object.assign({}, state, {
-          batchCountAccumulator: state.batchCountAccumulator + incomingTransactions.length,
-          newTransactionHashes: _.map(incomingTransactions, 'transactionHash'),
-          newPendingTransactionHashesBatch: updatedPendingTransactionHashesBatch,
-          transactionCount: transactionCount
-        })
+      if (state.beyondPageOne ||
+        (state.filter === 'to' && action.msg.toAddressHash !== state.addressHash) ||
+        (state.filter === 'from' && action.msg.fromAddressHash !== state.addressHash)) {
+        return Object.assign({}, state, { transactionCount })
       }
+
+      const updatedPendingTransactionHashes =
+        _.without(state.pendingTransactionHashes, action.msg.transactionHash)
+
+      return Object.assign({}, state, {
+        newTransactions: [
+          ...state.newTransactions,
+          action.msg
+        ],
+        pendingTransactionHashes: updatedPendingTransactionHashes,
+        transactionCount: transactionCount
+      })
     }
     case 'RECEIVED_UPDATED_BALANCE': {
       return Object.assign({}, state, {
@@ -176,6 +145,8 @@ if ($addressDetailsPage.length) {
         addressHash,
         beyondPageOne: !!blockNumber,
         filter,
+        pendingTransactionHashes: $('[data-selector="pending-transactions-list"]').children()
+          .map((index, el) => el.dataset.transactionHash).toArray(),
         transactionCount: $('[data-selector="transaction-count"]').text(),
         validationCount: $('[data-selector="validation-count"]') ? $('[data-selector="validation-count"]').text() : null
       })
@@ -187,29 +158,22 @@ if ($addressDetailsPage.length) {
       addressChannel.on('internal_transaction', batchChannel((msgs) =>
         store.dispatch({ type: 'RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH', msgs: humps.camelizeKeys(msgs) })
       ))
-      addressChannel.on('pending_transaction', batchChannel((msgs) =>
-        store.dispatch({ type: 'RECEIVED_NEW_PENDING_TRANSACTION_BATCH', msgs: humps.camelizeKeys(msgs) })
-      ))
-      addressChannel.on('transaction', batchChannel((msgs) =>
-        store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION_BATCH', msgs: humps.camelizeKeys(msgs) })
-      ))
+      addressChannel.on('pending_transaction', (msg) => store.dispatch({ type: 'RECEIVED_NEW_PENDING_TRANSACTION', msg: humps.camelizeKeys(msg) }))
+      addressChannel.on('transaction', (msg) => store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION', msg: humps.camelizeKeys(msg) }))
       const blocksChannel = socket.channel(`blocks:${addressHash}`, {})
       blocksChannel.join()
       blocksChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
-      blocksChannel.on('new_block', (msg) => {
-        store.dispatch({ type: 'RECEIVED_NEW_BLOCK', msg: humps.camelizeKeys(msg) })
-      })
+      blocksChannel.on('new_block', (msg) => store.dispatch({ type: 'RECEIVED_NEW_BLOCK', msg: humps.camelizeKeys(msg) }))
     },
     render (state, oldState) {
       const $balance = $('[data-selector="balance-card"]')
       const $channelBatching = $('[data-selector="channel-batching-message"]')
       const $channelBatchingCount = $('[data-selector="channel-batching-count"]')
-      const $channelPendingBatching = $('[data-selector="channel-pending-batching-message"]')
-      const $channelPendingBatchingCount = $('[data-selector="channel-pending-batching-count"]')
       const $channelDisconnected = $('[data-selector="channel-disconnected-message"]')
       const $emptyInternalTransactionsList = $('[data-selector="empty-internal-transactions-list"]')
       const $emptyTransactionsList = $('[data-selector="empty-transactions-list"]')
       const $internalTransactionsList = $('[data-selector="internal-transactions-list"]')
+      const $pendingTransactionsCount = $('[data-selector="pending-transactions-count"]')
       const $pendingTransactionsList = $('[data-selector="pending-transactions-list"]')
       const $transactionCount = $('[data-selector="transaction-count"]')
       const $transactionsList = $('[data-selector="transactions-list"]')
@@ -232,34 +196,39 @@ if ($addressDetailsPage.length) {
       } else {
         $channelBatching.hide()
       }
-      if (oldState.newPendingTransactionHashesBatch !== state.newPendingTransactionHashesBatch && state.newPendingTransactionHashesBatch.length > 0) {
-        $channelPendingBatching.show()
-        $channelPendingBatchingCount[0].innerHTML = numeral(state.newPendingTransactionHashesBatch.length).format()
-      } else {
-        $channelPendingBatching.hide()
-      }
-      if (oldState.newTransactionHashes !== state.newTransactionHashes && state.newTransactionHashes.length > 0) {
-        let $transaction
-        _.each(state.newTransactionHashes, (hash) => {
-          $transaction = $(`[data-selector="pending-transactions-list"] [data-transaction-hash="${hash}"]`)
-          $transaction.addClass('shrink-out')
-          setTimeout(() => $transaction.slideUp({ complete: () => $transaction.remove() }), 400)
-        })
-      }
       if (oldState.newInternalTransactions !== state.newInternalTransactions && $internalTransactionsList.length) {
-        prependWithClingBottom($internalTransactionsList, state.newInternalTransactions.slice(oldState.newInternalTransactions.length).reverse().join(''))
+        slideDownPrepend($internalTransactionsList, state.newInternalTransactions.slice(oldState.newInternalTransactions.length).reverse().join(''))
         updateAllAges()
       }
+      if (oldState.pendingTransactionHashes.length !== state.pendingTransactionHashes.length && $pendingTransactionsCount.length) {
+        $pendingTransactionsCount[0].innerHTML = numeral(state.pendingTransactionHashes.length).format()
+      }
       if (oldState.newPendingTransactions !== state.newPendingTransactions && $pendingTransactionsList.length) {
-        prependWithClingBottom($pendingTransactionsList, state.newPendingTransactions.slice(oldState.newPendingTransactions.length).reverse().join(''))
+        slideDownPrepend($pendingTransactionsList, state.newPendingTransactions.slice(oldState.newPendingTransactions.length).reverse().join(''))
         updateAllAges()
       }
       if (oldState.newTransactions !== state.newTransactions && $transactionsList.length) {
-        prependWithClingBottom($transactionsList, state.newTransactions.slice(oldState.newTransactions.length).reverse().join(''))
+        const newlyValidatedTransactions = state.newTransactions.slice(oldState.newTransactions.length).reverse()
+        newlyValidatedTransactions.forEach(({ transactionHash, transactionHtml }) => {
+          let $transaction = $(`[data-selector="pending-transactions-list"] [data-transaction-hash="${transactionHash}"]`)
+          $transaction.html($(transactionHtml).html())
+          if ($transaction.is(':visible')) {
+            setTimeout(() => {
+              $transaction.addClass('shrink-out')
+              setTimeout(() => {
+                slideUpRemove($transaction)
+                slideDownPrepend($transactionsList, transactionHtml)
+              }, 400)
+            }, 1000)
+          } else {
+            $transaction.remove()
+            slideDownPrepend($transactionsList, transactionHtml)
+          }
+        })
         updateAllAges()
       }
       if (oldState.newBlock !== state.newBlock) {
-        prependWithClingBottom($validationsList, state.newBlock)
+        slideDownPrepend($validationsList, state.newBlock)
         updateAllAges()
       }
     }
