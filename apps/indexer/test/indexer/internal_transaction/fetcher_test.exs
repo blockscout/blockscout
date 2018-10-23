@@ -101,7 +101,7 @@ defmodule Indexer.InternalTransaction.FetcherTest do
                [],
                fn hash_string, acc -> [hash_string | acc] end,
                json_rpc_named_arguments
-             ) == [{block.number, collated_unfetched_transaction.hash.bytes}]
+             ) == [{block.number, collated_unfetched_transaction.hash.bytes, collated_unfetched_transaction.index}]
     end
 
     test "does not buffer collated transactions with fetched internal transactions", %{
@@ -136,8 +136,8 @@ defmodule Indexer.InternalTransaction.FetcherTest do
         capture_log(fn ->
           InternalTransaction.Fetcher.run(
             [
-              {1, bytes},
-              {1, bytes}
+              {1, bytes, 0},
+              {1, bytes, 0}
             ],
             0,
             json_rpc_named_arguments
@@ -147,8 +147,8 @@ defmodule Indexer.InternalTransaction.FetcherTest do
       assert log =~
                """
                Duplicate entries being used to fetch internal transactions:
-                 1. {1, <<3, 205, 88, 153, 166, 59, 111, 98, 34, 175, 218, 135, 5, 208, 89, 253, 90, 125, 18, 107, 202, 190, 150, 47, 182, 84, 217, 115, 110, 107, 202, 250>>}
-                 2. {1, <<3, 205, 88, 153, 166, 59, 111, 98, 34, 175, 218, 135, 5, 208, 89, 253, 90, 125, 18, 107, 202, 190, 150, 47, 182, 84, 217, 115, 110, 107, 202, 250>>}
+                 1. {1, <<3, 205, 88, 153, 166, 59, 111, 98, 34, 175, 218, 135, 5, 208, 89, 253, 90, 125, 18, 107, 202, 190, 150, 47, 182, 84, 217, 115, 110, 107, 202, 250>>, 0}
+                 2. {1, <<3, 205, 88, 153, 166, 59, 111, 98, 34, 175, 218, 135, 5, 208, 89, 253, 90, 125, 18, 107, 202, 190, 150, 47, 182, 84, 217, 115, 110, 107, 202, 250>>, 0}
                """
     end
 
@@ -167,12 +167,12 @@ defmodule Indexer.InternalTransaction.FetcherTest do
 
       assert InternalTransaction.Fetcher.run(
                [
-                 {1, bytes},
-                 {1, bytes}
+                 {1, bytes, 0},
+                 {1, bytes, 0}
                ],
                0,
                json_rpc_named_arguments
-             ) == {:retry, [{1, bytes}]}
+             ) == {:retry, [{1, bytes, 0}]}
     end
   end
 end

@@ -127,8 +127,9 @@ defmodule Indexer.Block.Catchup.Fetcher do
        }) do
     transactions
     |> Enum.map(fn transaction_hash ->
-      block_number = Map.fetch!(transaction_hash_to_block_number, to_string(transaction_hash))
-      %{block_number: block_number, hash: transaction_hash}
+      transaction = Map.fetch!(transaction_hash_to_block_number, to_string(transaction_hash))
+
+      %{block_number: transaction[:block_number], hash: transaction_hash, index: transaction[:index]}
     end)
     |> InternalTransaction.Fetcher.async_fetch(10_000)
   end
