@@ -6,13 +6,13 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
   alias Explorer.ExchangeRates.{Source, Token}
   alias HTTPoison.{Error, Response}
 
+  import Source, only: [decode_json: 1, to_decimal: 1, headers: 0]
+
   @behaviour Source
 
   @impl Source
   def fetch_exchange_rates do
-    headers = [{"Content-Type", "application/json"}]
-
-    case HTTPoison.get(source_url(), headers) do
+    case HTTPoison.get(source_url(), headers()) do
       {:ok, %Response{body: body, status_code: 200}} ->
         {:ok, format_data(body)}
 
@@ -47,16 +47,6 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
   defp base_url do
     configured_url = Application.get_env(:explorer, __MODULE__, [])[:base_url]
     configured_url || "https://api.coinmarketcap.com"
-  end
-
-  defp decode_json(data) do
-    Jason.decode!(data)
-  end
-
-  defp to_decimal(nil), do: nil
-
-  defp to_decimal(value) do
-    Decimal.new(value)
   end
 
   defp source_url do
