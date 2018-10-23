@@ -1262,7 +1262,13 @@ defmodule Explorer.ChainTest do
   describe "address_to_internal_transactions/1" do
     test "with single transaction containing two internal transactions" do
       address = insert(:address)
-      transaction = insert(:transaction)
+
+      block = insert(:block, number: 2000)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
 
       %InternalTransaction{id: first_id} =
         insert(:internal_transaction,
@@ -1293,7 +1299,12 @@ defmodule Explorer.ChainTest do
 
     test "loads associations in necessity_by_association" do
       address = insert(:address)
-      transaction = insert(:transaction, to_address: address)
+      block = insert(:block, number: 2000)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
 
       insert(:internal_transaction,
         transaction: transaction,
@@ -1341,7 +1352,12 @@ defmodule Explorer.ChainTest do
     test "returns results in reverse chronological order by block number, transaction index, internal transaction index" do
       address = insert(:address)
 
-      pending_transaction = insert(:transaction)
+      block = insert(:block, number: 7000)
+
+      pending_transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
 
       %InternalTransaction{id: first_pending} =
         insert(

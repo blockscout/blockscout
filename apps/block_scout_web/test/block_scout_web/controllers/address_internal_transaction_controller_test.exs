@@ -27,12 +27,25 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
       transaction =
         :transaction
         |> insert()
-        |> with_block()
+        |> with_block(insert(:block, number: 1))
 
       from_internal_transaction =
-        insert(:internal_transaction, transaction: transaction, from_address: address, index: 1)
+        insert(:internal_transaction,
+          transaction: transaction,
+          from_address: address,
+          index: 1,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
 
-      to_internal_transaction = insert(:internal_transaction, transaction: transaction, to_address: address, index: 2)
+      to_internal_transaction =
+        insert(:internal_transaction,
+          transaction: transaction,
+          to_address: address,
+          index: 2,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
 
       path = address_internal_transaction_path(conn, :index, address)
       conn = get(conn, path)
@@ -145,7 +158,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
 
     test "next_page_params exist if not on last page", %{conn: conn} do
       address = insert(:address)
-      block = %Block{number: number} = insert(:block)
+      block = %Block{number: number} = insert(:block, number: 7000)
 
       transaction =
         %Transaction{index: transaction_index} =
@@ -159,7 +172,9 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
           :internal_transaction,
           transaction: transaction,
           from_address: address,
-          index: index
+          index: index,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
         )
       end)
 
