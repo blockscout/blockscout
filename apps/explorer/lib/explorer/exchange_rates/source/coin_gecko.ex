@@ -9,7 +9,6 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   import Source, only: [decode_json: 1, to_decimal: 1, headers: 0]
 
   @behaviour Source
-  @headers
 
   @impl Source
   def fetch_exchange_rates do
