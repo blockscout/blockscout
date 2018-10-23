@@ -10,6 +10,11 @@ defmodule Explorer.Counters.TokenHoldersCounter do
 
   @table :token_holders_counter
 
+  # It is undesirable to automatically start the consolidation in all environments.
+  # Consider the test environment: if the consolidation initiates but does not
+  # finish before a test ends, that test will fail. This way, hundreds of
+  # tests were failing before disabling the consolidation and the scheduler in
+  # the test env.
   config = Application.get_env(:explorer, Explorer.Counters.TokenHoldersCounter)
   @enable_consolidation Keyword.get(config, :enable_consolidation)
 
@@ -94,15 +99,17 @@ defmodule Explorer.Counters.TokenHoldersCounter do
     {:noreply, state}
   end
 
-  # We don't want to automatically start the consolidation in all environments.
-  # Consider the test environment: if the consolidation initiates but does not
-  # finishes before a test ends, that test will fail. This way, hundreds o
-  # tests were failing before disabling the consolidation and the scheduler in
-  # the test env.
-  #
-  # In order to choose whether or not to enable the scheduler and the initial
-  # consolidation, change the following Explorer config:
-  #
-  # config :explorer, Explorer.Counters.TokenHoldersCounter, enable_consolidation: false
-  defp enable_consolidation?, do: @enable_consolidation
+  @doc """
+  Returns a boolean that indicates whether consolidation is enabled
+
+  In order to choose whether or not to enable the scheduler and the initial
+  consolidation, change the following Explorer config:
+
+  `config :explorer, Explorer.Counters.TokenHoldersCounter, enable_consolidation: true`
+
+  to:
+
+  `config :explorer, Explorer.Counters.TokenHoldersCounter, enable_consolidation: false`
+  """
+  def enable_consolidation?, do: @enable_consolidation
 end
