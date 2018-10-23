@@ -96,8 +96,8 @@ defmodule Explorer.Chain do
   @doc """
   `t:Explorer.Chain.InternalTransaction/0`s from `address`.
 
-  This function excludes any internal transactions in the results where the internal transaction has no siblings within
-  the parent transaction.
+  This function excludes any internal transactions in the results where the
+  internal transaction has no siblings within the parent transaction.
 
   ## Options
 
@@ -122,20 +122,14 @@ defmodule Explorer.Chain do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     InternalTransaction
-    |> join(
-      :inner,
-      [internal_transaction],
-      transaction in assoc(internal_transaction, :transaction)
-    )
-    |> join(:left, [internal_transaction, transaction], block in assoc(transaction, :block))
     |> InternalTransaction.where_address_fields_match(hash, direction)
-    |> where_transaction_has_multiple_internal_transactions()
+    |> InternalTransaction.where_is_different_from_parent_transaction()
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by(
-      [it, transaction, block],
-      desc: block.number,
-      desc: transaction.index,
+      [it],
+      desc: it.block_number,
+      desc: it.transaction_index,
       desc: it.index
     )
     |> preload(transaction: :block)
@@ -1838,11 +1832,12 @@ defmodule Explorer.Chain do
   defp page_internal_transaction(query, %PagingOptions{key: {block_number, transaction_index, index}}) do
     where(
       query,
-      [internal_transaction, transaction],
-      transaction.block_number < ^block_number or
-        (transaction.block_number == ^block_number and transaction.index < ^transaction_index) or
-        (transaction.block_number == ^block_number and transaction.index == ^transaction_index and
-           internal_transaction.index < ^index)
+      [internal_transaction],
+      internal_transaction.block_number < ^block_number or
+        (internal_transaction.block_number == ^block_number and
+           internal_transaction.transaction_index < ^transaction_index) or
+        (internal_transaction.block_number == ^block_number and
+           internal_transaction.transaction_index == ^transaction_index and internal_transaction.index < ^index)
     )
   end
 
