@@ -3,9 +3,9 @@ defmodule BlockScoutWeb.AddressView do
 
   import BlockScoutWeb.AddressController, only: [transaction_count: 1, validation_count: 1]
 
+  alias BlockScoutWeb.LayoutView
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
-  alias BlockScoutWeb.LayoutView
 
   @dialyzer :no_match
 

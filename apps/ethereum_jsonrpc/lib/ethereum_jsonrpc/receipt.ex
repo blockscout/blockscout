@@ -6,9 +6,8 @@ defmodule EthereumJSONRPC.Receipt do
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
-  alias Explorer.Chain.Transaction.Status
-  alias EthereumJSONRPC
   alias EthereumJSONRPC.Logs
+  alias Explorer.Chain.Transaction.Status
 
   @type elixir :: %{String.t() => String.t() | non_neg_integer}
 

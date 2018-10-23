@@ -4,8 +4,8 @@ defmodule BlockScoutWeb.AddressChannel do
   """
   use BlockScoutWeb, :channel
 
+  alias BlockScoutWeb.{AddressView, InternalTransactionView, TransactionView}
   alias Explorer.Chain.Hash
-  alias BlockScoutWeb.{InternalTransactionView, AddressView, TransactionView}
   alias Phoenix.View
 
   intercept(["balance_update", "count", "internal_transaction", "pending_transaction", "transaction"])

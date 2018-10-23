@@ -7,8 +7,8 @@ defmodule Explorer.Chain.Import.Blocks do
 
   import Ecto.Query, only: [from: 2, update: 2]
 
-  alias Ecto.{Changeset, Multi}
   alias Ecto.Adapters.SQL
+  alias Ecto.{Changeset, Multi}
   alias Explorer.Chain.{Block, Import, InternalTransaction, Transaction}
   alias Explorer.Repo
 

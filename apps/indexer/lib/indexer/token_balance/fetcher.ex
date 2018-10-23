@@ -5,9 +5,9 @@ defmodule Indexer.TokenBalance.Fetcher do
 
   require Logger
 
-  alias Indexer.{BufferedTask, TokenBalances}
   alias Explorer.Chain
   alias Explorer.Chain.Hash
+  alias Indexer.{BufferedTask, TokenBalances}
 
   @behaviour BufferedTask
 

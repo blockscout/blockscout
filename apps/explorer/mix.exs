@@ -69,7 +69,7 @@ defmodule Explorer.Mixfile do
       {:benchee_csv, "~> 0.8.0", only: :test},
       {:bypass, "~> 0.8", only: :test},
       {:comeonin, "~> 4.0"},
-      {:credo, "0.9.2", only: [:dev, :test], runtime: false},
+      {:credo, "0.10.2", only: [:dev, :test], runtime: false},
       {:crontab, "~> 1.1"},
       {:decimal, "~> 1.0"},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},

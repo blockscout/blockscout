@@ -3,8 +3,8 @@ defmodule BlockScoutWeb.Tokens.Helpers do
   Helper functions for interacting with `t:BlockScoutWeb.Chain.Token` attributes.
   """
 
-  alias Explorer.Chain.{Token, TokenTransfer, Address}
   alias BlockScoutWeb.{CurrencyHelpers}
+  alias Explorer.Chain.{Address, Token, TokenTransfer}
 
   @doc """
   Returns the token transfers' amount according to the token's type and decimals.

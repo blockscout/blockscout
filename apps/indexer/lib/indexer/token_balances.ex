@@ -5,9 +5,9 @@ defmodule Indexer.TokenBalances do
 
   require Logger
 
+  alias Explorer.Chain
   alias Explorer.Token.BalanceReader
   alias Indexer.TokenBalance
-  alias Explorer.Chain
 
   @doc """
   Fetches TokenBalances from specific Addresses and Blocks in the Blockchain

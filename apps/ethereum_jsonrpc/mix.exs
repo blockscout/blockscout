@@ -63,7 +63,7 @@ defmodule EthereumJsonrpc.MixProject do
       # WebSocket-server for testing `EthereumJSONRPC.WebSocket.WebSocketClient`.
       {:cowboy, "~> 1.1", only: :test},
       # Style Checking
-      {:credo, "0.9.2", only: [:dev, :test], runtime: false},
+      {:credo, "0.10.2", only: [:dev, :test], runtime: false},
       # Static Type Checking
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       # Code coverage

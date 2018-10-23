@@ -22,8 +22,8 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.{
     Address,
-    Address.TokenBalance,
     Address.CoinBalance,
+    Address.TokenBalance,
     Block,
     Data,
     Hash,
@@ -39,7 +39,7 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Block.Reward
   alias Explorer.{PagingOptions, Repo}
-  alias Explorer.Counters.{TokenHoldersCounter, TokenTransferCounter, BlockValidationCounter}
+  alias Explorer.Counters.{BlockValidationCounter, TokenHoldersCounter, TokenTransferCounter}
 
   @default_paging_options %PagingOptions{page_size: 50}
 
