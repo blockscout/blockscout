@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.AddressValidationController do
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.hash_to_address(address_hash) do
+         {:ok, address} <- Chain.find_or_insert_address_from_hash(address_hash) do
       full_options =
         Keyword.merge(
           [
