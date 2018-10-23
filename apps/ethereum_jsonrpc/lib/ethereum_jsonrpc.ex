@@ -147,7 +147,7 @@ defmodule EthereumJSONRPC do
          %{contract_address: address, data: data, id: id},
          nil = _block_number
        ) do
-    params = [%{to: address, data: data}]
+    params = [%{to: address, data: data}, "latest"]
     request(%{id: id, method: "eth_call", params: params})
   end
 
