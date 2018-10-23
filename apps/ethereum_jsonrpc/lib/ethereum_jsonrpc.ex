@@ -21,7 +21,7 @@ defmodule EthereumJSONRPC do
   Requests for fetching blockchain can put a lot of CPU pressure on JSON RPC
   nodes. EthereumJSONRPC will check for request timeouts as well as bad-gateway
   responses and add delay between requests until the JSON RPC nodes reach
-  stability. For finer tuning and configuratio of throttling, read the
+  stability. For finer tuning and configuration of throttling, read the
   documentation for `EthereumJSONRPC.RequestCoordinator`.
   """
 
