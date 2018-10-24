@@ -2,12 +2,12 @@ defmodule Explorer.SmartContract.ReaderTest do
   use EthereumJSONRPC.Case
   use Explorer.DataCase
 
-  doctest Explorer.SmartContract.Reader
+  import Mox
 
   alias Explorer.SmartContract.Reader
   alias Explorer.Chain.Hash
 
-  import Mox
+  doctest Explorer.SmartContract.Reader
 
   setup :verify_on_exit!
 
@@ -55,7 +55,7 @@ defmodule Explorer.SmartContract.ReaderTest do
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
-        fn [%{id: id, method: _, params: [%{data: _, to: _}]}], _options ->
+        fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
           {:ok, [%{id: id, jsonrpc: "2.0", error: %{code: "12345", message: "Error message"}}]}
         end
       )
@@ -73,7 +73,7 @@ defmodule Explorer.SmartContract.ReaderTest do
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
-        fn [%{id: _, method: _, params: [%{data: _, to: _}]}], _options ->
+        fn [%{id: _, method: _, params: [%{data: _, to: _}, _]}], _options ->
           {:error, {:bad_gateway, "request_url"}}
         end
       )
@@ -91,7 +91,7 @@ defmodule Explorer.SmartContract.ReaderTest do
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
-        fn [%{id: _, method: _, params: [%{data: _, to: _}]}], _options ->
+        fn [%{id: _, method: _, params: [%{data: _, to: _}, _]}], _options ->
           raise FunctionClauseError
         end
       )
@@ -137,7 +137,7 @@ defmodule Explorer.SmartContract.ReaderTest do
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
-      fn [%{id: id, method: _, params: [%{data: _, to: _}]}], _options ->
+      fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
         {:ok, [%{id: id, jsonrpc: "2.0", result: "0x0000000000000000000000000000000000000000000000000000000000000012"}]}
       end
     )
@@ -319,11 +319,11 @@ defmodule Explorer.SmartContract.ReaderTest do
     end
   end
 
-  defp blockchain_get_function_mock() do
+  defp blockchain_get_function_mock do
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
-      fn [%{id: id, method: _, params: [%{data: _, to: _}]}], _options ->
+      fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
         {:ok, [%{id: id, jsonrpc: "2.0", result: "0x0000000000000000000000000000000000000000000000000000000000000000"}]}
       end
     )

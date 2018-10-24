@@ -26,4 +26,5 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
 
 config :logger, :block_scout_web,
   level: :info,
-  path: Path.absname("logs/prod/block_scout_web.log")
+  path: Path.absname("logs/prod/block_scout_web.log"),
+  rotate: %{max_bytes: 52_428_800, keep: 19}

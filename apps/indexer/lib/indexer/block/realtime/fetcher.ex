@@ -234,9 +234,13 @@ defmodule Indexer.Block.Realtime.Fetcher do
     Enum.map(transactions_params, &transaction_params_to_fetch_internal_transaction_params/1)
   end
 
-  defp transaction_params_to_fetch_internal_transaction_params(%{block_number: block_number, hash: hash})
+  defp transaction_params_to_fetch_internal_transaction_params(%{
+         block_number: block_number,
+         hash: hash,
+         transaction_index: transaction_index
+       })
        when is_integer(block_number) do
-    %{block_number: block_number, hash_data: to_string(hash)}
+    %{block_number: block_number, hash_data: to_string(hash), transaction_index: transaction_index}
   end
 
   defp balances(

@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
   alias BlockScoutWeb.{AddressPage, AddressView, Notifier}
 
   setup do
-    block = insert(:block)
+    block = insert(:block, number: 42)
 
     lincoln = insert(:address, fetched_coin_balance: 5)
     taft = insert(:address, fetched_coin_balance: 5)
@@ -62,7 +62,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       internal_transaction =
         insert(
           :internal_transaction_create,
-          index: 0,
+          index: 1,
           transaction: transaction,
           from_address: address,
           created_contract_address: contract
@@ -84,7 +84,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
 
       insert(
         :internal_transaction,
-        index: 0,
+        index: 1,
         transaction: transaction,
         from_address: lincoln,
         to_address: contract,
@@ -95,7 +95,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       internal_transaction =
         insert(
           :internal_transaction_create,
-          index: 1,
+          index: 2,
           transaction: transaction,
           from_address: contract,
           created_contract_address: another_contract
@@ -198,7 +198,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         |> insert(
           transaction: from_lincoln,
           from_address: lincoln,
-          index: 0
+          index: 1
         )
         |> with_contract_creation(contract_address)
 
@@ -225,9 +225,22 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       transaction = transactions.from_lincoln
 
       internal_transaction_lincoln_to_address =
-        insert(:internal_transaction, transaction: transaction, to_address: address, index: 0)
+        insert(:internal_transaction,
+          transaction: transaction,
+          to_address: address,
+          index: 1,
+          block_number: 7000,
+          transaction_index: 1
+        )
 
-      insert(:internal_transaction, transaction: transaction, from_address: address, index: 1)
+      insert(:internal_transaction,
+        transaction: transaction,
+        from_address: address,
+        index: 2,
+        block_number: 8000,
+        transaction_index: 2
+      )
+
       {:ok, %{internal_transaction_lincoln_to_address: internal_transaction_lincoln_to_address}}
     end
 
@@ -270,7 +283,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       transaction =
         :transaction
         |> insert(from_address: addresses.lincoln)
-        |> with_block()
+        |> with_block(insert(:block, number: 7000))
 
       session
       |> AddressPage.visit_page(addresses.lincoln)
@@ -278,7 +291,13 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> assert_has(AddressPage.internal_transactions(count: 2))
 
       internal_transaction =
-        insert(:internal_transaction, transaction: transaction, index: 0, from_address: addresses.lincoln)
+        insert(:internal_transaction,
+          transaction: transaction,
+          index: 2,
+          from_address: addresses.lincoln,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
 
       Notifier.handle_event({:chain_event, :internal_transactions, :realtime, [internal_transaction]})
 
@@ -307,7 +326,9 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> insert(
         transaction: from_lincoln,
         from_address: lincoln,
-        index: 0
+        index: 1,
+        block_number: from_lincoln.block_number,
+        transaction_index: from_lincoln.index
       )
       |> with_contract_creation(contract_address)
 

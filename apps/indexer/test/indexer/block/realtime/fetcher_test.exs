@@ -6,7 +6,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
 
   alias Explorer.Chain
   alias Explorer.Chain.Address
-  alias Indexer.{Sequence, Token}
+  alias Indexer.{Sequence, Token, TokenBalance}
   alias Indexer.Block.{Realtime, Uncle}
 
   @moduletag capture_log: true
@@ -33,6 +33,8 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       callback_module: Realtime.Fetcher,
       json_rpc_named_arguments: core_json_rpc_named_arguments
     }
+
+    TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
     %{block_fetcher: block_fetcher, json_rpc_named_arguments: core_json_rpc_named_arguments}
   end

@@ -142,13 +142,19 @@ defmodule EthereumJSONRPC.Parity do
 
   defp trace_replay_transaction_response_to_traces(%{id: id, result: %{"trace" => traces}}, id_to_params)
        when is_list(traces) and is_map(id_to_params) do
-    %{block_number: block_number, hash_data: transaction_hash} = Map.fetch!(id_to_params, id)
+    %{block_number: block_number, hash_data: transaction_hash, transaction_index: transaction_index} =
+      Map.fetch!(id_to_params, id)
 
     annotated_traces =
       traces
       |> Stream.with_index()
       |> Enum.map(fn {trace, index} ->
-        Map.merge(trace, %{"blockNumber" => block_number, "index" => index, "transactionHash" => transaction_hash})
+        Map.merge(trace, %{
+          "blockNumber" => block_number,
+          "index" => index,
+          "transactionIndex" => transaction_index,
+          "transactionHash" => transaction_hash
+        })
       end)
 
     {:ok, annotated_traces}
@@ -156,9 +162,15 @@ defmodule EthereumJSONRPC.Parity do
 
   defp trace_replay_transaction_response_to_traces(%{id: id, error: error}, id_to_params)
        when is_map(id_to_params) do
-    %{block_number: block_number, hash_data: transaction_hash} = Map.fetch!(id_to_params, id)
+    %{block_number: block_number, hash_data: transaction_hash, transaction_index: transaction_index} =
+      Map.fetch!(id_to_params, id)
 
-    annotated_error = Map.put(error, :data, %{"blockNumber" => block_number, "transactionHash" => transaction_hash})
+    annotated_error =
+      Map.put(error, :data, %{
+        "blockNumber" => block_number,
+        "transactionIndex" => transaction_index,
+        "transactionHash" => transaction_hash
+      })
 
     {:error, annotated_error}
   end

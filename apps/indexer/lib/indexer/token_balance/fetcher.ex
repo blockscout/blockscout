@@ -7,19 +7,18 @@ defmodule Indexer.TokenBalance.Fetcher do
 
   alias Indexer.{BufferedTask, TokenBalances}
   alias Explorer.Chain
-  alias Explorer.Chain.{Hash, Address.TokenBalance}
+  alias Explorer.Chain.Hash
 
   @behaviour BufferedTask
 
   @defaults [
     flush_interval: 300,
-    max_batch_size: 1,
+    max_batch_size: 100,
     max_concurrency: 10,
-    init_chunk_size: 1,
     task_supervisor: Indexer.TokenBalance.TaskSupervisor
   ]
 
-  @spec async_fetch([%TokenBalance{}]) :: :ok
+  @spec async_fetch([]) :: :ok
   def async_fetch(token_balances) do
     formatted_params = Enum.map(token_balances, &entry/1)
     BufferedTask.buffer(__MODULE__, formatted_params, :infinity)
@@ -56,7 +55,7 @@ defmodule Indexer.TokenBalance.Fetcher do
   end
 
   @impl BufferedTask
-  def run(entries, _retries, _json_rpc_named_arguments) do
+  def run(entries, _json_rpc_named_arguments) do
     Logger.debug(fn -> "fetching #{length(entries)} token balances" end)
 
     result =
@@ -92,7 +91,7 @@ defmodule Indexer.TokenBalance.Fetcher do
     end
   end
 
-  defp entry(%TokenBalance{
+  defp entry(%{
          token_contract_address_hash: token_contract_address_hash,
          address_hash: address_hash,
          block_number: block_number

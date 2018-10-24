@@ -29,6 +29,12 @@ defmodule Indexer.TokenBalance.FetcherTest do
   end
 
   describe "run/3" do
+    setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      :ok
+    end
+
     test "imports the given token balances" do
       %Address.TokenBalance{
         address_hash: %Hash{bytes: address_hash_bytes} = address_hash,
@@ -51,7 +57,7 @@ defmodule Indexer.TokenBalance.FetcherTest do
         end
       )
 
-      assert TokenBalance.Fetcher.run([{address_hash_bytes, token_contract_address_hash_bytes, block_number}], 0, nil) ==
+      assert TokenBalance.Fetcher.run([{address_hash_bytes, token_contract_address_hash_bytes, block_number}], nil) ==
                :ok
 
       token_balance_updated = Explorer.Repo.get_by(Address.TokenBalance, address_hash: address_hash)

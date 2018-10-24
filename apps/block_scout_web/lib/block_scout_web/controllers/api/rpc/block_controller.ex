@@ -14,19 +14,13 @@ defmodule BlockScoutWeb.API.RPC.BlockController do
       render(conn, :block_reward, block: block, reward: reward)
     else
       {:block_param, :error} ->
-        conn
-        |> put_status(400)
-        |> render(:error, error: "Query parameter 'blockno' is required")
+        render(conn, :error, error: "Query parameter 'blockno' is required")
 
       {:error, :invalid} ->
-        conn
-        |> put_status(400)
-        |> render(:error, error: "Invalid block number")
+        render(conn, :error, error: "Invalid block number")
 
       {:error, :not_found} ->
-        conn
-        |> put_status(404)
-        |> render(:error, error: "Block does not exist")
+        render(conn, :error, error: "Block does not exist")
     end
   end
 end
