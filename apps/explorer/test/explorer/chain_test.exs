@@ -820,7 +820,7 @@ defmodule Explorer.ChainTest do
 
   describe "indexed_ratio/0" do
     test "returns indexed ratio" do
-      for index <- 6..10 do
+      for index <- 5..9 do
         insert(:block, number: index)
       end
 
@@ -832,7 +832,7 @@ defmodule Explorer.ChainTest do
     end
 
     test "returns 1.0 if fully indexed blocks" do
-      for index <- 1..10 do
+      for index <- 0..9 do
         insert(:block, number: index)
       end
 

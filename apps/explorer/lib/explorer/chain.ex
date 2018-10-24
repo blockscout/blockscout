@@ -842,7 +842,7 @@ defmodule Explorer.Chain do
   @doc """
   The percentage of indexed blocks on the chain.
 
-      iex> for index <- 6..10 do
+      iex> for index <- 5..9 do
       ...>   insert(:block, number: index)
       ...> end
       iex> Explorer.Chain.indexed_ratio()
@@ -859,7 +859,7 @@ defmodule Explorer.Chain do
     with {:ok, min_block_number} <- min_block_number(),
          {:ok, max_block_number} <- max_block_number() do
       indexed_blocks = max_block_number - min_block_number + 1
-      indexed_blocks / max_block_number
+      indexed_blocks / (max_block_number + 1)
     else
       {:error, _} -> 0
     end
