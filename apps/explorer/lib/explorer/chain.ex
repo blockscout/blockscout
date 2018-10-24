@@ -18,6 +18,8 @@ defmodule Explorer.Chain do
   alias Ecto.Adapters.SQL
   alias Ecto.Multi
 
+  alias Explorer.Chain
+
   alias Explorer.Chain.{
     Address,
     Address.TokenBalance,
@@ -94,8 +96,8 @@ defmodule Explorer.Chain do
   @doc """
   `t:Explorer.Chain.InternalTransaction/0`s from `address`.
 
-  This function excludes any internal transactions in the results where the internal transaction has no siblings within
-  the parent transaction.
+  This function excludes any internal transactions in the results where the
+  internal transaction has no siblings within the parent transaction.
 
   ## Options
 
@@ -120,20 +122,15 @@ defmodule Explorer.Chain do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     InternalTransaction
-    |> join(
-      :inner,
-      [internal_transaction],
-      transaction in assoc(internal_transaction, :transaction)
-    )
-    |> join(:left, [internal_transaction, transaction], block in assoc(transaction, :block))
     |> InternalTransaction.where_address_fields_match(hash, direction)
-    |> where_transaction_has_multiple_internal_transactions()
+    |> InternalTransaction.where_is_different_from_parent_transaction()
+    |> InternalTransaction.where_block_number_is_not_null()
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by(
-      [it, transaction, block],
-      desc: block.number,
-      desc: transaction.index,
+      [it],
+      desc: it.block_number,
+      desc: it.transaction_index,
       desc: it.index
     )
     |> preload(transaction: :block)
@@ -603,6 +600,39 @@ defmodule Explorer.Chain do
     |> case do
       nil -> {:error, :not_found}
       address -> {:ok, address}
+    end
+  end
+
+  @doc """
+  Converts `t:Explorer.Chain.Address.t/0` `hash` to the `t:Explorer.Chain.Address.t/0` with that `hash`.
+
+  Returns `{:ok, %Explorer.Chain.Address{}}` if found
+
+      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.create_address(
+      ...>   %{hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"}
+      ...> )
+      iex> {:ok, %Explorer.Chain.Address{hash: found_hash}} = Explorer.Chain.hash_to_address(hash)
+      iex> found_hash == hash
+      true
+
+  Returns `{:error, address}` if not found but created an address
+
+      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.create_address(
+      ...>   %{hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"}
+      ...> )
+      iex> {:ok, %Explorer.Chain.Address{hash: found_hash}} = Explorer.Chain.hash_to_address(hash)
+      iex> found_hash == hash
+      true
+  """
+  @spec find_or_insert_address_from_hash(Hash.Address.t()) :: {:ok, Address.t()}
+  def find_or_insert_address_from_hash(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash) do
+    case Chain.hash_to_address(hash) do
+      {:ok, address} ->
+        {:ok, address}
+
+      {:error, :not_found} ->
+        Chain.create_address(%{hash: to_string(hash)})
+        Chain.hash_to_address(hash)
     end
   end
 
@@ -1803,11 +1833,12 @@ defmodule Explorer.Chain do
   defp page_internal_transaction(query, %PagingOptions{key: {block_number, transaction_index, index}}) do
     where(
       query,
-      [internal_transaction, transaction],
-      transaction.block_number < ^block_number or
-        (transaction.block_number == ^block_number and transaction.index < ^transaction_index) or
-        (transaction.block_number == ^block_number and transaction.index == ^transaction_index and
-           internal_transaction.index < ^index)
+      [internal_transaction],
+      internal_transaction.block_number < ^block_number or
+        (internal_transaction.block_number == ^block_number and
+           internal_transaction.transaction_index < ^transaction_index) or
+        (internal_transaction.block_number == ^block_number and
+           internal_transaction.transaction_index == ^transaction_index and internal_transaction.index < ^index)
     )
   end
 
@@ -1893,6 +1924,11 @@ defmodule Explorer.Chain do
   defp supply_module do
     Application.get_env(:explorer, :supply, Explorer.Chain.Supply.ProofOfAuthority)
   end
+
+  @doc """
+  Calls supply_for_days from the configured supply_module
+  """
+  def supply_for_days(days_count), do: supply_module().supply_for_days(days_count)
 
   @doc """
   Streams a lists token contract addresses that haven't been cataloged.

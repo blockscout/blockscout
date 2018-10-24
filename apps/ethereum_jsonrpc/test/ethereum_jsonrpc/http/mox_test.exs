@@ -179,7 +179,9 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
       end
 
       transactions_params =
-        Enum.map(transaction_hashes, fn hash_data -> %{block_number: 0, hash_data: hash_data, gas: 1_000_000} end)
+        Enum.map(transaction_hashes, fn hash_data ->
+          %{block_number: 0, hash_data: hash_data, gas: 1_000_000, transaction_index: 0}
+        end)
 
       assert {:ok, responses} =
                EthereumJSONRPC.fetch_internal_transactions(transactions_params, json_rpc_named_arguments)

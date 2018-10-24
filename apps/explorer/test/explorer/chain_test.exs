@@ -193,7 +193,12 @@ defmodule Explorer.ChainTest do
         |> with_block()
 
       %InternalTransaction{created_contract_address: address} =
-        insert(:internal_transaction_create, transaction: transaction, index: 0)
+        insert(:internal_transaction_create,
+          transaction: transaction,
+          index: 0,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
 
       assert [] == Chain.address_to_transactions(address)
     end
@@ -687,13 +692,53 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      insert(:internal_transaction, transaction: transaction, index: 0)
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 0,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index
+      )
 
       Enum.each(1..3, fn index ->
-        insert(:internal_transaction_create, transaction: transaction, index: index)
+        insert(:internal_transaction_create,
+          transaction: transaction,
+          index: index,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
       end)
 
       assert {:ok, %Transaction{hash: ^hash_with_block}} = Chain.hash_to_transaction(hash_with_block)
+    end
+  end
+
+  describe "hash_to_address/1" do
+    test "returns not found if the address doesn't exist" do
+      hash_str = "0xcbbcd5ac86f9a50e13313633b262e16f695a90c2"
+      {:ok, hash} = Chain.string_to_address_hash(hash_str)
+
+      assert {:error, :not_found} = Chain.hash_to_address(hash)
+    end
+
+    test "returns the correct address if it exists" do
+      address = insert(:address)
+
+      assert {:ok, address} = Chain.hash_to_address(address.hash)
+    end
+  end
+
+  describe "find_or_insert_address_from_hash/1" do
+    test "returns an address if it already exists" do
+      address = insert(:address)
+
+      assert {:ok, address} = Chain.find_or_insert_address_from_hash(address.hash)
+    end
+
+    test "returns an address if it doesn't exist" do
+      hash_str = "0xcbbcd5ac86f9a50e13313633b262e16f695a90c2"
+      {:ok, hash} = Chain.string_to_address_hash(hash_str)
+
+      assert {:ok, %Chain.Address{hash: hash}} = Chain.find_or_insert_address_from_hash(hash)
     end
   end
 
@@ -1217,24 +1262,65 @@ defmodule Explorer.ChainTest do
   describe "address_to_internal_transactions/1" do
     test "with single transaction containing two internal transactions" do
       address = insert(:address)
-      transaction = insert(:transaction)
+
+      block = insert(:block, number: 2000)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
 
       %InternalTransaction{id: first_id} =
-        insert(:internal_transaction, index: 0, transaction: transaction, to_address: address)
+        insert(:internal_transaction,
+          index: 1,
+          transaction: transaction,
+          to_address: address,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
 
       %InternalTransaction{id: second_id} =
-        insert(:internal_transaction, index: 1, transaction: transaction, to_address: address)
+        insert(:internal_transaction,
+          index: 2,
+          transaction: transaction,
+          to_address: address,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
 
-      result = address |> Chain.address_to_internal_transactions() |> Enum.map(& &1.id)
+      result =
+        address
+        |> Chain.address_to_internal_transactions()
+        |> Enum.map(& &1.id)
+
       assert Enum.member?(result, first_id)
       assert Enum.member?(result, second_id)
     end
 
     test "loads associations in necessity_by_association" do
       address = insert(:address)
-      transaction = insert(:transaction, to_address: address)
-      insert(:internal_transaction, transaction: transaction, to_address: address, index: 0)
-      insert(:internal_transaction, transaction: transaction, to_address: address, index: 1)
+      block = insert(:block, number: 2000)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        to_address: address,
+        index: 0,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        to_address: address,
+        index: 1,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index
+      )
 
       assert [
                %InternalTransaction{
@@ -1266,14 +1352,21 @@ defmodule Explorer.ChainTest do
     test "returns results in reverse chronological order by block number, transaction index, internal transaction index" do
       address = insert(:address)
 
-      pending_transaction = insert(:transaction)
+      block = insert(:block, number: 7000)
+
+      pending_transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
 
       %InternalTransaction{id: first_pending} =
         insert(
           :internal_transaction,
           transaction: pending_transaction,
           to_address: address,
-          index: 0
+          index: 1,
+          block_number: pending_transaction.block_number,
+          transaction_index: pending_transaction.index
         )
 
       %InternalTransaction{id: second_pending} =
@@ -1281,7 +1374,9 @@ defmodule Explorer.ChainTest do
           :internal_transaction,
           transaction: pending_transaction,
           to_address: address,
-          index: 1
+          index: 2,
+          block_number: pending_transaction.block_number,
+          transaction_index: pending_transaction.index
         )
 
       a_block = insert(:block, number: 2000)
@@ -1296,7 +1391,9 @@ defmodule Explorer.ChainTest do
           :internal_transaction,
           transaction: first_a_transaction,
           to_address: address,
-          index: 0
+          index: 1,
+          block_number: first_a_transaction.block_number,
+          transaction_index: first_a_transaction.index
         )
 
       %InternalTransaction{id: second} =
@@ -1304,7 +1401,9 @@ defmodule Explorer.ChainTest do
           :internal_transaction,
           transaction: first_a_transaction,
           to_address: address,
-          index: 1
+          index: 2,
+          block_number: first_a_transaction.block_number,
+          transaction_index: first_a_transaction.index
         )
 
       second_a_transaction =
@@ -1317,7 +1416,9 @@ defmodule Explorer.ChainTest do
           :internal_transaction,
           transaction: second_a_transaction,
           to_address: address,
-          index: 0
+          index: 1,
+          block_number: second_a_transaction.block_number,
+          transaction_index: second_a_transaction.index
         )
 
       %InternalTransaction{id: fourth} =
@@ -1325,7 +1426,9 @@ defmodule Explorer.ChainTest do
           :internal_transaction,
           transaction: second_a_transaction,
           to_address: address,
-          index: 1
+          index: 2,
+          block_number: second_a_transaction.block_number,
+          transaction_index: second_a_transaction.index
         )
 
       b_block = insert(:block, number: 6000)
@@ -1340,7 +1443,9 @@ defmodule Explorer.ChainTest do
           :internal_transaction,
           transaction: first_b_transaction,
           to_address: address,
-          index: 0
+          index: 1,
+          block_number: first_b_transaction.block_number,
+          transaction_index: first_b_transaction.index
         )
 
       %InternalTransaction{id: sixth} =
@@ -1348,7 +1453,9 @@ defmodule Explorer.ChainTest do
           :internal_transaction,
           transaction: first_b_transaction,
           to_address: address,
-          index: 1
+          index: 2,
+          block_number: first_b_transaction.block_number,
+          transaction_index: first_b_transaction.index
         )
 
       result =
@@ -1368,14 +1475,14 @@ defmodule Explorer.ChainTest do
         :internal_transaction,
         transaction: pending_transaction,
         to_address: address,
-        index: 0
+        index: 1
       )
 
       insert(
         :internal_transaction,
         transaction: pending_transaction,
         to_address: address,
-        index: 1
+        index: 2
       )
 
       a_block = insert(:block, number: 2000)
@@ -1390,7 +1497,9 @@ defmodule Explorer.ChainTest do
           :internal_transaction,
           transaction: first_a_transaction,
           to_address: address,
-          index: 0
+          index: 1,
+          block_number: first_a_transaction.block_number,
+          transaction_index: first_a_transaction.index
         )
 
       %InternalTransaction{id: second} =
@@ -1398,7 +1507,9 @@ defmodule Explorer.ChainTest do
           :internal_transaction,
           transaction: first_a_transaction,
           to_address: address,
-          index: 1
+          index: 2,
+          block_number: first_a_transaction.block_number,
+          transaction_index: first_a_transaction.index
         )
 
       second_a_transaction =
@@ -1411,7 +1522,9 @@ defmodule Explorer.ChainTest do
           :internal_transaction,
           transaction: second_a_transaction,
           to_address: address,
-          index: 0
+          index: 1,
+          block_number: second_a_transaction.block_number,
+          transaction_index: second_a_transaction.index
         )
 
       %InternalTransaction{id: fourth} =
@@ -1419,7 +1532,9 @@ defmodule Explorer.ChainTest do
           :internal_transaction,
           transaction: second_a_transaction,
           to_address: address,
-          index: 1
+          index: 2,
+          block_number: second_a_transaction.block_number,
+          transaction_index: second_a_transaction.index
         )
 
       b_block = insert(:block, number: 6000)
@@ -1434,7 +1549,9 @@ defmodule Explorer.ChainTest do
           :internal_transaction,
           transaction: first_b_transaction,
           to_address: address,
-          index: 0
+          index: 1,
+          block_number: first_b_transaction.block_number,
+          transaction_index: first_b_transaction.index
         )
 
       %InternalTransaction{id: sixth} =
@@ -1442,7 +1559,9 @@ defmodule Explorer.ChainTest do
           :internal_transaction,
           transaction: first_b_transaction,
           to_address: address,
-          index: 1
+          index: 2,
+          block_number: first_b_transaction.block_number,
+          transaction_index: first_b_transaction.index
         )
 
       # When paged, internal transactions need an associated block number, so `second_pending` and `first_pending` are
@@ -1455,7 +1574,7 @@ defmodule Explorer.ChainTest do
                |> Enum.map(& &1.id)
 
       # block number ==, transaction index ==, internal transaction index <
-      assert [fifth, fourth, third, second, first] ==
+      assert [fourth, third, second, first] ==
                address
                |> Chain.address_to_internal_transactions(
                  paging_options: %PagingOptions{key: {6000, 0, 1}, page_size: 8}
@@ -1487,7 +1606,13 @@ defmodule Explorer.ChainTest do
         |> insert(to_address: address)
         |> with_block()
 
-      insert(:internal_transaction, index: 0, to_address: address, transaction: transaction)
+      insert(:internal_transaction,
+        index: 0,
+        to_address: address,
+        transaction: transaction,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index
+      )
 
       assert Enum.empty?(Chain.address_to_internal_transactions(address))
     end
@@ -1505,7 +1630,9 @@ defmodule Explorer.ChainTest do
           :internal_transaction_create,
           index: 0,
           from_address: address,
-          transaction: transaction
+          transaction: transaction,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
         )
 
       actual = Enum.at(Chain.address_to_internal_transactions(address), 0)
@@ -1562,8 +1689,21 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block(block)
 
-      first = insert(:internal_transaction, transaction: transaction, index: 0)
-      second = insert(:internal_transaction, transaction: transaction, index: 1)
+      first =
+        insert(:internal_transaction,
+          transaction: transaction,
+          index: 0,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
+
+      second =
+        insert(:internal_transaction,
+          transaction: transaction,
+          index: 1,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
 
       results = [internal_transaction | _] = Chain.transaction_to_internal_transactions(transaction)
 
@@ -1574,7 +1714,13 @@ defmodule Explorer.ChainTest do
 
     test "with transaction with internal transactions loads associations with in necessity_by_association" do
       transaction = insert(:transaction)
-      insert(:internal_transaction_create, transaction: transaction, index: 0)
+
+      insert(:internal_transaction_create,
+        transaction: transaction,
+        index: 0,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index
+      )
 
       assert [
                %InternalTransaction{
@@ -1607,7 +1753,12 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      insert(:internal_transaction, transaction: transaction, index: 0)
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 0,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index
+      )
 
       result = Chain.transaction_to_internal_transactions(transaction)
 
@@ -1620,7 +1771,13 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      expected = insert(:internal_transaction_create, index: 0, transaction: transaction)
+      expected =
+        insert(:internal_transaction_create,
+          index: 0,
+          transaction: transaction,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
 
       actual = Enum.at(Chain.transaction_to_internal_transactions(transaction), 0)
 
@@ -1633,7 +1790,14 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      expected = insert(:internal_transaction, index: 0, transaction: transaction, type: :reward)
+      expected =
+        insert(:internal_transaction,
+          index: 0,
+          transaction: transaction,
+          type: :reward,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
 
       actual = Enum.at(Chain.transaction_to_internal_transactions(transaction), 0)
 
@@ -1646,7 +1810,15 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      expected = insert(:internal_transaction, index: 0, transaction: transaction, gas: nil, type: :suicide)
+      expected =
+        insert(:internal_transaction,
+          index: 0,
+          transaction: transaction,
+          gas: nil,
+          type: :suicide,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
 
       actual = Enum.at(Chain.transaction_to_internal_transactions(transaction), 0)
 
@@ -1659,8 +1831,21 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      %InternalTransaction{id: first_id} = insert(:internal_transaction, transaction: transaction, index: 0)
-      %InternalTransaction{id: second_id} = insert(:internal_transaction, transaction: transaction, index: 1)
+      %InternalTransaction{id: first_id} =
+        insert(:internal_transaction,
+          transaction: transaction,
+          index: 0,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
+
+      %InternalTransaction{id: second_id} =
+        insert(:internal_transaction,
+          transaction: transaction,
+          index: 1,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
 
       result =
         transaction
@@ -1676,8 +1861,21 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      %InternalTransaction{id: first_id} = insert(:internal_transaction, transaction: transaction, index: 0)
-      %InternalTransaction{id: second_id} = insert(:internal_transaction, transaction: transaction, index: 1)
+      %InternalTransaction{id: first_id} =
+        insert(:internal_transaction,
+          transaction: transaction,
+          index: 0,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
+
+      %InternalTransaction{id: second_id} =
+        insert(:internal_transaction,
+          transaction: transaction,
+          index: 1,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
 
       assert [^first_id, ^second_id] =
                transaction
@@ -1963,7 +2161,9 @@ defmodule Explorer.ChainTest do
         transaction: transaction,
         index: 0,
         created_contract_address: created_contract_address,
-        created_contract_code: smart_contract_bytecode
+        created_contract_code: smart_contract_bytecode,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index
       )
 
       assert Chain.smart_contract_bytecode(created_contract_address.hash) == smart_contract_bytecode
@@ -1992,7 +2192,9 @@ defmodule Explorer.ChainTest do
         transaction: transaction,
         index: 0,
         created_contract_address: created_contract_address,
-        created_contract_code: smart_contract_bytecode
+        created_contract_code: smart_contract_bytecode,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index
       )
 
       valid_attrs = %{
@@ -2190,7 +2392,9 @@ defmodule Explorer.ChainTest do
         :internal_transaction_create,
         created_contract_address: created_contract_address,
         index: 0,
-        transaction: transaction
+        transaction: transaction,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index
       )
 
       balance = insert(:unfetched_balance, address_hash: created_contract_address.hash, block_number: block.number)
@@ -2234,7 +2438,9 @@ defmodule Explorer.ChainTest do
         :internal_transaction_create,
         from_address: from_address,
         index: 0,
-        transaction: transaction
+        transaction: transaction,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index
       )
 
       balance = insert(:unfetched_balance, address_hash: from_address.hash, block_number: block.number)
@@ -2272,7 +2478,9 @@ defmodule Explorer.ChainTest do
         :internal_transaction_create,
         to_address: to_address,
         index: 0,
-        transaction: transaction
+        transaction: transaction,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index
       )
 
       balance = insert(:unfetched_balance, address_hash: to_address.hash, block_number: block.number)
@@ -2339,7 +2547,9 @@ defmodule Explorer.ChainTest do
         :internal_transaction_create,
         from_address: miner,
         index: 0,
-        transaction: from_internal_transaction_transaction
+        transaction: from_internal_transaction_transaction,
+        block_number: from_internal_transaction_transaction.block_number,
+        transaction_index: from_internal_transaction_transaction.index
       )
 
       insert(:unfetched_balance, address_hash: miner.hash, block_number: from_internal_transaction_block.number)
@@ -2355,7 +2565,9 @@ defmodule Explorer.ChainTest do
         :internal_transaction_create,
         index: 0,
         to_address: miner,
-        transaction: to_internal_transaction_transaction
+        transaction: to_internal_transaction_transaction,
+        block_number: to_internal_transaction_transaction.block_number,
+        transaction_index: to_internal_transaction_transaction.index
       )
 
       insert(:unfetched_balance, address_hash: miner.hash, block_number: to_internal_transaction_block.number)
@@ -2409,7 +2621,9 @@ defmodule Explorer.ChainTest do
         :internal_transaction_create,
         from_address: miner,
         index: 0,
-        transaction: from_internal_transaction_transaction
+        transaction: from_internal_transaction_transaction,
+        block_number: from_internal_transaction_transaction.block_number,
+        transaction_index: from_internal_transaction_transaction.index
       )
 
       to_internal_transaction_transaction =
@@ -2421,7 +2635,9 @@ defmodule Explorer.ChainTest do
         :internal_transaction_create,
         to_address: miner,
         index: 0,
-        transaction: to_internal_transaction_transaction
+        transaction: to_internal_transaction_transaction,
+        block_number: to_internal_transaction_transaction.block_number,
+        transaction_index: to_internal_transaction_transaction.index
       )
 
       {:ok, balance_fields_list} =

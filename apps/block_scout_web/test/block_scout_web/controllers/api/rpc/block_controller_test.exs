@@ -5,10 +5,10 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
 
   describe "getblockreward" do
     test "with missing block number", %{conn: conn} do
-      assert response =
-               conn
-               |> get("/api", %{"module" => "block", "action" => "getblockreward"})
-               |> json_response(400)
+      response =
+        conn
+        |> get("/api", %{"module" => "block", "action" => "getblockreward"})
+        |> json_response(200)
 
       assert response["message"] =~ "'blockno' is required"
       assert response["status"] == "0"
@@ -17,10 +17,10 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
     end
 
     test "with an invalid block number", %{conn: conn} do
-      assert response =
-               conn
-               |> get("/api", %{"module" => "block", "action" => "getblockreward", "blockno" => "badnumber"})
-               |> json_response(400)
+      response =
+        conn
+        |> get("/api", %{"module" => "block", "action" => "getblockreward", "blockno" => "badnumber"})
+        |> json_response(200)
 
       assert response["message"] =~ "Invalid block number"
       assert response["status"] == "0"
@@ -29,10 +29,10 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
     end
 
     test "with a block that doesn't exist", %{conn: conn} do
-      assert response =
-               conn
-               |> get("/api", %{"module" => "block", "action" => "getblockreward", "blockno" => "42"})
-               |> json_response(404)
+      response =
+        conn
+        |> get("/api", %{"module" => "block", "action" => "getblockreward", "blockno" => "42"})
+        |> json_response(200)
 
       assert response["message"] =~ "Block does not exist"
       assert response["status"] == "0"

@@ -55,7 +55,8 @@ defmodule EthereumJSONRPC.Transactions do
           s: "0x72caddc0371451a58de2ca6ab64e0f586ccdb9465ff54e1c82564940e89291e3",
           to_address_hash: nil,
           v: "0xbd",
-          value: 0
+          value: 0,
+          transaction_index: 0
         }
       ]
 

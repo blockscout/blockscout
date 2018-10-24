@@ -28,7 +28,8 @@ defmodule EthereumJSONRPC.Parity.Trace do
       ...>     "subtraces" => 0,
       ...>     "traceAddress" => [],
       ...>     "transactionHash" => "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
-      ...>     "type" => "create"
+      ...>     "type" => "create",
+      ...>     "transactionIndex" => 0
       ...>   }
       ...> )
       %{
@@ -43,7 +44,8 @@ defmodule EthereumJSONRPC.Parity.Trace do
         trace_address: [],
         transaction_hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
         type: "create",
-        value: 0
+        value: 0,
+        transaction_index: 0
       }
 
   A create can fail due to a Bad Instruction in the `init` that is meant to form the `code` of the contract
@@ -62,7 +64,8 @@ defmodule EthereumJSONRPC.Parity.Trace do
       ...>     "subtraces" => 0,
       ...>     "traceAddress" => [],
       ...>     "transactionHash" => "0x3c624bb4852fb5e35a8f45644cec7a486211f6ba89034768a2b763194f22f97d",
-      ...>     "type" => "create"
+      ...>     "type" => "create",
+      ...>     "transactionIndex" => 0
       ...>   }
       ...> )
       %{
@@ -75,7 +78,8 @@ defmodule EthereumJSONRPC.Parity.Trace do
         trace_address: [],
         transaction_hash: "0x3c624bb4852fb5e35a8f45644cec7a486211f6ba89034768a2b763194f22f97d",
         type: "create",
-        value: 0
+        value: 0,
+        transaction_index: 0
       }
 
   Call type traces are generated when a method is called.  Calls are further divided by call type.
@@ -99,7 +103,8 @@ defmodule EthereumJSONRPC.Parity.Trace do
       ...>     "subtraces" => 0,
       ...>     "traceAddress" => [],
       ...>     "transactionHash" => "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
-      ...>     "type" => "call"
+      ...>     "type" => "call",
+      ...>     "transactionIndex" => 0
       ...>   }
       ...> )
       %{
@@ -114,7 +119,8 @@ defmodule EthereumJSONRPC.Parity.Trace do
         trace_address: [],
         transaction_hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
         type: "call",
-        value: 0
+        value: 0,
+        transaction_index: 0
       }
 
   Calls can error and be reverted
@@ -135,7 +141,8 @@ defmodule EthereumJSONRPC.Parity.Trace do
      ...>     "subtraces" => 7,
      ...>     "traceAddress" => [],
      ...>     "transactionHash" => "0xcd7c15dbbc797722bef6e1d551edfd644fc7f4fb2ccd6a7947b2d1ade9ed140b",
-     ...>     "type" => "call"
+     ...>     "type" => "call",
+     ...>     "transactionIndex" => 0
      ...>   }
      ...> )
      %{
@@ -149,7 +156,8 @@ defmodule EthereumJSONRPC.Parity.Trace do
        trace_address: [],
        transaction_hash: "0xcd7c15dbbc797722bef6e1d551edfd644fc7f4fb2ccd6a7947b2d1ade9ed140b",
        type: "call",
-       value: 10000000000000000
+       value: 10000000000000000,
+       transaction_index: 0
      }
 
   Suicides transfer a `"balance"` from `"address"` to `"refundAddress"`.  These suicide-unique fields can be mapped to
@@ -174,7 +182,8 @@ defmodule EthereumJSONRPC.Parity.Trace do
       ...>     "subtraces" => 0,
       ...>     "traceAddress" => [0],
       ...>     "transactionHash" => "0xb012b8c53498c669d87d85ed90f57385848b86d3f44ed14b2784ec685d6fda98",
-      ...>     "type" => "suicide"
+      ...>     "type" => "suicide",
+      ...>     "transactionIndex" => 0
       ...>   }
       ...> )
       %{
@@ -185,7 +194,8 @@ defmodule EthereumJSONRPC.Parity.Trace do
         trace_address: [0],
         transaction_hash: "0xb012b8c53498c669d87d85ed90f57385848b86d3f44ed14b2784ec685d6fda98",
         type: "suicide",
-        value: 0
+        value: 0,
+        transaction_index: 0
       }
 
   """
@@ -202,7 +212,8 @@ defmodule EthereumJSONRPC.Parity.Trace do
       "blockNumber" => block_number,
       "index" => index,
       "traceAddress" => trace_address,
-      "transactionHash" => transaction_hash
+      "transactionHash" => transaction_hash,
+      "transactionIndex" => transaction_index
     } = elixir
 
     %{
@@ -215,7 +226,8 @@ defmodule EthereumJSONRPC.Parity.Trace do
       trace_address: trace_address,
       transaction_hash: transaction_hash,
       type: type,
-      value: value
+      value: value,
+      transaction_index: transaction_index
     }
     |> put_call_error_or_result(elixir)
   end
@@ -226,7 +238,8 @@ defmodule EthereumJSONRPC.Parity.Trace do
       "blockNumber" => block_number,
       "index" => index,
       "traceAddress" => trace_address,
-      "transactionHash" => transaction_hash
+      "transactionHash" => transaction_hash,
+      "transactionIndex" => transaction_index
     } = elixir
 
     %{
@@ -238,7 +251,8 @@ defmodule EthereumJSONRPC.Parity.Trace do
       trace_address: trace_address,
       transaction_hash: transaction_hash,
       type: type,
-      value: value
+      value: value,
+      transaction_index: transaction_index
     }
     |> put_create_error_or_result(elixir)
   end
@@ -253,7 +267,8 @@ defmodule EthereumJSONRPC.Parity.Trace do
       "blockNumber" => block_number,
       "index" => index,
       "traceAddress" => trace_address,
-      "transactionHash" => transaction_hash
+      "transactionHash" => transaction_hash,
+      "transactionIndex" => transaction_index
     } = elixir
 
     %{
@@ -264,7 +279,8 @@ defmodule EthereumJSONRPC.Parity.Trace do
       trace_address: trace_address,
       transaction_hash: transaction_hash,
       type: type,
-      value: value
+      value: value,
+      transaction_index: transaction_index
     }
   end
 
@@ -289,6 +305,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
       ...>     "subtraces" => 0,
       ...>     "traceAddress" => [],
       ...>     "transactionHash" => "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
+      ...>     "transactionIndex" => 0,
       ...>     "type" => "create"
       ...>   }
       ...> )
@@ -309,6 +326,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
         "subtraces" => 0,
         "traceAddress" => [],
         "transactionHash" => "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
+        "transactionIndex" => 0,
         "type" => "create"
       }
 
@@ -330,10 +348,11 @@ defmodule EthereumJSONRPC.Parity.Trace do
       ...>     },
       ...>     "subtraces" => 0,
       ...>     "traceAddress" => [],
+      ...>     "transactionIndex" => 0,
       ...>     "type" => "create"
       ...>   }
       ...> )
-      ** (ArgumentError) Caller must `Map.put/2` `"blockNumber"`, `"index"`, and `"transactionHash"` in trace
+      ** (ArgumentError) Caller must `Map.put/2` `"blockNumber"`, `"index"`, `"transactionHash"` and `"transactionIndex"` in trace
 
   `"suicide"` `"type"` traces are different in that they have a `nil` `"result"`.  This is because the `"result"` key
   is used to indicate success from Parity.
@@ -351,6 +370,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
       ...>     "subtraces" => 0,
       ...>     "traceAddress" => [0],
       ...>     "transactionHash" => "0xb012b8c53498c669d87d85ed90f57385848b86d3f44ed14b2784ec685d6fda98",
+      ...>     "transactionIndex" => 0,
       ...>     "type" => "suicide"
       ...>   }
       ...> )
@@ -366,6 +386,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
         "subtraces" => 0,
         "traceAddress" => [0],
         "transactionHash" => "0xb012b8c53498c669d87d85ed90f57385848b86d3f44ed14b2784ec685d6fda98",
+        "transactionIndex" => 0,
         "type" => "suicide"
       }
 
@@ -387,6 +408,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
       ...>     "subtraces" => 7,
       ...>     "traceAddress" => [],
       ...>     "transactionHash" => "0xcd7c15dbbc797722bef6e1d551edfd644fc7f4fb2ccd6a7947b2d1ade9ed140b",
+      ...>     "transactionIndex" => 0,
       ...>     "type" => "call"
       ...>   }
       ...> )
@@ -405,19 +427,20 @@ defmodule EthereumJSONRPC.Parity.Trace do
         "subtraces" => 7,
         "traceAddress" => [],
         "transactionHash" => "0xcd7c15dbbc797722bef6e1d551edfd644fc7f4fb2ccd6a7947b2d1ade9ed140b",
+        "transactionIndex" => 0,
         "type" => "call"
       }
 
   """
 
-  def to_elixir(%{"blockNumber" => _, "index" => _, "transactionHash" => _} = trace)
+  def to_elixir(%{"blockNumber" => _, "index" => _, "transactionHash" => _, "transactionIndex" => _} = trace)
       when is_map(trace) do
     Enum.into(trace, %{}, &entry_to_elixir/1)
   end
 
   def to_elixir(_) do
     raise ArgumentError,
-          ~S|Caller must `Map.put/2` `"blockNumber"`, `"index"`, and `"transactionHash"` in trace|
+          ~S|Caller must `Map.put/2` `"blockNumber"`, `"index"`, `"transactionHash"` and `"transactionIndex"` in trace|
   end
 
   # subtraces is an actual integer in JSON and not hex-encoded
@@ -440,6 +463,8 @@ defmodule EthereumJSONRPC.Parity.Trace do
   defp entry_to_elixir({"result" = key, result}) do
     {key, Result.to_elixir(result)}
   end
+
+  defp entry_to_elixir({"transactionIndex", index} = entry) when is_integer(index), do: entry
 
   defp put_call_error_or_result(params, %{
          "result" => %{"gasUsed" => gas_used, "output" => output}

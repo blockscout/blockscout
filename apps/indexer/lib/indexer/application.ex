@@ -6,42 +6,30 @@ defmodule Indexer.Application do
   use Application
 
   alias Indexer.{
-    Block,
-    CoinBalance,
-    InternalTransaction,
-    PendingTransaction,
-    Token,
-    TokenBalance,
-    TokenTransfer
+    Memory,
+    Shrinkable
   }
 
   @impl Application
   def start(_type, _args) do
-    json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
+    memory_monitor_options =
+      case Application.get_env(:indexer, :memory_limit) do
+        nil -> %{}
+        integer when is_integer(integer) -> %{limit: integer}
+      end
 
-    block_fetcher_supervisor_named_arguments =
-      :indexer
-      |> Application.get_all_env()
-      |> Keyword.take(
-        ~w(blocks_batch_size blocks_concurrency block_interval json_rpc_named_arguments receipts_batch_size
-           receipts_concurrency subscribe_named_arguments)a
-      )
-      |> Enum.into(%{})
+    memory_monitor_name = Memory.Monitor
 
     children = [
-      {CoinBalance.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments], [name: CoinBalance.Supervisor]]},
-      {PendingTransaction.Supervisor,
-       [[json_rpc_named_arguments: json_rpc_named_arguments], [name: PendingTransactionFetcher]]},
-      {InternalTransaction.Supervisor,
-       [[json_rpc_named_arguments: json_rpc_named_arguments], [name: InternalTransaction.Supervisor]]},
-      {Token.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments], [name: Token.Supervisor]]},
-      {TokenBalance.Supervisor,
-       [[json_rpc_named_arguments: json_rpc_named_arguments], [name: TokenBalance.Supervisor]]},
-      {Block.Supervisor, [block_fetcher_supervisor_named_arguments, [name: Block.Supervisor]]},
-      {TokenTransfer.Uncataloged.Supervisor, [[], [name: TokenTransfer.Uncataloged.Supervisor]]}
+      {Memory.Monitor, [memory_monitor_options, [name: memory_monitor_name]]},
+      {Shrinkable.Supervisor, [%{memory_monitor: memory_monitor_name}]}
     ]
 
-    opts = [strategy: :one_for_one, name: Indexer.Supervisor]
+    opts = [
+      # If the `Memory.Monitor` dies, it needs all the `Shrinkable`s to re-register, so restart them.
+      strategy: :rest_for_one,
+      name: Indexer.Supervisor
+    ]
 
     Supervisor.start_link(children, opts)
   end

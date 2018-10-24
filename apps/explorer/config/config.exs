@@ -28,6 +28,14 @@ config :explorer, Explorer.Counters.TokenTransferCounter, enabled: true
 
 config :explorer, Explorer.Counters.TokenHoldersCounter, enabled: true, enable_consolidation: true
 
+if System.get_env("SUPPLY_MODULE") == "TransactionAndLog" do
+  config :explorer, supply: Explorer.Chain.Supply.TransactionAndLog
+end
+
+if System.get_env("SOURCE_MODULE") == "TransactionAndLog" do
+  config :explorer, Explorer.ExchangeRates, source: Explorer.ExchangeRates.Source.TransactionAndLog
+end
+
 config :explorer,
   solc_bin_api_url: "https://solc-bin.ethereum.org"
 

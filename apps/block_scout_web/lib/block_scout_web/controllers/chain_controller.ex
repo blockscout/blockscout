@@ -40,6 +40,7 @@ defmodule BlockScoutWeb.ChainController do
       average_block_time: Chain.average_block_time(),
       blocks: blocks,
       exchange_rate: exchange_rate,
+      available_supply: available_supply(Chain.supply_for_days(30), exchange_rate),
       market_history_data: market_history_data,
       transaction_estimated_count: transaction_estimated_count,
       transactions: transactions
@@ -77,5 +78,18 @@ defmodule BlockScoutWeb.ChainController do
           item
         )
     )
+  end
+
+  defp available_supply(:ok, exchange_rate) do
+    to_string(exchange_rate.available_supply || 0)
+  end
+
+  defp available_supply({:ok, supply_for_days}, _exchange_rate) do
+    supply_for_days
+    |> Jason.encode()
+    |> case do
+      {:ok, data} -> data
+      _ -> []
+    end
   end
 end
