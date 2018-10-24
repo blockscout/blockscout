@@ -2038,7 +2038,7 @@ defmodule Explorer.Chain do
     token_changeset = Token.changeset(token, params)
     address_name_changeset = Address.Name.changeset(%Address.Name{}, Map.put(params, :address_hash, address_hash))
 
-    token_opts = [on_conflict: :replace_all, conflict_target: :contract_address_hash]
+    token_opts = [on_conflict: Import.Tokens.default_on_conflict(), conflict_target: :contract_address_hash]
     address_name_opts = [on_conflict: :nothing, conflict_target: [:address_hash, :name]]
 
     insert_result =

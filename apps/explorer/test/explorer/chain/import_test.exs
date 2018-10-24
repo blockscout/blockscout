@@ -1476,7 +1476,6 @@ defmodule Explorer.Chain.ImportTest do
                  },
                  tokens: %{
                    params: [params_for(:token, contract_address_hash: token_contract_address_hash)],
-                   on_conflict: :replace_all,
                    timeout: 1
                  },
                  transactions: %{
