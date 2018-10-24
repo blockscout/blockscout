@@ -51,7 +51,7 @@ defmodule Indexer.TokenBalance.FetcherTest do
         end
       )
 
-      assert TokenBalance.Fetcher.run([{address_hash_bytes, token_contract_address_hash_bytes, block_number}], 0, nil) ==
+      assert TokenBalance.Fetcher.run([{address_hash_bytes, token_contract_address_hash_bytes, block_number}], nil) ==
                :ok
 
       token_balance_updated = Explorer.Repo.get_by(Address.TokenBalance, address_hash: address_hash)

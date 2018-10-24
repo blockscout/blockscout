@@ -15,7 +15,6 @@ defmodule Indexer.TokenBalance.Fetcher do
     flush_interval: 300,
     max_batch_size: 1,
     max_concurrency: 10,
-    init_chunk_size: 1,
     task_supervisor: Indexer.TokenBalance.TaskSupervisor
   ]
 
@@ -56,7 +55,7 @@ defmodule Indexer.TokenBalance.Fetcher do
   end
 
   @impl BufferedTask
-  def run(entries, _retries, _json_rpc_named_arguments) do
+  def run(entries, _json_rpc_named_arguments) do
     Logger.debug(fn -> "fetching #{length(entries)} token balances" end)
 
     result =

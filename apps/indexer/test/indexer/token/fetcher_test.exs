@@ -23,7 +23,7 @@ defmodule Indexer.Token.FetcherTest do
     test "skips tokens that have already been cataloged", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       expect(EthereumJSONRPC.Mox, :json_rpc, 0, fn _, _ -> :ok end)
       %Token{contract_address_hash: contract_address_hash} = insert(:token, cataloged: true)
-      assert Fetcher.run([contract_address_hash], 0, json_rpc_named_arguments) == :ok
+      assert Fetcher.run([contract_address_hash], json_rpc_named_arguments) == :ok
     end
 
     test "catalogs tokens that haven't been cataloged", %{json_rpc_named_arguments: json_rpc_named_arguments} do
@@ -60,7 +60,7 @@ defmodule Indexer.Token.FetcherTest do
           end
         )
 
-        assert Fetcher.run([contract_address_hash], 0, json_rpc_named_arguments) == :ok
+        assert Fetcher.run([contract_address_hash], json_rpc_named_arguments) == :ok
 
         expected_supply = Decimal.new(1_000_000_000_000_000_000)
 
@@ -111,7 +111,7 @@ defmodule Indexer.Token.FetcherTest do
           end
         )
 
-        assert Fetcher.run([contract_address_hash], 0, json_rpc_named_arguments) == :ok
+        assert Fetcher.run([contract_address_hash], json_rpc_named_arguments) == :ok
         assert {:ok, %Token{cataloged: true, name: "0x0000"}} = Chain.token_from_address_hash(contract_address_hash)
       end
     end
@@ -150,7 +150,7 @@ defmodule Indexer.Token.FetcherTest do
           end
         )
 
-        assert Fetcher.run([contract_address_hash], 0, json_rpc_named_arguments) == :ok
+        assert Fetcher.run([contract_address_hash], json_rpc_named_arguments) == :ok
         assert {:ok, %Token{cataloged: true, symbol: nil}} = Chain.token_from_address_hash(contract_address_hash)
       end
     end
@@ -184,7 +184,7 @@ defmodule Indexer.Token.FetcherTest do
           end
         )
 
-        assert Fetcher.run([contract_address_hash], 0, json_rpc_named_arguments) == :ok
+        assert Fetcher.run([contract_address_hash], json_rpc_named_arguments) == :ok
         assert {:ok, %Token{cataloged: true, name: nil}} = Chain.token_from_address_hash(contract_address_hash)
       end
     end
@@ -214,7 +214,7 @@ defmodule Indexer.Token.FetcherTest do
           end
         )
 
-        assert Fetcher.run([contract_address_hash], 0, json_rpc_named_arguments) == :ok
+        assert Fetcher.run([contract_address_hash], json_rpc_named_arguments) == :ok
 
         assert {:ok, %Token{cataloged: true, name: ^long_token_name_shortened}} =
                  Chain.token_from_address_hash(contract_address_hash)
