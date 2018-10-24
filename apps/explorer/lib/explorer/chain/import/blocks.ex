@@ -170,7 +170,7 @@ defmodule Explorer.Chain.Import.Blocks do
   @spec insert([map()], %{required(:timeout) => timeout, required(:timestamps) => Import.timestamps()}) ::
           {:ok, [Block.t()]} | {:error, [Changeset.t()]}
   defp insert(changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
-    on_conflict = Map.get(options, :on_conflict, :replace_all)
+    on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # order so that row ShareLocks are grabbed in a consistent order
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.number, &1.hash})
@@ -183,6 +183,30 @@ defmodule Explorer.Chain.Import.Blocks do
       returning: true,
       timeout: timeout,
       timestamps: timestamps
+    )
+  end
+
+  defp default_on_conflict do
+    from(
+      block in Block,
+      update: [
+        set: [
+          consensus: fragment("EXCLUDED.consensus"),
+          difficulty: fragment("EXCLUDED.difficulty"),
+          gas_limit: fragment("EXCLUDED.gas_limit"),
+          gas_used: fragment("EXCLUDED.gas_used"),
+          miner_hash: fragment("EXCLUDED.miner_hash"),
+          nonce: fragment("EXCLUDED.nonce"),
+          number: fragment("EXCLUDED.number"),
+          parent_hash: fragment("EXCLUDED.parent_hash"),
+          size: fragment("EXCLUDED.size"),
+          timestamp: fragment("EXCLUDED.timestamp"),
+          total_difficulty: fragment("EXCLUDED.total_difficulty"),
+          # Don't update `hash` as it is used for the conflict target
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", block.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", block.updated_at)
+        ]
+      ]
     )
   end
 
