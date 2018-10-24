@@ -38,10 +38,22 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
       transaction =
         :transaction
         |> insert()
-        |> with_block()
+        |> with_block(insert(:block, number: 1))
 
-      expected_internal_transaction = insert(:internal_transaction, transaction: transaction, index: 0)
-      insert(:internal_transaction, transaction: transaction, index: 1)
+      expected_internal_transaction =
+        insert(:internal_transaction,
+          transaction: transaction,
+          index: 0,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 1,
+        transaction_index: transaction.index,
+        block_number: transaction.block_number
+      )
 
       path = transaction_internal_transaction_path(BlockScoutWeb.Endpoint, :index, transaction.hash)
 
@@ -71,11 +83,16 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
         :transaction
         |> insert(to_address: nil)
         |> with_contract_creation(contract_address)
-        |> with_block()
+        |> with_block(insert(:block, number: 7000))
 
       internal_transaction =
         :internal_transaction_create
-        |> insert(transaction: transaction, index: 0)
+        |> insert(
+          transaction: transaction,
+          index: 0,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
         |> with_contract_creation(contract_address)
 
       conn =
@@ -95,13 +112,26 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
       transaction =
         :transaction
         |> insert()
-        |> with_block()
+        |> with_block(insert(:block, number: 7000))
 
-      %InternalTransaction{index: index} = insert(:internal_transaction, transaction: transaction, index: 0)
+      %InternalTransaction{index: index} =
+        insert(:internal_transaction,
+          transaction: transaction,
+          index: 0,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
 
       second_page_indexes =
         1..50
-        |> Enum.map(fn index -> insert(:internal_transaction, transaction: transaction, index: index) end)
+        |> Enum.map(fn index ->
+          insert(:internal_transaction,
+            transaction: transaction,
+            index: index,
+            block_number: transaction.block_number,
+            transaction_index: transaction.index
+          )
+        end)
         |> Enum.map(& &1.index)
 
       conn =
@@ -117,7 +147,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
     end
 
     test "next_page_params exist if not on last page", %{conn: conn} do
-      block = %Block{number: number} = insert(:block)
+      block = %Block{number: number} = insert(:block, number: 7000)
 
       transaction =
         %Transaction{index: transaction_index} =
@@ -130,7 +160,9 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
         insert(
           :internal_transaction,
           transaction: transaction,
-          index: index
+          index: index,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
         )
       end)
 
@@ -144,14 +176,16 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
       transaction =
         :transaction
         |> insert()
-        |> with_block()
+        |> with_block(insert(:block, number: 7000))
 
       1..2
       |> Enum.map(fn index ->
         insert(
           :internal_transaction,
           transaction: transaction,
-          index: index
+          index: index,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
         )
       end)
 

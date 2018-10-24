@@ -124,6 +124,7 @@ defmodule Explorer.Chain do
     InternalTransaction
     |> InternalTransaction.where_address_fields_match(hash, direction)
     |> InternalTransaction.where_is_different_from_parent_transaction()
+    |> InternalTransaction.where_block_number_is_not_null()
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by(

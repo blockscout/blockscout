@@ -19,8 +19,8 @@
     <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column flex-nowrap justify-content-start text-md-right mt-3 mt-md-0">
       <span class="mr-2 mr-md-0 order-1">
         <%= link(
-          gettext("Block #%{number}", number: to_string(@internal_transaction.transaction.block_number)),
-          to: block_path(BlockScoutWeb.Endpoint, :show, @internal_transaction.transaction.block)
+          gettext("Block #%{number}", number: to_string(@internal_transaction.block_number)),
+          to: block_path(BlockScoutWeb.Endpoint, :show, @internal_transaction.block_number)
         ) %>
       </span>
       <span class="mr-2 mr-md-0 order-2" data-from-now="<%= @internal_transaction.transaction.block.timestamp %>"></span>
