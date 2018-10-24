@@ -1941,9 +1941,9 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      %Log{id: id} = insert(:log, transaction: transaction)
+      %Log{transaction_hash: transaction_hash, index: index} = insert(:log, transaction: transaction)
 
-      assert [%Log{id: ^id}] = Chain.transaction_to_logs(transaction)
+      assert [%Log{transaction_hash: ^transaction_hash, index: ^index}] = Chain.transaction_to_logs(transaction)
     end
 
     test "with logs can be paginated" do

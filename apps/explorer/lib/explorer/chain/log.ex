@@ -35,11 +35,12 @@ defmodule Explorer.Chain.Log do
           type: String.t() | nil
         }
 
+  @primary_key false
   schema "logs" do
     field(:data, Data)
     field(:first_topic, :string)
     field(:fourth_topic, :string)
-    field(:index, :integer)
+    field(:index, :integer, primary_key: true)
     field(:second_topic, :string)
     field(:third_topic, :string)
     field(:type, :string)
@@ -47,7 +48,13 @@ defmodule Explorer.Chain.Log do
     timestamps()
 
     belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address)
-    belongs_to(:transaction, Transaction, foreign_key: :transaction_hash, references: :hash, type: Hash.Full)
+
+    belongs_to(:transaction, Transaction,
+      foreign_key: :transaction_hash,
+      primary_key: true,
+      references: :hash,
+      type: Hash.Full
+    )
   end
 
   @doc """

@@ -1167,7 +1167,7 @@ defmodule Explorer.Chain do
 
   """
   def log_count do
-    Repo.aggregate(Log, :count, :id)
+    Repo.one!(from(log in "logs", select: fragment("COUNT(*)")))
   end
 
   @doc """
