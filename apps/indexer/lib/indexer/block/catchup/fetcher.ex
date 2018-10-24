@@ -10,6 +10,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   alias Explorer.Chain
   alias Indexer.{Block, InternalTransaction, Sequence, TokenBalance}
+  alias Indexer.Memory.Shrinkable
 
   @behaviour Block.Fetcher
 
@@ -22,7 +23,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   defstruct blocks_batch_size: @blocks_batch_size,
             blocks_concurrency: @blocks_concurrency,
-            block_fetcher: nil
+            block_fetcher: nil,
+            memory_monitor: nil
 
   @doc false
   def default_blocks_batch_size, do: @blocks_batch_size
@@ -59,7 +61,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
     case latest_block_number do
       # let realtime indexer get the genesis block
       0 ->
-        %{first_block_number: 0, missing_block_count: 0}
+        %{first_block_number: 0, missing_block_count: 0, shrunk: false}
 
       _ ->
         # realtime indexer gets the current latest block
@@ -77,20 +79,23 @@ defmodule Indexer.Block.Catchup.Fetcher do
           "#{missing_block_count} missed blocks in #{range_count} ranges between #{first} and #{last}"
         end)
 
-        case missing_block_count do
-          0 ->
-            :ok
+        shrunk =
+          case missing_block_count do
+            0 ->
+              false
 
-          _ ->
-            sequence_opts = [ranges: missing_ranges, step: -1 * blocks_batch_size]
-            gen_server_opts = [name: @sequence_name]
-            {:ok, sequence} = Sequence.start_link(sequence_opts, gen_server_opts)
-            Sequence.cap(sequence)
+            _ ->
+              sequence_opts = put_memory_monitor([ranges: missing_ranges, step: -1 * blocks_batch_size], state)
+              gen_server_opts = [name: @sequence_name]
+              {:ok, sequence} = Sequence.start_link(sequence_opts, gen_server_opts)
+              Sequence.cap(sequence)
 
-            stream_fetch_and_import(state, sequence)
-        end
+              stream_fetch_and_import(state, sequence)
 
-        %{first_block_number: first, missing_block_count: missing_block_count}
+              Shrinkable.shrunk?(sequence)
+          end
+
+        %{first_block_number: first, missing_block_count: missing_block_count, shrunk: shrunk}
     end
   end
 
@@ -171,7 +176,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
           "failed to fetch #{step} for blocks #{first} - #{last}: #{inspect(reason)}. Retrying block range."
         end)
 
-        :ok = Sequence.queue(sequence, range)
+        push_back(sequence, range)
 
         error
 
@@ -180,7 +185,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
           "failed to validate blocks #{inspect(range)}: #{inspect(changesets)}. Retrying"
         end)
 
-        :ok = Sequence.queue(sequence, range)
+        push_back(sequence, range)
 
         error
 
@@ -189,7 +194,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
           "failed to insert blocks during #{step} #{inspect(range)}: #{inspect(failed_value)}. Retrying"
         end)
 
-        :ok = Sequence.queue(sequence, range)
+        push_back(sequence, range)
 
         error
     end
@@ -210,17 +215,33 @@ defmodule Indexer.Block.Catchup.Fetcher do
     :ok
   end
 
+  defp push_back(sequence, range) do
+    case Sequence.push_back(sequence, range) do
+      :ok -> :ok
+      {:error, reason} -> Logger.error(fn -> ["Could not push block range to back to Sequence: ", inspect(reason)] end)
+    end
+  end
+
+  defp put_memory_monitor(sequence_options, %__MODULE__{memory_monitor: nil}) when is_list(sequence_options),
+    do: sequence_options
+
+  defp put_memory_monitor(sequence_options, %__MODULE__{memory_monitor: memory_monitor})
+       when is_list(sequence_options) do
+    Keyword.put(sequence_options, :memory_monitor, memory_monitor)
+  end
+
   @doc """
   Puts a list of block numbers to the front of the sequencing queue.
   """
-  @spec enqueue([non_neg_integer()]) :: :ok | {:error, :queue_unavailable}
-  def enqueue(block_numbers) do
+  @spec push_front([non_neg_integer()]) :: :ok | {:error, :queue_unavailable | :maximum_size | String.t()}
+  def push_front(block_numbers) do
     if Process.whereis(@sequence_name) do
-      for block_number <- block_numbers do
-        Sequence.queue_front(@sequence_name, block_number..block_number)
-      end
-
-      :ok
+      Enum.reduce_while(block_numbers, :ok, fn block_number, :ok ->
+        case Sequence.push_front(@sequence_name, block_number..block_number) do
+          :ok -> {:cont, :ok}
+          {:error, _} = error -> {:halt, error}
+        end
+      end)
     else
       {:error, :queue_unavailable}
     end

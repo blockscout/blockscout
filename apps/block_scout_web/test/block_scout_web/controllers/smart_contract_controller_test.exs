@@ -147,11 +147,11 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
     end
   end
 
-  defp blockchain_get_function_mock() do
+  defp blockchain_get_function_mock do
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
-      fn [%{id: id, method: _, params: [%{data: _, to: _}]}], _options ->
+      fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
         {:ok, [%{id: id, jsonrpc: "2.0", result: "0x0000000000000000000000000000000000000000000000000000000000000000"}]}
       end
     )

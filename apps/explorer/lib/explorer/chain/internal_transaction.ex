@@ -476,4 +476,8 @@ defmodule Explorer.Chain.InternalTransaction do
       (it.type == ^:call and it.index > 0) or it.type != ^:call
     )
   end
+
+  def where_block_number_is_not_null(query) do
+    where(query, [t], not is_nil(t.block_number))
+  end
 end
