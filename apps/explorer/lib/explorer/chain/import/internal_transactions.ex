@@ -69,7 +69,7 @@ defmodule Explorer.Chain.Import.InternalTransactions do
         conflict_target: [:transaction_hash, :index],
         for: InternalTransaction,
         on_conflict: on_conflict,
-        returning: [:id, :index, :transaction_hash],
+        returning: [:transaction_hash, :index],
         timeout: timeout,
         timestamps: timestamps
       )

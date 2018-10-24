@@ -49,13 +49,14 @@ defmodule Explorer.Chain.InternalTransaction do
           value: Wei.t()
         }
 
+  @primary_key false
   schema "internal_transactions" do
     field(:call_type, CallType)
     field(:created_contract_code, Data)
     field(:error, :string)
     field(:gas, :decimal)
     field(:gas_used, :decimal)
-    field(:index, :integer)
+    field(:index, :integer, primary_key: true)
     field(:init, Data)
     field(:input, Data)
     field(:output, Data)
@@ -91,7 +92,12 @@ defmodule Explorer.Chain.InternalTransaction do
       type: Hash.Address
     )
 
-    belongs_to(:transaction, Transaction, foreign_key: :transaction_hash, references: :hash, type: Hash.Full)
+    belongs_to(:transaction, Transaction,
+      foreign_key: :transaction_hash,
+      primary_key: true,
+      references: :hash,
+      type: Hash.Full
+    )
   end
 
   @doc """

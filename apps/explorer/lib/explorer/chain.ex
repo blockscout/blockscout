@@ -883,7 +883,7 @@ defmodule Explorer.Chain do
 
   """
   def internal_transaction_count do
-    Repo.aggregate(InternalTransaction, :count, :id)
+    Repo.one!(from(it in "internal_transactions", select: fragment("COUNT(*)")))
   end
 
   @doc """
@@ -1894,7 +1894,7 @@ defmodule Explorer.Chain do
       internal_transaction.type != ^:call or
         fragment(
           """
-          (SELECT COUNT(sibling.id)
+          (SELECT COUNT(sibling.*)
           FROM internal_transactions AS sibling
           WHERE sibling.transaction_hash = ?
           LIMIT 2

@@ -1270,7 +1270,7 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block(block)
 
-      %InternalTransaction{id: first_id} =
+      %InternalTransaction{transaction_hash: first_transaction_hash, index: first_index} =
         insert(:internal_transaction,
           index: 1,
           transaction: transaction,
@@ -1279,7 +1279,7 @@ defmodule Explorer.ChainTest do
           transaction_index: transaction.index
         )
 
-      %InternalTransaction{id: second_id} =
+      %InternalTransaction{transaction_hash: second_transaction_hash, index: second_index} =
         insert(:internal_transaction,
           index: 2,
           transaction: transaction,
@@ -1291,10 +1291,10 @@ defmodule Explorer.ChainTest do
       result =
         address
         |> Chain.address_to_internal_transactions()
-        |> Enum.map(& &1.id)
+        |> Enum.map(&{&1.transaction_hash, &1.index})
 
-      assert Enum.member?(result, first_id)
-      assert Enum.member?(result, second_id)
+      assert Enum.member?(result, {first_transaction_hash, first_index})
+      assert Enum.member?(result, {second_transaction_hash, second_index})
     end
 
     test "loads associations in necessity_by_association" do
@@ -1359,7 +1359,7 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block(block)
 
-      %InternalTransaction{id: first_pending} =
+      %InternalTransaction{transaction_hash: first_pending_transaction_hash, index: first_pending_index} =
         insert(
           :internal_transaction,
           transaction: pending_transaction,
@@ -1369,7 +1369,7 @@ defmodule Explorer.ChainTest do
           transaction_index: pending_transaction.index
         )
 
-      %InternalTransaction{id: second_pending} =
+      %InternalTransaction{transaction_hash: second_pending_transaction_hash, index: second_pending_index} =
         insert(
           :internal_transaction,
           transaction: pending_transaction,
@@ -1386,7 +1386,7 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block(a_block)
 
-      %InternalTransaction{id: first} =
+      %InternalTransaction{transaction_hash: first_transaction_hash, index: first_index} =
         insert(
           :internal_transaction,
           transaction: first_a_transaction,
@@ -1396,7 +1396,7 @@ defmodule Explorer.ChainTest do
           transaction_index: first_a_transaction.index
         )
 
-      %InternalTransaction{id: second} =
+      %InternalTransaction{transaction_hash: second_transaction_hash, index: second_index} =
         insert(
           :internal_transaction,
           transaction: first_a_transaction,
@@ -1411,7 +1411,7 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block(a_block)
 
-      %InternalTransaction{id: third} =
+      %InternalTransaction{transaction_hash: third_transaction_hash, index: third_index} =
         insert(
           :internal_transaction,
           transaction: second_a_transaction,
@@ -1421,7 +1421,7 @@ defmodule Explorer.ChainTest do
           transaction_index: second_a_transaction.index
         )
 
-      %InternalTransaction{id: fourth} =
+      %InternalTransaction{transaction_hash: fourth_transaction_hash, index: fourth_index} =
         insert(
           :internal_transaction,
           transaction: second_a_transaction,
@@ -1438,7 +1438,7 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block(b_block)
 
-      %InternalTransaction{id: fifth} =
+      %InternalTransaction{transaction_hash: fifth_transaction_hash, index: fifth_index} =
         insert(
           :internal_transaction,
           transaction: first_b_transaction,
@@ -1448,7 +1448,7 @@ defmodule Explorer.ChainTest do
           transaction_index: first_b_transaction.index
         )
 
-      %InternalTransaction{id: sixth} =
+      %InternalTransaction{transaction_hash: sixth_transaction_hash, index: sixth_index} =
         insert(
           :internal_transaction,
           transaction: first_b_transaction,
@@ -1461,9 +1461,18 @@ defmodule Explorer.ChainTest do
       result =
         address
         |> Chain.address_to_internal_transactions()
-        |> Enum.map(& &1.id)
+        |> Enum.map(&{&1.transaction_hash, &1.index})
 
-      assert [second_pending, first_pending, sixth, fifth, fourth, third, second, first] == result
+      assert [
+               {second_pending_transaction_hash, second_pending_index},
+               {first_pending_transaction_hash, first_pending_index},
+               {sixth_transaction_hash, sixth_index},
+               {fifth_transaction_hash, fifth_index},
+               {fourth_transaction_hash, fourth_index},
+               {third_transaction_hash, third_index},
+               {second_transaction_hash, second_index},
+               {first_transaction_hash, first_index}
+             ] == result
     end
 
     test "pages by {block_number, transaction_index, index}" do
@@ -1492,7 +1501,7 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block(a_block)
 
-      %InternalTransaction{id: first} =
+      %InternalTransaction{transaction_hash: first_transaction_hash, index: first_index} =
         insert(
           :internal_transaction,
           transaction: first_a_transaction,
@@ -1502,7 +1511,7 @@ defmodule Explorer.ChainTest do
           transaction_index: first_a_transaction.index
         )
 
-      %InternalTransaction{id: second} =
+      %InternalTransaction{transaction_hash: second_transaction_hash, index: second_index} =
         insert(
           :internal_transaction,
           transaction: first_a_transaction,
@@ -1517,7 +1526,7 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block(a_block)
 
-      %InternalTransaction{id: third} =
+      %InternalTransaction{transaction_hash: third_transaction_hash, index: third_index} =
         insert(
           :internal_transaction,
           transaction: second_a_transaction,
@@ -1527,7 +1536,7 @@ defmodule Explorer.ChainTest do
           transaction_index: second_a_transaction.index
         )
 
-      %InternalTransaction{id: fourth} =
+      %InternalTransaction{transaction_hash: fourth_transaction_hash, index: fourth_index} =
         insert(
           :internal_transaction,
           transaction: second_a_transaction,
@@ -1544,7 +1553,7 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block(b_block)
 
-      %InternalTransaction{id: fifth} =
+      %InternalTransaction{transaction_hash: fifth_transaction_hash, index: fifth_index} =
         insert(
           :internal_transaction,
           transaction: first_b_transaction,
@@ -1554,7 +1563,7 @@ defmodule Explorer.ChainTest do
           transaction_index: first_b_transaction.index
         )
 
-      %InternalTransaction{id: sixth} =
+      %InternalTransaction{transaction_hash: sixth_transaction_hash, index: sixth_index} =
         insert(
           :internal_transaction,
           transaction: first_b_transaction,
@@ -1566,28 +1575,45 @@ defmodule Explorer.ChainTest do
 
       # When paged, internal transactions need an associated block number, so `second_pending` and `first_pending` are
       # excluded.
-      assert [sixth, fifth, fourth, third, second, first] ==
+      assert [
+               {sixth_transaction_hash, sixth_index},
+               {fifth_transaction_hash, fifth_index},
+               {fourth_transaction_hash, fourth_index},
+               {third_transaction_hash, third_index},
+               {second_transaction_hash, second_index},
+               {first_transaction_hash, first_index}
+             ] ==
                address
                |> Chain.address_to_internal_transactions(
                  paging_options: %PagingOptions{key: {6001, 3, 2}, page_size: 8}
                )
-               |> Enum.map(& &1.id)
+               |> Enum.map(&{&1.transaction_hash, &1.index})
 
       # block number ==, transaction index ==, internal transaction index <
-      assert [fourth, third, second, first] ==
+      assert [
+               {fourth_transaction_hash, fourth_index},
+               {third_transaction_hash, third_index},
+               {second_transaction_hash, second_index},
+               {first_transaction_hash, first_index}
+             ] ==
                address
                |> Chain.address_to_internal_transactions(
                  paging_options: %PagingOptions{key: {6000, 0, 1}, page_size: 8}
                )
-               |> Enum.map(& &1.id)
+               |> Enum.map(&{&1.transaction_hash, &1.index})
 
       # block number ==, transaction index <
-      assert [fourth, third, second, first] ==
+      assert [
+               {fourth_transaction_hash, fourth_index},
+               {third_transaction_hash, third_index},
+               {second_transaction_hash, second_index},
+               {first_transaction_hash, first_index}
+             ] ==
                address
                |> Chain.address_to_internal_transactions(
                  paging_options: %PagingOptions{key: {6000, -1, -1}, page_size: 8}
                )
-               |> Enum.map(& &1.id)
+               |> Enum.map(&{&1.transaction_hash, &1.index})
 
       # block number <
       assert [] ==
@@ -1595,7 +1621,7 @@ defmodule Explorer.ChainTest do
                |> Chain.address_to_internal_transactions(
                  paging_options: %PagingOptions{key: {2000, -1, -1}, page_size: 8}
                )
-               |> Enum.map(& &1.id)
+               |> Enum.map(&{&1.transaction_hash, &1.index})
     end
 
     test "excludes internal transactions of type `call` when they are alone in the parent transaction" do
@@ -1637,7 +1663,7 @@ defmodule Explorer.ChainTest do
 
       actual = Enum.at(Chain.address_to_internal_transactions(address), 0)
 
-      assert actual.id == expected.id
+      assert {actual.transaction_hash, actual.index} == {expected.transaction_hash, expected.index}
     end
   end
 
@@ -1708,7 +1734,15 @@ defmodule Explorer.ChainTest do
       results = [internal_transaction | _] = Chain.transaction_to_internal_transactions(transaction)
 
       assert 2 == length(results)
-      assert Enum.all?(results, &(&1.id in [first.id, second.id]))
+
+      assert Enum.all?(
+               results,
+               &({&1.transaction_hash, &1.index} in [
+                   {first.transaction_hash, first.index},
+                   {second.transaction_hash, second.index}
+                 ])
+             )
+
       assert internal_transaction.transaction.block.number == block.number
     end
 
@@ -1781,7 +1815,7 @@ defmodule Explorer.ChainTest do
 
       actual = Enum.at(Chain.transaction_to_internal_transactions(transaction), 0)
 
-      assert actual.id == expected.id
+      assert {actual.transaction_hash, actual.index} == {expected.transaction_hash, expected.index}
     end
 
     test "includes internal transactions of type `reward` even when they are alone in the parent transaction" do
@@ -1801,7 +1835,7 @@ defmodule Explorer.ChainTest do
 
       actual = Enum.at(Chain.transaction_to_internal_transactions(transaction), 0)
 
-      assert actual.id == expected.id
+      assert {actual.transaction_hash, actual.index} == {expected.transaction_hash, expected.index}
     end
 
     test "includes internal transactions of type `suicide` even when they are alone in the parent transaction" do
@@ -1822,7 +1856,7 @@ defmodule Explorer.ChainTest do
 
       actual = Enum.at(Chain.transaction_to_internal_transactions(transaction), 0)
 
-      assert actual.id == expected.id
+      assert {actual.transaction_hash, actual.index} == {expected.transaction_hash, expected.index}
     end
 
     test "returns the internal transactions in ascending index order" do
@@ -1831,7 +1865,7 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      %InternalTransaction{id: first_id} =
+      %InternalTransaction{transaction_hash: first_transaction_hash, index: first_index} =
         insert(:internal_transaction,
           transaction: transaction,
           index: 0,
@@ -1839,7 +1873,7 @@ defmodule Explorer.ChainTest do
           transaction_index: transaction.index
         )
 
-      %InternalTransaction{id: second_id} =
+      %InternalTransaction{transaction_hash: second_transaction_hash, index: second_index} =
         insert(:internal_transaction,
           transaction: transaction,
           index: 1,
@@ -1850,9 +1884,9 @@ defmodule Explorer.ChainTest do
       result =
         transaction
         |> Chain.transaction_to_internal_transactions()
-        |> Enum.map(& &1.id)
+        |> Enum.map(&{&1.transaction_hash, &1.index})
 
-      assert [first_id, second_id] == result
+      assert [{first_transaction_hash, first_index}, {second_transaction_hash, second_index}] == result
     end
 
     test "pages by index" do
@@ -1861,7 +1895,7 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      %InternalTransaction{id: first_id} =
+      %InternalTransaction{transaction_hash: first_transaction_hash, index: first_index} =
         insert(:internal_transaction,
           transaction: transaction,
           index: 0,
@@ -1869,7 +1903,7 @@ defmodule Explorer.ChainTest do
           transaction_index: transaction.index
         )
 
-      %InternalTransaction{id: second_id} =
+      %InternalTransaction{transaction_hash: second_transaction_hash, index: second_index} =
         insert(:internal_transaction,
           transaction: transaction,
           index: 1,
@@ -1877,20 +1911,20 @@ defmodule Explorer.ChainTest do
           transaction_index: transaction.index
         )
 
-      assert [^first_id, ^second_id] =
+      assert [{first_transaction_hash, first_index}, {second_transaction_hash, second_index}] ==
                transaction
                |> Chain.transaction_to_internal_transactions(paging_options: %PagingOptions{key: {-1}, page_size: 2})
-               |> Enum.map(& &1.id)
+               |> Enum.map(&{&1.transaction_hash, &1.index})
 
-      assert [^first_id] =
+      assert [{first_transaction_hash, first_index}] ==
                transaction
                |> Chain.transaction_to_internal_transactions(paging_options: %PagingOptions{key: {-1}, page_size: 1})
-               |> Enum.map(& &1.id)
+               |> Enum.map(&{&1.transaction_hash, &1.index})
 
-      assert [^second_id] =
+      assert [{second_transaction_hash, second_index}] ==
                transaction
                |> Chain.transaction_to_internal_transactions(paging_options: %PagingOptions{key: {0}, page_size: 2})
-               |> Enum.map(& &1.id)
+               |> Enum.map(&{&1.transaction_hash, &1.index})
     end
   end
 

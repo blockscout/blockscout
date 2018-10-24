@@ -429,7 +429,9 @@ defmodule Explorer.Chain.ImportTest do
     test "publishes internal_transaction data to subscribers on insert" do
       Chain.subscribe_to_events(:internal_transactions)
       Import.all(@import_data)
-      assert_received {:chain_event, :internal_transactions, :realtime, [%{id: _}, %{id: _}]}
+
+      assert_received {:chain_event, :internal_transactions, :realtime,
+                       [%{transaction_hash: _, index: _}, %{transaction_hash: _, index: _}]}
     end
 
     test "publishes log data to subscribers on insert" do
