@@ -8,6 +8,8 @@ defmodule Explorer.Chain.Import.Logs do
   alias Ecto.{Changeset, Multi}
   alias Explorer.Chain.{Import, Log}
 
+  import Ecto.Query, only: [from: 2]
+
   @behaviour Import.Runner
 
   # milliseconds
@@ -46,7 +48,7 @@ defmodule Explorer.Chain.Import.Logs do
           {:ok, [Log.t()]}
           | {:error, [Changeset.t()]}
   defp insert(changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
-    on_conflict = Map.get(options, :on_conflict, :replace_all)
+    on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # order so that row ShareLocks are grabbed in a consistent order
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.index})
@@ -61,5 +63,26 @@ defmodule Explorer.Chain.Import.Logs do
         timeout: timeout,
         timestamps: timestamps
       )
+  end
+
+  defp default_on_conflict do
+    from(
+      log in Log,
+      update: [
+        set: [
+          address_hash: fragment("EXCLUDED.address_hash"),
+          data: fragment("EXCLUDED.data"),
+          first_topic: fragment("EXCLUDED.first_topic"),
+          second_topic: fragment("EXCLUDED.second_topic"),
+          third_topic: fragment("EXCLUDED.third_topic"),
+          fourth_topic: fragment("EXCLUDED.fourth_topic"),
+          # Don't update `index` as it is part of the composite primary key and used for the conflict target
+          type: fragment("EXCLUDED.type"),
+          # Don't update `transaction_hash` as it is part of the composite primary key and used for the conflict target
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", log.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", log.updated_at)
+        ]
+      ]
+    )
   end
 end
