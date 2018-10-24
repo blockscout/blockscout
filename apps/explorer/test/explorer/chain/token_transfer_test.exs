@@ -50,12 +50,15 @@ defmodule Explorer.Chain.TokenTransferTest do
         token: token
       )
 
-      transfers_ids =
+      transfers_primary_keys =
         token_contract_address.hash
         |> TokenTransfer.fetch_token_transfers_from_token_hash([])
-        |> Enum.map(& &1.id)
+        |> Enum.map(&{&1.transaction_hash, &1.log_index})
 
-      assert transfers_ids == [another_transfer.id, token_transfer.id]
+      assert transfers_primary_keys == [
+               {another_transfer.transaction_hash, another_transfer.log_index},
+               {token_transfer.transaction_hash, token_transfer.log_index}
+             ]
     end
 
     test "when there isn't token transfers won't show anything" do
@@ -101,14 +104,14 @@ defmodule Explorer.Chain.TokenTransferTest do
 
       paging_options = %PagingOptions{key: first_page.inserted_at, page_size: 1}
 
-      token_transfers_ids_paginated =
+      token_transfers_primary_keys_paginated =
         TokenTransfer.fetch_token_transfers_from_token_hash(
           token_contract_address.hash,
           paging_options: paging_options
         )
-        |> Enum.map(& &1.id)
+        |> Enum.map(&{&1.transaction_hash, &1.log_index})
 
-      assert token_transfers_ids_paginated == [second_page.id]
+      assert token_transfers_primary_keys_paginated == [{second_page.transaction_hash, second_page.log_index}]
     end
   end
 

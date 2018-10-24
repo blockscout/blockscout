@@ -235,7 +235,10 @@ defmodule Explorer.ChainTest do
       insert(:token_transfer, to_address: build(:address), transaction: transaction)
 
       transaction = Chain.address_to_transactions(address) |> List.first()
-      assert transaction.token_transfers |> Enum.map(& &1.id) == [token_transfer.id]
+
+      assert transaction.token_transfers |> Enum.map(&{&1.transaction_hash, &1.log_index}) == [
+               {token_transfer.transaction_hash, token_transfer.log_index}
+             ]
     end
 
     test "returns just the token transfers related to the given contract address" do
@@ -250,7 +253,10 @@ defmodule Explorer.ChainTest do
       insert(:token_transfer, to_address: build(:address), transaction: transaction)
 
       transaction = Chain.address_to_transactions(contract_address) |> List.first()
-      assert Enum.map(transaction.token_transfers, & &1.id) == [token_transfer.id]
+
+      assert Enum.map(transaction.token_transfers, &{&1.transaction_hash, &1.log_index}) == [
+               {token_transfer.transaction_hash, token_transfer.log_index}
+             ]
     end
 
     test "returns all token transfers when the given address is the token contract address" do
@@ -572,12 +578,17 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      %TokenTransfer{id: token_transfer_id, token_contract_address_hash: token_contract_address_hash} =
-        insert(:token_transfer, to_address: address, transaction: transaction)
+      %TokenTransfer{
+        transaction_hash: token_transfer_transaction_hash,
+        log_index: token_transfer_log_index,
+        token_contract_address_hash: token_contract_address_hash
+      } = insert(:token_transfer, to_address: address, transaction: transaction)
 
       assert token_contract_address_hash
              |> Chain.fetch_token_transfers_from_token_hash()
-             |> Enum.map(& &1.id) == [token_transfer_id]
+             |> Enum.map(&{&1.transaction_hash, &1.log_index}) == [
+               {token_transfer_transaction_hash, token_transfer_log_index}
+             ]
     end
   end
 
@@ -778,7 +789,7 @@ defmodule Explorer.ChainTest do
         |> insert_list(:transaction)
         |> with_block()
 
-      %TokenTransfer{id: id1} =
+      %TokenTransfer{transaction_hash: transaction_hash1, log_index: log_index1} =
         insert(
           :token_transfer,
           to_address: address,
@@ -787,7 +798,7 @@ defmodule Explorer.ChainTest do
           token: token
         )
 
-      %TokenTransfer{id: id2} =
+      %TokenTransfer{transaction_hash: transaction_hash2, log_index: log_index2} =
         insert(
           :token_transfer,
           to_address: address,
@@ -799,7 +810,10 @@ defmodule Explorer.ChainTest do
       fetched_transactions = Explorer.Chain.hashes_to_transactions([transaction1.hash, transaction2.hash])
 
       assert Enum.all?(fetched_transactions, fn transaction ->
-               hd(transaction.token_transfers).id in [id1, id2]
+               %TokenTransfer{transaction_hash: transaction_hash, log_index: log_index} =
+                 hd(transaction.token_transfers)
+
+               {transaction_hash, log_index} in [{transaction_hash1, log_index1}, {transaction_hash2, log_index2}]
              end)
     end
   end
@@ -2004,9 +2018,11 @@ defmodule Explorer.ChainTest do
         |> insert()
         |> with_block()
 
-      %TokenTransfer{id: id} = insert(:token_transfer, transaction: transaction)
+      %TokenTransfer{transaction_hash: transaction_hash, log_index: log_index} =
+        insert(:token_transfer, transaction: transaction)
 
-      assert [%TokenTransfer{id: ^id}] = Chain.transaction_to_token_transfers(transaction)
+      assert [%TokenTransfer{transaction_hash: ^transaction_hash, log_index: ^log_index}] =
+               Chain.transaction_to_token_transfers(transaction)
     end
 
     test "token transfers necessity_by_association loads associations" do
