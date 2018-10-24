@@ -24,14 +24,20 @@ RUN mix do deps.get, deps.compile
 ADD . .
 
 # Run forderground build and phoenix digest
-RUN mix do compile, phx.digest
+RUN mix compile
 
 # Add blockscout npm deps
-RUN cd apps/block_scout_web/assets/ && npm install && npm run deploy && cd -
-RUN cd apps/explorer/ && npm install && cd -
+RUN cd apps/block_scout_web/assets/ && \
+    npm install && \
+    npm run deploy && \
+    cd -
 
-RUN mix do ecto.drop --force, ecto.create, ecto.migrate
+RUN cd apps/explorer/ && \
+    npm install && \
+    cd -
+
+# RUN mix do ecto.drop --force, ecto.create, ecto.migrate
 
 # USER default
 
-CMD ["mix", "phx.server"]
+# CMD ["mix", "phx.server"]
