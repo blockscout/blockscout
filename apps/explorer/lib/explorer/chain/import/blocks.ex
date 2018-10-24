@@ -34,9 +34,14 @@ defmodule Explorer.Chain.Import.Blocks do
   end
 
   @impl Import.Runner
-  def run(multi, changes_list, options) when is_map(options) do
-    timestamps = Map.fetch!(options, :timestamps)
-    blocks_timeout = options[option_key()][:timeout] || @timeout
+  def run(multi, changes_list, %{timestamps: timestamps} = options) do
+    insert_options =
+      options
+      |> Map.get(option_key(), %{})
+      |> Map.take(~w(on_conflict timeout)a)
+      |> Map.put_new(:timeout, @timeout)
+      |> Map.put(:timestamps, timestamps)
+
     where_forked = where_forked(changes_list)
 
     multi
@@ -56,10 +61,10 @@ defmodule Explorer.Chain.Import.Blocks do
       })
     end)
     |> Multi.run(:lose_consenus, fn _ ->
-      lose_consensus(changes_list, %{timeout: blocks_timeout, timestamps: timestamps})
+      lose_consensus(changes_list, insert_options)
     end)
     |> Multi.run(:blocks, fn _ ->
-      insert(changes_list, %{timeout: blocks_timeout, timestamps: timestamps})
+      insert(changes_list, insert_options)
     end)
     |> Multi.run(:uncle_fetched_block_second_degree_relations, fn %{blocks: blocks} when is_list(blocks) ->
       update_block_second_degree_relations(
@@ -167,8 +172,11 @@ defmodule Explorer.Chain.Import.Blocks do
     end
   end
 
-  @spec insert([map()], %{required(:timeout) => timeout, required(:timestamps) => Import.timestamps()}) ::
-          {:ok, [Block.t()]} | {:error, [Changeset.t()]}
+  @spec insert([map()], %{
+          optional(:on_conflict) => Import.Runner.on_conflict(),
+          required(:timeout) => timeout,
+          required(:timestamps) => Import.timestamps()
+        }) :: {:ok, [Block.t()]} | {:error, [Changeset.t()]}
   defp insert(changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 

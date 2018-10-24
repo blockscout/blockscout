@@ -35,25 +35,36 @@ defmodule Explorer.Chain.Import.InternalTransactions do
   end
 
   @impl Import.Runner
-  def run(multi, changes_list, options) when is_map(options) do
-    timestamps = Map.fetch!(options, :timestamps)
-    internal_transactions_timeout = options[option_key()][:timeout] || @timeout
+  def run(multi, changes_list, %{timestamps: timestamps} = options) when is_map(options) do
+    insert_options =
+      options
+      |> Map.get(option_key(), %{})
+      |> Map.take(~w(on_conflict timeout)a)
+      |> Map.put_new(:timeout, @timeout)
+      |> Map.put(:timestamps, timestamps)
+
     transactions_timeout = options[Import.Transactions.option_key()][:timeout] || Import.Transactions.timeout()
+
+    update_transactions_options = %{timeout: transactions_timeout, timestamps: timestamps}
 
     multi
     |> Multi.run(:internal_transactions, fn _ ->
-      insert(changes_list, %{timeout: internal_transactions_timeout, timestamps: timestamps})
+      insert(changes_list, insert_options)
     end)
     |> Multi.run(:internal_transactions_indexed_at_transactions, fn %{internal_transactions: internal_transactions}
                                                                     when is_list(internal_transactions) ->
-      update_transactions(internal_transactions, %{timeout: transactions_timeout, timestamps: timestamps})
+      update_transactions(internal_transactions, update_transactions_options)
     end)
   end
 
   @impl Import.Runner
   def timeout, do: @timeout
 
-  @spec insert([map], %{required(:timeout) => timeout, required(:timestamps) => Import.timestamps()}) ::
+  @spec insert([map], %{
+          optional(:on_conflict) => Import.Runner.on_conflict(),
+          required(:timeout) => timeout,
+          required(:timestamps) => Import.timestamps()
+        }) ::
           {:ok, [%{index: non_neg_integer, transaction_hash: Hash.t()}]}
           | {:error, [Changeset.t()]}
   defp insert(changes_list, %{timeout: timeout, timestamps: timestamps} = options)

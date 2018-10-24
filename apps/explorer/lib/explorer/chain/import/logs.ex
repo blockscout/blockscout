@@ -32,19 +32,27 @@ defmodule Explorer.Chain.Import.Logs do
   end
 
   @impl Import.Runner
-  def run(multi, changes_list, options) when is_map(options) do
-    timestamps = Map.fetch!(options, :timestamps)
-    timeout = options[option_key()][:timeout] || @timeout
+  def run(multi, changes_list, %{timestamps: timestamps} = options) do
+    insert_options =
+      options
+      |> Map.get(option_key(), %{})
+      |> Map.take(~w(on_conflict timeout)a)
+      |> Map.put_new(:timeout, @timeout)
+      |> Map.put(:timestamps, timestamps)
 
     Multi.run(multi, :logs, fn _ ->
-      insert(changes_list, %{timeout: timeout, timestamps: timestamps})
+      insert(changes_list, insert_options)
     end)
   end
 
   @impl Import.Runner
   def timeout, do: @timeout
 
-  @spec insert([map()], %{required(:timeout) => timeout, required(:timestamps) => Import.timestamps()}) ::
+  @spec insert([map()], %{
+          optional(:on_conflict) => Import.Runner.on_conflict(),
+          required(:timeout) => timeout,
+          required(:timestamps) => Import.timestamps()
+        }) ::
           {:ok, [Log.t()]}
           | {:error, [Changeset.t()]}
   defp insert(changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do

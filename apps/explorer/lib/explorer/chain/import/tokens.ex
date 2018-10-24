@@ -30,12 +30,16 @@ defmodule Explorer.Chain.Import.Tokens do
   end
 
   @impl Import.Runner
-  def run(multi, changes_list, options) when is_map(options) do
-    %{timestamps: timestamps, tokens: %{on_conflict: on_conflict}} = options
-    timeout = options[option_key()][:timeout] || @timeout
+  def run(multi, changes_list, %{timestamps: timestamps} = options) do
+    insert_options =
+      options
+      |> Map.get(option_key(), %{})
+      |> Map.take(~w(on_conflict timeout)a)
+      |> Map.put_new(:timeout, @timeout)
+      |> Map.put(:timestamps, timestamps)
 
     Multi.run(multi, :tokens, fn _ ->
-      insert(changes_list, %{on_conflict: on_conflict, timeout: timeout, timestamps: timestamps})
+      insert(changes_list, insert_options)
     end)
   end
 

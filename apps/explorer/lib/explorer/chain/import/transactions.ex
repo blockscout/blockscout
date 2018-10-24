@@ -32,14 +32,13 @@ defmodule Explorer.Chain.Import.Transactions do
   end
 
   @impl Import.Runner
-  def run(multi, changes_list, options) when is_map(options) do
-    %{timestamps: timestamps, transactions: transactions_options} = options
-
+  def run(multi, changes_list, %{timestamps: timestamps} = options) do
     insert_options =
-      transactions_options
+      options
+      |> Map.get(option_key(), %{})
       |> Map.take(~w(on_conflict timeout)a)
       |> Map.put_new(:timeout, @timeout)
-      |> Map.put_new(:timestamps, timestamps)
+      |> Map.put(:timestamps, timestamps)
 
     Multi.run(multi, :transactions, fn _ ->
       insert(changes_list, insert_options)
