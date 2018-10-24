@@ -5,6 +5,8 @@ defmodule Explorer.Chain.Import.Transactions do
 
   require Ecto.Query
 
+  import Ecto.Query, only: [from: 2]
+
   alias Ecto.Multi
   alias Explorer.Chain.{Hash, Import, Transaction}
 
@@ -31,11 +33,16 @@ defmodule Explorer.Chain.Import.Transactions do
 
   @impl Import.Runner
   def run(multi, changes_list, options) when is_map(options) do
-    %{timestamps: timestamps, transactions: %{on_conflict: on_conflict} = transactions_options} = options
-    timeout = transactions_options[:timeout] || @timeout
+    %{timestamps: timestamps, transactions: transactions_options} = options
+
+    insert_options =
+      transactions_options
+      |> Map.take(~w(on_conflict timeout)a)
+      |> Map.put_new(:timeout, @timeout)
+      |> Map.put_new(:timestamps, timestamps)
 
     Multi.run(multi, :transactions, fn _ ->
-      insert(changes_list, %{on_conflict: on_conflict, timeout: timeout, timestamps: timestamps})
+      insert(changes_list, insert_options)
     end)
   end
 
@@ -43,12 +50,14 @@ defmodule Explorer.Chain.Import.Transactions do
   def timeout, do: @timeout
 
   @spec insert([map()], %{
-          required(:on_conflict) => Import.Runner.on_conflict(),
+          optional(:on_conflict) => Import.Runner.on_conflict(),
           required(:timeout) => timeout,
           required(:timestamps) => Import.timestamps()
         }) :: {:ok, [Hash.t()]}
-  defp insert(changes_list, %{on_conflict: on_conflict, timeout: timeout, timestamps: timestamps})
+  defp insert(changes_list, %{timeout: timeout, timestamps: timestamps} = options)
        when is_list(changes_list) do
+    on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
+
     # order so that row ShareLocks are grabbed in a consistent order
     ordered_changes_list = Enum.sort_by(changes_list, & &1.hash)
 
@@ -64,5 +73,37 @@ defmodule Explorer.Chain.Import.Transactions do
       )
 
     {:ok, for(transaction <- transactions, do: transaction.hash)}
+  end
+
+  defp default_on_conflict do
+    from(
+      transaction in Transaction,
+      update: [
+        set: [
+          block_hash: fragment("EXCLUDED.block_hash"),
+          block_number: fragment("EXCLUDED.block_number"),
+          created_contract_address_hash: fragment("EXCLUDED.created_contract_address_hash"),
+          cumulative_gas_used: fragment("EXCLUDED.cumulative_gas_used"),
+          error: fragment("EXCLUDED.error"),
+          from_address_hash: fragment("EXCLUDED.from_address_hash"),
+          gas: fragment("EXCLUDED.gas"),
+          gas_price: fragment("EXCLUDED.gas_price"),
+          gas_used: fragment("EXCLUDED.gas_used"),
+          index: fragment("EXCLUDED.index"),
+          internal_transactions_indexed_at: fragment("EXCLUDED.internal_transactions_indexed_at"),
+          input: fragment("EXCLUDED.input"),
+          nonce: fragment("EXCLUDED.nonce"),
+          r: fragment("EXCLUDED.r"),
+          s: fragment("EXCLUDED.s"),
+          status: fragment("EXCLUDED.status"),
+          to_address_hash: fragment("EXCLUDED.to_address_hash"),
+          v: fragment("EXCLUDED.v"),
+          value: fragment("EXCLUDED.value"),
+          # Don't update `hash` as it is part of the primary key and used for the conflict target
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", transaction.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", transaction.updated_at)
+        ]
+      ]
+    )
   end
 end

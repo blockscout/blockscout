@@ -95,7 +95,6 @@ defmodule Explorer.Chain.ImportTest do
         timeout: 5
       },
       transactions: %{
-        on_conflict: :replace_all,
         params: [
           %{
             block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
@@ -570,8 +569,7 @@ defmodule Explorer.Chain.ImportTest do
               v: 0,
               value: 0
             }
-          ],
-          on_conflict: :replace_all
+          ]
         },
         internal_transactions: %{
           params: [
@@ -662,8 +660,7 @@ defmodule Explorer.Chain.ImportTest do
               v: 0,
               value: 0
             }
-          ],
-          on_conflict: :replace_all
+          ]
         },
         internal_transactions: %{
           params: [
@@ -733,7 +730,6 @@ defmodule Explorer.Chain.ImportTest do
                    timeout: 5
                  },
                  transactions: %{
-                   on_conflict: :replace_all,
                    params: [
                      %{
                        block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
@@ -880,7 +876,6 @@ defmodule Explorer.Chain.ImportTest do
                  },
                  broadcast: false,
                  transactions: %{
-                   on_conflict: :replace_all,
                    params: [
                      %{
                        block_hash: "0x1f8cde8bd326702c49e065d56b08bdc82caa0c4820d914e27026c9c68ca1cf09",
@@ -1040,8 +1035,7 @@ defmodule Explorer.Chain.ImportTest do
                        v: 0,
                        value: 0
                      }
-                   ],
-                   on_conflict: :replace_all
+                   ]
                  },
                  transaction_forks: %{
                    params: [
@@ -1230,8 +1224,7 @@ defmodule Explorer.Chain.ImportTest do
                        value: 0,
                        status: :ok
                      }
-                   ],
-                   on_conflict: :replace_all
+                   ]
                  }
                })
 
@@ -1343,8 +1336,7 @@ defmodule Explorer.Chain.ImportTest do
                        value: 0,
                        status: :ok
                      }
-                   ],
-                   on_conflict: :replace_all
+                   ]
                  }
                })
 
@@ -1500,7 +1492,6 @@ defmodule Explorer.Chain.ImportTest do
                        cumulative_gas_used: 0
                      )
                    ],
-                   on_conflict: :replace_all,
                    timeout: 1
                  },
                  transaction_forks: %{
@@ -1713,8 +1704,7 @@ defmodule Explorer.Chain.ImportTest do
                        value: 0,
                        status: :error
                      }
-                   ],
-                   on_conflict: :replace_all
+                   ]
                  },
                  internal_transactions: %{
                    params: [

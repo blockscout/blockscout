@@ -903,7 +903,6 @@ defmodule Explorer.ChainTest do
         ]
       },
       transactions: %{
-        on_conflict: :replace_all,
         params: [
           %{
             block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
