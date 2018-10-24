@@ -21,7 +21,6 @@ defmodule Indexer.InternalTransaction.Fetcher do
     flush_interval: :timer.seconds(3),
     max_concurrency: @max_concurrency,
     max_batch_size: @max_batch_size,
-    init_chunk_size: 5000,
     task_supervisor: Indexer.InternalTransaction.TaskSupervisor
   ]
 
@@ -92,7 +91,7 @@ defmodule Indexer.InternalTransaction.Fetcher do
   end
 
   @impl BufferedTask
-  def run(entries, _retries, json_rpc_named_arguments) do
+  def run(entries, json_rpc_named_arguments) do
     unique_entries = unique_entries(entries)
 
     Logger.debug(fn -> "fetching internal transactions for #{length(unique_entries)} transactions" end)

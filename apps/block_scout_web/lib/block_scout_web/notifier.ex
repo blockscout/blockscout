@@ -55,7 +55,7 @@ defmodule BlockScoutWeb.Notifier do
     internal_transactions
     |> Stream.map(
       &(InternalTransaction
-        |> Repo.get(&1.id)
+        |> Repo.get_by(transaction_hash: &1.transaction_hash, index: &1.index)
         |> Repo.preload([:from_address, :to_address, transaction: :block]))
     )
     |> Enum.each(&broadcast_internal_transaction/1)

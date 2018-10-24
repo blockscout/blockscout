@@ -254,7 +254,7 @@ defmodule Indexer.CoinBalance.FetcherTest do
       {:ok, %Hash{bytes: address_hash_bytes}} = Hash.Address.cast(hash_data)
       entries = Enum.map(block_quantities, &{address_hash_bytes, quantity_to_integer(&1)})
 
-      case CoinBalance.Fetcher.run(entries, 0, json_rpc_named_arguments) do
+      case CoinBalance.Fetcher.run(entries, json_rpc_named_arguments) do
         :ok ->
           balances = Repo.all(from(balance in Address.CoinBalance, where: balance.address_hash == ^hash_data))
 
