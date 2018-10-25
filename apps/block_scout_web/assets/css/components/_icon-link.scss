@@ -19,7 +19,7 @@
   transition: all 0.1s ease;
 
   &:hover {
-    background-color: darken($primary, 20%);
+    background-color: var(--secondary);
     color: $white;
     text-decoration: none;
   }

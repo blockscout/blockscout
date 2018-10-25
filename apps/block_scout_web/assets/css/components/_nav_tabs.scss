@@ -8,13 +8,13 @@
     border-top-right-radius: 0;
 
     &:hover {
-      color: $primary;
+      color: var(--primary);
     }
 
     &.active {
       color: $white;
-      background-color: $primary;
-      border-color: $primary;
+      background-color: var(--primary);
+      border-color: var(--primary);
     }
 
     &:hover {
@@ -23,19 +23,18 @@
   }
 }
 
-
 .nav-tabs .nav-item.show .nav-link {
   color: $white;
-  background-color: darken($primary, 10%);
-  border-color: darken($primary, 10%);
+  background-color: var(--primary);
+  border-color: var(--primary);
 }
 
 .api-doc-tab {
   padding-bottom: 5px;
-  color: $primary !important;
+  color: var(--primary) !important;
   background-color: transparent !important;
 }
 
 .api-doc-tab.active {
-  border-bottom: 1px solid $primary;
+  border-bottom: 1px solid var(--primary);
 }

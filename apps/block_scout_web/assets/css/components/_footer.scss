@@ -5,7 +5,7 @@ $footer-text-color: rgba($white, 0.7);
 
 .footer {
   font-size: 12px;
-  background: $primary;
+  background: var(--primary);
   color: $footer-text-color;
   text-align: center;
   margin-top: $footer-padding;

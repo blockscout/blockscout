@@ -3,7 +3,7 @@
   z-index: 100;
 
   &-primary {
-    background-color: $primary;
+    background-color: var(--primary);
   }
 }
 
@@ -67,7 +67,7 @@
   margin-right: 0.5em;
 
   path {
-    fill: $secondary;
+    fill: var(--secondary);
   }
 }
 
@@ -117,7 +117,7 @@
   margin-left: 0px;
 
   path {
-    fill: $secondary;
+    fill: var(--secondary);
   }
 }
 
@@ -133,7 +133,7 @@
     left: 50%;
     width: 75%;
     height: 0.2rem;
-    background-color: $secondary;
+    background-color: var(--secondary);
     border-radius: 4px 4px 0 0;
     opacity: 0;
     transform: translateX(-50%);
@@ -144,19 +144,5 @@
     &:before{
       opacity: 1;
     }
-  }
-}
-
-.dropdown-menu {
-  padding: 0px;
-}
-
-.dropdown-item {
-  padding: 10px 20px;
-  font-size: 12px;
-
-  &:hover {
-    background-color: $tertiary;
-    color: $white;
   }
 }

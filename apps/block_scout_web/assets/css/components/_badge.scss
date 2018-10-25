@@ -1,3 +1,15 @@
 .badge {
   color: $white;
+
+  &-primary {
+    background-color: var(--primary);
+  }
+
+  &-secondary {
+    bacground-color: var(--secondary);
+  }
+
+  &-tertiary {
+    background-color: var(--tertiary);
+  }
 }

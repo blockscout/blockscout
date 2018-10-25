@@ -45,11 +45,11 @@ p {
 
 a {
   text-decoration: none;
-  color: $tertiary;
+  color: var(--tertiary);
 
   &:hover,
   &:focus {
-    color: darken($tertiary, 20%);
+    color: var(--tertiary);
     text-decoration: underline;
   }
 
@@ -74,6 +74,18 @@ label, textarea.form-control {
 
 
 .text {
+    &-primary {
+      color: var(--primary) !important;
+    }
+
+    &-secondary {
+      color: var(--secondary) !important;
+    }
+
+    &-tertiary {
+      color: var(--tertiary) !important;
+    }
+
     &-transaction {
       color: $blue;
     }

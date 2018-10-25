@@ -24,7 +24,7 @@
     right: 0;
     bottom: 0;
     left: 70%;
-    background-color: $primary;
+    background-color: var(--primary);
     box-shadow: 0 0 40px -5px rgba($black, 0.25);
 
     @media (max-width: 992px) {
@@ -75,11 +75,11 @@
     flex-grow: 1;
 
     &:first-of-type {
-      border-left: 4px solid $primary;
+      border-left: 4px solid var(--primary);
     }
 
     &:last-of-type {
-      border-left: 4px solid $secondary;
+      border-left: 4px solid var(--secondary);
     }
   }
 
@@ -99,7 +99,7 @@
   align-items: center;
   justify-content: space-around;
   padding-right: 1rem;
-  background-color: $primary;
+  background-color: var(--primary);
   box-shadow: -10px 0 15px 0 rgba($black, 0.14);
 
   @media (max-width: 992px) {

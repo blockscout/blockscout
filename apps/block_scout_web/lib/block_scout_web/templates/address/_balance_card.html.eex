@@ -10,14 +10,14 @@
       </span>
 
       <div class="mt-3" data-token-balance-dropdown data-api_path="<%= address_token_balance_path(BlockScoutWeb.Endpoint, :index, @address.hash) %>">
-          <h5 data-loading class="mb-0 text-white text-faded">
+          <span data-loading class="mb-0 text-white text-faded">
             <i class="fa fa-spinner fa-spin mr-2"></i>
             <%= gettext("Fetching tokens...") %>
-          </h5>
+          </span>
 
-          <h5 data-error-message class="mb-0 text-white text-faded" style="display: none;">
+          <span data-error-message class="mb-0 text-white text-faded" style="display: none;">
             <%= gettext("Error trying to fetch balances.") %>
-          </h5>
+          </span>
       </div>
     </div>
   </div>

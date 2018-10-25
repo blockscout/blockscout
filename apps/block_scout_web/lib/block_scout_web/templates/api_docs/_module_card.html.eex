@@ -1,7 +1,7 @@
 <div class="card">
   <h2 class="card-header">
     <%= "#{String.capitalize(@module.name)}" %>
-    <small class="text-primary">?module=<%= @module.name %></small>
+    <small class="text-primary ml-2">?module=<%= @module.name %></small>
   </h2>
 
   <div class="card-body">
@@ -10,4 +10,3 @@
     <% end %>
   </div> <!-- /card-body -->
 </div> <!-- /card -->
-
