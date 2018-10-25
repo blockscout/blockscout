@@ -2079,6 +2079,11 @@ defmodule Explorer.Chain do
     TokenHoldersCounter.fetch(contract_address_hash)
   end
 
+  @spec token_holders_counter_consolidation_enabled? :: boolean()
+  def token_holders_counter_consolidation_enabled? do
+    TokenHoldersCounter.enable_consolidation?()
+  end
+
   @spec address_to_unique_tokens(Hash.Address.t(), [paging_options]) :: [TokenTransfer.t()]
   def address_to_unique_tokens(contract_address_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
