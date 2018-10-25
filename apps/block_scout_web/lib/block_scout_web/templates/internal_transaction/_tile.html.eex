@@ -1,4 +1,4 @@
-<div class="tile tile-type-internal-transaction fade-in" data-test="internal_transaction" data-internal-transaction-id="<%= @internal_transaction.id %>">
+<div class="tile tile-type-internal-transaction fade-in" data-test="internal_transaction" data-internal-transaction-transaction-hash="<%= @internal_transaction.transaction_hash %>" data-internal-transaction-index="<%= @internal_transaction.index %>">
   <div class="row">
     <div class="col-md-2 d-flex flex-row flex-md-column align-items-left justify-content-start justify-content-lg-center mb-1 mb-md-0 pl-md-4">
       <%= gettext("Internal Transaction") %>

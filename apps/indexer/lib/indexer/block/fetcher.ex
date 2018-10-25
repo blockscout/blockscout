@@ -132,7 +132,7 @@ defmodule Indexer.Block.Fetcher do
                logs: %{params: logs},
                token_transfers: %{params: token_transfers},
                tokens: %{on_conflict: :nothing, params: tokens},
-               transactions: %{params: transactions_with_receipts, on_conflict: :replace_all}
+               transactions: %{params: transactions_with_receipts}
              }
            ) do
       {:ok, {inserted, next}}

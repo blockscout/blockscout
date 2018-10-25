@@ -9,7 +9,6 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
   setup do
     block =
       insert(:block, %{
-        number: 555,
         timestamp: Timex.now() |> Timex.shift(hours: -2),
         gas_used: 123_987
       })

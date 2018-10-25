@@ -12,7 +12,10 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
 
       conn = get(conn, transaction_token_transfer_path(BlockScoutWeb.Endpoint, :index, transaction.hash))
 
-      assert List.first(conn.assigns.transaction.token_transfers).id == token_transfer.id
+      assigned_token_transfer = List.first(conn.assigns.transaction.token_transfers)
+
+      assert {assigned_token_transfer.transaction_hash, assigned_token_transfer.log_index} ==
+               {token_transfer.transaction_hash, token_transfer.log_index}
     end
 
     test "with missing transaction", %{conn: conn} do
@@ -53,13 +56,16 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
 
       conn = get(conn, path)
 
-      actual_token_transfer_ids =
+      actual_token_transfer_primary_keys =
         conn.assigns.token_transfers
-        |> Enum.map(fn it -> it.id end)
+        |> Enum.map(&{&1.transaction_hash, &1.log_index})
 
       assert html_response(conn, 200)
 
-      assert Enum.member?(actual_token_transfer_ids, expected_token_transfer.id)
+      assert Enum.member?(
+               actual_token_transfer_primary_keys,
+               {expected_token_transfer.transaction_hash, expected_token_transfer.log_index}
+             )
     end
 
     test "includes USD exchange rate value for address in assigns", %{conn: conn} do
