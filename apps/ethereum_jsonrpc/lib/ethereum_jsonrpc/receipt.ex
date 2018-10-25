@@ -65,6 +65,7 @@ defmodule EthereumJSONRPC.Receipt do
       ...>   }
       ...> )
       %{
+        created_contract_address_hash: "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb4",
         cumulative_gas_used: 269607,
         gas_used: 269607,
         status: :ok,
@@ -97,6 +98,7 @@ defmodule EthereumJSONRPC.Receipt do
       ...>   }
       ...> )
       %{
+        created_contract_address_hash: nil,
         cumulative_gas_used: 21001,
         gas_used: 21001,
         status: nil,
