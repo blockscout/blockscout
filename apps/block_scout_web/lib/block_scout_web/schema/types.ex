@@ -3,6 +3,9 @@ defmodule BlockScoutWeb.Schema.Types do
 
   use Absinthe.Schema.Notation
 
+  import_types(Absinthe.Type.Custom)
+  import_types(BlockScoutWeb.Schema.Scalars)
+
   @desc """
   A package of data that contains zero or more transactions, the hash of the previous block ("parent"), and optionally
   other data. Because each block (except for the initial "genesis block") points to the previous block, the data
@@ -13,12 +16,12 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:difficulty, :decimal)
     field(:gas_limit, :decimal)
     field(:gas_used, :decimal)
-    field(:nonce, :string)
+    field(:nonce, :nonce_hash)
     field(:number, :integer)
     field(:size, :integer)
     field(:timestamp, :datetime)
     field(:total_difficulty, :decimal)
-    field(:miner_hash, :string)
-    field(:parent_hash, :string)
+    field(:miner_hash, :address_hash)
+    field(:parent_hash, :full_hash)
   end
 end

@@ -5,7 +5,6 @@ defmodule BlockScoutWeb.Schema do
 
   alias BlockScoutWeb.Resolvers.Block
 
-  import_types(Absinthe.Type.Custom)
   import_types(BlockScoutWeb.Schema.Types)
 
   query do
