@@ -1,6 +1,8 @@
 import $ from 'jquery'
 import _ from 'lodash'
 import { createStore } from 'redux'
+import morph from 'nanomorph'
+import { updateAllAges } from './lib/from_now'
 
 export function batchChannel (func) {
   let msgs = []
@@ -27,7 +29,7 @@ export function initRedux (reducer, { main, render, debug } = {}) {
   }
   if (!render) console.warn('initRedux: You have not passed a render function.')
 
-  const store = createStore(reducer)
+  const store = createStore(reducer, window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__())
   if (debug) store.subscribe(() => { console.log(store.getState()) })
   let oldState = store.getState()
   if (render) {
@@ -49,6 +51,13 @@ export function slideDownPrepend ($container, content) {
   smarterSlideDown($(content), {
     insert ($el) {
       $container.prepend($el)
+    }
+  })
+}
+export function slideDownAppend ($container, content) {
+  smarterSlideDown($(content), {
+    insert ($el) {
+      $container.append($el)
     }
   })
 }
@@ -104,4 +113,39 @@ function smarterSlideUp ($el, { complete = _.noop } = {}) {
   } else {
     $el.slideUp({ complete, easing: 'linear' })
   }
+}
+
+export function listMorph (container, newElements, { key, horizontal }) {
+  const oldElements = $(container).children().get()
+  let currentList = _.map(oldElements, (el) => ({ id: _.get(el, key), el }))
+  const newList = _.map(newElements, (el) => ({ id: _.get(el, key), el }))
+  const overlap = _.intersectionBy(newList, currentList, 'id')
+
+  // remove old items
+  const removals = _.differenceBy(currentList, newList, 'id')
+  removals.forEach(({ el }) => {
+    if (horizontal) return el.remove()
+    const $el = $(el)
+    $el.addClass('shrink-out')
+    setTimeout(() => { slideUpRemove($el) }, 400)
+  })
+  currentList = _.differenceBy(currentList, removals, 'id')
+
+  // update kept items
+  currentList = currentList.map(({ el }, i) => ({
+    id: overlap[i].id,
+    el: morph(el, overlap[i].el)
+  }))
+
+  // add new items
+  const finalList = newList.map(({ id, el }) => _.get(_.find(currentList, { id }), 'el', el)).reverse()
+  finalList.forEach((el, i) => {
+    if (el.parentElement) return
+    if (horizontal) return container.insertBefore(el, _.get(finalList, `[${i - 1}]`))
+    if (!_.get(finalList, `[${i - 1}]`)) return slideDownAppend($(container), el)
+    slideDownBefore($(_.get(finalList, `[${i - 1}]`)), el)
+  })
+
+  // update ages
+  updateAllAges()
 }
