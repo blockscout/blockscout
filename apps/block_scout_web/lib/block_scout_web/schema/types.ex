@@ -24,4 +24,28 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:miner_hash, :address_hash)
     field(:parent_hash, :full_hash)
   end
+
+  @desc """
+  Models a Web3 transaction.
+  """
+  object :transaction do
+    field(:hash, :full_hash)
+    field(:block_number, :integer)
+    field(:cumulative_gas_used, :decimal)
+    field(:error, :string)
+    field(:gas, :decimal)
+    field(:gas_price, :wei)
+    field(:gas_used, :decimal)
+    field(:index, :integer)
+    field(:input, :string)
+    field(:nonce, :nonce_hash)
+    field(:r, :decimal)
+    field(:s, :decimal)
+    field(:status, :status)
+    field(:v, :integer)
+    field(:value, :wei)
+    field(:from_address_hash, :address_hash)
+    field(:to_address_hash, :address_hash)
+    field(:created_contract_address_hash, :address_hash)
+  end
 end

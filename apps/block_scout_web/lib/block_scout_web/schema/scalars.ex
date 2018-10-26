@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.Schema.Scalars do
 
   use Absinthe.Schema.Notation
 
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{Hash, Wei}
   alias Explorer.Chain.Hash.{Address, Full, Nonce}
 
   @desc """
@@ -52,5 +52,32 @@ defmodule BlockScoutWeb.Schema.Scalars do
     end)
 
     serialize(&to_string/1)
+  end
+
+  @desc """
+  The smallest fractional unit of Ether. Using wei instead of ether allows code to do integer match instead of using
+  floats.
+
+  See [Ethereum Homestead Documentation](http://ethdocs.org/en/latest/ether.html) for examples of various denominations of wei.
+
+  Etymology of "wei" comes from [Wei Dai (戴維)](https://en.wikipedia.org/wiki/Wei_Dai), a
+  [cypherpunk](https://en.wikipedia.org/wiki/Cypherpunk) who came up with b-money, which outlined modern
+  cryptocurrencies.
+  """
+  scalar :wei do
+    parse(fn
+      %Absinthe.Blueprint.Input.String{value: value} ->
+        Wei.cast(value)
+
+      _ ->
+        :error
+    end)
+
+    serialize(&to_string(&1.value))
+  end
+
+  enum :status do
+    value(:ok)
+    value(:error)
   end
 end
