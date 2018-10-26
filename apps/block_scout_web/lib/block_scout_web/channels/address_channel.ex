@@ -55,6 +55,7 @@ defmodule BlockScoutWeb.AddressChannel do
     push(socket, "internal_transaction", %{
       to_address_hash: to_string(internal_transaction.to_address_hash),
       from_address_hash: to_string(internal_transaction.from_address_hash),
+      internal_transaction_id: to_string(internal_transaction.id),
       internal_transaction_html: rendered_internal_transaction
     })
 

@@ -52,17 +52,19 @@
         </div>
         <h2 class="card-title"><%= gettext "Transactions" %></h2>
         <div data-selector="pending-transactions-toggle">
-          <%= link to: "#pending-transactions", class: "d-inline-block mb-3", "data-toggle": "collapse" do %>
+          <%= link to: "#pending-transactions-container", class: "d-inline-block mb-3", "data-toggle": "collapse" do %>
             <span data-selector="pending-transactions-open">
             <%= gettext("Show") %></span>
             <span data-selector="pending-transactions-close" class="d-none"><%= gettext("Hide") %></span>
             <span data-selector="pending-transactions-count"><%= length(@pending_transactions) %></span>
             <%= gettext("Pending Transactions") %>
           <% end %>
-          <div class="mb-3 collapse" id="pending-transactions" data-selector="pending-transactions-list">
-            <%= for pending_transaction <- @pending_transactions do %>
-              <%= render(BlockScoutWeb.TransactionView, "_tile.html", current_address: @address, transaction: pending_transaction) %>
-            <% end %>
+          <div class="mb-3 collapse" id="pending-transactions-container">
+            <div data-selector="pending-transactions-list">
+              <%= for pending_transaction <- @pending_transactions do %>
+                <%= render(BlockScoutWeb.TransactionView, "_tile.html", current_address: @address, transaction: pending_transaction) %>
+              <% end %>
+            </div>
             <hr />
           </div>
         </div>
