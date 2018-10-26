@@ -10,6 +10,59 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
+  alias Explorer.Chain.Hash
+  alias BlockScoutWeb.{InternalTransactionView, AddressView, TransactionView}
+  alias Phoenix.View
+
+  def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
+    with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+         {:ok, address} <- Chain.hash_to_address(address_hash) do
+      full_options =
+        [
+          necessity_by_association: %{
+            :block => :required,
+            [created_contract_address: :names] => :optional,
+            [from_address: :names] => :optional,
+            [to_address: :names] => :optional,
+            :token_transfers => :optional
+          }
+        ]
+        |> Keyword.merge(paging_options(params))
+        |> Keyword.merge(current_filter(params))
+
+      transactions_plus_one = Chain.address_to_transactions(address, full_options)
+      {transactions, next_page} = split_list_by_page(transactions_plus_one)
+
+      json(
+        conn,
+        %{
+          transactions: Enum.map(transactions, fn transaction ->
+            %{
+              transaction_hash: Hash.to_string(transaction.hash),
+              transaction_html: View.render_to_string(
+                TransactionView,
+                "_tile.html",
+                current_address: address,
+                transaction: transaction
+              )
+            }
+          end),
+          next_page: address_transaction_path(
+            conn,
+            :index,
+            address,
+            next_page_params(next_page, transactions, params)
+          )
+        }
+      )
+    else
+      :error ->
+        unprocessable_entity(conn)
+
+      {:error, :not_found} ->
+        not_found(conn)
+    end
+  end
 
   def index(conn, %{"address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
@@ -23,7 +76,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
             :token_transfers => :optional
           }
         ]
-        |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
 
       full_options = put_in(pending_options, [:necessity_by_association, :block], :required)
@@ -31,11 +83,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
       transactions_plus_one = Chain.address_to_transactions(address, full_options)
       {transactions, next_page} = split_list_by_page(transactions_plus_one)
 
-      pending_transactions =
-        case Map.has_key?(params, "block_number") do
-          true -> []
-          false -> Chain.address_to_pending_transactions(address, pending_options)
-        end
+      pending_transactions = Chain.address_to_pending_transactions(address, pending_options)
 
       render(
         conn,

@@ -149,3 +149,14 @@ export function listMorph (container, newElements, { key, horizontal }) {
   // update ages
   updateAllAges()
 }
+
+export function atBottom(callback) {
+  $(window).on("scroll", function infiniteScrollChecker () {
+    var scrollHeight = $(document).height();
+    var scrollPosition = $(window).height() + $(window).scrollTop();
+    if ((scrollHeight - scrollPosition) / scrollHeight === 0) {
+      $(window).off("scroll", infiniteScrollChecker)
+      callback()
+    }
+  });
+}

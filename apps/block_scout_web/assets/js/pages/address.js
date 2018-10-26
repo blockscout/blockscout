@@ -4,7 +4,7 @@ import URI from 'urijs'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
-import { batchChannel, initRedux, listMorph } from '../utils'
+import { batchChannel, initRedux, listMorph, atBottom } from '../utils'
 import { updateAllCalculatedUsdValues } from '../lib/currency.js'
 import { loadTokenBalanceDropdown } from '../lib/token_balance_dropdown'
 
@@ -27,6 +27,8 @@ export const initialState = {
   internalTransactionsBatch: [],
   validatedBlocks: [],
 
+  nextPage: null,
+
   beyondPageOne: null
 }
 
@@ -45,6 +47,8 @@ export function reducer (state = initialState, action) {
         transactions: action.transactions,
         internalTransactions: action.internalTransactions,
         validatedBlocks: action.validatedBlocks,
+
+        nextPage: action.nextPage,
 
         beyondPageOne: action.beyondPageOne
       })
@@ -144,6 +148,15 @@ export function reducer (state = initialState, action) {
         balance: action.msg.balance
       })
     }
+    case 'NEXT_TRANSACTIONS_PAGE': {
+      return Object.assign({}, state, {
+        nextPage: action.msg.nextPage,
+        transactions: [
+          ...state.transactions,
+          ...action.msg.transactions
+        ]
+      })
+    }
     default:
       return state
   }
@@ -183,6 +196,8 @@ if ($addressDetailsPage.length) {
           blockHtml: el.outerHTML
         })).toArray(),
 
+        nextPage: $('[data-selector="next-page-button"]').length ? `${$('[data-selector="next-page-button"]').hide().attr("href")}&type=JSON` : null,
+
         beyondPageOne: !!blockNumber
       })
       addressChannel.join()
@@ -202,6 +217,13 @@ if ($addressDetailsPage.length) {
       blocksChannel.join()
       blocksChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
       blocksChannel.on('new_block', (msg) => store.dispatch({ type: 'RECEIVED_NEW_BLOCK', msg: humps.camelizeKeys(msg) }))
+
+      $('[data-selector="transactions-list"]').length && atBottom(function loadMoreTransactions() {
+        $.get(store.getState().nextPage).done(msg => {
+          store.dispatch({ type: 'NEXT_TRANSACTIONS_PAGE', msg: humps.camelizeKeys(msg) })
+          setTimeout(() => atBottom(loadMoreTransactions), 1000)
+        })
+      })
     },
     render (state, oldState) {
       if (state.channelDisconnected) $('[data-selector="channel-disconnected-message"]').show()

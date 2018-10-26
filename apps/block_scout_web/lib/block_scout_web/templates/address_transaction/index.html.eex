@@ -9,7 +9,7 @@
       </div>
 
       <div class="card-body">
-        <div data-selector="channel-disconnected-message" class="d-none">
+        <div data-selector="channel-disconnected-message" style="display: none;">
           <div data-selector="reload-button" class="alert alert-danger">
             <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer transactions" %></a>
           </div>
@@ -84,6 +84,7 @@
           <%= link(
             gettext("Older"),
             class: "button button-secondary button-sm float-right mt-3",
+            "data-selector": "next-page-button",
             to: address_transaction_path(
               @conn,
               :index,
