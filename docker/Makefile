@@ -32,7 +32,7 @@ ifdef HAS_BLOCKSCOUT_IMAGE
 	@echo "==> Image exist. Using $(DOCKER_IMAGE)"
 else
 	@echo "==> No image found trying to build one..."
-	# @docker build -t $(DOCKER_IMAGE) .
+	@docker build -f ./Dockerfile -t $(DOCKER_IMAGE) ../
 endif
 
 migrate: build postgres

@@ -6,10 +6,6 @@ EXPOSE 4000
 
 ENV PORT=4000 \
     MIX_ENV="prod" \
-    ETHEREUM_JSONRPC_VARIANT="ganache" \
-    ETHEREUM_JSONRPC_HTTP_URL="http://host.docker.internal:7545" \
-    ETHEREUM_JSONRPC_WEB_SOCKET_URL="ws://host.docker.internal:7545" \
-    DATABASE_URL="postgresql://postgres:@host.docker.internal:5432/explorer?ssl=false" \
     SECRET_KEY_BASE="RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5"
 
 # Cache elixir deps
