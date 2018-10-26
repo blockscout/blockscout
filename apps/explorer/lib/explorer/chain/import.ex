@@ -19,6 +19,7 @@ defmodule Explorer.Chain.Import do
     Import.Logs,
     Import.Tokens,
     Import.TokenTransfers,
+    Import.Address.CurrentTokenBalances,
     Import.Address.TokenBalances
   ]
 
