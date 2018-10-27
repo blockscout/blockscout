@@ -64,6 +64,21 @@
             <%= gettext("API") %>
           <% end %>
         </li>
+      </ul>
+      <div class="search-form">
+        <%= form_for @conn, chain_path(@conn, :search), [class: "form-inline my-2 my-lg-0", method: :get, enforce_utf8: false], fn f -> %>
+          <div class="input-group">
+            <%= search_input f, :q, class: 'form-control mr-auto', placeholder: gettext("Search by address, transaction hash, or block number"), "aria-describedby": "search-icon", "aria-label": gettext("Search"), "data-test": "search_input" %>
+            <div class="input-group-append">
+              <button class="input-group-text" id="search-icon">
+                <%= render BlockScoutWeb.IconsView, "_search_icon.html" %>
+              </button>
+            </div>
+          </div>
+          <button class="btn btn-outline-success my-2 my-sm-0 sr-only" type="submit"><%= gettext "Search" %></button>
+        <% end %>
+      </div>
+      <ul class="navbar-nav mr-auto">
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <!-- ICON FOR MAINNET -->
@@ -82,19 +97,6 @@
           </div>
         </li>
       </ul>
-      <div class="search-form">
-        <%= form_for @conn, chain_path(@conn, :search), [class: "form-inline my-2 my-lg-0", method: :get, enforce_utf8: false], fn f -> %>
-          <div class="input-group">
-            <%= search_input f, :q, class: 'form-control mr-auto', placeholder: gettext("Search by address, transaction hash, or block number"), "aria-describedby": "search-icon", "aria-label": gettext("Search"), "data-test": "search_input" %>
-            <div class="input-group-append">
-              <button class="input-group-text" id="search-icon">
-                <%= render BlockScoutWeb.IconsView, "_search_icon.html" %>
-              </button>
-            </div>
-          </div>
-          <button class="btn btn-outline-success my-2 my-sm-0 sr-only" type="submit"><%= gettext "Search" %></button>
-        <% end %>
-      </div>
     </div>
   </div>
 </nav>
