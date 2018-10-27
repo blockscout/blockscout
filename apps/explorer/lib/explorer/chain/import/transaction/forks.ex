@@ -34,12 +34,16 @@ defmodule Explorer.Chain.Import.Transaction.Forks do
   end
 
   @impl Import.Runner
-  def run(multi, changes_list, options) when is_map(options) do
-    %{timestamps: timestamps} = options
-    timeout = options[option_key()][:timeout] || @timeout
+  def run(multi, changes_list, %{timestamps: timestamps} = options) do
+    insert_options =
+      options
+      |> Map.get(option_key(), %{})
+      |> Map.take(~w(on_conflict timeout)a)
+      |> Map.put_new(:timeout, @timeout)
+      |> Map.put(:timestamps, timestamps)
 
     Multi.run(multi, :transaction_forks, fn _ ->
-      insert(changes_list, %{timeout: timeout, timestamps: timestamps})
+      insert(changes_list, insert_options)
     end)
   end
 
@@ -47,6 +51,7 @@ defmodule Explorer.Chain.Import.Transaction.Forks do
   def timeout, do: @timeout
 
   @spec insert([map()], %{
+          optional(:on_conflict) => Import.Runner.on_conflict(),
           required(:timeout) => timeout,
           required(:timestamps) => Import.timestamps()
         }) :: {:ok, [%{uncle_hash: Hash.t(), hash: Hash.t()}]}

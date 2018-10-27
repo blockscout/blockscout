@@ -7,6 +7,7 @@ defmodule Explorer.Chain.InternalTransaction do
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
 
   @typedoc """
+   * `block_number` - the `t:Explorer.Chain.Block.t/0` `number` that the `transaction` is collated into.
    * `call_type` - the type of call.  `nil` when `type` is not `:call`.
    * `created_contract_code` - the code of the contract that was created when `type` is `:create`.
    * `error` - error message when `:call` or `:create` `type` errors
@@ -23,13 +24,15 @@ defmodule Explorer.Chain.InternalTransaction do
    * `trace_address` - list of traces
    * `transaction` - transaction in which this transaction occurred
    * `transaction_hash` - foreign key for `transaction`
+   * `transaction_index` - the `t:Explorer.Chain.Transaction.t/0` `index` of `transaction` in `block_number`.
    * `type` - type of internal transaction
    * `value` - value of transferred from `from_address` to `to_address`
   """
   @type t :: %__MODULE__{
+          block_number: Explorer.Chain.Block.block_number() | nil,
           call_type: CallType.t() | nil,
           created_contract_address: %Ecto.Association.NotLoaded{} | Address.t() | nil,
-          created_contract_address_hash: Explorer.Chain.Hash.t() | nil,
+          created_contract_address_hash: Hash.t() | nil,
           created_contract_code: Data.t() | nil,
           error: String.t(),
           from_address: %Ecto.Association.NotLoaded{} | Address.t(),
@@ -44,18 +47,20 @@ defmodule Explorer.Chain.InternalTransaction do
           to_address_hash: Hash.Address.t() | nil,
           trace_address: [non_neg_integer()],
           transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
-          transaction_hash: Explorer.Chain.Hash.t(),
+          transaction_hash: Hash.t(),
+          transaction_index: Transaction.transaction_index() | nil,
           type: Type.t(),
           value: Wei.t()
         }
 
+  @primary_key false
   schema "internal_transactions" do
     field(:call_type, CallType)
     field(:created_contract_code, Data)
     field(:error, :string)
     field(:gas, :decimal)
     field(:gas_used, :decimal)
-    field(:index, :integer)
+    field(:index, :integer, primary_key: true)
     field(:init, Data)
     field(:input, Data)
     field(:output, Data)
@@ -91,7 +96,12 @@ defmodule Explorer.Chain.InternalTransaction do
       type: Hash.Address
     )
 
-    belongs_to(:transaction, Transaction, foreign_key: :transaction_hash, references: :hash, type: Hash.Full)
+    belongs_to(:transaction, Transaction,
+      foreign_key: :transaction_hash,
+      primary_key: true,
+      references: :hash,
+      type: Hash.Full
+    )
   end
 
   @doc """
@@ -475,5 +485,9 @@ defmodule Explorer.Chain.InternalTransaction do
       [it],
       (it.type == ^:call and it.index > 0) or it.type != ^:call
     )
+  end
+
+  def where_block_number_is_not_null(query) do
+    where(query, [t], not is_nil(t.block_number))
   end
 end

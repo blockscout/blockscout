@@ -2,7 +2,11 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
+import Bitwise
+
 config :indexer,
+  # bytes
+  memory_limit: 1 <<< 30,
   ecto_repos: [Explorer.Repo]
 
 config :logger, :indexer,

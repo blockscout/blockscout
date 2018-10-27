@@ -27,22 +27,41 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
       transaction =
         :transaction
         |> insert()
-        |> with_block()
+        |> with_block(insert(:block, number: 1))
 
       from_internal_transaction =
-        insert(:internal_transaction, transaction: transaction, from_address: address, index: 1)
+        insert(:internal_transaction,
+          transaction: transaction,
+          from_address: address,
+          index: 1,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
 
-      to_internal_transaction = insert(:internal_transaction, transaction: transaction, to_address: address, index: 2)
+      to_internal_transaction =
+        insert(:internal_transaction,
+          transaction: transaction,
+          to_address: address,
+          index: 2,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
 
       path = address_internal_transaction_path(conn, :index, address)
       conn = get(conn, path)
 
-      actual_transaction_ids =
-        conn.assigns.internal_transactions
-        |> Enum.map(fn internal_transaction -> internal_transaction.id end)
+      actual_internal_transaction_primary_keys =
+        Enum.map(conn.assigns.internal_transactions, &{&1.transaction_hash, &1.index})
 
-      assert Enum.member?(actual_transaction_ids, from_internal_transaction.id)
-      assert Enum.member?(actual_transaction_ids, to_internal_transaction.id)
+      assert Enum.member?(
+               actual_internal_transaction_primary_keys,
+               {from_internal_transaction.transaction_hash, from_internal_transaction.index}
+             )
+
+      assert Enum.member?(
+               actual_internal_transaction_primary_keys,
+               {to_internal_transaction.transaction_hash, to_internal_transaction.index}
+             )
     end
 
     test "includes USD exchange rate value for address in assigns", %{conn: conn} do
@@ -145,7 +164,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
 
     test "next_page_params exist if not on last page", %{conn: conn} do
       address = insert(:address)
-      block = %Block{number: number} = insert(:block)
+      block = %Block{number: number} = insert(:block, number: 7000)
 
       transaction =
         %Transaction{index: transaction_index} =
@@ -159,7 +178,9 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
           :internal_transaction,
           transaction: transaction,
           from_address: address,
-          index: index
+          index: index,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
         )
       end)
 

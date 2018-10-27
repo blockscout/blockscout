@@ -5,6 +5,8 @@ defmodule Explorer.Chain.Import.TokenTransfers do
 
   require Ecto.Query
 
+  import Ecto.Query, only: [from: 2]
+
   alias Ecto.{Changeset, Multi}
   alias Explorer.Chain.{Import, TokenTransfer}
 
@@ -30,12 +32,16 @@ defmodule Explorer.Chain.Import.TokenTransfers do
   end
 
   @impl Import.Runner
-  def run(multi, changes_list, options) when is_map(options) do
-    timestamps = Map.fetch!(options, :timestamps)
-    timeout = options[option_key()][:timeout] || @timeout
+  def run(multi, changes_list, %{timestamps: timestamps} = options) do
+    insert_options =
+      options
+      |> Map.get(option_key(), %{})
+      |> Map.take(~w(on_conflict timeout)a)
+      |> Map.put_new(:timeout, @timeout)
+      |> Map.put(:timestamps, timestamps)
 
     Multi.run(multi, :token_transfers, fn _ ->
-      insert(changes_list, %{timeout: timeout, timestamps: timestamps})
+      insert(changes_list, insert_options)
     end)
   end
 
@@ -46,7 +52,7 @@ defmodule Explorer.Chain.Import.TokenTransfers do
           {:ok, [TokenTransfer.t()]}
           | {:error, [Changeset.t()]}
   def insert(changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
-    on_conflict = Map.get(options, :on_conflict, :replace_all)
+    on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # order so that row ShareLocks are grabbed in a consistent order
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.log_index})
@@ -61,5 +67,24 @@ defmodule Explorer.Chain.Import.TokenTransfers do
         timeout: timeout,
         timestamps: timestamps
       )
+  end
+
+  defp default_on_conflict do
+    from(
+      token_transfer in TokenTransfer,
+      update: [
+        set: [
+          # Don't update `transaction_hash` as it is part of the composite primary key and used for the conflict target
+          # Don't update `log_index` as it is part of the composite primary key and used for the conflict target
+          amount: fragment("EXCLUDED.amount"),
+          from_address_hash: fragment("EXCLUDED.from_address_hash"),
+          to_address_hash: fragment("EXCLUDED.to_address_hash"),
+          token_contract_address_hash: fragment("EXCLUDED.token_contract_address_hash"),
+          token_id: fragment("EXCLUDED.token_id"),
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", token_transfer.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token_transfer.updated_at)
+        ]
+      ]
+    )
   end
 end

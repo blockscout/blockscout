@@ -6,7 +6,6 @@ defmodule Indexer.TokenBalance.Supervisor.Case do
       Keyword.merge(
         fetcher_arguments,
         flush_interval: 50,
-        init_chunk_size: 1,
         max_batch_size: 1,
         max_concurrency: 1
       )

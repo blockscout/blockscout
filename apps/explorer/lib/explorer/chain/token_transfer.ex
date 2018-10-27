@@ -62,9 +62,10 @@ defmodule Explorer.Chain.TokenTransfer do
 
   @constant "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 
+  @primary_key false
   schema "token_transfers" do
     field(:amount, :decimal)
-    field(:log_index, :integer)
+    field(:log_index, :integer, primary_key: true)
     field(:token_id, :decimal)
 
     belongs_to(:from_address, Address, foreign_key: :from_address_hash, references: :hash, type: Hash.Address)
@@ -78,7 +79,12 @@ defmodule Explorer.Chain.TokenTransfer do
       type: Hash.Address
     )
 
-    belongs_to(:transaction, Transaction, foreign_key: :transaction_hash, references: :hash, type: Hash.Full)
+    belongs_to(:transaction, Transaction,
+      foreign_key: :transaction_hash,
+      primary_key: true,
+      references: :hash,
+      type: Hash.Full
+    )
 
     has_one(:token, through: [:token_contract_address, :token])
 
@@ -195,7 +201,7 @@ defmodule Explorer.Chain.TokenTransfer do
         tt in TokenTransfer,
         join: t in Token,
         on: tt.token_contract_address_hash == t.contract_address_hash,
-        select: {tt.token_contract_address_hash, count(tt.id)},
+        select: {tt.token_contract_address_hash, fragment("COUNT(*)")},
         group_by: tt.token_contract_address_hash
       )
 

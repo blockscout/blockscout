@@ -15,7 +15,6 @@ defmodule Indexer.Token.Fetcher do
     flush_interval: 300,
     max_batch_size: 1,
     max_concurrency: 10,
-    init_chunk_size: 1,
     task_supervisor: Indexer.Token.TaskSupervisor
   ]
 
@@ -103,7 +102,7 @@ defmodule Indexer.Token.Fetcher do
   end
 
   @impl BufferedTask
-  def run([token_contract_address], _, json_rpc_named_arguments) do
+  def run([token_contract_address], json_rpc_named_arguments) do
     case Chain.token_from_address_hash(token_contract_address) do
       {:ok, %Token{cataloged: false} = token} ->
         catalog_token(token, json_rpc_named_arguments)

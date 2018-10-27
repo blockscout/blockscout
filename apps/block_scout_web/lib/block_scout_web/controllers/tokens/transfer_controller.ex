@@ -16,6 +16,7 @@ defmodule BlockScoutWeb.Tokens.TransferController do
         "index.html",
         transfers: token_transfers_paginated,
         token: token,
+        holders_count_consolidation_enabled: Chain.token_holders_counter_consolidation_enabled?(),
         total_token_transfers: Chain.count_token_transfers_from_token_hash(address_hash),
         total_token_holders: Chain.count_token_holders_from_token_hash(address_hash),
         next_page_params: next_page_params(next_page, token_transfers_paginated, params)

@@ -13,12 +13,12 @@ defmodule Explorer.Chain.Log do
    * `address_hash` - foreign key for `address`
    * `data` - non-indexed log parameters.
    * `first_topic` - `topics[0]`
-   * `fourth_topic` - `topics[3]`
-   * `index` - index of the log entry in all logs for the `transaction`
    * `second_topic` - `topics[1]`
+   * `third_topic` - `topics[2]`
+   * `fourth_topic` - `topics[3]`
    * `transaction` - transaction for which `log` is
    * `transaction_hash` - foreign key for `transaction`.
-   * `third_topic` - `topics[2]`
+   * `index` - index of the log entry in all logs for the `transaction`
    * `type` - type of event.  *Parity-only*
   """
   @type t :: %__MODULE__{
@@ -26,28 +26,35 @@ defmodule Explorer.Chain.Log do
           address_hash: Hash.Address.t(),
           data: Data.t(),
           first_topic: String.t(),
-          fourth_topic: String.t(),
-          index: non_neg_integer(),
           second_topic: String.t(),
+          third_topic: String.t(),
+          fourth_topic: String.t(),
           transaction: %Ecto.Association.NotLoaded{} | Transaction.t(),
           transaction_hash: Hash.Full.t(),
-          third_topic: String.t(),
+          index: non_neg_integer(),
           type: String.t() | nil
         }
 
+  @primary_key false
   schema "logs" do
     field(:data, Data)
     field(:first_topic, :string)
-    field(:fourth_topic, :string)
-    field(:index, :integer)
     field(:second_topic, :string)
     field(:third_topic, :string)
+    field(:fourth_topic, :string)
+    field(:index, :integer, primary_key: true)
     field(:type, :string)
 
     timestamps()
 
     belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address)
-    belongs_to(:transaction, Transaction, foreign_key: :transaction_hash, references: :hash, type: Hash.Full)
+
+    belongs_to(:transaction, Transaction,
+      foreign_key: :transaction_hash,
+      primary_key: true,
+      references: :hash,
+      type: Hash.Full
+    )
   end
 
   @doc """

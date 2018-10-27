@@ -124,6 +124,7 @@ defmodule Explorer.Chain do
     InternalTransaction
     |> InternalTransaction.where_address_fields_match(hash, direction)
     |> InternalTransaction.where_is_different_from_parent_transaction()
+    |> InternalTransaction.where_block_number_is_not_null()
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by(
@@ -841,7 +842,7 @@ defmodule Explorer.Chain do
   @doc """
   The percentage of indexed blocks on the chain.
 
-      iex> for index <- 6..10 do
+      iex> for index <- 5..9 do
       ...>   insert(:block, number: index)
       ...> end
       iex> Explorer.Chain.indexed_ratio()
@@ -858,7 +859,7 @@ defmodule Explorer.Chain do
     with {:ok, min_block_number} <- min_block_number(),
          {:ok, max_block_number} <- max_block_number() do
       indexed_blocks = max_block_number - min_block_number + 1
-      indexed_blocks / max_block_number
+      indexed_blocks / (max_block_number + 1)
     else
       {:error, _} -> 0
     end
@@ -882,7 +883,7 @@ defmodule Explorer.Chain do
 
   """
   def internal_transaction_count do
-    Repo.aggregate(InternalTransaction, :count, :id)
+    Repo.one!(from(it in "internal_transactions", select: fragment("COUNT(*)")))
   end
 
   @doc """
@@ -1166,7 +1167,7 @@ defmodule Explorer.Chain do
 
   """
   def log_count do
-    Repo.aggregate(Log, :count, :id)
+    Repo.one!(from(log in "logs", select: fragment("COUNT(*)")))
   end
 
   @doc """
@@ -1893,7 +1894,7 @@ defmodule Explorer.Chain do
       internal_transaction.type != ^:call or
         fragment(
           """
-          (SELECT COUNT(sibling.id)
+          (SELECT COUNT(sibling.*)
           FROM internal_transactions AS sibling
           WHERE sibling.transaction_hash = ?
           LIMIT 2
@@ -1966,7 +1967,7 @@ defmodule Explorer.Chain do
         left_join: tf in TokenTransfer,
         on: tf.transaction_hash == l.transaction_hash and tf.log_index == l.index,
         where: l.first_topic == unquote(TokenTransfer.constant()),
-        where: is_nil(tf.id),
+        where: is_nil(tf.transaction_hash) and is_nil(tf.log_index),
         select: t.block_number,
         distinct: t.block_number
       )
@@ -2037,7 +2038,7 @@ defmodule Explorer.Chain do
     token_changeset = Token.changeset(token, params)
     address_name_changeset = Address.Name.changeset(%Address.Name{}, Map.put(params, :address_hash, address_hash))
 
-    token_opts = [on_conflict: :replace_all, conflict_target: :contract_address_hash]
+    token_opts = [on_conflict: Import.Tokens.default_on_conflict(), conflict_target: :contract_address_hash]
     address_name_opts = [on_conflict: :nothing, conflict_target: [:address_hash, :name]]
 
     insert_result =
@@ -2076,6 +2077,11 @@ defmodule Explorer.Chain do
   @spec count_token_holders_from_token_hash(Hash.Address.t()) :: non_neg_integer()
   def count_token_holders_from_token_hash(contract_address_hash) do
     TokenHoldersCounter.fetch(contract_address_hash)
+  end
+
+  @spec token_holders_counter_consolidation_enabled? :: boolean()
+  def token_holders_counter_consolidation_enabled? do
+    TokenHoldersCounter.enable_consolidation?()
   end
 
   @spec address_to_unique_tokens(Hash.Address.t(), [paging_options]) :: [TokenTransfer.t()]

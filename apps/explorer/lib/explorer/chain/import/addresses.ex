@@ -32,12 +32,16 @@ defmodule Explorer.Chain.Import.Addresses do
   end
 
   @impl Import.Runner
-  def run(multi, changes_list, options) when is_map(options) do
-    timestamps = Map.fetch!(options, :timestamps)
-    timeout = options[:addresses][:timeout] || @timeout
+  def run(multi, changes_list, %{timestamps: timestamps} = options) do
+    insert_options =
+      options
+      |> Map.get(option_key(), %{})
+      |> Map.take(~w(on_conflict timeout)a)
+      |> Map.put_new(:timeout, @timeout)
+      |> Map.put(:timestamps, timestamps)
 
     Multi.run(multi, :addresses, fn _ ->
-      insert(changes_list, %{timeout: timeout, timestamps: timestamps})
+      insert(changes_list, insert_options)
     end)
   end
 
@@ -47,6 +51,7 @@ defmodule Explorer.Chain.Import.Addresses do
   ## Private Functions
 
   @spec insert([%{hash: Hash.Address.t()}], %{
+          optional(:on_conflict) => Import.Runner.on_conflict(),
           required(:timeout) => timeout,
           required(:timestamps) => Import.timestamps()
         }) :: {:ok, [Address.t()]}

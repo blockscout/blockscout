@@ -62,6 +62,12 @@ defmodule BlockScoutWeb.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      # GraphQL toolkit
+      {:absinthe, "~> 1.4"},
+      # Integrates Absinthe subscriptions with Phoenix
+      {:absinthe_phoenix, "~> 1.4"},
+      # Plug support for Absinthe
+      {:absinthe_plug, "~> 1.4"},
       {:bypass, "~> 0.8", only: :test},
       {:cowboy, "~> 1.0"},
       {:credo, "0.9.2", only: [:dev, :test], runtime: false},
