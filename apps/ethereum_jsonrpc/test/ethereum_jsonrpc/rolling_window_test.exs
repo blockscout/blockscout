@@ -70,15 +70,6 @@ defmodule EthereumJSONRPC.RollingWindowTest do
     assert RollingWindow.count(@table, :foobar) == 2
   end
 
-  test "when an increment has happened in multiple windows, with an empty window in between, inspect shows that empty window" do
-    RollingWindow.inc(@table, :foobar)
-    sweep()
-    sweep()
-    RollingWindow.inc(@table, :foobar)
-
-    assert RollingWindow.inspect(@table, :foobar) == [1, 0, 1]
-  end
-
   test "when an increment has happened in multiple windows, with an empty window in between, count still sums all windows" do
     RollingWindow.inc(@table, :foobar)
     sweep()
