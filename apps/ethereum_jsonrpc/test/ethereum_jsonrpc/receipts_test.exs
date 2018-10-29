@@ -14,6 +14,7 @@ defmodule EthereumJSONRPC.ReceiptsTest do
   describe "fetch/2" do
     test "with receipts and logs", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       %{
+        created_contract_address_hash: nil,
         cumulative_gas_used: cumulative_gas_used,
         gas_used: gas_used,
         address_hash: address_hash,
@@ -29,6 +30,7 @@ defmodule EthereumJSONRPC.ReceiptsTest do
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
           EthereumJSONRPC.Geth ->
             %{
+              created_contract_address_hash: nil,
               cumulative_gas_used: 884_322,
               address_hash: "0x1e2fbe6be9eb39fc894d38be976111f332172d83",
               block_number: 3_560_000,
@@ -45,6 +47,7 @@ defmodule EthereumJSONRPC.ReceiptsTest do
 
           EthereumJSONRPC.Parity ->
             %{
+              created_contract_address_hash: nil,
               cumulative_gas_used: 50450,
               gas_used: 50450,
               address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
@@ -73,6 +76,7 @@ defmodule EthereumJSONRPC.ReceiptsTest do
              %{
                id: 0,
                result: %{
+                 "contractAddress" => nil,
                  "cumulativeGasUsed" => integer_to_quantity(cumulative_gas_used),
                  "gasUsed" => integer_to_quantity(gas_used),
                  "logs" => [

@@ -65,6 +65,7 @@ defmodule EthereumJSONRPC.Receipt do
       ...>   }
       ...> )
       %{
+        created_contract_address_hash: "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb4",
         cumulative_gas_used: 269607,
         gas_used: 269607,
         status: :ok,
@@ -97,6 +98,7 @@ defmodule EthereumJSONRPC.Receipt do
       ...>   }
       ...> )
       %{
+        created_contract_address_hash: nil,
         cumulative_gas_used: 21001,
         gas_used: 21001,
         status: nil,
@@ -108,6 +110,7 @@ defmodule EthereumJSONRPC.Receipt do
   @spec elixir_to_params(elixir) :: %{
           cumulative_gas_used: non_neg_integer,
           gas_used: non_neg_integer,
+          created_contract_address_hash: String.t() | nil,
           status: Status.t(),
           transaction_hash: String.t(),
           transaction_index: non_neg_integer()
@@ -116,6 +119,7 @@ defmodule EthereumJSONRPC.Receipt do
         %{
           "cumulativeGasUsed" => cumulative_gas_used,
           "gasUsed" => gas_used,
+          "contractAddress" => created_contract_address_hash,
           "transactionHash" => transaction_hash,
           "transactionIndex" => transaction_index
         } = elixir
@@ -125,6 +129,7 @@ defmodule EthereumJSONRPC.Receipt do
     %{
       cumulative_gas_used: cumulative_gas_used,
       gas_used: gas_used,
+      created_contract_address_hash: created_contract_address_hash,
       status: status,
       transaction_hash: transaction_hash,
       transaction_index: transaction_index
