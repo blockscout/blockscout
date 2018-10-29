@@ -119,12 +119,13 @@ export function listMorph (container, newElements, { key, horizontal }) {
   const oldElements = $(container).children().get()
   let currentList = _.map(oldElements, (el) => ({ id: _.get(el, key), el }))
   const newList = _.map(newElements, (el) => ({ id: _.get(el, key), el }))
-  const overlap = _.intersectionBy(newList, currentList, 'id')
+  const overlap = _.intersectionBy(newList, currentList, 'id').map(({ id, el }) => ({ id, el: updateAllAges($(el))[0] }))
 
   // remove old items
   const removals = _.differenceBy(currentList, newList, 'id')
+  let canAnimate = !horizontal && removals.length <= 1
   removals.forEach(({ el }) => {
-    if (horizontal) return el.remove()
+    if (!canAnimate) return el.remove()
     const $el = $(el)
     $el.addClass('shrink-out')
     setTimeout(() => { slideUpRemove($el) }, 400)
@@ -134,20 +135,19 @@ export function listMorph (container, newElements, { key, horizontal }) {
   // update kept items
   currentList = currentList.map(({ el }, i) => ({
     id: overlap[i].id,
-    el: morph(el, overlap[i].el)
+    el: el.outerHTML === overlap[i].el.outerHTML ? el : morph(el, overlap[i].el)
   }))
 
   // add new items
   const finalList = newList.map(({ id, el }) => _.get(_.find(currentList, { id }), 'el', el)).reverse()
+  canAnimate = !horizontal
   finalList.forEach((el, i) => {
     if (el.parentElement) return
-    if (horizontal) return container.insertBefore(el, _.get(finalList, `[${i - 1}]`))
+    if (!canAnimate) return container.insertBefore(el, _.get(finalList, `[${i - 1}]`))
+    canAnimate = false
     if (!_.get(finalList, `[${i - 1}]`)) return slideDownAppend($(container), el)
     slideDownBefore($(_.get(finalList, `[${i - 1}]`)), el)
   })
-
-  // update ages
-  updateAllAges()
 }
 
 export function atBottom(callback) {
