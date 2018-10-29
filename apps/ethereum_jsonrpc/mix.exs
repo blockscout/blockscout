@@ -77,7 +77,7 @@ defmodule EthereumJsonrpc.MixProject do
       # Mocking `EthereumJSONRPC.Transport` and `EthereumJSONRPC.HTTP` so we avoid hitting real chains for local testing
       {:mox, "~> 0.4", only: [:test]},
       # Convert unix timestamps in JSONRPC to DateTimes
-      {:timex, "~> 3.1.24"},
+      {:timex, "~> 3.4"},
       # Encode/decode function names and arguments
       {:ex_abi, "~> 0.1.16"},
       # `:verify_fun` for `Socket.Web.connect`
