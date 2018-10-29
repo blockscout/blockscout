@@ -73,6 +73,8 @@ defmodule Indexer.Token.Fetcher do
     }
   ]
 
+  @postgres_max_bigint 9_223_372_036_854_775_807
+
   @doc false
   def child_spec([init_options, gen_server_options]) do
     {state, mergeable_init_options} = Keyword.pop(init_options, :json_rpc_named_arguments)
@@ -163,11 +165,14 @@ defmodule Indexer.Token.Fetcher do
 
   # It's a temp fix to store tokens that have names and/or symbols with characters that the database
   # doesn't accept. See https://github.com/poanetwork/blockscout/issues/669 for more info.
-  defp handle_invalid_strings(%{name: name, symbol: symbol, contract_address_hash: contract_address_hash} = token) do
+  defp handle_invalid_strings(
+         %{name: name, symbol: symbol, decimals: decimals, contract_address_hash: contract_address_hash} = token
+       ) do
     name = handle_invalid_name(name, contract_address_hash)
     symbol = handle_invalid_symbol(symbol)
+    decimals = handle_invalid_decimals(decimals)
 
-    %{token | name: name, symbol: symbol}
+    %{token | name: name, symbol: symbol, decimals: decimals}
   end
 
   defp handle_invalid_name(nil, _contract_address_hash), do: nil
@@ -185,6 +190,9 @@ defmodule Indexer.Token.Fetcher do
       false -> nil
     end
   end
+
+  defp handle_invalid_decimals(decimals) when decimals > @postgres_max_bigint, do: nil
+  defp handle_invalid_decimals(decimals), do: decimals
 
   defp format_according_contract_address_hash(contract_address_hash) do
     contract_address_hash
