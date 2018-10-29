@@ -95,7 +95,7 @@ defmodule BlockScoutWeb.Schema.Query.TransactionTest do
 
       conn = get(conn, "/graphql", query: query)
 
-      assert %{"errors" => [error]} = json_response(conn, 400)
+      assert %{"errors" => [error]} = json_response(conn, 200)
       assert error["message"] == ~s(In argument "hash": Expected type "FullHash!", found null.)
     end
 
@@ -112,7 +112,7 @@ defmodule BlockScoutWeb.Schema.Query.TransactionTest do
 
       conn = get(conn, "/graphql", query: query, variables: variables)
 
-      assert %{"errors" => [error]} = json_response(conn, 400)
+      assert %{"errors" => [error]} = json_response(conn, 200)
       assert error["message"] =~ ~s(Argument "hash" has invalid value)
     end
   end

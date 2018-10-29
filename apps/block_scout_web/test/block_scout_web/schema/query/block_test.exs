@@ -80,7 +80,7 @@ defmodule BlockScoutWeb.Schema.Query.BlockTest do
 
       conn = get(conn, "/graphql", query: query)
 
-      assert %{"errors" => [error]} = json_response(conn, 400)
+      assert %{"errors" => [error]} = json_response(conn, 200)
       assert error["message"] == ~s(In argument "number": Expected type "Int!", found null.)
     end
 
@@ -99,7 +99,7 @@ defmodule BlockScoutWeb.Schema.Query.BlockTest do
 
       conn = get(conn, "/graphql", query: query, variables: variables)
 
-      assert %{"errors" => [error]} = json_response(conn, 400)
+      assert %{"errors" => [error]} = json_response(conn, 200)
       assert error["message"] =~ ~s(Argument "number" has invalid value)
     end
   end
