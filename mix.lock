@@ -48,7 +48,7 @@
   "idna": {:hex, :idna, "6.0.0", "689c46cbcdf3524c44d5f3dde8001f364cd7608a99556d8fbd8239a5798d4c10", [:rebar3], [{:unicode_util_compat, "0.4.1", [hex: :unicode_util_compat, repo: "hexpm", optional: false]}], "hexpm"},
   "jason": {:hex, :jason, "1.0.0", "0f7cfa9bdb23fed721ec05419bcee2b2c21a77e926bce0deda029b5adc716fe2", [:mix], [{:decimal, "~> 1.0", [hex: :decimal, optional: true]}]},
   "jsx": {:hex, :jsx, "2.8.3", "a05252d381885240744d955fbe3cf810504eb2567164824e19303ea59eef62cf", [:mix, :rebar3], []},
-  "junit_formatter": {:hex, :junit_formatter, "2.1.0", "ff03d2bbe9a67041f2488d8e72180ddcf4dff9e9c8a39b79eac9828fcb9e9bbf", [:mix], []},
+  "junit_formatter": {:hex, :junit_formatter, "2.2.0", "da6093f0740c58a824f9585ebb7cb1b960efaecf48d1fa969e95d9c47c6b19dd", [:mix], [], "hexpm"},
   "keccakf1600": {:hex, :keccakf1600_orig, "2.0.0", "0a7217ddb3ee8220d449bbf7575ec39d4e967099f220a91e3dfca4dbaef91963", [:rebar3], []},
   "libsecp256k1": {:hex, :libsecp256k1, "0.1.4", "42b7f76d8e32f85f578ccda0abfdb1afa0c5c231d1fd8aeab9cda352731a2d83", [:rebar3], []},
   "logger_file_backend": {:hex, :logger_file_backend, "0.0.10", "876f9f84ae110781207c54321ffbb62bebe02946fe3c13f0d7c5f5d8ad4fa910", [:mix], [], "hexpm"},
