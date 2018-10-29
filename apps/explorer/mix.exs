@@ -52,8 +52,7 @@ defmodule Explorer.Mixfile do
       :logger,
       :mix,
       :runtime_tools,
-      :timex,
-      :timex_ecto
+      :timex
     ]
 
   # Specifies your project dependencies.
@@ -97,7 +96,8 @@ defmodule Explorer.Mixfile do
       {:plug_cowboy, "~> 1.0", only: :test},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
       {:timex, "~> 3.1.24"},
-      {:timex_ecto, "~> 3.2.1"}
+      # `Timex.Duration` for `Explorer.Chain.average_block_time/0`
+      {:timex_ecto, "~> 3.3"}
     ]
   end
 

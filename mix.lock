@@ -88,7 +88,7 @@
   "sobelow": {:hex, :sobelow, "0.7.1", "01a52ea8a19be0aa41ce969746f057e90f3994f1607c771968359718bd0e6988", [:mix], [], "hexpm"},
   "ssl_verify_fun": {:hex, :ssl_verify_fun, "1.1.1", "28a4d65b7f59893bc2c7de786dec1e1555bd742d336043fe644ae956c3497fbe", [:make, :rebar], []},
   "timex": {:hex, :timex, "3.1.25", "6002dae5432f749d1c93e2cd103eb73cecb53e50d2c885349e8e4146fc96bd44", [:mix], [{:combine, "~> 0.10", [hex: :combine, optional: false]}, {:gettext, "~> 0.10", [hex: :gettext, optional: false]}, {:tzdata, "~> 0.1.8 or ~> 0.5", [hex: :tzdata, optional: false]}]},
-  "timex_ecto": {:hex, :timex_ecto, "3.2.1", "461140751026e1ca03298fab628f78ab189e78784175f5e301eefa034ee530aa", [:mix], [{:ecto, "~> 2.2", [hex: :ecto, optional: false]}, {:timex, "~> 3.1", [hex: :timex, optional: false]}]},
+  "timex_ecto": {:hex, :timex_ecto, "3.3.0", "d5bdef09928e7a60f10a0baa47ce653f29b43d6fee87b30b236b216d0e36b98d", [:mix], [{:ecto, "~> 2.2", [hex: :ecto, repo: "hexpm", optional: false]}, {:timex, "~> 3.1", [hex: :timex, repo: "hexpm", optional: false]}], "hexpm"},
   "tzdata": {:hex, :tzdata, "0.5.16", "13424d3afc76c68ff607f2df966c0ab4f3258859bbe3c979c9ed1606135e7352", [:mix], [{:hackney, "~> 1.0", [hex: :hackney, optional: false]}]},
   "unicode_util_compat": {:hex, :unicode_util_compat, "0.3.1", "a1f612a7b512638634a603c8f401892afbf99b8ce93a45041f8aaca99cadb85e", [:rebar3], []},
   "wallaby": {:hex, :wallaby, "0.20.0", "cc6663555ff7b05afbebb2a8b461d18a5b321658b9017f7bc77d494b7063266a", [:mix], [{:httpoison, "~> 0.12", [hex: :httpoison, optional: false]}, {:poison, ">= 1.4.0", [hex: :poison, optional: false]}, {:poolboy, "~> 1.5", [hex: :poolboy, optional: false]}]},
