@@ -4,7 +4,7 @@ import URI from 'urijs'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
-import { batchChannel, initRedux, listMorph, atBottom } from '../utils'
+import { createStore, connectElements, batchChannel, listMorph, atBottom } from '../utils'
 import { updateAllCalculatedUsdValues } from '../lib/currency.js'
 import { loadTokenBalanceDropdown } from '../lib/token_balance_dropdown'
 
@@ -35,24 +35,9 @@ export const initialState = {
 
 export function reducer (state = initialState, action) {
   switch (action.type) {
-    case 'PAGE_LOAD': {
-      return Object.assign({}, state, {
-        addressHash: action.addressHash,
-        filter: action.filter,
-
-        balance: action.balance,
-        transactionCount: numeral(action.transactionCount).value(),
-        validationCount: action.validationCount ? numeral(action.validationCount).value() : null,
-
-        pendingTransactions: action.pendingTransactions,
-        transactions: action.transactions,
-        internalTransactions: action.internalTransactions,
-        validatedBlocks: action.validatedBlocks,
-
-        nextPage: action.nextPage,
-
-        beyondPageOne: action.beyondPageOne
-      })
+    case 'PAGE_LOAD':
+    case 'ELEMENTS_LOAD': {
+      return Object.assign({}, state, _.omit(action, 'type'))
     }
     case 'CHANNEL_DISCONNECTED': {
       if (state.beyondPageOne) return state
@@ -154,7 +139,7 @@ export function reducer (state = initialState, action) {
         loadingNextPage: true
       })
     }
-    case 'NEXT_TRANSACTIONS_PAGE': {
+    case 'RECEIVED_NEXT_TRANSACTIONS_PAGE': {
       return Object.assign({}, state, {
         loadingNextPage: false,
         nextPage: action.msg.nextPage,
@@ -169,123 +154,207 @@ export function reducer (state = initialState, action) {
   }
 }
 
-const $addressDetailsPage = $('[data-page="address-details"]')
-if ($addressDetailsPage.length) {
-  initRedux(reducer, {
-    main (store) {
-      const addressHash = $addressDetailsPage[0].dataset.pageAddressHash
-      const addressChannel = socket.channel(`addresses:${addressHash}`, {})
-      const { filter, blockNumber } = humps.camelizeKeys(URI(window.location).query(true))
-      store.dispatch({
-        type: 'PAGE_LOAD',
-
-        addressHash,
-        filter,
-
-        balance: $('[data-selector="balance-card"]').html(),
-        transactionCount: $('[data-selector="transaction-count"]').text(),
-        validationCount: $('[data-selector="validation-count"]') ? $('[data-selector="validation-count"]').text() : null,
-
-        pendingTransactions: $('[data-selector="pending-transactions-list"]').children().map((index, el) => ({
-          transactionHash: el.dataset.transactionHash,
-          transactionHtml: el.outerHTML
-        })).toArray(),
-        transactions: $('[data-selector="transactions-list"]').children().map((index, el) => ({
-          transactionHash: el.dataset.transactionHash,
-          transactionHtml: el.outerHTML
-        })).toArray(),
-        internalTransactions: $('[data-selector="internal-transactions-list"]').children().map((index, el) => ({
-          internalTransactionId: el.dataset.internalTransactionId,
-          internalTransactionHtml: el.outerHTML
-        })).toArray(),
-        validatedBlocks: $('[data-selector="validations-list"]').children().map((index, el) => ({
-          blockNumber: parseInt(el.dataset.blockNumber),
-          blockHtml: el.outerHTML
-        })).toArray(),
-
-        nextPage: $('[data-selector="next-page-button"]').length ? `${$('[data-selector="next-page-button"]').hide().attr('href')}&type=JSON` : null,
-
-        beyondPageOne: !!blockNumber
-      })
-      addressChannel.join()
-      addressChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
-      addressChannel.on('balance', (msg) => {
-        store.dispatch({ type: 'RECEIVED_UPDATED_BALANCE', msg: humps.camelizeKeys(msg) })
-      })
-      addressChannel.on('internal_transaction', batchChannel((msgs) =>
-        store.dispatch({ type: 'RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH', msgs: humps.camelizeKeys(msgs) })
-      ))
-      addressChannel.on('pending_transaction', (msg) => store.dispatch({ type: 'RECEIVED_NEW_PENDING_TRANSACTION', msg: humps.camelizeKeys(msg) }))
-      addressChannel.on('transaction', (msg) => {
-        store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION', msg: humps.camelizeKeys(msg) })
-        setTimeout(() => store.dispatch({ type: 'REMOVE_PENDING_TRANSACTION', msg: humps.camelizeKeys(msg) }), TRANSACTION_VALIDATED_MOVE_DELAY)
-      })
-      const blocksChannel = socket.channel(`blocks:${addressHash}`, {})
-      blocksChannel.join()
-      blocksChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
-      blocksChannel.on('new_block', (msg) => store.dispatch({ type: 'RECEIVED_NEW_BLOCK', msg: humps.camelizeKeys(msg) }))
-
-      $('[data-selector="transactions-list"]').length && atBottom(function loadMoreTransactions () {
-        const nextPage = store.getState().nextPage
-        if (nextPage) {
-          store.dispatch({ type: 'LOADING_NEXT_PAGE' })
-          $.get(nextPage).done(msg => {
-            store.dispatch({ type: 'NEXT_TRANSACTIONS_PAGE', msg: humps.camelizeKeys(msg) })
-          })
-        }
-      })
+const elements = {
+  '[data-selector="channel-disconnected-message"]': {
+    render ($el, state) {
+      if (state.channelDisconnected) $el.show()
+    }
+  },
+  '[data-selector="balance-card"]': {
+    load ($el) {
+      return { balance: $el.html() }
     },
-    render (state, oldState) {
-      if (state.channelDisconnected) $('[data-selector="channel-disconnected-message"]').show()
+    render ($el, state, oldState) {
+      if (oldState.balance === state.balance) return
+      $el.empty().append(state.balance)
+      loadTokenBalanceDropdown()
+      updateAllCalculatedUsdValues()
+    }
+  },
+  '[data-selector="transaction-count"]': {
+    load ($el) {
+      return { transactionCount: numeral($el.text()).value() }
+    },
+    render ($el, state, oldState) {
+      if (oldState.transactionCount === state.transactionCount) return
+      $el.empty().append(numeral(state.transactionCount).format())
+    }
+  },
+  '[data-selector="validation-count"]': {
+    load ($el) {
+      return { validationCount: numeral($el.text()).value }
+    },
+    render ($el, state, oldState) {
+      if (oldState.validationCount === state.validationCount) return
+      $el.empty().append(numeral(state.validationCount).format())
+    }
+  },
+  '[data-selector="loading-next-page"]': {
+    render ($el, state) {
       if (state.loadingNextPage) {
-        $('[data-selector="loading-next-page"]').show()
+        $el.show()
       } else {
-        $('[data-selector="loading-next-page"]').hide()
+        $el.hide()
       }
-
-      if (oldState.balance !== state.balance) {
-        $('[data-selector="balance-card"]').empty().append(state.balance)
-        loadTokenBalanceDropdown()
-        updateAllCalculatedUsdValues()
+    }
+  },
+  '[data-selector="pending-transactions-list"]': {
+    load ($el) {
+      return {
+        pendingTransactions: $el.children().map((index, el) => ({
+          transactionHash: el.dataset.transactionHash,
+          transactionHtml: el.outerHTML
+        })).toArray()
       }
-      if (oldState.transactionCount !== state.transactionCount) $('[data-selector="transaction-count"]').empty().append(numeral(state.transactionCount).format())
-      if (oldState.validationCount !== state.validationCount) $('[data-selector="validation-count"]').empty().append(numeral(state.validationCount).format())
-
-      if (oldState.pendingTransactions !== state.pendingTransactions) {
-        const container = $('[data-selector="pending-transactions-list"]')[0]
-        const newElements = _.map(state.pendingTransactions, ({ transactionHtml }) => $(transactionHtml)[0])
-        listMorph(container, newElements, { key: 'dataset.transactionHash' })
-        if ($('[data-selector="pending-transactions-count"]').length) $('[data-selector="pending-transactions-count"]')[0].innerHTML = numeral(state.pendingTransactions.filter(({ validated }) => !validated).length).format()
+    },
+    render ($el, state, oldState) {
+      if (oldState.pendingTransactions === state.pendingTransactions) return
+      const container = $el[0]
+      const newElements = _.map(state.pendingTransactions, ({ transactionHtml }) => $(transactionHtml)[0])
+      listMorph(container, newElements, { key: 'dataset.transactionHash' })
+    }
+  },
+  '[data-selector="pending-transactions-count"]': {
+    render ($el, state, oldState) {
+      if (oldState.pendingTransactions === state.pendingTransactions) return
+      $el[0].innerHTML = numeral(state.pendingTransactions.filter(({ validated }) => !validated).length).format()
+    }
+  },
+  '[data-selector="transactions-list"]': {
+    load ($el, store) {
+      return {
+        transactions: $el.children().map((index, el) => ({
+          transactionHash: el.dataset.transactionHash,
+          transactionHtml: el.outerHTML
+        })).toArray()
       }
+    },
+    render ($el, state, oldState) {
+      if (oldState.transactions === state.transactions) return
       function updateTransactions () {
-        const container = $('[data-selector="transactions-list"]')[0]
+        const container = $el[0]
         const newElements = _.map(state.transactions, ({ transactionHtml }) => $(transactionHtml)[0])
         listMorph(container, newElements, { key: 'dataset.transactionHash' })
       }
-      if (oldState.transactions !== state.transactions) {
-        if ($('[data-selector="pending-transactions-list"]').is(':visible')) {
-          setTimeout(updateTransactions, TRANSACTION_VALIDATED_MOVE_DELAY + 400)
-        } else {
-          updateTransactions()
-        }
-      }
-      if (oldState.internalTransactions !== state.internalTransactions) {
-        const container = $('[data-selector="internal-transactions-list"]')[0]
-        const newElements = _.map(state.internalTransactions, ({ internalTransactionHtml }) => $(internalTransactionHtml)[0])
-        listMorph(container, newElements, { key: 'dataset.internalTransactionId' })
-      }
-      const $channelBatching = $('[data-selector="channel-batching-message"]')
-      if (state.internalTransactionsBatch.length) {
-        $channelBatching.show()
-        $('[data-selector="channel-batching-count"]')[0].innerHTML = numeral(state.internalTransactionsBatch.length).format()
+      if ($('[data-selector="pending-transactions-list"]').is(':visible')) {
+        setTimeout(updateTransactions, TRANSACTION_VALIDATED_MOVE_DELAY + 400)
       } else {
-        $channelBatching.hide()
+        updateTransactions()
       }
-      if (oldState.validatedBlocks !== state.validatedBlocks) {
-        const container = $('[data-selector="validations-list"]')[0]
-        const newElements = _.map(state.validatedBlocks, ({ blockHtml }) => $(blockHtml)[0])
-        listMorph(container, newElements, { key: 'dataset.blockNumber' })
+    }
+  },
+  '[data-selector="internal-transactions-list"]': {
+    load ($el) {
+      return {
+        internalTransactions: $el.children().map((index, el) => ({
+          internalTransactionId: el.dataset.internalTransactionId,
+          internalTransactionHtml: el.outerHTML
+        })).toArray()
       }
+    },
+    render ($el, state, oldState) {
+      if (oldState.internalTransactions === state.internalTransactions) return
+      const container = $el[0]
+      const newElements = _.map(state.internalTransactions, ({ internalTransactionHtml }) => $(internalTransactionHtml)[0])
+      listMorph(container, newElements, { key: 'dataset.internalTransactionId' })
+    }
+  },
+  '[data-selector="channel-batching-count"]': {
+    render ($el, state, oldState) {
+      const $channelBatching = $('[data-selector="channel-batching-message"]')
+      if (!state.internalTransactionsBatch.length) return $channelBatching.hide()
+      $channelBatching.show()
+      $el[0].innerHTML = numeral(state.internalTransactionsBatch.length).format()
+    }
+  },
+  '[data-selector="validations-list"]': {
+    load ($el) {
+      return {
+        validatedBlocks: $el.children().map((index, el) => ({
+          blockNumber: parseInt(el.dataset.blockNumber),
+          blockHtml: el.outerHTML
+        })).toArray()
+      }
+    },
+    render ($el, state, oldState) {
+      if (oldState.validatedBlocks === state.validatedBlocks) return
+      const container = $el[0]
+      const newElements = _.map(state.validatedBlocks, ({ blockHtml }) => $(blockHtml)[0])
+      listMorph(container, newElements, { key: 'dataset.blockNumber' })
+    }
+  },
+  '[data-selector="next-page-button"]': {
+    load ($el) {
+      return {
+        nextPage: `${$el.hide().attr('href')}&type=JSON`
+      }
+    }
+  }
+}
+
+const $addressDetailsPage = $('[data-page="address-details"]')
+if ($addressDetailsPage.length) {
+  const store = createStore(reducer)
+  const addressHash = $addressDetailsPage[0].dataset.pageAddressHash
+  const { filter, blockNumber } = humps.camelizeKeys(URI(window.location).query(true))
+  store.dispatch({
+    type: 'PAGE_LOAD',
+    addressHash,
+    filter,
+    beyondPageOne: !!blockNumber
+  })
+  connectElements({ store, elements })
+
+  const addressChannel = socket.channel(`addresses:${addressHash}`, {})
+  addressChannel.join()
+  addressChannel.onError(() => store.dispatch({
+    type: 'CHANNEL_DISCONNECTED'
+  }))
+  addressChannel.on('balance', (msg) => store.dispatch({
+    type: 'RECEIVED_UPDATED_BALANCE',
+    msg: humps.camelizeKeys(msg)
+  }))
+  addressChannel.on('internal_transaction', batchChannel((msgs) => store.dispatch({
+    type: 'RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH',
+    msgs: humps.camelizeKeys(msgs)
+  })))
+  addressChannel.on('pending_transaction', (msg) => store.dispatch({
+    type: 'RECEIVED_NEW_PENDING_TRANSACTION',
+    msg: humps.camelizeKeys(msg)
+  }))
+  addressChannel.on('transaction', (msg) => {
+    store.dispatch({
+      type: 'RECEIVED_NEW_TRANSACTION',
+      msg: humps.camelizeKeys(msg)
+    })
+    setTimeout(() => store.dispatch({
+      type: 'REMOVE_PENDING_TRANSACTION',
+      msg: humps.camelizeKeys(msg)
+    }), TRANSACTION_VALIDATED_MOVE_DELAY)
+  })
+
+  const blocksChannel = socket.channel(`blocks:${addressHash}`, {})
+  blocksChannel.join()
+  blocksChannel.onError(() => store.dispatch({
+    type: 'CHANNEL_DISCONNECTED'
+  }))
+  blocksChannel.on('new_block', (msg) => store.dispatch({
+    type: 'RECEIVED_NEW_BLOCK',
+    msg: humps.camelizeKeys(msg)
+  }))
+
+  $('[data-selector="transactions-list"]').length && atBottom(function loadMoreTransactions () {
+    const nextPage = store.getState().nextPage
+    if (nextPage) {
+      store.dispatch({
+        type: 'LOADING_NEXT_PAGE'
+      })
+      $.get(nextPage).done(msg => {
+        store.dispatch({
+          type: 'RECEIVED_NEXT_TRANSACTIONS_PAGE',
+          msg: humps.camelizeKeys(msg)
+        })
+      })
     }
   })
 }

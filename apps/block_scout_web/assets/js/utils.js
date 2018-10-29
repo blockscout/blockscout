@@ -1,6 +1,6 @@
 import $ from 'jquery'
 import _ from 'lodash'
-import { createStore } from 'redux'
+import { createStore as reduxCreateStore } from 'redux'
 import morph from 'nanomorph'
 import { updateAllAges } from './lib/from_now'
 
@@ -29,7 +29,7 @@ export function initRedux (reducer, { main, render, debug } = {}) {
   }
   if (!render) console.warn('initRedux: You have not passed a render function.')
 
-  const store = createStore(reducer, window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__())
+  const store = createStore(reducer)
   if (debug) store.subscribe(() => { console.log(store.getState()) })
   let oldState = store.getState()
   if (render) {
@@ -40,6 +40,37 @@ export function initRedux (reducer, { main, render, debug } = {}) {
     })
   }
   if (main) main(store)
+}
+
+export function createStore (reducer) {
+  return reduxCreateStore(reducer, window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__())
+}
+
+export function connectElements ({ elements, store }) {
+  function loadElements () {
+    return _.reduce(elements, (pageLoadParams, { load }, selector) => {
+      if (!load) return pageLoadParams
+      const $el = $(selector)
+      if (!$el.length) return pageLoadParams
+      const morePageLoadParams = load($el, store)
+      return _.isObject(morePageLoadParams) ? Object.assign(pageLoadParams, morePageLoadParams) : pageLoadParams
+    }, {})
+  }
+  function renderElements (state, oldState) {
+    _.forIn(elements, ({ render }, selector) => {
+      if (!render) return
+      const $el = $(selector)
+      if (!$el.length) return
+      render($el, state, oldState)
+    })
+  }
+  store.dispatch(Object.assign(loadElements(), { type: 'ELEMENTS_LOAD' }))
+  let oldState = store.getState()
+  store.subscribe(() => {
+    const state = store.getState()
+    renderElements(state, oldState)
+    oldState = state
+  })
 }
 
 export function skippedBlockListBuilder (skippedBlockNumbers, newestBlock, oldestBlock) {
