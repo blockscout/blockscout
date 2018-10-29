@@ -25,24 +25,24 @@ defmodule BlockScoutWeb.CurrencyHelpers do
 
   ## Examples
 
-      iex> format_according_to_decimals(Decimal.new(20500000), 5)
+      iex> format_according_to_decimals(Decimal.new(20500000), Decimal.new(5))
       "205"
 
-      iex> format_according_to_decimals(Decimal.new(20500000), 7)
+      iex> format_according_to_decimals(Decimal.new(20500000), Decimal.new(7))
       "2.05"
 
-      iex> format_according_to_decimals(Decimal.new(205000), 12)
+      iex> format_according_to_decimals(Decimal.new(205000), Decimal.new(12))
       "0.000000205"
 
-      iex> format_according_to_decimals(Decimal.new(205000), 2)
+      iex> format_according_to_decimals(Decimal.new(205000), Decimal.new(2))
       "2,050"
 
-      iex> format_according_to_decimals(205000, 2)
+      iex> format_according_to_decimals(205000, Decimal.new(2))
       "2,050"
   """
-  @spec format_according_to_decimals(non_neg_integer(), non_neg_integer()) :: String.t()
+  @spec format_according_to_decimals(non_neg_integer(), nil) :: String.t()
   def format_according_to_decimals(value, nil) do
-    format_according_to_decimals(value, 0)
+    format_according_to_decimals(value, Decimal.new(0))
   end
 
   def format_according_to_decimals(value, decimals) when is_integer(value) do
@@ -51,10 +51,10 @@ defmodule BlockScoutWeb.CurrencyHelpers do
     |> format_according_to_decimals(decimals)
   end
 
-  @spec format_according_to_decimals(Decimal.t(), non_neg_integer()) :: String.t()
+  @spec format_according_to_decimals(Decimal.t(), Decimal.t()) :: String.t()
   def format_according_to_decimals(%Decimal{sign: sign, coef: coef, exp: exp}, decimals) do
     sign
-    |> Decimal.new(coef, exp - decimals)
+    |> Decimal.new(coef, exp - Decimal.to_integer(decimals))
     |> Decimal.reduce()
     |> thousands_separator()
   end
