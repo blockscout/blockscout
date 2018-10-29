@@ -27,6 +27,7 @@ export const initialState = {
   internalTransactionsBatch: [],
   validatedBlocks: [],
 
+  loadingNextPage: false,
   nextPage: null,
 
   beyondPageOne: null
@@ -148,8 +149,14 @@ export function reducer (state = initialState, action) {
         balance: action.msg.balance
       })
     }
+    case 'LOADING_NEXT_PAGE': {
+      return Object.assign({}, state, {
+        loadingNextPage: true
+      })
+    }
     case 'NEXT_TRANSACTIONS_PAGE': {
       return Object.assign({}, state, {
+        loadingNextPage: false,
         nextPage: action.msg.nextPage,
         transactions: [
           ...state.transactions,
@@ -196,7 +203,7 @@ if ($addressDetailsPage.length) {
           blockHtml: el.outerHTML
         })).toArray(),
 
-        nextPage: $('[data-selector="next-page-button"]').length ? `${$('[data-selector="next-page-button"]').hide().attr("href")}&type=JSON` : null,
+        nextPage: $('[data-selector="next-page-button"]').length ? `${$('[data-selector="next-page-button"]').hide().attr('href')}&type=JSON` : null,
 
         beyondPageOne: !!blockNumber
       })
@@ -218,15 +225,23 @@ if ($addressDetailsPage.length) {
       blocksChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
       blocksChannel.on('new_block', (msg) => store.dispatch({ type: 'RECEIVED_NEW_BLOCK', msg: humps.camelizeKeys(msg) }))
 
-      $('[data-selector="transactions-list"]').length && atBottom(function loadMoreTransactions() {
-        $.get(store.getState().nextPage).done(msg => {
-          store.dispatch({ type: 'NEXT_TRANSACTIONS_PAGE', msg: humps.camelizeKeys(msg) })
-          setTimeout(() => atBottom(loadMoreTransactions), 1000)
-        })
+      $('[data-selector="transactions-list"]').length && atBottom(function loadMoreTransactions () {
+        const nextPage = store.getState().nextPage
+        if (nextPage) {
+          store.dispatch({ type: 'LOADING_NEXT_PAGE' })
+          $.get(nextPage).done(msg => {
+            store.dispatch({ type: 'NEXT_TRANSACTIONS_PAGE', msg: humps.camelizeKeys(msg) })
+          })
+        }
       })
     },
     render (state, oldState) {
       if (state.channelDisconnected) $('[data-selector="channel-disconnected-message"]').show()
+      if (state.loadingNextPage) {
+        $('[data-selector="loading-next-page"]').show()
+      } else {
+        $('[data-selector="loading-next-page"]').hide()
+      }
 
       if (oldState.balance !== state.balance) {
         $('[data-selector="balance-card"]').empty().append(state.balance)
@@ -240,7 +255,7 @@ if ($addressDetailsPage.length) {
         const container = $('[data-selector="pending-transactions-list"]')[0]
         const newElements = _.map(state.pendingTransactions, ({ transactionHtml }) => $(transactionHtml)[0])
         listMorph(container, newElements, { key: 'dataset.transactionHash' })
-        if($('[data-selector="pending-transactions-count"]').length) $('[data-selector="pending-transactions-count"]')[0].innerHTML = numeral(state.pendingTransactions.filter(({ validated }) => !validated).length).format()
+        if ($('[data-selector="pending-transactions-count"]').length) $('[data-selector="pending-transactions-count"]')[0].innerHTML = numeral(state.pendingTransactions.filter(({ validated }) => !validated).length).format()
       }
       function updateTransactions () {
         const container = $('[data-selector="transactions-list"]')[0]

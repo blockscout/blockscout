@@ -116,6 +116,7 @@ function smarterSlideUp ($el, { complete = _.noop } = {}) {
 }
 
 export function listMorph (container, newElements, { key, horizontal }) {
+  if (!container) return
   const oldElements = $(container).children().get()
   let currentList = _.map(oldElements, (el) => ({ id: _.get(el, key), el }))
   const newList = _.map(newElements, (el) => ({ id: _.get(el, key), el }))
@@ -150,13 +151,14 @@ export function listMorph (container, newElements, { key, horizontal }) {
   })
 }
 
-export function atBottom(callback) {
-  $(window).on("scroll", function infiniteScrollChecker () {
-    var scrollHeight = $(document).height();
-    var scrollPosition = $(window).height() + $(window).scrollTop();
+export function atBottom (callback) {
+  function infiniteScrollChecker () {
+    var scrollHeight = $(document).height()
+    var scrollPosition = $(window).height() + $(window).scrollTop()
     if ((scrollHeight - scrollPosition) / scrollHeight === 0) {
-      $(window).off("scroll", infiniteScrollChecker)
       callback()
     }
-  });
+  }
+  infiniteScrollChecker()
+  $(window).on('scroll', infiniteScrollChecker)
 }
