@@ -93,32 +93,6 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClientTest do
 
       %{pid: pid, port: port}
     end
-
-    test "rerequests", %{pid: pid, port: port} do
-      first_params = [1]
-
-      # json_rpc requests work before connection is closed
-      assert {:ok, ^first_params} =
-               WebSocketClient.json_rpc(
-                 pid,
-                 EthereumJSONRPC.request(%{id: :erlang.unique_integer(), method: "echo", params: first_params})
-               )
-
-      assert :ok = :ranch.stop_listener(EthereumJSONRPC.WebSocket.Cowboy)
-
-      spawn_link(fn ->
-        Process.sleep(500)
-        cowboy(port)
-      end)
-
-      second_params = [2]
-
-      assert {:ok, ^second_params} =
-               WebSocketClient.json_rpc(
-                 pid,
-                 EthereumJSONRPC.request(%{id: :erlang.unique_integer(), method: "echo", params: second_params})
-               )
-    end
   end
 
   defp cowboy(0) do
