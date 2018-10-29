@@ -26,7 +26,7 @@ defmodule Explorer.Chain.TokenTransfer do
 
   import Ecto.{Changeset, Query}
 
-  alias Explorer.Chain.{Address, Block, Hash, Transaction, Token, TokenTransfer}
+  alias Explorer.Chain.{Address, Block, Hash, Token, TokenTransfer, Transaction}
   alias Explorer.{PagingOptions, Repo}
 
   @default_paging_options %PagingOptions{page_size: 50}

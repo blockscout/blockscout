@@ -3,10 +3,10 @@ defmodule BlockScoutWeb.Notifier do
   Responds to events from EventHandler by sending appropriate channel updates to front-end.
   """
 
+  alias BlockScoutWeb.Endpoint
   alias Explorer.{Chain, Market, Repo}
   alias Explorer.Chain.{Address, InternalTransaction, Transaction}
   alias Explorer.ExchangeRates.Token
-  alias BlockScoutWeb.Endpoint
 
   def handle_event({:chain_event, :addresses, :realtime, addresses}) do
     Endpoint.broadcast("addresses:new_address", "count", %{count: Chain.address_estimated_count()})

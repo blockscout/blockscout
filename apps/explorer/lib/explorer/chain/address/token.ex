@@ -12,13 +12,14 @@ defmodule Explorer.Chain.Address.Token do
   - balance - how much tokens (TokenBalance) the Address has from the Token.
   - transfer_count - a count of how many TokenTransfers of the Token the Address was involved.
   """
-  @enforce_keys [:contract_address_hash, :inserted_at, :name, :symbol, :balance, :decimals, :type, :transfers_count]
-  defstruct @enforce_keys
 
   import Ecto.Query
-  alias Explorer.{PagingOptions, Chain}
 
-  alias Explorer.Chain.{Hash, Address, Address.TokenBalance}
+  alias Explorer.{Chain, PagingOptions}
+  alias Explorer.Chain.{Address, Address.TokenBalance, Hash}
+
+  @enforce_keys [:contract_address_hash, :inserted_at, :name, :symbol, :balance, :decimals, :type, :transfers_count]
+  defstruct @enforce_keys
 
   @default_paging_options %PagingOptions{page_size: 50}
   @typep paging_options :: {:paging_options, PagingOptions.t()}

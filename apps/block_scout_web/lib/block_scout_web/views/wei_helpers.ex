@@ -5,8 +5,8 @@ defmodule BlockScoutWeb.WeiHelpers do
 
   import BlockScoutWeb.Gettext
 
-  alias Explorer.Chain.Wei
   alias BlockScoutWeb.Cldr
+  alias Explorer.Chain.Wei
 
   @valid_units ~w(wei gwei ether)a
 

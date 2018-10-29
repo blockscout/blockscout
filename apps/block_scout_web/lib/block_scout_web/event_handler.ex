@@ -4,8 +4,9 @@ defmodule BlockScoutWeb.EventHandler do
   """
 
   use GenServer
-  alias Explorer.Chain
+
   alias BlockScoutWeb.Notifier
+  alias Explorer.Chain
 
   # Client
 

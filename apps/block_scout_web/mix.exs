@@ -50,9 +50,6 @@ defmodule BlockScoutWeb.Mixfile do
   defp extra_applications,
     do: [
       :ex_cldr,
-      :timex,
-      :timex_ecto,
-      :crontab,
       :logger,
       :runtime_tools
     ]
@@ -69,9 +66,7 @@ defmodule BlockScoutWeb.Mixfile do
       # Plug support for Absinthe
       {:absinthe_plug, "~> 1.4"},
       {:bypass, "~> 0.8", only: :test},
-      {:cowboy, "~> 1.0"},
-      {:credo, "0.9.2", only: [:dev, :test], runtime: false},
-      {:crontab, "~> 1.1"},
+      {:credo, "0.10.2", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       {:ex_cldr_numbers, "~> 1.0"},
       {:ex_cldr_units, "~> 1.0"},
@@ -95,6 +90,8 @@ defmodule BlockScoutWeb.Mixfile do
       {:phoenix_html, "~> 2.10"},
       {:phoenix_live_reload, "~> 1.0", only: [:dev]},
       {:phoenix_pubsub, "~> 1.0"},
+      # use `:cowboy` for WebServer with `:plug`
+      {:plug_cowboy, "~> 1.0"},
       # Waiting for the Pretty Print to be implemented at the Jason lib
       # https://github.com/michalmuskala/jason/issues/15
       {:poison, "~> 3.1"},
@@ -109,8 +106,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:prometheus_process_collector, "~> 1.3"},
       {:qrcode, "~> 0.1.0"},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
-      {:timex, "~> 3.1.24"},
-      {:timex_ecto, "~> 3.2.1"},
+      {:timex, "~> 3.4"},
       {:wallaby, "~> 0.20", only: [:test], runtime: false},
       {:wobserver, "~> 0.1.8"}
     ]

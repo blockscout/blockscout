@@ -7,8 +7,8 @@ defmodule Explorer.Etherscan.Logs do
 
   import Ecto.Query, only: [from: 2, where: 3]
 
-  alias Explorer.Repo
   alias Explorer.Chain.Log
+  alias Explorer.Repo
 
   @base_filter %{
     from_block: nil,

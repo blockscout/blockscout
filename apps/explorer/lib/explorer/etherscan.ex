@@ -6,10 +6,10 @@ defmodule Explorer.Etherscan do
   import Ecto.Query, only: [from: 2, where: 3, or_where: 3]
 
   alias Explorer.Etherscan.Logs
-  alias Explorer.{Repo, Chain}
+  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Address.TokenBalance
   alias Explorer.Chain.{Block, Hash, InternalTransaction, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
-  alias Explorer.Chain.Address.TokenBalance
 
   @default_options %{
     order_by_direction: :asc,
