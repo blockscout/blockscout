@@ -20,4 +20,14 @@ defmodule BlockScoutWeb.Schema do
       resolve(&Transaction.get_by/3)
     end
   end
+
+  subscription do
+    field :token_transfers, list_of(:token_transfer) do
+      arg(:token_contract_address_hash, non_null(:address_hash))
+
+      config(fn args, _info ->
+        {:ok, topic: to_string(args.token_contract_address_hash)}
+      end)
+    end
+  end
 end

@@ -42,7 +42,8 @@ defmodule BlockScoutWeb.Router do
 
   forward("/graphiql", Absinthe.Plug.GraphiQL,
     schema: BlockScoutWeb.Schema,
-    interface: :playground
+    interface: :playground,
+    socket: BlockScoutWeb.UserSocket
   )
 
   scope "/", BlockScoutWeb do

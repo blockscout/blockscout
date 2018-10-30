@@ -48,4 +48,15 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:to_address_hash, :address_hash)
     field(:created_contract_address_hash, :address_hash)
   end
+
+  @desc """
+  Represents a token transfer between addresses.
+  """
+  object :token_transfer do
+    field(:amount, :decimal)
+    field(:from_address_hash, :address_hash)
+    field(:to_address_hash, :address_hash)
+    field(:token_contract_address_hash, :address_hash)
+    field(:transaction_hash, :full_hash)
+  end
 end
