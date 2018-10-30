@@ -74,9 +74,14 @@
               <%= render(BlockScoutWeb.TransactionView, "_tile.html", current_address: @address, transaction: transaction) %>
             <% end %>
           </span>
-          <div data-selector="loading-next-page" style="display: none;">
+          <div data-selector="loading-next-page" class="tile tile-muted text-center mt-3" style="display: none;">
+            <span class="loading-spinner-small mr-2">
+              <span class="loading-spinner-block-1"></span>
+              <span class="loading-spinner-block-2"></span>
+            </span>
             <%= gettext("Loading") %>...
           </div>
+
         <% else %>
           <div class="tile tile-muted text-center">
             <span data-selector="empty-transactions-list"><%= gettext "There are no transactions for this address." %></span>
