@@ -2,14 +2,9 @@
 <pre>
 [ <strong><%= @function_name %></strong> method Response ]
 
-[
-  <%= for item <- @outputs do %>
-  <%= if named_argument?(item) do %>
-  <%= item["name"] %>
-  <% end %>
-  <span class="text-muted">(<%= item["type"] %>)</span> : <%= values(item["value"]) %>,
-
-  <% end %>
-]
+[<%= for item <- @outputs do %>
+<span class="function-response-item"><%= if named_argument?(item) do %><%= item["name"] %>
+<% end %>
+<span class="text-muted">(<%= item["type"] %>)</span> : <%= values(item["value"]) %></span><% end %>]
 </pre>
 </div>
