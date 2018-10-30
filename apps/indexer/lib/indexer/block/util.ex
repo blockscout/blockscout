@@ -25,7 +25,7 @@ defmodule Indexer.Block.Util do
     header_data = [
       decode(block.parent_hash),
       decode(block.sha3_uncles),
-      decode(block.miner),
+      decode(block.miner_hash),
       decode(block.state_root),
       decode(block.transactions_root),
       decode(block.receipts_root),
@@ -34,7 +34,7 @@ defmodule Indexer.Block.Util do
       block.number,
       block.gas_limit,
       block.gas_used,
-      block.timestamp,
+      DateTime.to_unix(block.timestamp),
       decode(block.extra_data),
       decode(block.mix_hash),
       decode(block.nonce)
