@@ -10,6 +10,11 @@ defmodule BlockScoutWeb.SmartContractView do
   def named_argument?(%{"name" => _}), do: true
   def named_argument?(_), do: false
 
-  def values(values) when is_list(values), do: Enum.join(values, ",")
-  def values(value), do: value
+  def values(value, "address") do
+    {:ok, address} = Explorer.Chain.Hash.Address.cast(value)
+    to_string(address)
+  end
+
+  def values(values, _) when is_list(values), do: Enum.join(values, ",")
+  def values(value, _), do: value
 end
