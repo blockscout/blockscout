@@ -4,15 +4,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
   alias BlockScoutWeb.API.RPC.RPCView
 
   def render("gettxinfo.json", %{transaction: transaction, max_block_number: max_block_number, logs: logs}) do
-    try do
-      data = prepare_transaction(transaction, max_block_number, logs)
-      IO.puts "after prepare"
-      IO.inspect data
-      RPCView.render("show.json", data: data)
-    catch
-      x -> "Got #{x}"
-      :exit, _ -> "not really"
-    end
+    data = prepare_transaction(transaction, max_block_number, logs)
+    RPCView.render("show.json", data: data)
   end
 
   def render("gettxreceiptstatus.json", %{status: status}) do
