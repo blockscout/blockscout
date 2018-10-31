@@ -19,7 +19,10 @@ defmodule BlockScoutWeb.AddressTransactionController do
       [created_contract_address: :names] => :optional,
       [from_address: :names] => :optional,
       [to_address: :names] => :optional,
-      :token_transfers => :optional
+      [token_transfers: :token] => :optional,
+      [token_transfers: :to_address] => :optional,
+      [token_transfers: :from_address] => :optional,
+      [token_transfers: :token_contract_address] => :optional
     }
   ]
 
@@ -81,7 +84,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
          {:ok, address} <- Chain.hash_to_address(address_hash) do
       pending_options =
         @transaction_necessity_by_association
-        |> Keyword.merge(paging_options(%{}))
+        |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
 
       full_options = put_in(pending_options, [:necessity_by_association, :block], :required)
