@@ -8,10 +8,10 @@ defmodule BlockScoutWeb.AddressTransactionController do
   import BlockScoutWeb.AddressController, only: [transaction_count: 1, validation_count: 1]
   import BlockScoutWeb.Chain, only: [current_filter: 1, paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
+  alias BlockScoutWeb.TransactionView
   alias Explorer.{Chain, Market}
-  alias Explorer.ExchangeRates.Token
   alias Explorer.Chain.Hash
-  alias BlockScoutWeb.{InternalTransactionView, AddressView, TransactionView}
+  alias Explorer.ExchangeRates.Token
   alias Phoenix.View
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
@@ -87,6 +87,7 @@ defmodule BlockScoutWeb.AddressTransactionController do
             :token_transfers => :optional
           }
         ]
+        |> Keyword.merge(paging_options(%{}))
         |> Keyword.merge(current_filter(params))
 
       full_options = put_in(pending_options, [:necessity_by_association, :block], :required)

@@ -103,8 +103,6 @@ export function reducer (state = initialState, action) {
       })
     }
     case 'REMOVE_PENDING_TRANSACTION': {
-      if (state.channelDisconnected) return state
-
       return Object.assign({}, state, {
         pendingTransactions: state.pendingTransactions.filter((transaction) => action.msg.transactionHash !== transaction.transactionHash)
       })
@@ -247,7 +245,6 @@ const elements = {
     load ($el) {
       return {
         internalTransactions: $el.children().map((index, el) => ({
-          internalTransactionId: el.dataset.internalTransactionId,
           internalTransactionHtml: el.outerHTML
         })).toArray()
       }
@@ -256,7 +253,7 @@ const elements = {
       if (oldState.internalTransactions === state.internalTransactions) return
       const container = $el[0]
       const newElements = _.map(state.internalTransactions, ({ internalTransactionHtml }) => $(internalTransactionHtml)[0])
-      listMorph(container, newElements, { key: 'dataset.internalTransactionId' })
+      listMorph(container, newElements, { key: 'dataset.key' })
     }
   },
   '[data-selector="channel-batching-count"]': {
