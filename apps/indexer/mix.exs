@@ -53,7 +53,7 @@ defmodule Indexer.MixProject do
       # Importing to database
       {:explorer, in_umbrella: true},
       # libsecp2561k1 crypto functions
-      {:libsecp256k1, "~> 0.1.10"},
+      {:libsecp256k1, "~> 0.1.10", manager: :mix, override: true},
       # Log errors and application output to separate files
       {:logger_file_backend, "~> 0.0.10"},
       # Mocking `EthereumJSONRPC.Transport`, so we avoid hitting real chains for local testing
