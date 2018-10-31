@@ -22,7 +22,7 @@
             <span class="loading-spinner-block-1"></span>
             <span class="loading-spinner-block-2"></span>
           </span>
-          <%= gettext("loading...") %>
+          <%= gettext("Loading...") %>
         </div>
       </div>
     </div>
