@@ -95,18 +95,6 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClientTest do
     end
   end
 
-  defp cowboy(0) do
-    dispatch = :cowboy_router.compile([{:_, [{"/websocket", EthereumJSONRPC.WebSocket.Cowboy.WebSocketHandler, []}]}])
-    {:ok, _} = :cowboy.start_http(EthereumJSONRPC.WebSocket.Cowboy, 100, [], env: [dispatch: dispatch])
-    :ranch.get_port(EthereumJSONRPC.WebSocket.Cowboy)
-  end
-
-  defp cowboy(port) do
-    dispatch = :cowboy_router.compile([{:_, [{"/websocket", EthereumJSONRPC.WebSocket.Cowboy.WebSocketHandler, []}]}])
-    {:ok, _} = :cowboy.start_http(EthereumJSONRPC.WebSocket.Cowboy, 100, [port: port], env: [dispatch: dispatch])
-    port
-  end
-
   defp example_state(_) do
     %{state: %WebSocketClient{url: "ws://example.com"}}
   end
