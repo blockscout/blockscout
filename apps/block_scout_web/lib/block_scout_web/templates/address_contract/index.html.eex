@@ -23,12 +23,12 @@
             <dd class="col-sm-8 col-md-10"><%= @address.smart_contract.name %></dd>
           </dl>
           <dl class="row">
-            <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "Optimization enabled" %></dt>
-            <dd class="col-sm-8 col-md-10"><%= format_optimization_text(@address.smart_contract.optimization) %></dd>
-          </dl>
-          <dl class="row">
             <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "Compiler version" %></dt>
             <dd class="col-sm-8 col-md-10"><%= @address.smart_contract.compiler_version %></dd>
+          </dl>
+          <dl class="row">
+            <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "Optimization enabled" %></dt>
+            <dd class="col-sm-8 col-md-10"><%= format_optimization_text(@address.smart_contract.optimization) %></dd>
           </dl>
         </div>
         <hr/>
