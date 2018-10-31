@@ -25,7 +25,7 @@ defmodule BlockScoutWeb.Tokens.Helpers do
   end
 
   defp do_token_transfer_amount(%Token{type: "ERC-20", decimals: nil}, amount, _token_id) do
-    CurrencyHelpers.format_according_to_decimals(amount, 0)
+    CurrencyHelpers.format_according_to_decimals(amount, Decimal.new(0))
   end
 
   defp do_token_transfer_amount(%Token{type: "ERC-20", decimals: decimals}, amount, _token_id) do

@@ -50,7 +50,7 @@ defmodule Explorer.Chain.Token do
     field(:name, :string)
     field(:symbol, :string)
     field(:total_supply, :decimal)
-    field(:decimals, :integer)
+    field(:decimals, :decimal)
     field(:type, :string)
     field(:cataloged, :boolean)
 
