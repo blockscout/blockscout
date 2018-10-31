@@ -3,6 +3,18 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
 
   alias BlockScoutWeb.API.RPC.RPCView
 
+  def render("gettxinfo.json", %{transaction: transaction, max_block_number: max_block_number, logs: logs}) do
+    try do
+      data = prepare_transaction(transaction, max_block_number, logs)
+      IO.puts "after prepare"
+      IO.inspect data
+      RPCView.render("show.json", data: data)
+    catch
+      x -> "Got #{x}"
+      :exit, _ -> "not really"
+    end
+  end
+
   def render("gettxreceiptstatus.json", %{status: status}) do
     prepared_status = prepare_tx_receipt_status(status)
     RPCView.render("show.json", data: %{"status" => prepared_status})
@@ -43,5 +55,36 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
       "isError" => "1",
       "errDescription" => error |> Atom.to_string() |> String.replace("_", " ")
     }
+  end
+
+  defp prepare_transaction(transaction, max_block_number, logs) do
+    %{
+      "hash" => "#{transaction.hash}",
+      "timeStamp" => "#{DateTime.to_unix(transaction.block.timestamp)}",
+      "blockNumber" => "#{transaction.block_number}",
+      "confirmations" => "#{(max_block_number - transaction.block_number)}",
+      "success" => if(transaction.status == :ok, do: true, else: false),
+      "from" => "#{transaction.from_address_hash}",
+      "to" => "#{transaction.to_address_hash}",
+      "value" => "#{transaction.value.value}",
+      "input" => "#{transaction.input}",
+      "gasLimit" => "#{transaction.gas}",
+      "gasUsed" => "#{transaction.gas_used}",
+      "logs" => Enum.map(logs, &prepare_log/1)
+    }
+  end
+
+  defp prepare_log(log) do
+    %{
+      "address" => "#{log.address_hash}",
+      "topics" => get_topics(log),
+      "data" => "#{log.data}"
+    }
+  end
+
+  defp get_topics(log) do
+    log
+    |> Map.take([:first_topic, :second_topic, :third_topic, :fourth_topic])
+    |> Map.values()
   end
 end
