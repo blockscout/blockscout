@@ -1,8 +1,9 @@
 import $ from 'jquery'
+import _ from 'lodash'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
-import { initRedux } from '../utils'
+import { createStore, connectElements } from '../utils'
 
 export const initialState = {
   blockNumber: null,
@@ -11,10 +12,8 @@ export const initialState = {
 
 export function reducer (state = initialState, action) {
   switch (action.type) {
-    case 'PAGE_LOAD': {
-      return Object.assign({}, state, {
-        blockNumber: parseInt(action.blockNumber, 10)
-      })
+    case 'ELEMENTS_LOAD': {
+      return Object.assign({}, state, _.omit(action, 'type'))
     }
     case 'RECEIVED_NEW_BLOCK': {
       if ((action.msg.blockNumber - state.blockNumber) > state.confirmations) {
@@ -28,30 +27,35 @@ export function reducer (state = initialState, action) {
   }
 }
 
-const $transactionDetailsPage = $('[data-page="transaction-details"]')
-if ($transactionDetailsPage.length) {
-  initRedux(reducer, {
-    main (store) {
-      const blocksChannel = socket.channel(`blocks:new_block`, {})
-      const $transactionBlockNumber = $('[data-selector="block-number"]')
-      store.dispatch({
-        type: 'PAGE_LOAD',
-        blockNumber: $transactionBlockNumber.text()
-      })
-      blocksChannel.join()
-      blocksChannel.on('new_block', (msg) => store.dispatch({ type: 'RECEIVED_NEW_BLOCK', msg: humps.camelizeKeys(msg) }))
-
-      const transactionHash = $transactionDetailsPage[0].dataset.pageTransactionHash
-      const transactionChannel = socket.channel(`transactions:${transactionHash}`, {})
-      transactionChannel.join()
-      transactionChannel.on('collated', () => window.location.reload())
-    },
-    render (state, oldState) {
-      const $blockConfirmations = $('[data-selector="block-confirmations"]')
-
+const elements = {
+  '[data-selector="block-number"]': {
+    load ($el) {
+      return { blockNumber: parseInt($el.text(), 10) }
+    }
+  },
+  '[data-selector="block-confirmations"]': {
+    render ($el, state, oldState) {
       if (oldState.confirmations !== state.confirmations) {
-        $blockConfirmations.empty().append(numeral(state.confirmations).format())
+        $el.empty().append(numeral(state.confirmations).format())
       }
     }
-  })
+  }
+}
+
+const $transactionDetailsPage = $('[data-page="transaction-details"]')
+if ($transactionDetailsPage.length) {
+  const store = createStore(reducer)
+  connectElements({ store, elements })
+
+  const blocksChannel = socket.channel(`blocks:new_block`, {})
+  blocksChannel.join()
+  blocksChannel.on('new_block', (msg) => store.dispatch({
+    type: 'RECEIVED_NEW_BLOCK',
+    msg: humps.camelizeKeys(msg)
+  }))
+
+  const transactionHash = $transactionDetailsPage[0].dataset.pageTransactionHash
+  const transactionChannel = socket.channel(`transactions:${transactionHash}`, {})
+  transactionChannel.join()
+  transactionChannel.on('collated', () => window.location.reload())
 }

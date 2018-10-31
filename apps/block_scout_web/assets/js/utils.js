@@ -16,32 +16,6 @@ export function batchChannel (func) {
   }
 }
 
-export function buildFullBlockList (blockNumbers) {
-  const newestBlock = _.first(blockNumbers)
-  const oldestBlock = _.last(blockNumbers)
-  return skippedBlockListBuilder([], newestBlock + 1, oldestBlock - 1)
-}
-
-export function initRedux (reducer, { main, render, debug } = {}) {
-  if (!reducer) {
-    console.error('initRedux: You need a reducer to initialize Redux.')
-    return
-  }
-  if (!render) console.warn('initRedux: You have not passed a render function.')
-
-  const store = createStore(reducer)
-  if (debug) store.subscribe(() => { console.log(store.getState()) })
-  let oldState = store.getState()
-  if (render) {
-    store.subscribe(() => {
-      const state = store.getState()
-      render(state, oldState)
-      oldState = state
-    })
-  }
-  if (main) main(store)
-}
-
 export function createStore (reducer) {
   return reduxCreateStore(reducer, window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__())
 }
@@ -71,11 +45,6 @@ export function connectElements ({ elements, store }) {
     renderElements(state, oldState)
     oldState = state
   })
-}
-
-export function skippedBlockListBuilder (skippedBlockNumbers, newestBlock, oldestBlock) {
-  for (let i = newestBlock - 1; i > oldestBlock; i--) skippedBlockNumbers.push(i)
-  return skippedBlockNumbers
 }
 
 export function slideDownPrepend ($container, content) {

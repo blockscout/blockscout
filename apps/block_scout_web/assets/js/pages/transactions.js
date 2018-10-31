@@ -5,7 +5,7 @@ import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
 import { updateAllAges } from '../lib/from_now'
-import { batchChannel, initRedux, slideDownPrepend } from '../utils'
+import { createStore, connectElements, batchChannel, slideDownPrepend } from '../utils'
 
 const BATCH_THRESHOLD = 10
 
@@ -19,11 +19,9 @@ export const initialState = {
 
 export function reducer (state = initialState, action) {
   switch (action.type) {
-    case 'PAGE_LOAD': {
-      return Object.assign({}, state, {
-        beyondPageOne: action.beyondPageOne,
-        transactionCount: numeral(action.transactionCount).value()
-      })
+    case 'PAGE_LOAD':
+    case 'ELEMENTS_LOAD': {
+      return Object.assign({}, state, _.omit(action, 'type'))
     }
     case 'CHANNEL_DISCONNECTED': {
       return Object.assign({}, state, {
@@ -58,43 +56,59 @@ export function reducer (state = initialState, action) {
   }
 }
 
-const $transactionListPage = $('[data-page="transaction-list"]')
-if ($transactionListPage.length) {
-  initRedux(reducer, {
-    main (store) {
-      store.dispatch({
-        type: 'PAGE_LOAD',
-        transactionCount: $('[data-selector="transaction-count"]').text(),
-        beyondPageOne: !!humps.camelizeKeys(URI(window.location).query(true)).index
-      })
-      const transactionsChannel = socket.channel(`transactions:new_transaction`)
-      transactionsChannel.join()
-      transactionsChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
-      transactionsChannel.on('transaction', batchChannel((msgs) =>
-        store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION_BATCH', msgs: humps.camelizeKeys(msgs) }))
-      )
-    },
-    render (state, oldState) {
+const elements = {
+  '[data-selector="channel-disconnected-message"]': {
+    render ($el, state) {
+      if (state.channelDisconnected) $el.show()
+    }
+  },
+  '[data-selector="channel-batching-count"]': {
+    render ($el, state, oldState) {
       const $channelBatching = $('[data-selector="channel-batching-message"]')
-      const $channelBatchingCount = $('[data-selector="channel-batching-count"]')
-      const $channelDisconnected = $('[data-selector="channel-disconnected-message"]')
-      const $transactionsList = $('[data-selector="transactions-list"]')
-      const $transactionCount = $('[data-selector="transaction-count"]')
-
-      if (state.channelDisconnected) $channelDisconnected.show()
-      if (oldState.transactionCount !== state.transactionCount) $transactionCount.empty().append(numeral(state.transactionCount).format())
       if (state.batchCountAccumulator) {
         $channelBatching.show()
-        $channelBatchingCount[0].innerHTML = numeral(state.batchCountAccumulator).format()
+        $el[0].innerHTML = numeral(state.batchCountAccumulator).format()
       } else {
         $channelBatching.hide()
       }
-      if (oldState.newTransactions !== state.newTransactions) {
-        const newTransactionsToInsert = state.newTransactions.slice(oldState.newTransactions.length)
-        slideDownPrepend($transactionsList, newTransactionsToInsert.reverse().join(''))
-
-        updateAllAges()
-      }
     }
+  },
+  '[data-selector="transaction-count"]': {
+    load ($el) {
+      return { transactionCount: numeral($el.text()).value() }
+    },
+    render ($el, state, oldState) {
+      if (oldState.transactionCount === state.transactionCount) return
+      $el.empty().append(numeral(state.transactionCount).format())
+    }
+  },
+  '[data-selector="transactions-list"]': {
+    render ($el, state, oldState) {
+      if (oldState.newTransactions === state.newTransactions) return
+      const newTransactionsToInsert = state.newTransactions.slice(oldState.newTransactions.length)
+      slideDownPrepend($el, newTransactionsToInsert.reverse().join(''))
+
+      updateAllAges()
+    }
+  }
+}
+
+const $transactionListPage = $('[data-page="transaction-list"]')
+if ($transactionListPage.length) {
+  const store = createStore(reducer)
+  store.dispatch({
+    type: 'PAGE_LOAD',
+    beyondPageOne: !!humps.camelizeKeys(URI(window.location).query(true)).index
   })
+  connectElements({ store, elements })
+
+  const transactionsChannel = socket.channel(`transactions:new_transaction`)
+  transactionsChannel.join()
+  transactionsChannel.onError(() => store.dispatch({
+    type: 'CHANNEL_DISCONNECTED'
+  }))
+  transactionsChannel.on('transaction', batchChannel((msgs) => store.dispatch({
+    type: 'RECEIVED_NEW_TRANSACTION_BATCH',
+    msgs: humps.camelizeKeys(msgs)
+  })))
 }
