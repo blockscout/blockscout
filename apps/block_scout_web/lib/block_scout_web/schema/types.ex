@@ -12,6 +12,7 @@ defmodule BlockScoutWeb.Schema.Types do
   structure that they form is called a "blockchain".
   """
   object :block do
+    field(:hash, :full_hash)
     field(:consensus, :boolean)
     field(:difficulty, :decimal)
     field(:gas_limit, :decimal)
