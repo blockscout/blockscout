@@ -2795,7 +2795,7 @@ defmodule Explorer.ChainTest do
         name: "Hodl Token",
         symbol: "HT",
         total_supply: 10,
-        decimals: 1,
+        decimals: Decimal.new(1),
         cataloged: true
       }
 

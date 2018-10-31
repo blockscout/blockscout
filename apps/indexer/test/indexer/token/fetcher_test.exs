@@ -64,12 +64,14 @@ defmodule Indexer.Token.FetcherTest do
 
         expected_supply = Decimal.new(1_000_000_000_000_000_000)
 
+        decimals_expected = Decimal.new(18)
+
         assert {:ok,
                 %Token{
                   name: "Bancor",
                   symbol: "BNT",
                   total_supply: ^expected_supply,
-                  decimals: 18,
+                  decimals: ^decimals_expected,
                   cataloged: true
                 }} = Chain.token_from_address_hash(contract_address_hash)
       end

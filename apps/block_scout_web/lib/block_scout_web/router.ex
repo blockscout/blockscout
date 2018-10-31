@@ -38,6 +38,14 @@ defmodule BlockScoutWeb.Router do
     })
   end
 
+  forward("/graphql", Absinthe.Plug, schema: BlockScoutWeb.Schema)
+
+  forward("/graphiql", Absinthe.Plug.GraphiQL,
+    schema: BlockScoutWeb.Schema,
+    interface: :playground,
+    socket: BlockScoutWeb.UserSocket
+  )
+
   scope "/", BlockScoutWeb do
     pipe_through(:browser)
 

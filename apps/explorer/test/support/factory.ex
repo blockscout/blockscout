@@ -29,8 +29,6 @@ defmodule Explorer.Factory do
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
 
-  @dialyzer {:nowarn_function, fields_for: 1}
-
   def address_factory do
     %Address{
       hash: address_hash()
