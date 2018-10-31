@@ -48,7 +48,7 @@ defmodule Explorer.Chain.Address.TokenTest do
                name: "token-c",
                symbol: "TC",
                balance: Decimal.new(1000),
-               decimals: 0,
+               decimals: Decimal.new(0),
                type: "ERC-721",
                transfers_count: 2
              }
