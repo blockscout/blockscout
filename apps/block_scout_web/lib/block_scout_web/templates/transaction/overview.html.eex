@@ -80,9 +80,7 @@
             <dd class="col-sm-9">
               <div class="tile tile-muted">
                 <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0">
-                  <code>
-                    <%= @transaction.input %>
-                  </code>
+<code><%= @transaction.input %></code>
                 </pre>
               </div>
             </dd>
