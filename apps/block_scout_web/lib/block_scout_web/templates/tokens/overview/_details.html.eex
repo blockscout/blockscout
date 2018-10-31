@@ -37,11 +37,11 @@
             <div class="d-flex flex-row justify-content-start text-muted">
               <span class="mr-4"> <%= @token.type %> </span>
               <%= if @holders_count_consolidation_enabled do %>
-                <span class="mr-4"><%= @total_token_holders %>  <%= gettext "addresses" %></span>
+                <span class="mr-4"><%= @total_token_holders %>  <%= gettext "Addresses" %></span>
               <% end %>
               <span class="mr-4"><%= @total_token_transfers %> <%= gettext "Transfers" %></span>
               <%= if decimals?(@token) do %>
-                <span class="mr-4"><%= @token.decimals %> <%= gettext "decimals" %></span>
+                <span class="mr-4"><%= @token.decimals %> <%= gettext "Decimals" %></span>
               <% end %>
             </div>
           </div>
