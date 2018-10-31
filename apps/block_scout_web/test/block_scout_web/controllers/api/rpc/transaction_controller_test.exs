@@ -374,7 +374,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         |> with_block(block, status: :ok)
 
       address = insert(:address)
-      insert(:log, address: address, transaction: transaction)
+      log = insert(:log, address: address, transaction: transaction)
 
       params = %{
         "module" => "transaction",
@@ -382,7 +382,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         "txhash" => "#{transaction.hash}"
       }
 
-      expected_result =     %{
+      expected_result = %{
         "hash" => "#{transaction.hash}",
         "timeStamp" => "#{DateTime.to_unix(transaction.block.timestamp)}",
         "blockNumber" => "#{transaction.block_number}",
@@ -394,11 +394,13 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         "input" => "#{transaction.input}",
         "gasLimit" => "#{transaction.gas}",
         "gasUsed" => "#{transaction.gas_used}",
-        "logs" => [%{
-          "address" => "#{address}",
-          "data" => "0x00",
-          "topics" => [nil, nil, nil, nil]
-        }]
+        "logs" => [
+          %{
+            "address" => "#{address}",
+            "data" => "#{log.data}",
+            "topics" => [nil, nil, nil, nil]
+          }
+        ]
       }
 
       assert response =
