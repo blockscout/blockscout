@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.Schema.Query.BlockTest do
       query = """
       query ($number: Int!) {
         block(number: $number) {
+          hash
           consensus
           difficulty
           gas_limit
@@ -31,6 +32,7 @@ defmodule BlockScoutWeb.Schema.Query.BlockTest do
       assert json_response(conn, 200) == %{
                "data" => %{
                  "block" => %{
+                   "hash" => to_string(block.hash),
                    "consensus" => block.consensus,
                    "difficulty" => to_string(block.difficulty),
                    "gas_limit" => to_string(block.gas_limit),
