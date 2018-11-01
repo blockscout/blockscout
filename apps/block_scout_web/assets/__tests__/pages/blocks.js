@@ -1,4 +1,4 @@
-import { reducer, initialState } from '../../js/pages/block'
+import { reducer, initialState } from '../../js/pages/blocks'
 
 test('CHANNEL_DISCONNECTED', () => {
   const state = initialState
