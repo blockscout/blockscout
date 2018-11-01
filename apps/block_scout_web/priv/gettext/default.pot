@@ -84,11 +84,6 @@ msgid "A string with the name of the module to be invoked."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:64
-msgid "API"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/api_docs/_metatags.html.eex:4
 msgid "API endpoints for the %{subnetwork}"
 msgstr ""
@@ -660,12 +655,12 @@ msgid "Owner Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:95
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:107
 msgid "POA Core"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:94
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:106
 msgid "POA Sokol"
 msgstr ""
 
@@ -757,13 +752,13 @@ msgid "Responses"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:71
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:78
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:83
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:90
 msgid "Search"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:71
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:83
 msgid "Search by address, transaction hash, or block number"
 msgstr ""
 
@@ -870,11 +865,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:28
 msgid "There are no transfers for this Token."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/api_docs/index.html.eex:7
-msgid "This API is provided for developers transitioning their applications from Etherscan to Explorer. It supports GET and POST requests."
 msgstr ""
 
 #, elixir-format
@@ -1220,4 +1210,23 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:82
 msgid "Loading"
+msgstr ""
+
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:64
+msgid "APIs"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:68
+msgid "GraphQL"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/index.html.eex:7
+msgid "This API is provided for developers transitioning their applications from Etherscan to BlockScout. It supports GET and POST requests."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:73
+msgid "RPC"
 msgstr ""
