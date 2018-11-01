@@ -7,11 +7,22 @@ defmodule BlockScoutWeb.Schema.Types do
   import_types(BlockScoutWeb.Schema.Scalars)
 
   @desc """
+  A stored representation of a Web3 address.
+  """
+  object :address do
+    field(:hash, :address_hash)
+    field(:fetched_coin_balance, :wei)
+    field(:fetched_coin_balance_block_number, :integer)
+    field(:contract_code, :data)
+  end
+
+  @desc """
   A package of data that contains zero or more transactions, the hash of the previous block ("parent"), and optionally
   other data. Because each block (except for the initial "genesis block") points to the previous block, the data
   structure that they form is called a "blockchain".
   """
   object :block do
+    field(:hash, :full_hash)
     field(:consensus, :boolean)
     field(:difficulty, :decimal)
     field(:gas_limit, :decimal)
