@@ -4,7 +4,7 @@ import URI from 'urijs'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
-import { createStore, connectElements, batchChannel, listMorph, atBottom } from '../utils'
+import { createStore, connectElements, batchChannel, listMorph, onScrollBottom } from '../utils'
 import { updateAllCalculatedUsdValues } from '../lib/currency.js'
 import { loadTokenBalanceDropdown } from '../lib/token_balance_dropdown'
 
@@ -28,7 +28,8 @@ export const initialState = {
   validatedBlocks: [],
 
   loadingNextPage: false,
-  nextPage: null,
+  pagingError: false,
+  nextPageUrl: null,
 
   beyondPageOne: null
 }
@@ -137,10 +138,16 @@ export function reducer (state = initialState, action) {
         loadingNextPage: true
       })
     }
+    case 'PAGING_ERROR': {
+      return Object.assign({}, state, {
+        loadingNextPage: false,
+        pagingError: true
+      })
+    }
     case 'RECEIVED_NEXT_TRANSACTIONS_PAGE': {
       return Object.assign({}, state, {
         loadingNextPage: false,
-        nextPage: action.msg.nextPage,
+        nextPageUrl: action.msg.nextPageUrl,
         transactions: [
           ...state.transactions,
           ...action.msg.transactions
@@ -193,6 +200,13 @@ const elements = {
         $el.show()
       } else {
         $el.hide()
+      }
+    }
+  },
+  '[data-selector="paging-error-message"]': {
+    render ($el, state) {
+      if (state.pagingError) {
+        $el.show()
       }
     }
   },
@@ -283,7 +297,7 @@ const elements = {
   '[data-selector="next-page-button"]': {
     load ($el) {
       return {
-        nextPage: `${$el.hide().attr('href')}&type=JSON`
+        nextPageUrl: `${$el.hide().attr('href')}&type=JSON`
       }
     }
   }
@@ -340,18 +354,24 @@ if ($addressDetailsPage.length) {
     msg: humps.camelizeKeys(msg)
   }))
 
-  $('[data-selector="transactions-list"]').length && atBottom(function loadMoreTransactions () {
-    const nextPage = store.getState().nextPage
-    if (nextPage) {
+  $('[data-selector="transactions-list"]').length && onScrollBottom(function loadMoreTransactions () {
+    const { loadingNextPage, nextPageUrl, pagingError } = store.getState()
+    if (!loadingNextPage && nextPageUrl && !pagingError) {
       store.dispatch({
         type: 'LOADING_NEXT_PAGE'
       })
-      $.get(nextPage).done(msg => {
-        store.dispatch({
-          type: 'RECEIVED_NEXT_TRANSACTIONS_PAGE',
-          msg: humps.camelizeKeys(msg)
+      $.get(nextPageUrl)
+        .done(msg => {
+          store.dispatch({
+            type: 'RECEIVED_NEXT_TRANSACTIONS_PAGE',
+            msg: humps.camelizeKeys(msg)
+          })
         })
-      })
+        .fail(() => {
+          store.dispatch({
+            type: 'PAGING_ERROR'
+          })
+        })
     }
   })
 }

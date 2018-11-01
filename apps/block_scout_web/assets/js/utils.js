@@ -146,7 +146,26 @@ function smarterSlideUp ($el, { complete = _.noop } = {}) {
   }
 }
 
-export function listMorph (container, newElements, { key, horizontal }) {
+// The goal of this function is to DOM diff lists, so upon completion `container.innerHTML` should be
+// equivalent to `newElements.join('')`.
+//
+// We could simply do `container.innerHTML = newElements.join('')` but that would not be efficient and
+// it not animate appropriately. We could also simply use `morph` (or a similar library) on the entire
+// list, however that doesn't give us the proper amount of control for animations.
+//
+// This function will walk though, remove items currently in `container` which are not in the new list.
+// Then it will swap the contents of the items that are in both lists in case the items were updated or
+// the order changed. Finally, it will add elements to `container` which are in the new list and didn't
+// already exist in the DOM.
+//
+// Params:
+// container:    the DOM element which contents need replaced
+// newElements:  a list of elements that need to be put into the container
+// options:
+//   key:        the path to the unique identifier of each element
+//   horizontal: our horizontal animations are handled in CSS, so passing in `true` will not play JS
+//               animations
+export function listMorph (container, newElements, { key, horizontal } = {}) {
   if (!container) return
   const oldElements = $(container).children().get()
   let currentList = _.map(oldElements, (el) => ({ id: _.get(el, key), el }))
@@ -182,14 +201,15 @@ export function listMorph (container, newElements, { key, horizontal }) {
   })
 }
 
-export function atBottom (callback) {
+export function onScrollBottom (callback) {
+  const $window = $(window)
   function infiniteScrollChecker () {
-    var scrollHeight = $(document).height()
-    var scrollPosition = $(window).height() + $(window).scrollTop()
+    const scrollHeight = $(document).height()
+    const scrollPosition = $window.height() + $window.scrollTop()
     if ((scrollHeight - scrollPosition) / scrollHeight === 0) {
       callback()
     }
   }
   infiniteScrollChecker()
-  $(window).on('scroll', infiniteScrollChecker)
+  $window.on('scroll', infiniteScrollChecker)
 }
