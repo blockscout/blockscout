@@ -13,10 +13,10 @@ defmodule BlockScoutWeb.CSPHeader do
       "content-security-policy" => "\
         connect-src 'self' #{websocket_endpoints(conn)}; \
         default-src 'self';\
-        script-src 'self' 'unsafe-inline' 'unsafe-eval';\
-        style-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com;\
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net;\
+        style-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com https://cdn.jsdelivr.net;\
         img-src 'self' 'unsafe-inline' 'unsafe-eval' data:;\
-        font-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.gstatic.com data:;\
+        font-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.gstatic.com https://cdn.jsdelivr.net data:;\
       "
     })
   end

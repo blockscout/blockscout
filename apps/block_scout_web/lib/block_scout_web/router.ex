@@ -44,13 +44,17 @@ defmodule BlockScoutWeb.Router do
     max_complexity: 50
   )
 
-  forward("/graphiql", Absinthe.Plug.GraphiQL,
-    schema: BlockScoutWeb.Schema,
-    interface: :playground,
-    socket: BlockScoutWeb.UserSocket,
-    analyze_complexity: true,
-    max_complexity: 50
-  )
+  scope "/" do
+    pipe_through([BlockScoutWeb.CSPHeader])
+
+    forward("/graphiql", Absinthe.Plug.GraphiQL,
+      schema: BlockScoutWeb.Schema,
+      interface: :playground,
+      socket: BlockScoutWeb.UserSocket,
+      analyze_complexity: true,
+      max_complexity: 50
+    )
+  end
 
   scope "/", BlockScoutWeb do
     pipe_through(:browser)
