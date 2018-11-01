@@ -26,8 +26,8 @@
 
         <div class="mb-4">
           <dl class="row">
-            <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "Name" %></dt>
-            <dt class="col-sm-8 col-md-10 text-muted"><%= gettext "Description" %></dt>
+            <dt class="col-2 text-muted d-none d-md-block"><%= gettext "Name" %></dt>
+            <dt class="col-10 text-muted d-none d-md-block"><%= gettext "Description" %></dt>
           </dl>
           <dl class="row">
             <dd class="col-sm-4 col-md-2">
@@ -93,8 +93,8 @@
           <div class="col-sm-2 offset-sm-4 col-md-2 offset-md-2">
             <button data-selector="<%= "#{@module_name}-#{@action.name}-try-api-ui" %>" data-try-api-ui-button-type="execute" role="button" class="collapse button button-primary w-100" data-module="<%= @module_name %>" data-action="<%= @action.name %>"><%= gettext "Execute" %></button>
           </div>
-          <div class="col-sm-2 col-md-2">
-            <button role="button" class="collapse button button-secondary" data-selector="<%= "#{@module_name}-#{@action.name}-btn-try-api-clear" %>" data-module="<%= @module_name %>" data-action="<%= @action.name %>"><%= gettext "Clear" %></button>
+          <div class="col-sm-2 col-md-2 mt-2 mt-md-0">
+            <button role="button" class="collapse button button-secondary w-100" data-selector="<%= "#{@module_name}-#{@action.name}-btn-try-api-clear" %>" data-module="<%= @module_name %>" data-action="<%= @action.name %>"><%= gettext "Clear" %></button>
           </div>
         </div>
  <!-- /btn-group -->
@@ -116,13 +116,13 @@
           <div>
             <h5><%= gettext "Server Response" %></h5>
               <dl class="row">
-                <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "Code" %></dt>
-                <dt class="col-sm-8 col-md-10 text-muted"><%= gettext "Details" %></dt>
+                <dt class="col-2 pr-0 pr-md-2 text-muted"><%= gettext "Code" %></dt>
+                <dt class="col-10 text-muted"><%= gettext "Details" %></dt>
               </dl>
               <dl class="row">
-                <dd class="col-sm-4 col-md-2" data-selector="<%= "#{@module_name}-#{@action.name}-server-response-code" %>">
+                <dd class="col-2 pr-0 pr-md-2 col-md-2" data-selector="<%= "#{@module_name}-#{@action.name}-server-response-code" %>">
                 </dd>
-                <dd class="col-sm-8 col-md-10">
+                <dd class="col-10 col-md-10">
                   <%= gettext "Response Body" %>
                   <div class="tile tile-muted p-1 card-server-response-body">
                     <pre data-selector="<%= "#{@module_name}-#{@action.name}-server-response-body" %>" class="m-2"></pre>
@@ -138,15 +138,15 @@
         <h4 class="text-primary my-4"><%= gettext "Responses" %></h4>
         <div>
           <dl class="row">
-            <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "Code" %></dt>
-            <dt class="col-sm-8 col-md-10 text-muted"><%= gettext "Description" %></dt>
+            <dt class="col-2 pr-0 pr-md-2 text-muted"><%= gettext "Code" %></dt>
+            <dt class="col-10 text-muted"><%= gettext "Description" %></dt>
           </dl>
             <%= for {response, index} <- Enum.with_index(@action.responses) do %>
             <dl class="row">
-              <dd class="col-sm-4 col-md-2">
+              <dd class="col-2 pr-0 pr-md-2">
                   <%= response.code %>
               </dd>
-              <dd class="col-sm-8 col-md-10">
+              <dd class="col-10">
                 <div class="tile tile-muted p-1 mb-3">
                   <pre class="m-2"><strong><%= response.description %></strong></pre>
                 </div>
