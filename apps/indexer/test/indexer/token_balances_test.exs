@@ -45,28 +45,21 @@ defmodule Indexer.TokenBalancesTest do
              } = List.first(result)
     end
 
-    test "does not ignore calls that were returned with error" do
-      address = insert(:address)
+    test "ignores calls that gave errors to try fetch they again later" do
+      address = insert(:address, hash: "0x7113ffcb9c18a97da1b9cfc43e6cb44ed9165509")
       token = insert(:token, contract_address: build(:contract_address))
-      address_hash_string = Hash.to_string(address.hash)
 
-      data = %{
-        token_contract_address_hash: token.contract_address_hash,
-        address_hash: address_hash_string,
-        block_number: 1_000
-      }
+      token_balances = [
+        %{
+          address_hash: to_string(address.hash),
+          block_number: 1_000,
+          token_contract_address_hash: to_string(token.contract_address_hash)
+        }
+      ]
 
       get_balance_from_blockchain_with_error()
 
-      {:ok, result} = TokenBalances.fetch_token_balances_from_blockchain([data])
-
-      assert %{
-               value: nil,
-               token_contract_address_hash: token_contract_address_hash,
-               address_hash: address_hash,
-               block_number: 1_000,
-               value_fetched_at: nil
-             } = List.first(result)
+      assert TokenBalances.fetch_token_balances_from_blockchain(token_balances) == {:ok, []}
     end
 
     test "ignores results that raised :timeout" do

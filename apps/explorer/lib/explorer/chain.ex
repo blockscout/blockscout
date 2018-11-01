@@ -23,6 +23,7 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.{
     Address,
     Address.CoinBalance,
+    Address.CurrentTokenBalance,
     Address.TokenBalance,
     Block,
     Data,
@@ -2070,7 +2071,7 @@ defmodule Explorer.Chain do
   @spec fetch_token_holders_from_token_hash(Hash.Address.t(), [paging_options]) :: [TokenBalance.t()]
   def fetch_token_holders_from_token_hash(contract_address_hash, options) do
     contract_address_hash
-    |> TokenBalance.token_holders_ordered_by_value(options)
+    |> CurrentTokenBalance.token_holders_ordered_by_value(options)
     |> Repo.all()
   end
 
