@@ -28,6 +28,7 @@
     "jquery": "^3.3.1",
     "lodash": "^4.17.10",
     "moment": "^2.22.1",
+    "nanomorph": "^5.1.3",
     "numeral": "^2.0.6",
     "path-parser": "^4.1.1",
     "phoenix": "file:../../../deps/phoenix",

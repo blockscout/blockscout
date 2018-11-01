@@ -20,6 +20,13 @@ import 'bootstrap'
 
 import './locale'
 
+import './pages/address'
+import './pages/blocks'
+import './pages/chain'
+import './pages/pending_transactions'
+import './pages/transaction'
+import './pages/transactions'
+
 import './lib/clipboard_buttons'
 import './lib/currency'
 import './lib/from_now'
@@ -37,8 +44,3 @@ import './lib/token_balance_dropdown_search'
 import './lib/token_transfers_toggle'
 import './lib/tooltip'
 import './lib/try_api'
-
-import './pages/address'
-import './pages/block'
-import './pages/chain'
-import './pages/transaction'

@@ -9,17 +9,17 @@
         <%= gettext("Validated Transactions") %>
       </p>
 
-      <div data-selector="channel-batching-message" class="d-none">
+      <div data-selector="channel-batching-message" style="display: none;">
         <div data-selector="reload-button" class="alert alert-info">
           <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>
         </div>
       </div>
-      <div data-selector="channel-disconnected-message" class="d-none">
+      <div data-selector="channel-disconnected-message" style="display: none;">
         <div data-selector="reload-button" class="alert alert-danger">
           <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer transactions" %></a>
         </div>
       </div>
-      
+
       <span data-selector="transactions-list">
         <%= for transaction <- @transactions do %>
           <%= render BlockScoutWeb.TransactionView, "_tile.html", transaction: transaction %>
