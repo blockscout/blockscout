@@ -76,8 +76,6 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
   end
 
   defp get_topics(log) do
-    log
-    |> Map.take([:first_topic, :second_topic, :third_topic, :fourth_topic])
-    |> Map.values()
+    [log.first_topic, log.second_topic, log.third_topic, log.fourth_topic]
   end
 end

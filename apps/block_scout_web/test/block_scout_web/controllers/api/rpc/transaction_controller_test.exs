@@ -374,7 +374,14 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         |> with_block(block, status: :ok)
 
       address = insert(:address)
-      log = insert(:log, address: address, transaction: transaction)
+
+      log =
+        insert(:log,
+          address: address,
+          transaction: transaction,
+          first_topic: "first topic",
+          second_topic: "second topic"
+        )
 
       params = %{
         "module" => "transaction",
@@ -398,7 +405,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
           %{
             "address" => "#{address}",
             "data" => "#{log.data}",
-            "topics" => [nil, nil, nil, nil]
+            "topics" => ["first topic", "second topic", nil, nil]
           }
         ]
       }
