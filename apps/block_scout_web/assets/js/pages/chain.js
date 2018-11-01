@@ -3,9 +3,8 @@ import _ from 'lodash'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
-import { updateAllAges } from '../lib/from_now'
 import { exchangeRateChannel, formatUsdValue } from '../lib/currency'
-import { createStore, connectElements, slideDownPrepend } from '../utils'
+import { createStore, connectElements, listMorph } from '../utils'
 import { createMarketHistoryChart } from '../lib/market_history_chart'
 
 export const initialState = {
@@ -13,8 +12,8 @@ export const initialState = {
   availableSupply: null,
   averageBlockTime: null,
   marketHistoryData: null,
-  newBlock: null,
-  newTransaction: null,
+  blocks: null,
+  transactions: null,
   transactionCount: null,
   usdMarketCap: null
 }
@@ -32,7 +31,10 @@ export function reducer (state = initialState, action) {
     case 'RECEIVED_NEW_BLOCK': {
       return Object.assign({}, state, {
         averageBlockTime: action.msg.averageBlockTime,
-        newBlock: action.msg.chainBlockHtml
+        blocks: [
+          action.msg,
+          ...state.blocks.slice(0, -1)
+        ]
       })
     }
     case 'RECEIVED_NEW_EXCHANGE_RATE': {
@@ -44,8 +46,11 @@ export function reducer (state = initialState, action) {
     }
     case 'RECEIVED_NEW_TRANSACTION': {
       return Object.assign({}, state, {
-        newTransaction: action.msg.transactionHtml,
-        transactionCount: state.transactionCount + 1
+        transactionCount: state.transactionCount + 1,
+        transactions: [
+          action.msg,
+          ...state.transactions.slice(0, -1)
+        ]
       })
     }
     default:
@@ -92,19 +97,35 @@ const elements = {
     }
   },
   '[data-selector="chain-block-list"]': {
+    load ($el) {
+      return {
+        blocks: $el.children().map((index, el) => ({
+          blockNumber: parseInt(el.dataset.blockNumber),
+          chainBlockHtml: el.outerHTML
+        })).toArray()
+      }
+    },
     render ($el, state, oldState) {
-      if (oldState.newBlock === state.newBlock) return
-      $el.children().last().remove()
-      $el.prepend(newBlockHtml(state.newBlock))
-      updateAllAges()
+      if (oldState.blocks === state.blocks) return
+      const container = $el[0]
+      const newElements = _.map(state.blocks, ({ chainBlockHtml }) => $(chainBlockHtml)[0])
+      listMorph(container, newElements, { key: 'dataset.blockNumber', horizontal: true })
     }
   },
   '[data-selector="transactions-list"]': {
+    load ($el) {
+      return {
+        transactions: $el.children().map((index, el) => ({
+          transactionHash: el.dataset.transactionHash,
+          transactionHtml: el.outerHTML
+        })).toArray()
+      }
+    },
     render ($el, state, oldState) {
-      if (oldState.newTransaction === state.newTransaction) return
-      $el.children().last().remove()
-      slideDownPrepend($el, state.newTransaction)
-      updateAllAges()
+      if (oldState.transactions === state.transactions) return
+      const container = $el[0]
+      const newElements = _.map(state.transactions, ({ transactionHtml }) => $(transactionHtml)[0])
+      listMorph(container, newElements, { key: 'dataset.transactionHash' })
     }
   }
 }
@@ -139,12 +160,4 @@ if ($chainDetailsPage.length) {
     type: 'RECEIVED_NEW_TRANSACTION',
     msg: humps.camelizeKeys(msg)
   }))
-}
-
-function newBlockHtml (blockHtml) {
-  return `
-    <div class="col-lg-3 fade-up-blocks-chain">
-      ${blockHtml}
-    </div>
-  `
 }

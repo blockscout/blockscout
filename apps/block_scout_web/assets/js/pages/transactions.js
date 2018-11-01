@@ -4,17 +4,19 @@ import URI from 'urijs'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
-import { updateAllAges } from '../lib/from_now'
-import { createStore, connectElements, batchChannel, slideDownPrepend } from '../utils'
+import { createStore, connectElements, batchChannel, listMorph } from '../utils'
 
 const BATCH_THRESHOLD = 10
 
 export const initialState = {
-  batchCountAccumulator: 0,
-  beyondPageOne: null,
   channelDisconnected: false,
-  newTransactions: [],
-  transactionCount: null
+
+  transactionCount: null,
+
+  transactions: [],
+  transactionsBatch: [],
+
+  beyondPageOne: null
 }
 
 export function reducer (state = initialState, action) {
@@ -26,7 +28,7 @@ export function reducer (state = initialState, action) {
     case 'CHANNEL_DISCONNECTED': {
       return Object.assign({}, state, {
         channelDisconnected: true,
-        batchCountAccumulator: 0
+        transactionsBatch: []
       })
     }
     case 'RECEIVED_NEW_TRANSACTION_BATCH': {
@@ -36,17 +38,20 @@ export function reducer (state = initialState, action) {
 
       if (state.beyondPageOne) return Object.assign({}, state, { transactionCount })
 
-      if (!state.batchCountAccumulator && action.msgs.length < BATCH_THRESHOLD) {
+      if (!state.transactionsBatch.length && action.msgs.length < BATCH_THRESHOLD) {
         return Object.assign({}, state, {
-          newTransactions: [
-            ...state.newTransactions,
-            ..._.map(action.msgs, 'transactionHtml')
+          transactions: [
+            ...action.msgs.reverse(),
+            ...state.transactions
           ],
           transactionCount
         })
       } else {
         return Object.assign({}, state, {
-          batchCountAccumulator: state.batchCountAccumulator + action.msgs.length,
+          transactionsBatch: [
+            ...action.msgs.reverse(),
+            ...state.transactionsBatch
+          ],
           transactionCount
         })
       }
@@ -65,12 +70,9 @@ const elements = {
   '[data-selector="channel-batching-count"]': {
     render ($el, state, oldState) {
       const $channelBatching = $('[data-selector="channel-batching-message"]')
-      if (state.batchCountAccumulator) {
-        $channelBatching.show()
-        $el[0].innerHTML = numeral(state.batchCountAccumulator).format()
-      } else {
-        $channelBatching.hide()
-      }
+      if (!state.transactionsBatch.length) return $channelBatching.hide()
+      $channelBatching.show()
+      $el[0].innerHTML = numeral(state.transactionsBatch.length).format()
     }
   },
   '[data-selector="transaction-count"]': {
@@ -83,12 +85,19 @@ const elements = {
     }
   },
   '[data-selector="transactions-list"]': {
+    load ($el, store) {
+      return {
+        transactions: $el.children().map((index, el) => ({
+          transactionHash: el.dataset.transactionHash,
+          transactionHtml: el.outerHTML
+        })).toArray()
+      }
+    },
     render ($el, state, oldState) {
-      if (oldState.newTransactions === state.newTransactions) return
-      const newTransactionsToInsert = state.newTransactions.slice(oldState.newTransactions.length)
-      slideDownPrepend($el, newTransactionsToInsert.reverse().join(''))
-
-      updateAllAges()
+      if (oldState.transactions === state.transactions) return
+      const container = $el[0]
+      const newElements = _.map(state.transactions, ({ transactionHtml }) => $(transactionHtml)[0])
+      listMorph(container, newElements, { key: 'dataset.transactionHash' })
     }
   }
 }

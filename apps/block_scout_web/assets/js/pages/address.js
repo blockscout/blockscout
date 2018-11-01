@@ -233,7 +233,7 @@ const elements = {
     }
   },
   '[data-selector="transactions-list"]': {
-    load ($el, store) {
+    load ($el) {
       return {
         transactions: $el.children().map((index, el) => ({
           transactionHash: el.dataset.transactionHash,

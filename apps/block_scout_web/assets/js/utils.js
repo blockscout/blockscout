@@ -47,28 +47,21 @@ export function connectElements ({ elements, store }) {
   })
 }
 
-export function slideDownPrepend ($container, content) {
-  smarterSlideDown($(content), {
-    insert ($el) {
-      $container.prepend($el)
-    }
-  })
-}
-export function slideDownAppend ($container, content) {
+function slideDownAppend ($container, content) {
   smarterSlideDown($(content), {
     insert ($el) {
       $container.append($el)
     }
   })
 }
-export function slideDownBefore ($container, content) {
+function slideDownBefore ($container, content) {
   smarterSlideDown($(content), {
     insert ($el) {
       $container.before($el)
     }
   })
 }
-export function slideUpRemove ($el) {
+function slideUpRemove ($el) {
   smarterSlideUp($el, {
     complete () {
       $el.remove()

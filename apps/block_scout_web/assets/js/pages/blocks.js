@@ -3,13 +3,12 @@ import _ from 'lodash'
 import URI from 'urijs'
 import humps from 'humps'
 import socket from '../socket'
-import { updateAllAges } from '../lib/from_now'
-import { createStore, connectElements, slideDownPrepend } from '../utils'
+import { createStore, connectElements, listMorph } from '../utils'
 
 export const initialState = {
   channelDisconnected: false,
 
-  newBlock: null,
+  blocks: [],
 
   beyondPageOne: null
 }
@@ -29,7 +28,10 @@ export function reducer (state = initialState, action) {
       if (state.channelDisconnected || state.beyondPageOne) return state
 
       return Object.assign({}, state, {
-        newBlock: action.msg.blockHtml
+        blocks: [
+          action.msg,
+          ...state.blocks
+        ]
       })
     }
     default:
@@ -44,10 +46,19 @@ const elements = {
     }
   },
   '[data-selector="blocks-list"]': {
+    load ($el) {
+      return {
+        blocks: $el.children().map((index, el) => ({
+          blockNumber: parseInt(el.dataset.blockNumber),
+          blockHtml: el.outerHTML
+        })).toArray()
+      }
+    },
     render ($el, state, oldState) {
-      if (oldState.newBlock === state.newBlock) return
-      slideDownPrepend($el, state.newBlock)
-      updateAllAges()
+      if (oldState.blocks === state.blocks) return
+      const container = $el[0]
+      const newElements = _.map(state.blocks, ({ blockHtml }) => $(blockHtml)[0])
+      listMorph(container, newElements, { key: 'dataset.blockNumber' })
     }
   }
 }
