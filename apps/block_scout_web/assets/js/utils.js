@@ -38,13 +38,13 @@ export function connectElements ({ elements, store }) {
       render($el, state, oldState)
     })
   }
-  store.dispatch(Object.assign(loadElements(), { type: 'ELEMENTS_LOAD' }))
   let oldState = store.getState()
   store.subscribe(() => {
     const state = store.getState()
     renderElements(state, oldState)
     oldState = state
   })
+  store.dispatch(Object.assign(loadElements(), { type: 'ELEMENTS_LOAD' }))
 }
 
 function slideDownAppend ($container, content) {

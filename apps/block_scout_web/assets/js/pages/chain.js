@@ -18,7 +18,9 @@ export const initialState = {
   usdMarketCap: null
 }
 
-export function reducer (state = initialState, action) {
+export const reducer = withMissingBlocks(baseReducer)
+
+function baseReducer (state = initialState, action) {
   switch (action.type) {
     case 'ELEMENTS_LOAD': {
       return Object.assign({}, state, _.omit(action, 'type'))
@@ -55,6 +57,25 @@ export function reducer (state = initialState, action) {
     }
     default:
       return state
+  }
+}
+
+function withMissingBlocks (reducer) {
+  return (...args) => {
+    const result = reducer(...args)
+
+    if (!result.blocks || result.blocks.length < 2) return result
+
+    const maxBlock = _.first(result.blocks).blockNumber
+    const minBlock = maxBlock - (result.blocks.length - 1)
+
+    return Object.assign({}, result, {
+      blocks: _.rangeRight(minBlock, maxBlock + 1)
+        .map((blockNumber) => _.find(result.blocks, ['blockNumber', blockNumber]) || {
+          blockNumber,
+          chainBlockHtml: placeHolderBlock(blockNumber)
+        })
+    })
   }
 }
 
@@ -160,4 +181,29 @@ if ($chainDetailsPage.length) {
     type: 'RECEIVED_NEW_TRANSACTION',
     msg: humps.camelizeKeys(msg)
   }))
+}
+
+function placeHolderBlock (blockNumber) {
+  return `
+    <div
+      class="col-lg-3 fade-up-blocks-chain"
+      style="min-height: 100px;"
+      data-selector="place-holder"
+      data-block-number="${blockNumber}"
+    >
+      <div
+        class="tile tile-type-block d-flex align-items-center fade-up"
+        style="height: 100px;"
+      >
+        <span class="loading-spinner-small ml-1 mr-4">
+          <span class="loading-spinner-block-1"></span>
+          <span class="loading-spinner-block-2"></span>
+        </span>
+        <div>
+          <div class="tile-title">${blockNumber}</div>
+          <div>${window.localized['Block Processing']}</div>
+        </div>
+      </div>
+    </div>
+  `
 }

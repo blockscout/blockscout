@@ -13,7 +13,9 @@ export const initialState = {
   beyondPageOne: null
 }
 
-export function reducer (state = initialState, action) {
+export const reducer = withMissingBlocks(baseReducer)
+
+function baseReducer (state = initialState, action) {
   switch (action.type) {
     case 'PAGE_LOAD':
     case 'ELEMENTS_LOAD': {
@@ -36,6 +38,25 @@ export function reducer (state = initialState, action) {
     }
     default:
       return state
+  }
+}
+
+function withMissingBlocks (reducer) {
+  return (...args) => {
+    const result = reducer(...args)
+
+    if (result.blocks.length < 2) return result
+
+    const maxBlock = _.first(result.blocks).blockNumber
+    const minBlock = _.last(result.blocks).blockNumber
+
+    return Object.assign({}, result, {
+      blocks: _.rangeRight(minBlock, maxBlock + 1)
+        .map((blockNumber) => _.find(result.blocks, ['blockNumber', blockNumber]) || {
+          blockNumber,
+          blockHtml: placeHolderBlock(blockNumber)
+        })
+    })
   }
 }
 
@@ -81,4 +102,24 @@ if ($blockListPage.length) {
     type: 'RECEIVED_NEW_BLOCK',
     msg: humps.camelizeKeys(msg)
   }))
+}
+
+function placeHolderBlock (blockNumber) {
+  return `
+    <div class="my-3" style="height: 98px;" data-selector="place-holder" data-block-number="${blockNumber}">
+      <div
+        class="tile tile-type-block d-flex align-items-center fade-up"
+        style="height: 98px;"
+      >
+        <span class="loading-spinner-small ml-1 mr-4">
+          <span class="loading-spinner-block-1"></span>
+          <span class="loading-spinner-block-2"></span>
+        </span>
+        <div>
+          <div class="tile-title">${blockNumber}</div>
+          <div>${window.localized['Block Processing']}</div>
+        </div>
+      </div>
+    </div>
+  `
 }
