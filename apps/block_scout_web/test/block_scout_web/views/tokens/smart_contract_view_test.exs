@@ -80,6 +80,16 @@ defmodule BlockScoutWeb.SmartContractViewTest do
       assert SmartContractView.values(value, "address payable") == "0x5f26097334b6a32b7951df61fd0c5803ec5d8354"
     end
 
+    test "convert each value to string and join them when receiving 'address[]' as the type" do
+      value = [
+        <<95, 38, 9, 115, 52, 182, 163, 43, 121, 81, 223, 97, 253, 12, 88, 3, 236, 93, 131, 84>>,
+        <<207, 38, 14, 163, 23, 85, 86, 55, 197, 95, 112, 229, 93, 186, 141, 90, 216, 65, 76, 176>>
+      ]
+
+      assert SmartContractView.values(value, "address[]") ==
+               "0x5f26097334b6a32b7951df61fd0c5803ec5d8354, 0xcf260ea317555637c55f70e55dba8d5ad8414cb0"
+    end
+
     test "returns the value when the type is neither 'address' nor 'address payable'" do
       value = "POA"
 
