@@ -29,12 +29,18 @@ function baseReducer (state = initialState, action) {
     case 'RECEIVED_NEW_BLOCK': {
       if (state.channelDisconnected || state.beyondPageOne) return state
 
-      return Object.assign({}, state, {
-        blocks: [
-          action.msg,
-          ...state.blocks
-        ]
-      })
+      if (_.find(state.blocks, { blockNumber: action.msg.blockNumber })) {
+        return Object.assign({}, state, {
+          blocks: state.blocks.map((block) => block.blockNumber === action.msg.blockNumber ? action.msg : block)
+        })
+      } else {
+        return Object.assign({}, state, {
+          blocks: [
+            action.msg,
+            ...state.blocks
+          ]
+        })
+      }
     }
     default:
       return state

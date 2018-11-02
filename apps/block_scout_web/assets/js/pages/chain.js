@@ -31,13 +31,20 @@ function baseReducer (state = initialState, action) {
       })
     }
     case 'RECEIVED_NEW_BLOCK': {
-      return Object.assign({}, state, {
-        averageBlockTime: action.msg.averageBlockTime,
-        blocks: [
-          action.msg,
-          ...state.blocks.slice(0, -1)
-        ]
-      })
+      if (_.find(state.blocks, { blockNumber: action.msg.blockNumber })) {
+        return Object.assign({}, state, {
+          averageBlockTime: action.msg.averageBlockTime,
+          blocks: state.blocks.map((block) => block.blockNumber === action.msg.blockNumber ? action.msg : block)
+        })
+      } else {
+        return Object.assign({}, state, {
+          averageBlockTime: action.msg.averageBlockTime,
+          blocks: [
+            action.msg,
+            ...state.blocks.slice(0, -1)
+          ]
+        })
+      }
     }
     case 'RECEIVED_NEW_EXCHANGE_RATE': {
       return Object.assign({}, state, {
