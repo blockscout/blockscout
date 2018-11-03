@@ -923,14 +923,15 @@ defmodule Explorer.Chain do
   @spec list_top_addresses :: [{Address.t(), non_neg_integer()}]
   def list_top_addresses do
     query =
-	  from a in Address,
-	  left_join: t in Transaction,
-	  on: a.hash == t.from_address_hash,
-	  where: a.fetched_coin_balance > ^0,
-	  group_by: [a.hash, a.fetched_coin_balance],
-	  order_by: [desc: a.fetched_coin_balance, asc: a.hash],
-	  select: {a, fragment("coalesce(1 + max(?), 0)", t.nonce)},
-	  limit: 250
+      from(a in Address,
+        left_join: t in Transaction,
+        on: a.hash == t.from_address_hash,
+        where: a.fetched_coin_balance > ^0,
+        group_by: [a.hash, a.fetched_coin_balance],
+        order_by: [desc: a.fetched_coin_balance, asc: a.hash],
+        select: {a, fragment("coalesce(1 + max(?), 0)", t.nonce)},
+        limit: 250
+      )
 
     Repo.all(query)
   end
