@@ -8,7 +8,7 @@
       "method": "post",
       "options": [],
       "request_body": "",
-      "url": "https://foundation-trace-fn4v7.poa.network"
+      "url": "https://sokol-trace.poa.network"
     },
     "response": {
       "binary": false,

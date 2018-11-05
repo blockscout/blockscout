@@ -7,8 +7,8 @@ defmodule EthereumJSONRPC do
   Configuration for parity URLs can be provided with the following mix config:
 
       config :ethereum_jsonrpc,
-        url: "https://foundation-trace-fn4v7.poa.network",
-        trace_url: "https://foundation-trace-fn4v7.poa.network",
+        url: "https://sokol-trace.poa.network",
+        trace_url: "https://sokol-trace.poa.network",
         http: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :ethereum_jsonrpc]]
 
 
