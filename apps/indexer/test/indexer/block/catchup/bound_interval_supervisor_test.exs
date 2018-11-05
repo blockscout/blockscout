@@ -448,20 +448,26 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
              jsonrpc: "2.0",
              result: %{
                "difficulty" => "0x0",
+               "extraData" => "0x0",
                "gasLimit" => "0x0",
                "gasUsed" => "0x0",
                "hash" =>
                  Explorer.Factory.block_hash()
                  |> to_string(),
+               "logsBloom" => "0x0",
                "miner" => "0xb2930b35844a230f00e51431acae96fe543a0347",
                "number" => "0x0",
                "parentHash" =>
                  Explorer.Factory.block_hash()
                  |> to_string(),
+               "receiptsRoot" => "0x0",
+               "sha3Uncles" => "0x0",
                "size" => "0x0",
+               "stateRoot" => "0x0",
                "timestamp" => "0x0",
                "totalDifficulty" => "0x0",
                "transactions" => [],
+               "transactionsRoot" => "0x0",
                "uncles" => []
              }
            }
