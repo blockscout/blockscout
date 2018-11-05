@@ -76,7 +76,7 @@
         #
         {Credo.Check.Design.AliasUsage,
          excluded_namespaces: ~w(Import Socket Task),
-         excluded_lastnames: ~w(Address DateTime Exporter Fetcher Full Instrumenter Name Number Repo Time Unit),
+         excluded_lastnames: ~w(Address DateTime Exporter Fetcher Full Instrumenter Monitor Name Number Repo Time Unit),
          priority: :low},
 
         # For some checks, you can also set other parameters

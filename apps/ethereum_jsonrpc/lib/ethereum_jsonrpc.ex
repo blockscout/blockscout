@@ -11,13 +11,34 @@ defmodule EthereumJSONRPC do
         trace_url: "https://foundation-trace-fn4v7.poa.network",
         http: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :ethereum_jsonrpc]]
 
+
   Note: the tracing node URL is provided separately from `:url`, via `:trace_url`. The trace URL and is used for
   `fetch_internal_transactions`, which is only a supported method on tracing nodes. The `:http` option is passed
   directly to the HTTP library (`HTTPoison`), which forwards the options down to `:hackney`.
+
+  ## Throttling
+
+  Requests for fetching blockchain can put a lot of CPU pressure on JSON RPC
+  nodes. EthereumJSONRPC will check for request timeouts as well as bad-gateway
+  responses and add delay between requests until the JSON RPC nodes reach
+  stability. For finer tuning and configuration of throttling, read the
+  documentation for `EthereumJSONRPC.RequestCoordinator`.
   """
 
   alias Explorer.Chain.Block
-  alias EthereumJSONRPC.{Blocks, Receipts, Subscription, Transactions, Transport, Uncles, Variant}
+
+  alias EthereumJSONRPC.{
+    Blocks,
+    Receipts,
+    RequestCoordinator,
+    Subscription,
+    Transactions,
+    Transport,
+    Uncles,
+    Variant
+  }
+
+  @default_throttle_timeout :timer.minutes(2)
 
   @typedoc """
   Truncated 20-byte [KECCAK-256](https://en.wikipedia.org/wiki/SHA-3) hash encoded as a hexadecimal number in a
@@ -46,10 +67,14 @@ defmodule EthereumJSONRPC do
    * `:transport` - the `t:EthereumJSONRPC.Transport.t/0` callback module
    * `:transport_options` - options passed to `c:EthereumJSONRPC.Transport.json_rpc/2`
    * `:variant` - the `t:EthereumJSONRPC.Variant.t/0` callback module
-
+   * `:throttle_timout` - the maximum amount of time in milliseconds to throttle
+     before automatically returning a timeout. Defaults to #{@default_throttle_timeout} milliseconds.
   """
   @type json_rpc_named_arguments :: [
-          {:transport, Transport.t()} | {:transport_options, Transport.options()} | {:variant, Variant.t()}
+          {:transport, Transport.t()}
+          | {:transport_options, Transport.options()}
+          | {:variant, Variant.t()}
+          | {:throttle_timeout, non_neg_integer()}
         ]
 
   @typedoc """
@@ -147,7 +172,7 @@ defmodule EthereumJSONRPC do
          %{contract_address: address, data: data, id: id},
          nil = _block_number
        ) do
-    params = [%{to: address, data: data}]
+    params = [%{to: address, data: data}, "latest"]
     request(%{id: id, method: "eth_call", params: params})
   end
 
@@ -310,8 +335,9 @@ defmodule EthereumJSONRPC do
   def json_rpc(request, named_arguments) when (is_map(request) or is_list(request)) and is_list(named_arguments) do
     transport = Keyword.fetch!(named_arguments, :transport)
     transport_options = Keyword.fetch!(named_arguments, :transport_options)
+    throttle_timeout = Keyword.get(named_arguments, :throttle_timeout, @default_throttle_timeout)
 
-    transport.json_rpc(request, transport_options)
+    RequestCoordinator.perform(request, transport, transport_options, throttle_timeout)
   end
 
   @doc """

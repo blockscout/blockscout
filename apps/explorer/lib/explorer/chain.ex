@@ -18,10 +18,13 @@ defmodule Explorer.Chain do
   alias Ecto.Adapters.SQL
   alias Ecto.Multi
 
+  alias Explorer.Chain
+
   alias Explorer.Chain.{
     Address,
-    Address.TokenBalance,
     Address.CoinBalance,
+    Address.CurrentTokenBalance,
+    Address.TokenBalance,
     Block,
     Data,
     Hash,
@@ -37,7 +40,7 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Block.Reward
   alias Explorer.{PagingOptions, Repo}
-  alias Explorer.Counters.{TokenHoldersCounter, TokenTransferCounter, BlockValidationCounter}
+  alias Explorer.Counters.{BlockValidationCounter, TokenHoldersCounter, TokenTransferCounter}
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -94,8 +97,8 @@ defmodule Explorer.Chain do
   @doc """
   `t:Explorer.Chain.InternalTransaction/0`s from `address`.
 
-  This function excludes any internal transactions in the results where the internal transaction has no siblings within
-  the parent transaction.
+  This function excludes any internal transactions in the results where the
+  internal transaction has no siblings within the parent transaction.
 
   ## Options
 
@@ -120,20 +123,15 @@ defmodule Explorer.Chain do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
     InternalTransaction
-    |> join(
-      :inner,
-      [internal_transaction],
-      transaction in assoc(internal_transaction, :transaction)
-    )
-    |> join(:left, [internal_transaction, transaction], block in assoc(transaction, :block))
     |> InternalTransaction.where_address_fields_match(hash, direction)
-    |> where_transaction_has_multiple_internal_transactions()
+    |> InternalTransaction.where_is_different_from_parent_transaction()
+    |> InternalTransaction.where_block_number_is_not_null()
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by(
-      [it, transaction, block],
-      desc: block.number,
-      desc: transaction.index,
+      [it],
+      desc: it.block_number,
+      desc: it.transaction_index,
       desc: it.index
     )
     |> preload(transaction: :block)
@@ -607,6 +605,39 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Converts `t:Explorer.Chain.Address.t/0` `hash` to the `t:Explorer.Chain.Address.t/0` with that `hash`.
+
+  Returns `{:ok, %Explorer.Chain.Address{}}` if found
+
+      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.create_address(
+      ...>   %{hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"}
+      ...> )
+      iex> {:ok, %Explorer.Chain.Address{hash: found_hash}} = Explorer.Chain.hash_to_address(hash)
+      iex> found_hash == hash
+      true
+
+  Returns `{:error, address}` if not found but created an address
+
+      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.create_address(
+      ...>   %{hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"}
+      ...> )
+      iex> {:ok, %Explorer.Chain.Address{hash: found_hash}} = Explorer.Chain.hash_to_address(hash)
+      iex> found_hash == hash
+      true
+  """
+  @spec find_or_insert_address_from_hash(Hash.Address.t()) :: {:ok, Address.t()}
+  def find_or_insert_address_from_hash(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash) do
+    case Chain.hash_to_address(hash) do
+      {:ok, address} ->
+        {:ok, address}
+
+      {:error, :not_found} ->
+        Chain.create_address(%{hash: to_string(hash)})
+        Chain.hash_to_address(hash)
+    end
+  end
+
+  @doc """
   Converts list of `t:Explorer.Chain.Address.t/0` `hash` to the `t:Explorer.Chain.Address.t/0` with that `hash`.
 
   Returns `[%Explorer.Chain.Address{}]}` if found
@@ -812,7 +843,7 @@ defmodule Explorer.Chain do
   @doc """
   The percentage of indexed blocks on the chain.
 
-      iex> for index <- 6..10 do
+      iex> for index <- 5..9 do
       ...>   insert(:block, number: index)
       ...> end
       iex> Explorer.Chain.indexed_ratio()
@@ -829,7 +860,7 @@ defmodule Explorer.Chain do
     with {:ok, min_block_number} <- min_block_number(),
          {:ok, max_block_number} <- max_block_number() do
       indexed_blocks = max_block_number - min_block_number + 1
-      indexed_blocks / max_block_number
+      indexed_blocks / (max_block_number + 1)
     else
       {:error, _} -> 0
     end
@@ -853,7 +884,7 @@ defmodule Explorer.Chain do
 
   """
   def internal_transaction_count do
-    Repo.aggregate(InternalTransaction, :count, :id)
+    Repo.one!(from(it in "internal_transactions", select: fragment("COUNT(*)")))
   end
 
   @doc """
@@ -889,13 +920,20 @@ defmodule Explorer.Chain do
   Lists the top 250 `t:Explorer.Chain.Address.t/0`'s' in descending order based on coin balance.
 
   """
-  @spec list_top_addresses :: [Address.t()]
+  @spec list_top_addresses :: [{Address.t(), non_neg_integer()}]
   def list_top_addresses do
-    Address
-    |> limit(250)
-    |> order_by(desc: :fetched_coin_balance, asc: :hash)
-    |> where([address], address.fetched_coin_balance > ^0)
-    |> Repo.all()
+    query =
+      from(a in Address,
+        left_join: t in Transaction,
+        on: a.hash == t.from_address_hash,
+        where: a.fetched_coin_balance > ^0,
+        group_by: [a.hash, a.fetched_coin_balance],
+        order_by: [desc: a.fetched_coin_balance, asc: a.hash],
+        select: {a, fragment("coalesce(1 + max(?), 0)", t.nonce)},
+        limit: 250
+      )
+
+    Repo.all(query)
   end
 
   @doc """
@@ -1137,7 +1175,7 @@ defmodule Explorer.Chain do
 
   """
   def log_count do
-    Repo.aggregate(Log, :count, :id)
+    Repo.one!(from(log in "logs", select: fragment("COUNT(*)")))
   end
 
   @doc """
@@ -1803,11 +1841,12 @@ defmodule Explorer.Chain do
   defp page_internal_transaction(query, %PagingOptions{key: {block_number, transaction_index, index}}) do
     where(
       query,
-      [internal_transaction, transaction],
-      transaction.block_number < ^block_number or
-        (transaction.block_number == ^block_number and transaction.index < ^transaction_index) or
-        (transaction.block_number == ^block_number and transaction.index == ^transaction_index and
-           internal_transaction.index < ^index)
+      [internal_transaction],
+      internal_transaction.block_number < ^block_number or
+        (internal_transaction.block_number == ^block_number and
+           internal_transaction.transaction_index < ^transaction_index) or
+        (internal_transaction.block_number == ^block_number and
+           internal_transaction.transaction_index == ^transaction_index and internal_transaction.index < ^index)
     )
   end
 
@@ -1863,7 +1902,7 @@ defmodule Explorer.Chain do
       internal_transaction.type != ^:call or
         fragment(
           """
-          (SELECT COUNT(sibling.id)
+          (SELECT COUNT(sibling.*)
           FROM internal_transactions AS sibling
           WHERE sibling.transaction_hash = ?
           LIMIT 2
@@ -1893,6 +1932,11 @@ defmodule Explorer.Chain do
   defp supply_module do
     Application.get_env(:explorer, :supply, Explorer.Chain.Supply.ProofOfAuthority)
   end
+
+  @doc """
+  Calls supply_for_days from the configured supply_module
+  """
+  def supply_for_days(days_count), do: supply_module().supply_for_days(days_count)
 
   @doc """
   Streams a lists token contract addresses that haven't been cataloged.
@@ -1931,7 +1975,7 @@ defmodule Explorer.Chain do
         left_join: tf in TokenTransfer,
         on: tf.transaction_hash == l.transaction_hash and tf.log_index == l.index,
         where: l.first_topic == unquote(TokenTransfer.constant()),
-        where: is_nil(tf.id),
+        where: is_nil(tf.transaction_hash) and is_nil(tf.log_index),
         select: t.block_number,
         distinct: t.block_number
       )
@@ -2002,7 +2046,7 @@ defmodule Explorer.Chain do
     token_changeset = Token.changeset(token, params)
     address_name_changeset = Address.Name.changeset(%Address.Name{}, Map.put(params, :address_hash, address_hash))
 
-    token_opts = [on_conflict: :replace_all, conflict_target: :contract_address_hash]
+    token_opts = [on_conflict: Import.Tokens.default_on_conflict(), conflict_target: :contract_address_hash]
     address_name_opts = [on_conflict: :nothing, conflict_target: [:address_hash, :name]]
 
     insert_result =
@@ -2034,13 +2078,18 @@ defmodule Explorer.Chain do
   @spec fetch_token_holders_from_token_hash(Hash.Address.t(), [paging_options]) :: [TokenBalance.t()]
   def fetch_token_holders_from_token_hash(contract_address_hash, options) do
     contract_address_hash
-    |> TokenBalance.token_holders_ordered_by_value(options)
+    |> CurrentTokenBalance.token_holders_ordered_by_value(options)
     |> Repo.all()
   end
 
   @spec count_token_holders_from_token_hash(Hash.Address.t()) :: non_neg_integer()
   def count_token_holders_from_token_hash(contract_address_hash) do
     TokenHoldersCounter.fetch(contract_address_hash)
+  end
+
+  @spec token_holders_counter_consolidation_enabled? :: boolean()
+  def token_holders_counter_consolidation_enabled? do
+    TokenHoldersCounter.enable_consolidation?()
   end
 
   @spec address_to_unique_tokens(Hash.Address.t(), [paging_options]) :: [TokenTransfer.t()]

@@ -5,6 +5,7 @@ defmodule Indexer.TokenBalancesTest do
   doctest Indexer.TokenBalances
 
   alias Indexer.TokenBalances
+  alias Indexer.TokenBalance
   alias Explorer.Chain.Hash
 
   import Mox
@@ -14,6 +15,12 @@ defmodule Indexer.TokenBalancesTest do
   setup :set_mox_global
 
   describe "fetch_token_balances_from_blockchain/2" do
+    setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      :ok
+    end
+
     test "fetches balances of tokens given the address hash" do
       address = insert(:address)
       token = insert(:token, contract_address: build(:contract_address))
@@ -38,28 +45,21 @@ defmodule Indexer.TokenBalancesTest do
              } = List.first(result)
     end
 
-    test "does not ignore calls that were returned with error" do
-      address = insert(:address)
+    test "ignores calls that gave errors to try fetch they again later" do
+      address = insert(:address, hash: "0x7113ffcb9c18a97da1b9cfc43e6cb44ed9165509")
       token = insert(:token, contract_address: build(:contract_address))
-      address_hash_string = Hash.to_string(address.hash)
 
-      data = %{
-        token_contract_address_hash: token.contract_address_hash,
-        address_hash: address_hash_string,
-        block_number: 1_000
-      }
+      token_balances = [
+        %{
+          address_hash: to_string(address.hash),
+          block_number: 1_000,
+          token_contract_address_hash: to_string(token.contract_address_hash)
+        }
+      ]
 
       get_balance_from_blockchain_with_error()
 
-      {:ok, result} = TokenBalances.fetch_token_balances_from_blockchain([data])
-
-      assert %{
-               value: nil,
-               token_contract_address_hash: token_contract_address_hash,
-               address_hash: address_hash,
-               block_number: 1_000,
-               value_fetched_at: nil
-             } = List.first(result)
+      assert TokenBalances.fetch_token_balances_from_blockchain(token_balances) == {:ok, []}
     end
 
     test "ignores results that raised :timeout" do
@@ -146,6 +146,32 @@ defmodule Indexer.TokenBalancesTest do
         end)
 
       assert log_message_response == ""
+    end
+  end
+
+  describe "unfetched_token_balances/2" do
+    test "finds unfetched token balances given all token balances" do
+      address = insert(:address)
+      token = insert(:token, contract_address: build(:contract_address))
+      address_hash_string = Hash.to_string(address.hash)
+
+      token_balance_a = %{
+        token_contract_address_hash: Hash.to_string(token.contract_address_hash),
+        address_hash: address_hash_string,
+        block_number: 1_000
+      }
+
+      token_balance_b = %{
+        token_contract_address_hash: Hash.to_string(token.contract_address_hash),
+        address_hash: address_hash_string,
+        block_number: 1_001
+      }
+
+      token_balances = MapSet.new([token_balance_a, token_balance_b])
+      fetched_token_balances = MapSet.new([token_balance_a])
+      unfetched_token_balances = MapSet.new([token_balance_b])
+
+      assert TokenBalances.unfetched_token_balances(token_balances, fetched_token_balances) == unfetched_token_balances
     end
   end
 

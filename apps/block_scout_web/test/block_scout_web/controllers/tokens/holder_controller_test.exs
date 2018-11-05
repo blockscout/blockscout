@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.Tokens.HolderControllerTest do
 
       insert_list(
         2,
-        :token_balance,
+        :address_current_token_balance,
         token_contract_address_hash: token.contract_address_hash
       )
 
@@ -43,7 +43,7 @@ defmodule BlockScoutWeb.Tokens.HolderControllerTest do
         1..50
         |> Enum.map(
           &insert(
-            :token_balance,
+            :address_current_token_balance,
             token_contract_address_hash: token.contract_address_hash,
             value: &1 + 1000
           )
@@ -52,7 +52,7 @@ defmodule BlockScoutWeb.Tokens.HolderControllerTest do
 
       token_balance =
         insert(
-          :token_balance,
+          :address_current_token_balance,
           token_contract_address_hash: token.contract_address_hash,
           value: 50000
         )
@@ -78,7 +78,7 @@ defmodule BlockScoutWeb.Tokens.HolderControllerTest do
       Enum.each(
         1..51,
         &insert(
-          :token_balance,
+          :address_current_token_balance,
           token_contract_address_hash: token.contract_address_hash,
           value: &1 + 1000
         )

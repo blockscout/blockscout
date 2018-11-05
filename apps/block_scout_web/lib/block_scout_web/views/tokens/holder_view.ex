@@ -49,7 +49,7 @@ defmodule BlockScoutWeb.Tokens.HolderView do
 
   ## Examples
 
-    iex> token = build(:token, type: "ERC-20", decimals: 2)
+    iex> token = build(:token, type: "ERC-20", decimals: Decimal.new(2))
     iex> BlockScoutWeb.Tokens.HolderView.format_token_balance_value(100000, token)
     "1,000"
 

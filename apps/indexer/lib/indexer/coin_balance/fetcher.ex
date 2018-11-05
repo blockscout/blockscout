@@ -17,8 +17,7 @@ defmodule Indexer.CoinBalance.Fetcher do
   @defaults [
     flush_interval: :timer.seconds(3),
     max_batch_size: 250,
-    max_concurrency: 2,
-    init_chunk_size: 1000,
+    max_concurrency: 4,
     task_supervisor: Indexer.CoinBalance.TaskSupervisor
   ]
 
@@ -65,7 +64,7 @@ defmodule Indexer.CoinBalance.Fetcher do
   end
 
   @impl BufferedTask
-  def run(entries, _retries, json_rpc_named_arguments) do
+  def run(entries, json_rpc_named_arguments) do
     # the same address may be used more than once in the same block, but we only want one `Balance` for a given
     # `{address, block}`, so take unique params only
     unique_entries = Enum.uniq(entries)

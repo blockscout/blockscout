@@ -63,7 +63,7 @@ defmodule EthereumJsonrpc.MixProject do
       # WebSocket-server for testing `EthereumJSONRPC.WebSocket.WebSocketClient`.
       {:cowboy, "~> 1.1", only: :test},
       # Style Checking
-      {:credo, "0.9.2", only: [:dev, :test], runtime: false},
+      {:credo, "0.10.2", only: [:dev, :test], runtime: false},
       # Static Type Checking
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       # Code coverage
@@ -77,7 +77,7 @@ defmodule EthereumJsonrpc.MixProject do
       # Mocking `EthereumJSONRPC.Transport` and `EthereumJSONRPC.HTTP` so we avoid hitting real chains for local testing
       {:mox, "~> 0.4", only: [:test]},
       # Convert unix timestamps in JSONRPC to DateTimes
-      {:timex, "~> 3.1.24"},
+      {:timex, "~> 3.4"},
       # Encode/decode function names and arguments
       {:ex_abi, "~> 0.1.16"},
       # `:verify_fun` for `Socket.Web.connect`

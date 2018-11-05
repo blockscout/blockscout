@@ -2,8 +2,13 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
+import Bitwise
+
 config :indexer,
-  ecto_repos: [Explorer.Repo]
+  block_transformer: Indexer.Block.Transform.Base,
+  ecto_repos: [Explorer.Repo],
+  # bytes
+  memory_limit: 16 <<< 30
 
 config :logger, :indexer,
   # keep synced with `config/config.exs`

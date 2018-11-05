@@ -207,10 +207,15 @@ defmodule EthereumJSONRPCTest do
                  "gasLimit" => "0x0",
                  "gasUsed" => "0x0",
                  "hash" => block_hash,
+                 "extraData" => "0x0",
+                 "logsBloom" => "0x0",
                  "miner" => "0x0",
                  "number" => block_number,
                  "parentHash" => "0x0",
+                 "receiptsRoot" => "0x0",
                  "size" => "0x0",
+                 "sha3Uncles" => "0x0",
+                 "stateRoot" => "0x0",
                  "timestamp" => "0x0",
                  "totalDifficulty" => "0x0",
                  "transactions" => [
@@ -231,6 +236,7 @@ defmodule EthereumJSONRPCTest do
                      "value" => "0x0"
                    }
                  ],
+                 "transactionsRoot" => "0x0",
                  "uncles" => []
                }
              }
@@ -364,16 +370,22 @@ defmodule EthereumJSONRPCTest do
              id: 0,
              result: %{
                "difficulty" => "0x0",
+               "extraData" => "0x0",
                "gasLimit" => "0x0",
                "gasUsed" => "0x0",
                "hash" => "0x0",
+               "logsBloom" => "0x0",
                "miner" => "0x0",
                "number" => "0x0",
                "parentHash" => "0x0",
+               "receiptsRoot" => "0x0",
+               "sha3Uncles" => "0x0",
                "size" => "0x0",
+               "stateRoot" => "0x0",
                "timestamp" => "0x0",
                "totalDifficulty" => "0x0",
                "transactions" => [],
+               "transactionsRoot" => "0x0",
                "uncles" => []
              },
              jsonrpc: "2.0"
@@ -792,7 +804,7 @@ defmodule EthereumJSONRPCTest do
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
-        fn [%{id: id, method: _, params: [%{data: _, to: _}]}], _options ->
+        fn [%{id: id, method: _, params: [%{data: _, to: _}, "latest"]}], _options ->
           {:ok,
            [
              %{

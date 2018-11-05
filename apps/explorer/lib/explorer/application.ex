@@ -5,8 +5,8 @@ defmodule Explorer.Application do
 
   use Application
 
-  alias Explorer.Repo.PrometheusLogger
   alias Explorer.Admin
+  alias Explorer.Repo.PrometheusLogger
 
   @impl Application
   def start(_type, _args) do

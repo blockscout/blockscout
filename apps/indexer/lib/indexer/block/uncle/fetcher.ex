@@ -15,9 +15,8 @@ defmodule Indexer.Block.Uncle.Fetcher do
 
   @defaults [
     flush_interval: :timer.seconds(3),
-    max_batch_size: 10,
-    max_concurrency: 10,
-    init_chunk_size: 1000,
+    max_batch_size: 2,
+    max_concurrency: 2,
     task_supervisor: Indexer.Block.Uncle.TaskSupervisor
   ]
 
@@ -66,7 +65,7 @@ defmodule Indexer.Block.Uncle.Fetcher do
   end
 
   @impl BufferedTask
-  def run(hashes, _retries, %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher) do
+  def run(hashes, %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher) do
     # the same block could be included as an uncle on multiple blocks, but we only want to fetch it once
     unique_hashes = Enum.uniq(hashes)
 

@@ -9,6 +9,7 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.{AddressExtraction, CoinBalance, MintTransfer, Token, TokenTransfers}
   alias Indexer.Address.{CoinBalances, TokenBalances}
   alias Indexer.Block.Fetcher.Receipts
+  alias Indexer.Block.Transform
 
   @type address_hash_to_fetched_balance_block_number :: %{String.t() => Block.block_number()}
   @type transaction_hash_to_block_number :: %{String.t() => Block.block_number()}
@@ -96,6 +97,7 @@ defmodule Indexer.Block.Fetcher do
            transactions: transactions_without_receipts,
            block_second_degree_relations: block_second_degree_relations
          } = result,
+         blocks = Transform.transform_blocks(blocks),
          {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_without_receipts)},
          %{logs: logs, receipts: receipts} = receipt_params,
          transactions_with_receipts = Receipts.put(transactions_without_receipts, receipts),
@@ -132,7 +134,7 @@ defmodule Indexer.Block.Fetcher do
                logs: %{params: logs},
                token_transfers: %{params: token_transfers},
                tokens: %{on_conflict: :nothing, params: tokens},
-               transactions: %{params: transactions_with_receipts, on_conflict: :replace_all}
+               transactions: %{params: transactions_with_receipts}
              }
            ) do
       {:ok, {inserted, next}}
@@ -218,8 +220,8 @@ defmodule Indexer.Block.Fetcher do
   defp get_transaction_hash_to_block_number(options) do
     options
     |> get_in([:transactions, :params, Access.all()])
-    |> Enum.into(%{}, fn %{block_number: block_number, hash: hash} ->
-      {hash, block_number}
+    |> Enum.into(%{}, fn %{block_number: block_number, hash: hash, index: index} ->
+      {hash, %{block_number: block_number, index: index}}
     end)
   end
 

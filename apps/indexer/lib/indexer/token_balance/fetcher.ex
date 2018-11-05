@@ -5,21 +5,20 @@ defmodule Indexer.TokenBalance.Fetcher do
 
   require Logger
 
-  alias Indexer.{BufferedTask, TokenBalances}
   alias Explorer.Chain
-  alias Explorer.Chain.{Hash, Address.TokenBalance}
+  alias Explorer.Chain.Hash
+  alias Indexer.{BufferedTask, TokenBalances}
 
   @behaviour BufferedTask
 
   @defaults [
     flush_interval: 300,
-    max_batch_size: 1,
-    max_concurrency: 1,
-    init_chunk_size: 1,
+    max_batch_size: 100,
+    max_concurrency: 10,
     task_supervisor: Indexer.TokenBalance.TaskSupervisor
   ]
 
-  @spec async_fetch([%TokenBalance{}]) :: :ok
+  @spec async_fetch([]) :: :ok
   def async_fetch(token_balances) do
     formatted_params = Enum.map(token_balances, &entry/1)
     BufferedTask.buffer(__MODULE__, formatted_params, :infinity)
@@ -56,7 +55,7 @@ defmodule Indexer.TokenBalance.Fetcher do
   end
 
   @impl BufferedTask
-  def run(entries, _retries, _json_rpc_named_arguments) do
+  def run(entries, _json_rpc_named_arguments) do
     Logger.debug(fn -> "fetching #{length(entries)} token balances" end)
 
     result =
@@ -81,7 +80,13 @@ defmodule Indexer.TokenBalance.Fetcher do
   end
 
   def import_token_balances(token_balances_params) do
-    case Chain.import(%{address_token_balances: %{params: token_balances_params}, timeout: :infinity}) do
+    import_params = %{
+      address_token_balances: %{params: token_balances_params},
+      address_current_token_balances: %{params: token_balances_params},
+      timeout: :infinity
+    }
+
+    case Chain.import(import_params) do
       {:ok, _} ->
         :ok
 
@@ -92,7 +97,7 @@ defmodule Indexer.TokenBalance.Fetcher do
     end
   end
 
-  defp entry(%TokenBalance{
+  defp entry(%{
          token_contract_address_hash: token_contract_address_hash,
          address_hash: address_hash,
          block_number: block_number

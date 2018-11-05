@@ -1,7 +1,10 @@
 defmodule Indexer.TokenTransfer.Uncataloged.WorkerTest do
   use Explorer.DataCase
 
+  alias Indexer.Sequence
   alias Indexer.TokenTransfer.Uncataloged.{Worker, TaskSupervisor}
+
+  @moduletag :capture_log
 
   describe "start_link/1" do
     test "starts the worker" do
@@ -32,17 +35,21 @@ defmodule Indexer.TokenTransfer.Uncataloged.WorkerTest do
       state = %{task_ref: nil, block_numbers: [], retry_interval: 1}
 
       assert {:noreply, ^expected_state} = Worker.handle_info(:scan, state)
-      assert_receive :enqueue_blocks
+      assert_receive :push_front_blocks
     end
   end
 
-  describe "handle_info with :enqueue_blocks" do
+  describe "handle_info with :push_front_blocks" do
     test "starts a task" do
       task_sup_pid = start_supervised!({Task.Supervisor, name: TaskSupervisor})
+      start_supervised!({Sequence, [[ranges: [], step: -1], [name: :block_catchup_sequencer]]})
 
       state = %{task_ref: nil, block_numbers: [1]}
-      assert {:noreply, new_state} = Worker.handle_info(:enqueue_blocks, state)
-      assert is_reference(new_state.task_ref)
+      assert {:noreply, %{task_ref: task_ref}} = Worker.handle_info(:push_front_blocks, state)
+      assert is_reference(task_ref)
+
+      refute_receive {^task_ref, {:error, :queue_unavailable}}
+      assert_receive {^task_ref, :ok}
 
       stop_supervised(task_sup_pid)
     end
@@ -61,7 +68,7 @@ defmodule Indexer.TokenTransfer.Uncataloged.WorkerTest do
       state = %{task_ref: ref, block_numbers: [1], sup_pid: self(), retry_interval: 1}
       expected_state = %{state | task_ref: nil}
       assert {:noreply, ^expected_state} = Worker.handle_info({ref, {:error, :queue_unavailable}}, state)
-      assert_receive :enqueue_blocks
+      assert_receive :push_front_blocks
     end
   end
 
@@ -70,7 +77,7 @@ defmodule Indexer.TokenTransfer.Uncataloged.WorkerTest do
       ref = Process.monitor(self())
       state = %{task_ref: ref, block_numbers: [1], sup_pid: self(), retry_interval: 1}
       assert {:noreply, %{task_ref: nil}} = Worker.handle_info({:DOWN, ref, :process, self(), :EXIT}, state)
-      assert_receive :enqueue_blocks
+      assert_receive :push_front_blocks
     end
   end
 end
