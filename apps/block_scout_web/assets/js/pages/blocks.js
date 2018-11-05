@@ -29,16 +29,16 @@ function baseReducer (state = initialState, action) {
     case 'RECEIVED_NEW_BLOCK': {
       if (state.channelDisconnected || state.beyondPageOne) return state
 
-      if (_.find(state.blocks, { blockNumber: action.msg.blockNumber })) {
-        return Object.assign({}, state, {
-          blocks: state.blocks.map((block) => block.blockNumber === action.msg.blockNumber ? action.msg : block)
-        })
-      } else {
+      if (!state.blocks.length || state.blocks[0].blockNumber < action.msg.blockNumber) {
         return Object.assign({}, state, {
           blocks: [
             action.msg,
             ...state.blocks
           ]
+        })
+      } else {
+        return Object.assign({}, state, {
+          blocks: state.blocks.map((block) => block.blockNumber === action.msg.blockNumber ? action.msg : block)
         })
       }
     }
@@ -110,7 +110,7 @@ if ($blockListPage.length) {
   }))
 }
 
-function placeHolderBlock (blockNumber) {
+export function placeHolderBlock (blockNumber) {
   return `
     <div class="my-3" style="height: 98px;" data-selector="place-holder" data-block-number="${blockNumber}">
       <div

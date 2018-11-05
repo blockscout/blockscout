@@ -12,8 +12,8 @@ export const initialState = {
   availableSupply: null,
   averageBlockTime: null,
   marketHistoryData: null,
-  blocks: null,
-  transactions: null,
+  blocks: [],
+  transactions: [],
   transactionCount: null,
   usdMarketCap: null
 }
@@ -31,18 +31,17 @@ function baseReducer (state = initialState, action) {
       })
     }
     case 'RECEIVED_NEW_BLOCK': {
-      if (_.find(state.blocks, { blockNumber: action.msg.blockNumber })) {
-        return Object.assign({}, state, {
-          averageBlockTime: action.msg.averageBlockTime,
-          blocks: state.blocks.map((block) => block.blockNumber === action.msg.blockNumber ? action.msg : block)
-        })
-      } else {
+      if (!state.blocks.length || state.blocks[0].blockNumber < action.msg.blockNumber) {
         return Object.assign({}, state, {
           averageBlockTime: action.msg.averageBlockTime,
           blocks: [
             action.msg,
             ...state.blocks.slice(0, -1)
           ]
+        })
+      } else {
+        return Object.assign({}, state, {
+          blocks: state.blocks.map((block) => block.blockNumber === action.msg.blockNumber ? action.msg : block)
         })
       }
     }
@@ -190,7 +189,7 @@ if ($chainDetailsPage.length) {
   }))
 }
 
-function placeHolderBlock (blockNumber) {
+export function placeHolderBlock (blockNumber) {
   return `
     <div
       class="col-lg-3 fade-up-blocks-chain"
