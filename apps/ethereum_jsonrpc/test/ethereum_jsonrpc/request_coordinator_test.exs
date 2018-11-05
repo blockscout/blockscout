@@ -10,15 +10,6 @@ defmodule EthereumJSONRPC.RequestCoordinatorTest do
   setup :set_mox_global
   setup :verify_on_exit!
 
-  defp sleep_time(timeouts) do
-    wait_per_timeout =
-      :ethereum_jsonrpc
-      |> Application.get_env(RequestCoordinator)
-      |> Keyword.fetch!(:wait_per_timeout)
-
-    timeouts * wait_per_timeout
-  end
-
   setup do
     table = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.RequestCoordinator)[:rolling_window_opts][:table]
 
