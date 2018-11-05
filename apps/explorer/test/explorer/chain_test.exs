@@ -1182,7 +1182,10 @@ defmodule Explorer.ChainTest do
         |> Enum.map(&insert(:address, fetched_coin_balance: &1))
         |> Enum.map(& &1.hash)
 
-      assert address_hashes == Enum.map(Chain.list_top_addresses(), & &1.hash)
+      assert address_hashes ==
+               Chain.list_top_addresses()
+               |> Enum.map(fn {address, _transaction_count} -> address end)
+               |> Enum.map(& &1.hash)
     end
 
     test "with top addresses in order with matching value" do
@@ -1201,7 +1204,10 @@ defmodule Explorer.ChainTest do
         |> insert(fetched_coin_balance: 4, hash: Enum.fetch!(test_hashes, 4))
         |> Map.fetch!(:hash)
 
-      assert [first_result_hash | tail] == Enum.map(Chain.list_top_addresses(), & &1.hash)
+      assert [first_result_hash | tail] ==
+               Chain.list_top_addresses()
+               |> Enum.map(fn {address, _transaction_count} -> address end)
+               |> Enum.map(& &1.hash)
     end
   end
 
