@@ -4,7 +4,9 @@ import URI from 'urijs'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
-import { createStore, connectElements, batchChannel, listMorph } from '../utils'
+import { createStore, connectElements } from '../lib/redux_helpers.js'
+import { batchChannel } from '../lib/utils'
+import listMorph from '../lib/list_morph'
 
 const BATCH_THRESHOLD = 10
 

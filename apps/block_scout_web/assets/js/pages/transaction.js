@@ -3,7 +3,7 @@ import _ from 'lodash'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
-import { createStore, connectElements } from '../utils'
+import { createStore, connectElements } from '../lib/redux_helpers.js'
 
 export const initialState = {
   blockNumber: null,

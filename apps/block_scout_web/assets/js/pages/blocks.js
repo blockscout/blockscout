@@ -3,7 +3,8 @@ import _ from 'lodash'
 import URI from 'urijs'
 import humps from 'humps'
 import socket from '../socket'
-import { createStore, connectElements, listMorph } from '../utils'
+import { createStore, connectElements } from '../lib/redux_helpers.js'
+import listMorph from '../lib/list_morph'
 
 export const initialState = {
   channelDisconnected: false,

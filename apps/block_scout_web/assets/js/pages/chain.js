@@ -4,7 +4,8 @@ import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
 import { exchangeRateChannel, formatUsdValue } from '../lib/currency'
-import { createStore, connectElements, listMorph } from '../utils'
+import { createStore, connectElements } from '../lib/redux_helpers.js'
+import listMorph from '../lib/list_morph'
 import { createMarketHistoryChart } from '../lib/market_history_chart'
 
 export const initialState = {
