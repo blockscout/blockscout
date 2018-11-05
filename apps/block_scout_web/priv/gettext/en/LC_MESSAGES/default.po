@@ -1181,18 +1181,48 @@ msgstr ""
 msgid "Suicide"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:44
 msgid "Decimals"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/address_read_contract/index.html.eex:17
 #: lib/block_scout_web/templates/tokens/read_contract/index.html.eex:25
 msgid "Loading..."
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:61
 msgid "Loading...."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:64
+msgid "APIs"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:85
+msgid "Error trying to fetch next page."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:68
+msgid "GraphQL"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:82
+msgid "Loading"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:73
+msgid "RPC"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/index.html.eex:7
+msgid "This API is provided for developers transitioning their applications from Etherscan to BlockScout. It supports GET and POST requests."
 msgstr ""
