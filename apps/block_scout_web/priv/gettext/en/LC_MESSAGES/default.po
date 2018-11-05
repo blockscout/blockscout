@@ -41,7 +41,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/overview.html.eex:21
-#: lib/block_scout_web/templates/chain/_block.html.eex:9
+#: lib/block_scout_web/templates/chain/_block.html.eex:10
 msgid "%{count} Transactions"
 msgstr ""
 
@@ -555,7 +555,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:37
 #: lib/block_scout_web/templates/block/overview.html.eex:99
-#: lib/block_scout_web/templates/chain/_block.html.eex:13
+#: lib/block_scout_web/templates/chain/_block.html.eex:14
 msgid "Miner"
 msgstr ""
 
@@ -575,6 +575,7 @@ msgid "More internal transactions have come in"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/chain/show.html.eex:72
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:14
 #: lib/block_scout_web/templates/transaction/index.html.eex:14
 msgid "More transactions have come in"
@@ -989,7 +990,7 @@ msgstr ""
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:23
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:26
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:35
-#: lib/block_scout_web/templates/chain/show.html.eex:71
+#: lib/block_scout_web/templates/chain/show.html.eex:69
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:35
 #: lib/block_scout_web/views/address_view.ex:212
 msgid "Transactions"
@@ -1069,7 +1070,7 @@ msgid "View All Blocks →"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:70
+#: lib/block_scout_web/templates/chain/show.html.eex:68
 msgid "View All Transactions →"
 msgstr ""
 
