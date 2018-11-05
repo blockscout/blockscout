@@ -356,7 +356,7 @@ if ($addressDetailsPage.length) {
     msg: humps.camelizeKeys(msg)
   }))
 
-  $('[data-selector="transactions-list"]').length && onScrollBottom(function loadMoreTransactions () {
+  $('[data-selector="transactions-list"]').length && onScrollBottom(() => {
     const { loadingNextPage, nextPageUrl, pagingError } = store.getState()
     if (!loadingNextPage && nextPageUrl && !pagingError) {
       store.dispatch({

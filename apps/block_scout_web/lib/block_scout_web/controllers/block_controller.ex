@@ -3,7 +3,58 @@ defmodule BlockScoutWeb.BlockController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
+  alias BlockScoutWeb.BlockView
   alias Explorer.Chain
+  alias Phoenix.View
+
+  def index(conn, %{"type" => "JSON"} = params) do
+    full_options =
+      [
+        necessity_by_association: %{
+          :transactions => :optional,
+          [miner: :names] => :optional
+        }
+      ]
+      |> Keyword.merge(paging_options(params))
+
+    blocks_plus_one = Chain.list_blocks(full_options)
+    {blocks, next_page} = split_list_by_page(blocks_plus_one)
+
+    next_page_url =
+      case next_page_params(next_page, blocks, params) do
+        nil ->
+          nil
+
+        next_page_params ->
+          block_path(
+            conn,
+            :index,
+            next_page_params
+          )
+      end
+
+    block_type = Keyword.get(full_options, :block_type, "Block")
+
+    json(
+      conn,
+      %{
+        blocks:
+          Enum.map(blocks, fn block ->
+            %{
+              block_number: block.number,
+              block_html:
+                View.render_to_string(
+                  BlockView,
+                  "_tile.html",
+                  block: block,
+                  block_type: block_type
+                )
+            }
+          end),
+        next_page_url: next_page_url
+      }
+    )
+  end
 
   def index(conn, params) do
     [
@@ -12,7 +63,7 @@ defmodule BlockScoutWeb.BlockController do
         [miner: :names] => :optional
       }
     ]
-    |> Keyword.merge(paging_options(params))
+    |> Keyword.merge(paging_options(%{}))
     |> handle_render(conn, params)
   end
 
