@@ -42,6 +42,8 @@ defmodule Explorer.Chain do
   alias Explorer.{PagingOptions, Repo}
   alias Explorer.Counters.{BlockValidationCounter, TokenHoldersCounter, TokenTransferCounter}
 
+  alias Dataloader.Ecto, as: DataloaderEcto
+
   @default_paging_options %PagingOptions{page_size: 50}
 
   @typedoc """
@@ -2086,4 +2088,7 @@ defmodule Explorer.Chain do
     |> limit(^paging_options.page_size)
     |> Repo.all()
   end
+
+  @spec data() :: Dataloader.Ecto.t()
+  def data, do: DataloaderEcto.new(Repo)
 end
