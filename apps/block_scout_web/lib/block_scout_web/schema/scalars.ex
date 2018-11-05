@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.Schema.Scalars do
 
   use Absinthe.Schema.Notation
 
-  alias Explorer.Chain.{Hash, Wei}
+  alias Explorer.Chain.{Data, Hash, Wei}
   alias Explorer.Chain.Hash.{Address, Full, Nonce}
 
   @desc """
@@ -16,6 +16,23 @@ defmodule BlockScoutWeb.Schema.Scalars do
     parse(fn
       %Absinthe.Blueprint.Input.String{value: value} ->
         Hash.cast(Address, value)
+
+      _ ->
+        :error
+    end)
+
+    serialize(&to_string/1)
+  end
+
+  @desc """
+  An unpadded hexadecimal number with 0 or more digits. Each pair of digits
+  maps directly to a byte in the underlying binary representation. When
+  interpreted as a number, it should be treated as big-endian.
+  """
+  scalar :data do
+    parse(fn
+      %Absinthe.Blueprint.Input.String{value: value} ->
+        Data.cast(value)
 
       _ ->
         :error

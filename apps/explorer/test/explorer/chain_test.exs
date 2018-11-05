@@ -1182,7 +1182,10 @@ defmodule Explorer.ChainTest do
         |> Enum.map(&insert(:address, fetched_coin_balance: &1))
         |> Enum.map(& &1.hash)
 
-      assert address_hashes == Enum.map(Chain.list_top_addresses(), & &1.hash)
+      assert address_hashes ==
+               Chain.list_top_addresses()
+               |> Enum.map(fn {address, _transaction_count} -> address end)
+               |> Enum.map(& &1.hash)
     end
 
     test "with top addresses in order with matching value" do
@@ -1201,7 +1204,10 @@ defmodule Explorer.ChainTest do
         |> insert(fetched_coin_balance: 4, hash: Enum.fetch!(test_hashes, 4))
         |> Map.fetch!(:hash)
 
-      assert [first_result_hash | tail] == Enum.map(Chain.list_top_addresses(), & &1.hash)
+      assert [first_result_hash | tail] ==
+               Chain.list_top_addresses()
+               |> Enum.map(fn {address, _transaction_count} -> address end)
+               |> Enum.map(& &1.hash)
     end
   end
 
@@ -2956,173 +2962,32 @@ defmodule Explorer.ChainTest do
   end
 
   describe "fetch_token_holders_from_token_hash/2" do
-    test "returns the last value for each address" do
+    test "returns the token holders" do
       %Token{contract_address_hash: contract_address_hash} = insert(:token)
-      address = insert(:address)
+      address_a = insert(:address)
+      address_b = insert(:address)
 
       insert(
-        :token_balance,
-        address: address,
-        block_number: 1000,
+        :address_current_token_balance,
+        address: address_a,
         token_contract_address_hash: contract_address_hash,
         value: 5000
       )
 
       insert(
-        :token_balance,
+        :address_current_token_balance,
+        address: address_b,
         block_number: 1001,
         token_contract_address_hash: contract_address_hash,
         value: 4000
       )
 
-      insert(
-        :token_balance,
-        address: address,
-        block_number: 1002,
-        token_contract_address_hash: contract_address_hash,
-        value: 2000
-      )
-
-      values =
+      token_holders_count =
         contract_address_hash
         |> Chain.fetch_token_holders_from_token_hash([])
-        |> Enum.map(&Decimal.to_integer(&1.value))
+        |> Enum.count()
 
-      assert values == [4000, 2000]
-    end
-
-    test "sort by the highest value" do
-      %Token{contract_address_hash: contract_address_hash} = insert(:token)
-
-      insert(
-        :token_balance,
-        block_number: 1000,
-        token_contract_address_hash: contract_address_hash,
-        value: 2000
-      )
-
-      insert(
-        :token_balance,
-        block_number: 1001,
-        token_contract_address_hash: contract_address_hash,
-        value: 1000
-      )
-
-      insert(
-        :token_balance,
-        block_number: 1002,
-        token_contract_address_hash: contract_address_hash,
-        value: 4000
-      )
-
-      insert(
-        :token_balance,
-        block_number: 1002,
-        token_contract_address_hash: contract_address_hash,
-        value: 3000
-      )
-
-      values =
-        contract_address_hash
-        |> Chain.fetch_token_holders_from_token_hash([])
-        |> Enum.map(&Decimal.to_integer(&1.value))
-
-      assert values == [4000, 3000, 2000, 1000]
-    end
-
-    test "returns only token balances that have value" do
-      %Token{contract_address_hash: contract_address_hash} = insert(:token)
-
-      insert(
-        :token_balance,
-        token_contract_address_hash: contract_address_hash,
-        value: 0
-      )
-
-      assert Chain.fetch_token_holders_from_token_hash(contract_address_hash, []) == []
-    end
-
-    test "returns an empty list when there are no address with value greater than 0" do
-      %Token{contract_address_hash: contract_address_hash} = insert(:token)
-
-      insert(:token_balance, value: 1000)
-
-      assert Chain.fetch_token_holders_from_token_hash(contract_address_hash, []) == []
-    end
-
-    test "ignores the burn address" do
-      {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
-
-      burn_address = insert(:address, hash: burn_address_hash)
-
-      %Token{contract_address_hash: contract_address_hash} = insert(:token)
-
-      insert(
-        :token_balance,
-        address: burn_address,
-        token_contract_address_hash: contract_address_hash,
-        value: 1000
-      )
-
-      assert Chain.fetch_token_holders_from_token_hash(contract_address_hash, []) == []
-    end
-
-    test "paginates the result by value and different address" do
-      address_a = build(:address, hash: "0xcb2cf1fd3199584ac5faa16c6aca49472dc6495a")
-      address_b = build(:address, hash: "0x5f26097334b6a32b7951df61fd0c5803ec5d8354")
-
-      %Token{contract_address_hash: contract_address_hash} = insert(:token)
-
-      first_page =
-        insert(
-          :token_balance,
-          address: address_a,
-          token_contract_address_hash: contract_address_hash,
-          value: 4000
-        )
-
-      second_page =
-        insert(
-          :token_balance,
-          address: address_b,
-          token_contract_address_hash: contract_address_hash,
-          value: 4000
-        )
-
-      paging_options = %PagingOptions{
-        key: {first_page.value, first_page.address_hash},
-        page_size: 2
-      }
-
-      holders_paginated =
-        contract_address_hash
-        |> Chain.fetch_token_holders_from_token_hash(paging_options: paging_options)
-        |> Enum.map(& &1.address_hash)
-
-      assert holders_paginated == [second_page.address_hash]
-    end
-
-    test "considers the last block only if it has value" do
-      address = insert(:address, hash: "0x5f26097334b6a32b7951df61fd0c5803ec5d8354")
-      %Token{contract_address_hash: contract_address_hash} = insert(:token)
-
-      insert(
-        :token_balance,
-        address: address,
-        block_number: 1000,
-        token_contract_address_hash: contract_address_hash,
-        value: 5000
-      )
-
-      insert(
-        :token_balance,
-        address: address,
-        block_number: 1002,
-        token_contract_address_hash: contract_address_hash,
-        value: 0
-      )
-
-      assert Chain.fetch_token_holders_from_token_hash(contract_address_hash, []) == []
+      assert token_holders_count == 2
     end
   end
 

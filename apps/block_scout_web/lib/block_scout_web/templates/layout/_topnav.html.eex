@@ -56,13 +56,25 @@
             <%= gettext("Accounts") %>
           <% end %>
         </li>
-        <li class="nav-item">
-          <%= link to: api_docs_path(@conn, :index), class: "nav-link topnav-nav-link" do %>
+        <li class="nav-item dropdown">
+          <a href="#" role="button" id="navbarAPIsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <span class="nav-link-icon">
               <%= render BlockScoutWeb.IconsView, "_api_icon.html" %>
             </span>
-            <%= gettext("API") %>
-          <% end %>
+            <%= gettext("APIs") %>
+          </a>
+          <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
+            <%= link(
+                  gettext("GraphQL"),
+                  class: "dropdown-item",
+                  to: "/graphiql"
+                ) %>
+            <%= link(
+                  gettext("RPC"),
+                  class: "dropdown-item",
+                  to: api_docs_path(@conn, :index)
+                ) %>
+          </div>
         </li>
       </ul>
       <div class="search-form d-lg-flex d-inline-block">

@@ -23,6 +23,7 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.{
     Address,
     Address.CoinBalance,
+    Address.CurrentTokenBalance,
     Address.TokenBalance,
     Block,
     Data,
@@ -919,13 +920,20 @@ defmodule Explorer.Chain do
   Lists the top 250 `t:Explorer.Chain.Address.t/0`'s' in descending order based on coin balance.
 
   """
-  @spec list_top_addresses :: [Address.t()]
+  @spec list_top_addresses :: [{Address.t(), non_neg_integer()}]
   def list_top_addresses do
-    Address
-    |> limit(250)
-    |> order_by(desc: :fetched_coin_balance, asc: :hash)
-    |> where([address], address.fetched_coin_balance > ^0)
-    |> Repo.all()
+    query =
+      from(a in Address,
+        left_join: t in Transaction,
+        on: a.hash == t.from_address_hash,
+        where: a.fetched_coin_balance > ^0,
+        group_by: [a.hash, a.fetched_coin_balance],
+        order_by: [desc: a.fetched_coin_balance, asc: a.hash],
+        select: {a, fragment("coalesce(1 + max(?), 0)", t.nonce)},
+        limit: 250
+      )
+
+    Repo.all(query)
   end
 
   @doc """
@@ -2070,7 +2078,7 @@ defmodule Explorer.Chain do
   @spec fetch_token_holders_from_token_hash(Hash.Address.t(), [paging_options]) :: [TokenBalance.t()]
   def fetch_token_holders_from_token_hash(contract_address_hash, options) do
     contract_address_hash
-    |> TokenBalance.token_holders_ordered_by_value(options)
+    |> CurrentTokenBalance.token_holders_ordered_by_value(options)
     |> Repo.all()
   end
 
