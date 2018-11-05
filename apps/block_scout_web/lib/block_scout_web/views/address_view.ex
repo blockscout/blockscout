@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.AddressView do
   use BlockScoutWeb, :view
 
-  import BlockScoutWeb.AddressController, only: [transaction_count: 1, validation_count: 1]
+  import BlockScoutWeb.AddressController, only: [validation_count: 1]
 
   alias BlockScoutWeb.LayoutView
   alias Explorer.Chain
@@ -94,14 +94,18 @@ defmodule BlockScoutWeb.AddressView do
     format_wei_value(balance, :ether)
   end
 
-  def balance_percentage(%Address{fetched_coin_balance: balance}) do
+  def balance_percentage(%Address{fetched_coin_balance: balance}, total_supply) do
     balance
     |> Wei.to(:ether)
-    |> Decimal.div(Decimal.new(Chain.total_supply()))
+    |> Decimal.div(Decimal.new(total_supply))
     |> Decimal.mult(100)
     |> Decimal.round(4)
     |> Decimal.to_string(:normal)
     |> Kernel.<>("% #{gettext("Market Cap")}")
+  end
+
+  def balance_percentage(%Address{fetched_coin_balance: _} = address) do
+    balance_percentage(address, Chain.total_supply())
   end
 
   def balance_block_number(%Address{fetched_coin_balance_block_number: nil}), do: ""
