@@ -67,6 +67,11 @@
     <div class="card-body">
       <%= link(gettext("View All Transactions →"), to: transaction_path(BlockScoutWeb.Endpoint, :index), class: "button button-secondary button-xsmall float-right") %>
       <h2 class="card-title"><%= gettext "Transactions" %></h2>
+      <div data-selector="channel-batching-message" style="display: none;">
+        <div data-selector="reload-button" class="alert alert-info">
+          <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>
+        </div>
+      </div>
       <span data-selector="transactions-list">
         <%= for transaction <- @transactions do %>
           <%= render BlockScoutWeb.TransactionView, "_tile.html", transaction: transaction %>

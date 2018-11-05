@@ -5,8 +5,11 @@ import numeral from 'numeral'
 import socket from '../socket'
 import { exchangeRateChannel, formatUsdValue } from '../lib/currency'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
+import { batchChannel } from '../lib/utils'
 import listMorph from '../lib/list_morph'
 import { createMarketHistoryChart } from '../lib/market_history_chart'
+
+const BATCH_THRESHOLD = 6
 
 export const initialState = {
   addressCount: null,
@@ -15,6 +18,7 @@ export const initialState = {
   marketHistoryData: null,
   blocks: [],
   transactions: [],
+  transactionsBatch: [],
   transactionCount: null,
   usdMarketCap: null
 }
@@ -53,14 +57,28 @@ function baseReducer (state = initialState, action) {
         usdMarketCap: action.msg.exchangeRate.marketCapUsd
       })
     }
-    case 'RECEIVED_NEW_TRANSACTION': {
-      return Object.assign({}, state, {
-        transactionCount: state.transactionCount + 1,
-        transactions: [
-          action.msg,
-          ...state.transactions.slice(0, -1)
-        ]
-      })
+    case 'RECEIVED_NEW_TRANSACTION_BATCH': {
+      if (state.channelDisconnected) return state
+
+      const transactionCount = state.transactionCount + action.msgs.length
+
+      if (!state.transactionsBatch.length && action.msgs.length < BATCH_THRESHOLD) {
+        return Object.assign({}, state, {
+          transactions: [
+            ...action.msgs.reverse(),
+            ...state.transactions.slice(0, -1 * action.msgs.length)
+          ],
+          transactionCount
+        })
+      } else {
+        return Object.assign({}, state, {
+          transactionsBatch: [
+            ...action.msgs.reverse(),
+            ...state.transactionsBatch
+          ],
+          transactionCount
+        })
+      }
     }
     default:
       return state
@@ -155,6 +173,14 @@ const elements = {
       const newElements = _.map(state.transactions, ({ transactionHtml }) => $(transactionHtml)[0])
       listMorph(container, newElements, { key: 'dataset.transactionHash' })
     }
+  },
+  '[data-selector="channel-batching-count"]': {
+    render ($el, state, oldState) {
+      const $channelBatching = $('[data-selector="channel-batching-message"]')
+      if (!state.transactionsBatch.length) return $channelBatching.hide()
+      $channelBatching.show()
+      $el[0].innerHTML = numeral(state.transactionsBatch.length).format()
+    }
   }
 }
 
@@ -184,10 +210,10 @@ if ($chainDetailsPage.length) {
 
   const transactionsChannel = socket.channel(`transactions:new_transaction`)
   transactionsChannel.join()
-  transactionsChannel.on('transaction', (msg) => store.dispatch({
-    type: 'RECEIVED_NEW_TRANSACTION',
-    msg: humps.camelizeKeys(msg)
-  }))
+  transactionsChannel.on('transaction', batchChannel((msgs) => store.dispatch({
+    type: 'RECEIVED_NEW_TRANSACTION_BATCH',
+    msgs: humps.camelizeKeys(msgs)
+  })))
 }
 
 export function placeHolderBlock (blockNumber) {
