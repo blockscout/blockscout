@@ -162,7 +162,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/app.html.eex:46
 msgid "Block Mined, awaiting import..."
-msgstr ""
+msgstr "Block Signed, processing..."
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:45
@@ -405,7 +405,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/overview.html.eex:98
 #: lib/block_scout_web/views/wei_helpers.ex:72
 msgid "Ether"
-msgstr "POA"
+msgstr "ETH"
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:163
@@ -556,7 +556,7 @@ msgstr ""
 #: lib/block_scout_web/templates/block/overview.html.eex:99
 #: lib/block_scout_web/templates/chain/_block.html.eex:13
 msgid "Miner"
-msgstr ""
+msgstr "Signer"
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:176
@@ -1035,18 +1035,18 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:39
 msgid "Validated"
-msgstr ""
+msgstr "Signed"
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/index.html.eex:5
 #: lib/block_scout_web/templates/transaction/index.html.eex:9
 msgid "Validated Transactions"
-msgstr ""
+msgstr "Signed Transactions"
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tile.html.eex:23
 msgid "Validations"
-msgstr ""
+msgstr "Confirmations"
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:98
