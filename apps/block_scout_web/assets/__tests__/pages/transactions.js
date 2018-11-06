@@ -145,21 +145,4 @@ describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
     expect(output.transactions).toEqual([])
     expect(output.transactionsBatch.length).toEqual(0)
   })
-  test('on page 2+', () => {
-    const state = Object.assign({}, initialState, {
-      beyondPageOne: true,
-      transactionCount: 1
-    })
-    const action = {
-      type: 'RECEIVED_NEW_TRANSACTION_BATCH',
-      msgs: [{
-        transactionHtml: 'test'
-      }]
-    }
-    const output = reducer(state, action)
-
-    expect(output.transactions).toEqual([])
-    expect(output.transactionsBatch.length).toEqual(0)
-    expect(output.transactionCount).toEqual(2)
-  })
 })
