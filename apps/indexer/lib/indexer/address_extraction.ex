@@ -84,7 +84,8 @@ defmodule Indexer.AddressExtraction do
       ],
       [
         %{from: :block_number, to: :fetched_coin_balance_block_number},
-        %{from: :from_address_hash, to: :hash}
+        %{from: :from_address_hash, to: :hash},
+        %{from: :nonce, to: :nonce}
       ],
       [
         %{from: :block_number, to: :fetched_coin_balance_block_number},
@@ -136,6 +137,7 @@ defmodule Indexer.AddressExtraction do
           required(:hash) => String.t(),
           required(:fetched_coin_balance_block_number) => non_neg_integer(),
           optional(:fetched_coin_balance) => non_neg_integer(),
+          optional(:nonce) => non_neg_integer(),
           optional(:contract_code) => String.t()
         }
 
@@ -209,11 +211,13 @@ defmodule Indexer.AddressExtraction do
       ...>       %{
       ...>         block_number: 1,
       ...>         from_address_hash: "0x0000000000000000000000000000000000000001",
-      ...>         to_address_hash: "0x0000000000000000000000000000000000000002"
+      ...>         to_address_hash: "0x0000000000000000000000000000000000000002",
+      ...>         nonce: 3
       ...>       },
       ...>       %{
       ...>         block_number: 2,
-      ...>         from_address_hash: "0x0000000000000000000000000000000000000003"
+      ...>         from_address_hash: "0x0000000000000000000000000000000000000003",
+      ...>         nonce: 4
       ...>       }
       ...>     ]
       ...>   }
@@ -221,7 +225,8 @@ defmodule Indexer.AddressExtraction do
       [
         %{
           fetched_coin_balance_block_number: 1,
-          hash: "0x0000000000000000000000000000000000000001"
+          hash: "0x0000000000000000000000000000000000000001",
+          nonce: 3
         },
         %{
           fetched_coin_balance_block_number: 1,
@@ -229,7 +234,8 @@ defmodule Indexer.AddressExtraction do
         },
         %{
           fetched_coin_balance_block_number: 2,
-          hash: "0x0000000000000000000000000000000000000003"
+          hash: "0x0000000000000000000000000000000000000003",
+          nonce: 4
         }
       ]
 
@@ -366,6 +372,7 @@ defmodule Indexer.AddressExtraction do
             %{
               required(:block_number) => non_neg_integer(),
               required(:from_address_hash) => String.t(),
+              required(:nonce) => non_neg_integer(),
               optional(:to_address_hash) => String.t(),
               optional(:created_contract_address_hash) => String.t()
             }
@@ -477,6 +484,7 @@ defmodule Indexer.AddressExtraction do
           Map.merge(first, second)
         end
     end
+    |> Map.put(:nonce, max_nil_last(first[:nonce], second[:nonce]))
   end
 
   # `nil > 5 == true`, but we want numbers instead
