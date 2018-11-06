@@ -3,20 +3,16 @@ import _ from 'lodash'
 import humps from 'humps'
 import socket from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
-import { onScrollBottom } from '../lib/utils'
+import { withInfiniteScroll, connectInfiniteScroll } from '../lib/infinite_scroll_helpers'
 import listMorph from '../lib/list_morph'
 
 export const initialState = {
   channelDisconnected: false,
 
-  blocks: [],
-
-  loadingNextPage: false,
-  pagingError: false,
-  nextPageUrl: null
+  blocks: []
 }
 
-export const reducer = withMissingBlocks(baseReducer)
+export const reducer = withMissingBlocks(withInfiniteScroll(baseReducer))
 
 function baseReducer (state = initialState, action) {
   switch (action.type) {
@@ -44,21 +40,8 @@ function baseReducer (state = initialState, action) {
         })
       }
     }
-    case 'LOADING_NEXT_PAGE': {
-      return Object.assign({}, state, {
-        loadingNextPage: true
-      })
-    }
-    case 'PAGING_ERROR': {
-      return Object.assign({}, state, {
-        loadingNextPage: false,
-        pagingError: true
-      })
-    }
     case 'RECEIVED_NEXT_PAGE': {
       return Object.assign({}, state, {
-        loadingNextPage: false,
-        nextPageUrl: action.msg.nextPageUrl,
         blocks: [
           ...state.blocks,
           ...action.msg.blocks
@@ -110,29 +93,6 @@ const elements = {
       const newElements = _.map(state.blocks, ({ blockHtml }) => $(blockHtml)[0])
       listMorph(container, newElements, { key: 'dataset.blockNumber' })
     }
-  },
-  '[data-selector="next-page-button"]': {
-    load ($el) {
-      return {
-        nextPageUrl: `${$el.hide().attr('href')}&type=JSON`
-      }
-    }
-  },
-  '[data-selector="loading-next-page"]': {
-    render ($el, state) {
-      if (state.loadingNextPage) {
-        $el.show()
-      } else {
-        $el.hide()
-      }
-    }
-  },
-  '[data-selector="paging-error-message"]': {
-    render ($el, state) {
-      if (state.pagingError) {
-        $el.show()
-      }
-    }
   }
 }
 
@@ -140,6 +100,7 @@ const $blockListPage = $('[data-page="block-list"]')
 if ($blockListPage.length) {
   const store = createStore(reducer)
   connectElements({ store, elements })
+  connectInfiniteScroll(store)
 
   const blocksChannel = socket.channel(`blocks:new_block`, {})
   blocksChannel.join()
@@ -150,27 +111,6 @@ if ($blockListPage.length) {
     type: 'RECEIVED_NEW_BLOCK',
     msg: humps.camelizeKeys(msg)
   }))
-
-  onScrollBottom(() => {
-    const { loadingNextPage, nextPageUrl, pagingError } = store.getState()
-    if (!loadingNextPage && nextPageUrl && !pagingError) {
-      store.dispatch({
-        type: 'LOADING_NEXT_PAGE'
-      })
-      $.get(nextPageUrl)
-        .done(msg => {
-          store.dispatch({
-            type: 'RECEIVED_NEXT_PAGE',
-            msg: humps.camelizeKeys(msg)
-          })
-        })
-        .fail(() => {
-          store.dispatch({
-            type: 'PAGING_ERROR'
-          })
-        })
-    }
-  })
 }
 
 export function placeHolderBlock (blockNumber) {
