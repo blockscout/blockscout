@@ -54,7 +54,11 @@
           id="loading"
           disabled="true"
           class="d-none px-4 position-absolute button button-primary button-sm mr-2">
-          <i class="fa fa-spinner fa-spin"></i> <%= gettext("loading.....") %>
+          <span class="loading-spinner-small mr-2">
+            <span class="loading-spinner-block-1"></span>
+            <span class="loading-spinner-block-2"></span>
+          </span>
+          <%= gettext("Loading....") %>
         </button>
         <%= submit gettext("Verify & publish"), class: "button button-primary button-sm mr-2", "data-loading": "animation"  %>
         <%= reset gettext("Reset"), class: "button button-secondary button-sm mr-2" %>

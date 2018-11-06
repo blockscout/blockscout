@@ -10,10 +10,10 @@
 
     <div class="col-10 col-md-11">
       <div class="row">
-        <div class="col-md-7 d-flex flex-column mt-3 mt-md-0">
+        <div class="col-md-6 d-flex flex-column">
           <%= @address |> BlockScoutWeb.AddressView.address_partial_selector(nil, nil) |> BlockScoutWeb.RenderHelpers.render_partial() %>
           <!-- number of txns for this address -->
-          <span class="mr-4 mb-2">
+          <span class="mr-4">
             <span data-test="transaction_count">
               <%= @tx_count %>
             </span> <%= gettext "Transactions sent" %>
@@ -26,7 +26,7 @@
         </div>
 
         <!-- balance and percentage -->
-        <div class="col-md-5 d-flex flex-column text-md-right mt-3 mt-md-0">
+        <div class="col-md-6 d-flex flex-column text-md-right mt-3 mt-md-0">
           <!-- address coin balance -->
           <span class="tile-title" data-test="address_balance"><%= balance(@address) %></span>
           <div class="d-flex flex-column flex-md-row justify-content-md-end">

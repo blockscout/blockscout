@@ -8,7 +8,7 @@ test('CHANNEL_DISCONNECTED', () => {
   const output = reducer(state, action)
 
   expect(output.channelDisconnected).toBe(true)
-  expect(output.batchCountAccumulator).toBe(0)
+  expect(output.transactionsBatch.length).toBe(0)
 })
 
 describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
@@ -22,8 +22,8 @@ describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
     }
     const output = reducer(state, action)
 
-    expect(output.newTransactions).toEqual(['test'])
-    expect(output.batchCountAccumulator).toEqual(0)
+    expect(output.transactions).toEqual([{ transactionHtml: 'test' }])
+    expect(output.transactionsBatch.length).toEqual(0)
     expect(output.transactionCount).toEqual(1)
   })
   test('large batch of transactions', () => {
@@ -56,13 +56,15 @@ describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
     }
     const output = reducer(state, action)
 
-    expect(output.newTransactions).toEqual([])
-    expect(output.batchCountAccumulator).toEqual(11)
+    expect(output.transactions).toEqual([])
+    expect(output.transactionsBatch.length).toEqual(11)
     expect(output.transactionCount).toEqual(11)
   })
   test('single transaction after single transaction', () => {
     const state = Object.assign({}, initialState, {
-      newTransactions: ['test 1']
+      transactions: [{
+        transactionHtml: 'test 1'
+      }]
     })
     const action = {
       type: 'RECEIVED_NEW_TRANSACTION_BATCH',
@@ -72,12 +74,15 @@ describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
     }
     const output = reducer(state, action)
 
-    expect(output.newTransactions).toEqual(['test 1', 'test 2'])
-    expect(output.batchCountAccumulator).toEqual(0)
+    expect(output.transactions).toEqual([
+      { transactionHtml: 'test 2' },
+      { transactionHtml: 'test 1' }
+    ])
+    expect(output.transactionsBatch.length).toEqual(0)
   })
   test('single transaction after large batch of transactions', () => {
     const state = Object.assign({}, initialState, {
-      batchCountAccumulator: 11
+      transactionsBatch: [1,2,3,4,5,6,7,8,9,10,11]
     })
     const action = {
       type: 'RECEIVED_NEW_TRANSACTION_BATCH',
@@ -87,12 +92,12 @@ describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
     }
     const output = reducer(state, action)
 
-    expect(output.newTransactions).toEqual([])
-    expect(output.batchCountAccumulator).toEqual(12)
+    expect(output.transactions).toEqual([])
+    expect(output.transactionsBatch.length).toEqual(12)
   })
   test('large batch of transactions after large batch of transactions', () => {
     const state = Object.assign({}, initialState, {
-      batchCountAccumulator: 11
+      transactionsBatch: [1,2,3,4,5,6,7,8,9,10,11]
     })
     const action = {
       type: 'RECEIVED_NEW_TRANSACTION_BATCH',
@@ -122,8 +127,8 @@ describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
     }
     const output = reducer(state, action)
 
-    expect(output.newTransactions).toEqual([])
-    expect(output.batchCountAccumulator).toEqual(22)
+    expect(output.transactions).toEqual([])
+    expect(output.transactionsBatch.length).toEqual(22)
   })
   test('after disconnection', () => {
     const state = Object.assign({}, initialState, {
@@ -137,8 +142,8 @@ describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
     }
     const output = reducer(state, action)
 
-    expect(output.newTransactions).toEqual([])
-    expect(output.batchCountAccumulator).toEqual(0)
+    expect(output.transactions).toEqual([])
+    expect(output.transactionsBatch.length).toEqual(0)
   })
   test('on page 2+', () => {
     const state = Object.assign({}, initialState, {
@@ -153,8 +158,8 @@ describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
     }
     const output = reducer(state, action)
 
-    expect(output.newTransactions).toEqual([])
-    expect(output.batchCountAccumulator).toEqual(0)
+    expect(output.transactions).toEqual([])
+    expect(output.transactionsBatch.length).toEqual(0)
     expect(output.transactionCount).toEqual(2)
   })
 })

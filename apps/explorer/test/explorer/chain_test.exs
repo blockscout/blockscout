@@ -208,15 +208,14 @@ defmodule Explorer.ChainTest do
 
       transaction =
         :transaction
-        |> insert()
+        |> insert(to_address: address, to_address_hash: address.hash)
         |> with_block()
 
-      insert(:token_transfer, to_address: address, transaction: transaction)
-
-      transaction =
-        Transaction
-        |> Repo.get!(transaction.hash)
-        |> Repo.preload([:block, :to_address, :from_address, token_transfers: :token])
+      insert(
+        :token_transfer,
+        to_address: address,
+        transaction: transaction
+      )
 
       assert [transaction.hash] ==
                Chain.address_to_transactions(address)
@@ -228,33 +227,75 @@ defmodule Explorer.ChainTest do
 
       transaction =
         :transaction
-        |> insert()
+        |> insert(to_address: address)
         |> with_block()
 
-      token_transfer = insert(:token_transfer, to_address: address, transaction: transaction)
-      insert(:token_transfer, to_address: build(:address), transaction: transaction)
+      token_transfer =
+        insert(
+          :token_transfer,
+          to_address: address,
+          transaction: transaction
+        )
 
-      transaction = Chain.address_to_transactions(address) |> List.first()
+      insert(
+        :token_transfer,
+        to_address: build(:address),
+        transaction: transaction
+      )
 
-      assert transaction.token_transfers |> Enum.map(&{&1.transaction_hash, &1.log_index}) == [
+      transaction =
+        address
+        |> Chain.address_to_transactions()
+        |> List.first()
+
+      token_transfers_related =
+        Enum.map(
+          transaction.token_transfers,
+          &{&1.transaction_hash, &1.log_index}
+        )
+
+      assert token_transfers_related == [
                {token_transfer.transaction_hash, token_transfer.log_index}
              ]
     end
 
     test "returns just the token transfers related to the given contract address" do
-      contract_address = insert(:address, contract_code: Factory.data("contract_code"))
+      contract_address =
+        insert(
+          :address,
+          contract_code: Factory.data("contract_code")
+        )
 
       transaction =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block()
 
-      token_transfer = insert(:token_transfer, to_address: contract_address, transaction: transaction)
-      insert(:token_transfer, to_address: build(:address), transaction: transaction)
+      token_transfer =
+        insert(
+          :token_transfer,
+          to_address: contract_address,
+          transaction: transaction
+        )
 
-      transaction = Chain.address_to_transactions(contract_address) |> List.first()
+      insert(
+        :token_transfer,
+        to_address: build(:address),
+        transaction: transaction
+      )
 
-      assert Enum.map(transaction.token_transfers, &{&1.transaction_hash, &1.log_index}) == [
+      transaction =
+        contract_address
+        |> Chain.address_to_transactions()
+        |> List.first()
+
+      token_transfers_contract_address =
+        Enum.map(
+          transaction.token_transfers,
+          &{&1.transaction_hash, &1.log_index}
+        )
+
+      assert token_transfers_contract_address == [
                {token_transfer.transaction_hash, token_transfer.log_index}
              ]
     end
@@ -289,7 +330,7 @@ defmodule Explorer.ChainTest do
       address = insert(:address)
 
       second_page_hashes =
-        50
+        2
         |> insert_list(:transaction, from_address: address)
         |> with_block()
         |> Enum.map(& &1.hash)
@@ -302,7 +343,10 @@ defmodule Explorer.ChainTest do
       assert second_page_hashes ==
                address
                |> Chain.address_to_transactions(
-                 paging_options: %PagingOptions{key: {block_number, index}, page_size: 50}
+                 paging_options: %PagingOptions{
+                   key: {block_number, index},
+                   page_size: 2
+                 }
                )
                |> Enum.map(& &1.hash)
                |> Enum.reverse()
