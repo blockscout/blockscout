@@ -7,17 +7,49 @@ defmodule BlockScoutWeb.BlockController do
   alias Explorer.Chain
   alias Phoenix.View
 
-  def index(conn, %{"type" => "JSON"} = params) do
-    full_options =
-      [
-        necessity_by_association: %{
-          :transactions => :optional,
-          [miner: :names] => :optional
-        }
-      ]
-      |> Keyword.merge(paging_options(params))
+  def index(conn, params) do
+    [
+      necessity_by_association: %{
+        :transactions => :optional,
+        [miner: :names] => :optional
+      }
+    ]
+    |> handle_render(conn, params)
+  end
 
-    blocks_plus_one = Chain.list_blocks(full_options)
+  def show(conn, %{"hash_or_number" => hash_or_number}) do
+    redirect(conn, to: block_transaction_path(conn, :index, hash_or_number))
+  end
+
+  def reorg(conn, params) do
+    [
+      necessity_by_association: %{
+        :transactions => :optional,
+        [miner: :names] => :optional
+      },
+      block_type: "Reorg"
+    ]
+    |> handle_render(conn, params)
+  end
+
+  def uncle(conn, params) do
+    [
+      necessity_by_association: %{
+        :transactions => :optional,
+        [miner: :names] => :optional,
+        :nephews => :required
+      },
+      block_type: "Uncle"
+    ]
+    |> handle_render(conn, params)
+  end
+
+  defp handle_render(full_options, conn, %{"type" => "JSON"} = params) do
+    blocks_plus_one =
+      full_options
+      |> Keyword.merge(paging_options(params))
+      |> Chain.list_blocks()
+
     {blocks, next_page} = split_list_by_page(blocks_plus_one)
 
     next_page_url =
@@ -56,48 +88,11 @@ defmodule BlockScoutWeb.BlockController do
     )
   end
 
-  def index(conn, params) do
-    [
-      necessity_by_association: %{
-        :transactions => :optional,
-        [miner: :names] => :optional
-      }
-    ]
-    |> Keyword.merge(paging_options(%{}))
-    |> handle_render(conn, params)
-  end
-
-  def show(conn, %{"hash_or_number" => hash_or_number}) do
-    redirect(conn, to: block_transaction_path(conn, :index, hash_or_number))
-  end
-
-  def reorg(conn, params) do
-    [
-      necessity_by_association: %{
-        :transactions => :optional,
-        [miner: :names] => :optional
-      },
-      block_type: "Reorg"
-    ]
-    |> Keyword.merge(paging_options(params))
-    |> handle_render(conn, params)
-  end
-
-  def uncle(conn, params) do
-    [
-      necessity_by_association: %{
-        :transactions => :optional,
-        [miner: :names] => :optional,
-        :nephews => :required
-      },
-      block_type: "Uncle"
-    ]
-    |> Keyword.merge(paging_options(params))
-    |> handle_render(conn, params)
-  end
-
   defp handle_render(full_options, conn, params) do
-    blocks_plus_one = Chain.list_blocks(full_options)
+    blocks_plus_one =
+      full_options
+      |> Keyword.merge(paging_options(%{}))
+      |> Chain.list_blocks()
 
     {blocks, next_page} = split_list_by_page(blocks_plus_one)
 
