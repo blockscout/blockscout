@@ -3,6 +3,8 @@ defmodule BlockScoutWeb.Schema.Types do
 
   use Absinthe.Schema.Notation
 
+  import Absinthe.Resolution.Helpers
+
   import_types(Absinthe.Type.Custom)
   import_types(BlockScoutWeb.Schema.Scalars)
 
@@ -14,6 +16,10 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:fetched_coin_balance, :wei)
     field(:fetched_coin_balance_block_number, :integer)
     field(:contract_code, :data)
+
+    field :smart_contract, :smart_contract do
+      resolve(dataloader(:db, :smart_contract))
+    end
   end
 
   @desc """
@@ -34,6 +40,23 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:total_difficulty, :decimal)
     field(:miner_hash, :address_hash)
     field(:parent_hash, :full_hash)
+  end
+
+  @desc """
+  The representation of a verified Smart Contract.
+
+  "A contract in the sense of Solidity is a collection of code (its functions)
+  and data (its state) that resides at a specific address on the Ethereum
+  blockchain."
+  http://solidity.readthedocs.io/en/v0.4.24/introduction-to-smart-contracts.html
+  """
+  object :smart_contract do
+    field(:name, :string)
+    field(:compiler_version, :string)
+    field(:optimization, :boolean)
+    field(:contract_source_code, :string)
+    field(:abi, :json)
+    field(:address_hash, :address_hash)
   end
 
   @desc """

@@ -6,6 +6,8 @@ defmodule BlockScoutWeb.Schema.Scalars do
   alias Explorer.Chain.{Data, Hash, Wei}
   alias Explorer.Chain.Hash.{Address, Full, Nonce}
 
+  import_types(BlockScoutWeb.Schema.Scalars.JSON)
+
   @desc """
   The address (40 (hex) characters / 160 bits / 20 bytes) is derived from the public key (128 (hex) characters /
   512 bits / 64 bytes) which is derived from the private key (64 (hex) characters / 256 bits / 32 bytes).
