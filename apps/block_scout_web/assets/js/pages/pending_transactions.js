@@ -4,27 +4,28 @@ import URI from 'urijs'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
-import { updateAllAges } from '../lib/from_now'
-import { batchChannel, initRedux, slideDownPrepend, slideUpRemove } from '../utils'
+import { createStore, connectElements } from '../lib/redux_helpers.js'
+import { batchChannel } from '../lib/utils'
+import listMorph from '../lib/list_morph'
 
 const BATCH_THRESHOLD = 10
 
 export const initialState = {
-  newPendingTransactionHashesBatch: [],
-  beyondPageOne: null,
   channelDisconnected: false,
-  newPendingTransactions: [],
-  newTransactionHashes: [],
-  pendingTransactionCount: null
+
+  pendingTransactionCount: null,
+
+  pendingTransactions: [],
+  pendingTransactionsBatch: [],
+
+  beyondPageOne: null
 }
 
 export function reducer (state = initialState, action) {
   switch (action.type) {
-    case 'PAGE_LOAD': {
-      return Object.assign({}, state, {
-        beyondPageOne: action.beyondPageOne,
-        pendingTransactionCount: numeral(action.pendingTransactionCount).value()
-      })
+    case 'PAGE_LOAD':
+    case 'ELEMENTS_LOAD': {
+      return Object.assign({}, state, _.omit(action, 'type'))
     }
     case 'CHANNEL_DISCONNECTED': {
       return Object.assign({}, state, {
@@ -35,9 +36,9 @@ export function reducer (state = initialState, action) {
       if (state.channelDisconnected) return state
 
       return Object.assign({}, state, {
-        newPendingTransactionHashesBatch: _.without(state.newPendingTransactionHashesBatch, action.msg.transactionHash),
-        pendingTransactionCount: state.pendingTransactionCount - 1,
-        newTransactionHashes: [action.msg.transactionHash]
+        pendingTransactions: state.pendingTransactions.map((transaction) => action.msg.transactionHash === transaction.transactionHash ? action.msg : transaction),
+        pendingTransactionsBatch: state.pendingTransactionsBatch.filter((transaction) => action.msg.transactionHash !== transaction.transactionHash),
+        pendingTransactionCount: state.pendingTransactionCount - 1
       })
     }
     case 'RECEIVED_NEW_PENDING_TRANSACTION_BATCH': {
@@ -47,85 +48,110 @@ export function reducer (state = initialState, action) {
 
       if (state.beyondPageOne) return Object.assign({}, state, { pendingTransactionCount })
 
-      if (!state.newPendingTransactionHashesBatch.length && action.msgs.length < BATCH_THRESHOLD) {
+      if (!state.pendingTransactionsBatch.length && action.msgs.length < BATCH_THRESHOLD) {
         return Object.assign({}, state, {
-          newPendingTransactions: [
-            ...state.newPendingTransactions,
-            ..._.map(action.msgs, 'transactionHtml')
+          pendingTransactions: [
+            ...action.msgs.reverse(),
+            ...state.pendingTransactions
           ],
           pendingTransactionCount
         })
       } else {
         return Object.assign({}, state, {
-          newPendingTransactionHashesBatch: [
-            ...state.newPendingTransactionHashesBatch,
-            ..._.map(action.msgs, 'transactionHash')
+          pendingTransactionsBatch: [
+            ...action.msgs.reverse(),
+            ...state.pendingTransactionsBatch
           ],
           pendingTransactionCount
         })
       }
+    }
+    case 'REMOVE_PENDING_TRANSACTION': {
+      return Object.assign({}, state, {
+        pendingTransactions: state.pendingTransactions.filter((transaction) => action.msg.transactionHash !== transaction.transactionHash)
+      })
     }
     default:
       return state
   }
 }
 
-const $transactionPendingListPage = $('[data-page="transaction-pending-list"]')
-if ($transactionPendingListPage.length) {
-  initRedux(reducer, {
-    main (store) {
-      store.dispatch({
-        type: 'PAGE_LOAD',
-        pendingTransactionCount: $('[data-selector="transaction-pending-count"]').text(),
-        beyondPageOne: !!humps.camelizeKeys(URI(window.location).query(true)).insertedAt
-      })
-      const transactionsChannel = socket.channel(`transactions:new_transaction`)
-      transactionsChannel.join()
-      transactionsChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
-      transactionsChannel.on('transaction', (msg) =>
-        store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION', msg: humps.camelizeKeys(msg) })
-      )
-      const pendingTransactionsChannel = socket.channel(`transactions:new_pending_transaction`)
-      pendingTransactionsChannel.join()
-      pendingTransactionsChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
-      pendingTransactionsChannel.on('pending_transaction', batchChannel((msgs) =>
-        store.dispatch({ type: 'RECEIVED_NEW_PENDING_TRANSACTION_BATCH', msgs: humps.camelizeKeys(msgs) }))
-      )
-    },
-    render (state, oldState) {
+const elements = {
+  '[data-selector="channel-disconnected-message"]': {
+    render ($el, state) {
+      if (state.channelDisconnected) $el.show()
+    }
+  },
+  '[data-selector="channel-batching-count"]': {
+    render ($el, state, oldState) {
       const $channelBatching = $('[data-selector="channel-batching-message"]')
-      const $channelBatchingCount = $('[data-selector="channel-batching-count"]')
-      const $channelDisconnected = $('[data-selector="channel-disconnected-message"]')
-      const $pendingTransactionsList = $('[data-selector="transactions-pending-list"]')
-      const $pendingTransactionsCount = $('[data-selector="transaction-pending-count"]')
-
-      if (state.channelDisconnected) $channelDisconnected.show()
-      if (oldState.pendingTransactionCount !== state.pendingTransactionCount) {
-        $pendingTransactionsCount.empty().append(numeral(state.pendingTransactionCount).format())
-      }
-      if (oldState.newTransactionHashes !== state.newTransactionHashes && state.newTransactionHashes.length > 0) {
-        const $transaction = $(`[data-transaction-hash="${state.newTransactionHashes[0]}"]`)
-        $transaction.addClass('shrink-out')
-        setTimeout(() => {
-          if ($transaction.length === 1 && $transaction.siblings().length === 0 && state.pendingTransactionCount > 0) {
-            window.location.href = URI(window.location).removeQuery('inserted_at').removeQuery('hash').toString()
-          } else {
-            slideUpRemove($transaction)
-          }
-        }, 400)
-      }
-      if (state.newPendingTransactionHashesBatch.length) {
+      if (state.pendingTransactionsBatch.length) {
         $channelBatching.show()
-        $channelBatchingCount[0].innerHTML = numeral(state.newPendingTransactionHashesBatch.length).format()
+        $el[0].innerHTML = numeral(state.pendingTransactionsBatch.length).format()
       } else {
         $channelBatching.hide()
       }
-      if (oldState.newPendingTransactions !== state.newPendingTransactions) {
-        const newTransactionsToInsert = state.newPendingTransactions.slice(oldState.newPendingTransactions.length)
-        slideDownPrepend($pendingTransactionsList, newTransactionsToInsert.reverse().join(''))
-
-        updateAllAges()
-      }
     }
+  },
+  '[data-selector="transaction-pending-count"]': {
+    load ($el) {
+      return { pendingTransactionCount: numeral($el.text()).value() }
+    },
+    render ($el, state, oldState) {
+      if (oldState.transactionCount === state.transactionCount) return
+      $el.empty().append(numeral(state.transactionCount).format())
+    }
+  },
+  '[data-selector="transactions-pending-list"]': {
+    load ($el) {
+      return {
+        pendingTransactions: $el.children().map((index, el) => ({
+          transactionHash: el.dataset.transactionHash,
+          transactionHtml: el.outerHTML
+        })).toArray()
+      }
+    },
+    render ($el, state, oldState) {
+      if (oldState.pendingTransactions === state.pendingTransactions) return
+      const container = $el[0]
+      const newElements = _.map(state.pendingTransactions, ({ transactionHtml }) => $(transactionHtml)[0])
+      listMorph(container, newElements, { key: 'dataset.transactionHash' })
+    }
+  }
+}
+
+const $transactionPendingListPage = $('[data-page="transaction-pending-list"]')
+if ($transactionPendingListPage.length) {
+  const store = createStore(reducer)
+  store.dispatch({
+    type: 'PAGE_LOAD',
+    beyondPageOne: !!humps.camelizeKeys(URI(window.location).query(true)).insertedAt
   })
+  connectElements({ store, elements })
+
+  const transactionsChannel = socket.channel(`transactions:new_transaction`)
+  transactionsChannel.join()
+  transactionsChannel.onError(() => store.dispatch({
+    type: 'CHANNEL_DISCONNECTED'
+  }))
+  transactionsChannel.on('transaction', (msg) => {
+    store.dispatch({
+      type: 'RECEIVED_NEW_TRANSACTION',
+      msg: humps.camelizeKeys(msg)
+    })
+    setTimeout(() => store.dispatch({
+      type: 'REMOVE_PENDING_TRANSACTION',
+      msg: humps.camelizeKeys(msg)
+    }), 1000)
+  })
+
+  const pendingTransactionsChannel = socket.channel(`transactions:new_pending_transaction`)
+  pendingTransactionsChannel.join()
+  pendingTransactionsChannel.onError(() => store.dispatch({
+    type: 'CHANNEL_DISCONNECTED'
+  }))
+  pendingTransactionsChannel.on('pending_transaction', batchChannel((msgs) => store.dispatch({
+    type: 'RECEIVED_NEW_PENDING_TRANSACTION_BATCH',
+    msgs: humps.camelizeKeys(msgs)
+  })))
 }

@@ -4,7 +4,9 @@ import URI from 'urijs'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
-import { createStore, connectElements, batchChannel, listMorph, onScrollBottom } from '../utils'
+import { createStore, connectElements } from '../lib/redux_helpers.js'
+import { batchChannel, onScrollBottom } from '../lib/utils'
+import listMorph from '../lib/list_morph'
 import { updateAllCalculatedUsdValues } from '../lib/currency.js'
 import { loadTokenBalanceDropdown } from '../lib/token_balance_dropdown'
 
@@ -233,7 +235,7 @@ const elements = {
     }
   },
   '[data-selector="transactions-list"]': {
-    load ($el, store) {
+    load ($el) {
       return {
         transactions: $el.children().map((index, el) => ({
           transactionHash: el.dataset.transactionHash,

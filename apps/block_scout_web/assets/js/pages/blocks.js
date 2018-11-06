@@ -3,28 +3,24 @@ import _ from 'lodash'
 import URI from 'urijs'
 import humps from 'humps'
 import socket from '../socket'
-import { updateAllAges } from '../lib/from_now'
-import { buildFullBlockList, initRedux, slideDownBefore, skippedBlockListBuilder } from '../utils'
+import { createStore, connectElements } from '../lib/redux_helpers.js'
+import listMorph from '../lib/list_morph'
 
 export const initialState = {
-  blockNumbers: [],
-  beyondPageOne: null,
   channelDisconnected: false,
-  newBlock: null,
-  replaceBlock: null,
-  skippedBlockNumbers: []
+
+  blocks: [],
+
+  beyondPageOne: null
 }
 
-export function reducer (state = initialState, action) {
+export const reducer = withMissingBlocks(baseReducer)
+
+function baseReducer (state = initialState, action) {
   switch (action.type) {
-    case 'PAGE_LOAD': {
-      const blockNumbers = buildFullBlockList(action.blockNumbers)
-      const skippedBlockNumbers = _.difference(blockNumbers, action.blockNumbers)
-      return Object.assign({}, state, {
-        beyondPageOne: action.beyondPageOne,
-        blockNumbers,
-        skippedBlockNumbers
-      })
+    case 'PAGE_LOAD':
+    case 'ELEMENTS_LOAD': {
+      return Object.assign({}, state, _.omit(action, 'type'))
     }
     case 'CHANNEL_DISCONNECTED': {
       return Object.assign({}, state, {
@@ -34,30 +30,16 @@ export function reducer (state = initialState, action) {
     case 'RECEIVED_NEW_BLOCK': {
       if (state.channelDisconnected || state.beyondPageOne) return state
 
-      const blockNumber = parseInt(action.msg.blockNumber)
-      if (_.includes(state.blockNumbers, blockNumber)) {
+      if (!state.blocks.length || state.blocks[0].blockNumber < action.msg.blockNumber) {
         return Object.assign({}, state, {
-          newBlock: action.msg.blockHtml,
-          replaceBlock: blockNumber,
-          skippedBlockNumbers: _.without(state.skippedBlockNumbers, blockNumber)
+          blocks: [
+            action.msg,
+            ...state.blocks
+          ]
         })
-      } else if (blockNumber < _.last(state.blockNumbers)) {
-        return state
       } else {
-        let skippedBlockNumbers = state.skippedBlockNumbers.slice(0)
-        if (blockNumber > state.blockNumbers[0] + 1) {
-          skippedBlockListBuilder(skippedBlockNumbers, blockNumber, state.blockNumbers[0])
-        }
-        const newBlockNumbers = _.chain([blockNumber])
-          .union(skippedBlockNumbers, state.blockNumbers)
-          .orderBy([], ['desc'])
-          .value()
-
         return Object.assign({}, state, {
-          blockNumbers: newBlockNumbers,
-          newBlock: action.msg.blockHtml,
-          replaceBlock: null,
-          skippedBlockNumbers
+          blocks: state.blocks.map((block) => block.blockNumber === action.msg.blockNumber ? action.msg : block)
         })
       }
     }
@@ -66,49 +48,70 @@ export function reducer (state = initialState, action) {
   }
 }
 
-const $blockListPage = $('[data-page="block-list"]')
-if ($blockListPage.length) {
-  initRedux(reducer, {
-    main (store) {
-      const state = store.dispatch({
-        type: 'PAGE_LOAD',
-        beyondPageOne: !!humps.camelizeKeys(URI(window.location).query(true)).blockNumber,
-        blockNumbers: $('[data-selector="block-number"]').map((index, el) => parseInt(el.innerText)).toArray()
-      })
-      if (!state.beyondPageOne) {
-        const blocksChannel = socket.channel(`blocks:new_block`, {})
-        blocksChannel.join()
-        blocksChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
-        blocksChannel.on('new_block', (msg) =>
-          store.dispatch({ type: 'RECEIVED_NEW_BLOCK', msg: humps.camelizeKeys(msg) })
-        )
-      }
-    },
-    render (state, oldState) {
-      const $channelDisconnected = $('[data-selector="channel-disconnected-message"]')
-      const skippedBlockNumbers = _.difference(state.skippedBlockNumbers, oldState.skippedBlockNumbers)
+function withMissingBlocks (reducer) {
+  return (...args) => {
+    const result = reducer(...args)
 
-      if (state.channelDisconnected) $channelDisconnected.show()
-      if ((state.newBlock && oldState.newBlock !== state.newBlock) || skippedBlockNumbers.length) {
-        if (state.replaceBlock && oldState.replaceBlock !== state.replaceBlock) {
-          const $replaceBlock = $(`[data-block-number="${state.replaceBlock}"]`)
-          $replaceBlock.addClass('shrink-out')
-          setTimeout(() => $replaceBlock.replaceWith(state.newBlock), 400)
-        } else {
-          if (skippedBlockNumbers.length) {
-            _.forEachRight(skippedBlockNumbers, (skippedBlockNumber) => {
-              slideDownBefore($(`[data-block-number="${skippedBlockNumber - 1}"]`), placeHolderBlock(skippedBlockNumber))
-            })
-          }
-          slideDownBefore($(`[data-block-number="${state.blockNumbers[0] - 1}"]`), state.newBlock)
-        }
-        updateAllAges()
-      }
-    }
-  })
+    if (result.blocks.length < 2) return result
+
+    const maxBlock = _.first(result.blocks).blockNumber
+    const minBlock = _.last(result.blocks).blockNumber
+
+    return Object.assign({}, result, {
+      blocks: _.rangeRight(minBlock, maxBlock + 1)
+        .map((blockNumber) => _.find(result.blocks, ['blockNumber', blockNumber]) || {
+          blockNumber,
+          blockHtml: placeHolderBlock(blockNumber)
+        })
+    })
+  }
 }
 
-function placeHolderBlock (blockNumber) {
+const elements = {
+  '[data-selector="channel-disconnected-message"]': {
+    render ($el, state) {
+      if (state.channelDisconnected) $el.show()
+    }
+  },
+  '[data-selector="blocks-list"]': {
+    load ($el) {
+      return {
+        blocks: $el.children().map((index, el) => ({
+          blockNumber: parseInt(el.dataset.blockNumber),
+          blockHtml: el.outerHTML
+        })).toArray()
+      }
+    },
+    render ($el, state, oldState) {
+      if (oldState.blocks === state.blocks) return
+      const container = $el[0]
+      const newElements = _.map(state.blocks, ({ blockHtml }) => $(blockHtml)[0])
+      listMorph(container, newElements, { key: 'dataset.blockNumber' })
+    }
+  }
+}
+
+const $blockListPage = $('[data-page="block-list"]')
+if ($blockListPage.length) {
+  const store = createStore(reducer)
+  store.dispatch({
+    type: 'PAGE_LOAD',
+    beyondPageOne: !!humps.camelizeKeys(URI(window.location).query(true)).blockNumber
+  })
+  connectElements({ store, elements })
+
+  const blocksChannel = socket.channel(`blocks:new_block`, {})
+  blocksChannel.join()
+  blocksChannel.onError(() => store.dispatch({
+    type: 'CHANNEL_DISCONNECTED'
+  }))
+  blocksChannel.on('new_block', (msg) => store.dispatch({
+    type: 'RECEIVED_NEW_BLOCK',
+    msg: humps.camelizeKeys(msg)
+  }))
+}
+
+export function placeHolderBlock (blockNumber) {
   return `
     <div class="my-3" style="height: 98px;" data-selector="place-holder" data-block-number="${blockNumber}">
       <div
