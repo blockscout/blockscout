@@ -4,9 +4,9 @@ defmodule Indexer.Token.Fetcher do
   """
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Hash, Token}
   alias Explorer.Chain.Hash.Address
-  alias Explorer.SmartContract.Reader
+  alias Explorer.Chain.Token
+  alias Explorer.Token.FunctionsReader
   alias Indexer.BufferedTask
 
   @behaviour BufferedTask
@@ -16,61 +16,6 @@ defmodule Indexer.Token.Fetcher do
     max_batch_size: 1,
     max_concurrency: 10,
     task_supervisor: Indexer.Token.TaskSupervisor
-  ]
-
-  @contract_abi [
-    %{
-      "constant" => true,
-      "inputs" => [],
-      "name" => "name",
-      "outputs" => [
-        %{
-          "name" => "",
-          "type" => "string"
-        }
-      ],
-      "payable" => false,
-      "type" => "function"
-    },
-    %{
-      "constant" => true,
-      "inputs" => [],
-      "name" => "decimals",
-      "outputs" => [
-        %{
-          "name" => "",
-          "type" => "uint8"
-        }
-      ],
-      "payable" => false,
-      "type" => "function"
-    },
-    %{
-      "constant" => true,
-      "inputs" => [],
-      "name" => "totalSupply",
-      "outputs" => [
-        %{
-          "name" => "",
-          "type" => "uint256"
-        }
-      ],
-      "payable" => false,
-      "type" => "function"
-    },
-    %{
-      "constant" => true,
-      "inputs" => [],
-      "name" => "symbol",
-      "outputs" => [
-        %{
-          "name" => "",
-          "type" => "string"
-        }
-      ],
-      "payable" => false,
-      "type" => "function"
-    }
   ]
 
   @doc false
@@ -102,10 +47,10 @@ defmodule Indexer.Token.Fetcher do
   end
 
   @impl BufferedTask
-  def run([token_contract_address], json_rpc_named_arguments) do
+  def run([token_contract_address], _json_rpc_named_arguments) do
     case Chain.token_from_address_hash(token_contract_address) do
       {:ok, %Token{cataloged: false} = token} ->
-        catalog_token(token, json_rpc_named_arguments)
+        catalog_token(token)
 
       {:ok, _} ->
         :ok
@@ -120,90 +65,12 @@ defmodule Indexer.Token.Fetcher do
     BufferedTask.buffer(__MODULE__, token_contract_addresses)
   end
 
-  defp catalog_token(%Token{contract_address_hash: contract_address_hash} = token, json_rpc_named_arguments) do
-    contract_functions = %{
-      "totalSupply" => [],
-      "decimals" => [],
-      "name" => [],
-      "symbol" => []
-    }
+  defp catalog_token(%Token{contract_address_hash: contract_address_hash} = token) do
+    contract_functions = FunctionsReader.get_functions_of(contract_address_hash)
 
-    token_contract_results =
-      Reader.query_unverified_contract(
-        contract_address_hash,
-        @contract_abi,
-        contract_functions,
-        json_rpc_named_arguments: json_rpc_named_arguments
-      )
-
-    token_params = format_token_params(token, token_contract_results)
+    token_params = Map.put(contract_functions, :cataloged, true)
 
     {:ok, _} = Chain.update_token(token, token_params)
     :ok
-  end
-
-  def format_token_params(token, token_contract_data) do
-    token_contract_data =
-      for {function_name, {:ok, [function_data]}} <- token_contract_data, into: %{} do
-        {atomized_key(function_name), function_data}
-      end
-
-    token
-    |> Map.from_struct()
-    |> Map.put(:cataloged, true)
-    |> Map.merge(token_contract_data)
-    |> handle_invalid_strings()
-    |> handle_large_strings()
-  end
-
-  defp atomized_key("decimals"), do: :decimals
-  defp atomized_key("name"), do: :name
-  defp atomized_key("symbol"), do: :symbol
-  defp atomized_key("totalSupply"), do: :total_supply
-
-  # It's a temp fix to store tokens that have names and/or symbols with characters that the database
-  # doesn't accept. See https://github.com/poanetwork/blockscout/issues/669 for more info.
-  defp handle_invalid_strings(%{name: name, symbol: symbol, contract_address_hash: contract_address_hash} = token) do
-    name = handle_invalid_name(name, contract_address_hash)
-    symbol = handle_invalid_symbol(symbol)
-
-    %{token | name: name, symbol: symbol}
-  end
-
-  defp handle_invalid_name(nil, _contract_address_hash), do: nil
-
-  defp handle_invalid_name(name, contract_address_hash) do
-    case String.valid?(name) do
-      true -> remove_null_bytes(name)
-      false -> format_according_contract_address_hash(contract_address_hash)
-    end
-  end
-
-  defp handle_invalid_symbol(symbol) do
-    case String.valid?(symbol) do
-      true -> remove_null_bytes(symbol)
-      false -> nil
-    end
-  end
-
-  defp format_according_contract_address_hash(contract_address_hash) do
-    contract_address_hash
-    |> Hash.to_string()
-    |> String.slice(0, 6)
-  end
-
-  defp handle_large_strings(%{name: name, symbol: symbol, type: type} = token) do
-    [name, type, symbol] = Enum.map([name, type, symbol], &handle_large_string/1)
-
-    %{token | name: name, symbol: symbol, type: type}
-  end
-
-  defp handle_large_string(nil), do: nil
-  defp handle_large_string(string), do: handle_large_string(string, byte_size(string))
-  defp handle_large_string(string, size) when size > 255, do: binary_part(string, 0, 255)
-  defp handle_large_string(string, _size), do: string
-
-  defp remove_null_bytes(string) do
-    String.replace(string, "\0", "")
   end
 end
