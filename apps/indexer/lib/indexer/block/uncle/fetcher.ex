@@ -15,8 +15,8 @@ defmodule Indexer.Block.Uncle.Fetcher do
 
   @defaults [
     flush_interval: :timer.seconds(3),
-    max_batch_size: 2,
-    max_concurrency: 2,
+    max_batch_size: 0,
+    max_concurrency: 0,
     task_supervisor: Indexer.Block.Uncle.TaskSupervisor
   ]
 

@@ -26,7 +26,7 @@ config :explorer, Explorer.Repo,
 
 config :explorer, Explorer.Counters.TokenTransferCounter, enabled: true
 
-config :explorer, Explorer.Counters.TokenHoldersCounter, enabled: true, enable_consolidation: true
+config :explorer, Explorer.Counters.TokenHoldersCounter, enabled: true, enable_consolidation: false
 
 if System.get_env("SUPPLY_MODULE") == "TransactionAndLog" do
   config :explorer, supply: Explorer.Chain.Supply.TransactionAndLog

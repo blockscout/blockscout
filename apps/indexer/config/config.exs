@@ -8,7 +8,7 @@ config :indexer,
   block_transformer: Indexer.Block.Transform.Base,
   ecto_repos: [Explorer.Repo],
   # bytes
-  memory_limit: 16 <<< 30
+  memory_limit: 36 <<< 30
 
 config :logger, :indexer,
   # keep synced with `config/config.exs`
