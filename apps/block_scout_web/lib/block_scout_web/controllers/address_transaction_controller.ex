@@ -91,8 +91,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
       {transactions, next_page} = get_transactions_and_next_page(address, full_options)
 
-      pending_transactions = Chain.address_to_pending_transactions(address, pending_options)
-
       render(
         conn,
         "index.html",
@@ -100,7 +98,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
         next_page_params: next_page_params(next_page, transactions, params),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
-        pending_transactions: pending_transactions,
         transactions: transactions,
         transaction_count: transaction_count(address),
         validation_count: validation_count(address)
