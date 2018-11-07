@@ -25,10 +25,10 @@ defmodule BlockScoutWeb.InternalTransactionViewTest do
       assert InternalTransactionView.type(internal_transaction) == "Create"
     end
 
-    test "returns the correct string when the type is :suicide" do
-      internal_transaction = %InternalTransaction{type: :suicide}
+    test "returns the correct string when the type is :selfdestruct" do
+      internal_transaction = %InternalTransaction{type: :selfdestruct}
 
-      assert InternalTransactionView.type(internal_transaction) == "Suicide"
+      assert InternalTransactionView.type(internal_transaction) == "Self-Destruct"
     end
 
     test "returns the correct string when the type is :reward" do

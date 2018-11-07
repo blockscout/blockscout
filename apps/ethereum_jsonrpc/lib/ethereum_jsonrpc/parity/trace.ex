@@ -160,8 +160,8 @@ defmodule EthereumJSONRPC.Parity.Trace do
        transaction_index: 0
      }
 
-  Suicides transfer a `"balance"` from `"address"` to `"refundAddress"`.  These suicide-unique fields can be mapped to
-  pre-existing `t:Explorer.Chain.InternalTransaction.t/0` fields.
+  Self-destruct transfer a `"balance"` from `"address"` to `"refundAddress"`.  These self-destruct-unique fields can be
+  mapped to pre-existing `t:Explorer.Chain.InternalTransaction.t/0` fields.
 
   | Elixir            | Params               |
   |-------------------|----------------------|
@@ -193,7 +193,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
         to_address_hash: "0x59e2e9ecf133649b1a7efc731162ff09d29ca5a5",
         trace_address: [0],
         transaction_hash: "0xb012b8c53498c669d87d85ed90f57385848b86d3f44ed14b2784ec685d6fda98",
-        type: "suicide",
+        type: "selfdestruct",
         value: 0,
         transaction_index: 0
       }
@@ -257,7 +257,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
     |> put_create_error_or_result(elixir)
   end
 
-  def elixir_to_params(%{"type" => "suicide" = type} = elixir) do
+  def elixir_to_params(%{"type" => "suicide"} = elixir) do
     %{
       "action" => %{
         "address" => from_address_hash,
@@ -278,7 +278,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
       to_address_hash: to_address_hash,
       trace_address: trace_address,
       transaction_hash: transaction_hash,
-      type: type,
+      type: "selfdestruct",
       value: value,
       transaction_index: transaction_index
     }

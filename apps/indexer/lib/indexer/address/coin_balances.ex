@@ -48,7 +48,7 @@ defmodule Indexer.Address.CoinBalances do
       %{type: "create", created_contract_address_hash: address_hash} when is_binary(address_hash) ->
         MapSet.put(acc, %{address_hash: address_hash, block_number: block_number})
 
-      %{type: "suicide", from_address_hash: from_address_hash, to_address_hash: to_address_hash}
+      %{type: "selfdestruct", from_address_hash: from_address_hash, to_address_hash: to_address_hash}
       when is_binary(from_address_hash) and is_binary(to_address_hash) ->
         acc
         |> MapSet.put(%{address_hash: from_address_hash, block_number: block_number})
