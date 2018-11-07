@@ -73,6 +73,10 @@ defmodule BlockScoutWeb.TransactionView do
     Cldr.Number.to_string!(gas)
   end
 
+  def decoded_input_data(transaction) do
+    Transaction.decoded_input_data(transaction)
+  end
+
   @doc """
   Converts a transaction's gas price to a displayable value.
   """

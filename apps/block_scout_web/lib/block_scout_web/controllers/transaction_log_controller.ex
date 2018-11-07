@@ -16,6 +16,7 @@ defmodule BlockScoutWeb.TransactionLogController do
                [created_contract_address: :names] => :optional,
                [from_address: :names] => :required,
                [to_address: :names] => :optional,
+               [to_address: :smart_contract] => :optional,
                :token_transfers => :optional
              }
            ) do
