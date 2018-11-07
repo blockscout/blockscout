@@ -39,7 +39,7 @@ const elements = {
       if (oldState.uncles === state.uncles) return
       const container = $el[0]
       const newElements = state.uncles.map((html) => $(html)[0])
-      listMorph(container, newElements, { key: 'dataset.blockNumber' })
+      listMorph(container, newElements, { key: 'dataset.blockHash' })
     }
   }
 }
