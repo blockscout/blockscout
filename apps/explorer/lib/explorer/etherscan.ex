@@ -344,9 +344,11 @@ defmodule Explorer.Etherscan do
             block_number: b.number,
             block_timestamp: b.timestamp,
             confirmations: fragment("? - ?", ^max_block_number, t.block_number),
+            token_id: tt.token_id,
             token_name: tkn.name,
             token_symbol: tkn.symbol,
-            token_decimals: tkn.decimals
+            token_decimals: tkn.decimals,
+            token_type: tkn.type
           })
       )
 

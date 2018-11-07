@@ -3,7 +3,10 @@ defmodule BlockScoutWeb.Schema do
 
   use Absinthe.Schema
 
+  alias Absinthe.Middleware.Dataloader, as: AbsintheMiddlewareDataloader
+  alias Absinthe.Plugin, as: AbsinthePlugin
   alias BlockScoutWeb.Resolvers.{Address, Block, Transaction}
+  alias Explorer.Chain
 
   import_types(BlockScoutWeb.Schema.Types)
 
@@ -36,5 +39,15 @@ defmodule BlockScoutWeb.Schema do
         {:ok, topic: to_string(args.token_contract_address_hash)}
       end)
     end
+  end
+
+  def context(context) do
+    loader = Dataloader.add_source(Dataloader.new(), :db, Chain.data())
+
+    Map.put(context, :loader, loader)
+  end
+
+  def plugins do
+    [AbsintheMiddlewareDataloader] ++ AbsinthePlugin.defaults()
   end
 end

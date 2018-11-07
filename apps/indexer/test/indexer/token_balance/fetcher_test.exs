@@ -87,5 +87,43 @@ defmodule Indexer.TokenBalance.FetcherTest do
 
       assert TokenBalance.Fetcher.import_token_balances(token_balances_params) == :error
     end
+
+    test "insert the missing address, import the token balances and return :ok when the address does not exist yet" do
+      contract = insert(:token)
+      insert(:block, number: 19999)
+
+      token_balances_params = [
+        %{
+          address_hash: "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+          block_number: 19999,
+          token_contract_address_hash: to_string(contract.contract_address_hash)
+        }
+      ]
+
+      {:ok, address_hash} = Explorer.Chain.string_to_address_hash("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
+      assert TokenBalance.Fetcher.import_token_balances(token_balances_params) == :ok
+      assert {:ok, _} = Explorer.Chain.hash_to_address(address_hash)
+    end
+
+    test "import the token balances and return :ok when there are multiple balances for the same address on the batch" do
+      contract = insert(:token)
+      contract2 = insert(:token)
+      insert(:block, number: 19999)
+
+      token_balances_params = [
+        %{
+          address_hash: "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+          block_number: 19999,
+          token_contract_address_hash: to_string(contract.contract_address_hash)
+        },
+        %{
+          address_hash: "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+          block_number: 19999,
+          token_contract_address_hash: to_string(contract2.contract_address_hash)
+        }
+      ]
+
+      assert TokenBalance.Fetcher.import_token_balances(token_balances_params) == :ok
+    end
   end
 end

@@ -1584,6 +1584,41 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert response["message"] == "No token transfers found"
     end
 
+    test "has correct value for ERC-721", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      token_address = insert(:contract_address)
+      insert(:token, %{contract_address: token_address, type: "ERC-721"})
+
+      token_transfer =
+        insert(:token_transfer, %{
+          token_contract_address: token_address,
+          token_id: 666,
+          transaction: transaction
+        })
+
+      {:ok, _} = Chain.token_from_address_hash(token_transfer.token_contract_address_hash)
+
+      params = %{
+        "module" => "account",
+        "action" => "tokentx",
+        "address" => to_string(token_transfer.from_address.hash)
+      }
+
+      assert response =
+               %{"result" => [result]} =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert result["value"] == to_string(token_transfer.token_id)
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
     test "returns all the required fields", %{conn: conn} do
       transaction =
         %{block: block} =
