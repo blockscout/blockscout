@@ -28,9 +28,7 @@ export const initialState = {
   transactions: [],
   internalTransactions: [],
   internalTransactionsBatch: [],
-  validatedBlocks: [],
-
-  beyondPageOne: null
+  validatedBlocks: []
 }
 
 export const reducer = withInfiniteScroll(baseReducer)
@@ -42,8 +40,6 @@ function baseReducer (state = initialState, action) {
       return Object.assign({}, state, _.omit(action, 'type'))
     }
     case 'CHANNEL_DISCONNECTED': {
-      if (state.beyondPageOne) return state
-
       return Object.assign({}, state, {
         channelDisconnected: true,
         internalTransactionsBatch: []
@@ -54,7 +50,6 @@ function baseReducer (state = initialState, action) {
 
       const validationCount = state.validationCount + 1
 
-      if (state.beyondPageOne) return Object.assign({}, state, { validationCount })
       return Object.assign({}, state, {
         validatedBlocks: [
           action.msg,
@@ -64,7 +59,7 @@ function baseReducer (state = initialState, action) {
       })
     }
     case 'RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH': {
-      if (state.channelDisconnected || state.beyondPageOne) return state
+      if (state.channelDisconnected) return state
 
       const incomingInternalTransactions = action.msgs
         .filter(({toAddressHash, fromAddressHash}) => (
@@ -90,7 +85,7 @@ function baseReducer (state = initialState, action) {
       }
     }
     case 'RECEIVED_NEW_PENDING_TRANSACTION': {
-      if (state.channelDisconnected || state.beyondPageOne) return state
+      if (state.channelDisconnected) return state
 
       if ((state.filter === 'to' && action.msg.toAddressHash !== state.addressHash) ||
         (state.filter === 'from' && action.msg.fromAddressHash !== state.addressHash)) {
@@ -114,8 +109,7 @@ function baseReducer (state = initialState, action) {
 
       const transactionCount = (action.msg.fromAddressHash === state.addressHash) ? state.transactionCount + 1 : state.transactionCount
 
-      if (state.beyondPageOne ||
-        (state.filter === 'to' && action.msg.toAddressHash !== state.addressHash) ||
+      if ((state.filter === 'to' && action.msg.toAddressHash !== state.addressHash) ||
         (state.filter === 'from' && action.msg.fromAddressHash !== state.addressHash)) {
         return Object.assign({}, state, { transactionCount })
       }
@@ -138,7 +132,15 @@ function baseReducer (state = initialState, action) {
       return Object.assign({}, state, {
         transactions: [
           ...state.transactions,
-          ...action.msg.transactions
+          ...action.msg.transactions || []
+        ],
+        internalTransactions: [
+          ...state.internalTransactions,
+          ...action.msg.internalTransactions || []
+        ],
+        validatedBlocks: [
+          ...state.validatedBlocks,
+          ...action.msg.validatedBlocks || []
         ]
       })
     }
@@ -263,7 +265,7 @@ const elements = {
       if (oldState.validatedBlocks === state.validatedBlocks) return
       const container = $el[0]
       const newElements = _.map(state.validatedBlocks, ({ blockHtml }) => $(blockHtml)[0])
-      listMorph(container, newElements, { key: 'dataset.blockNumber' })
+      listMorph(container, newElements, { key: 'dataset.blockHash' })
     }
   }
 }
@@ -272,15 +274,14 @@ const $addressDetailsPage = $('[data-page="address-details"]')
 if ($addressDetailsPage.length) {
   const store = createStore(reducer)
   const addressHash = $addressDetailsPage[0].dataset.pageAddressHash
-  const { filter, blockNumber } = humps.camelizeKeys(URI(window.location).query(true))
+  const { filter } = humps.camelizeKeys(URI(window.location).query(true))
   store.dispatch({
     type: 'PAGE_LOAD',
     addressHash,
-    filter,
-    beyondPageOne: !!blockNumber
+    filter
   })
   connectElements({ store, elements })
-  $('[data-selector="transactions-list"]').length && connectInfiniteScroll(store)
+  connectInfiniteScroll(store)
 
   const addressChannel = socket.channel(`addresses:${addressHash}`, {})
   addressChannel.join()

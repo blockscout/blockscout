@@ -10,9 +10,21 @@
       <div class="card-body">
         <h2 class="card-title"><%= gettext "Tokens" %></h2>
         <%= if Enum.any?(@tokens) do %>
-          <%= for token <- @tokens do %>
-            <%= render "_tokens.html", conn: @conn, token: token, address: @address %>
-          <% end %>
+          <span data-selector="tokens-list">
+            <%= for token <- @tokens do %>
+              <%= render "_tokens.html", conn: @conn, token: token, address: @address %>
+            <% end %>
+          </span>
+          <div data-selector="loading-next-page" class="tile tile-muted text-center mt-3" style="display: none;">
+            <span class="loading-spinner-small mr-2">
+              <span class="loading-spinner-block-1"></span>
+              <span class="loading-spinner-block-2"></span>
+            </span>
+            <%= gettext("Loading") %>...
+          </div>
+          <div data-selector="paging-error-message" class="alert alert-danger text-center mt-3" style="display: none;">
+            <%= gettext("Error trying to fetch next page.") %>
+          </div>
         <% else %>
           <div class="tile tile-muted text-center">
             <span><%= gettext "There are no tokens for this address." %></span>
@@ -24,6 +36,7 @@
             <%= link(
               gettext("Next"),
               class: "button button-secondary button-sm float-right mt-3",
+              "data-selector": "next-page-button",
               to: address_token_path(
                 @conn,
                 :index,
