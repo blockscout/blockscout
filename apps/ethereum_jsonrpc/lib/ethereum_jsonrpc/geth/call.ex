@@ -14,6 +14,7 @@ defmodule EthereumJSONRPC.Geth.Call do
       ...>     "transactionIndex" => 13,
       ...>     "transactionHash" => "0x32b17f27ddb546eab3c4c33f31eb22c1cb992d4ccc50dae26922805b717efe5c",
       ...>     "index" => 0,
+      ...>     "traceAddress" => [],
       ...>     "type" => "call",
       ...>     "callType" => "call",
       ...>     "from" => "0xa931c862e662134b85e4dc4baf5c70cc9ba74db4",
@@ -30,6 +31,7 @@ defmodule EthereumJSONRPC.Geth.Call do
         transaction_index: 13,
         transaction_hash: "0x32b17f27ddb546eab3c4c33f31eb22c1cb992d4ccc50dae26922805b717efe5c",
         index: 0,
+        trace_address: [],
         type: "call",
         call_type: "call",
         from_address_hash: "0xa931c862e662134b85e4dc4baf5c70cc9ba74db4",
@@ -38,7 +40,6 @@ defmodule EthereumJSONRPC.Geth.Call do
         gas_used: 32055,
         input: "0xb118e2db0000000000000000000000000000000000000000000000000000000000000008",
         output: "0x",
-        trace_address: [],
         value: 100000000000
       }
 
@@ -47,17 +48,18 @@ defmodule EthereumJSONRPC.Geth.Call do
       iex> EthereumJSONRPC.Geth.Call.to_internal_transaction_params(
       ...>   %{
       ...>     "blockNumber" => 3293221,
+      ...>     "transactionIndex" => 16,
+      ...>     "transactionHash" => "0xa9a893fe2f019831496cec9777ad25ff940823b9b47a3969299ea139e42b2073",
+      ...>     "index" => 0,
+      ...>     "traceAddress" => [],
+      ...>     "type" => "call",
       ...>     "callType" => "call",
-      ...>     "error" => "out of gas",
       ...>     "from" => "0x8ec75ef3adf6c953775d0738e0e7bd60e647e5ef",
+      ...>     "to" => "0xaae465ad04b12e90c32291e59b65ca781c57e361",
+      ...>     "input" => "0xa83627de",
+      ...>     "error" => "out of gas",
       ...>     "gas" => "0x4c9",
       ...>     "gasUsed" => "0x4c9",
-      ...>     "index" => 0,
-      ...>     "input" => "0xa83627de",
-      ...>     "to" => "0xaae465ad04b12e90c32291e59b65ca781c57e361",
-      ...>     "transactionHash" => "0xa9a893fe2f019831496cec9777ad25ff940823b9b47a3969299ea139e42b2073",
-      ...>     "transactionIndex" => 16,
-      ...>     "type" => "call",
       ...>     "value" => "0x0"
       ...>   }
       ...> )
@@ -66,6 +68,7 @@ defmodule EthereumJSONRPC.Geth.Call do
         transaction_index: 16,
         transaction_hash: "0xa9a893fe2f019831496cec9777ad25ff940823b9b47a3969299ea139e42b2073",
         index: 0,
+        trace_address: [],
         type: "call",
         call_type: "call",
         error: "out of gas",
@@ -73,7 +76,6 @@ defmodule EthereumJSONRPC.Geth.Call do
         to_address_hash: "0xaae465ad04b12e90c32291e59b65ca781c57e361",
         gas: 1225,
         input: "0xa83627de",
-        trace_address: [],
         value: 0
       }
 
@@ -85,6 +87,7 @@ defmodule EthereumJSONRPC.Geth.Call do
       ...>     "transactionIndex" => 7,
       ...>     "transactionHash" => "0xc4f4ba28bf8e6093b3f5932191a7a6af1dd17517c2b0e1be3b76dc445564a9ff",
       ...>     "index" => 64,
+      ...>     "traceAddress" => [],
       ...>     "type" => "call",
       ...>     "callType" => "call",
       ...>     "from" => "0xaf7cf620c3df1b9ccbc640be903d5ea6cea7bc96",
@@ -101,6 +104,7 @@ defmodule EthereumJSONRPC.Geth.Call do
         transaction_index: 7,
         transaction_hash: "0xc4f4ba28bf8e6093b3f5932191a7a6af1dd17517c2b0e1be3b76dc445564a9ff",
         index: 64,
+        trace_address: [],
         type: "call",
         call_type: "call",
         from_address_hash: "0xaf7cf620c3df1b9ccbc640be903d5ea6cea7bc96",
@@ -108,7 +112,6 @@ defmodule EthereumJSONRPC.Geth.Call do
         input: "0x49b46d5d",
         error: "stack limit reached 1024 (1024)",
         gas: 1445580,
-        trace_address: [],
         value: 0
       }
 
@@ -120,6 +123,7 @@ defmodule EthereumJSONRPC.Geth.Call do
       ...>     "transactionIndex" => 1,
       ...>     "transactionHash" => "0x248a832af263a298b9869ee9a669c2c86a3676799b0b8b566c6dd452daaedbf6",
       ...>     "index" => 0,
+      ...>     "traceAddress" => [],
       ...>     "type" => "create",
       ...>     "from" => "0xb95754d27da16a0f17aba278fc10a69e1c9fee1c",
       ...>     "createdContractAddressHash" => "0x08d24f568715041e72223cc023e806060de8a2a5",
@@ -154,6 +158,7 @@ defmodule EthereumJSONRPC.Geth.Call do
       ...>     "transactionIndex" => 14,
       ...>     "transactionHash" => "0x5c0c728190e593f2bbcbd9d7f851cbfbcaf041e41ce1b1eead97c301deb071fa",
       ...>     "index" => 0,
+      ...>     "traceAddress" => [],
       ...>     "type" => "create",
       ...>     "from" => "0x0a49007c56c5f9eda04a2ae4229da03a30be892e",
       ...>     "gas" => "0x84068",
@@ -168,12 +173,12 @@ defmodule EthereumJSONRPC.Geth.Call do
         transaction_index: 14,
         transaction_hash: "0x5c0c728190e593f2bbcbd9d7f851cbfbcaf041e41ce1b1eead97c301deb071fa",
         index: 0,
+        trace_address: [],
         type: "create",
         from_address_hash: "0x0a49007c56c5f9eda04a2ae4229da03a30be892e",
         init: "0xf49e4745",
         error: "stack underflow (0 <=> 6)",
         gas: 540776,
-        trace_address: [],
         value: 5287885714285715
       }
 
@@ -185,6 +190,7 @@ defmodule EthereumJSONRPC.Geth.Call do
       ...>     "transactionIndex" => 21,
       ...>     "transactionHash" => "0x6cf0aa434f6500251ce8579d031c821b9fd4b687685b21c368f1c1106e9a49a9",
       ...>     "index" => 1,
+      ...>     "traceAddress" => [0],
       ...>     "type" => "call",
       ...>     "callType" => "delegatecall",
       ...>     "from" => "0x54a298ee9fccbf0ad8e55bc641d3086b81a48c41",
@@ -201,6 +207,7 @@ defmodule EthereumJSONRPC.Geth.Call do
         transaction_index: 21,
         transaction_hash: "0x6cf0aa434f6500251ce8579d031c821b9fd4b687685b21c368f1c1106e9a49a9",
         index: 1,
+        trace_address: [0],
         type: "call",
         call_type: "delegatecall",
         from_address_hash: "0x54a298ee9fccbf0ad8e55bc641d3086b81a48c41",
@@ -209,7 +216,6 @@ defmodule EthereumJSONRPC.Geth.Call do
         gas_used: 6111,
         input: "0xeb9d50e46930b3227102b442f93b4aed3dead4ed76f850a76ee7f8b2cbe763428f2790530000000000000000000000000000000000000000000000000926708dfd7272e3",
         output: "0x",
-        trace_address: [],
         value: 0
       }
 
@@ -222,6 +228,7 @@ defmodule EthereumJSONRPC.Geth.Call do
       ...>     "transactionIndex" => 0,
       ...>     "transactionHash" => "0xb49ac6385dce60e2d88d8b4579f4e70a23cd40b45ecb29eb6c6069efc895325b",
       ...>     "index" => 1,
+      ...>     "traceAddress" => [0],
       ...>     "type" => "call",
       ...>     "callType" => "staticcall",
       ...>     "from" => "0xa4b3886db53bebdabbe17592a57886810b906200",
@@ -238,6 +245,7 @@ defmodule EthereumJSONRPC.Geth.Call do
         transaction_index: 0,
         transaction_hash: "0xb49ac6385dce60e2d88d8b4579f4e70a23cd40b45ecb29eb6c6069efc895325b",
         index: 1,
+        trace_address: [0],
         type: "call",
         call_type: "staticcall",
         from_address_hash: "0xa4b3886db53bebdabbe17592a57886810b906200",
@@ -246,7 +254,6 @@ defmodule EthereumJSONRPC.Geth.Call do
         gas_used: 1040,
         input: "0x0f370699",
         output: "0x",
-        trace_address: [],
         value: 0
       }
 
@@ -258,6 +265,7 @@ defmodule EthereumJSONRPC.Geth.Call do
       ...>     "transactionIndex" => 9,
       ...>     "transactionHash" => "0xe098557c8fa82be6779f5c2b3f248e990e2dc67b6bd60a4fa4a9aa66f6c24c08",
       ...>     "index" => 32,
+      ...>     "traceAddress" => [1],
       ...>     "type" => "selfdestruct",
       ...>     "from" => "0x9317da7be8e05f36f329a95f004a44552effb968",
       ...>     "to" => "0xff77830c100623316736b45c4983df970423aaf4",
@@ -268,14 +276,15 @@ defmodule EthereumJSONRPC.Geth.Call do
       ...> )
       %{
         block_number: 3298074,
+        transaction_index: 9,
+        transaction_hash: "0xe098557c8fa82be6779f5c2b3f248e990e2dc67b6bd60a4fa4a9aa66f6c24c08",
+        index: 32,
+        trace_address: [1],
+        type: "selfdestruct",
         from_address_hash: "0x9317da7be8e05f36f329a95f004a44552effb968",
+        to_address_hash: "0xff77830c100623316736b45c4983df970423aaf4",
         gas: 742088,
         gas_used: 718517,
-        index: 32,
-        to_address_hash: "0xff77830c100623316736b45c4983df970423aaf4",
-        transaction_hash: "0xe098557c8fa82be6779f5c2b3f248e990e2dc67b6bd60a4fa4a9aa66f6c24c08",
-        transaction_index: 9,
-        type: "selfdestruct",
         value: 0
       }
 
@@ -302,11 +311,18 @@ defmodule EthereumJSONRPC.Geth.Call do
     {key, quantity_to_integer(quantity)}
   end
 
+  defp entry_to_elixir({"traceAddress", trace_address} = entry) when is_list(trace_address) do
+    true = Enum.all?(trace_address, &is_integer/1)
+
+    entry
+  end
+
   defp elixir_to_internal_transaction_params(%{
          "blockNumber" => block_number,
          "transactionIndex" => transaction_index,
          "transactionHash" => transaction_hash,
          "index" => index,
+         "traceAddress" => trace_address,
          "type" => "call" = type,
          "callType" => call_type,
          "from" => from_address_hash,
@@ -323,6 +339,7 @@ defmodule EthereumJSONRPC.Geth.Call do
       transaction_index: transaction_index,
       transaction_hash: transaction_hash,
       index: index,
+      trace_address: trace_address,
       type: type,
       call_type: call_type,
       from_address_hash: from_address_hash,
@@ -331,7 +348,6 @@ defmodule EthereumJSONRPC.Geth.Call do
       gas_used: gas_used,
       input: input,
       output: output,
-      trace_address: [],
       value: value
     }
   end
@@ -341,6 +357,7 @@ defmodule EthereumJSONRPC.Geth.Call do
          "transactionIndex" => transaction_index,
          "transactionHash" => transaction_hash,
          "index" => index,
+         "traceAddress" => trace_address,
          "type" => "call" = type,
          "callType" => call_type,
          "from" => from_address_hash,
@@ -356,6 +373,7 @@ defmodule EthereumJSONRPC.Geth.Call do
       transaction_index: transaction_index,
       transaction_hash: transaction_hash,
       index: index,
+      trace_address: trace_address,
       type: type,
       call_type: call_type,
       from_address_hash: from_address_hash,
@@ -363,7 +381,6 @@ defmodule EthereumJSONRPC.Geth.Call do
       gas: gas,
       input: input,
       error: error,
-      trace_address: [],
       value: value
     }
   end
@@ -373,6 +390,7 @@ defmodule EthereumJSONRPC.Geth.Call do
          "transactionIndex" => transaction_index,
          "transactionHash" => transaction_hash,
          "index" => index,
+         "traceAddress" => trace_address,
          "type" => "call" = type,
          "callType" => "staticcall" = call_type,
          "from" => from_address_hash,
@@ -388,6 +406,7 @@ defmodule EthereumJSONRPC.Geth.Call do
       transaction_index: transaction_index,
       transaction_hash: transaction_hash,
       index: index,
+      trace_address: trace_address,
       type: type,
       call_type: call_type,
       from_address_hash: from_address_hash,
@@ -396,7 +415,6 @@ defmodule EthereumJSONRPC.Geth.Call do
       gas_used: gas_used,
       input: input,
       output: output,
-      trace_address: [],
       value: value
     }
   end
@@ -406,6 +424,7 @@ defmodule EthereumJSONRPC.Geth.Call do
          "transactionIndex" => transaction_index,
          "transactionHash" => transaction_hash,
          "index" => index,
+         "traceAddress" => trace_address,
          "type" => "create",
          "from" => from_address_hash,
          "createdContractAddressHash" => created_contract_address_hash,
@@ -420,6 +439,7 @@ defmodule EthereumJSONRPC.Geth.Call do
       transaction_index: transaction_index,
       transaction_hash: transaction_hash,
       index: index,
+      trace_address: trace_address,
       type: "create",
       from_address_hash: from_address_hash,
       gas: gas,
@@ -427,7 +447,6 @@ defmodule EthereumJSONRPC.Geth.Call do
       created_contract_address_hash: created_contract_address_hash,
       init: init,
       created_contract_code: created_contract_code,
-      trace_address: [],
       value: value
     }
   end
@@ -437,6 +456,7 @@ defmodule EthereumJSONRPC.Geth.Call do
          "transactionIndex" => transaction_index,
          "transactionHash" => transaction_hash,
          "index" => index,
+         "traceAddress" => trace_address,
          "type" => "create" = type,
          "from" => from_address_hash,
          "error" => error,
@@ -449,12 +469,12 @@ defmodule EthereumJSONRPC.Geth.Call do
       transaction_index: transaction_index,
       transaction_hash: transaction_hash,
       index: index,
+      trace_address: trace_address,
       type: type,
       from_address_hash: from_address_hash,
       gas: gas,
       error: error,
       init: init,
-      trace_address: [],
       value: value
     }
   end
@@ -464,6 +484,7 @@ defmodule EthereumJSONRPC.Geth.Call do
          "transactionIndex" => transaction_index,
          "transactionHash" => transaction_hash,
          "index" => index,
+         "traceAddress" => trace_address,
          "type" => "selfdestruct" = type,
          "from" => from_address_hash,
          "to" => to_address_hash,
@@ -476,6 +497,7 @@ defmodule EthereumJSONRPC.Geth.Call do
       transaction_index: transaction_index,
       transaction_hash: transaction_hash,
       index: index,
+      trace_address: trace_address,
       type: type,
       from_address_hash: from_address_hash,
       to_address_hash: to_address_hash,

@@ -220,7 +220,7 @@
     result(ctx, db) {
         const result = this.ctxToResult(ctx, db);
         const filtered = this.filterNotUndefined(result);
-        const callSequence = this.sequence(filtered, [], filtered.valueBigInt, filtered.gasUsedBigInt).callSequence;
+        const callSequence = this.sequence(filtered, [], filtered.valueBigInt, filtered.gasUsedBigInt, []).callSequence;
         return this.encodeCallSequence(callSequence);
     },
 
@@ -339,9 +339,11 @@
     },
 
     // sequence converts the finalized calls from a call tree to a call sequence
-    sequence(call, callSequence, availableValueBigInt, availableGasBigInt) {
+    sequence(call, callSequence, availableValueBigInt, availableGasBigInt, traceAddress) {
         const subcalls = call.calls;
         delete call.calls;
+
+        call.traceAddress = traceAddress;
 
         if (call.type === 'call' && call.callType === 'delegatecall') {
             call.valueBigInt = availableValueBigInt;
@@ -356,7 +358,13 @@
             var nestedAvailableGasBigInt = availableGasBigInt;
 
             for (var i = 0; i < subcalls.length; i++) {
-                const nestedSequenced = this.sequence(subcalls[i], newCallSequence, nestedAvailableValueBigInt, availableGasBigInt);
+                const nestedSequenced = this.sequence(
+                    subcalls[i],
+                    newCallSequence,
+                    nestedAvailableValueBigInt,
+                    availableGasBigInt,
+                    traceAddress.concat([i])
+                );
                 newCallSequence = nestedSequenced.callSequence;
                 nestedAvailableValueBigInt = nestedSequenced.availableValueBigInt;
                 nestedAvailableGasBigInt = nestedSequenced.availableGasBigInt;
@@ -367,7 +375,11 @@
 
         const newAvailableGasUsedBigInt = availableGasBigInt.subtract(call.gasUsedBigInt);
 
-        return {callSequence: newCallSequence, availableValueBigInt: newAvailableValueBigInt, availableGasBigInt: newAvailableGasUsedBigInt};
+        return {
+            callSequence: newCallSequence,
+            availableValueBigInt: newAvailableValueBigInt,
+            availableGasBigInt: newAvailableGasUsedBigInt
+        };
     },
 
     encodeCallSequence(calls) {
