@@ -10,6 +10,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
   import Indexer.Block.Fetcher, only: [async_import_tokens: 1, async_import_uncles: 1, fetch_and_import_range: 2]
 
+  alias Ecto.Changeset
   alias EthereumJSONRPC.Subscription
   alias Explorer.Chain
   alias Indexer.{AddressExtraction, Block, TokenBalances}
@@ -146,7 +147,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
           ]
         end)
 
-      {:error, changesets} when is_list(changesets) ->
+      {:error, [%Changeset{} | _] = changesets} ->
         params = %{
           changesets: changesets,
           block_number_to_fetch: block_number_to_fetch,
