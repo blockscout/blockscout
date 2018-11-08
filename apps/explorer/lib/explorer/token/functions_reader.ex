@@ -3,6 +3,8 @@ defmodule Explorer.Token.FunctionsReader do
   Reads Token's fields using Smart Contract functions from the blockchain.
   """
 
+  require Logger
+
   alias Explorer.Chain.Hash
   alias Explorer.SmartContract.Reader
 
@@ -92,7 +94,7 @@ defmodule Explorer.Token.FunctionsReader do
     decimals: 18
   }
 
-  It will retry to fetch each function in the Smart Contract according to :token_fetcher_retry
+  It will retry to fetch each function in the Smart Contract according to :token_functions_reader_max_retries
   configured in the application env case one of them raised error.
   """
   @spec get_functions_of(Hash.t()) :: Map.t()
@@ -110,39 +112,65 @@ defmodule Explorer.Token.FunctionsReader do
   end
 
   defp fetch_functions_from_contract(contract_address_hash, contract_functions) do
-    retry = Application.get_env(:explorer, :token_functions_reader_retry)
+    max_retries = Application.get_env(:explorer, :token_functions_reader_max_retries)
+    functions_fetched = %{}
 
-    fetch_functions_from_contract(contract_address_hash, contract_functions, retry)
+    fetch_functions_from_contract(contract_address_hash, contract_functions, max_retries, functions_fetched)
   end
 
-  defp fetch_functions_from_contract(contract_address_hash, contract_functions, retry, result \\ %{}) do
+  defp fetch_functions_from_contract(contract_address_hash, contract_functions, retries_left, functions_fetched)
+       when retries_left == 0 do
     contract_functions_result = Reader.query_contract(contract_address_hash, @contract_abi, contract_functions)
 
-    contract_functions_with_errors = contract_functions_with_errors(contract_functions_result)
+    Map.merge(functions_fetched, contract_functions_result)
+  end
 
-    if Enum.any?(contract_functions_with_errors) && retry > 0 do
+  defp fetch_functions_from_contract(contract_address_hash, contract_functions, retries_left, functions_fetched)
+       when retries_left > 0 do
+    contract_functions_result = Reader.query_contract(contract_address_hash, @contract_abi, contract_functions)
+
+    functions_with_errors =
+      Enum.filter(contract_functions_result, fn function ->
+        case function do
+          {_, {:error, _}} -> true
+          {_, {:ok, _}} -> false
+        end
+      end)
+
+    if Enum.any?(functions_with_errors) do
+      log_functions_with_errors(contract_address_hash, functions_with_errors, retries_left)
+
+      contract_functions_with_errors =
+        Map.take(
+          contract_functions,
+          Enum.map(functions_with_errors, fn {function, _} -> function end)
+        )
+
       fetch_functions_from_contract(
         contract_address_hash,
         contract_functions_with_errors,
-        retry - 1,
-        Map.merge(result, contract_functions_result)
+        retries_left - 1,
+        Map.merge(functions_fetched, contract_functions_result)
       )
     else
-      Map.merge(result, contract_functions_result)
+      Map.merge(functions_fetched, contract_functions_result)
     end
   end
 
-  defp contract_functions_with_errors(contract_functions) do
-    contract_functions
-    |> Enum.filter(fn function ->
-      case function do
-        {_, {:error, _}} -> true
-        {_, {:ok, _}} -> false
-      end
-    end)
-    |> Enum.reduce(%{}, fn {name, _error}, acc ->
-      Map.put(acc, name, [])
-    end)
+  defp log_functions_with_errors(contract_address_hash, functions_with_errors, retries_left) do
+    error_messages =
+      Enum.map(functions_with_errors, fn {function, {:error, error_message}} ->
+        "function: #{function} - error: #{error_message} \n"
+      end)
+
+    Logger.debug(
+      [
+        "<Token contract hash: #{contract_address_hash}> error while fetching metadata: \n",
+        error_messages,
+        "Retries left: #{retries_left}"
+      ],
+      fetcher: :token_functions
+    )
   end
 
   defp format_contract_functions_result(contract_functions, contract_address_hash) do
