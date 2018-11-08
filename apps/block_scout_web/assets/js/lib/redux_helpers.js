@@ -6,7 +6,7 @@ export function createStore (reducer) {
   return reduxCreateStore(reducer, window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__())
 }
 
-export function connectElements ({ elements, store }) {
+export function connectElements ({ elements, store, action = 'ELEMENTS_LOAD' }) {
   function loadElements () {
     return _.reduce(elements, (pageLoadParams, { load }, selector) => {
       if (!load) return pageLoadParams
@@ -30,5 +30,5 @@ export function connectElements ({ elements, store }) {
     renderElements(state, oldState)
     oldState = state
   })
-  store.dispatch(Object.assign(loadElements(), { type: 'ELEMENTS_LOAD' }))
+  store.dispatch(Object.assign(loadElements(), { type: action }))
 }

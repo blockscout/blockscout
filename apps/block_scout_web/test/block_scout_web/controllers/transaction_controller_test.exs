@@ -45,7 +45,7 @@ defmodule BlockScoutWeb.TransactionControllerTest do
         50
         |> insert_list(:transaction)
         |> with_block()
-        |> Enum.map(& &1.hash)
+        |> Enum.map(&to_string(&1.hash))
 
       %Transaction{block_number: block_number, index: index} =
         :transaction
@@ -54,13 +54,16 @@ defmodule BlockScoutWeb.TransactionControllerTest do
 
       conn =
         get(conn, "/txs", %{
+          "type" => "JSON",
           "block_number" => Integer.to_string(block_number),
           "index" => Integer.to_string(index)
         })
 
+      {:ok, %{"transactions" => transactions}} = conn.resp_body |> Poison.decode()
+
       actual_hashes =
-        conn.assigns.transactions
-        |> Enum.map(& &1.hash)
+        transactions
+        |> Enum.map(& &1["transaction_hash"])
         |> Enum.reverse()
 
       assert second_page_hashes == actual_hashes
