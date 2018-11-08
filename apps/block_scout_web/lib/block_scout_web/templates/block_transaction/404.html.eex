@@ -7,7 +7,7 @@
             <%= gettext("Block Details") %>
           </h1>
           <div class="tile tile-muted text-center">
-            <%= @message %>
+            <%= block_not_found_message(@block_above_tip) %>
           </div>
         </div>
       </div>

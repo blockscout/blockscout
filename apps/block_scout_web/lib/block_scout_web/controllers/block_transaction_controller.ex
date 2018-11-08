@@ -5,7 +5,6 @@ defmodule BlockScoutWeb.BlockTransactionController do
     only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   import Explorer.Chain, only: [hash_to_block: 2, number_to_block: 2, string_to_block_hash: 1]
-  import BlockScoutWeb.Gettext, only: [gettext: 1]
   alias Explorer.Chain
 
   def index(conn, %{"block_hash_or_number" => formatted_block_hash_or_number} = params) do
@@ -52,24 +51,12 @@ defmodule BlockScoutWeb.BlockTransactionController do
         not_found(conn)
 
       {:error, :not_found} ->
-        message =
-          case block_above_tip?(formatted_block_hash_or_number) do
-            false ->
-              gettext("This block has not been processed yet.")
-
-            nil ->
-              gettext("Block not found, please try again later.")
-
-            true ->
-              gettext("Easy Cowboy! This block does not exist yet!")
-          end
-
         conn
         |> put_status(:not_found)
         |> render(
           "404.html",
           block: nil,
-          message: message
+          block_above_tip: block_above_tip?(formatted_block_hash_or_number)
         )
     end
   end
