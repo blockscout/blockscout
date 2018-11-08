@@ -1,4 +1,3 @@
-import $ from 'jquery'
 import _ from 'lodash'
 
 export function batchChannel (func) {
@@ -11,17 +10,4 @@ export function batchChannel (func) {
     msgs.push(msg)
     debouncedFunc()
   }
-}
-
-export function onScrollBottom (callback) {
-  const $window = $(window)
-  function infiniteScrollChecker () {
-    const scrollHeight = $(document).height()
-    const scrollPosition = $window.height() + $window.scrollTop()
-    if ((scrollHeight - scrollPosition) / scrollHeight === 0) {
-      callback()
-    }
-  }
-  infiniteScrollChecker()
-  $window.on('scroll', infiniteScrollChecker)
 }

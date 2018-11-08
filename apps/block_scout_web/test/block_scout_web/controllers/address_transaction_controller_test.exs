@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.AddressTransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
-  import BlockScoutWeb.Router.Helpers, only: [address_transaction_path: 3]
+  import BlockScoutWeb.Router.Helpers, only: [address_transaction_path: 3, address_transaction_path: 4]
 
   alias Explorer.Chain.{Block, Transaction}
   alias Explorer.ExchangeRates.Token
@@ -34,15 +34,15 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
         |> insert(to_address: address)
         |> with_block(block)
 
-      conn = get(conn, address_transaction_path(conn, :index, address))
+      conn = get(conn, address_transaction_path(conn, :index, address), %{"type" => "JSON"})
 
-      actual_transaction_hashes =
-        conn.assigns.transactions
-        |> Enum.map(& &1.hash)
+      {:ok, %{"transactions" => transactions}} = conn.resp_body |> Poison.decode()
 
-      assert html_response(conn, 200)
-      assert Enum.member?(actual_transaction_hashes, from_transaction.hash)
-      assert Enum.member?(actual_transaction_hashes, to_transaction.hash)
+      actual_transaction_hashes = Enum.map(transactions, & &1["transaction_hash"])
+
+      assert json_response(conn, 200)
+      assert Enum.member?(actual_transaction_hashes, to_string(from_transaction.hash))
+      assert Enum.member?(actual_transaction_hashes, to_string(to_transaction.hash))
     end
 
     test "includes USD exchange rate value for address in assigns", %{conn: conn} do
@@ -92,9 +92,18 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       |> insert_list(:transaction, from_address: address)
       |> with_block(block)
 
-      conn = get(conn, address_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash))
+      conn = get(conn, address_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash), %{"type" => "JSON"})
 
-      assert %{"block_number" => ^number, "index" => 10} = conn.assigns.next_page_params
+      {:ok, %{"next_page_url" => actual_next_page_url}} = conn.resp_body |> Poison.decode()
+
+      expected_next_page_url =
+        address_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash, %{
+          "block_number" => number,
+          "index" => 10,
+          "type" => "JSON"
+        })
+
+      assert expected_next_page_url = actual_next_page_url
     end
 
     test "next_page_params are empty if on last page", %{conn: conn} do
@@ -104,9 +113,11 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       |> insert(from_address: address)
       |> with_block()
 
-      conn = get(conn, address_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash))
+      conn = get(conn, address_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash), %{"type" => "JSON"})
 
-      refute conn.assigns.next_page_params
+      {:ok, %{"next_page_url" => next_page_url}} = conn.resp_body |> Poison.decode()
+
+      refute next_page_url
     end
 
     test "returns parent transaction for a contract address", %{conn: conn} do
@@ -127,9 +138,13 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
         transaction: transaction
       )
 
-      conn = get(conn, address_transaction_path(conn, :index, address))
+      conn = get(conn, address_transaction_path(conn, :index, address), %{"type" => "JSON"})
 
-      assert [transaction] == conn.assigns.transactions
+      {:ok, %{"transactions" => transactions}} = conn.resp_body |> Poison.decode()
+
+      transaction_hashes = Enum.map(transactions, & &1["transaction_hash"])
+
+      assert [to_string(transaction.hash)] == transaction_hashes
     end
   end
 end

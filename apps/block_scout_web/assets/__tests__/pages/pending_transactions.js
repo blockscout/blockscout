@@ -176,23 +176,6 @@ describe('RECEIVED_NEW_PENDING_TRANSACTION_BATCH', () => {
 
     expect(output.pendingTransactions).toEqual([])
   })
-  test('on page 2+', () => {
-    const state = Object.assign({}, initialState, {
-      beyondPageOne: true,
-      pendingTransactionCount: 1
-    })
-    const action = {
-      type: 'RECEIVED_NEW_PENDING_TRANSACTION_BATCH',
-      msgs: [{
-        transactionHash: '0x00',
-        transactionHtml: 'test'
-      }]
-    }
-    const output = reducer(state, action)
-
-    expect(output.pendingTransactions).toEqual([])
-    expect(output.pendingTransactionCount).toEqual(2)
-  })
 })
 
 describe('RECEIVED_NEW_TRANSACTION', () => {
@@ -245,20 +228,5 @@ describe('RECEIVED_NEW_TRANSACTION', () => {
 
     expect(output.pendingTransactionsBatch.length).toEqual(10)
     expect(_.map(output.pendingTransactionsBatch, 'transactionHash')).not.toContain('0x01')
-  })
-  test('on page 2+', () => {
-    const state = Object.assign({}, initialState, {
-      beyondPageOne: true,
-      pendingTransactionCount: 2
-    })
-    const action = {
-      type: 'RECEIVED_NEW_TRANSACTION',
-      msg: {
-        transactionHash: '0x01'
-      }
-    }
-    const output = reducer(state, action)
-
-    expect(output.pendingTransactionCount).toEqual(1)
   })
 })

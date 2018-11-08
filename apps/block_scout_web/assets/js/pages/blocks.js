@@ -1,24 +1,21 @@
 import $ from 'jquery'
 import _ from 'lodash'
-import URI from 'urijs'
 import humps from 'humps'
 import socket from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
+import { withInfiniteScroll, connectInfiniteScroll } from '../lib/infinite_scroll_helpers'
 import listMorph from '../lib/list_morph'
 
 export const initialState = {
   channelDisconnected: false,
 
-  blocks: [],
-
-  beyondPageOne: null
+  blocks: []
 }
 
-export const reducer = withMissingBlocks(baseReducer)
+export const reducer = withMissingBlocks(withInfiniteScroll(baseReducer))
 
 function baseReducer (state = initialState, action) {
   switch (action.type) {
-    case 'PAGE_LOAD':
     case 'ELEMENTS_LOAD': {
       return Object.assign({}, state, _.omit(action, 'type'))
     }
@@ -28,7 +25,7 @@ function baseReducer (state = initialState, action) {
       })
     }
     case 'RECEIVED_NEW_BLOCK': {
-      if (state.channelDisconnected || state.beyondPageOne) return state
+      if (state.channelDisconnected) return state
 
       if (!state.blocks.length || state.blocks[0].blockNumber < action.msg.blockNumber) {
         return Object.assign({}, state, {
@@ -42,6 +39,14 @@ function baseReducer (state = initialState, action) {
           blocks: state.blocks.map((block) => block.blockNumber === action.msg.blockNumber ? action.msg : block)
         })
       }
+    }
+    case 'RECEIVED_NEXT_PAGE': {
+      return Object.assign({}, state, {
+        blocks: [
+          ...state.blocks,
+          ...action.msg.blocks
+        ]
+      })
     }
     default:
       return state
@@ -94,11 +99,8 @@ const elements = {
 const $blockListPage = $('[data-page="block-list"]')
 if ($blockListPage.length) {
   const store = createStore(reducer)
-  store.dispatch({
-    type: 'PAGE_LOAD',
-    beyondPageOne: !!humps.camelizeKeys(URI(window.location).query(true)).blockNumber
-  })
   connectElements({ store, elements })
+  connectInfiniteScroll(store)
 
   const blocksChannel = socket.channel(`blocks:new_block`, {})
   blocksChannel.join()
