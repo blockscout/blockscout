@@ -853,7 +853,7 @@ defmodule BlockScoutWeb.Etherscan do
 
   @account_balance_action %{
     name: "balance",
-    description: "Get balance for address",
+    description: "Get balance for address. Also available through a GraphQL 'addresses' query.",
     required_params: [
       %{
         key: "address",
@@ -887,7 +887,7 @@ defmodule BlockScoutWeb.Etherscan do
 
   @account_balancemulti_action %{
     name: "balancemulti",
-    description: "Get balance for multiple addresses",
+    description: "Get balance for multiple addresses. Also available through a GraphQL 'addresses' query.",
     required_params: [
       %{
         key: "address",
@@ -1572,7 +1572,7 @@ defmodule BlockScoutWeb.Etherscan do
 
   @contract_getabi_action %{
     name: "getabi",
-    description: "Get ABI for verified contract.",
+    description: "Get ABI for verified contract. Also available through a GraphQL 'addresses' query.",
     required_params: [
       %{
         key: "address",
@@ -1609,7 +1609,7 @@ defmodule BlockScoutWeb.Etherscan do
 
   @contract_getsourcecode_action %{
     name: "getsourcecode",
-    description: "Get contract source code for verified contract.",
+    description: "Get contract source code for verified contract. Also available through a GraphQL 'addresses' query.",
     required_params: [
       %{
         key: "address",
@@ -1683,7 +1683,7 @@ defmodule BlockScoutWeb.Etherscan do
 
   @transaction_gettxreceiptstatus_action %{
     name: "gettxreceiptstatus",
-    description: "Get transaction receipt status.",
+    description: "Get transaction receipt status. Also available through a GraphQL 'transaction' query.",
     required_params: [
       %{
         key: "txhash",
@@ -1720,7 +1720,7 @@ defmodule BlockScoutWeb.Etherscan do
 
   @transaction_getstatus_action %{
     name: "getstatus",
-    description: "Get error status and error message.",
+    description: "Get error status and error message. Also available through a GraphQL 'transaction' query.",
     required_params: [
       %{
         key: "txhash",

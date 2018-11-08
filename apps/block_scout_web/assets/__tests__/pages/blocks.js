@@ -70,20 +70,6 @@ describe('RECEIVED_NEW_BLOCK', () => {
       { blockNumber: 1, blockHtml: 'test' }
     ])
   })
-  test('on page 2+', () => {
-    const state = Object.assign({}, initialState, {
-      beyondPageOne: true
-    })
-    const action = {
-      type: 'RECEIVED_NEW_BLOCK',
-      msgs: [{
-        blockHtml: 'test'
-      }]
-    }
-    const output = reducer(state, action)
-
-    expect(output.blocks).toEqual([])
-  })
   test('inserts place holders if block received out of order', () => {
     window.localized = {}
     const state = Object.assign({}, initialState, {
@@ -151,6 +137,31 @@ describe('RECEIVED_NEW_BLOCK', () => {
       { blockNumber: 4, blockHtml: 'test 4' },
       { blockNumber: 3, blockHtml: 'test 3' },
       { blockNumber: 2, blockHtml: 'test 2' }
+    ])
+  })
+})
+
+describe('RECEIVED_NEXT_PAGE', () => {
+  test('with new block page', () => {
+    const state = Object.assign({}, initialState, {
+      loadingNextPage: true,
+      nextPageUrl: '1',
+      blocks: [{ blockNumber: 2, blockHtml: 'test 2' }]
+    })
+    const action = {
+      type: 'RECEIVED_NEXT_PAGE',
+      msg: {
+        nextPageUrl: '2',
+        blocks: [{ blockNumber: 1, blockHtml: 'test 1' }]
+      }
+    }
+    const output = reducer(state, action)
+
+    expect(output.loadingNextPage).toEqual(false)
+    expect(output.nextPageUrl).toEqual('2')
+    expect(output.blocks).toEqual([
+      { blockNumber: 2, blockHtml: 'test 2' },
+      { blockNumber: 1, blockHtml: 'test 1' }
     ])
   })
 })

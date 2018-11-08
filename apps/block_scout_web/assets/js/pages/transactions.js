@@ -1,10 +1,10 @@
 import $ from 'jquery'
 import _ from 'lodash'
-import URI from 'urijs'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
+import { withInfiniteScroll, connectInfiniteScroll } from '../lib/infinite_scroll_helpers'
 import { batchChannel } from '../lib/utils'
 import listMorph from '../lib/list_morph'
 
@@ -16,14 +16,13 @@ export const initialState = {
   transactionCount: null,
 
   transactions: [],
-  transactionsBatch: [],
-
-  beyondPageOne: null
+  transactionsBatch: []
 }
 
-export function reducer (state = initialState, action) {
+export const reducer = withInfiniteScroll(baseReducer)
+
+function baseReducer (state = initialState, action) {
   switch (action.type) {
-    case 'PAGE_LOAD':
     case 'ELEMENTS_LOAD': {
       return Object.assign({}, state, _.omit(action, 'type'))
     }
@@ -37,8 +36,6 @@ export function reducer (state = initialState, action) {
       if (state.channelDisconnected) return state
 
       const transactionCount = state.transactionCount + action.msgs.length
-
-      if (state.beyondPageOne) return Object.assign({}, state, { transactionCount })
 
       if (!state.transactionsBatch.length && action.msgs.length < BATCH_THRESHOLD) {
         return Object.assign({}, state, {
@@ -57,6 +54,14 @@ export function reducer (state = initialState, action) {
           transactionCount
         })
       }
+    }
+    case 'RECEIVED_NEXT_PAGE': {
+      return Object.assign({}, state, {
+        transactions: [
+          ...state.transactions,
+          ...action.msg.transactions
+        ]
+      })
     }
     default:
       return state
@@ -107,11 +112,8 @@ const elements = {
 const $transactionListPage = $('[data-page="transaction-list"]')
 if ($transactionListPage.length) {
   const store = createStore(reducer)
-  store.dispatch({
-    type: 'PAGE_LOAD',
-    beyondPageOne: !!humps.camelizeKeys(URI(window.location).query(true)).index
-  })
   connectElements({ store, elements })
+  connectInfiniteScroll(store)
 
   const transactionsChannel = socket.channel(`transactions:new_transaction`)
   transactionsChannel.join()
