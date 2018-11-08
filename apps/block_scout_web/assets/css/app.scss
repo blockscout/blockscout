@@ -81,6 +81,7 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/token_tile_view_more";
 @import "components/dropdown";
 @import "components/loading-spinner";
+@import "components/transaction-input";
 
 :export {
   primary: $primary;
