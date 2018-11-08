@@ -30,7 +30,9 @@ export const initialState = {
   internalTransactionsBatch: [],
   validatedBlocks: [],
 
-  beyondPageOne: null
+  beyondPageOne: null,
+
+  nextPageUrl: $('[data-selector="transactions-list"]').length ? URI(window.location).addQuery({ type: 'JSON' }).toString() : null
 }
 
 export const reducer = withInfiniteScroll(baseReducer)
@@ -202,6 +204,15 @@ const elements = {
     render ($el, state, oldState) {
       if (oldState.pendingTransactions === state.pendingTransactions) return
       $el[0].innerHTML = numeral(state.pendingTransactions.filter(({ validated }) => !validated).length).format()
+    }
+  },
+  '[data-selector="empty-transactions-list"]': {
+    render ($el, state) {
+      if (state.transactions.length || state.loadingNextPage || state.pagingError) {
+        $el.hide()
+      } else {
+        $el.show()
+      }
     }
   },
   '[data-selector="transactions-list"]': {
