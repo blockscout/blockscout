@@ -85,9 +85,30 @@ defmodule Explorer.Token.FunctionsReaderTest do
         end
       )
 
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        2,
+        fn [%{id: "decimals"}, %{id: "symbol"}], _opts ->
+          {:ok,
+           [
+             %{
+               error: %{code: -32015, data: "something", message: "some error"},
+               id: "decimals",
+               jsonrpc: "2.0"
+             },
+             %{
+               error: %{code: -32015, data: "something", message: "some error"},
+               id: "symbol",
+               jsonrpc: "2.0"
+             }
+           ]}
+        end
+      )
+
       expected = %{
         name: "Bancor",
-        total_supply: 1_000_000_000_000_000_000,
+        total_supply: 1_000_000_000_000_000_000
       }
 
       assert FunctionsReader.get_functions_of(token.contract_address_hash) == expected
@@ -202,6 +223,114 @@ defmodule Explorer.Token.FunctionsReaderTest do
       )
 
       assert FunctionsReader.get_functions_of(token.contract_address_hash) == %{name: long_token_name_shortened}
+    end
+
+    test "retries when some function gave error" do
+      token = insert(:token, contract_address: build(:contract_address))
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        1,
+        fn [%{id: "decimals"}, %{id: "name"}, %{id: "symbol"}, %{id: "totalSupply"}], _opts ->
+          {:ok,
+           [
+             %{
+               error: %{code: -32015, data: "something", message: "some error"},
+               id: "symbol",
+               jsonrpc: "2.0"
+             },
+             %{
+               id: "decimals",
+               result: "0x0000000000000000000000000000000000000000000000000000000000000012"
+             }
+           ]}
+        end
+      )
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        1,
+        fn [%{id: "symbol"}], _opts ->
+          {:ok,
+           [
+             %{
+               id: "symbol",
+               result:
+                 "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003424e540000000000000000000000000000000000000000000000000000000000"
+             }
+           ]}
+        end
+      )
+
+      assert FunctionsReader.get_functions_of(token.contract_address_hash) == %{decimals: 18, symbol: "BNT"}
+    end
+
+    test "retries according to the configured number" do
+      original = Application.get_env(:explorer, :token_functions_reader_max_retries)
+
+      Application.put_env(:explorer, :token_functions_reader_max_retries, 2)
+
+      token = insert(:token, contract_address: build(:contract_address))
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        1,
+        fn [%{id: "decimals"}, %{id: "name"}, %{id: "symbol"}, %{id: "totalSupply"}], _opts ->
+          {:ok,
+           [
+             %{
+               error: %{code: -32015, data: "something", message: "some error"},
+               id: "decimals",
+               jsonrpc: "2.0"
+             },
+             %{
+               id: "name",
+               result:
+                 "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000642616e636f720000000000000000000000000000000000000000000000000000"
+             },
+             %{
+               error: %{code: -32015, data: "something", message: "some error"},
+               id: "symbol",
+               jsonrpc: "2.0"
+             },
+             %{
+               id: "totalSupply",
+               result: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
+             }
+           ]}
+        end
+      )
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        2,
+        fn [%{id: "decimals"}, %{id: "symbol"}], _opts ->
+          {:ok,
+           [
+             %{
+               error: %{code: -32015, data: "something", message: "some error"},
+               id: "decimals",
+               jsonrpc: "2.0"
+             },
+             %{
+               error: %{code: -32015, data: "something", message: "some error"},
+               id: "symbol",
+               jsonrpc: "2.0"
+             }
+           ]}
+        end
+      )
+
+      assert FunctionsReader.get_functions_of(token.contract_address_hash) == %{
+               name: "Bancor",
+               total_supply: 1_000_000_000_000_000_000
+             }
+
+      on_exit(fn -> Application.put_env(:explorer, :token_functions_reader_max_retries, original) end)
     end
   end
 end

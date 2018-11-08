@@ -80,17 +80,20 @@ defmodule Explorer.Token.FunctionsReader do
 
   * Given that all functions were read:
   %{
-    "totalSupply" => [],
-    "decimals" => [],
-    "name" => [],
-    "symbol" => []
+    name: "BNT",
+    decimals: 18,
+    total_supply: 1_000_000_000_000_000_000,
+    symbol: nil
   }
 
   * Given that some of them were read:
   %{
-    "name" => [],
-    "symbol" => []
+    name: "BNT",
+    decimals: 18
   }
+
+  It will retry to fetch each function in the Smart Contract according to :token_fetcher_retry
+  configured in the application env case one of them raised error.
   """
   @spec get_functions_of(Hash.t()) :: Map.t()
   def get_functions_of(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address) do
@@ -101,9 +104,45 @@ defmodule Explorer.Token.FunctionsReader do
 
   @spec get_functions_of(String.t()) :: Map.t()
   def get_functions_of(contract_address_hash) do
-    contract_functions_result = Reader.query_contract(contract_address_hash, @contract_abi, @contract_functions)
+    contract_address_hash
+    |> fetch_functions_from_contract(@contract_functions)
+    |> format_contract_functions_result(contract_address_hash)
+  end
 
-    format_contract_functions_result(contract_functions_result, contract_address_hash)
+  defp fetch_functions_from_contract(contract_address_hash, contract_functions) do
+    retry = Application.get_env(:explorer, :token_functions_reader_retry)
+
+    fetch_functions_from_contract(contract_address_hash, contract_functions, retry)
+  end
+
+  defp fetch_functions_from_contract(contract_address_hash, contract_functions, retry, result \\ %{}) do
+    contract_functions_result = Reader.query_contract(contract_address_hash, @contract_abi, contract_functions)
+
+    contract_functions_with_errors = contract_functions_with_errors(contract_functions_result)
+
+    if Enum.any?(contract_functions_with_errors) && retry > 0 do
+      fetch_functions_from_contract(
+        contract_address_hash,
+        contract_functions_with_errors,
+        retry - 1,
+        Map.merge(result, contract_functions_result)
+      )
+    else
+      Map.merge(result, contract_functions_result)
+    end
+  end
+
+  defp contract_functions_with_errors(contract_functions) do
+    contract_functions
+    |> Enum.filter(fn function ->
+      case function do
+        {_, {:error, _}} -> true
+        {_, {:ok, _}} -> false
+      end
+    end)
+    |> Enum.reduce(%{}, fn {name, _error}, acc ->
+      Map.put(acc, name, [])
+    end)
   end
 
   defp format_contract_functions_result(contract_functions, contract_address_hash) do
