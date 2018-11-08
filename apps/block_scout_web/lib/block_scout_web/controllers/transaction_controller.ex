@@ -22,9 +22,7 @@ defmodule BlockScoutWeb.TransactionController do
         paging_options(params)
       )
 
-    transactions_plus_one = Chain.recent_collated_transactions(full_options)
-
-    {transactions, next_page} = split_list_by_page(transactions_plus_one)
+    {transactions, next_page} = get_transactions_and_next_page(full_options)
 
     next_page_url =
       case next_page_params(next_page, transactions, params) do
@@ -73,9 +71,7 @@ defmodule BlockScoutWeb.TransactionController do
         paging_options(%{})
       )
 
-    transactions_plus_one = Chain.recent_collated_transactions(full_options)
-
-    {transactions, next_page} = split_list_by_page(transactions_plus_one)
+    {transactions, next_page} = get_transactions_and_next_page(full_options)
 
     transaction_estimated_count = Chain.transaction_estimated_count()
 
@@ -96,5 +92,10 @@ defmodule BlockScoutWeb.TransactionController do
     else
       redirect(conn, to: transaction_internal_transaction_path(conn, :index, id))
     end
+  end
+
+  defp get_transactions_and_next_page(options) do
+    transactions_plus_one = Chain.recent_collated_transactions(options)
+    split_list_by_page(transactions_plus_one)
   end
 end

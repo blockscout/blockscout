@@ -20,9 +20,7 @@ defmodule BlockScoutWeb.PendingTransactionController do
         paging_options(params)
       )
 
-    transactions_plus_one = Chain.recent_pending_transactions(full_options)
-
-    {transactions, next_page} = split_list_by_page(transactions_plus_one)
+    {transactions, next_page} = get_pending_transactions_and_next_page(full_options)
 
     next_page_url =
       case next_page_params(next_page, transactions, params) do
@@ -69,9 +67,7 @@ defmodule BlockScoutWeb.PendingTransactionController do
         paging_options(%{})
       )
 
-    transactions_plus_one = Chain.recent_pending_transactions(full_options)
-
-    {transactions, next_page} = split_list_by_page(transactions_plus_one)
+    {transactions, next_page} = get_pending_transactions_and_next_page(full_options)
 
     pending_transaction_count = Chain.pending_transaction_count()
 
@@ -82,5 +78,10 @@ defmodule BlockScoutWeb.PendingTransactionController do
       pending_transaction_count: pending_transaction_count,
       transactions: transactions
     )
+  end
+
+  defp get_pending_transactions_and_next_page(options) do
+    transactions_plus_one = Chain.recent_pending_transactions(options)
+    split_list_by_page(transactions_plus_one)
   end
 end
