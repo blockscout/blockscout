@@ -28,7 +28,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
     test "with invalid transaction hash", %{conn: conn} do
       conn = get(conn, transaction_token_transfer_path(BlockScoutWeb.Endpoint, :index, "nope"))
 
-      assert html_response(conn, 404)
+      assert html_response(conn, 422)
     end
 
     test "includes transaction data", %{conn: conn} do
