@@ -5,16 +5,13 @@ import numeral from 'numeral'
 import socket from '../socket'
 import { updateAllAges } from '../lib/from_now'
 import { exchangeRateChannel, formatUsdValue } from '../lib/currency'
-import { batchChannel, buildFullBlockList, initRedux, skippedBlockListBuilder, slideDownPrepend } from '../utils'
+import { buildFullBlockList, initRedux, skippedBlockListBuilder, slideDownPrepend } from '../utils'
 import { createMarketHistoryChart } from '../lib/market_history_chart'
-
-const BATCH_THRESHOLD = 10
 
 export const initialState = {
   addressCount: null,
   availableSupply: null,
   averageBlockTime: null,
-  batchCountAccumulator: 0,
   blockNumbers: [],
   marketHistoryData: null,
   newBlock: null,
@@ -85,21 +82,14 @@ export function reducer (state = initialState, action) {
         usdMarketCap: action.msg.exchangeRate.marketCapUsd
       })
     }
-    case 'RECEIVED_NEW_TRANSACTION_BATCH': {
-      if (!state.batchCountAccumulator && action.msgs.length < BATCH_THRESHOLD) {
-        return Object.assign({}, state, {
-          newTransactions: [
-            ...state.newTransactions,
-            ...action.msgs.map(({transactionHtml}) => transactionHtml)
-          ],
-          transactionCount: state.transactionCount + action.msgs.length
-        })
-      } else {
-        return Object.assign({}, state, {
-          batchCountAccumulator: state.batchCountAccumulator + action.msgs.length,
-          transactionCount: state.transactionCount + action.msgs.length
-        })
-      }
+    case 'RECEIVED_NEW_TRANSACTION': {
+      return Object.assign({}, state, {
+        newTransactions: [
+          ...state.newTransactions,
+          action.msg.transactionHtml
+        ],
+        transactionCount: state.transactionCount + 1
+      })
     }
     default:
       return state
@@ -128,9 +118,7 @@ if ($chainDetailsPage.length) {
 
       const transactionsChannel = socket.channel(`transactions:new_transaction`)
       transactionsChannel.join()
-      transactionsChannel.on('transaction', batchChannel((msgs) =>
-        store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION_BATCH', msgs: humps.camelizeKeys(msgs) }))
-      )
+      transactionsChannel.on('transaction', (msg) => store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION', msg: humps.camelizeKeys(msg) }))
 
       chart = createMarketHistoryChart($('[data-chart="marketHistoryChart"]')[0])
     },
@@ -138,8 +126,6 @@ if ($chainDetailsPage.length) {
       const $addressCount = $('[data-selector="address-count"]')
       const $averageBlockTime = $('[data-selector="average-block-time"]')
       const $blockList = $('[data-selector="chain-block-list"]')
-      const $channelBatching = $('[data-selector="channel-batching-message"]')
-      const $channelBatchingCount = $('[data-selector="channel-batching-count"]')
       const $marketCap = $('[data-selector="market-cap"]')
       const $transactionsList = $('[data-selector="transactions-list"]')
       const $transactionCount = $('[data-selector="transaction-count"]')
@@ -176,12 +162,6 @@ if ($chainDetailsPage.length) {
         updateAllAges()
       }
       if (oldState.transactionCount !== state.transactionCount) $transactionCount.empty().append(numeral(state.transactionCount).format())
-      if (state.batchCountAccumulator) {
-        $channelBatching.show()
-        $channelBatchingCount[0].innerHTML = numeral(state.batchCountAccumulator).format()
-      } else {
-        $channelBatching.hide()
-      }
       if (newTransactions.length) {
         const newTransactionsToInsert = state.newTransactions.slice(oldState.newTransactions.length)
         $transactionsList

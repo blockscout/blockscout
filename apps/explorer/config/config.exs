@@ -10,7 +10,7 @@ config :ecto, json_library: Jason
 # General application configuration
 config :explorer,
   ecto_repos: [Explorer.Repo],
-  coin: System.get_env("COIN") || "POA"
+  coin: System.get_env("COIN") || "DAI"
 
 config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: 2_000
 
@@ -27,6 +27,10 @@ config :explorer, Explorer.Repo,
 config :explorer, Explorer.Counters.TokenTransferCounter, enabled: true
 
 config :explorer, Explorer.Counters.TokenHoldersCounter, enabled: true, enable_consolidation: true
+
+config :explorer, supply: Explorer.Chain.Supply.TransactionAndLog
+
+config :explorer, Explorer.ExchangeRates, source: Explorer.ExchangeRates.Source.TransactionAndLog
 
 config :explorer,
   solc_bin_api_url: "https://solc-bin.ethereum.org"

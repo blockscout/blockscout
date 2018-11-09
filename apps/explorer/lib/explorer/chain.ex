@@ -18,6 +18,8 @@ defmodule Explorer.Chain do
   alias Ecto.Adapters.SQL
   alias Ecto.Multi
 
+  alias Explorer.Chain
+
   alias Explorer.Chain.{
     Address,
     Address.TokenBalance,
@@ -603,6 +605,39 @@ defmodule Explorer.Chain do
     |> case do
       nil -> {:error, :not_found}
       address -> {:ok, address}
+    end
+  end
+
+  @doc """
+  Converts `t:Explorer.Chain.Address.t/0` `hash` to the `t:Explorer.Chain.Address.t/0` with that `hash`.
+
+  Returns `{:ok, %Explorer.Chain.Address{}}` if found
+
+      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.create_address(
+      ...>   %{hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"}
+      ...> )
+      iex> {:ok, %Explorer.Chain.Address{hash: found_hash}} = Explorer.Chain.hash_to_address(hash)
+      iex> found_hash == hash
+      true
+
+  Returns `{:error, address}` if not found but created an address
+
+      iex> {:ok, %Explorer.Chain.Address{hash: hash}} = Explorer.Chain.create_address(
+      ...>   %{hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"}
+      ...> )
+      iex> {:ok, %Explorer.Chain.Address{hash: found_hash}} = Explorer.Chain.hash_to_address(hash)
+      iex> found_hash == hash
+      true
+  """
+  @spec find_or_insert_address_from_hash(Hash.Address.t()) :: {:ok, Address.t()}
+  def find_or_insert_address_from_hash(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash) do
+    case Chain.hash_to_address(hash) do
+      {:ok, address} ->
+        {:ok, address}
+
+      {:error, :not_found} ->
+        Chain.create_address(%{hash: to_string(hash)})
+        Chain.hash_to_address(hash)
     end
   end
 
@@ -1893,6 +1928,11 @@ defmodule Explorer.Chain do
   defp supply_module do
     Application.get_env(:explorer, :supply, Explorer.Chain.Supply.ProofOfAuthority)
   end
+
+  @doc """
+  Calls supply_for_days from the configured supply_module
+  """
+  def supply_for_days(days_count), do: supply_module().supply_for_days(days_count)
 
   @doc """
   Streams a lists token contract addresses that haven't been cataloged.

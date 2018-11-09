@@ -12,11 +12,9 @@ defmodule Explorer.Chain.Supply.ProofOfAuthority do
   See https://github.com/poanetwork/wiki/wiki/POA-Token-Supply for more
   information.
   """
+  use Explorer.Chain.Supply
 
   alias Explorer.Chain
-  alias Explorer.Chain.Supply
-
-  @behaviour Supply
 
   @initial_supply 252_460_800
   @reserved_for_vesting 50_492_160
@@ -31,12 +29,10 @@ defmodule Explorer.Chain.Supply.ProofOfAuthority do
     ~D[2019-12-15] => 0.125
   }
 
-  @impl Supply
   def circulating do
     total() - reserved_supply(Date.utc_today())
   end
 
-  @impl Supply
   def total do
     initial_supply = initial_supply()
     block_height = block_height()
