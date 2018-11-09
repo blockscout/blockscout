@@ -6,10 +6,10 @@ defmodule Explorer.Etherscan do
   import Ecto.Query, only: [from: 2, where: 3, or_where: 3]
 
   alias Explorer.Etherscan.Logs
-  alias Explorer.{Repo, Chain}
+  alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Address.TokenBalance
   alias Explorer.Chain.{Block, Hash, InternalTransaction, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
-  alias Explorer.Chain.Address.TokenBalance
 
   @default_options %{
     order_by_direction: :asc,
@@ -344,9 +344,11 @@ defmodule Explorer.Etherscan do
             block_number: b.number,
             block_timestamp: b.timestamp,
             confirmations: fragment("? - ?", ^max_block_number, t.block_number),
+            token_id: tt.token_id,
             token_name: tkn.name,
             token_symbol: tkn.symbol,
-            token_decimals: tkn.decimals
+            token_decimals: tkn.decimals,
+            token_type: tkn.type
           })
       )
 

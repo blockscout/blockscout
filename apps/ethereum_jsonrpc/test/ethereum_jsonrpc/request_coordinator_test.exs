@@ -10,15 +10,6 @@ defmodule EthereumJSONRPC.RequestCoordinatorTest do
   setup :set_mox_global
   setup :verify_on_exit!
 
-  defp sleep_time(timeouts) do
-    wait_per_timeout =
-      :ethereum_jsonrpc
-      |> Application.get_env(RequestCoordinator)
-      |> Keyword.fetch!(:wait_per_timeout)
-
-    timeouts * wait_per_timeout
-  end
-
   setup do
     table = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.RequestCoordinator)[:rolling_window_opts][:table]
 
@@ -46,34 +37,6 @@ defmodule EthereumJSONRPC.RequestCoordinatorTest do
                RequestCoordinator.perform(:bad_gateway, EthereumJSONRPC.Mox, [], :timer.minutes(60))
 
       assert RollingWindow.count(table, :throttleable_error_count) == 2
-    end
-
-    test "waits the configured amount of time per failure", %{table: table} do
-      RollingWindow.inc(table, :throttleable_error_count)
-      RollingWindow.inc(table, :throttleable_error_count)
-      RollingWindow.inc(table, :throttleable_error_count)
-      RollingWindow.inc(table, :throttleable_error_count)
-      RollingWindow.inc(table, :throttleable_error_count)
-      RollingWindow.inc(table, :throttleable_error_count)
-
-      test_process = self()
-
-      expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
-        send(test_process, :called_json_rpc)
-      end)
-
-      # Calculate expected sleep time as if there were one less failure, allowing
-      # a margin of error between the refute_receive, assert_receive, and actual
-      # call.
-      wait_time = sleep_time(5)
-
-      Task.async(fn ->
-        RequestCoordinator.perform(%{}, EthereumJSONRPC.Mox, [], :timer.minutes(60))
-      end)
-
-      refute_receive(:called_json_rpc, wait_time)
-
-      assert_receive(:called_json_rpc, wait_time)
     end
 
     test "returns timeout error if sleep time will exceed max timeout", %{table: table} do

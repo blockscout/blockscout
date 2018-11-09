@@ -22,8 +22,9 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.{
     Address,
-    Address.TokenBalance,
     Address.CoinBalance,
+    Address.CurrentTokenBalance,
+    Address.TokenBalance,
     Block,
     Data,
     Hash,
@@ -39,7 +40,9 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Block.Reward
   alias Explorer.{PagingOptions, Repo}
-  alias Explorer.Counters.{TokenHoldersCounter, TokenTransferCounter, BlockValidationCounter}
+  alias Explorer.Counters.{BlockValidationCounter, TokenHoldersCounter, TokenTransferCounter}
+
+  alias Dataloader.Ecto, as: DataloaderEcto
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -139,44 +142,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Pending `t:Explorer.Chain.Transaction/0`s from `address`.
-
-  ## Options
-
-    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
-      `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association, then the
-      `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
-
-  """
-  @spec address_to_pending_transactions(Address.t(), [necessity_by_association_option]) :: [Transaction.t()]
-  def address_to_pending_transactions(
-        %Address{hash: %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash},
-        options \\ []
-      )
-      when is_list(options) do
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-
-    options
-    |> Keyword.get(:direction)
-    |> case do
-      :from -> [:from_address_hash]
-      :to -> [:to_address_hash]
-      _ -> [:from_address_hash, :to_address_hash]
-    end
-    |> Enum.map(fn address_field ->
-      Transaction
-      |> Transaction.where_address_fields_match(address_hash, address_field)
-      |> join_associations(necessity_by_association)
-      |> where([transaction], is_nil(transaction.block_number))
-      |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
-      |> Repo.all()
-      |> MapSet.new()
-    end)
-    |> Enum.reduce(MapSet.new(), &MapSet.union/2)
-    |> MapSet.to_list()
-  end
-
-  @doc """
   Get the total number of transactions sent by the given address according to the last block indexed.
 
   We have to increment +1 in the last nonce result because it works like an array position, the first
@@ -218,38 +183,22 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    transaction_matches =
-      direction
-      |> case do
-        :from -> [:from_address_hash]
-        :to -> [:to_address_hash, :created_contract_address_hash]
-        _ -> [:from_address_hash, :to_address_hash, :created_contract_address_hash]
-      end
-      |> Enum.map(fn address_field ->
-        paging_options
-        |> fetch_transactions()
-        |> Transaction.where_address_fields_match(address_hash, address_field)
-        |> join_associations(necessity_by_association)
-        |> Transaction.preload_token_transfers(address_hash)
-        |> Repo.all()
-        |> MapSet.new()
-      end)
+    {:ok, address_bytes} = Explorer.Chain.Hash.Address.dump(address_hash)
 
-    token_transfer_matches =
+    token_transfers_dynamic = TokenTransfer.dynamic_any_address_fields_match(direction, address_bytes)
+
+    transaction_dynamic =
+      Transaction.dynamic_where_address_hash_matches(address_hash, direction, token_transfers_dynamic)
+
+    base_query =
       paging_options
       |> fetch_transactions()
-      |> TokenTransfer.where_address_fields_match(address_hash, direction)
       |> join_associations(necessity_by_association)
       |> Transaction.preload_token_transfers(address_hash)
-      |> Repo.all()
-      |> MapSet.new()
 
-    transaction_matches
-    |> Enum.reduce(token_transfer_matches, &MapSet.union/2)
-    |> MapSet.to_list()
-    |> Enum.sort_by(& &1.index, &>=/2)
-    |> Enum.sort_by(& &1.block_number, &>=/2)
-    |> Enum.slice(0..paging_options.page_size)
+    base_query
+    |> from(where: ^transaction_dynamic)
+    |> Repo.all()
   end
 
   @doc """
@@ -842,7 +791,7 @@ defmodule Explorer.Chain do
   @doc """
   The percentage of indexed blocks on the chain.
 
-      iex> for index <- 6..10 do
+      iex> for index <- 5..9 do
       ...>   insert(:block, number: index)
       ...> end
       iex> Explorer.Chain.indexed_ratio()
@@ -859,7 +808,7 @@ defmodule Explorer.Chain do
     with {:ok, min_block_number} <- min_block_number(),
          {:ok, max_block_number} <- max_block_number() do
       indexed_blocks = max_block_number - min_block_number + 1
-      indexed_blocks / max_block_number
+      indexed_blocks / (max_block_number + 1)
     else
       {:error, _} -> 0
     end
@@ -883,7 +832,7 @@ defmodule Explorer.Chain do
 
   """
   def internal_transaction_count do
-    Repo.aggregate(InternalTransaction, :count, :id)
+    Repo.one!(from(it in "internal_transactions", select: fragment("COUNT(*)")))
   end
 
   @doc """
@@ -919,13 +868,20 @@ defmodule Explorer.Chain do
   Lists the top 250 `t:Explorer.Chain.Address.t/0`'s' in descending order based on coin balance.
 
   """
-  @spec list_top_addresses :: [Address.t()]
+  @spec list_top_addresses :: [{Address.t(), non_neg_integer()}]
   def list_top_addresses do
-    Address
-    |> limit(250)
-    |> order_by(desc: :fetched_coin_balance, asc: :hash)
-    |> where([address], address.fetched_coin_balance > ^0)
-    |> Repo.all()
+    query =
+      from(a in Address,
+        left_join: t in Transaction,
+        on: a.hash == t.from_address_hash,
+        where: a.fetched_coin_balance > ^0,
+        group_by: [a.hash, a.fetched_coin_balance],
+        order_by: [desc: a.fetched_coin_balance, asc: a.hash],
+        select: {a, fragment("coalesce(1 + max(?), 0)", t.nonce)},
+        limit: 250
+      )
+
+    Repo.all(query)
   end
 
   @doc """
@@ -1167,7 +1123,7 @@ defmodule Explorer.Chain do
 
   """
   def log_count do
-    Repo.aggregate(Log, :count, :id)
+    Repo.one!(from(log in "logs", select: fragment("COUNT(*)")))
   end
 
   @doc """
@@ -1894,7 +1850,7 @@ defmodule Explorer.Chain do
       internal_transaction.type != ^:call or
         fragment(
           """
-          (SELECT COUNT(sibling.id)
+          (SELECT COUNT(sibling.*)
           FROM internal_transactions AS sibling
           WHERE sibling.transaction_hash = ?
           LIMIT 2
@@ -1967,7 +1923,7 @@ defmodule Explorer.Chain do
         left_join: tf in TokenTransfer,
         on: tf.transaction_hash == l.transaction_hash and tf.log_index == l.index,
         where: l.first_topic == unquote(TokenTransfer.constant()),
-        where: is_nil(tf.id),
+        where: is_nil(tf.transaction_hash) and is_nil(tf.log_index),
         select: t.block_number,
         distinct: t.block_number
       )
@@ -2038,7 +1994,7 @@ defmodule Explorer.Chain do
     token_changeset = Token.changeset(token, params)
     address_name_changeset = Address.Name.changeset(%Address.Name{}, Map.put(params, :address_hash, address_hash))
 
-    token_opts = [on_conflict: :replace_all, conflict_target: :contract_address_hash]
+    token_opts = [on_conflict: Import.Tokens.default_on_conflict(), conflict_target: :contract_address_hash]
     address_name_opts = [on_conflict: :nothing, conflict_target: [:address_hash, :name]]
 
     insert_result =
@@ -2070,13 +2026,18 @@ defmodule Explorer.Chain do
   @spec fetch_token_holders_from_token_hash(Hash.Address.t(), [paging_options]) :: [TokenBalance.t()]
   def fetch_token_holders_from_token_hash(contract_address_hash, options) do
     contract_address_hash
-    |> TokenBalance.token_holders_ordered_by_value(options)
+    |> CurrentTokenBalance.token_holders_ordered_by_value(options)
     |> Repo.all()
   end
 
   @spec count_token_holders_from_token_hash(Hash.Address.t()) :: non_neg_integer()
   def count_token_holders_from_token_hash(contract_address_hash) do
     TokenHoldersCounter.fetch(contract_address_hash)
+  end
+
+  @spec token_holders_counter_consolidation_enabled? :: boolean()
+  def token_holders_counter_consolidation_enabled? do
+    TokenHoldersCounter.enable_consolidation?()
   end
 
   @spec address_to_unique_tokens(Hash.Address.t(), [paging_options]) :: [TokenTransfer.t()]
@@ -2089,4 +2050,7 @@ defmodule Explorer.Chain do
     |> limit(^paging_options.page_size)
     |> Repo.all()
   end
+
+  @spec data() :: Dataloader.Ecto.t()
+  def data, do: DataloaderEcto.new(Repo)
 end

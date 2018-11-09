@@ -52,14 +52,17 @@
 
     <%= if involves_token_transfers?(@transaction) do %>
       <div class="offset-md-2 col-md-10 col-lg-8 d-flex flex-column mt-2 mb-2">
-        <% [first_token_transfer | remaining_token_transfers]= @transaction.token_transfers %>
+        <% [first_token_transfer | remaining_token_transfers] = @transaction.token_transfers %>
+
         <%= render "_token_transfer.html", address: assigns[:current_address], token_transfer: first_token_transfer %>
+
         <div class="collapse token-transfer-toggle" id="transaction-<%= @transaction.hash %>">
           <%= for token_transfer <- remaining_token_transfers do %>
             <%= render "_token_transfer.html", address: assigns[:current_address], token_transfer: token_transfer %>
           <% end %>
         </div>
       </div>
+
       <%= if Enum.any?(remaining_token_transfers) do %>
         <div class="col-md-12 d-flex flex-column mt-1 mb-2 text-center token-tile-view-more">
           <span class="token-tile-more-lines">

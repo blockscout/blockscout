@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.RPC.AddressController do
   use BlockScoutWeb, :controller
 
-  alias Explorer.{Etherscan, Chain}
+  alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.{Address, Wei}
 
   def balance(conn, params, template \\ :balance) do

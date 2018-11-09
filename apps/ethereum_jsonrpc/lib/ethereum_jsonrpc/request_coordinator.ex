@@ -67,6 +67,8 @@ defmodule EthereumJSONRPC.RequestCoordinator do
       |> transport.json_rpc(transport_options)
       |> handle_transport_response()
     else
+      :timer.sleep(throttle_timeout)
+
       {:error, :timeout}
     end
   end

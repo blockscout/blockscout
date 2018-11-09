@@ -6,9 +6,9 @@ defmodule Explorer.SmartContract.Reader do
   [wiki](https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI).
   """
 
+  alias EthereumJSONRPC.Encoder
   alias Explorer.Chain
   alias Explorer.Chain.{Block, Hash}
-  alias EthereumJSONRPC.Encoder
 
   @typedoc """
   Map of functions to call with the values for the function to be called with.

@@ -123,37 +123,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> assert_has(AddressPage.transaction_status(transactions.from_lincoln))
     end
 
-    test "sees pending transactions", %{
-      addresses: addresses,
-      session: session,
-      transactions: transactions
-    } do
-      pending = insert(:transaction, to_address: addresses.lincoln)
-
-      session
-      |> AddressPage.visit_page(addresses.lincoln)
-      |> AddressPage.click_show_pending_transactions()
-      |> assert_has(AddressPage.pending_transaction(pending))
-      |> assert_has(AddressPage.transaction(transactions.from_taft))
-      |> assert_has(AddressPage.transaction(transactions.from_lincoln))
-      |> assert_has(AddressPage.transaction_status(transactions.from_lincoln))
-    end
-
-    test "viewing new pending transactions via live update", %{addresses: addresses, session: session} do
-      pending = insert(:transaction, from_address: addresses.lincoln)
-
-      session
-      |> AddressPage.visit_page(addresses.lincoln)
-      |> AddressPage.click_show_pending_transactions()
-      |> assert_has(AddressPage.pending_transaction(pending))
-
-      new_pending = insert(:transaction, from_address: addresses.lincoln)
-
-      Notifier.handle_event({:chain_event, :transactions, :realtime, [new_pending.hash]})
-
-      assert_has(session, AddressPage.pending_transaction(new_pending))
-    end
-
     test "can filter to only see transactions from an address", %{
       addresses: addresses,
       session: session,

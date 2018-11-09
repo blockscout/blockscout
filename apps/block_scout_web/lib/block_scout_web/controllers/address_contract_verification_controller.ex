@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
   use BlockScoutWeb, :controller
 
   alias Explorer.Chain.SmartContract
-  alias Explorer.SmartContract.{Solidity.CompilerVersion, Publisher}
+  alias Explorer.SmartContract.{Publisher, Solidity.CompilerVersion}
 
   def new(conn, %{"address_id" => address_hash_string}) do
     changeset =

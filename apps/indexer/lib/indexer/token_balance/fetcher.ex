@@ -5,9 +5,9 @@ defmodule Indexer.TokenBalance.Fetcher do
 
   require Logger
 
-  alias Indexer.{BufferedTask, TokenBalances}
   alias Explorer.Chain
   alias Explorer.Chain.Hash
+  alias Indexer.{BufferedTask, TokenBalances}
 
   @behaviour BufferedTask
 
@@ -80,7 +80,16 @@ defmodule Indexer.TokenBalance.Fetcher do
   end
 
   def import_token_balances(token_balances_params) do
-    case Chain.import(%{address_token_balances: %{params: token_balances_params}, timeout: :infinity}) do
+    addresses_params = format_and_filter_address_params(token_balances_params)
+
+    import_params = %{
+      addresses: %{params: addresses_params},
+      address_token_balances: %{params: token_balances_params},
+      address_current_token_balances: %{params: token_balances_params},
+      timeout: :infinity
+    }
+
+    case Chain.import(import_params) do
       {:ok, _} ->
         :ok
 
@@ -89,6 +98,12 @@ defmodule Indexer.TokenBalance.Fetcher do
 
         :error
     end
+  end
+
+  defp format_and_filter_address_params(token_balances_params) do
+    token_balances_params
+    |> Enum.map(&%{hash: &1.address_hash})
+    |> Enum.uniq()
   end
 
   defp entry(%{

@@ -213,4 +213,30 @@ defmodule Explorer.Chain.TransactionTest do
       assert last_nonce == nil
     end
   end
+
+  describe "decoded_input_data/1" do
+    test "that a tranasction that is not a contract call returns a commensurate error" do
+      transaction = insert(:transaction)
+
+      assert Transaction.decoded_input_data(transaction) == {:error, :not_a_contract_call}
+    end
+
+    test "that a contract call transaction that has no verified contract returns a commensurate error" do
+      transaction =
+        :transaction
+        |> insert(to_address: insert(:contract_address))
+        |> Repo.preload(to_address: :smart_contract)
+
+      assert Transaction.decoded_input_data(transaction) == {:error, :contract_not_verified}
+    end
+
+    test "that a contract call transaction that has a verified contract returns the decoded input data" do
+      transaction =
+        :transaction_to_verified_contract
+        |> insert()
+        |> Repo.preload(to_address: :smart_contract)
+
+      assert Transaction.decoded_input_data(transaction) == {:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 50}]}
+    end
+  end
 end

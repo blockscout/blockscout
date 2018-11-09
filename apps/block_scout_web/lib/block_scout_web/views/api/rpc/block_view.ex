@@ -1,8 +1,8 @@
 defmodule BlockScoutWeb.API.RPC.BlockView do
   use BlockScoutWeb, :view
 
-  alias Explorer.Chain.{Hash, Wei}
   alias BlockScoutWeb.API.RPC.RPCView
+  alias Explorer.Chain.{Hash, Wei}
 
   def render("block_reward.json", %{block: block, reward: reward}) do
     reward_as_string =

@@ -59,13 +59,12 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
 
       conn = get(conn, path)
 
-      actual_internal_transaction_ids =
-        conn.assigns.internal_transactions
-        |> Enum.map(fn it -> it.id end)
+      actual_internal_transaction_primary_keys =
+        Enum.map(conn.assigns.internal_transactions, &{&1.transaction_hash, &1.index})
 
       assert html_response(conn, 200)
 
-      assert Enum.member?(actual_internal_transaction_ids, expected_internal_transaction.id)
+      assert {expected_internal_transaction.transaction_hash, expected_internal_transaction.index} in actual_internal_transaction_primary_keys
     end
 
     test "includes USD exchange rate value for address in assigns", %{conn: conn} do

@@ -49,12 +49,9 @@ defmodule Explorer.Mixfile do
 
   defp extra_applications,
     do: [
-      :crontab,
       :logger,
       :mix,
-      :runtime_tools,
-      :timex,
-      :timex_ecto
+      :runtime_tools
     ]
 
   # Specifies your project dependencies.
@@ -69,8 +66,7 @@ defmodule Explorer.Mixfile do
       {:benchee_csv, "~> 0.8.0", only: :test},
       {:bypass, "~> 0.8", only: :test},
       {:comeonin, "~> 4.0"},
-      {:credo, "0.9.2", only: [:dev, :test], runtime: false},
-      {:crontab, "~> 1.1"},
+      {:credo, "0.10.2", only: [:dev, :test], runtime: false},
       {:decimal, "~> 1.0"},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       # Casting Ethereum-native types to Elixir-native types
@@ -95,10 +91,12 @@ defmodule Explorer.Mixfile do
       {:prometheus, "~> 4.0", override: true},
       # Prometheus metrics for query duration
       {:prometheus_ecto, "~> 1.3"},
+      # bypass optional dependency
+      {:plug_cowboy, "~> 1.0", only: :test},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
-      {:timex, "~> 3.1.24"},
-      {:timex_ecto, "~> 3.2.1"},
-      {:cowboy, "~> 1.0"}
+      {:timex, "~> 3.4"},
+      # `Timex.Duration` for `Explorer.Chain.average_block_time/0`
+      {:timex_ecto, "~> 3.3"}
     ]
   end
 

@@ -9,7 +9,7 @@
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav mr-auto">
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="navbarBlocksDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <a class="nav-link topnav-nav-link dropdown-toggle" href="#" id="navbarBlocksDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <span class="nav-link-icon">
               <%= render BlockScoutWeb.IconsView, "_block_icon.html" %>
             </span>
@@ -25,7 +25,7 @@
           </div>
         </li>
         <li class="nav-item dropdown">
-          <a href="#" role="button" id="navbarTransactionsDropdown" class="nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <a href="#" role="button" id="navbarTransactionsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <span class="nav-link-icon">
               <%= render BlockScoutWeb.IconsView, "_transaction_icon.html" %>
             </span>
@@ -53,16 +53,28 @@
             <%= gettext("Accounts") %>
           <% end %>
         </li>
-        <li class="nav-item">
-          <%= link to: api_docs_path(@conn, :index), class: "nav-link topnav-nav-link" do %>
+        <li class="nav-item dropdown">
+          <a href="#" role="button" id="navbarAPIsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <span class="nav-link-icon">
               <%= render BlockScoutWeb.IconsView, "_api_icon.html" %>
             </span>
-            <%= gettext("API") %>
-          <% end %>
+            <%= gettext("APIs") %>
+          </a>
+          <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
+            <%= link(
+                  gettext("GraphQL"),
+                  class: "dropdown-item",
+                  to: "/graphiql"
+                ) %>
+            <%= link(
+                  gettext("RPC"),
+                  class: "dropdown-item",
+                  to: api_docs_path(@conn, :index)
+                ) %>
+          </div>
         </li>
       </ul>
-      <div class="search-form">
+      <div class="search-form d-lg-flex d-inline-block">
         <%= form_for @conn, chain_path(@conn, :search), [class: "form-inline my-2 my-lg-0", method: :get, enforce_utf8: false], fn f -> %>
           <div class="input-group">
             <%= search_input f, :q, class: 'form-control mr-auto', placeholder: gettext("Search by address, transaction hash, or block number"), "aria-describedby": "search-icon", "aria-label": gettext("Search"), "data-test": "search_input" %>
@@ -76,7 +88,7 @@
         <% end %>
         <ul class="navbar-nav">
           <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle pl-2" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <a class="nav-link dropdown-toggle pl-lg-2" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <!-- ICON FOR MAINNET -->
               <span class="nav-link-icon">
                 <%= render BlockScoutWeb.IconsView, network_icon_partial() %>
