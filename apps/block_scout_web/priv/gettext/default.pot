@@ -200,7 +200,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_validation/index.html.eex:81
 #: lib/block_scout_web/templates/address_validation/index.html.eex:108
 msgid "Blocks Validated"
-msgstr ""
+msgstr "Blocks Mined"
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:66
@@ -406,7 +406,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/overview.html.eex:182
 #: lib/block_scout_web/views/wei_helpers.ex:72
 msgid "Ether"
-msgstr ""
+msgstr "ETH"
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:163
@@ -1026,18 +1026,18 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:39
 msgid "Validated"
-msgstr ""
+msgstr "Mined"
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/index.html.eex:5
 #: lib/block_scout_web/templates/transaction/index.html.eex:9
 msgid "Validated Transactions"
-msgstr ""
+msgstr "Mined Transactions"
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tile.html.eex:23
 msgid "Validations"
-msgstr ""
+msgstr "Confirmations"
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:182

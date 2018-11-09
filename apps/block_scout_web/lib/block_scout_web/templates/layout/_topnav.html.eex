@@ -48,14 +48,6 @@
                 ) %>
           </div>
         </li>
-        <li class="nav-item">
-          <%= link to: address_path(@conn, :index), class: "nav-link topnav-nav-link" do %>
-            <span class="nav-link-icon">
-              <%= render BlockScoutWeb.IconsView, "_accounts_icon.html" %>
-            </span>
-            <%= gettext("Accounts") %>
-          <% end %>
-        </li>
         <li class="nav-item dropdown">
           <a href="#" role="button" id="navbarAPIsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <span class="nav-link-icon">
@@ -103,8 +95,14 @@
               <%= subnetwork_title() %>
             </a>
             <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-              <a class="dropdown-item" href="https://sokol.blockscout.com/"><%= gettext("POA Sokol") %></a>
-              <a class="dropdown-item" href="https://poa.blockscout.com/"><%= gettext("POA Core") %></a>
+              <a class="dropdown-item" href="https://blockscout.com/poa/core"><%= gettext("POA Core") %></a>
+              <a class="dropdown-item" href="https://blockscout.com/poa/sokol"><%= gettext("POA Sokol") %></a>
+              <a class="dropdown-item" href="https://blockscout.com/poa/dai"><%= gettext("xDai Chain") %></a>
+              <a class="dropdown-item" href="https://blockscout.com/eth/mainnet"><%= gettext("Ethereum Mainnet") %></a>
+              <a class="dropdown-item" href="https://blockscout.com/eth/kovan"><%= gettext("Kovan Testnet") %></a>
+              <a class="dropdown-item" href="https://blockscout.com/eth/ropsten"><%= gettext("Ropsten Testnet") %></a>
+              <a class="dropdown-item" href="https://blockscout.com/eth/rinkeby"><%= gettext("Rinkeby Testnet") %></a>
+              <a class="dropdown-item" href="https://blockscout.com/etc/mainnet"><%= gettext("Ethereum Classic") %></a>
             </div>
           </li>
         </ul>

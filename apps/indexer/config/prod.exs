@@ -1,12 +1,12 @@
 use Mix.Config
 
 config :logger, :indexer,
-  level: :info,
+  level: :debug,
   path: Path.absname("logs/prod/indexer.log"),
   rotate: %{max_bytes: 52_428_800, keep: 19}
 
 config :logger, :indexer_token_balances,
-  level: :debug,
+  level: :info,
   path: Path.absname("logs/prod/indexer/token_balances/error.log"),
   metadata_filter: [fetcher: :token_balances],
   rotate: %{max_bytes: 52_428_800, keep: 19}
