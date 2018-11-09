@@ -23,12 +23,12 @@
             <dd class="col-sm-8 col-md-10"><%= @address.smart_contract.name %></dd>
           </dl>
           <dl class="row">
-            <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "Optimization enabled" %></dt>
-            <dd class="col-sm-8 col-md-10"><%= format_optimization_text(@address.smart_contract.optimization) %></dd>
-          </dl>
-          <dl class="row">
             <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "Compiler version" %></dt>
             <dd class="col-sm-8 col-md-10"><%= @address.smart_contract.compiler_version %></dd>
+          </dl>
+          <dl class="row">
+            <dt class="col-sm-4 col-md-2 text-muted"><%= gettext "Optimization enabled" %></dt>
+            <dd class="col-sm-8 col-md-10"><%= format_optimization_text(@address.smart_contract.optimization) %></dd>
           </dl>
         </div>
         <hr/>
@@ -40,10 +40,7 @@
             </button>
           </div>
           <div class="tile tile-muted mb-4">
-            <pre class="pre-scrollable">
-              <code>
-                <%= text_to_html(@address.smart_contract.contract_source_code, insert_brs: false) %>
-              </code>
+            <pre class="pre-scrollable"><code><%= text_to_html(@address.smart_contract.contract_source_code, wrapper_tag: :span, insert_brs: false) %></code>
             </pre>
           </div>
         </section>
@@ -56,10 +53,7 @@
             </button>
           </div>
           <div class="tile tile-muted mb-4">
-            <pre class="pre-wrap pre-scrollable">
-              <code>
-                <%= format_smart_contract_abi(@address.smart_contract.abi) %>
-              </code>
+            <pre class="pre-wrap pre-scrollable"><code><%= format_smart_contract_abi(@address.smart_contract.abi) %></code>
             </pre>
           </div>
         </section>
@@ -73,9 +67,7 @@
           </button>
         </div>
         <div class="tile tile-muted">
-          <pre class="pre-wrap pre-scrollable">
-            <code><%= @address.contract_code %></code>
-          </pre>
+          <pre class="pre-wrap pre-scrollable"><code><%= @address.contract_code %></code></pre>
         </div>
       </section>
 

@@ -5,9 +5,10 @@ use Mix.Config
 import Bitwise
 
 config :indexer,
+  block_transformer: Indexer.Block.Transform.Base,
+  ecto_repos: [Explorer.Repo],
   # bytes
-  memory_limit: 11 <<< 30,
-  ecto_repos: [Explorer.Repo]
+  memory_limit: 10 <<< 30
 
 config :logger, :indexer,
   # keep synced with `config/config.exs`

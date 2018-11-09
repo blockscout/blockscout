@@ -3,6 +3,7 @@
     OverviewView,
     "_details.html",
     token: @token,
+    holders_count_consolidation_enabled: @holders_count_consolidation_enabled,
     total_token_transfers: @total_token_transfers,
     total_token_holders: @total_token_holders,
     conn: @conn
@@ -16,7 +17,13 @@
 
       <!-- loaded via AJAX -->
       <div class="card-body" data-smart-contract-functions data-hash="<%= to_string(@token.contract_address.hash) %>" data-url="<%= smart_contract_path(@conn, :index) %>">
-        <i class="fa fa-spinner fa-spin"></i> <%= gettext("loading...") %>
+        <div class="tile tile-muted text-center">
+          <span class="loading-spinner-small mr-2">
+            <span class="loading-spinner-block-1"></span>
+            <span class="loading-spinner-block-2"></span>
+          </span>
+          <%= gettext("Loading...") %>
+        </div>
       </div>
     </div>
   </section>

@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.ViewingTokensTest do
 
       insert_list(
         2,
-        :token_balance,
+        :address_current_token_balance,
         token_contract_address_hash: token.contract_address_hash
       )
 

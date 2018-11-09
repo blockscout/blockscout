@@ -26,7 +26,7 @@ defmodule Explorer.Chain.TokenTransfer do
 
   import Ecto.{Changeset, Query}
 
-  alias Explorer.Chain.{Address, Block, Hash, Transaction, Token, TokenTransfer}
+  alias Explorer.Chain.{Address, Block, Hash, Token, TokenTransfer, Transaction}
   alias Explorer.{PagingOptions, Repo}
 
   @default_paging_options %PagingOptions{page_size: 50}
@@ -62,9 +62,10 @@ defmodule Explorer.Chain.TokenTransfer do
 
   @constant "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 
+  @primary_key false
   schema "token_transfers" do
     field(:amount, :decimal)
-    field(:log_index, :integer)
+    field(:log_index, :integer, primary_key: true)
     field(:token_id, :decimal)
 
     belongs_to(:from_address, Address, foreign_key: :from_address_hash, references: :hash, type: Hash.Address)
@@ -78,7 +79,12 @@ defmodule Explorer.Chain.TokenTransfer do
       type: Hash.Address
     )
 
-    belongs_to(:transaction, Transaction, foreign_key: :transaction_hash, references: :hash, type: Hash.Full)
+    belongs_to(:transaction, Transaction,
+      foreign_key: :transaction_hash,
+      primary_key: true,
+      references: :hash,
+      type: Hash.Full
+    )
 
     has_one(:token, through: [:token_contract_address, :token])
 
@@ -145,22 +151,57 @@ defmodule Explorer.Chain.TokenTransfer do
     )
   end
 
-  def where_address_fields_match(query, address_hash, :from) do
-    query
-    |> join(:left, [transaction], tt in assoc(transaction, :token_transfers))
-    |> where([_transaction, tt], tt.from_address_hash == ^address_hash)
+  @doc """
+  Builds a dynamic query expression to identify if there is a token transfer
+  related to the hash.
+  """
+  def dynamic_any_address_fields_match(:to, address_bytes) do
+    dynamic(
+      [t],
+      t.hash ==
+        fragment(
+          ~s"""
+          (SELECT tt.transaction_hash
+          FROM "token_transfers" AS tt
+          WHERE (tt."to_address_hash" = ?)
+          LIMIT 1)
+          """,
+          ^address_bytes
+        )
+    )
   end
 
-  def where_address_fields_match(query, address_hash, :to) do
-    query
-    |> join(:left, [transaction], tt in assoc(transaction, :token_transfers))
-    |> where([_transaction, tt], tt.to_address_hash == ^address_hash)
+  def dynamic_any_address_fields_match(:from, address_bytes) do
+    dynamic(
+      [t],
+      t.hash ==
+        fragment(
+          ~s"""
+          (SELECT tt.transaction_hash
+          FROM "token_transfers" AS tt
+          WHERE (tt."from_address_hash" = ?)
+          LIMIT 1)
+          """,
+          ^address_bytes
+        )
+    )
   end
 
-  def where_address_fields_match(query, address_hash, _) do
-    query
-    |> join(:left, [transaction], tt in assoc(transaction, :token_transfers))
-    |> where([_transaction, tt], tt.to_address_hash == ^address_hash or tt.from_address_hash == ^address_hash)
+  def dynamic_any_address_fields_match(_, address_bytes) do
+    dynamic(
+      [t],
+      t.hash ==
+        fragment(
+          ~s"""
+          (SELECT tt.transaction_hash
+          FROM "token_transfers" AS tt
+          WHERE ((tt."to_address_hash" = ?) OR (tt."from_address_hash" = ?))
+          LIMIT 1)
+          """,
+          ^address_bytes,
+          ^address_bytes
+        )
+    )
   end
 
   @doc """
@@ -195,7 +236,7 @@ defmodule Explorer.Chain.TokenTransfer do
         tt in TokenTransfer,
         join: t in Token,
         on: tt.token_contract_address_hash == t.contract_address_hash,
-        select: {tt.token_contract_address_hash, count(tt.id)},
+        select: {tt.token_contract_address_hash, fragment("COUNT(*)")},
         group_by: tt.token_contract_address_hash
       )
 

@@ -44,7 +44,7 @@
           <%= gettext("Code") %>
 
         <%= if smart_contract_verified?(@address) do %>
-          <i class="far fa-check-circle"></i>
+          <i class="far fa-check-circle text-success"></i>
         <% end %>
       <% end %>
     </li>

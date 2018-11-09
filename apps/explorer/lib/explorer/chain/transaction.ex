@@ -3,7 +3,11 @@ defmodule Explorer.Chain.Transaction do
 
   use Explorer.Schema
 
-  import Ecto.Query, only: [from: 2, preload: 3, where: 3, subquery: 1]
+  require Logger
+
+  import Ecto.Query, only: [dynamic: 2, from: 2, preload: 3, subquery: 1, where: 3]
+
+  alias ABI.FunctionSelector
 
   alias Ecto.Changeset
 
@@ -415,6 +419,54 @@ defmodule Explorer.Chain.Transaction do
     preload(query, [tt], token_transfers: ^token_transfers_query)
   end
 
+  # Because there is no contract association, we know the contract was not verified
+  def decoded_input_data(%__MODULE__{to_address: nil}), do: {:error, :no_to_address}
+  def decoded_input_data(%__MODULE__{input: %{bytes: bytes}}) when bytes in [nil, <<>>], do: {:error, :no_input_data}
+  def decoded_input_data(%__MODULE__{to_address: %{contract_code: nil}}), do: {:error, :not_a_contract_call}
+  def decoded_input_data(%__MODULE__{to_address: %{smart_contract: nil}}), do: {:error, :contract_not_verified}
+
+  def decoded_input_data(%__MODULE__{input: %{bytes: data}, to_address: %{smart_contract: %{abi: abi}}, hash: hash}) do
+    with {:ok, {selector, values}} <- find_and_decode(abi, data, hash),
+         {:ok, mapping} <- selector_mapping(selector, values, hash),
+         identifier <- Base.encode16(selector.method_id, case: :lower),
+         text <- function_call(selector.function, mapping),
+         do: {:ok, identifier, text, mapping}
+  end
+
+  defp function_call(name, mapping) do
+    text =
+      mapping
+      |> Stream.map(fn {name, type, _} -> [type, " ", name] end)
+      |> Enum.intersperse(", ")
+
+    IO.iodata_to_binary([name, "(", text, ")"])
+  end
+
+  defp find_and_decode(abi, data, hash) do
+    result =
+      abi
+      |> ABI.parse_specification()
+      |> ABI.find_and_decode(data)
+
+    {:ok, result}
+  rescue
+    _ ->
+      Logger.warn(fn -> ["Could not decode input data for transaction: ", Hash.to_iodata(hash)] end)
+      {:error, :could_not_decode}
+  end
+
+  defp selector_mapping(selector, values, hash) do
+    types = Enum.map(selector.types, &FunctionSelector.encode_type/1)
+
+    mapping = Enum.zip([selector.input_names, types, values])
+
+    {:ok, mapping}
+  rescue
+    _ ->
+      Logger.warn(fn -> ["Could not decode input data for transaction: ", Hash.to_iodata(hash)] end)
+      {:error, :could_not_decode}
+  end
+
   @doc """
   Adds to the given transaction's query a `where` with one of the conditions that the matched
   function returns.
@@ -425,6 +477,32 @@ defmodule Explorer.Chain.Transaction do
   """
   def where_address_fields_match(query, address_hash, address_field) do
     where(query, [t], field(t, ^address_field) == ^address_hash)
+  end
+
+  @doc """
+  Builds a dynamic query expression to identify if there is a transaction
+  related to the hash.
+  """
+  def dynamic_where_address_hash_matches(address_hash, :to, dynamic) do
+    dynamic(
+      [t],
+      t.to_address_hash == ^address_hash or t.created_contract_address_hash == ^address_hash or ^dynamic
+    )
+  end
+
+  def dynamic_where_address_hash_matches(address_hash, :from, dynamic) do
+    dynamic(
+      [t],
+      t.from_address_hash == ^address_hash or ^dynamic
+    )
+  end
+
+  def dynamic_where_address_hash_matches(address_hash, _, dynamic) do
+    dynamic(
+      [t],
+      t.to_address_hash == ^address_hash or t.from_address_hash == ^address_hash or
+        t.created_contract_address_hash == ^address_hash or ^dynamic
+    )
   end
 
   @collated_fields ~w(block_number cumulative_gas_used gas_used index)a

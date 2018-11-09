@@ -7,9 +7,11 @@ defmodule BlockScoutWeb.ViewingAppTest do
 
   describe "loading bar when indexing" do
     test "shows blocks indexed percentage", %{session: session} do
-      for index <- 6..10 do
+      for index <- 5..9 do
         insert(:block, number: index)
       end
+
+      assert Explorer.Chain.indexed_ratio() == 0.5
 
       session
       |> AppPage.visit_page()
@@ -17,9 +19,11 @@ defmodule BlockScoutWeb.ViewingAppTest do
     end
 
     test "shows tokens loading", %{session: session} do
-      for index <- 1..10 do
+      for index <- 0..9 do
         insert(:block, number: index)
       end
+
+      assert Explorer.Chain.indexed_ratio() == 1.0
 
       session
       |> AppPage.visit_page()
@@ -27,30 +31,34 @@ defmodule BlockScoutWeb.ViewingAppTest do
     end
 
     test "live updates blocks indexed percentage", %{session: session} do
-      for index <- 6..10 do
+      for index <- 5..9 do
         insert(:block, number: index)
       end
+
+      assert Explorer.Chain.indexed_ratio() == 0.5
 
       session
       |> AppPage.visit_page()
       |> assert_has(AppPage.indexed_status("50% Blocks Indexed"))
 
-      insert(:block, number: 5)
+      insert(:block, number: 4)
       Notifier.handle_event({:chain_event, :blocks, :catchup, []})
 
       assert_has(session, AppPage.indexed_status("60% Blocks Indexed"))
     end
 
     test "live updates when blocks are fully indexed", %{session: session} do
-      for index <- 2..10 do
+      for index <- 1..9 do
         insert(:block, number: index)
       end
+
+      assert Explorer.Chain.indexed_ratio() == 0.9
 
       session
       |> AppPage.visit_page()
       |> assert_has(AppPage.indexed_status("90% Blocks Indexed"))
 
-      insert(:block, number: 1)
+      insert(:block, number: 0)
       Notifier.handle_event({:chain_event, :blocks, :catchup, []})
 
       assert_has(session, AppPage.indexed_status("Indexing Tokens"))
@@ -58,9 +66,11 @@ defmodule BlockScoutWeb.ViewingAppTest do
 
     test "live removes message when chain is indexed", %{session: session} do
       [block | _] =
-        for index <- 1..10 do
+        for index <- 0..9 do
           insert(:block, number: index)
         end
+
+      assert Explorer.Chain.indexed_ratio() == 1.0
 
       session
       |> AppPage.visit_page()

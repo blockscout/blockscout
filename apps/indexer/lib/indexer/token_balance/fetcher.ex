@@ -5,20 +5,20 @@ defmodule Indexer.TokenBalance.Fetcher do
 
   require Logger
 
-  alias Indexer.{BufferedTask, TokenBalances}
   alias Explorer.Chain
-  alias Explorer.Chain.{Hash, Address.TokenBalance}
+  alias Explorer.Chain.Hash
+  alias Indexer.{BufferedTask, TokenBalances}
 
   @behaviour BufferedTask
 
   @defaults [
     flush_interval: 300,
-    max_batch_size: 1,
+    max_batch_size: 100,
     max_concurrency: 10,
     task_supervisor: Indexer.TokenBalance.TaskSupervisor
   ]
 
-  @spec async_fetch([%TokenBalance{}]) :: :ok
+  @spec async_fetch([]) :: :ok
   def async_fetch(token_balances) do
     formatted_params = Enum.map(token_balances, &entry/1)
     BufferedTask.buffer(__MODULE__, formatted_params, :infinity)
@@ -80,7 +80,16 @@ defmodule Indexer.TokenBalance.Fetcher do
   end
 
   def import_token_balances(token_balances_params) do
-    case Chain.import(%{address_token_balances: %{params: token_balances_params}, timeout: :infinity}) do
+    addresses_params = format_and_filter_address_params(token_balances_params)
+
+    import_params = %{
+      addresses: %{params: addresses_params},
+      address_token_balances: %{params: token_balances_params},
+      address_current_token_balances: %{params: token_balances_params},
+      timeout: :infinity
+    }
+
+    case Chain.import(import_params) do
       {:ok, _} ->
         :ok
 
@@ -91,7 +100,13 @@ defmodule Indexer.TokenBalance.Fetcher do
     end
   end
 
-  defp entry(%TokenBalance{
+  defp format_and_filter_address_params(token_balances_params) do
+    token_balances_params
+    |> Enum.map(&%{hash: &1.address_hash})
+    |> Enum.uniq()
+  end
+
+  defp entry(%{
          token_contract_address_hash: token_contract_address_hash,
          address_hash: address_hash,
          block_number: block_number

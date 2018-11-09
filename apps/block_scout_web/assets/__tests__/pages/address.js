@@ -1,300 +1,327 @@
 import { reducer, initialState } from '../../js/pages/address'
 
-describe('PAGE_LOAD', () => {
-  test('page 1 without filter', () => {
-    const state = initialState
+describe('RECEIVED_NEW_BLOCK', () => {
+  test('with new block', () => {
+    const state = Object.assign({}, initialState, {
+      validationCount: 30,
+      validatedBlocks: [{ blockNumber: 1, blockHtml: 'test 1' }]
+    })
     const action = {
-      type: 'PAGE_LOAD',
-      addressHash: '1234',
-      beyondPageOne: false,
-      pendingTransactionHashes: ['1']
+      type: 'RECEIVED_NEW_BLOCK',
+      msg: { blockNumber: 2, blockHtml: 'test 2' }
     }
     const output = reducer(state, action)
 
-    expect(output.addressHash).toBe('1234')
-    expect(output.beyondPageOne).toBe(false)
-    expect(output.filter).toBe(undefined)
-    expect(output.pendingTransactionHashes).toEqual(['1'])
+    expect(output.validationCount).toEqual(31)
+    expect(output.validatedBlocks).toEqual([
+      { blockNumber: 2, blockHtml: 'test 2' },
+      { blockNumber: 1, blockHtml: 'test 1' }
+    ])
   })
-  test('page 2 without filter', () => {
-    const state = initialState
+  test('when channel has been disconnected', () => {
+    const state = Object.assign({}, initialState, {
+      channelDisconnected: true,
+      validationCount: 30,
+      validatedBlocks: [{ blockNumber: 1, blockHtml: 'test 1' }]
+    })
     const action = {
-      type: 'PAGE_LOAD',
-      addressHash: '1234',
+      type: 'RECEIVED_NEW_BLOCK',
+      msg: { blockNumber: 2, blockHtml: 'test 2' }
+    }
+    const output = reducer(state, action)
+
+    expect(output.validationCount).toEqual(30)
+    expect(output.validatedBlocks).toEqual([
+      { blockNumber: 1, blockHtml: 'test 1' }
+    ])
+  })
+  test('beyond page one', () => {
+    const state = Object.assign({}, initialState, {
       beyondPageOne: true,
-      pendingTransactionHashes: ['1']
-    }
-    const output = reducer(state, action)
-
-    expect(output.addressHash).toBe('1234')
-    expect(output.beyondPageOne).toBe(true)
-    expect(output.filter).toBe(undefined)
-    expect(output.pendingTransactionHashes).toEqual(['1'])
-  })
-  test('page 1 with "to" filter', () => {
-    const state = initialState
+      validationCount: 30,
+      validatedBlocks: [{ blockNumber: 1, blockHtml: 'test 1' }]
+    })
     const action = {
-      type: 'PAGE_LOAD',
-      addressHash: '1234',
-      beyondPageOne: false,
-      filter: 'to'
+      type: 'RECEIVED_NEW_BLOCK',
+      msg: { blockNumber: 2, blockHtml: 'test 2' }
     }
     const output = reducer(state, action)
 
-    expect(output.addressHash).toBe('1234')
-    expect(output.beyondPageOne).toBe(false)
-    expect(output.filter).toBe('to')
-  })
-  test('page 2 with "to" filter', () => {
-    const state = initialState
-    const action = {
-      type: 'PAGE_LOAD',
-      addressHash: '1234',
-      beyondPageOne: true,
-      filter: 'to'
-    }
-    const output = reducer(state, action)
-
-    expect(output.addressHash).toBe('1234')
-    expect(output.beyondPageOne).toBe(true)
-    expect(output.filter).toBe('to')
+    expect(output.validationCount).toEqual(31)
+    expect(output.validatedBlocks).toEqual([
+      { blockNumber: 1, blockHtml: 'test 1' }
+    ])
   })
 })
 
-test('CHANNEL_DISCONNECTED', () => {
-  const state = initialState
-  const action = {
-    type: 'CHANNEL_DISCONNECTED'
-  }
-  const output = reducer(state, action)
-
-  expect(output.channelDisconnected).toBe(true)
-})
-
-test('RECEIVED_UPDATED_BALANCE', () => {
-  const state = initialState
-  const action = {
-    type: 'RECEIVED_UPDATED_BALANCE',
-    msg: {
-      balance: 'hello world'
+describe('RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH', () => {
+  test('with new internal transaction', () => {
+    const state = Object.assign({}, initialState, {
+      internalTransactions: [{ internalTransactionHtml: 'test 1' }]
+    })
+    const action = {
+      type: 'RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH',
+      msgs: [{ internalTransactionHtml: 'test 2' }]
     }
-  }
-  const output = reducer(state, action)
+    const output = reducer(state, action)
 
-  expect(output.balance).toBe('hello world')
+    expect(output.internalTransactions).toEqual([
+      { internalTransactionHtml: 'test 2' },
+      { internalTransactionHtml: 'test 1' }
+    ])
+  })
+  test('with batch of new internal transactions', () => {
+    const state = Object.assign({}, initialState, {
+      internalTransactions: [{ internalTransactionHtml: 'test 1' }]
+    })
+    const action = {
+      type: 'RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH',
+      msgs: [
+        { internalTransactionHtml: 'test 2' },
+        { internalTransactionHtml: 'test 3' },
+        { internalTransactionHtml: 'test 4' },
+        { internalTransactionHtml: 'test 5' },
+        { internalTransactionHtml: 'test 6' },
+        { internalTransactionHtml: 'test 7' },
+        { internalTransactionHtml: 'test 8' },
+        { internalTransactionHtml: 'test 9' },
+        { internalTransactionHtml: 'test 10' },
+        { internalTransactionHtml: 'test 11' },
+        { internalTransactionHtml: 'test 12' },
+        { internalTransactionHtml: 'test 13' }
+      ]
+    }
+    const output = reducer(state, action)
+
+    expect(output.internalTransactions).toEqual([
+      { internalTransactionHtml: 'test 1' }
+    ])
+    expect(output.internalTransactionsBatch).toEqual([
+      { internalTransactionHtml: 'test 13' },
+      { internalTransactionHtml: 'test 12' },
+      { internalTransactionHtml: 'test 11' },
+      { internalTransactionHtml: 'test 10' },
+      { internalTransactionHtml: 'test 9' },
+      { internalTransactionHtml: 'test 8' },
+      { internalTransactionHtml: 'test 7' },
+      { internalTransactionHtml: 'test 6' },
+      { internalTransactionHtml: 'test 5' },
+      { internalTransactionHtml: 'test 4' },
+      { internalTransactionHtml: 'test 3' },
+      { internalTransactionHtml: 'test 2' },
+    ])
+  })
+  test('after batch of new internal transactions', () => {
+    const state = Object.assign({}, initialState, {
+      internalTransactionsBatch: [{ internalTransactionHtml: 'test 1' }]
+    })
+    const action = {
+      type: 'RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH',
+      msgs: [
+        { internalTransactionHtml: 'test 2' }
+      ]
+    }
+    const output = reducer(state, action)
+
+    expect(output.internalTransactionsBatch).toEqual([
+      { internalTransactionHtml: 'test 2' },
+      { internalTransactionHtml: 'test 1' }
+    ])
+  })
+  test('when channel has been disconnected', () => {
+    const state = Object.assign({}, initialState, {
+      channelDisconnected: true,
+      internalTransactions: [{ internalTransactionHtml: 'test 1' }]
+    })
+    const action = {
+      type: 'RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH',
+      msgs: [{ internalTransactionHtml: 'test 2' }]
+    }
+    const output = reducer(state, action)
+
+    expect(output.internalTransactions).toEqual([
+      { internalTransactionHtml: 'test 1' }
+    ])
+  })
+  test('beyond page one', () => {
+    const state = Object.assign({}, initialState, {
+      beyondPageOne: true,
+      internalTransactions: [{ internalTransactionHtml: 'test 1' }]
+    })
+    const action = {
+      type: 'RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH',
+      msgs: [{ internalTransactionHtml: 'test 2' }]
+    }
+    const output = reducer(state, action)
+
+    expect(output.internalTransactions).toEqual([
+      { internalTransactionHtml: 'test 1' }
+    ])
+  })
+  test('with filtered out internal transaction', () => {
+    const state = Object.assign({}, initialState, {
+      filter: 'to'
+    })
+    const action = {
+      type: 'RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH',
+      msgs: [{ internalTransactionHtml: 'test 2' }]
+    }
+    const output = reducer(state, action)
+
+    expect(output.internalTransactions).toEqual([])
+  })
 })
 
 describe('RECEIVED_NEW_PENDING_TRANSACTION', () => {
-  test('single transaction', () => {
-    const state = initialState
-    const action = {
-      type: 'RECEIVED_NEW_PENDING_TRANSACTION',
-      msg: {
-        transactionHash: '0x00',
-        transactionHtml: 'test'
-      }
-    }
-    const output = reducer(state, action)
-
-    expect(output.newPendingTransactions).toEqual(['test'])
-    expect(output.transactionCount).toEqual(null)
-  })
-  test('single transaction after single transaction', () => {
+  test('with new pending transaction', () => {
     const state = Object.assign({}, initialState, {
-      newPendingTransactions: ['test 1']
+      pendingTransactions: [{ transactionHash: 1, transactionHtml: 'test 1' }]
     })
     const action = {
       type: 'RECEIVED_NEW_PENDING_TRANSACTION',
-      msg: {
-        transactionHash: '0x02',
-        transactionHtml: 'test 2'
-      }
+      msg: { transactionHash: 2, transactionHtml: 'test 2' }
     }
     const output = reducer(state, action)
 
-    expect(output.newPendingTransactions).toEqual(['test 1', 'test 2'])
-    expect(output.pendingTransactionHashes.length).toEqual(1)
+    expect(output.pendingTransactions).toEqual([
+      { transactionHash: 2, transactionHtml: 'test 2' },
+      { transactionHash: 1, transactionHtml: 'test 1' }
+    ])
   })
-  test('after disconnection', () => {
+  test('when channel has been disconnected', () => {
     const state = Object.assign({}, initialState, {
-      channelDisconnected: true
+      channelDisconnected: true,
+      pendingTransactions: [{ transactionHash: 1, transactionHtml: 'test 1' }]
     })
     const action = {
       type: 'RECEIVED_NEW_PENDING_TRANSACTION',
-      msg: {
-        transactionHash: '0x00',
-        transactionHtml: 'test'
-      }
+      msg: { transactionHash: 2, transactionHtml: 'test 2' }
     }
     const output = reducer(state, action)
 
-    expect(output.newPendingTransactions).toEqual([])
-    expect(output.pendingTransactionHashes).toEqual([])
+    expect(output.pendingTransactions).toEqual([
+      { transactionHash: 1, transactionHtml: 'test 1' }
+    ])
   })
-  test('on page 2', () => {
+  test('beyond page one', () => {
     const state = Object.assign({}, initialState, {
-      beyondPageOne: true
+      beyondPageOne: true,
+      pendingTransactions: [{ transactionHash: 1, transactionHtml: 'test 1' }]
     })
     const action = {
       type: 'RECEIVED_NEW_PENDING_TRANSACTION',
-      msg: {
-        transactionHash: '0x00',
-        transactionHtml: 'test'
-      }
+      msg: { transactionHash: 2, transactionHtml: 'test 2' }
     }
     const output = reducer(state, action)
 
-    expect(output.newPendingTransactions).toEqual([])
-    expect(output.pendingTransactionHashes).toEqual([])
+    expect(output.pendingTransactions).toEqual([
+      { transactionHash: 1, transactionHtml: 'test 1' }
+    ])
+  })
+  test('with filtered out pending transaction', () => {
+    const state = Object.assign({}, initialState, {
+      filter: 'to'
+    })
+    const action = {
+      type: 'RECEIVED_NEW_PENDING_TRANSACTION',
+      msg: { transactionHash: 2, transactionHtml: 'test 2' }
+    }
+    const output = reducer(state, action)
+
+    expect(output.pendingTransactions).toEqual([])
   })
 })
 
 describe('RECEIVED_NEW_TRANSACTION', () => {
-  test('single transaction', () => {
+  test('with new transaction', () => {
     const state = Object.assign({}, initialState, {
-      addressHash: '0x111'
+      pendingTransactions: [{ transactionHash: 2, transactionHtml: 'test' }],
+      transactions: [{ transactionHash: 1, transactionHtml: 'test 1' }]
     })
     const action = {
       type: 'RECEIVED_NEW_TRANSACTION',
-      msg: {
-        transactionHtml: 'test'
-      }
+      msg: { transactionHash: 2, transactionHtml: 'test 2' }
     }
     const output = reducer(state, action)
 
-    expect(output.newTransactions).toEqual([{ transactionHtml: 'test' }])
-    expect(output.transactionCount).toEqual(null)
-  })
-  test('single transaction after single transaction', () => {
-    const state = Object.assign({}, initialState, {
-      newTransactions: [{ transactionHtml: 'test 1' }]
-    })
-    const action = {
-      type: 'RECEIVED_NEW_TRANSACTION',
-      msg: {
-        transactionHtml: 'test 2'
-      }
-    }
-    const output = reducer(state, action)
-
-    expect(output.newTransactions).toEqual([
-      { transactionHtml: 'test 1' },
-      { transactionHtml: 'test 2' }
+    expect(output.pendingTransactions).toEqual([
+      { transactionHash: 2, transactionHtml: 'test 2', validated: true }
+    ])
+    expect(output.transactions).toEqual([
+      { transactionHash: 2, transactionHtml: 'test 2' },
+      { transactionHash: 1, transactionHtml: 'test 1' }
     ])
   })
-  test('after disconnection', () => {
+  test('when channel has been disconnected', () => {
     const state = Object.assign({}, initialState, {
-      channelDisconnected: true
+      channelDisconnected: true,
+      pendingTransactions: [{ transactionHash: 2, transactionHtml: 'test' }],
+      transactions: [{ transactionHash: 1, transactionHtml: 'test 1' }]
     })
     const action = {
       type: 'RECEIVED_NEW_TRANSACTION',
-      msg: {
-        transactionHtml: 'test'
-      }
+      msg: { transactionHash: 2, transactionHtml: 'test 2' }
     }
     const output = reducer(state, action)
 
-    expect(output.newTransactions).toEqual([])
+    expect(output.pendingTransactions).toEqual([
+      { transactionHash: 2, transactionHtml: 'test' }
+    ])
+    expect(output.transactions).toEqual([
+      { transactionHash: 1, transactionHtml: 'test 1' }
+    ])
   })
-  test('on page 2', () => {
+  test('beyond page one', () => {
     const state = Object.assign({}, initialState, {
       beyondPageOne: true,
-      transactionCount: 1,
-      addressHash: '0x111'
+      transactions: [{ transactionHash: 1, transactionHtml: 'test 1' }]
     })
     const action = {
       type: 'RECEIVED_NEW_TRANSACTION',
-      msg: {
-        transactionHtml: 'test'
-      }
+      msg: { transactionHash: 2, transactionHtml: 'test 2' }
     }
     const output = reducer(state, action)
 
-    expect(output.newTransactions).toEqual([])
-    expect(output.transactionCount).toEqual(1)
-  })
-  test('transaction from current address with "from" filter', () => {
-    const state = Object.assign({}, initialState, {
-      addressHash: '1234',
-      filter: 'from'
-    })
-    const action = {
-      type: 'RECEIVED_NEW_TRANSACTION',
-      msg: {
-        fromAddressHash: '1234',
-        transactionHtml: 'test'
-      }
-    }
-    const output = reducer(state, action)
-
-    expect(output.newTransactions).toEqual([
-      { fromAddressHash: '1234', transactionHtml: 'test' }
+    expect(output.pendingTransactions).toEqual([])
+    expect(output.transactions).toEqual([
+      { transactionHash: 1, transactionHtml: 'test 1' }
     ])
   })
-  test('transaction from current address with "to" filter', () => {
+  test('with filtered out transaction', () => {
     const state = Object.assign({}, initialState, {
-      addressHash: '1234',
       filter: 'to'
     })
     const action = {
       type: 'RECEIVED_NEW_TRANSACTION',
-      msg: {
-        fromAddressHash: '1234',
-        transactionHtml: 'test'
-      }
+      msg: { transactionHash: 2, transactionHtml: 'test 2' }
     }
     const output = reducer(state, action)
 
-    expect(output.newTransactions).toEqual([])
+    expect(output.transactions).toEqual([])
   })
-  test('transaction to current address with "to" filter', () => {
+})
+
+describe('RECEIVED_NEXT_PAGE', () => {
+  test('with new transaction page', () => {
     const state = Object.assign({}, initialState, {
-      addressHash: '1234',
-      filter: 'to'
+      loadingNextPage: true,
+      nextPageUrl: '1',
+      transactions: [{ transactionHash: 1, transactionHtml: 'test 1' }]
     })
     const action = {
-      type: 'RECEIVED_NEW_TRANSACTION',
+      type: 'RECEIVED_NEXT_PAGE',
       msg: {
-        toAddressHash: '1234',
-        transactionHtml: 'test'
+        nextPageUrl: '2',
+        transactions: [{ transactionHash: 2, transactionHtml: 'test 2' }]
       }
     }
     const output = reducer(state, action)
 
-    expect(output.newTransactions).toEqual([
-      { toAddressHash: '1234', transactionHtml: 'test' }
+    expect(output.loadingNextPage).toEqual(false)
+    expect(output.nextPageUrl).toEqual('2')
+    expect(output.transactions).toEqual([
+      { transactionHash: 1, transactionHtml: 'test 1' },
+      { transactionHash: 2, transactionHtml: 'test 2' }
     ])
-  })
-  test('transaction to current address with "from" filter', () => {
-    const state = Object.assign({}, initialState, {
-      addressHash: '1234',
-      filter: 'from'
-    })
-    const action = {
-      type: 'RECEIVED_NEW_TRANSACTION',
-      msg: {
-        toAddressHash: '1234',
-        transactionHtml: 'test'
-      }
-    }
-    const output = reducer(state, action)
-
-    expect(output.newTransactions).toEqual([])
-  })
-  test('single transaction collated from pending', () => {
-    const state = initialState
-    const action = {
-      type: 'RECEIVED_NEW_TRANSACTION',
-      msg: {
-        transactionHash: '0x00',
-        transactionHtml: 'test'
-      }
-    }
-    const output = reducer(state, action)
-
-    expect(output.newTransactions).toEqual([
-      { transactionHash: '0x00', transactionHtml: 'test' }
-    ])
-    expect(output.transactionCount).toEqual(null)
   })
 })
