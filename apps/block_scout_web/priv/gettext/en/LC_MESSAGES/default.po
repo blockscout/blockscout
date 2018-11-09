@@ -1244,3 +1244,23 @@ msgstr ""
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:64
 msgid "Error trying to fetch transactions."
 msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/block_transaction/404.html.eex:7
+msgid "Block Details"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/block_transaction_view.ex:15
+msgid "Block not found, please try again later."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/block_transaction_view.ex:9
+msgid "Easy Cowboy! This block does not exist yet!"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/block_transaction_view.ex:12
+msgid "This block has not been processed yet."
+msgstr ""

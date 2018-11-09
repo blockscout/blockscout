@@ -11,10 +11,20 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
       assert html_response(conn, 404)
     end
 
-    test "with valid block number without block", %{conn: conn} do
+    test "with valid block number below the tip", %{conn: conn} do
+      insert(:block, number: 666)
+
       conn = get(conn, block_transaction_path(conn, :index, "1"))
 
-      assert html_response(conn, 404)
+      assert html_response(conn, 404) =~ "This block has not been processed yet."
+    end
+
+    test "with valid block number above the tip", %{conn: conn} do
+      block = insert(:block)
+
+      conn = get(conn, block_transaction_path(conn, :index, block.number + 1))
+
+      assert html_response(conn, 404) =~ "Easy Cowboy! This block does not exist yet!"
     end
 
     test "returns transactions for the block", %{conn: conn} do
@@ -44,7 +54,7 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
 
       conn = get(conn, block_transaction_path(conn, :index, block.number))
 
-      assert html_response(conn, 404)
+      assert html_response(conn, 404) =~ "This block has not been processed yet."
     end
 
     test "returns transactions for consensus block hash", %{conn: conn} do
@@ -77,6 +87,12 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
       conn = get(conn, block_transaction_path(conn, :index, "0x0"))
 
       assert html_response(conn, 404)
+    end
+
+    test "with valid not-indexed hash", %{conn: conn} do
+      conn = get(conn, block_transaction_path(conn, :index, block_hash()))
+
+      assert html_response(conn, 404) =~ "Block not found, please try again later."
     end
 
     test "does not return unrelated transactions", %{conn: conn} do
