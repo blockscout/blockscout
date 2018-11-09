@@ -167,7 +167,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/app.html.eex:46
 msgid "Block Mined, awaiting import..."
-msgstr ""
+msgstr "Block Validated, processing..."
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:45

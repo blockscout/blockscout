@@ -167,7 +167,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/app.html.eex:46
 msgid "Block Mined, awaiting import..."
-msgstr ""
+msgstr "Block Validated, processing..."
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:45
@@ -1188,144 +1188,8 @@ msgid "true"
 msgstr ""
 
 #, elixir-format
-<<<<<<< HEAD
-<<<<<<< HEAD
-#: lib/block_scout_web/views/transaction_view.ex:17
-msgid "Block Pending"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:14
-msgid "More pending transactions have come in"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/chain/_metatags.html.eex:2
-msgid "%{subnetwork} %{network} Explorer"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address/_metatags.html.eex:3
-msgid "%{address} - %{subnetwork} Explorer"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_default_title.html.eex:2
-msgid "%{subnetwork} Explorer - BlockScout"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/api_docs/_metatags.html.eex:4
-msgid "API endpoints for the %{subnetwork}"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/api_docs/_metatags.html.eex:2
-msgid "API for the %{subnetwork} - BlockScout"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/block/_metatags.html.eex:3
-msgid "Block %{block_number} - %{subnetwork} Explorer"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/chain/_metatags.html.eex:4
-msgid "BlockScout provides analytics data, API, and Smart Contract tools for the %{subnetwork}"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address/_metatags.html.eex:13
-msgid "Top Accounts - %{subnetwork} Explorer"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/_metatags.html.eex:3
-msgid "Transaction %{transaction} - %{subnetwork} Explorer"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/_metatags.html.eex:11
-msgid "Transaction %{transaction}, %{subnetwork} %{transaction}"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address/_metatags.html.eex:9
-msgid "View the account balance, transactions, and other data for %{address} on the %{network}"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/block/_metatags.html.eex:10
-msgid "View the transactions, token transfers, and uncles for block number %{block_number}"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/transaction/_metatags.html.eex:10
-msgid "View transaction %{transaction} on %{subnetwork}"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:8
-msgid "%{block_type} Details"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:15
-msgid "%{block_type} Height:"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/block/index.html.eex:10
-msgid "%{block_type}s"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:13
-msgid "Block Height: %{height}"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:26
-msgid "Forked Blocks (Reorgs)"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:80
-msgid "Position %{index}"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/block_transaction/index.html.eex:44
-msgid "There are no transactions for this block."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:76
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:23
-msgid "Uncles"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:46
-msgid "Block Mined, awaiting import..."
-msgstr "Block Validated, processing..."
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:31
-msgid "- We're indexing this chain right now. Some of the counts may be inaccurate."
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/app.html.eex:45
-msgid "Blocks Indexed"
-=======
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:58
-msgid "Hide"
->>>>>>> master
-=======
 #: lib/block_scout_web/views/internal_transaction_view.ex:29
 msgid "Call"
->>>>>>> master
 msgstr ""
 
 #, elixir-format
