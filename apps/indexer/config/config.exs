@@ -6,7 +6,7 @@ import Bitwise
 
 config :indexer,
   # bytes
-  memory_limit: 1 <<< 30,
+  memory_limit: 11 <<< 30,
   ecto_repos: [Explorer.Repo]
 
 config :logger, :indexer,
