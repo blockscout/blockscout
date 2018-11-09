@@ -1,8 +1,8 @@
 defmodule Mix.Tasks.Migrate.Transaction.Info do
   use Mix.Task
 
-  alias Explorer.Repo
   alias Ecto.Adapters.SQL
+  alias Explorer.Repo
 
   @shortdoc "Migrates transaction info to internal transaction"
 

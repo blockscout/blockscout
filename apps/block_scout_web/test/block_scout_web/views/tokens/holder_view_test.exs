@@ -44,7 +44,7 @@ defmodule BlockScoutWeb.Tokens.HolderViewTest do
 
   describe "format_token_balance_value/1" do
     test "formats according to token decimals when it's a ERC-20" do
-      token = build(:token, type: "ERC-20", decimals: 2)
+      token = build(:token, type: "ERC-20", decimals: Decimal.new(2))
       token_balance = build(:token_balance, value: 2_000_000)
 
       assert HolderView.format_token_balance_value(token_balance.value, token) == "20,000"

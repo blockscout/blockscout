@@ -11,16 +11,23 @@ defmodule EthereumJSONRPC.Block do
   @type elixir :: %{String.t() => non_neg_integer | DateTime.t() | String.t() | nil}
   @type params :: %{
           difficulty: pos_integer(),
+          extra_data: EthereumJSONRPC.hash(),
           gas_limit: non_neg_integer(),
           gas_used: non_neg_integer(),
           hash: EthereumJSONRPC.hash(),
+          logs_bloom: EthereumJSONRPC.hash(),
           miner_hash: EthereumJSONRPC.hash(),
+          mix_hash: EthereumJSONRPC.hash(),
           nonce: EthereumJSONRPC.hash(),
           number: non_neg_integer(),
           parent_hash: EthereumJSONRPC.hash(),
+          receipts_root: EthereumJSONRPC.hash(),
+          sha3_uncles: EthereumJSONRPC.hash(),
           size: non_neg_integer(),
+          state_root: EthereumJSONRPC.hash(),
           timestamp: DateTime.t(),
           total_difficulty: non_neg_integer(),
+          transactions_root: EthereumJSONRPC.hash(),
           uncles: [EthereumJSONRPC.hash()]
         }
 
@@ -95,16 +102,23 @@ defmodule EthereumJSONRPC.Block do
       ...> )
       %{
         difficulty: 340282366920938463463374607431465537093,
+        extra_data: "0xd5830108048650617269747986312e32322e31826c69",
         gas_limit: 6706541,
         gas_used: 0,
         hash: "0x52c867bc0a91e573dc39300143c3bead7408d09d45bdb686749f02684ece72f3",
+        logs_bloom: "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
         miner_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+        mix_hash: "0x0",
         nonce: 0,
         number: 1,
         parent_hash: "0x5b28c1bfd3a15230c9a46b399cd0f9a6920d432e85381cc6a140b06e8410112f",
+        receipts_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+        sha3_uncles: "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
         size: 576,
+        state_root: "0xc196ad59d867542ef20b29df5f418d07dc7234f4bc3d25260526620b7958a8fb",
         timestamp: Timex.parse!("2017-12-15T21:03:30Z", "{ISO:Extended:Z}"),
         total_difficulty: 340282366920938463463374607431465668165,
+        transactions_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
         uncles: []
       }
 
@@ -136,16 +150,23 @@ defmodule EthereumJSONRPC.Block do
       ...> )
       %{
         difficulty: 17561410778,
+        extra_data: "0x476574682f4c5649562f76312e302e302f6c696e75782f676f312e342e32",
         gas_limit: 5000,
         gas_used: 0,
         hash: "0x4d9423080290a650eaf6db19c87c76dff83d1b4ab64aefe6e5c5aa2d1f4b6623",
+        logs_bloom: "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        mix_hash: "0xbbb93d610b2b0296a59f18474ac3d6086a9902aa7ca4b9a306692f7c3d496fdf",
         miner_hash: "0xbb7b8287f3f0a933474a79eae42cbca977791171",
         nonce: 5539500215739777653,
         number: 59,
         parent_hash: "0xcd5b5c4cecd7f18a13fe974255badffd58e737dc67596d56bc01f063dd282e9e",
+        receipts_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+        sha3_uncles: "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
         size: 542,
+        state_root: "0x6fd0a5d82ca77d9f38c3ebbde11b11d304a5fcf3854f291df64395ab38ed43ba",
         timestamp: Timex.parse!("2015-07-30T15:32:07Z", "{ISO:Extended:Z}"),
         total_difficulty: 1039309006117,
+        transactions_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
         uncles: []
       }
 
@@ -154,30 +175,43 @@ defmodule EthereumJSONRPC.Block do
   def elixir_to_params(
         %{
           "difficulty" => difficulty,
+          "extraData" => extra_data,
           "gasLimit" => gas_limit,
           "gasUsed" => gas_used,
           "hash" => hash,
+          "logsBloom" => logs_bloom,
           "miner" => miner_hash,
           "number" => number,
           "parentHash" => parent_hash,
+          "receiptsRoot" => receipts_root,
+          "sha3Uncles" => sha3_uncles,
           "size" => size,
+          "stateRoot" => state_root,
           "timestamp" => timestamp,
           "totalDifficulty" => total_difficulty,
+          "transactionsRoot" => transactions_root,
           "uncles" => uncles
         } = elixir
       ) do
     %{
       difficulty: difficulty,
+      extra_data: extra_data,
       gas_limit: gas_limit,
       gas_used: gas_used,
       hash: hash,
+      logs_bloom: logs_bloom,
       miner_hash: miner_hash,
+      mix_hash: Map.get(elixir, "mixHash", "0x0"),
       nonce: Map.get(elixir, "nonce", 0),
       number: number,
       parent_hash: parent_hash,
+      receipts_root: receipts_root,
+      sha3_uncles: sha3_uncles,
       size: size,
+      state_root: state_root,
       timestamp: timestamp,
       total_difficulty: total_difficulty,
+      transactions_root: transactions_root,
       uncles: uncles
     }
   end

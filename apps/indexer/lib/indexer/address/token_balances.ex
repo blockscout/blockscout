@@ -30,11 +30,6 @@ defmodule Indexer.Address.TokenBalances do
         token_contract_address_hash: token_contract_address_hash,
         block_number: block_number
       })
-      |> MapSet.put(%{
-        address_hash: token_contract_address_hash,
-        token_contract_address_hash: token_contract_address_hash,
-        block_number: block_number
-      })
     end)
   end
 

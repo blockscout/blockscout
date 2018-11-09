@@ -4,8 +4,8 @@ defmodule Explorer.ExchangeRates.Source.TransactionAndLog do
   while still getting other info like price in dollars and bitcoin from a secondary source
   """
 
-  alias Explorer.ExchangeRates.{Source, Token}
   alias Explorer.Chain
+  alias Explorer.ExchangeRates.{Source, Token}
 
   @behaviour Source
 

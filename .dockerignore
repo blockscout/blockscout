@@ -1,0 +1,9 @@
+_build
+deps
+apps/block_scout_web/assets/node_modules
+apps/explorer/node_modules
+test
+.git
+.circleci
+logs
+apps/*/test

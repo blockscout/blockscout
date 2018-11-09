@@ -5,9 +5,9 @@ defmodule Indexer.TokenBalances do
 
   require Logger
 
+  alias Explorer.Chain
   alias Explorer.Token.BalanceReader
   alias Indexer.TokenBalance
-  alias Explorer.Chain
 
   @doc """
   Fetches TokenBalances from specific Addresses and Blocks in the Blockchain
@@ -29,7 +29,7 @@ defmodule Indexer.TokenBalances do
       token_balances
       |> Task.async_stream(&fetch_token_balance/1, on_timeout: :kill_task)
       |> Stream.map(&format_task_results/1)
-      |> Enum.filter(&ignore_request_with_timeouts/1)
+      |> Enum.filter(&ignore_request_with_errors/1)
 
     token_balances
     |> MapSet.new()
@@ -70,11 +70,12 @@ defmodule Indexer.TokenBalances do
     |> TokenBalance.Fetcher.async_fetch()
   end
 
-  def format_task_results({:exit, :timeout}), do: {:error, :timeout}
-  def format_task_results({:ok, token_balance}), do: token_balance
+  defp format_task_results({:exit, :timeout}), do: {:error, :timeout}
+  defp format_task_results({:ok, token_balance}), do: token_balance
 
-  def ignore_request_with_timeouts({:error, :timeout}), do: false
-  def ignore_request_with_timeouts(_token_balance), do: true
+  defp ignore_request_with_errors({:error, :timeout}), do: false
+  defp ignore_request_with_errors(%{value: nil, value_fetched_at: nil, error: _error}), do: false
+  defp ignore_request_with_errors(_token_balance), do: true
 
   def log_fetching_errors(from, token_balances_params) do
     error_messages =

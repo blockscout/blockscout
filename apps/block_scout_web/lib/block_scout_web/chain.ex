@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.Chain do
 
   alias Explorer.Chain.{
     Address,
-    Address.TokenBalance,
+    Address.CurrentTokenBalance,
     Block,
     InternalTransaction,
     Log,
@@ -198,7 +198,7 @@ defmodule BlockScoutWeb.Chain do
     %{"token_name" => name, "token_type" => type, "token_inserted_at" => inserted_at_datetime}
   end
 
-  defp paging_params(%TokenBalance{address_hash: address_hash, value: value}) do
+  defp paging_params(%CurrentTokenBalance{address_hash: address_hash, value: value}) do
     %{"address_hash" => to_string(address_hash), "value" => Decimal.to_integer(value)}
   end
 

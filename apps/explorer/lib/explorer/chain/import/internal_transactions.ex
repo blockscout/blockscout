@@ -35,30 +35,41 @@ defmodule Explorer.Chain.Import.InternalTransactions do
   end
 
   @impl Import.Runner
-  def run(multi, changes_list, options) when is_map(options) do
-    timestamps = Map.fetch!(options, :timestamps)
-    internal_transactions_timeout = options[option_key()][:timeout] || @timeout
+  def run(multi, changes_list, %{timestamps: timestamps} = options) when is_map(options) do
+    insert_options =
+      options
+      |> Map.get(option_key(), %{})
+      |> Map.take(~w(on_conflict timeout)a)
+      |> Map.put_new(:timeout, @timeout)
+      |> Map.put(:timestamps, timestamps)
+
     transactions_timeout = options[Import.Transactions.option_key()][:timeout] || Import.Transactions.timeout()
+
+    update_transactions_options = %{timeout: transactions_timeout, timestamps: timestamps}
 
     multi
     |> Multi.run(:internal_transactions, fn _ ->
-      insert(changes_list, %{timeout: internal_transactions_timeout, timestamps: timestamps})
+      insert(changes_list, insert_options)
     end)
     |> Multi.run(:internal_transactions_indexed_at_transactions, fn %{internal_transactions: internal_transactions}
                                                                     when is_list(internal_transactions) ->
-      update_transactions(internal_transactions, %{timeout: transactions_timeout, timestamps: timestamps})
+      update_transactions(internal_transactions, update_transactions_options)
     end)
   end
 
   @impl Import.Runner
   def timeout, do: @timeout
 
-  @spec insert([map], %{required(:timeout) => timeout, required(:timestamps) => Import.timestamps()}) ::
+  @spec insert([map], %{
+          optional(:on_conflict) => Import.Runner.on_conflict(),
+          required(:timeout) => timeout,
+          required(:timestamps) => Import.timestamps()
+        }) ::
           {:ok, [%{index: non_neg_integer, transaction_hash: Hash.t()}]}
           | {:error, [Changeset.t()]}
   defp insert(changes_list, %{timeout: timeout, timestamps: timestamps} = options)
        when is_list(changes_list) do
-    on_conflict = Map.get(options, :on_conflict, :replace_all)
+    on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # order so that row ShareLocks are grabbed in a consistent order
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.transaction_hash, &1.index})
@@ -69,7 +80,7 @@ defmodule Explorer.Chain.Import.InternalTransactions do
         conflict_target: [:transaction_hash, :index],
         for: InternalTransaction,
         on_conflict: on_conflict,
-        returning: [:id, :index, :transaction_hash],
+        returning: [:transaction_hash, :index],
         timeout: timeout,
         timestamps: timestamps
       )
@@ -79,6 +90,36 @@ defmodule Explorer.Chain.Import.InternalTransactions do
        internal_transaction <- internal_transactions,
        do: Map.take(internal_transaction, [:id, :index, :transaction_hash])
      )}
+  end
+
+  defp default_on_conflict do
+    from(
+      internal_transaction in InternalTransaction,
+      update: [
+        set: [
+          block_number: fragment("EXCLUDED.block_number"),
+          call_type: fragment("EXCLUDED.call_type"),
+          created_contract_address_hash: fragment("EXCLUDED.created_contract_address_hash"),
+          created_contract_code: fragment("EXCLUDED.created_contract_code"),
+          error: fragment("EXCLUDED.error"),
+          from_address_hash: fragment("EXCLUDED.from_address_hash"),
+          gas: fragment("EXCLUDED.gas"),
+          gas_used: fragment("EXCLUDED.gas_used"),
+          # Don't update `index` as it is part of the composite primary key and used for the conflict target
+          init: fragment("EXCLUDED.init"),
+          input: fragment("EXCLUDED.input"),
+          output: fragment("EXCLUDED.output"),
+          to_address_hash: fragment("EXCLUDED.to_address_hash"),
+          trace_address: fragment("EXCLUDED.trace_address"),
+          # Don't update `transaction_hash` as it is part of the composite primary key and used for the conflict target
+          transaction_index: fragment("EXCLUDED.transaction_index"),
+          type: fragment("EXCLUDED.type"),
+          value: fragment("EXCLUDED.value"),
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", internal_transaction.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", internal_transaction.updated_at)
+        ]
+      ]
+    )
   end
 
   defp update_transactions(internal_transactions, %{

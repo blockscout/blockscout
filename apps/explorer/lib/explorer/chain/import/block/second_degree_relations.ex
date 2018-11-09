@@ -34,17 +34,21 @@ defmodule Explorer.Chain.Import.Block.SecondDegreeRelations do
 
   @impl Import.Runner
   def run(multi, changes_list, options) when is_map(options) do
-    timeout = options[:block_second_degree_relations][:timeout] || @timeout
+    insert_options =
+      options
+      |> Map.get(option_key(), %{})
+      |> Map.take(~w(on_conflict timeout)a)
+      |> Map.put_new(:timeout, @timeout)
 
     Multi.run(multi, :block_second_degree_relations, fn _ ->
-      insert(changes_list, %{timeout: timeout})
+      insert(changes_list, insert_options)
     end)
   end
 
   @impl Import.Runner
   def timeout, do: @timeout
 
-  @spec insert([map()], %{required(:timeout) => timeout}) ::
+  @spec insert([map()], %{optional(:on_conflict) => Import.Runner.on_conflict(), required(:timeout) => timeout}) ::
           {:ok, %{nephew_hash: Hash.Full.t(), uncle_hash: Hash.Full.t()}} | {:error, [Changeset.t()]}
   defp insert(changes_list, %{timeout: timeout} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)

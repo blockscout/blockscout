@@ -8,8 +8,9 @@ moment.relativeTimeThreshold('m', 60)
 moment.relativeTimeThreshold('s', 60)
 moment.relativeTimeThreshold('ss', 1)
 
-export function updateAllAges () {
-  $('[data-from-now]').each((i, el) => tryUpdateAge(el))
+export function updateAllAges ($container = $(document)) {
+  $container.find('[data-from-now]').each((i, el) => tryUpdateAge(el))
+  return $container
 }
 function tryUpdateAge (el) {
   if (!el.dataset.fromNow) return

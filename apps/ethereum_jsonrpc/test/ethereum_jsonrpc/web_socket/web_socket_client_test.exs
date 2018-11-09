@@ -93,58 +93,6 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClientTest do
 
       %{pid: pid, port: port}
     end
-
-    test "resubscribes", %{pid: pid, port: port} do
-      assert {:ok, subscription} = WebSocketClient.subscribe(pid, "newHeads", [])
-
-      assert_receive {^subscription, {:ok, %{}}}, 500
-
-      assert :ok = :ranch.stop_listener(EthereumJSONRPC.WebSocket.Cowboy)
-
-      refute_receive {^subscription, {:ok, %{}}}, 100
-
-      cowboy(port)
-
-      assert_receive {^subscription, {:ok, %{}}}, 500
-    end
-
-    test "rerequests", %{pid: pid, port: port} do
-      first_params = [1]
-
-      # json_rpc requests work before connection is closed
-      assert {:ok, ^first_params} =
-               WebSocketClient.json_rpc(
-                 pid,
-                 EthereumJSONRPC.request(%{id: :erlang.unique_integer(), method: "echo", params: first_params})
-               )
-
-      assert :ok = :ranch.stop_listener(EthereumJSONRPC.WebSocket.Cowboy)
-
-      spawn_link(fn ->
-        Process.sleep(500)
-        cowboy(port)
-      end)
-
-      second_params = [2]
-
-      assert {:ok, ^second_params} =
-               WebSocketClient.json_rpc(
-                 pid,
-                 EthereumJSONRPC.request(%{id: :erlang.unique_integer(), method: "echo", params: second_params})
-               )
-    end
-  end
-
-  defp cowboy(0) do
-    dispatch = :cowboy_router.compile([{:_, [{"/websocket", EthereumJSONRPC.WebSocket.Cowboy.WebSocketHandler, []}]}])
-    {:ok, _} = :cowboy.start_http(EthereumJSONRPC.WebSocket.Cowboy, 100, [], env: [dispatch: dispatch])
-    :ranch.get_port(EthereumJSONRPC.WebSocket.Cowboy)
-  end
-
-  defp cowboy(port) do
-    dispatch = :cowboy_router.compile([{:_, [{"/websocket", EthereumJSONRPC.WebSocket.Cowboy.WebSocketHandler, []}]}])
-    {:ok, _} = :cowboy.start_http(EthereumJSONRPC.WebSocket.Cowboy, 100, [port: port], env: [dispatch: dispatch])
-    port
   end
 
   defp example_state(_) do

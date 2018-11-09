@@ -3,6 +3,7 @@
     OverviewView,
     "_details.html",
     token: @token,
+    holders_count_consolidation_enabled: @holders_count_consolidation_enabled,
     total_token_transfers: @total_token_transfers,
     total_token_holders: @total_token_holders,
     conn: @conn
