@@ -35,7 +35,8 @@ defmodule BlockScoutWeb.AddressTransactionController do
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
 
-      {transactions, next_page} = get_transactions_and_next_page(address, options)
+      transactions_plus_one = Chain.address_to_transactions(address, options)
+      {transactions, next_page} = split_list_by_page(transactions_plus_one)
 
       next_page_url =
         case next_page_params(next_page, transactions, params) do
@@ -82,23 +83,12 @@ defmodule BlockScoutWeb.AddressTransactionController do
   def index(conn, %{"address_id" => address_hash_string} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash) do
-      pending_options =
-        @transaction_necessity_by_association
-        |> Keyword.merge(paging_options(params))
-        |> Keyword.merge(current_filter(params))
-
-      full_options = put_in(pending_options, [:necessity_by_association, :block], :required)
-
-      {transactions, next_page} = get_transactions_and_next_page(address, full_options)
-
       render(
         conn,
         "index.html",
         address: address,
-        next_page_params: next_page_params(next_page, transactions, params),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
-        transactions: transactions,
         transaction_count: transaction_count(address),
         validation_count: validation_count(address)
       )
@@ -109,10 +99,5 @@ defmodule BlockScoutWeb.AddressTransactionController do
       {:error, :not_found} ->
         not_found(conn)
     end
-  end
-
-  defp get_transactions_and_next_page(address, options) do
-    transactions_plus_one = Chain.address_to_transactions(address, options)
-    split_list_by_page(transactions_plus_one)
   end
 end
