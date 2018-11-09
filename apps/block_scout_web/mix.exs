@@ -67,6 +67,8 @@ defmodule BlockScoutWeb.Mixfile do
       {:absinthe_plug, "~> 1.4"},
       {:bypass, "~> 0.8", only: :test},
       {:credo, "0.10.2", only: [:dev, :test], runtime: false},
+      # For Absinthe to load data in batches
+      {:dataloader, "~> 1.0.0"},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       {:ex_cldr_numbers, "~> 1.0"},
       {:ex_cldr_units, "~> 1.0"},
@@ -80,6 +82,8 @@ defmodule BlockScoutWeb.Mixfile do
       {:flow, "~> 0.12"},
       {:gettext, "~> 0.14.1"},
       {:httpoison, "~> 1.0", override: true},
+      # JSON parser and generator
+      {:jason, "~> 1.0"},
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       # Log errors and application output to separate files
       {:logger_file_backend, "~> 0.0.10"},

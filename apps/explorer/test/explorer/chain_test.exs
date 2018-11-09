@@ -34,70 +34,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "address_to_pending_transactions/2" do
-    test "without pending transactions" do
-      address = insert(:address)
-
-      assert Repo.aggregate(Transaction, :count, :hash) == 0
-
-      assert [] == Chain.address_to_pending_transactions(address)
-    end
-
-    test "with from pending transactions" do
-      address = insert(:address)
-
-      transaction = insert(:transaction, from_address: address)
-
-      assert [transaction] ==
-               Chain.address_to_pending_transactions(address, direction: :from)
-               |> Repo.preload([:to_address, :from_address])
-    end
-
-    test "with to transactions" do
-      address = insert(:address)
-
-      transaction = insert(:transaction, to_address: address)
-
-      assert [transaction] ==
-               Chain.address_to_pending_transactions(address, direction: :to)
-               |> Repo.preload([:to_address, :from_address])
-    end
-
-    test "with to and from transactions and direction: :from" do
-      address = insert(:address)
-
-      transaction = insert(:transaction, from_address: address)
-      insert(:transaction, to_address: address)
-
-      # only contains "from" transaction
-      assert [transaction] ==
-               Chain.address_to_pending_transactions(address, direction: :from)
-               |> Repo.preload([:to_address, :from_address])
-    end
-
-    test "with to and from transactions and direction: :to" do
-      address = insert(:address)
-
-      transaction = insert(:transaction, to_address: address)
-      insert(:transaction, from_address: address)
-
-      assert [transaction] ==
-               Chain.address_to_pending_transactions(address, direction: :to)
-               |> Repo.preload([:to_address, :from_address])
-    end
-
-    test "with to and from transactions and no :direction option" do
-      address = insert(:address)
-
-      transaction1 = insert(:transaction, from_address: address)
-      transaction2 = insert(:transaction, to_address: address)
-
-      assert [transaction1, transaction2] ==
-               Chain.address_to_pending_transactions(address)
-               |> Repo.preload([:to_address, :from_address])
-    end
-  end
-
   describe "address_to_transactions/2" do
     test "without transactions" do
       address = insert(:address)
@@ -208,15 +144,14 @@ defmodule Explorer.ChainTest do
 
       transaction =
         :transaction
-        |> insert()
+        |> insert(to_address: address, to_address_hash: address.hash)
         |> with_block()
 
-      insert(:token_transfer, to_address: address, transaction: transaction)
-
-      transaction =
-        Transaction
-        |> Repo.get!(transaction.hash)
-        |> Repo.preload([:block, :to_address, :from_address, token_transfers: :token])
+      insert(
+        :token_transfer,
+        to_address: address,
+        transaction: transaction
+      )
 
       assert [transaction.hash] ==
                Chain.address_to_transactions(address)
@@ -228,33 +163,75 @@ defmodule Explorer.ChainTest do
 
       transaction =
         :transaction
-        |> insert()
+        |> insert(to_address: address)
         |> with_block()
 
-      token_transfer = insert(:token_transfer, to_address: address, transaction: transaction)
-      insert(:token_transfer, to_address: build(:address), transaction: transaction)
+      token_transfer =
+        insert(
+          :token_transfer,
+          to_address: address,
+          transaction: transaction
+        )
 
-      transaction = Chain.address_to_transactions(address) |> List.first()
+      insert(
+        :token_transfer,
+        to_address: build(:address),
+        transaction: transaction
+      )
 
-      assert transaction.token_transfers |> Enum.map(&{&1.transaction_hash, &1.log_index}) == [
+      transaction =
+        address
+        |> Chain.address_to_transactions()
+        |> List.first()
+
+      token_transfers_related =
+        Enum.map(
+          transaction.token_transfers,
+          &{&1.transaction_hash, &1.log_index}
+        )
+
+      assert token_transfers_related == [
                {token_transfer.transaction_hash, token_transfer.log_index}
              ]
     end
 
     test "returns just the token transfers related to the given contract address" do
-      contract_address = insert(:address, contract_code: Factory.data("contract_code"))
+      contract_address =
+        insert(
+          :address,
+          contract_code: Factory.data("contract_code")
+        )
 
       transaction =
         :transaction
-        |> insert()
+        |> insert(to_address: contract_address)
         |> with_block()
 
-      token_transfer = insert(:token_transfer, to_address: contract_address, transaction: transaction)
-      insert(:token_transfer, to_address: build(:address), transaction: transaction)
+      token_transfer =
+        insert(
+          :token_transfer,
+          to_address: contract_address,
+          transaction: transaction
+        )
 
-      transaction = Chain.address_to_transactions(contract_address) |> List.first()
+      insert(
+        :token_transfer,
+        to_address: build(:address),
+        transaction: transaction
+      )
 
-      assert Enum.map(transaction.token_transfers, &{&1.transaction_hash, &1.log_index}) == [
+      transaction =
+        contract_address
+        |> Chain.address_to_transactions()
+        |> List.first()
+
+      token_transfers_contract_address =
+        Enum.map(
+          transaction.token_transfers,
+          &{&1.transaction_hash, &1.log_index}
+        )
+
+      assert token_transfers_contract_address == [
                {token_transfer.transaction_hash, token_transfer.log_index}
              ]
     end
@@ -289,7 +266,7 @@ defmodule Explorer.ChainTest do
       address = insert(:address)
 
       second_page_hashes =
-        50
+        2
         |> insert_list(:transaction, from_address: address)
         |> with_block()
         |> Enum.map(& &1.hash)
@@ -302,7 +279,10 @@ defmodule Explorer.ChainTest do
       assert second_page_hashes ==
                address
                |> Chain.address_to_transactions(
-                 paging_options: %PagingOptions{key: {block_number, index}, page_size: 50}
+                 paging_options: %PagingOptions{
+                   key: {block_number, index},
+                   page_size: 2
+                 }
                )
                |> Enum.map(& &1.hash)
                |> Enum.reverse()
@@ -310,9 +290,6 @@ defmodule Explorer.ChainTest do
 
     test "returns results in reverse chronological order by block number and transaction index" do
       address = insert(:address)
-
-      %Transaction{hash: first_pending} = insert(:transaction, to_address: address)
-      %Transaction{hash: second_pending} = insert(:transaction, to_address: address)
 
       a_block = insert(:block, number: 6000)
 
@@ -353,7 +330,7 @@ defmodule Explorer.ChainTest do
         |> Chain.address_to_transactions()
         |> Enum.map(& &1.hash)
 
-      assert [first_pending, second_pending, fourth, third, second, first, sixth, fifth] == result
+      assert [fourth, third, second, first, sixth, fifth] == result
     end
   end
 

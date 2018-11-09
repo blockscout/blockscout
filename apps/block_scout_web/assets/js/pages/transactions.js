@@ -1,34 +1,35 @@
 import $ from 'jquery'
 import _ from 'lodash'
-import URI from 'urijs'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
-import { updateAllAges } from '../lib/from_now'
-import { batchChannel, initRedux, slideDownPrepend } from '../utils'
+import { createStore, connectElements } from '../lib/redux_helpers.js'
+import { withInfiniteScroll, connectInfiniteScroll } from '../lib/infinite_scroll_helpers'
+import { batchChannel } from '../lib/utils'
+import listMorph from '../lib/list_morph'
 
 const BATCH_THRESHOLD = 10
 
 export const initialState = {
-  batchCountAccumulator: 0,
-  beyondPageOne: null,
   channelDisconnected: false,
-  newTransactions: [],
-  transactionCount: null
+
+  transactionCount: null,
+
+  transactions: [],
+  transactionsBatch: []
 }
 
-export function reducer (state = initialState, action) {
+export const reducer = withInfiniteScroll(baseReducer)
+
+function baseReducer (state = initialState, action) {
   switch (action.type) {
-    case 'PAGE_LOAD': {
-      return Object.assign({}, state, {
-        beyondPageOne: action.beyondPageOne,
-        transactionCount: numeral(action.transactionCount).value()
-      })
+    case 'ELEMENTS_LOAD': {
+      return Object.assign({}, state, _.omit(action, 'type'))
     }
     case 'CHANNEL_DISCONNECTED': {
       return Object.assign({}, state, {
         channelDisconnected: true,
-        batchCountAccumulator: 0
+        transactionsBatch: []
       })
     }
     case 'RECEIVED_NEW_TRANSACTION_BATCH': {
@@ -36,65 +37,91 @@ export function reducer (state = initialState, action) {
 
       const transactionCount = state.transactionCount + action.msgs.length
 
-      if (state.beyondPageOne) return Object.assign({}, state, { transactionCount })
-
-      if (!state.batchCountAccumulator && action.msgs.length < BATCH_THRESHOLD) {
+      if (!state.transactionsBatch.length && action.msgs.length < BATCH_THRESHOLD) {
         return Object.assign({}, state, {
-          newTransactions: [
-            ...state.newTransactions,
-            ..._.map(action.msgs, 'transactionHtml')
+          transactions: [
+            ...action.msgs.reverse(),
+            ...state.transactions
           ],
           transactionCount
         })
       } else {
         return Object.assign({}, state, {
-          batchCountAccumulator: state.batchCountAccumulator + action.msgs.length,
+          transactionsBatch: [
+            ...action.msgs.reverse(),
+            ...state.transactionsBatch
+          ],
           transactionCount
         })
       }
+    }
+    case 'RECEIVED_NEXT_PAGE': {
+      return Object.assign({}, state, {
+        transactions: [
+          ...state.transactions,
+          ...action.msg.transactions
+        ]
+      })
     }
     default:
       return state
   }
 }
 
+const elements = {
+  '[data-selector="channel-disconnected-message"]': {
+    render ($el, state) {
+      if (state.channelDisconnected) $el.show()
+    }
+  },
+  '[data-selector="channel-batching-count"]': {
+    render ($el, state, oldState) {
+      const $channelBatching = $('[data-selector="channel-batching-message"]')
+      if (!state.transactionsBatch.length) return $channelBatching.hide()
+      $channelBatching.show()
+      $el[0].innerHTML = numeral(state.transactionsBatch.length).format()
+    }
+  },
+  '[data-selector="transaction-count"]': {
+    load ($el) {
+      return { transactionCount: numeral($el.text()).value() }
+    },
+    render ($el, state, oldState) {
+      if (oldState.transactionCount === state.transactionCount) return
+      $el.empty().append(numeral(state.transactionCount).format())
+    }
+  },
+  '[data-selector="transactions-list"]': {
+    load ($el, store) {
+      return {
+        transactions: $el.children().map((index, el) => ({
+          transactionHash: el.dataset.transactionHash,
+          transactionHtml: el.outerHTML
+        })).toArray()
+      }
+    },
+    render ($el, state, oldState) {
+      if (oldState.transactions === state.transactions) return
+      const container = $el[0]
+      const newElements = _.map(state.transactions, ({ transactionHtml }) => $(transactionHtml)[0])
+      listMorph(container, newElements, { key: 'dataset.transactionHash' })
+    }
+  }
+}
+
 const $transactionListPage = $('[data-page="transaction-list"]')
 if ($transactionListPage.length) {
-  initRedux(reducer, {
-    main (store) {
-      store.dispatch({
-        type: 'PAGE_LOAD',
-        transactionCount: $('[data-selector="transaction-count"]').text(),
-        beyondPageOne: !!humps.camelizeKeys(URI(window.location).query(true)).index
-      })
-      const transactionsChannel = socket.channel(`transactions:new_transaction`)
-      transactionsChannel.join()
-      transactionsChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
-      transactionsChannel.on('transaction', batchChannel((msgs) =>
-        store.dispatch({ type: 'RECEIVED_NEW_TRANSACTION_BATCH', msgs: humps.camelizeKeys(msgs) }))
-      )
-    },
-    render (state, oldState) {
-      const $channelBatching = $('[data-selector="channel-batching-message"]')
-      const $channelBatchingCount = $('[data-selector="channel-batching-count"]')
-      const $channelDisconnected = $('[data-selector="channel-disconnected-message"]')
-      const $transactionsList = $('[data-selector="transactions-list"]')
-      const $transactionCount = $('[data-selector="transaction-count"]')
+  const store = createStore(reducer)
+  connectElements({ store, elements })
+  connectInfiniteScroll(store)
 
-      if (state.channelDisconnected) $channelDisconnected.show()
-      if (oldState.transactionCount !== state.transactionCount) $transactionCount.empty().append(numeral(state.transactionCount).format())
-      if (state.batchCountAccumulator) {
-        $channelBatching.show()
-        $channelBatchingCount[0].innerHTML = numeral(state.batchCountAccumulator).format()
-      } else {
-        $channelBatching.hide()
-      }
-      if (oldState.newTransactions !== state.newTransactions) {
-        const newTransactionsToInsert = state.newTransactions.slice(oldState.newTransactions.length)
-        slideDownPrepend($transactionsList, newTransactionsToInsert.reverse().join(''))
-
-        updateAllAges()
-      }
-    }
-  })
+  const transactionsChannel = socket.channel(`transactions:new_transaction`)
+  transactionsChannel.join()
+  transactionsChannel.onError(() => store.dispatch({
+    type: 'CHANNEL_DISCONNECTED'
+  }))
+  transactionsChannel.on('transaction', batchChannel((msgs) => store.dispatch({
+    type: 'RECEIVED_NEW_TRANSACTION_BATCH',
+    msgs: humps.camelizeKeys(msgs)
+  })))
 }

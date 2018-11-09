@@ -1,27 +1,26 @@
-import { reducer, initialState } from '../../js/pages/chain'
+import { reducer, initialState, placeHolderBlock } from '../../js/pages/chain'
 
-describe('PAGE_LOAD', () => {
-  test('loads block numbers', () => {
-    const state = initialState
-    const action = {
-      type: 'PAGE_LOAD',
-      blockNumbers: [2, 1]
-    }
-    const output = reducer(state, action)
-
-    expect(output.blockNumbers).toEqual([2, 1])
-    expect(output.skippedBlockNumbers).toEqual([])
-  })
+describe('ELEMENTS_LOAD', () => {
   test('loads with skipped blocks', () => {
+    window.localized = {}
     const state = initialState
     const action = {
-      type: 'PAGE_LOAD',
-      blockNumbers: [4, 1]
+      type: 'ELEMENTS_LOAD',
+      blocks: [
+        { blockNumber: 6, chainBlockHtml: 'test 6' },
+        { blockNumber: 3, chainBlockHtml: 'test 3' },
+        { blockNumber: 2, chainBlockHtml: 'test 2' },
+        { blockNumber: 1, chainBlockHtml: 'test 1' }
+      ]
     }
     const output = reducer(state, action)
 
-    expect(output.blockNumbers).toEqual([4, 3, 2, 1])
-    expect(output.skippedBlockNumbers).toEqual([3, 2])
+    expect(output.blocks).toEqual([
+      { blockNumber: 6, chainBlockHtml: 'test 6' },
+      { blockNumber: 5, chainBlockHtml: placeHolderBlock(5) },
+      { blockNumber: 4, chainBlockHtml: placeHolderBlock(4) },
+      { blockNumber: 3, chainBlockHtml: 'test 3' }
+    ])
   })
 })
 
@@ -44,8 +43,10 @@ describe('RECEIVED_NEW_BLOCK', () => {
   test('receives new block', () => {
     const state = Object.assign({}, initialState, {
       averageBlockTime: '6 seconds',
-      blockNumbers: [1],
-      newBlock: 'last new block'
+      blocks: [
+        { blockNumber: 1, chainBlockHtml: 'test 1' },
+        { blockNumber: 0, chainBlockHtml: 'test 0' }
+      ]
     })
     const action = {
       type: 'RECEIVED_NEW_BLOCK',
@@ -58,121 +59,138 @@ describe('RECEIVED_NEW_BLOCK', () => {
     const output = reducer(state, action)
 
     expect(output.averageBlockTime).toEqual('5 seconds')
-    expect(output.newBlock).toEqual('new block')
-    expect(output.blockNumbers).toEqual([2, 1])
+    expect(output.blocks).toEqual([
+      { blockNumber: 2, chainBlockHtml: 'new block', averageBlockTime: '5 seconds' },
+      { blockNumber: 1, chainBlockHtml: 'test 1' }
+    ])
   })
 
   test('inserts place holders if block received out of order', () => {
+    window.localized = {}
     const state = Object.assign({}, initialState, {
-      blockNumbers: [2]
+      blocks: [
+        { blockNumber: 3, chainBlockHtml: 'test 3' },
+        { blockNumber: 2, chainBlockHtml: 'test 2' },
+        { blockNumber: 1, chainBlockHtml: 'test 1' },
+        { blockNumber: 0, chainBlockHtml: 'test 0' }
+      ]
     })
     const action = {
       type: 'RECEIVED_NEW_BLOCK',
       msg: {
-        averageBlockTime: '5 seconds',
-        chainBlockHtml: 'test5',
-        blockNumber: 5
-      }
-    }
-    const output = reducer(state, action)
-
-    expect(output.averageBlockTime).toEqual('5 seconds')
-    expect(output.newBlock).toBe('test5')
-    expect(output.blockNumbers).toEqual([5, 4, 3, 2])
-    expect(output.skippedBlockNumbers).toEqual([4, 3])
-  })
-  test('replaces skipped block', () => {
-    const state = Object.assign({}, initialState, {
-      blockNumbers: [4, 3, 2, 1],
-      skippedBlockNumbers: [3, 2, 1]
-    })
-    const action = {
-      type: 'RECEIVED_NEW_BLOCK',
-      msg: {
-        averageBlockTime: '5 seconds',
-        chainBlockHtml: 'test2',
-        blockNumber: 2
-      }
-    }
-    const output = reducer(state, action)
-
-    expect(output.averageBlockTime).toEqual('5 seconds')
-    expect(output.newBlock).toBe('test2')
-    expect(output.blockNumbers).toEqual([4, 3, 2, 1])
-    expect(output.skippedBlockNumbers).toEqual([3, 1])
-  })
-  test('replaces duplicated block', () => {
-    const state = Object.assign({}, initialState, {
-      blockNumbers: [5, 4]
-    })
-    const action = {
-      type: 'RECEIVED_NEW_BLOCK',
-      msg: {
-        averageBlockTime: '5 seconds',
-        chainBlockHtml: 'test5',
-        blockNumber: 5
-      }
-    }
-    const output = reducer(state, action)
-
-    expect(output.averageBlockTime).toEqual('5 seconds')
-    expect(output.newBlock).toBe('test5')
-    expect(output.blockNumbers).toEqual([5, 4])
-  })
-  test('skips if new block height is lower than lowest on page', () => {
-    const state = Object.assign({}, initialState, {
-      averageBlockTime: '5 seconds',
-      blockNumbers: [5, 4, 3, 2]
-    })
-    const action = {
-      type: 'RECEIVED_NEW_BLOCK',
-      msg: {
-        averageBlockTime: '9 seconds',
-        chainBlockHtml: 'test1',
-        blockNumber: 1
-      }
-    }
-    const output = reducer(state, action)
-
-    expect(output.averageBlockTime).toEqual('5 seconds')
-    expect(output.newBlock).toBe(null)
-    expect(output.blockNumbers).toEqual([5, 4, 3, 2])
-  })
-  test('only tracks 4 blocks based on page display limit', () => {
-    const state = Object.assign({}, initialState, {
-      blockNumbers: [5, 4, 3, 2],
-      skippedBlockNumbers: [4, 3, 2]
-    })
-    const action = {
-      type: 'RECEIVED_NEW_BLOCK',
-      msg: {
-        chainBlockHtml: 'test6',
+        chainBlockHtml: 'test 6',
         blockNumber: 6
       }
     }
     const output = reducer(state, action)
 
-    expect(output.newBlock).toBe('test6')
-    expect(output.blockNumbers).toEqual([6, 5, 4, 3])
-    expect(output.skippedBlockNumbers).toEqual([4, 3])
+    expect(output.blocks).toEqual([
+      { blockNumber: 6, chainBlockHtml: 'test 6' },
+      { blockNumber: 5, chainBlockHtml: placeHolderBlock(5) },
+      { blockNumber: 4, chainBlockHtml: placeHolderBlock(4) },
+      { blockNumber: 3, chainBlockHtml: 'test 3' }
+    ])
   })
-  test('skipped blocks list replaced when another block comes in with +3 blockheight', () => {
+  test('replaces duplicated block', () => {
     const state = Object.assign({}, initialState, {
-      blockNumbers: [5, 4, 3, 2],
-      skippedBlockNumbers: [4, 3, 2]
+      blocks: [
+        { blockNumber: 5, chainBlockHtml: 'test 5' },
+        { blockNumber: 4, chainBlockHtml: 'test 4' }
+      ]
     })
     const action = {
       type: 'RECEIVED_NEW_BLOCK',
       msg: {
-        chainBlockHtml: 'test10',
-        blockNumber: 10
+        chainBlockHtml: 'test5',
+        blockNumber: 5
       }
     }
     const output = reducer(state, action)
 
-    expect(output.newBlock).toBe('test10')
-    expect(output.blockNumbers).toEqual([10, 9, 8, 7])
-    expect(output.skippedBlockNumbers).toEqual([9, 8, 7])
+    expect(output.blocks).toEqual([
+      { blockNumber: 5, chainBlockHtml: 'test5' },
+      { blockNumber: 4, chainBlockHtml: 'test 4' }
+    ])
+  })
+  test('skips if new block height is lower than lowest on page', () => {
+    window.localized = {}
+    const state = Object.assign({}, initialState, {
+      averageBlockTime: '5 seconds',
+      blocks: [
+        { blockNumber: 5, chainBlockHtml: 'test 5' },
+        { blockNumber: 4, chainBlockHtml: 'test 4' },
+        { blockNumber: 3, chainBlockHtml: 'test 3' },
+        { blockNumber: 2, chainBlockHtml: 'test 2' }
+      ]
+    })
+    const action = {
+      type: 'RECEIVED_NEW_BLOCK',
+      msg: {
+        averageBlockTime: '9 seconds',
+        blockNumber: 1,
+        chainBlockHtml: 'test 1'
+      }
+    }
+    const output = reducer(state, action)
+
+    expect(output.averageBlockTime).toEqual('5 seconds')
+    expect(output.blocks).toEqual([
+      { blockNumber: 5, chainBlockHtml: 'test 5' },
+      { blockNumber: 4, chainBlockHtml: 'test 4' },
+      { blockNumber: 3, chainBlockHtml: 'test 3' },
+      { blockNumber: 2, chainBlockHtml: 'test 2' }
+    ])
+  })
+  test('only tracks 4 blocks based on page display limit', () => {
+    const state = Object.assign({}, initialState, {
+      blocks: [
+        { blockNumber: 5, chainBlockHtml: 'test 5' },
+        { blockNumber: 4, chainBlockHtml: 'test 4' },
+        { blockNumber: 3, chainBlockHtml: 'test 3' },
+        { blockNumber: 2, chainBlockHtml: 'test 2' }
+      ]
+    })
+    const action = {
+      type: 'RECEIVED_NEW_BLOCK',
+      msg: {
+        chainBlockHtml: 'test 6',
+        blockNumber: 6
+      }
+    }
+    const output = reducer(state, action)
+
+    expect(output.blocks).toEqual([
+      { blockNumber: 6, chainBlockHtml: 'test 6' },
+      { blockNumber: 5, chainBlockHtml: 'test 5' },
+      { blockNumber: 4, chainBlockHtml: 'test 4' },
+      { blockNumber: 3, chainBlockHtml: 'test 3' }
+    ])
+  })
+  test('skipped blocks list replaced when another block comes in with +3 blockheight', () => {
+    window.localized = {}
+    const state = Object.assign({}, initialState, {
+      blocks: [
+        { blockNumber: 5, chainBlockHtml: 'test 5' },
+        { blockNumber: 4, chainBlockHtml: 'test 4' },
+        { blockNumber: 3, chainBlockHtml: 'test 3' },
+        { blockNumber: 2, chainBlockHtml: 'test 2' }
+      ]
+    })
+    const action = {
+      type: 'RECEIVED_NEW_BLOCK',
+      msg: {
+        blockNumber: 10,
+        chainBlockHtml: 'test 10'
+      }
+    }
+    const output = reducer(state, action)
+
+    expect(output.blocks).toEqual([
+      { blockNumber: 10, chainBlockHtml: 'test 10' },
+      { blockNumber: 9, chainBlockHtml: placeHolderBlock(9) },
+      { blockNumber: 8, chainBlockHtml: placeHolderBlock(8) },
+      { blockNumber: 7, chainBlockHtml: placeHolderBlock(7) }
+    ])
   })
 })
 
@@ -195,32 +213,144 @@ test('RECEIVED_NEW_EXCHANGE_RATE', () => {
   expect(output.usdMarketCap).toEqual(1230000)
 })
 
-describe('RECEIVED_NEW_TRANSACTION', () => {
+describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
   test('single transaction', () => {
     const state = initialState
     const action = {
-      type: 'RECEIVED_NEW_TRANSACTION',
-      msg: {
+      type: 'RECEIVED_NEW_TRANSACTION_BATCH',
+      msgs: [{
         transactionHtml: 'test'
-      }
+      }]
     }
     const output = reducer(state, action)
 
-    expect(output.newTransactions).toEqual(['test'])
+    expect(output.transactions).toEqual([{ transactionHtml: 'test' }])
+    expect(output.transactionsBatch.length).toEqual(0)
     expect(output.transactionCount).toEqual(1)
   })
-  test('single transaction after single transaction', () => {
-    const state = Object.assign({}, initialState, {
-      newTransactions: ['test 1']
-    })
+  test('large batch of transactions', () => {
+    const state = initialState
     const action = {
-      type: 'RECEIVED_NEW_TRANSACTION',
-      msg: {
+      type: 'RECEIVED_NEW_TRANSACTION_BATCH',
+      msgs: [{
+        transactionHtml: 'test 1'
+      },{
         transactionHtml: 'test 2'
-      }
+      },{
+        transactionHtml: 'test 3'
+      },{
+        transactionHtml: 'test 4'
+      },{
+        transactionHtml: 'test 5'
+      },{
+        transactionHtml: 'test 6'
+      },{
+        transactionHtml: 'test 7'
+      },{
+        transactionHtml: 'test 8'
+      },{
+        transactionHtml: 'test 9'
+      },{
+        transactionHtml: 'test 10'
+      },{
+        transactionHtml: 'test 11'
+      }]
     }
     const output = reducer(state, action)
 
-    expect(output.newTransactions).toEqual(['test 1', 'test 2'])
+    expect(output.transactions).toEqual([])
+    expect(output.transactionsBatch.length).toEqual(11)
+    expect(output.transactionCount).toEqual(11)
+  })
+  test('maintains list size', () => {
+    const state = Object.assign({}, initialState, {
+      transactions: [
+        { transactionHash: '0x4', transactionHtml: 'test 4' },
+        { transactionHash: '0x3', transactionHtml: 'test 3' },
+        { transactionHash: '0x2', transactionHtml: 'test 2' },
+        { transactionHash: '0x1', transactionHtml: 'test 1' }
+      ]
+    })
+    const action = {
+      type: 'RECEIVED_NEW_TRANSACTION_BATCH',
+      msgs: [
+        { transactionHash: '0x5', transactionHtml: 'test 5' },
+        { transactionHash: '0x6', transactionHtml: 'test 6' }
+      ]
+    }
+    const output = reducer(state, action)
+
+    expect(output.transactions).toEqual([
+      { transactionHash: '0x6', transactionHtml: 'test 6' },
+      { transactionHash: '0x5', transactionHtml: 'test 5' },
+      { transactionHash: '0x4', transactionHtml: 'test 4' },
+      { transactionHash: '0x3', transactionHtml: 'test 3' },
+    ])
+    expect(output.transactionsBatch.length).toEqual(0)
+  })
+  test('single transaction after large batch of transactions', () => {
+    const state = Object.assign({}, initialState, {
+      transactionsBatch: [1,2,3,4,5,6,7,8,9,10,11]
+    })
+    const action = {
+      type: 'RECEIVED_NEW_TRANSACTION_BATCH',
+      msgs: [{
+        transactionHtml: 'test 12'
+      }]
+    }
+    const output = reducer(state, action)
+
+    expect(output.transactions).toEqual([])
+    expect(output.transactionsBatch.length).toEqual(12)
+  })
+  test('large batch of transactions after large batch of transactions', () => {
+    const state = Object.assign({}, initialState, {
+      transactionsBatch: [1,2,3,4,5,6,7,8,9,10,11]
+    })
+    const action = {
+      type: 'RECEIVED_NEW_TRANSACTION_BATCH',
+      msgs: [{
+        transactionHtml: 'test 12'
+      },{
+        transactionHtml: 'test 13'
+      },{
+        transactionHtml: 'test 14'
+      },{
+        transactionHtml: 'test 15'
+      },{
+        transactionHtml: 'test 16'
+      },{
+        transactionHtml: 'test 17'
+      },{
+        transactionHtml: 'test 18'
+      },{
+        transactionHtml: 'test 19'
+      },{
+        transactionHtml: 'test 20'
+      },{
+        transactionHtml: 'test 21'
+      },{
+        transactionHtml: 'test 22'
+      }]
+    }
+    const output = reducer(state, action)
+
+    expect(output.transactions).toEqual([])
+    expect(output.transactionsBatch.length).toEqual(22)
+  })
+  test('after disconnection', () => {
+    const state = Object.assign({}, initialState, {
+      channelDisconnected: true
+    })
+    const action = {
+      type: 'RECEIVED_NEW_TRANSACTION_BATCH',
+      msgs: [{
+        transactionHtml: 'test'
+      }]
+    }
+    const output = reducer(state, action)
+
+    expect(output.transactions).toEqual([])
+    expect(output.transactionsBatch.length).toEqual(0)
   })
 })
