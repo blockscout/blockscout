@@ -107,6 +107,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
            |> put_in([:addresses, :params], balances_addresses_params)
            |> put_in([:blocks, :params, Access.all(), :consensus], true)
            |> put_in([Access.key(:address_coin_balances, %{}), :params], balances_params)
+           |> put_in([Access.key(:address_current_token_balances, %{}), :params], address_token_balances)
            |> put_in([Access.key(:address_token_balances), :params], address_token_balances)
            |> put_in([Access.key(:internal_transactions, %{}), :params], internal_transactions_params),
          {:ok, imported} = ok <- Chain.import(chain_import_options) do
@@ -234,9 +235,13 @@ defmodule Indexer.Block.Realtime.Fetcher do
     Enum.map(transactions_params, &transaction_params_to_fetch_internal_transaction_params/1)
   end
 
-  defp transaction_params_to_fetch_internal_transaction_params(%{block_number: block_number, hash: hash})
+  defp transaction_params_to_fetch_internal_transaction_params(%{
+         block_number: block_number,
+         hash: hash,
+         transaction_index: transaction_index
+       })
        when is_integer(block_number) do
-    %{block_number: block_number, hash_data: to_string(hash)}
+    %{block_number: block_number, hash_data: to_string(hash), transaction_index: transaction_index}
   end
 
   defp balances(

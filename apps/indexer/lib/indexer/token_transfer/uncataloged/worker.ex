@@ -9,6 +9,8 @@ defmodule Indexer.TokenTransfer.Uncataloged.Worker do
 
   use GenServer
 
+  require Logger
+
   alias Explorer.Chain
   alias Indexer.Block.Catchup.Fetcher
   alias Indexer.TokenTransfer.Uncataloged
@@ -57,13 +59,13 @@ defmodule Indexer.TokenTransfer.Uncataloged.Worker do
         {:noreply, state}
 
       block_numbers ->
-        Process.send_after(self(), :enqueue_blocks, state.retry_interval)
+        Process.send_after(self(), :push_front_blocks, state.retry_interval)
         {:noreply, %{state | block_numbers: block_numbers}}
     end
   end
 
-  def handle_info(:enqueue_blocks, %{block_numbers: block_numbers} = state) do
-    %Task{ref: ref} = async_enqueue(block_numbers)
+  def handle_info(:push_front_blocks, %{block_numbers: block_numbers} = state) do
+    %Task{ref: ref} = async_push_front(block_numbers)
     {:noreply, %{state | task_ref: ref}}
   end
 
@@ -73,18 +75,21 @@ defmodule Indexer.TokenTransfer.Uncataloged.Worker do
     {:stop, :shutdown}
   end
 
-  def handle_info({ref, {:error, :queue_unavailable}}, %{task_ref: ref, retry_interval: millis} = state) do
+  def handle_info({ref, {:error, reason}}, %{task_ref: ref, retry_interval: millis} = state) do
+    Logger.error(fn -> inspect(reason) end)
+
     Process.demonitor(ref, [:flush])
-    Process.send_after(self(), :enqueue_blocks, millis)
+    Process.send_after(self(), :push_front_blocks, millis)
+
     {:noreply, %{state | task_ref: nil}}
   end
 
   def handle_info({:DOWN, ref, :process, _, _}, %{task_ref: ref, retry_interval: millis} = state) do
-    Process.send_after(self(), :enqueue_blocks, millis)
+    Process.send_after(self(), :push_front_blocks, millis)
     {:noreply, %{state | task_ref: nil}}
   end
 
-  defp async_enqueue(block_numbers) do
-    Task.Supervisor.async_nolink(Uncataloged.TaskSupervisor, Fetcher, :enqueue, [block_numbers])
+  defp async_push_front(block_numbers) do
+    Task.Supervisor.async_nolink(Uncataloged.TaskSupervisor, Fetcher, :push_front, [block_numbers])
   end
 end

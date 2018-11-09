@@ -99,10 +99,24 @@ label, textarea.form-control {
     }
 }
 
-[data-transaction-status="Success"] {
+[data-transaction-status="Success"],
+[data-internal-transaction-type="Reward"] {
   color: $success;
 }
 
-[data-transaction-status^="Error"] {
+[data-internal-transaction-type="Call"] {
+  color: $blue;
+}
+
+[data-internal-transaction-type="Delegate Call"] {
+  color: $purple;
+}
+
+[data-internal-transaction-type="Create"] {
+  color: $pink;
+}
+
+[data-transaction-status^="Error"],
+[data-internal-transaction-type="Suicide"] {
   color: $danger;
 }

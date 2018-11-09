@@ -1,9 +1,10 @@
 defmodule BlockScoutWeb.BlockTransactionController do
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
-  import Explorer.Chain, only: [hash_to_block: 2, number_to_block: 2, string_to_block_hash: 1]
+  import BlockScoutWeb.Chain,
+    only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
+  import Explorer.Chain, only: [hash_to_block: 2, number_to_block: 2, string_to_block_hash: 1]
   alias Explorer.Chain
 
   def index(conn, %{"block_hash_or_number" => formatted_block_hash_or_number} = params) do
@@ -50,7 +51,13 @@ defmodule BlockScoutWeb.BlockTransactionController do
         not_found(conn)
 
       {:error, :not_found} ->
-        not_found(conn)
+        conn
+        |> put_status(:not_found)
+        |> render(
+          "404.html",
+          block: nil,
+          block_above_tip: block_above_tip?(formatted_block_hash_or_number)
+        )
     end
   end
 
@@ -62,11 +69,23 @@ defmodule BlockScoutWeb.BlockTransactionController do
     end
   end
 
-  defp param_block_hash_or_number_to_block(number_string, options) when is_binary(number_string) do
+  defp param_block_hash_or_number_to_block(number_string, options)
+       when is_binary(number_string) do
     with {:ok, number} <- BlockScoutWeb.Chain.param_to_block_number(number_string) do
       number_to_block(number, options)
     else
       {:error, :invalid} -> {:error, {:invalid, :number}}
+    end
+  end
+
+  defp block_above_tip?("0x" <> _), do: nil
+
+  defp block_above_tip?(block_hash_or_number) when is_binary(block_hash_or_number) do
+    with {:ok, max_block_number} <- Chain.max_block_number() do
+      {block_number, _} = Integer.parse(block_hash_or_number)
+      block_number > max_block_number
+    else
+      _ -> true
     end
   end
 end

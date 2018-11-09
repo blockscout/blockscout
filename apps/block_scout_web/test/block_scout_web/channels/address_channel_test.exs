@@ -11,13 +11,7 @@ defmodule BlockScoutWeb.AddressChannelTest do
 
     Notifier.handle_event({:chain_event, :addresses, :realtime, [address]})
 
-    receive do
-      %Phoenix.Socket.Broadcast{topic: ^topic, event: "count", payload: %{count: _}} ->
-        assert true
-    after
-      5_000 ->
-        assert false, "Expected message received nothing."
-    end
+    assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "count", payload: %{count: _}}, 5_000
   end
 
   describe "user subscribed to address" do
@@ -32,23 +26,14 @@ defmodule BlockScoutWeb.AddressChannelTest do
       address_with_balance = %{address | fetched_coin_balance: 1}
       Notifier.handle_event({:chain_event, :addresses, :realtime, [address_with_balance]})
 
-      receive do
-        %Phoenix.Socket.Broadcast{topic: ^topic, event: "balance_update", payload: payload} ->
-          assert payload.address.hash == address_with_balance.hash
-      after
-        5_000 ->
-          assert false, "Expected message received nothing."
-      end
+      assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "balance_update", payload: payload}, 5_000
+      assert payload.address.hash == address_with_balance.hash
     end
 
     test "not notified of balance_update if fetched_coin_balance is nil", %{address: address} do
       Notifier.handle_event({:chain_event, :addresses, :realtime, [address]})
 
-      receive do
-        _ -> assert false, "Message was broadcast for nil fetched_coin_balance."
-      after
-        100 -> assert true
-      end
+      refute_receive _, 100, "Message was broadcast for nil fetched_coin_balance."
     end
 
     test "notified of new_pending_transaction for matching from_address", %{address: address, topic: topic} do
@@ -56,14 +41,9 @@ defmodule BlockScoutWeb.AddressChannelTest do
 
       Notifier.handle_event({:chain_event, :transactions, :realtime, [pending.hash]})
 
-      receive do
-        %Phoenix.Socket.Broadcast{topic: ^topic, event: "pending_transaction", payload: payload} ->
-          assert payload.address.hash == address.hash
-          assert payload.transaction.hash == pending.hash
-      after
-        5_000 ->
-          assert false, "Expected message received nothing."
-      end
+      assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "pending_transaction", payload: payload}, 5_000
+      assert payload.address.hash == address.hash
+      assert payload.transaction.hash == pending.hash
     end
 
     test "notified of new_transaction for matching from_address", %{address: address, topic: topic} do
@@ -74,14 +54,9 @@ defmodule BlockScoutWeb.AddressChannelTest do
 
       Notifier.handle_event({:chain_event, :transactions, :realtime, [transaction.hash]})
 
-      receive do
-        %Phoenix.Socket.Broadcast{topic: ^topic, event: "transaction", payload: payload} ->
-          assert payload.address.hash == address.hash
-          assert payload.transaction.hash == transaction.hash
-      after
-        5_000 ->
-          assert false, "Expected message received nothing."
-      end
+      assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "transaction", payload: payload}, 5_000
+      assert payload.address.hash == address.hash
+      assert payload.transaction.hash == transaction.hash
     end
 
     test "notified of new_transaction for matching to_address", %{address: address, topic: topic} do
@@ -92,14 +67,9 @@ defmodule BlockScoutWeb.AddressChannelTest do
 
       Notifier.handle_event({:chain_event, :transactions, :realtime, [transaction.hash]})
 
-      receive do
-        %Phoenix.Socket.Broadcast{topic: ^topic, event: "transaction", payload: payload} ->
-          assert payload.address.hash == address.hash
-          assert payload.transaction.hash == transaction.hash
-      after
-        5_000 ->
-          assert false, "Expected message received nothing."
-      end
+      assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "transaction", payload: payload}, 5_000
+      assert payload.address.hash == address.hash
+      assert payload.transaction.hash == transaction.hash
     end
 
     test "not notified twice of new_transaction if to and from address are equal", %{address: address, topic: topic} do
@@ -110,20 +80,11 @@ defmodule BlockScoutWeb.AddressChannelTest do
 
       Notifier.handle_event({:chain_event, :transactions, :realtime, [transaction.hash]})
 
-      receive do
-        %Phoenix.Socket.Broadcast{topic: ^topic, event: "transaction", payload: payload} ->
-          assert payload.address.hash == address.hash
-          assert payload.transaction.hash == transaction.hash
-      after
-        5_000 ->
-          assert false, "Expected message received nothing."
-      end
+      assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "transaction", payload: payload}, 5_000
+      assert payload.address.hash == address.hash
+      assert payload.transaction.hash == transaction.hash
 
-      receive do
-        _ -> assert false, "Received duplicate broadcast."
-      after
-        100 -> assert true
-      end
+      refute_receive _, 100, "Received duplicate broadcast."
     end
 
     test "notified of new_internal_transaction for matching from_address", %{address: address, topic: topic} do
@@ -136,14 +97,18 @@ defmodule BlockScoutWeb.AddressChannelTest do
 
       Notifier.handle_event({:chain_event, :internal_transactions, :realtime, [internal_transaction]})
 
-      receive do
-        %Phoenix.Socket.Broadcast{topic: ^topic, event: "internal_transaction", payload: payload} ->
-          assert payload.address.hash == address.hash
-          assert payload.internal_transaction.id == internal_transaction.id
-      after
-        5_000 ->
-          assert false, "Expected message received nothing."
-      end
+      assert_receive %Phoenix.Socket.Broadcast{
+                       topic: ^topic,
+                       event: "internal_transaction",
+                       payload: %{
+                         address: %{hash: address_hash},
+                         internal_transaction: %{transaction_hash: transaction_hash, index: index}
+                       }
+                     },
+                     5_000
+
+      assert address_hash == address.hash
+      assert {transaction_hash, index} == {internal_transaction.transaction_hash, internal_transaction.index}
     end
 
     test "notified of new_internal_transaction for matching to_address", %{address: address, topic: topic} do
@@ -156,14 +121,18 @@ defmodule BlockScoutWeb.AddressChannelTest do
 
       Notifier.handle_event({:chain_event, :internal_transactions, :realtime, [internal_transaction]})
 
-      receive do
-        %Phoenix.Socket.Broadcast{topic: ^topic, event: "internal_transaction", payload: payload} ->
-          assert payload.address.hash == address.hash
-          assert payload.internal_transaction.id == internal_transaction.id
-      after
-        5_000 ->
-          assert false, "Expected message received nothing."
-      end
+      assert_receive %Phoenix.Socket.Broadcast{
+                       topic: ^topic,
+                       event: "internal_transaction",
+                       payload: %{
+                         address: %{hash: address_hash},
+                         internal_transaction: %{transaction_hash: transaction_hash, index: index}
+                       }
+                     },
+                     5_000
+
+      assert address_hash == address.hash
+      assert {transaction_hash, index} == {internal_transaction.transaction_hash, internal_transaction.index}
     end
 
     test "not notified twice of new_internal_transaction if to and from address are equal", %{
@@ -180,20 +149,20 @@ defmodule BlockScoutWeb.AddressChannelTest do
 
       Notifier.handle_event({:chain_event, :internal_transactions, :realtime, [internal_transaction]})
 
-      receive do
-        %Phoenix.Socket.Broadcast{topic: ^topic, event: "internal_transaction", payload: payload} ->
-          assert payload.address.hash == address.hash
-          assert payload.internal_transaction.id == internal_transaction.id
-      after
-        5_000 ->
-          assert false, "Expected message received nothing."
-      end
+      assert_receive %Phoenix.Socket.Broadcast{
+                       topic: ^topic,
+                       event: "internal_transaction",
+                       payload: %{
+                         address: %{hash: address_hash},
+                         internal_transaction: %{transaction_hash: transaction_hash, index: index}
+                       }
+                     },
+                     5_000
 
-      receive do
-        _ -> assert false, "Received duplicate broadcast."
-      after
-        100 -> assert true
-      end
+      assert address_hash == address.hash
+      assert {transaction_hash, index} == {internal_transaction.transaction_hash, internal_transaction.index}
+
+      refute_receive _, 100, "Received duplicate broadcast."
     end
   end
 end

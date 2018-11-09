@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Supply.TransactionAndLog do
   use Explorer.Chain.Supply
 
   alias Explorer.Chain.{InternalTransaction, Log, Wei}
-  alias Explorer.{Repo, Chain}
+  alias Explorer.{Chain, Repo}
 
   {:ok, base_wei} = Wei.cast(0)
   @base_wei base_wei

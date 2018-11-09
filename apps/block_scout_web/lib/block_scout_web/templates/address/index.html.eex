@@ -9,9 +9,10 @@
       </p>
 
       <span data-selector="top-addresses-list">
-        <%= for {address, index} <- Enum.with_index(@addresses, 1) do %>
+        <%= for {{address, tx_count}, index} <- Enum.with_index(@address_tx_count_pairs, 1) do %>
           <%= render "_tile.html", 
             address: address, index: index, exchange_rate: @exchange_rate,
+            total_supply: @total_supply, tx_count: tx_count,
             validation_count: validation_count(address) %> 
         <% end %>
       </span>

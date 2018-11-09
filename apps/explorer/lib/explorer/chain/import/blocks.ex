@@ -7,9 +7,9 @@ defmodule Explorer.Chain.Import.Blocks do
 
   import Ecto.Query, only: [from: 2, update: 2]
 
-  alias Ecto.{Changeset, Multi}
   alias Ecto.Adapters.SQL
-  alias Explorer.Chain.{Block, Import, Transaction}
+  alias Ecto.{Changeset, Multi}
+  alias Explorer.Chain.{Block, Import, InternalTransaction, Transaction}
   alias Explorer.Repo
 
   @behaviour Import.Runner
@@ -34,9 +34,14 @@ defmodule Explorer.Chain.Import.Blocks do
   end
 
   @impl Import.Runner
-  def run(multi, changes_list, options) when is_map(options) do
-    timestamps = Map.fetch!(options, :timestamps)
-    blocks_timeout = options[option_key()][:timeout] || @timeout
+  def run(multi, changes_list, %{timestamps: timestamps} = options) do
+    insert_options =
+      options
+      |> Map.get(option_key(), %{})
+      |> Map.take(~w(on_conflict timeout)a)
+      |> Map.put_new(:timeout, @timeout)
+      |> Map.put(:timestamps, timestamps)
+
     where_forked = where_forked(changes_list)
 
     multi
@@ -56,10 +61,10 @@ defmodule Explorer.Chain.Import.Blocks do
       })
     end)
     |> Multi.run(:lose_consenus, fn _ ->
-      lose_consensus(changes_list, %{timeout: blocks_timeout, timestamps: timestamps})
+      lose_consensus(changes_list, insert_options)
     end)
     |> Multi.run(:blocks, fn _ ->
-      insert(changes_list, %{timeout: blocks_timeout, timestamps: timestamps})
+      insert(changes_list, insert_options)
     end)
     |> Multi.run(:uncle_fetched_block_second_degree_relations, fn %{blocks: blocks} when is_list(blocks) ->
       update_block_second_degree_relations(
@@ -72,6 +77,31 @@ defmodule Explorer.Chain.Import.Blocks do
         }
       )
     end)
+    |> Multi.run(
+      :internal_transaction_transaction_block_number,
+      fn %{blocks: blocks} ->
+        blocks_hashes = Enum.map(blocks, & &1.hash)
+
+        query =
+          from(
+            internal_transaction in InternalTransaction,
+            join: transaction in Transaction,
+            on: internal_transaction.transaction_hash == transaction.hash,
+            join: block in Block,
+            on: block.hash == transaction.block_hash,
+            where: block.hash in ^blocks_hashes,
+            update: [
+              set: [
+                block_number: block.number
+              ]
+            ]
+          )
+
+        {total, _} = Repo.update_all(query, [])
+
+        {:ok, total}
+      end
+    )
   end
 
   @impl Import.Runner
@@ -142,10 +172,13 @@ defmodule Explorer.Chain.Import.Blocks do
     end
   end
 
-  @spec insert([map()], %{required(:timeout) => timeout, required(:timestamps) => Import.timestamps()}) ::
-          {:ok, [Block.t()]} | {:error, [Changeset.t()]}
+  @spec insert([map()], %{
+          optional(:on_conflict) => Import.Runner.on_conflict(),
+          required(:timeout) => timeout,
+          required(:timestamps) => Import.timestamps()
+        }) :: {:ok, [Block.t()]} | {:error, [Changeset.t()]}
   defp insert(changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
-    on_conflict = Map.get(options, :on_conflict, :replace_all)
+    on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # order so that row ShareLocks are grabbed in a consistent order
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.number, &1.hash})
@@ -158,6 +191,30 @@ defmodule Explorer.Chain.Import.Blocks do
       returning: true,
       timeout: timeout,
       timestamps: timestamps
+    )
+  end
+
+  defp default_on_conflict do
+    from(
+      block in Block,
+      update: [
+        set: [
+          consensus: fragment("EXCLUDED.consensus"),
+          difficulty: fragment("EXCLUDED.difficulty"),
+          gas_limit: fragment("EXCLUDED.gas_limit"),
+          gas_used: fragment("EXCLUDED.gas_used"),
+          miner_hash: fragment("EXCLUDED.miner_hash"),
+          nonce: fragment("EXCLUDED.nonce"),
+          number: fragment("EXCLUDED.number"),
+          parent_hash: fragment("EXCLUDED.parent_hash"),
+          size: fragment("EXCLUDED.size"),
+          timestamp: fragment("EXCLUDED.timestamp"),
+          total_difficulty: fragment("EXCLUDED.total_difficulty"),
+          # Don't update `hash` as it is used for the conflict target
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", block.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", block.updated_at)
+        ]
+      ]
     )
   end
 

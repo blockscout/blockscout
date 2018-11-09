@@ -3,10 +3,11 @@ defmodule BlockScoutWeb.Notifier do
   Responds to events from EventHandler by sending appropriate channel updates to front-end.
   """
 
+  alias Absinthe.Subscription
+  alias BlockScoutWeb.Endpoint
   alias Explorer.{Chain, Market, Repo}
   alias Explorer.Chain.{Address, InternalTransaction, Transaction}
   alias Explorer.ExchangeRates.Token
-  alias BlockScoutWeb.Endpoint
 
   def handle_event({:chain_event, :addresses, :realtime, addresses}) do
     Endpoint.broadcast("addresses:new_address", "count", %{count: Chain.address_estimated_count()})
@@ -55,10 +56,22 @@ defmodule BlockScoutWeb.Notifier do
     internal_transactions
     |> Stream.map(
       &(InternalTransaction
-        |> Repo.get(&1.id)
+        |> Repo.get_by(transaction_hash: &1.transaction_hash, index: &1.index)
         |> Repo.preload([:from_address, :to_address, transaction: :block]))
     )
     |> Enum.each(&broadcast_internal_transaction/1)
+  end
+
+  def handle_event({:chain_event, :token_transfers, :realtime, all_token_transfers}) do
+    transfers_by_token = Enum.group_by(all_token_transfers, fn tt -> to_string(tt.token_contract_address_hash) end)
+
+    for {token_contract_address_hash, token_transfers} <- transfers_by_token do
+      Subscription.publish(
+        Endpoint,
+        token_transfers,
+        token_transfers: token_contract_address_hash
+      )
+    end
   end
 
   def handle_event({:chain_event, :transactions, :realtime, transaction_hashes}) do

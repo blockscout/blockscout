@@ -1,48 +1,14 @@
 <section class="container" data-page="transaction-pending-list">
   <div class="card">
-    <div class="card-header">
-
-      <!-- DESKTOP TAB NAV -->
-      <ul class="nav nav-tabs card-header-tabs d-none d-md-inline-flex">
-        <li class="nav-item">
-          <%= link(
-                gettext("Validated"),
-                class: "nav-link",
-                to: transaction_path(@conn, :index)
-              ) %>
-        </li>
-        <li class="nav-item">
-          <%= link(
-                gettext("Pending"),
-                class: "nav-link active",
-                "data-test": "pending_transactions_link",
-                to: pending_transaction_path(@conn, :index)
-              ) %>
-        </li>
-      </ul>
-
-      <!-- MOBILE DROPDOWN NAV -->
-      <ul class="nav nav-tabs card-header-tabs d-lg-none">
-        <li class="nav-item dropdown flex-fill text-center">
-          <a class="nav-link active dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false"><%= gettext("Pending") %></a>
-          <div class="dropdown-menu">
-            <%= link(
-                  gettext("Validated"),
-                  class: "dropdown-item",
-                  to: transaction_path(@conn, :index)
-                ) %>
-            <%= link(
-                  gettext("Pending"),
-                  class: "dropdown-item active",
-                  "data-test": "pending_transactions_link",
-                  to: pending_transaction_path(@conn, :index)
-                ) %>
-          </div>
-        </li>
-      </ul>
-    </div>
-
     <div class="card-body">
+
+      <h1><%= gettext "Pending Transactions" %></h1>
+      <p>
+        <%= gettext("Showing") %>
+        <span data-selector="transaction-pending-count"><%= Cldr.Number.to_string!(@pending_transaction_count, format: "#,###") %></span>
+        <%= gettext("Pending Transactions") %>
+      </p>
+
       <div data-selector="channel-batching-message" style="display:none;">
         <div data-selector="reload-button" class="alert alert-info">
           <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>
@@ -53,22 +19,28 @@
           <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer transactions" %></a>
         </div>
       </div>
-      <h2 class="card-title mb-0"><%= gettext "Transactions" %></h2>
-      <p>
-        <%= gettext("Showing") %>
-        <span data-selector="transaction-pending-count"><%= Cldr.Number.to_string!(@pending_transaction_count, format: "#,###") %></span>
-        <%= gettext("Pending Transactions") %>
-      </p>
+
       <span data-selector="transactions-pending-list">
         <%= for transaction <- @transactions do %>
           <%= render BlockScoutWeb.TransactionView, "_tile.html", transaction: transaction %>
         <% end %>
       </span>
+      <div data-selector="loading-next-page" class="tile tile-muted text-center mt-3" style="display: none;">
+        <span class="loading-spinner-small mr-2">
+          <span class="loading-spinner-block-1"></span>
+          <span class="loading-spinner-block-2"></span>
+        </span>
+        <%= gettext("Loading") %>...
+      </div>
+      <div data-selector="paging-error-message" class="alert alert-danger text-center mt-3" style="display: none;">
+        <%= gettext("Error trying to fetch next page.") %>
+      </div>
 
       <%= if @next_page_params do %>
         <%= link(
           gettext("Older"),
           class: "button button-secondary button-sm float-right mt-3",
+          "data-selector": "next-page-button",
           to: pending_transaction_path(
             @conn,
             :index,

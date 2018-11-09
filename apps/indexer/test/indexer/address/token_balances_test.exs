@@ -29,7 +29,7 @@ defmodule Indexer.Address.TokenBalancesTest do
 
       params_set = TokenBalances.params_set(%{token_transfers_params: [token_transfer_params]})
 
-      assert MapSet.size(params_set) == 3
+      assert MapSet.size(params_set) == 2
       assert %{address_hash: from_address_hash, block_number: block_number}
       assert %{address_hash: to_address_hash, block_number: block_number}
       assert %{address_hash: token_contract_address_hash, block_number: block_number}
