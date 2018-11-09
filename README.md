@@ -16,7 +16,7 @@ The first release will include a block explorer for the POA core and Sokol test 
 
 ### Features
 
-Development is ongoing. Please see the [project timeline](https://github.com/poanetwork/blockscout/wiki/Timeline-for-POA-Block-Explorer) for projected milestones.
+Development is ongoing. Please see the [project timeline](https://github.com/poanetwork/blockscout/wiki/Timeline-for-BlockScout-explorer) for projected milestones.
 
 - [x] **Open source development**: The code is community driven and available for anyone to use, explore and improve.
 
