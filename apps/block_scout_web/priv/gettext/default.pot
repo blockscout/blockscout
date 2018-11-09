@@ -632,7 +632,6 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:72
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:79
 #: lib/block_scout_web/templates/address_validation/index.html.eex:117
 #: lib/block_scout_web/templates/block/index.html.eex:30
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:50
@@ -845,7 +844,7 @@ msgid "There are no tokens."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:73
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:67
 msgid "There are no transactions for this address."
 msgstr ""
 
@@ -1195,7 +1194,6 @@ msgid "APIs"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:68
 #: lib/block_scout_web/templates/block/index.html.eex:25
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:36
 #: lib/block_scout_web/templates/transaction/index.html.eex:36
@@ -1208,7 +1206,7 @@ msgid "GraphQL"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_transaction/index.html.eex:65
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:61
 #: lib/block_scout_web/templates/block/index.html.eex:22
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:33
 #: lib/block_scout_web/templates/transaction/index.html.eex:33
@@ -1240,4 +1238,9 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/overview.html.eex:140
 #: lib/block_scout_web/templates/transaction/overview.html.eex:164
 msgid "copy"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_transaction/index.html.eex:64
+msgid "Error trying to fetch transactions."
 msgstr ""

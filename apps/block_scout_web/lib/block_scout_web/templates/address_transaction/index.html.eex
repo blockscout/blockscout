@@ -51,42 +51,21 @@
           </div>
         </div>
         <h2 class="card-title"><%= gettext "Transactions" %></h2>
-        <%= if Enum.count(@transactions) > 0 do %>
-          <span data-selector="transactions-list">
-            <%= for transaction <- @transactions do %>
-              <%= render(BlockScoutWeb.TransactionView, "_tile.html", current_address: @address, transaction: transaction) %>
-            <% end %>
+        <span data-selector="transactions-list">
+        </span>
+        <div data-selector="loading-next-page" class="tile tile-muted text-center mt-3">
+          <span class="loading-spinner-small mr-2">
+            <span class="loading-spinner-block-1"></span>
+            <span class="loading-spinner-block-2"></span>
           </span>
-          <div data-selector="loading-next-page" class="tile tile-muted text-center mt-3" style="display: none;">
-            <span class="loading-spinner-small mr-2">
-              <span class="loading-spinner-block-1"></span>
-              <span class="loading-spinner-block-2"></span>
-            </span>
-            <%= gettext("Loading") %>...
-          </div>
-          <div data-selector="paging-error-message" class="alert alert-danger text-center mt-3" style="display: none;">
-            <%= gettext("Error trying to fetch next page.") %>
-          </div>
-
-        <% else %>
-          <div class="tile tile-muted text-center">
-            <span data-selector="empty-transactions-list"><%= gettext "There are no transactions for this address." %></span>
-          </div>
-        <% end %>
-
-        <%= if @next_page_params do %>
-          <%= link(
-            gettext("Older"),
-            class: "button button-secondary button-sm float-right mt-3",
-            "data-selector": "next-page-button",
-            to: address_transaction_path(
-              @conn,
-              :index,
-              @address,
-              @next_page_params
-            )
-          ) %>
-        <% end %>
+          <%= gettext("Loading") %>...
+        </div>
+        <div data-selector="paging-error-message" class="alert alert-danger text-center mt-3" style="display: none;">
+          <%= gettext("Error trying to fetch transactions.") %>
+        </div>
+        <div class="tile tile-muted text-center" data-selector="empty-transactions-list" style="display: none;">
+          <%= gettext "There are no transactions for this address." %>
+        </div>
       </div>
     </div>
   </section>
