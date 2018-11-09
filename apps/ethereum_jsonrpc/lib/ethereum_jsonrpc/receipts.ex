@@ -97,6 +97,7 @@ defmodule EthereumJSONRPC.Receipts do
       ...> ])
       [
         %{
+          created_contract_address_hash: nil,
           cumulative_gas_used: 50450,
           gas_used: 50450,
           status: :ok,

@@ -5,13 +5,16 @@ defmodule Indexer.TokenBalances do
 
   require Logger
 
+  alias Explorer.Chain
   alias Explorer.Token.BalanceReader
+  alias Indexer.TokenBalance
 
   @doc """
   Fetches TokenBalances from specific Addresses and Blocks in the Blockchain
 
   Every `TokenBalance` is fetched asynchronously, but in case an exception is raised (such as a
-  timeout) during the RPC call the particular TokenBalance request is ignored.
+  timeout) during the RPC call the particular TokenBalance request is ignored and sent to
+  `TokenBalance.Fetcher` to be fetched again.
 
   ## token_balances
 
@@ -22,13 +25,18 @@ defmodule Indexer.TokenBalances do
   * `block_number` - The block number that the address_hash has the balance.
   """
   def fetch_token_balances_from_blockchain(token_balances) do
-    result =
+    fetched_token_balances =
       token_balances
       |> Task.async_stream(&fetch_token_balance/1, on_timeout: :kill_task)
       |> Stream.map(&format_task_results/1)
-      |> Enum.filter(&ignore_request_with_timeouts/1)
+      |> Enum.filter(&ignore_request_with_errors/1)
 
-    {:ok, result}
+    token_balances
+    |> MapSet.new()
+    |> unfetched_token_balances(fetched_token_balances)
+    |> schedule_token_balances
+
+    {:ok, fetched_token_balances}
   end
 
   defp fetch_token_balance(
@@ -51,11 +59,23 @@ defmodule Indexer.TokenBalances do
     Map.merge(token_balance, %{value: nil, value_fetched_at: nil, error: error_message})
   end
 
-  def format_task_results({:exit, :timeout}), do: {:error, :timeout}
-  def format_task_results({:ok, token_balance}), do: token_balance
+  defp schedule_token_balances(unfetched_token_balances) do
+    unfetched_token_balances
+    |> Enum.map(fn token_balance ->
+      {:ok, address_hash} = Chain.string_to_address_hash(token_balance.address_hash)
+      {:ok, token_hash} = Chain.string_to_address_hash(token_balance.token_contract_address_hash)
 
-  def ignore_request_with_timeouts({:error, :timeout}), do: false
-  def ignore_request_with_timeouts(_token_balance), do: true
+      %{address_hash: address_hash, token_contract_address_hash: token_hash, block_number: token_balance.block_number}
+    end)
+    |> TokenBalance.Fetcher.async_fetch()
+  end
+
+  defp format_task_results({:exit, :timeout}), do: {:error, :timeout}
+  defp format_task_results({:ok, token_balance}), do: token_balance
+
+  defp ignore_request_with_errors({:error, :timeout}), do: false
+  defp ignore_request_with_errors(%{value: nil, value_fetched_at: nil, error: _error}), do: false
+  defp ignore_request_with_errors(_token_balance), do: true
 
   def log_fetching_errors(from, token_balances_params) do
     error_messages =
@@ -77,5 +97,23 @@ defmodule Indexer.TokenBalances do
         fetcher: :token_balances
       )
     end
+  end
+
+  @doc """
+  Finds the unfetched token balances given all token balances and the ones that were fetched.
+
+  This function compares the two given lists using the `MapSet.difference/2` and return the difference.
+  """
+  def unfetched_token_balances(token_balances, fetched_token_balances) do
+    fetched_token_balances_set =
+      MapSet.new(fetched_token_balances, fn token_balance ->
+        %{
+          address_hash: token_balance.address_hash,
+          token_contract_address_hash: token_balance.token_contract_address_hash,
+          block_number: token_balance.block_number
+        }
+      end)
+
+    MapSet.difference(token_balances, fetched_token_balances_set)
   end
 end

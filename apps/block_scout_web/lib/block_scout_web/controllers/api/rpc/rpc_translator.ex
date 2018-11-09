@@ -16,8 +16,8 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
   import Plug.Conn
 
   alias BlockScoutWeb.API.RPC.RPCView
-  alias Plug.Conn
   alias Phoenix.Controller
+  alias Plug.Conn
 
   def init(opts), do: opts
 

@@ -131,6 +131,22 @@ defmodule Explorer.Chain.Wei do
   end
 
   @doc """
+  Subtracts two Wei values.
+
+  ## Example
+
+      iex> first = %Explorer.Chain.Wei{value: Decimal.new(1_123)}
+      iex> second = %Explorer.Chain.Wei{value: Decimal.new(1_000)}
+      iex> Explorer.Chain.Wei.sub(first, second)
+      %Explorer.Chain.Wei{value: Decimal.new(123)}
+  """
+  def sub(%Wei{value: wei_1}, %Wei{value: wei_2}) do
+    wei_1
+    |> Decimal.sub(wei_2)
+    |> from(:wei)
+  end
+
+  @doc """
   Converts `Decimal` representations of various wei denominations (wei, Gwei, ether) to
   a wei base unit.
 

@@ -11,10 +11,6 @@ defmodule BlockScoutWeb.TransactionListPage do
     click(session, css("[data-transaction-hash='#{transaction_hash}'] [data-test='transaction_hash_link']"))
   end
 
-  def click_pending(session) do
-    click(session, css("[data-test='pending_transactions_link']"))
-  end
-
   def contract_creation(%Transaction{hash: hash}) do
     css("[data-transaction-hash='#{hash}'] [data-test='transaction_type']", text: "Contract Creation")
   end
@@ -29,5 +25,9 @@ defmodule BlockScoutWeb.TransactionListPage do
 
   def visit_page(session) do
     visit(session, "/txs")
+  end
+
+  def visit_pending_transactions_page(session) do
+    visit(session, "/pending_transactions")
   end
 end

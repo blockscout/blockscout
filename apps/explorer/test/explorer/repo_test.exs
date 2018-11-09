@@ -18,7 +18,9 @@ defmodule Explorer.RepoTest do
           from_address_hash: insert(:address).hash,
           to_address_hash: insert(:address).hash,
           transaction_hash: transaction.hash,
-          index: 0
+          index: 0,
+          block_number: 35,
+          transaction_index: 0
         )
 
       %Changeset{valid?: true, changes: changes} = InternalTransaction.changeset(%InternalTransaction{}, params)

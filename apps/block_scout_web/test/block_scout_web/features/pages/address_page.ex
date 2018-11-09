@@ -63,6 +63,10 @@ defmodule BlockScoutWeb.AddressPage do
     click(session, css("[data-test='token_transfers_#{contract_address_hash}']"))
   end
 
+  def click_show_pending_transactions(session) do
+    click(session, css("[data-selector='pending-transactions-open']"))
+  end
+
   def contract_creation(%InternalTransaction{created_contract_address_hash: hash}) do
     css("[data-address-hash='#{hash}']", text: to_string(hash))
   end
@@ -71,20 +75,36 @@ defmodule BlockScoutWeb.AddressPage do
     css("[data-test='address_detail_hash']", text: to_string(address_hash))
   end
 
-  def internal_transaction(%InternalTransaction{id: id}) do
-    css("[data-test='internal_transaction'][data-internal-transaction-id='#{id}']")
+  def internal_transaction(%InternalTransaction{transaction_hash: transaction_hash, index: index}) do
+    css(
+      "[data-test='internal_transaction']" <>
+        "[data-internal-transaction-transaction-hash='#{transaction_hash}']" <>
+        "[data-internal-transaction-index='#{index}']"
+    )
   end
 
   def internal_transactions(count: count) do
     css("[data-test='internal_transaction']", count: count)
   end
 
-  def internal_transaction_address_link(%InternalTransaction{id: id, from_address_hash: address_hash}, :from) do
-    css("[data-internal-transaction-id='#{id}'] [data-test='address_hash_link'] [data-address-hash='#{address_hash}']")
+  def internal_transaction_address_link(
+        %InternalTransaction{transaction_hash: transaction_hash, index: index, from_address_hash: address_hash},
+        :from
+      ) do
+    css(
+      "[data-internal-transaction-transaction-hash='#{transaction_hash}'][data-internal-transaction-index='#{index}']" <>
+        " [data-test='address_hash_link']" <> " [data-address-hash='#{address_hash}']"
+    )
   end
 
-  def internal_transaction_address_link(%InternalTransaction{id: id, to_address_hash: address_hash}, :to) do
-    css("[data-internal-transaction-id='#{id}'] [data-test='address_hash_link'] [data-address-hash='#{address_hash}']")
+  def internal_transaction_address_link(
+        %InternalTransaction{transaction_hash: transaction_hash, index: index, to_address_hash: address_hash},
+        :to
+      ) do
+    css(
+      "[data-internal-transaction-transaction-hash='#{transaction_hash}'][data-internal-transaction-index='#{index}']" <>
+        " [data-test='address_hash_link']" <> " [data-address-hash='#{address_hash}']"
+    )
   end
 
   def pending_transaction(%Transaction{hash: transaction_hash}), do: pending_transaction(transaction_hash)

@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.API.RPC.LogsController do
   use BlockScoutWeb, :controller
 
-  alias Explorer.{Etherscan, Chain}
+  alias Explorer.{Chain, Etherscan}
 
   def getlogs(conn, params) do
     with {:required_params, {:ok, fetched_params}} <- fetch_required_params(params),

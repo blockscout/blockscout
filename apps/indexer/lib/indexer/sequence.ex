@@ -3,9 +3,11 @@ defmodule Indexer.Sequence do
 
   use GenServer
 
-  @enforce_keys ~w(current queue step)a
+  alias Indexer.{BoundQueue, Memory}
+
+  @enforce_keys ~w(current bound_queue step)a
   defstruct current: nil,
-            queue: nil,
+            bound_queue: %BoundQueue{},
             step: nil
 
   @typedoc """
@@ -36,12 +38,16 @@ defmodule Indexer.Sequence do
 
   @typep step_named_argument :: {:step, step}
 
-  @type options :: [ranges_option | first_option | step_named_argument]
+  @typep memory_monitor_option :: {:memory_monitor, GenServer.server()}
+
+  @type options :: [ranges_option | first_option | memory_monitor_option | step_named_argument]
 
   @typep edge :: :front | :back
 
+  @typep range_tuple :: {first :: non_neg_integer(), last :: non_neg_integer()}
+
   @typep t :: %__MODULE__{
-           queue: :queue.queue(Range.t()),
+           bound_queue: BoundQueue.t(range_tuple()),
            current: nil | integer(),
            step: step()
          }
@@ -85,7 +91,7 @@ defmodule Indexer.Sequence do
     Stream.resource(
       fn -> sequencer end,
       fn seq ->
-        case pop(seq) do
+        case pop_front(seq) do
           :halt -> {:halt, seq}
           range -> {[range], seq}
         end
@@ -105,25 +111,25 @@ defmodule Indexer.Sequence do
   @doc """
   Adds a range of block numbers to the end of the sequence.
   """
-  @spec queue(GenServer.server(), Range.t()) :: :ok | {:error, String.t()}
-  def queue(sequence, _first.._last = range) do
-    GenServer.call(sequence, {:queue, range})
+  @spec push_back(GenServer.server(), Range.t()) :: :ok | {:error, String.t()}
+  def push_back(sequence, _first.._last = range) do
+    GenServer.call(sequence, {:push_back, range})
   end
 
   @doc """
   Adds a range of block numbers to the front of the sequence.
   """
-  @spec queue_front(GenServer.server(), Range.t()) :: {:ok, {:error, String.t()}}
-  def queue_front(sequence, _first.._last = range) do
-    GenServer.call(sequence, {:queue_front, range})
+  @spec push_front(GenServer.server(), Range.t()) :: :ok | {:error, String.t()}
+  def push_front(sequence, _first.._last = range) do
+    GenServer.call(sequence, {:push_front, range})
   end
 
   @doc """
   Pops the next block range from the sequence.
   """
-  @spec pop(GenServer.server()) :: Range.t() | :halt
-  def pop(sequence) do
-    GenServer.call(sequence, :pop)
+  @spec pop_front(GenServer.server()) :: Range.t() | :halt
+  def pop_front(sequence) do
+    GenServer.call(sequence, :pop_front)
   end
 
   @impl GenServer
@@ -131,10 +137,11 @@ defmodule Indexer.Sequence do
   def init(options) when is_list(options) do
     Process.flag(:trap_exit, true)
 
+    shrinkable(options)
+
     with {:ok, %{ranges: ranges, first: first, step: step}} <- validate_options(options),
-         initial_queue = :queue.new(),
-         {:ok, queue} <- queue_chunked_ranges(initial_queue, step, ranges) do
-      {:ok, %__MODULE__{queue: queue, current: first, step: step}}
+         {:ok, bound_queue} <- push_chunked_ranges(%BoundQueue{}, step, ranges) do
+      {:ok, %__MODULE__{bound_queue: bound_queue, current: first, step: step}}
     else
       {:error, reason} ->
         {:stop, reason}
@@ -156,69 +163,92 @@ defmodule Indexer.Sequence do
     {:reply, mode, %__MODULE__{state | current: nil}}
   end
 
-  @spec handle_call({:queue, Range.t()}, GenServer.from(), t()) :: {:reply, :ok | {:error, String.t()}, t()}
-  def handle_call({:queue, _first.._last = range}, _from, %__MODULE__{queue: queue, step: step} = state) do
-    case queue_chunked_range(queue, step, range) do
-      {:ok, updated_queue} ->
-        {:reply, :ok, %__MODULE__{state | queue: updated_queue}}
+  @spec handle_call({:push_back, Range.t()}, GenServer.from(), t()) :: {:reply, :ok | {:error, String.t()}, t()}
+  def handle_call({:push_back, _first.._last = range}, _from, %__MODULE__{bound_queue: bound_queue, step: step} = state) do
+    case push_chunked_range(bound_queue, step, range) do
+      {:ok, updated_bound_queue} ->
+        {:reply, :ok, %__MODULE__{state | bound_queue: updated_bound_queue}}
 
       {:error, _} = error ->
         {:reply, error, state}
     end
   end
 
-  @spec handle_call({:queue_front, Range.t()}, GenServer.from(), t()) :: {:reply, :ok | {:error, String.t()}, t()}
-  def handle_call({:queue_front, _first.._last = range}, _from, %__MODULE__{queue: queue, step: step} = state) do
-    case queue_chunked_range(queue, step, range, :front) do
-      {:ok, updated_queue} ->
-        {:reply, :ok, %__MODULE__{state | queue: updated_queue}}
+  @spec handle_call({:push_front, Range.t()}, GenServer.from(), t()) :: {:reply, :ok | {:error, String.t()}, t()}
+  def handle_call(
+        {:push_front, _first.._last = range},
+        _from,
+        %__MODULE__{bound_queue: bound_queue, step: step} = state
+      ) do
+    case push_chunked_range(bound_queue, step, range, :front) do
+      {:ok, updated_bound_queue} ->
+        {:reply, :ok, %__MODULE__{state | bound_queue: updated_bound_queue}}
 
       {:error, _} = error ->
         {:reply, error, state}
     end
   end
 
-  @spec handle_call(:pop, GenServer.from(), t()) :: {:reply, Range.t() | :halt, t()}
-  def handle_call(:pop, _from, %__MODULE__{queue: queue, current: current, step: step} = state) do
+  @spec handle_call(:pop_front, GenServer.from(), t()) :: {:reply, Range.t() | :halt, t()}
+  def handle_call(:pop_front, _from, %__MODULE__{bound_queue: bound_queue, current: current, step: step} = state) do
     {reply, new_state} =
-      case {current, :queue.out(queue)} do
-        {_, {{:value, {first, last}}, new_queue}} ->
-          {first..last, %__MODULE__{state | queue: new_queue}}
+      case {current, BoundQueue.pop_front(bound_queue)} do
+        {_, {:ok, {{first, last}, new_bound_queue}}} ->
+          {first..last, %__MODULE__{state | bound_queue: new_bound_queue}}
 
-        {nil, {:empty, new_queue}} ->
-          {:halt, %__MODULE__{state | queue: new_queue}}
+        {nil, {:error, :empty}} ->
+          {:halt, %__MODULE__{state | bound_queue: bound_queue}}
 
-        {_, {:empty, new_queue}} ->
+        {_, {:error, :empty}} ->
           case current + step do
             new_current ->
               last = new_current - 1
-              {current..last, %__MODULE__{state | current: new_current, queue: new_queue}}
+              {current..last, %__MODULE__{state | current: new_current, bound_queue: bound_queue}}
           end
       end
 
     {:reply, reply, new_state}
   end
 
-  @spec queue_chunked_range(:queue.queue(Range.t()), step, Range.t(), edge()) ::
-          {:ok, :queue.queue(Range.t())} | {:error, reason :: String.t()}
-  defp queue_chunked_range(queue, step, _.._ = range, edge \\ :back)
+  @spec handle_call(:shrink, GenServer.from(), t()) :: {:reply, :ok, t()}
+  def handle_call(:shrink, _from, %__MODULE__{bound_queue: bound_queue} = state) do
+    {reply, shrunk_state} =
+      case BoundQueue.shrink(bound_queue) do
+        {:error, :minimum_size} = error ->
+          {error, state}
+
+        {:ok, shrunk_bound_queue} ->
+          {:ok, %__MODULE__{state | bound_queue: shrunk_bound_queue}}
+      end
+
+    {:reply, reply, shrunk_state, :hibernate}
+  end
+
+  @spec handle_call(:shrunk?, GenServer.from(), t()) :: {:reply, boolean(), t()}
+  def handle_call(:shrunk?, _from, %__MODULE__{bound_queue: bound_queue} = state) do
+    {:reply, BoundQueue.shrunk?(bound_queue), state}
+  end
+
+  @spec push_chunked_range(BoundQueue.t(Range.t()), step, Range.t(), edge()) ::
+          {:ok, BoundQueue.t(Range.t())} | {:error, reason :: String.t()}
+  defp push_chunked_range(bound_queue, step, _.._ = range, edge \\ :back)
        when is_integer(step) and edge in [:back, :front] do
-    with {:error, [reason]} <- queue_chunked_ranges(queue, step, [range], edge) do
+    with {:error, [reason]} <- push_chunked_ranges(bound_queue, step, [range], edge) do
       {:error, reason}
     end
   end
 
-  @spec queue_chunked_range(:queue.queue(Range.t()), step, [Range.t()], edge()) ::
-          {:ok, :queue.queue(Range.t())} | {:error, reasons :: [String.t()]}
-  defp queue_chunked_ranges(queue, step, ranges, edge \\ :back)
+  @spec push_chunked_range(BoundQueue.t(Range.t()), step, [Range.t()], edge()) ::
+          {:ok, BoundQueue.t(Range.t())} | {:error, reasons :: [String.t()]}
+  defp push_chunked_ranges(bound_queue, step, ranges, edge \\ :back)
        when is_integer(step) and is_list(ranges) and edge in [:back, :front] do
     reducer =
       case edge do
-        :back -> &:queue.in/2
-        :front -> &:queue.in_r/2
+        :back -> &BoundQueue.push_back(&2, &1)
+        :front -> &BoundQueue.push_front(&2, &1)
       end
 
-    reduce_chunked_ranges(ranges, step, queue, reducer)
+    reduce_chunked_ranges(ranges, step, bound_queue, reducer)
   end
 
   defp reduce_chunked_ranges(ranges, step, initial, reducer)
@@ -252,7 +282,7 @@ defmodule Indexer.Sequence do
   end
 
   defp reduce_chunked_range(first..last, count, step, initial, reducer) when count <= abs(step) do
-    {:ok, reducer.({first, last}, initial)}
+    reducer.({first, last}, initial)
   end
 
   defp reduce_chunked_range(first..last, _, step, initial, reducer) do
@@ -263,24 +293,42 @@ defmodule Indexer.Sequence do
         {-1, &Kernel.<=/2}
       end
 
-    final =
-      first
-      |> Stream.iterate(&(&1 + step))
-      |> Enum.reduce_while(initial, fn chunk_first, acc ->
-        next_chunk_first = chunk_first + step
-        full_chunk_last = next_chunk_first - sign
+    first
+    |> Stream.iterate(&(&1 + step))
+    |> Enum.reduce_while(
+      initial,
+      &reduce_whiler(&1, &2, %{step: step, sign: sign, comparator: comparator, last: last, reducer: reducer})
+    )
+  end
 
-        {action, chunk_last} =
-          if comparator.(full_chunk_last, last) do
-            {:halt, last}
-          else
-            {:cont, full_chunk_last}
-          end
+  defp reduce_whiler(chunk_first, acc, %{step: step, sign: sign, comparator: comparator, last: last, reducer: reducer}) do
+    next_chunk_first = chunk_first + step
+    full_chunk_last = next_chunk_first - sign
 
-        {action, reducer.({chunk_first, chunk_last}, acc)}
-      end)
+    {action, chunk_last} =
+      if comparator.(full_chunk_last, last) do
+        {:halt, last}
+      else
+        {:cont, full_chunk_last}
+      end
 
-    {:ok, final}
+    case reducer.({chunk_first, chunk_last}, acc) do
+      {:ok, reduced} ->
+        case action do
+          :halt -> {:halt, {:ok, reduced}}
+          :cont -> {:cont, reduced}
+        end
+
+      {:error, _} = error ->
+        {:halt, error}
+    end
+  end
+
+  defp shrinkable(options) do
+    case Keyword.get(options, :memory_monitor) do
+      nil -> :ok
+      memory_monitor -> Memory.Monitor.shrinkable(memory_monitor)
+    end
   end
 
   defp validate_options(options) do

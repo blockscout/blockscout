@@ -1,6 +1,6 @@
 <%= if Enum.any?(@token_balances) do %>
   <a href="#"
-      class="text-white"
+      class="text-white text-faded"
       data-dropdown-toggle
       data-toggle="dropdown"
       role="button"
@@ -10,8 +10,10 @@
       style="text-decoration: none;">
 
      <i class="fas fa-chevron-down mr-2"></i>
-     <h5 data-tokens-count class="d-inline"><%= tokens_count_title(@token_balances) %></h5>
+     <span data-tokens-count><%= tokens_count_title(@token_balances) %></span>
   </a>
+<% else %>
+   <span data-tokens-count class="text-white text-faded"><%= tokens_count_title(@token_balances) %></span>
 <% end %>
 
 <div class="dropdown-menu dropdown-menu-right token-balance-dropdown p-0" aria-labelledby="dropdown-tokens">

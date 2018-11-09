@@ -32,6 +32,7 @@ defmodule EthereumJSONRPC.ParityTest do
       gas_used = 382_953
       trace_address = []
       transaction_hash = "0x0fa6f723216dba694337f9bb37d8870725655bdf2573526a39454685659e39b1"
+      transaction_index = 0
       type = "create"
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
@@ -58,6 +59,7 @@ defmodule EthereumJSONRPC.ParityTest do
                      },
                      "traceAddress" => trace_address,
                      "transactionHash" => transaction_hash,
+                     "transactionIndex" => transaction_index,
                      "type" => type
                    }
                  ]
@@ -71,7 +73,8 @@ defmodule EthereumJSONRPC.ParityTest do
                [
                  %{
                    block_number: block_number,
-                   hash_data: transaction_hash
+                   hash_data: transaction_hash,
+                   transaction_index: transaction_index
                  }
                ],
                json_rpc_named_arguments
@@ -90,7 +93,8 @@ defmodule EthereumJSONRPC.ParityTest do
                    trace_address: trace_address,
                    transaction_hash: transaction_hash,
                    type: type,
-                   value: value
+                   value: value,
+                   transaction_index: transaction_index
                  }
                ]
              }
@@ -118,7 +122,8 @@ defmodule EthereumJSONRPC.ParityTest do
                [
                  %{
                    block_number: 1,
-                   hash_data: "0x0000000000000000000000000000000000000000000000000000000000000001"
+                   hash_data: "0x0000000000000000000000000000000000000000000000000000000000000001",
+                   transaction_index: 0
                  }
                ],
                json_rpc_named_arguments
@@ -129,7 +134,8 @@ defmodule EthereumJSONRPC.ParityTest do
                     code: -32603,
                     data: %{
                       "blockNumber" => 1,
-                      "transactionHash" => "0x0000000000000000000000000000000000000000000000000000000000000001"
+                      "transactionHash" => "0x0000000000000000000000000000000000000000000000000000000000000001",
+                      "transactionIndex" => 0
                     },
                     message:
                       "Internal error occurred: {}, this should not be the case with eth_call, most likely a bug."
@@ -179,22 +185,26 @@ defmodule EthereumJSONRPC.ParityTest do
                  # start with :ok
                  %{
                    block_number: 1,
-                   hash_data: "0x0fa6f723216dba694337f9bb37d8870725655bdf2573526a39454685659e39b1"
+                   hash_data: "0x0fa6f723216dba694337f9bb37d8870725655bdf2573526a39454685659e39b1",
+                   transaction_index: 0
                  },
                  # :ok, :ok clause
                  %{
                    block_number: 34,
-                   hash_data: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6"
+                   hash_data: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
+                   transaction_index: 0
                  },
                  # :ok, :error clause
                  %{
                    block_number: 1,
-                   hash_data: "0x0000000000000000000000000000000000000000000000000000000000000001"
+                   hash_data: "0x0000000000000000000000000000000000000000000000000000000000000001",
+                   transaction_index: 0
                  },
                  # :error, :error clause
                  %{
                    block_number: 2,
-                   hash_data: "0x0000000000000000000000000000000000000000000000000000000000000002"
+                   hash_data: "0x0000000000000000000000000000000000000000000000000000000000000002",
+                   transaction_index: 0
                  }
                ],
                json_rpc_named_arguments
@@ -205,7 +215,8 @@ defmodule EthereumJSONRPC.ParityTest do
                     code: -32603,
                     data: %{
                       "blockNumber" => 1,
-                      "transactionHash" => "0x0000000000000000000000000000000000000000000000000000000000000001"
+                      "transactionHash" => "0x0000000000000000000000000000000000000000000000000000000000000001",
+                      "transactionIndex" => 0
                     },
                     message:
                       "Internal error occurred: {}, this should not be the case with eth_call, most likely a bug."
@@ -214,7 +225,8 @@ defmodule EthereumJSONRPC.ParityTest do
                     code: -32603,
                     data: %{
                       "blockNumber" => 2,
-                      "transactionHash" => "0x0000000000000000000000000000000000000000000000000000000000000002"
+                      "transactionHash" => "0x0000000000000000000000000000000000000000000000000000000000000002",
+                      "transactionIndex" => 0
                     },
                     message:
                       "Internal error occurred: {}, this should not be the case with eth_call, most likely a bug."

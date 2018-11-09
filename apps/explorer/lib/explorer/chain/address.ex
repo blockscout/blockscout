@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Address do
   use Explorer.Schema
 
   alias Ecto.Changeset
-  alias Explorer.Chain.{Address, Block, Data, Hash, Wei, SmartContract, InternalTransaction, Token}
+  alias Explorer.Chain.{Address, Block, Data, Hash, InternalTransaction, SmartContract, Token, Wei}
 
   @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number)a
   @required_attrs ~w(hash)a

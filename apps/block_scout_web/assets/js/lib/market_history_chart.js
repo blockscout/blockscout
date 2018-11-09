@@ -75,7 +75,11 @@ function getPriceData (marketHistoryData) {
 }
 
 function getMarketCapData (marketHistoryData, availableSupply) {
-  return marketHistoryData.map(({ date, closingPrice }) => ({x: date, y: closingPrice * availableSupply}))
+  if (availableSupply !== null && typeof availableSupply === 'object') {
+    return marketHistoryData.map(({ date, closingPrice }) => ({x: date, y: closingPrice * availableSupply[date]}))
+  } else {
+    return marketHistoryData.map(({ date, closingPrice }) => ({x: date, y: closingPrice * availableSupply}))
+  }
 }
 
 class MarketHistoryChart {
@@ -100,18 +104,25 @@ class MarketHistoryChart {
       borderColor: sassVariables.secondary,
       lineTension: 0
     }
+    this.availableSupply = availableSupply
     config.data.datasets = [this.price, this.marketCap]
     this.chart = new Chart(el, config)
   }
   update (availableSupply, marketHistoryData) {
     this.price.data = getPriceData(marketHistoryData)
-    this.marketCap.data = getMarketCapData(marketHistoryData, availableSupply)
+    if (this.availableSupply !== null && typeof this.availableSupply === 'object') {
+      const today = new Date().toJSON().slice(0, 10)
+      this.availableSupply[today] = availableSupply
+      this.marketCap.data = getMarketCapData(marketHistoryData, this.availableSupply)
+    } else {
+      this.marketCap.data = getMarketCapData(marketHistoryData, availableSupply)
+    }
     this.chart.update()
   }
 }
 
 export function createMarketHistoryChart (ctx) {
-  const availableSupply = ctx.dataset.available_supply
+  const availableSupply = JSON.parse(ctx.dataset.available_supply)
   const marketHistoryData = humps.camelizeKeys(JSON.parse(ctx.dataset.market_history_data))
 
   return new MarketHistoryChart(ctx, availableSupply, marketHistoryData)

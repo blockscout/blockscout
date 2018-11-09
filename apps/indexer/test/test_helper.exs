@@ -15,6 +15,8 @@ end
 {:ok, _} = Application.ensure_all_started(:ex_machina)
 
 Mox.defmock(EthereumJSONRPC.Mox, for: EthereumJSONRPC.Transport)
+Mox.defmock(Indexer.BufferedTaskTest.RetryableTask, for: Indexer.BufferedTask)
+Mox.defmock(Indexer.BufferedTaskTest.ShrinkableTask, for: Indexer.BufferedTask)
 
 ExUnit.configure(formatters: [JUnitFormatter, ExUnit.CLIFormatter])
 ExUnit.start()

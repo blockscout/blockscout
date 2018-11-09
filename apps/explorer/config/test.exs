@@ -23,9 +23,17 @@ config :logger, :explorer,
   level: :warn,
   path: Path.absname("logs/test/explorer.log")
 
-if File.exists?(file = "test.secret.exs") do
-  import_config file
+secret_file =
+  __ENV__.file
+  |> Path.dirname()
+  |> Path.join("test.secret.exs")
+
+if File.exists?(secret_file) do
+  import_config secret_file
 end
+
+config :explorer, Explorer.ExchangeRates.Source.TransactionAndLog,
+  secondary_source: Explorer.ExchangeRates.Source.OneCoinSource
 
 variant =
   if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do

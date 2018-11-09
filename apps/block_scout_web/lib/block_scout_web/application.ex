@@ -17,6 +17,7 @@ defmodule BlockScoutWeb.Application do
     children = [
       # Start the endpoint when the application starts
       supervisor(Endpoint, []),
+      supervisor(Absinthe.Subscription, [Endpoint]),
       {EventHandler, name: EventHandler}
     ]
 

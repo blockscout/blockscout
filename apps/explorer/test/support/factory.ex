@@ -13,6 +13,7 @@ defmodule Explorer.Factory do
 
   alias Explorer.Chain.{
     Address,
+    Address.CurrentTokenBalance,
     Address.TokenBalance,
     Address.CoinBalance,
     Block,
@@ -28,8 +29,6 @@ defmodule Explorer.Factory do
 
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
-
-  @dialyzer {:nowarn_function, fields_for: 1}
 
   def address_factory do
     %Address{
@@ -93,6 +92,26 @@ defmodule Explorer.Factory do
           }
       }
       """,
+      abi: [
+        %{
+          "constant" => false,
+          "inputs" => [%{"name" => "x", "type" => "uint256"}],
+          "name" => "set",
+          "outputs" => [],
+          "payable" => false,
+          "stateMutability" => "nonpayable",
+          "type" => "function"
+        },
+        %{
+          "constant" => true,
+          "inputs" => [],
+          "name" => "get",
+          "outputs" => [%{"name" => "", "type" => "uint256"}],
+          "payable" => false,
+          "stateMutability" => "view",
+          "type" => "function"
+        }
+      ],
       version: "v0.4.24+commit.e67f0147",
       optimized: false
     }
@@ -420,6 +439,23 @@ defmodule Explorer.Factory do
     }
   end
 
+  def transaction_to_verified_contract_factory do
+    smart_contract = build(:smart_contract)
+
+    address = %Address{
+      hash: address_hash(),
+      contract_code: contract_code_info().bytecode,
+      smart_contract: smart_contract
+    }
+
+    input_data =
+      "set(uint)"
+      |> ABI.encode([50])
+      |> Base.encode16(case: :lower)
+
+    build(:transaction, to_address: address, input: "0x" <> input_data)
+  end
+
   def transaction_hash do
     {:ok, transaction_hash} =
       "transaction_hash"
@@ -442,38 +478,30 @@ defmodule Explorer.Factory do
   end
 
   def smart_contract_factory() do
+    contract_code_info = contract_code_info()
+
     %SmartContract{
       address_hash: insert(:address).hash,
-      compiler_version: "0.4.24",
-      name: "SimpleStorage",
-      contract_source_code:
-        "pragma solidity ^0.4.24; contract SimpleStorage {uint storedData; function set(uint x) public {storedData = x; } function get() public constant returns (uint) {return storedData; } }",
-      optimization: false,
-      abi: [
-        %{
-          "constant" => false,
-          "inputs" => [%{"name" => "x", "type" => "uint256"}],
-          "name" => "set",
-          "outputs" => [],
-          "payable" => false,
-          "stateMutability" => "nonpayable",
-          "type" => "function"
-        },
-        %{
-          "constant" => true,
-          "inputs" => [],
-          "name" => "get",
-          "outputs" => [%{"name" => "", "type" => "uint256"}],
-          "payable" => false,
-          "stateMutability" => "view",
-          "type" => "function"
-        }
-      ]
+      compiler_version: contract_code_info.version,
+      name: contract_code_info.name,
+      contract_source_code: contract_code_info.source_code,
+      optimization: contract_code_info.optimized,
+      abi: contract_code_info.abi
     }
   end
 
   def token_balance_factory() do
     %TokenBalance{
+      address: build(:address),
+      token_contract_address_hash: insert(:token).contract_address_hash,
+      block_number: block_number(),
+      value: Enum.random(1..100_000),
+      value_fetched_at: DateTime.utc_now()
+    }
+  end
+
+  def address_current_token_balance_factory() do
+    %CurrentTokenBalance{
       address: build(:address),
       token_contract_address_hash: insert(:token).contract_address_hash,
       block_number: block_number(),

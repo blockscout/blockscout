@@ -3,7 +3,7 @@
   <div class="container">
     <div class="dashboard-banner">
       <div class="dashboard-banner-chart">
-        <canvas data-chart="marketHistoryChart" data-available_supply='<%= @exchange_rate.available_supply %>' data-market_history_data='<%=raw encode_market_history_data(@market_history_data) %>' width="350" height="152"></canvas>
+        <canvas data-chart="marketHistoryChart" data-available_supply='<%=raw @available_supply %>' data-market_history_data='<%=raw encode_market_history_data(@market_history_data) %>' width="350" height="152"></canvas>
       </div>
       <div class="dashboard-banner-chart-legend">
         <div class="dashboard-banner-chart-legend-item">
@@ -57,9 +57,7 @@
       <h2 class="card-title"><%= gettext "Blocks" %></h2>
       <div class="row" data-selector="chain-block-list">
         <%= for block <- @blocks do %>
-          <div class="col-lg-3 fade-up-blocks-chain">
-            <%= render BlockScoutWeb.ChainView, "_block.html", block: block %>
-          </div>
+          <%= render BlockScoutWeb.ChainView, "_block.html", block: block %>
         <% end %>
       </div>
     </div>
@@ -67,13 +65,13 @@
 
   <div class="card card-chain-transactions">
     <div class="card-body">
-      <div data-selector="channel-batching-message" class="d-none">
+      <%= link(gettext("View All Transactions →"), to: transaction_path(BlockScoutWeb.Endpoint, :index), class: "button button-secondary button-xsmall float-right") %>
+      <h2 class="card-title"><%= gettext "Transactions" %></h2>
+      <div data-selector="channel-batching-message" style="display: none;">
         <div data-selector="reload-button" class="alert alert-info">
           <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>
         </div>
       </div>
-      <%= link(gettext("View All Transactions →"), to: transaction_path(BlockScoutWeb.Endpoint, :index), class: "button button-secondary button-xsmall float-right") %>
-      <h2 class="card-title"><%= gettext "Transactions" %></h2>
       <span data-selector="transactions-list">
         <%= for transaction <- @transactions do %>
           <%= render BlockScoutWeb.TransactionView, "_tile.html", transaction: transaction %>

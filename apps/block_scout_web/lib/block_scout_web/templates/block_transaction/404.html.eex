@@ -1,0 +1,16 @@
+<section class="container">
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body">
+          <h1 class="card-title" data-test="detail_type">
+            <%= gettext("Block Details") %>
+          </h1>
+          <div class="tile tile-muted text-center">
+            <%= block_not_found_message(@block_above_tip) %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

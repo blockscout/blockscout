@@ -10,7 +10,9 @@ defmodule BlockScoutWeb.AddressControllerTest do
 
       conn = get(conn, address_path(conn, :index))
 
-      assert conn.assigns.addresses |> Enum.map(& &1.hash) == address_hashes
+      assert conn.assigns.address_tx_count_pairs
+             |> Enum.map(fn {address, _transaction_count} -> address end)
+             |> Enum.map(& &1.hash) == address_hashes
     end
   end
 

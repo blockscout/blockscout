@@ -68,12 +68,15 @@ defmodule BlockScoutWeb.BlockControllerTest do
 
       conn =
         get(conn, block_path(conn, :index), %{
+          "type" => "JSON",
           "block_number" => Integer.to_string(block.number)
         })
 
+      {:ok, %{"blocks" => blocks}} = conn.resp_body |> Poison.decode()
+
       actual_block_ids =
-        conn.assigns.blocks
-        |> Enum.map(& &1.number)
+        blocks
+        |> Enum.map(& &1["block_number"])
         |> Enum.reverse()
 
       assert second_page_block_ids == actual_block_ids
