@@ -187,18 +187,45 @@ defmodule Explorer.Chain do
 
     token_transfers_dynamic = TokenTransfer.dynamic_any_address_fields_match(direction, address_bytes)
 
-    transaction_dynamic =
-      Transaction.dynamic_where_address_hash_matches(address_hash, direction, token_transfers_dynamic)
-
     base_query =
       paging_options
       |> fetch_transactions()
       |> join_associations(necessity_by_association)
       |> Transaction.preload_token_transfers(address_hash)
 
-    base_query
-    |> from(where: ^transaction_dynamic)
-    |> Repo.all()
+    token_transfers_query =
+      base_query
+      |> from(where: ^token_transfers_dynamic)
+
+    from_address_query =
+      base_query
+      |> where([t], t.from_address_hash == ^address_hash)
+
+    to_address_query =
+      base_query
+      |> where([t], t.to_address_hash == ^address_hash)
+
+    created_contract_query =
+      base_query
+      |> where([t], t.created_contract_address_hash == ^address_hash)
+
+    queries =
+      [token_transfers_query] ++
+        case direction do
+          :from -> [from_address_query]
+          :to -> [to_address_query, created_contract_query]
+          _ -> [from_address_query, to_address_query, created_contract_query]
+        end
+
+    result = Enum.flat_map(queries, &Repo.all/1)
+
+    sorted_result =
+      result
+      |> Enum.uniq()
+      |> Enum.sort_by(fn x -> {-x.block_number, -x.index} end)
+      |> Enum.take(paging_options.page_size)
+
+    sorted_result
   end
 
   @doc """

@@ -1,0 +1,39 @@
+<section class="container">
+  <section data-page="transaction-details" data-page-transaction-hash="<%= @transaction_hash %>">
+    <div class="row">
+      <div class="col-12"> 
+        <div class="card">
+          <div class="card-body">
+            <div class="icon-links float-right">
+              <span data-clipboard-text="<%= @transaction_hash %>">
+                <button type="button" class="icon-link" id="button" data-toggle="tooltip" data-placement="top" title="<%= gettext("Copy Txn Hash") %>" aria-label="<%= gettext("Copy Transaction Hash") %>">
+                  <i class="fas fa-clone"></i>
+                </button>
+              </span>
+            </div>
+            <h1 class="card-title"><%= gettext "Transaction Details" %> </h1>
+            <div class="tile tile-muted text-center">
+              <div class="loading-spinner mx-auto">
+                <span class="loading-spinner-block-1"></span>
+                <span class="loading-spinner-block-2"></span>
+              </div>
+              <br>
+              <span><%= gettext("The transaction %{bold_hash} was not processed yet", bold_hash: "<span class=\"font-weight-bold\">#{@transaction_hash}</span>") |> raw() %> <span>
+            </div>
+            <hr>
+            <div class="text-center">
+              <h2><%= gettext "Once we have the transaction's data this page will refresh automatically" %></h2>
+              <h3><%= gettext "The possible reasons for this transaction not being processed include the following:" %></h3>
+              <ul class="d-inline-block text-left">
+                <li><%= gettext "The transaction was made a few seconds ago" %></li>
+                <li><%= gettext "The transaction may be in the pool of a node that didn't broadcast it yet" %></li>
+                <li><%= gettext "Some transactions may take a while longer to be indexed depending on the load on the network" %></li>
+                <li><%= gettext "The transaction still does not exist" %></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</section>
