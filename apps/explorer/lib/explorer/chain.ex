@@ -217,7 +217,7 @@ defmodule Explorer.Chain do
           _ -> [from_address_query, to_address_query, created_contract_query]
         end
 
-    result = queries |> Enum.flat_map(&Repo.all/1)
+    result = Enum.flat_map(queries, &Repo.all/1)
 
     sorted_result =
       result
