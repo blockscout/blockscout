@@ -328,11 +328,13 @@ msgid "Copy Code"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:9
 #: lib/block_scout_web/templates/transaction/overview.html.eex:10
 msgid "Copy Transaction Hash"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:9
 #: lib/block_scout_web/templates/transaction/overview.html.eex:10
 msgid "Copy Txn Hash"
 msgstr ""
@@ -966,6 +968,7 @@ msgid "Transaction %{transaction}, %{subnetwork} %{transaction}"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:14
 #: lib/block_scout_web/templates/transaction/overview.html.eex:15
 msgid "Transaction Details"
 msgstr ""
@@ -1263,4 +1266,49 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/views/block_transaction_view.ex:12
 msgid "This block has not been processed yet."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/invalid.html.eex:6
+msgid "Invalid Transaction Hash"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:25
+msgid "Once we have the transaction's data this page will refresh automatically"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:30
+msgid "Some transactions may take a while longer to be indexed depending on the load on the network"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:26
+msgid "The possible reasons for this transaction not being processed include the following:"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:21
+msgid "The transaction %{bold_hash} was not processed yet"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:29
+msgid "The transaction may be in the pool of a node that didn't broadcast it yet"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:31
+msgid "The transaction still does not exist"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/not_found.html.eex:28
+msgid "The transaction was made a few seconds ago"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/invalid.html.eex:8
+msgid "is not a valid transaction hash"
 msgstr ""
