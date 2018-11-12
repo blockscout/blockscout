@@ -77,26 +77,16 @@ defmodule Explorer.SmartContract.Reader do
   end
 
   @doc """
-  Runs contract functions on a given address for an unverified contract with an expected ABI.
+  Runs contract functions on a given address for smart contract with an expected ABI and functions.
+
+  This function can be used to read data from smart contracts that are not verified (like token contracts)
+  since it receives the ABI as an argument.
 
   ## Options
 
   * `:json_rpc_named_arguments` - Options to forward for calling the Ethereum JSON RPC. See
     `t:EthereumJSONRPC.json_rpc_named_arguments.t/0` for full list of options.
   """
-  @spec query_unverified_contract(Hash.Address.t(), [map()], functions(), contract_call_options()) ::
-          functions_results()
-  def query_unverified_contract(
-        %Hash{byte_count: unquote(Hash.Address.byte_count())} = address,
-        abi,
-        functions,
-        opts \\ []
-      ) do
-    contract_address = Hash.to_string(address)
-
-    query_contract(contract_address, abi, functions, opts)
-  end
-
   @spec query_contract(
           String.t(),
           term(),
