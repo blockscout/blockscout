@@ -102,6 +102,19 @@ defmodule BlockScoutWeb.TransactionControllerTest do
   end
 
   describe "GET show/3" do
+    test "responds with 404 with the transaction missing", %{conn: conn} do
+      hash = transaction_hash()
+      conn = get(conn, transaction_path(BlockScoutWeb.Endpoint, :show, hash))
+
+      assert html_response(conn, 404)
+    end
+
+    test "responds with 422 when the hash is invalid" do
+      conn = get(conn, transaction_path(BlockScoutWeb.Endpoint, :show, "wrong"))
+
+      assert html_response(conn, 422)
+    end
+
     test "redirects to transactions/:transaction_id/token_transfers when there are token transfers", %{conn: conn} do
       transaction = insert(:transaction)
       insert(:token_transfer, transaction: transaction)
