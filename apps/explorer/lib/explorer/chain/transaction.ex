@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Transaction do
 
   require Logger
 
-  import Ecto.Query, only: [dynamic: 2, from: 2, preload: 3, subquery: 1, where: 3]
+  import Ecto.Query, only: [from: 2, preload: 3, subquery: 1, where: 3]
 
   alias ABI.FunctionSelector
 
@@ -477,32 +477,6 @@ defmodule Explorer.Chain.Transaction do
   """
   def where_address_fields_match(query, address_hash, address_field) do
     where(query, [t], field(t, ^address_field) == ^address_hash)
-  end
-
-  @doc """
-  Builds a dynamic query expression to identify if there is a transaction
-  related to the hash.
-  """
-  def dynamic_where_address_hash_matches(address_hash, :to, dynamic) do
-    dynamic(
-      [t],
-      t.to_address_hash == ^address_hash or t.created_contract_address_hash == ^address_hash or ^dynamic
-    )
-  end
-
-  def dynamic_where_address_hash_matches(address_hash, :from, dynamic) do
-    dynamic(
-      [t],
-      t.from_address_hash == ^address_hash or ^dynamic
-    )
-  end
-
-  def dynamic_where_address_hash_matches(address_hash, _, dynamic) do
-    dynamic(
-      [t],
-      t.to_address_hash == ^address_hash or t.from_address_hash == ^address_hash or
-        t.created_contract_address_hash == ^address_hash or ^dynamic
-    )
   end
 
   @collated_fields ~w(block_number cumulative_gas_used gas_used index)a
