@@ -15,7 +15,7 @@ defmodule Indexer.InternalTransaction.Fetcher do
 
   @behaviour BufferedTask
 
-  @max_batch_size 5
+  @max_batch_size 2
   @max_concurrency 3
   @defaults [
     flush_interval: :timer.seconds(3),
