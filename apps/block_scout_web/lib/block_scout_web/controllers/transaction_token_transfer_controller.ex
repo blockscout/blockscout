@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
 
   import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
+  alias BlockScoutWeb.TransactionView
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
 
@@ -16,6 +17,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
                [created_contract_address: :names] => :optional,
                [from_address: :names] => :optional,
                [to_address: :names] => :optional,
+               [to_address: :smart_contract] => :optional,
                :token_transfers => :optional
              }
            ) do
@@ -49,10 +51,16 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
       )
     else
       :error ->
-        not_found(conn)
+        conn
+        |> put_status(422)
+        |> put_view(TransactionView)
+        |> render("invalid.html", transaction_hash: hash_string)
 
       {:error, :not_found} ->
-        not_found(conn)
+        conn
+        |> put_status(404)
+        |> put_view(TransactionView)
+        |> render("not_found.html", transaction_hash: hash_string)
     end
   end
 

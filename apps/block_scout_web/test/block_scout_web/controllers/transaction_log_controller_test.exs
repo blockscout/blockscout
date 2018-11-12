@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.TransactionLogControllerTest do
     test "with invalid transaction hash", %{conn: conn} do
       conn = get(conn, transaction_log_path(conn, :index, "invalid_transaction_string"))
 
-      assert html_response(conn, 404)
+      assert html_response(conn, 422)
     end
 
     test "with valid transaction hash without transaction", %{conn: conn} do
