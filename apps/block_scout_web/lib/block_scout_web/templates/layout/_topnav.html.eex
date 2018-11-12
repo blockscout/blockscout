@@ -45,14 +45,6 @@
                 ) %>
           </div>
         </li>
-        <li class="nav-item">
-          <%= link to: address_path(@conn, :index), class: "nav-link topnav-nav-link" do %>
-            <span class="nav-link-icon">
-              <%= render BlockScoutWeb.IconsView, "_accounts_icon.html" %>
-            </span>
-            <%= gettext("Accounts") %>
-          <% end %>
-        </li>
         <li class="nav-item dropdown">
           <a href="#" role="button" id="navbarAPIsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <span class="nav-link-icon">
