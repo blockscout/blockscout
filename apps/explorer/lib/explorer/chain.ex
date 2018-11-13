@@ -1953,8 +1953,9 @@ defmodule Explorer.Chain do
         query =
           from(
             token in Token,
+            select: token.contract_address_hash,
             where: token.cataloged == true,
-            select: token.contract_address_hash
+            order_by: [asc: token.updated_at]
           )
 
         query

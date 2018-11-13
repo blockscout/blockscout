@@ -5,7 +5,7 @@ defmodule Indexer.Token.Supervisor do
 
   use Supervisor
 
-  alias Indexer.Token.Fetcher
+  alias Indexer.Token.{Fetcher, MetadataUpdater}
 
   def child_spec([init_arguments]) do
     child_spec([init_arguments, []])
@@ -30,7 +30,8 @@ defmodule Indexer.Token.Supervisor do
     Supervisor.init(
       [
         {Task.Supervisor, name: Indexer.Token.TaskSupervisor},
-        {Fetcher, [fetcher_arguments, [name: Fetcher]]}
+        {Fetcher, [fetcher_arguments, [name: Fetcher]]},
+        {MetadataUpdater, [[], [name: MetadataUpdater]]}
       ],
       strategy: :one_for_one
     )
