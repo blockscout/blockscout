@@ -269,7 +269,8 @@ defmodule Explorer.Factory do
       call_type: :delegatecall,
       gas: gas,
       gas_used: gas_used,
-      output: %Data{bytes: <<1>>},
+      input: %Data{bytes: <<1>>},
+      output: %Data{bytes: <<2>>},
       # caller MUST supply `index`
       trace_address: [],
       # caller MUST supply `transaction` because it can't be built lazily to allow overrides without creating an extra
