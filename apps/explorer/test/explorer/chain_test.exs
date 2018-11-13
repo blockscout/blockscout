@@ -850,16 +850,17 @@ defmodule Explorer.ChainTest do
       internal_transactions: %{
         params: [
           %{
+            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+            index: 0,
+            trace_address: [],
+            type: "call",
             call_type: "call",
             from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+            to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             gas: 4_677_320,
             gas_used: 27770,
-            index: 0,
+            input: "0x",
             output: "0x",
-            to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
-            trace_address: [],
-            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-            type: "call",
             value: 0
           }
         ]
