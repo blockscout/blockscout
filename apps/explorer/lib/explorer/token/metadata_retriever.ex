@@ -1,4 +1,4 @@
-defmodule Explorer.Token.FunctionsReader do
+defmodule Explorer.Token.MetadataRetriever do
   @moduledoc """
   Reads Token's fields using Smart Contract functions from the blockchain.
   """
@@ -113,19 +113,13 @@ defmodule Explorer.Token.FunctionsReader do
 
   defp fetch_functions_from_contract(contract_address_hash, contract_functions) do
     max_retries = Application.get_env(:explorer, :token_functions_reader_max_retries)
-    functions_fetched = %{}
 
-    fetch_functions_from_contract(contract_address_hash, contract_functions, max_retries, functions_fetched)
+    fetch_functions_with_retries(contract_address_hash, contract_functions, %{}, max_retries)
   end
 
-  defp fetch_functions_from_contract(contract_address_hash, contract_functions, retries_left, functions_fetched)
-       when retries_left == 0 do
-    contract_functions_result = Reader.query_contract(contract_address_hash, @contract_abi, contract_functions)
+  defp fetch_functions_with_retries(_contract_address_hash, _contract_functions, accumulator, 0), do: accumulator
 
-    Map.merge(functions_fetched, contract_functions_result)
-  end
-
-  defp fetch_functions_from_contract(contract_address_hash, contract_functions, retries_left, functions_fetched)
+  defp fetch_functions_with_retries(contract_address_hash, contract_functions, accumulator, retries_left)
        when retries_left > 0 do
     contract_functions_result = Reader.query_contract(contract_address_hash, @contract_abi, contract_functions)
 
@@ -143,17 +137,22 @@ defmodule Explorer.Token.FunctionsReader do
       contract_functions_with_errors =
         Map.take(
           contract_functions,
-          Enum.map(functions_with_errors, fn {function, _} -> function end)
+          Enum.map(functions_with_errors, fn {function, _status} -> function end)
         )
 
-      fetch_functions_from_contract(
+      fetch_functions_with_retries(
         contract_address_hash,
         contract_functions_with_errors,
-        retries_left - 1,
-        Map.merge(functions_fetched, contract_functions_result)
+        Map.merge(accumulator, contract_functions_result),
+        retries_left - 1
       )
     else
-      Map.merge(functions_fetched, contract_functions_result)
+      fetch_functions_with_retries(
+        contract_address_hash,
+        %{},
+        Map.merge(accumulator, contract_functions_result),
+        0
+      )
     end
   end
 
@@ -167,7 +166,7 @@ defmodule Explorer.Token.FunctionsReader do
       [
         "<Token contract hash: #{contract_address_hash}> error while fetching metadata: \n",
         error_messages,
-        "Retries left: #{retries_left}"
+        "Retries left: #{retries_left - 1}"
       ],
       fetcher: :token_functions
     )

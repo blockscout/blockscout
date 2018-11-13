@@ -1,8 +1,8 @@
-defmodule Explorer.Token.FunctionsReaderTest do
+defmodule Explorer.Token.MetadataRetrieverTest do
   use EthereumJSONRPC.Case
   use Explorer.DataCase
 
-  alias Explorer.Token.FunctionsReader
+  alias Explorer.Token.MetadataRetriever
 
   import Mox
 
@@ -49,7 +49,7 @@ defmodule Explorer.Token.FunctionsReaderTest do
         decimals: 18
       }
 
-      assert FunctionsReader.get_functions_of(token.contract_address_hash) == expected
+      assert MetadataRetriever.get_functions_of(token.contract_address_hash) == expected
     end
 
     test "returns only the functions that were read without error" do
@@ -111,7 +111,7 @@ defmodule Explorer.Token.FunctionsReaderTest do
         total_supply: 1_000_000_000_000_000_000
       }
 
-      assert FunctionsReader.get_functions_of(token.contract_address_hash) == expected
+      assert MetadataRetriever.get_functions_of(token.contract_address_hash) == expected
     end
 
     test "considers the contract address formatted hash when it is an invalid string" do
@@ -154,7 +154,7 @@ defmodule Explorer.Token.FunctionsReaderTest do
         symbol: "BNT"
       }
 
-      assert FunctionsReader.get_functions_of(token.contract_address_hash) == expected
+      assert MetadataRetriever.get_functions_of(token.contract_address_hash) == expected
     end
 
     test "considers the symbol nil when it is an invalid string" do
@@ -196,7 +196,7 @@ defmodule Explorer.Token.FunctionsReaderTest do
         symbol: nil
       }
 
-      assert FunctionsReader.get_functions_of(token.contract_address_hash) == expected
+      assert MetadataRetriever.get_functions_of(token.contract_address_hash) == expected
     end
 
     test "shortens strings larger than 255 characters" do
@@ -222,7 +222,7 @@ defmodule Explorer.Token.FunctionsReaderTest do
         end
       )
 
-      assert FunctionsReader.get_functions_of(token.contract_address_hash) == %{name: long_token_name_shortened}
+      assert MetadataRetriever.get_functions_of(token.contract_address_hash) == %{name: long_token_name_shortened}
     end
 
     test "retries when some function gave error" do
@@ -264,7 +264,7 @@ defmodule Explorer.Token.FunctionsReaderTest do
         end
       )
 
-      assert FunctionsReader.get_functions_of(token.contract_address_hash) == %{decimals: 18, symbol: "BNT"}
+      assert MetadataRetriever.get_functions_of(token.contract_address_hash) == %{decimals: 18, symbol: "BNT"}
     end
 
     test "retries according to the configured number" do
@@ -307,7 +307,7 @@ defmodule Explorer.Token.FunctionsReaderTest do
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
-        2,
+        1,
         fn [%{id: "decimals"}, %{id: "symbol"}], _opts ->
           {:ok,
            [
@@ -325,7 +325,7 @@ defmodule Explorer.Token.FunctionsReaderTest do
         end
       )
 
-      assert FunctionsReader.get_functions_of(token.contract_address_hash) == %{
+      assert MetadataRetriever.get_functions_of(token.contract_address_hash) == %{
                name: "Bancor",
                total_supply: 1_000_000_000_000_000_000
              }

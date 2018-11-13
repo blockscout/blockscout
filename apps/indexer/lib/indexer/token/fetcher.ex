@@ -6,7 +6,7 @@ defmodule Indexer.Token.Fetcher do
   alias Explorer.Chain
   alias Explorer.Chain.Hash.Address
   alias Explorer.Chain.Token
-  alias Explorer.Token.FunctionsReader
+  alias Explorer.Token.MetadataRetriever
   alias Indexer.BufferedTask
 
   @behaviour BufferedTask
@@ -66,9 +66,10 @@ defmodule Indexer.Token.Fetcher do
   end
 
   defp catalog_token(%Token{contract_address_hash: contract_address_hash} = token) do
-    contract_functions = FunctionsReader.get_functions_of(contract_address_hash)
-
-    token_params = Map.put(contract_functions, :cataloged, true)
+    token_params =
+      contract_address_hash
+      |> MetadataRetriever.get_functions_of()
+      |> Map.put(:cataloged, true)
 
     {:ok, _} = Chain.update_token(token, token_params)
     :ok
