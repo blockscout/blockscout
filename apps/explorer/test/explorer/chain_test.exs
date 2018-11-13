@@ -2756,6 +2756,12 @@ defmodule Explorer.ChainTest do
     assert Chain.stream_uncataloged_token_contract_address_hashes([], &[&1 | &2]) == {:ok, [uncatalog_address]}
   end
 
+  test "stream_cataloged_token_contract_address_hashes/2 reduces with given reducer and accumulator" do
+    %Token{contract_address_hash: catalog_address} = insert(:token, cataloged: true)
+    insert(:token, cataloged: false)
+    assert Chain.stream_cataloged_token_contract_address_hashes([], &[&1 | &2]) == {:ok, [catalog_address]}
+  end
+
   describe "transaction_has_token_transfers?/1" do
     test "returns true if transaction has token transfers" do
       transaction = insert(:transaction)
