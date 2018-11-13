@@ -1834,7 +1834,7 @@ defmodule Explorer.ChainTest do
       assert {actual.transaction_hash, actual.index} == {expected.transaction_hash, expected.index}
     end
 
-    test "includes internal transactions of type `suicide` even when they are alone in the parent transaction" do
+    test "includes internal transactions of type `selfdestruct` even when they are alone in the parent transaction" do
       transaction =
         :transaction
         |> insert()
@@ -1845,7 +1845,7 @@ defmodule Explorer.ChainTest do
           index: 0,
           transaction: transaction,
           gas: nil,
-          type: :suicide,
+          type: :selfdestruct,
           block_number: transaction.block_number,
           transaction_index: transaction.index
         )

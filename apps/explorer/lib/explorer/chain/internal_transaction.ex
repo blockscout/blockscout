@@ -334,7 +334,7 @@ defmodule Explorer.Chain.InternalTransaction do
         gas_used: {"can't be blank for successful create", [validation: :required]}
       ]
 
-  For `:suicide`s, it looks like a simple value transfer between the addresses.
+  For `:selfdestruct`s, it looks like a simple value transfer between the addresses.
 
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},
@@ -344,7 +344,7 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     to_address_hash: "0x59e2e9ecf133649b1a7efc731162ff09d29ca5a5",
       ...>     trace_address: [0],
       ...>     transaction_hash: "0xb012b8c53498c669d87d85ed90f57385848b86d3f44ed14b2784ec685d6fda98",
-      ...>     type: "suicide",
+      ...>     type: "selfdestruct",
       ...>     value: 0,
       ...>     block_number: 35,
       ...>     transaction_index: 0
@@ -397,14 +397,14 @@ defmodule Explorer.Chain.InternalTransaction do
     |> unique_constraint(:index)
   end
 
-  @suicide_optional_fields ~w(block_number transaction_index)
-  @suicide_required_fields ~w(from_address_hash index to_address_hash trace_address transaction_hash type value)a
-  @suicide_allowed_fields @suicide_optional_fields ++ @suicide_required_fields
+  @selfdestruct_optional_fields ~w(block_number transaction_index)
+  @selfdestruct_required_fields ~w(from_address_hash index to_address_hash trace_address transaction_hash type value)a
+  @selfdestruct_allowed_fields @selfdestruct_optional_fields ++ @selfdestruct_required_fields
 
-  defp type_changeset(changeset, attrs, :suicide) do
+  defp type_changeset(changeset, attrs, :selfdestruct) do
     changeset
-    |> cast(attrs, @suicide_allowed_fields)
-    |> validate_required(@suicide_required_fields)
+    |> cast(attrs, @selfdestruct_allowed_fields)
+    |> validate_required(@selfdestruct_required_fields)
     |> foreign_key_constraint(:from_address_hash)
     |> foreign_key_constraint(:to_address_hash)
     |> unique_constraint(:index)
