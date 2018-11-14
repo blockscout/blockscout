@@ -6,8 +6,9 @@ defmodule Indexer.CoinBalance.Fetcher do
 
   require Logger
 
-  import EthereumJSONRPC, only: [integer_to_quantity: 1]
+  import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
 
+  alias EthereumJSONRPC.FetchedBalances
   alias Explorer.Chain
   alias Explorer.Chain.{Block, Hash}
   alias Indexer.BufferedTask
@@ -75,23 +76,14 @@ defmodule Indexer.CoinBalance.Fetcher do
     |> Enum.map(&entry_to_params/1)
     |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments)
     |> case do
-      {:ok, balances_params} ->
-        value_fetched_at = DateTime.utc_now()
-
-        importable_balances_params = Enum.map(balances_params, &Map.put(&1, :value_fetched_at, value_fetched_at))
-
-        addresses_params = balances_params_to_address_params(importable_balances_params)
-
-        {:ok, _} =
-          Chain.import(%{
-            addresses: %{params: addresses_params, with: :balance_changeset},
-            address_coin_balances: %{params: importable_balances_params}
-          })
-
-        :ok
+      {:ok, fetched_balances} ->
+        run_fetched_balances(fetched_balances, unique_entries)
 
       {:error, reason} ->
-        Logger.debug(fn -> "failed to fetch #{length(unique_entries)} balances, #{inspect(reason)}" end)
+        Logger.error(fn ->
+          ["failed to fetch ", unique_entries |> length() |> to_string(), " balances, ", inspect(reason)]
+        end)
+
         {:retry, unique_entries}
     end
   end
@@ -115,5 +107,72 @@ defmodule Indexer.CoinBalance.Fetcher do
     |> Enum.map(fn %{address_hash: address_hash, block_number: block_number, value: value} ->
       %{hash: address_hash, fetched_coin_balance_block_number: block_number, fetched_coin_balance: value}
     end)
+  end
+
+  defp run_fetched_balances(%FetchedBalances{params_list: []}, original_entries), do: {:retry, original_entries}
+
+  defp run_fetched_balances(%FetchedBalances{params_list: params_list, errors: errors}, original_entries) do
+    value_fetched_at = DateTime.utc_now()
+
+    importable_balances_params = Enum.map(params_list, &Map.put(&1, :value_fetched_at, value_fetched_at))
+
+    addresses_params = balances_params_to_address_params(importable_balances_params)
+
+    {:ok, _} =
+      Chain.import(%{
+        addresses: %{params: addresses_params, with: :balance_changeset},
+        address_coin_balances: %{params: importable_balances_params}
+      })
+
+    retry(errors, original_entries)
+  end
+
+  defp retry([], _), do: :ok
+
+  defp retry(errors, original_entries) when is_list(errors) do
+    retried_entries = fetched_balances_errors_to_entries(errors)
+
+    Logger.error(fn ->
+      [
+        "failed to fetch ",
+        retried_entries |> length() |> to_string(),
+        "/",
+        original_entries |> length() |> to_string(),
+        " balances: ",
+        fetched_balance_errors_to_iodata(errors)
+      ]
+    end)
+
+    {:retry, retried_entries}
+  end
+
+  defp fetched_balances_errors_to_entries(errors) when is_list(errors) do
+    Enum.map(errors, &fetched_balance_error_to_entry/1)
+  end
+
+  defp fetched_balance_error_to_entry(%{data: %{block_quantity: block_quantity, hash_data: hash_data}})
+       when is_binary(block_quantity) and is_binary(hash_data) do
+    {:ok, %Hash{bytes: address_hash_bytes}} = Hash.Address.cast(hash_data)
+    block_number = quantity_to_integer(block_quantity)
+    {address_hash_bytes, block_number}
+  end
+
+  defp fetched_balance_errors_to_iodata(errors) when is_list(errors) do
+    fetched_balance_errors_to_iodata(errors, [])
+  end
+
+  defp fetched_balance_errors_to_iodata([], iodata), do: iodata
+
+  defp fetched_balance_errors_to_iodata([error | errors], iodata) do
+    fetched_balance_errors_to_iodata(errors, [iodata | fetched_balance_error_to_iodata(error)])
+  end
+
+  defp fetched_balance_error_to_iodata(%{
+         code: code,
+         message: message,
+         data: %{block_quantity: block_quantity, hash_data: hash_data}
+       })
+       when is_integer(code) and is_binary(message) and is_binary(block_quantity) and is_binary(hash_data) do
+    [hash_data, "@", quantity_to_integer(block_quantity), ": (", to_string(code), ") ", message]
   end
 end

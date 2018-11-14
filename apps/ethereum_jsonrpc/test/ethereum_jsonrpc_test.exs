@@ -4,7 +4,7 @@ defmodule EthereumJSONRPCTest do
   import EthereumJSONRPC.Case
   import Mox
 
-  alias EthereumJSONRPC.Subscription
+  alias EthereumJSONRPC.{FetchedBalances, Subscription}
   alias EthereumJSONRPC.WebSocket.WebSocketClient
 
   setup :verify_on_exit!
@@ -37,16 +37,18 @@ defmodule EthereumJSONRPCTest do
                json_rpc_named_arguments
              ) ==
                {:ok,
-                [
-                  %{
-                    address_hash: hash,
-                    block_number: 1,
-                    value: expected_fetched_balance
-                  }
-                ]}
+                %FetchedBalances{
+                  params_list: [
+                    %{
+                      address_hash: hash,
+                      block_number: 1,
+                      value: expected_fetched_balance
+                    }
+                  ]
+                }}
     end
 
-    test "with all invalid hash_data returns {:error, reasons}", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+    test "with all invalid hash_data returns errors", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
 
       expected_message =
@@ -76,18 +78,21 @@ defmodule EthereumJSONRPCTest do
         end)
       end
 
-      assert {:error,
-              [
-                %{
-                  code: -32602,
-                  data: %{"blockNumber" => "0x1", "hash" => "0x0"},
-                  message: ^expected_message
-                }
-              ]} =
+      assert {:ok,
+              %FetchedBalances{
+                errors: [
+                  %{
+                    code: -32602,
+                    data: %{hash_data: "0x0", block_quantity: "0x1"},
+                    message: ^expected_message
+                  }
+                ],
+                params_list: []
+              }} =
                EthereumJSONRPC.fetch_balances([%{block_quantity: "0x1", hash_data: "0x0"}], json_rpc_named_arguments)
     end
 
-    test "with a mix of valid and invalid hash_data returns {:error, reasons}", %{
+    test "with a mix of valid and invalid hash_data returns both", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
@@ -128,7 +133,7 @@ defmodule EthereumJSONRPCTest do
         end)
       end
 
-      assert {:error, reasons} =
+      assert {:ok, %FetchedBalances{params_list: params_list, errors: errors}} =
                EthereumJSONRPC.fetch_balances(
                  [
                    # start with :ok
@@ -160,8 +165,11 @@ defmodule EthereumJSONRPCTest do
                  json_rpc_named_arguments
                )
 
-      assert is_list(reasons)
-      assert length(reasons) > 1
+      assert is_list(params_list)
+      assert length(params_list) > 1
+
+      assert is_list(errors)
+      assert length(errors) > 1
     end
   end
 

@@ -25,10 +25,9 @@ defmodule EthereumJSONRPC do
   documentation for `EthereumJSONRPC.RequestCoordinator`.
   """
 
-  alias Explorer.Chain.Block
-
   alias EthereumJSONRPC.{
     Blocks,
+    FetchedBalances,
     Receipts,
     RequestCoordinator,
     Subscription,
@@ -190,25 +189,16 @@ defmodule EthereumJSONRPC do
   @spec fetch_balances(
           [%{required(:block_quantity) => quantity, required(:hash_data) => data()}],
           json_rpc_named_arguments
-        ) ::
-          {:ok,
-           [
-             %{
-               required(:address_hash) => quantity,
-               required(:block_number) => Block.block_number(),
-               required(:value) => non_neg_integer()
-             }
-           ]}
-          | {:error, reason :: term}
+        ) :: {:ok, FetchedBalances.t()} | {:error, reason :: term}
   def fetch_balances(params_list, json_rpc_named_arguments)
       when is_list(params_list) and is_list(json_rpc_named_arguments) do
     id_to_params = id_to_params(params_list)
 
     with {:ok, responses} <-
            id_to_params
-           |> get_balance_requests()
+           |> FetchedBalances.requests()
            |> json_rpc(json_rpc_named_arguments) do
-      get_balance_responses_to_balances_params(responses, id_to_params)
+      {:ok, FetchedBalances.from_responses(responses, id_to_params)}
     end
   end
 
@@ -312,6 +302,7 @@ defmodule EthereumJSONRPC do
   @doc """
   Assigns an id to each set of params in `params_list` for batch request-response correlation
   """
+  @spec id_to_params([params]) :: %{id => params} when id: non_neg_integer(), params: map()
   def id_to_params(params_list) do
     params_list
     |> Stream.with_index()
@@ -418,62 +409,6 @@ defmodule EthereumJSONRPC do
     timestamp
     |> quantity_to_integer()
     |> Timex.from_unix()
-  end
-
-  defp get_balance_requests(id_to_params) when is_map(id_to_params) do
-    Enum.map(id_to_params, fn {id, %{block_quantity: block_quantity, hash_data: hash_data}} ->
-      get_balance_request(%{id: id, block_quantity: block_quantity, hash_data: hash_data})
-    end)
-  end
-
-  defp get_balance_request(%{id: id, block_quantity: block_quantity, hash_data: hash_data}) do
-    request(%{id: id, method: "eth_getBalance", params: [hash_data, block_quantity]})
-  end
-
-  defp get_balance_responses_to_balances_params(responses, id_to_params)
-       when is_list(responses) and is_map(id_to_params) do
-    {status, reversed} =
-      responses
-      |> Enum.map(&get_balance_responses_to_balance_params(&1, id_to_params))
-      |> Enum.reduce(
-        {:ok, []},
-        fn
-          {:ok, address_params}, {:ok, address_params_list} ->
-            {:ok, [address_params | address_params_list]}
-
-          {:ok, _}, {:error, _} = acc_error ->
-            acc_error
-
-          {:error, reason}, {:ok, _} ->
-            {:error, [reason]}
-
-          {:error, reason}, {:error, acc_reason} ->
-            {:error, [reason | acc_reason]}
-        end
-      )
-
-    {status, Enum.reverse(reversed)}
-  end
-
-  defp get_balance_responses_to_balance_params(%{id: id, result: fetched_balance_quantity}, id_to_params)
-       when is_map(id_to_params) do
-    %{block_quantity: block_quantity, hash_data: hash_data} = Map.fetch!(id_to_params, id)
-
-    {:ok,
-     %{
-       value: quantity_to_integer(fetched_balance_quantity),
-       block_number: quantity_to_integer(block_quantity),
-       address_hash: hash_data
-     }}
-  end
-
-  defp get_balance_responses_to_balance_params(%{id: id, error: error}, id_to_params)
-       when is_map(id_to_params) do
-    %{block_quantity: block_quantity, hash_data: hash_data} = Map.fetch!(id_to_params, id)
-
-    annotated_error = Map.put(error, :data, %{"blockNumber" => block_quantity, "hash" => hash_data})
-
-    {:error, annotated_error}
   end
 
   defp get_block_by_hash_requests(id_to_params) do

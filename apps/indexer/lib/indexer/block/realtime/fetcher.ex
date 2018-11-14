@@ -11,7 +11,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   import Indexer.Block.Fetcher, only: [async_import_tokens: 1, async_import_uncles: 1, fetch_and_import_range: 2]
 
   alias Ecto.Changeset
-  alias EthereumJSONRPC.Subscription
+  alias EthereumJSONRPC.{FetchedBalances, Subscription}
   alias Explorer.Chain
   alias Indexer.{AddressExtraction, Block, TokenBalances}
   alias Indexer.Block.Realtime.TaskSupervisor
@@ -247,20 +247,27 @@ defmodule Indexer.Block.Realtime.Fetcher do
          %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments},
          %{addresses_params: addresses_params} = options
        ) do
-    with {:ok, fetched_balances_params} <-
-           options
-           |> fetch_balances_params_list()
-           |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments) do
-      merged_addresses_params =
-        %{address_coin_balances: fetched_balances_params}
-        |> AddressExtraction.extract_addresses()
-        |> Kernel.++(addresses_params)
-        |> AddressExtraction.merge_addresses()
+    case options
+         |> fetch_balances_params_list()
+         |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments) do
+      {:ok, %FetchedBalances{params_list: params_list, errors: []}} ->
+        merged_addresses_params =
+          %{address_coin_balances: params_list}
+          |> AddressExtraction.extract_addresses()
+          |> Kernel.++(addresses_params)
+          |> AddressExtraction.merge_addresses()
 
-      value_fetched_at = DateTime.utc_now()
-      importable_balances_params = Enum.map(fetched_balances_params, &Map.put(&1, :value_fetched_at, value_fetched_at))
+        value_fetched_at = DateTime.utc_now()
 
-      {:ok, %{addresses_params: merged_addresses_params, balances_params: importable_balances_params}}
+        importable_balances_params = Enum.map(params_list, &Map.put(&1, :value_fetched_at, value_fetched_at))
+
+        {:ok, %{addresses_params: merged_addresses_params, balances_params: importable_balances_params}}
+
+      {:error, _} = error ->
+        error
+
+      {:ok, %FetchedBalances{errors: errors}} ->
+        {:error, errors}
     end
   end
 
