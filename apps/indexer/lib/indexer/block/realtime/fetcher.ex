@@ -112,7 +112,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
            |> put_in([Access.key(:address_token_balances), :params], address_token_balances)
            |> put_in([Access.key(:internal_transactions, %{}), :params], internal_transactions_params),
          {:ok, imported} = ok <- Chain.import(chain_import_options) do
-      TokenBalances.log_fetching_errors(__MODULE__, address_token_balances)
       async_import_remaining_block_data(imported)
       ok
     end

@@ -25,6 +25,8 @@ defmodule Indexer.TokenBalances do
   * `block_number` - The block number that the address_hash has the balance.
   """
   def fetch_token_balances_from_blockchain(token_balances) do
+    Logger.debug(fn -> "fetching #{Enum.count(token_balances)} token balances" end)
+
     requested_token_balances =
       token_balances
       |> Task.async_stream(&fetch_token_balance/1, on_timeout: :kill_task)
@@ -64,6 +66,10 @@ defmodule Indexer.TokenBalances do
   defp schedule_token_balances([]), do: nil
 
   defp schedule_token_balances(unfetched_token_balances) do
+    Logger.debug(fn -> "#{Enum.count(unfetched_token_balances)} token balances will be retried" end)
+
+    log_fetching_errors(unfetched_token_balances)
+
     unfetched_token_balances
     |> Enum.map(fn token_balance ->
       {:ok, address_hash} = Chain.string_to_address_hash(token_balance.address_hash)
@@ -93,20 +99,20 @@ defmodule Indexer.TokenBalances do
     |> Enum.map(&Map.merge(&1, %{value: nil, value_fetched_at: nil, error: :timeout}))
   end
 
-  def log_fetching_errors(from, token_balances_params) do
+  def log_fetching_errors(token_balances_params) do
     error_messages =
       token_balances_params
       |> Stream.filter(fn token_balance -> token_balance.error != nil end)
       |> Enum.map(fn token_balance ->
         "<address_hash: #{token_balance.address_hash}, " <>
           "contract_address_hash: #{token_balance.token_contract_address_hash}, " <>
-          "block_number: #{token_balance.block_number}, " <> "error: #{token_balance.error}> \n"
+          "block_number: #{token_balance.block_number}, " <>
+          "error: #{token_balance.error}>, " <> "retried: #{Map.get(token_balance, :retries_count, 1)} times\n"
       end)
 
     if Enum.any?(error_messages) do
       Logger.debug(
         [
-          "<#{from}> ",
           "Errors while fetching TokenBalances through Contract interaction: \n",
           error_messages
         ],

@@ -58,8 +58,6 @@ defmodule Indexer.TokenBalance.Fetcher do
 
   @impl BufferedTask
   def run(entries, _json_rpc_named_arguments) do
-    Logger.debug(fn -> "fetching #{length(entries)} token balances" end)
-
     result =
       entries
       |> Enum.map(&format_params/1)
@@ -79,8 +77,6 @@ defmodule Indexer.TokenBalance.Fetcher do
       params_list
       |> Enum.filter(&(&1.retries_count <= @max_retries))
       |> TokenBalances.fetch_token_balances_from_blockchain()
-
-    TokenBalances.log_fetching_errors(__MODULE__, token_balances)
 
     token_balances
   end
