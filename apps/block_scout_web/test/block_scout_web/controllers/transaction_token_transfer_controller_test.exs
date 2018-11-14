@@ -28,7 +28,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
     test "with invalid transaction hash", %{conn: conn} do
       conn = get(conn, transaction_token_transfer_path(BlockScoutWeb.Endpoint, :index, "nope"))
 
-      assert html_response(conn, 404)
+      assert html_response(conn, 422)
     end
 
     test "includes transaction data", %{conn: conn} do
@@ -141,6 +141,16 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
       conn = get(conn, transaction_token_transfer_path(BlockScoutWeb.Endpoint, :index, transaction.hash))
 
       assert is_nil(conn.assigns.next_page_params)
+    end
+
+    test "preloads to_address smart contract verified", %{conn: conn} do
+      transaction = insert(:transaction_to_verified_contract)
+
+      conn = get(conn, transaction_token_transfer_path(BlockScoutWeb.Endpoint, :index, transaction.hash))
+
+      assert html_response(conn, 200)
+      assert conn.assigns.transaction.hash == transaction.hash
+      assert conn.assigns.transaction.to_address.smart_contract != nil
     end
   end
 end

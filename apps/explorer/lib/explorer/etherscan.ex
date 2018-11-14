@@ -74,7 +74,7 @@ defmodule Explorer.Etherscan do
 
     * exclude internal transactions of type call with no siblings in the
       transaction
-    * include internal transactions of type create, reward, or suicide
+    * include internal transactions of type create, reward, or selfdestruct
       even when they are alone in the parent transaction
 
   """
@@ -108,7 +108,7 @@ defmodule Explorer.Etherscan do
 
     * exclude internal transactions of type call with no siblings in the
       transaction
-    * include internal transactions of type create, reward, or suicide
+    * include internal transactions of type create, reward, or selfdestruct
       even when they are alone in the parent transaction
 
   """
@@ -344,9 +344,11 @@ defmodule Explorer.Etherscan do
             block_number: b.number,
             block_timestamp: b.timestamp,
             confirmations: fragment("? - ?", ^max_block_number, t.block_number),
+            token_id: tt.token_id,
             token_name: tkn.name,
             token_symbol: tkn.symbol,
-            token_decimals: tkn.decimals
+            token_decimals: tkn.decimals,
+            token_type: tkn.type
           })
       )
 

@@ -72,7 +72,7 @@ defmodule Indexer.Address.CoinBalancesTest do
       assert %{address_hash: created_contract_address_hash, block_number: block_number}
     end
 
-    test "with suicide internal transaction extracts from_address_hash and to_address_hash" do
+    test "with self-destruct internal transaction extracts from_address_hash and to_address_hash" do
       block_number = 1
 
       from_address_hash =
@@ -84,7 +84,7 @@ defmodule Indexer.Address.CoinBalancesTest do
         |> to_string()
 
       internal_transaction_params =
-        :internal_transaction_suicide
+        :internal_transaction_selfdestruct
         |> Factory.params_for()
         |> Map.update!(:type, &to_string/1)
         |> Map.put(:block_number, block_number)

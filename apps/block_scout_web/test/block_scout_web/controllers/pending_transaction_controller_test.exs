@@ -59,19 +59,22 @@ defmodule BlockScoutWeb.PendingTransactionControllerTest do
       second_page_hashes =
         50
         |> insert_list(:transaction)
-        |> Enum.map(& &1.hash)
+        |> Enum.map(&to_string(&1.hash))
 
       %Transaction{inserted_at: inserted_at, hash: hash} = insert(:transaction)
 
       conn =
         get(conn, pending_transaction_path(BlockScoutWeb.Endpoint, :index), %{
+          "type" => "JSON",
           "inserted_at" => DateTime.to_iso8601(inserted_at),
           "hash" => Hash.to_string(hash)
         })
 
+      {:ok, %{"pending_transactions" => pending_transactions}} = conn.resp_body |> Poison.decode()
+
       actual_hashes =
-        conn.assigns.transactions
-        |> Enum.map(& &1.hash)
+        pending_transactions
+        |> Enum.map(& &1["transaction_hash"])
         |> Enum.reverse()
 
       assert second_page_hashes == actual_hashes

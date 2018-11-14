@@ -21,6 +21,11 @@
             <%= if address_name = primary_name(@address) do %>
               <strong class="mr-4 mb-2 text-primary"><%= address_name %></strong>
             <% end %>
+            <%= if @address.token do %>
+              <span class="mr-4 mb-2">
+                <%= link(token_title(@address.token), to: token_path(@conn, :show, @address.hash), "data-test": "token_hash_link" ) %>
+              </span>
+            <% end %>
             <span class="mr-4 mb-2">
               <span data-selector="transaction-count">
                 <%= Cldr.Number.to_string!(@transaction_count, format: "#,###") %>
@@ -32,11 +37,6 @@
                 </span> <%= gettext("Blocks Validated") %>
               <% end %>
             </span>
-            <%= if @address.token do %>
-              <span class="mr-4 mb-2">
-                <%= link(token_title(@address.token), to: token_path(@conn, :show, @address.hash), "data-test": "token_hash_link" ) %>
-              </span>
-            <% end %>
           </div>
           <%= if contract?(@address) do %>
             <span class="text-muted" data-test="address_contract_creator">

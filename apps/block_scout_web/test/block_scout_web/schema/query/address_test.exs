@@ -60,6 +60,49 @@ defmodule BlockScoutWeb.Schema.Query.AddressTest do
              }
     end
 
+    test "smart_contract returns all expected fields", %{conn: conn} do
+      address = insert(:address, fetched_coin_balance: 100)
+      smart_contract = insert(:smart_contract, address_hash: address.hash)
+
+      query = """
+      query ($hashes: [AddressHash!]!) {
+        addresses(hashes: $hashes) {
+          fetched_coin_balance
+          smart_contract {
+            name
+            compiler_version
+            optimization
+            contract_source_code
+            abi
+            address_hash
+          }
+        }
+      }
+      """
+
+      variables = %{"hashes" => to_string(address.hash)}
+
+      conn = get(conn, "/graphql", query: query, variables: variables)
+
+      assert json_response(conn, 200) == %{
+               "data" => %{
+                 "addresses" => [
+                   %{
+                     "fetched_coin_balance" => to_string(address.fetched_coin_balance.value),
+                     "smart_contract" => %{
+                       "name" => smart_contract.name,
+                       "compiler_version" => smart_contract.compiler_version,
+                       "optimization" => smart_contract.optimization,
+                       "contract_source_code" => smart_contract.contract_source_code,
+                       "abi" => Jason.encode!(smart_contract.abi),
+                       "address_hash" => to_string(address.hash)
+                     }
+                   }
+                 ]
+               }
+             }
+    end
+
     test "errors for non-existent address hashes", %{conn: conn} do
       address = build(:address)
 
@@ -114,10 +157,10 @@ defmodule BlockScoutWeb.Schema.Query.AddressTest do
     end
 
     test "correlates complexity to size of 'hashes' argument", %{conn: conn} do
-      # max of 12 addresses with four fields of complexity 1 can be fetched
+      # max of 50 addresses with four fields of complexity 1 can be fetched
       # per query:
-      # 12 * 4 = 48, which is less than a max complexity of 50
-      hashes = 13 |> build_list(:address) |> Enum.map(&to_string(&1.hash))
+      # 50 * 4 = 200, which is equal to a max complexity of 200
+      hashes = 51 |> build_list(:address) |> Enum.map(&to_string(&1.hash))
 
       query = """
       query ($hashes: [AddressHash!]!) {

@@ -114,7 +114,7 @@ $('button[data-try-api-ui-button-type="execute"]').click(event => {
   const action = clickedButton.attr('data-action')
   const inputs = $(`input[data-selector="${module}-${action}-try-api-ui"]`)
   const query = composeQuery(module, action, inputs)
-  const loadingText = '<i class="fa fa-spinner fa-spin"></i> loading...'
+  const loadingText = '<span class="loading-spinner-small mr-2"><span class="loading-spinner-block-1"></span><span class="loading-spinner-block-2"></span></span> Loading...'
 
   clickedButton.prop('disabled', true)
   clickedButton.data('original-text', clickedButton.html())

@@ -45,7 +45,7 @@ defmodule BlockScoutWeb.TransactionControllerTest do
         50
         |> insert_list(:transaction)
         |> with_block()
-        |> Enum.map(& &1.hash)
+        |> Enum.map(&to_string(&1.hash))
 
       %Transaction{block_number: block_number, index: index} =
         :transaction
@@ -54,13 +54,16 @@ defmodule BlockScoutWeb.TransactionControllerTest do
 
       conn =
         get(conn, "/txs", %{
+          "type" => "JSON",
           "block_number" => Integer.to_string(block_number),
           "index" => Integer.to_string(index)
         })
 
+      {:ok, %{"transactions" => transactions}} = conn.resp_body |> Poison.decode()
+
       actual_hashes =
-        conn.assigns.transactions
-        |> Enum.map(& &1.hash)
+        transactions
+        |> Enum.map(& &1["transaction_hash"])
         |> Enum.reverse()
 
       assert second_page_hashes == actual_hashes
@@ -99,6 +102,19 @@ defmodule BlockScoutWeb.TransactionControllerTest do
   end
 
   describe "GET show/3" do
+    test "responds with 404 with the transaction missing", %{conn: conn} do
+      hash = transaction_hash()
+      conn = get(conn, transaction_path(BlockScoutWeb.Endpoint, :show, hash))
+
+      assert html_response(conn, 404)
+    end
+
+    test "responds with 422 when the hash is invalid", %{conn: conn} do
+      conn = get(conn, transaction_path(BlockScoutWeb.Endpoint, :show, "wrong"))
+
+      assert html_response(conn, 422)
+    end
+
     test "redirects to transactions/:transaction_id/token_transfers when there are token transfers", %{conn: conn} do
       transaction = insert(:transaction)
       insert(:token_transfer, transaction: transaction)

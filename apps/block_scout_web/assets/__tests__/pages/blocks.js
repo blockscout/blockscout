@@ -1,4 +1,4 @@
-import { reducer, initialState } from '../../js/pages/blocks'
+import { reducer, initialState, placeHolderBlock } from '../../js/pages/blocks'
 
 test('CHANNEL_DISCONNECTED', () => {
   const state = initialState
@@ -10,58 +10,48 @@ test('CHANNEL_DISCONNECTED', () => {
   expect(output.channelDisconnected).toBe(true)
 })
 
-describe('PAGE_LOAD', () => {
-  test('page 1 loads block numbers', () => {
-    const state = initialState
-    const action = {
-      type: 'PAGE_LOAD',
-      beyondPageOne: false,
-      blockNumbers: [2, 1]
-    }
-    const output = reducer(state, action)
-
-    expect(output.beyondPageOne).toBe(false)
-    expect(output.blockNumbers).toEqual([2, 1])
-    expect(output.skippedBlockNumbers).toEqual([])
-  })
-  test('page 2 loads block numbers', () => {
-    const state = initialState
-    const action = {
-      type: 'PAGE_LOAD',
-      beyondPageOne: true,
-      blockNumbers: [2, 1]
-    }
-    const output = reducer(state, action)
-
-    expect(output.beyondPageOne).toBe(true)
-    expect(output.blockNumbers).toEqual([2, 1])
-    expect(output.skippedBlockNumbers).toEqual([])
-  })
+describe('ELEMENTS_LOAD', () => {
   test('page 1 with skipped blocks', () => {
-    const state = initialState
+    window.localized = {}
+    const state = Object.assign({}, initialState, {
+      beyondPageOne: false
+    })
     const action = {
-      type: 'PAGE_LOAD',
-      beyondPageOne: false,
-      blockNumbers: [4, 1]
+      type: 'ELEMENTS_LOAD',
+      blocks: [
+        { blockNumber: 4, blockHtml: 'test 4' },
+        { blockNumber: 1, blockHtml: 'test 1' }
+      ]
     }
     const output = reducer(state, action)
 
-    expect(output.beyondPageOne).toBe(false)
-    expect(output.blockNumbers).toEqual([4, 3, 2, 1])
-    expect(output.skippedBlockNumbers).toEqual([3, 2])
+    expect(output.blocks).toEqual([
+      { blockNumber: 4, blockHtml: 'test 4' },
+      { blockNumber: 3, blockHtml: placeHolderBlock(3) },
+      { blockNumber: 2, blockHtml: placeHolderBlock(2) },
+      { blockNumber: 1, blockHtml: 'test 1' }
+    ])
   })
   test('page 2 with skipped blocks', () => {
-    const state = initialState
+    window.localized = {}
+    const state = Object.assign({}, initialState, {
+      beyondPageOne: true
+    })
     const action = {
-      type: 'PAGE_LOAD',
-      beyondPageOne: true,
-      blockNumbers: [4, 1]
+      type: 'ELEMENTS_LOAD',
+      blocks: [
+        { blockNumber: 4, blockHtml: 'test 4' },
+        { blockNumber: 1, blockHtml: 'test 1' }
+      ]
     }
     const output = reducer(state, action)
 
-    expect(output.beyondPageOne).toBe(true)
-    expect(output.blockNumbers).toEqual([4, 3, 2, 1])
-    expect(output.skippedBlockNumbers).toEqual([3, 2])
+    expect(output.blocks).toEqual([
+      { blockNumber: 4, blockHtml: 'test 4' },
+      { blockNumber: 3, blockHtml: placeHolderBlock(3) },
+      { blockNumber: 2, blockHtml: placeHolderBlock(2) },
+      { blockNumber: 1, blockHtml: 'test 1' }
+    ])
   })
 })
 
@@ -76,63 +66,39 @@ describe('RECEIVED_NEW_BLOCK', () => {
     }
     const output = reducer(initialState, action)
 
-    expect(output.newBlock).toBe('test')
-    expect(output.blockNumbers).toEqual([1])
-  })
-  test('on page 2+', () => {
-    const state = Object.assign({}, initialState, {
-      beyondPageOne: true
-    })
-    const action = {
-      type: 'RECEIVED_NEW_BLOCK',
-      msgs: [{
-        blockHtml: 'test'
-      }]
-    }
-    const output = reducer(state, action)
-
-    expect(output.newBlock).toBe(null)
-    expect(output.blockNumbers).toEqual([])
-    expect(output.skippedBlockNumbers).toEqual([])
+    expect(output.blocks).toEqual([
+      { blockNumber: 1, blockHtml: 'test' }
+    ])
   })
   test('inserts place holders if block received out of order', () => {
+    window.localized = {}
     const state = Object.assign({}, initialState, {
-      blockNumbers: [2]
+      blocks: [
+        { blockNumber: 2, blockHtml: 'test 2' }
+      ]
     })
     const action = {
       type: 'RECEIVED_NEW_BLOCK',
       msg: {
-        blockHtml: 'test5',
+        blockHtml: 'test 5',
         blockNumber: 5
       }
     }
     const output = reducer(state, action)
 
-    expect(output.newBlock).toBe('test5')
-    expect(output.blockNumbers).toEqual([5, 4, 3, 2])
-    expect(output.skippedBlockNumbers).toEqual([4, 3])
-  })
-  test('replaces skipped block', () => {
-    const state = Object.assign({}, initialState, {
-      blockNumbers: [5, 4, 3, 2, 1],
-      skippedBlockNumbers: [4, 3, 1]
-    })
-    const action = {
-      type: 'RECEIVED_NEW_BLOCK',
-      msg: {
-        blockHtml: 'test3',
-        blockNumber: 3
-      }
-    }
-    const output = reducer(state, action)
-
-    expect(output.newBlock).toBe('test3')
-    expect(output.blockNumbers).toEqual([5, 4, 3, 2, 1])
-    expect(output.skippedBlockNumbers).toEqual([4, 1])
+    expect(output.blocks).toEqual([
+      { blockNumber: 5, blockHtml: 'test 5' },
+      { blockNumber: 4, blockHtml: placeHolderBlock(4) },
+      { blockNumber: 3, blockHtml: placeHolderBlock(3) },
+      { blockNumber: 2, blockHtml: 'test 2' }
+    ])
   })
   test('replaces duplicated block', () => {
     const state = Object.assign({}, initialState, {
-      blockNumbers: [5, 4]
+      blocks: [
+        { blockNumber: 5, blockHtml: 'test 5' },
+        { blockNumber: 4, blockHtml: 'test 4' }
+      ]
     })
     const action = {
       type: 'RECEIVED_NEW_BLOCK',
@@ -143,23 +109,59 @@ describe('RECEIVED_NEW_BLOCK', () => {
     }
     const output = reducer(state, action)
 
-    expect(output.newBlock).toBe('test5')
-    expect(output.blockNumbers).toEqual([5, 4])
+    expect(output.blocks).toEqual([
+      { blockNumber: 5, blockHtml: 'test5' },
+      { blockNumber: 4, blockHtml: 'test 4' }
+    ])
   })
   test('skips if new block height is lower than lowest on page', () => {
     const state = Object.assign({}, initialState, {
-      blockNumbers: [5, 4, 3, 2]
+      blocks: [
+        { blockNumber: 5, blockHtml: 'test 5' },
+        { blockNumber: 4, blockHtml: 'test 4' },
+        { blockNumber: 3, blockHtml: 'test 3' },
+        { blockNumber: 2, blockHtml: 'test 2' }
+      ]
     })
     const action = {
       type: 'RECEIVED_NEW_BLOCK',
       msg: {
-        blockHtml: 'test1',
-        blockNumber: 1
+        blockNumber: 1,
+        blockHtml: 'test 1'
       }
     }
     const output = reducer(state, action)
 
-    expect(output.newBlock).toBe(null)
-    expect(output.blockNumbers).toEqual([5, 4, 3, 2])
+    expect(output.blocks).toEqual([
+      { blockNumber: 5, blockHtml: 'test 5' },
+      { blockNumber: 4, blockHtml: 'test 4' },
+      { blockNumber: 3, blockHtml: 'test 3' },
+      { blockNumber: 2, blockHtml: 'test 2' }
+    ])
+  })
+})
+
+describe('RECEIVED_NEXT_PAGE', () => {
+  test('with new block page', () => {
+    const state = Object.assign({}, initialState, {
+      loadingNextPage: true,
+      nextPageUrl: '1',
+      blocks: [{ blockNumber: 2, blockHtml: 'test 2' }]
+    })
+    const action = {
+      type: 'RECEIVED_NEXT_PAGE',
+      msg: {
+        nextPageUrl: '2',
+        blocks: [{ blockNumber: 1, blockHtml: 'test 1' }]
+      }
+    }
+    const output = reducer(state, action)
+
+    expect(output.loadingNextPage).toEqual(false)
+    expect(output.nextPageUrl).toEqual('2')
+    expect(output.blocks).toEqual([
+      { blockNumber: 2, blockHtml: 'test 2' },
+      { blockNumber: 1, blockHtml: 'test 1' }
+    ])
   })
 })

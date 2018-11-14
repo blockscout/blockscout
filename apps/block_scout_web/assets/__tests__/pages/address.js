@@ -301,7 +301,7 @@ describe('RECEIVED_NEW_TRANSACTION', () => {
   })
 })
 
-describe('RECEIVED_NEXT_TRANSACTIONS_PAGE', () => {
+describe('RECEIVED_NEXT_PAGE', () => {
   test('with new transaction page', () => {
     const state = Object.assign({}, initialState, {
       loadingNextPage: true,
@@ -309,7 +309,7 @@ describe('RECEIVED_NEXT_TRANSACTIONS_PAGE', () => {
       transactions: [{ transactionHash: 1, transactionHtml: 'test 1' }]
     })
     const action = {
-      type: 'RECEIVED_NEXT_TRANSACTIONS_PAGE',
+      type: 'RECEIVED_NEXT_PAGE',
       msg: {
         nextPageUrl: '2',
         transactions: [{ transactionHash: 2, transactionHtml: 'test 2' }]

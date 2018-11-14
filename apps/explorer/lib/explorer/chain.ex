@@ -42,6 +42,8 @@ defmodule Explorer.Chain do
   alias Explorer.{PagingOptions, Repo}
   alias Explorer.Counters.{BlockValidationCounter, TokenHoldersCounter, TokenTransferCounter}
 
+  alias Dataloader.Ecto, as: DataloaderEcto
+
   @default_paging_options %PagingOptions{page_size: 50}
 
   @typedoc """
@@ -140,44 +142,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Pending `t:Explorer.Chain.Transaction/0`s from `address`.
-
-  ## Options
-
-    * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
-      `:required`, and the `t:Explorer.Chain.Transaction.t/0` has no associated record for that association, then the
-      `t:Explorer.Chain.Transaction.t/0` will not be included in the page `entries`.
-
-  """
-  @spec address_to_pending_transactions(Address.t(), [necessity_by_association_option]) :: [Transaction.t()]
-  def address_to_pending_transactions(
-        %Address{hash: %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash},
-        options \\ []
-      )
-      when is_list(options) do
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-
-    options
-    |> Keyword.get(:direction)
-    |> case do
-      :from -> [:from_address_hash]
-      :to -> [:to_address_hash]
-      _ -> [:from_address_hash, :to_address_hash]
-    end
-    |> Enum.map(fn address_field ->
-      Transaction
-      |> Transaction.where_address_fields_match(address_hash, address_field)
-      |> join_associations(necessity_by_association)
-      |> where([transaction], is_nil(transaction.block_number))
-      |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
-      |> Repo.all()
-      |> MapSet.new()
-    end)
-    |> Enum.reduce(MapSet.new(), &MapSet.union/2)
-    |> MapSet.to_list()
-  end
-
-  @doc """
   Get the total number of transactions sent by the given address according to the last block indexed.
 
   We have to increment +1 in the last nonce result because it works like an array position, the first
@@ -219,38 +183,49 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    transaction_matches =
-      direction
-      |> case do
-        :from -> [:from_address_hash]
-        :to -> [:to_address_hash, :created_contract_address_hash]
-        _ -> [:from_address_hash, :to_address_hash, :created_contract_address_hash]
-      end
-      |> Enum.map(fn address_field ->
-        paging_options
-        |> fetch_transactions()
-        |> Transaction.where_address_fields_match(address_hash, address_field)
-        |> join_associations(necessity_by_association)
-        |> Transaction.preload_token_transfers(address_hash)
-        |> Repo.all()
-        |> MapSet.new()
-      end)
+    {:ok, address_bytes} = Explorer.Chain.Hash.Address.dump(address_hash)
 
-    token_transfer_matches =
+    token_transfers_dynamic = TokenTransfer.dynamic_any_address_fields_match(direction, address_bytes)
+
+    base_query =
       paging_options
       |> fetch_transactions()
-      |> TokenTransfer.where_address_fields_match(address_hash, direction)
       |> join_associations(necessity_by_association)
       |> Transaction.preload_token_transfers(address_hash)
-      |> Repo.all()
-      |> MapSet.new()
 
-    transaction_matches
-    |> Enum.reduce(token_transfer_matches, &MapSet.union/2)
-    |> MapSet.to_list()
-    |> Enum.sort_by(& &1.index, &>=/2)
-    |> Enum.sort_by(& &1.block_number, &>=/2)
-    |> Enum.slice(0..paging_options.page_size)
+    token_transfers_query =
+      base_query
+      |> from(where: ^token_transfers_dynamic)
+
+    from_address_query =
+      base_query
+      |> where([t], t.from_address_hash == ^address_hash)
+
+    to_address_query =
+      base_query
+      |> where([t], t.to_address_hash == ^address_hash)
+
+    created_contract_query =
+      base_query
+      |> where([t], t.created_contract_address_hash == ^address_hash)
+
+    queries =
+      [token_transfers_query] ++
+        case direction do
+          :from -> [from_address_query]
+          :to -> [to_address_query, created_contract_query]
+          _ -> [from_address_query, to_address_query, created_contract_query]
+        end
+
+    result = Enum.flat_map(queries, &Repo.all/1)
+
+    sorted_result =
+      result
+      |> Enum.uniq()
+      |> Enum.sort_by(fn x -> {-x.block_number, -x.index} end)
+      |> Enum.take(paging_options.page_size)
+
+    sorted_result
   end
 
   @doc """
@@ -920,13 +895,20 @@ defmodule Explorer.Chain do
   Lists the top 250 `t:Explorer.Chain.Address.t/0`'s' in descending order based on coin balance.
 
   """
-  @spec list_top_addresses :: [Address.t()]
+  @spec list_top_addresses :: [{Address.t(), non_neg_integer()}]
   def list_top_addresses do
-    Address
-    |> limit(250)
-    |> order_by(desc: :fetched_coin_balance, asc: :hash)
-    |> where([address], address.fetched_coin_balance > ^0)
-    |> Repo.all()
+    query =
+      from(a in Address,
+        left_join: t in Transaction,
+        on: a.hash == t.from_address_hash,
+        where: a.fetched_coin_balance > ^0,
+        group_by: [a.hash, a.fetched_coin_balance],
+        order_by: [desc: a.fetched_coin_balance, asc: a.hash],
+        select: {a, fragment("coalesce(1 + max(?), 0)", t.nonce)},
+        limit: 250
+      )
+
+    Repo.all(query)
   end
 
   @doc """
@@ -1883,7 +1865,7 @@ defmodule Explorer.Chain do
 
     * excludes internal transactions of type call with no siblings in the
       transaction
-    * includes internal transactions of type create, reward, or suicide
+    * includes internal transactions of type create, reward, or selfdestruct
       even when they are alone in the parent transaction
 
   """
@@ -2095,4 +2077,7 @@ defmodule Explorer.Chain do
     |> limit(^paging_options.page_size)
     |> Repo.all()
   end
+
+  @spec data() :: Dataloader.Ecto.t()
+  def data, do: DataloaderEcto.new(Repo)
 end

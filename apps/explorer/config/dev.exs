@@ -13,6 +13,11 @@ config :logger, :explorer,
   level: :debug,
   path: Path.absname("logs/dev/explorer.log")
 
+config :logger, :reading_token_functions,
+  level: :debug,
+  path: Path.absname("logs/dev/explorer/tokens/reading_functions.log"),
+  metadata_filter: [fetcher: :token_functions]
+
 import_config "dev.secret.exs"
 
 variant =
