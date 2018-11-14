@@ -18,6 +18,8 @@ defmodule Indexer.TokenBalance.Fetcher do
     task_supervisor: Indexer.TokenBalance.TaskSupervisor
   ]
 
+  @max_retries 3
+
   @spec async_fetch([]) :: :ok
   def async_fetch(token_balances) do
     formatted_params = Enum.map(token_balances, &entry/1)
@@ -61,6 +63,7 @@ defmodule Indexer.TokenBalance.Fetcher do
     result =
       entries
       |> Enum.map(&format_params/1)
+      |> Enum.map(&Map.put(&1, :retries_count, &1.retries_count + 1))
       |> fetch_from_blockchain()
       |> import_token_balances()
 
@@ -72,7 +75,10 @@ defmodule Indexer.TokenBalance.Fetcher do
   end
 
   def fetch_from_blockchain(params_list) do
-    {:ok, token_balances} = TokenBalances.fetch_token_balances_from_blockchain(params_list)
+    {:ok, token_balances} =
+      params_list
+      |> Enum.filter(&(&1.retries_count <= @max_retries))
+      |> TokenBalances.fetch_token_balances_from_blockchain()
 
     TokenBalances.log_fetching_errors(__MODULE__, token_balances)
 
@@ -106,22 +112,27 @@ defmodule Indexer.TokenBalance.Fetcher do
     |> Enum.uniq()
   end
 
-  defp entry(%{
-         token_contract_address_hash: token_contract_address_hash,
-         address_hash: address_hash,
-         block_number: block_number
-       }) do
-    {address_hash.bytes, token_contract_address_hash.bytes, block_number}
+  defp entry(
+         %{
+           token_contract_address_hash: token_contract_address_hash,
+           address_hash: address_hash,
+           block_number: block_number
+         } = token_balance
+       ) do
+    retries_count = Map.get(token_balance, :retries_count, 0)
+
+    {address_hash.bytes, token_contract_address_hash.bytes, block_number, retries_count}
   end
 
-  defp format_params({address_hash_bytes, token_contract_address_hash_bytes, block_number}) do
+  defp format_params({address_hash_bytes, token_contract_address_hash_bytes, block_number, retries_count}) do
     {:ok, token_contract_address_hash} = Hash.Address.cast(token_contract_address_hash_bytes)
     {:ok, address_hash} = Hash.Address.cast(address_hash_bytes)
 
     %{
       token_contract_address_hash: to_string(token_contract_address_hash),
       address_hash: to_string(address_hash),
-      block_number: block_number
+      block_number: block_number,
+      retries_count: retries_count
     }
   end
 end
