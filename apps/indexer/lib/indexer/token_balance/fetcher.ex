@@ -13,7 +13,7 @@ defmodule Indexer.TokenBalance.Fetcher do
 
   @defaults [
     flush_interval: 300,
-    max_batch_size: 50,
+    max_batch_size: 10,
     max_concurrency: 5,
     task_supervisor: Indexer.TokenBalance.TaskSupervisor
   ]
