@@ -1,6 +1,17 @@
 defmodule Indexer.TokenBalance.Fetcher do
   @moduledoc """
-  Fetches the token balances values.
+  Fetches token balances and send the ones that were fetched to be imported in `Address.CurrentTokenBalance` and
+  `Address.TokenBalance`.
+
+  The module responsible for fetching token balances in the Smart Contract is the `Indexer.TokenBalances`. this module
+  only prepare the params, send they to `Indexer.TokenBalances` and relies on its return.
+
+  It behaves as a `BufferedTask`, so we can configure the `max_batch_size` and the `max_concurrency` to control how many
+  token balances will be fetched at the same time. Be aware that, for each token balance the indexer will make a request
+  to the Smart Contract.
+
+  Also, this module set a `retries_count` for each token balance and increment this number to avoid fetching the ones
+  that always raise errors interacting with the Smart Contract.
   """
 
   require Logger
@@ -56,6 +67,12 @@ defmodule Indexer.TokenBalance.Fetcher do
     final
   end
 
+  @doc """
+  Fetches the given entries (token_balances) from the Smart Contract and import they in our database.
+
+  It also increments the `retries_count` to avoid fetching token balances that always raise errors
+  when reading their balance in the Smart Contract.
+  """
   @impl BufferedTask
   def run(entries, _json_rpc_named_arguments) do
     result =
