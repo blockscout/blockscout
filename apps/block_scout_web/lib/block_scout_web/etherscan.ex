@@ -538,7 +538,7 @@ defmodule BlockScoutWeb.Etherscan do
       input: @input_type,
       type: %{
         type: "type",
-        definition: ~s(Possible values: "create", "call", "reward", or "suicide"),
+        definition: ~s(Possible values: "create", "call", "reward", or "selfdestruct"),
         example: ~s("create")
       },
       gas: @gas_type,

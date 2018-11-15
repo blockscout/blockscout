@@ -67,6 +67,8 @@ defmodule Explorer.Mixfile do
       {:bypass, "~> 0.8", only: :test},
       {:comeonin, "~> 4.0"},
       {:credo, "0.10.2", only: [:dev, :test], runtime: false},
+      # For Absinthe to load data in batches
+      {:dataloader, "~> 1.0.0"},
       {:decimal, "~> 1.0"},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       # Casting Ethereum-native types to Elixir-native types
