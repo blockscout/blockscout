@@ -24,6 +24,8 @@ defmodule Indexer.TokenBalances do
   * `address_hash` - The address_hash that we want to know the balance.
   * `block_number` - The block number that the address_hash has the balance.
   """
+  def fetch_token_balances_from_blockchain([]), do: {:ok, []}
+
   def fetch_token_balances_from_blockchain(token_balances) do
     Logger.debug(fn -> "fetching #{Enum.count(token_balances)} token balances" end)
 
