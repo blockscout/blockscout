@@ -9,7 +9,7 @@ defmodule Explorer.ExchangeRates do
 
   require Logger
 
-  alias Explorer.ExchangeRates.Token
+  alias Explorer.ExchangeRates.{Source, Token}
 
   @interval :timer.minutes(5)
   @table_name :exchange_rates
@@ -115,15 +115,10 @@ defmodule Explorer.ExchangeRates do
     Application.get_env(:explorer, __MODULE__, [])[key]
   end
 
-  @spec exchange_rates_source() :: module()
-  defp exchange_rates_source do
-    config(:source) || Explorer.ExchangeRates.Source.CoinMarketCap
-  end
-
   @spec fetch_rates :: Task.t()
   defp fetch_rates do
     Task.Supervisor.async_nolink(Explorer.MarketTaskSupervisor, fn ->
-      exchange_rates_source().fetch_exchange_rates()
+      Source.fetch_exchange_rates()
     end)
   end
 

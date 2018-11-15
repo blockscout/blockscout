@@ -7,7 +7,7 @@ defmodule Explorer.ExchangeRates.Source.OneCoinSource do
   @behaviour Source
 
   @impl Source
-  def fetch_exchange_rates do
+  def format_data(_) do
     pseudo_token = %Token{
       available_supply: Decimal.new(10_000_000),
       btc_value: Decimal.new(1),
@@ -20,6 +20,9 @@ defmodule Explorer.ExchangeRates.Source.OneCoinSource do
       volume_24h_usd: Decimal.new(1)
     }
 
-    {:ok, [pseudo_token]}
+    [pseudo_token]
   end
+
+  @impl Source
+  def source_url, do: ""
 end

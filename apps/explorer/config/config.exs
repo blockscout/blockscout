@@ -15,7 +15,7 @@ config :explorer,
 
 config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: 2_000
 
-config :explorer, Explorer.ExchangeRates, enabled: true
+config :explorer, Explorer.ExchangeRates, enabled: true, store: :ets
 
 config :explorer, Explorer.Counters.BlockValidationCounter, enabled: true
 
@@ -39,7 +39,7 @@ if System.get_env("SUPPLY_MODULE") == "TransactionAndLog" do
 end
 
 if System.get_env("SOURCE_MODULE") == "TransactionAndLog" do
-  config :explorer, Explorer.ExchangeRates, source: Explorer.ExchangeRates.Source.TransactionAndLog
+  config :explorer, Explorer.ExchangeRates.Source, source: Explorer.ExchangeRates.Source.TransactionAndLog
 end
 
 config :explorer,

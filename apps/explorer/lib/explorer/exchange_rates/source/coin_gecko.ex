@@ -11,20 +11,6 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
   @behaviour Source
 
   @impl Source
-  def fetch_exchange_rates do
-    case HTTPoison.get(source_url(), headers()) do
-      {:ok, %Response{body: body, status_code: 200}} ->
-        {:ok, format_data(body)}
-
-      {:ok, %Response{body: body, status_code: status_code}} when status_code in 400..499 ->
-        {:error, decode_json(body)["error"]}
-
-      {:error, %Error{reason: reason}} ->
-        {:error, reason}
-    end
-  end
-
-  @doc false
   def format_data(data) do
     {:ok, price} = get_btc_price()
     btc_price = to_decimal(price)
@@ -52,13 +38,13 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
     end
   end
 
-  defp base_url do
-    configured_url = Application.get_env(:explorer, __MODULE__, [])[:base_url]
-    configured_url || "https://api.coingecko.com/api/v3"
+  @impl Source
+  def source_url(currency \\ "usd") do
+    "#{base_url()}/coins/markets?vs_currency=#{currency}"
   end
 
-  defp source_url(currency \\ "usd") do
-    "#{base_url()}/coins/markets?vs_currency=#{currency}"
+  defp base_url do
+    config(:base_url) || "https://api.coingecko.com/api/v3"
   end
 
   defp get_btc_price(currency \\ "usd") do
@@ -77,5 +63,10 @@ defmodule Explorer.ExchangeRates.Source.CoinGecko do
       {:error, %Error{reason: reason}} ->
         {:error, reason}
     end
+  end
+
+  @spec config(atom()) :: term
+  defp config(key) do
+    Application.get_env(:explorer, __MODULE__, [])[key]
   end
 end
