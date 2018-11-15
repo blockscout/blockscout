@@ -5,12 +5,12 @@ defmodule EthereumJSONRPC.FetchedBalances do
 
   alias EthereumJSONRPC.FetchedBalance
 
-  defstruct errors: [],
-            params_list: []
+  defstruct params_list: [],
+            errors: []
 
   @typedoc """
    * `params_list` - all the balance params from requests that succeeded in the batch.
-   * `errors` - all the error from requests that failed in the batch.
+   * `errors` - all the errors from requests that failed in the batch.
   """
   @type t :: %__MODULE__{params_list: [FetchedBalance.params()], errors: [FetchedBalance.error()]}
 

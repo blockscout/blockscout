@@ -5,6 +5,7 @@ defmodule Indexer.Block.Fetcher do
 
   require Logger
 
+  alias EthereumJSONRPC.FetchedBeneficiaries
   alias Explorer.Chain.{Address, Block, Import}
   alias Indexer.{AddressExtraction, CoinBalance, MintTransfer, Token, TokenTransfers}
   alias Indexer.Address.{CoinBalances, TokenBalances}
@@ -103,10 +104,11 @@ defmodule Indexer.Block.Fetcher do
          transactions_with_receipts = Receipts.put(transactions_without_receipts, receipts),
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfer.parse(logs),
-         {:beneficiaries, {:ok, beneficiaries}} <- fetch_beneficiaries(range, json_rpc_named_arguments),
+         {:beneficiaries, {:ok, %FetchedBeneficiaries{params_set: beneficiary_params_set}}} <-
+           fetch_beneficiaries(range, json_rpc_named_arguments),
          addresses =
            AddressExtraction.extract_addresses(%{
-             block_reward_contract_beneficiaries: MapSet.to_list(beneficiaries),
+             block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set),
              blocks: blocks,
              logs: logs,
              mint_transfers: mint_transfers,
@@ -120,7 +122,7 @@ defmodule Indexer.Block.Fetcher do
              transactions_params: transactions_with_receipts
            }
            |> CoinBalances.params_set()
-           |> MapSet.union(beneficiaries),
+           |> MapSet.union(beneficiary_params_set),
          address_token_balances = TokenBalances.params_set(%{token_transfers_params: token_transfers}),
          {:ok, inserted} <-
            __MODULE__.import(
@@ -139,6 +141,7 @@ defmodule Indexer.Block.Fetcher do
            ) do
       {:ok, {inserted, next}}
     else
+      {:beneficiaries = step, {:ok, %FetchedBeneficiaries{errors: [_ | _] = errors}}} -> {:error, {step, errors}}
       {step, {:error, reason}} -> {:error, {step, reason}}
       {:error, :timeout} = error -> error
       {:error, changesets} = error when is_list(changesets) -> error
@@ -200,9 +203,8 @@ defmodule Indexer.Block.Fetcher do
 
   defp fetch_beneficiaries(range, json_rpc_named_arguments) do
     result =
-      case EthereumJSONRPC.fetch_beneficiaries(range, json_rpc_named_arguments) do
-        :ignore -> {:ok, MapSet.new()}
-        result -> result
+      with :ignore <- EthereumJSONRPC.fetch_beneficiaries(range, json_rpc_named_arguments) do
+        {:ok, %FetchedBeneficiaries{params_set: MapSet.new()}}
       end
 
     {:beneficiaries, result}

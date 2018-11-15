@@ -109,8 +109,8 @@ defmodule Indexer.Block.FetcherTest do
                  }
                ]}
             end)
-            |> expect(:json_rpc, fn %{id: _id, method: "trace_block", params: [^block_quantity]}, _options ->
-              {:ok, []}
+            |> expect(:json_rpc, fn [%{id: id, method: "trace_block", params: [^block_quantity]}], _options ->
+              {:ok, [%{id: id, result: []}]}
             end)
             |> expect(:json_rpc, fn [
                                       %{
@@ -359,9 +359,8 @@ defmodule Indexer.Block.FetcherTest do
                  }
                ]}
             end)
-            |> expect(:json_rpc, fn json, _options ->
-              assert %{id: _id, method: "trace_block", params: [^block_quantity]} = json
-              {:ok, []}
+            |> expect(:json_rpc, fn [%{id: id, method: "trace_block", params: [^block_quantity]}], _options ->
+              {:ok, [%{id: id, result: []}]}
             end)
             # async requests need to be grouped in one expect because the order is non-deterministic while multiple expect
             # calls on the same name/arity are used in order

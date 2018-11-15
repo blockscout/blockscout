@@ -198,8 +198,9 @@ defmodule Indexer.Block.Realtime.FetcherTest do
              }
            ]}
         end)
-        |> expect(:json_rpc, 2, fn %{method: "trace_block"}, _options ->
-          {:ok, []}
+        |> expect(:json_rpc, fn [%{method: "trace_block"}, %{method: "trace_block"}] = requests, _options ->
+          responses = Enum.map(requests, fn %{id: id} -> %{id: id, result: []} end)
+          {:ok, responses}
         end)
         |> expect(:json_rpc, fn [
                                   %{

@@ -4,7 +4,7 @@ defmodule EthereumJSONRPCTest do
   import EthereumJSONRPC.Case
   import Mox
 
-  alias EthereumJSONRPC.{FetchedBalances, Subscription}
+  alias EthereumJSONRPC.{FetchedBalances, FetchedBeneficiaries, Subscription}
   alias EthereumJSONRPC.WebSocket.WebSocketClient
 
   setup :verify_on_exit!
@@ -181,7 +181,8 @@ defmodule EthereumJSONRPCTest do
           {:ok, []}
         end)
 
-        assert EthereumJSONRPC.fetch_beneficiaries(1..1, json_rpc_named_arguments) == {:ok, MapSet.new()}
+        assert EthereumJSONRPC.fetch_beneficiaries(1..1, json_rpc_named_arguments) ==
+                 {:ok, %FetchedBeneficiaries{params_set: MapSet.new(), errors: []}}
       end
     end
   end
