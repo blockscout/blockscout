@@ -100,8 +100,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
              addresses_params: internal_transactions_addresses_params,
              balances_params: address_coin_balances_params
            }),
-         {:ok, address_token_balances} <-
-           TokenBalances.fetch_token_balances_from_blockchain(address_token_balances_params),
+         {:ok, address_token_balances} <- fetch_token_balances(address_token_balances_params),
          chain_import_options =
            options
            |> Map.drop(@import_options)
@@ -298,5 +297,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
     Enum.into(balances_params, MapSet.new(), fn %{address_hash: address_hash, block_number: block_number} ->
       %{hash_data: address_hash, block_quantity: integer_to_quantity(block_number)}
     end)
+  end
+
+  defp fetch_token_balances(address_token_balances_params) do
+    address_token_balances_params
+    |> MapSet.to_list()
+    |> TokenBalances.fetch_token_balances_from_blockchain()
   end
 end
