@@ -65,6 +65,8 @@ defmodule BlockScoutWeb.Mixfile do
       {:absinthe_phoenix, "~> 1.4"},
       # Plug support for Absinthe
       {:absinthe_plug, "~> 1.4"},
+      # Absinthe support for the Relay framework
+      {:absinthe_relay, "~> 1.4"},
       {:bypass, "~> 0.8", only: :test},
       {:credo, "0.10.2", only: [:dev, :test], runtime: false},
       # For Absinthe to load data in batches

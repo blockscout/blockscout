@@ -38,6 +38,13 @@ defmodule Explorer.Chain.InternalTransaction.Type do
       iex> Explorer.Chain.InternalTransaction.Type.cast("selfdestruct")
       {:ok, :selfdestruct}
 
+  Deprecated values are not allowed for incoming data.
+
+      iex> Explorer.Chain.InternalTransaction.Type.cast(:suicide)
+      :error
+      iex> Explorer.Chain.InternalTransaction.Type.cast("suicide")
+      :error
+
   Unsupported `String.t` return an `:error`.
 
       iex> Explorer.Chain.InternalTransaction.Type.cast("hard-fork")
@@ -65,6 +72,11 @@ defmodule Explorer.Chain.InternalTransaction.Type do
       iex> Explorer.Chain.InternalTransaction.Type.dump(:selfdestruct)
       {:ok, "selfdestruct"}
 
+  Deprecated values are not allowed to be dumped to the database as old values should only be read, not written.
+
+      iex> Explorer.Chain.InternalTransaction.Type.dump(:suicide)
+      :error
+
   Other atoms return an error
 
       iex> Explorer.Chain.InternalTransaction.Type.dump(:other)
@@ -91,6 +103,11 @@ defmodule Explorer.Chain.InternalTransaction.Type do
       iex> Explorer.Chain.InternalTransaction.Type.load("selfdestruct")
       {:ok, :selfdestruct}
 
+  Converts deprecated value on load to the corresponding `t:t/0`.
+
+      iex> Explorer.Chain.InternalTransaction.Type.load("suicide")
+      {:ok, :selfdestruct}
+
   Other `t:String.t/0` return `:error`
 
       iex> Explorer.Chain.InternalTransaction.Type.load("other")
@@ -103,6 +120,8 @@ defmodule Explorer.Chain.InternalTransaction.Type do
   def load("create"), do: {:ok, :create}
   def load("reward"), do: {:ok, :reward}
   def load("selfdestruct"), do: {:ok, :selfdestruct}
+  # deprecated
+  def load("suicide"), do: {:ok, :selfdestruct}
   def load(_), do: :error
 
   @doc """
