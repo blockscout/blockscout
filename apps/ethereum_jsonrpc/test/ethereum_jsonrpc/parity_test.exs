@@ -294,6 +294,64 @@ defmodule EthereumJSONRPC.ParityTest do
       assert fetched_beneficiaries == expected_beneficiaries
     end
 
+    test "with 'external' 'rewardType'", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      block_number = 5_609_295
+      block_quantity = EthereumJSONRPC.integer_to_quantity(block_number)
+      hash1 = "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
+      hash2 = "0x523b6539ff08d72a6c8bb598af95bf50c1ea839c"
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn %{params: [^block_quantity]}, _options ->
+          {:ok,
+           [
+             %{
+               "action" => %{
+                 "author" => hash1,
+                 "rewardType" => "external",
+                 "value" => "0xde0b6b3a7640000"
+               },
+               "blockHash" => "0xf19a4ea2bb4f2d8839f4c3ec11e0e86c29d57799d7073713958fe1990e197cf5",
+               "blockNumber" => 5_609_295,
+               "result" => nil,
+               "subtraces" => 0,
+               "traceAddress" => [],
+               "transactionHash" => nil,
+               "transactionPosition" => nil,
+               "type" => "reward"
+             },
+             %{
+               "action" => %{
+                 "author" => hash2,
+                 "rewardType" => "external",
+                 "value" => "0xde0b6b3a7640000"
+               },
+               "blockHash" => "0xf19a4ea2bb4f2d8839f4c3ec11e0e86c29d57799d7073713958fe1990e197cf5",
+               "blockNumber" => 5_609_295,
+               "result" => nil,
+               "subtraces" => 0,
+               "traceAddress" => [],
+               "transactionHash" => nil,
+               "transactionPosition" => nil,
+               "type" => "reward"
+             }
+           ]}
+        end)
+      end
+
+      expected_beneficiaries =
+        MapSet.new([
+          %{block_number: block_number, address_hash: hash2},
+          %{block_number: block_number, address_hash: hash1}
+        ])
+
+      {:ok, fetched_beneficiaries} =
+        EthereumJSONRPC.Parity.fetch_beneficiaries(5_609_295..5_609_295, json_rpc_named_arguments)
+
+      assert fetched_beneficiaries == expected_beneficiaries
+    end
+
     test "with no rewards, returns {:ok, []}", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
@@ -309,7 +367,7 @@ defmodule EthereumJSONRPC.ParityTest do
       end
     end
 
-    test "with nil rewards, returns {:error, }", %{
+    test "with nil rewards, returns {:error, reason}", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
