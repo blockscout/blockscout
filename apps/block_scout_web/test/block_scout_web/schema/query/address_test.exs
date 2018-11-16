@@ -515,33 +515,13 @@ defmodule BlockScoutWeb.Schema.Query.AddressTest do
         |> List.last()
         |> Map.get("cursor")
 
-      query3 = """
-      query ($hash: AddressHash!, $first: Int!, $after: Int!) {
-        address(hash: $hash) {
-          transactions(first: $first, after: $after) {
-            page_info {
-              has_next_page
-              has_previous_page
-            }
-            edges {
-              node {
-                hash
-                block_number
-              }
-              cursor
-            }
-          }
-        }
-      }
-      """
-
       variables3 = %{
         "hash" => to_string(address.hash),
         "first" => 3,
         "after" => last_cursor_page2
       }
 
-      conn = get(conn, "/graphql", query: query3, variables: variables3)
+      conn = get(conn, "/graphql", query: query2, variables: variables3)
 
       %{"data" => %{"address" => %{"transactions" => page3}}} = json_response(conn, 200)
 
