@@ -40,8 +40,8 @@ defmodule Indexer.Block.Fetcher do
   # These are all the *default* values for options.
   # DO NOT use them directly in the code.  Get options from `state`.
 
-  @receipts_batch_size 250
-  @receipts_concurrency 10
+  @receipts_batch_size 225
+  @receipts_concurrency 4
 
   @doc false
   def default_receipts_batch_size, do: @receipts_batch_size
@@ -103,10 +103,8 @@ defmodule Indexer.Block.Fetcher do
          transactions_with_receipts = Receipts.put(transactions_without_receipts, receipts),
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfer.parse(logs),
-         {:beneficiaries, {:ok, beneficiaries}} <- fetch_beneficiaries(range, json_rpc_named_arguments),
          addresses =
            AddressExtraction.extract_addresses(%{
-             block_reward_contract_beneficiaries: MapSet.to_list(beneficiaries),
              blocks: blocks,
              logs: logs,
              mint_transfers: mint_transfers,
@@ -119,8 +117,7 @@ defmodule Indexer.Block.Fetcher do
              logs_params: logs,
              transactions_params: transactions_with_receipts
            }
-           |> CoinBalances.params_set()
-           |> MapSet.union(beneficiaries),
+           |> CoinBalances.params_set(),
          address_token_balances = TokenBalances.params_set(%{token_transfers_params: token_transfers}),
          {:ok, inserted} <-
            __MODULE__.import(
@@ -196,16 +193,6 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_uncles(_), do: :ok
-
-  defp fetch_beneficiaries(range, json_rpc_named_arguments) do
-    result =
-      case EthereumJSONRPC.fetch_beneficiaries(range, json_rpc_named_arguments) do
-        :ignore -> {:ok, MapSet.new()}
-        result -> result
-      end
-
-    {:beneficiaries, result}
-  end
 
   # `fetched_balance_block_number` is needed for the `CoinBalanceFetcher`, but should not be used for `import` because the
   # balance is not known yet.
