@@ -387,7 +387,7 @@ msgid "Enter the Solidity Contract Code below"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/_balance_card.html.eex:36
+#: lib/block_scout_web/templates/address/_balance_card.html.eex:25
 msgid "Error trying to fetch balances."
 msgstr ""
 
@@ -402,6 +402,7 @@ msgid "Error: (Awaiting internal transactions for reason)"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/address/_balance_card.html.eex:12
 #: lib/block_scout_web/templates/internal_transaction/_tile.html.eex:16
 #: lib/block_scout_web/templates/transaction/_pending_tile.html.eex:19
 #: lib/block_scout_web/templates/transaction/_tile.html.eex:26
@@ -421,7 +422,7 @@ msgid "Execute"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/_balance_card.html.eex:32
+#: lib/block_scout_web/templates/address/_balance_card.html.eex:21
 msgid "Fetching tokens..."
 msgstr ""
 
@@ -699,7 +700,6 @@ msgid "Position %{index}"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/_balance_card.html.eex:9
 #: lib/block_scout_web/templates/chain/show.html.eex:11
 #: lib/block_scout_web/templates/layout/app.html.eex:50
 msgid "Price"
@@ -1322,9 +1322,4 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/views/internal_transaction_view.ex:24
 msgid "Static Call"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address/_balance_card.html.eex:18
-msgid "Unit Price"
 msgstr ""

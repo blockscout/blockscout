@@ -4,24 +4,13 @@
     <span></span>
     <div class="text-right">
       <h3 class="text-white" data-test="address_balance"><%= balance(@address) %></h3>
-
-      <div class="text-white">
-        <span><%= gettext("Price") %> - </span>
+      <span class="text-white text-faded">
         <span
-          class="text-faded"
           data-wei-value="<%= if @address.fetched_coin_balance, do: @address.fetched_coin_balance.value %>"
-          data-usd-exchange-rate="<%= @exchange_rate.usd_value %>"
-        ></span>
-      </div>
-
-      <div class="text-white">
-        <span><%= gettext("Unit Price") %> - </span>
-        <span
-          class="text-faded"
-          data-wei-value="<%= Explorer.Chain.Wei.from(Decimal.new(1), :ether).value %>"
-          data-usd-exchange-rate="<%= @exchange_rate.usd_value %>"
-        ></span>
-      </div>
+          data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
+        </span>
+        <small>(@ <%= @exchange_rate.usd_value %>/<%= gettext("Ether") %>)</small>
+      </span>
 
       <div class="mt-3" data-token-balance-dropdown data-api_path="<%= address_token_balance_path(BlockScoutWeb.Endpoint, :index, @address.hash) %>">
           <div data-loading class="mb-0 text-white text-faded">
