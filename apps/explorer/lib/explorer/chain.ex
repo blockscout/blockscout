@@ -1950,15 +1950,8 @@ defmodule Explorer.Chain do
   def stream_cataloged_token_contract_address_hashes(initial_acc, reducer) when is_function(reducer, 2) do
     Repo.transaction(
       fn ->
-        query =
-          from(
-            token in Token,
-            select: token.contract_address_hash,
-            where: token.cataloged == true,
-            order_by: [asc: token.updated_at]
-          )
-
-        query
+        Chain.Token.cataloged_tokens()
+        |> Ecto.Query.order_by([asc: :updated_at])
         |> Repo.stream(timeout: :infinity)
         |> Enum.reduce(initial_acc, reducer)
       end,
