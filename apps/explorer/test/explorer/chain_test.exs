@@ -2773,7 +2773,7 @@ defmodule Explorer.ChainTest do
       expected_response =
         [token1, token2]
         |> Enum.sort(&(&1.updated_at < &2.updated_at))
-        |> Enum.map(&(&1.contract_address_hash))
+        |> Enum.map(& &1.contract_address_hash)
 
       assert Chain.stream_cataloged_token_contract_address_hashes([], &(&2 ++ [&1])) == {:ok, expected_response}
     end

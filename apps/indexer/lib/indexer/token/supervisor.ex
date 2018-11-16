@@ -28,6 +28,7 @@ defmodule Indexer.Token.Supervisor do
   @impl Supervisor
   def init(fetcher_arguments) do
     metadata_updater_inverval = Application.get_env(:indexer, :metadata_updater_days_interval)
+
     Supervisor.init(
       [
         {Task.Supervisor, name: Indexer.Token.TaskSupervisor},

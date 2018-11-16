@@ -100,7 +100,7 @@ defmodule Explorer.Chain.Token do
 
   These are tokens with cataloged field set to true.
   """
-  def cataloged_tokens() do
+  def cataloged_tokens do
     from(
       token in __MODULE__,
       select: token.contract_address_hash,

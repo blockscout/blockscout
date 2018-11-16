@@ -22,8 +22,11 @@ defmodule Indexer.Token.MetadataUpdater do
 
   @impl true
   def handle_info(:update_tokens, state) do
-    {:ok, tokens} = Chain.stream_cataloged_token_contract_address_hashes([], &(&2 ++ [&1]))
-    update_metadata(tokens)
+    {:ok, tokens} = Chain.stream_cataloged_token_contract_address_hashes([], &[&1 | &2])
+
+    tokens
+    |> Enum.reverse()
+    |> update_metadata()
 
     Process.send_after(self(), :update_tokens, :timer.hours(state.update_interval) * 24)
 

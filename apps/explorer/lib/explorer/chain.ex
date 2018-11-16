@@ -1951,7 +1951,7 @@ defmodule Explorer.Chain do
     Repo.transaction(
       fn ->
         Chain.Token.cataloged_tokens()
-        |> Ecto.Query.order_by([asc: :updated_at])
+        |> order_by(asc: :updated_at)
         |> Repo.stream(timeout: :infinity)
         |> Enum.reduce(initial_acc, reducer)
       end,
