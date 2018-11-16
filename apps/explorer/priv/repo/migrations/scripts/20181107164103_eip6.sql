@@ -3,7 +3,10 @@ DECLARE
    row_count integer := 1;
    batch_size  integer := 50000; -- HOW MANY ITEMS WILL BE UPDATED AT TIME
    iterator  integer := batch_size;
-   affected integer;
+   max_row_number integer;
+   next_iterator integer;
+   updated_row_count integer;
+   deleted_row_count integer;
 BEGIN
   DROP TABLE IF EXISTS current_suicide_internal_transactions_temp;
   -- CREATES TEMP TABLE TO STORE TOKEN BALANCES TO BE UPDATED
@@ -39,7 +42,8 @@ BEGIN
 
     GET DIAGNOSTICS updated_row_count = ROW_COUNT;
 
-     RAISE NOTICE '-> % internal transactions updated from suicide to selfdesruct', updated_row_count;
+    RAISE NOTICE '-> % internal transactions updated from suicide to selfdesruct', updated_row_count;
+
     DELETE FROM current_suicide_internal_transactions_temp
     WHERE row_number < next_iterator;
 

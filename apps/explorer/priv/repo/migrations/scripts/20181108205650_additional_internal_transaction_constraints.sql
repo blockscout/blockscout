@@ -3,7 +3,11 @@ DECLARE
    row_count integer := 1;
    batch_size  integer := 50000; -- HOW MANY ITEMS WILL BE UPDATED AT TIME
    iterator  integer := batch_size;
-   affected integer;
+   max_row_number integer;
+   next_iterator integer;
+   updated_transaction_count integer;
+   deleted_internal_transaction_count integer;
+   deleted_row_count integer;
 BEGIN
   DROP TABLE IF EXISTS transactions_with_deprecated_internal_transactions;
   -- CREATES TEMP TABLE TO STORE TOKEN BALANCES TO BE UPDATED
@@ -25,7 +29,7 @@ BEGIN
     (type = 'create' AND init is NULL)
   ORDER BY transaction_hash DESC;
 
-  max_row_number := (SELECT MAX(row_number) FROM deprecated_internal_transactions);
+  max_row_number := (SELECT MAX(row_number) FROM transactions_with_deprecated_internal_transactions);
   RAISE NOTICE '% transactions to be updated', max_row_number + 1;
 
   -- ITERATES THROUGH THE ITEMS UNTIL THE TEMP TABLE IS EMPTY
@@ -51,7 +55,7 @@ BEGIN
 
     GET DIAGNOSTICS deleted_internal_transaction_count = ROW_COUNT;
 
-    RAISE DIAGNOSTICS  '-> % internal transactions deleted', deleted_internal_transaction_count;
+    RAISE NOTICE  '-> % internal transactions deleted', deleted_internal_transaction_count;
 
     DELETE FROM transactions_with_deprecated_internal_transactions
     WHERE row_number < next_iterator;
