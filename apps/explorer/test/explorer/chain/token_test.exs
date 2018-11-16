@@ -6,7 +6,7 @@ defmodule Explorer.Chain.TokenTest do
   alias Explorer.Chain
 
   describe "cataloged_tokens/0" do
-    test "filters uncataloged tokens out" do
+    test "filters only cataloged tokens" do
       token = insert(:token, cataloged: true)
       insert(:token, cataloged: false)
 

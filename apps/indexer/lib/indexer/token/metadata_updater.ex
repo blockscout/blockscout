@@ -9,8 +9,8 @@ defmodule Indexer.Token.MetadataUpdater do
   alias Explorer.Chain.Token
   alias Explorer.Token.MetadataRetriever
 
-  def start_link(_) do
-    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
+  def start_link(initial_state) do
+    GenServer.start_link(__MODULE__, initial_state, name: __MODULE__)
   end
 
   @impl true
@@ -25,8 +25,7 @@ defmodule Indexer.Token.MetadataUpdater do
     {:ok, tokens} = Chain.stream_cataloged_token_contract_address_hashes([], &(&2 ++ [&1]))
     update_metadata(tokens)
 
-    interval = Application.get_env(:indexer, :metadata_updater_days_interval)
-    Process.send_after(self(), :update_tokens, :timer.hours(interval) * 24)
+    Process.send_after(self(), :update_tokens, :timer.hours(state.update_interval) * 24)
 
     {:noreply, state}
   end
