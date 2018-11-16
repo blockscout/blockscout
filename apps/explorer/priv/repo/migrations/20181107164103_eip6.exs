@@ -1,8 +1,8 @@
 defmodule Explorer.Repo.Migrations.EIP6 do
   @moduledoc """
-  Use `priv/repo/migrations/scripts/20181107164103_eip6.sql` to migrate data and validate constraint
+  Use `priv/repo/migrations/scripts/20181107164103_eip6.sql` to migrate data and validate constraint.
 
-  ```
+  ```sh
   mix ecto.migrate
   psql -d $DATABASE -a -f priv/repo/migrations/scripts/20181107164103_eip6.sql
   ```

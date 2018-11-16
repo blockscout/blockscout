@@ -21,35 +21,37 @@ BEGIN
   WHERE type = 'suicide'
   ORDER BY transaction_hash, index DESC;
 
-  row_count := (SELECT count(*) FROM current_suicide_internal_transactions_temp);
-  RAISE NOTICE '% items to be updated', row_count;
+  max_row_number := (SELECT MAX(row_number) FROM current_suicide_internal_transactions_temp);
+  RAISE NOTICE '% items to be updated', max_row_number + 1;
 
   -- ITERATES THROUGH THE ITEMS UNTIL THE TEMP TABLE IS EMPTY
-  WHILE row_count > 0 LOOP
-    -- UPDATES THE INTERNAL TRANSACTION AND RETURNS THE ADDRESS HASH AND TOKEN HASH TO BE DELETED
-    WITH updated_internal_transactions AS (
-      UPDATE internal_transactions
-      SET type = "suicide"
-      FROM current_suicide_internal_transactions_temp
-      WHERE internal_transactions.transaction_hash = current_suicide_internal_transactions_temp.transaction_hash AND
-            internal_transactions.index = current_suicide_internal_transactions_temp.index AND
-            current_suicide_internal_transactions_temp.row_number <= iterator
-      RETURNING current_suicide_internal_transactions_temp.row_number
-    )
-    DELETE FROM current_suicide_internal_transactions_temp
-    WHERE row_number IN (select row_number from updated_address_current_token_balances);
+  WHILE iterator <= max_row_number LOOP
+    next_iterator := iterator + batch_size;
 
-    GET DIAGNOSTICS affected = ROW_COUNT;
-    RAISE NOTICE '-> % address current token balances updated!', affected;
+    RAISE NOTICE '-> suicide internal transactions % to % to be updated', iterator, next_iterator - 1;
+
+    UPDATE internal_transactions
+    SET type = 'selfdestruct'
+    FROM current_suicide_internal_transactions_temp
+    WHERE internal_transactions.transaction_hash = current_suicide_internal_transactions_temp.transaction_hash AND
+          internal_transactions.index = current_suicide_internal_transactions_temp.index AND
+          current_suicide_internal_transactions_temp.row_number < next_iterator;
+
+    GET DIAGNOSTICS updated_row_count = ROW_COUNT;
+
+     RAISE NOTICE '-> % internal transactions updated from suicide to selfdesruct', updated_row_count;
+    DELETE FROM current_suicide_internal_transactions_temp
+    WHERE row_number < next_iterator;
+
+    GET DIAGNOSTICS deleted_row_count = ROW_COUNT;
+
+    ASSERT updated_row_count = deleted_row_count;
 
     -- COMMITS THE BATCH UPDATES
     CHECKPOINT;
 
     -- UPDATES THE COUNTER SO IT DOESN'T TURN INTO AN INFINITE LOOP
-    row_count := (SELECT count(*) FROM current_token_balance_temp);
-    iterator := iterator + batch_size;
-    RAISE NOTICE '-> % counter', row_count;
-    RAISE NOTICE '-> % next batch', iterator;
+    iterator := next_iterator;
   END LOOP;
 
   RAISE NOTICE 'All suicide type internal transactions updated to selfdestruct.  Validating constraint.';
