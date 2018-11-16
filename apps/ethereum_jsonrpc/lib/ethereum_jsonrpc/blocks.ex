@@ -4,11 +4,51 @@ defmodule EthereumJSONRPC.Blocks do
   and [`eth_getBlockByNumber`](https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getblockbynumber) from batch requests.
   """
 
-  alias EthereumJSONRPC.{Block, Transactions, Uncles}
+  alias EthereumJSONRPC.{Block, Transactions, Transport, Uncles}
 
   @type elixir :: [Block.elixir()]
   @type params :: [Block.params()]
-  @type t :: [Block.t()]
+  @type t :: %__MODULE__{
+          blocks_params: [map()],
+          block_second_degree_relations_params: [map()],
+          transactions_params: [map()],
+          errors: [Transport.error()]
+        }
+
+  defstruct blocks_params: [],
+            block_second_degree_relations_params: [],
+            transactions_params: [],
+            errors: []
+
+  @spec from_responses(list(), map()) :: t()
+  def from_responses(responses, id_to_params) when is_list(responses) and is_map(id_to_params) do
+    %{errors: errors, blocks: blocks} =
+      responses
+      |> Enum.map(&Block.from_response(&1, id_to_params))
+      |> Enum.reduce(%{errors: [], blocks: []}, fn
+        {:ok, block}, %{blocks: blocks} = acc ->
+          %{acc | blocks: [block | blocks]}
+
+        {:error, error}, %{errors: errors} = acc ->
+          %{acc | errors: [error | errors]}
+      end)
+
+    elixir_blocks = to_elixir(blocks)
+
+    elixir_uncles = elixir_to_uncles(elixir_blocks)
+    elixir_transactions = elixir_to_transactions(elixir_blocks)
+
+    block_second_degree_relations_params = Uncles.elixir_to_params(elixir_uncles)
+    transactions_params = Transactions.elixir_to_params(elixir_transactions)
+    blocks_params = elixir_to_params(elixir_blocks)
+
+    %__MODULE__{
+      errors: errors,
+      blocks_params: blocks_params,
+      block_second_degree_relations_params: block_second_degree_relations_params,
+      transactions_params: transactions_params
+    }
+  end
 
   @doc """
   Converts `t:elixir/0` elements to params used by `Explorer.Chain.Block.changeset/2`.
@@ -282,7 +322,7 @@ defmodule EthereumJSONRPC.Blocks do
         }
       ]
   """
-  @spec to_elixir(t) :: elixir
+  @spec to_elixir([Block.t()]) :: elixir
   def to_elixir(blocks) when is_list(blocks) do
     Enum.map(blocks, &Block.to_elixir/1)
   end

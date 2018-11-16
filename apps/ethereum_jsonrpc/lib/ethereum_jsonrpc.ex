@@ -220,13 +220,11 @@ defmodule EthereumJSONRPC do
       |> Enum.map(fn block_hash -> %{hash: block_hash} end)
       |> id_to_params()
 
-    id_to_params
-    |> get_block_by_hash_requests()
-    |> json_rpc(json_rpc_named_arguments)
-    |> handle_get_blocks(id_to_params)
-    |> case do
-      {:ok, _next, results} -> {:ok, results}
-      {:error, reason} -> {:error, reason}
+    with {:ok, responses} <-
+           id_to_params
+           |> Blocks.ByHash.requests()
+           |> json_rpc(json_rpc_named_arguments) do
+      {:ok, Blocks.from_responses(responses, id_to_params)}
     end
   end
 
@@ -409,20 +407,6 @@ defmodule EthereumJSONRPC do
     timestamp
     |> quantity_to_integer()
     |> Timex.from_unix()
-  end
-
-  defp get_block_by_hash_requests(id_to_params) do
-    Enum.map(id_to_params, fn {id, %{hash: hash}} ->
-      get_block_by_hash_request(%{id: id, hash: hash, transactions: :full})
-    end)
-  end
-
-  defp get_block_by_hash_request(%{id: id} = options) do
-    request(%{id: id, method: "eth_getBlockByHash", params: get_block_by_hash_params(options)})
-  end
-
-  defp get_block_by_hash_params(%{hash: hash} = options) do
-    [hash, get_block_transactions(options)]
   end
 
   defp get_block_by_number_requests(id_to_params) do

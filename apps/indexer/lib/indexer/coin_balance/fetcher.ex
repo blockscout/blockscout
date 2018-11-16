@@ -173,6 +173,6 @@ defmodule Indexer.CoinBalance.Fetcher do
          data: %{block_quantity: block_quantity, hash_data: hash_data}
        })
        when is_integer(code) and is_binary(message) and is_binary(block_quantity) and is_binary(hash_data) do
-    [hash_data, "@", quantity_to_integer(block_quantity), ": (", to_string(code), ") ", message]
+    [hash_data, "@", quantity_to_integer(block_quantity), ": (", to_string(code), ") ", message, ?\n]
   end
 end

@@ -4,7 +4,7 @@ defmodule EthereumJSONRPCTest do
   import EthereumJSONRPC.Case
   import Mox
 
-  alias EthereumJSONRPC.{FetchedBalances, FetchedBeneficiaries, Subscription}
+  alias EthereumJSONRPC.{Blocks, FetchedBalances, FetchedBeneficiaries, Subscription}
   alias EthereumJSONRPC.WebSocket.WebSocketClient
 
   setup :verify_on_exit!
@@ -205,12 +205,13 @@ defmodule EthereumJSONRPCTest do
         end
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
-        expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id}], _options ->
           block_number = "0x0"
 
           {:ok,
            [
              %{
+               id: id,
                result: %{
                  "difficulty" => "0x0",
                  "gasLimit" => "0x0",
@@ -253,7 +254,7 @@ defmodule EthereumJSONRPCTest do
         end)
       end
 
-      assert {:ok, %{blocks: [_ | _], transactions: [_ | _]}} =
+      assert {:ok, %Blocks{blocks_params: [_ | _], transactions_params: [_ | _]}} =
                EthereumJSONRPC.fetch_blocks_by_hash([block_hash], json_rpc_named_arguments)
     end
 
@@ -274,8 +275,18 @@ defmodule EthereumJSONRPCTest do
         end)
       end
 
-      assert {:error, [%{data: %{hash: "0x0"}}]} =
-               EthereumJSONRPC.fetch_blocks_by_hash(["0x0"], json_rpc_named_arguments)
+      hash = "0x0"
+
+      assert {:ok,
+              %Blocks{
+                errors: [
+                  %{
+                    data: %{
+                      hash: ^hash
+                    }
+                  }
+                ]
+              }} = EthereumJSONRPC.fetch_blocks_by_hash([hash], json_rpc_named_arguments)
     end
 
     test "full batch errors are returned", %{json_rpc_named_arguments: json_rpc_named_arguments} do

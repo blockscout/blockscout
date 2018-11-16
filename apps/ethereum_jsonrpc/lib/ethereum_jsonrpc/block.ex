@@ -68,6 +68,21 @@ defmodule EthereumJSONRPC.Block do
   """
   @type t :: %{String.t() => EthereumJSONRPC.data() | EthereumJSONRPC.hash() | EthereumJSONRPC.quantity() | nil}
 
+  def from_response(%{id: id, result: %{"hash" => hash} = block}, id_to_params) when is_map(id_to_params) do
+    # `^` verifies returned hash matches sent hash
+    %{hash: ^hash} = Map.fetch!(id_to_params, id)
+
+    {:ok, block}
+  end
+
+  def from_response(%{id: id, error: error}, id_to_params) when is_map(id_to_params) do
+    %{hash: hash} = Map.fetch!(id_to_params, id)
+
+    annotated_error = Map.put(error, :data, %{hash: hash})
+
+    {:error, annotated_error}
+  end
+
   @doc """
   Converts `t:elixir/0` format to params used in `Explorer.Chain`.
 
