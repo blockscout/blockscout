@@ -109,7 +109,7 @@ defmodule BlockScoutWeb.TransactionControllerTest do
       assert html_response(conn, 404)
     end
 
-    test "responds with 422 when the hash is invalid" do
+    test "responds with 422 when the hash is invalid", %{conn: conn} do
       conn = get(conn, transaction_path(BlockScoutWeb.Endpoint, :show, "wrong"))
 
       assert html_response(conn, 422)

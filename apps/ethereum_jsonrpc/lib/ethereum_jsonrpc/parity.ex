@@ -74,7 +74,7 @@ defmodule EthereumJSONRPC.Parity do
 
   defp extract_beneficiaries(traces) when is_list(traces) do
     Enum.reduce(traces, MapSet.new(), fn
-      %{"action" => %{"rewardType" => "block", "author" => author}, "blockNumber" => block_number}, beneficiaries ->
+      %{"type" => "reward", "blockNumber" => block_number, "action" => %{"author" => author}}, beneficiaries ->
         beneficiary = %{
           block_number: block_number,
           address_hash: author

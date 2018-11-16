@@ -23,7 +23,7 @@ defmodule Indexer.TokenBalance.FetcherTest do
       insert(:token_balance, value_fetched_at: DateTime.utc_now())
 
       assert TokenBalance.Fetcher.init([], &[&1 | &2], nil) == [
-               {address_hash_bytes, token_contract_address_hash_bytes, block_number}
+               {address_hash_bytes, token_contract_address_hash_bytes, block_number, 0}
              ]
     end
   end
@@ -57,13 +57,59 @@ defmodule Indexer.TokenBalance.FetcherTest do
         end
       )
 
-      assert TokenBalance.Fetcher.run([{address_hash_bytes, token_contract_address_hash_bytes, block_number}], nil) ==
-               :ok
+      assert TokenBalance.Fetcher.run(
+               [{address_hash_bytes, token_contract_address_hash_bytes, block_number, 0}],
+               nil
+             ) == :ok
 
       token_balance_updated = Explorer.Repo.get_by(Address.TokenBalance, address_hash: address_hash)
 
       assert token_balance_updated.value == Decimal.new(1_000_000_000_000_000_000_000_000)
       assert token_balance_updated.value_fetched_at != nil
+    end
+
+    test "does not try to fetch the token balance again if the retry is over" do
+      max_retries = 3
+
+      Application.put_env(:indexer, :token_balance_max_retries, max_retries)
+
+      token_balance_a = insert(:token_balance, value_fetched_at: nil, value: nil)
+      token_balance_b = insert(:token_balance, value_fetched_at: nil, value: nil)
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        1,
+        fn [%{id: _, method: _, params: [%{data: _, to: _}, _]}], _options ->
+          {:ok,
+           [
+             %{
+               error: %{code: -32015, data: "Reverted 0x", message: "VM execution error."},
+               id: "balanceOf",
+               jsonrpc: "2.0"
+             }
+           ]}
+        end
+      )
+
+      token_balances = [
+        {
+          token_balance_a.address_hash.bytes,
+          token_balance_a.token_contract_address_hash.bytes,
+          token_balance_a.block_number,
+          # this token balance must be ignored
+          max_retries
+        },
+        {
+          token_balance_b.address_hash.bytes,
+          token_balance_b.token_contract_address_hash.bytes,
+          token_balance_b.block_number,
+          # this token balance still have to be retried
+          max_retries - 2
+        }
+      ]
+
+      assert TokenBalance.Fetcher.run(token_balances, nil) == :ok
     end
   end
 

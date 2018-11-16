@@ -269,7 +269,8 @@ defmodule Explorer.Factory do
       call_type: :delegatecall,
       gas: gas,
       gas_used: gas_used,
-      output: %Data{bytes: <<1>>},
+      input: %Data{bytes: <<1>>},
+      output: %Data{bytes: <<2>>},
       # caller MUST supply `index`
       trace_address: [],
       # caller MUST supply `transaction` because it can't be built lazily to allow overrides without creating an extra
@@ -301,13 +302,13 @@ defmodule Explorer.Factory do
     }
   end
 
-  def internal_transaction_suicide_factory() do
+  def internal_transaction_selfdestruct_factory() do
     %InternalTransaction{
       from_address: build(:address),
       trace_address: [],
       # caller MUST supply `transaction` because it can't be built lazily to allow overrides without creating an extra
       # transaction
-      type: :suicide,
+      type: :selfdestruct,
       value: sequence("internal_transaction_value", &Decimal.new(&1))
     }
   end

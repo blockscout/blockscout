@@ -1,6 +1,17 @@
 defmodule Indexer.TokenBalance.Fetcher do
   @moduledoc """
-  Fetches the token balances values.
+  Fetches token balances and send the ones that were fetched to be imported in `Address.CurrentTokenBalance` and
+  `Address.TokenBalance`.
+
+  The module responsible for fetching token balances in the Smart Contract is the `Indexer.TokenBalances`. this module
+  only prepare the params, send they to `Indexer.TokenBalances` and relies on its return.
+
+  It behaves as a `BufferedTask`, so we can configure the `max_batch_size` and the `max_concurrency` to control how many
+  token balances will be fetched at the same time. Be aware that, for each token balance the indexer will make a request
+  to the Smart Contract.
+
+  Also, this module set a `retries_count` for each token balance and increment this number to avoid fetching the ones
+  that always raise errors interacting with the Smart Contract.
   """
 
   require Logger
@@ -17,6 +28,8 @@ defmodule Indexer.TokenBalance.Fetcher do
     max_concurrency: 5,
     task_supervisor: Indexer.TokenBalance.TaskSupervisor
   ]
+
+  @max_retries 3
 
   @spec async_fetch([]) :: :ok
   def async_fetch(token_balances) do
@@ -54,13 +67,18 @@ defmodule Indexer.TokenBalance.Fetcher do
     final
   end
 
+  @doc """
+  Fetches the given entries (token_balances) from the Smart Contract and import they in our database.
+
+  It also increments the `retries_count` to avoid fetching token balances that always raise errors
+  when reading their balance in the Smart Contract.
+  """
   @impl BufferedTask
   def run(entries, _json_rpc_named_arguments) do
-    Logger.debug(fn -> "fetching #{length(entries)} token balances" end)
-
     result =
       entries
       |> Enum.map(&format_params/1)
+      |> Enum.map(&Map.put(&1, :retries_count, &1.retries_count + 1))
       |> fetch_from_blockchain()
       |> import_token_balances()
 
@@ -72,9 +90,10 @@ defmodule Indexer.TokenBalance.Fetcher do
   end
 
   def fetch_from_blockchain(params_list) do
-    {:ok, token_balances} = TokenBalances.fetch_token_balances_from_blockchain(params_list)
-
-    TokenBalances.log_fetching_errors(__MODULE__, token_balances)
+    {:ok, token_balances} =
+      params_list
+      |> Enum.filter(&(&1.retries_count <= @max_retries))
+      |> TokenBalances.fetch_token_balances_from_blockchain()
 
     token_balances
   end
@@ -106,22 +125,27 @@ defmodule Indexer.TokenBalance.Fetcher do
     |> Enum.uniq()
   end
 
-  defp entry(%{
-         token_contract_address_hash: token_contract_address_hash,
-         address_hash: address_hash,
-         block_number: block_number
-       }) do
-    {address_hash.bytes, token_contract_address_hash.bytes, block_number}
+  defp entry(
+         %{
+           token_contract_address_hash: token_contract_address_hash,
+           address_hash: address_hash,
+           block_number: block_number
+         } = token_balance
+       ) do
+    retries_count = Map.get(token_balance, :retries_count, 0)
+
+    {address_hash.bytes, token_contract_address_hash.bytes, block_number, retries_count}
   end
 
-  defp format_params({address_hash_bytes, token_contract_address_hash_bytes, block_number}) do
+  defp format_params({address_hash_bytes, token_contract_address_hash_bytes, block_number, retries_count}) do
     {:ok, token_contract_address_hash} = Hash.Address.cast(token_contract_address_hash_bytes)
     {:ok, address_hash} = Hash.Address.cast(address_hash_bytes)
 
     %{
       token_contract_address_hash: to_string(token_contract_address_hash),
       address_hash: to_string(address_hash),
-      block_number: block_number
+      block_number: block_number,
+      retries_count: retries_count
     }
   end
 end
