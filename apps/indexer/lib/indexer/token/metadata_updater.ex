@@ -22,7 +22,7 @@ defmodule Indexer.Token.MetadataUpdater do
 
   @impl true
   def handle_info(:update_tokens, state) do
-    {:ok, tokens} = Chain.stream_cataloged_token_contract_address_hashes([], &[&1 | &2])
+    {:ok, tokens} = Chain.stream_cataloged_token_contract_address_hashes([], &(&2 ++ [&1]))
     update_metadata(tokens)
 
     interval = Application.get_env(:indexer, :metadata_updater_days_interval)
