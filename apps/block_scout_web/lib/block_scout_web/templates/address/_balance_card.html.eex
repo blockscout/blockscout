@@ -9,7 +9,7 @@
           data-wei-value="<%= if @address.fetched_coin_balance, do: @address.fetched_coin_balance.value %>"
           data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
         </span>
-        <small>(@ <%= @exchange_rate.usd_value %>/<%= gettext("Ether") %>)</small>
+        <small>(@ <span data-usd-unit-price="<%= @exchange_rate.usd_value %>"></span>/<%= gettext("Ether") %>)</small>
       </span>
 
       <div class="mt-3" data-token-balance-dropdown data-api_path="<%= address_token_balance_path(BlockScoutWeb.Endpoint, :index, @address.hash) %>">
