@@ -2,11 +2,16 @@ defmodule BlockScoutWeb.Schema.Types do
   @moduledoc false
 
   use Absinthe.Schema.Notation
+  use Absinthe.Relay.Schema.Notation, :modern
 
   import Absinthe.Resolution.Helpers
 
+  alias BlockScoutWeb.Resolvers.Transaction
+
   import_types(Absinthe.Type.Custom)
   import_types(BlockScoutWeb.Schema.Scalars)
+
+  connection(node_type: :transaction)
 
   @desc """
   A stored representation of a Web3 address.
@@ -19,6 +24,19 @@ defmodule BlockScoutWeb.Schema.Types do
 
     field :smart_contract, :smart_contract do
       resolve(dataloader(:db, :smart_contract))
+    end
+
+    connection field(:transactions, node_type: :transaction) do
+      arg(:count, :integer)
+      resolve(&Transaction.get_by/3)
+
+      complexity(fn
+        %{first: first}, child_complexity ->
+          first * child_complexity
+
+        %{last: last}, child_complexity ->
+          last * child_complexity
+      end)
     end
   end
 
@@ -62,7 +80,7 @@ defmodule BlockScoutWeb.Schema.Types do
   @desc """
   Models a Web3 transaction.
   """
-  object :transaction do
+  node object(:transaction, id_fetcher: &transaction_id_fetcher/2) do
     field(:hash, :full_hash)
     field(:block_number, :integer)
     field(:cumulative_gas_used, :decimal)
@@ -93,4 +111,6 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:token_contract_address_hash, :address_hash)
     field(:transaction_hash, :full_hash)
   end
+
+  def transaction_id_fetcher(%{hash: hash}, _), do: to_string(hash)
 end
