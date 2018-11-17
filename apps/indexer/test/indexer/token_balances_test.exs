@@ -53,7 +53,8 @@ defmodule Indexer.TokenBalancesTest do
         %{
           address_hash: to_string(address.hash),
           block_number: 1_000,
-          token_contract_address_hash: to_string(token.contract_address_hash)
+          token_contract_address_hash: to_string(token.contract_address_hash),
+          retries_count: 1
         }
       ]
 
@@ -71,12 +72,14 @@ defmodule Indexer.TokenBalancesTest do
         %{
           token_contract_address_hash: Hash.to_string(token.contract_address_hash),
           address_hash: address_hash_string,
-          block_number: 1_000
+          block_number: 1_000,
+          retries_count: 1
         },
         %{
           token_contract_address_hash: Hash.to_string(token.contract_address_hash),
           address_hash: address_hash_string,
-          block_number: 1_001
+          block_number: 1_001,
+          retries_count: 1
         }
       ]
 
@@ -93,31 +96,28 @@ defmodule Indexer.TokenBalancesTest do
     test "logs the given from argument in final message" do
       token_balance_params_with_error = Map.put(build(:token_balance), :error, "Error")
       params = [token_balance_params_with_error]
-      from = "Tests"
 
       log_message_response =
         capture_log(fn ->
-          TokenBalances.log_fetching_errors(from, params)
+          TokenBalances.log_fetching_errors(params)
         end)
 
-      assert log_message_response =~ "<Tests"
+      assert log_message_response =~ "Error"
     end
 
     test "log when there is a token_balance param with errors" do
-      from = "Tests"
-      token_balance_params_with_error = Map.put(build(:token_balance), :error, "Error")
+      token_balance_params_with_error = Map.merge(build(:token_balance), %{error: "Error", retries_count: 1})
       params = [token_balance_params_with_error]
 
       log_message_response =
         capture_log(fn ->
-          TokenBalances.log_fetching_errors(from, params)
+          TokenBalances.log_fetching_errors(params)
         end)
 
       assert log_message_response =~ "Error"
     end
 
     test "log multiple token balances params with errors" do
-      from = "Tests"
       error_1 = "Error"
       error_2 = "BadGateway"
 
@@ -128,7 +128,7 @@ defmodule Indexer.TokenBalancesTest do
 
       log_message_response =
         capture_log(fn ->
-          TokenBalances.log_fetching_errors(from, params)
+          TokenBalances.log_fetching_errors(params)
         end)
 
       assert log_message_response =~ error_1
@@ -136,13 +136,12 @@ defmodule Indexer.TokenBalancesTest do
     end
 
     test "doesn't log when there aren't errors after fetching token balances" do
-      from = "Tests"
       token_balance_params = Map.put(build(:token_balance), :error, nil)
       params = [token_balance_params]
 
       log_message_response =
         capture_log(fn ->
-          TokenBalances.log_fetching_errors(from, params)
+          TokenBalances.log_fetching_errors(params)
         end)
 
       assert log_message_response == ""
@@ -169,9 +168,8 @@ defmodule Indexer.TokenBalancesTest do
 
       token_balances = MapSet.new([token_balance_a, token_balance_b])
       fetched_token_balances = MapSet.new([token_balance_a])
-      unfetched_token_balances = MapSet.new([token_balance_b])
 
-      assert TokenBalances.unfetched_token_balances(token_balances, fetched_token_balances) == unfetched_token_balances
+      assert TokenBalances.unfetched_token_balances(token_balances, fetched_token_balances) == [token_balance_b]
     end
   end
 

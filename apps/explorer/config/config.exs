@@ -10,7 +10,8 @@ config :ecto, json_library: Jason
 # General application configuration
 config :explorer,
   ecto_repos: [Explorer.Repo],
-  coin: System.get_env("COIN") || "ETC"
+  coin: System.get_env("COIN") || "ETC",
+  token_functions_reader_max_retries: 3
 
 config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: 2_000
 

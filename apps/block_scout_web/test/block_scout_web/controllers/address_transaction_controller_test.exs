@@ -103,7 +103,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
           "type" => "JSON"
         })
 
-      assert expected_next_page_url = actual_next_page_url
+      assert expected_next_page_url == actual_next_page_url
     end
 
     test "next_page_params are empty if on last page", %{conn: conn} do
