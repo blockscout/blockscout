@@ -140,6 +140,7 @@ defmodule Indexer.Block.Fetcher do
       {:ok, {inserted, next}}
     else
       {step, {:error, reason}} -> {:error, {step, reason}}
+      {:error, :timeout} = error -> error
       {:error, changesets} = error when is_list(changesets) -> error
       {:error, step, failed_value, changes_so_far} -> {:error, {step, failed_value, changes_so_far}}
     end

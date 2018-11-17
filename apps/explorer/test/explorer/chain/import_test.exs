@@ -47,34 +47,36 @@ defmodule Explorer.Chain.ImportTest do
       internal_transactions: %{
         params: [
           %{
+            block_number: 35,
+            transaction_index: 0,
+            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+            index: 0,
+            trace_address: [],
+            type: "call",
             call_type: "call",
             from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+            to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             gas: 4_677_320,
             gas_used: 27770,
-            index: 0,
+            input: "0x",
             output: "0x",
-            to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
-            trace_address: [],
-            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-            type: "call",
-            value: 0,
-            block_number: 35,
-            transaction_index: 0
+            value: 0
           },
           %{
+            block_number: 35,
+            transaction_index: 1,
+            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+            index: 1,
+            trace_address: [0],
+            type: "call",
             call_type: "call",
             from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+            to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             gas: 4_677_320,
             gas_used: 27770,
-            index: 1,
+            input: "0x",
             output: "0x",
-            to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
-            trace_address: [],
-            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-            type: "call",
-            value: 0,
-            block_number: 35,
-            transaction_index: 1
+            value: 0
           }
         ],
         timeout: 5
@@ -625,19 +627,19 @@ defmodule Explorer.Chain.ImportTest do
           params: [
             %{
               block_number: 35,
+              transaction_index: 0,
+              transaction_hash: transaction_hash,
+              index: 0,
+              trace_address: [],
+              type: "call",
               call_type: "call",
               from_address_hash: from_address_hash,
+              to_address_hash: to_address_hash,
               gas: 4_677_320,
               gas_used: 27770,
-              index: 0,
+              input: "0x",
               output: "0x",
-              to_address_hash: to_address_hash,
-              trace_address: [],
-              transaction_hash: transaction_hash,
-              type: "call",
-              value: 0,
-              transaction_block_number: 35,
-              transaction_index: 0
+              value: 0
             }
           ]
         }
@@ -1767,6 +1769,7 @@ defmodule Explorer.Chain.ImportTest do
                        to_address_hash: to_address_hash_before,
                        trace_address: [],
                        value: 0,
+                       input: "0x",
                        error: error,
                        block_number: 35,
                        transaction_index: 0
