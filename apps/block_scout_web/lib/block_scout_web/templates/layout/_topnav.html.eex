@@ -19,9 +19,6 @@
             <%= link to: block_path(@conn, :index), class: "dropdown-item" do %>
               <%= gettext("Blocks") %>
             <% end %>
-            <%= link to: uncle_path(@conn, :uncle), class: "dropdown-item" do %>
-              <%= gettext("Uncles") %>
-            <% end %>
             <%= link to: reorg_path(@conn, :reorg), class: "dropdown-item" do %>
               <%= gettext("Forked Blocks (Reorgs)") %>
             <% end %>
@@ -103,8 +100,15 @@
               <%= subnetwork_title() %>
             </a>
             <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-              <a class="dropdown-item" href="https://sokol.blockscout.com/"><%= gettext("POA Sokol") %></a>
-              <a class="dropdown-item" href="https://poa.blockscout.com/"><%= gettext("POA Core") %></a>
+              <a class="dropdown-item" href="https://blockscout.com/poa/core"><%= gettext("POA Core") %></a>
+              <a class="dropdown-item" href="https://blockscout.com/poa/sokol"><%= gettext("POA Sokol") %></a>
+              <a class="dropdown-item" href="https://blockscout.com/poa/dai"><%= gettext("xDai Chain") %></a>
+              <a class="dropdown-item" href="https://blockscout.com/eth/mainnet"><%= gettext("Ethereum Mainnet") %></a>
+              <a class="dropdown-item" href="https://blockscout.com/eth/kovan"><%= gettext("Kovan Testnet") %></a>
+              <a class="dropdown-item" href="https://blockscout.com/eth/ropsten"><%= gettext("Ropsten Testnet") %></a>
+              <a class="dropdown-item" href="https://blockscout.com/eth/goerli"><%= gettext("Göerli Testnet") %></a>
+              <a class="dropdown-item" href="https://blockscout.com/eth/rinkeby"><%= gettext("Rinkeby Testnet") %></a>
+              <a class="dropdown-item" href="https://blockscout.com/etc/mainnet"><%= gettext("Ethereum Classic") %></a>
             </div>
           </li>
         </ul>
