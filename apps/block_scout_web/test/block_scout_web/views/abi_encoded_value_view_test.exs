@@ -28,31 +28,33 @@ defmodule BlockScoutWeb.ABIEncodedValueViewTest do
     end
 
     test "it formats lists with newlines and spaces" do
-      expected = String.trim("""
-      [
-        1,
-        2,
-        3,
-        4
-      ]
-      """)
+      expected =
+        String.trim("""
+        [
+          1,
+          2,
+          3,
+          4
+        ]
+        """)
 
       assert value_html("uint[]", [1, 2, 3, 4]) == expected
     end
 
     test "it formats nested lists with nested depth" do
-      expected = String.trim("""
-      [
+      expected =
+        String.trim("""
         [
-          1,
-          2
-        ],
-        [
-          3,
-          4
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            4
+          ]
         ]
-      ]
-      """)
+        """)
 
       assert value_html("uint[][]", [[1, 2], [3, 4]]) == expected
     end
@@ -61,14 +63,15 @@ defmodule BlockScoutWeb.ABIEncodedValueViewTest do
       address = "0x0000000000000000000000000000000000000000"
       address_link = ~s(<a href=\"/address/#{address}\" target=\"_blank\">#{address}</a>)
 
-      expected = String.trim("""
-      [
-        #{address_link},
-        #{address_link},
-        #{address_link},
-        #{address_link}
-      ]
-      """)
+      expected =
+        String.trim("""
+        [
+          #{address_link},
+          #{address_link},
+          #{address_link},
+          #{address_link}
+        ]
+        """)
 
       address_bytes = "0x0000000000000000000000000000000000000000" |> String.trim_leading("0x") |> Base.decode16!()
 
