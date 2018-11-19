@@ -96,6 +96,9 @@ _Additional runtime options:_
 
 ![BlockScout Example](explorer_example.gif)
 
+### Projects Utilizing BlockScout
+* [Oasis Labs](https://blockexplorer.oasiscloud.io/)
+
 ### Configuring Ethereum Classic and other EVM Chains
 **Note: Most of these modifications will be consolidated into a single file in the future.**
 
