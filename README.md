@@ -1,12 +1,15 @@
 <p align="center">
-  ![BlockScout Example](blockscout.png)
+  <a href="https://blockscout.com">
+    <img width="200" src="https://blockscout.com/eth/mainnet/android-chrome-192x192.png" \>
+  </a>
 </p>
 
 <h1 align="center">BlockScout</h1>
+<p align="center">Blockchain Explorer for inspecting and analyzing EVM Chains.</p>
 <div align="center">
-Blockchain Explorer for EVM Chains :fire: 
-
+  
 [![CircleCI](https://circleci.com/gh/poanetwork/blockscout.svg?style=svg&circle-token=f8823a3d0090407c11f87028c73015a331dbf604)](https://circleci.com/gh/poanetwork/blockscout) [![Coverage Status](https://coveralls.io/repos/github/poanetwork/blockscout/badge.svg?branch=master)](https://coveralls.io/github/poanetwork/blockscout?branch=master) [![Join the chat at https://gitter.im/poanetwork/blockscout](https://badges.gitter.im/poanetwork/blockscout.svg)](https://gitter.im/poanetwork/blockscout?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 </div>
 
 BlockScout provides a comprehensive, easy-to-use interface for users to view, confirm, and inspect transactions on **all EVM** (Ethereum Virtual Machine) blockchains. This includes the Ethereum main and test networks as well as **Ethereum forks and sidechains**.
