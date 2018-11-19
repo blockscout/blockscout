@@ -106,12 +106,14 @@ defmodule Explorer.Chain.Log do
   Decode transaction log data.
   """
   def decode(_log, %Transaction{to_address: nil}), do: {:error, :no_to_address}
+
   def decode(log, %Transaction{to_address: %{smart_contract: %{abi: abi}}}) when not is_nil(abi) do
     with {:ok, selector, mapping} <- find_and_decode(abi, log),
          identifier <- Base.encode16(selector.method_id, case: :lower),
          text <- function_call(selector.function, mapping),
          do: {:ok, identifier, text, mapping}
   end
+
   def decode(_log, _transaction), do: {:error, :contract_not_verified}
 
   defp find_and_decode(abi, log) do
