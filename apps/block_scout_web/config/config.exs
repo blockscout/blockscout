@@ -12,9 +12,9 @@ config :block_scout_web,
 
 config :block_scout_web, BlockScoutWeb.Chain,
   network: System.get_env("NETWORK"),
-  subnetwork: System.get_env("SUBNETWORK"),
+  subnetwork: "Görli Testnet",
   network_icon: System.get_env("NETWORK_ICON"),
-  logo: System.get_env("LOGO") || "/images/goerli.png"
+  logo: System.get_env("LOGO") || "/images/goerli_logo.png"
 
 # Configures the endpoint
 config :block_scout_web, BlockScoutWeb.Endpoint,
