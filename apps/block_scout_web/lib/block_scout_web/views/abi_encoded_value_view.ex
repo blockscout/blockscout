@@ -7,10 +7,13 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
   """
   use BlockScoutWeb, :view
 
+  alias ABI.FunctionSelector
+  alias Phoenix.HTML
+
   require Logger
 
   def value_html(type, value) do
-    decoded_type = ABI.FunctionSelector.decode_type(type)
+    decoded_type = FunctionSelector.decode_type(type)
 
     do_value_html(decoded_type, value)
   rescue
@@ -21,7 +24,7 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
   end
 
   def copy_text(type, value) do
-    decoded_type = ABI.FunctionSelector.decode_type(type)
+    decoded_type = FunctionSelector.decode_type(type)
 
     do_copy_text(decoded_type, value)
   rescue
@@ -102,7 +105,7 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
     hex(value)
   end
 
-  def base_value_html(_, value), do: Phoenix.HTML.html_escape(value)
+  def base_value_html(_, value), do: HTML.html_escape(value)
 
   defp hex(value), do: "0x" <> Base.encode16(value, case: :lower)
 end

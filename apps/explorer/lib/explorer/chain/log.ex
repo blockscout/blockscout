@@ -5,6 +5,7 @@ defmodule Explorer.Chain.Log do
 
   require Logger
 
+  alias ABI.Event
   alias Explorer.Chain.{Address, Data, Hash, Transaction}
 
   @required_attrs ~w(address_hash data index transaction_hash)a
@@ -117,7 +118,7 @@ defmodule Explorer.Chain.Log do
     with {selector, mapping} <-
            abi
            |> ABI.parse_specification(include_events?: true)
-           |> ABI.Event.find_and_decode(
+           |> Event.find_and_decode(
              decode16!(log.first_topic),
              decode16!(log.second_topic),
              decode16!(log.third_topic),
