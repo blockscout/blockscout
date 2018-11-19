@@ -75,102 +75,75 @@
           </dl>
 
           <!-- Input -->
-          <dl class="row mb-0">
-            <%= case decoded_input_data(@transaction) do %>
-              <% {:error, :contract_not_verified} -> %>
-                <dt class="col-sm-3 text-muted"> <%= gettext "Input" %> </dt>
-                <dd class="col-sm-9">
-                  <div class="alert alert-danger">
-                    To see decoded input data, the <a href="<%= address_verify_contract_path(@conn, :new, @transaction.to_address.hash)%>">contract must be verified.</a>
-                  </div>
-                </dd>
-              <% {:error, :could_not_decode} -> %>
-                <dt class="col-sm-3 text-muted"> <%= gettext "Input" %> </dt>
-                <dd class="col-sm-9">
-                  <div class="alert alert-danger">
-                    Failed to decode input data. Some dynamic types are not currently supported.
-                  </div>
-                </dd>
-              <% {:ok, method_id, text, mapping} -> %>
-                <dt class="col-sm-3 text-muted"> <%= gettext "Input" %> </dt>
-                <dd class="col-sm-9">
-                <table summary="Transaction Info" class="table thead-light table-bordered">
-                  <tr>
-                    <td>Method Id</td>
-                    <td colspan="3"><code>0x<%= method_id %></code></td>
-                  </tr>
-                  <tr>
-                    <td>Call</td>
-                    <td colspan="3"><code><%= text %></code></td>
-                  </tr>
-                </table>
-                <table summary="Transaction Inputs" class="table thead-light table-bordered table-responsive">
-                  <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">Name</th>
-                    <th scope="col">Type</th>
-                    <th scope="col">Data</th>
-                    <th scope="col"></th>
-                  <tr>
-                <%= for {{name, type, value}, index} <- Enum.with_index(mapping) do %>
-                    <tr>
-                      <th scope="row"><%= index %></th>
-                      <td><%= name %></td>
-                      <td><%= type %></td>
-                      <%= case type do %>
-                        <% "address" -> %>
-                          <% address = "0x" <> Base.encode16(value, case: :lower) %>
-                          <td>
-                          <div class="transaction-input-text">
-                            <a href="<%= address_path(@conn, :show, address) %>" target="_blank"> <%= address %> </a>
-                          </div>
-                          </td>
-                          <td>
-                            <button type="button" class="copy" id="button" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= address %>" aria-label="Copy Value">
-                              <%= gettext "copy"%>
-                            </button>
-                          </td>
-
-                        <% _ -> %>
-                        <td>
-                          <div class="transaction-input-text"><%= value %></textarea>
-                        </td>
-                        <td>
-                          <button type="button" class="copy" id="button" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= value %>" aria-label="Copy Value">
-                            <%= gettext "copy"%>
-                          </button>
-                        </td>
-                      <% end %>
-                    </tr>
-                <% end %>
-                </table>
-                </dd>
-              <% _ -> %>
-                <%= nil %>
-            <% end %>
-
-            <%= unless @transaction.input.bytes in [<<>>, nil] do %>
-              <dt class="col-sm-3 text-muted"><%= gettext "Raw Input" %></dt>
-              <dd class="col-sm-9">
-              <div swappable-item>
-                <button swapper class="button button-primary"><%= gettext "Show Raw Input"%></button>
+          <h3 class="text-muted"><%= gettext "Input" %></h3>
+          <%= case decoded_input_data(@transaction) do %>
+            <% {:error, :contract_not_verified} -> %>
+              <div class="alert alert-danger">
+                To see decoded input data, the <a href="<%= address_verify_contract_path(@conn, :new, @transaction.to_address.hash)%>" target="_blank">contract must be verified.</a>
               </div>
-              <div swappable-item class="raw-transaction-input">
-                <button swapper type="button" class="close pr-2" aria-label="Close">
-                  <span aria-hidden="true">&times;</span>
-                </button>
-                <div class="tile tile-muted">
-                  <button type="button" class="copy" id="button" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= @transaction.input %>" aria-label="Copy Value">
-                    <%= gettext "copy"%>
-                  </button>
-                  <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0">
-                    <code><%= @transaction.input %></code>
-                  </pre>
-                </div>
+            <% {:error, :could_not_decode} -> %>
+              <div class="alert alert-danger">
+                Failed to decode input data. Some dynamic types are not currently supported.
               </div>
-              </dd>
-            <% end %>
-          </dl>
+            <% {:ok, method_id, text, mapping} -> %>
+              <table summary="Transaction Info" class="table thead-light table-bordered table-responsive transaction-info-table">
+                <tr>
+                  <td>Method Id</td>
+                  <td colspan="3"><code>0x<%= method_id %></code></td>
+                </tr>
+                <tr>
+                  <td>Call</td>
+                  <td colspan="3"><code><%= text %></code></td>
+                </tr>
+              </table>
+
+              <table summary="Transaction Inputs" class="table thead-light table-bordered table-responsive">
+                <tr>
+                  <th scope="col"></th>
+                  <th scope="col"><%= gettext "Name" %></th>
+                  <th scope="col"><%= gettext "Type" %></th>
+                  <th scope="col"><%= gettext "Data" %></th>
+                <tr>
+              <%= for {name, type, value} <- mapping do %>
+                  <tr>
+                    <th scope="row">
+                      <% copy_text = BlockScoutWeb.ABIEncodedValueView.copy_text(type, value) %>
+                      <button type="button" class="copy icon-link" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= copy_text %>" aria-label="Copy Value">
+                        <i class="fas fa-clone"></i>
+                      </button>
+                    </th>
+                    <td><%= name %></td>
+                    <td><%= type %></td>
+                    <td>
+                      <pre class="transaction-input-text tile"><code><%= BlockScoutWeb.ABIEncodedValueView.value_html(type, value) %></code></pre>
+                    </td>
+                  </tr>
+              <% end %>
+              </table>
+            <% _ -> %>
+              <%= nil %>
+          <% end %>
+
+          <%= unless @transaction.input.bytes in [<<>>, nil] do %>
+            <h3 class="text-muted"><%= gettext "Raw Input" %></h3>
+            <div swappable-item>
+              <button swapper class="button button-primary"><%= gettext "Show Raw Input"%></button>
+            </div>
+            <div swappable-item class="raw-transaction-input">
+              <button swapper type="button" class="close pr-2" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+              <button type="button" class="copy icon-link mb-1" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= @transaction.input %>" aria-label="Copy Value">
+                <i class="fas fa-clone"></i>
+              </button>
+
+              <div class="tile tile-muted">
+                <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0">
+                  <code><%= @transaction.input %></code>
+                </pre>
+              </div>
+            </div>
+          <% end %>
         </div>
       </div>
     </div>
