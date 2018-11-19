@@ -89,38 +89,39 @@ defmodule EthereumJSONRPC.Parity.Trace do
       ...>     "action" => %{
       ...>       "callType" => "call",
       ...>       "from" => "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>       "to" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
       ...>       "gas" => 4677320,
       ...>       "input" => "0x10855269000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
-      ...>       "to" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
       ...>       "value" => 0
       ...>     },
       ...>     "blockNumber" => 35,
+      ...>     "transactionIndex" => 0,
+      ...>     "transactionHash" => "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
       ...>     "index" => 0,
+      ...>     "traceAddress" => [],
+      ...>     "type" => "call",
       ...>     "result" => %{
       ...>       "gasUsed" => 27770,
       ...>       "output" => "0x"
       ...>     },
-      ...>     "subtraces" => 0,
-      ...>     "traceAddress" => [],
-      ...>     "transactionHash" => "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
-      ...>     "type" => "call",
-      ...>     "transactionIndex" => 0
+      ...>     "subtraces" => 0
       ...>   }
       ...> )
       %{
         block_number: 35,
+        transaction_index: 0,
+        transaction_hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
+        index: 0,
+        trace_address: [],
+        type: "call",
         call_type: "call",
         from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+        to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
         gas: 4677320,
         gas_used: 27770,
-        index: 0,
+        input: "0x10855269000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
         output: "0x",
-        to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
-        trace_address: [],
-        transaction_hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
-        type: "call",
-        value: 0,
-        transaction_index: 0
+        value: 0
       }
 
   Calls can error and be reverted
@@ -130,38 +131,39 @@ defmodule EthereumJSONRPC.Parity.Trace do
      ...>     "action" => %{
      ...>       "callType" => "call",
      ...>       "from" => "0xc9266e6fdf5182dc47d27e0dc32bdff9e4cd2e32",
+     ...>       "to" => "0xfdca0da4158740a93693441b35809b5bb463e527",
      ...>       "gas" => 7578728,
      ...>       "input" => "0xa6f2ae3a",
-     ...>       "to" => "0xfdca0da4158740a93693441b35809b5bb463e527",
      ...>       "value" => 10000000000000000
      ...>     },
      ...>     "blockNumber" => 35,
-     ...>     "error" => "Reverted",
-     ...>     "index" => 0,
-     ...>     "subtraces" => 7,
-     ...>     "traceAddress" => [],
+     ...>     "transactionIndex" => 0,
      ...>     "transactionHash" => "0xcd7c15dbbc797722bef6e1d551edfd644fc7f4fb2ccd6a7947b2d1ade9ed140b",
+     ...>     "index" => 0,
+     ...>     "traceAddress" => [],
      ...>     "type" => "call",
-     ...>     "transactionIndex" => 0
+     ...>     "error" => "Reverted",
+     ...>     "subtraces" => 7,
      ...>   }
      ...> )
      %{
        block_number: 35,
-       call_type: "call",
-       error: "Reverted",
-       from_address_hash: "0xc9266e6fdf5182dc47d27e0dc32bdff9e4cd2e32",
-       gas: 7578728,
-       index: 0,
-       to_address_hash: "0xfdca0da4158740a93693441b35809b5bb463e527",
-       trace_address: [],
+       transaction_index: 0,
        transaction_hash: "0xcd7c15dbbc797722bef6e1d551edfd644fc7f4fb2ccd6a7947b2d1ade9ed140b",
+       index: 0,
+       trace_address: [],
        type: "call",
-       value: 10000000000000000,
-       transaction_index: 0
+       call_type: "call",
+       from_address_hash: "0xc9266e6fdf5182dc47d27e0dc32bdff9e4cd2e32",
+       to_address_hash: "0xfdca0da4158740a93693441b35809b5bb463e527",
+       input: "0xa6f2ae3a",
+       error: "Reverted",
+       gas: 7578728,
+       value: 10000000000000000
      }
 
-  Suicides transfer a `"balance"` from `"address"` to `"refundAddress"`.  These suicide-unique fields can be mapped to
-  pre-existing `t:Explorer.Chain.InternalTransaction.t/0` fields.
+  Self-destruct transfer a `"balance"` from `"address"` to `"refundAddress"`.  These self-destruct-unique fields can be
+  mapped to pre-existing `t:Explorer.Chain.InternalTransaction.t/0` fields.
 
   | Elixir            | Params               |
   |-------------------|----------------------|
@@ -193,7 +195,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
         to_address_hash: "0x59e2e9ecf133649b1a7efc731162ff09d29ca5a5",
         trace_address: [0],
         transaction_hash: "0xb012b8c53498c669d87d85ed90f57385848b86d3f44ed14b2784ec685d6fda98",
-        type: "suicide",
+        type: "selfdestruct",
         value: 0,
         transaction_index: 0
       }
@@ -204,30 +206,32 @@ defmodule EthereumJSONRPC.Parity.Trace do
     %{
       "action" => %{
         "callType" => call_type,
-        "from" => from_address_hash,
-        "gas" => gas,
         "to" => to_address_hash,
+        "from" => from_address_hash,
+        "input" => input,
+        "gas" => gas,
         "value" => value
       },
       "blockNumber" => block_number,
-      "index" => index,
-      "traceAddress" => trace_address,
+      "transactionIndex" => transaction_index,
       "transactionHash" => transaction_hash,
-      "transactionIndex" => transaction_index
+      "index" => index,
+      "traceAddress" => trace_address
     } = elixir
 
     %{
       block_number: block_number,
+      transaction_hash: transaction_hash,
+      transaction_index: transaction_index,
+      index: index,
+      trace_address: trace_address,
+      type: type,
       call_type: call_type,
       from_address_hash: from_address_hash,
-      gas: gas,
-      index: index,
       to_address_hash: to_address_hash,
-      trace_address: trace_address,
-      transaction_hash: transaction_hash,
-      type: type,
-      value: value,
-      transaction_index: transaction_index
+      gas: gas,
+      input: input,
+      value: value
     }
     |> put_call_error_or_result(elixir)
   end
@@ -257,7 +261,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
     |> put_create_error_or_result(elixir)
   end
 
-  def elixir_to_params(%{"type" => "suicide" = type} = elixir) do
+  def elixir_to_params(%{"type" => "suicide"} = elixir) do
     %{
       "action" => %{
         "address" => from_address_hash,
@@ -278,7 +282,7 @@ defmodule EthereumJSONRPC.Parity.Trace do
       to_address_hash: to_address_hash,
       trace_address: trace_address,
       transaction_hash: transaction_hash,
-      type: type,
+      type: "selfdestruct",
       value: value,
       transaction_index: transaction_index
     }

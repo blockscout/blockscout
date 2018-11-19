@@ -74,7 +74,7 @@ defmodule Explorer.Etherscan do
 
     * exclude internal transactions of type call with no siblings in the
       transaction
-    * include internal transactions of type create, reward, or suicide
+    * include internal transactions of type create, reward, or selfdestruct
       even when they are alone in the parent transaction
 
   """
@@ -108,7 +108,7 @@ defmodule Explorer.Etherscan do
 
     * exclude internal transactions of type call with no siblings in the
       transaction
-    * include internal transactions of type create, reward, or suicide
+    * include internal transactions of type create, reward, or selfdestruct
       even when they are alone in the parent transaction
 
   """

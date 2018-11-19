@@ -115,36 +115,6 @@ defmodule Explorer.SmartContract.ReaderTest do
     end
   end
 
-  test "query_unverified_contract/3" do
-    address = insert(:address)
-
-    abi = [
-      %{
-        "constant" => true,
-        "inputs" => [],
-        "name" => "decimals",
-        "outputs" => [
-          %{
-            "name" => "",
-            "type" => "uint8"
-          }
-        ],
-        "payable" => false,
-        "type" => "function"
-      }
-    ]
-
-    expect(
-      EthereumJSONRPC.Mox,
-      :json_rpc,
-      fn [%{id: id, method: _, params: [%{data: _, to: _}, _]}], _options ->
-        {:ok, [%{id: id, jsonrpc: "2.0", result: "0x0000000000000000000000000000000000000000000000000000000000000012"}]}
-      end
-    )
-
-    assert Reader.query_unverified_contract(address.hash, abi, %{"decimals" => []}) == %{"decimals" => {:ok, [18]}}
-  end
-
   describe "setup_call_payload/2" do
     test "returns the expected payload" do
       function_name = "get"

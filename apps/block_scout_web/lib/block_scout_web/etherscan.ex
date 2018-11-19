@@ -538,7 +538,7 @@ defmodule BlockScoutWeb.Etherscan do
       input: @input_type,
       type: %{
         type: "type",
-        definition: ~s(Possible values: "create", "call", "reward", or "suicide"),
+        definition: ~s(Possible values: "create", "call", "reward", or "selfdestruct"),
         example: ~s("create")
       },
       gas: @gas_type,
@@ -925,7 +925,8 @@ defmodule BlockScoutWeb.Etherscan do
 
   @account_txlist_action %{
     name: "txlist",
-    description: "Get transactions by address. Up to a maximum of 10,000 transactions.",
+    description:
+      "Get transactions by address. Up to a maximum of 10,000 transactions. Also available through a GraphQL 'address' query.",
     required_params: [
       %{
         key: "address",

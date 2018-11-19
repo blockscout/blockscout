@@ -566,7 +566,9 @@ defmodule EthereumJSONRPC do
     end
   end
 
-  defp handle_get_block_by_tag({:ok, %{"number" => quantity}}) do
+  defp handle_get_block_by_tag({:ok, %{"number" => nil}}), do: {:error, :not_found}
+
+  defp handle_get_block_by_tag({:ok, %{"number" => quantity}}) when is_binary(quantity) do
     {:ok, quantity_to_integer(quantity)}
   end
 

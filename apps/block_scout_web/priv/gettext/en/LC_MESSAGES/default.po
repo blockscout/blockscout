@@ -1151,28 +1151,28 @@ msgid "true"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/internal_transaction_view.ex:29
+#: lib/block_scout_web/views/internal_transaction_view.ex:21
 msgid "Call"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/internal_transaction_view.ex:31
+#: lib/block_scout_web/views/internal_transaction_view.ex:25
 msgid "Create"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/internal_transaction_view.ex:30
+#: lib/block_scout_web/views/internal_transaction_view.ex:23
 msgid "Delegate Call"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/internal_transaction_view.ex:33
+#: lib/block_scout_web/views/internal_transaction_view.ex:27
 msgid "Reward"
 msgstr ""
 
-#, elixir-format
-#: lib/block_scout_web/views/internal_transaction_view.ex:32
-msgid "Suicide"
+#, elixir-format, fuzzy
+#: lib/block_scout_web/views/internal_transaction_view.ex:26
+msgid "Self-Destruct"
 msgstr ""
 
 #, elixir-format
@@ -1311,4 +1311,14 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/invalid.html.eex:8
 msgid "is not a valid transaction hash"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/internal_transaction_view.ex:22
+msgid "Call Code"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/internal_transaction_view.ex:24
+msgid "Static Call"
 msgstr ""
