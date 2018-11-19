@@ -107,8 +107,8 @@ defmodule Explorer.Chain.Log do
   """
   def decode(_log, %Transaction{to_address: nil}), do: {:error, :no_to_address}
 
-  def decode(log, %Transaction{to_address: %{smart_contract: %{abi: abi}}}) when not is_nil(abi) do
-    with {:ok, selector, mapping} <- find_and_decode(abi, log),
+  def decode(log, transaction = %Transaction{to_address: %{smart_contract: %{abi: abi}}}) when not is_nil(abi) do
+    with {:ok, selector, mapping} <- find_and_decode(abi, log, transaction),
          identifier <- Base.encode16(selector.method_id, case: :lower),
          text <- function_call(selector.function, mapping),
          do: {:ok, identifier, text, mapping}
@@ -116,8 +116,8 @@ defmodule Explorer.Chain.Log do
 
   def decode(_log, _transaction), do: {:error, :contract_not_verified}
 
-  defp find_and_decode(abi, log) do
-    with {selector, mapping} <-
+  defp find_and_decode(abi, log, transaction) do
+    with {selector, mapping} when selector != :error <-
            abi
            |> ABI.parse_specification(include_events?: true)
            |> Event.find_and_decode(
@@ -128,10 +128,14 @@ defmodule Explorer.Chain.Log do
              log.data.bytes
            ) do
       {:ok, selector, mapping}
+    else
+      :error ->
+        {:error, :could_not_decode}
     end
   rescue
     _ ->
-      Logger.warn(fn -> ["Could not decode input data for log: ", Hash.to_iodata(log.hash)] end)
+      Logger.warn(fn -> ["Could not decode input data for log from transaction: ", Hash.to_iodata(transaction.hash)] end)
+
       {:error, :could_not_decode}
   end
 
