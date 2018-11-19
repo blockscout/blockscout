@@ -117,7 +117,7 @@ defmodule Explorer.Chain.Log do
   def decode(_log, _transaction), do: {:error, :contract_not_verified}
 
   defp find_and_decode(abi, log, transaction) do
-    with {selector, mapping} when selector != :error <-
+    with {selector, mapping} <-
            abi
            |> ABI.parse_specification(include_events?: true)
            |> Event.find_and_decode(
@@ -128,9 +128,6 @@ defmodule Explorer.Chain.Log do
              log.data.bytes
            ) do
       {:ok, selector, mapping}
-    else
-      :error ->
-        {:error, :could_not_decode}
     end
   rescue
     _ ->
