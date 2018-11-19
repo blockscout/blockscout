@@ -12,4 +12,4 @@ config :logger, :error, path: Path.absname("logs/test/error.log")
 
 config :explorer, Explorer.ExchangeRates,
   source: Explorer.ExchangeRates.Source.NoOpSource,
-  store: :none
+  store: :ets

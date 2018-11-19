@@ -46,7 +46,7 @@ defmodule Explorer.ExchangeRates.Source.CoinGeckoTest do
   ]
   """
 
-  describe "fetch_exchange_rates" do
+  describe "format_data/1" do
     setup do
       bypass = Bypass.open()
       Application.put_env(:explorer, CoinGecko, base_url: "http://localhost:#{bypass.port}")
@@ -54,15 +54,10 @@ defmodule Explorer.ExchangeRates.Source.CoinGeckoTest do
       {:ok, bypass: bypass}
     end
 
-    test "with successful request", %{bypass: bypass} do
+    test "returns valid tokens with valid data", %{bypass: bypass} do
       Bypass.expect(bypass, "GET", "/exchange_rates", fn conn ->
         Conn.resp(conn, 200, @json_btc_price)
       end)
-
-      Bypass.expect(
-        bypass,
-        fn conn -> Conn.resp(conn, 200, @json_mkt_data) end
-      )
 
       {:ok, expected_date, 0} = "2018-10-23T01:25:31.764Z" |> DateTime.from_iso8601()
 
@@ -80,18 +75,19 @@ defmodule Explorer.ExchangeRates.Source.CoinGeckoTest do
         }
       ]
 
-      assert {:ok, ^expected} = CoinGecko.fetch_exchange_rates()
+      assert expected == CoinGecko.format_data(@json_mkt_data)
     end
 
-    test "with bad request response", %{bypass: bypass} do
-      error_text = ~S({"error": "bad request"})
+    test "returns nothing when given bad data", %{bypass: bypass} do
+      Bypass.expect(bypass, "GET", "/exchange_rates", fn conn ->
+        Conn.resp(conn, 200, @json_btc_price)
+      end)
 
-      Bypass.expect(
-        bypass,
-        fn conn -> Conn.resp(conn, 400, error_text) end
-      )
+      bad_data = """
+        [{"id": "poa-network"}]
+      """
 
-      assert {:error, "bad request"} == CoinGecko.fetch_exchange_rates()
+      assert [] = CoinGecko.format_data(bad_data)
     end
   end
 end

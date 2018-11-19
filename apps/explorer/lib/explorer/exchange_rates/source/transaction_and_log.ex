@@ -14,8 +14,8 @@ defmodule Explorer.ExchangeRates.Source.TransactionAndLog do
   @impl Source
   def format_data(data) do
     data = secondary_source().format_data(data)
-    
-    token_data = 
+
+    token_data =
       data
       |> Enum.find(fn token -> token.symbol == Explorer.coin() end)
       |> build_struct
