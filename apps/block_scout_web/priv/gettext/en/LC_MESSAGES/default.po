@@ -357,7 +357,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/overview.html.eex:105
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:54
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:113
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:115
 msgid "Data"
 msgstr ""
 
@@ -601,7 +601,7 @@ msgstr ""
 #, elixir-format
 #:
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:23
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:140
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:142
 msgid "Newer"
 msgstr ""
 
@@ -823,7 +823,7 @@ msgid "There are no internal transactions for this transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:134
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:136
 msgid "There are no logs for this transaction."
 msgstr ""
 
@@ -935,7 +935,7 @@ msgid "Top Accounts - %{subnetwork} Explorer"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:77
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:79
 msgid "Topics"
 msgstr ""
 
@@ -1329,12 +1329,12 @@ msgid "Indexed?"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:118
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:120
 msgid "Show Raw Data"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:80
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:82
 msgid "Show Raw Topics"
 msgstr ""
 
