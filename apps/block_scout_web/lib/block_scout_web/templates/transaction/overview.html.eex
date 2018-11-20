@@ -75,7 +75,7 @@
             </dd>
           </dl>
 
-          <%= unless @transaction.input.bytes in [<<>>, nil] do %>
+          <%= unless value_transfer?(@transaction) do %>
           <dl class="row">
             <dt class="col-sm-3 text-muted"><%= gettext "Raw Input" %></dt>
             <dd class="col-sm-9">
@@ -141,9 +141,12 @@
     </div>
   </div>
 
-  <div class="row">
-    <div class="col-md-12">
-      <%= render BlockScoutWeb.TransactionView, "_decoded_input.html", Map.put(assigns, :decoded_input_data, decoded_input_data) %>
+  <%= unless should_decode?(@transaction) do %>
+    <div class="row">
+      <div class="col-md-12">
+        <%= render BlockScoutWeb.TransactionView, "_decoded_input.html", Map.put(assigns, :decoded_input_data, decoded_input_data) %>
+      </div>
     </div>
-  </div>
+  <% end %>
+
 </section>
