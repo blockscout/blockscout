@@ -101,6 +101,7 @@
               <a class="dropdown-item" href="https://blockscout.com/eth/mainnet"><%= gettext("Ethereum Mainnet") %></a>
               <a class="dropdown-item" href="https://blockscout.com/eth/kovan"><%= gettext("Kovan Testnet") %></a>
               <a class="dropdown-item" href="https://blockscout.com/eth/ropsten"><%= gettext("Ropsten Testnet") %></a>
+              <a class="dropdown-item" href="https://blockscout.com/eth/goerli"><%= gettext("Görli Testnet") %></a>
               <a class="dropdown-item" href="https://blockscout.com/eth/rinkeby"><%= gettext("Rinkeby Testnet") %></a>
               <a class="dropdown-item" href="https://blockscout.com/etc/mainnet"><%= gettext("Ethereum Classic") %></a>
             </div>
