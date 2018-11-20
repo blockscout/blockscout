@@ -38,15 +38,15 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
       :error
   end
 
-  def do_copy_text({:bytes, _type}, value) do
+  defp do_copy_text({:bytes, _type}, value) do
     hex(value)
   end
 
-  def do_copy_text({:array, type, _}, value) do
+  defp do_copy_text({:array, type, _}, value) do
     do_copy_text({:array, type}, value)
   end
 
-  def do_copy_text({:array, type}, value) do
+  defp do_copy_text({:array, type}, value) do
     values =
       value
       |> Enum.map(&do_copy_text(type, &1))
@@ -55,15 +55,15 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
     ~E|[<%= values %>]|
   end
 
-  def do_copy_text(_, {:dynamic, value}) do
+  defp do_copy_text(_, {:dynamic, value}) do
     hex(value)
   end
 
-  def do_copy_text(type, value) when type in [:bytes, :address] do
+  defp do_copy_text(type, value) when type in [:bytes, :address] do
     hex(value)
   end
 
-  def do_copy_text(_type, value) do
+  defp do_copy_text(_type, value) do
     to_string(value)
   end
 
