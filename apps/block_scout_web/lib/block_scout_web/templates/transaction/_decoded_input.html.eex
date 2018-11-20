@@ -7,10 +7,10 @@
     <div class="alert alert-danger">
       <%= gettext "To see decoded input data, the contract must be verified." %>
       <%= case @transaction do %>
-      <% %{to_address: %{hash: hash}} -> %>
-      <%= gettext "Verify the contract " %><a href="<%= address_verify_contract_path(@conn, :new, hash)%>"><%= gettext "here" %></a>
-      <% _ -> %>
-      <%= nil %>
+        <% %{to_address: %{hash: hash}} -> %>
+          <%= gettext "Verify the contract " %><a href="<%= address_verify_contract_path(@conn, :new, hash)%>"><%= gettext "here" %></a>
+        <% _ -> %>
+          <%= nil %>
       <% end %>
     </div>
     <% {:ok, method_id, text, mapping} -> %>

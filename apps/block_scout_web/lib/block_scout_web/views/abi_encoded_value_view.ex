@@ -95,21 +95,21 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
     [spacing, base_value_html(type, value)]
   end
 
-  def base_value_html(_, {:dynamic, value}) do
+  defp base_value_html(_, {:dynamic, value}) do
     hex(value)
   end
 
-  def base_value_html(:address, value) do
+  defp base_value_html(:address, value) do
     address = hex(value)
 
     ~E|<a href="<%= address_path(BlockScoutWeb.Endpoint, :show, address) %>" target="_blank"><%= address %></a>|
   end
 
-  def base_value_html(:bytes, value) do
+  defp base_value_html(:bytes, value) do
     hex(value)
   end
 
-  def base_value_html(_, value), do: HTML.html_escape(value)
+  defp base_value_html(_, value), do: HTML.html_escape(value)
 
   defp hex(value), do: "0x" <> Base.encode16(value, case: :lower)
 end
