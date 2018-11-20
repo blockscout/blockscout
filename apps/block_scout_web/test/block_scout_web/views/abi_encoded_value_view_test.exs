@@ -6,6 +6,13 @@ defmodule BlockScoutWeb.ABIEncodedValueViewTest do
   defp value_html(type, value) do
     type
     |> ABIEncodedValueView.value_html(value)
+    |> case do
+      :error ->
+        raise "failed to generate html"
+
+      other ->
+        other
+    end
     |> Phoenix.HTML.Safe.to_iodata()
     |> IO.iodata_to_binary()
   end
@@ -13,6 +20,13 @@ defmodule BlockScoutWeb.ABIEncodedValueViewTest do
   defp copy_text(type, value) do
     type
     |> ABIEncodedValueView.copy_text(value)
+    |> case do
+      :error ->
+        raise "failed to generate copy text"
+
+      other ->
+        other
+    end
     |> Phoenix.HTML.Safe.to_iodata()
     |> IO.iodata_to_binary()
   end
@@ -75,7 +89,11 @@ defmodule BlockScoutWeb.ABIEncodedValueViewTest do
 
       address_bytes = "0x0000000000000000000000000000000000000000" |> String.trim_leading("0x") |> Base.decode16!()
 
-      assert value_html("address[]", [address_bytes, address_bytes, address_bytes, address_bytes]) == expected
+      assert value_html("address[4]", [address_bytes, address_bytes, address_bytes, address_bytes]) == expected
+    end
+
+    test "it renders :dynamic values as bytes" do
+      assert value_html("uint", {:dynamic, <<1>>}) == "0x01"
     end
   end
 
@@ -88,7 +106,18 @@ defmodule BlockScoutWeb.ABIEncodedValueViewTest do
     end
 
     test "it skips the formatting when copying lists" do
-      assert copy_text("uint[]", [1, 2, 3, 4]) == "[1, 2, 3, 4]"
+      assert copy_text("uint[4]", [1, 2, 3, 4]) == "[1, 2, 3, 4]"
+    end
+
+    test "it copies bytes as their hex representation" do
+      hex = "0xffffff"
+      bytes = hex |> String.trim_leading("0x") |> Base.decode16!(case: :lower)
+
+      assert copy_text("bytes", bytes) == hex
+    end
+
+    test "it copies :dynamic values as bytes" do
+      assert copy_text("uint", {:dynamic, <<1>>}) == "0x01"
     end
   end
 end

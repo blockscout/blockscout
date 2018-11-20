@@ -357,7 +357,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:33
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:54
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:115
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:118
 msgid "Data"
 msgstr ""
 
@@ -601,7 +601,7 @@ msgstr ""
 #, elixir-format
 #:
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:23
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:142
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:145
 msgid "Newer"
 msgstr ""
 
@@ -823,7 +823,7 @@ msgid "There are no internal transactions for this transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:136
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:139
 msgid "There are no logs for this transaction."
 msgstr ""
 
@@ -935,7 +935,7 @@ msgid "Top Accounts - %{subnetwork} Explorer"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:79
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:82
 msgid "Topics"
 msgstr ""
 
@@ -1329,12 +1329,12 @@ msgid "Indexed?"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:120
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:123
 msgid "Show Raw Data"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:82
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:85
 msgid "Show Raw Topics"
 msgstr ""
 
@@ -1375,6 +1375,11 @@ msgid "here"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:53
+#: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:65
 msgid "Failed to decode input data."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:53
+msgid "Error rendering value"
 msgstr ""

@@ -21,6 +21,8 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
       Logger.warn(fn ->
         ["Error determining value html for #{inspect(type)}: ", Exception.format(:error, exception)]
       end)
+
+      :error
   end
 
   def copy_text(type, value) do
@@ -32,6 +34,8 @@ defmodule BlockScoutWeb.ABIEncodedValueView do
       Logger.warn(fn ->
         ["Error determining copy text for #{inspect(type)}: ", Exception.format(:error, exception)]
       end)
+
+      :error
   end
 
   def do_copy_text({:bytes, _type}, value) do

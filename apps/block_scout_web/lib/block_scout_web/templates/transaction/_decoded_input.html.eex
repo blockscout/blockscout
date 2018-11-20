@@ -35,15 +35,27 @@
         <%= for {name, type, value} <- mapping do %>
             <tr>
               <th scope="row">
-                <% copy_text = BlockScoutWeb.ABIEncodedValueView.copy_text(type, value) %>
-                <button type="button" class="copy icon-link" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= copy_text %>" aria-label="Copy Value">
-                  <i class="fas fa-clone"></i>
-                </button>
+                <%= case BlockScoutWeb.ABIEncodedValueView.copy_text(type, value) do %>
+                  <% :error -> %>
+                    <%= nil %>
+                  <% copy_text -> %>
+                    <button type="button" class="copy icon-link" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= copy_text %>" aria-label="Copy Value">
+                      <i class="fas fa-clone"></i>
+                    </button>
+                 <% end %>
               </th>
               <td><%= name %></td>
               <td><%= type %></td>
               <td>
-                <pre class="transaction-input-text tile"><code><%= BlockScoutWeb.ABIEncodedValueView.value_html(type, value) %></code></pre>
+                <%= case BlockScoutWeb.ABIEncodedValueView.value_html(type, value) do %>
+                  <% :error -> %>
+                    <div class="alert alert-danger">
+                      <%= gettext "Error rendering value" %>
+                    </div>
+                  <% value -> %>
+                    <pre class="transaction-input-text tile"><code><%= value %></code></pre>
+                <% end %>
+
               </td>
             </tr>
             <% end %>
