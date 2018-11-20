@@ -75,6 +75,8 @@ defmodule BlockScoutWeb.TransactionView do
 
   def decoded_input_data(transaction) do
     Transaction.decoded_input_data(transaction)
+    # {:error, :contract_not_verified}
+    # {:error, :could_not_decode}
   end
 
   @doc """
