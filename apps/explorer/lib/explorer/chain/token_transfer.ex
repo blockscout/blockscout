@@ -26,7 +26,7 @@ defmodule Explorer.Chain.TokenTransfer do
 
   import Ecto.{Changeset, Query}
 
-  alias Explorer.Chain.{Address, Block, Hash, Token, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Hash, Token, TokenTransfer, Transaction}
   alias Explorer.{PagingOptions, Repo}
 
   @default_paging_options %PagingOptions{page_size: 50}
@@ -121,13 +121,9 @@ defmodule Explorer.Chain.TokenTransfer do
     query =
       from(
         tt in TokenTransfer,
-        join: t in Transaction,
-        on: tt.transaction_hash == t.hash,
-        join: b in Block,
-        on: t.block_hash == b.hash,
         where: tt.token_contract_address_hash == ^token_address_hash,
         preload: [{:transaction, :block}, :token, :from_address, :to_address],
-        order_by: [desc: b.timestamp]
+        order_by: [desc: tt.block_number]
       )
 
     query
