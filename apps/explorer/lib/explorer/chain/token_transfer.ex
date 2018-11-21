@@ -33,6 +33,7 @@ defmodule Explorer.Chain.TokenTransfer do
 
   @typedoc """
   * `:amount` - The token transferred amount
+  * `:block_number` - The block number that the transfer took place.
   * `:from_address` - The `t:Explorer.Chain.Address.t/0` that sent the tokens
   * `:from_address_hash` - Address hash foreign key
   * `:to_address` - The `t:Explorer.Chain.Address.t/0` that received the tokens
@@ -46,6 +47,7 @@ defmodule Explorer.Chain.TokenTransfer do
   """
   @type t :: %TokenTransfer{
           amount: Decimal.t(),
+          block_number: non_neg_integer() | nil,
           from_address: %Ecto.Association.NotLoaded{} | Address.t(),
           from_address_hash: Hash.Address.t(),
           to_address: %Ecto.Association.NotLoaded{} | Address.t(),
@@ -65,6 +67,7 @@ defmodule Explorer.Chain.TokenTransfer do
   @primary_key false
   schema "token_transfers" do
     field(:amount, :decimal)
+    field(:block_number, :integer)
     field(:log_index, :integer, primary_key: true)
     field(:token_id, :decimal)
 
@@ -91,7 +94,7 @@ defmodule Explorer.Chain.TokenTransfer do
     timestamps()
   end
 
-  @required_attrs ~w(log_index from_address_hash to_address_hash token_contract_address_hash transaction_hash)a
+  @required_attrs ~w(block_number log_index from_address_hash to_address_hash token_contract_address_hash transaction_hash)a
   @optional_attrs ~w(amount token_id)a
 
   @doc false
