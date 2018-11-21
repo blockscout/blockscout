@@ -5,7 +5,7 @@ defmodule Indexer.Token.Supervisor do
 
   use Supervisor
 
-  alias Indexer.Token.Fetcher
+  alias Indexer.Token.{Fetcher, MetadataUpdater}
 
   def child_spec([init_arguments]) do
     child_spec([init_arguments, []])
@@ -27,10 +27,13 @@ defmodule Indexer.Token.Supervisor do
 
   @impl Supervisor
   def init(fetcher_arguments) do
+    metadata_updater_inverval = Application.get_env(:indexer, :metadata_updater_days_interval)
+
     Supervisor.init(
       [
         {Task.Supervisor, name: Indexer.Token.TaskSupervisor},
-        {Fetcher, [fetcher_arguments, [name: Fetcher]]}
+        {Fetcher, [fetcher_arguments, [name: Fetcher]]},
+        {MetadataUpdater, %{update_interval: metadata_updater_inverval}}
       ],
       strategy: :one_for_one
     )
