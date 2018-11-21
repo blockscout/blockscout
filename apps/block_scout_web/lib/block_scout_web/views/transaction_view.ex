@@ -20,6 +20,12 @@ defmodule BlockScoutWeb.TransactionView do
   def block_timestamp(%Transaction{block_number: nil, inserted_at: time}), do: time
   def block_timestamp(%Transaction{block: %Block{timestamp: time}}), do: time
 
+  def value_transfer?(%Transaction{input: %{bytes: bytes}}) when bytes in [<<>>, nil] do
+    true
+  end
+
+  def value_transfer?(_), do: false
+
   def confirmations(%Transaction{block: block}, named_arguments) when is_list(named_arguments) do
     case block do
       nil -> 0
@@ -71,6 +77,10 @@ defmodule BlockScoutWeb.TransactionView do
 
   def gas(%type{gas: gas}) when is_transaction_type(type) do
     Cldr.Number.to_string!(gas)
+  end
+
+  def should_decode?(transaction) do
+    contract_creation?(transaction) || value_transfer?(transaction)
   end
 
   def decoded_input_data(transaction) do
