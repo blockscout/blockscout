@@ -18,17 +18,11 @@ defmodule BlockScoutWeb.InternalTransactionView do
   iex> BlockScoutWeb.InternalTransactionView.type(%Explorer.Chain.InternalTransaction{type: :call, call_type: :delegatecall})
   "Delegate Call"
   """
-  def type(%InternalTransaction{type: :call, call_type: call_type}) do
-    formatted_type(call_type)
-  end
-
-  def type(%InternalTransaction{type: type}) do
-    formatted_type(type)
-  end
-
-  defp formatted_type(:call), do: gettext("Call")
-  defp formatted_type(:delegatecall), do: gettext("Delegate Call")
-  defp formatted_type(:create), do: gettext("Create")
-  defp formatted_type(:suicide), do: gettext("Suicide")
-  defp formatted_type(:reward), do: gettext("Reward")
+  def type(%InternalTransaction{type: :call, call_type: :call}), do: gettext("Call")
+  def type(%InternalTransaction{type: :call, call_type: :callcode}), do: gettext("Call Code")
+  def type(%InternalTransaction{type: :call, call_type: :delegatecall}), do: gettext("Delegate Call")
+  def type(%InternalTransaction{type: :call, call_type: :staticcall}), do: gettext("Static Call")
+  def type(%InternalTransaction{type: :create}), do: gettext("Create")
+  def type(%InternalTransaction{type: :selfdestruct}), do: gettext("Self-Destruct")
+  def type(%InternalTransaction{type: :reward}), do: gettext("Reward")
 end

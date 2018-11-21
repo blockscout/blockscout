@@ -61,7 +61,7 @@ defmodule EthereumJsonrpc.MixProject do
       # CACerts bundle for `EthereumJSONRPC.WebSocket.WebSocketClient`
       {:certifi, "~> 2.3"},
       # WebSocket-server for testing `EthereumJSONRPC.WebSocket.WebSocketClient`.
-      {:cowboy, "~> 1.1", only: :test},
+      {:cowboy, "~> 1.1", only: [:dev, :test]},
       # Style Checking
       {:credo, "0.10.2", only: [:dev, :test], runtime: false},
       # Static Type Checking
@@ -79,7 +79,7 @@ defmodule EthereumJsonrpc.MixProject do
       # Convert unix timestamps in JSONRPC to DateTimes
       {:timex, "~> 3.4"},
       # Encode/decode function names and arguments
-      {:ex_abi, "~> 0.1.17"},
+      {:ex_abi, "~> 0.1.18"},
       # `:verify_fun` for `Socket.Web.connect`
       {:ssl_verify_fun, "~> 1.1"},
       # `EthereumJSONRPC.WebSocket`

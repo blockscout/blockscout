@@ -1865,7 +1865,7 @@ defmodule Explorer.Chain do
 
     * excludes internal transactions of type call with no siblings in the
       transaction
-    * includes internal transactions of type create, reward, or suicide
+    * includes internal transactions of type create, reward, or selfdestruct
       even when they are alone in the parent transaction
 
   """
@@ -1932,6 +1932,26 @@ defmodule Explorer.Chain do
           )
 
         query
+        |> Repo.stream(timeout: :infinity)
+        |> Enum.reduce(initial_acc, reducer)
+      end,
+      timeout: :infinity
+    )
+  end
+
+  @doc """
+  Streams a list of token contract addresses that have been cataloged.
+  """
+  @spec stream_cataloged_token_contract_address_hashes(
+          initial :: accumulator,
+          reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_cataloged_token_contract_address_hashes(initial_acc, reducer) when is_function(reducer, 2) do
+    Repo.transaction(
+      fn ->
+        Chain.Token.cataloged_tokens()
+        |> order_by(asc: :updated_at)
         |> Repo.stream(timeout: :infinity)
         |> Enum.reduce(initial_acc, reducer)
       end,

@@ -23,39 +23,116 @@
                     ) %>
                 </h3>
               </dd>
+              <dt class="col-md-1"><%= gettext "Decoded" %></dt>
+              <dd class="col-md-11">
+                <%= case decode(log, @transaction) do %>
+                  <% {:error, :contract_not_verified} -> %>
+                    <div class="alert alert-danger">
+                      <%= gettext "To see decoded input data, the contract must be verified." %>
+                      <%= case @transaction do %>
+                        <% %{to_address: %{hash: hash}} -> %>
+                          <%= gettext "Verify the contract " %><a href="<%= address_verify_contract_path(@conn, :new, hash)%>"><%= gettext "here" %></a>
+                        <% _ -> %>
+                          <%= nil %>
+                      <% end %>
+                    </div>
+                  <% {:error, :could_not_decode} -> %>
+                    <div class="alert alert-danger">
+                      <%= gettext "Failed to decode log data." %>
+                    </div>
+                  <% {:ok, method_id, text, mapping} -> %>
+                    <table summary="Transaction Info" class="table thead-light table-bordered transaction-input-table">
+                      <tr>
+                        <td>Method Id</td>
+                        <td colspan="3"><code>0x<%= method_id %></code></td>
+                      </tr>
+                      <tr>
+                        <td>Call</td>
+                        <td colspan="3"><code><%= text %></code></td>
+                      </tr>
+                    </table>
+                    <table style="color: black;" summary="<%= gettext "Log Data" %>" class="table thead-light table-bordered table-responsive">
+                      <tr>
+                        <th scope="col"></th>
+                        <th scope="col"><%= gettext "Name" %></th>
+                        <th scope="col"><%= gettext "Type" %></th>
+                        <th scope="col"><%= gettext "Indexed?" %></th>
+                        <th scope="col"><%= gettext "Data" %></th>
+                      <tr>
+                    <%= for {name, type, indexed?, value} <- mapping do %>
+                        <tr>
+                          <th scope="row">
+                            <%= case BlockScoutWeb.ABIEncodedValueView.copy_text(type, value) do %>
+                              <% :error -> %>
+                                <%= nil %>
+                              <% copy_text -> %>
+                                <button type="button" class="copy icon-link" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= copy_text %>" aria-label="<%= gettext "Copy Value" %>">
+                                  <i class="fas fa-clone"></i>
+                                </button>
+                            <% end %>
+                          </th>
+                          <td><%= name %></td>
+                          <td><%= type %></td>
+                          <td><%= indexed? %></td>
+                          <td>
+                            <pre class="transaction-input-text tile"><code><%= BlockScoutWeb.ABIEncodedValueView.value_html(type, value) %></code></pre>
+                          </td>
+                        </tr>
+                    <% end %>
+                    </table>
+                  <% _ -> %>
+                    <%= nil %>
+                <% end %>
+
+              </dd>
               <dt class="col-md-1"><%= gettext "Topics" %></dt>
               <dd class="col-md-11">
-                <%= unless is_nil(log.first_topic) do %>
-                  <div class="text-dark">
-                    <span class="text-dark">[0]</span>
-                    <%= log.first_topic %>
-                  </div>
-                <% end %>
-                <%= unless is_nil(log.second_topic) do %>
-                  <div class="text-dark">
-                    <span class="">[1] </span>
-                    <%= log.second_topic %>
-                  </div>
-                <% end %>
-                <%= unless is_nil(log.third_topic) do %>
-                  <div class="text-dark">
-                    <span>[2]</span>
-                    <%= log.third_topic %>
-                  </div>
-                <% end %>
-                <%= unless is_nil(log.fourth_topic) do %>
-                  <div class="text-dark">
-                    <span>[3]</span>
-                    <%= log.fourth_topic %>
-                  </div>
-                <% end %>
+                <div swappable-item>
+                  <button swapper class="button button-primary"><%= gettext "Show Raw Topics"%></button>
+                </div>
+                <div swappable-item class="raw-transaction-log-topics">
+                  <button swapper type="button" class="close pr-2" aria-label="<%= gettext "Close" %>">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                  <%= unless is_nil(log.first_topic) do %>
+                    <div class="text-dark">
+                      <span class="text-dark">[0]</span>
+                      <%= log.first_topic %>
+                    </div>
+                  <% end %>
+                  <%= unless is_nil(log.second_topic) do %>
+                    <div class="text-dark">
+                      <span class="">[1] </span>
+                      <%= log.second_topic %>
+                    </div>
+                  <% end %>
+                  <%= unless is_nil(log.third_topic) do %>
+                    <div class="text-dark">
+                      <span>[2]</span>
+                      <%= log.third_topic %>
+                    </div>
+                  <% end %>
+                  <%= unless is_nil(log.fourth_topic) do %>
+                    <div class="text-dark">
+                      <span>[3]</span>
+                      <%= log.fourth_topic %>
+                    </div>
+                  <% end %>
+                </div>
               </dd>
               <dt class="col-md-1">
                 <%= gettext "Data" %>
               </dt>
               <dd class="col-md-11">
                 <%= unless is_nil(log.data) do %>
-                  <div class="text-dark">
+                  <div swappable-item>
+                    <button swapper class="button button-primary"><%= gettext "Show Raw Data"%></button>
+                  </div>
+
+                  <div swappable-item class="text-dark raw-transaction-log-data">
+                    <button swapper type="button" class="close pr-2" aria-label="<%= gettext "Close" %>">
+                      <span aria-hidden="true">&times;</span>
+                    </button>
                     <%= log.data %>
                   </div>
                 <% end %>

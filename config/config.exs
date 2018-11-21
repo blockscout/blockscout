@@ -25,7 +25,8 @@ config :logger,
     {LoggerFileBackend, :explorer},
     # only :indexer, but all levels
     {LoggerFileBackend, :indexer},
-    {LoggerFileBackend, :indexer_token_balances}
+    {LoggerFileBackend, :indexer_token_balances},
+    {LoggerFileBackend, :reading_token_functions}
   ]
 
 config :logger, :console,
