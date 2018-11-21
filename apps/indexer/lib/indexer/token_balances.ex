@@ -9,6 +9,9 @@ defmodule Indexer.TokenBalances do
   alias Explorer.Token.BalanceReader
   alias Indexer.TokenBalance
 
+  # The timeout used for each process opened by Task.async_stream/3. Default 15s.
+  @task_timeout 15000
+
   @doc """
   Fetches TokenBalances from specific Addresses and Blocks in the Blockchain
 
@@ -26,12 +29,14 @@ defmodule Indexer.TokenBalances do
   """
   def fetch_token_balances_from_blockchain([]), do: {:ok, []}
 
-  def fetch_token_balances_from_blockchain(token_balances) do
+  def fetch_token_balances_from_blockchain(token_balances, opts \\ []) do
     Logger.debug(fn -> "fetching #{Enum.count(token_balances)} token balances" end)
+
+    task_timeout = Keyword.get(opts, :timeout, @task_timeout)
 
     requested_token_balances =
       token_balances
-      |> Task.async_stream(&fetch_token_balance/1, on_timeout: :kill_task)
+      |> Task.async_stream(&fetch_token_balance/1, timeout: task_timeout, on_timeout: :kill_task)
       |> Stream.map(&format_task_results/1)
       |> Enum.filter(&ignore_killed_task/1)
 

@@ -2756,6 +2756,29 @@ defmodule Explorer.ChainTest do
     assert Chain.stream_uncataloged_token_contract_address_hashes([], &[&1 | &2]) == {:ok, [uncatalog_address]}
   end
 
+  describe "stream_cataloged_token_contract_address_hashes/2" do
+    test "reduces with given reducer and accumulator" do
+      %Token{contract_address_hash: catalog_address} = insert(:token, cataloged: true)
+      insert(:token, cataloged: false)
+      assert Chain.stream_cataloged_token_contract_address_hashes([], &[&1 | &2]) == {:ok, [catalog_address]}
+    end
+
+    test "sorts the tokens by updated_at in ascending order" do
+      today = DateTime.utc_now()
+      yesterday = Timex.shift(today, days: -1)
+
+      token1 = insert(:token, %{cataloged: true, updated_at: today})
+      token2 = insert(:token, %{cataloged: true, updated_at: yesterday})
+
+      expected_response =
+        [token1, token2]
+        |> Enum.sort(&(&1.updated_at < &2.updated_at))
+        |> Enum.map(& &1.contract_address_hash)
+
+      assert Chain.stream_cataloged_token_contract_address_hashes([], &(&2 ++ [&1])) == {:ok, expected_response}
+    end
+  end
+
   describe "transaction_has_token_transfers?/1" do
     test "returns true if transaction has token transfers" do
       transaction = insert(:transaction)

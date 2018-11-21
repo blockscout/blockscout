@@ -3,6 +3,9 @@ defmodule Explorer.Chain.Log do
 
   use Explorer.Schema
 
+  require Logger
+
+  alias ABI.Event
   alias Explorer.Chain.{Address, Data, Hash, Transaction}
 
   @required_attrs ~w(address_hash data index transaction_hash)a
@@ -97,5 +100,65 @@ defmodule Explorer.Chain.Log do
     |> cast(attrs, @required_attrs)
     |> cast(attrs, @optional_attrs)
     |> validate_required(@required_attrs)
+  end
+
+  @doc """
+  Decode transaction log data.
+  """
+  def decode(_log, %Transaction{to_address: nil}), do: {:error, :no_to_address}
+
+  def decode(log, transaction = %Transaction{to_address: %{smart_contract: %{abi: abi}}}) when not is_nil(abi) do
+    with {:ok, selector, mapping} <- find_and_decode(abi, log, transaction),
+         identifier <- Base.encode16(selector.method_id, case: :lower),
+         text <- function_call(selector.function, mapping),
+         do: {:ok, identifier, text, mapping}
+  end
+
+  def decode(_log, _transaction), do: {:error, :contract_not_verified}
+
+  defp find_and_decode(abi, log, transaction) do
+    with {selector, mapping} <-
+           abi
+           |> ABI.parse_specification(include_events?: true)
+           |> Event.find_and_decode(
+             decode16!(log.first_topic),
+             decode16!(log.second_topic),
+             decode16!(log.third_topic),
+             decode16!(log.fourth_topic),
+             log.data.bytes
+           ) do
+      {:ok, selector, mapping}
+    end
+  rescue
+    _ ->
+      Logger.warn(fn -> ["Could not decode input data for log from transaction: ", Hash.to_iodata(transaction.hash)] end)
+
+      {:error, :could_not_decode}
+  end
+
+  defp function_call(name, mapping) do
+    text =
+      mapping
+      |> Stream.map(fn {name, type, indexed?, _value} ->
+        indexed_keyword =
+          if indexed? do
+            ["indexed "]
+          else
+            []
+          end
+
+        [type, " ", indexed_keyword, name]
+      end)
+      |> Enum.intersperse(", ")
+
+    IO.iodata_to_binary([name, "(", text, ")"])
+  end
+
+  def decode16!(nil), do: nil
+
+  def decode16!(value) do
+    value
+    |> String.trim_leading("0x")
+    |> Base.decode16!(case: :lower)
   end
 end
