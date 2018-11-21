@@ -218,6 +218,8 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:82
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:84
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:92
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:94
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:133
 msgid "Close"
 msgstr ""
 
@@ -356,8 +358,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:33
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:54
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:118
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:60
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:124
 msgid "Data"
 msgstr ""
 
@@ -589,7 +591,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:29
 #: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:31
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:51
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:57
 msgid "Name"
 msgstr ""
 
@@ -601,7 +603,7 @@ msgstr ""
 #, elixir-format
 #:
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:23
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:145
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:151
 msgid "Newer"
 msgstr ""
 
@@ -823,7 +825,7 @@ msgid "There are no internal transactions for this transaction."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:139
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:145
 msgid "There are no logs for this transaction."
 msgstr ""
 
@@ -935,7 +937,7 @@ msgid "Top Accounts - %{subnetwork} Explorer"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:82
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:88
 msgid "Topics"
 msgstr ""
 
@@ -1324,23 +1326,23 @@ msgid "Decoded"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:53
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:59
 msgid "Indexed?"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:123
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:129
 msgid "Show Raw Data"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:85
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:91
 msgid "Show Raw Topics"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:32
-#: lib/block_scout_web/templates/transaction_log/index.html.eex:52
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:58
 msgid "Type"
 msgstr ""
 
@@ -1351,6 +1353,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:8
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:31
 msgid "To see decoded input data, the contract must be verified."
 msgstr ""
 
@@ -1366,11 +1369,13 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:11
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:34
 msgid "Verify the contract "
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:11
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:34
 msgid "here"
 msgstr ""
 
@@ -1382,4 +1387,20 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:53
 msgid "Error rendering value"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:42
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:69
+msgid "Copy Value"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:41
+msgid "Failed to decode log data."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction_log/index.html.eex:54
+msgid "Log Data"
 msgstr ""

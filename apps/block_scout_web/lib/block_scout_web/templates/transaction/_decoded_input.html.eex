@@ -39,7 +39,7 @@
                   <% :error -> %>
                     <%= nil %>
                   <% copy_text -> %>
-                    <button type="button" class="copy icon-link" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= copy_text %>" aria-label="Copy Value">
+                    <button type="button" class="copy icon-link" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= copy_text %>" aria-label="<%= gettext "Copy Value" %>">
                       <i class="fas fa-clone"></i>
                     </button>
                  <% end %>
