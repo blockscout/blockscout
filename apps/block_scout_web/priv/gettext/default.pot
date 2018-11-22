@@ -602,7 +602,7 @@ msgid "New Smart Contract"
 msgstr ""
 
 #, elixir-format
-#:
+#: lib/block_scout_web/templates/transaction/index.html.eex:54
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:23
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:151
 msgid "Newer"
@@ -1404,4 +1404,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:54
 msgid "Log Data"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/index.html.eex:67
+msgid "First"
 msgstr ""
