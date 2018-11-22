@@ -82,25 +82,21 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
         |> insert()
         |> with_block()
 
-      {:ok, first_transfer_time} = NaiveDateTime.new(2000, 1, 1, 0, 0, 5)
-      {:ok, remaining_transfers_time} = NaiveDateTime.new(1999, 1, 1, 0, 0, 0)
-      insert(:token_transfer, transaction: transaction, inserted_at: first_transfer_time)
+      token_transfer = insert(:token_transfer, transaction: transaction, block_number: 1000, log_index: 1)
 
-      1..5
-      |> Enum.each(fn log_index ->
-        insert(:token_transfer, transaction: transaction, inserted_at: remaining_transfers_time, log_index: log_index)
+      Enum.each(2..5, fn item ->
+        insert(:token_transfer, transaction: transaction, block_number: item + 1001, log_index: item + 1)
       end)
 
       conn =
         get(conn, transaction_token_transfer_path(BlockScoutWeb.Endpoint, :index, transaction.hash), %{
-          "inserted_at" => first_transfer_time |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_iso8601()
+          "block_number" => "1000",
+          "index" => "1"
         })
 
-      actual_times =
-        conn.assigns.token_transfers
-        |> Enum.map(& &1.inserted_at)
+      actual_log_indexes = Enum.map(conn.assigns.token_transfers, & &1.log_index)
 
-      refute Enum.any?(actual_times, fn time -> first_transfer_time == time end)
+      refute Enum.any?(actual_log_indexes, fn log_index -> log_index == token_transfer.log_index end)
     end
 
     test "next_page_params exist if not on last page", %{conn: conn} do

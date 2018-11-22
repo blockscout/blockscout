@@ -24,7 +24,8 @@ defmodule Explorer.Chain.TokenTransfer do
 
   use Ecto.Schema
 
-  import Ecto.{Changeset, Query}
+  import Ecto.Changeset
+  import Ecto.Query, only: [from: 2, dynamic: 2, limit: 2, where: 3]
 
   alias Explorer.Chain.{Address, Hash, Token, TokenTransfer, Transaction}
   alias Explorer.{PagingOptions, Repo}
@@ -123,7 +124,7 @@ defmodule Explorer.Chain.TokenTransfer do
         tt in TokenTransfer,
         where: tt.token_contract_address_hash == ^token_address_hash,
         preload: [{:transaction, :block}, :token, :from_address, :to_address],
-        order_by: [desc: tt.block_number]
+        order_by: [desc: tt.block_number, desc: tt.log_index]
       )
 
     query
@@ -134,19 +135,11 @@ defmodule Explorer.Chain.TokenTransfer do
 
   def page_token_transfer(query, %PagingOptions{key: nil}), do: query
 
-  def page_token_transfer(query, %PagingOptions{key: {token_id}}) do
+  def page_token_transfer(query, %PagingOptions{key: {block_number, log_index}}) do
     where(
       query,
-      [token_transfer],
-      token_transfer.token_id > ^token_id
-    )
-  end
-
-  def page_token_transfer(query, %PagingOptions{key: inserted_at}) do
-    where(
-      query,
-      [token_transfer],
-      token_transfer.inserted_at < ^inserted_at
+      [tt],
+      tt.block_number < ^block_number or (tt.block_number == ^block_number and tt.log_index < ^log_index)
     )
   end
 
