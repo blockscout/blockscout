@@ -48,6 +48,32 @@
           )
         ) %>
       <% end %>
+
+      <%= if @prev_page_params do %>
+        <%= link(
+          gettext("Newer"),
+          class: "button button-secondary button-sm float-right mt-3",
+          "data-selector": "prev-page-button",
+          to: transaction_path(
+            @conn,
+            :index,
+            @prev_page_params
+          )
+        ) %>
+      <% end %>
+
+      <%= if @first_page_params do %>
+        <%= link(
+          gettext("First"),
+          class: "button button-secondary button-sm float-right mt-3",
+          "data-selector": "first-page-button",
+          to: transaction_path(
+            @conn,
+            :index,
+            @first_page_params
+          )
+        ) %>
+      <% end %>
     </div>
 
   </div>

@@ -27,7 +27,7 @@ defmodule BlockScoutWeb.Chain do
   alias Explorer.PagingOptions
 
   @page_size 50
-  @default_paging_options %PagingOptions{page_size: @page_size + 1}
+  @default_paging_options %PagingOptions{page_size: @page_size + 1, page_number: 0}
 
   def default_paging_options do
     @default_paging_options
@@ -124,6 +124,15 @@ defmodule BlockScoutWeb.Chain do
     with {:ok, inserted_at, _} <- DateTime.from_iso8601(inserted_at_string),
          {:ok, hash} <- string_to_transaction_hash(hash_string) do
       [paging_options: %{@default_paging_options | key: {inserted_at, hash}}]
+    else
+      _ ->
+        [paging_options: @default_paging_options]
+    end
+  end
+
+  def paging_options(%{"p" => page_number_string}) do
+    with {page_number, ""} <- Integer.parse(page_number_string) do
+      [paging_options: %{@default_paging_options | page_number: page_number - 1}]
     else
       _ ->
         [paging_options: @default_paging_options]

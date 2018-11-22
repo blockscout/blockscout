@@ -4,7 +4,7 @@ import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
-import { withInfiniteScroll, connectInfiniteScroll } from '../lib/infinite_scroll_helpers'
+import { withInfiniteScroll } from '../lib/infinite_scroll_helpers'
 import { batchChannel } from '../lib/utils'
 import listMorph from '../lib/list_morph'
 
@@ -113,7 +113,6 @@ const $transactionListPage = $('[data-page="transaction-list"]')
 if ($transactionListPage.length) {
   const store = createStore(reducer)
   connectElements({ store, elements })
-  connectInfiniteScroll(store)
 
   const transactionsChannel = socket.channel(`transactions:new_transaction`)
   transactionsChannel.join()

@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.ChainController do
           [from_address: :names] => :required,
           [to_address: :names] => :optional
         },
-        paging_options: %PagingOptions{page_size: 5}
+        paging_options: %PagingOptions{page_size: 5, page_number: 0}
       )
 
     exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()

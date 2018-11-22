@@ -8,6 +8,7 @@ defmodule Explorer.Chain do
       from: 2,
       join: 4,
       limit: 2,
+      offset: 2,
       order_by: 2,
       order_by: 3,
       preload: 2,
@@ -44,7 +45,7 @@ defmodule Explorer.Chain do
 
   alias Dataloader.Ecto, as: DataloaderEcto
 
-  @default_paging_options %PagingOptions{page_size: 50}
+  @default_paging_options %PagingOptions{page_size: 50, page_number: 0}
 
   @typedoc """
   The name of an association on the `t:Ecto.Schema.t/0`
@@ -1346,7 +1347,7 @@ defmodule Explorer.Chain do
 
       iex> newest_first_transactions = 50 |> insert_list(:transaction) |> with_block() |> Enum.reverse()
       iex> oldest_seen = Enum.at(newest_first_transactions, 9)
-      iex> paging_options = %Explorer.PagingOptions{page_size: 10, key: {oldest_seen.block_number, oldest_seen.index}}
+      iex> paging_options = %Explorer.PagingOptions{page_size: 10, page_number: 0, key: {oldest_seen.block_number, oldest_seen.index}}
       iex> recent_collated_transactions = Explorer.Chain.recent_collated_transactions(paging_options: paging_options)
       iex> length(recent_collated_transactions)
       10
@@ -1769,9 +1770,12 @@ defmodule Explorer.Chain do
   defp handle_paging_options(query, nil), do: query
 
   defp handle_paging_options(query, paging_options) do
+    page_offset = paging_options.page_number * paging_options.page_size
+
     query
     |> page_transaction(paging_options)
     |> limit(^paging_options.page_size)
+    |> offset(^page_offset)
   end
 
   defp join_association(query, [{association, nested_preload}], necessity)
