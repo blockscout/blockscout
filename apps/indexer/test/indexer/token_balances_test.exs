@@ -84,9 +84,9 @@ defmodule Indexer.TokenBalancesTest do
       ]
 
       get_balance_from_blockchain()
-      get_balance_from_blockchain_with_timeout()
+      get_balance_from_blockchain_with_timeout(200)
 
-      {:ok, result} = TokenBalances.fetch_token_balances_from_blockchain(token_balance_params)
+      {:ok, result} = TokenBalances.fetch_token_balances_from_blockchain(token_balance_params, timeout: 100)
 
       assert length(result) == 1
     end
@@ -190,12 +190,21 @@ defmodule Indexer.TokenBalancesTest do
     )
   end
 
-  defp get_balance_from_blockchain_with_timeout() do
+  defp get_balance_from_blockchain_with_timeout(timeout) do
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
       fn [%{id: _, method: _, params: [%{data: _, to: _}, _]}], _options ->
-        :timer.sleep(5001)
+        :timer.sleep(timeout)
+
+        {:ok,
+         [
+           %{
+             id: "balanceOf",
+             jsonrpc: "2.0",
+             result: "0x00000000000000000000000000000000000000000000d3c21bcecceda1000000"
+           }
+         ]}
       end
     )
   end

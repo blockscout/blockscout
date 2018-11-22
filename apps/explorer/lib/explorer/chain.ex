@@ -1944,6 +1944,26 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Streams a list of token contract addresses that have been cataloged.
+  """
+  @spec stream_cataloged_token_contract_address_hashes(
+          initial :: accumulator,
+          reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_cataloged_token_contract_address_hashes(initial_acc, reducer) when is_function(reducer, 2) do
+    Repo.transaction(
+      fn ->
+        Chain.Token.cataloged_tokens()
+        |> order_by(asc: :updated_at)
+        |> Repo.stream(timeout: :infinity)
+        |> Enum.reduce(initial_acc, reducer)
+      end,
+      timeout: :infinity
+    )
+  end
+
+  @doc """
   Returns a list of block numbers token transfer `t:Log.t/0`s that don't have an
   associated `t:TokenTransfer.t/0` record.
   """
