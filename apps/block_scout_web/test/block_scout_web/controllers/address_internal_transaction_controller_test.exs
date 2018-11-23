@@ -1,7 +1,8 @@
 defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
-  import BlockScoutWeb.Router.Helpers, only: [address_internal_transaction_path: 3]
+  import BlockScoutWeb.Router.Helpers,
+    only: [address_internal_transaction_path: 3, address_internal_transaction_path: 4]
 
   alias Explorer.Chain.{Block, InternalTransaction, Transaction}
   alias Explorer.ExchangeRates.Token
@@ -19,6 +20,14 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
       conn = get(conn, address_internal_transaction_path(conn, :index, "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"))
 
       assert html_response(conn, 404)
+    end
+
+    test "includes USD exchange rate value for address in assigns", %{conn: conn} do
+      address = insert(:address)
+
+      conn = get(conn, address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash))
+
+      assert %Token{} = conn.assigns.exchange_rate
     end
 
     test "returns internal transactions for the address", %{conn: conn} do
@@ -47,29 +56,17 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
           transaction_index: transaction.index
         )
 
-      path = address_internal_transaction_path(conn, :index, address)
+      path = address_internal_transaction_path(conn, :index, address, %{"type" => "JSON"})
       conn = get(conn, path)
 
-      actual_internal_transaction_primary_keys =
-        Enum.map(conn.assigns.internal_transactions, &{&1.transaction_hash, &1.index})
+      internal_transaction_tiles = json_response(conn, 200)["items"]
 
-      assert Enum.member?(
-               actual_internal_transaction_primary_keys,
-               {from_internal_transaction.transaction_hash, from_internal_transaction.index}
-             )
-
-      assert Enum.member?(
-               actual_internal_transaction_primary_keys,
-               {to_internal_transaction.transaction_hash, to_internal_transaction.index}
-             )
-    end
-
-    test "includes USD exchange rate value for address in assigns", %{conn: conn} do
-      address = insert(:address)
-
-      conn = get(conn, address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash))
-
-      assert %Token{} = conn.assigns.exchange_rate
+      assert Enum.all?([from_internal_transaction, to_internal_transaction], fn internal_transaction ->
+               Enum.any?(internal_transaction_tiles, fn tile ->
+                 String.contains?(tile, to_string(internal_transaction.transaction_hash)) &&
+                   String.contains?(tile, "data-internal-transaction-index=\"#{internal_transaction.index}\"")
+               end)
+             end)
     end
 
     test "returns next page of results based on last seen internal transaction", %{conn: conn} do
@@ -105,7 +102,6 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
             transaction_index: transaction_1.index
           )
         end)
-        |> Enum.map(&"#{&1.transaction_hash}.#{&1.index}")
 
       transaction_2_hashes =
         1..20
@@ -119,7 +115,6 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
             transaction_index: transaction_2.index
           )
         end)
-        |> Enum.map(&"#{&1.transaction_hash}.#{&1.index}")
 
       transaction_3_hashes =
         1..10
@@ -133,9 +128,8 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
             transaction_index: transaction_3.index
           )
         end)
-        |> Enum.map(&"#{&1.transaction_hash}.#{&1.index}")
 
-      second_page_hashes = transaction_1_hashes ++ transaction_2_hashes ++ transaction_3_hashes
+      second_page = transaction_1_hashes ++ transaction_2_hashes ++ transaction_3_hashes
 
       %InternalTransaction{index: index} =
         insert(
@@ -151,15 +145,18 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
         get(conn, address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash), %{
           "block_number" => Integer.to_string(b_block.number),
           "transaction_index" => Integer.to_string(transaction_3.index),
-          "index" => Integer.to_string(index)
+          "index" => Integer.to_string(index),
+          "type" => "JSON"
         })
 
-      actual_hashes =
-        conn.assigns.internal_transactions
-        |> Enum.map(&"#{&1.transaction_hash}.#{&1.index}")
-        |> Enum.reverse()
+      internal_transaction_tiles = json_response(conn, 200)["items"]
 
-      assert second_page_hashes == actual_hashes
+      assert Enum.all?(second_page, fn internal_transaction ->
+               Enum.any?(internal_transaction_tiles, fn tile ->
+                 String.contains?(tile, to_string(internal_transaction.transaction_hash)) &&
+                   String.contains?(tile, "data-internal-transaction-index=\"#{internal_transaction.index}\"")
+               end)
+             end)
     end
 
     test "next_page_params exist if not on last page", %{conn: conn} do
@@ -184,10 +181,17 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
         )
       end)
 
-      conn = get(conn, address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash))
+      conn =
+        get(conn, address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash, %{"type" => "JSON"}))
 
-      assert %{"block_number" => ^number, "index" => 11, "transaction_index" => ^transaction_index} =
-               conn.assigns.next_page_params
+      expected_response =
+        address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash, %{
+          "block_number" => number,
+          "index" => 11,
+          "transaction_index" => transaction_index
+        })
+
+      assert expected_response == json_response(conn, 200)["next_page_path"]
     end
 
     test "next_page_params are empty if on last page", %{conn: conn} do
@@ -208,9 +212,10 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
         )
       end)
 
-      conn = get(conn, address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash))
+      conn =
+        get(conn, address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash, %{"type" => "JSON"}))
 
-      refute conn.assigns.next_page_params
+      assert %{"next_page_path" => nil} = json_response(conn, 200)
     end
   end
 end
