@@ -15,7 +15,6 @@ defmodule BlockScoutWeb.ViewingTokensTest do
 
       session
       |> TokenPage.visit_page(token.contract_address)
-      |> TokenPage.click_tokens_holders()
       |> assert_has(TokenPage.token_holders(count: 2))
     end
   end
