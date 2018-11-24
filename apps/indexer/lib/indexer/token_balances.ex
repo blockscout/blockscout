@@ -10,7 +10,7 @@ defmodule Indexer.TokenBalances do
   alias Indexer.TokenBalance
 
   # The timeout used for each process opened by Task.async_stream/3. Default 15s.
-  @task_timeout 15000
+  @task_timeout 25000
 
   @doc """
   Fetches TokenBalances from specific Addresses and Blocks in the Blockchain
