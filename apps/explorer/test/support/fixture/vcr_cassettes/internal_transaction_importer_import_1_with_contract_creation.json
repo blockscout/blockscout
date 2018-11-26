@@ -8,7 +8,7 @@
       "method": "post",
       "options": [],
       "request_body": "",
-      "url": "https://sokol-trace.poa.network"
+      "url": "http://54.234.12.105:8545"
     },
     "response": {
       "binary": false,

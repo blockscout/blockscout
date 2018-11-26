@@ -6,7 +6,7 @@ defmodule EthereumJSONRPC.WebSocket.Case.Parity do
   import ExUnit.Callbacks, only: [start_supervised!: 1]
 
   def setup do
-    url = "wss://sokol-ws.poa.network/ws"
+    url = "ws://54.234.12.105:8546"
     web_socket_module = EthereumJSONRPC.WebSocket.WebSocketClient
     web_socket = start_supervised!({web_socket_module, [url, []]})
 
