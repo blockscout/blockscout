@@ -127,9 +127,20 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   def fetch_and_import_block(block_number_to_fetch, block_fetcher, retry \\ 3) do
     case fetch_and_import_range(block_fetcher, block_number_to_fetch..block_number_to_fetch) do
-      {:ok, {_inserted, _next}} ->
+      {:ok, %{inserted: _, errors: []}} ->
         Logger.debug(fn ->
           ["realtime indexer fetched and imported block ", to_string(block_number_to_fetch)]
+        end)
+
+      {:ok, %{inserted: _, errors: [_ | _] = errors}} ->
+        Logger.error(fn ->
+          [
+            "realtime indexer failed to fetch block",
+            to_string(block_number_to_fetch),
+            ": ",
+            inspect(errors),
+            ".  Block will be retried by catchup indexer."
+          ]
         end)
 
       {:error, {step, reason}} ->

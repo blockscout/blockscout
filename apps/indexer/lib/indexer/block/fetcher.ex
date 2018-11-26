@@ -5,7 +5,7 @@ defmodule Indexer.Block.Fetcher do
 
   require Logger
 
-  alias EthereumJSONRPC.FetchedBeneficiaries
+  alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
   alias Explorer.Chain.{Address, Block, Import}
   alias Indexer.{AddressExtraction, CoinBalance, MintTransfer, Token, TokenTransfers}
   alias Indexer.Address.{CoinBalances, TokenBalances}
@@ -77,7 +77,7 @@ defmodule Indexer.Block.Fetcher do
   end
 
   @spec fetch_and_import_range(t, Range.t()) ::
-          {:ok, {inserted :: %{}, next :: :more | :end_of_chain}}
+          {:ok, %{inserted: %{}, errors: [EthereumJSONRPC.Transport.error()]}}
           | {:error,
              {step :: atom(), reason :: term()}
              | [%Ecto.Changeset{}]
@@ -91,20 +91,22 @@ defmodule Indexer.Block.Fetcher do
         _.._ = range
       )
       when callback_module != nil do
-    with {:blocks, {:ok, next, result}} <-
-           {:blocks, EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments)},
-         %{
-           blocks: blocks,
-           transactions: transactions_without_receipts,
-           block_second_degree_relations: block_second_degree_relations
-         } = result,
-         blocks = Transform.transform_blocks(blocks),
-         {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_without_receipts)},
+    with {:blocks,
+          {:ok,
+           %Blocks{
+             blocks_params: blocks_params,
+             transactions_params: transactions_params_without_receipts,
+             block_second_degree_relations_params: block_second_degree_relations_params,
+             errors: blocks_errors
+           }}} <- {:blocks, EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments)},
+         blocks = Transform.transform_blocks(blocks_params),
+         {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_params_without_receipts)},
          %{logs: logs, receipts: receipts} = receipt_params,
-         transactions_with_receipts = Receipts.put(transactions_without_receipts, receipts),
+         transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfer.parse(logs),
-         {:beneficiaries, {:ok, %FetchedBeneficiaries{params_set: beneficiary_params_set}}} <-
+         {:beneficiaries,
+          {:ok, %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors}}} <-
            fetch_beneficiaries(range, json_rpc_named_arguments),
          addresses =
            AddressExtraction.extract_addresses(%{
@@ -132,16 +134,15 @@ defmodule Indexer.Block.Fetcher do
                address_coin_balances: %{params: coin_balances_params_set},
                address_token_balances: %{params: address_token_balances},
                blocks: %{params: blocks},
-               block_second_degree_relations: %{params: block_second_degree_relations},
+               block_second_degree_relations: %{params: block_second_degree_relations_params},
                logs: %{params: logs},
                token_transfers: %{params: token_transfers},
                tokens: %{on_conflict: :nothing, params: tokens},
                transactions: %{params: transactions_with_receipts}
              }
            ) do
-      {:ok, {inserted, next}}
+      {:ok, %{inserted: inserted, errors: blocks_errors ++ beneficiaries_errors}}
     else
-      {:beneficiaries = step, {:ok, %FetchedBeneficiaries{errors: [_ | _] = errors}}} -> {:error, {step, errors}}
       {step, {:error, reason}} -> {:error, {step, reason}}
       {:error, :timeout} = error -> error
       {:error, changesets} = error when is_list(changesets) -> error

@@ -166,9 +166,11 @@ defmodule Indexer.Block.Catchup.Fetcher do
          sequence
        ) do
     case fetch_and_import_range(block_fetcher, range) do
-      {:ok, {inserted, next}} ->
-        cap_seq(sequence, next, range)
-        {:ok, inserted}
+      {:ok, %{inserted: inserted, errors: errors}} ->
+        errors = cap_seq(sequence, errors, range)
+        retry(sequence, errors)
+
+        {:ok, inserted: inserted}
 
       {:error, {step, reason}} = error ->
         Logger.error(fn ->
@@ -200,19 +202,27 @@ defmodule Indexer.Block.Catchup.Fetcher do
     end
   end
 
-  defp cap_seq(seq, next, range) do
-    case next do
-      :more ->
+  defp cap_seq(seq, errors, range) do
+    {not_founds, other_errors} =
+      Enum.split_with(errors, fn
+        %{code: 404, data: %{number: _}} -> true
+        _ -> false
+      end)
+
+    case not_founds do
+      [] ->
         Logger.debug(fn ->
           first_block_number..last_block_number = range
           "got blocks #{first_block_number} - #{last_block_number}"
         end)
 
-      :end_of_chain ->
+        other_errors
+
+      _ ->
         Sequence.cap(seq)
     end
 
-    :ok
+    other_errors
   end
 
   defp push_back(sequence, range) do
@@ -220,6 +230,41 @@ defmodule Indexer.Block.Catchup.Fetcher do
       :ok -> :ok
       {:error, reason} -> Logger.error(fn -> ["Could not push block range to back to Sequence: ", inspect(reason)] end)
     end
+  end
+
+  defp retry(sequence, errors) when is_list(errors) do
+    errors
+    |> errors_to_ranges()
+    |> Enum.map(&push_back(sequence, &1))
+  end
+
+  defp errors_to_ranges(errors) when is_list(errors) do
+    errors
+    |> Enum.flat_map(&error_to_numbers/1)
+    |> numbers_to_ranges()
+  end
+
+  defp error_to_numbers(%{data: %{number: number}}) when is_integer(number), do: [number]
+
+  defp numbers_to_ranges([]), do: []
+
+  defp numbers_to_ranges(numbers) when is_list(numbers) do
+    numbers
+    |> Enum.sort()
+    |> Enum.chunk_while(
+      nil,
+      fn
+        number, nil ->
+          {:cont, number..number}
+
+        number, first..last when number == last + 1 ->
+          {:cont, first..number}
+
+        number, range ->
+          {:cont, range, number..number}
+      end,
+      fn range -> {:cont, range} end
+    )
   end
 
   defp put_memory_monitor(sequence_options, %__MODULE__{memory_monitor: nil}) when is_list(sequence_options),

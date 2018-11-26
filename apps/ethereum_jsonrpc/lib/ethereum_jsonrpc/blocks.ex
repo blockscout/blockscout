@@ -20,6 +20,14 @@ defmodule EthereumJSONRPC.Blocks do
             transactions_params: [],
             errors: []
 
+  def requests(id_to_params, request) when is_map(id_to_params) and is_function(request, 1) do
+    Enum.map(id_to_params, fn {id, params} ->
+      params
+      |> Map.put(:id, id)
+      |> request.()
+    end)
+  end
+
   @spec from_responses(list(), map()) :: t()
   def from_responses(responses, id_to_params) when is_list(responses) and is_map(id_to_params) do
     %{errors: errors, blocks: blocks} =

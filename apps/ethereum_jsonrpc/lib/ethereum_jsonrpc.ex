@@ -26,14 +26,13 @@ defmodule EthereumJSONRPC do
   """
 
   alias EthereumJSONRPC.{
+    Block,
     Blocks,
     FetchedBalances,
     Receipts,
     RequestCoordinator,
     Subscription,
-    Transactions,
     Transport,
-    Uncles,
     Variant
   }
 
@@ -86,11 +85,6 @@ defmodule EthereumJSONRPC do
   @type subscribe_named_arguments :: [
           {:transport, Transport.t()} | {:transport_options, Transport.options()} | {:variant, Variant.t()}
         ]
-
-  @typedoc """
-  If there are more blocks.
-  """
-  @type next :: :end_of_chain | :more
 
   @typedoc """
   8 byte [KECCAK-256](https://en.wikipedia.org/wiki/SHA-3) hash of the proof-of-work.
@@ -214,41 +208,21 @@ defmodule EthereumJSONRPC do
 
   Transaction data is included for each block.
   """
+  @spec fetch_blocks_by_hash([hash()], json_rpc_named_arguments) :: {:ok, Blocks.t()} | {:error, reason :: term}
   def fetch_blocks_by_hash(block_hashes, json_rpc_named_arguments) do
-    id_to_params =
-      block_hashes
-      |> Enum.map(fn block_hash -> %{hash: block_hash} end)
-      |> id_to_params()
-
-    with {:ok, responses} <-
-           id_to_params
-           |> Blocks.ByHash.requests()
-           |> json_rpc(json_rpc_named_arguments) do
-      {:ok, Blocks.from_responses(responses, id_to_params)}
-    end
+    block_hashes
+    |> Enum.map(fn block_hash -> %{hash: block_hash} end)
+    |> fetch_blocks_by_params(&Block.ByHash.request/1, json_rpc_named_arguments)
   end
 
   @doc """
   Fetches blocks by block number range.
   """
-  @spec fetch_blocks_by_range(Range.t(), json_rpc_named_arguments) ::
-          {:ok, next,
-           %{
-             blocks: Blocks.params(),
-             block_second_degree_relations: Uncles.params(),
-             transactions: Transactions.params()
-           }}
-          | {:error, [reason :: term, ...]}
+  @spec fetch_blocks_by_range(Range.t(), json_rpc_named_arguments) :: {:ok, Blocks.t()} | {:error, reason :: term}
   def fetch_blocks_by_range(_first.._last = range, json_rpc_named_arguments) do
-    id_to_params =
-      range
-      |> Enum.map(fn number -> %{number: number} end)
-      |> id_to_params()
-
-    id_to_params
-    |> get_block_by_number_requests()
-    |> json_rpc(json_rpc_named_arguments)
-    |> handle_get_blocks(id_to_params)
+    range
+    |> Enum.map(fn number -> %{number: number} end)
+    |> fetch_blocks_by_params(&Block.ByNumber.request/1, json_rpc_named_arguments)
   end
 
   @doc """
@@ -409,10 +383,16 @@ defmodule EthereumJSONRPC do
     |> Timex.from_unix()
   end
 
-  defp get_block_by_number_requests(id_to_params) do
-    Enum.map(id_to_params, fn {id, %{number: number}} ->
-      get_block_by_number_request(%{id: id, quantity: number, transactions: :full})
-    end)
+  defp fetch_blocks_by_params(params, request, json_rpc_named_arguments)
+       when is_list(params) and is_function(request, 1) do
+    id_to_params = id_to_params(params)
+
+    with {:ok, responses} <-
+           id_to_params
+           |> Blocks.requests(request)
+           |> json_rpc(json_rpc_named_arguments) do
+      {:ok, Blocks.from_responses(responses, id_to_params)}
+    end
   end
 
   defp get_block_by_number_request(%{id: id} = options) do
@@ -442,46 +422,6 @@ defmodule EthereumJSONRPC do
     case transactions do
       :full -> true
       :hashes -> false
-    end
-  end
-
-  defp handle_get_blocks({:ok, results}, id_to_params) when is_list(results) do
-    with {:ok, next, blocks} <- reduce_results(results, id_to_params) do
-      elixir_blocks = Blocks.to_elixir(blocks)
-
-      elixir_uncles = Blocks.elixir_to_uncles(elixir_blocks)
-      elixir_transactions = Blocks.elixir_to_transactions(elixir_blocks)
-
-      block_second_degree_relations_params = Uncles.elixir_to_params(elixir_uncles)
-      transactions_params = Transactions.elixir_to_params(elixir_transactions)
-      blocks_params = Blocks.elixir_to_params(elixir_blocks)
-
-      {:ok, next,
-       %{
-         blocks: blocks_params,
-         block_second_degree_relations: block_second_degree_relations_params,
-         transactions: transactions_params
-       }}
-    end
-  end
-
-  defp handle_get_blocks({:error, _} = error, _id_to_params), do: error
-
-  defp reduce_results(results, id_to_params) do
-    Enum.reduce(results, {:ok, :more, []}, &reduce_result(&1, &2, id_to_params))
-  end
-
-  defp reduce_result(%{result: nil}, {:ok, _, blocks}, _id_to_params), do: {:ok, :end_of_chain, blocks}
-  defp reduce_result(%{result: %{} = block}, {:ok, next, blocks}, _id_to_params), do: {:ok, next, [block | blocks]}
-  defp reduce_result(%{result: _}, {:error, _} = error, _id_to_params), do: error
-
-  defp reduce_result(%{error: reason, id: id}, acc, id_to_params) do
-    data = Map.fetch!(id_to_params, id)
-    annotated_reason = Map.put(reason, :data, data)
-
-    case acc do
-      {:ok, _, _} -> {:error, [annotated_reason]}
-      {:error, reasons} -> {:error, [annotated_reason | reasons]}
     end
   end
 

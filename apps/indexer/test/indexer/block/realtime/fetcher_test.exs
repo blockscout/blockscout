@@ -370,47 +370,50 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       end
 
       assert {:ok,
-              {%{
-                 addresses: [
-                   %Address{hash: first_address_hash, fetched_coin_balance_block_number: 3_946_079},
-                   %Address{hash: second_address_hash, fetched_coin_balance_block_number: 3_946_079},
-                   %Address{hash: third_address_hash, fetched_coin_balance_block_number: 3_946_079},
-                   %Address{hash: fourth_address_hash, fetched_coin_balance_block_number: 3_946_080},
-                   %Address{hash: fifth_address_hash, fetched_coin_balance_block_number: 3_946_079}
-                 ],
-                 address_coin_balances: [
-                   %{
-                     address_hash: first_address_hash,
-                     block_number: 3_946_079
-                   },
-                   %{
-                     address_hash: second_address_hash,
-                     block_number: 3_946_079
-                   },
-                   %{
-                     address_hash: third_address_hash,
-                     block_number: 3_946_079
-                   },
-                   %{
-                     address_hash: fourth_address_hash,
-                     block_number: 3_946_080
-                   },
-                   %{
-                     address_hash: fifth_address_hash,
-                     block_number: 3_946_079
-                   }
-                 ],
-                 blocks: [%Chain.Block{number: 3_946_079}, %Chain.Block{number: 3_946_080}],
-                 internal_transactions: [
-                   %{index: 0, transaction_hash: transaction_hash},
-                   %{index: 1, transaction_hash: transaction_hash},
-                   %{index: 2, transaction_hash: transaction_hash},
-                   %{index: 3, transaction_hash: transaction_hash},
-                   %{index: 4, transaction_hash: transaction_hash},
-                   %{index: 5, transaction_hash: transaction_hash}
-                 ],
-                 transactions: [transaction_hash]
-               }, :more}} = Indexer.Block.Fetcher.fetch_and_import_range(block_fetcher, 3_946_079..3_946_080)
+              %{
+                inserted: %{
+                  addresses: [
+                    %Address{hash: first_address_hash, fetched_coin_balance_block_number: 3_946_079},
+                    %Address{hash: second_address_hash, fetched_coin_balance_block_number: 3_946_079},
+                    %Address{hash: third_address_hash, fetched_coin_balance_block_number: 3_946_079},
+                    %Address{hash: fourth_address_hash, fetched_coin_balance_block_number: 3_946_080},
+                    %Address{hash: fifth_address_hash, fetched_coin_balance_block_number: 3_946_079}
+                  ],
+                  address_coin_balances: [
+                    %{
+                      address_hash: first_address_hash,
+                      block_number: 3_946_079
+                    },
+                    %{
+                      address_hash: second_address_hash,
+                      block_number: 3_946_079
+                    },
+                    %{
+                      address_hash: third_address_hash,
+                      block_number: 3_946_079
+                    },
+                    %{
+                      address_hash: fourth_address_hash,
+                      block_number: 3_946_080
+                    },
+                    %{
+                      address_hash: fifth_address_hash,
+                      block_number: 3_946_079
+                    }
+                  ],
+                  blocks: [%Chain.Block{number: 3_946_079}, %Chain.Block{number: 3_946_080}],
+                  internal_transactions: [
+                    %{index: 0, transaction_hash: transaction_hash},
+                    %{index: 1, transaction_hash: transaction_hash},
+                    %{index: 2, transaction_hash: transaction_hash},
+                    %{index: 3, transaction_hash: transaction_hash},
+                    %{index: 4, transaction_hash: transaction_hash},
+                    %{index: 5, transaction_hash: transaction_hash}
+                  ],
+                  transactions: [transaction_hash]
+                },
+                errors: []
+              }} = Indexer.Block.Fetcher.fetch_and_import_range(block_fetcher, 3_946_079..3_946_080)
     end
   end
 end

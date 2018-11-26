@@ -329,15 +329,29 @@ defmodule EthereumJSONRPCTest do
         end)
       end
 
-      assert {:error,
-              [%{data: %{number: 1_000_000_000_000_000_000_001}}, %{data: %{number: 1_000_000_000_000_000_000_000}}]} =
+      assert {:ok,
+              %EthereumJSONRPC.Blocks{
+                block_second_degree_relations_params: [],
+                blocks_params: [],
+                errors: [
+                  %{
+                    data: %{number: 1_000_000_000_000_000_000_001}
+                  },
+                  %{
+                    data: %{number: 1_000_000_000_000_000_000_000}
+                  }
+                ],
+                transactions_params: []
+              }} =
                EthereumJSONRPC.fetch_blocks_by_range(
                  1_000_000_000_000_000_000_000..1_000_000_000_000_000_000_001,
                  json_rpc_named_arguments
                )
     end
 
-    test "returns only errors if a mix of results and errors", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+    test "returns only errors and results if a mix of results and errors", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
       # Can't be faked reliably on real chain
       moxed_json_rpc_named_arguments = Keyword.put(json_rpc_named_arguments, :transport, EthereumJSONRPC.Mox)
 
@@ -356,30 +370,71 @@ defmodule EthereumJSONRPCTest do
              id: 1,
              result: %{
                "difficulty" => "0x0",
+               "extraData" => "0x",
                "gasLimit" => "0x0",
                "gasUsed" => "0x0",
                "hash" => "0x0",
+               "logsBloom" => "0x",
                "miner" => "0x0",
                "number" => "0x0",
                "parentHash" => "0x0",
+               "receiptsRoot" => "0x0",
+               "sha3Uncles" => "0x0",
                "size" => "0x0",
+               "stateRoot" => "0x0",
                "timestamp" => "0x0",
                "totalDifficulty" => "0x0",
-               "transactions" => []
+               "transactions" => [],
+               "transactionsRoot" => [],
+               "uncles" => []
              },
              jsonrpc: "2.0"
            }
          ]}
       end)
 
-      assert {:error, [%{data: %{number: 1_000_000_000_000_000_000_000}}]} =
+      assert {:ok,
+              %EthereumJSONRPC.Blocks{
+                block_second_degree_relations_params: [],
+                blocks_params: [
+                  %{
+                    difficulty: 0,
+                    extra_data: "0x",
+                    gas_limit: 0,
+                    gas_used: 0,
+                    hash: "0x0",
+                    logs_bloom: "0x",
+                    miner_hash: "0x0",
+                    mix_hash: "0x0",
+                    nonce: 0,
+                    number: 0,
+                    parent_hash: "0x0",
+                    receipts_root: "0x0",
+                    sha3_uncles: "0x0",
+                    size: 0,
+                    state_root: "0x0",
+                    timestamp: _,
+                    total_difficulty: 0,
+                    transactions_root: [],
+                    uncles: []
+                  }
+                ],
+                errors: [
+                  %{
+                    code: -32602,
+                    data: %{number: 1_000_000_000_000_000_000_000},
+                    message: "Invalid params: Invalid block number: number too large to fit in target type."
+                  }
+                ],
+                transactions_params: []
+              }} =
                EthereumJSONRPC.fetch_blocks_by_range(
                  1_000_000_000_000_000_000_000..1_000_000_000_000_000_000_001,
                  moxed_json_rpc_named_arguments
                )
     end
 
-    test "nil result indicated end-of-chain", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+    test "nil result indicated error code 404", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       # Can't be faked reliably on real chain
       moxed_json_rpc_named_arguments = Keyword.put(json_rpc_named_arguments, :transport, EthereumJSONRPC.Mox)
 
@@ -418,8 +473,13 @@ defmodule EthereumJSONRPCTest do
          ]}
       end)
 
-      assert {:ok, :end_of_chain, %{blocks: [_], transactions: []}} =
-               EthereumJSONRPC.fetch_blocks_by_range(0..1, moxed_json_rpc_named_arguments)
+      assert {:ok,
+              %EthereumJSONRPC.Blocks{
+                block_second_degree_relations_params: [],
+                blocks_params: [%{}],
+                errors: [%{code: 404, data: %{number: 1}, message: "Not Found"}],
+                transactions_params: []
+              }} = EthereumJSONRPC.fetch_blocks_by_range(0..1, moxed_json_rpc_named_arguments)
     end
   end
 
