@@ -1,4 +1,13 @@
 defmodule Explorer.Repo.Migrations.AddNonceToAddresses do
+  @moduledoc """
+  Use `priv/repo/migrations/scripts/20181126182700_migrate_address_nonce.sql` to migrate data.
+
+  ```sh
+  mix ecto.migrate
+  psql -d $DATABASE -a -f priv/repo/migrations/scripts/20181126182700_migrate_address_nonce.sql
+  ```
+  """
+
   use Ecto.Migration
 
   def up do
@@ -6,20 +15,6 @@ defmodule Explorer.Repo.Migrations.AddNonceToAddresses do
     alter table(:addresses) do
       add(:nonce, :integer)
     end
-
-    # Populate nonce field from transactions table
-    # Commented out due to running time concerns
-    # execute("""
-    #     WITH t AS (
-    #         SELECT from_address_hash AS hash, MAX(nonce) AS nonce
-    #         FROM transactions
-    #         GROUP BY hash
-    #     )
-    #  UPDATE addresses AS a
-    #     SET nonce = t.nonce
-    #     FROM t
-    #     WHERE a.hash = t.hash
-    # """)
   end
 
   def down do
