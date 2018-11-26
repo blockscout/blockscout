@@ -238,10 +238,10 @@ defmodule EthereumJSONRPC do
   @spec fetch_block_number_by_tag(tag(), json_rpc_named_arguments) ::
           {:ok, non_neg_integer()} | {:error, reason :: :invalid_tag | :not_found | term()}
   def fetch_block_number_by_tag(tag, json_rpc_named_arguments) when tag in ~w(earliest latest pending) do
-    tag
-    |> get_block_by_tag_request()
+    %{id: 0, tag: tag}
+    |> Block.ByTag.request()
     |> json_rpc(json_rpc_named_arguments)
-    |> handle_get_block_by_tag()
+    |> Block.ByTag.number_from_result()
   end
 
   @doc """
@@ -394,47 +394,4 @@ defmodule EthereumJSONRPC do
       {:ok, Blocks.from_responses(responses, id_to_params)}
     end
   end
-
-  defp get_block_by_number_request(%{id: id} = options) do
-    request(%{id: id, method: "eth_getBlockByNumber", params: get_block_by_number_params(options)})
-  end
-
-  defp get_block_by_tag_request(tag) do
-    # eth_getBlockByNumber accepts either a number OR a tag
-    get_block_by_number_request(%{id: 0, tag: tag, transactions: :hashes})
-  end
-
-  defp get_block_by_number_params(options) do
-    [get_block_by_number_subject(options), get_block_transactions(options)]
-  end
-
-  defp get_block_by_number_subject(options) do
-    case {Map.fetch(options, :quantity), Map.fetch(options, :tag)} do
-      {{:ok, integer}, :error} when is_integer(integer) ->
-        integer_to_quantity(integer)
-
-      {:error, {:ok, tag}} ->
-        tag
-    end
-  end
-
-  defp get_block_transactions(%{transactions: transactions}) do
-    case transactions do
-      :full -> true
-      :hashes -> false
-    end
-  end
-
-  defp handle_get_block_by_tag({:ok, %{"number" => nil}}), do: {:error, :not_found}
-
-  defp handle_get_block_by_tag({:ok, %{"number" => quantity}}) when is_binary(quantity) do
-    {:ok, quantity_to_integer(quantity)}
-  end
-
-  # https://github.com/paritytech/parity-ethereum/pull/8281 fixed
-  #   https://github.com/paritytech/parity-ethereum/issues/8028
-  defp handle_get_block_by_tag({:ok, nil}), do: {:error, :not_found}
-
-  defp handle_get_block_by_tag({:error, %{"code" => -32602}}), do: {:error, :invalid_tag}
-  defp handle_get_block_by_tag({:error, _} = error), do: error
 end
