@@ -90,7 +90,13 @@ The [development stack page](https://github.com/poanetwork/blockscout/wiki/Devel
   `cd apps/block_scout_web/assets && npm install; cd -`  
   `cd apps/explorer && npm install; cd -`
 
-  7. Start Phoenix Server.  
+  7. Update your JSON RPC Variant in `apps/explorer/config/dev.exs` and `apps/indexer/config/dev.exs`.
+  For `variant`, enter `ganache`, `geth`, or `parity`
+
+  8. Update your JSON RPC Endpoint in `apps/explorer/config/dev/` and `apps/indexer/config/dev/`
+  For the `variant` chosen in step 7, enter the correct information for the corresponding JSON RPC Endpoint in `parity.exs`, `geth.exs`, or `ganache.exs`
+
+  9. Start Phoenix Server.  
   `mix phx.server`
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
