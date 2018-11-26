@@ -52,7 +52,84 @@ defmodule BlockScoutWeb.AddressTokenTransferControllerTest do
       assert json_response(conn, 200) == %{"items" => [], "next_page_path" => nil}
     end
 
-    test "returns correct next_page_path", %{conn: conn} do
+    test "returns the correct number of transactions", %{conn: conn} do
+      address = insert(:address)
+      token = insert(:token)
+
+      inserted_transactions =
+        Enum.map(1..5, fn index ->
+          block = insert(:block, number: 1000 - index)
+
+          transaction =
+            :transaction
+            |> insert()
+            |> with_block(block)
+
+          insert(
+            :token_transfer,
+            to_address: address,
+            transaction: transaction,
+            token_contract_address: token.contract_address
+          )
+
+          transaction
+        end)
+
+      conn =
+        get(
+          conn,
+          address_token_transfers_path(conn, :index, address.hash, token.contract_address_hash),
+          %{type: "JSON"}
+        )
+
+      response_items =
+        conn
+        |> json_response(200)
+        |> Map.get("items")
+
+      items_length = length(response_items)
+
+      assert items_length == 5
+
+      assert Enum.all?(inserted_transactions, fn transaction ->
+               Enum.any?(response_items, fn item ->
+                 String.contains?(
+                   item,
+                   "data-transaction-hash=\"#{to_string(transaction.hash)}\""
+                 )
+               end)
+             end)
+    end
+
+    test "returns next_page_path as null when there are no more pages", %{conn: conn} do
+      address = insert(:address)
+      token = insert(:token)
+
+      block = insert(:block, number: 1000)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      insert(
+        :token_transfer,
+        to_address: address,
+        transaction: transaction,
+        token_contract_address: token.contract_address
+      )
+
+      conn =
+        get(
+          conn,
+          address_token_transfers_path(conn, :index, address.hash, token.contract_address_hash),
+          %{type: "JSON"}
+        )
+
+      assert Map.get(json_response(conn, 200), "next_page_path") == nil
+    end
+
+    test "returns next_page_path when there are more items", %{conn: conn} do
       address = insert(:address)
       token = insert(:token)
 
