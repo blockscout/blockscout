@@ -210,8 +210,8 @@ mix coveralls.html --umbrella --exclude no_parity
 
 | Protocol  | URL                                |
 |:----------|:-----------------------------------|
-| HTTP      | `http://54.234.12.105:8545`  |
-| WebSocket | `ws://54.234.12.105:8546`    |
+| HTTP      | `http://localhost:8545`  |
+| WebSocket | `ws://localhost:8546`    |
 
 ##### Geth
 

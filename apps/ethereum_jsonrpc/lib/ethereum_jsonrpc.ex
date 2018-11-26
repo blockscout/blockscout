@@ -7,8 +7,8 @@ defmodule EthereumJSONRPC do
   Configuration for parity URLs can be provided with the following mix config:
 
       config :ethereum_jsonrpc,
-        url: "http://54.234.12.105:8545",
-        trace_url: "http://54.234.12.105:8545",
+        url: "http://localhost:8545",
+        trace_url: "http://localhost:8545",
         http: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :ethereum_jsonrpc]]
 
 
