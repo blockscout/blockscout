@@ -6,7 +6,6 @@ import numeral from 'numeral'
 import socket from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
 import { batchChannel } from '../lib/utils'
-import { withInfiniteScroll, connectInfiniteScroll } from '../lib/infinite_scroll_helpers'
 import listMorph from '../lib/list_morph'
 import { updateAllCalculatedUsdValues } from '../lib/currency.js'
 import { loadTokenBalanceDropdown } from '../lib/token_balance_dropdown'
@@ -32,9 +31,7 @@ export const initialState = {
   nextPageUrl: $('[data-selector="transactions-list"]').length ? URI(window.location).addQuery({ type: 'JSON' }).toString() : null
 }
 
-export const reducer = withInfiniteScroll(baseReducer)
-
-function baseReducer (state = initialState, action) {
+function reducer (state = initialState, action) {
   switch (action.type) {
     case 'PAGE_LOAD':
     case 'ELEMENTS_LOAD': {
@@ -215,7 +212,6 @@ if ($addressDetailsPage.length) {
     beyondPageOne: !!blockNumber
   })
   connectElements({ store, elements })
-  $('[data-selector="transactions-list"]').length && connectInfiniteScroll(store)
 
   const addressChannel = socket.channel(`addresses:${addressHash}`, {})
   addressChannel.join()

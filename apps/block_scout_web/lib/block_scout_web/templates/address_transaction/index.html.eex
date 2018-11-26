@@ -52,17 +52,25 @@
         </div>
         <h2 class="card-title"><%= gettext "Transactions" %></h2>
         <span data-selector="transactions-list">
+          <%= for transaction <- @transactions do %>
+            <%= render BlockScoutWeb.TransactionView, "_tile.html", transaction: transaction, current_address: @address %>
+          <% end %>
         </span>
-        <div data-selector="loading-next-page" class="tile tile-muted text-center mt-3">
-          <span class="loading-spinner-small mr-2">
-            <span class="loading-spinner-block-1"></span>
-            <span class="loading-spinner-block-2"></span>
-          </span>
-          <%= gettext("Loading") %>...
-        </div>
-        <div data-selector="paging-error-message" class="alert alert-danger text-center mt-3" style="display: none;">
-          <%= gettext("Error trying to fetch transactions.") %>
-        </div>
+
+        <%= if @next_page_params do %>
+          <%= link(
+            gettext("Older"),
+            class: "button button-secondary button-sm float-right mt-3",
+            "data-selector": "next-page-button",
+            to: address_transaction_path(
+              @conn,
+              :index,
+              @address,
+              @next_page_params
+            )
+          ) %>
+        <% end %>
+
         <div class="tile tile-muted text-center" data-selector="empty-transactions-list" style="display: none;">
           <%= gettext "There are no transactions for this address." %>
         </div>
