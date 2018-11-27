@@ -83,7 +83,6 @@ defmodule Indexer.Block.Fetcher do
           {:ok, %{inserted: %{}, errors: [EthereumJSONRPC.Transport.error()]}}
           | {:error,
              {step :: atom(), reason :: term()}
-             | [%Ecto.Changeset{}]
              | {step :: atom(), failed_value :: term(), changes_so_far :: term()}}
   def fetch_and_import_range(
         %__MODULE__{
@@ -129,27 +128,26 @@ defmodule Indexer.Block.Fetcher do
            |> CoinBalances.params_set()
            |> MapSet.union(beneficiary_params_set),
          address_token_balances = TokenBalances.params_set(%{token_transfers_params: token_transfers}),
-         {:ok, inserted} <-
-           __MODULE__.import(
-             state,
-             %{
-               addresses: %{params: addresses},
-               address_coin_balances: %{params: coin_balances_params_set},
-               address_token_balances: %{params: address_token_balances},
-               blocks: %{params: blocks},
-               block_second_degree_relations: %{params: block_second_degree_relations_params},
-               logs: %{params: logs},
-               token_transfers: %{params: token_transfers},
-               tokens: %{on_conflict: :nothing, params: tokens},
-               transactions: %{params: transactions_with_receipts}
-             }
-           ) do
+         {:import, {:ok, inserted}} <-
+           {:import,
+            __MODULE__.import(
+              state,
+              %{
+                addresses: %{params: addresses},
+                address_coin_balances: %{params: coin_balances_params_set},
+                address_token_balances: %{params: address_token_balances},
+                blocks: %{params: blocks},
+                block_second_degree_relations: %{params: block_second_degree_relations_params},
+                logs: %{params: logs},
+                token_transfers: %{params: token_transfers},
+                tokens: %{on_conflict: :nothing, params: tokens},
+                transactions: %{params: transactions_with_receipts}
+              }
+            )} do
       {:ok, %{inserted: inserted, errors: blocks_errors ++ beneficiaries_errors}}
     else
       {step, {:error, reason}} -> {:error, {step, reason}}
-      {:error, :timeout} = error -> error
-      {:error, changesets} = error when is_list(changesets) -> error
-      {:error, step, failed_value, changes_so_far} -> {:error, {step, failed_value, changes_so_far}}
+      {:import, {:error, step, failed_value, changes_so_far}} -> {:error, {step, failed_value, changes_so_far}}
     end
   end
 
