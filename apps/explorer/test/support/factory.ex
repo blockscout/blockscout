@@ -387,6 +387,7 @@ defmodule Explorer.Factory do
 
     %TokenTransfer{
       amount: Decimal.new(1),
+      block_number: block_number(),
       from_address: from_address,
       to_address: to_address,
       token_contract_address: token_address,

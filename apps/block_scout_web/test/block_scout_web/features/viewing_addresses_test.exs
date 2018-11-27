@@ -147,35 +147,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> assert_has(AddressPage.transaction(transactions.from_taft))
     end
 
-    test "contract creation is shown for to_address on list page", %{
-      addresses: addresses,
-      block: block,
-      session: session
-    } do
-      lincoln = addresses.lincoln
-
-      contract_address = insert(:contract_address)
-
-      from_lincoln =
-        :transaction
-        |> insert(from_address: lincoln, to_address: nil)
-        |> with_contract_creation(contract_address)
-        |> with_block(block)
-
-      internal_transaction =
-        :internal_transaction_create
-        |> insert(
-          transaction: from_lincoln,
-          from_address: lincoln,
-          index: 1
-        )
-        |> with_contract_creation(contract_address)
-
-      session
-      |> AddressPage.visit_page(addresses.lincoln)
-      |> assert_has(AddressPage.contract_creation(internal_transaction))
-    end
-
     test "only addresses not matching the page are links", %{
       addresses: addresses,
       session: session,
@@ -213,29 +184,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       {:ok, %{internal_transaction_lincoln_to_address: internal_transaction_lincoln_to_address}}
     end
 
-    test "can see internal transactions for an address", %{addresses: addresses, session: session} do
-      session
-      |> AddressPage.visit_page(addresses.lincoln)
-      |> AddressPage.click_internal_transactions()
-      |> assert_has(AddressPage.internal_transactions(count: 2))
-    end
-
-    test "can filter to only see internal transactions from an address", %{addresses: addresses, session: session} do
-      session
-      |> AddressPage.visit_page(addresses.lincoln)
-      |> AddressPage.click_internal_transactions()
-      |> AddressPage.apply_filter("From")
-      |> assert_has(AddressPage.internal_transactions(count: 1))
-    end
-
-    test "can filter to only see internal transactions to an address", %{addresses: addresses, session: session} do
-      session
-      |> AddressPage.visit_page(addresses.lincoln)
-      |> AddressPage.click_internal_transactions()
-      |> AddressPage.apply_filter("To")
-      |> assert_has(AddressPage.internal_transactions(count: 1))
-    end
-
+    @tag :skip
     test "only addresses not matching the page are links", %{
       addresses: addresses,
       internal_transaction_lincoln_to_address: internal_transaction,
@@ -248,6 +197,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> refute_has(AddressPage.internal_transaction_address_link(internal_transaction, :to))
     end
 
+    @tag :skip
     test "viewing new internal transactions via live update", %{addresses: addresses, session: session} do
       transaction =
         :transaction
@@ -274,37 +224,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> assert_has(AddressPage.internal_transactions(count: 3))
       |> assert_has(AddressPage.internal_transaction(internal_transaction))
     end
-  end
-
-  test "contract creation is shown for to_address on list page", %{
-    addresses: addresses,
-    block: block,
-    session: session
-  } do
-    lincoln = addresses.lincoln
-    contract_address = insert(:contract_address)
-
-    from_lincoln =
-      :transaction
-      |> insert(from_address: lincoln, to_address: nil)
-      |> with_block(block)
-      |> with_contract_creation(contract_address)
-
-    internal_transaction =
-      :internal_transaction_create
-      |> insert(
-        transaction: from_lincoln,
-        from_address: lincoln,
-        index: 1,
-        block_number: from_lincoln.block_number,
-        transaction_index: from_lincoln.index
-      )
-      |> with_contract_creation(contract_address)
-
-    session
-    |> AddressPage.visit_page(addresses.lincoln)
-    |> AddressPage.click_internal_transactions()
-    |> assert_has(AddressPage.contract_creation(internal_transaction))
   end
 
   describe "viewing token transfers" do
