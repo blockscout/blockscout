@@ -289,6 +289,84 @@ defmodule Indexer.CoinBalance.FetcherTest do
     end
   end
 
+  describe "run/2 partial batch" do
+    setup do
+      %{
+        json_rpc_named_arguments: [
+          transport: EthereumJSONRPC.Mox,
+          transport_options: [],
+          # Which one does not matter, so pick one
+          variant: EthereumJSONRPC.Parity
+        ]
+      }
+    end
+
+    test "retries all if no successes", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      %Hash{bytes: address_hash_bytes} = address_hash()
+      entries = [{address_hash_bytes, block_number()}]
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, method: "eth_getBalance", params: [_, _]}], _ ->
+        {:ok, [%{id: id, error: %{code: 1, message: "Bad"}}]}
+      end)
+
+      assert {:retry, ^entries} = CoinBalance.Fetcher.run(entries, json_rpc_named_arguments)
+    end
+
+    test "retries none if all imported and no fetch errors", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      %Hash{bytes: address_hash_bytes} = address_hash()
+      entries = [{address_hash_bytes, block_number()}]
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, method: "eth_getBalance", params: [_, _]}], _ ->
+        {:ok, [%{id: id, result: "0x1"}]}
+      end)
+
+      assert :ok = CoinBalance.Fetcher.run(entries, json_rpc_named_arguments)
+    end
+
+    test "retries retries fetch errors if all imported", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      %Hash{bytes: address_hash_bytes} = address_hash()
+      bad_block_number = block_number()
+      good_block_number = block_number()
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn [
+                                                  %{
+                                                    id: first_id,
+                                                    method: "eth_getBalance",
+                                                    params: [_, first_block_quantity]
+                                                  },
+                                                  %{
+                                                    id: second_id,
+                                                    method: "eth_getBalance",
+                                                    params: [_, _]
+                                                  }
+                                                ],
+                                                _ ->
+        responses =
+          case quantity_to_integer(first_block_quantity) do
+            ^good_block_number ->
+              [
+                %{id: first_id, result: "0x1"},
+                %{id: second_id, error: %{code: 2, message: "Bad"}}
+              ]
+
+            ^bad_block_number ->
+              [
+                %{id: first_id, error: %{code: 1, message: "Bad"}},
+                %{id: second_id, result: "0x2"}
+              ]
+          end
+
+        {:ok, responses}
+      end)
+
+      assert {:retry, [{^address_hash_bytes, ^bad_block_number}]} =
+               CoinBalance.Fetcher.run(
+                 [{address_hash_bytes, good_block_number}, {address_hash_bytes, bad_block_number}],
+                 json_rpc_named_arguments
+               )
+    end
+  end
+
   defp wait(producer) do
     producer.()
   rescue

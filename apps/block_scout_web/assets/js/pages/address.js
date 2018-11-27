@@ -177,7 +177,7 @@ const elements = {
   },
   '[data-selector="validation-count"]': {
     load ($el) {
-      return { validationCount: numeral($el.text()).value }
+      return { validationCount: numeral($el.text()).value() }
     },
     render ($el, state, oldState) {
       if (oldState.validationCount === state.validationCount) return
