@@ -1240,13 +1240,17 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "group_block_validations_by_address/0" do
-    test "returns block validations grouped by the address that validated them (`address_hash`)" do
+  describe "each_address_block_validation_count/0" do
+    test "streams block validation count grouped by the address that validated them (`address_hash`)" do
       address = insert(:address)
 
       insert(:block, miner: address, miner_hash: address.hash)
 
-      results = Chain.group_block_validations_by_address()
+      {:ok, agent_pid} = Agent.start_link(fn -> [] end)
+
+      Chain.each_address_block_validation_count(fn entry -> Agent.update(agent_pid, &[entry | &1]) end)
+
+      results = Agent.get(agent_pid, &Enum.reverse/1)
 
       assert length(results) == 1
       assert results == [{address.hash, 1}]
