@@ -20,12 +20,12 @@ defmodule Indexer.Block.Realtime.FetcherTest do
   setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
     core_json_rpc_named_arguments =
       json_rpc_named_arguments
-      |> put_in([:transport_options, :url], "https://core.poa.network")
+      |> put_in([:transport_options, :url], "http://54.144.107.14:8545")
       |> put_in(
         [:transport_options, :method_to_url],
-        eth_getBalance: "https://core-trace.poa.network",
-        trace_replayTransaction: "https://core-trace.poa.network",
-        trace_block: "https://core-trace.poa.network"
+        eth_getBalance: "http://54.144.107.14:8545",
+        trace_replayTransaction: "http://54.144.107.14:8545",
+        trace_block: "http://54.144.107.14:8545"
       )
 
     block_fetcher = %Indexer.Block.Fetcher{

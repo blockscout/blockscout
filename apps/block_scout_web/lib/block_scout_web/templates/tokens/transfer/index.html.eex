@@ -15,28 +15,35 @@
         <%= render OverviewView, "_tabs.html", assigns %>
       </div>
 
-      <div class="card-body">
+      <div class="card-body" data-async-listing="<%= @current_path %>">
         <h2 class="card-title"><%= gettext "Token Transfers" %></h2>
-
-        <%= if Enum.any?(@transfers) do %>
-          <%= for transfer <- @transfers do %>
-            <%= render("_token_transfer.html", conn: @conn, token: @token, transfer: transfer) %>
-          <% end %>
-        <% else %>
-          <div class="tile tile-muted text-center">
-            <span data-selector="empty-transactions-list">
-              <%= gettext "There are no transfers for this Token." %>
-            </span>
-          </div>
-        <% end %>
-
-        <%= if @next_page_params do %>
-          <%= link(
-            gettext("Older"),
-            class: "button button-secondary button-small float-right mt-4",
-            to: token_path(@conn, :show, @token.contract_address_hash, @next_page_params)
-          ) %>
-        <% end %>
+        <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
+          <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>
+        </button>
+        <div data-empty-response-message class="tile tile-muted text-center" style="display: none;">
+          <span data-selector="empty-transactions-list">
+            <%= gettext "There are no transfers for this Token." %>
+          </span>
+        </div>
+        <div data-loading-message class="tile tile-muted text-center mt-3">
+          <span class="loading-spinner-small mr-2">
+            <span class="loading-spinner-block-1"></span>
+            <span class="loading-spinner-block-2"></span>
+          </span>
+          <%= gettext("Loading") %>...
+        </div>
+        <div data-items>
+        </div>
+        <a href="#" class="button button-secondary button-small float-right mt-4" data-next-page-button style="display: none;">
+          <%= gettext("Older") %>
+        </a>
+        <div class="button button-secondary button-small float-right mt-4" data-loading-button style="display: none;">
+          <span class="loading-spinner-small mr-2">
+            <span class="loading-spinner-block-1"></span>
+            <span class="loading-spinner-block-2"></span>
+          </span>
+          <%= gettext("Loading") %>...
+        </div>
       </div>
     </div>
   </section>

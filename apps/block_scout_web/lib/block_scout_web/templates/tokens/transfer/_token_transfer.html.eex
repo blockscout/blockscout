@@ -43,7 +43,7 @@
           <%= link(
             gettext(
               "Block #%{number}",
-              number: @transfer.transaction.block_number
+              number: @transfer.block_number
             ),
             class: "mr-2 mr-sm-0 text-muted",
             to: block_path(BlockScoutWeb.Endpoint, :show, @transfer.transaction.block_number)
