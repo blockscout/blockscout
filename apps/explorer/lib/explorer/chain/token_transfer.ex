@@ -226,7 +226,7 @@ defmodule Explorer.Chain.TokenTransfer do
   @doc """
   Counts all the token transfers and groups by token contract address hash.
   """
-  def count_token_transfers do
+  def each_count(fun) when is_function(fun, 1) do
     query =
       from(
         tt in TokenTransfer,
@@ -236,6 +236,6 @@ defmodule Explorer.Chain.TokenTransfer do
         group_by: tt.token_contract_address_hash
       )
 
-    Repo.all(query)
+    Repo.stream_each(query, fun)
   end
 end

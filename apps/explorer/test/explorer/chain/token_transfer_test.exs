@@ -146,8 +146,8 @@ defmodule Explorer.Chain.TokenTransferTest do
     end
   end
 
-  describe "count_token_transfers/0" do
-    test "returns token transfers grouped by tokens" do
+  describe "each_count/0" do
+    test "streams token transfers grouped by tokens" do
       token_contract_address = insert(:contract_address)
       token = insert(:token, contract_address: token_contract_address)
 
@@ -172,7 +172,11 @@ defmodule Explorer.Chain.TokenTransferTest do
         token: token
       )
 
-      results = TokenTransfer.count_token_transfers()
+      {:ok, agent_pid} = Agent.start_link(fn -> [] end)
+
+      TokenTransfer.each_count(fn entry -> Agent.update(agent_pid, &[entry | &1]) end)
+
+      results = Agent.get(agent_pid, fn entries -> Enum.reverse(entries) end)
 
       assert length(results) == 1
       assert List.first(results) == {token.contract_address_hash, 2}
