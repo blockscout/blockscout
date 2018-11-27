@@ -3112,6 +3112,7 @@ defmodule Explorer.ChainTest do
       first_page =
         insert(
           :token_transfer,
+          block_number: 1000,
           to_address: build(:address),
           transaction: transaction,
           token_contract_address: token_contract_address,
@@ -3122,6 +3123,7 @@ defmodule Explorer.ChainTest do
       second_page =
         insert(
           :token_transfer,
+          block_number: 999,
           to_address: build(:address),
           transaction: transaction,
           token_contract_address: token_contract_address,
@@ -3129,13 +3131,11 @@ defmodule Explorer.ChainTest do
           token_id: 29
         )
 
-      paging_options = %PagingOptions{key: {first_page.token_id}, page_size: 1}
+      paging_options = %PagingOptions{key: {first_page.block_number, first_page.log_index}, page_size: 1}
 
       unique_tokens_ids_paginated =
-        Chain.address_to_unique_tokens(
-          token_contract_address.hash,
-          paging_options: paging_options
-        )
+        token_contract_address.hash
+        |> Chain.address_to_unique_tokens(paging_options: paging_options)
         |> Enum.map(& &1.token_id)
 
       assert unique_tokens_ids_paginated == [second_page.token_id]

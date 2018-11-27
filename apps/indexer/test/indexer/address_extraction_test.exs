@@ -76,7 +76,8 @@ defmodule Indexer.AddressExtractionTest do
                %{
                  fetched_coin_balance_block_number: 2,
                  contract_code: "0x1",
-                 hash: "0x0000000000000000000000000000000000000001"
+                 hash: "0x0000000000000000000000000000000000000001",
+                 nonce: nil
                }
              ]
     end
@@ -95,7 +96,8 @@ defmodule Indexer.AddressExtractionTest do
       transaction = %{
         block_number: 3,
         from_address_hash: gen_hash(),
-        to_address_hash: gen_hash()
+        to_address_hash: gen_hash(),
+        nonce: 7
       }
 
       log = %{address_hash: gen_hash(), block_number: 4}
@@ -136,7 +138,11 @@ defmodule Indexer.AddressExtractionTest do
                  contract_code: internal_transaction.created_contract_code,
                  fetched_coin_balance_block_number: internal_transaction.block_number
                },
-               %{hash: transaction.from_address_hash, fetched_coin_balance_block_number: transaction.block_number},
+               %{
+                 hash: transaction.from_address_hash,
+                 fetched_coin_balance_block_number: transaction.block_number,
+                 nonce: 7
+               },
                %{hash: transaction.to_address_hash, fetched_coin_balance_block_number: transaction.block_number},
                %{hash: log.address_hash, fetched_coin_balance_block_number: log.block_number},
                %{
@@ -176,7 +182,7 @@ defmodule Indexer.AddressExtractionTest do
 
       blockchain_data = %{
         blocks: [%{miner_hash: hash, number: 34}],
-        transactions: [%{block_number: 34, from_address_hash: hash}],
+        transactions: [%{block_number: 34, from_address_hash: hash, nonce: 12}],
         internal_transactions: [
           %{
             block_number: 34,
@@ -188,7 +194,7 @@ defmodule Indexer.AddressExtractionTest do
 
       assert AddressExtraction.extract_addresses(blockchain_data) ==
                [
-                 %{hash: hash, fetched_coin_balance_block_number: 34, contract_code: "code"}
+                 %{hash: hash, fetched_coin_balance_block_number: 34, contract_code: "code", nonce: 12}
                ]
     end
 
