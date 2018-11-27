@@ -26,9 +26,7 @@ export const initialState = {
   internalTransactions: [],
   internalTransactionsBatch: [],
 
-  beyondPageOne: null,
-
-  nextPageUrl: $('[data-selector="transactions-list"]').length ? URI(window.location).addQuery({ type: 'JSON' }).toString() : null
+  beyondPageOne: null
 }
 
 function reducer (state = initialState, action) {
