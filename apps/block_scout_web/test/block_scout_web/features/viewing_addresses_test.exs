@@ -364,6 +364,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
   end
 
   describe "viewing token transfers from a specific token" do
+    @tag :skip
     test "list token transfers related to the address", %{
       addresses: addresses,
       block: block,
