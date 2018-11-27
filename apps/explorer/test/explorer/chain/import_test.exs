@@ -1517,7 +1517,9 @@ defmodule Explorer.Chain.ImportTest do
                  },
                  token_transfers: %{
                    params: [
-                     params_for(:token_transfer,
+                     params_for(
+                       :token_transfer,
+                       block_number: 35,
                        from_address_hash: from_address_hash,
                        to_address_hash: to_address_hash,
                        token_contract_address_hash: token_contract_address_hash,

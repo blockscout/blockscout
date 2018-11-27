@@ -8,7 +8,7 @@ defmodule Explorer.Chain.TokenTransferTest do
 
   doctest Explorer.Chain.TokenTransfer
 
-  describe "fetch_token_transfers/2" do
+  describe "fetch_token_transfers_from_token_hash/2" do
     test "returns token transfers for the given address" do
       token_contract_address = insert(:contract_address)
 
@@ -87,6 +87,7 @@ defmodule Explorer.Chain.TokenTransferTest do
       second_page =
         insert(
           :token_transfer,
+          block_number: 999,
           to_address: build(:address),
           transaction: transaction,
           token_contract_address: token_contract_address,
@@ -96,22 +97,52 @@ defmodule Explorer.Chain.TokenTransferTest do
       first_page =
         insert(
           :token_transfer,
+          block_number: 1000,
           to_address: build(:address),
           transaction: transaction,
           token_contract_address: token_contract_address,
           token: token
         )
 
-      paging_options = %PagingOptions{key: first_page.inserted_at, page_size: 1}
+      paging_options = %PagingOptions{key: {first_page.block_number, first_page.log_index}, page_size: 1}
 
       token_transfers_primary_keys_paginated =
-        TokenTransfer.fetch_token_transfers_from_token_hash(
-          token_contract_address.hash,
-          paging_options: paging_options
-        )
+        token_contract_address.hash
+        |> TokenTransfer.fetch_token_transfers_from_token_hash(paging_options: paging_options)
         |> Enum.map(&{&1.transaction_hash, &1.log_index})
 
       assert token_transfers_primary_keys_paginated == [{second_page.transaction_hash, second_page.log_index}]
+    end
+
+    test "paginates considering the log_index when there are repeated block numbers" do
+      token_contract_address = insert(:contract_address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      token = insert(:token)
+
+      token_transfer =
+        insert(
+          :token_transfer,
+          block_number: 1000,
+          log_index: 0,
+          to_address: build(:address),
+          transaction: transaction,
+          token_contract_address: token_contract_address,
+          token: token
+        )
+
+      paging_options = %PagingOptions{key: {token_transfer.block_number, token_transfer.log_index + 1}, page_size: 1}
+
+      token_transfers_primary_keys_paginated =
+        token_contract_address.hash
+        |> TokenTransfer.fetch_token_transfers_from_token_hash(paging_options: paging_options)
+        |> Enum.map(&{&1.transaction_hash, &1.log_index})
+
+      assert token_transfers_primary_keys_paginated == [{token_transfer.transaction_hash, token_transfer.log_index}]
     end
   end
 
