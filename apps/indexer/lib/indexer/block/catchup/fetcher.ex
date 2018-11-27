@@ -10,6 +10,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
   import Indexer.Block.Fetcher,
     only: [async_import_coin_balances: 2, async_import_tokens: 1, async_import_uncles: 1, fetch_and_import_range: 2]
 
+  alias Ecto.Changeset
   alias Explorer.Chain
   alias Indexer.{Block, InternalTransaction, Sequence, TokenBalance, Tracer}
   alias Indexer.Memory.Shrinkable
@@ -179,19 +180,19 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
         {:ok, inserted: inserted}
 
-      {:error, {step, reason}} = error ->
+      {:error, {:import, [%Changeset{} | _] = changesets}} = error ->
         Logger.error(fn ->
-          first..last = range
-          "failed to fetch #{step} for blocks #{first} - #{last}: #{inspect(reason)}. Retrying block range."
+          "failed to validate blocks #{inspect(range)}: #{inspect(changesets)}. Retrying"
         end)
 
         push_back(sequence, range)
 
         error
 
-      {:error, changesets} = error when is_list(changesets) ->
+      {:error, {step, reason}} = error ->
         Logger.error(fn ->
-          "failed to validate blocks #{inspect(range)}: #{inspect(changesets)}. Retrying"
+          first..last = range
+          "failed to fetch #{step} for blocks #{first} - #{last}: #{inspect(reason)}. Retrying block range."
         end)
 
         push_back(sequence, range)

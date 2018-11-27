@@ -185,20 +185,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
           ]
         end)
 
-      {:error, {step, reason}} ->
-        Logger.error(fn ->
-          [
-            "realtime indexer failed to fetch ",
-            to_string(step),
-            " for block ",
-            to_string(block_number_to_fetch),
-            ": ",
-            inspect(reason),
-            ".  Block will be retried by catchup indexer."
-          ]
-        end)
-
-      {:error, [%Changeset{} | _] = changesets} ->
+      {:error, {:import, [%Changeset{} | _] = changesets}} ->
         params = %{
           changesets: changesets,
           block_number_to_fetch: block_number_to_fetch,
@@ -217,6 +204,19 @@ defmodule Indexer.Block.Realtime.Fetcher do
             ]
           end)
         end
+
+      {:error, {step, reason}} ->
+        Logger.error(fn ->
+          [
+            "realtime indexer failed to fetch ",
+            to_string(step),
+            " for block ",
+            to_string(block_number_to_fetch),
+            ": ",
+            inspect(reason),
+            ".  Block will be retried by catchup indexer."
+          ]
+        end)
 
       {:error, {step, failed_value, _changes_so_far}} ->
         Logger.error(fn ->
