@@ -29,7 +29,7 @@ export const initialState = {
   beyondPageOne: null
 }
 
-function reducer (state = initialState, action) {
+export function reducer (state = initialState, action) {
   switch (action.type) {
     case 'PAGE_LOAD':
     case 'ELEMENTS_LOAD': {
@@ -97,14 +97,6 @@ function reducer (state = initialState, action) {
     case 'RECEIVED_UPDATED_BALANCE': {
       return Object.assign({}, state, {
         balance: action.msg.balance
-      })
-    }
-    case 'RECEIVED_NEXT_PAGE': {
-      return Object.assign({}, state, {
-        transactions: [
-          ...state.transactions,
-          ...action.msg.transactions
-        ]
       })
     }
     default:

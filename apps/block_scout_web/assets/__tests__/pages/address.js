@@ -203,28 +203,3 @@ describe('RECEIVED_NEW_TRANSACTION', () => {
     expect(output.transactions).toEqual([])
   })
 })
-
-describe('RECEIVED_NEXT_PAGE', () => {
-  test('with new transaction page', () => {
-    const state = Object.assign({}, initialState, {
-      loadingNextPage: true,
-      nextPageUrl: '1',
-      transactions: [{ transactionHash: 1, transactionHtml: 'test 1' }]
-    })
-    const action = {
-      type: 'RECEIVED_NEXT_PAGE',
-      msg: {
-        nextPageUrl: '2',
-        transactions: [{ transactionHash: 2, transactionHtml: 'test 2' }]
-      }
-    }
-    const output = reducer(state, action)
-
-    expect(output.loadingNextPage).toEqual(false)
-    expect(output.nextPageUrl).toEqual('2')
-    expect(output.transactions).toEqual([
-      { transactionHash: 1, transactionHtml: 'test 1' },
-      { transactionHash: 2, transactionHtml: 'test 2' }
-    ])
-  })
-})
