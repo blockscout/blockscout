@@ -955,7 +955,7 @@ defmodule Explorer.Chain do
   @doc """
   Counts all of the block validations and groups by the `miner_hash`.
   """
-  def group_block_validations_by_address do
+  def each_address_block_validation_count(fun) when is_function(fun, 1) do
     query =
       from(
         b in Block,
@@ -965,7 +965,7 @@ defmodule Explorer.Chain do
         group_by: b.miner_hash
       )
 
-    Repo.all(query)
+    Repo.stream_each(query, fun)
   end
 
   @doc """
