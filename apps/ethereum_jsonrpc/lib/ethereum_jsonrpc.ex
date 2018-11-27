@@ -25,16 +25,14 @@ defmodule EthereumJSONRPC do
   documentation for `EthereumJSONRPC.RequestCoordinator`.
   """
 
-  alias Explorer.Chain.Block
-
   alias EthereumJSONRPC.{
+    Block,
     Blocks,
+    FetchedBalances,
     Receipts,
     RequestCoordinator,
     Subscription,
-    Transactions,
     Transport,
-    Uncles,
     Variant
   }
 
@@ -87,11 +85,6 @@ defmodule EthereumJSONRPC do
   @type subscribe_named_arguments :: [
           {:transport, Transport.t()} | {:transport_options, Transport.options()} | {:variant, Variant.t()}
         ]
-
-  @typedoc """
-  If there are more blocks.
-  """
-  @type next :: :end_of_chain | :more
 
   @typedoc """
   8 byte [KECCAK-256](https://en.wikipedia.org/wiki/SHA-3) hash of the proof-of-work.
@@ -190,25 +183,16 @@ defmodule EthereumJSONRPC do
   @spec fetch_balances(
           [%{required(:block_quantity) => quantity, required(:hash_data) => data()}],
           json_rpc_named_arguments
-        ) ::
-          {:ok,
-           [
-             %{
-               required(:address_hash) => quantity,
-               required(:block_number) => Block.block_number(),
-               required(:value) => non_neg_integer()
-             }
-           ]}
-          | {:error, reason :: term}
+        ) :: {:ok, FetchedBalances.t()} | {:error, reason :: term}
   def fetch_balances(params_list, json_rpc_named_arguments)
       when is_list(params_list) and is_list(json_rpc_named_arguments) do
     id_to_params = id_to_params(params_list)
 
     with {:ok, responses} <-
            id_to_params
-           |> get_balance_requests()
+           |> FetchedBalances.requests()
            |> json_rpc(json_rpc_named_arguments) do
-      get_balance_responses_to_balances_params(responses, id_to_params)
+      {:ok, FetchedBalances.from_responses(responses, id_to_params)}
     end
   end
 
@@ -224,43 +208,21 @@ defmodule EthereumJSONRPC do
 
   Transaction data is included for each block.
   """
+  @spec fetch_blocks_by_hash([hash()], json_rpc_named_arguments) :: {:ok, Blocks.t()} | {:error, reason :: term}
   def fetch_blocks_by_hash(block_hashes, json_rpc_named_arguments) do
-    id_to_params =
-      block_hashes
-      |> Enum.map(fn block_hash -> %{hash: block_hash} end)
-      |> id_to_params()
-
-    id_to_params
-    |> get_block_by_hash_requests()
-    |> json_rpc(json_rpc_named_arguments)
-    |> handle_get_blocks(id_to_params)
-    |> case do
-      {:ok, _next, results} -> {:ok, results}
-      {:error, reason} -> {:error, reason}
-    end
+    block_hashes
+    |> Enum.map(fn block_hash -> %{hash: block_hash} end)
+    |> fetch_blocks_by_params(&Block.ByHash.request/1, json_rpc_named_arguments)
   end
 
   @doc """
   Fetches blocks by block number range.
   """
-  @spec fetch_blocks_by_range(Range.t(), json_rpc_named_arguments) ::
-          {:ok, next,
-           %{
-             blocks: Blocks.params(),
-             block_second_degree_relations: Uncles.params(),
-             transactions: Transactions.params()
-           }}
-          | {:error, [reason :: term, ...]}
+  @spec fetch_blocks_by_range(Range.t(), json_rpc_named_arguments) :: {:ok, Blocks.t()} | {:error, reason :: term}
   def fetch_blocks_by_range(_first.._last = range, json_rpc_named_arguments) do
-    id_to_params =
-      range
-      |> Enum.map(fn number -> %{number: number} end)
-      |> id_to_params()
-
-    id_to_params
-    |> get_block_by_number_requests()
-    |> json_rpc(json_rpc_named_arguments)
-    |> handle_get_blocks(id_to_params)
+    range
+    |> Enum.map(fn number -> %{number: number} end)
+    |> fetch_blocks_by_params(&Block.ByNumber.request/1, json_rpc_named_arguments)
   end
 
   @doc """
@@ -276,10 +238,10 @@ defmodule EthereumJSONRPC do
   @spec fetch_block_number_by_tag(tag(), json_rpc_named_arguments) ::
           {:ok, non_neg_integer()} | {:error, reason :: :invalid_tag | :not_found | term()}
   def fetch_block_number_by_tag(tag, json_rpc_named_arguments) when tag in ~w(earliest latest pending) do
-    tag
-    |> get_block_by_tag_request()
+    %{id: 0, tag: tag}
+    |> Block.ByTag.request()
     |> json_rpc(json_rpc_named_arguments)
-    |> handle_get_block_by_tag()
+    |> Block.ByTag.number_from_result()
   end
 
   @doc """
@@ -312,6 +274,7 @@ defmodule EthereumJSONRPC do
   @doc """
   Assigns an id to each set of params in `params_list` for batch request-response correlation
   """
+  @spec id_to_params([params]) :: %{id => params} when id: non_neg_integer(), params: map()
   def id_to_params(params_list) do
     params_list
     |> Stream.with_index()
@@ -420,162 +383,15 @@ defmodule EthereumJSONRPC do
     |> Timex.from_unix()
   end
 
-  defp get_balance_requests(id_to_params) when is_map(id_to_params) do
-    Enum.map(id_to_params, fn {id, %{block_quantity: block_quantity, hash_data: hash_data}} ->
-      get_balance_request(%{id: id, block_quantity: block_quantity, hash_data: hash_data})
-    end)
-  end
+  defp fetch_blocks_by_params(params, request, json_rpc_named_arguments)
+       when is_list(params) and is_function(request, 1) do
+    id_to_params = id_to_params(params)
 
-  defp get_balance_request(%{id: id, block_quantity: block_quantity, hash_data: hash_data}) do
-    request(%{id: id, method: "eth_getBalance", params: [hash_data, block_quantity]})
-  end
-
-  defp get_balance_responses_to_balances_params(responses, id_to_params)
-       when is_list(responses) and is_map(id_to_params) do
-    {status, reversed} =
-      responses
-      |> Enum.map(&get_balance_responses_to_balance_params(&1, id_to_params))
-      |> Enum.reduce(
-        {:ok, []},
-        fn
-          {:ok, address_params}, {:ok, address_params_list} ->
-            {:ok, [address_params | address_params_list]}
-
-          {:ok, _}, {:error, _} = acc_error ->
-            acc_error
-
-          {:error, reason}, {:ok, _} ->
-            {:error, [reason]}
-
-          {:error, reason}, {:error, acc_reason} ->
-            {:error, [reason | acc_reason]}
-        end
-      )
-
-    {status, Enum.reverse(reversed)}
-  end
-
-  defp get_balance_responses_to_balance_params(%{id: id, result: fetched_balance_quantity}, id_to_params)
-       when is_map(id_to_params) do
-    %{block_quantity: block_quantity, hash_data: hash_data} = Map.fetch!(id_to_params, id)
-
-    {:ok,
-     %{
-       value: quantity_to_integer(fetched_balance_quantity),
-       block_number: quantity_to_integer(block_quantity),
-       address_hash: hash_data
-     }}
-  end
-
-  defp get_balance_responses_to_balance_params(%{id: id, error: error}, id_to_params)
-       when is_map(id_to_params) do
-    %{block_quantity: block_quantity, hash_data: hash_data} = Map.fetch!(id_to_params, id)
-
-    annotated_error = Map.put(error, :data, %{"blockNumber" => block_quantity, "hash" => hash_data})
-
-    {:error, annotated_error}
-  end
-
-  defp get_block_by_hash_requests(id_to_params) do
-    Enum.map(id_to_params, fn {id, %{hash: hash}} ->
-      get_block_by_hash_request(%{id: id, hash: hash, transactions: :full})
-    end)
-  end
-
-  defp get_block_by_hash_request(%{id: id} = options) do
-    request(%{id: id, method: "eth_getBlockByHash", params: get_block_by_hash_params(options)})
-  end
-
-  defp get_block_by_hash_params(%{hash: hash} = options) do
-    [hash, get_block_transactions(options)]
-  end
-
-  defp get_block_by_number_requests(id_to_params) do
-    Enum.map(id_to_params, fn {id, %{number: number}} ->
-      get_block_by_number_request(%{id: id, quantity: number, transactions: :full})
-    end)
-  end
-
-  defp get_block_by_number_request(%{id: id} = options) do
-    request(%{id: id, method: "eth_getBlockByNumber", params: get_block_by_number_params(options)})
-  end
-
-  defp get_block_by_tag_request(tag) do
-    # eth_getBlockByNumber accepts either a number OR a tag
-    get_block_by_number_request(%{id: 0, tag: tag, transactions: :hashes})
-  end
-
-  defp get_block_by_number_params(options) do
-    [get_block_by_number_subject(options), get_block_transactions(options)]
-  end
-
-  defp get_block_by_number_subject(options) do
-    case {Map.fetch(options, :quantity), Map.fetch(options, :tag)} do
-      {{:ok, integer}, :error} when is_integer(integer) ->
-        integer_to_quantity(integer)
-
-      {:error, {:ok, tag}} ->
-        tag
+    with {:ok, responses} <-
+           id_to_params
+           |> Blocks.requests(request)
+           |> json_rpc(json_rpc_named_arguments) do
+      {:ok, Blocks.from_responses(responses, id_to_params)}
     end
   end
-
-  defp get_block_transactions(%{transactions: transactions}) do
-    case transactions do
-      :full -> true
-      :hashes -> false
-    end
-  end
-
-  defp handle_get_blocks({:ok, results}, id_to_params) when is_list(results) do
-    with {:ok, next, blocks} <- reduce_results(results, id_to_params) do
-      elixir_blocks = Blocks.to_elixir(blocks)
-
-      elixir_uncles = Blocks.elixir_to_uncles(elixir_blocks)
-      elixir_transactions = Blocks.elixir_to_transactions(elixir_blocks)
-
-      block_second_degree_relations_params = Uncles.elixir_to_params(elixir_uncles)
-      transactions_params = Transactions.elixir_to_params(elixir_transactions)
-      blocks_params = Blocks.elixir_to_params(elixir_blocks)
-
-      {:ok, next,
-       %{
-         blocks: blocks_params,
-         block_second_degree_relations: block_second_degree_relations_params,
-         transactions: transactions_params
-       }}
-    end
-  end
-
-  defp handle_get_blocks({:error, _} = error, _id_to_params), do: error
-
-  defp reduce_results(results, id_to_params) do
-    Enum.reduce(results, {:ok, :more, []}, &reduce_result(&1, &2, id_to_params))
-  end
-
-  defp reduce_result(%{result: nil}, {:ok, _, blocks}, _id_to_params), do: {:ok, :end_of_chain, blocks}
-  defp reduce_result(%{result: %{} = block}, {:ok, next, blocks}, _id_to_params), do: {:ok, next, [block | blocks]}
-  defp reduce_result(%{result: _}, {:error, _} = error, _id_to_params), do: error
-
-  defp reduce_result(%{error: reason, id: id}, acc, id_to_params) do
-    data = Map.fetch!(id_to_params, id)
-    annotated_reason = Map.put(reason, :data, data)
-
-    case acc do
-      {:ok, _, _} -> {:error, [annotated_reason]}
-      {:error, reasons} -> {:error, [annotated_reason | reasons]}
-    end
-  end
-
-  defp handle_get_block_by_tag({:ok, %{"number" => nil}}), do: {:error, :not_found}
-
-  defp handle_get_block_by_tag({:ok, %{"number" => quantity}}) when is_binary(quantity) do
-    {:ok, quantity_to_integer(quantity)}
-  end
-
-  # https://github.com/paritytech/parity-ethereum/pull/8281 fixed
-  #   https://github.com/paritytech/parity-ethereum/issues/8028
-  defp handle_get_block_by_tag({:ok, nil}), do: {:error, :not_found}
-
-  defp handle_get_block_by_tag({:error, %{"code" => -32602}}), do: {:error, :invalid_tag}
-  defp handle_get_block_by_tag({:error, _} = error), do: error
 end
