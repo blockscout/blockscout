@@ -8,7 +8,7 @@
         <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
       </div>
 
-      <div class="card-body">
+      <div class="card-body" data-async-listing="<%= @current_path %>">
         <div data-selector="channel-disconnected-message" style="display: none;">
           <div data-selector="reload-button" class="alert alert-danger">
             <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer transactions" %></a>
@@ -51,28 +51,36 @@
           </div>
         </div>
         <h2 class="card-title"><%= gettext "Transactions" %></h2>
-        <span data-selector="transactions-list">
-          <%= for transaction <- @transactions do %>
-            <%= render BlockScoutWeb.TransactionView, "_tile.html", transaction: transaction, current_address: @address %>
-          <% end %>
-        </span>
+        <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
+          <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>
+        </button>
 
-        <%= if @next_page_params do %>
-          <%= link(
-            gettext("Older"),
-            class: "button button-secondary button-sm float-right mt-3",
-            "data-selector": "next-page-button",
-            to: address_transaction_path(
-              @conn,
-              :index,
-              @address,
-              @next_page_params
-            )
-          ) %>
-        <% end %>
+        <div data-empty-response-message style="display: none;">
+          <div class="tile tile-muted text-center" data-selector="empty-transactions-list">
+            <%= gettext "There are no transactions for this address." %>
+          </div>
+        </div>
 
-        <div class="tile tile-muted text-center" data-selector="empty-transactions-list" style="display: none;">
-          <%= gettext "There are no transactions for this address." %>
+        <div data-loading-message class="tile tile-muted text-center mt-3">
+          <span class="loading-spinner-small mr-2">
+            <span class="loading-spinner-block-1"></span>
+            <span class="loading-spinner-block-2"></span>
+          </span>
+          <%= gettext("Loading") %>...
+        </div>
+
+        <div data-selector="transactions-list" data-items></div>
+
+        <a href="#" class="button button-secondary button-small float-right mt-4" data-next-page-button style="display: none;">
+          <%= gettext("Older") %>
+        </a>
+
+        <div class="button button-secondary button-small float-right mt-4" data-loading-button style="display: none;">
+          <span class="loading-spinner-small mr-2">
+            <span class="loading-spinner-block-1"></span>
+            <span class="loading-spinner-block-2"></span>
+          </span>
+          <%= gettext("Loading") %>...
         </div>
       </div>
     </div>
