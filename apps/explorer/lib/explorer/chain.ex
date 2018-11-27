@@ -1007,21 +1007,14 @@ defmodule Explorer.Chain do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_unfetched_balances(initial, reducer) when is_function(reducer, 2) do
-    Repo.transaction(
-      fn ->
-        query =
-          from(
-            balance in CoinBalance,
-            where: is_nil(balance.value_fetched_at),
-            select: %{address_hash: balance.address_hash, block_number: balance.block_number}
-          )
+    query =
+      from(
+        balance in CoinBalance,
+        where: is_nil(balance.value_fetched_at),
+        select: %{address_hash: balance.address_hash, block_number: balance.block_number}
+      )
 
-        query
-        |> Repo.stream(timeout: :infinity)
-        |> Enum.reduce(initial, reducer)
-      end,
-      timeout: :infinity
-    )
+    Repo.stream_reduce(query, initial, reducer)
   end
 
   @doc """
@@ -1033,16 +1026,8 @@ defmodule Explorer.Chain do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_unfetched_token_balances(initial, reducer) when is_function(reducer, 2) do
-    Repo.transaction(
-      fn ->
-        query = TokenBalance.unfetched_token_balances()
-
-        query
-        |> Repo.stream(timeout: :infinity)
-        |> Enum.reduce(initial, reducer)
-      end,
-      timeout: :infinity
-    )
+    TokenBalance.unfetched_token_balances()
+    |> Repo.stream_reduce(initial, reducer)
   end
 
   @doc """
@@ -1097,22 +1082,15 @@ defmodule Explorer.Chain do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_transactions_with_unfetched_internal_transactions(fields, initial, reducer) when is_function(reducer, 2) do
-    Repo.transaction(
-      fn ->
-        query =
-          from(
-            t in Transaction,
-            # exclude pending transactions
-            where: not is_nil(t.block_hash) and is_nil(t.internal_transactions_indexed_at),
-            select: ^fields
-          )
+    query =
+      from(
+        t in Transaction,
+        # exclude pending transactions
+        where: not is_nil(t.block_hash) and is_nil(t.internal_transactions_indexed_at),
+        select: ^fields
+      )
 
-        query
-        |> Repo.stream(timeout: :infinity)
-        |> Enum.reduce(initial, reducer)
-      end,
-      timeout: :infinity
-    )
+    Repo.stream_reduce(query, initial, reducer)
   end
 
   @doc """
@@ -1129,21 +1107,14 @@ defmodule Explorer.Chain do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_unfetched_uncle_hashes(initial, reducer) when is_function(reducer, 2) do
-    Repo.transaction(
-      fn ->
-        query =
-          from(bsdr in Block.SecondDegreeRelation,
-            where: is_nil(bsdr.uncle_fetched_at),
-            select: bsdr.uncle_hash,
-            group_by: bsdr.uncle_hash
-          )
+    query =
+      from(bsdr in Block.SecondDegreeRelation,
+        where: is_nil(bsdr.uncle_fetched_at),
+        select: bsdr.uncle_hash,
+        group_by: bsdr.uncle_hash
+      )
 
-        query
-        |> Repo.stream(timeout: :infinity)
-        |> Enum.reduce(initial, reducer)
-      end,
-      timeout: :infinity
-    )
+    Repo.stream_reduce(query, initial, reducer)
   end
 
   @doc """
@@ -1938,22 +1909,15 @@ defmodule Explorer.Chain do
           reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator)
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_uncataloged_token_contract_address_hashes(initial_acc, reducer) when is_function(reducer, 2) do
-    Repo.transaction(
-      fn ->
-        query =
-          from(
-            token in Token,
-            where: token.cataloged == false,
-            select: token.contract_address_hash
-          )
+  def stream_uncataloged_token_contract_address_hashes(initial, reducer) when is_function(reducer, 2) do
+    query =
+      from(
+        token in Token,
+        where: token.cataloged == false,
+        select: token.contract_address_hash
+      )
 
-        query
-        |> Repo.stream(timeout: :infinity)
-        |> Enum.reduce(initial_acc, reducer)
-      end,
-      timeout: :infinity
-    )
+    Repo.stream_reduce(query, initial, reducer)
   end
 
   @doc """
@@ -1964,16 +1928,10 @@ defmodule Explorer.Chain do
           reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator)
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_cataloged_token_contract_address_hashes(initial_acc, reducer) when is_function(reducer, 2) do
-    Repo.transaction(
-      fn ->
-        Chain.Token.cataloged_tokens()
-        |> order_by(asc: :updated_at)
-        |> Repo.stream(timeout: :infinity)
-        |> Enum.reduce(initial_acc, reducer)
-      end,
-      timeout: :infinity
-    )
+  def stream_cataloged_token_contract_address_hashes(initial, reducer) when is_function(reducer, 2) do
+    Chain.Token.cataloged_tokens()
+    |> order_by(asc: :updated_at)
+    |> Repo.stream_reduce(initial, reducer)
   end
 
   @doc """
@@ -1992,14 +1950,7 @@ defmodule Explorer.Chain do
         distinct: t.block_number
       )
 
-    Repo.transaction(
-      fn ->
-        query
-        |> Repo.stream(timeout: :infinity)
-        |> Enum.reduce([], &[&1 | &2])
-      end,
-      timeout: :infinity
-    )
+    Repo.stream_reduce(query, [], &[&1 | &2])
   end
 
   @doc """
