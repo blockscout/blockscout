@@ -31,20 +31,20 @@ config :logger,
 
 config :logger, :console,
   # Use same format for all loggers, even though the level should only ever be `:error` for `:error` backend
-  format: "$time $metadata[$level] $message\n",
-  metadata: [:application, :request_id]
+  format: "$dateT$time $metadata[$level] $message\n",
+  metadata: ~w(application import_id request_id transaction_id)a
 
 config :logger, :ecto,
   # Use same format for all loggers, even though the level should only ever be `:error` for `:error` backend
-  format: "$time $metadata[$level] $message\n",
-  metadata: [:application, :request_id],
+  format: "$dateT$time $metadata[$level] $message\n",
+  metadata: ~w(application import_id request_id transaction_id)a,
   metadata_filter: [application: :ecto]
 
 config :logger, :error,
   # Use same format for all loggers, even though the level should only ever be `:error` for `:error` backend
-  format: "$time $metadata[$level] $message\n",
+  format: "$dateT$time $metadata[$level] $message\n",
   level: :error,
-  metadata: [:application, :request_id]
+  metadata: ~w(application import_id request_id transaction_id)a
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
