@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Address do
   alias Ecto.Changeset
   alias Explorer.Chain.{Address, Block, Data, Hash, InternalTransaction, SmartContract, Token, Wei}
 
-  @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number)a
+  @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce)a
   @required_attrs ~w(hash)a
   @allowed_attrs @optional_attrs ++ @required_attrs
 
@@ -34,7 +34,8 @@ defmodule Explorer.Chain.Address do
           contract_code: Data.t() | nil,
           names: %Ecto.Association.NotLoaded{} | [Address.Name.t()],
           inserted_at: DateTime.t(),
-          updated_at: DateTime.t()
+          updated_at: DateTime.t(),
+          nonce: non_neg_integer() | nil
         }
 
   @primary_key {:hash, Hash.Address, autogenerate: false}
@@ -42,6 +43,7 @@ defmodule Explorer.Chain.Address do
     field(:fetched_coin_balance, Wei)
     field(:fetched_coin_balance_block_number, :integer)
     field(:contract_code, Data)
+    field(:nonce, :integer)
 
     has_one(:smart_contract, SmartContract)
     has_one(:token, Token, foreign_key: :contract_address_hash)

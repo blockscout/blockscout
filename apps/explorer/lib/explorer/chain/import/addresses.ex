@@ -95,18 +95,10 @@ defmodule Explorer.Chain.Import.Addresses do
           # MAX on two columns
           fetched_coin_balance_block_number:
             fragment(
-              """
-              CASE WHEN EXCLUDED.fetched_coin_balance_block_number IS NOT NULL AND
-                        (? IS NULL OR
-                         EXCLUDED.fetched_coin_balance_block_number >= ?) THEN
-                          EXCLUDED.fetched_coin_balance_block_number
-                   ELSE ?
-              END
-              """,
-              address.fetched_coin_balance_block_number,
-              address.fetched_coin_balance_block_number,
+              "GREATEST(EXCLUDED.fetched_coin_balance_block_number, ?)",
               address.fetched_coin_balance_block_number
-            )
+            ),
+          nonce: fragment("GREATEST(EXCLUDED.nonce, ?)", address.nonce)
         ]
       ]
     )

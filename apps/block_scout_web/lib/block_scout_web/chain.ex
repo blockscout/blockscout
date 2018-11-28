@@ -130,9 +130,6 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  def paging_options(%{"inserted_at" => inserted_at}),
-    do: [paging_options: %{@default_paging_options | key: inserted_at}]
-
   def paging_options(%{"token_name" => name, "token_type" => type, "token_inserted_at" => inserted_at}),
     do: [paging_options: %{@default_paging_options | key: {name, type, inserted_at}}]
 
@@ -180,13 +177,8 @@ defmodule BlockScoutWeb.Chain do
     %{"block_number" => block_number, "index" => index}
   end
 
-  defp paging_params(%TokenTransfer{inserted_at: inserted_at}) do
-    inserted_at_datetime =
-      inserted_at
-      |> DateTime.from_naive!("Etc/UTC")
-      |> DateTime.to_iso8601()
-
-    %{"inserted_at" => inserted_at_datetime}
+  defp paging_params(%TokenTransfer{block_number: block_number, log_index: index}) do
+    %{"block_number" => block_number, "index" => index}
   end
 
   defp paging_params(%Address.Token{name: name, type: type, inserted_at: inserted_at}) do
