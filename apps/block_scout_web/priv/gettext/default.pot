@@ -614,7 +614,7 @@ msgid "Next"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/holder/index.html.eex:36
+#: lib/block_scout_web/templates/tokens/holder/index.html.eex:41
 #: lib/block_scout_web/templates/tokens/inventory/index.html.eex:35
 msgid "Next Page"
 msgstr ""
@@ -810,7 +810,7 @@ msgid "Telegram"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/tokens/holder/index.html.eex:29
+#: lib/block_scout_web/templates/tokens/holder/index.html.eex:28
 msgid "There are no holders for this Token."
 msgstr ""
 
@@ -1221,6 +1221,8 @@ msgstr ""
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:61
 #: lib/block_scout_web/templates/block/index.html.eex:22
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:33
+#: lib/block_scout_web/templates/tokens/holder/index.html.eex:37
+#: lib/block_scout_web/templates/tokens/holder/index.html.eex:48
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:33
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:45
 #: lib/block_scout_web/templates/transaction/index.html.eex:33
@@ -1415,6 +1417,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:60
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:26
+#: lib/block_scout_web/templates/tokens/holder/index.html.eex:23
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:21
 msgid "Something went wrong, click to reload."
 msgstr ""
