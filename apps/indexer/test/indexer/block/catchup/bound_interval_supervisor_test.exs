@@ -22,6 +22,8 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
     # See https://github.com/poanetwork/blockscout/issues/597
     @tag :no_geth
     test "starts fetching blocks from latest and goes down", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      Logger.configure(truncate: :infinity)
+
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         case Keyword.fetch!(json_rpc_named_arguments, :variant) do
           EthereumJSONRPC.Parity ->
@@ -63,8 +65,8 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
                    "uncles" => []
                  }}
 
-              %{method: "trace_block"}, _options ->
-                {:ok, []}
+              [%{method: "trace_block"} | _] = requests, _options ->
+                {:ok, Enum.map(requests, fn %{id: id} -> %{id: id, result: []} end)}
 
               [%{method: "eth_getBlockByNumber", params: [_, true]} | _] = requests, _options ->
                 {:ok,
@@ -476,8 +478,8 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
       |> (fn mock ->
             case Keyword.fetch!(json_rpc_named_arguments, :variant) do
               EthereumJSONRPC.Parity ->
-                expect(mock, :json_rpc, fn %{method: "trace_block"}, _options ->
-                  {:ok, []}
+                expect(mock, :json_rpc, fn [%{method: "trace_block"} | _] = requests, _options ->
+                  {:ok, Enum.map(requests, fn %{id: id} -> %{id: id, result: []} end)}
                 end)
 
               _ ->

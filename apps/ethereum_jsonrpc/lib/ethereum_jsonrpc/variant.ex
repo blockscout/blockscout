@@ -4,7 +4,7 @@ defmodule EthereumJSONRPC.Variant do
   Ethereum JSONRPC API.  The variant callbacks abstract over this difference.
   """
 
-  alias EthereumJSONRPC.Transaction
+  alias EthereumJSONRPC.{FetchedBeneficiaries, Transaction}
 
   @typedoc """
   A module that implements the `EthereumJSONRPC.Variant` behaviour callbacks.
@@ -22,12 +22,12 @@ defmodule EthereumJSONRPC.Variant do
 
   ## Returns
 
-   * `{:ok, #MapSet<[%{...}]>}` - beneficiaries were successfully fetched
-   * `{:error, reason}` - there was one or more errors with `reason` in fetching the beneficiaries
+   * `{:ok, %EthereumJSONRPC.FetchedBeneficiaries{params_list: [%{address_hash: address_hash, block_number: block_number}], errors: %{code: code, message: message, data: %{block_number: block_number}}}` - some beneficiaries were successfully fetched and some may have had errors.
+   * `{:error, reason}` - there was an error at the transport level
    * `:ignore` - the variant does not support fetching beneficiaries
   """
   @callback fetch_beneficiaries(Range.t(), EthereumJSONRPC.json_rpc_named_arguments()) ::
-              {:ok, MapSet.t()} | {:error, reason :: term} | :ignore
+              {:ok, FetchedBeneficiaries.t()} | {:error, reason :: term} | :ignore
 
   @doc """
   Fetches the `t:Explorer.Chain.InternalTransaction.changeset/2` params from the variant of the Ethereum JSONRPC API.
