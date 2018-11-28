@@ -3,11 +3,13 @@ defmodule Indexer.Token.Fetcher do
   Fetches information about a token.
   """
 
+  use Spandex.Decorators
+
   alias Explorer.Chain
   alias Explorer.Chain.Hash.Address
   alias Explorer.Chain.Token
   alias Explorer.Token.MetadataRetriever
-  alias Indexer.BufferedTask
+  alias Indexer.{BufferedTask, Tracer}
 
   @behaviour BufferedTask
 
@@ -47,6 +49,7 @@ defmodule Indexer.Token.Fetcher do
   end
 
   @impl BufferedTask
+  @decorate trace(name: "fetch", resource: "Indexer.Token.Fetcher.run/2", service: :indexer, tracer: Tracer)
   def run([token_contract_address], _json_rpc_named_arguments) do
     case Chain.token_from_address_hash(token_contract_address) do
       {:ok, %Token{cataloged: false} = token} ->
