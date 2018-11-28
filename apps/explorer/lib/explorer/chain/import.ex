@@ -8,20 +8,25 @@ defmodule Explorer.Chain.Import do
   alias Explorer.Repo
 
   # in order so that foreign keys are inserted before being referenced
-  @runners [
-    Import.Addresses,
-    Import.Address.CoinBalances,
-    Import.Blocks,
-    Import.Block.SecondDegreeRelations,
-    Import.Transactions,
-    Import.Transaction.Forks,
-    Import.InternalTransactions,
-    Import.Logs,
-    Import.Tokens,
-    Import.TokenTransfers,
-    Import.Address.CurrentTokenBalances,
-    Import.Address.TokenBalances
+  @runner_stages [
+    [
+      Import.Addresses
+    ],
+    [
+      Import.Address.CoinBalances,
+      Import.Blocks,
+      Import.Block.SecondDegreeRelations,
+      Import.Transactions,
+      Import.Transaction.Forks,
+      Import.InternalTransactions,
+      Import.Logs,
+      Import.Tokens,
+      Import.TokenTransfers,
+      Import.Address.CurrentTokenBalances,
+      Import.Address.TokenBalances
+    ]
   ]
+  @runners List.flatten(@runner_stages)
 
   quoted_runner_option_value =
     quote do
@@ -68,7 +73,7 @@ defmodule Explorer.Chain.Import do
   @type timestamps :: %{inserted_at: DateTime.t(), updated_at: DateTime.t()}
 
   # milliseconds
-  @transaction_timeout 120_000
+  @transaction_timeout 170_000
 
   @imported_table_rows @runners
                        |> Stream.map(&Map.put(&1.imported_table_row(), :key, &1.option_key()))
@@ -285,13 +290,22 @@ defmodule Explorer.Chain.Import do
     end
   end
 
-  defp runner_changes_list_pairs_to_multi(runner_changes_list_pairs, options)
+  defp runner_changes_list_pairs_to_multis(runner_changes_list_pairs, options)
        when is_list(runner_changes_list_pairs) and is_map(options) do
     timestamps = timestamps()
     full_options = Map.put(options, :timestamps, timestamps)
 
-    Enum.reduce(runner_changes_list_pairs, Multi.new(), fn {runner, changes_list}, acc ->
-      runner.run(acc, changes_list, full_options)
+    @runner_stages
+    |> Enum.map(fn runners ->
+      Enum.reduce(runners, Multi.new(), fn runner, acc ->
+        case Keyword.fetch(runner_changes_list_pairs, runner) do
+          {:ok, changes_list} ->
+            runner.run(acc, changes_list, full_options)
+
+          :error ->
+            acc
+        end
+      end)
     end)
   end
 
@@ -318,14 +332,27 @@ defmodule Explorer.Chain.Import do
     Map.merge(changes, timestamps)
   end
 
-  defp import_transaction(multi, options) when is_map(options) do
-    Repo.transaction(multi, timeout: Map.get(options, :timeout, @transaction_timeout))
-  end
-
   defp insert_runner_changes_list_pairs(runner_changes_list_pairs, options) do
     runner_changes_list_pairs
-    |> runner_changes_list_pairs_to_multi(options)
-    |> import_transaction(options)
+    |> runner_changes_list_pairs_to_multis(options)
+    |> import_transactions(options)
+  end
+
+  defp import_transactions(multis, options) when is_list(multis) and is_map(options) do
+    import_id = :erlang.unique_integer([:positive])
+
+    Explorer.metadata([import_id: import_id], fn ->
+      Enum.reduce_while(multis, {:ok, %{}}, fn multi, {:ok, acc_changes} ->
+        case import_transaction(multi, options) do
+          {:ok, changes} -> {:cont, {:ok, Map.merge(acc_changes, changes)}}
+          {:error, _, _, _} = error -> {:halt, error}
+        end
+      end)
+    end)
+  end
+
+  defp import_transaction(multi, options) when is_map(options) do
+    Repo.logged_transaction(multi, timeout: Map.get(options, :timeout, @transaction_timeout))
   end
 
   @spec timestamps() :: timestamps

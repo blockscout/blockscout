@@ -3,12 +3,27 @@ defmodule Explorer.Repo do
 
   require Logger
 
+  import Explorer, only: [metadata: 2]
+
   @doc """
   Dynamically loads the repository url from the
   DATABASE_URL environment variable.
   """
   def init(_, opts) do
     {:ok, Keyword.put(opts, :url, System.get_env("DATABASE_URL"))}
+  end
+
+  def logged_transaction(fun_or_multi, opts \\ []) do
+    transaction_id = :erlang.unique_integer([:positive])
+
+    metadata([transaction_id: transaction_id], fn ->
+      {microseconds, value} = :timer.tc(__MODULE__, :transaction, [fun_or_multi, opts])
+
+      milliseconds = div(microseconds, 100) / 10.0
+      Logger.debug(["transaction_time=", :io_lib_format.fwrite_g(milliseconds), ?m, ?s])
+
+      value
+    end)
   end
 
   @doc """
