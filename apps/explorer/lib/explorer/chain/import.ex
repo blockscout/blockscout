@@ -3,30 +3,17 @@ defmodule Explorer.Chain.Import do
   Bulk importing of data into `Explorer.Repo`
   """
 
-  alias Ecto.{Changeset, Multi}
+  alias Ecto.Changeset
   alias Explorer.Chain.Import
   alias Explorer.Repo
 
-  # in order so that foreign keys are inserted before being referenced
-  @runner_stages [
-    [
-      Import.Addresses
-    ],
-    [
-      Import.Address.CoinBalances,
-      Import.Blocks,
-      Import.Block.SecondDegreeRelations,
-      Import.Transactions,
-      Import.Transaction.Forks,
-      Import.InternalTransactions,
-      Import.Logs,
-      Import.Tokens,
-      Import.TokenTransfers,
-      Import.Address.CurrentTokenBalances,
-      Import.Address.TokenBalances
-    ]
+  @stages [
+    Import.Stage.Addresses,
+    Import.Stage.AddressReferencing
   ]
-  @runners List.flatten(@runner_stages)
+
+  # in order so that foreign keys are inserted before being referenced
+  @runners Enum.flat_map(@stages, fn stage -> stage.runners() end)
 
   quoted_runner_option_value =
     quote do
@@ -73,7 +60,7 @@ defmodule Explorer.Chain.Import do
   @type timestamps :: %{inserted_at: DateTime.t(), updated_at: DateTime.t()}
 
   # milliseconds
-  @transaction_timeout 170_000
+  @transaction_timeout 15_000
 
   @imported_table_rows @runners
                        |> Stream.map(&Map.put(&1.imported_table_row(), :key, &1.option_key()))
@@ -133,8 +120,8 @@ defmodule Explorer.Chain.Import do
   def all(options) when is_map(options) do
     with {:ok, runner_options_pairs} <- validate_options(options),
          {:ok, valid_runner_option_pairs} <- validate_runner_options_pairs(runner_options_pairs),
-         {:ok, runner_changes_list_pairs} <- runner_changes_list_pairs(valid_runner_option_pairs),
-         {:ok, data} <- insert_runner_changes_list_pairs(runner_changes_list_pairs, options) do
+         {:ok, runner_to_changes_list} <- runner_to_changes_list(valid_runner_option_pairs),
+         {:ok, data} <- insert_runner_to_changes_list(runner_to_changes_list, options) do
       broadcast_events(data, Map.get(options, :broadcast, false))
       {:ok, data}
     end
@@ -157,25 +144,22 @@ defmodule Explorer.Chain.Import do
     end)
   end
 
-  defp runner_changes_list_pairs(runner_options_pairs) when is_list(runner_options_pairs) do
-    {status, reversed} =
-      runner_options_pairs
-      |> Stream.map(fn {runner, options} -> runner_changes_list(runner, options) end)
-      |> Enum.reduce({:ok, []}, fn
-        {:ok, runner_changes_pair}, {:ok, acc_runner_changes_pairs} ->
-          {:ok, [runner_changes_pair | acc_runner_changes_pairs]}
+  defp runner_to_changes_list(runner_options_pairs) when is_list(runner_options_pairs) do
+    runner_options_pairs
+    |> Stream.map(fn {runner, options} -> runner_changes_list(runner, options) end)
+    |> Enum.reduce({:ok, %{}}, fn
+      {:ok, {runner, changes_list}}, {:ok, acc_runner_to_changes_list} ->
+        {:ok, Map.put(acc_runner_to_changes_list, runner, changes_list)}
 
-        {:ok, _}, {:error, _} = error ->
-          error
+      {:ok, _}, {:error, _} = error ->
+        error
 
-        {:error, _} = error, {:ok, _} ->
-          error
+      {:error, _} = error, {:ok, _} ->
+        error
 
-        {:error, runner_changesets}, {:error, acc_changesets} ->
-          {:error, acc_changesets ++ runner_changesets}
-      end)
-
-    {status, Enum.reverse(reversed)}
+      {:error, runner_changesets}, {:error, acc_changesets} ->
+        {:error, acc_changesets ++ runner_changesets}
+    end)
   end
 
   defp runner_changes_list(runner, %{params: params} = options) do
@@ -290,26 +274,27 @@ defmodule Explorer.Chain.Import do
     end
   end
 
-  defp runner_changes_list_pairs_to_multis(runner_changes_list_pairs, options)
-       when is_list(runner_changes_list_pairs) and is_map(options) do
+  defp runner_to_changes_list_to_multis(runner_to_changes_list, options)
+       when is_map(runner_to_changes_list) and is_map(options) do
     timestamps = timestamps()
     full_options = Map.put(options, :timestamps, timestamps)
 
-    @runner_stages
-    |> Enum.map(fn runners ->
-      Enum.reduce(runners, Multi.new(), fn runner, acc ->
-        case Keyword.fetch(runner_changes_list_pairs, runner) do
-          {:ok, changes_list} ->
-            runner.run(acc, changes_list, full_options)
-
-          :error ->
-            acc
-        end
+    {multis, final_runner_to_changes_list} =
+      Enum.flat_map_reduce(@stages, runner_to_changes_list, fn stage, remaining_runner_to_changes_list ->
+        stage.multis(remaining_runner_to_changes_list, full_options)
       end)
-    end)
+
+    unless Enum.empty?(final_runner_to_changes_list) do
+      raise ArgumentError,
+            "No stages consumed the following runners: #{final_runner_to_changes_list |> Map.keys() |> inspect()}"
+    end
+
+    multis
   end
 
-  def insert_changes_list(changes_list, options) when is_list(changes_list) do
+  @row_limit 500
+
+  def insert_changes_list(changes_list, options) when is_list(changes_list) and length(changes_list) <= @row_limit do
     ecto_schema_module = Keyword.fetch!(options, :for)
 
     timestamped_changes_list = timestamp_changes_list(changes_list, Keyword.fetch!(options, :timestamps))
@@ -324,6 +309,13 @@ defmodule Explorer.Chain.Import do
     {:ok, inserted}
   end
 
+  def insert_changes_list(changes_list, options) do
+    raise ArgumentError,
+          "Too many changes (#{length(changes_list)} > #{@row_limit}}) in list for #{Keyword.fetch!(options, :for)}"
+  end
+
+  def row_limit, do: @row_limit
+
   defp timestamp_changes_list(changes_list, timestamps) when is_list(changes_list) do
     Enum.map(changes_list, &timestamp_params(&1, timestamps))
   end
@@ -332,9 +324,9 @@ defmodule Explorer.Chain.Import do
     Map.merge(changes, timestamps)
   end
 
-  defp insert_runner_changes_list_pairs(runner_changes_list_pairs, options) do
-    runner_changes_list_pairs
-    |> runner_changes_list_pairs_to_multis(options)
+  defp insert_runner_to_changes_list(runner_to_changes_list, options) when is_map(runner_to_changes_list) do
+    runner_to_changes_list
+    |> runner_to_changes_list_to_multis(options)
     |> import_transactions(options)
   end
 

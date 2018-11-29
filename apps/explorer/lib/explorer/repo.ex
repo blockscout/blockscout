@@ -31,7 +31,7 @@ defmodule Explorer.Repo do
 
   *Note:* Should always be run within a transaction as multiple inserts may occur.
   """
-  def safe_insert_all(kind, elements, opts) do
+  def safe_insert_all(kind, elements, opts) when length(elements) <= 500 do
     returning = opts[:returning]
 
     elements
