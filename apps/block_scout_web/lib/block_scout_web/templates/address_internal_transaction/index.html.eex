@@ -7,7 +7,7 @@
         <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
       </div>
 
-      <div class="card-body" data-async-listing="<%= @current_path %>">
+      <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
         <div data-selector="channel-batching-message" style="display: none;">
           <div data-selector="reload-button" class="alert alert-info">
             <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More internal transactions have come in" %></a>
