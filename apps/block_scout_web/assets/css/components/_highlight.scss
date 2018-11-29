@@ -1,0 +1,19 @@
+//replace the default background color from highlightjs
+.hljs {
+  background: $gray-100;
+}
+
+.line-numbers {
+
+  [data-line-number] {
+
+    &:before {
+      content: attr(data-line-number);
+      display: inline-block;
+      border-right: 1px solid $gray-400;
+      padding: 0 .5em;
+      margin-right: .5em;
+      color: $gray-600
+    }
+  }
+}
