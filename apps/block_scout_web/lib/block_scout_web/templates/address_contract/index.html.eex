@@ -40,8 +40,7 @@
             </button>
           </div>
           <div class="tile tile-muted mb-4">
-            <pre class="pre-scrollable"><code><%= text_to_html(@address.smart_contract.contract_source_code, wrapper_tag: :span, insert_brs: false) %></code>
-            </pre>
+            <pre class="pre-scrollable line-numbers" data-activate-highlight><code class="solidity"><%= for {line, number} <- contract_lines_with_index(@address.smart_contract.contract_source_code) do %><div data-line-number="<%= number %>"><%= line %></div><% end %></code></pre>
           </div>
         </section>
 
