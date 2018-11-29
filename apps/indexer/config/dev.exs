@@ -18,7 +18,7 @@ config :logger, :failed_contract_creations,
 
 variant =
   if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do
-    "ganache"
+    "parity"
   else
     System.get_env("ETHEREUM_JSONRPC_VARIANT")
     |> String.split(".")
