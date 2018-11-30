@@ -145,61 +145,36 @@ describe('RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH', () => {
 })
 
 describe('RECEIVED_NEW_TRANSACTION', () => {
-  test('with new transaction', () => {
+  test('increment the transactions count', () => {
     const state = Object.assign({}, initialState, {
-      transactions: [{ transactionHash: 1, transactionHtml: 'test 1' }]
+      addressHash: "0x001",
+      transactionCount: 1
     })
+
     const action = {
       type: 'RECEIVED_NEW_TRANSACTION',
-      msg: { transactionHash: 2, transactionHtml: 'test 2' }
+      msg: { fromAddressHash: "0x001", transactionHash: 2, transactionHtml: 'test 2' }
     }
-    const output = reducer(state, action)
 
-    expect(output.transactions).toEqual([
-      { transactionHash: 2, transactionHtml: 'test 2' },
-      { transactionHash: 1, transactionHtml: 'test 1' }
-    ])
+    const newState = reducer(state, action)
+
+    expect(newState.transactionCount).toEqual(2)
   })
-  test('when channel has been disconnected', () => {
+
+  test('does not increment the count if the channel is disconnected', () => {
     const state = Object.assign({}, initialState, {
-      channelDisconnected: true,
-      transactions: [{ transactionHash: 1, transactionHtml: 'test 1' }]
+      addressHash: "0x001",
+      transactionCount: 1,
+      channelDisconnected: true
     })
+
     const action = {
       type: 'RECEIVED_NEW_TRANSACTION',
-      msg: { transactionHash: 2, transactionHtml: 'test 2' }
+      msg: { fromAddressHash: "0x001", transactionHash: 2, transactionHtml: 'test 2' }
     }
-    const output = reducer(state, action)
 
-    expect(output.transactions).toEqual([
-      { transactionHash: 1, transactionHtml: 'test 1' }
-    ])
-  })
-  test('beyond page one', () => {
-    const state = Object.assign({}, initialState, {
-      beyondPageOne: true,
-      transactions: [{ transactionHash: 1, transactionHtml: 'test 1' }]
-    })
-    const action = {
-      type: 'RECEIVED_NEW_TRANSACTION',
-      msg: { transactionHash: 2, transactionHtml: 'test 2' }
-    }
-    const output = reducer(state, action)
+    const newState = reducer(state, action)
 
-    expect(output.transactions).toEqual([
-      { transactionHash: 1, transactionHtml: 'test 1' }
-    ])
-  })
-  test('with filtered out transaction', () => {
-    const state = Object.assign({}, initialState, {
-      filter: 'to'
-    })
-    const action = {
-      type: 'RECEIVED_NEW_TRANSACTION',
-      msg: { transactionHash: 2, transactionHtml: 'test 2' }
-    }
-    const output = reducer(state, action)
-
-    expect(output.transactions).toEqual([])
+    expect(newState.transactionCount).toEqual(1)
   })
 })

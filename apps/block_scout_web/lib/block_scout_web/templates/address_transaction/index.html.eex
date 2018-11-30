@@ -2,7 +2,7 @@
 
   <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
 
-  <section>
+  <section data-page="address-transactions">
     <div class="card">
       <div class="card-header">
         <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
@@ -69,7 +69,7 @@
           <%= gettext("Loading") %>...
         </div>
 
-        <div data-selector="transactions-list" data-items></div>
+        <div data-items></div>
 
         <a href="#" class="button button-secondary button-small float-right mt-4" data-next-page-button style="display: none;">
           <%= gettext("Older") %>

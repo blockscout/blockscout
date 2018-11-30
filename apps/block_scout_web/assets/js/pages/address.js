@@ -22,11 +22,10 @@ export const initialState = {
   transactionCount: null,
   validationCount: null,
 
-  transactions: [],
   internalTransactions: [],
   internalTransactionsBatch: [],
-
-  beyondPageOne: null
+  validatedBlocks: [],
+  beyondPageOne: false
 }
 
 export function reducer (state = initialState, action) {
@@ -80,19 +79,7 @@ export function reducer (state = initialState, action) {
 
       const transactionCount = (action.msg.fromAddressHash === state.addressHash) ? state.transactionCount + 1 : state.transactionCount
 
-      if (state.beyondPageOne ||
-        (state.filter === 'to' && action.msg.toAddressHash !== state.addressHash) ||
-        (state.filter === 'from' && action.msg.fromAddressHash !== state.addressHash)) {
-        return Object.assign({}, state, { transactionCount })
-      }
-
-      return Object.assign({}, state, {
-        transactions: [
-          action.msg,
-          ...state.transactions
-        ],
-        transactionCount: transactionCount
-      })
+      return Object.assign({}, state, { transactionCount })
     }
     case 'RECEIVED_UPDATED_BALANCE': {
       return Object.assign({}, state, {
@@ -137,32 +124,6 @@ const elements = {
     render ($el, state, oldState) {
       if (oldState.validationCount === state.validationCount) return
       $el.empty().append(numeral(state.validationCount).format())
-    }
-  },
-  '[data-selector="empty-transactions-list"]': {
-    render ($el, state) {
-      if (state.transactions.length || state.loadingNextPage || state.pagingError) {
-        $el.hide()
-      } else {
-        $el.show()
-      }
-    }
-  },
-  '[data-selector="transactions-list"]': {
-    load ($el) {
-      return {
-        transactions: $el.children().map((index, el) => ({
-          transactionHash: el.dataset.transactionHash,
-          transactionHtml: el.outerHTML
-        })).toArray()
-      }
-    },
-    render ($el, state, oldState) {
-      if (oldState.transactions === state.transactions) return
-
-      const container = $el[0]
-      const newElements = _.map(state.transactions, ({ transactionHtml }) => $(transactionHtml)[0])
-      return listMorph(container, newElements, { key: 'dataset.transactionHash' })
     }
   },
   '[data-selector="internal-transactions-list"]': {
