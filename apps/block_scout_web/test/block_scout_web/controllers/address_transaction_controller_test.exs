@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.AddressTransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
-  import BlockScoutWeb.Router.Helpers, only: [address_transaction_path: 3]
+  import BlockScoutWeb.Router.Helpers, only: [address_transaction_path: 3, address_transaction_path: 4]
 
   alias Explorer.Chain.{Block, Transaction}
   alias Explorer.ExchangeRates.Token
@@ -34,11 +34,14 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
         |> insert(to_address: address)
         |> with_block(block)
 
-      conn = get(conn, address_transaction_path(conn, :index, address))
+      conn = get(conn, address_transaction_path(conn, :index, address, %{"type" => "JSON"}))
 
-      transactions_hashes = Enum.map(conn.assigns.transactions, &Map.get(&1, :hash))
+      transaction_tiles = json_response(conn, 200)["items"]
+      transaction_hashes = Enum.map([to_transaction.hash, from_transaction.hash], &to_string(&1))
 
-      assert transactions_hashes == [to_transaction.hash, from_transaction.hash]
+      assert Enum.all?(transaction_hashes, fn transaction_hash ->
+               Enum.any?(transaction_tiles, &String.contains?(&1, transaction_hash))
+             end)
     end
 
     test "includes USD exchange rate value for address in assigns", %{conn: conn} do
@@ -66,15 +69,15 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       conn =
         get(conn, address_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash), %{
           "block_number" => Integer.to_string(block_number),
-          "index" => Integer.to_string(index)
+          "index" => Integer.to_string(index),
+          "type" => "JSON"
         })
 
-      actual_hashes =
-        conn.assigns.transactions
-        |> Enum.reverse()
-        |> Enum.map(& &1.hash)
+      transaction_tiles = json_response(conn, 200)["items"]
 
-      assert second_page_hashes == actual_hashes
+      assert Enum.all?(second_page_hashes, fn address_hash ->
+               Enum.any?(transaction_tiles, &String.contains?(&1, to_string(address_hash)))
+             end)
     end
 
     test "next_page_params exist if not on last page", %{conn: conn} do
@@ -85,15 +88,9 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       |> insert_list(:transaction, from_address: address)
       |> with_block(block)
 
-      conn = get(conn, address_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash))
+      conn = get(conn, address_transaction_path(conn, :index, address.hash, %{"type" => "JSON"}))
 
-      expected_next_page_params = %{
-        "address_id" => to_string(address.hash),
-        "block_number" => number,
-        "index" => 10
-      }
-
-      assert conn.assigns.next_page_params == expected_next_page_params
+      assert json_response(conn, 200)["next_page_path"]
     end
 
     test "next_page_params are empty if on last page", %{conn: conn} do
@@ -103,9 +100,9 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
       |> insert(from_address: address)
       |> with_block()
 
-      conn = get(conn, address_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash))
+      conn = get(conn, address_transaction_path(conn, :index, address.hash, %{"type" => "JSON"}))
 
-      refute conn.assigns.next_page_params
+      refute json_response(conn, 200)["next_page_path"]
     end
 
     test "returns parent transaction for a contract address", %{conn: conn} do
@@ -128,9 +125,11 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
 
       conn = get(conn, address_transaction_path(conn, :index, address), %{"type" => "JSON"})
 
-      transaction_hashes = Enum.map(conn.assigns.transactions, & &1.hash)
+      transaction_tiles = json_response(conn, 200)["items"]
 
-      assert [transaction.hash] == transaction_hashes
+      assert Enum.all?([transaction.hash], fn transaction_hash ->
+               Enum.any?(transaction_tiles, &String.contains?(&1, to_string(transaction_hash)))
+             end)
     end
   end
 end
