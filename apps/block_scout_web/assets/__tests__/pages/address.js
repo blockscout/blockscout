@@ -172,70 +172,9 @@ describe('RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH', () => {
   })
 })
 
-describe('RECEIVED_NEW_PENDING_TRANSACTION', () => {
-  test('with new pending transaction', () => {
-    const state = Object.assign({}, initialState, {
-      pendingTransactions: [{ transactionHash: 1, transactionHtml: 'test 1' }]
-    })
-    const action = {
-      type: 'RECEIVED_NEW_PENDING_TRANSACTION',
-      msg: { transactionHash: 2, transactionHtml: 'test 2' }
-    }
-    const output = reducer(state, action)
-
-    expect(output.pendingTransactions).toEqual([
-      { transactionHash: 2, transactionHtml: 'test 2' },
-      { transactionHash: 1, transactionHtml: 'test 1' }
-    ])
-  })
-  test('when channel has been disconnected', () => {
-    const state = Object.assign({}, initialState, {
-      channelDisconnected: true,
-      pendingTransactions: [{ transactionHash: 1, transactionHtml: 'test 1' }]
-    })
-    const action = {
-      type: 'RECEIVED_NEW_PENDING_TRANSACTION',
-      msg: { transactionHash: 2, transactionHtml: 'test 2' }
-    }
-    const output = reducer(state, action)
-
-    expect(output.pendingTransactions).toEqual([
-      { transactionHash: 1, transactionHtml: 'test 1' }
-    ])
-  })
-  test('beyond page one', () => {
-    const state = Object.assign({}, initialState, {
-      beyondPageOne: true,
-      pendingTransactions: [{ transactionHash: 1, transactionHtml: 'test 1' }]
-    })
-    const action = {
-      type: 'RECEIVED_NEW_PENDING_TRANSACTION',
-      msg: { transactionHash: 2, transactionHtml: 'test 2' }
-    }
-    const output = reducer(state, action)
-
-    expect(output.pendingTransactions).toEqual([
-      { transactionHash: 1, transactionHtml: 'test 1' }
-    ])
-  })
-  test('with filtered out pending transaction', () => {
-    const state = Object.assign({}, initialState, {
-      filter: 'to'
-    })
-    const action = {
-      type: 'RECEIVED_NEW_PENDING_TRANSACTION',
-      msg: { transactionHash: 2, transactionHtml: 'test 2' }
-    }
-    const output = reducer(state, action)
-
-    expect(output.pendingTransactions).toEqual([])
-  })
-})
-
 describe('RECEIVED_NEW_TRANSACTION', () => {
   test('with new transaction', () => {
     const state = Object.assign({}, initialState, {
-      pendingTransactions: [{ transactionHash: 2, transactionHtml: 'test' }],
       transactions: [{ transactionHash: 1, transactionHtml: 'test 1' }]
     })
     const action = {
@@ -244,9 +183,6 @@ describe('RECEIVED_NEW_TRANSACTION', () => {
     }
     const output = reducer(state, action)
 
-    expect(output.pendingTransactions).toEqual([
-      { transactionHash: 2, transactionHtml: 'test 2', validated: true }
-    ])
     expect(output.transactions).toEqual([
       { transactionHash: 2, transactionHtml: 'test 2' },
       { transactionHash: 1, transactionHtml: 'test 1' }
@@ -255,7 +191,6 @@ describe('RECEIVED_NEW_TRANSACTION', () => {
   test('when channel has been disconnected', () => {
     const state = Object.assign({}, initialState, {
       channelDisconnected: true,
-      pendingTransactions: [{ transactionHash: 2, transactionHtml: 'test' }],
       transactions: [{ transactionHash: 1, transactionHtml: 'test 1' }]
     })
     const action = {
@@ -264,9 +199,6 @@ describe('RECEIVED_NEW_TRANSACTION', () => {
     }
     const output = reducer(state, action)
 
-    expect(output.pendingTransactions).toEqual([
-      { transactionHash: 2, transactionHtml: 'test' }
-    ])
     expect(output.transactions).toEqual([
       { transactionHash: 1, transactionHtml: 'test 1' }
     ])
@@ -282,7 +214,6 @@ describe('RECEIVED_NEW_TRANSACTION', () => {
     }
     const output = reducer(state, action)
 
-    expect(output.pendingTransactions).toEqual([])
     expect(output.transactions).toEqual([
       { transactionHash: 1, transactionHtml: 'test 1' }
     ])
