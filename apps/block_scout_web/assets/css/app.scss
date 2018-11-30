@@ -47,6 +47,9 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "node_modules/bootstrap/scss/badge";
 @import "node_modules/bootstrap/scss/alert";
 
+// Code highlight
+@import "node_modules/highlight.js/styles/default";
+
 //Custom theme
 @import "theme/fonts";
 
@@ -82,6 +85,7 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/dropdown";
 @import "components/loading-spinner";
 @import "components/transaction-input";
+@import "components/highlight";
 
 :export {
   primary: $primary;
