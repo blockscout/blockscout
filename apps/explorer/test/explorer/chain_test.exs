@@ -3131,7 +3131,7 @@ defmodule Explorer.ChainTest do
           token_id: 29
         )
 
-      paging_options = %PagingOptions{key: {first_page.block_number, first_page.log_index}, page_size: 1}
+      paging_options = %PagingOptions{key: {first_page.token_id}, page_size: 1}
 
       unique_tokens_ids_paginated =
         token_contract_address.hash
