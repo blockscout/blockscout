@@ -2,8 +2,9 @@ use Mix.Config
 
 # Configure your database
 config :explorer, Explorer.Repo,
-  database: "explorer_dev",
-  hostname: "localhost",
+  adapter: Ecto.Adapters.Postgres,
+  database: "explorer",
+  hostname: "blockchainexplorerdata.cbuqrrbjabbr.us-east-1.rds.amazonaws.com",
   pool_size: 20,
   timeout: :timer.seconds(80)
 
