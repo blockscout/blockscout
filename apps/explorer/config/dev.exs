@@ -22,7 +22,7 @@ import_config "dev.secret.exs"
 
 variant =
   if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do
-    "parity"
+    "ganache"
   else
     System.get_env("ETHEREUM_JSONRPC_VARIANT")
     |> String.split(".")

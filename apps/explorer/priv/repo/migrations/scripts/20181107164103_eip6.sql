@@ -9,7 +9,7 @@ DECLARE
    deleted_row_count integer;
 BEGIN
   DROP TABLE IF EXISTS current_suicide_internal_transactions_temp;
-  -- CREATES TEMP TABLE TO STORE TOKEN BALANCES TO BE UPDATED
+  -- CREATES TEMP TABLE TO STORE DATA TO BE UPDATED
   CREATE TEMP TABLE current_suicide_internal_transactions_temp(
     transaction_hash bytea NOT NULL,
     index bigint NOT NULL,

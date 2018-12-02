@@ -12,7 +12,6 @@ import { updateAllCalculatedUsdValues } from '../lib/currency.js'
 import { loadTokenBalanceDropdown } from '../lib/token_balance_dropdown'
 
 const BATCH_THRESHOLD = 10
-const TRANSACTION_VALIDATED_MOVE_DELAY = 1000
 
 export const initialState = {
   channelDisconnected: false,
@@ -24,7 +23,6 @@ export const initialState = {
   transactionCount: null,
   validationCount: null,
 
-  pendingTransactions: [],
   transactions: [],
   internalTransactions: [],
   internalTransactionsBatch: [],
@@ -91,26 +89,6 @@ function baseReducer (state = initialState, action) {
         })
       }
     }
-    case 'RECEIVED_NEW_PENDING_TRANSACTION': {
-      if (state.channelDisconnected || state.beyondPageOne) return state
-
-      if ((state.filter === 'to' && action.msg.toAddressHash !== state.addressHash) ||
-        (state.filter === 'from' && action.msg.fromAddressHash !== state.addressHash)) {
-        return state
-      }
-
-      return Object.assign({}, state, {
-        pendingTransactions: [
-          action.msg,
-          ...state.pendingTransactions
-        ]
-      })
-    }
-    case 'REMOVE_PENDING_TRANSACTION': {
-      return Object.assign({}, state, {
-        pendingTransactions: state.pendingTransactions.filter((transaction) => action.msg.transactionHash !== transaction.transactionHash)
-      })
-    }
     case 'RECEIVED_NEW_TRANSACTION': {
       if (state.channelDisconnected) return state
 
@@ -123,7 +101,6 @@ function baseReducer (state = initialState, action) {
       }
 
       return Object.assign({}, state, {
-        pendingTransactions: state.pendingTransactions.map((transaction) => action.msg.transactionHash === transaction.transactionHash ? Object.assign({}, action.msg, { validated: true }) : transaction),
         transactions: [
           action.msg,
           ...state.transactions
@@ -177,33 +154,11 @@ const elements = {
   },
   '[data-selector="validation-count"]': {
     load ($el) {
-      return { validationCount: numeral($el.text()).value }
+      return { validationCount: numeral($el.text()).value() }
     },
     render ($el, state, oldState) {
       if (oldState.validationCount === state.validationCount) return
       $el.empty().append(numeral(state.validationCount).format())
-    }
-  },
-  '[data-selector="pending-transactions-list"]': {
-    load ($el) {
-      return {
-        pendingTransactions: $el.children().map((index, el) => ({
-          transactionHash: el.dataset.transactionHash,
-          transactionHtml: el.outerHTML
-        })).toArray()
-      }
-    },
-    render ($el, state, oldState) {
-      if (oldState.pendingTransactions === state.pendingTransactions) return
-      const container = $el[0]
-      const newElements = _.map(state.pendingTransactions, ({ transactionHtml }) => $(transactionHtml)[0])
-      listMorph(container, newElements, { key: 'dataset.transactionHash' })
-    }
-  },
-  '[data-selector="pending-transactions-count"]': {
-    render ($el, state, oldState) {
-      if (oldState.pendingTransactions === state.pendingTransactions) return
-      $el[0].innerHTML = numeral(state.pendingTransactions.filter(({ validated }) => !validated).length).format()
     }
   },
   '[data-selector="empty-transactions-list"]': {
@@ -226,16 +181,10 @@ const elements = {
     },
     render ($el, state, oldState) {
       if (oldState.transactions === state.transactions) return
-      function updateTransactions () {
-        const container = $el[0]
-        const newElements = _.map(state.transactions, ({ transactionHtml }) => $(transactionHtml)[0])
-        listMorph(container, newElements, { key: 'dataset.transactionHash' })
-      }
-      if ($('[data-selector="pending-transactions-list"]').is(':visible')) {
-        setTimeout(updateTransactions, TRANSACTION_VALIDATED_MOVE_DELAY + 400)
-      } else {
-        updateTransactions()
-      }
+
+      const container = $el[0]
+      const newElements = _.map(state.transactions, ({ transactionHtml }) => $(transactionHtml)[0])
+      return listMorph(container, newElements, { key: 'dataset.transactionHash' })
     }
   },
   '[data-selector="internal-transactions-list"]': {
@@ -306,19 +255,11 @@ if ($addressDetailsPage.length) {
     type: 'RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH',
     msgs: humps.camelizeKeys(msgs)
   })))
-  addressChannel.on('pending_transaction', (msg) => store.dispatch({
-    type: 'RECEIVED_NEW_PENDING_TRANSACTION',
-    msg: humps.camelizeKeys(msg)
-  }))
   addressChannel.on('transaction', (msg) => {
     store.dispatch({
       type: 'RECEIVED_NEW_TRANSACTION',
       msg: humps.camelizeKeys(msg)
     })
-    setTimeout(() => store.dispatch({
-      type: 'REMOVE_PENDING_TRANSACTION',
-      msg: humps.camelizeKeys(msg)
-    }), TRANSACTION_VALIDATED_MOVE_DELAY)
   })
 
   const blocksChannel = socket.channel(`blocks:${addressHash}`, {})
