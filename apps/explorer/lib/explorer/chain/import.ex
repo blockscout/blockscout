@@ -327,19 +327,23 @@ defmodule Explorer.Chain.Import do
   defp insert_runner_to_changes_list(runner_to_changes_list, options) when is_map(runner_to_changes_list) do
     runner_to_changes_list
     |> runner_to_changes_list_to_multis(options)
-    |> import_transactions(options)
+    |> log_and_import_transactions(options)
+  end
+
+  defp log_and_import_transactions(multis, options) when is_list(multis) and is_map(options) do
+    import_id = :erlang.unique_integer([:positive])
+
+    Explorer.Logger.metadata([import_id: import_id], fn ->
+      import_transactions(multis, options)
+    end)
   end
 
   defp import_transactions(multis, options) when is_list(multis) and is_map(options) do
-    import_id = :erlang.unique_integer([:positive])
-
-    Explorer.metadata([import_id: import_id], fn ->
-      Enum.reduce_while(multis, {:ok, %{}}, fn multi, {:ok, acc_changes} ->
-        case import_transaction(multi, options) do
-          {:ok, changes} -> {:cont, {:ok, Map.merge(acc_changes, changes)}}
-          {:error, _, _, _} = error -> {:halt, error}
-        end
-      end)
+    Enum.reduce_while(multis, {:ok, %{}}, fn multi, {:ok, acc_changes} ->
+      case import_transaction(multi, options) do
+        {:ok, changes} -> {:cont, {:ok, Map.merge(acc_changes, changes)}}
+        {:error, _, _, _} = error -> {:halt, error}
+      end
     end)
   end
 
