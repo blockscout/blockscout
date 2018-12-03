@@ -5,7 +5,6 @@ defmodule Explorer.Chain.Import.Stage.Addresses do
   """
 
   alias Ecto.Multi
-  alias Explorer.Chain.Import
   alias Explorer.Chain.Import.{Runner, Stage}
 
   @behaviour Stage
@@ -23,9 +22,11 @@ defmodule Explorer.Chain.Import.Stage.Addresses do
 
   defp address_changes_list_to_multis(nil, _), do: []
 
+  @chunk_size 50
+
   defp address_changes_list_to_multis(changes_list, options) do
     changes_list
-    |> Stream.chunk_every(Import.row_limit())
+    |> Stream.chunk_every(@chunk_size)
     |> Enum.map(fn changes_chunk ->
       Runner.Addresses.run(Multi.new(), changes_chunk, options)
     end)
