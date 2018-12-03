@@ -10,7 +10,11 @@ defmodule BlockScoutWeb.TokenPage do
   end
 
   def visit_page(session, contract_address_hash) do
-    visit(session, "tokens/#{contract_address_hash}")
+    visit(session, "tokens/#{contract_address_hash}/token_holders")
+  end
+
+  def token_holders_tab(count: count) do
+    css("[data-test='token_holders_tab']", count: count)
   end
 
   def click_tokens_holders(session) do

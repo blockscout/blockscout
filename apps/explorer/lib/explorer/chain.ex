@@ -899,12 +899,9 @@ defmodule Explorer.Chain do
   def list_top_addresses do
     query =
       from(a in Address,
-        left_join: t in Transaction,
-        on: a.hash == t.from_address_hash,
         where: a.fetched_coin_balance > ^0,
-        group_by: [a.hash, a.fetched_coin_balance],
         order_by: [desc: a.fetched_coin_balance, asc: a.hash],
-        select: {a, fragment("coalesce(1 + max(?), 0)", t.nonce)},
+        select: {a, fragment("coalesce(1 + ?, 0)", a.nonce)},
         limit: 250
       )
 
@@ -1932,6 +1929,26 @@ defmodule Explorer.Chain do
           )
 
         query
+        |> Repo.stream(timeout: :infinity)
+        |> Enum.reduce(initial_acc, reducer)
+      end,
+      timeout: :infinity
+    )
+  end
+
+  @doc """
+  Streams a list of token contract addresses that have been cataloged.
+  """
+  @spec stream_cataloged_token_contract_address_hashes(
+          initial :: accumulator,
+          reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_cataloged_token_contract_address_hashes(initial_acc, reducer) when is_function(reducer, 2) do
+    Repo.transaction(
+      fn ->
+        Chain.Token.cataloged_tokens()
+        |> order_by(asc: :updated_at)
         |> Repo.stream(timeout: :infinity)
         |> Enum.reduce(initial_acc, reducer)
       end,

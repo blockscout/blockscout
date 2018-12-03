@@ -7,6 +7,7 @@ import Bitwise
 config :indexer,
   block_transformer: Indexer.Block.Transform.Clique,
   ecto_repos: [Explorer.Repo],
+  metadata_updater_days_interval: 7,
   # bytes
   memory_limit: 4 <<< 30
 

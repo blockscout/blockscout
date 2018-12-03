@@ -94,4 +94,17 @@ defmodule Explorer.Chain.Token do
       on: tt.token_contract_address_hash == t.contract_address_hash
     )
   end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch the cataloged tokens.
+
+  These are tokens with cataloged field set to true.
+  """
+  def cataloged_tokens do
+    from(
+      token in __MODULE__,
+      select: token.contract_address_hash,
+      where: token.cataloged == true
+    )
+  end
 end

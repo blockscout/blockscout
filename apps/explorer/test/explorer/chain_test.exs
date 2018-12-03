@@ -2756,6 +2756,29 @@ defmodule Explorer.ChainTest do
     assert Chain.stream_uncataloged_token_contract_address_hashes([], &[&1 | &2]) == {:ok, [uncatalog_address]}
   end
 
+  describe "stream_cataloged_token_contract_address_hashes/2" do
+    test "reduces with given reducer and accumulator" do
+      %Token{contract_address_hash: catalog_address} = insert(:token, cataloged: true)
+      insert(:token, cataloged: false)
+      assert Chain.stream_cataloged_token_contract_address_hashes([], &[&1 | &2]) == {:ok, [catalog_address]}
+    end
+
+    test "sorts the tokens by updated_at in ascending order" do
+      today = DateTime.utc_now()
+      yesterday = Timex.shift(today, days: -1)
+
+      token1 = insert(:token, %{cataloged: true, updated_at: today})
+      token2 = insert(:token, %{cataloged: true, updated_at: yesterday})
+
+      expected_response =
+        [token1, token2]
+        |> Enum.sort(&(&1.updated_at < &2.updated_at))
+        |> Enum.map(& &1.contract_address_hash)
+
+      assert Chain.stream_cataloged_token_contract_address_hashes([], &(&2 ++ [&1])) == {:ok, expected_response}
+    end
+  end
+
   describe "transaction_has_token_transfers?/1" do
     test "returns true if transaction has token transfers" do
       transaction = insert(:transaction)
@@ -3089,6 +3112,7 @@ defmodule Explorer.ChainTest do
       first_page =
         insert(
           :token_transfer,
+          block_number: 1000,
           to_address: build(:address),
           transaction: transaction,
           token_contract_address: token_contract_address,
@@ -3099,6 +3123,7 @@ defmodule Explorer.ChainTest do
       second_page =
         insert(
           :token_transfer,
+          block_number: 999,
           to_address: build(:address),
           transaction: transaction,
           token_contract_address: token_contract_address,
@@ -3106,13 +3131,11 @@ defmodule Explorer.ChainTest do
           token_id: 29
         )
 
-      paging_options = %PagingOptions{key: {first_page.token_id}, page_size: 1}
+      paging_options = %PagingOptions{key: {first_page.block_number, first_page.log_index}, page_size: 1}
 
       unique_tokens_ids_paginated =
-        Chain.address_to_unique_tokens(
-          token_contract_address.hash,
-          paging_options: paging_options
-        )
+        token_contract_address.hash
+        |> Chain.address_to_unique_tokens(paging_options: paging_options)
         |> Enum.map(& &1.token_id)
 
       assert unique_tokens_ids_paginated == [second_page.token_id]
