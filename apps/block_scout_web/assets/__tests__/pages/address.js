@@ -1,56 +1,28 @@
 import { reducer, initialState } from '../../js/pages/address'
 
 describe('RECEIVED_NEW_BLOCK', () => {
-  test('with new block', () => {
-    const state = Object.assign({}, initialState, {
-      validationCount: 30,
-      validatedBlocks: [{ blockNumber: 1, blockHtml: 'test 1' }]
-    })
+  test('increases validation count', () => {
+    const state = Object.assign({}, initialState, { validationCount: 30 })
     const action = {
       type: 'RECEIVED_NEW_BLOCK',
-      msg: { blockNumber: 2, blockHtml: 'test 2' }
+      blockHtml: 'test 2'
     }
     const output = reducer(state, action)
 
     expect(output.validationCount).toEqual(31)
-    expect(output.validatedBlocks).toEqual([
-      { blockNumber: 2, blockHtml: 'test 2' },
-      { blockNumber: 1, blockHtml: 'test 1' }
-    ])
   })
-  test('when channel has been disconnected', () => {
+  test('when channel has been disconnected does not increase validation count', () => {
     const state = Object.assign({}, initialState, {
       channelDisconnected: true,
-      validationCount: 30,
-      validatedBlocks: [{ blockNumber: 1, blockHtml: 'test 1' }]
+      validationCount: 30
     })
     const action = {
       type: 'RECEIVED_NEW_BLOCK',
-      msg: { blockNumber: 2, blockHtml: 'test 2' }
+      blockHtml: 'test 2'
     }
     const output = reducer(state, action)
 
     expect(output.validationCount).toEqual(30)
-    expect(output.validatedBlocks).toEqual([
-      { blockNumber: 1, blockHtml: 'test 1' }
-    ])
-  })
-  test('beyond page one', () => {
-    const state = Object.assign({}, initialState, {
-      beyondPageOne: true,
-      validationCount: 30,
-      validatedBlocks: [{ blockNumber: 1, blockHtml: 'test 1' }]
-    })
-    const action = {
-      type: 'RECEIVED_NEW_BLOCK',
-      msg: { blockNumber: 2, blockHtml: 'test 2' }
-    }
-    const output = reducer(state, action)
-
-    expect(output.validationCount).toEqual(31)
-    expect(output.validatedBlocks).toEqual([
-      { blockNumber: 1, blockHtml: 'test 1' }
-    ])
   })
 })
 

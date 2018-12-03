@@ -26,7 +26,6 @@ export const initialState = {
   transactions: [],
   internalTransactions: [],
   internalTransactionsBatch: [],
-  validatedBlocks: [],
 
   beyondPageOne: null,
 
@@ -53,15 +52,7 @@ function baseReducer (state = initialState, action) {
       if (state.channelDisconnected) return state
 
       const validationCount = state.validationCount + 1
-
-      if (state.beyondPageOne) return Object.assign({}, state, { validationCount })
-      return Object.assign({}, state, {
-        validatedBlocks: [
-          action.msg,
-          ...state.validatedBlocks
-        ],
-        validationCount
-      })
+      return Object.assign({}, state, { validationCount })
     }
     case 'RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH': {
       if (state.channelDisconnected || state.beyondPageOne) return state
@@ -208,22 +199,6 @@ const elements = {
       if (!state.internalTransactionsBatch.length) return $channelBatching.hide()
       $channelBatching.show()
       $el[0].innerHTML = numeral(state.internalTransactionsBatch.length).format()
-    }
-  },
-  '[data-selector="validations-list"]': {
-    load ($el) {
-      return {
-        validatedBlocks: $el.children().map((index, el) => ({
-          blockNumber: parseInt(el.dataset.blockNumber),
-          blockHtml: el.outerHTML
-        })).toArray()
-      }
-    },
-    render ($el, state, oldState) {
-      if (oldState.validatedBlocks === state.validatedBlocks) return
-      const container = $el[0]
-      const newElements = _.map(state.validatedBlocks, ({ blockHtml }) => $(blockHtml)[0])
-      listMorph(container, newElements, { key: 'dataset.blockNumber' })
     }
   }
 }
