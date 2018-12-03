@@ -1,7 +1,7 @@
 <section class="container">
   <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
 
-  <section>
+  <section data-page="blocks-validated">
     <div class="card">
       <div class="card-header">
         <!-- DESKTOP TAB NAV -->
@@ -98,7 +98,7 @@
         </ul>
       </div>
 
-      <div class="card-body">
+      <div data-async-listing="<%= @current_path %>" class="card-body">
         <div data-selector="channel-disconnected-message" style="display: none;">
           <div data-selector="reload-button" class="alert alert-danger">
             <a href="#" class="alert-link"><%= gettext "Connection Lost, click to load newer validations" %></a>
@@ -106,24 +106,31 @@
         </div>
 
         <h2 class="card-title"><%=gettext("Blocks Validated")%></h2>
-        <span data-selector="validations-list">
-          <%= for block <- @blocks do %>
-            <%= render BlockScoutWeb.BlockView, "_tile.html", block: block, block_type: BlockScoutWeb.BlockView.block_type(block)%>
-          <% end %>
-        </span>
-        <div>
-          <%= if @next_page_params do %>
-            <%= link(
-              gettext("Older"),
-              class: "button button-secondary button-sm float-right mt-3",
-              to: address_validation_path(
-                @conn,
-                :index,
-                @address,
-                @next_page_params
-              )
-            ) %>
-          <% end %>
+        <div data-loading-message class="tile tile-muted text-center mt-3">
+          <span class="loading-spinner-small mr-2">
+            <span class="loading-spinner-block-1"></span>
+            <span class="loading-spinner-block-2"></span>
+          </span>
+          <%= gettext("Loading...") %>
+        </div>
+        <div data-empty-response-message class="tile tile-muted text-center" style="display: none;">
+          <span><%= gettext "There are no blocks validated by this address." %></span>
+        </div>
+        <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
+          <span class="alert-link">
+            <%= gettext "Something went wrong, click to reload." %>
+          </span>
+        </button>
+        <div data-items data-selector="validations-list"></div>
+        <a data-next-page-button href="#" class="button button-secondary button-small float-right mt-4" style="display: none;">
+          <%= gettext("Older") %>
+        </a>
+        <div data-loading-button class="button button-secondary button-small float-right mt-4" style="display: none;">
+          <span class="loading-spinner-small mr-2">
+            <span class="loading-spinner-block-1"></span>
+            <span class="loading-spinner-block-2"></span>
+          </span>
+          <%= gettext("Loading...") %>
         </div>
       </div> <!-- Card Body -->
     </div> <!-- Card -->
