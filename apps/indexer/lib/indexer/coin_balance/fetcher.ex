@@ -114,18 +114,26 @@ defmodule Indexer.CoinBalance.Fetcher do
 
   defp run_fetched_balances(%FetchedBalances{params_list: []}, original_entries), do: {:retry, original_entries}
 
+  # The `Explorer.Chain.Import.row_limit/0` of `500` is too much to insert quickly
+  @chunk_size 25
+
   defp run_fetched_balances(%FetchedBalances{params_list: params_list, errors: errors}, original_entries) do
     value_fetched_at = DateTime.utc_now()
 
-    importable_balances_params = Enum.map(params_list, &Map.put(&1, :value_fetched_at, value_fetched_at))
+    params_list
+    |> Enum.map(&Map.put(&1, :value_fetched_at, value_fetched_at))
+    |> Stream.chunk_every(@chunk_size)
+    |> Enum.each(fn address_coin_balance_chunk ->
+      addresses_params = balances_params_to_address_params(address_coin_balance_chunk)
 
-    addresses_params = balances_params_to_address_params(importable_balances_params)
-
-    {:ok, _} =
-      Chain.import(%{
-        addresses: %{params: addresses_params, with: :balance_changeset},
-        address_coin_balances: %{params: importable_balances_params}
-      })
+      Indexer.Logger.metadata([fetcher: :coin_balance], fn ->
+        {:ok, _} =
+          Chain.import(%{
+            addresses: %{params: addresses_params, with: :balance_changeset},
+            address_coin_balances: %{params: address_coin_balance_chunk}
+          })
+      end)
+    end)
 
     retry(errors, original_entries)
   end
