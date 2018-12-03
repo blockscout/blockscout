@@ -24,6 +24,8 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
     port: System.get_env("PORT")
   ]
 
+config :block_scout_web, BlockScoutWeb.Tracer, env: "production", disabled?: true
+
 config :logger, :block_scout_web,
   level: :info,
   path: Path.absname("logs/prod/block_scout_web.log"),

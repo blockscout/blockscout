@@ -9,6 +9,8 @@ config :explorer, Explorer.Repo,
   pool_timeout: 60_000,
   timeout: 80_000
 
+config :explorer, Explorer.Tracer, env: "dev", disabled?: true
+
 config :logger, :explorer,
   level: :debug,
   path: Path.absname("logs/dev/explorer.log")

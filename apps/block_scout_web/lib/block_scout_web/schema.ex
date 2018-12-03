@@ -6,8 +6,16 @@ defmodule BlockScoutWeb.Schema do
 
   alias Absinthe.Middleware.Dataloader, as: AbsintheMiddlewareDataloader
   alias Absinthe.Plugin, as: AbsinthePlugin
-  alias BlockScoutWeb.Resolvers.{Address, Block, Transaction}
+
+  alias BlockScoutWeb.Resolvers.{
+    Address,
+    Block,
+    InternalTransaction,
+    Transaction
+  }
+
   alias Explorer.Chain
+  alias Explorer.Chain.InternalTransaction, as: ExplorerChainInternalTransaction
   alias Explorer.Chain.Transaction, as: ExplorerChainTransaction
 
   import_types(BlockScoutWeb.Schema.Types)
@@ -16,6 +24,9 @@ defmodule BlockScoutWeb.Schema do
     resolve_type(fn
       %ExplorerChainTransaction{}, _ ->
         :transaction
+
+      %ExplorerChainInternalTransaction{}, _ ->
+        :internal_transaction
 
       _, _ ->
         nil
@@ -28,6 +39,11 @@ defmodule BlockScoutWeb.Schema do
         %{type: :transaction, id: transaction_hash_string}, _ ->
           {:ok, hash} = Chain.string_to_transaction_hash(transaction_hash_string)
           Transaction.get_by(%{}, %{hash: hash}, %{})
+
+        %{type: :internal_transaction, id: id}, _ ->
+          %{"transaction_hash" => transaction_hash_string, "index" => index} = Jason.decode!(id)
+          {:ok, transaction_hash} = Chain.string_to_transaction_hash(transaction_hash_string)
+          InternalTransaction.get_by(%{transaction_hash: transaction_hash, index: index})
 
         _, _ ->
           {:error, "Unknown node"}

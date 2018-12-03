@@ -68,6 +68,8 @@ defmodule BlockScoutWeb.Endpoint do
     signing_salt: "iC2ksJHS"
   )
 
+  use SpandexPhoenix
+
   plug(BlockScoutWeb.Prometheus.Exporter)
 
   plug(BlockScoutWeb.Router)
