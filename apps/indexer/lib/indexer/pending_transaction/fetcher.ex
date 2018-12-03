@@ -12,7 +12,6 @@ defmodule Indexer.PendingTransaction.Fetcher do
   import EthereumJSONRPC, only: [fetch_pending_transactions: 1]
 
   alias Explorer.Chain
-  alias Explorer.Chain.Import
   alias Indexer.{AddressExtraction, PendingTransaction}
 
   # milliseconds
@@ -118,14 +117,16 @@ defmodule Indexer.PendingTransaction.Fetcher do
   defp import_chunk(transactions_params) do
     addresses_params = AddressExtraction.extract_addresses(%{transactions: transactions_params}, pending: true)
 
-    # There's no need to queue up fetching the address balance since theses are pending transactions and cannot have
-    # affected the address balance yet since address balance is a balance at a give block and these transactions are
-    # blockless.
-    {:ok, _} =
-      Chain.import(%{
-        addresses: %{params: addresses_params},
-        broadcast: :realtime,
-        transactions: %{params: transactions_params, on_conflict: :nothing}
-      })
+    Indexer.Logger.metadata([fetcher: :pending_transaction], fn ->
+      # There's no need to queue up fetching the address balance since theses are pending transactions and cannot have
+      # affected the address balance yet since address balance is a balance at a give block and these transactions are
+      # blockless.
+      {:ok, _} =
+        Chain.import(%{
+          addresses: %{params: addresses_params},
+          broadcast: :realtime,
+          transactions: %{params: transactions_params, on_conflict: :nothing}
+        })
+    end)
   end
 end

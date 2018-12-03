@@ -3,7 +3,7 @@ defmodule Explorer.Repo do
 
   require Logger
 
-  import Explorer, only: [metadata: 2]
+  import Explorer.Logger, only: [metadata: 2]
 
   @doc """
   Dynamically loads the repository url from the
@@ -51,6 +51,9 @@ defmodule Explorer.Repo do
                 to_string(kind),
                 " using options because of error.\n",
                 "\n",
+                "Chunk Size: ",
+                chunk |> length() |> to_string(),
+                "\n",
                 "Chunk:\n",
                 "\n",
                 inspect(chunk, limit: :infinity, printable_limit: :infinity),
@@ -70,7 +73,7 @@ defmodule Explorer.Repo do
             Logger.configure(truncate: old_truncate)
 
             # reraise to kill caller
-            raise exception
+            reraise exception, __STACKTRACE__
         end
 
       if returning do
