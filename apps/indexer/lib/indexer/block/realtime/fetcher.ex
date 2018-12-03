@@ -75,6 +75,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   end
 
   @import_options ~w(address_hash_to_fetched_balance_block_number transaction_hash_to_block_number)a
+  @chain_import_timeout 50_000
 
   @impl Block.Fetcher
   def import(
@@ -106,6 +107,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
          chain_import_options =
            options
            |> Map.drop(@import_options)
+           |> put_in([:timeout], @chain_import_timeout)
            |> put_in([:addresses, :params], balances_addresses_params)
            |> put_in([:blocks, :params, Access.all(), :consensus], true)
            |> put_in([Access.key(:address_coin_balances, %{}), :params], balances_params)
