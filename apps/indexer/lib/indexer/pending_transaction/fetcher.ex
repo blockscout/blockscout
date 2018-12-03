@@ -100,11 +100,14 @@ defmodule Indexer.PendingTransaction.Fetcher do
     %PendingTransaction.Fetcher{state | task: nil}
   end
 
+  # The `Explorer.Chain.Import.row_limit/0` of `500` is too much to insert quickly
+  @chunk_size 10
+
   defp task(%PendingTransaction.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = _state) do
     case fetch_pending_transactions(json_rpc_named_arguments) do
       {:ok, transactions_params} ->
         transactions_params
-        |> Stream.chunk_every(Import.row_limit())
+        |> Stream.chunk_every(@chunk_size)
         |> Enum.each(&import_chunk/1)
 
       :ignore ->
