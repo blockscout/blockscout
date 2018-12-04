@@ -17,8 +17,6 @@ config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: 2_0
 
 config :explorer, Explorer.ExchangeRates, enabled: true
 
-config :explorer, Explorer.Counters.BlockValidationCounter, enabled: true
-
 config :explorer, Explorer.Market.History.Cataloger, enabled: true
 
 config :explorer, Explorer.Repo,
@@ -31,6 +29,8 @@ config :explorer, Explorer.Tracer,
   trace_key: :blockscout
 
 config :explorer, Explorer.Counters.TokenTransferCounter, enabled: true
+
+config :explorer, Explorer.Counters.BlockValidationCounter, enabled: true, enable_consolidation: true
 
 config :explorer, Explorer.Counters.TokenHoldersCounter, enabled: true, enable_consolidation: true
 
