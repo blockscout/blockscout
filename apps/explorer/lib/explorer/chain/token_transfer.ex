@@ -24,15 +24,17 @@ defmodule Explorer.Chain.TokenTransfer do
 
   use Ecto.Schema
 
-  import Ecto.{Changeset, Query}
+  import Ecto.Changeset
+  import Ecto.Query, only: [from: 2, dynamic: 2, limit: 2, where: 3]
 
-  alias Explorer.Chain.{Address, Block, Hash, Token, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Hash, Token, TokenTransfer, Transaction}
   alias Explorer.{PagingOptions, Repo}
 
   @default_paging_options %PagingOptions{page_size: 50}
 
   @typedoc """
   * `:amount` - The token transferred amount
+  * `:block_number` - The block number that the transfer took place.
   * `:from_address` - The `t:Explorer.Chain.Address.t/0` that sent the tokens
   * `:from_address_hash` - Address hash foreign key
   * `:to_address` - The `t:Explorer.Chain.Address.t/0` that received the tokens
@@ -46,6 +48,7 @@ defmodule Explorer.Chain.TokenTransfer do
   """
   @type t :: %TokenTransfer{
           amount: Decimal.t(),
+          block_number: non_neg_integer() | nil,
           from_address: %Ecto.Association.NotLoaded{} | Address.t(),
           from_address_hash: Hash.Address.t(),
           to_address: %Ecto.Association.NotLoaded{} | Address.t(),
@@ -65,6 +68,7 @@ defmodule Explorer.Chain.TokenTransfer do
   @primary_key false
   schema "token_transfers" do
     field(:amount, :decimal)
+    field(:block_number, :integer)
     field(:log_index, :integer, primary_key: true)
     field(:token_id, :decimal)
 
@@ -91,7 +95,7 @@ defmodule Explorer.Chain.TokenTransfer do
     timestamps()
   end
 
-  @required_attrs ~w(log_index from_address_hash to_address_hash token_contract_address_hash transaction_hash)a
+  @required_attrs ~w(block_number log_index from_address_hash to_address_hash token_contract_address_hash transaction_hash)a
   @optional_attrs ~w(amount token_id)a
 
   @doc false
@@ -118,13 +122,9 @@ defmodule Explorer.Chain.TokenTransfer do
     query =
       from(
         tt in TokenTransfer,
-        join: t in Transaction,
-        on: tt.transaction_hash == t.hash,
-        join: b in Block,
-        on: t.block_hash == b.hash,
         where: tt.token_contract_address_hash == ^token_address_hash,
         preload: [{:transaction, :block}, :token, :from_address, :to_address],
-        order_by: [desc: b.timestamp]
+        order_by: [desc: tt.block_number, desc: tt.log_index]
       )
 
     query
@@ -136,18 +136,14 @@ defmodule Explorer.Chain.TokenTransfer do
   def page_token_transfer(query, %PagingOptions{key: nil}), do: query
 
   def page_token_transfer(query, %PagingOptions{key: {token_id}}) do
-    where(
-      query,
-      [token_transfer],
-      token_transfer.token_id > ^token_id
-    )
+    where(query, [token_transfer], token_transfer.token_id > ^token_id)
   end
 
-  def page_token_transfer(query, %PagingOptions{key: inserted_at}) do
+  def page_token_transfer(query, %PagingOptions{key: {block_number, log_index}}) do
     where(
       query,
-      [token_transfer],
-      token_transfer.inserted_at < ^inserted_at
+      [tt],
+      tt.block_number < ^block_number or (tt.block_number == ^block_number and tt.log_index < ^log_index)
     )
   end
 

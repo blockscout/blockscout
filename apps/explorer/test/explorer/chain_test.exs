@@ -24,13 +24,22 @@ defmodule Explorer.ChainTest do
 
   alias Explorer.Chain.Supply.ProofOfAuthority
 
-  alias Explorer.Counters.TokenHoldersCounter
+  alias Explorer.Counters.{AddessesWithBalanceCounter, TokenHoldersCounter}
 
   doctest Explorer.Chain
 
-  describe "address_estimated_count/1" do
-    test "returns integer" do
-      assert is_integer(Chain.address_estimated_count())
+  describe "count_addresses_with_balance_from_cache/0" do
+    test "returns the number of addresses with fetched_coin_balance > 0" do
+      insert(:address, fetched_coin_balance: 0)
+      insert(:address, fetched_coin_balance: 1)
+      insert(:address, fetched_coin_balance: 2)
+
+      AddessesWithBalanceCounter.consolidate()
+
+      addresses_with_balance = Chain.count_addresses_with_balance_from_cache()
+
+      assert is_integer(addresses_with_balance)
+      assert addresses_with_balance == 2
     end
   end
 
@@ -3112,6 +3121,7 @@ defmodule Explorer.ChainTest do
       first_page =
         insert(
           :token_transfer,
+          block_number: 1000,
           to_address: build(:address),
           transaction: transaction,
           token_contract_address: token_contract_address,
@@ -3122,6 +3132,7 @@ defmodule Explorer.ChainTest do
       second_page =
         insert(
           :token_transfer,
+          block_number: 999,
           to_address: build(:address),
           transaction: transaction,
           token_contract_address: token_contract_address,
@@ -3132,10 +3143,8 @@ defmodule Explorer.ChainTest do
       paging_options = %PagingOptions{key: {first_page.token_id}, page_size: 1}
 
       unique_tokens_ids_paginated =
-        Chain.address_to_unique_tokens(
-          token_contract_address.hash,
-          paging_options: paging_options
-        )
+        token_contract_address.hash
+        |> Chain.address_to_unique_tokens(paging_options: paging_options)
         |> Enum.map(& &1.token_id)
 
       assert unique_tokens_ids_paginated == [second_page.token_id]

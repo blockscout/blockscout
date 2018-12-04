@@ -4,16 +4,18 @@ defmodule Indexer.Block.Realtime.Fetcher do
   """
 
   use GenServer
+  use Spandex.Decorators
 
+  require Indexer.Tracer
   require Logger
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
   import Indexer.Block.Fetcher, only: [async_import_tokens: 1, async_import_uncles: 1, fetch_and_import_range: 2]
 
   alias Ecto.Changeset
-  alias EthereumJSONRPC.Subscription
+  alias EthereumJSONRPC.{FetchedBalances, Subscription}
   alias Explorer.Chain
-  alias Indexer.{AddressExtraction, Block, TokenBalances}
+  alias Indexer.{AddressExtraction, Block, TokenBalances, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
 
   @behaviour Block.Fetcher
@@ -125,11 +127,28 @@ defmodule Indexer.Block.Realtime.Fetcher do
     end
   end
 
+  @decorate trace(name: "fetch", resource: "Indexer.Block.Realtime.Fetcher.fetch_and_import_block/3", tracer: Tracer)
   def fetch_and_import_block(block_number_to_fetch, block_fetcher, retry \\ 3) do
+    do_fetch_and_import_block(block_number_to_fetch, block_fetcher, retry)
+  end
+
+  @decorate span(tracer: Tracer)
+  defp do_fetch_and_import_block(block_number_to_fetch, block_fetcher, retry) do
     case fetch_and_import_range(block_fetcher, block_number_to_fetch..block_number_to_fetch) do
-      {:ok, {_inserted, _next}} ->
+      {:ok, %{inserted: _, errors: []}} ->
         Logger.debug(fn ->
           ["realtime indexer fetched and imported block ", to_string(block_number_to_fetch)]
+        end)
+
+      {:ok, %{inserted: _, errors: [_ | _] = errors}} ->
+        Logger.error(fn ->
+          [
+            "realtime indexer failed to fetch block",
+            to_string(block_number_to_fetch),
+            ": ",
+            inspect(errors),
+            ".  Block will be retried by catchup indexer."
+          ]
         end)
 
       {:error, {step, reason}} ->
@@ -191,7 +210,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
       fetcher = params.block_fetcher
       updated_retry = params.retry - 1
 
-      fetch_and_import_block(number, fetcher, updated_retry)
+      do_fetch_and_import_block(number, fetcher, updated_retry)
     else
       :ignore
     end
@@ -247,20 +266,27 @@ defmodule Indexer.Block.Realtime.Fetcher do
          %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments},
          %{addresses_params: addresses_params} = options
        ) do
-    with {:ok, fetched_balances_params} <-
-           options
-           |> fetch_balances_params_list()
-           |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments) do
-      merged_addresses_params =
-        %{address_coin_balances: fetched_balances_params}
-        |> AddressExtraction.extract_addresses()
-        |> Kernel.++(addresses_params)
-        |> AddressExtraction.merge_addresses()
+    case options
+         |> fetch_balances_params_list()
+         |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments) do
+      {:ok, %FetchedBalances{params_list: params_list, errors: []}} ->
+        merged_addresses_params =
+          %{address_coin_balances: params_list}
+          |> AddressExtraction.extract_addresses()
+          |> Kernel.++(addresses_params)
+          |> AddressExtraction.merge_addresses()
 
-      value_fetched_at = DateTime.utc_now()
-      importable_balances_params = Enum.map(fetched_balances_params, &Map.put(&1, :value_fetched_at, value_fetched_at))
+        value_fetched_at = DateTime.utc_now()
 
-      {:ok, %{addresses_params: merged_addresses_params, balances_params: importable_balances_params}}
+        importable_balances_params = Enum.map(params_list, &Map.put(&1, :value_fetched_at, value_fetched_at))
+
+        {:ok, %{addresses_params: merged_addresses_params, balances_params: importable_balances_params}}
+
+      {:error, _} = error ->
+        error
+
+      {:ok, %FetchedBalances{errors: errors}} ->
+        {:error, errors}
     end
   end
 

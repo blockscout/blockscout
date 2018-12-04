@@ -3,13 +3,15 @@ defmodule Indexer.Block.Catchup.Fetcher do
   Fetches and indexes block ranges from the block before the latest block to genesis (0) that are missing.
   """
 
+  use Spandex.Decorators
+
   require Logger
 
   import Indexer.Block.Fetcher,
     only: [async_import_coin_balances: 2, async_import_tokens: 1, async_import_uncles: 1, fetch_and_import_range: 2]
 
   alias Explorer.Chain
-  alias Indexer.{Block, InternalTransaction, Sequence, TokenBalance}
+  alias Indexer.{Block, InternalTransaction, Sequence, TokenBalance, Tracer}
   alias Indexer.Memory.Shrinkable
 
   @behaviour Block.Fetcher
@@ -160,15 +162,22 @@ defmodule Indexer.Block.Catchup.Fetcher do
   end
 
   # Run at state.blocks_concurrency max_concurrency when called by `stream_import/1`
+  @decorate trace(
+              name: "fetch",
+              resource: "Indexer.Block.Catchup.Fetcher.fetch_and_import_range_from_sequence/3",
+              tracer: Tracer
+            )
   defp fetch_and_import_range_from_sequence(
          %__MODULE__{block_fetcher: %Block.Fetcher{} = block_fetcher},
          _.._ = range,
          sequence
        ) do
     case fetch_and_import_range(block_fetcher, range) do
-      {:ok, {inserted, next}} ->
-        cap_seq(sequence, next, range)
-        {:ok, inserted}
+      {:ok, %{inserted: inserted, errors: errors}} ->
+        errors = cap_seq(sequence, errors, range)
+        retry(sequence, errors)
+
+        {:ok, inserted: inserted}
 
       {:error, {step, reason}} = error ->
         Logger.error(fn ->
@@ -200,19 +209,27 @@ defmodule Indexer.Block.Catchup.Fetcher do
     end
   end
 
-  defp cap_seq(seq, next, range) do
-    case next do
-      :more ->
+  defp cap_seq(seq, errors, range) do
+    {not_founds, other_errors} =
+      Enum.split_with(errors, fn
+        %{code: 404, data: %{number: _}} -> true
+        _ -> false
+      end)
+
+    case not_founds do
+      [] ->
         Logger.debug(fn ->
           first_block_number..last_block_number = range
           "got blocks #{first_block_number} - #{last_block_number}"
         end)
 
-      :end_of_chain ->
+        other_errors
+
+      _ ->
         Sequence.cap(seq)
     end
 
-    :ok
+    other_errors
   end
 
   defp push_back(sequence, range) do
@@ -220,6 +237,41 @@ defmodule Indexer.Block.Catchup.Fetcher do
       :ok -> :ok
       {:error, reason} -> Logger.error(fn -> ["Could not push block range to back to Sequence: ", inspect(reason)] end)
     end
+  end
+
+  defp retry(sequence, errors) when is_list(errors) do
+    errors
+    |> errors_to_ranges()
+    |> Enum.map(&push_back(sequence, &1))
+  end
+
+  defp errors_to_ranges(errors) when is_list(errors) do
+    errors
+    |> Enum.flat_map(&error_to_numbers/1)
+    |> numbers_to_ranges()
+  end
+
+  defp error_to_numbers(%{data: %{number: number}}) when is_integer(number), do: [number]
+
+  defp numbers_to_ranges([]), do: []
+
+  defp numbers_to_ranges(numbers) when is_list(numbers) do
+    numbers
+    |> Enum.sort()
+    |> Enum.chunk_while(
+      nil,
+      fn
+        number, nil ->
+          {:cont, number..number}
+
+        number, first..last when number == last + 1 ->
+          {:cont, first..number}
+
+        number, range ->
+          {:cont, range, number..number}
+      end,
+      fn range -> {:cont, range} end
+    )
   end
 
   defp put_memory_monitor(sequence_options, %__MODULE__{memory_monitor: nil}) when is_list(sequence_options),

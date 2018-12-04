@@ -68,6 +68,8 @@ defmodule BlockScoutWeb.Mixfile do
       # Absinthe support for the Relay framework
       {:absinthe_relay, "~> 1.4"},
       {:bypass, "~> 0.8", only: :test},
+      # To add (CORS)(https://www.w3.org/TR/cors/)
+      {:cors_plug, "~> 2.0"},
       {:credo, "0.10.2", only: [:dev, :test], runtime: false},
       # For Absinthe to load data in batches
       {:dataloader, "~> 1.0.0"},
@@ -112,6 +114,12 @@ defmodule BlockScoutWeb.Mixfile do
       {:prometheus_process_collector, "~> 1.3"},
       {:qrcode, "~> 0.1.0"},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
+      # Tracing
+      {:spandex, github: "spandex-project/spandex", branch: "allow-setting-trace-key", override: true},
+      # `:spandex` integration with Datadog
+      {:spandex_datadog, "~> 0.3.1"},
+      # `:spandex` tracing of `:phoenix`
+      {:spandex_phoenix, "~> 0.3.0"},
       {:timex, "~> 3.4"},
       {:wallaby, "~> 0.20", only: [:test], runtime: false},
       {:wobserver, "~> 0.1.8"}

@@ -9,6 +9,8 @@ config :explorer, Explorer.Repo,
   pool_timeout: 60_000,
   timeout: 80_000
 
+config :explorer, Explorer.Tracer, env: "dev", disabled?: true
+
 config :logger, :explorer,
   level: :debug,
   path: Path.absname("logs/dev/explorer.log")
@@ -22,7 +24,7 @@ import_config "dev.secret.exs"
 
 variant =
   if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do
-    "parity"
+    "ganache"
   else
     System.get_env("ETHEREUM_JSONRPC_VARIANT")
     |> String.split(".")

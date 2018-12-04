@@ -40,7 +40,13 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Block.Reward
   alias Explorer.{PagingOptions, Repo}
-  alias Explorer.Counters.{BlockValidationCounter, TokenHoldersCounter, TokenTransferCounter}
+
+  alias Explorer.Counters.{
+    AddessesWithBalanceCounter,
+    BlockValidationCounter,
+    TokenHoldersCounter,
+    TokenTransferCounter
+  }
 
   alias Dataloader.Ecto, as: DataloaderEcto
 
@@ -82,18 +88,24 @@ defmodule Explorer.Chain do
   @typep paging_options :: {:paging_options, PagingOptions.t()}
 
   @doc """
-  Gets an estimated count of `t:Explorer.Chain.Address.t/0`'s where the `fetched_coin_balance` is > 0
+  Gets from the cache the count of `t:Explorer.Chain.Address.t/0`'s where the `fetched_coin_balance` is > 0
   """
-  @spec address_estimated_count :: non_neg_integer()
-  def address_estimated_count do
-    {:ok, %Postgrex.Result{rows: result}} =
-      Repo.query("""
-      EXPLAIN SELECT COUNT(a0.hash) FROM addresses AS a0 WHERE (a0.fetched_coin_balance > 0)
-      """)
+  @spec count_addresses_with_balance_from_cache :: non_neg_integer()
+  def count_addresses_with_balance_from_cache do
+    AddessesWithBalanceCounter.fetch()
+  end
 
-    {[explain], _} = List.pop_at(result, 1)
-    [[_ | [rows]]] = Regex.scan(~r/rows=(\d+)/, explain)
-    String.to_integer(rows)
+  @doc """
+  Counts the number of addresses with fetched coin balance > 0.
+
+  This function should be used with caution. In larger databases, it may take a
+  while to have the return back.
+  """
+  def count_addresses_with_balance do
+    Repo.one(
+      Address.count_with_fetched_coin_balance(),
+      timeout: :infinity
+    )
   end
 
   @doc """
@@ -899,12 +911,9 @@ defmodule Explorer.Chain do
   def list_top_addresses do
     query =
       from(a in Address,
-        left_join: t in Transaction,
-        on: a.hash == t.from_address_hash,
         where: a.fetched_coin_balance > ^0,
-        group_by: [a.hash, a.fetched_coin_balance],
         order_by: [desc: a.fetched_coin_balance, asc: a.hash],
-        select: {a, fragment("coalesce(1 + max(?), 0)", t.nonce)},
+        select: {a, fragment("coalesce(1 + ?, 0)", a.nonce)},
         limit: 250
       )
 
