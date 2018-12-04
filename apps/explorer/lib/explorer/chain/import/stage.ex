@@ -24,4 +24,27 @@ defmodule Explorer.Chain.Import.Stage do
   The runners used by the stage should be removed from the returned `runner_to_changes_list` map.
   """
   @callback multis(runner_to_changes_list, %{optional(atom()) => term()}) :: {[Multi.t()], runner_to_changes_list}
+
+  @doc """
+  Uses a single `t:Explorer.Chain.Runner.t/0` and chunks the `changes_list` across multiple `t:Ecto.Multi.t/0`
+  """
+  @spec chunk_every(runner_to_changes_list, Runner.t(), chunk_size :: pos_integer(), %{optional(atom()) => term()}) ::
+          {[Multi.t()], runner_to_changes_list}
+  def chunk_every(runner_to_changes_list, runner, chunk_size, options)
+      when is_map(runner_to_changes_list) and is_atom(runner) and is_integer(chunk_size) and is_map(options) do
+    {changes_list, unstaged_runner_to_changes_list} = Map.pop(runner_to_changes_list, runner)
+    multis = changes_list_chunk_every(changes_list, chunk_size, runner, options)
+
+    {multis, unstaged_runner_to_changes_list}
+  end
+
+  defp changes_list_chunk_every(nil, _, _, _), do: []
+
+  defp changes_list_chunk_every(changes_list, chunk_size, runner, options) do
+    changes_list
+    |> Stream.chunk_every(chunk_size)
+    |> Enum.map(fn changes_chunk ->
+      runner.run(Multi.new(), changes_chunk, options)
+    end)
+  end
 end

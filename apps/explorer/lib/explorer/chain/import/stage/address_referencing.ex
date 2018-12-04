@@ -18,7 +18,6 @@ defmodule Explorer.Chain.Import.Stage.AddressReferencing do
       Import.Block.SecondDegreeRelations,
       Import.Transactions,
       Import.Transaction.Forks,
-      Import.InternalTransactions,
       Import.Logs,
       Import.Tokens,
       Import.TokenTransfers,
