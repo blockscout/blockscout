@@ -9,7 +9,8 @@ defmodule Explorer.Chain.Import do
 
   @stages [
     Import.Stage.Addresses,
-    Import.Stage.AddressReferencing
+    Import.Stage.AddressReferencing,
+    Import.Stage.InternalTransactions
   ]
 
   # in order so that foreign keys are inserted before being referenced

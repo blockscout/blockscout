@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Import.InternalTransactions do
+defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.InternalTransactions.t/0`.
   """
