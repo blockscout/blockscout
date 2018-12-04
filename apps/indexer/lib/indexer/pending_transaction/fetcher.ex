@@ -109,6 +109,12 @@ defmodule Indexer.PendingTransaction.Fetcher do
         |> Stream.chunk_every(@chunk_size)
         |> Enum.each(&import_chunk/1)
 
+      {:error, reason} ->
+        Logger.error(fn -> ["failed to fetch: ", inspect(reason)] end)
+
+        # no need to retry or exit as the next fetch is automatically scheduled on `:ok`.
+        :ok
+
       :ignore ->
         :ok
     end
