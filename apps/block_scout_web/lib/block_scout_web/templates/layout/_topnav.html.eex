@@ -1,8 +1,8 @@
 <nav class="navbar navbar-dark navbar-expand-lg navbar-primary" data-selector="navbar">
   <div class="container">
-    <%= link to: chain_path(@conn, :show), class: "navbar-brand", "data-test": "header_logo" do %>
-      <img class="navbar-logo" src="<%= logo() %>" alt="<%= subnetwork_title() %>" />
-    <% end %>
+    <!-- <%= link to: chain_path(@conn, :show), class: "navbar-brand", "data-test": "header_logo" do %>
+      <img class="navbar-logo" src="<%= logo() %>" />
+    <% end %> -->
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="<%= gettext("Toggle navigation") %>">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -89,26 +89,25 @@
           </div>
           <button class="btn btn-outline-success my-2 my-sm-0 sr-only" type="submit"><%= gettext "Search" %></button>
         <% end %>
-        <ul class="navbar-nav">
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle pl-lg-2" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <!-- <ul class="navbar-nav"> -->
+          <!-- <li class="nav-item dropdown"> -->
+            <!-- <a class="nav-link dropdown-toggle pl-lg-2" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> -->
               <!-- ICON FOR MAINNET -->
-              <span class="nav-link-icon">
-                <%= render BlockScoutWeb.IconsView, network_icon_partial() %>
-              </span>
+              <!-- <span class="nav-link-icon"> -->
+                <!-- <%= render BlockScoutWeb.IconsView, network_icon_partial() %> -->
+              <!-- </span> -->
               <!-- ICON FOR TESTNET -->
               <!-- <span class="nav-link-icon">
                 <%= render BlockScoutWeb.IconsView, "_test_network_icon.html" %>
               </span> -->
-              <%= subnetwork_title() %>
-            </a>
-            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-              <%= for %{url: url, title: title} <- other_networks() do %>
-                <a class="dropdown-item" href="<%= url%>"><%= title %></a>
-              <% end %>
-            </div>
-          </li>
-        </ul>
+              <!-- <%= subnetwork_title() %> -->
+            <!-- </a> -->
+            <!-- <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+              <a class="dropdown-item" href="https://sokol.blockscout.com/"><%= gettext("POA Sokol") %></a>
+              <a class="dropdown-item" href="https://poa.blockscout.com/"><%= gettext("POA Core") %></a>
+            </div> -->
+          <!-- </li> -->
+        <!-- </ul> -->
       </div>
     </div>
   </div>

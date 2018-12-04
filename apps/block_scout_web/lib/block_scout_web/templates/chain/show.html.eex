@@ -1,19 +1,12 @@
 <div class="dashboard-banner-container d-none d-md-block" data-page="chain-details">
   <img src="<%= static_path(@conn, "/images/cube.svg") %>" alt="cube_graphic" class="dashboard-banner-graphic">
   <div class="container">
-    <div class="dashboard-banner">
-      <div class="dashboard-banner-chart">
-        <div data-chart-loading-message class="tile tile-muted text-center mt-5">
-          <span class="loading-spinner-small mr-2">
-            <span class="loading-spinner-block-1"></span>
-            <span class="loading-spinner-block-2"></span>
-          </span>
-          <%= gettext("Loading chart") %>...
-        </div>
-        <button data-chart-error-message class="alert alert-danger col-12 text-left mt-5" style="display: none;">
-          <span><%= gettext("There was a problem loading the chart.") %></span>
-        </button>
-        <canvas data-chart="marketHistoryChart" data-market_history_chart_path="<%= @chart_data_path %>" width="350" height="152" style="display: none;"></canvas>
+    <!-- <div class="dashboard-banner"> -->
+
+    <div>
+
+      <!-- <div class="dashboard-banner-chart">
+        <canvas data-chart="marketHistoryChart" data-available_supply='<%=raw @available_supply %>' data-market_history_data='<%=raw encode_market_history_data(@market_history_data) %>' width="350" height="152"></canvas>
       </div>
       <div class="dashboard-banner-chart-legend">
         <div class="dashboard-banner-chart-legend-item">
@@ -30,7 +23,7 @@
           <span class="dashboard-banner-chart-legend-value" data-selector="market-cap" data-usd-value="<%= @exchange_rate.market_cap_usd %>">
           </span>
         </div>
-      </div>
+      </div> -->
       <div class="dashboard-banner-network-stats">
         <%= case @average_block_time do %>
           <% {:error, :disabled} -> %>
