@@ -3,6 +3,9 @@
     <!-- <%= link to: chain_path(@conn, :show), class: "navbar-brand", "data-test": "header_logo" do %>
       <img class="navbar-logo" src="<%= logo() %>" />
     <% end %> -->
+
+    <a class="navbar-brand" data-test="header_logo" href="/">      <h1 class="mt-2">SpringChain</h1></a>
+
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="<%= gettext("Toggle navigation") %>">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -48,15 +51,15 @@
                 ) %>
           </div>
         </li>
-        <li class="nav-item">
+        <!-- <li class="nav-item">
           <%= link to: address_path(@conn, :index), class: "nav-link topnav-nav-link" do %>
             <span class="nav-link-icon">
               <%= render BlockScoutWeb.IconsView, "_accounts_icon.html" %>
             </span>
             <%= gettext("Accounts") %>
           <% end %>
-        </li>
-        <li class="nav-item dropdown">
+        </li> -->
+        <!-- <li class="nav-item dropdown">
           <a href="#" role="button" id="navbarAPIsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             <span class="nav-link-icon">
               <%= render BlockScoutWeb.IconsView, "_api_icon.html" %>
@@ -75,7 +78,7 @@
                   to: api_docs_path(@conn, :index)
                 ) %>
           </div>
-        </li>
+        </li> -->
       </ul>
       <div class="search-form d-lg-flex d-inline-block">
         <%= form_for @conn, chain_path(@conn, :search), [class: "form-inline my-2 my-lg-0", method: :get, enforce_utf8: false], fn f -> %>

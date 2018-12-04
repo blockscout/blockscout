@@ -18,7 +18,7 @@
 
     <br>
 
-    <%= gettext "Copyright %{year} SpringRole", year: 2018 %>
+    <%= gettext "Copyright %{year} Blockscout", year: 2018 %>
 
   </div>
 </footer>

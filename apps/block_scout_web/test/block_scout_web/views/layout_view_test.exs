@@ -57,7 +57,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
     end
 
     test "use the default network title when there is no env configured for it" do
-      assert LayoutView.network_title() == "POA"
+      assert LayoutView.network_title() == "SPRING"
     end
   end
 end

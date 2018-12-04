@@ -1,9 +1,9 @@
 <div class="dashboard-banner-container d-none d-md-block" data-page="chain-details">
-  <img src="<%= static_path(@conn, "/images/cube.svg") %>" alt="cube_graphic" class="dashboard-banner-graphic">
+  <!-- <img src="<%= static_path(@conn, "/images/cube.svg") %>" alt="cube_graphic" class="dashboard-banner-graphic"> -->
   <div class="container">
-    <!-- <div class="dashboard-banner"> -->
+    <div class="dashboard-banner">
 
-    <div>
+    <!-- <div> -->
 
       <!-- <div class="dashboard-banner-chart">
         <canvas data-chart="marketHistoryChart" data-available_supply='<%=raw @available_supply %>' data-market_history_data='<%=raw encode_market_history_data(@market_history_data) %>' width="350" height="152"></canvas>
@@ -46,14 +46,14 @@
             <%= Cldr.Number.to_string!(@transaction_estimated_count, format: "#,###") %>
           </span>
         </div>
-        <div class="dashboard-banner-network-stats-item">
+        <!-- <div class="dashboard-banner-network-stats-item hidden">
           <span class="dashboard-banner-network-stats-label">
             <%= gettext "Wallet addresses" %>
           </span>
           <span class="dashboard-banner-network-stats-value" data-selector="address-count">
             <%= Cldr.Number.to_string!(@address_count, format: "#,###") %>
           </span>
-        </div>
+        </div> -->
       </div>
     </div>
   </div>

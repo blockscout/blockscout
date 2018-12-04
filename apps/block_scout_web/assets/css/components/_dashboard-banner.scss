@@ -1,8 +1,7 @@
 .dashboard-banner-container {
   position: relative;
-  margin-top: -3rem;
-  background-color: $white;
-  box-shadow: 0 5px 40px -5px rgba($black, 0.25);
+  margin: 0 0 3rem 0;
+  background-color: #FBFAFC;
 
   &:before {
     content: "";
@@ -12,8 +11,7 @@
     left: 0;
     right: 0;
     bottom: 68px;
-    background-color: $white;
-    box-shadow: 0 0 40px -5px rgba($black, 0.25);
+    background-color: #FBFAFC;
   }
 
   &:after {
@@ -24,8 +22,6 @@
     right: 0;
     bottom: 0;
     left: 70%;
-    background-color: $primary;
-    box-shadow: 0 0 40px -5px rgba($black, 0.25);
 
     @media (max-width: 992px) {
       top: 2rem;
@@ -36,7 +32,7 @@
 
 .dashboard-banner {
   position: relative;
-  display: grid;
+  // display: grid;
   grid-template-rows: 3rem 2fr 1fr;
   grid-template-columns: 1fr 4fr;
   grid-template-areas:
@@ -96,13 +92,12 @@
 }
 
 .dashboard-banner-network-stats {
-  grid-area: stats;
+  // grid-area: stats;
   display: flex;
   align-items: center;
   justify-content: space-around;
   padding-right: 1rem;
   background-color: $primary;
-  box-shadow: -10px 0 15px 0 rgba($black, 0.14);
 
   @media (max-width: 992px) {
     flex-direction: column;
@@ -111,9 +106,12 @@
   }
 
   &-item {
-    padding-left: 1rem;
+    padding: 1rem;
     color: $white;
     border-left: 4px solid rgba($white, 0.6);
+    &:first-child{
+      border-left: 0;
+    }
   }
 
   &-label {
