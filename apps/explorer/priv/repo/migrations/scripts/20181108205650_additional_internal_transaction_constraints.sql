@@ -50,6 +50,7 @@ BEGIN
     RAISE NOTICE '-> % transactions updated to refetch internal transactions', updated_transaction_count;
 
     DELETE FROM internal_transactions
+    USING transactions_with_deprecated_internal_transactions
     WHERE internal_transactions.transaction_hash = transactions_with_deprecated_internal_transactions.hash AND
           transactions_with_deprecated_internal_transactions.row_number < next_iterator;
 

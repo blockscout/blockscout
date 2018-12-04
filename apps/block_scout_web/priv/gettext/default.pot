@@ -267,7 +267,7 @@ msgid "Connection Lost, click to load newer validations"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:50
+#: lib/block_scout_web/templates/address_contract/index.html.eex:49
 msgid "Contract ABI"
 msgstr ""
 
@@ -300,7 +300,7 @@ msgid "Contract Name"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:64
+#: lib/block_scout_web/templates/address_contract/index.html.eex:63
 msgid "Contract creation code"
 msgstr ""
 
@@ -324,8 +324,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract/index.html.eex:39
-#: lib/block_scout_web/templates/address_contract/index.html.eex:52
-#: lib/block_scout_web/templates/address_contract/index.html.eex:66
+#: lib/block_scout_web/templates/address_contract/index.html.eex:51
+#: lib/block_scout_web/templates/address_contract/index.html.eex:65
 msgid "Copy Code"
 msgstr ""
 
@@ -639,7 +639,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:76
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:31
-#: lib/block_scout_web/templates/address_validation/index.html.eex:117
+#: lib/block_scout_web/templates/address_validation/index.html.eex:126
 #: lib/block_scout_web/templates/block/index.html.eex:30
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:50
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:41
@@ -1188,6 +1188,8 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_read_contract/index.html.eex:17
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:19
+#: lib/block_scout_web/templates/address_validation/index.html.eex:114
+#: lib/block_scout_web/templates/address_validation/index.html.eex:133
 #: lib/block_scout_web/templates/tokens/read_contract/index.html.eex:25
 msgid "Loading..."
 msgstr ""
@@ -1417,7 +1419,13 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_internal_transaction/index.html.eex:60
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:26
+#: lib/block_scout_web/templates/address_validation/index.html.eex:121
 #: lib/block_scout_web/templates/tokens/holder/index.html.eex:23
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:21
 msgid "Something went wrong, click to reload."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_validation/index.html.eex:117
+msgid "There are no blocks validated by this address."
 msgstr ""

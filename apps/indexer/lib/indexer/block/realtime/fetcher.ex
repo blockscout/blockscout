@@ -4,7 +4,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
   """
 
   use GenServer
+  use Spandex.Decorators
 
+  require Indexer.Tracer
   require Logger
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
@@ -13,7 +15,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Ecto.Changeset
   alias EthereumJSONRPC.{FetchedBalances, Subscription}
   alias Explorer.Chain
-  alias Indexer.{AddressExtraction, Block, TokenBalances}
+  alias Indexer.{AddressExtraction, Block, TokenBalances, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
 
   @behaviour Block.Fetcher
@@ -125,7 +127,13 @@ defmodule Indexer.Block.Realtime.Fetcher do
     end
   end
 
+  @decorate trace(name: "fetch", resource: "Indexer.Block.Realtime.Fetcher.fetch_and_import_block/3", tracer: Tracer)
   def fetch_and_import_block(block_number_to_fetch, block_fetcher, retry \\ 3) do
+    do_fetch_and_import_block(block_number_to_fetch, block_fetcher, retry)
+  end
+
+  @decorate span(tracer: Tracer)
+  defp do_fetch_and_import_block(block_number_to_fetch, block_fetcher, retry) do
     case fetch_and_import_range(block_fetcher, block_number_to_fetch..block_number_to_fetch) do
       {:ok, %{inserted: _, errors: []}} ->
         Logger.debug(fn ->
@@ -202,7 +210,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
       fetcher = params.block_fetcher
       updated_retry = params.retry - 1
 
-      fetch_and_import_block(number, fetcher, updated_retry)
+      do_fetch_and_import_block(number, fetcher, updated_retry)
     else
       :ignore
     end

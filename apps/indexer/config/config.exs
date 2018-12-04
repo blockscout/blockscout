@@ -11,6 +11,11 @@ config :indexer,
   # bytes
   memory_limit: 8 <<< 30
 
+config :indexer, Indexer.Tracer,
+  service: :indexer,
+  adapter: SpandexDatadog.Adapter,
+  trace_key: :blockscout
+
 config :logger, :indexer,
   # keep synced with `config/config.exs`
   format: "$time $metadata[$level] $message\n",
