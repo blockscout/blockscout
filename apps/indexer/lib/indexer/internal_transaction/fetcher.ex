@@ -23,7 +23,8 @@ defmodule Indexer.InternalTransaction.Fetcher do
     flush_interval: :timer.seconds(3),
     max_concurrency: @max_concurrency,
     max_batch_size: @max_batch_size,
-    task_supervisor: Indexer.InternalTransaction.TaskSupervisor
+    task_supervisor: Indexer.InternalTransaction.TaskSupervisor,
+    metadata: [fetcher: :internal_transaction]
   ]
 
   @doc """
@@ -102,6 +103,7 @@ defmodule Indexer.InternalTransaction.Fetcher do
   def run(entries, json_rpc_named_arguments) do
     unique_entries = unique_entries(entries)
 
+    IO.inspect(Logger.metadata())
     Logger.debug(fn -> "fetching internal transactions for #{length(unique_entries)} transactions" end)
 
     unique_entries
@@ -131,12 +133,10 @@ defmodule Indexer.InternalTransaction.Fetcher do
               [
                 "failed to import internal transactions for ",
                 to_string(length(entries)),
-                " transactions at ",
-                to_string(step),
-                ": ",
+                " transactions: ",
                 inspect(reason)
               ]
-            end)
+            end, step: step)
 
             # re-queue the de-duped entries
             {:retry, unique_entries}
@@ -144,7 +144,12 @@ defmodule Indexer.InternalTransaction.Fetcher do
 
       {:error, reason} ->
         Logger.error(fn ->
-          "failed to fetch internal transactions for #{length(entries)} transactions: #{inspect(reason)}"
+          [
+            "failed to fetch internal transactions for ",
+            entries |> length() |> to_string(),
+            " transactions: ",
+            inspect(reason)
+          ]
         end)
 
         # re-queue the de-duped entries
@@ -169,7 +174,7 @@ defmodule Indexer.InternalTransaction.Fetcher do
         duplicate_entries
         |> Stream.with_index()
         |> Enum.reduce(
-          ["Duplicate entries being used to fetch internal transactions:\n"],
+          ["Duplicate entries being used to fetch:\n"],
           fn {entry, index}, acc ->
             [acc, "  ", to_string(index + 1), ". ", inspect(entry), "\n"]
           end

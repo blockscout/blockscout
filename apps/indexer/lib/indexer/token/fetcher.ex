@@ -17,7 +17,8 @@ defmodule Indexer.Token.Fetcher do
     flush_interval: 300,
     max_batch_size: 1,
     max_concurrency: 10,
-    task_supervisor: Indexer.Token.TaskSupervisor
+    task_supervisor: Indexer.Token.TaskSupervisor,
+    metadata: [fetcher: :token]
   ]
 
   @doc false
