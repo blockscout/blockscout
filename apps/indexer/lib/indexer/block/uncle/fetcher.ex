@@ -73,17 +73,22 @@ defmodule Indexer.Block.Uncle.Fetcher do
   def run(hashes, %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher) do
     # the same block could be included as an uncle on multiple blocks, but we only want to fetch it once
     unique_hashes = Enum.uniq(hashes)
+    unique_hash_count = length(unique_hashes)
 
-    Logger.debug(fn -> "fetching #{length(unique_hashes)}" end)
+    Logger.debug("fetching", count: unique_hash_count)
 
     case EthereumJSONRPC.fetch_blocks_by_hash(unique_hashes, json_rpc_named_arguments) do
       {:ok, blocks} ->
         run_blocks(blocks, block_fetcher, unique_hashes)
 
       {:error, reason} ->
-        Logger.error(fn ->
-          ["failed to fetch ", unique_hashes |> length |> to_string(), ": ", inspect(reason)]
-        end)
+        Logger.error(
+          fn ->
+            ["failed to fetch: ", inspect(reason)]
+          end,
+          count: unique_hash_count,
+          error_count: unique_hash_count
+        )
 
         {:retry, unique_hashes}
     end

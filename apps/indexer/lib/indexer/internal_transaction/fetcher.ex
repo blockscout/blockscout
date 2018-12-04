@@ -102,9 +102,9 @@ defmodule Indexer.InternalTransaction.Fetcher do
             )
   def run(entries, json_rpc_named_arguments) do
     unique_entries = unique_entries(entries)
+    unique_entry_count = length(unique_entries)
 
-    IO.inspect(Logger.metadata())
-    Logger.debug(fn -> "fetching internal transactions for #{length(unique_entries)} transactions" end)
+    Logger.debug("fetching internal transactions for transactions", count: unique_entry_count)
 
     unique_entries
     |> Enum.map(&params/1)
@@ -129,28 +129,21 @@ defmodule Indexer.InternalTransaction.Fetcher do
           })
         else
           {:error, step, reason, _changes_so_far} ->
-            Logger.error(fn ->
-              [
-                "failed to import internal transactions for ",
-                to_string(length(entries)),
-                " transactions: ",
-                inspect(reason)
-              ]
-            end, step: step)
+            Logger.error(fn -> ["failed to import internal transactions for  transactions: ", inspect(reason)] end,
+              count: unique_entry_count,
+              error_count: unique_entry_count,
+              step: step
+            )
 
             # re-queue the de-duped entries
             {:retry, unique_entries}
         end
 
       {:error, reason} ->
-        Logger.error(fn ->
-          [
-            "failed to fetch internal transactions for ",
-            entries |> length() |> to_string(),
-            " transactions: ",
-            inspect(reason)
-          ]
-        end)
+        Logger.error(fn -> ["failed to fetch internal transactions for transactions: ", inspect(reason)] end,
+          count: unique_entry_count,
+          error_count: unique_entry_count
+        )
 
         # re-queue the de-duped entries
         {:retry, unique_entries}

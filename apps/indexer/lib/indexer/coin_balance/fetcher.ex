@@ -73,8 +73,9 @@ defmodule Indexer.CoinBalance.Fetcher do
     # the same address may be used more than once in the same block, but we only want one `Balance` for a given
     # `{address, block}`, so take unique params only
     unique_entries = Enum.uniq(entries)
+    unique_entry_count = length(unique_entries)
 
-    Logger.debug(fn -> ["fetching ", unique_entries |> length() |> to_string()] end)
+    Logger.debug("fetching", count: unique_entry_count)
 
     unique_entries
     |> Enum.map(&entry_to_params/1)
@@ -84,9 +85,13 @@ defmodule Indexer.CoinBalance.Fetcher do
         run_fetched_balances(fetched_balances, unique_entries)
 
       {:error, reason} ->
-        Logger.error(fn ->
-          ["failed to fetch ", unique_entries |> length() |> to_string(), ": ", inspect(reason)]
-        end)
+        Logger.error(
+          fn ->
+            ["failed to fetch: ", inspect(reason)]
+          end,
+          count: unique_entry_count,
+          error_count: unique_entry_count
+        )
 
         {:retry, unique_entries}
     end
@@ -141,17 +146,23 @@ defmodule Indexer.CoinBalance.Fetcher do
 
   defp retry(errors, original_entries) when is_list(errors) do
     retried_entries = fetched_balances_errors_to_entries(errors)
+    original_entry_count = original_entries |> length() |> to_string()
+    retry_entry_count = retried_entries |> length() |> to_string()
 
-    Logger.error(fn ->
-      [
-        "failed to fetch ",
-        retried_entries |> length() |> to_string(),
-        "/",
-        original_entries |> length() |> to_string(),
-        ": ",
-        fetched_balance_errors_to_iodata(errors)
-      ]
-    end)
+    Logger.error(
+      fn ->
+        [
+          "failed to fetch ",
+          retry_entry_count,
+          "/",
+          original_entry_count,
+          ": ",
+          fetched_balance_errors_to_iodata(errors)
+        ]
+      end,
+      count: original_entry_count,
+      error_count: retry_entry_count
+    )
 
     {:retry, retried_entries}
   end

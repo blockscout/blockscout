@@ -117,9 +117,12 @@ defmodule Indexer.TokenBalance.Fetcher do
         :ok
 
       {:error, reason} ->
-        Logger.error(fn ->
-          ["failed to import ", token_balances_params |> length() |> to_string(), ": ", inspect(reason)]
-        end)
+        token_balance_params_count = token_balances_params |> length() |> to_string()
+
+        Logger.error(fn -> ["failed to import : ", inspect(reason)] end,
+          count: token_balance_params_count,
+          error_count: token_balance_params_count
+        )
 
         :error
     end
