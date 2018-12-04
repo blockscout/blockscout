@@ -197,7 +197,7 @@ defmodule Explorer.Chain.Address.TokenTest do
 
       token2 =
         :token
-        |> insert(name: "token-c", type: "ERC-721", decimals: 0, symbol: "TC")
+        |> insert(name: "token-b", type: "ERC-721", decimals: 0, symbol: "TC")
         |> Repo.preload(:contract_address)
 
       insert(
