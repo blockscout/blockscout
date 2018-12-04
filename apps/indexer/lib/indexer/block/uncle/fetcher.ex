@@ -4,11 +4,14 @@ defmodule Indexer.Block.Uncle.Fetcher do
   `uncle_fetched_at` where the `uncle_hash` matches `hash`.
   """
 
+  use Spandex.Decorators
+
   require Logger
 
+  alias EthereumJSONRPC.Blocks
   alias Explorer.Chain
   alias Explorer.Chain.Hash
-  alias Indexer.{AddressExtraction, Block, BufferedTask}
+  alias Indexer.{AddressExtraction, Block, BufferedTask, Tracer}
 
   @behaviour Block.Fetcher
   @behaviour BufferedTask
@@ -65,6 +68,7 @@ defmodule Indexer.Block.Uncle.Fetcher do
   end
 
   @impl BufferedTask
+  @decorate trace(name: "fetch", resource: "Indexer.Block.Uncle.Fetcher.run/2", service: :indexer, tracer: Tracer)
   def run(hashes, %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher) do
     # the same block could be included as an uncle on multiple blocks, but we only want to fetch it once
     unique_hashes = Enum.uniq(hashes)
@@ -72,38 +76,8 @@ defmodule Indexer.Block.Uncle.Fetcher do
     Logger.debug(fn -> "fetching #{length(unique_hashes)} uncle blocks" end)
 
     case EthereumJSONRPC.fetch_blocks_by_hash(unique_hashes, json_rpc_named_arguments) do
-      {:ok,
-       %{
-         blocks: blocks_params,
-         transactions: transactions_params,
-         block_second_degree_relations: block_second_degree_relations_params
-       }} ->
-        addresses_params =
-          AddressExtraction.extract_addresses(%{blocks: blocks_params, transactions: transactions_params})
-
-        case Block.Fetcher.import(block_fetcher, %{
-               addresses: %{params: addresses_params},
-               blocks: %{params: blocks_params},
-               block_second_degree_relations: %{params: block_second_degree_relations_params},
-               transactions: %{params: transactions_params, on_conflict: :nothing}
-             }) do
-          {:ok, _} ->
-            :ok
-
-          {:error, step, failed_value, _changes_so_far} ->
-            Logger.error(fn ->
-              [
-                "failed to import ",
-                unique_hashes |> length() |> to_string(),
-                "uncle blocks in step ",
-                inspect(step),
-                ": ",
-                inspect(failed_value)
-              ]
-            end)
-
-            {:retry, unique_hashes}
-        end
+      {:ok, blocks} ->
+        run_blocks(blocks, block_fetcher, unique_hashes)
 
       {:error, reason} ->
         Logger.error(fn ->
@@ -111,6 +85,45 @@ defmodule Indexer.Block.Uncle.Fetcher do
         end)
 
         {:retry, unique_hashes}
+    end
+  end
+
+  defp run_blocks(%Blocks{blocks_params: []}, _, original_entries), do: {:retry, original_entries}
+
+  defp run_blocks(
+         %Blocks{
+           blocks_params: blocks_params,
+           transactions_params: transactions_params,
+           block_second_degree_relations_params: block_second_degree_relations_params,
+           errors: errors
+         },
+         block_fetcher,
+         original_entries
+       ) do
+    addresses_params = AddressExtraction.extract_addresses(%{blocks: blocks_params, transactions: transactions_params})
+
+    case Block.Fetcher.import(block_fetcher, %{
+           addresses: %{params: addresses_params},
+           blocks: %{params: blocks_params},
+           block_second_degree_relations: %{params: block_second_degree_relations_params},
+           transactions: %{params: transactions_params, on_conflict: :nothing}
+         }) do
+      {:ok, _} ->
+        retry(errors, original_entries)
+
+      {:error, step, failed_value, _changes_so_far} ->
+        Logger.error(fn ->
+          [
+            "failed to import ",
+            original_entries |> length() |> to_string(),
+            "uncle blocks in step ",
+            inspect(step),
+            ": ",
+            inspect(failed_value)
+          ]
+        end)
+
+        {:retry, original_entries}
     end
   end
 
@@ -169,5 +182,43 @@ defmodule Indexer.Block.Uncle.Fetcher do
     Enum.map(transactions_params, fn %{block_hash: uncle_hash, index: index, hash: hash} ->
       %{uncle_hash: uncle_hash, index: index, hash: hash}
     end)
+  end
+
+  defp retry([], _), do: :ok
+
+  defp retry(errors, original_entries) when is_list(errors) do
+    retried_entries = errors_to_entries(errors)
+
+    Logger.error(fn ->
+      [
+        "failed to fetch ",
+        retried_entries |> length() |> to_string(),
+        "/",
+        original_entries |> length() |> to_string(),
+        " uncles: ",
+        errors_to_iodata(errors)
+      ]
+    end)
+  end
+
+  defp errors_to_entries(errors) when is_list(errors) do
+    Enum.map(errors, &error_to_entry/1)
+  end
+
+  defp error_to_entry(%{data: %{hash: hash}}) when is_binary(hash), do: hash
+
+  defp errors_to_iodata(errors) when is_list(errors) do
+    errors_to_iodata(errors, [])
+  end
+
+  defp errors_to_iodata([], iodata), do: iodata
+
+  defp errors_to_iodata([error | errors], iodata) do
+    errors_to_iodata(errors, [iodata | error_to_iodata(error)])
+  end
+
+  defp error_to_iodata(%{code: code, message: message, data: %{hash: hash}})
+       when is_integer(code) and is_binary(message) and is_binary(hash) do
+    [hash, ": (", to_string(code), ") ", message, ?\n]
   end
 end

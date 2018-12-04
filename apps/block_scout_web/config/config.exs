@@ -18,13 +18,18 @@ config :block_scout_web, BlockScoutWeb.Chain,
 
 # Configures the endpoint
 config :block_scout_web, BlockScoutWeb.Endpoint,
-  instrumenters: [BlockScoutWeb.Prometheus.Instrumenter],
+  instrumenters: [BlockScoutWeb.Prometheus.Instrumenter, SpandexPhoenix.Instrumenter],
   url: [
     host: "localhost",
     path: System.get_env("NETWORK_PATH") || "/"
   ],
   render_errors: [view: BlockScoutWeb.ErrorView, accepts: ~w(html json)],
   pubsub: [name: BlockScoutWeb.PubSub, adapter: Phoenix.PubSub.PG2]
+
+config :block_scout_web, BlockScoutWeb.Tracer,
+  service: :block_scout_web,
+  adapter: SpandexDatadog.Adapter,
+  trace_key: :blockscout
 
 # Configures gettext
 config :block_scout_web, BlockScoutWeb.Gettext, locales: ~w(en), default_locale: "en"
@@ -45,6 +50,8 @@ config :logger, :block_scout_web,
   format: "$time $metadata[$level] $message\n",
   metadata: [:application, :request_id],
   metadata_filter: [application: :block_scout_web]
+
+config :spandex_phoenix, tracer: BlockScoutWeb.Tracer
 
 config :wobserver,
   # return only the local node

@@ -10,7 +10,7 @@ DECLARE
    deleted_row_count integer;
 BEGIN
   DROP TABLE IF EXISTS transactions_with_deprecated_internal_transactions;
-  -- CREATES TEMP TABLE TO STORE TOKEN BALANCES TO BE UPDATED
+  -- CREATES TEMP TABLE TO STORE DATA TO BE UPDATED
   CREATE TEMP TABLE transactions_with_deprecated_internal_transactions(
     hash bytea NOT NULL,
     row_number integer
@@ -50,6 +50,7 @@ BEGIN
     RAISE NOTICE '-> % transactions updated to refetch internal transactions', updated_transaction_count;
 
     DELETE FROM internal_transactions
+    USING transactions_with_deprecated_internal_transactions
     WHERE internal_transactions.transaction_hash = transactions_with_deprecated_internal_transactions.hash AND
           transactions_with_deprecated_internal_transactions.row_number < next_iterator;
 

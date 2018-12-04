@@ -24,13 +24,22 @@ defmodule Explorer.ChainTest do
 
   alias Explorer.Chain.Supply.ProofOfAuthority
 
-  alias Explorer.Counters.TokenHoldersCounter
+  alias Explorer.Counters.{AddessesWithBalanceCounter, TokenHoldersCounter}
 
   doctest Explorer.Chain
 
-  describe "address_estimated_count/1" do
-    test "returns integer" do
-      assert is_integer(Chain.address_estimated_count())
+  describe "count_addresses_with_balance_from_cache/0" do
+    test "returns the number of addresses with fetched_coin_balance > 0" do
+      insert(:address, fetched_coin_balance: 0)
+      insert(:address, fetched_coin_balance: 1)
+      insert(:address, fetched_coin_balance: 2)
+
+      AddessesWithBalanceCounter.consolidate()
+
+      addresses_with_balance = Chain.count_addresses_with_balance_from_cache()
+
+      assert is_integer(addresses_with_balance)
+      assert addresses_with_balance == 2
     end
   end
 
@@ -3131,7 +3140,7 @@ defmodule Explorer.ChainTest do
           token_id: 29
         )
 
-      paging_options = %PagingOptions{key: {first_page.block_number, first_page.log_index}, page_size: 1}
+      paging_options = %PagingOptions{key: {first_page.token_id}, page_size: 1}
 
       unique_tokens_ids_paginated =
         token_contract_address.hash
