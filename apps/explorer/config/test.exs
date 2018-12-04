@@ -15,7 +15,7 @@ config :explorer, Explorer.Repo,
   pool_timeout: 10_000,
   ownership_timeout: 60_000
 
-config :explorer, Explorer.ExchangeRates, enabled: true
+config :explorer, Explorer.ExchangeRates, enabled: false, store: :ets
 
 config :explorer, Explorer.Market.History.Cataloger, enabled: false
 
