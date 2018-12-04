@@ -6,7 +6,6 @@ import numeral from 'numeral'
 import socket from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
 import { batchChannel } from '../lib/utils'
-import { withInfiniteScroll, connectInfiniteScroll } from '../lib/infinite_scroll_helpers'
 import listMorph from '../lib/list_morph'
 import { updateAllCalculatedUsdValues } from '../lib/currency.js'
 import { loadTokenBalanceDropdown } from '../lib/token_balance_dropdown'
@@ -23,18 +22,13 @@ export const initialState = {
   transactionCount: null,
   validationCount: null,
 
-  transactions: [],
   internalTransactions: [],
   internalTransactionsBatch: [],
-
-  beyondPageOne: null,
-
-  nextPageUrl: $('[data-selector="transactions-list"]').length ? URI(window.location).addQuery({ type: 'JSON' }).toString() : null
+  validatedBlocks: [],
+  beyondPageOne: false
 }
 
-export const reducer = withInfiniteScroll(baseReducer)
-
-function baseReducer (state = initialState, action) {
+export function reducer (state = initialState, action) {
   switch (action.type) {
     case 'PAGE_LOAD':
     case 'ELEMENTS_LOAD': {
@@ -85,31 +79,11 @@ function baseReducer (state = initialState, action) {
 
       const transactionCount = (action.msg.fromAddressHash === state.addressHash) ? state.transactionCount + 1 : state.transactionCount
 
-      if (state.beyondPageOne ||
-        (state.filter === 'to' && action.msg.toAddressHash !== state.addressHash) ||
-        (state.filter === 'from' && action.msg.fromAddressHash !== state.addressHash)) {
-        return Object.assign({}, state, { transactionCount })
-      }
-
-      return Object.assign({}, state, {
-        transactions: [
-          action.msg,
-          ...state.transactions
-        ],
-        transactionCount: transactionCount
-      })
+      return Object.assign({}, state, { transactionCount })
     }
     case 'RECEIVED_UPDATED_BALANCE': {
       return Object.assign({}, state, {
         balance: action.msg.balance
-      })
-    }
-    case 'RECEIVED_NEXT_PAGE': {
-      return Object.assign({}, state, {
-        transactions: [
-          ...state.transactions,
-          ...action.msg.transactions
-        ]
       })
     }
     default:
@@ -152,32 +126,6 @@ const elements = {
       $el.empty().append(numeral(state.validationCount).format())
     }
   },
-  '[data-selector="empty-transactions-list"]': {
-    render ($el, state) {
-      if (state.transactions.length || state.loadingNextPage || state.pagingError) {
-        $el.hide()
-      } else {
-        $el.show()
-      }
-    }
-  },
-  '[data-selector="transactions-list"]': {
-    load ($el) {
-      return {
-        transactions: $el.children().map((index, el) => ({
-          transactionHash: el.dataset.transactionHash,
-          transactionHtml: el.outerHTML
-        })).toArray()
-      }
-    },
-    render ($el, state, oldState) {
-      if (oldState.transactions === state.transactions) return
-
-      const container = $el[0]
-      const newElements = _.map(state.transactions, ({ transactionHtml }) => $(transactionHtml)[0])
-      return listMorph(container, newElements, { key: 'dataset.transactionHash' })
-    }
-  },
   '[data-selector="internal-transactions-list"]': {
     load ($el) {
       return {
@@ -215,7 +163,6 @@ if ($addressDetailsPage.length) {
     beyondPageOne: !!blockNumber
   })
   connectElements({ store, elements })
-  $('[data-selector="transactions-list"]').length && connectInfiniteScroll(store)
 
   const addressChannel = socket.channel(`addresses:${addressHash}`, {})
   addressChannel.join()
