@@ -19,7 +19,7 @@ config :indexer, Indexer.Tracer,
 config :logger, :indexer,
   # keep synced with `config/config.exs`
   format: "$dateT$time $metadata[$level] $message\n",
-  metadata: ~w(application fetcher step import_id request_id transaction_id)a,
+  metadata: ~w(application fetcher block_number step import_id request_id transaction_id)a,
   metadata_filter: [application: :indexer]
 
 # Import environment specific config. This must remain at the bottom
