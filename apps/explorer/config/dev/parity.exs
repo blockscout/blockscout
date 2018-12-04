@@ -11,7 +11,7 @@ config :explorer,
         eth_getBalance: System.get_env("ETHEREUM_JSONRPC_TRACE_URL") || "http://localhost:8545",
         trace_replayTransaction: System.get_env("ETHEREUM_JSONRPC_TRACE_URL") || "http://localhost:8545"
       ],
-      http_options: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :ethereum_jsonrpc]]
+      http_options: [recv_timeout: 60_000, timeout: 60_000, hackney: [:insecure, pool: :ethereum_jsonrpc]]
     ],
     variant: EthereumJSONRPC.Parity
   ],
@@ -21,5 +21,4 @@ config :explorer,
       web_socket: EthereumJSONRPC.WebSocket.WebSocketClient,
       url: System.get_env("ETHEREUM_JSONRPC_WS_URL") || "ws://localhost:8546"
     ],
-    variant: EthereumJSONRPC.Parity
-  ]
+    
