@@ -21,7 +21,8 @@ defmodule Indexer.CoinBalance.Fetcher do
     flush_interval: :timer.seconds(3),
     max_batch_size: 500,
     max_concurrency: 4,
-    task_supervisor: Indexer.CoinBalance.TaskSupervisor
+    task_supervisor: Indexer.CoinBalance.TaskSupervisor,
+    metadata: [fetcher: :coin_balance]
   ]
 
   @doc """
@@ -73,7 +74,7 @@ defmodule Indexer.CoinBalance.Fetcher do
     # `{address, block}`, so take unique params only
     unique_entries = Enum.uniq(entries)
 
-    Logger.debug(fn -> "fetching #{length(unique_entries)} balances" end)
+    Logger.debug(fn -> ["fetching ", unique_entries |> length() |> to_string()] end)
 
     unique_entries
     |> Enum.map(&entry_to_params/1)
@@ -84,7 +85,7 @@ defmodule Indexer.CoinBalance.Fetcher do
 
       {:error, reason} ->
         Logger.error(fn ->
-          ["failed to fetch ", unique_entries |> length() |> to_string(), " balances, ", inspect(reason)]
+          ["failed to fetch ", unique_entries |> length() |> to_string(), ": ", inspect(reason)]
         end)
 
         {:retry, unique_entries}
@@ -126,13 +127,11 @@ defmodule Indexer.CoinBalance.Fetcher do
     |> Enum.each(fn address_coin_balance_chunk ->
       addresses_params = balances_params_to_address_params(address_coin_balance_chunk)
 
-      Indexer.Logger.metadata([fetcher: :coin_balance], fn ->
-        {:ok, _} =
-          Chain.import(%{
-            addresses: %{params: addresses_params, with: :balance_changeset},
-            address_coin_balances: %{params: address_coin_balance_chunk}
-          })
-      end)
+      {:ok, _} =
+        Chain.import(%{
+          addresses: %{params: addresses_params, with: :balance_changeset},
+          address_coin_balances: %{params: address_coin_balance_chunk}
+        })
     end)
 
     retry(errors, original_entries)
@@ -149,7 +148,7 @@ defmodule Indexer.CoinBalance.Fetcher do
         retried_entries |> length() |> to_string(),
         "/",
         original_entries |> length() |> to_string(),
-        " balances: ",
+        ": ",
         fetched_balance_errors_to_iodata(errors)
       ]
     end)

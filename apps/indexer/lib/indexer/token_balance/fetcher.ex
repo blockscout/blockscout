@@ -28,7 +28,8 @@ defmodule Indexer.TokenBalance.Fetcher do
     flush_interval: 300,
     max_batch_size: 100,
     max_concurrency: 10,
-    task_supervisor: Indexer.TokenBalance.TaskSupervisor
+    task_supervisor: Indexer.TokenBalance.TaskSupervisor,
+    metadata: [fetcher: :token_balances]
   ]
 
   @max_retries 3
@@ -116,7 +117,9 @@ defmodule Indexer.TokenBalance.Fetcher do
         :ok
 
       {:error, reason} ->
-        Logger.debug(fn -> "failed to import #{length(token_balances_params)} token balances, #{inspect(reason)}" end)
+        Logger.error(fn ->
+          ["failed to import ", token_balances_params |> length() |> to_string(), ": ", inspect(reason)]
+        end)
 
         :error
     end

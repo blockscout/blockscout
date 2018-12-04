@@ -174,22 +174,28 @@ defmodule Indexer.Block.Realtime.Fetcher do
         end
 
       {:error, {step, reason}} ->
-        Logger.error(fn ->
-          [
-            "failed step: ",
-            inspect(reason),
-            ".  Block will be retried by catchup indexer."
-          ]
-        end, step: step)
+        Logger.error(
+          fn ->
+            [
+              "failed step: ",
+              inspect(reason),
+              ".  Block will be retried by catchup indexer."
+            ]
+          end,
+          step: step
+        )
 
       {:error, {step, failed_value, _changes_so_far}} ->
-        Logger.error(fn ->
-          [
-            "failed to insert: ",
-            inspect(failed_value),
-            ".  Block will be retried by catchup indexer."
-          ]
-        end, step: step)
+        Logger.error(
+          fn ->
+            [
+              "failed to import: ",
+              inspect(failed_value),
+              ".  Block will be retried by catchup indexer."
+            ]
+          end,
+          step: step
+        )
     end
   end
 

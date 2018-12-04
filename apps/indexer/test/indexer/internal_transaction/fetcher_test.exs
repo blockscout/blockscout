@@ -145,7 +145,7 @@ defmodule Indexer.InternalTransaction.FetcherTest do
 
       assert log =~
                """
-               Duplicate entries being used to fetch internal transactions:
+               Duplicate entries being used to fetch:
                  1. {1, <<3, 205, 88, 153, 166, 59, 111, 98, 34, 175, 218, 135, 5, 208, 89, 253, 90, 125, 18, 107, 202, 190, 150, 47, 182, 84, 217, 115, 110, 107, 202, 250>>, 0}
                  2. {1, <<3, 205, 88, 153, 166, 59, 111, 98, 34, 175, 218, 135, 5, 208, 89, 253, 90, 125, 18, 107, 202, 190, 150, 47, 182, 84, 217, 115, 110, 107, 202, 250>>, 0}
                """
