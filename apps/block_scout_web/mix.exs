@@ -68,6 +68,8 @@ defmodule BlockScoutWeb.Mixfile do
       # Absinthe support for the Relay framework
       {:absinthe_relay, "~> 1.4"},
       {:bypass, "~> 0.8", only: :test},
+      # To add (CORS)(https://www.w3.org/TR/cors/)
+      {:cors_plug, "~> 2.0"},
       {:credo, "0.10.2", only: [:dev, :test], runtime: false},
       # For Absinthe to load data in batches
       {:dataloader, "~> 1.0.0"},
