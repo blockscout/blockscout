@@ -36,7 +36,7 @@ defmodule BlockScoutWeb.ChainController do
     render(
       conn,
       "show.html",
-      address_estimated_count: Chain.address_estimated_count(),
+      address_count: Chain.count_addresses_with_balance_from_cache(),
       average_block_time: Chain.average_block_time(),
       blocks: blocks,
       exchange_rate: exchange_rate,
