@@ -16,6 +16,7 @@ defmodule BlockScoutWeb.Schema.Types do
 
   connection(node_type: :transaction)
   connection(node_type: :internal_transaction)
+  connection(node_type: :token_transfer)
 
   @desc """
   A stored representation of a Web3 address.
@@ -106,6 +107,20 @@ defmodule BlockScoutWeb.Schema.Types do
   end
 
   @desc """
+  Represents a token transfer between addresses.
+  """
+  node object(:token_transfer, id_fetcher: &token_transfer_id_fetcher/2) do
+    field(:amount, :decimal)
+    field(:block_number, :integer)
+    field(:log_index, :integer)
+    field(:token_id, :decimal)
+    field(:from_address_hash, :address_hash)
+    field(:to_address_hash, :address_hash)
+    field(:token_contract_address_hash, :address_hash)
+    field(:transaction_hash, :full_hash)
+  end
+
+  @desc """
   Models a Web3 transaction.
   """
   node object(:transaction, id_fetcher: &transaction_id_fetcher/2) do
@@ -142,15 +157,8 @@ defmodule BlockScoutWeb.Schema.Types do
     end
   end
 
-  @desc """
-  Represents a token transfer between addresses.
-  """
-  object :token_transfer do
-    field(:amount, :decimal)
-    field(:from_address_hash, :address_hash)
-    field(:to_address_hash, :address_hash)
-    field(:token_contract_address_hash, :address_hash)
-    field(:transaction_hash, :full_hash)
+  def token_transfer_id_fetcher(%{transaction_hash: transaction_hash, log_index: log_index}, _) do
+    Jason.encode!(%{transaction_hash: to_string(transaction_hash), log_index: log_index})
   end
 
   def transaction_id_fetcher(%{hash: hash}, _), do: to_string(hash)
