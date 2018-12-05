@@ -15,6 +15,7 @@ defmodule Explorer.GraphQL do
     Address,
     Hash,
     InternalTransaction,
+    TokenTransfer,
     Transaction
   }
 
@@ -66,5 +67,33 @@ defmodule Explorer.GraphQL do
       )
 
     Chain.where_transaction_has_multiple_internal_transactions(query)
+  end
+
+  @doc """
+  Returns a token transfer for a given transaction hash and log index.
+  """
+  @spec get_token_transfer(map()) :: {:ok, TokenTransfer.t()} | {:error, String.t()}
+  def get_token_transfer(%{transaction_hash: _, log_index: _} = clauses) do
+    if token_transfer = Repo.get_by(TokenTransfer, clauses) do
+      {:ok, token_transfer}
+    else
+      {:error, "Token transfer not found."}
+    end
+  end
+
+  @doc """
+  Returns a query to fetch token transfers for a token contract address hash.
+
+  Orders token transfers by descending block number, descending transaction index, and ascending log index.
+  """
+  @spec list_token_transfers_query(Hash.t()) :: Ecto.Query.t()
+  def list_token_transfers_query(%Hash{byte_count: unquote(Hash.Address.byte_count())} = token_contract_address_hash) do
+    from(
+      tt in TokenTransfer,
+      inner_join: t in assoc(tt, :transaction),
+      where: tt.token_contract_address_hash == ^token_contract_address_hash,
+      order_by: [desc: tt.block_number, desc: t.index, asc: tt.log_index],
+      select: tt
+    )
   end
 end
