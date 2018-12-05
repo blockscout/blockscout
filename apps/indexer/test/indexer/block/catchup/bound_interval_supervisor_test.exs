@@ -394,162 +394,395 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
 
     setup :state
 
-    test "increases catchup_bound_interval if no blocks missing", %{
+    @realtime_block_count 1
+
+    test "_..0 without shrunk without blocks missing increases interval and catches up later at latest", %{
       json_rpc_named_arguments: json_rpc_named_arguments,
+      max_missing_block_count: max_missing_block_count,
       state: state
     } do
-      insert(:block, number: 0)
-      insert(:block, number: 1)
+      latest = 1
+      insert_block_range(latest)
+      expect_latest(latest)
 
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn %{method: "eth_getBlockByNumber", params: ["latest", false]}, _options ->
-        {:ok, %{"number" => "0x1"}}
-      end)
-
-      start_supervised!({Task.Supervisor, name: Indexer.Block.Catchup.TaskSupervisor})
-      CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-
-      # from `setup :state`
-      assert_received :catchup_index
+      ensure_supervised!(json_rpc_named_arguments)
 
       assert {:noreply,
               %Catchup.BoundIntervalSupervisor{fetcher: %Catchup.Fetcher{}, task: %Task{pid: pid, ref: ref}} =
-                catchup_index_state} = Catchup.BoundIntervalSupervisor.handle_info(:catchup_index, state)
+                catchup_index_state} =
+               Catchup.BoundIntervalSupervisor.handle_continue({:catchup_index, [max_missing_block_count]}, state)
 
-      assert_receive {^ref, %{first_block_number: 0, missing_block_count: 0}} = message
+      assert_receive {^ref, %{missing_block_count: 0, missing_block_number_search_range: _..0, shrunk: false}} = message
 
-      Process.sleep(100)
+      assert {:noreply, message_state} =
+               assert_flushes_down(ref, pid, fn ->
+                 Catchup.BoundIntervalSupervisor.handle_info(message, catchup_index_state)
+               end)
 
-      # DOWN is not flushed
-      assert {:messages, [{:DOWN, ^ref, :process, ^pid, :normal}]} = Process.info(self(), :messages)
+      assert message_state.bound_interval.current > catchup_index_state.bound_interval.current
 
-      assert {:noreply, message_state} = Catchup.BoundIntervalSupervisor.handle_info(message, catchup_index_state)
+      assert_receive {:catchup_index, [^max_missing_block_count]}, message_state.bound_interval.current
+    end
 
-      # DOWN is flushed
-      assert {:messages, []} = Process.info(self(), :messages)
+    test "_..0 without shrunk with blocks missing decreases interval and catches up later at latest", %{
+      json_rpc_named_arguments: json_rpc_named_arguments,
+      max_missing_block_count: max_missing_block_count,
+      state: state
+    } do
+      latest = 1
+      expect_latest(latest)
+      expect_catchup(latest - @realtime_block_count, json_rpc_named_arguments)
+
+      ensure_supervised!(json_rpc_named_arguments)
+
+      assert {:noreply,
+              %Catchup.BoundIntervalSupervisor{fetcher: %Catchup.Fetcher{}, task: %Task{pid: pid, ref: ref}} =
+                catchup_index_state} =
+               Catchup.BoundIntervalSupervisor.handle_continue({:catchup_index, [max_missing_block_count]}, state)
+
+      assert_receive {^ref,
+                      %{
+                        missing_block_count: missing_block_count,
+                        missing_block_number_search_range: _..0,
+                        shrunk: false
+                      }} = message,
+                     200
+
+      assert 0 < missing_block_count
+
+      assert {:noreply, message_state} =
+               assert_flushes_down(ref, pid, fn ->
+                 Catchup.BoundIntervalSupervisor.handle_info(message, catchup_index_state)
+               end)
+
+      assert message_state.bound_interval.current < catchup_index_state.bound_interval.current
+
+      assert_receive {:catchup_index, [^max_missing_block_count]}, 10_000
+    end
+
+    test "_..0 with shrunk without blocks missing does not change interval and catches up immediately at latest", %{
+      json_rpc_named_arguments: json_rpc_named_arguments,
+      max_missing_block_count: max_missing_block_count,
+      state: state
+    } do
+      latest = 1
+      insert_block_range(latest - @realtime_block_count)
+      expect_latest(latest)
+
+      ensure_supervised!(json_rpc_named_arguments)
+
+      assert {:noreply,
+              %Catchup.BoundIntervalSupervisor{fetcher: %Catchup.Fetcher{}, task: %Task{pid: pid, ref: ref}} =
+                catchup_index_state} =
+               Catchup.BoundIntervalSupervisor.handle_continue({:catchup_index, [max_missing_block_count]}, state)
+
+      assert_receive {^ref, %{missing_block_count: 0, missing_block_number_search_range: _..0, shrunk: false} = result} =
+                       message
+
+      shrunk_message = put_elem(message, 1, Map.put(result, :shrunk, true))
+
+      assert {:noreply, message_state, {:continue, {:catchup_index, [^max_missing_block_count]}}} =
+               assert_flushes_down(ref, pid, fn ->
+                 Catchup.BoundIntervalSupervisor.handle_info(shrunk_message, catchup_index_state)
+               end)
+
+      assert message_state.bound_interval.current == catchup_index_state.bound_interval.current
+    end
+
+    test "_..0 with shrunk with blocks missing decreases interval and catches up immediately at latest", %{
+      json_rpc_named_arguments: json_rpc_named_arguments,
+      max_missing_block_count: max_missing_block_count,
+      state: state
+    } do
+      latest = 1
+      expect_latest(latest)
+      expect_catchup(latest - @realtime_block_count, json_rpc_named_arguments)
+
+      ensure_supervised!(json_rpc_named_arguments)
+
+      assert {:noreply,
+              %Catchup.BoundIntervalSupervisor{fetcher: %Catchup.Fetcher{}, task: %Task{pid: pid, ref: ref}} =
+                catchup_index_state} =
+               Catchup.BoundIntervalSupervisor.handle_continue({:catchup_index, [max_missing_block_count]}, state)
+
+      assert_receive {^ref,
+                      %{
+                        missing_block_count: missing_block_count,
+                        missing_block_number_search_range: _..0,
+                        shrunk: false
+                      } = result} = message
+
+      assert 0 < missing_block_count
+
+      shrunk_message = put_elem(message, 1, Map.put(result, :shrunk, true))
+
+      assert {:noreply, message_state, {:continue, {:catchup_index, [^max_missing_block_count]}}} =
+               assert_flushes_down(ref, pid, fn ->
+                 Catchup.BoundIntervalSupervisor.handle_info(shrunk_message, catchup_index_state)
+               end)
+
+      assert message_state.bound_interval.current < catchup_index_state.bound_interval.current
+    end
+
+    test "_..n without shrunk without blocks missing increases interval and catches up immediately at n-1", %{
+      json_rpc_named_arguments: json_rpc_named_arguments,
+      state: state
+    } do
+      latest = 2
+      insert_block_range(latest)
+      expect_latest(2)
+
+      ensure_supervised!(json_rpc_named_arguments)
+
+      max_missing_block_count = 1
+      state = %Catchup.BoundIntervalSupervisor{state | max_missing_block_count: max_missing_block_count}
+
+      assert {:noreply,
+              %Catchup.BoundIntervalSupervisor{fetcher: %Catchup.Fetcher{}, task: %Task{pid: pid, ref: ref}} =
+                catchup_index_state} =
+               Catchup.BoundIntervalSupervisor.handle_continue({:catchup_index, [max_missing_block_count]}, state)
+
+      assert_receive {^ref,
+                      %{missing_block_count: 0, missing_block_number_search_range: _..last_block_number, shrunk: false}} =
+                       message
+
+      assert 0 < last_block_number
+
+      assert {:noreply, message_state, {:continue, {:catchup_index, [first_block_number, ^max_missing_block_count]}}} =
+               assert_flushes_down(ref, pid, fn ->
+                 Catchup.BoundIntervalSupervisor.handle_info(message, catchup_index_state)
+               end)
+
+      assert first_block_number == last_block_number - 1
 
       assert message_state.bound_interval.current > catchup_index_state.bound_interval.current
     end
 
-    test "decreases catchup_bound_interval if blocks missing", %{
+    test "_..n without shrunk with blocks missing decreases interval and catches up immediately at n-1", %{
       json_rpc_named_arguments: json_rpc_named_arguments,
       state: state
     } do
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn %{method: "eth_getBlockByNumber", params: ["latest", false]}, _options ->
-        {:ok, %{"number" => "0x1"}}
-      end)
-      |> expect(:json_rpc, fn [%{id: id, method: "eth_getBlockByNumber", params: ["0x0", true]}], _options ->
-        {:ok,
-         [
-           %{
-             id: id,
-             jsonrpc: "2.0",
-             result: %{
-               "difficulty" => "0x0",
-               "extraData" => "0x0",
-               "gasLimit" => "0x0",
-               "gasUsed" => "0x0",
-               "hash" =>
-                 Explorer.Factory.block_hash()
-                 |> to_string(),
-               "logsBloom" => "0x0",
-               "miner" => "0xb2930b35844a230f00e51431acae96fe543a0347",
-               "number" => "0x0",
-               "parentHash" =>
-                 Explorer.Factory.block_hash()
-                 |> to_string(),
-               "receiptsRoot" => "0x0",
-               "sha3Uncles" => "0x0",
-               "size" => "0x0",
-               "stateRoot" => "0x0",
-               "timestamp" => "0x0",
-               "totalDifficulty" => "0x0",
-               "transactions" => [],
-               "transactionsRoot" => "0x0",
-               "uncles" => []
-             }
-           }
-         ]}
-      end)
-      |> (fn mock ->
-            case Keyword.fetch!(json_rpc_named_arguments, :variant) do
-              EthereumJSONRPC.Parity ->
-                expect(mock, :json_rpc, fn [%{method: "trace_block"} | _] = requests, _options ->
-                  {:ok, Enum.map(requests, fn %{id: id} -> %{id: id, result: []} end)}
-                end)
+      latest = 2
+      insert_block_range(latest - @realtime_block_count - 1)
+      expect_latest(2)
+      expect_catchup(1, json_rpc_named_arguments)
 
-              _ ->
-                mock
-            end
-          end).()
-      |> stub(:json_rpc, fn [
-                              %{
-                                id: id,
-                                method: "eth_getBalance",
-                                params: ["0xb2930b35844a230f00e51431acae96fe543a0347", "0x0"]
-                              }
-                            ],
-                            _options ->
-        {:ok, [%{id: id, jsonrpc: "2.0", result: "0x0"}]}
-      end)
+      ensure_supervised!(json_rpc_named_arguments)
 
-      start_supervised({Task.Supervisor, name: Indexer.Block.Catchup.TaskSupervisor})
-      CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-
-      Uncle.Supervisor.Case.start_supervised!(
-        block_fetcher: %Indexer.Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
-      )
-
-      # from `setup :state`
-      assert_received :catchup_index
+      max_missing_block_count = 1
+      state = %Catchup.BoundIntervalSupervisor{state | max_missing_block_count: max_missing_block_count}
 
       assert {:noreply,
               %Catchup.BoundIntervalSupervisor{fetcher: %Catchup.Fetcher{}, task: %Task{pid: pid, ref: ref}} =
-                catchup_index_state} = Catchup.BoundIntervalSupervisor.handle_info(:catchup_index, state)
+                catchup_index_state} =
+               Catchup.BoundIntervalSupervisor.handle_continue({:catchup_index, [max_missing_block_count]}, state)
 
-      # 2 blocks are missing, but latest is assumed to be handled by realtime_index, so only 1 is missing for
-      # catchup_index
-      assert_receive {^ref, %{first_block_number: 0, missing_block_count: 1}} = message, 200
+      assert_receive {^ref,
+                      %{missing_block_count: 1, missing_block_number_search_range: _..last_block_number, shrunk: false}} =
+                       message
 
-      Process.sleep(200)
+      assert 0 < last_block_number
 
-      # DOWN is not flushed
-      assert {:messages, [{:DOWN, ^ref, :process, ^pid, :normal}]} = Process.info(self(), :messages)
+      assert {:noreply, message_state, {:continue, {:catchup_index, [first_block_number, ^max_missing_block_count]}}} =
+               assert_flushes_down(ref, pid, fn ->
+                 Catchup.BoundIntervalSupervisor.handle_info(message, catchup_index_state)
+               end)
 
-      assert {:noreply, message_state} = Catchup.BoundIntervalSupervisor.handle_info(message, catchup_index_state)
+      assert first_block_number == last_block_number - 1
 
-      # DOWN is flushed
-      assert {:messages, []} = Process.info(self(), :messages)
+      assert message_state.bound_interval.current < catchup_index_state.bound_interval.current
+    end
 
-      assert message_state.bound_interval.current == message_state.bound_interval.minimum
+    test "_..n with shrunk without blocks missing does not change interval and catches up immediately at n-1", %{
+      json_rpc_named_arguments: json_rpc_named_arguments,
+      state: state
+    } do
+      latest = 2
+      insert_block_range(latest)
+      expect_latest(latest)
 
-      # When not at minimum it is decreased
+      ensure_supervised!(json_rpc_named_arguments)
 
-      above_minimum_state = update_in(catchup_index_state.bound_interval, &BoundInterval.increase/1)
+      max_missing_block_count = 1
+      state = %Catchup.BoundIntervalSupervisor{state | max_missing_block_count: max_missing_block_count}
 
-      assert above_minimum_state.bound_interval.current > message_state.bound_interval.minimum
+      assert {:noreply,
+              %Catchup.BoundIntervalSupervisor{fetcher: %Catchup.Fetcher{}, task: %Task{pid: pid, ref: ref}} =
+                catchup_index_state} =
+               Catchup.BoundIntervalSupervisor.handle_continue({:catchup_index, [max_missing_block_count]}, state)
 
-      assert {:noreply, above_minimum_message_state} =
-               Catchup.BoundIntervalSupervisor.handle_info(message, above_minimum_state)
+      assert_receive {^ref,
+                      %{missing_block_count: 0, missing_block_number_search_range: _..last_block_number, shrunk: false} =
+                        result} = message
 
-      assert above_minimum_message_state.bound_interval.current < above_minimum_state.bound_interval.current
+      assert 0 < last_block_number
+
+      shrunk_message = put_elem(message, 1, Map.put(result, :shrunk, true))
+
+      assert {:noreply, message_state, {:continue, {:catchup_index, [first_block_number, ^max_missing_block_count]}}} =
+               assert_flushes_down(ref, pid, fn ->
+                 Catchup.BoundIntervalSupervisor.handle_info(shrunk_message, catchup_index_state)
+               end)
+
+      assert first_block_number == last_block_number - 1
+
+      assert message_state.bound_interval.current == catchup_index_state.bound_interval.current
+    end
+
+    test "_..n with shrunk with blocks missing decreases interval and catches up immediately at n-1", %{
+      json_rpc_named_arguments: json_rpc_named_arguments,
+      state: state
+    } do
+      latest = 2
+      insert_block_range(latest - @realtime_block_count - 1)
+      expect_latest(latest)
+      expect_catchup(latest - @realtime_block_count, json_rpc_named_arguments)
+
+      ensure_supervised!(json_rpc_named_arguments)
+
+      max_missing_block_count = 1
+      state = %Catchup.BoundIntervalSupervisor{state | max_missing_block_count: max_missing_block_count}
+
+      assert {:noreply,
+              %Catchup.BoundIntervalSupervisor{fetcher: %Catchup.Fetcher{}, task: %Task{pid: pid, ref: ref}} =
+                catchup_index_state} =
+               Catchup.BoundIntervalSupervisor.handle_continue({:catchup_index, [max_missing_block_count]}, state)
+
+      assert_receive {^ref,
+                      %{
+                        missing_block_count: missing_block_count,
+                        missing_block_number_search_range: _..last_block_number,
+                        shrunk: false
+                      } = result} = message
+
+      assert 0 < missing_block_count
+      assert 0 < last_block_number
+
+      shrunk_message = put_elem(message, 1, Map.put(result, :shrunk, true))
+
+      assert {:noreply, message_state, {:continue, {:catchup_index, [first_block_number, ^max_missing_block_count]}}} =
+               assert_flushes_down(ref, pid, fn ->
+                 Catchup.BoundIntervalSupervisor.handle_info(shrunk_message, catchup_index_state)
+               end)
+
+      assert first_block_number == last_block_number - 1
+
+      assert message_state.bound_interval.current < catchup_index_state.bound_interval.current
     end
   end
 
+  defp assert_flushes_down(ref, pid, fun) when is_reference(ref) and is_pid(pid) and is_function(fun, 0) do
+    Process.sleep(100)
+
+    # DOWN is not flushed
+    assert {:messages, [{:DOWN, ^ref, :process, ^pid, :normal}]} = Process.info(self(), :messages)
+
+    fun_output = fun.()
+
+    # DOWN is flushed
+    assert {:messages, []} = Process.info(self(), :messages)
+
+    fun_output
+  end
+
+  defp expect_catchup(number, json_rpc_named_arguments) when is_integer(number) do
+    number
+    |> integer_to_quantity()
+    |> expect_catchup(json_rpc_named_arguments)
+  end
+
+  defp expect_catchup(quantity, json_rpc_named_arguments) when is_binary(quantity) do
+    EthereumJSONRPC.Mox
+    |> expect(:json_rpc, fn [%{id: id, method: "eth_getBlockByNumber", params: [^quantity, true]}], _options ->
+      {:ok,
+       [
+         %{
+           id: id,
+           jsonrpc: "2.0",
+           result: %{
+             "difficulty" => "0x0",
+             "extraData" => "0x0",
+             "gasLimit" => "0x0",
+             "gasUsed" => "0x0",
+             "hash" =>
+               Explorer.Factory.block_hash()
+               |> to_string(),
+             "logsBloom" => "0x0",
+             "miner" => "0xb2930b35844a230f00e51431acae96fe543a0347",
+             "number" => quantity,
+             "parentHash" =>
+               Explorer.Factory.block_hash()
+               |> to_string(),
+             "receiptsRoot" => "0x0",
+             "sha3Uncles" => "0x0",
+             "size" => "0x0",
+             "stateRoot" => "0x0",
+             "timestamp" => "0x0",
+             "totalDifficulty" => "0x0",
+             "transactions" => [],
+             "transactionsRoot" => "0x0",
+             "uncles" => []
+           }
+         }
+       ]}
+    end)
+    |> (fn mock ->
+          case Keyword.fetch!(json_rpc_named_arguments, :variant) do
+            EthereumJSONRPC.Parity ->
+              expect(mock, :json_rpc, fn [%{method: "trace_block"} | _] = requests, _options ->
+                {:ok, Enum.map(requests, fn %{id: id} -> %{id: id, result: []} end)}
+              end)
+
+            _ ->
+              mock
+          end
+        end).()
+    |> stub(:json_rpc, fn [
+                            %{
+                              id: id,
+                              method: "eth_getBalance",
+                              params: ["0xb2930b35844a230f00e51431acae96fe543a0347", ^quantity]
+                            }
+                          ],
+                          _options ->
+      {:ok, [%{id: id, jsonrpc: "2.0", result: "0x0"}]}
+    end)
+  end
+
+  defp expect_latest(number) when is_integer(number) do
+    number
+    |> integer_to_quantity()
+    |> expect_latest()
+  end
+
+  defp expect_latest(quantity) when is_binary(quantity) do
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn %{method: "eth_getBlockByNumber", params: ["latest", false]}, _options ->
+      {:ok, %{"number" => quantity}}
+    end)
+  end
+
+  defp insert_block_range(greatest_block_number) do
+    Enum.each(0..greatest_block_number, &insert(:block, number: &1))
+  end
+
   defp state(%{json_rpc_named_arguments: json_rpc_named_arguments}) do
-    {:ok, state} =
+    {:ok, state, {:continue, {:catchup_index, [max_missing_block_count]}}} =
       Catchup.BoundIntervalSupervisor.init(%{
         block_fetcher: %Indexer.Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
       })
 
-    %{state: state}
+    # increase interval once so it can increase or decrease without hitting bounds
+    state = update_in(state.bound_interval, &BoundInterval.increase/1)
+
+    %{state: state, max_missing_block_count: max_missing_block_count}
+  end
+
+  defp ensure_supervised!(json_rpc_named_arguments) do
+    start_supervised!({Task.Supervisor, name: Indexer.Block.Catchup.TaskSupervisor})
+    CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+    InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+    Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+    TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
   end
 
   defp supervisor(%{json_rpc_named_arguments: json_rpc_named_arguments}) do

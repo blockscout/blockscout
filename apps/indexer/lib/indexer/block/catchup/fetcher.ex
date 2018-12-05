@@ -23,83 +23,128 @@ defmodule Indexer.Block.Catchup.Fetcher do
   @blocks_batch_size 10
   @blocks_concurrency 10
   @sequence_name :block_catchup_sequencer
+  @realtime_block_count 1
+  @receipts_total_count @blocks_concurrency * Block.Fetcher.default_receipts_batch_size() *
+                          Block.Fetcher.default_receipts_batch_size()
 
   defstruct blocks_batch_size: @blocks_batch_size,
             blocks_concurrency: @blocks_concurrency,
             block_fetcher: nil,
             memory_monitor: nil
 
+  @typedoc """
+  * `:blocks_batch_size` - The number of blocks to request in one call to the JSONRPC.  Defaults to
+      `#{@blocks_batch_size}`.  Block requests also include the transactions for those blocks.  *These transactions
+      are not paginated.*
+  * `:blocks_concurrency` - The number of concurrent requests of `:blocks_batch_size` to allow against the JSONRPC.
+      Defaults to #{@blocks_concurrency}.  So, up to `blocks_concurrency * block_batch_size` (defaults to
+      `#{@blocks_concurrency * @blocks_batch_size}`) blocks can be requested from the JSONRPC at once over all
+      connections.  Up to `block_concurrency * receipts_batch_size * receipts_concurrency` (defaults to
+      `#{@receipts_total_count}`) receipts can be requested from the JSONRPC at once over all connections.
+  """
+  @type t :: %__MODULE__{
+          blocks_batch_size: pos_integer(),
+          blocks_concurrency: pos_integer(),
+          block_fetcher: Block.Fetcher.t(),
+          memory_monitor: GenServer.server() | nil
+        }
+
   @doc false
   def default_blocks_batch_size, do: @blocks_batch_size
 
   @doc """
-  Required named arguments
-
-    * `:json_rpc_named_arguments` - `t:EthereumJSONRPC.json_rpc_named_arguments/0` passed to
-        `EthereumJSONRPC.json_rpc/2`.
-
-  The follow options can be overridden:
-
-    * `:blocks_batch_size` - The number of blocks to request in one call to the JSONRPC.  Defaults to
-      `#{@blocks_batch_size}`.  Block requests also include the transactions for those blocks.  *These transactions
-      are not paginated.*
-    * `:blocks_concurrency` - The number of concurrent requests of `:blocks_batch_size` to allow against the JSONRPC.
-      Defaults to #{@blocks_concurrency}.  So, up to `blocks_concurrency * block_batch_size` (defaults to
-      `#{@blocks_concurrency * @blocks_batch_size}`) blocks can be requested from the JSONRPC at once over all
-      connections.  Up to `block_concurrency * receipts_batch_size * receipts_concurrency` (defaults to
-      `#{
-    @blocks_concurrency * Block.Fetcher.default_receipts_batch_size() * Block.Fetcher.default_receipts_batch_size()
-  }`
-      ) receipts can be requested from the JSONRPC at once over all connections.
-
+  * `task(t, max_missing_block_count)` - calculates the missing block search range from `#{@realtime_block_count}`
+    blocks back from the latest block number on the chain.  The missing block number search range is at most
+    `max_missing_block_count` wide.  Does not run the catchup and returns after calculating the missing block number
+    range if the range is empty.
+  * `task(t, missing_block_number_search_range)` - Calculates the missing block number ranges in
+    `missing_block_number_search_range` and then catches up those blocks.  Does not run the catchup and returns if no
+    blocks are missing in the `missing_block_number_search_range.
   """
+
+  def task(
+        %__MODULE__{block_fetcher: %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}} = state,
+        max_missing_block_count
+      )
+      when is_integer(max_missing_block_count) and max_missing_block_count > 0 do
+    Logger.metadata(fetcher: :block_catchup)
+
+    {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
+
+    case latest_block_number do
+      # let realtime indexer get starting blocks when chain is new
+      realtime_block_number when realtime_block_number < @realtime_block_count ->
+        %{missing_block_number_range: nil, missing_block_count: 0, shrunk: false}
+
+      _ ->
+        first_catchup_block_number = latest_block_number - @realtime_block_count
+
+        missing_block_number_search_range =
+          missing_block_number_search_range(first_catchup_block_number, max_missing_block_count)
+
+        task(state, missing_block_number_search_range)
+    end
+  end
+
   def task(
         %__MODULE__{
           blocks_batch_size: blocks_batch_size,
           block_fetcher: %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
-        } = state
-      ) do
-    {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
+        } = state,
+        first..last = missing_block_number_search_range
+      )
+      when 0 <= first and 0 <= last do
+    Logger.metadata(fetcher: :block_catchup)
 
-    case latest_block_number do
-      # let realtime indexer get the genesis block
-      0 ->
-        %{first_block_number: 0, missing_block_count: 0, shrunk: false}
+    {microseconds, missing_ranges} = :timer.tc(Chain, :missing_block_number_ranges, [missing_block_number_search_range])
 
-      _ ->
-        # realtime indexer gets the current latest block
-        first = latest_block_number - 1
-        last = 0
-        missing_ranges = Chain.missing_block_number_ranges(first..last)
-        range_count = Enum.count(missing_ranges)
+    Logger.info(fn -> "Missing block number ranges calculated" end,
+      first_block_number: first,
+      last_block_number: last,
+      microseconds: microseconds
+    )
 
-        missing_block_count =
-          missing_ranges
-          |> Stream.map(&Enum.count/1)
-          |> Enum.sum()
+    range_count = Enum.count(missing_ranges)
 
-        Logger.debug(fn ->
-          "#{missing_block_count} missed blocks in #{range_count} ranges between #{first} and #{last}"
-        end)
+    missing_block_count =
+      missing_ranges
+      |> Stream.map(&Enum.count/1)
+      |> Enum.sum()
 
-        shrunk =
-          case missing_block_count do
-            0 ->
-              false
+    Logger.debug(fn ->
+      "#{missing_block_count} missed blocks in #{range_count} ranges between #{first} and #{last}"
+    end)
 
-            _ ->
-              sequence_opts = put_memory_monitor([ranges: missing_ranges, step: -1 * blocks_batch_size], state)
-              gen_server_opts = [name: @sequence_name]
-              {:ok, sequence} = Sequence.start_link(sequence_opts, gen_server_opts)
-              Sequence.cap(sequence)
+    shrunk =
+      case missing_block_count do
+        0 ->
+          false
 
-              stream_fetch_and_import(state, sequence)
+        _ ->
+          sequence_opts = put_memory_monitor([ranges: missing_ranges, step: -1 * blocks_batch_size], state)
+          gen_server_opts = [name: @sequence_name]
+          {:ok, sequence} = Sequence.start_link(sequence_opts, gen_server_opts)
+          Sequence.cap(sequence)
 
-              Shrinkable.shrunk?(sequence)
-          end
+          stream_fetch_and_import(state, sequence)
 
-        %{first_block_number: first, missing_block_count: missing_block_count, shrunk: shrunk}
-    end
+          Shrinkable.shrunk?(sequence)
+      end
+
+    %{missing_block_number_search_range: first..last, missing_block_count: missing_block_count, shrunk: shrunk}
+  end
+
+  @doc """
+  Calculates the missing block number search range starting at `first_block_number` and having at most
+  `max_missing_block_count` elements and then catches them up in `task/2`.  The range is truncated so that it does not
+  go below block number `0`.
+  """
+  def task(%__MODULE__{} = state, first_block_number, max_missing_block_count)
+      when is_integer(first_block_number) and first_block_number >= 0 and is_integer(max_missing_block_count) and
+             max_missing_block_count > 0 do
+    missing_block_number_search_range = missing_block_number_search_range(first_block_number, max_missing_block_count)
+
+    task(state, missing_block_number_search_range)
   end
 
   @async_import_remaining_block_data_options ~w(address_hash_to_fetched_balance_block_number transaction_hash_to_block_number)a
@@ -150,6 +195,12 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   defp async_import_token_balances(_), do: :ok
 
+  defp missing_block_number_search_range(first_block_number, max_missing_block_count)
+       when is_integer(first_block_number) and first_block_number >= 0 and is_integer(max_missing_block_count) and
+              max_missing_block_count > 0 do
+    first_block_number..max(first_block_number - max_missing_block_count + 1, 0)
+  end
+
   defp stream_fetch_and_import(%__MODULE__{blocks_concurrency: blocks_concurrency} = state, sequence)
        when is_pid(sequence) do
     sequence
@@ -170,9 +221,15 @@ defmodule Indexer.Block.Catchup.Fetcher do
             )
   defp fetch_and_import_range_from_sequence(
          %__MODULE__{block_fetcher: %Block.Fetcher{} = block_fetcher},
-         _.._ = range,
+         first_block_number..last_block_number = range,
          sequence
        ) do
+    Logger.metadata(
+      fetcher: :block_catchup,
+      first_block_number: first_block_number,
+      last_block_number: last_block_number
+    )
+
     case fetch_and_import_range(block_fetcher, range) do
       {:ok, %{inserted: inserted, errors: errors}} ->
         errors = cap_seq(sequence, errors, range)
