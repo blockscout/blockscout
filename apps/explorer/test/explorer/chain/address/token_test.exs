@@ -197,7 +197,7 @@ defmodule Explorer.Chain.Address.TokenTest do
 
       token2 =
         :token
-        |> insert(name: "token-b", type: "ERC-721", decimals: 0, symbol: "TC")
+        |> insert(name: "token-c", type: "ERC-721", decimals: 0, symbol: "TC")
         |> Repo.preload(:contract_address)
 
       insert(
@@ -233,13 +233,14 @@ defmodule Explorer.Chain.Address.TokenTest do
         to_address: build(:address)
       )
 
-      fetched_tokens =
+      last_fetched_token =
         address.hash
         |> Address.Token.list_address_tokens_with_balance()
         |> Repo.all()
         |> Enum.map(& &1.contract_address_hash)
+        |> List.last()
 
-      assert fetched_tokens == [token2.contract_address_hash, token3.contract_address_hash, token.contract_address_hash]
+      assert last_fetched_token == token.contract_address_hash
     end
 
     test "does not return tokens with zero balance" do
