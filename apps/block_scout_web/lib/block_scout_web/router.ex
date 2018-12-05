@@ -55,8 +55,14 @@ defmodule BlockScoutWeb.Router do
     max_complexity: @max_complexity
   )
 
+  # Disallows Iframes (write routes)
   scope "/", BlockScoutWeb do
     pipe_through(:browser)
+  end
+
+  # Allows Iframes (read-only routes)
+  scope "/", BlockScoutWeb do
+    pipe_through([:browser, BlockScoutWeb.Plug.AllowIframe])
 
     resources("/", ChainController, only: [:show], singleton: true, as: :chain)
 
