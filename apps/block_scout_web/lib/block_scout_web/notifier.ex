@@ -10,7 +10,7 @@ defmodule BlockScoutWeb.Notifier do
   alias Explorer.ExchangeRates.Token
 
   def handle_event({:chain_event, :addresses, :realtime, addresses}) do
-    Endpoint.broadcast("addresses:new_address", "count", %{count: Chain.address_estimated_count()})
+    Endpoint.broadcast("addresses:new_address", "count", %{count: Chain.count_addresses_with_balance_from_cache()})
 
     addresses
     |> Stream.reject(fn %Address{fetched_coin_balance: fetched_coin_balance} -> is_nil(fetched_coin_balance) end)
