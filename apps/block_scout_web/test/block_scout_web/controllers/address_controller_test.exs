@@ -16,8 +16,8 @@ defmodule BlockScoutWeb.AddressControllerTest do
     end
 
     test "returns an address's primary name when present", %{conn: conn} do
-      address = insert(:address)
-      address_name = insert(:address_name, address: address, primary: true, name: "POA Wallet3")
+      address = insert(:address, fetched_coin_balance: 1)
+      address_name = insert(:address_name, address: address, primary: true, name: "POA Wallet")
 
       conn = get(conn, address_path(conn, :index))
 
