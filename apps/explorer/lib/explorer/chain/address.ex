@@ -104,4 +104,15 @@ defmodule Explorer.Chain.Address do
       @protocol.to_string(hash)
     end
   end
+
+  @doc """
+  Counts all the addresses where the `fetched_coin_balance` is > 0.
+  """
+  def count_with_fetched_coin_balance do
+    from(
+      a in Address,
+      select: fragment("COUNT(*)"),
+      where: a.fetched_coin_balance > ^0
+    )
+  end
 end

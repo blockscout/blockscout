@@ -17,7 +17,13 @@ config :explorer, Explorer.ExchangeRates, enabled: false
 
 config :explorer, Explorer.Market.History.Cataloger, enabled: false
 
+config :explorer, Explorer.Tracer, disabled?: false
+
+config :explorer, Explorer.Counters.BlockValidationCounter, enabled: true, enable_consolidation: false
+
 config :explorer, Explorer.Counters.TokenHoldersCounter, enabled: true, enable_consolidation: false
+
+config :explorer, Explorer.Counters.AddessesWithBalanceCounter, enabled: true, enable_consolidation: false
 
 config :logger, :explorer,
   level: :warn,
