@@ -20,11 +20,15 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
   # milliseconds
   @block_interval 5_000
 
-  @enforce_keys ~w(bound_interval fetcher)a
+  @max_missing_block_count 100
+
+  @enforce_keys ~w(bound_interval fetcher max_missing_block_count)a
   defstruct bound_interval: nil,
             fetcher: %Catchup.Fetcher{},
+            max_missing_block_count: @max_missing_block_count,
             memory_monitor: nil,
-            task: nil
+            task: nil,
+            task_args: nil
 
   @spec child_spec([named_arguments | GenServer.options(), ...]) :: Supervisor.child_spec()
   def child_spec([named_arguments]) when is_map(named_arguments), do: child_spec([named_arguments, []])
@@ -53,11 +57,11 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
 
   @impl GenServer
   def init(named_arguments) do
-    state = new(named_arguments)
+    Logger.metadata(fetcher: :block_catchup)
 
-    send(self(), :catchup_index)
+    state = %__MODULE__{max_missing_block_count: max_missing_block_count} = new(named_arguments)
 
-    {:ok, state}
+    {:ok, state, {:continue, {:catchup_index, [max_missing_block_count]}}}
   end
 
   defp new(%{block_fetcher: common_block_fetcher} = named_arguments) do
@@ -69,7 +73,8 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
 
     %__MODULE__{
       fetcher: %Catchup.Fetcher{block_fetcher: block_fetcher, memory_monitor: Map.get(named_arguments, :memory_monitor)},
-      bound_interval: bound_interval
+      bound_interval: bound_interval,
+      max_missing_block_count: Map.get(named_arguments, :max_missing_block_count, @max_missing_block_count)
     }
   end
 
@@ -100,12 +105,16 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
 
   @task_shutdown_timeout 5_000
 
-  def handle_call({:get_childspec, :task}, _from, %__MODULE__{fetcher: %Catchup.Fetcher{} = catchup} = state) do
+  def handle_call(
+        {:get_childspec, :task},
+        _from,
+        %__MODULE__{fetcher: %Catchup.Fetcher{} = catchup, max_missing_block_count: max_missing_block_count} = state
+      ) do
     {:reply,
      {:ok,
       %{
         id: :task,
-        start: {Catchup.Fetcher, :task, [catchup]},
+        start: {Catchup.Fetcher, :task, [catchup, max_missing_block_count]},
         restart: :transient,
         shutdown: @task_shutdown_timeout,
         type: :worker,
@@ -117,8 +126,15 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
     {:reply, {:error, :not_found}, state}
   end
 
-  def handle_call({:restart_child, :task}, _from, %__MODULE__{fetcher: %Catchup.Fetcher{} = catchup, task: nil} = state) do
-    %Task{pid: pid} = task = Task.Supervisor.async_nolink(Catchup.TaskSupervisor, Catchup.Fetcher, :task, [catchup])
+  def handle_call(
+        {:restart_child, :task},
+        _from,
+        %__MODULE__{fetcher: %Catchup.Fetcher{} = catchup, max_missing_block_count: max_missing_block_count, task: nil} =
+          state
+      ) do
+    %Task{pid: pid} =
+      task =
+      Task.Supervisor.async_nolink(Catchup.TaskSupervisor, Catchup.Fetcher, :task, [catchup, max_missing_block_count])
 
     {:reply, {:ok, pid}, %__MODULE__{state | task: task}}
   end
@@ -176,85 +192,147 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
   end
 
   @impl GenServer
-  def handle_info(:catchup_index, %__MODULE__{fetcher: %Catchup.Fetcher{} = catchup} = state) do
-    {:noreply,
-     %__MODULE__{state | task: Task.Supervisor.async_nolink(Catchup.TaskSupervisor, Catchup.Fetcher, :task, [catchup])}}
+  def handle_continue({:catchup_index, task_args}, state) do
+    handle_catchup(task_args, state)
+  end
+
+  @impl GenServer
+  def handle_info({:catchup_index, task_args}, state) do
+    handle_catchup(task_args, state)
   end
 
   def handle_info(
-        {ref, %{first_block_number: first_block_number, missing_block_count: missing_block_count, shrunk: false}},
-        %__MODULE__{
-          bound_interval: bound_interval,
-          task: %Task{ref: ref}
-        } = state
+        {ref,
+         %{
+           missing_block_number_search_range: first_block_number..last_block_number,
+           missing_block_count: missing_block_count,
+           shrunk: shrunk
+         }},
+        %__MODULE__{max_missing_block_count: max_missing_block_count, task: %Task{ref: ref}} = state
       )
-      when is_integer(missing_block_count) do
-    new_bound_interval =
-      case missing_block_count do
-        0 ->
-          Logger.info(fn -> ["Index already caught up in ", to_string(first_block_number), "-0."] end)
-
-          BoundInterval.increase(bound_interval)
-
-        _ ->
-          Logger.info(fn ->
-            [
-              "Index had to catch up ",
-              to_string(missing_block_count),
-              " blocks in ",
-              to_string(first_block_number),
-              "-0."
-            ]
-          end)
-
-          BoundInterval.decrease(bound_interval)
-      end
-
+      when is_integer(missing_block_count) and missing_block_count >= 0 and shrunk in [false, true] do
     Process.demonitor(ref, [:flush])
 
-    interval = new_bound_interval.current
+    delay = delay(last_block_number, shrunk, state)
+    new_first_block_number = new_first_block_number(last_block_number)
 
-    Logger.info(fn ->
-      ["Checking if index needs to catch up in ", to_string(interval), "ms."]
-    end)
+    Logger.info(
+      fn ->
+        [
+          caught_up_iodata(missing_block_count),
+          ?\s,
+          range_iodata(last_block_number),
+          shrunk_iodata(shrunk, missing_block_count),
+          ".  ",
+          checking_iodata(delay, new_first_block_number)
+        ]
+      end,
+      first_block_number: first_block_number,
+      last_block_number: last_block_number,
+      missing_block_count: missing_block_count,
+      shrunk: shrunk
+    )
 
-    Process.send_after(self(), :catchup_index, interval)
+    new_state = update_bound_interval(%__MODULE__{state | task: nil, task_args: nil}, missing_block_count, shrunk)
+    message = catchup_index_message(new_first_block_number, max_missing_block_count)
 
-    {:noreply, %__MODULE__{state | bound_interval: new_bound_interval, task: nil}}
-  end
+    case delay do
+      0 ->
+        {:noreply, new_state, {:continue, message}}
 
-  def handle_info(
-        {ref, %{first_block_number: first_block_number, missing_block_count: missing_block_count, shrunk: true}},
-        %__MODULE__{
-          task: %Task{ref: ref}
-        } = state
-      )
-      when is_integer(missing_block_count) do
-    Process.demonitor(ref, [:flush])
-
-    Logger.info(fn ->
-      [
-        "Index had to catch up ",
-        to_string(missing_block_count),
-        " blocks in ",
-        to_string(first_block_number),
-        "-0, but the sequence was shrunk to save memory, so retrying immediately."
-      ]
-    end)
-
-    send(self(), :catchup_index)
-
-    {:noreply, %__MODULE__{state | task: nil}}
+      _ ->
+        Process.send_after(self(), message, delay)
+        {:noreply, new_state}
+    end
   end
 
   def handle_info(
         {:DOWN, ref, :process, pid, reason},
-        %__MODULE__{task: %Task{pid: pid, ref: ref}} = state
-      ) do
-    Logger.error(fn -> "Catchup index stream exited with reason (#{inspect(reason)}). Restarting" end)
+        %__MODULE__{task: %Task{pid: pid, ref: ref}, task_args: task_args} = state
+      )
+      when is_list(task_args) do
+    Logger.error(fn -> "Task exited with reason (#{inspect(reason)}). Restarting" end)
 
-    send(self(), :catchup_index)
+    {:noreply, %__MODULE__{state | task: nil, task_args: nil}, {:continue, {:catchup_index, task_args}}}
+  end
 
-    {:noreply, %__MODULE__{state | task: nil}}
+  defp handle_catchup(task_args, %__MODULE__{fetcher: %Catchup.Fetcher{} = catchup} = state) when is_list(task_args) do
+    {:noreply,
+     %__MODULE__{
+       state
+       | task:
+           Task.Supervisor.async_nolink(
+             Catchup.TaskSupervisor,
+             Catchup.Fetcher,
+             :task,
+             [
+               catchup
+               | task_args
+             ]
+           ),
+         task_args: task_args
+     }}
+  end
+
+  defp update_bound_interval(state, missing_block_count, shrunk)
+
+  defp update_bound_interval(state, 0, false) do
+    update_in(state.bound_interval, &BoundInterval.increase/1)
+  end
+
+  defp update_bound_interval(state, 0, true), do: state
+
+  defp update_bound_interval(state, _, _) do
+    update_in(state.bound_interval, &BoundInterval.decrease/1)
+  end
+
+  defp delay(last_block_number, shrunk, state)
+  defp delay(0, false, %__MODULE__{bound_interval: %BoundInterval{current: interval}}), do: interval
+  defp delay(0, true, _), do: 0
+  defp delay(last_block_number, _, _) when is_integer(last_block_number), do: 0
+
+  defp new_first_block_number(0), do: :latest
+
+  defp new_first_block_number(last_block_number) when is_integer(last_block_number) and last_block_number > 0,
+    do: last_block_number - 1
+
+  defp caught_up_iodata(0), do: "Already caught up"
+
+  defp caught_up_iodata(missing_block_count) when is_integer(missing_block_count) and missing_block_count > 0,
+    do: "Had to catch up"
+
+  defp range_iodata(0), do: "entire history"
+
+  defp range_iodata(last_block_number) when is_integer(last_block_number) and last_block_number > 0,
+    do: "in search range"
+
+  defp checking_iodata(delay, from) do
+    ["Checking for missing blocks ", delay_iodata(delay), ?\s, from_iodata(from)]
+  end
+
+  defp delay_iodata(0), do: "immediately"
+
+  defp delay_iodata(milliseconds) when is_integer(milliseconds) and milliseconds > 0 do
+    ["in ", to_string(milliseconds), "ms"]
+  end
+
+  defp from_iodata(:latest), do: "latest"
+
+  defp from_iodata(first_block_number) when is_integer(first_block_number) and first_block_number >= 0 do
+    ["before ", to_string(first_block_number)]
+  end
+
+  defp shrunk_iodata(false, _), do: []
+  defp shrunk_iodata(true, 0), do: ", but after shrinking"
+  defp shrunk_iodata(true, _), do: " and after shrinking"
+
+  defp catchup_index_message(new_first_block_number, max_missing_block_count) do
+    task_args =
+      case new_first_block_number do
+        :latest -> [max_missing_block_count]
+        _ -> [new_first_block_number, max_missing_block_count]
+      end
+
+    {:catchup_index, task_args}
   end
 end

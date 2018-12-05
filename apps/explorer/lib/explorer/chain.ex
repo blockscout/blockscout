@@ -1226,9 +1226,10 @@ defmodule Explorer.Chain do
 
   """
   @spec missing_block_number_ranges(Range.t()) :: [Range.t()]
-  def missing_block_number_ranges(range)
+  @spec missing_block_number_ranges(Range.t(), opts :: list()) :: [Range.t()]
+  def missing_block_number_ranges(range, opts \\ [])
 
-  def missing_block_number_ranges(range_start..range_end) do
+  def missing_block_number_ranges(range_start..range_end, opts) do
     {step, first, last, direction} =
       if range_start <= range_end do
         {1, :minimum, :maximum, :asc}
@@ -1249,7 +1250,7 @@ defmodule Explorer.Chain do
                   EXCEPT
                   SELECT blocks.number
                   FROM blocks
-                  WHERE blocks.consensus = true)
+                  WHERE blocks.number BETWEEN ? AND ? AND blocks.consensus = true)
             SELECT no_previous.number AS minimum,
                    (SELECT MIN(no_next.number)
                     FROM missing_blocks AS no_next
@@ -1264,7 +1265,9 @@ defmodule Explorer.Chain do
             """,
             ^range_start,
             ^range_end,
-            ^step
+            ^step,
+            ^min(range_start, range_end),
+            ^max(range_start, range_end)
           ),
         select: %Range{
           first: field(missing_block_number_range, ^first),
@@ -1276,7 +1279,7 @@ defmodule Explorer.Chain do
         distinct: true
       )
 
-    Repo.all(query, timeout: :infinity)
+    Repo.all(query, opts)
   end
 
   @doc """
