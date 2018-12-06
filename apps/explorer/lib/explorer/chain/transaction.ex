@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Transaction do
 
   require Logger
 
-  import Ecto.Query, only: [from: 2, preload: 3, subquery: 1]
+  import Ecto.Query, only: [from: 2, order_by: 3, preload: 3, subquery: 1, where: 3]
 
   alias ABI.FunctionSelector
 
@@ -465,6 +465,18 @@ defmodule Explorer.Chain.Transaction do
     _ ->
       Logger.warn(fn -> ["Could not decode input data for transaction: ", Hash.to_iodata(hash)] end)
       {:error, :could_not_decode}
+  end
+
+  @doc """
+  Builds a query that will check for transactions within the hashes params.
+
+  Be careful to not pass a large list, because this will lead to performance
+  problems.
+  """
+  def where_transaction_hashes_match(transaction_hashes) do
+    Transaction
+    |> where([t], t.hash == fragment("ANY (?)", ^transaction_hashes))
+    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
   end
 
   @collated_fields ~w(block_number cumulative_gas_used gas_used index)a

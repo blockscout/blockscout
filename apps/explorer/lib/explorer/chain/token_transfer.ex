@@ -25,7 +25,7 @@ defmodule Explorer.Chain.TokenTransfer do
   use Ecto.Schema
 
   import Ecto.Changeset
-  import Ecto.Query, only: [from: 2, dynamic: 2, limit: 2, where: 3]
+  import Ecto.Query, only: [from: 2, limit: 2, where: 3]
 
   alias Explorer.Chain.{Address, Hash, Token, TokenTransfer, Transaction}
   alias Explorer.{PagingOptions, Repo}
@@ -148,55 +148,105 @@ defmodule Explorer.Chain.TokenTransfer do
   end
 
   @doc """
-  Builds a dynamic query expression to identify if there is a token transfer
-  related to the hash.
+  Fetches the transaction hashes from token transfers according
+  to the address hash.
   """
-  def dynamic_any_address_fields_match(:to, address_bytes) do
-    dynamic(
-      [t],
-      t.hash ==
-        fragment(
-          ~s"""
-          (SELECT tt.transaction_hash
-          FROM "token_transfers" AS tt
-          WHERE (tt."to_address_hash" = ?)
-          LIMIT 1)
-          """,
-          ^address_bytes
-        )
-    )
+  def where_any_address_fields_match(:to, address_hash, paging_options) do
+    query =
+      from(
+        tt in TokenTransfer,
+        where: tt.to_address_hash == ^address_hash,
+        select: tt.transaction_hash
+      )
+
+    query
+    |> page_transaction_hashes_from_token_transfers(paging_options)
+    |> limit(^paging_options.page_size)
+    |> Repo.all()
   end
 
-  def dynamic_any_address_fields_match(:from, address_bytes) do
-    dynamic(
-      [t],
-      t.hash ==
-        fragment(
-          ~s"""
-          (SELECT tt.transaction_hash
-          FROM "token_transfers" AS tt
-          WHERE (tt."from_address_hash" = ?)
-          LIMIT 1)
-          """,
-          ^address_bytes
-        )
-    )
+  def where_any_address_fields_match(:from, address_hash, paging_options) do
+    query =
+      from(
+        tt in TokenTransfer,
+        where: tt.from_address_hash == ^address_hash,
+        select: tt.transaction_hash
+      )
+
+    query
+    |> page_transaction_hashes_from_token_transfers(paging_options)
+    |> limit(^paging_options.page_size)
+    |> Repo.all()
   end
 
-  def dynamic_any_address_fields_match(_, address_bytes) do
-    dynamic(
-      [t],
-      t.hash ==
-        fragment(
-          ~s"""
-          (SELECT tt.transaction_hash
-          FROM "token_transfers" AS tt
-          WHERE ((tt."to_address_hash" = ?) OR (tt."from_address_hash" = ?))
-          LIMIT 1)
-          """,
-          ^address_bytes,
-          ^address_bytes
-        )
+  def where_any_address_fields_match(_, address_hash, paging_options) do
+    {:ok, address_bytes} = Explorer.Chain.Hash.Address.dump(address_hash)
+
+    transaction_hashes_from_token_transfers_sql(address_bytes, paging_options)
+  end
+
+  defp transaction_hashes_from_token_transfers_sql(address_bytes, %PagingOptions{key: nil, page_size: page_size}) do
+    {:ok, %Postgrex.Result{rows: transaction_hashes_from_token_transfers}} =
+      Repo.query(
+        """
+          SELECT transaction_hash
+          FROM
+          (
+          SELECT transaction_hash
+          FROM token_transfers
+          WHERE from_address_hash = $1
+
+          UNION
+
+          SELECT transaction_hash
+          FROM token_transfers
+          WHERE to_address_hash = $1
+          ) as token_transfers_transaction_hashes
+          LIMIT $2
+        """,
+        [address_bytes, page_size]
+      )
+
+    List.flatten(transaction_hashes_from_token_transfers)
+  end
+
+  defp transaction_hashes_from_token_transfers_sql(address_bytes, %PagingOptions{
+         key: {block_number, _index},
+         page_size: page_size
+       }) do
+    {:ok, %Postgrex.Result{rows: transaction_hashes_from_token_transfers}} =
+      Repo.query(
+        """
+          SELECT transaction_hash
+          FROM
+          (
+          SELECT transaction_hash
+          FROM token_transfers
+          WHERE from_address_hash = $1
+          AND block_number < $2
+
+          UNION
+
+          SELECT transaction_hash
+          FROM token_transfers
+          WHERE to_address_hash = $1
+          AND block_number < $2
+          ) as token_transfers_transaction_hashes
+          LIMIT $3
+        """,
+        [address_bytes, block_number, page_size]
+      )
+
+    List.flatten(transaction_hashes_from_token_transfers)
+  end
+
+  defp page_transaction_hashes_from_token_transfers(query, %PagingOptions{key: nil}), do: query
+
+  defp page_transaction_hashes_from_token_transfers(query, %PagingOptions{key: {block_number, _index}}) do
+    where(
+      query,
+      [tt],
+      tt.block_number < ^block_number
     )
   end
 
