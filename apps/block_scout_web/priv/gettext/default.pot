@@ -645,7 +645,7 @@ msgstr ""
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:50
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:41
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:38
-#: lib/block_scout_web/templates/transaction/index.html.eex:41
+#: lib/block_scout_web/templates/transaction/index.html.eex:46
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:24
 msgid "Older"
 msgstr ""
@@ -1208,7 +1208,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block/index.html.eex:25
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:36
-#: lib/block_scout_web/templates/transaction/index.html.eex:36
 msgid "Error trying to fetch next page."
 msgstr ""
 
@@ -1229,7 +1228,8 @@ msgstr ""
 #: lib/block_scout_web/templates/tokens/holder/index.html.eex:48
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:33
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:45
-#: lib/block_scout_web/templates/transaction/index.html.eex:33
+#: lib/block_scout_web/templates/transaction/index.html.eex:40
+#: lib/block_scout_web/templates/transaction/index.html.eex:54
 msgid "Loading"
 msgstr ""
 
@@ -1420,10 +1420,16 @@ msgstr ""
 #: lib/block_scout_web/templates/address_validation/index.html.eex:121
 #: lib/block_scout_web/templates/tokens/holder/index.html.eex:23
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:21
+#: lib/block_scout_web/templates/transaction/index.html.eex:24
 msgid "Something went wrong, click to reload."
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_validation/index.html.eex:117
 msgid "There are no blocks validated by this address."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/index.html.eex:30
+msgid "There are no transactions."
 msgstr ""
