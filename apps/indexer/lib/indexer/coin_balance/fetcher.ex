@@ -4,6 +4,8 @@ defmodule Indexer.CoinBalance.Fetcher do
   `fetched_coin_balance_block_number` to value at max `t:Explorer.Chain.Address.CoinBalance.t/0` `block_number` for the given `t:Explorer.Chain.Address.t/` `hash`.
   """
 
+  use Spandex.Decorators
+
   require Logger
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
@@ -11,7 +13,7 @@ defmodule Indexer.CoinBalance.Fetcher do
   alias EthereumJSONRPC.FetchedBalances
   alias Explorer.Chain
   alias Explorer.Chain.{Block, Hash}
-  alias Indexer.BufferedTask
+  alias Indexer.{BufferedTask, Tracer}
 
   @behaviour BufferedTask
 
@@ -65,6 +67,7 @@ defmodule Indexer.CoinBalance.Fetcher do
   end
 
   @impl BufferedTask
+  @decorate trace(name: "fetch", resource: "Indexer.CoinBalance.Fetcher.run/2", service: :indexer, tracer: Tracer)
   def run(entries, json_rpc_named_arguments) do
     # the same address may be used more than once in the same block, but we only want one `Balance` for a given
     # `{address, block}`, so take unique params only

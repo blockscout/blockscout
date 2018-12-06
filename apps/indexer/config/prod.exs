@@ -1,5 +1,7 @@
 use Mix.Config
 
+config :indexer, Indexer.Tracer, env: "production", disabled?: true
+
 config :logger, :indexer,
   level: :debug,
   path: Path.absname("logs/prod/indexer.log"),

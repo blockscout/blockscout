@@ -6,12 +6,17 @@ defmodule BlockScoutWeb.Schema.Types do
 
   import Absinthe.Resolution.Helpers
 
-  alias BlockScoutWeb.Resolvers.Transaction
+  alias BlockScoutWeb.Resolvers.{
+    InternalTransaction,
+    Transaction
+  }
 
   import_types(Absinthe.Type.Custom)
   import_types(BlockScoutWeb.Schema.Scalars)
 
   connection(node_type: :transaction)
+  connection(node_type: :internal_transaction)
+  connection(node_type: :token_transfer)
 
   @desc """
   A stored representation of a Web3 address.
@@ -61,6 +66,30 @@ defmodule BlockScoutWeb.Schema.Types do
   end
 
   @desc """
+  Models internal transactions.
+  """
+  node object(:internal_transaction, id_fetcher: &internal_transaction_id_fetcher/2) do
+    field(:call_type, :call_type)
+    field(:created_contract_code, :data)
+    field(:error, :string)
+    field(:gas, :decimal)
+    field(:gas_used, :decimal)
+    field(:index, :integer)
+    field(:init, :data)
+    field(:input, :data)
+    field(:output, :data)
+    field(:trace_address, :json)
+    field(:type, :type)
+    field(:value, :wei)
+    field(:block_number, :integer)
+    field(:transaction_index, :integer)
+    field(:created_contract_address_hash, :address_hash)
+    field(:from_address_hash, :address_hash)
+    field(:to_address_hash, :address_hash)
+    field(:transaction_hash, :full_hash)
+  end
+
+  @desc """
   The representation of a verified Smart Contract.
 
   "A contract in the sense of Solidity is a collection of code (its functions)
@@ -75,6 +104,20 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:contract_source_code, :string)
     field(:abi, :json)
     field(:address_hash, :address_hash)
+  end
+
+  @desc """
+  Represents a token transfer between addresses.
+  """
+  node object(:token_transfer, id_fetcher: &token_transfer_id_fetcher/2) do
+    field(:amount, :decimal)
+    field(:block_number, :integer)
+    field(:log_index, :integer)
+    field(:token_id, :decimal)
+    field(:from_address_hash, :address_hash)
+    field(:to_address_hash, :address_hash)
+    field(:token_contract_address_hash, :address_hash)
+    field(:transaction_hash, :full_hash)
   end
 
   @desc """
@@ -99,18 +142,28 @@ defmodule BlockScoutWeb.Schema.Types do
     field(:from_address_hash, :address_hash)
     field(:to_address_hash, :address_hash)
     field(:created_contract_address_hash, :address_hash)
+
+    connection field(:internal_transactions, node_type: :internal_transaction) do
+      arg(:count, :integer)
+      resolve(&InternalTransaction.get_by/3)
+
+      complexity(fn
+        %{first: first}, child_complexity ->
+          first * child_complexity
+
+        %{last: last}, child_complexity ->
+          last * child_complexity
+      end)
+    end
   end
 
-  @desc """
-  Represents a token transfer between addresses.
-  """
-  object :token_transfer do
-    field(:amount, :decimal)
-    field(:from_address_hash, :address_hash)
-    field(:to_address_hash, :address_hash)
-    field(:token_contract_address_hash, :address_hash)
-    field(:transaction_hash, :full_hash)
+  def token_transfer_id_fetcher(%{transaction_hash: transaction_hash, log_index: log_index}, _) do
+    Jason.encode!(%{transaction_hash: to_string(transaction_hash), log_index: log_index})
   end
 
   def transaction_id_fetcher(%{hash: hash}, _), do: to_string(hash)
+
+  def internal_transaction_id_fetcher(%{transaction_hash: transaction_hash, index: index}, _) do
+    Jason.encode!(%{transaction_hash: to_string(transaction_hash), index: index})
+  end
 end

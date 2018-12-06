@@ -3,13 +3,15 @@ defmodule Indexer.Block.Catchup.Fetcher do
   Fetches and indexes block ranges from the block before the latest block to genesis (0) that are missing.
   """
 
+  use Spandex.Decorators
+
   require Logger
 
   import Indexer.Block.Fetcher,
     only: [async_import_coin_balances: 2, async_import_tokens: 1, async_import_uncles: 1, fetch_and_import_range: 2]
 
   alias Explorer.Chain
-  alias Indexer.{Block, InternalTransaction, Sequence, TokenBalance}
+  alias Indexer.{Block, InternalTransaction, Sequence, TokenBalance, Tracer}
   alias Indexer.Memory.Shrinkable
 
   @behaviour Block.Fetcher
@@ -160,6 +162,11 @@ defmodule Indexer.Block.Catchup.Fetcher do
   end
 
   # Run at state.blocks_concurrency max_concurrency when called by `stream_import/1`
+  @decorate trace(
+              name: "fetch",
+              resource: "Indexer.Block.Catchup.Fetcher.fetch_and_import_range_from_sequence/3",
+              tracer: Tracer
+            )
   defp fetch_and_import_range_from_sequence(
          %__MODULE__{block_fetcher: %Block.Fetcher{} = block_fetcher},
          _.._ = range,

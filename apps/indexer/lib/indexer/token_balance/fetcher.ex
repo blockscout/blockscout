@@ -14,11 +14,13 @@ defmodule Indexer.TokenBalance.Fetcher do
   that always raise errors interacting with the Smart Contract.
   """
 
+  use Spandex.Decorators
+
   require Logger
 
   alias Explorer.Chain
   alias Explorer.Chain.Hash
-  alias Indexer.{BufferedTask, TokenBalances}
+  alias Indexer.{BufferedTask, TokenBalances, Tracer}
 
   @behaviour BufferedTask
 
@@ -74,6 +76,7 @@ defmodule Indexer.TokenBalance.Fetcher do
   when reading their balance in the Smart Contract.
   """
   @impl BufferedTask
+  @decorate trace(name: "fetch", resource: "Indexer.TokenBalance.Fetcher.run/2", tracer: Tracer, service: :indexer)
   def run(entries, _json_rpc_named_arguments) do
     result =
       entries

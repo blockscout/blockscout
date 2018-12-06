@@ -5,13 +5,15 @@ defmodule Indexer.InternalTransaction.Fetcher do
   See `async_fetch/1` for details on configuring limits.
   """
 
+  use Spandex.Decorators
+
   require Logger
 
   import Indexer.Block.Fetcher, only: [async_import_coin_balances: 2]
 
   alias Explorer.Chain
-  alias Indexer.{AddressExtraction, BufferedTask}
   alias Explorer.Chain.{Block, Hash}
+  alias Indexer.{AddressExtraction, BufferedTask, Tracer}
 
   @behaviour BufferedTask
 
@@ -91,6 +93,12 @@ defmodule Indexer.InternalTransaction.Fetcher do
   end
 
   @impl BufferedTask
+  @decorate trace(
+              name: "fetch",
+              resource: "Indexer.InternalTransaction.Fetcher.run/2",
+              service: :indexer,
+              tracer: Tracer
+            )
   def run(entries, json_rpc_named_arguments) do
     unique_entries = unique_entries(entries)
 

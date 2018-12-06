@@ -14,6 +14,15 @@ defmodule BlockScoutWeb.AddressControllerTest do
              |> Enum.map(fn {address, _transaction_count} -> address end)
              |> Enum.map(& &1.hash) == address_hashes
     end
+
+    test "returns an address's primary name when present", %{conn: conn} do
+      address = insert(:address, fetched_coin_balance: 1)
+      address_name = insert(:address_name, address: address, primary: true, name: "POA Wallet")
+
+      conn = get(conn, address_path(conn, :index))
+
+      assert html_response(conn, 200) =~ address_name.name
+    end
   end
 
   describe "GET show/3" do

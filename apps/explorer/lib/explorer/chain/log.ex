@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Log do
 
   require Logger
 
-  alias ABI.Event
+  alias ABI.{Event, FunctionSelector}
   alias Explorer.Chain.{Address, Data, Hash, Transaction}
 
   @required_attrs ~w(address_hash data index transaction_hash)a
@@ -117,7 +117,7 @@ defmodule Explorer.Chain.Log do
   def decode(_log, _transaction), do: {:error, :contract_not_verified}
 
   defp find_and_decode(abi, log, transaction) do
-    with {selector, mapping} <-
+    with {%FunctionSelector{} = selector, mapping} <-
            abi
            |> ABI.parse_specification(include_events?: true)
            |> Event.find_and_decode(
