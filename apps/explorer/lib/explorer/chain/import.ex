@@ -346,6 +346,12 @@ defmodule Explorer.Chain.Import do
         {:error, _, _, _} = error -> {:halt, error}
       end
     end)
+  rescue
+    e in DBConnection.ConnectionError ->
+      case e.message do
+        "tcp recv: closed" -> {:error, :timeout}
+        _ -> reraise e, __STACKTRACE__
+      end
   end
 
   defp import_transaction(multi, options) when is_map(options) do

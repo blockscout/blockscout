@@ -66,7 +66,7 @@ defmodule Explorer.Repo do
                 "\n",
                 "Exception:\n",
                 "\n",
-                Exception.format(:error, exception)
+                Exception.format(:error, exception, __STACKTRACE__)
               ]
             end)
 
