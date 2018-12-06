@@ -30,6 +30,11 @@ defmodule EthereumJSONRPC.Block do
           transactions_root: EthereumJSONRPC.hash(),
           uncles: [EthereumJSONRPC.hash()]
         }
+  @type derived_params :: %{
+          block_params: params(),
+          block_second_degree_relations_params: [map()],
+          transactions_params: [map()]
+        }
 
   @typedoc """
    * `"author"` - `t:EthereumJSONRPC.address/0` that created the block.  Aliased by `"miner"`.
@@ -85,6 +90,22 @@ defmodule EthereumJSONRPC.Block do
     annotated_error = Map.put(error, :data, params)
 
     {:error, annotated_error}
+  end
+
+  @spec derive_params(t()) :: derived_params()
+  def derive_params(block) do
+    elixir_block = to_elixir(block)
+    elixir_uncles = elixir_to_uncles(elixir_block)
+    elixir_transactions = elixir_to_transactions(elixir_block)
+    block_second_degree_relations_params = Uncles.elixir_to_params(elixir_uncles)
+    transactions_params = Transactions.elixir_to_params(elixir_transactions)
+    block_params = elixir_to_params(elixir_block)
+
+    %{
+      block_params: block_params,
+      block_second_degree_relations_params: block_second_degree_relations_params,
+      transactions_params: transactions_params
+    }
   end
 
   @doc """

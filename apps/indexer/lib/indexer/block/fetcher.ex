@@ -80,40 +80,104 @@ defmodule Indexer.Block.Fetcher do
 
   @decorate span(tracer: Tracer)
   @spec fetch_and_import_range(t, Range.t()) ::
-          {:ok, %{inserted: %{}, errors: [EthereumJSONRPC.Transport.error()]}}
-          | {:error,
-             {step :: atom(), reason :: term()}
-             | {step :: atom(), failed_value :: term(), changes_so_far :: term()}}
+          {:ok,
+           %{
+             inserted: %{},
+             errors: [
+               EthereumJSONRPC.Transport.error() | %{required(:number) => non_neg_integer(), optional(atom()) => term()}
+             ]
+           }}
+          | {:error, {step :: atom(), reason :: term()}}
   def fetch_and_import_range(
         %__MODULE__{
-          broadcast: _broadcast,
           callback_module: callback_module,
           json_rpc_named_arguments: json_rpc_named_arguments
         } = state,
         _.._ = range
       )
       when callback_module != nil do
-    with {:blocks,
-          {:ok,
-           %Blocks{
-             blocks_params: blocks_params,
-             transactions_params: transactions_params_without_receipts,
-             block_second_degree_relations_params: block_second_degree_relations_params,
-             errors: blocks_errors
-           }}} <- {:blocks, EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments)},
-         blocks = Transform.transform_blocks(blocks_params),
-         {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_params_without_receipts)},
+    with {:ok,
+          %Blocks{
+            derived_params_list: derived_params_list,
+            errors: blocks_errors
+          }} <- EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments) do
+      %{inserted: inserted, errors: errors} = fetch_and_import_derived_params_list(derived_params_list, state)
+      {:ok, %{inserted: inserted, errors: errors ++ blocks_errors}}
+    else
+      {:error, reason} -> {:error, {:blocks, reason}}
+    end
+  end
+
+  @spec fetch_and_import_derived_params_list(
+          [
+            %{
+              block_params: %{required(:number) => number, optional(atom()) => any()},
+              block_second_degree_relations_params: [map()],
+              transactions_params: [map()]
+            }
+          ],
+          t()
+        ) :: %{inserted: map(), errors: [%{}]}
+        when number: non_neg_integer()
+  defp fetch_and_import_derived_params_list(derived_params_list, state) when is_list(derived_params_list) do
+    derived_params_list
+    |> Stream.map(&fetch_and_import_derived_params(&1, state))
+    |> Enum.reduce(%{inserted: %{}, errors: []}, fn
+      {:error, reason}, %{errors: errors} = acc ->
+        %{acc | errors: [reason | errors]}
+
+      {:ok, %{inserted: inserted, errors: errors}}, %{inserted: acc_inserted, errors: acc_errors} ->
+        %{inserted: merge_inserted(inserted, acc_inserted), errors: errors ++ acc_errors}
+    end)
+  end
+
+  defp merge_inserted(into, from) do
+    Map.merge(into, from, fn
+      _key, into_value, from_value when is_list(into_value) and is_list(from_value) ->
+        into_value ++ from_value
+
+      _key, into_value, from_value when is_integer(into_value) and is_integer(from_value) ->
+        into_value + from_value
+    end)
+  end
+
+  @spec fetch_and_import_derived_params(
+          %{
+            block_params: %{required(:number) => number, optional(atom()) => any()},
+            block_second_degree_relations_params: [map()],
+            transactions_params: [map()]
+          },
+          t()
+        ) ::
+          {:ok, %{number: number, inserted: map(), errors: list()}}
+          | {:error,
+             %{number: number, step: atom(), reason: term()}
+             | %{number: number, step: atom(), failed_value: term(), changes_so_far: term()}}
+        when number: non_neg_integer()
+  defp fetch_and_import_derived_params(
+         %{
+           block_params: %{number: number} = block_params,
+           block_second_degree_relations_params: block_second_degree_relations_params,
+           transactions_params: transactions_params_without_receipts
+         },
+         %__MODULE__{json_rpc_named_arguments: json_rpc_named_arguments} = state
+       ) do
+    Logger.metadata(block_number: number)
+    transformed_block_params = Transform.transform_block(block_params)
+    blocks_params = [transformed_block_params]
+
+    with {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_params_without_receipts)},
          %{logs: logs, receipts: receipts} = receipt_params,
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfer.parse(logs),
          {:beneficiaries,
           {:ok, %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors}}} <-
-           fetch_beneficiaries(range, json_rpc_named_arguments),
-         addresses =
+           fetch_beneficiaries(number..number, json_rpc_named_arguments),
+         addresses_params =
            AddressExtraction.extract_addresses(%{
              block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set),
-             blocks: blocks,
+             blocks: blocks_params,
              logs: logs,
              mint_transfers: mint_transfers,
              token_transfers: token_transfers,
@@ -121,7 +185,7 @@ defmodule Indexer.Block.Fetcher do
            }),
          coin_balances_params_set =
            %{
-             blocks_params: blocks,
+             blocks_params: blocks_params,
              logs_params: logs,
              transactions_params: transactions_with_receipts
            }
@@ -133,22 +197,28 @@ defmodule Indexer.Block.Fetcher do
             __MODULE__.import(
               state,
               %{
-                addresses: %{params: addresses},
+                addresses: %{params: addresses_params},
                 address_coin_balances: %{params: coin_balances_params_set},
                 address_token_balances: %{params: address_token_balances},
-                blocks: %{params: blocks},
+                blocks: %{params: blocks_params},
                 block_second_degree_relations: %{params: block_second_degree_relations_params},
                 logs: %{params: logs},
                 token_transfers: %{params: token_transfers},
                 tokens: %{on_conflict: :nothing, params: tokens},
-                transactions: %{params: transactions_with_receipts}
+                transactions: %{params: transactions_with_receipts},
+                timeout: 100_000
               }
             )} do
-      {:ok, %{inserted: inserted, errors: blocks_errors ++ beneficiaries_errors}}
+      {:ok, %{number: number, inserted: inserted, errors: beneficiaries_errors}}
     else
-      {step, {:error, reason}} -> {:error, {step, reason}}
-      {:import, {:error, step, failed_value, changes_so_far}} -> {:error, {step, failed_value, changes_so_far}}
+      {step, {:error, reason}} ->
+        {:error, %{number: number, step: step, reason: reason}}
+
+      {:import, {:error, step, failed_value, changes_so_far}} ->
+        {:error, %{number: number, step: step, failed_value: failed_value, changes_so_far: changes_so_far}}
     end
+  after
+    Logger.metadata(block_number: nil)
   end
 
   def import(

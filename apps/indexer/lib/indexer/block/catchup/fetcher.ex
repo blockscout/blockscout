@@ -86,13 +86,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
     end
   end
 
-  def task(
-        %__MODULE__{
-          blocks_batch_size: blocks_batch_size,
-          block_fetcher: %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
-        } = state,
-        first..last = missing_block_number_search_range
-      )
+  def task(%__MODULE__{blocks_batch_size: blocks_batch_size} = state, first..last = missing_block_number_search_range)
       when 0 <= first and 0 <= last do
     Logger.metadata(fetcher: :block_catchup)
 
@@ -233,32 +227,15 @@ defmodule Indexer.Block.Catchup.Fetcher do
     case fetch_and_import_range(block_fetcher, range) do
       {:ok, %{inserted: inserted, errors: errors}} ->
         errors = cap_seq(sequence, errors, range)
+        log_errors(errors)
         retry(sequence, errors)
 
         {:ok, inserted: inserted}
-
-      {:error, {:import, [%Changeset{} | _] = changesets}} = error ->
-        Logger.error(fn ->
-          "failed to validate blocks #{inspect(range)}: #{inspect(changesets)}. Retrying"
-        end)
-
-        push_back(sequence, range)
-
-        error
 
       {:error, {step, reason}} = error ->
         Logger.error(fn ->
           first..last = range
           "failed to fetch #{step} for blocks #{first} - #{last}: #{inspect(reason)}. Retrying block range."
-        end)
-
-        push_back(sequence, range)
-
-        error
-
-      {:error, {step, failed_value, _changes_so_far}} = error ->
-        Logger.error(fn ->
-          "failed to insert blocks during #{step} #{inspect(range)}: #{inspect(failed_value)}. Retrying"
         end)
 
         push_back(sequence, range)
@@ -290,6 +267,31 @@ defmodule Indexer.Block.Catchup.Fetcher do
     other_errors
   end
 
+  defp log_errors(errors) when is_list(errors) do
+    Enum.each(errors, &log_error/1)
+  end
+
+  defp log_error(%{data: %{number: number}, code: code, message: message}) do
+    Logger.error(fn -> ["Failed to fetch: (", to_string(code), ") ", message] end, block_number: number)
+  end
+
+  defp log_error(%{number: number, step: :import, reason: [%Changeset{} | _] = changesets}) do
+    Logger.error(fn -> ["Failed to validate: ", inspect(changesets), ". Retrying."] end, block_number: number)
+  end
+
+  defp log_error(%{number: number, step: step, reason: reason}) do
+    Logger.error(fn -> ["Failed to fetch ", to_string(step), ": ", inspect(reason)] end, block_umber: number, step: step)
+  end
+
+  defp log_error(%{number: number, step: step, failed_value: failed_value, changes_so_far: _}) do
+    Logger.error(
+      fn ->
+        ["Failed to insert block during ", to_string(step), ": ", inspect(failed_value), ". Retrying"]
+      end,
+      block_number: number
+    )
+  end
+
   defp push_back(sequence, range) do
     case Sequence.push_back(sequence, range) do
       :ok -> :ok
@@ -310,6 +312,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
   end
 
   defp error_to_numbers(%{data: %{number: number}}) when is_integer(number), do: [number]
+  defp error_to_numbers(%{number: number}) when is_integer(number), do: [number]
 
   defp numbers_to_ranges([]), do: []
 

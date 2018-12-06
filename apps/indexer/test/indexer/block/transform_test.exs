@@ -34,23 +34,21 @@ defmodule Indexer.Block.TransformTest do
     uncles: []
   }
 
-  @blocks [@block, @block]
-
-  describe "transform_blocks/1" do
+  describe "transform_block/1" do
     setup do
       original = Application.get_env(:indexer, :block_transformer)
 
       on_exit(fn -> Application.put_env(:indexer, :block_transformer, original) end)
     end
 
-    test "transforms a list of blocks" do
-      assert Transform.transform_blocks(@blocks)
+    test "transforms a block" do
+      assert Transform.transform_block(@block)
     end
 
     test "raises when no transformer is configured" do
       Application.put_env(:indexer, :block_transformer, nil)
 
-      assert_raise ArgumentError, fn -> Transform.transform_blocks(@blocks) end
+      assert_raise ArgumentError, fn -> Transform.transform_block(@block) end
     end
   end
 end

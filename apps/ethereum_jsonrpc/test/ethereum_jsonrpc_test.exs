@@ -254,7 +254,7 @@ defmodule EthereumJSONRPCTest do
         end)
       end
 
-      assert {:ok, %Blocks{blocks_params: [_ | _], transactions_params: [_ | _]}} =
+      assert {:ok, %Blocks{derived_params_list: [%{block_params: _, transactions_params: [_ | _]} | _]}} =
                EthereumJSONRPC.fetch_blocks_by_hash([block_hash], json_rpc_named_arguments)
     end
 
@@ -331,8 +331,7 @@ defmodule EthereumJSONRPCTest do
 
       assert {:ok,
               %EthereumJSONRPC.Blocks{
-                block_second_degree_relations_params: [],
-                blocks_params: [],
+                derived_params_list: [],
                 errors: [
                   %{
                     data: %{number: 1_000_000_000_000_000_000_001}
@@ -340,8 +339,7 @@ defmodule EthereumJSONRPCTest do
                   %{
                     data: %{number: 1_000_000_000_000_000_000_000}
                   }
-                ],
-                transactions_params: []
+                ]
               }} =
                EthereumJSONRPC.fetch_blocks_by_range(
                  1_000_000_000_000_000_000_000..1_000_000_000_000_000_000_001,
@@ -395,28 +393,30 @@ defmodule EthereumJSONRPCTest do
 
       assert {:ok,
               %EthereumJSONRPC.Blocks{
-                block_second_degree_relations_params: [],
-                blocks_params: [
+                derived_params_list: [
                   %{
-                    difficulty: 0,
-                    extra_data: "0x",
-                    gas_limit: 0,
-                    gas_used: 0,
-                    hash: "0x0",
-                    logs_bloom: "0x",
-                    miner_hash: "0x0",
-                    mix_hash: "0x0",
-                    nonce: 0,
-                    number: 0,
-                    parent_hash: "0x0",
-                    receipts_root: "0x0",
-                    sha3_uncles: "0x0",
-                    size: 0,
-                    state_root: "0x0",
-                    timestamp: _,
-                    total_difficulty: 0,
-                    transactions_root: [],
-                    uncles: []
+                    block_params: %{
+                      difficulty: 0,
+                      extra_data: "0x",
+                      gas_limit: 0,
+                      gas_used: 0,
+                      hash: "0x0",
+                      logs_bloom: "0x",
+                      miner_hash: "0x0",
+                      mix_hash: "0x0",
+                      nonce: 0,
+                      number: 0,
+                      parent_hash: "0x0",
+                      receipts_root: "0x0",
+                      sha3_uncles: "0x0",
+                      size: 0,
+                      state_root: "0x0",
+                      timestamp: _,
+                      total_difficulty: 0,
+                      transactions_root: [],
+                      uncles: []
+                    },
+                    transactions_params: []
                   }
                 ],
                 errors: [
@@ -425,8 +425,7 @@ defmodule EthereumJSONRPCTest do
                     data: %{number: 1_000_000_000_000_000_000_000},
                     message: "Invalid params: Invalid block number: number too large to fit in target type."
                   }
-                ],
-                transactions_params: []
+                ]
               }} =
                EthereumJSONRPC.fetch_blocks_by_range(
                  1_000_000_000_000_000_000_000..1_000_000_000_000_000_000_001,
@@ -475,10 +474,14 @@ defmodule EthereumJSONRPCTest do
 
       assert {:ok,
               %EthereumJSONRPC.Blocks{
-                block_second_degree_relations_params: [],
-                blocks_params: [%{}],
-                errors: [%{code: 404, data: %{number: 1}, message: "Not Found"}],
-                transactions_params: []
+                derived_params_list: [
+                  %{
+                    block_params: %{},
+                    block_second_degree_relations_params: [],
+                    transactions_params: []
+                  }
+                ],
+                errors: [%{code: 404, data: %{number: 1}, message: "Not Found"}]
               }} = EthereumJSONRPC.fetch_blocks_by_range(0..1, moxed_json_rpc_named_arguments)
     end
   end

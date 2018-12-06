@@ -94,18 +94,44 @@ defmodule Indexer.Block.Uncle.Fetcher do
     end
   end
 
-  defp run_blocks(%Blocks{blocks_params: []}, _, original_entries), do: {:retry, original_entries}
+  defp run_blocks(%Blocks{derived_params_list: []}, _, original_entries), do: {:retry, original_entries}
 
   defp run_blocks(
          %Blocks{
-           blocks_params: blocks_params,
-           transactions_params: transactions_params,
-           block_second_degree_relations_params: block_second_degree_relations_params,
+           derived_params_list: derived_params_list,
            errors: errors
          },
          block_fetcher,
-         original_entries
+         _
        ) do
+    log_errors(errors)
+
+    retry_entries = run_derived_params_list(derived_params_list, block_fetcher) ++ errors_to_entries(errors)
+
+    case retry_entries do
+      [] -> :ok
+      _ -> {:retry, retry_entries}
+    end
+  end
+
+  defp run_derived_params_list(derived_params_list, block_fetcher) when is_list(derived_params_list) do
+    Enum.flat_map(derived_params_list, fn %{block_params: %{hash: hash}} = derived_params ->
+      case run_derived_params(derived_params, block_fetcher) do
+        :ok -> []
+        :error -> [hash]
+      end
+    end)
+  end
+
+  defp run_derived_params(
+         %{
+           block_params: %{hash: hash} = block_params,
+           block_second_degree_relations_params: block_second_degree_relations_params,
+           transactions_params: transactions_params
+         },
+         block_fetcher
+       ) do
+    blocks_params = [block_params]
     addresses_params = AddressExtraction.extract_addresses(%{blocks: blocks_params, transactions: transactions_params})
 
     case Block.Fetcher.import(block_fetcher, %{
@@ -115,22 +141,12 @@ defmodule Indexer.Block.Uncle.Fetcher do
            transactions: %{params: transactions_params, on_conflict: :nothing}
          }) do
       {:ok, _} ->
-        retry(errors, original_entries)
+        :ok
 
       {:error, step, failed_value, _changes_so_far} ->
-        Logger.error(
-          fn ->
-            [
-              "failed to import ",
-              original_entries |> length() |> to_string(),
-              ": ",
-              inspect(failed_value)
-            ]
-          end,
-          step: step
-        )
+        Logger.error(fn -> ["failed to import: ", inspect(failed_value)] end, block_hash: hash, step: step)
 
-        {:retry, original_entries}
+        :error
     end
   end
 
@@ -191,21 +207,10 @@ defmodule Indexer.Block.Uncle.Fetcher do
     end)
   end
 
-  defp retry([], _), do: :ok
+  defp log_errors([]), do: :ok
 
-  defp retry(errors, original_entries) when is_list(errors) do
-    retried_entries = errors_to_entries(errors)
-
-    Logger.error(fn ->
-      [
-        "failed to fetch ",
-        retried_entries |> length() |> to_string(),
-        "/",
-        original_entries |> length() |> to_string(),
-        ": ",
-        errors_to_iodata(errors)
-      ]
-    end)
+  defp log_errors(errors) when is_list(errors) do
+    Logger.error(fn -> errors_to_iodata(errors) end)
   end
 
   defp errors_to_entries(errors) when is_list(errors) do

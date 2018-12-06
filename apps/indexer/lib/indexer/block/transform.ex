@@ -13,7 +13,7 @@ defmodule Indexer.Block.Transform do
   @doc """
   Runs a list of blocks through the configured block transformer.
   """
-  def transform_blocks(blocks) when is_list(blocks) do
+  def transform_block(block) when is_map(block) do
     transformer = Application.get_env(:indexer, :block_transformer)
 
     unless transformer do
@@ -26,6 +26,6 @@ defmodule Indexer.Block.Transform do
             """
     end
 
-    Enum.map(blocks, &transformer.transform/1)
+    transformer.transform(block)
   end
 end
