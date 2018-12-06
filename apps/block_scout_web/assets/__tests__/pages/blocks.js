@@ -1,4 +1,4 @@
-import { reducer, initialState, placeHolderBlock } from '../../js/pages/blocks'
+import { blockReducer as reducer, initialState, placeHolderBlock } from '../../js/pages/blocks'
 
 test('CHANNEL_DISCONNECTED', () => {
   const state = Object.assign({}, initialState, { items: [] })
@@ -12,7 +12,7 @@ test('CHANNEL_DISCONNECTED', () => {
 
 describe('RECEIVED_NEW_BLOCK', () => {
   test('receives new block', () => {
-    const state = Object.assign({}, initialState, { items: [] })
+    const state = Object.assign({}, initialState, { items: [], blockType: 'block' })
     const action = {
       type: 'RECEIVED_NEW_BLOCK',
       msg: {
@@ -35,12 +35,37 @@ describe('RECEIVED_NEW_BLOCK', () => {
 
     expect(output.items).toEqual([])
   })
+  test('ignores new block on uncles page', () => {
+    const state = Object.assign({}, initialState, { items: [], blockType: 'uncle' })
+    const action = {
+      type: 'RECEIVED_NEW_BLOCK',
+      msg: {
+        blockHtml: '<div data-block-number="1"></div>'
+      }
+    }
+    const output = reducer(state, action)
+
+    expect(output.items).toEqual([])
+  })
+  test('ignores new block on reorgs page', () => {
+    const state = Object.assign({}, initialState, { items: [], blockType: 'reorg' })
+    const action = {
+      type: 'RECEIVED_NEW_BLOCK',
+      msg: {
+        blockHtml: '<div data-block-number="1"></div>'
+      }
+    }
+    const output = reducer(state, action)
+
+    expect(output.items).toEqual([])
+  })
   test('inserts place holders if block received out of order', () => {
     window.localized = {}
     const state = Object.assign({}, initialState, {
       items: [
         '<div data-block-number="2"></div>'
-      ]
+      ],
+      blockType: 'block'
     })
     const action = {
       type: 'RECEIVED_NEW_BLOCK',
@@ -62,7 +87,8 @@ describe('RECEIVED_NEW_BLOCK', () => {
       items: [
         '<div data-block-number="5"></div>',
         '<div data-block-number="4"></div>'
-      ]
+      ],
+      blockType: 'block'
     })
     const action = {
       type: 'RECEIVED_NEW_BLOCK',
@@ -84,7 +110,8 @@ describe('RECEIVED_NEW_BLOCK', () => {
         '<div data-block-number="4"></div>',
         '<div data-block-number="3"></div>',
         '<div data-block-number="2"></div>'
-      ]
+      ],
+      blockType: 'block'
     })
     const action = {
       type: 'RECEIVED_NEW_BLOCK',

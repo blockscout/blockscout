@@ -9,7 +9,7 @@ export const initialState = {
   channelDisconnected: false
 }
 
-export const reducer = withMissingBlocks(baseReducer)
+export const blockReducer = withMissingBlocks(baseReducer)
 
 function baseReducer (state = initialState, action) {
   switch (action.type) {
@@ -22,7 +22,7 @@ function baseReducer (state = initialState, action) {
       })
     }
     case 'RECEIVED_NEW_BLOCK': {
-      if (state.channelDisconnected || state.beyondPageOne) return state
+      if (state.channelDisconnected || state.beyondPageOne || state.blockType !== 'block') return state
 
       const blockNumber = getBlockNumber(action.msg.blockHtml)
       const minBlock = getBlockNumber(_.last(state.items))
@@ -73,8 +73,16 @@ function withMissingBlocks (reducer) {
 }
 
 const $blockListPage = $('[data-page="block-list"]')
-if ($blockListPage.length) {
-  const store = createStore(reducer)
+const $uncleListPage = $('[data-page="uncle-list"]')
+const $reorgListPage = $('[data-page="reorg-list"]')
+if ($blockListPage.length || $uncleListPage.length || $reorgListPage.length) {
+  const blockType = $blockListPage.length ? 'block' : $uncleListPage.length ? 'uncle' : 'reorg'
+
+  const store = createAsyncLoadStore(
+    $blockListPage.length ? blockReducer : baseReducer,
+    Object.assign({}, initialState, { blockType }),
+    'dataset.blockNumber'
+  )
   connectElements({ store, elements })
 
   const blocksChannel = socket.channel(`blocks:new_block`, {})
