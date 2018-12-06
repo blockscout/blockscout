@@ -272,9 +272,9 @@ defmodule Explorer.Chain.Import.Blocks do
       )
 
     try do
-      {_, result} = Repo.update_all(query, [], timeout: timeout)
+      {count, _} = Repo.update_all(query, [], timeout: timeout)
 
-      {:ok, result}
+      {:ok, count}
     rescue
       postgrex_error in Postgrex.Error ->
         {:error, %{exception: postgrex_error, uncle_hashes: ordered_uncle_hashes}}
