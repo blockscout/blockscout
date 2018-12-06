@@ -5,7 +5,7 @@ defmodule Indexer.Block.Fetcher do
 
   require Logger
 
-  alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
+  alias EthereumJSONRPC.{Blocks}
   alias Explorer.Chain.{Address, Block, Import}
   alias Indexer.{AddressExtraction, CoinBalance, MintTransfer, Token, TokenTransfers}
   alias Indexer.Address.{CoinBalances, TokenBalances}
@@ -105,12 +105,8 @@ defmodule Indexer.Block.Fetcher do
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfer.parse(logs),
-         {:beneficiaries,
-          {:ok, %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors}}} <-
-           fetch_beneficiaries(range, json_rpc_named_arguments),
          addresses =
            AddressExtraction.extract_addresses(%{
-             block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set),
              blocks: blocks,
              logs: logs,
              mint_transfers: mint_transfers,
@@ -123,8 +119,7 @@ defmodule Indexer.Block.Fetcher do
              logs_params: logs,
              transactions_params: transactions_with_receipts
            }
-           |> CoinBalances.params_set()
-           |> MapSet.union(beneficiary_params_set),
+           |> CoinBalances.params_set(),
          address_token_balances = TokenBalances.params_set(%{token_transfers_params: token_transfers}),
          {:ok, inserted} <-
            __MODULE__.import(
@@ -141,7 +136,7 @@ defmodule Indexer.Block.Fetcher do
                transactions: %{params: transactions_with_receipts}
              }
            ) do
-      {:ok, %{inserted: inserted, errors: blocks_errors ++ beneficiaries_errors}}
+      {:ok, %{inserted: inserted, errors: blocks_errors}}
     else
       {step, {:error, reason}} -> {:error, {step, reason}}
       {:error, :timeout} = error -> error
@@ -201,15 +196,6 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_uncles(_), do: :ok
-
-  defp fetch_beneficiaries(range, json_rpc_named_arguments) do
-    result =
-      with :ignore <- EthereumJSONRPC.fetch_beneficiaries(range, json_rpc_named_arguments) do
-        {:ok, %FetchedBeneficiaries{params_set: MapSet.new()}}
-      end
-
-    {:beneficiaries, result}
-  end
 
   # `fetched_balance_block_number` is needed for the `CoinBalanceFetcher`, but should not be used for `import` because the
   # balance is not known yet.
