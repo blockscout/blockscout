@@ -356,13 +356,15 @@ defmodule Indexer.AddressExtraction do
             %{
               required(:address_hash) => String.t(),
               required(:block_number) => non_neg_integer(),
-              required(:value) => non_neg_integer()
+              required(:value) => non_neg_integer(),
+              optional(atom()) => any()
             }
           ],
           optional(:blocks) => [
             %{
               required(:miner_hash) => String.t(),
-              required(:number) => non_neg_integer()
+              required(:number) => non_neg_integer(),
+              optional(atom()) => any()
             }
           ],
           optional(:internal_transactions) => [
@@ -371,7 +373,8 @@ defmodule Indexer.AddressExtraction do
               required(:from_address_hash) => String.t(),
               optional(:to_address_hash) => String.t(),
               optional(:created_contract_address_hash) => String.t(),
-              optional(:created_contract_code) => String.t()
+              optional(:created_contract_code) => String.t(),
+              optional(atom()) => any()
             }
           ],
           optional(:transactions) => [
@@ -380,13 +383,15 @@ defmodule Indexer.AddressExtraction do
               required(:from_address_hash) => String.t(),
               required(:nonce) => non_neg_integer(),
               optional(:to_address_hash) => String.t(),
-              optional(:created_contract_address_hash) => String.t()
+              optional(:created_contract_address_hash) => String.t(),
+              optional(atom()) => any()
             }
           ],
           optional(:logs) => [
             %{
               required(:address_hash) => String.t(),
-              required(:block_number) => non_neg_integer()
+              required(:block_number) => non_neg_integer(),
+              optional(atom()) => any()
             }
           ],
           optional(:token_transfers) => [
@@ -394,20 +399,23 @@ defmodule Indexer.AddressExtraction do
               required(:from_address_hash) => String.t(),
               required(:to_address_hash) => String.t(),
               required(:token_contract_address_hash) => String.t(),
-              required(:block_number) => non_neg_integer()
+              required(:block_number) => non_neg_integer(),
+              optional(atom()) => any()
             }
           ],
           optional(:mint_transfers) => [
             %{
               required(:from_address_hash) => String.t(),
               required(:to_address_hash) => String.t(),
-              required(:block_number) => non_neg_integer()
+              required(:block_number) => non_neg_integer(),
+              optional(atom()) => any()
             }
           ],
           optional(:block_reward_contract_beneficiaries) => [
             %{
               required(:address_hash) => String.t(),
-              required(:block_number) => non_neg_integer()
+              required(:block_number) => non_neg_integer(),
+              optional(atom()) => any()
             }
           ]
         }) :: [params]

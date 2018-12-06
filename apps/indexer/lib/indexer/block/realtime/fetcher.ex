@@ -147,31 +147,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
         Logger.debug(fn -> "fetched and imported" end)
 
       {:ok, %{inserted: _, errors: [_ | _] = errors}} ->
-        Logger.error(fn ->
-          [
-            "failed to fetch: ",
-            inspect(errors),
-            ".  Block will be retried by catchup indexer."
-          ]
-        end)
-
-      {:error, {:import, [%Changeset{} | _] = changesets}} ->
-        params = %{
-          changesets: changesets,
-          block_number_to_fetch: block_number_to_fetch,
-          block_fetcher: block_fetcher,
-          retry: retry
-        }
-
-        if retry_fetch_and_import_block(params) == :ignore do
-          Logger.error(fn ->
-            [
-              "failed to validate: ",
-              inspect(changesets),
-              ".  Block will be retried by catchup indexer."
-            ]
-          end)
-        end
+        log_errors(errors)
+        retry_errors(errors, block_number_to_fetch, block_fetcher, retry)
 
       {:error, {step, reason}} ->
         Logger.error(
@@ -184,18 +161,64 @@ defmodule Indexer.Block.Realtime.Fetcher do
           end,
           step: step
         )
+    end
+  end
 
-      {:error, {step, failed_value, _changes_so_far}} ->
-        Logger.error(
-          fn ->
-            [
-              "failed to import: ",
-              inspect(failed_value),
-              ".  Block will be retried by catchup indexer."
-            ]
-          end,
-          step: step
-        )
+  defp log_errors(errors) when is_list(errors) do
+    Enum.each(errors, &log_error/1)
+  end
+
+  defp log_error(%{data: %{number: number}, code: code, message: message}) do
+    Logger.error(
+      fn -> ["Failed to fetch: (", to_string(code), ") ", message, ".  Block will be retried by catchup indexer."] end,
+      block_number: number
+    )
+  end
+
+  defp log_error(%{number: _, step: :import, reason: [%Changeset{} | _]}), do: :ignore
+
+  defp log_error(%{number: number, step: step, reason: reason}) do
+    Logger.error(fn -> ["Failed to fetch ", to_string(step), ": ", inspect(reason)] end, block_number: number)
+  end
+
+  defp log_error(%{number: number, step: step, failed_value: failed_value, changes_so_far: _}) do
+    Logger.error(
+      fn ->
+        [
+          "Failed to insert block during ",
+          to_string(step),
+          ": ",
+          inspect(failed_value),
+          ".  Block will be retried by catchup indexer."
+        ]
+      end,
+      block_number: number
+    )
+  end
+
+  defp retry_errors(errors, block_number_to_fetch, block_fetcher, retry) do
+    if Enum.all?(errors, fn
+         %{step: :import, reason: [%Changeset{} | _]} -> true
+         _ -> false
+       end) do
+      changesets = Enum.flat_map(errors, fn %{reason: [%Changeset{} | _] = changesets} -> changesets end)
+
+      params = %{
+        changesets: changesets,
+        block_number_to_fetch: block_number_to_fetch,
+        block_fetcher: block_fetcher,
+        retry: retry
+      }
+
+      if retry_fetch_and_import_block(params) == :ignore do
+        Logger.error(fn ->
+          [
+            "failed to validate: ",
+            inspect(changesets),
+            ".  Block will be retried by catchup indexer."
+          ]
+        end)
+      end
     end
   end
 
