@@ -13,7 +13,7 @@ test('CHANNEL_DISCONNECTED', () => {
 
 describe('RECEIVED_NEW_PENDING_TRANSACTION_BATCH', () => {
   test('single transaction', () => {
-    const state = initialState
+    const state = Object.assign({}, initialState, {items:[]})
     const action = {
       type: 'RECEIVED_NEW_PENDING_TRANSACTION_BATCH',
       msgs: [{
@@ -23,15 +23,12 @@ describe('RECEIVED_NEW_PENDING_TRANSACTION_BATCH', () => {
     }
     const output = reducer(state, action)
 
-    expect(output.pendingTransactions).toEqual([{
-      transactionHash: '0x00',
-      transactionHtml: 'test'
-    }])
+    expect(output.items).toEqual(['test'])
     expect(output.pendingTransactionsBatch.length).toEqual(0)
     expect(output.pendingTransactionCount).toEqual(1)
   })
   test('large batch of transactions', () => {
-    const state = initialState
+    const state = Object.assign({}, initialState, {items:[]})
     const action = {
       type: 'RECEIVED_NEW_PENDING_TRANSACTION_BATCH',
       msgs: [{
@@ -71,37 +68,32 @@ describe('RECEIVED_NEW_PENDING_TRANSACTION_BATCH', () => {
     }
     const output = reducer(state, action)
 
-    expect(output.pendingTransactions).toEqual([])
+    expect(output.items).toEqual([])
     expect(output.pendingTransactionsBatch.length).toEqual(11)
     expect(output.pendingTransactionCount).toEqual(11)
   })
   test('single transaction after single transaction', () => {
     const state = Object.assign({}, initialState, {
-      pendingTransactions: [{
-        transactionHash: '0x01',
-        transactionHtml: 'test 1'
-      }],
+      items: ['test 0x01'],
       pendingTransactionCount: 1
     })
     const action = {
       type: 'RECEIVED_NEW_PENDING_TRANSACTION_BATCH',
       msgs: [{
         transactionHash: '0x02',
-        transactionHtml: 'test 2'
+        transactionHtml: 'test 0x02'
       }]
     }
     const output = reducer(state, action)
 
-    expect(output.pendingTransactions).toEqual([
-      { transactionHash: '0x02', transactionHtml: 'test 2' },
-      { transactionHash: '0x01', transactionHtml: 'test 1' }
-    ])
+    expect(output.items).toEqual(['test 0x02', 'test 0x01'])
     expect(output.pendingTransactionsBatch.length).toEqual(0)
     expect(output.pendingTransactionCount).toEqual(2)
   })
   test('single transaction after large batch of transactions', () => {
     const state = Object.assign({}, initialState, {
-      pendingTransactionsBatch: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']
+      pendingTransactionsBatch: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'],
+      items: []
     })
     const action = {
       type: 'RECEIVED_NEW_PENDING_TRANSACTION_BATCH',
@@ -112,12 +104,13 @@ describe('RECEIVED_NEW_PENDING_TRANSACTION_BATCH', () => {
     }
     const output = reducer(state, action)
 
-    expect(output.pendingTransactions).toEqual([])
+    expect(output.items).toEqual([])
     expect(output.pendingTransactionsBatch.length).toEqual(12)
   })
   test('large batch of transactions after large batch of transactions', () => {
     const state = Object.assign({}, initialState, {
-      pendingTransactionsBatch: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11']
+      pendingTransactionsBatch: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'],
+      items: []
     })
     const action = {
       type: 'RECEIVED_NEW_PENDING_TRANSACTION_BATCH',
@@ -158,12 +151,13 @@ describe('RECEIVED_NEW_PENDING_TRANSACTION_BATCH', () => {
     }
     const output = reducer(state, action)
 
-    expect(output.pendingTransactions).toEqual([])
+    expect(output.items).toEqual([])
     expect(output.pendingTransactionsBatch.length).toEqual(22)
   })
   test('after disconnection', () => {
     const state = Object.assign({}, initialState, {
-      channelDisconnected: true
+      channelDisconnected: true,
+      items: []
     })
     const action = {
       type: 'RECEIVED_NEW_PENDING_TRANSACTION_BATCH',
@@ -174,7 +168,7 @@ describe('RECEIVED_NEW_PENDING_TRANSACTION_BATCH', () => {
     }
     const output = reducer(state, action)
 
-    expect(output.pendingTransactions).toEqual([])
+    expect(output.items).toEqual([])
   })
 })
 
@@ -182,41 +176,24 @@ describe('RECEIVED_NEW_TRANSACTION', () => {
   test('single transaction collated', () => {
     const state = Object.assign({}, initialState, {
       pendingTransactionCount: 2,
-      pendingTransactions: [{
-        transactionHash: '0x00',
-        transactionHtml: 'old'
-      }]
+      items: ['old 0x00']
     })
     const action = {
       type: 'RECEIVED_NEW_TRANSACTION',
       msg: {
         transactionHash: '0x00',
-        transactionHtml: 'new'
+        transactionHtml: 'new 0x00'
       }
     }
     const output = reducer(state, action)
 
     expect(output.pendingTransactionCount).toBe(1)
-    expect(output.pendingTransactions).toEqual([{
-      transactionHash: '0x00',
-      transactionHtml: 'new'
-    }])
+    expect(output.items).toEqual(['new 0x00'])
   })
   test('single transaction collated after batch', () => {
     const state = Object.assign({}, initialState, {
-      pendingTransactionsBatch: [
-        { transactionHash: '0x01' },
-        { transactionHash: '2' },
-        { transactionHash: '3' },
-        { transactionHash: '4' },
-        { transactionHash: '5' },
-        { transactionHash: '6' },
-        { transactionHash: '7' },
-        { transactionHash: '8' },
-        { transactionHash: '9' },
-        { transactionHash: '10' },
-        { transactionHash: '11' }
-      ]
+      pendingTransactionsBatch: ['0x01', '0x02', '0x03', '0x04', '0x05', '0x06', '0x07', '0x08', '0x09', '0x0a', '0x0b'],
+      items: []
     })
     const action = {
       type: 'RECEIVED_NEW_TRANSACTION',
@@ -227,6 +204,6 @@ describe('RECEIVED_NEW_TRANSACTION', () => {
     const output = reducer(state, action)
 
     expect(output.pendingTransactionsBatch.length).toEqual(10)
-    expect(_.map(output.pendingTransactionsBatch, 'transactionHash')).not.toContain('0x01')
+    expect(output.pendingTransactionsBatch).not.toContain('0x01')
   })
 })
