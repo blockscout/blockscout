@@ -143,6 +143,9 @@ defmodule Indexer.Block.Uncle.Fetcher do
       {:ok, _} ->
         :ok
 
+      {:error, reason} ->
+        Logger.error(fn -> ["failed to import: ", inspect(reason)] end, block_hash: hash)
+
       {:error, step, failed_value, _changes_so_far} ->
         Logger.error(fn -> ["failed to import: ", inspect(failed_value)] end, block_hash: hash, step: step)
 

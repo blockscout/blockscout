@@ -75,7 +75,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   end
 
   @import_options ~w(address_hash_to_fetched_balance_block_number transaction_hash_to_block_number)a
-  @chain_import_timeout 50_000
+  @chain_import_timeout 70_000
 
   @impl Block.Fetcher
   def import(
@@ -176,6 +176,10 @@ defmodule Indexer.Block.Realtime.Fetcher do
   end
 
   defp log_error(%{number: _, step: :import, reason: [%Changeset{} | _]}), do: :ignore
+
+  defp log_error(%{number: number, step: :import, reason: reason}) do
+    Logger.error(fn -> ["Failed to import: ", inspect(reason)] end, block_number: number)
+  end
 
   defp log_error(%{number: number, step: step, reason: reason}) do
     Logger.error(fn -> ["Failed to fetch ", to_string(step), ": ", inspect(reason)] end, block_number: number)
