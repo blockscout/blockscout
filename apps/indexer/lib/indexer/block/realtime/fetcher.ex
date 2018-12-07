@@ -161,6 +161,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
       # give previous fetch attempt (for same block number) a chance to finish
       # before fetching again, to reduce block consensus mistakes
       :timer.sleep(@reorg_delay)
+      :timer.sleep(5_000)
     end
 
     do_fetch_and_import_block(block_number_to_fetch, block_fetcher, retry)
