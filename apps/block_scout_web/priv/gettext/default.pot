@@ -641,7 +641,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:31
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:75
 #: lib/block_scout_web/templates/address_validation/index.html.eex:126
-#: lib/block_scout_web/templates/block/index.html.eex:30
+#: lib/block_scout_web/templates/block/index.html.eex:25
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:50
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:39
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:38
@@ -1206,11 +1206,6 @@ msgid "APIs"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/index.html.eex:25
-msgid "Error trying to fetch next page."
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:68
 msgid "GraphQL"
 msgstr ""
@@ -1221,7 +1216,8 @@ msgstr ""
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:38
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:69
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:83
-#: lib/block_scout_web/templates/block/index.html.eex:22
+#: lib/block_scout_web/templates/block/index.html.eex:17
+#: lib/block_scout_web/templates/block/index.html.eex:32
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:36
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:46
 #: lib/block_scout_web/templates/tokens/holder/index.html.eex:37
@@ -1433,6 +1429,11 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/index.html.eex:30
 msgid "There are no transactions."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/block/index.html.eex:21
+msgid "There are no blocks."
 msgstr ""
 
 #, elixir-format
