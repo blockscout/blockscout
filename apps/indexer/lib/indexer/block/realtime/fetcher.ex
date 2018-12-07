@@ -21,7 +21,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   @behaviour Block.Fetcher
 
   @enforce_keys ~w(block_fetcher)a
-  defstruct ~w(block_fetcher subscription previous_number)a
+  defstruct ~w(block_fetcher subscription previous_number max_number_seen)a
 
   @type t :: %__MODULE__{
           block_fetcher: %Block.Fetcher{
@@ -32,7 +32,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
             receipts_concurrency: pos_integer()
           },
           subscription: Subscription.t(),
-          previous_number: pos_integer() | nil
+          previous_number: pos_integer() | nil,
+          max_number_seen: pos_integer() | nil
         }
 
   def start_link([arguments, gen_server_options]) do
@@ -61,7 +62,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
         %__MODULE__{
           block_fetcher: %Block.Fetcher{} = block_fetcher,
           subscription: %Subscription{} = subscription,
-          previous_number: previous_number
+          previous_number: previous_number,
+          max_number_seen: max_number_seen
         } = state
       )
       when is_binary(quantity) do
@@ -69,10 +71,16 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
     # Subscriptions don't support getting all the blocks and transactions data,
     # so we need to go back and get the full block
-    start_fetch_and_import(number, block_fetcher, previous_number)
+    start_fetch_and_import(number, block_fetcher, previous_number, max_number_seen)
 
-    {:noreply, %{state | previous_number: number}}
+    new_max_number = new_max_number(number, max_number_seen)
+
+    {:noreply, %{state | previous_number: number, max_number_seen: new_max_number}}
   end
+
+  defp new_max_number(number, nil), do: number
+
+  defp new_max_number(number, max_number_seen), do: max(number, max_number_seen)
 
   @import_options ~w(address_hash_to_fetched_balance_block_number transaction_hash_to_block_number)a
 
@@ -118,17 +126,43 @@ defmodule Indexer.Block.Realtime.Fetcher do
     end
   end
 
-  defp start_fetch_and_import(number, block_fetcher, previous_number) do
-    start_at = if is_integer(previous_number), do: previous_number + 1, else: number
+  defp start_fetch_and_import(number, block_fetcher, previous_number, max_number_seen) do
+    start_at = determine_start_at(number, previous_number, max_number_seen)
 
     for block_number_to_fetch <- start_at..number do
-      args = [block_number_to_fetch, block_fetcher]
+      args = [block_number_to_fetch, block_fetcher, reorg?(number, max_number_seen)]
       Task.Supervisor.start_child(TaskSupervisor, __MODULE__, :fetch_and_import_block, args)
     end
   end
 
+  defp determine_start_at(number, nil, nil), do: number
+
+  defp determine_start_at(number, previous_number, max_number_seen) do
+    if reorg?(number, max_number_seen) do
+      # set start_at to NOT fill in skipped numbers
+      number
+    else
+      # set start_at to fill in skipped numbers, if any
+      previous_number + 1
+    end
+  end
+
+  defp reorg?(number, max_number_seen) when is_integer(max_number_seen) and number <= max_number_seen do
+    true
+  end
+
+  defp reorg?(_, _), do: false
+
+  @reorg_delay 5_000
+
   @decorate trace(name: "fetch", resource: "Indexer.Block.Realtime.Fetcher.fetch_and_import_block/3", tracer: Tracer)
-  def fetch_and_import_block(block_number_to_fetch, block_fetcher, retry \\ 3) do
+  def fetch_and_import_block(block_number_to_fetch, block_fetcher, reorg?, retry \\ 3) do
+    if reorg? do
+      # give previous fetch attempt (for same block number) a chance to finish
+      # before fetching again, to reduce block consensus mistakes
+      :timer.sleep(@reorg_delay)
+    end
+
     do_fetch_and_import_block(block_number_to_fetch, block_fetcher, retry)
   end
 
