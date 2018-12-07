@@ -643,7 +643,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_validation/index.html.eex:126
 #: lib/block_scout_web/templates/block/index.html.eex:30
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:50
-#: lib/block_scout_web/templates/pending_transaction/index.html.eex:41
+#: lib/block_scout_web/templates/pending_transaction/index.html.eex:39
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:38
 #: lib/block_scout_web/templates/transaction/index.html.eex:46
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:24
@@ -1207,7 +1207,6 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/index.html.eex:25
-#: lib/block_scout_web/templates/pending_transaction/index.html.eex:36
 msgid "Error trying to fetch next page."
 msgstr ""
 
@@ -1223,7 +1222,8 @@ msgstr ""
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:69
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:83
 #: lib/block_scout_web/templates/block/index.html.eex:22
-#: lib/block_scout_web/templates/pending_transaction/index.html.eex:33
+#: lib/block_scout_web/templates/pending_transaction/index.html.eex:36
+#: lib/block_scout_web/templates/pending_transaction/index.html.eex:46
 #: lib/block_scout_web/templates/tokens/holder/index.html.eex:37
 #: lib/block_scout_web/templates/tokens/holder/index.html.eex:48
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:33
@@ -1418,6 +1418,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:26
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:55
 #: lib/block_scout_web/templates/address_validation/index.html.eex:121
+#: lib/block_scout_web/templates/pending_transaction/index.html.eex:23
 #: lib/block_scout_web/templates/tokens/holder/index.html.eex:23
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:21
 #: lib/block_scout_web/templates/transaction/index.html.eex:24
@@ -1432,4 +1433,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/index.html.eex:30
 msgid "There are no transactions."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/pending_transaction/index.html.eex:27
+msgid "There are no pending transactions."
 msgstr ""
