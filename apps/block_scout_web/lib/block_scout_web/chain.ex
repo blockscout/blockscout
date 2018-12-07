@@ -16,6 +16,7 @@ defmodule BlockScoutWeb.Chain do
 
   alias Explorer.Chain.{
     Address,
+    Address.CoinBalance,
     Address.CurrentTokenBalance,
     Block,
     InternalTransaction,
@@ -192,6 +193,10 @@ defmodule BlockScoutWeb.Chain do
 
   defp paging_params(%CurrentTokenBalance{address_hash: address_hash, value: value}) do
     %{"address_hash" => to_string(address_hash), "value" => Decimal.to_integer(value)}
+  end
+
+  defp paging_params(%CoinBalance{block_number: block_number}) do
+    %{"block_number" => block_number}
   end
 
   defp block_or_transaction_from_param(param) do
