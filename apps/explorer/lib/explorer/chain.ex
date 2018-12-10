@@ -2034,7 +2034,7 @@ defmodule Explorer.Chain do
   @spec fetch_last_token_balances(Hash.Address.t()) :: []
   def fetch_last_token_balances(address_hash) do
     address_hash
-    |> TokenBalance.last_token_balances()
+    |> CurrentTokenBalance.last_token_balances()
     |> Repo.all()
   end
 

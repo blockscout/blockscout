@@ -87,6 +87,18 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     |> limit(^paging_options.page_size)
   end
 
+  @doc """
+  Builds an `Ecto.Query` to fetch the current token balances of the given address.
+  """
+  def last_token_balances(address_hash) do
+    from(
+      tb in __MODULE__,
+      where: tb.address_hash == ^address_hash,
+      where: tb.value > 0,
+      preload: :token
+    )
+  end
+
   defp token_holders_query(token_contract_address_hash) do
     from(
       tb in __MODULE__,

@@ -2887,91 +2887,15 @@ defmodule Explorer.ChainTest do
   describe "fetch_last_token_balances/1" do
     test "returns the token balances given the address hash" do
       address = insert(:address)
-      token_balance = insert(:token_balance, address: address)
-      insert(:token_balance, address: build(:address))
+      current_token_balance = insert(:address_current_token_balance, address: address)
+      insert(:address_current_token_balance, address: build(:address))
 
       token_balances =
         address.hash
         |> Chain.fetch_last_token_balances()
         |> Enum.map(& &1.address_hash)
 
-      assert token_balances == [token_balance.address_hash]
-    end
-
-    test "returns the value from the last block" do
-      address = insert(:address)
-      token_a = insert(:token, contract_address: build(:contract_address))
-      token_b = insert(:token, contract_address: build(:contract_address))
-
-      insert(
-        :token_balance,
-        address: address,
-        block_number: 1000,
-        token_contract_address_hash: token_a.contract_address_hash,
-        value: 5000
-      )
-
-      token_balance_a =
-        insert(
-          :token_balance,
-          address: address,
-          block_number: 1001,
-          token_contract_address_hash: token_a.contract_address_hash,
-          value: 4000
-        )
-
-      insert(
-        :token_balance,
-        address: address,
-        block_number: 1000,
-        token_contract_address_hash: token_b.contract_address_hash,
-        value: 3000
-      )
-
-      token_balance_b =
-        insert(
-          :token_balance,
-          address: address,
-          block_number: 1001,
-          token_contract_address_hash: token_b.contract_address_hash,
-          value: 2000
-        )
-
-      token_balances = Chain.fetch_last_token_balances(address.hash)
-
-      assert Enum.count(token_balances) == 2
-      assert Enum.map(token_balances, & &1.value) == [token_balance_a.value, token_balance_b.value]
-    end
-
-    test "returns an empty list when there are no token balances" do
-      address = insert(:address)
-
-      insert(:token_balance, address: build(:address))
-
-      assert Chain.fetch_last_token_balances(address.hash) == []
-    end
-
-    test "does not consider other blocks when the last block has the value 0" do
-      address = insert(:address)
-      token = insert(:token, contract_address: build(:contract_address))
-
-      insert(
-        :token_balance,
-        address: address,
-        block_number: 1000,
-        token_contract_address_hash: token.contract_address_hash,
-        value: 5000
-      )
-
-      insert(
-        :token_balance,
-        address: address,
-        block_number: 1001,
-        token_contract_address_hash: token.contract_address_hash,
-        value: 0
-      )
-
-      assert Chain.fetch_last_token_balances(address.hash) == []
+      assert token_balances == [current_token_balance.address_hash]
     end
   end
 
