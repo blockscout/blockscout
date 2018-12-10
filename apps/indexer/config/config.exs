@@ -20,7 +20,7 @@ config :logger, :indexer,
   # keep synced with `config/config.exs`
   format: "$dateT$time $metadata[$level] $message\n",
   metadata: ~w(application fetcher block_number count error_count first_block_number last_block_number microseconds
-       missing_block_count shrunk step import_id request_id transaction_id)a,
+       missing_block_range_count missing_block_count shrunk step import_id request_id transaction_id)a,
   metadata_filter: [application: :indexer]
 
 # Import environment specific config. This must remain at the bottom

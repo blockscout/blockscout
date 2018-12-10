@@ -92,12 +92,6 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
     {microseconds, missing_ranges} = :timer.tc(Chain, :missing_block_number_ranges, [missing_block_number_search_range])
 
-    Logger.info(fn -> "Missing block number ranges calculated" end,
-      first_block_number: first,
-      last_block_number: last,
-      microseconds: microseconds
-    )
-
     range_count = Enum.count(missing_ranges)
 
     missing_block_count =
@@ -105,9 +99,13 @@ defmodule Indexer.Block.Catchup.Fetcher do
       |> Stream.map(&Enum.count/1)
       |> Enum.sum()
 
-    Logger.debug(fn ->
-      "#{missing_block_count} missed blocks in #{range_count} ranges between #{first} and #{last}"
-    end)
+    Logger.info(fn -> "Missing block number ranges calculated" end,
+      first_block_number: first,
+      last_block_number: last,
+      missing_block_count: missing_block_count,
+      missing_block_range_count: range_count,
+      microseconds: microseconds
+    )
 
     shrunk =
       case missing_block_count do
