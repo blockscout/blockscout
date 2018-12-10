@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Transaction do
 
   require Logger
 
-  import Ecto.Query, only: [from: 2, preload: 3, subquery: 1, where: 3]
+  import Ecto.Query, only: [from: 2, preload: 3, subquery: 1]
 
   alias ABI.FunctionSelector
 
@@ -465,18 +465,6 @@ defmodule Explorer.Chain.Transaction do
     _ ->
       Logger.warn(fn -> ["Could not decode input data for transaction: ", Hash.to_iodata(hash)] end)
       {:error, :could_not_decode}
-  end
-
-  @doc """
-  Adds to the given transaction's query a `where` with one of the conditions that the matched
-  function returns.
-
-  `where_address_fields_match(query, address, address_field)`
-  - returns a query constraining the given address_hash to be equal to the given
-    address field from transactions' table.
-  """
-  def where_address_fields_match(query, address_hash, address_field) do
-    where(query, [t], field(t, ^address_field) == ^address_hash)
   end
 
   @collated_fields ~w(block_number cumulative_gas_used gas_used index)a
