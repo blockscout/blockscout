@@ -81,6 +81,13 @@
       .tile-label {
         color: $orange;
       }
+
+      &-short-name {
+        overflow: hidden;
+        max-width: 45%;
+        vertical-align: middle;
+        text-overflow: ellipsis;
+      }
     }
 
     &-unique-token {
