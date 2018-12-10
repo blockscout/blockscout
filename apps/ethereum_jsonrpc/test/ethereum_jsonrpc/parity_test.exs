@@ -293,8 +293,10 @@ defmodule EthereumJSONRPC.ParityTest do
                EthereumJSONRPC.Parity.fetch_beneficiaries(5_080_887..5_080_887, json_rpc_named_arguments)
 
       assert Enum.count(params_set) == 2
-      assert %{block_number: block_number, address_hash: hash2} in params_set
-      assert %{block_number: block_number, address_hash: hash1} in params_set
+
+      assert %{block_number: block_number, address_hash: hash2, address_type: :validator, reward: "0xde0b6b3a7640000"} in params_set
+
+      assert %{block_number: block_number, address_hash: hash1, address_type: :validator, reward: "0xde0b6b3a7640000"} in params_set
     end
 
     test "with 'external' 'rewardType'", %{
@@ -352,8 +354,15 @@ defmodule EthereumJSONRPC.ParityTest do
                EthereumJSONRPC.Parity.fetch_beneficiaries(5_609_295..5_609_295, json_rpc_named_arguments)
 
       assert Enum.count(params_set) == 2
-      assert %{block_number: block_number, address_hash: hash1} in params_set
-      assert %{block_number: block_number, address_hash: hash2} in params_set
+
+      assert %{block_number: block_number, address_hash: hash1, address_type: :validator, reward: "0xde0b6b3a7640000"} in params_set
+
+      assert %{
+               block_number: block_number,
+               address_hash: hash2,
+               address_type: :emission_funds,
+               reward: "0xde0b6b3a7640000"
+             } in params_set
     end
 
     test "with no rewards, returns {:ok, []}", %{
@@ -445,8 +454,10 @@ defmodule EthereumJSONRPC.ParityTest do
                EthereumJSONRPC.Parity.fetch_beneficiaries(5_077_429..5_077_429, json_rpc_named_arguments)
 
       assert Enum.count(params_set) == 2
-      assert %{block_number: block_number, address_hash: hash2} in params_set
-      assert %{block_number: block_number, address_hash: hash1} in params_set
+
+      assert %{block_number: block_number, address_hash: hash2, address_type: :validator, reward: "0xde0b6b3a7640000"} in params_set
+
+      assert %{block_number: block_number, address_hash: hash1, address_type: :validator, reward: "0xde0b6b3a7640000"} in params_set
     end
 
     test "with multiple blocks with repeat beneficiaries", %{
@@ -543,10 +554,14 @@ defmodule EthereumJSONRPC.ParityTest do
                EthereumJSONRPC.Parity.fetch_beneficiaries(5_080_886..5_080_887, json_rpc_named_arguments)
 
       assert Enum.count(params_set) == 4
-      assert %{block_number: block_number1, address_hash: hash3} in params_set
-      assert %{block_number: block_number2, address_hash: hash3} in params_set
-      assert %{block_number: block_number2, address_hash: hash2} in params_set
-      assert %{block_number: block_number1, address_hash: hash1} in params_set
+
+      assert %{block_number: block_number1, address_hash: hash3, address_type: :validator, reward: "0xde0b6b3a7640000"} in params_set
+
+      assert %{block_number: block_number2, address_hash: hash3, address_type: :validator, reward: "0xde0b6b3a7640000"} in params_set
+
+      assert %{block_number: block_number2, address_hash: hash2, address_type: :validator, reward: "0xde0b6b3a7640000"} in params_set
+
+      assert %{block_number: block_number1, address_hash: hash1, address_type: :validator, reward: "0xde0b6b3a7640000"} in params_set
     end
 
     test "with error, returns {:error, reason}", %{
