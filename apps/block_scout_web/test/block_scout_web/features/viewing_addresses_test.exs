@@ -476,4 +476,24 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> assert_has(AddressPage.token_balance_counter("2"))
     end
   end
+
+  describe "viewing coin balance history" do
+    setup do
+      address = insert(:address, fetched_coin_balance: 5)
+      noon = Timex.now() |> Timex.beginning_of_day() |> Timex.set(hour: 12)
+      block = insert(:block, timestamp: noon)
+      block_one_day_ago = insert(:block, timestamp: Timex.shift(noon, days: -1))
+      insert(:fetched_balance, address_hash: address.hash, value: 5, block_number: block.number)
+      insert(:fetched_balance, address_hash: address.hash, value: 10, block_number: block_one_day_ago.number)
+
+      {:ok, address: address}
+    end
+
+    test "see list of coin balances", %{session: session, address: address} do
+      session
+      |> AddressPage.visit_page(address)
+      |> AddressPage.click_coin_balance_history()
+      |> assert_has(AddressPage.coin_balances(count: 2))
+    end
+  end
 end

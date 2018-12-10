@@ -17,6 +17,10 @@ defmodule BlockScoutWeb.Notifier do
     |> Enum.each(&broadcast_balance/1)
   end
 
+  def handle_event({:chain_event, :address_coin_balances, :realtime, address_coin_balances}) do
+    Enum.each(address_coin_balances, &broadcast_address_coin_balance/1)
+  end
+
   def handle_event({:chain_event, :blocks, :catchup, _blocks}) do
     ratio = Chain.indexed_ratio()
 
@@ -89,6 +93,14 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event(_), do: nil
+
+  defp broadcast_address_coin_balance(%{address_hash: address_hash, block_number: block_number}) do
+    coin_balance = Chain.get_coin_balance(address_hash, block_number)
+
+    Endpoint.broadcast("addresses:#{address_hash}", "coin_balance", %{
+      coin_balance: coin_balance
+    })
+  end
 
   defp broadcast_balance(%Address{hash: address_hash} = address) do
     Endpoint.broadcast("addresses:#{address_hash}", "balance_update", %{
