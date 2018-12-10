@@ -126,5 +126,72 @@ defmodule BlockScoutWeb.Schema.Query.NodeTest do
 
       assert error["message"] == "Internal transaction not found."
     end
+
+    test "with valid argument 'id' for a token_transfer", %{conn: conn} do
+      transaction = insert(:transaction)
+      token_transfer = insert(:token_transfer, transaction: transaction)
+
+      query = """
+      query($id: ID!) {
+        node(id: $id) {
+          ... on TokenTransfer {
+            id
+            transaction_hash
+            log_index
+          }
+        }
+      }
+      """
+
+      id =
+        %{transaction_hash: to_string(token_transfer.transaction_hash), log_index: token_transfer.log_index}
+        |> Jason.encode!()
+        |> (fn unique_id -> "TokenTransfer:#{unique_id}" end).()
+        |> Base.encode64()
+
+      variables = %{"id" => id}
+
+      conn = get(conn, "/graphql", query: query, variables: variables)
+
+      assert json_response(conn, 200) == %{
+               "data" => %{
+                 "node" => %{
+                   "id" => id,
+                   "transaction_hash" => to_string(token_transfer.transaction_hash),
+                   "log_index" => token_transfer.log_index
+                 }
+               }
+             }
+    end
+
+    test "with id for non-existent token transfer", %{conn: conn} do
+      transaction = build(:transaction)
+
+      query = """
+      query($id: ID!) {
+        node(id: $id) {
+          ... on TokenTransfer {
+            id
+            transaction_hash
+            log_index
+          }
+        }
+      }
+      """
+
+      id =
+        %{transaction_hash: to_string(transaction.hash), log_index: 0}
+        |> Jason.encode!()
+        |> (fn unique_id -> "TokenTransfer:#{unique_id}" end).()
+        |> Base.encode64()
+
+      variables = %{"id" => id}
+
+      conn = get(conn, "/graphql", query: query, variables: variables)
+
+      %{"errors" => [error]} = json_response(conn, 200)
+
+      assert error["message"] == "Token transfer not found."
+    end
   end
 end

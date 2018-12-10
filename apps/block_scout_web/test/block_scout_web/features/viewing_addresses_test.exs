@@ -184,7 +184,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       {:ok, %{internal_transaction_lincoln_to_address: internal_transaction_lincoln_to_address}}
     end
 
-    @tag :skip
     test "only addresses not matching the page are links", %{
       addresses: addresses,
       internal_transaction_lincoln_to_address: internal_transaction,
@@ -197,7 +196,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> refute_has(AddressPage.internal_transaction_address_link(internal_transaction, :to))
     end
 
-    @tag :skip
     test "viewing new internal transactions via live update", %{addresses: addresses, session: session} do
       transaction =
         :transaction
@@ -364,7 +362,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
   end
 
   describe "viewing token transfers from a specific token" do
-    @tag :skip
     test "list token transfers related to the address", %{
       addresses: addresses,
       block: block,

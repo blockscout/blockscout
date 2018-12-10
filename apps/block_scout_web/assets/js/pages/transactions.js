@@ -3,25 +3,19 @@ import _ from 'lodash'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
-import { createStore, connectElements } from '../lib/redux_helpers.js'
-import { withInfiniteScroll, connectInfiniteScroll } from '../lib/infinite_scroll_helpers'
+import { connectElements } from '../lib/redux_helpers'
+import { createAsyncLoadStore } from '../lib/async_listing_load'
 import { batchChannel } from '../lib/utils'
-import listMorph from '../lib/list_morph'
 
 const BATCH_THRESHOLD = 10
 
 export const initialState = {
   channelDisconnected: false,
-
   transactionCount: null,
-
-  transactions: [],
   transactionsBatch: []
 }
 
-export const reducer = withInfiniteScroll(baseReducer)
-
-function baseReducer (state = initialState, action) {
+export function reducer (state = initialState, action) {
   switch (action.type) {
     case 'ELEMENTS_LOAD': {
       return Object.assign({}, state, _.omit(action, 'type'))
@@ -33,15 +27,15 @@ function baseReducer (state = initialState, action) {
       })
     }
     case 'RECEIVED_NEW_TRANSACTION_BATCH': {
-      if (state.channelDisconnected) return state
+      if (state.channelDisconnected || state.beyondPageOne) return state
 
       const transactionCount = state.transactionCount + action.msgs.length
 
       if (!state.transactionsBatch.length && action.msgs.length < BATCH_THRESHOLD) {
         return Object.assign({}, state, {
-          transactions: [
-            ...action.msgs.reverse(),
-            ...state.transactions
+          items: [
+            ...action.msgs.map(msg => msg.transactionHtml).reverse(),
+            ...state.items
           ],
           transactionCount
         })
@@ -54,14 +48,6 @@ function baseReducer (state = initialState, action) {
           transactionCount
         })
       }
-    }
-    case 'RECEIVED_NEXT_PAGE': {
-      return Object.assign({}, state, {
-        transactions: [
-          ...state.transactions,
-          ...action.msg.transactions
-        ]
-      })
     }
     default:
       return state
@@ -90,30 +76,14 @@ const elements = {
       if (oldState.transactionCount === state.transactionCount) return
       $el.empty().append(numeral(state.transactionCount).format())
     }
-  },
-  '[data-selector="transactions-list"]': {
-    load ($el, store) {
-      return {
-        transactions: $el.children().map((index, el) => ({
-          transactionHash: el.dataset.transactionHash,
-          transactionHtml: el.outerHTML
-        })).toArray()
-      }
-    },
-    render ($el, state, oldState) {
-      if (oldState.transactions === state.transactions) return
-      const container = $el[0]
-      const newElements = _.map(state.transactions, ({ transactionHtml }) => $(transactionHtml)[0])
-      listMorph(container, newElements, { key: 'dataset.transactionHash' })
-    }
   }
 }
 
 const $transactionListPage = $('[data-page="transaction-list"]')
 if ($transactionListPage.length) {
-  const store = createStore(reducer)
+  const store = createAsyncLoadStore(reducer, initialState, 'dataset.transactionHash')
+
   connectElements({ store, elements })
-  connectInfiniteScroll(store)
 
   const transactionsChannel = socket.channel(`transactions:new_transaction`)
   transactionsChannel.join()
