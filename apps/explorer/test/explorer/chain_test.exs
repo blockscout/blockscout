@@ -2159,15 +2159,15 @@ defmodule Explorer.ChainTest do
 
   describe "block_reward/1" do
     setup do
-      %{block_range: range} = block_reward = insert(:block_reward)
+      %{block_range: range} = emission_reward = insert(:emission_reward)
 
       block = insert(:block, number: Enum.random(Range.new(range.from, range.to)))
       insert(:transaction)
 
-      {:ok, block: block, block_reward: block_reward}
+      {:ok, block: block, emission_reward: emission_reward}
     end
 
-    test "with block containing transactions", %{block: block, block_reward: block_reward} do
+    test "with block containing transactions", %{block: block, emission_reward: emission_reward} do
       :transaction
       |> insert(gas_price: 1)
       |> with_block(block, gas_used: 1)
@@ -2177,7 +2177,7 @@ defmodule Explorer.ChainTest do
       |> with_block(block, gas_used: 2)
 
       expected =
-        block_reward.reward
+        emission_reward.reward
         |> Wei.to(:wei)
         |> Decimal.add(Decimal.new(3))
         |> Wei.from(:wei)
@@ -2185,8 +2185,8 @@ defmodule Explorer.ChainTest do
       assert expected == Chain.block_reward(block)
     end
 
-    test "with block without transactions", %{block: block, block_reward: block_reward} do
-      assert block_reward.reward == Chain.block_reward(block)
+    test "with block without transactions", %{block: block, emission_reward: emission_reward} do
+      assert emission_reward.reward == Chain.block_reward(block)
     end
   end
 
