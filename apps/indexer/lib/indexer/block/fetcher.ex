@@ -127,11 +127,11 @@ defmodule Indexer.Block.Fetcher do
         %{acc | errors: [reason | errors]}
 
       {:ok, %{inserted: inserted, errors: errors}}, %{inserted: acc_inserted, errors: acc_errors} ->
-        %{inserted: merge_inserted(inserted, acc_inserted), errors: errors ++ acc_errors}
+        %{inserted: merge_inserted(acc_inserted, inserted), errors: acc_errors ++ errors}
     end)
   end
 
-  defp merge_inserted(into, from) do
+  defp merge_inserted(into, from) when is_map(into) and is_map(from) do
     Map.merge(into, from, fn
       _key, into_value, from_value when is_list(into_value) and is_list(from_value) ->
         into_value ++ from_value
@@ -192,23 +192,22 @@ defmodule Indexer.Block.Fetcher do
            |> CoinBalances.params_set()
            |> MapSet.union(beneficiary_params_set),
          address_token_balances = TokenBalances.params_set(%{token_transfers_params: token_transfers}),
-         {:import, {:ok, inserted}} <-
-           {:import,
-            __MODULE__.import(
-              state,
-              %{
-                addresses: %{params: addresses_params},
-                address_coin_balances: %{params: coin_balances_params_set},
-                address_token_balances: %{params: address_token_balances},
-                blocks: %{params: blocks_params},
-                block_second_degree_relations: %{params: block_second_degree_relations_params},
-                logs: %{params: logs},
-                token_transfers: %{params: token_transfers},
-                tokens: %{on_conflict: :nothing, params: tokens},
-                transactions: %{params: transactions_with_receipts},
-                timeout: 100_000
-              }
-            )} do
+         {:ok, inserted} <-
+           __MODULE__.import(
+             state,
+             %{
+               addresses: %{params: addresses_params},
+               address_coin_balances: %{params: coin_balances_params_set},
+               address_token_balances: %{params: address_token_balances},
+               blocks: %{params: blocks_params},
+               block_second_degree_relations: %{params: block_second_degree_relations_params},
+               logs: %{params: logs},
+               token_transfers: %{params: token_transfers},
+               tokens: %{on_conflict: :nothing, params: tokens},
+               transactions: %{params: transactions_with_receipts},
+               timeout: 300_000
+             }
+           ) do
       {:ok, %{number: number, inserted: inserted, errors: beneficiaries_errors}}
     else
       {step, {:error, reason}} ->

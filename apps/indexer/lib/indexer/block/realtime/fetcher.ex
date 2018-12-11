@@ -96,22 +96,25 @@ defmodule Indexer.Block.Realtime.Fetcher do
           transactions: %{params: transactions_params}
         } = options
       ) do
-    with {:ok,
-          %{
-            addresses_params: internal_transactions_addresses_params,
-            internal_transactions_params: internal_transactions_params
-          }} <-
-           internal_transactions(block_fetcher, %{
-             addresses_params: addresses_params,
-             transactions_params: transactions_params
-           }),
-         {:ok, %{addresses_params: balances_addresses_params, balances_params: balances_params}} <-
-           balances(block_fetcher, %{
-             address_hash_to_block_number: address_hash_to_block_number,
+    with {:internal_transactions,
+          {:ok,
+           %{
              addresses_params: internal_transactions_addresses_params,
-             balances_params: address_coin_balances_params
-           }),
-         {:ok, address_token_balances} <- fetch_token_balances(address_token_balances_params),
+             internal_transactions_params: internal_transactions_params
+           }}} <-
+           {:internal_transactions,
+            internal_transactions(block_fetcher, %{
+              addresses_params: addresses_params,
+              transactions_params: transactions_params
+            })},
+         {:balances, {:ok, %{addresses_params: balances_addresses_params, balances_params: balances_params}}} <-
+           {:balances,
+            balances(block_fetcher, %{
+              address_hash_to_block_number: address_hash_to_block_number,
+              addresses_params: internal_transactions_addresses_params,
+              balances_params: address_coin_balances_params
+            })},
+         {:token_balances, {:ok, address_token_balances}} <- {:token_balances, fetch_token_balances(address_token_balances_params)},
          chain_import_options =
            options
            |> Map.drop(@import_options)
@@ -122,7 +125,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
            |> put_in([Access.key(:address_current_token_balances, %{}), :params], address_token_balances)
            |> put_in([Access.key(:address_token_balances), :params], address_token_balances)
            |> put_in([Access.key(:internal_transactions, %{}), :params], internal_transactions_params),
-         {:ok, imported} = ok <- Chain.import(chain_import_options) do
+         {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
       async_import_remaining_block_data(imported)
       ok
     end

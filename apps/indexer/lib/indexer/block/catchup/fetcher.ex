@@ -146,10 +146,9 @@ defmodule Indexer.Block.Catchup.Fetcher do
     {async_import_remaining_block_data_options, chain_import_options} =
       Map.split(options, @async_import_remaining_block_data_options)
 
-    with {:ok, imported} = ok <-
-           chain_import_options
-           |> put_in([:blocks, :params, Access.all(), :consensus], true)
-           |> Chain.import() do
+    consensus_options = put_in(chain_import_options, [:blocks, :params, Access.all(), :consensus], true)
+
+    with {:import, {:ok, imported} = ok} <- {:import, Chain.import(consensus_options)} do
       async_import_remaining_block_data(
         imported,
         async_import_remaining_block_data_options
