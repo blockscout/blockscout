@@ -213,7 +213,20 @@ defmodule Indexer.Block.Uncle.Fetcher do
   defp log_errors([]), do: :ok
 
   defp log_errors(errors) when is_list(errors) do
-    Logger.error(fn -> errors_to_iodata(errors) end)
+    case codes(errors) do
+      # Not Found is so common that it is not worth logging as an error as it floods the error logs and console
+      [404] ->
+        Logger.debug(fn -> errors_to_iodata(errors) end)
+
+      _ ->
+        Logger.error(fn -> errors_to_iodata(errors) end)
+    end
+  end
+
+  defp codes(errors) do
+    errors
+    |> Enum.into(MapSet.new(), fn %{code: code} -> code end)
+    |> Enum.to_list()
   end
 
   defp errors_to_entries(errors) when is_list(errors) do
