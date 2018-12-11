@@ -13,7 +13,7 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
   @behaviour Import.Runner
 
   # milliseconds
-  @timeout 15_000
+  @timeout 25_000
 
   @type imported :: [Address.t()]
 
