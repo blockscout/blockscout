@@ -135,6 +135,7 @@ defmodule Indexer.PendingTransaction.Fetcher do
         Chain.import(%{
           addresses: %{params: addresses_params},
           broadcast: :realtime,
+          timeout: 40_000,
           transactions: %{params: transactions_params, on_conflict: :nothing}
         })
     end)
