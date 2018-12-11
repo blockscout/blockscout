@@ -23,6 +23,7 @@ defmodule Indexer.Block.Uncle.Fetcher do
     task_supervisor: Indexer.Block.Uncle.TaskSupervisor,
     metadata: [fetcher: :block_uncle]
   ]
+  @timeout 20_000
 
   @doc """
   Asynchronously fetches `t:Explorer.Chain.Block.t/0` for the given `hashes` and updates
@@ -138,6 +139,7 @@ defmodule Indexer.Block.Uncle.Fetcher do
            addresses: %{params: addresses_params},
            blocks: %{params: blocks_params},
            block_second_degree_relations: %{params: block_second_degree_relations_params},
+           timeout: @timeout,
            transactions: %{params: transactions_params, on_conflict: :nothing}
          }) do
       {:ok, _} ->
