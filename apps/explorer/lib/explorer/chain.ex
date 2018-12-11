@@ -2051,10 +2051,10 @@ defmodule Explorer.Chain do
     |> Repo.all()
   end
 
-  def get_coin_balance(address_hash, block_number) do
+  def get_coin_balance(address_hash, block_number, opts \\ []) do
     query = CoinBalance.fetch_coin_balance(address_hash, block_number)
 
-    Repo.one(query)
+    Repo.one(query, opts)
   end
 
   @spec address_to_balances_by_day(Hash.Address.t()) :: [balance_by_day]
