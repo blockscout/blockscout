@@ -40,7 +40,13 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Block.Reward
   alias Explorer.{PagingOptions, Repo}
-  alias Explorer.Counters.{BlockValidationCounter, TokenHoldersCounter, TokenTransferCounter}
+
+  alias Explorer.Counters.{
+    AddessesWithBalanceCounter,
+    BlockValidationCounter,
+    TokenHoldersCounter,
+    TokenTransferCounter
+  }
 
   alias Dataloader.Ecto, as: DataloaderEcto
 
@@ -80,20 +86,27 @@ defmodule Explorer.Chain do
 
   @typep necessity_by_association_option :: {:necessity_by_association, necessity_by_association}
   @typep paging_options :: {:paging_options, PagingOptions.t()}
+  @typep balance_by_day :: %{date: String.t(), value: Wei.t()}
 
   @doc """
-  Gets an estimated count of `t:Explorer.Chain.Address.t/0`'s where the `fetched_coin_balance` is > 0
+  Gets from the cache the count of `t:Explorer.Chain.Address.t/0`'s where the `fetched_coin_balance` is > 0
   """
-  @spec address_estimated_count :: non_neg_integer()
-  def address_estimated_count do
-    {:ok, %Postgrex.Result{rows: result}} =
-      Repo.query("""
-      EXPLAIN SELECT COUNT(a0.hash) FROM addresses AS a0 WHERE (a0.fetched_coin_balance > 0)
-      """)
+  @spec count_addresses_with_balance_from_cache :: non_neg_integer()
+  def count_addresses_with_balance_from_cache do
+    AddessesWithBalanceCounter.fetch()
+  end
 
-    {[explain], _} = List.pop_at(result, 1)
-    [[_ | [rows]]] = Regex.scan(~r/rows=(\d+)/, explain)
-    String.to_integer(rows)
+  @doc """
+  Counts the number of addresses with fetched coin balance > 0.
+
+  This function should be used with caution. In larger databases, it may take a
+  while to have the return back.
+  """
+  def count_addresses_with_balance do
+    Repo.one(
+      Address.count_with_fetched_coin_balance(),
+      timeout: :infinity
+    )
   end
 
   @doc """
@@ -901,6 +914,7 @@ defmodule Explorer.Chain do
       from(a in Address,
         where: a.fetched_coin_balance > ^0,
         order_by: [desc: a.fetched_coin_balance, asc: a.hash],
+        preload: [:names],
         select: {a, fragment("coalesce(1 + ?, 0)", a.nonce)},
         limit: 250
       )
@@ -1808,6 +1822,12 @@ defmodule Explorer.Chain do
     where(query, [block], block.number < ^block_number)
   end
 
+  defp page_coin_balances(query, %PagingOptions{key: nil}), do: query
+
+  defp page_coin_balances(query, %PagingOptions{key: {block_number}}) do
+    where(query, [coin_balance], coin_balance.block_number < ^block_number)
+  end
+
   defp page_internal_transaction(query, %PagingOptions{key: nil}), do: query
 
   defp page_internal_transaction(query, %PagingOptions{key: {block_number, transaction_index, index}}) do
@@ -2065,6 +2085,45 @@ defmodule Explorer.Chain do
     address_hash
     |> TokenBalance.last_token_balances()
     |> Repo.all()
+  end
+
+  @spec address_to_coin_balances(Hash.Address.t(), [paging_options]) :: []
+  def address_to_coin_balances(address_hash, options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    address_hash
+    |> CoinBalance.fetch_coin_balances(paging_options)
+    |> page_coin_balances(paging_options)
+    |> Repo.all()
+  end
+
+  def get_coin_balance(address_hash, block_number) do
+    query = CoinBalance.fetch_coin_balance(address_hash, block_number)
+
+    Repo.one(query)
+  end
+
+  @spec address_to_balances_by_day(Hash.Address.t()) :: [balance_by_day]
+  def address_to_balances_by_day(address_hash) do
+    address_hash
+    |> CoinBalance.balances_by_day()
+    |> Repo.all()
+    |> normalize_balances_by_day()
+  end
+
+  defp normalize_balances_by_day(balances_by_day) do
+    balances_by_day
+    |> Enum.map(fn day -> Map.update(day, :date, nil, &tuple_to_date(&1)) end)
+    |> Enum.map(fn day -> Map.take(day, [:date, :value]) end)
+    |> Enum.filter(fn day -> day.value end)
+    |> Enum.map(fn day -> Map.update!(day, :date, &to_string(&1)) end)
+    |> Enum.map(fn day -> Map.update!(day, :value, &Wei.to(&1, :ether)) end)
+  end
+
+  defp tuple_to_date({date_tuple, _time_tuple}) do
+    case Date.from_erl(date_tuple) do
+      {:ok, date} -> date
+    end
   end
 
   @spec fetch_token_holders_from_token_hash(Hash.Address.t(), [paging_options]) :: [TokenBalance.t()]

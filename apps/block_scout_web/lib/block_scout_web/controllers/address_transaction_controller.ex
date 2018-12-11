@@ -10,7 +10,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   alias BlockScoutWeb.TransactionView
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.Hash
   alias Explorer.ExchangeRates.Token
   alias Phoenix.View
 
@@ -48,29 +47,21 @@ defmodule BlockScoutWeb.AddressTransactionController do
               conn,
               :index,
               address,
-              next_page_params
+              Map.delete(next_page_params, "type")
             )
         end
 
-      json(
-        conn,
-        %{
-          transactions:
-            Enum.map(transactions, fn transaction ->
-              %{
-                transaction_hash: Hash.to_string(transaction.hash),
-                transaction_html:
-                  View.render_to_string(
-                    TransactionView,
-                    "_tile.html",
-                    current_address: address,
-                    transaction: transaction
-                  )
-              }
-            end),
-          next_page_url: next_page_url
-        }
-      )
+      transactions_json =
+        Enum.map(transactions, fn transaction ->
+          View.render_to_string(
+            TransactionView,
+            "_tile.html",
+            current_address: address,
+            transaction: transaction
+          )
+        end)
+
+      json(conn, %{items: transactions_json, next_page_path: next_page_url})
     else
       :error ->
         unprocessable_entity(conn)
@@ -90,7 +81,8 @@ defmodule BlockScoutWeb.AddressTransactionController do
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
         transaction_count: transaction_count(address),
-        validation_count: validation_count(address)
+        validation_count: validation_count(address),
+        current_path: current_path(conn)
       )
     else
       :error ->

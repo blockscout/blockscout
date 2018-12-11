@@ -96,6 +96,12 @@ defmodule Explorer.Mixfile do
       # bypass optional dependency
       {:plug_cowboy, "~> 1.0", only: :test},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
+      # Tracing
+      {:spandex, github: "spandex-project/spandex", branch: "allow-setting-trace-key", override: true},
+      # `:spandex` integration with Datadog
+      {:spandex_datadog, "~> 0.3.1"},
+      # `:spandex` tracing of `:ecto`
+      {:spandex_ecto, "~> 0.4.0"},
       {:timex, "~> 3.4"},
       # `Timex.Duration` for `Explorer.Chain.average_block_time/0`
       {:timex_ecto, "~> 3.3"}

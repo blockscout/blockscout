@@ -9,6 +9,8 @@ config :explorer, Explorer.Repo,
   prepare: :unnamed,
   timeout: 60_000
 
+config :explorer, Explorer.Tracer, env: "production", disabled?: true
+
 config :logger, :explorer,
   level: :info,
   path: Path.absname("logs/prod/explorer.log"),

@@ -1012,7 +1012,7 @@ defmodule BlockScoutWeb.Etherscan do
   @account_txlistinternal_action %{
     name: "txlistinternal",
     description:
-      "Get internal transactions by transaction or address hash. Up to a maximum of 10,000 internal transactions.",
+      "Get internal transactions by transaction or address hash. Up to a maximum of 10,000 internal transactions. Also available through a GraphQL 'transaction' query.",
     required_params: [
       %{
         key: "txhash",
@@ -1087,7 +1087,8 @@ defmodule BlockScoutWeb.Etherscan do
 
   @account_tokentx_action %{
     name: "tokentx",
-    description: "Get token transfer events by address. Up to a maximum of 10,000 token transfer events.",
+    description:
+      "Get token transfer events by address. Up to a maximum of 10,000 token transfer events. Also available through a GraphQL 'token_transfers' query.",
     required_params: [
       %{
         key: "address",

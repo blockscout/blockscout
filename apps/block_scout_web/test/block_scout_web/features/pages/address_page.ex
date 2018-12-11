@@ -47,6 +47,10 @@ defmodule BlockScoutWeb.AddressPage do
     click(session, css("[data-test='tokens_tab_link']"))
   end
 
+  def click_coin_balance_history(session) do
+    click(session, css("[data-test='coin_balance_tab_link']"))
+  end
+
   def click_balance_dropdown_toggle(session) do
     click(session, css("[data-dropdown-toggle]"))
   end
@@ -65,6 +69,10 @@ defmodule BlockScoutWeb.AddressPage do
 
   def click_show_pending_transactions(session) do
     click(session, css("[data-selector='pending-transactions-open']"))
+  end
+
+  def coin_balances(count: count) do
+    css("[data-test='coin_balance']", count: count)
   end
 
   def contract_creation(%InternalTransaction{created_contract_address_hash: hash}) do

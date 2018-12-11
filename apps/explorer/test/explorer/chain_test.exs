@@ -24,13 +24,22 @@ defmodule Explorer.ChainTest do
 
   alias Explorer.Chain.Supply.ProofOfAuthority
 
-  alias Explorer.Counters.TokenHoldersCounter
+  alias Explorer.Counters.{AddessesWithBalanceCounter, TokenHoldersCounter}
 
   doctest Explorer.Chain
 
-  describe "address_estimated_count/1" do
-    test "returns integer" do
-      assert is_integer(Chain.address_estimated_count())
+  describe "count_addresses_with_balance_from_cache/0" do
+    test "returns the number of addresses with fetched_coin_balance > 0" do
+      insert(:address, fetched_coin_balance: 0)
+      insert(:address, fetched_coin_balance: 1)
+      insert(:address, fetched_coin_balance: 2)
+
+      AddessesWithBalanceCounter.consolidate()
+
+      addresses_with_balance = Chain.count_addresses_with_balance_from_cache()
+
+      assert is_integer(addresses_with_balance)
+      assert addresses_with_balance == 2
     end
   end
 
@@ -3131,7 +3140,7 @@ defmodule Explorer.ChainTest do
           token_id: 29
         )
 
-      paging_options = %PagingOptions{key: {first_page.block_number, first_page.log_index}, page_size: 1}
+      paging_options = %PagingOptions{key: {first_page.token_id}, page_size: 1}
 
       unique_tokens_ids_paginated =
         token_contract_address.hash
@@ -3147,6 +3156,24 @@ defmodule Explorer.ChainTest do
       log = insert(:token_transfer_log)
       block_number = log.transaction.block_number
       assert {:ok, [^block_number]} = Chain.uncataloged_token_transfer_block_numbers()
+    end
+  end
+
+  describe "address_to_balances_by_day/1" do
+    test "return a list of balances by day" do
+      address = insert(:address)
+      noon = ~D[2018-12-06] |> Timex.to_datetime() |> Timex.set(hour: 12)
+      block = insert(:block, timestamp: noon)
+      block_one_day_ago = insert(:block, timestamp: Timex.shift(noon, days: -1))
+      insert(:fetched_balance, address_hash: address.hash, value: 1000, block_number: block.number)
+      insert(:fetched_balance, address_hash: address.hash, value: 2000, block_number: block_one_day_ago.number)
+
+      balances = Chain.address_to_balances_by_day(address.hash)
+
+      assert balances == [
+               %{date: "2018-12-05", value: Decimal.new("2E-15")},
+               %{date: "2018-12-06", value: Decimal.new("1E-15")}
+             ]
     end
   end
 end

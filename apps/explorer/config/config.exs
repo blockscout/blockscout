@@ -15,9 +15,7 @@ config :explorer,
 
 config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: 2_000
 
-config :explorer, Explorer.ExchangeRates, enabled: true
-
-config :explorer, Explorer.Counters.BlockValidationCounter, enabled: true
+config :explorer, Explorer.ExchangeRates, enabled: true, store: :ets
 
 config :explorer, Explorer.Market.History.Cataloger, enabled: true
 
@@ -25,16 +23,25 @@ config :explorer, Explorer.Repo,
   loggers: [Explorer.Repo.PrometheusLogger, Ecto.LogEntry],
   migration_timestamps: [type: :utc_datetime]
 
+config :explorer, Explorer.Tracer,
+  service: :explorer,
+  adapter: SpandexDatadog.Adapter,
+  trace_key: :blockscout
+
 config :explorer, Explorer.Counters.TokenTransferCounter, enabled: true
 
+config :explorer, Explorer.Counters.BlockValidationCounter, enabled: true, enable_consolidation: true
+
 config :explorer, Explorer.Counters.TokenHoldersCounter, enabled: true, enable_consolidation: true
+
+config :explorer, Explorer.Counters.AddessesWithBalanceCounter, enabled: true, enable_consolidation: true
 
 if System.get_env("SUPPLY_MODULE") == "TransactionAndLog" do
   config :explorer, supply: Explorer.Chain.Supply.TransactionAndLog
 end
 
 if System.get_env("SOURCE_MODULE") == "TransactionAndLog" do
-  config :explorer, Explorer.ExchangeRates, source: Explorer.ExchangeRates.Source.TransactionAndLog
+  config :explorer, Explorer.ExchangeRates.Source, source: Explorer.ExchangeRates.Source.TransactionAndLog
 end
 
 config :explorer,
@@ -45,6 +52,11 @@ config :logger, :explorer,
   format: "$time $metadata[$level] $message\n",
   metadata: [:application, :request_id],
   metadata_filter: [application: :explorer]
+
+config :spandex_ecto, SpandexEcto.EctoLogger,
+  service: :ecto,
+  tracer: Explorer.Tracer,
+  otp_app: :explorer
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

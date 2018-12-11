@@ -2,7 +2,7 @@ defmodule Explorer.Counters.BlockValidationCounter do
   use GenServer
 
   @moduledoc """
-  Module responsible for fetching and consolidating the number of 
+  Module responsible for fetching and consolidating the number of
   validations from an address.
   """
 
@@ -14,6 +14,14 @@ defmodule Explorer.Counters.BlockValidationCounter do
   def table_name do
     @table
   end
+
+  # It is undesirable to automatically start the consolidation in all environments.
+  # Consider the test environment: if the consolidation initiates but does not
+  # finish before a test ends, that test will fail. This way, hundreds of
+  # tests were failing before disabling the consolidation and the scheduler in
+  # the test env.
+  config = Application.get_env(:explorer, Explorer.Counters.BlockValidationCounter)
+  @enable_consolidation Keyword.get(config, :enable_consolidation)
 
   @doc """
   Creates a process to continually monitor the validation counts.
@@ -28,7 +36,9 @@ defmodule Explorer.Counters.BlockValidationCounter do
   def init(args) do
     create_table()
 
-    Task.start_link(&consolidate_blocks/0)
+    if enable_consolidation?() do
+      Task.start_link(&consolidate_blocks/0)
+    end
 
     Chain.subscribe_to_events(:blocks)
 
@@ -40,8 +50,7 @@ defmodule Explorer.Counters.BlockValidationCounter do
       :set,
       :named_table,
       :public,
-      read_concurrency: true,
-      write_concurrency: true
+      read_concurrency: true
     ]
 
     :ets.new(table_name(), opts)
@@ -59,7 +68,7 @@ defmodule Explorer.Counters.BlockValidationCounter do
   end
 
   @doc """
-  Fetches the number of validations related to an `address_hash`. 
+  Fetches the number of validations related to an `address_hash`.
   """
   @spec fetch(Hash.Address.t()) :: non_neg_integer
   def fetch(addr_hash) do
@@ -91,4 +100,18 @@ defmodule Explorer.Counters.BlockValidationCounter do
 
     :ets.update_counter(table_name(), string_addr, number, default)
   end
+
+  @doc """
+  Returns a boolean that indicates whether consolidation is enabled
+
+  In order to choose whether or not to enable the scheduler and the initial
+  consolidation, change the following Explorer config:
+
+  `config :explorer, Explorer.Counters.BlockValidationCounter, enable_consolidation: true`
+
+  to:
+
+  `config :explorer, Explorer.Counters.BlockValidationCounter, enable_consolidation: false`
+  """
+  def enable_consolidation?, do: @enable_consolidation
 end
