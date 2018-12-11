@@ -13,76 +13,63 @@ test('CHANNEL_DISCONNECTED', () => {
 
 describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
   test('single transaction', () => {
-    const state = initialState
+    const state = Object.assign({}, initialState, { items: [] })
     const action = {
       type: 'RECEIVED_NEW_TRANSACTION_BATCH',
       msgs: [{
-        transactionHtml: 'test'
+        transactionHtml: 'transaction_html'
       }]
     }
     const output = reducer(state, action)
 
-    expect(output.transactions).toEqual([{ transactionHtml: 'test' }])
+    expect(output.items).toEqual(['transaction_html'])
     expect(output.transactionsBatch.length).toEqual(0)
     expect(output.transactionCount).toEqual(1)
   })
+
   test('large batch of transactions', () => {
-    const state = initialState
+    const state = Object.assign({}, initialState, { items: [] })
     const action = {
       type: 'RECEIVED_NEW_TRANSACTION_BATCH',
-      msgs: [{
-        transactionHtml: 'test 1'
-      },{
-        transactionHtml: 'test 2'
-      },{
-        transactionHtml: 'test 3'
-      },{
-        transactionHtml: 'test 4'
-      },{
-        transactionHtml: 'test 5'
-      },{
-        transactionHtml: 'test 6'
-      },{
-        transactionHtml: 'test 7'
-      },{
-        transactionHtml: 'test 8'
-      },{
-        transactionHtml: 'test 9'
-      },{
-        transactionHtml: 'test 10'
-      },{
-        transactionHtml: 'test 11'
-      }]
+      msgs: [
+        { transactionHtml: 'transaction_html_1' },
+        { transactionHtml: 'transaction_html_2' },
+        { transactionHtml: 'transaction_html_3' },
+        { transactionHtml: 'transaction_html_4' },
+        { transactionHtml: 'transaction_html_5' },
+        { transactionHtml: 'transaction_html_6' },
+        { transactionHtml: 'transaction_html_7' },
+        { transactionHtml: 'transaction_html_8' },
+        { transactionHtml: 'transaction_html_9' },
+        { transactionHtml: 'transaction_html_10' },
+        { transactionHtml: 'transaction_html_11' },
+      ]
     }
     const output = reducer(state, action)
 
-    expect(output.transactions).toEqual([])
+    expect(output.items).toEqual([])
     expect(output.transactionsBatch.length).toEqual(11)
     expect(output.transactionCount).toEqual(11)
   })
+
   test('single transaction after single transaction', () => {
-    const state = Object.assign({}, initialState, {
-      transactions: [{
-        transactionHtml: 'test 1'
-      }]
-    })
+    const state = Object.assign({}, initialState, { items: [ 'transaction_html' ] })
     const action = {
       type: 'RECEIVED_NEW_TRANSACTION_BATCH',
       msgs: [{
-        transactionHtml: 'test 2'
+        transactionHtml: 'another_transaction_html'
       }]
     }
     const output = reducer(state, action)
 
-    expect(output.transactions).toEqual([
-      { transactionHtml: 'test 2' },
-      { transactionHtml: 'test 1' }
-    ])
+    expect(output.items).toEqual([ 'another_transaction_html', 'transaction_html' ])
     expect(output.transactionsBatch.length).toEqual(0)
   })
+
   test('single transaction after large batch of transactions', () => {
     const state = Object.assign({}, initialState, {
-      transactionsBatch: [1,2,3,4,5,6,7,8,9,10,11]
+      items: [],
+      transactionsBatch: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
     })
     const action = {
       type: 'RECEIVED_NEW_TRANSACTION_BATCH',
@@ -92,57 +79,51 @@ describe('RECEIVED_NEW_TRANSACTION_BATCH', () => {
     }
     const output = reducer(state, action)
 
-    expect(output.transactions).toEqual([])
+    expect(output.items).toEqual([])
     expect(output.transactionsBatch.length).toEqual(12)
   })
+
   test('large batch of transactions after large batch of transactions', () => {
     const state = Object.assign({}, initialState, {
-      transactionsBatch: [1,2,3,4,5,6,7,8,9,10,11]
+      items: [],
+      transactionsBatch: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
     })
     const action = {
       type: 'RECEIVED_NEW_TRANSACTION_BATCH',
-      msgs: [{
-        transactionHtml: 'test 12'
-      },{
-        transactionHtml: 'test 13'
-      },{
-        transactionHtml: 'test 14'
-      },{
-        transactionHtml: 'test 15'
-      },{
-        transactionHtml: 'test 16'
-      },{
-        transactionHtml: 'test 17'
-      },{
-        transactionHtml: 'test 18'
-      },{
-        transactionHtml: 'test 19'
-      },{
-        transactionHtml: 'test 20'
-      },{
-        transactionHtml: 'test 21'
-      },{
-        transactionHtml: 'test 22'
-      }]
+      msgs: [
+        { transactionHtml: 'transaction_html_12' },
+        { transactionHtml: 'transaction_html_13' },
+        { transactionHtml: 'transaction_html_14' },
+        { transactionHtml: 'transaction_html_15' },
+        { transactionHtml: 'transaction_html_16' },
+        { transactionHtml: 'transaction_html_17' },
+        { transactionHtml: 'transaction_html_18' },
+        { transactionHtml: 'transaction_html_19' },
+        { transactionHtml: 'transaction_html_20' },
+        { transactionHtml: 'transaction_html_21' },
+        { transactionHtml: 'transaction_html_22' }
+      ]
     }
     const output = reducer(state, action)
 
-    expect(output.transactions).toEqual([])
+    expect(output.items).toEqual([])
     expect(output.transactionsBatch.length).toEqual(22)
   })
+
   test('after disconnection', () => {
     const state = Object.assign({}, initialState, {
+      items: [],
       channelDisconnected: true
     })
     const action = {
       type: 'RECEIVED_NEW_TRANSACTION_BATCH',
       msgs: [{
-        transactionHtml: 'test'
+        transactionHtml: 'transaction_html'
       }]
     }
     const output = reducer(state, action)
 
-    expect(output.transactions).toEqual([])
+    expect(output.items).toEqual([])
     expect(output.transactionsBatch.length).toEqual(0)
   })
 })

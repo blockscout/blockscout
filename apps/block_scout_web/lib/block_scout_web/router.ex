@@ -149,6 +149,20 @@ defmodule BlockScoutWeb.Router do
         only: [:index],
         as: :token_balance
       )
+
+      resources(
+        "/coin_balances",
+        AddressCoinBalanceController,
+        only: [:index],
+        as: :coin_balance
+      )
+
+      resources(
+        "/coin_balances/by_day",
+        AddressCoinBalanceByDayController,
+        only: [:index],
+        as: :coin_balance_by_day
+      )
     end
 
     resources "/tokens", Tokens.TokenController, only: [:show], as: :token do

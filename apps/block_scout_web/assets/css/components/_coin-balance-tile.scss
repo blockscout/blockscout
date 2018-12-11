@@ -1,0 +1,9 @@
+.tile.tile-type-coin-balance {
+  [data-balance-change-sign="Positive"] {
+    color: $green;
+  }
+
+  [data-balance-change-sign="Negative"] {
+    color: $red;
+  }
+}

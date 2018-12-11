@@ -5,7 +5,6 @@ defmodule BlockScoutWeb.TransactionController do
 
   alias BlockScoutWeb.TransactionView
   alias Explorer.Chain
-  alias Explorer.Chain.Hash
   alias Phoenix.View
 
   def index(conn, %{"type" => "JSON"} = params) do
@@ -22,65 +21,42 @@ defmodule BlockScoutWeb.TransactionController do
         paging_options(params)
       )
 
-    {transactions, next_page} = get_transactions_and_next_page(full_options)
+    transactions_plus_one = Chain.recent_collated_transactions(full_options)
+    {transactions, next_page} = split_list_by_page(transactions_plus_one)
 
-    next_page_url =
+    next_page_path =
       case next_page_params(next_page, transactions, params) do
         nil ->
           nil
 
         next_page_params ->
-          transaction_path(
-            conn,
-            :index,
-            next_page_params
-          )
+          transaction_path(conn, :index, Map.delete(next_page_params, "type"))
       end
 
     json(
       conn,
       %{
-        transactions:
+        items:
           Enum.map(transactions, fn transaction ->
-            %{
-              transaction_hash: Hash.to_string(transaction.hash),
-              transaction_html:
-                View.render_to_string(
-                  TransactionView,
-                  "_tile.html",
-                  transaction: transaction
-                )
-            }
+            View.render_to_string(
+              TransactionView,
+              "_tile.html",
+              transaction: transaction
+            )
           end),
-        next_page_url: next_page_url
+        next_page_path: next_page_path
       }
     )
   end
 
-  def index(conn, params) do
-    full_options =
-      Keyword.merge(
-        [
-          necessity_by_association: %{
-            :block => :required,
-            [created_contract_address: :names] => :optional,
-            [from_address: :names] => :optional,
-            [to_address: :names] => :optional
-          }
-        ],
-        paging_options(%{})
-      )
-
-    {transactions, next_page} = get_transactions_and_next_page(full_options)
-
+  def index(conn, _params) do
     transaction_estimated_count = Chain.transaction_estimated_count()
 
     render(
       conn,
       "index.html",
-      next_page_params: next_page_params(next_page, transactions, params),
-      transaction_estimated_count: transaction_estimated_count,
-      transactions: transactions
+      current_path: current_path(conn),
+      transaction_estimated_count: transaction_estimated_count
     )
   end
 
@@ -101,10 +77,5 @@ defmodule BlockScoutWeb.TransactionController do
     else
       redirect(conn, to: transaction_internal_transaction_path(conn, :index, id))
     end
-  end
-
-  defp get_transactions_and_next_page(options) do
-    transactions_plus_one = Chain.recent_collated_transactions(options)
-    split_list_by_page(transactions_plus_one)
   end
 end
