@@ -58,6 +58,8 @@ defmodule Indexer.PendingTransaction.Fetcher do
 
   @impl GenServer
   def init(opts) when is_list(opts) do
+    Logger.metadata(fetcher: :pending_transaction)
+
     opts =
       :indexer
       |> Application.get_all_env()
@@ -103,6 +105,8 @@ defmodule Indexer.PendingTransaction.Fetcher do
   @chunk_size 10
 
   defp task(%PendingTransaction.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = _state) do
+    Logger.metadata(fetcher: :pending_transaction)
+
     case fetch_pending_transactions(json_rpc_named_arguments) do
       {:ok, transactions_params} ->
         transactions_params
