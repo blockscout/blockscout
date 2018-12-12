@@ -22,7 +22,7 @@ defmodule Explorer.Chain.Token do
   import Ecto.{Changeset, Query}
 
   alias Ecto.Changeset
-  alias Explorer.Chain.{Address, Hash, Token, TokenTransfer}
+  alias Explorer.Chain.{Address, Hash, Token}
 
   @typedoc """
   * `:name` - Name of the token
@@ -85,14 +85,6 @@ defmodule Explorer.Chain.Token do
       nil -> changeset
       name -> put_change(changeset, :name, String.trim(name))
     end
-  end
-
-  def join_with_transfers(queryable \\ Token) do
-    from(
-      t in queryable,
-      join: tt in TokenTransfer,
-      on: tt.token_contract_address_hash == t.contract_address_hash
-    )
   end
 
   @doc """
