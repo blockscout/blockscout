@@ -159,15 +159,19 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   @decorate trace(name: "fetch", resource: "Indexer.Block.Realtime.Fetcher.fetch_and_import_block/3", tracer: Tracer)
   def fetch_and_import_block(block_number_to_fetch, block_fetcher, reorg?, retry \\ 3) do
-    Indexer.Logger.metadata(fn ->
-    if reorg? do
-      # give previous fetch attempt (for same block number) a chance to finish
-      # before fetching again, to reduce block consensus mistakes
-      :timer.sleep(@reorg_delay)
-    end
+    Indexer.Logger.metadata(
+      fn ->
+        if reorg? do
+          # give previous fetch attempt (for same block number) a chance to finish
+          # before fetching again, to reduce block consensus mistakes
+          :timer.sleep(@reorg_delay)
+        end
 
-    do_fetch_and_import_block(block_number_to_fetch, block_fetcher, retry)
-    end, fetcher: :block_realtime, block_number: block_number_to_fetch)
+        do_fetch_and_import_block(block_number_to_fetch, block_fetcher, retry)
+      end,
+      fetcher: :block_realtime,
+      block_number: block_number_to_fetch
+    )
   end
 
   @decorate span(tracer: Tracer)
