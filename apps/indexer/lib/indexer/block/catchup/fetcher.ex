@@ -82,9 +82,10 @@ defmodule Indexer.Block.Catchup.Fetcher do
           |> Stream.map(&Enum.count/1)
           |> Enum.sum()
 
-        Logger.debug(fn ->
-          [to_string(missing_block_count), " missed blocks in ", to_string(range_count), " ranges"]
-        end)
+        Logger.debug(fn -> "Missed blocks in ranges." end,
+          missing_block_range_count: range_count,
+          missing_block_count: missing_block_count
+        )
 
         shrunk =
           case missing_block_count do

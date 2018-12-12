@@ -195,21 +195,20 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
     new_bound_interval =
       case missing_block_count do
         0 ->
-          Logger.info(fn -> "Index already caught up." end, first_block_number: first_block_number, last_block_number: 0)
+          Logger.info("Index already caught up.",
+            first_block_number: first_block_number,
+            last_block_number: 0,
+            missing_block_count: 0
+          )
 
           BoundInterval.increase(bound_interval)
 
         _ ->
           Logger.info(
-            fn ->
-              [
-                "Index had to catch up ",
-                to_string(missing_block_count),
-                " blocks."
-              ]
-            end,
+            "Index had to catch up.",
             first_block_number: first_block_number,
-            last_block_number: 0
+            last_block_number: 0,
+            missing_block_count: missing_block_count
           )
 
           BoundInterval.decrease(bound_interval)
@@ -239,15 +238,10 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
     Process.demonitor(ref, [:flush])
 
     Logger.info(
-      fn ->
-        [
-          "Index had to catch up ",
-          to_string(missing_block_count),
-          " blocks, but the sequence was shrunk to save memory, so retrying immediately."
-        ]
-      end,
+      "Index had to catch up, but the sequence was shrunk to save memory, so retrying immediately.",
       first_block_number: first_block_number,
-      last_block_number: 0
+      last_block_number: 0,
+      missing_block_count: missing_block_count
     )
 
     send(self(), :catchup_index)

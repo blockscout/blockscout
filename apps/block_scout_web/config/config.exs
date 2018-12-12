@@ -49,7 +49,8 @@ config :logger, :block_scout_web,
   # keep synced with `config/config.exs`
   format: "$dateT$time $metadata[$level] $message\n",
   metadata:
-    ~w(application fetcher request_id first_block_number last_block_number block_number step count error_count)a,
+    ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
+       block_number step count error_count)a,
   metadata_filter: [application: :block_scout_web]
 
 config :spandex_phoenix, tracer: BlockScoutWeb.Tracer
