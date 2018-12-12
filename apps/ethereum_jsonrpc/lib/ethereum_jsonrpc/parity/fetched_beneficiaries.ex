@@ -6,7 +6,64 @@ defmodule EthereumJSONRPC.Parity.FetchedBeneficiaries do
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   @doc """
-  Converts `responses` to `t/0`.
+  Converts `responses` to `EthereumJSONRPC.FetchedBeneficiaries.t()`.
+
+  responses - List with trace_block responses
+  id_to_params - Maps request id to query params
+
+  ## Examples
+    iex> EthereumJSONRPC.Parity.FetchedBeneficiaries.from_responses(
+    ...>   [
+    ...>     %{
+    ...>       id: 0,
+    ...>       result: [
+    ...>         %{
+    ...>           "action" => %{"author" => "0x1", "rewardType" => "external", "value" => "0x0"},
+    ...>           "blockHash" => "0xFFF",
+    ...>           "blockNumber" => 12,
+    ...>           "result" => nil,
+    ...>           "subtraces" => 0,
+    ...>           "traceAddress" => [],
+    ...>           "transactionHash" => nil,
+    ...>           "transactionPosition" => nil,
+    ...>           "type" => "reward"
+    ...>         },
+    ...>         %{
+    ...>           "action" => %{"author" => "0x2", "rewardType" => "external", "value" => "0x0"},
+    ...>           "blockHash" => "0x52a8d2185282506ce681364d2aa0c085ba45fdeb5d6c0ddec1131617a71ee2ca",
+    ...>           "blockHash" => "0xFFF",
+    ...>           "blockNumber" => 12,
+    ...>           "result" => nil,
+    ...>           "subtraces" => 0,
+    ...>           "traceAddress" => [],
+    ...>           "transactionHash" => nil,
+    ...>           "transactionPosition" => nil,
+    ...>           "type" => "reward"
+    ...>         }
+    ...>       ]
+    ...>     }
+    ...>   ],
+    ...>   %{0 => %{block_quantity: "0xC"}}
+    ...> )
+    %EthereumJSONRPC.FetchedBeneficiaries{
+      errors: [],
+      params_set: #MapSet<[
+        %{
+          address_hash: "0x1",
+          address_type: :validator,
+          block_hash: "0xFFF",
+          block_number: 12,
+          reward: "0x0"
+        },
+        %{
+          address_hash: "0x2",
+          address_type: :emission_funds,
+          block_hash: "0xFFF",
+          block_number: 12,
+          reward: "0x0"
+        }
+      ]>
+    }
   """
   def from_responses(responses, id_to_params) when is_list(responses) and is_map(id_to_params) do
     responses
@@ -102,6 +159,17 @@ defmodule EthereumJSONRPC.Parity.FetchedBeneficiaries do
     ])
   end
 
+  # Beneficiary's address type will depend on the responses' action.rewardType,
+  # which will vary depending on which network is being indexed
+  #
+  # On POA networks, rewardType will always be external and the type of the address being
+  # rewarded will depend on its position.
+  # First address will always be the validator's while the second will be the EmissionsFunds address
+  #
+  # On PoW networks, like Ethereum, the reward type will already specify the type for the
+  # address being rewarded
+  # The rewardType "block" will show the reward for the consensus block validator
+  # The rewardType "uncle" will show reward for validating an uncle block
   defp get_address_type(reward_type, index) when reward_type == "external" and index == 0, do: :validator
   defp get_address_type(reward_type, index) when reward_type == "external" and index == 1, do: :emission_funds
   defp get_address_type(reward_type, _index) when reward_type == "block", do: :validator
