@@ -185,7 +185,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
 
   def handle_info(
         {ref,
-         %{first_block_number: first_block_number, missing_block_count: missing_block_count, shrunk: false}},
+         %{first_block_number: first_block_number, missing_block_count: missing_block_count, shrunk: false = shrunk}},
         %__MODULE__{
           bound_interval: bound_interval,
           task: %Task{ref: ref}
@@ -198,7 +198,8 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
           Logger.info("Index already caught up.",
             first_block_number: first_block_number,
             last_block_number: 0,
-            missing_block_count: 0
+            missing_block_count: 0,
+            shrunk: shrunk
           )
 
           BoundInterval.increase(bound_interval)
@@ -208,7 +209,8 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
             "Index had to catch up.",
             first_block_number: first_block_number,
             last_block_number: 0,
-            missing_block_count: missing_block_count
+            missing_block_count: missing_block_count,
+            shrunk: shrunk
           )
 
           BoundInterval.decrease(bound_interval)
@@ -229,7 +231,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
 
   def handle_info(
         {ref,
-         %{first_block_number: first_block_number, missing_block_count: missing_block_count, shrunk: true}},
+         %{first_block_number: first_block_number, missing_block_count: missing_block_count, shrunk: true = shrunk}},
         %__MODULE__{
           task: %Task{ref: ref}
         } = state
@@ -241,7 +243,8 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
       "Index had to catch up, but the sequence was shrunk to save memory, so retrying immediately.",
       first_block_number: first_block_number,
       last_block_number: 0,
-      missing_block_count: missing_block_count
+      missing_block_count: missing_block_count,
+      shrunk: shrunk
     )
 
     send(self(), :catchup_index)
