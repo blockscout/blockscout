@@ -87,9 +87,12 @@ defmodule Indexer.CoinBalance.Fetcher do
         run_fetched_balances(fetched_balances, unique_entries)
 
       {:error, reason} ->
-        Logger.error(fn ->
-          ["failed to fetch: ", inspect(reason)]
-        end, error_count: unique_entry_count)
+        Logger.error(
+          fn ->
+            ["failed to fetch: ", inspect(reason)]
+          end,
+          error_count: unique_entry_count
+        )
 
         {:retry, unique_entries}
     end
@@ -139,12 +142,15 @@ defmodule Indexer.CoinBalance.Fetcher do
   defp retry(errors) when is_list(errors) do
     retried_entries = fetched_balances_errors_to_entries(errors)
 
-    Logger.error(fn ->
-      [
-        "failed to fetch: ",
-        fetched_balance_errors_to_iodata(errors)
-      ]
-    end, error_count: Enum.count(retried_entries))
+    Logger.error(
+      fn ->
+        [
+          "failed to fetch: ",
+          fetched_balance_errors_to_iodata(errors)
+        ]
+      end,
+      error_count: Enum.count(retried_entries)
+    )
 
     {:retry, retried_entries}
   end

@@ -131,21 +131,25 @@ defmodule Indexer.InternalTransaction.Fetcher do
           })
         else
           {:error, step, reason, _changes_so_far} ->
-            Logger.error(fn ->
-              [
-                "failed to import internal transactions for transactions at ",
-                to_string(step),
-                ": ",
-                inspect(reason)
-              ]
-            end, error_count: unique_entries_count)
+            Logger.error(
+              fn ->
+                [
+                  "failed to import internal transactions for transactions: ",
+                  inspect(reason)
+                ]
+              end,
+              step: step,
+              error_count: unique_entries_count
+            )
 
             # re-queue the de-duped entries
             {:retry, unique_entries}
         end
 
       {:error, reason} ->
-        Logger.error(fn -> ["failed to fetch internal transactions for transactions: ", inspect(reason)] end, error_count: unique_entries_count)
+        Logger.error(fn -> ["failed to fetch internal transactions for transactions: ", inspect(reason)] end,
+          error_count: unique_entries_count
+        )
 
         # re-queue the de-duped entries
         {:retry, unique_entries}

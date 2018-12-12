@@ -187,9 +187,12 @@ defmodule Indexer.Block.Catchup.Fetcher do
         {:ok, inserted: inserted}
 
       {:error, {step, reason}} = error ->
-        Logger.error(fn ->
-          ["failed to fetch ", to_string(step), ": ", inspect(reason), ". Retrying."]
-        end)
+        Logger.error(
+          fn ->
+            ["failed to fetch: ", inspect(reason), ". Retrying."]
+          end,
+          step: step
+        )
 
         push_back(sequence, range)
 
@@ -205,9 +208,12 @@ defmodule Indexer.Block.Catchup.Fetcher do
         error
 
       {:error, {step, failed_value, _changes_so_far}} = error ->
-        Logger.error(fn ->
-          ["failed to insert during ", to_string(step), ": ", inspect(failed_value), ". Retrying."]
-        end)
+        Logger.error(
+          fn ->
+            ["failed to insert: ", inspect(failed_value), ". Retrying."]
+          end,
+          step: step
+        )
 
         push_back(sequence, range)
 

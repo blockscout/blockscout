@@ -195,15 +195,16 @@ defmodule Indexer.Block.Realtime.Fetcher do
         end)
 
       {:error, {step, reason}} ->
-        Logger.error(fn ->
-          [
-            "failed to fetch ",
-            to_string(step),
-            ": ",
-            inspect(reason),
-            ".  Block will be retried by catchup indexer."
-          ]
-        end)
+        Logger.error(
+          fn ->
+            [
+              "failed to fetch: ",
+              inspect(reason),
+              ".  Block will be retried by catchup indexer."
+            ]
+          end,
+          step: step
+        )
 
       {:error, [%Changeset{} | _] = changesets} ->
         params = %{
@@ -226,15 +227,16 @@ defmodule Indexer.Block.Realtime.Fetcher do
         end
 
       {:error, {step, failed_value, _changes_so_far}} ->
-        Logger.error(fn ->
-          [
-            "failed to insert ",
-            to_string(step),
-            ": ",
-            inspect(failed_value),
-            ".  Block will be retried by catchup indexer."
-          ]
-        end)
+        Logger.error(
+          fn ->
+            [
+              "failed to insert: ",
+              inspect(failed_value),
+              ".  Block will be retried by catchup indexer."
+            ]
+          end,
+          step: step
+        )
     end
   end
 

@@ -117,7 +117,9 @@ defmodule Indexer.TokenBalance.Fetcher do
         :ok
 
       {:error, reason} ->
-        Logger.debug(fn -> ["failed to import token balances: ", inspect(reason)] end, error_count: Enum.count(token_balances_params))
+        Logger.debug(fn -> ["failed to import token balances: ", inspect(reason)] end,
+          error_count: Enum.count(token_balances_params)
+        )
 
         :error
     end
