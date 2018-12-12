@@ -32,19 +32,19 @@ config :logger,
 config :logger, :console,
   # Use same format for all loggers, even though the level should only ever be `:error` for `:error` backend
   format: "$dateT$time $metadata[$level] $message\n",
-  metadata: ~w(application fetcher request_id)a
+  metadata: ~w(application fetcher request_id block_number)a
 
 config :logger, :ecto,
   # Use same format for all loggers, even though the level should only ever be `:error` for `:error` backend
   format: "$dateT$time $metadata[$level] $message\n",
-  metadata: ~w(application fetcher request_id)a,
+  metadata: ~w(application fetcher request_id block_number)a,
   metadata_filter: [application: :ecto]
 
 config :logger, :error,
   # Use same format for all loggers, even though the level should only ever be `:error` for `:error` backend
   format: "$dateT$time $metadata[$level] $message\n",
   level: :error,
-  metadata: ~w(application fetcher request_id)a
+  metadata: ~w(application fetcher request_id block_number)a
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

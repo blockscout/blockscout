@@ -159,8 +159,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   @decorate trace(name: "fetch", resource: "Indexer.Block.Realtime.Fetcher.fetch_and_import_block/3", tracer: Tracer)
   def fetch_and_import_block(block_number_to_fetch, block_fetcher, reorg?, retry \\ 3) do
-    Logger.metadata(fetcher: :block_realtime)
-
+    Indexer.Logger.metadata(fn ->
     if reorg? do
       # give previous fetch attempt (for same block number) a chance to finish
       # before fetching again, to reduce block consensus mistakes
@@ -168,6 +167,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     end
 
     do_fetch_and_import_block(block_number_to_fetch, block_fetcher, retry)
+    end, fetcher: :block_realtime, block_number: block_number_to_fetch)
   end
 
   @decorate span(tracer: Tracer)
@@ -179,16 +179,12 @@ defmodule Indexer.Block.Realtime.Fetcher do
           Task.Supervisor.start_child(TaskSupervisor, ConsensusEnsurer, :perform, args)
         end
 
-        Logger.debug(fn ->
-          ["fetched and imported block ", to_string(block_number_to_fetch)]
-        end)
+        Logger.debug("Fetched and imported.")
 
       {:ok, %{inserted: _, errors: [_ | _] = errors}} ->
         Logger.error(fn ->
           [
-            "failed to fetch block ",
-            to_string(block_number_to_fetch),
-            ": ",
+            "failed to fetch block: ",
             inspect(errors),
             ".  Block will be retried by catchup indexer."
           ]
@@ -199,8 +195,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
           [
             "failed to fetch ",
             to_string(step),
-            " for block ",
-            to_string(block_number_to_fetch),
             ": ",
             inspect(reason),
             ".  Block will be retried by catchup indexer."
@@ -232,8 +226,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
           [
             "failed to insert ",
             to_string(step),
-            " for block ",
-            to_string(block_number_to_fetch),
             ": ",
             inspect(failed_value),
             ".  Block will be retried by catchup indexer."

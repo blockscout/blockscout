@@ -50,7 +50,7 @@ config :explorer,
 config :logger, :explorer,
   # keep synced with `config/config.exs`
   format: "$dateT$time $metadata[$level] $message\n",
-  metadata: ~w(application fetcher request_id)a,
+  metadata: ~w(application fetcher request_id block_number)a,
   metadata_filter: [application: :explorer]
 
 config :spandex_ecto, SpandexEcto.EctoLogger,

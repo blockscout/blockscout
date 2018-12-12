@@ -48,7 +48,7 @@ config :ex_cldr,
 config :logger, :block_scout_web,
   # keep synced with `config/config.exs`
   format: "$dateT$time $metadata[$level] $message\n",
-  metadata: ~w(application fetcher request_id)a,
+  metadata: ~w(application fetcher request_id block_number)a,
   metadata_filter: [application: :block_scout_web]
 
 config :spandex_phoenix, tracer: BlockScoutWeb.Tracer
