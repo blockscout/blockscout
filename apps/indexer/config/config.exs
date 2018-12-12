@@ -18,7 +18,7 @@ config :indexer, Indexer.Tracer,
 
 config :logger, :indexer,
   # keep synced with `config/config.exs`
-  format: "$time $metadata[$level] $message\n",
+  format: "$dateT$time $metadata[$level] $message\n",
   metadata: [:application, :request_id],
   metadata_filter: [application: :indexer]
 

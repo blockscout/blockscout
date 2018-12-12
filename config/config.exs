@@ -31,18 +31,18 @@ config :logger,
 
 config :logger, :console,
   # Use same format for all loggers, even though the level should only ever be `:error` for `:error` backend
-  format: "$time $metadata[$level] $message\n",
+  format: "$dateT$time $metadata[$level] $message\n",
   metadata: [:application, :request_id]
 
 config :logger, :ecto,
   # Use same format for all loggers, even though the level should only ever be `:error` for `:error` backend
-  format: "$time $metadata[$level] $message\n",
+  format: "$dateT$time $metadata[$level] $message\n",
   metadata: [:application, :request_id],
   metadata_filter: [application: :ecto]
 
 config :logger, :error,
   # Use same format for all loggers, even though the level should only ever be `:error` for `:error` backend
-  format: "$time $metadata[$level] $message\n",
+  format: "$dateT$time $metadata[$level] $message\n",
   level: :error,
   metadata: [:application, :request_id]
 
