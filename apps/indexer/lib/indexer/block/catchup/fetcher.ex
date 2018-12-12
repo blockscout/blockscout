@@ -58,6 +58,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
           block_fetcher: %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
         } = state
       ) do
+    Logger.metadata(fetcher: :block_catchup)
+
     {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
 
     case latest_block_number do
@@ -172,6 +174,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
          _.._ = range,
          sequence
        ) do
+    Logger.metadata(fetcher: :block_catchup)
+
     case fetch_and_import_range(block_fetcher, range) do
       {:ok, %{inserted: inserted, errors: errors}} ->
         errors = cap_seq(sequence, errors, range)

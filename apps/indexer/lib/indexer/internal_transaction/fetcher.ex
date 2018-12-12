@@ -23,7 +23,8 @@ defmodule Indexer.InternalTransaction.Fetcher do
     flush_interval: :timer.seconds(3),
     max_concurrency: @max_concurrency,
     max_batch_size: @max_batch_size,
-    task_supervisor: Indexer.InternalTransaction.TaskSupervisor
+    task_supervisor: Indexer.InternalTransaction.TaskSupervisor,
+    metadata: [fetcher: :internal_transaction]
   ]
 
   @doc """

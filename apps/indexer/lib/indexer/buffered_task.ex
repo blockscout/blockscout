@@ -70,6 +70,7 @@ defmodule Indexer.BufferedTask do
             flush_interval: nil,
             max_batch_size: nil,
             max_concurrency: nil,
+            metadata: [],
             current_buffer: [],
             bound_queue: %BoundQueue{},
             task_ref_to_batch: %{}
@@ -195,6 +196,7 @@ defmodule Indexer.BufferedTask do
   Options are optional and are passed in the list that is second element of the tuple.
 
     * `:name` - The registered name for the new process.
+    * `:metadata` - `Logger.metadata/1` to det in teh `Indexer.BufferedTask` process and any child processes.
 
   """
   @spec start_link(
@@ -221,13 +223,17 @@ defmodule Indexer.BufferedTask do
 
     shrinkable(opts)
 
+    metadata = Keyword.get(opts, :metadata, [])
+    Logger.metadata(metadata)
+
     state = %BufferedTask{
       callback_module: callback_module,
       callback_module_state: Keyword.fetch!(opts, :state),
       task_supervisor: Keyword.fetch!(opts, :task_supervisor),
       flush_interval: Keyword.fetch!(opts, :flush_interval),
       max_batch_size: Keyword.fetch!(opts, :max_batch_size),
-      max_concurrency: Keyword.fetch!(opts, :max_concurrency)
+      max_concurrency: Keyword.fetch!(opts, :max_concurrency),
+      metadata: metadata
     }
 
     {:ok, state}
@@ -337,13 +343,16 @@ defmodule Indexer.BufferedTask do
            callback_module: callback_module,
            callback_module_state: callback_module_state,
            max_batch_size: max_batch_size,
-           task_supervisor: task_supervisor
+           task_supervisor: task_supervisor,
+           metadata: metadata
          } = state
        ) do
     parent = self()
 
     task =
       Task.Supervisor.async(task_supervisor, fn ->
+        Logger.metadata(metadata)
+
         {0, []}
         |> callback_module.init(
           fn
@@ -463,22 +472,39 @@ defmodule Indexer.BufferedTask do
            callback_module_state: callback_module_state,
            max_concurrency: max_concurrency,
            task_ref_to_batch: task_ref_to_batch,
-           task_supervisor: task_supervisor
+           task_supervisor: task_supervisor,
+           metadata: metadata
          } = state
        ) do
     if Enum.count(task_ref_to_batch) < max_concurrency and not Enum.empty?(bound_queue) do
       {batch, new_state} = take_batch(state)
 
       %Task{ref: ref} =
-        Task.Supervisor.async_nolink(task_supervisor, callback_module, :run, [
-          batch,
-          callback_module_state
+        Task.Supervisor.async_nolink(task_supervisor, __MODULE__, :log_run, [
+          %{
+            metadata: metadata,
+            callback_module: callback_module,
+            batch: batch,
+            callback_module_state: callback_module_state
+          }
         ])
 
       %BufferedTask{new_state | task_ref_to_batch: Map.put(task_ref_to_batch, ref, batch)}
     else
       state
     end
+  end
+
+  # only public so that `Task.Supervisor.async_nolink` can call it
+  @doc false
+  def log_run(%{
+        metadata: metadata,
+        callback_module: callback_module,
+        batch: batch,
+        callback_module_state: callback_module_state
+      }) do
+    Logger.metadata(metadata)
+    callback_module.run(batch, callback_module_state)
   end
 
   defp flush(%BufferedTask{current_buffer: []} = state) do

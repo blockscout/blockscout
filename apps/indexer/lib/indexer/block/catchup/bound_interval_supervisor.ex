@@ -53,6 +53,8 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
 
   @impl GenServer
   def init(named_arguments) do
+    Logger.metadata(fetcher: :block_catchup)
+
     state = new(named_arguments)
 
     send(self(), :catchup_index)
