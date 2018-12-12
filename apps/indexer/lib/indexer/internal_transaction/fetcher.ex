@@ -138,14 +138,14 @@ defmodule Indexer.InternalTransaction.Fetcher do
                 ": ",
                 inspect(reason)
               ]
-            end)
+            end, error_count: unique_entries_count)
 
             # re-queue the de-duped entries
             {:retry, unique_entries}
         end
 
       {:error, reason} ->
-        Logger.error(fn -> ["failed to fetch internal transactions for transactions: ", inspect(reason)] end)
+        Logger.error(fn -> ["failed to fetch internal transactions for transactions: ", inspect(reason)] end, error_count: unique_entries_count)
 
         # re-queue the de-duped entries
         {:retry, unique_entries}

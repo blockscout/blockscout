@@ -86,7 +86,7 @@ defmodule Indexer.Block.Uncle.Fetcher do
       {:error, reason} ->
         Logger.error(fn ->
           ["failed to fetch: ", inspect(reason)]
-        end)
+        end, error_count: unique_hash_count)
 
         {:retry, unique_hashes}
     end
@@ -123,7 +123,7 @@ defmodule Indexer.Block.Uncle.Fetcher do
             ": ",
             inspect(failed_value)
           ]
-        end)
+        end, error_count: Enum.count(original_entries))
 
         {:retry, original_entries}
     end
@@ -193,12 +193,10 @@ defmodule Indexer.Block.Uncle.Fetcher do
 
     Logger.error(fn ->
       [
-        "failed to fetch ",
-        retried_entries |> length() |> to_string(),
-        ": ",
+        "failed to fetch: ",
         errors_to_iodata(errors)
       ]
-    end)
+    end, error_count: Enum.count(retried_entries))
   end
 
   defp errors_to_entries(errors) when is_list(errors) do
