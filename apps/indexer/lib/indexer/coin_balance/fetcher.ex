@@ -74,7 +74,10 @@ defmodule Indexer.CoinBalance.Fetcher do
     # `{address, block}`, so take unique params only
     unique_entries = Enum.uniq(entries)
 
-    Logger.debug(fn -> ["fetching ", unique_entries |> length() |> to_string()] end)
+    unique_entry_count = Enum.count(unique_entries)
+    Logger.metadata(count: unique_entry_count)
+
+    Logger.debug(fn -> "fetching" end)
 
     unique_entries
     |> Enum.map(&entry_to_params/1)
@@ -85,7 +88,7 @@ defmodule Indexer.CoinBalance.Fetcher do
 
       {:error, reason} ->
         Logger.error(fn ->
-          ["failed to fetch ", unique_entries |> length() |> to_string(), ": ", inspect(reason)]
+          ["failed to fetch: ", inspect(reason)]
         end)
 
         {:retry, unique_entries}
@@ -115,7 +118,7 @@ defmodule Indexer.CoinBalance.Fetcher do
 
   defp run_fetched_balances(%FetchedBalances{params_list: []}, original_entries), do: {:retry, original_entries}
 
-  defp run_fetched_balances(%FetchedBalances{params_list: params_list, errors: errors}, original_entries) do
+  defp run_fetched_balances(%FetchedBalances{params_list: params_list, errors: errors}, _) do
     value_fetched_at = DateTime.utc_now()
 
     importable_balances_params = Enum.map(params_list, &Map.put(&1, :value_fetched_at, value_fetched_at))
@@ -128,20 +131,18 @@ defmodule Indexer.CoinBalance.Fetcher do
         address_coin_balances: %{params: importable_balances_params}
       })
 
-    retry(errors, original_entries)
+    retry(errors)
   end
 
-  defp retry([], _), do: :ok
+  defp retry([]), do: :ok
 
-  defp retry(errors, original_entries) when is_list(errors) do
+  defp retry(errors) when is_list(errors) do
     retried_entries = fetched_balances_errors_to_entries(errors)
 
     Logger.error(fn ->
       [
         "failed to fetch ",
         retried_entries |> length() |> to_string(),
-        "/",
-        original_entries |> length() |> to_string(),
         ": ",
         fetched_balance_errors_to_iodata(errors)
       ]

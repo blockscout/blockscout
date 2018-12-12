@@ -93,10 +93,11 @@ defmodule Indexer.TokenBalance.Fetcher do
   end
 
   def fetch_from_blockchain(params_list) do
-    {:ok, token_balances} =
-      params_list
-      |> Enum.filter(&(&1.retries_count <= @max_retries))
-      |> TokenBalances.fetch_token_balances_from_blockchain()
+    retryable_params_list = Enum.filter(params_list, &(&1.retries_count <= @max_retries))
+
+    Logger.metadata(count: Enum.count(retryable_params_list))
+
+    {:ok, token_balances} = TokenBalances.fetch_token_balances_from_blockchain(retryable_params_list)
 
     token_balances
   end

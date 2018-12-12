@@ -184,7 +184,8 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
   end
 
   def handle_info(
-        {ref, %{first_block_number: first_block_number, missing_block_count: missing_block_count, shrunk: false}},
+        {ref,
+         %{first_block_number: first_block_number, missing_block_count: missing_block_count, shrunk: false}},
         %__MODULE__{
           bound_interval: bound_interval,
           task: %Task{ref: ref}
@@ -228,7 +229,8 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
   end
 
   def handle_info(
-        {ref, %{first_block_number: first_block_number, missing_block_count: missing_block_count, shrunk: true}},
+        {ref,
+         %{first_block_number: first_block_number, missing_block_count: missing_block_count, shrunk: true}},
         %__MODULE__{
           task: %Task{ref: ref}
         } = state
