@@ -6,6 +6,7 @@ defmodule Explorer.Counters.TokenHoldersCounter do
   """
 
   alias Explorer.Chain.Address.TokenBalance
+  alias Explorer.Chain.Hash
   alias Explorer.Repo
 
   @table :token_holders_counter
@@ -59,11 +60,9 @@ defmodule Explorer.Counters.TokenHoldersCounter do
   """
   def consolidate do
     TokenBalance.tokens_grouped_by_number_of_holders()
-    |> Repo.all()
-    |> Enum.map(fn {token, number_of_holders} ->
-      {token.bytes, number_of_holders}
+    |> Repo.stream_each(fn {%Hash{bytes: bytes}, number_of_holders} ->
+      insert_counter({bytes, number_of_holders})
     end)
-    |> insert_counter()
   end
 
   defp schedule_next_consolidation do
@@ -76,8 +75,8 @@ defmodule Explorer.Counters.TokenHoldersCounter do
   @doc """
   Fetches the token holders info for a specific token from the `:ets` table.
   """
-  def fetch(token_hash) do
-    do_fetch(:ets.lookup(table_name(), token_hash.bytes))
+  def fetch(%Hash{bytes: bytes}) do
+    do_fetch(:ets.lookup(table_name(), bytes))
   end
 
   defp do_fetch([{_, result}]), do: result
