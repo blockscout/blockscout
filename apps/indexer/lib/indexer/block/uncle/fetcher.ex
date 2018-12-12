@@ -74,16 +74,22 @@ defmodule Indexer.Block.Uncle.Fetcher do
     # the same block could be included as an uncle on multiple blocks, but we only want to fetch it once
     unique_hashes = Enum.uniq(hashes)
 
-    Logger.debug(fn -> "fetching #{length(unique_hashes)}" end)
+    unique_hash_count = Enum.count(unique_hashes)
+    Logger.metadata(count: unique_hash_count)
+
+    Logger.debug("fetching")
 
     case EthereumJSONRPC.fetch_blocks_by_hash(unique_hashes, json_rpc_named_arguments) do
       {:ok, blocks} ->
         run_blocks(blocks, block_fetcher, unique_hashes)
 
       {:error, reason} ->
-        Logger.error(fn ->
-          ["failed to fetch ", unique_hashes |> length |> to_string(), ": ", inspect(reason)]
-        end)
+        Logger.error(
+          fn ->
+            ["failed to fetch: ", inspect(reason)]
+          end,
+          error_count: unique_hash_count
+        )
 
         {:retry, unique_hashes}
     end
@@ -110,19 +116,13 @@ defmodule Indexer.Block.Uncle.Fetcher do
            transactions: %{params: transactions_params, on_conflict: :nothing}
          }) do
       {:ok, _} ->
-        retry(errors, original_entries)
+        retry(errors)
 
       {:error, step, failed_value, _changes_so_far} ->
-        Logger.error(fn ->
-          [
-            "failed to import ",
-            original_entries |> length() |> to_string(),
-            " in step ",
-            inspect(step),
-            ": ",
-            inspect(failed_value)
-          ]
-        end)
+        Logger.error(fn -> ["failed to import: ", inspect(failed_value)] end,
+          step: step,
+          error_count: Enum.count(original_entries)
+        )
 
         {:retry, original_entries}
     end
@@ -185,21 +185,20 @@ defmodule Indexer.Block.Uncle.Fetcher do
     end)
   end
 
-  defp retry([], _), do: :ok
+  defp retry([]), do: :ok
 
-  defp retry(errors, original_entries) when is_list(errors) do
+  defp retry(errors) when is_list(errors) do
     retried_entries = errors_to_entries(errors)
 
-    Logger.error(fn ->
-      [
-        "failed to fetch ",
-        retried_entries |> length() |> to_string(),
-        "/",
-        original_entries |> length() |> to_string(),
-        ": ",
-        errors_to_iodata(errors)
-      ]
-    end)
+    Logger.error(
+      fn ->
+        [
+          "failed to fetch: ",
+          errors_to_iodata(errors)
+        ]
+      end,
+      error_count: Enum.count(retried_entries)
+    )
   end
 
   defp errors_to_entries(errors) when is_list(errors) do
