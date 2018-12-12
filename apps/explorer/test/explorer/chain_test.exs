@@ -271,6 +271,56 @@ defmodule Explorer.ChainTest do
       assert Enum.count(transaction.token_transfers) == 2
     end
 
+    test "returns all transactions that the address is present only in the token transfers" do
+      john = insert(:address)
+      paul = insert(:address)
+      contract_address = insert(:contract_address)
+
+      transaction_one =
+        :transaction
+        |> insert(
+          from_address: john,
+          from_address_hash: john.hash,
+          to_address: contract_address,
+          to_address_hash: contract_address.hash
+        )
+        |> with_block()
+
+      insert(
+        :token_transfer,
+        from_address: john,
+        to_address: paul,
+        transaction: transaction_one,
+        amount: 1
+      )
+
+      transaction_two =
+        :transaction
+        |> insert(
+          from_address: john,
+          from_address_hash: john.hash,
+          to_address: contract_address,
+          to_address_hash: contract_address.hash
+        )
+        |> with_block()
+
+      insert(
+        :token_transfer,
+        from_address: john,
+        to_address: paul,
+        transaction: transaction_two,
+        amount: 1
+      )
+
+      transactions_hashes =
+        paul
+        |> Chain.address_to_transactions()
+        |> Enum.map(& &1.hash)
+
+      assert Enum.member?(transactions_hashes, transaction_one.hash) == true
+      assert Enum.member?(transactions_hashes, transaction_two.hash) == true
+    end
+
     test "with transactions can be paginated" do
       address = insert(:address)
 
