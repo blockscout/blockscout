@@ -66,23 +66,6 @@ defmodule Explorer.Chain.Address.TokenBalance do
   @burn_address_hash burn_address_hash
 
   @doc """
-  Builds an `Ecto.Query` to fetch the last token balances that have value greater than 0.
-
-  The last token balances from an Address is the last block indexed.
-  """
-  def last_token_balances(address_hash) do
-    query =
-      from(
-        tb in TokenBalance,
-        where: tb.address_hash == ^address_hash,
-        distinct: :token_contract_address_hash,
-        order_by: [desc: :block_number]
-      )
-
-    from(tb in subquery(query), where: tb.value > 0, preload: :token)
-  end
-
-  @doc """
   Builds an `Ecto.Query` to group all tokens with their number of holders.
   """
   def tokens_grouped_by_number_of_holders do

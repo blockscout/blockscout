@@ -174,7 +174,18 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  `t:Explorer.Chain.Transaction/0`s from `address`.
+  Fetches the transactions related to the given address, including transactions
+  that only have the address in the `token_transfers` related table.
+
+  This query is divided into multiple subqueries intentionally in order to
+  improve the listing performance.
+
+  The `token_trasfers` table tends to grow exponentially, and the query results
+  with a `transactions` `join` statement takes too long.
+
+  To solve this the `transaction_hashes` are fetched in a separate query, and
+  paginated through the `block_number` already present in the `token_transfers`
+  table.
 
   ## Options
 
@@ -196,19 +207,21 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    {:ok, address_bytes} = Explorer.Chain.Hash.Address.dump(address_hash)
+    transaction_hashes_from_token_transfers =
+      TokenTransfer.where_any_address_fields_match(direction, address_hash, paging_options)
 
-    token_transfers_dynamic = TokenTransfer.dynamic_any_address_fields_match(direction, address_bytes)
+    token_transfers_query =
+      transaction_hashes_from_token_transfers
+      |> Transaction.where_transaction_hashes_match()
+      |> join_associations(necessity_by_association)
+      |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
+      |> Transaction.preload_token_transfers(address_hash)
 
     base_query =
       paging_options
       |> fetch_transactions()
       |> join_associations(necessity_by_association)
       |> Transaction.preload_token_transfers(address_hash)
-
-    token_transfers_query =
-      base_query
-      |> from(where: ^token_transfers_dynamic)
 
     from_address_query =
       base_query
@@ -955,7 +968,7 @@ defmodule Explorer.Chain do
   @doc """
   Counts all of the block validations and groups by the `miner_hash`.
   """
-  def group_block_validations_by_address do
+  def each_address_block_validation_count(fun) when is_function(fun, 1) do
     query =
       from(
         b in Block,
@@ -965,7 +978,7 @@ defmodule Explorer.Chain do
         group_by: b.miner_hash
       )
 
-    Repo.all(query)
+    Repo.stream_each(query, fun)
   end
 
   @doc """
@@ -1007,21 +1020,14 @@ defmodule Explorer.Chain do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_unfetched_balances(initial, reducer) when is_function(reducer, 2) do
-    Repo.transaction(
-      fn ->
-        query =
-          from(
-            balance in CoinBalance,
-            where: is_nil(balance.value_fetched_at),
-            select: %{address_hash: balance.address_hash, block_number: balance.block_number}
-          )
+    query =
+      from(
+        balance in CoinBalance,
+        where: is_nil(balance.value_fetched_at),
+        select: %{address_hash: balance.address_hash, block_number: balance.block_number}
+      )
 
-        query
-        |> Repo.stream(timeout: :infinity)
-        |> Enum.reduce(initial, reducer)
-      end,
-      timeout: :infinity
-    )
+    Repo.stream_reduce(query, initial, reducer)
   end
 
   @doc """
@@ -1033,16 +1039,8 @@ defmodule Explorer.Chain do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_unfetched_token_balances(initial, reducer) when is_function(reducer, 2) do
-    Repo.transaction(
-      fn ->
-        query = TokenBalance.unfetched_token_balances()
-
-        query
-        |> Repo.stream(timeout: :infinity)
-        |> Enum.reduce(initial, reducer)
-      end,
-      timeout: :infinity
-    )
+    TokenBalance.unfetched_token_balances()
+    |> Repo.stream_reduce(initial, reducer)
   end
 
   @doc """
@@ -1097,22 +1095,15 @@ defmodule Explorer.Chain do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_transactions_with_unfetched_internal_transactions(fields, initial, reducer) when is_function(reducer, 2) do
-    Repo.transaction(
-      fn ->
-        query =
-          from(
-            t in Transaction,
-            # exclude pending transactions
-            where: not is_nil(t.block_hash) and is_nil(t.internal_transactions_indexed_at),
-            select: ^fields
-          )
+    query =
+      from(
+        t in Transaction,
+        # exclude pending transactions
+        where: not is_nil(t.block_hash) and is_nil(t.internal_transactions_indexed_at),
+        select: ^fields
+      )
 
-        query
-        |> Repo.stream(timeout: :infinity)
-        |> Enum.reduce(initial, reducer)
-      end,
-      timeout: :infinity
-    )
+    Repo.stream_reduce(query, initial, reducer)
   end
 
   @doc """
@@ -1129,21 +1120,14 @@ defmodule Explorer.Chain do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_unfetched_uncle_hashes(initial, reducer) when is_function(reducer, 2) do
-    Repo.transaction(
-      fn ->
-        query =
-          from(bsdr in Block.SecondDegreeRelation,
-            where: is_nil(bsdr.uncle_fetched_at),
-            select: bsdr.uncle_hash,
-            group_by: bsdr.uncle_hash
-          )
+    query =
+      from(bsdr in Block.SecondDegreeRelation,
+        where: is_nil(bsdr.uncle_fetched_at),
+        select: bsdr.uncle_hash,
+        group_by: bsdr.uncle_hash
+      )
 
-        query
-        |> Repo.stream(timeout: :infinity)
-        |> Enum.reduce(initial, reducer)
-      end,
-      timeout: :infinity
-    )
+    Repo.stream_reduce(query, initial, reducer)
   end
 
   @doc """
@@ -1938,22 +1922,15 @@ defmodule Explorer.Chain do
           reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator)
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_uncataloged_token_contract_address_hashes(initial_acc, reducer) when is_function(reducer, 2) do
-    Repo.transaction(
-      fn ->
-        query =
-          from(
-            token in Token,
-            where: token.cataloged == false,
-            select: token.contract_address_hash
-          )
+  def stream_uncataloged_token_contract_address_hashes(initial, reducer) when is_function(reducer, 2) do
+    query =
+      from(
+        token in Token,
+        where: token.cataloged == false,
+        select: token.contract_address_hash
+      )
 
-        query
-        |> Repo.stream(timeout: :infinity)
-        |> Enum.reduce(initial_acc, reducer)
-      end,
-      timeout: :infinity
-    )
+    Repo.stream_reduce(query, initial, reducer)
   end
 
   @doc """
@@ -1964,16 +1941,10 @@ defmodule Explorer.Chain do
           reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator)
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_cataloged_token_contract_address_hashes(initial_acc, reducer) when is_function(reducer, 2) do
-    Repo.transaction(
-      fn ->
-        Chain.Token.cataloged_tokens()
-        |> order_by(asc: :updated_at)
-        |> Repo.stream(timeout: :infinity)
-        |> Enum.reduce(initial_acc, reducer)
-      end,
-      timeout: :infinity
-    )
+  def stream_cataloged_token_contract_address_hashes(initial, reducer) when is_function(reducer, 2) do
+    Chain.Token.cataloged_tokens()
+    |> order_by(asc: :updated_at)
+    |> Repo.stream_reduce(initial, reducer)
   end
 
   @doc """
@@ -1992,14 +1963,7 @@ defmodule Explorer.Chain do
         distinct: t.block_number
       )
 
-    Repo.transaction(
-      fn ->
-        query
-        |> Repo.stream(timeout: :infinity)
-        |> Enum.reduce([], &[&1 | &2])
-      end,
-      timeout: :infinity
-    )
+    Repo.stream_reduce(query, [], &[&1 | &2])
   end
 
   @doc """
@@ -2083,7 +2047,7 @@ defmodule Explorer.Chain do
   @spec fetch_last_token_balances(Hash.Address.t()) :: []
   def fetch_last_token_balances(address_hash) do
     address_hash
-    |> TokenBalance.last_token_balances()
+    |> CurrentTokenBalance.last_token_balances()
     |> Repo.all()
   end
 
@@ -2156,4 +2120,22 @@ defmodule Explorer.Chain do
 
   @spec data() :: Dataloader.Ecto.t()
   def data, do: DataloaderEcto.new(Repo)
+
+  @doc """
+  Returns a list of block numbers with invalid consensus.
+  """
+  @spec list_block_numbers_with_invalid_consensus :: [integer()]
+  def list_block_numbers_with_invalid_consensus do
+    query =
+      from(
+        block in Block,
+        join: parent in Block,
+        on: parent.hash == block.parent_hash,
+        where: block.consensus == true,
+        where: parent.consensus == false,
+        select: parent.number
+      )
+
+    Repo.all(query, timeout: :infinity)
+  end
 end

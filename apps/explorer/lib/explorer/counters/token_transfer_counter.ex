@@ -51,11 +51,9 @@ defmodule Explorer.Counters.TokenTransferCounter do
   Consolidates the number of token transfers grouped by token.
   """
   def consolidate do
-    total_token_transfers = TokenTransfer.count_token_transfers()
-
-    for {token_hash, total} <- total_token_transfers do
+    TokenTransfer.each_count(fn {token_hash, total} ->
       insert_or_update_counter(token_hash, total)
-    end
+    end)
   end
 
   @doc """

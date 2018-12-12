@@ -271,6 +271,56 @@ defmodule Explorer.ChainTest do
       assert Enum.count(transaction.token_transfers) == 2
     end
 
+    test "returns all transactions that the address is present only in the token transfers" do
+      john = insert(:address)
+      paul = insert(:address)
+      contract_address = insert(:contract_address)
+
+      transaction_one =
+        :transaction
+        |> insert(
+          from_address: john,
+          from_address_hash: john.hash,
+          to_address: contract_address,
+          to_address_hash: contract_address.hash
+        )
+        |> with_block()
+
+      insert(
+        :token_transfer,
+        from_address: john,
+        to_address: paul,
+        transaction: transaction_one,
+        amount: 1
+      )
+
+      transaction_two =
+        :transaction
+        |> insert(
+          from_address: john,
+          from_address_hash: john.hash,
+          to_address: contract_address,
+          to_address_hash: contract_address.hash
+        )
+        |> with_block()
+
+      insert(
+        :token_transfer,
+        from_address: john,
+        to_address: paul,
+        transaction: transaction_two,
+        amount: 1
+      )
+
+      transactions_hashes =
+        paul
+        |> Chain.address_to_transactions()
+        |> Enum.map(& &1.hash)
+
+      assert Enum.member?(transactions_hashes, transaction_one.hash) == true
+      assert Enum.member?(transactions_hashes, transaction_two.hash) == true
+    end
+
     test "with transactions can be paginated" do
       address = insert(:address)
 
@@ -1240,13 +1290,17 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "group_block_validations_by_address/0" do
-    test "returns block validations grouped by the address that validated them (`address_hash`)" do
+  describe "each_address_block_validation_count/0" do
+    test "streams block validation count grouped by the address that validated them (`address_hash`)" do
       address = insert(:address)
 
       insert(:block, miner: address, miner_hash: address.hash)
 
-      results = Chain.group_block_validations_by_address()
+      {:ok, agent_pid} = Agent.start_link(fn -> [] end)
+
+      Chain.each_address_block_validation_count(fn entry -> Agent.update(agent_pid, &[entry | &1]) end)
+
+      results = Agent.get(agent_pid, &Enum.reverse/1)
 
       assert length(results) == 1
       assert results == [{address.hash, 1}]
@@ -2883,91 +2937,15 @@ defmodule Explorer.ChainTest do
   describe "fetch_last_token_balances/1" do
     test "returns the token balances given the address hash" do
       address = insert(:address)
-      token_balance = insert(:token_balance, address: address)
-      insert(:token_balance, address: build(:address))
+      current_token_balance = insert(:address_current_token_balance, address: address)
+      insert(:address_current_token_balance, address: build(:address))
 
       token_balances =
         address.hash
         |> Chain.fetch_last_token_balances()
         |> Enum.map(& &1.address_hash)
 
-      assert token_balances == [token_balance.address_hash]
-    end
-
-    test "returns the value from the last block" do
-      address = insert(:address)
-      token_a = insert(:token, contract_address: build(:contract_address))
-      token_b = insert(:token, contract_address: build(:contract_address))
-
-      insert(
-        :token_balance,
-        address: address,
-        block_number: 1000,
-        token_contract_address_hash: token_a.contract_address_hash,
-        value: 5000
-      )
-
-      token_balance_a =
-        insert(
-          :token_balance,
-          address: address,
-          block_number: 1001,
-          token_contract_address_hash: token_a.contract_address_hash,
-          value: 4000
-        )
-
-      insert(
-        :token_balance,
-        address: address,
-        block_number: 1000,
-        token_contract_address_hash: token_b.contract_address_hash,
-        value: 3000
-      )
-
-      token_balance_b =
-        insert(
-          :token_balance,
-          address: address,
-          block_number: 1001,
-          token_contract_address_hash: token_b.contract_address_hash,
-          value: 2000
-        )
-
-      token_balances = Chain.fetch_last_token_balances(address.hash)
-
-      assert Enum.count(token_balances) == 2
-      assert Enum.map(token_balances, & &1.value) == [token_balance_a.value, token_balance_b.value]
-    end
-
-    test "returns an empty list when there are no token balances" do
-      address = insert(:address)
-
-      insert(:token_balance, address: build(:address))
-
-      assert Chain.fetch_last_token_balances(address.hash) == []
-    end
-
-    test "does not consider other blocks when the last block has the value 0" do
-      address = insert(:address)
-      token = insert(:token, contract_address: build(:contract_address))
-
-      insert(
-        :token_balance,
-        address: address,
-        block_number: 1000,
-        token_contract_address_hash: token.contract_address_hash,
-        value: 5000
-      )
-
-      insert(
-        :token_balance,
-        address: address,
-        block_number: 1001,
-        token_contract_address_hash: token.contract_address_hash,
-        value: 0
-      )
-
-      assert Chain.fetch_last_token_balances(address.hash) == []
+      assert token_balances == [current_token_balance.address_hash]
     end
   end
 
@@ -3174,6 +3152,27 @@ defmodule Explorer.ChainTest do
                %{date: "2018-12-05", value: Decimal.new("2E-15")},
                %{date: "2018-12-06", value: Decimal.new("1E-15")}
              ]
+    end
+  end
+
+  describe "list_block_numbers_with_invalid_consensus/0" do
+    test "returns a list of block numbers with invalid consensus" do
+      block1 = insert(:block)
+      block2_with_invalid_consensus = insert(:block, parent_hash: block1.hash, consensus: false)
+      _block2 = insert(:block, parent_hash: block1.hash, number: block2_with_invalid_consensus.number)
+      block3 = insert(:block, parent_hash: block2_with_invalid_consensus.hash)
+      block4 = insert(:block, parent_hash: block3.hash)
+      block5 = insert(:block, parent_hash: block4.hash)
+      block6_without_consensus = insert(:block, parent_hash: block5.hash, consensus: false)
+      block6 = insert(:block, parent_hash: block5.hash, number: block6_without_consensus.number)
+      block7 = insert(:block, parent_hash: block6.hash)
+      block8_with_invalid_consensus = insert(:block, parent_hash: block7.hash, consensus: false)
+      _block8 = insert(:block, parent_hash: block7.hash, number: block8_with_invalid_consensus.number)
+      block9 = insert(:block, parent_hash: block8_with_invalid_consensus.hash)
+      _block10 = insert(:block, parent_hash: block9.hash)
+
+      assert Chain.list_block_numbers_with_invalid_consensus() ==
+               [block2_with_invalid_consensus.number, block8_with_invalid_consensus.number]
     end
   end
 end

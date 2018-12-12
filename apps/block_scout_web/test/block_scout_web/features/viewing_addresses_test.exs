@@ -421,7 +421,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         token_contract_address: contract_address
       )
 
-      insert(:token_balance, address: lincoln, token_contract_address_hash: contract_address.hash)
+      insert(:address_current_token_balance, address: lincoln, token_contract_address_hash: contract_address.hash)
 
       contract_address_2 = insert(:contract_address)
       insert(:token, name: "token2", symbol: "T2", contract_address: contract_address_2, type: "ERC-20")
@@ -439,7 +439,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         token_contract_address: contract_address_2
       )
 
-      insert(:token_balance, address: lincoln, token_contract_address_hash: contract_address_2.hash)
+      insert(:address_current_token_balance, address: lincoln, token_contract_address_hash: contract_address_2.hash)
 
       {:ok, lincoln: lincoln}
     end
