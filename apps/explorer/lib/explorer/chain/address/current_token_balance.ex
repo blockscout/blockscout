@@ -1,6 +1,9 @@
 defmodule Explorer.Chain.Address.CurrentTokenBalance do
   @moduledoc """
   Represents the current token balance from addresses according to the last block.
+
+  In this table we can see only the last balance from addresses. If you want to see the history of
+  token balances look at the `Address.TokenBalance` instead.
   """
 
   use Ecto.Schema
