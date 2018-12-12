@@ -17,7 +17,7 @@ config :ethereum_jsonrpc, EthereumJSONRPC.Tracer,
 config :logger, :ethereum_jsonrpc,
   # keep synced with `config/config.exs`
   format: "$dateT$time $metadata[$level] $message\n",
-  metadata: [:application, :request_id],
+  metadata: ~w(application fetcher request_id)a,
   metadata_filter: [application: :ethereum_jsonrpc]
 
 # Import environment specific config. This must remain at the bottom

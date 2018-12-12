@@ -20,7 +20,8 @@ defmodule Indexer.Block.Uncle.Fetcher do
     flush_interval: :timer.seconds(3),
     max_batch_size: 10,
     max_concurrency: 10,
-    task_supervisor: Indexer.Block.Uncle.TaskSupervisor
+    task_supervisor: Indexer.Block.Uncle.TaskSupervisor,
+    metadata: [fetcher: :block_uncle]
   ]
 
   @doc """
@@ -73,7 +74,7 @@ defmodule Indexer.Block.Uncle.Fetcher do
     # the same block could be included as an uncle on multiple blocks, but we only want to fetch it once
     unique_hashes = Enum.uniq(hashes)
 
-    Logger.debug(fn -> "fetching #{length(unique_hashes)} uncle blocks" end)
+    Logger.debug(fn -> "fetching #{length(unique_hashes)}" end)
 
     case EthereumJSONRPC.fetch_blocks_by_hash(unique_hashes, json_rpc_named_arguments) do
       {:ok, blocks} ->
@@ -81,7 +82,7 @@ defmodule Indexer.Block.Uncle.Fetcher do
 
       {:error, reason} ->
         Logger.error(fn ->
-          ["failed to fetch ", unique_hashes |> length |> to_string(), " uncle blocks: ", inspect(reason)]
+          ["failed to fetch ", unique_hashes |> length |> to_string(), ": ", inspect(reason)]
         end)
 
         {:retry, unique_hashes}
@@ -116,7 +117,7 @@ defmodule Indexer.Block.Uncle.Fetcher do
           [
             "failed to import ",
             original_entries |> length() |> to_string(),
-            "uncle blocks in step ",
+            " in step ",
             inspect(step),
             ": ",
             inspect(failed_value)
@@ -195,7 +196,7 @@ defmodule Indexer.Block.Uncle.Fetcher do
         retried_entries |> length() |> to_string(),
         "/",
         original_entries |> length() |> to_string(),
-        " uncles: ",
+        ": ",
         errors_to_iodata(errors)
       ]
     end)
