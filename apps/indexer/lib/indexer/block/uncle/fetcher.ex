@@ -189,16 +189,29 @@ defmodule Indexer.Block.Uncle.Fetcher do
 
   defp retry(errors) when is_list(errors) do
     retried_entries = errors_to_entries(errors)
+    loggable_errors = loggable_errors(errors)
+    loggable_error_count = Enum.count(loggable_errors)
 
-    Logger.error(
-      fn ->
-        [
-          "failed to fetch: ",
-          errors_to_iodata(errors)
-        ]
-      end,
-      error_count: Enum.count(retried_entries)
-    )
+    unless loggable_error_count == 0 do
+      Logger.error(
+        fn ->
+          [
+            "failed to fetch: ",
+            errors_to_iodata(loggable_errors)
+          ]
+        end,
+        error_count: loggable_error_count
+      )
+    end
+
+    {:retry, retried_entries}
+  end
+
+  defp loggable_errors(errors) when is_list(errors) do
+    Enum.filter(errors, fn
+      %{code: 404, message: "Not Found"} -> false
+      _ -> true
+    end)
   end
 
   defp errors_to_entries(errors) when is_list(errors) do
