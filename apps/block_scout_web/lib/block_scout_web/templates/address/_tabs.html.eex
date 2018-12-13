@@ -25,11 +25,20 @@
         ) %>
   </li>
 
+  <li class="nav-item">
+    <%= link(
+          gettext("Coin Balance History"),
+          class: "nav-link #{tab_status("coin_balances", @conn.request_path)}",
+          "data-test": "coin_balance_tab_link",
+          to: address_coin_balance_path(@conn, :index, @address.hash)
+        ) %>
+  </li>
+
   <%= if BlockScoutWeb.AddressView.validator?(@validation_count) do %>
     <li class="nav-item">
       <%= link(
         gettext("Blocks Validated"),
-        class: "nav-link",
+        class: "nav-link #{tab_status("validations", @conn.request_path)}",
         "data-test": "validations_tab_link",
         to: address_validation_path(@conn, :index, @address.hash)
       ) %>
@@ -82,6 +91,12 @@
             class: "dropdown-item #{tab_status("internal_transactions", @conn.request_path)}",
             "data-test": "internal_transactions_tab_link",
             to: address_internal_transaction_path(@conn, :index, @address.hash)
+          ) %>
+      <%= link(
+            gettext("Coin Balance History"),
+            class: "dropdown-item #{tab_status("coin_balances", @conn.request_path)}",
+            "data-test": "coin_balance_tab_link",
+            to: address_coin_balance_path(@conn, :index, @address.hash)
           ) %>
       <%= if validator?(@validation_count) do %>
         <%= link(

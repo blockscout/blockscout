@@ -55,8 +55,14 @@ defmodule BlockScoutWeb.Router do
     max_complexity: @max_complexity
   )
 
+  # Disallows Iframes (write routes)
   scope "/", BlockScoutWeb do
     pipe_through(:browser)
+  end
+
+  # Allows Iframes (read-only routes)
+  scope "/", BlockScoutWeb do
+    pipe_through([:browser, BlockScoutWeb.Plug.AllowIframe])
 
     resources("/", ChainController, only: [:show], singleton: true, as: :chain)
 
@@ -142,6 +148,20 @@ defmodule BlockScoutWeb.Router do
         AddressTokenBalanceController,
         only: [:index],
         as: :token_balance
+      )
+
+      resources(
+        "/coin_balances",
+        AddressCoinBalanceController,
+        only: [:index],
+        as: :coin_balance
+      )
+
+      resources(
+        "/coin_balances/by_day",
+        AddressCoinBalanceByDayController,
+        only: [:index],
+        as: :coin_balance_by_day
       )
     end
 

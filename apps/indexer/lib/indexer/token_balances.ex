@@ -34,7 +34,7 @@ defmodule Indexer.TokenBalances do
 
   @decorate span(tracer: Tracer)
   def fetch_token_balances_from_blockchain(token_balances, opts \\ []) do
-    Logger.debug(fn -> "fetching #{Enum.count(token_balances)} token balances" end)
+    Logger.debug("fetching token balances", count: Enum.count(token_balances))
 
     task_timeout = Keyword.get(opts, :timeout, @task_timeout)
 

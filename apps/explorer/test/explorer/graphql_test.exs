@@ -181,4 +181,129 @@ defmodule Explorer.GraphQLTest do
     #
     # These two requirements are tested in `Explorer.ChainTest`.
   end
+
+  describe "get_token_transfer/1" do
+    test "returns existing token transfer" do
+      transaction = insert(:transaction)
+      token_transfer = insert(:token_transfer, transaction: transaction)
+
+      clauses = %{transaction_hash: token_transfer.transaction_hash, log_index: token_transfer.log_index}
+
+      {:ok, found_token_transfer} = GraphQL.get_token_transfer(clauses)
+
+      assert found_token_transfer.transaction_hash == token_transfer.transaction_hash
+      assert found_token_transfer.log_index == token_transfer.log_index
+    end
+
+    test " returns error tuple for non-existing token transfer" do
+      transaction = insert(:transaction)
+      token_transfer = build(:token_transfer, transaction: transaction)
+
+      clauses = %{transaction_hash: transaction.hash, log_index: token_transfer.log_index}
+
+      assert GraphQL.get_token_transfer(clauses) == {:error, "Token transfer not found."}
+    end
+  end
+
+  describe "list_token_transfers_query/1" do
+    test "with token contract address hash with zero token transfers" do
+      result =
+        :address
+        |> insert()
+        |> Map.get(:hash)
+        |> GraphQL.list_token_transfers_query()
+        |> Repo.all()
+
+      assert result == []
+    end
+
+    test "returns all expected token transfer fields" do
+      transaction = insert(:transaction)
+      token_transfer = insert(:token_transfer, transaction: transaction)
+
+      [found_token_transfer] =
+        token_transfer.token_contract_address_hash
+        |> GraphQL.list_token_transfers_query()
+        |> Repo.all()
+
+      expected_fields = ~w(
+        amount
+        block_number
+        log_index
+        token_id
+        from_address_hash
+        to_address_hash
+        token_contract_address_hash
+        transaction_hash
+      )a
+
+      for expected_field <- expected_fields do
+        assert Map.get(found_token_transfer, expected_field) == Map.get(token_transfer, expected_field)
+      end
+    end
+
+    test "orders token transfers by descending block number, descending transaction index, and ascending log index" do
+      first_block = insert(:block)
+      second_block = insert(:block)
+      third_block = insert(:block)
+
+      transactions_block2 =
+        2
+        |> insert_list(:transaction)
+        |> with_block(second_block)
+
+      transactions_block3 =
+        2
+        |> insert_list(:transaction)
+        |> with_block(third_block)
+
+      transactions_block1 =
+        2
+        |> insert_list(:transaction)
+        |> with_block(first_block)
+
+      all_transactions = Enum.concat([transactions_block2, transactions_block3, transactions_block1])
+
+      token_address = insert(:contract_address)
+      insert(:token, contract_address: token_address)
+
+      for transaction <- all_transactions do
+        token_transfer_attrs1 = %{
+          block_number: transaction.block_number,
+          log_index: 0,
+          transaction: transaction,
+          token_contract_address: token_address
+        }
+
+        token_transfer_attrs2 = %{
+          block_number: transaction.block_number,
+          log_index: 1,
+          transaction: transaction,
+          token_contract_address: token_address
+        }
+
+        insert(:token_transfer, token_transfer_attrs1)
+        insert(:token_transfer, token_transfer_attrs2)
+      end
+
+      found_token_transfers =
+        token_address.hash
+        |> GraphQL.list_token_transfers_query()
+        |> Repo.all()
+        |> Repo.preload(:transaction)
+
+      block_number_order = Enum.map(found_token_transfers, & &1.block_number)
+      transaction_index_order = Enum.map(found_token_transfers, &{&1.block_number, &1.transaction.index})
+
+      assert block_number_order == Enum.sort(block_number_order, &(&1 >= &2))
+      assert transaction_index_order == Enum.sort(transaction_index_order, &(&1 >= &2))
+
+      tt_by_block_transaction = Enum.group_by(found_token_transfers, &{&1.block_number, &1.transaction.index})
+
+      for {_, token_transfers} <- tt_by_block_transaction do
+        log_index_order = Enum.map(token_transfers, & &1.log_index)
+        assert log_index_order == Enum.sort(log_index_order)
+      end
+    end
+  end
 end
