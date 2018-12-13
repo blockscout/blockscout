@@ -120,6 +120,11 @@ defmodule Indexer.PendingTransaction.Fetcher do
 
       :ignore ->
         :ok
+
+      {:error, :timeout} ->
+        Logger.error("timeout")
+
+        :ok
     end
   end
 end
