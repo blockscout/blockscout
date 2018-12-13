@@ -7,7 +7,7 @@
 <h1 align="center">BlockScout</h1>
 <p align="center">Blockchain Explorer for inspecting and analyzing EVM Chains.</p>
 <div align="center">
-  
+
 [![CircleCI](https://circleci.com/gh/poanetwork/blockscout.svg?style=svg&circle-token=f8823a3d0090407c11f87028c73015a331dbf604)](https://circleci.com/gh/poanetwork/blockscout) [![Coverage Status](https://coveralls.io/repos/github/poanetwork/blockscout/badge.svg?branch=master)](https://coveralls.io/github/poanetwork/blockscout?branch=master) [![Join the chat at https://gitter.im/poanetwork/blockscout](https://badges.gitter.im/poanetwork/blockscout.svg)](https://gitter.im/poanetwork/blockscout?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 </div>
@@ -245,6 +245,22 @@ To view Modules and API Reference documentation:
 2. View the generated docs.  
 `open doc/index.html`
 
+## Front-end 
+
+### Javascript
+
+All Javascript files are under [apps/block_scout_web/assets/js](https://github.com/poanetwork/blockscout/tree/master/apps/block_scout_web/assets/js) and the main file is [app.js](https://github.com/poanetwork/blockscout/blob/master/apps/block_scout_web/assets/js/app.js). This file imports all javascript used in the application. If you want to create a new JS file consider creating into [/js/pages](https://github.com/poanetwork/blockscout/tree/master/apps/block_scout_web/assets/js/pages) or [/js/lib](https://github.com/poanetwork/blockscout/tree/master/apps/block_scout_web/assets/js/lib), as follows:
+
+#### js/lib
+This folder contains all scripts that can be reused in any page or can be used as a helper to some component.
+
+#### js/pages
+This folder contains the scripts that are specific for some page.
+
+#### Redux
+This project uses Redux to control the state in some pages. There are pages that have things happening in real-time thanks to the Phoenix channels, e.g. Address page, so the page state changes a lot depending on which events it is listening. The redux is also used to load some contents asynchronous, see [async_listing_load.js](https://github.com/poanetwork/blockscout/blob/master/apps/block_scout_web/assets/js/lib/async_listing_load.js).
+
+To understand how to build new pages that need redux in this project, see the [redux_helpers.js](https://github.com/poanetwork/blockscout/blob/master/apps/block_scout_web/assets/js/lib/redux_helpers.js)
 
 ## Internationalization
 
@@ -282,6 +298,33 @@ BlockScout is setup to export [Prometheus](https://prometheus.io/) metrics at `/
    2. Copy the contents of the JSON file in the "Or paste JSON" entry
    3. Click "Load"
 6. View the dashboards.  (You will need to click-around and use BlockScout for the web-related metrics to show up.)
+
+## Tracing
+
+Blockscout supports tracing via
+[Spandex](http://git@github.com:spandex-project/spandex.git). Each application
+has its own tracer, that is configured internally to that application. In order
+to enable it, visit each application's `config/<env>.ex` and update its tracer
+configuration to change `disabled?: true` to `disabled?: false`. Do this for
+each application you'd like included in your trace data.
+
+Currently, only [Datadog](https://www.datadoghq.com/) is supported as a
+tracing backend, but more will be added soon.
+
+### DataDog
+
+If you would like to use DataDog, after enabling `Spandex`, set
+`"DATADOG_HOST"` and `"DATADOG_PORT"` environment variables to the
+host/port that your Datadog agent is running on. For more information on
+Datadog and the Datadog agent, see their
+[documentation](https://docs.datadoghq.com/).
+
+### Other
+
+If you want to use a different  backend, remove the
+`SpandexDatadog.ApiServer` `Supervisor.child_spec` from
+`Explorer.Application` and follow any instructions provided in `Spandex`
+for setting up that backend.
 
 ## Memory Usage
 

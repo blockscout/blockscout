@@ -75,8 +75,9 @@
         # Priority values are: `low, normal, high, higher`
         #
         {Credo.Check.Design.AliasUsage,
-         excluded_namespaces: ~w(Block Blocks Import Socket Task),
-         excluded_lastnames: ~w(Address DateTime Exporter Fetcher Full Instrumenter Monitor Name Number Repo Time Unit),
+         excluded_namespaces: ~w(Block Blocks Import Socket SpandexDatadog Task),
+         excluded_lastnames:
+           ~w(Address DateTime Exporter Fetcher Full Instrumenter Logger Monitor Name Number Repo Spec Time Unit),
          priority: :low},
 
         # For some checks, you can also set other parameters

@@ -1,6 +1,10 @@
 defmodule Explorer.Chain.Address.TokenBalance do
   @moduledoc """
   Represents a token balance from an address.
+
+  In this table we can see all token balances that a specific addreses had acording to the block
+  numbers. If you want to show only the last balance from an address, consider querying against
+  `Address.CurrentTokenBalance` instead.
   """
 
   use Ecto.Schema
@@ -64,23 +68,6 @@ defmodule Explorer.Chain.Address.TokenBalance do
 
   {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
   @burn_address_hash burn_address_hash
-
-  @doc """
-  Builds an `Ecto.Query` to fetch the last token balances that have value greater than 0.
-
-  The last token balances from an Address is the last block indexed.
-  """
-  def last_token_balances(address_hash) do
-    query =
-      from(
-        tb in TokenBalance,
-        where: tb.address_hash == ^address_hash,
-        distinct: :token_contract_address_hash,
-        order_by: [desc: :block_number]
-      )
-
-    from(tb in subquery(query), where: tb.value > 0, preload: :token)
-  end
 
   @doc """
   Builds an `Ecto.Query` to group all tokens with their number of holders.

@@ -3,14 +3,21 @@ defmodule Indexer.TokenBalances do
   Reads Token's balances using Smart Contract functions from the blockchain.
   """
 
+  use Spandex.Decorators, tracer: Indexer.Tracer
+
+  require Indexer.Tracer
   require Logger
 
   alias Explorer.Chain
   alias Explorer.Token.BalanceReader
-  alias Indexer.TokenBalance
+  alias Indexer.{TokenBalance, Tracer}
 
   # The timeout used for each process opened by Task.async_stream/3. Default 15s.
   @task_timeout 15000
+
+  def fetch_token_balances_from_blockchain(token_balances) do
+    fetch_token_balances_from_blockchain(token_balances, [])
+  end
 
   @doc """
   Fetches TokenBalances from specific Addresses and Blocks in the Blockchain
@@ -27,16 +34,19 @@ defmodule Indexer.TokenBalances do
   * `address_hash` - The address_hash that we want to know the balance.
   * `block_number` - The block number that the address_hash has the balance.
   """
-  def fetch_token_balances_from_blockchain([]), do: {:ok, []}
+  def fetch_token_balances_from_blockchain([], _opts), do: {:ok, []}
 
-  def fetch_token_balances_from_blockchain(token_balances, opts \\ []) do
-    Logger.debug(fn -> "fetching #{Enum.count(token_balances)} token balances" end)
+  @decorate span(tracer: Tracer)
+  def fetch_token_balances_from_blockchain(token_balances, opts) do
+    Logger.debug("fetching token balances", count: Enum.count(token_balances))
 
     task_timeout = Keyword.get(opts, :timeout, @task_timeout)
 
+    task_callback = traced_fetch_token_balance_callback(Tracer.current_span())
+
     requested_token_balances =
       token_balances
-      |> Task.async_stream(&fetch_token_balance/1, timeout: task_timeout, on_timeout: :kill_task)
+      |> Task.async_stream(task_callback, timeout: task_timeout, on_timeout: :kill_task)
       |> Stream.map(&format_task_results/1)
       |> Enum.filter(&ignore_killed_task/1)
 
@@ -50,6 +60,23 @@ defmodule Indexer.TokenBalances do
     {:ok, fetched_token_balances}
   end
 
+  defp traced_fetch_token_balance_callback(%Spandex.Span{} = span) do
+    fn balance ->
+      try do
+        Tracer.continue_trace_from_span("traced_fetch_token_balance_callback/1", span)
+
+        fetch_token_balance(balance)
+      after
+        Tracer.finish_trace()
+      end
+    end
+  end
+
+  defp traced_fetch_token_balance_callback(_) do
+    &fetch_token_balance/1
+  end
+
+  @decorate span(tracer: Tracer)
   defp fetch_token_balance(
          %{
            token_contract_address_hash: token_contract_address_hash,

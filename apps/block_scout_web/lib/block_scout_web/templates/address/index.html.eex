@@ -4,16 +4,16 @@
       <h1><%= gettext "Addresses" %></h1>
       <p>
         <%= gettext "Showing 250 addresses of" %>
-        <%= Cldr.Number.to_string!(@address_estimated_count, format: "#,###") %>
+        <%= Cldr.Number.to_string!(@address_count, format: "#,###") %>
         <%= gettext "total addresses with a balance" %>
       </p>
 
       <span data-selector="top-addresses-list">
         <%= for {{address, tx_count}, index} <- Enum.with_index(@address_tx_count_pairs, 1) do %>
-          <%= render "_tile.html", 
+          <%= render "_tile.html",
             address: address, index: index, exchange_rate: @exchange_rate,
             total_supply: @total_supply, tx_count: tx_count,
-            validation_count: validation_count(address) %> 
+            validation_count: validation_count(address) %>
         <% end %>
       </span>
     </div>

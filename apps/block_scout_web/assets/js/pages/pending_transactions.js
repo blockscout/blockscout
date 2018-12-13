@@ -3,10 +3,9 @@ import _ from 'lodash'
 import humps from 'humps'
 import numeral from 'numeral'
 import socket from '../socket'
-import { createStore, connectElements } from '../lib/redux_helpers.js'
-import { withInfiniteScroll, connectInfiniteScroll } from '../lib/infinite_scroll_helpers'
+import { connectElements } from '../lib/redux_helpers.js'
 import { batchChannel } from '../lib/utils'
-import listMorph from '../lib/list_morph'
+import { createAsyncLoadStore } from '../lib/async_listing_load'
 
 const BATCH_THRESHOLD = 10
 
@@ -15,13 +14,10 @@ export const initialState = {
 
   pendingTransactionCount: null,
 
-  pendingTransactions: [],
   pendingTransactionsBatch: []
 }
 
-export const reducer = withInfiniteScroll(baseReducer)
-
-function baseReducer (state = initialState, action) {
+export function reducer (state = initialState, action) {
   switch (action.type) {
     case 'ELEMENTS_LOAD': {
       return Object.assign({}, state, _.omit(action, 'type'))
@@ -33,10 +29,9 @@ function baseReducer (state = initialState, action) {
     }
     case 'RECEIVED_NEW_TRANSACTION': {
       if (state.channelDisconnected) return state
-
       return Object.assign({}, state, {
-        pendingTransactions: state.pendingTransactions.map((transaction) => action.msg.transactionHash === transaction.transactionHash ? action.msg : transaction),
-        pendingTransactionsBatch: state.pendingTransactionsBatch.filter((transaction) => action.msg.transactionHash !== transaction.transactionHash),
+        items: state.items.map((item) => item.includes(action.msg.transactionHash) ? action.msg.transactionHtml : item),
+        pendingTransactionsBatch: state.pendingTransactionsBatch.filter(transactionHtml => !transactionHtml.includes(action.msg.transactionHash)),
         pendingTransactionCount: state.pendingTransactionCount - 1
       })
     }
@@ -44,19 +39,20 @@ function baseReducer (state = initialState, action) {
       if (state.channelDisconnected) return state
 
       const pendingTransactionCount = state.pendingTransactionCount + action.msgs.length
+      const pendingTransactionHtml = action.msgs.map(message => message.transactionHtml)
 
       if (!state.pendingTransactionsBatch.length && action.msgs.length < BATCH_THRESHOLD) {
         return Object.assign({}, state, {
-          pendingTransactions: [
-            ...action.msgs.reverse(),
-            ...state.pendingTransactions
+          items: [
+            ...pendingTransactionHtml.reverse(),
+            ...state.items
           ],
           pendingTransactionCount
         })
       } else {
         return Object.assign({}, state, {
           pendingTransactionsBatch: [
-            ...action.msgs.reverse(),
+            ...pendingTransactionHtml.reverse(),
             ...state.pendingTransactionsBatch
           ],
           pendingTransactionCount
@@ -65,15 +61,7 @@ function baseReducer (state = initialState, action) {
     }
     case 'REMOVE_PENDING_TRANSACTION': {
       return Object.assign({}, state, {
-        pendingTransactions: state.pendingTransactions.filter((transaction) => action.msg.transactionHash !== transaction.transactionHash)
-      })
-    }
-    case 'RECEIVED_NEXT_PAGE': {
-      return Object.assign({}, state, {
-        pendingTransactions: [
-          ...state.pendingTransactions,
-          ...action.msg.pendingTransactions
-        ]
+        items: state.items.filter(transactionHtml => !transactionHtml.includes(action.msg.transactionHash))
       })
     }
     default:
@@ -106,30 +94,13 @@ const elements = {
       if (oldState.transactionCount === state.transactionCount) return
       $el.empty().append(numeral(state.transactionCount).format())
     }
-  },
-  '[data-selector="transactions-pending-list"]': {
-    load ($el) {
-      return {
-        pendingTransactions: $el.children().map((index, el) => ({
-          transactionHash: el.dataset.transactionHash,
-          transactionHtml: el.outerHTML
-        })).toArray()
-      }
-    },
-    render ($el, state, oldState) {
-      if (oldState.pendingTransactions === state.pendingTransactions) return
-      const container = $el[0]
-      const newElements = _.map(state.pendingTransactions, ({ transactionHtml }) => $(transactionHtml)[0])
-      listMorph(container, newElements, { key: 'dataset.transactionHash' })
-    }
   }
 }
 
 const $transactionPendingListPage = $('[data-page="transaction-pending-list"]')
 if ($transactionPendingListPage.length) {
-  const store = createStore(reducer)
+  const store = createAsyncLoadStore(reducer, initialState, 'dataset.transactionHash')
   connectElements({ store, elements })
-  connectInfiniteScroll(store)
 
   const transactionsChannel = socket.channel(`transactions:new_transaction`)
   transactionsChannel.join()

@@ -43,7 +43,7 @@
             <%= gettext "Wallet addresses" %>
           </span>
           <span class="dashboard-banner-network-stats-value" data-selector="address-count">
-            <%= Cldr.Number.to_string!(@address_estimated_count, format: "#,###") %>
+            <%= Cldr.Number.to_string!(@address_count, format: "#,###") %>
           </span>
         </div>
       </div>

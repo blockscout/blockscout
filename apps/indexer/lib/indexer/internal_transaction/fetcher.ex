@@ -5,13 +5,15 @@ defmodule Indexer.InternalTransaction.Fetcher do
   See `async_fetch/1` for details on configuring limits.
   """
 
+  use Spandex.Decorators
+
   require Logger
 
   import Indexer.Block.Fetcher, only: [async_import_coin_balances: 2]
 
   alias Explorer.Chain
-  alias Indexer.{AddressExtraction, BufferedTask}
   alias Explorer.Chain.{Block, Hash}
+  alias Indexer.{AddressExtraction, BufferedTask, Tracer}
 
   @behaviour BufferedTask
 
@@ -21,7 +23,8 @@ defmodule Indexer.InternalTransaction.Fetcher do
     flush_interval: :timer.seconds(3),
     max_concurrency: @max_concurrency,
     max_batch_size: @max_batch_size,
-    task_supervisor: Indexer.InternalTransaction.TaskSupervisor
+    task_supervisor: Indexer.InternalTransaction.TaskSupervisor,
+    metadata: [fetcher: :internal_transaction]
   ]
 
   @doc """
@@ -91,10 +94,19 @@ defmodule Indexer.InternalTransaction.Fetcher do
   end
 
   @impl BufferedTask
+  @decorate trace(
+              name: "fetch",
+              resource: "Indexer.InternalTransaction.Fetcher.run/2",
+              service: :indexer,
+              tracer: Tracer
+            )
   def run(entries, json_rpc_named_arguments) do
     unique_entries = unique_entries(entries)
 
-    Logger.debug(fn -> "fetching internal transactions for #{length(unique_entries)} transactions" end)
+    unique_entries_count = Enum.count(unique_entries)
+    Logger.metadata(count: unique_entries_count)
+
+    Logger.debug("fetching internal transactions for transactions")
 
     unique_entries
     |> Enum.map(&params/1)
@@ -119,25 +131,25 @@ defmodule Indexer.InternalTransaction.Fetcher do
           })
         else
           {:error, step, reason, _changes_so_far} ->
-            Logger.error(fn ->
-              [
-                "failed to import internal transactions for ",
-                to_string(length(entries)),
-                " transactions at ",
-                to_string(step),
-                ": ",
-                inspect(reason)
-              ]
-            end)
+            Logger.error(
+              fn ->
+                [
+                  "failed to import internal transactions for transactions: ",
+                  inspect(reason)
+                ]
+              end,
+              step: step,
+              error_count: unique_entries_count
+            )
 
             # re-queue the de-duped entries
             {:retry, unique_entries}
         end
 
       {:error, reason} ->
-        Logger.error(fn ->
-          "failed to fetch internal transactions for #{length(entries)} transactions: #{inspect(reason)}"
-        end)
+        Logger.error(fn -> ["failed to fetch internal transactions for transactions: ", inspect(reason)] end,
+          error_count: unique_entries_count
+        )
 
         # re-queue the de-duped entries
         {:retry, unique_entries}
