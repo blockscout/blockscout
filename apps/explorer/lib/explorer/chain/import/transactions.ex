@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Import.Transactions do
 
   import Ecto.Query, only: [from: 2]
 
-  alias Ecto.Multi
+  alias Ecto.{Multi, Repo}
   alias Explorer.Chain.{Hash, Import, Transaction}
 
   @behaviour Import.Runner
@@ -40,20 +40,20 @@ defmodule Explorer.Chain.Import.Transactions do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    Multi.run(multi, :transactions, fn _ ->
-      insert(changes_list, insert_options)
+    Multi.run(multi, :transactions, fn repo, _ ->
+      insert(repo, changes_list, insert_options)
     end)
   end
 
   @impl Import.Runner
   def timeout, do: @timeout
 
-  @spec insert([map()], %{
+  @spec insert(Repo.t(), [map()], %{
           optional(:on_conflict) => Import.Runner.on_conflict(),
           required(:timeout) => timeout,
           required(:timestamps) => Import.timestamps()
         }) :: {:ok, [Hash.t()]}
-  defp insert(changes_list, %{timeout: timeout, timestamps: timestamps} = options)
+  defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options)
        when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
@@ -62,6 +62,7 @@ defmodule Explorer.Chain.Import.Transactions do
 
     {:ok, transactions} =
       Import.insert_changes_list(
+        repo,
         ordered_changes_list,
         conflict_target: :hash,
         on_conflict: on_conflict,

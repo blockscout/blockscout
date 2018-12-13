@@ -1,12 +1,18 @@
 defmodule BlockScoutWeb.ChainControllerTest do
-  use BlockScoutWeb.ConnCase
+  use BlockScoutWeb.ConnCase,
+    # ETS table is shared in `Explorer.Counters.AddressesWithBalanceCounter`
+    async: false
 
   import BlockScoutWeb.Router.Helpers, only: [chain_path: 2, block_path: 3, transaction_path: 3, address_path: 3]
 
   alias Explorer.Chain.Block
+  alias Explorer.Counters.AddressesWithBalanceCounter
 
   describe "GET index/2" do
     test "returns a welcome message", %{conn: conn} do
+      start_supervised!(AddressesWithBalanceCounter)
+      AddressesWithBalanceCounter.consolidate()
+
       conn = get(conn, chain_path(BlockScoutWeb.Endpoint, :show))
 
       assert(html_response(conn, 200) =~ "POA")
@@ -14,6 +20,10 @@ defmodule BlockScoutWeb.ChainControllerTest do
 
     test "returns a block", %{conn: conn} do
       insert(:block, %{number: 23})
+
+      start_supervised!(AddressesWithBalanceCounter)
+      AddressesWithBalanceCounter.consolidate()
+
       conn = get(conn, "/")
 
       assert(List.first(conn.assigns.blocks).number == 23)
@@ -22,6 +32,10 @@ defmodule BlockScoutWeb.ChainControllerTest do
     test "excludes all but the most recent five blocks", %{conn: conn} do
       old_block = insert(:block)
       insert_list(5, :block)
+
+      start_supervised!(AddressesWithBalanceCounter)
+      AddressesWithBalanceCounter.consolidate()
+
       conn = get(conn, "/")
 
       refute(Enum.member?(conn.assigns.blocks, old_block))
@@ -34,6 +48,9 @@ defmodule BlockScoutWeb.ChainControllerTest do
         |> with_block()
 
       unassociated = insert(:transaction)
+
+      start_supervised!(AddressesWithBalanceCounter)
+      AddressesWithBalanceCounter.consolidate()
 
       conn = get(conn, "/")
 
@@ -49,6 +66,9 @@ defmodule BlockScoutWeb.ChainControllerTest do
         |> insert()
         |> with_block()
 
+      start_supervised!(AddressesWithBalanceCounter)
+      AddressesWithBalanceCounter.consolidate()
+
       conn = get(conn, "/")
 
       assert(List.first(conn.assigns.transactions).hash == transaction.hash)
@@ -57,6 +77,9 @@ defmodule BlockScoutWeb.ChainControllerTest do
     test "returns market history data", %{conn: conn} do
       today = Date.utc_today()
       for day <- -40..0, do: insert(:market_history, date: Date.add(today, day))
+
+      start_supervised!(AddressesWithBalanceCounter)
+      AddressesWithBalanceCounter.consolidate()
 
       conn = get(conn, "/")
 
@@ -69,6 +92,9 @@ defmodule BlockScoutWeb.ChainControllerTest do
       %{address: miner_address} = insert(:address_name, name: miner_name, primary: true)
 
       insert(:block, miner: miner_address, miner_hash: nil)
+
+      start_supervised!(AddressesWithBalanceCounter)
+      AddressesWithBalanceCounter.consolidate()
 
       conn = get(conn, chain_path(conn, :show))
       assert html_response(conn, 200) =~ miner_name

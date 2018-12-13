@@ -1,5 +1,7 @@
 defmodule Explorer.Repo do
-  use Ecto.Repo, otp_app: :explorer
+  use Ecto.Repo,
+    otp_app: :explorer,
+    adapter: Ecto.Adapters.Postgres
 
   require Logger
 

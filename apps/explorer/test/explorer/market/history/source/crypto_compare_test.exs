@@ -61,19 +61,19 @@ defmodule Explorer.Market.History.Source.CryptoCompareTest do
 
       expected = [
         %{
-          closing_price: Decimal.new(9655.77),
+          closing_price: Decimal.from_float(9655.77),
           date: ~D[2018-04-24],
-          opening_price: Decimal.new(8967.86)
+          opening_price: Decimal.from_float(8967.86)
         },
         %{
-          closing_price: Decimal.new(8873.62),
+          closing_price: Decimal.from_float(8873.62),
           date: ~D[2018-04-25],
-          opening_price: Decimal.new(9657.69)
+          opening_price: Decimal.from_float(9657.69)
         },
         %{
-          closing_price: Decimal.new(8804.32),
+          closing_price: Decimal.from_float(8804.32),
           date: ~D[2018-04-26],
-          opening_price: Decimal.new(8873.57)
+          opening_price: Decimal.from_float(8873.57)
         }
       ]
 

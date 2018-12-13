@@ -1,10 +1,13 @@
 defmodule BlockScoutWeb.ViewingTransactionsTest do
   @moduledoc false
 
-  use BlockScoutWeb.FeatureCase, async: true
+  use BlockScoutWeb.FeatureCase,
+    # ETS tables are shared in `Explorer.Counters.BlockValidationCounter`
+    async: false
 
-  alias Explorer.Chain.Wei
   alias BlockScoutWeb.{AddressPage, TransactionListPage, TransactionLogsPage, TransactionPage}
+  alias Explorer.Chain.Wei
+  alias Explorer.Counters.BlockValidationCounter
 
   setup do
     block =
@@ -139,6 +142,8 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
       session: session,
       transaction: transaction
     } do
+      start_supervised!(BlockValidationCounter)
+
       session
       |> TransactionLogsPage.visit_page(transaction)
       |> TransactionLogsPage.click_address(lincoln)

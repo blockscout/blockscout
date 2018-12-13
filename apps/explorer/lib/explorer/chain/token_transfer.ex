@@ -22,7 +22,7 @@ defmodule Explorer.Chain.TokenTransfer do
   | `:index`            | `:log_index`                   | Index of log in transaction     |
   """
 
-  use Ecto.Schema
+  use Explorer.Schema
 
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2, limit: 2, where: 3]

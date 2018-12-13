@@ -512,18 +512,6 @@ defmodule Explorer.Factory do
     }
   end
 
-  defmacrop left + right do
-    quote do
-      fragment("? + ?", unquote(left), unquote(right))
-    end
-  end
-
-  defmacrop coalesce(left, right) do
-    quote do
-      fragment("coalesce(?, ?)", unquote(left), unquote(right))
-    end
-  end
-
   defp block_hash_to_next_transaction_index(block_hash) do
     import Kernel, except: [+: 2]
 

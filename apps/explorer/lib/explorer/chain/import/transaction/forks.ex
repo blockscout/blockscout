@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Import.Transaction.Forks do
 
   import Ecto.Query, only: [from: 2]
 
-  alias Ecto.Multi
+  alias Ecto.{Multi, Repo}
   alias Explorer.Chain.{Hash, Import, Transaction}
 
   @behaviour Import.Runner
@@ -42,26 +42,27 @@ defmodule Explorer.Chain.Import.Transaction.Forks do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    Multi.run(multi, :transaction_forks, fn _ ->
-      insert(changes_list, insert_options)
+    Multi.run(multi, :transaction_forks, fn repo, _ ->
+      insert(repo, changes_list, insert_options)
     end)
   end
 
   @impl Import.Runner
   def timeout, do: @timeout
 
-  @spec insert([map()], %{
+  @spec insert(Repo.t(), [map()], %{
           optional(:on_conflict) => Import.Runner.on_conflict(),
           required(:timeout) => timeout,
           required(:timestamps) => Import.timestamps()
         }) :: {:ok, [%{uncle_hash: Hash.t(), hash: Hash.t()}]}
-  defp insert(changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
+  defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # order so that row ShareLocks are grabbed in a consistent order
     ordered_changes_list = Enum.sort_by(changes_list, &{&1.uncle_hash, &1.hash})
 
     Import.insert_changes_list(
+      repo,
       ordered_changes_list,
       conflict_target: [:uncle_hash, :index],
       on_conflict: on_conflict,
