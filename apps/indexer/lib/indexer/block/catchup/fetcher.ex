@@ -17,8 +17,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
   # These are all the *default* values for options.
   # DO NOT use them directly in the code.  Get options from `state`.
 
-  @blocks_batch_size 3
-  @blocks_concurrency 3
+  @blocks_batch_size 1
+  @blocks_concurrency 1
   @sequence_name :block_catchup_sequencer
 
   defstruct blocks_batch_size: @blocks_batch_size,
@@ -65,7 +65,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
       _ ->
         # realtime indexer gets the current latest block
-        first = latest_block_number - 1
+        first = latest_block_number - 20
         last = 0
         missing_ranges = Chain.missing_block_number_ranges(first..last)
         range_count = Enum.count(missing_ranges)
