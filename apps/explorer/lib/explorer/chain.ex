@@ -38,7 +38,7 @@ defmodule Explorer.Chain do
     Wei
   }
 
-  alias Explorer.Chain.Block.Reward
+  alias Explorer.Chain.Block.EmissionReward
   alias Explorer.{PagingOptions, Repo}
 
   alias Explorer.Counters.{
@@ -366,15 +366,15 @@ defmodule Explorer.Chain do
       from(
         block in Block,
         left_join: transaction in assoc(block, :transactions),
-        inner_join: block_reward in Reward,
-        on: fragment("? <@ ?", block.number, block_reward.block_range),
+        inner_join: emission_reward in EmissionReward,
+        on: fragment("? <@ ?", block.number, emission_reward.block_range),
         where: block.number == ^block_number,
-        group_by: block_reward.reward,
+        group_by: emission_reward.reward,
         select: %{
           transaction_reward: %Wei{
             value: default_if_empty(sum_of_products(transaction.gas_used, transaction.gas_price), 0)
           },
-          static_reward: block_reward.reward
+          static_reward: emission_reward.reward
         }
       )
 
