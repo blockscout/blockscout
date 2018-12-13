@@ -199,6 +199,8 @@ defmodule Indexer.Block.Uncle.Fetcher do
       end,
       error_count: Enum.count(retried_entries)
     )
+
+    {:retry, retried_entries}
   end
 
   defp errors_to_entries(errors) when is_list(errors) do
