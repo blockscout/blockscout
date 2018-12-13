@@ -67,7 +67,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
       _ ->
         # realtime indexer gets the current latest block
-        first = latest_block_number - 1
+        first = latest_block_number - 20
         last = 0
         missing_ranges = Chain.missing_block_number_ranges(first..last)
         range_count = Enum.count(missing_ranges)
