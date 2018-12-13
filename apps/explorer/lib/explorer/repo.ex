@@ -20,7 +20,7 @@ defmodule Explorer.Repo do
     returning = opts[:returning]
 
     elements
-    |> Enum.chunk_every(1000)
+    |> Enum.chunk_every(500)
     |> Enum.reduce({0, []}, fn chunk, {total_count, acc} ->
       {count, inserted} =
         try do
@@ -64,5 +64,24 @@ defmodule Explorer.Repo do
         {count + total_count, nil}
       end
     end)
+  end
+
+  def stream_in_transaction(query, fun) when is_function(fun, 1) do
+    transaction(
+      fn ->
+        query
+        |> stream(timeout: :infinity)
+        |> fun.()
+      end,
+      timeout: :infinity
+    )
+  end
+
+  def stream_each(query, fun) when is_function(fun, 1) do
+    stream_in_transaction(query, &Enum.each(&1, fun))
+  end
+
+  def stream_reduce(query, initial, reducer) when is_function(reducer, 2) do
+    stream_in_transaction(query, &Enum.reduce(&1, initial, reducer))
   end
 end

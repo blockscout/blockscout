@@ -14,11 +14,13 @@ defmodule Indexer.TokenBalance.Fetcher do
   that always raise errors interacting with the Smart Contract.
   """
 
+  use Spandex.Decorators
+
   require Logger
 
   alias Explorer.Chain
   alias Explorer.Chain.Hash
-  alias Indexer.{BufferedTask, TokenBalances}
+  alias Indexer.{BufferedTask, TokenBalances, Tracer}
 
   @behaviour BufferedTask
 
@@ -74,6 +76,7 @@ defmodule Indexer.TokenBalance.Fetcher do
   when reading their balance in the Smart Contract.
   """
   @impl BufferedTask
+  @decorate trace(name: "fetch", resource: "Indexer.TokenBalance.Fetcher.run/2", tracer: Tracer, service: :indexer)
   def run(entries, _json_rpc_named_arguments) do
     result =
       entries
@@ -90,10 +93,11 @@ defmodule Indexer.TokenBalance.Fetcher do
   end
 
   def fetch_from_blockchain(params_list) do
-    {:ok, token_balances} =
-      params_list
-      |> Enum.filter(&(&1.retries_count <= @max_retries))
-      |> TokenBalances.fetch_token_balances_from_blockchain()
+    retryable_params_list = Enum.filter(params_list, &(&1.retries_count <= @max_retries))
+
+    Logger.metadata(count: Enum.count(retryable_params_list))
+
+    {:ok, token_balances} = TokenBalances.fetch_token_balances_from_blockchain(retryable_params_list)
 
     token_balances
   end
@@ -113,7 +117,9 @@ defmodule Indexer.TokenBalance.Fetcher do
         :ok
 
       {:error, reason} ->
-        Logger.debug(fn -> "failed to import #{length(token_balances_params)} token balances, #{inspect(reason)}" end)
+        Logger.debug(fn -> ["failed to import token balances: ", inspect(reason)] end,
+          error_count: Enum.count(token_balances_params)
+        )
 
         :error
     end

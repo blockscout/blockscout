@@ -4,7 +4,6 @@ defmodule BlockScoutWeb.ViewingTokensTest do
   alias BlockScoutWeb.TokenPage
 
   describe "viewing token holders" do
-    @tag :skip
     test "list the token holders", %{session: session} do
       token = insert(:token)
 

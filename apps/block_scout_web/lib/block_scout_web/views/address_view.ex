@@ -9,7 +9,15 @@ defmodule BlockScoutWeb.AddressView do
 
   @dialyzer :no_match
 
-  @tabs ["tokens", "transactions", "internal_transactions", "contracts", "read_contract"]
+  @tabs [
+    "coin_balances",
+    "contracts",
+    "internal_transactions",
+    "read_contract",
+    "tokens",
+    "transactions",
+    "validations"
+  ]
 
   def address_partial_selector(struct_to_render_from, direction, current_address, truncate \\ false)
 
@@ -213,6 +221,8 @@ defmodule BlockScoutWeb.AddressView do
   defp tab_name(["internal_transactions"]), do: gettext("Internal Transactions")
   defp tab_name(["contracts"]), do: gettext("Code")
   defp tab_name(["read_contract"]), do: gettext("Read Contract")
+  defp tab_name(["coin_balances"]), do: gettext("Coin Balance History")
+  defp tab_name(["validations"]), do: gettext("Blocks Validated")
 
   def short_hash(%Address{hash: hash}) do
     <<

@@ -6,7 +6,9 @@ defmodule Explorer.Chain.Address.CoinBalance do
 
   use Explorer.Schema
 
+  alias Explorer.PagingOptions
   alias Explorer.Chain.{Address, Block, Hash, Wei}
+  alias Explorer.Chain.Address.CoinBalance
 
   @optional_fields ~w(value value_fetched_at)a
   @required_fields ~w(address_hash block_number)a
@@ -39,10 +41,62 @@ defmodule Explorer.Chain.Address.CoinBalance do
     field(:block_number, :integer)
     field(:value, Wei)
     field(:value_fetched_at, :utc_datetime)
+    field(:delta, Wei, virtual: true)
+    field(:block_timestamp, :utc_datetime, virtual: true)
 
     timestamps()
 
     belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address)
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch the coin balance of the given address in the given block.
+  """
+  def fetch_coin_balance(address_hash, block_number) do
+    from(
+      cb in CoinBalance,
+      where: cb.address_hash == ^address_hash,
+      where: cb.block_number <= ^block_number,
+      inner_join: b in Block,
+      on: cb.block_number == b.number,
+      limit: ^1,
+      order_by: [desc: :block_number],
+      select_merge: %{delta: fragment("value - coalesce(lag(value, 1) over (order by block_number), 0)")},
+      select_merge: %{block_timestamp: b.timestamp}
+    )
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch the last coin balances that have value greater than 0.
+
+  The last coin balance from an Address is the last block indexed.
+  """
+  def fetch_coin_balances(address_hash, %PagingOptions{page_size: page_size}) do
+    from(
+      cb in CoinBalance,
+      where: cb.address_hash == ^address_hash,
+      where: cb.value > ^0,
+      inner_join: b in Block,
+      on: cb.block_number == b.number,
+      order_by: [desc: :block_number],
+      limit: ^page_size,
+      select_merge: %{delta: fragment("value - coalesce(lag(value, 1) over (order by block_number), 0)")},
+      select_merge: %{block_timestamp: b.timestamp}
+    )
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch a series of balances by day for the given account. Each element in the series
+  corresponds to the maximum balance in that day. Only the last 90 days of data are used.
+  """
+  def balances_by_day(address_hash) do
+    CoinBalance
+    |> join(:inner, [cb], b in Block, cb.block_number == b.number)
+    |> where([cb], cb.address_hash == ^address_hash)
+    |> where([cb, b], b.timestamp >= fragment("date_trunc('day', now()) - interval '90 days'"))
+    |> group_by([cb, b], fragment("date_trunc('day', ?)", b.timestamp))
+    |> order_by([cb, b], fragment("date_trunc('day', ?)", b.timestamp))
+    |> select([cb, b], %{date: fragment("date_trunc('day', ?)", b.timestamp), value: max(cb.value)})
   end
 
   def changeset(%__MODULE__{} = balance, params) do

@@ -184,7 +184,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       {:ok, %{internal_transaction_lincoln_to_address: internal_transaction_lincoln_to_address}}
     end
 
-    @tag :skip
     test "only addresses not matching the page are links", %{
       addresses: addresses,
       internal_transaction_lincoln_to_address: internal_transaction,
@@ -197,7 +196,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> refute_has(AddressPage.internal_transaction_address_link(internal_transaction, :to))
     end
 
-    @tag :skip
     test "viewing new internal transactions via live update", %{addresses: addresses, session: session} do
       transaction =
         :transaction
@@ -364,7 +362,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
   end
 
   describe "viewing token transfers from a specific token" do
-    @tag :skip
     test "list token transfers related to the address", %{
       addresses: addresses,
       block: block,
@@ -424,7 +421,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         token_contract_address: contract_address
       )
 
-      insert(:token_balance, address: lincoln, token_contract_address_hash: contract_address.hash)
+      insert(:address_current_token_balance, address: lincoln, token_contract_address_hash: contract_address.hash)
 
       contract_address_2 = insert(:contract_address)
       insert(:token, name: "token2", symbol: "T2", contract_address: contract_address_2, type: "ERC-20")
@@ -442,7 +439,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         token_contract_address: contract_address_2
       )
 
-      insert(:token_balance, address: lincoln, token_contract_address_hash: contract_address_2.hash)
+      insert(:address_current_token_balance, address: lincoln, token_contract_address_hash: contract_address_2.hash)
 
       {:ok, lincoln: lincoln}
     end
@@ -477,6 +474,26 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> assert_has(AddressPage.token_balance_counter("1"))
       |> AddressPage.click_outside_of_the_dropdown()
       |> assert_has(AddressPage.token_balance_counter("2"))
+    end
+  end
+
+  describe "viewing coin balance history" do
+    setup do
+      address = insert(:address, fetched_coin_balance: 5)
+      noon = Timex.now() |> Timex.beginning_of_day() |> Timex.set(hour: 12)
+      block = insert(:block, timestamp: noon)
+      block_one_day_ago = insert(:block, timestamp: Timex.shift(noon, days: -1))
+      insert(:fetched_balance, address_hash: address.hash, value: 5, block_number: block.number)
+      insert(:fetched_balance, address_hash: address.hash, value: 10, block_number: block_one_day_ago.number)
+
+      {:ok, address: address}
+    end
+
+    test "see list of coin balances", %{session: session, address: address} do
+      session
+      |> AddressPage.visit_page(address)
+      |> AddressPage.click_coin_balance_history()
+      |> assert_has(AddressPage.coin_balances(count: 2))
     end
   end
 end

@@ -121,9 +121,9 @@ class MarketHistoryChart {
   }
 }
 
-export function createMarketHistoryChart (ctx) {
-  const availableSupply = JSON.parse(ctx.dataset.available_supply)
-  const marketHistoryData = humps.camelizeKeys(JSON.parse(ctx.dataset.market_history_data))
+export function createMarketHistoryChart (el) {
+  const availableSupply = JSON.parse(el.dataset.available_supply)
+  const marketHistoryData = humps.camelizeKeys(JSON.parse(el.dataset.market_history_data))
 
-  return new MarketHistoryChart(ctx, availableSupply, marketHistoryData)
+  return new MarketHistoryChart(el, availableSupply, marketHistoryData)
 }

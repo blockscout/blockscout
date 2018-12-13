@@ -9,9 +9,13 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
   secret_key_base: "27Swe6KtEtmN37WyEYRjKWyxYULNtrxlkCEKur4qoV+Lwtk8lafsR16ifz1XBBYj",
   server: true
 
+config :block_scout_web, BlockScoutWeb.Tracer, disabled?: false
+
 config :logger, :block_scout_web,
   level: :warn,
   path: Path.absname("logs/test/block_scout_web.log")
 
 # Configure wallaby
 config :wallaby, screenshot_on_failure: true
+
+config :explorer, Explorer.ExchangeRates, enabled: false, store: :none

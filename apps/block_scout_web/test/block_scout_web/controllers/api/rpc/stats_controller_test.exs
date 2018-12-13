@@ -106,6 +106,7 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
       # Use TestSource mock for this test set
       configuration = Application.get_env(:explorer, Explorer.ExchangeRates)
       Application.put_env(:explorer, Explorer.ExchangeRates, source: TestSource)
+      Application.put_env(:explorer, Explorer.ExchangeRates, table_name: :rates)
 
       ExchangeRates.init([])
 

@@ -1,11 +1,5 @@
 use Mix.Config
 
-config :logger, :ethereum_jsonrpc,
-  # keep synced with `config/config.exs`
-  format: "$time $metadata[$level] $message\n",
-  metadata: [:application, :request_id],
-  metadata_filter: [application: :ethereum_jsonrpc]
-
 config :ethereum_jsonrpc, EthereumJSONRPC.RequestCoordinator,
   rolling_window_opts: [
     window_count: 12,
@@ -14,6 +8,19 @@ config :ethereum_jsonrpc, EthereumJSONRPC.RequestCoordinator,
   ],
   wait_per_timeout: :timer.seconds(2),
   max_jitter: :timer.seconds(2)
+
+config :ethereum_jsonrpc, EthereumJSONRPC.Tracer,
+  service: :ethereum_jsonrpc,
+  adapter: SpandexDatadog.Adapter,
+  trace_key: :blockscout
+
+config :logger, :ethereum_jsonrpc,
+  # keep synced with `config/config.exs`
+  format: "$dateT$time $metadata[$level] $message\n",
+  metadata:
+    ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
+       block_number step count error_count shrunk)a,
+  metadata_filter: [application: :ethereum_jsonrpc]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
