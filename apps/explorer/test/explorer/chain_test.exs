@@ -3131,9 +3131,21 @@ defmodule Explorer.ChainTest do
 
   describe "uncataloged_token_transfer_block_numbers/0" do
     test "returns a list of block numbers" do
-      log = insert(:token_transfer_log)
-      block_number = log.transaction.block_number
+      block = insert(:block)
+      transaction = :transaction |> insert() |> with_block(block)
+      insert(:log, first_topic: TokenTransfer.constant(), transaction: transaction)
+
+      block_number = block.number
+
       assert {:ok, [^block_number]} = Chain.uncataloged_token_transfer_block_numbers()
+      assert is_integer(block_number)
+    end
+
+    test "ignores nil block numbers" do
+      log = insert(:token_transfer_log)
+
+      assert is_nil(log.transaction.block_number)
+      assert {:ok, []} = Chain.uncataloged_token_transfer_block_numbers()
     end
   end
 

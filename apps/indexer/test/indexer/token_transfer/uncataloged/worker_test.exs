@@ -1,6 +1,7 @@
 defmodule Indexer.TokenTransfer.Uncataloged.WorkerTest do
   use Explorer.DataCase
 
+  alias Explorer.Chain.TokenTransfer
   alias Indexer.Sequence
   alias Indexer.TokenTransfer.Uncataloged.{Worker, TaskSupervisor}
 
@@ -28,8 +29,11 @@ defmodule Indexer.TokenTransfer.Uncataloged.WorkerTest do
     end
 
     test "sends message to self when uncataloged token transfers are found" do
-      log = insert(:token_transfer_log)
-      block_number = log.transaction.block_number
+      block = insert(:block)
+      transaction = :transaction |> insert() |> with_block(block)
+      insert(:log, first_topic: TokenTransfer.constant(), transaction: transaction)
+
+      block_number = block.number
 
       expected_state = %{task_ref: nil, block_numbers: [block_number], retry_interval: 1}
       state = %{task_ref: nil, block_numbers: [], retry_interval: 1}
