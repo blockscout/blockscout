@@ -20,20 +20,22 @@ defmodule Explorer.Chain.Address.Name do
           address: %Ecto.Association.NotLoaded{} | Address.t(),
           address_hash: Hash.Address.t(),
           name: String.t(),
-          primary: boolean()
+          primary: boolean(),
+          metadata: map()
         }
 
   @primary_key false
   schema "address_names" do
     field(:name, :string)
     field(:primary, :boolean)
+    field(:metadata, :map)
     belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address)
 
     timestamps()
   end
 
   @required_fields ~w(address_hash name)a
-  @optional_fields ~w(primary)a
+  @optional_fields ~w(primary metadata)a
   @allowed_fields @required_fields ++ @optional_fields
 
   def changeset(%__MODULE__{} = struct, params \\ %{}) do
