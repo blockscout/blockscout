@@ -11,6 +11,8 @@ defmodule Explorer.Chain do
       order_by: 2,
       order_by: 3,
       preload: 2,
+      subquery: 1,
+      union_all: 2,
       where: 2,
       where: 3
     ]
@@ -1244,54 +1246,76 @@ defmodule Explorer.Chain do
   def missing_block_number_ranges(range)
 
   def missing_block_number_ranges(range_start..range_end) do
-    {step, first, last, direction} =
-      if range_start <= range_end do
-        {1, :minimum, :maximum, :asc}
-      else
-        {-1, :maximum, :minimum, :desc}
-      end
+    # subquery so we can check for NULL in `range_min_query`, which happens for empty table
+    min_query = from(block in Block, select: %{number: min(block.number)}, where: block.consensus == true)
+    # this acts a fake found block, so it has to before the range of blocks we actually care to check
+    before_range_min = min(range_start, range_end) - 1
 
-    query =
-      from(
-        b in Block,
-        right_join:
-          missing_block_number_range in fragment(
-            # adapted from https://www.xaprb.com/blog/2006/03/22/find-contiguous-ranges-with-sql/
-            """
-            (WITH missing_blocks AS
-                  (SELECT number
-                   FROM generate_series(? :: bigint, ? :: bigint, ? :: bigint) AS number
-                   EXCEPT
-                   SELECT blocks.number
-                   FROM blocks
-                   WHERE blocks.consensus = true)
-             SELECT no_previous.number AS minimum,
-                    (SELECT MIN(no_next.number)
-                     FROM missing_blocks AS no_next
-                     LEFT OUTER JOIN missing_blocks AS next
-                     ON no_next.number = next.number - 1
-                     WHERE next.number IS NULL AND
-                           no_next.number >= no_previous.number) AS maximum
-             FROM missing_blocks as no_previous
-             LEFT OUTER JOIN missing_blocks AS previous
-             ON previous.number = no_previous.number - 1
-             WHERE previous.number IS NULL)
-            """,
-            ^range_start,
-            ^range_end,
-            ^step
-          ),
-        select: %Range{
-          first: field(missing_block_number_range, ^first),
-          last: field(missing_block_number_range, ^last)
+    range_min_query =
+      from(min_block in subquery(min_query),
+        select: %{
+          # `LEAST` ignores `NULL`, so it pciks the fake range when there is no `min_block.number`
+          # because `blocks` is empty
+          number: fragment("LEAST(?, ?)", min_block.number, ^before_range_min)
         },
-        order_by: [{^direction, field(missing_block_number_range, ^first)}],
-        # needed because the join makes a cartesian product with all block rows, but we need to use Block to make
-        # Ecto work.
-        distinct: true
+        # `blocks` is empty
+        # same number will not be returned by `number_query`
+        where: is_nil(min_block.number) or min_block.number != ^before_range_min
       )
 
-    Repo.all(query, timeout: :infinity)
+    number_query = from(block in Block, select: %{number: block.number}, where: block.consensus == true)
+
+    # subquery so we can check for NULL in `range_max_query`, which happens for empty table
+    max_query = from(block in Block, select: %{number: max(block.number)}, where: block.consensus == true)
+    # this acts a fake found block, so it has to after the range of blocks we actually care to check
+    after_range_max = max(range_start, range_end) + 1
+
+    range_max_query =
+      from(max_block in subquery(max_query),
+        select: %{
+          # `GREATEST` ignores `NULL`, so it picks the fake range when there is no `max_block.number`
+          # because `blocks` is empty
+          number: fragment("GREATEST(?, ?)", max_block.number, ^after_range_max)
+        },
+        # blocks is empty
+        # same number will not be returned by `number_query`
+        where: is_nil(max_block.number) or max_block.number != ^after_range_max
+      )
+
+    # The actual blocks and a boundary of fake found blocks outside of `range_start..range_end` so that there is always
+    # a `lag` block
+    search_range_query =
+      number_query
+      |> union_all(^range_min_query)
+      |> union_all(^range_max_query)
+
+    # Gaps and Islands is the term-of-art for finding the runs of missing (gaps) and existing (islands) data.  If you
+    # Google for `sql missing ranges` you won't find much, but `sql gaps and islands` will get a lot of hits.
+
+    island_query =
+      from(
+        search_block in subquery(search_range_query),
+        windows: [w: [order_by: search_block.number]],
+        select: %{last_number: search_block.number |> lag() |> over(:w), next_number: search_block.number}
+      )
+
+    gap_query =
+      from(
+        island in subquery(island_query),
+        where: island.last_number != island.next_number - 1,
+        select: %Range{first: island.last_number + 1, last: island.next_number - 1},
+        order_by: island.last_number
+      )
+
+    ascending = Repo.all(gap_query, timeout: :infinity)
+
+    if range_start <= range_end do
+      ascending
+    else
+      ascending
+      |> Enum.reverse()
+      |> Enum.map(fn first..last -> last..first end)
+    end
   end
 
   @doc """
