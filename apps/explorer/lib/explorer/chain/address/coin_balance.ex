@@ -40,9 +40,9 @@ defmodule Explorer.Chain.Address.CoinBalance do
   schema "address_coin_balances" do
     field(:block_number, :integer)
     field(:value, Wei)
-    field(:value_fetched_at, :utc_datetime)
+    field(:value_fetched_at, :utc_datetime_usec)
     field(:delta, Wei, virtual: true)
-    field(:block_timestamp, :utc_datetime, virtual: true)
+    field(:block_timestamp, :utc_datetime_usec, virtual: true)
 
     timestamps()
 
@@ -91,12 +91,12 @@ defmodule Explorer.Chain.Address.CoinBalance do
   """
   def balances_by_day(address_hash) do
     CoinBalance
-    |> join(:inner, [cb], b in Block, cb.block_number == b.number)
+    |> join(:inner, [cb], b in Block, on: cb.block_number == b.number)
     |> where([cb], cb.address_hash == ^address_hash)
     |> where([cb, b], b.timestamp >= fragment("date_trunc('day', now()) - interval '90 days'"))
     |> group_by([cb, b], fragment("date_trunc('day', ?)", b.timestamp))
     |> order_by([cb, b], fragment("date_trunc('day', ?)", b.timestamp))
-    |> select([cb, b], %{date: fragment("date_trunc('day', ?)", b.timestamp), value: max(cb.value)})
+    |> select([cb, b], %{date: type(fragment("date_trunc('day', ?)", b.timestamp), :date), value: max(cb.value)})
   end
 
   def changeset(%__MODULE__{} = balance, params) do

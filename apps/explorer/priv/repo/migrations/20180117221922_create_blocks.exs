@@ -16,10 +16,10 @@ defmodule Explorer.Repo.Migrations.CreateBlocks do
       add(:parent_hash, :bytea, null: false)
 
       add(:size, :integer, null: false)
-      add(:timestamp, :utc_datetime, null: false)
+      add(:timestamp, :utc_datetime_usec, null: false)
       add(:total_difficulty, :numeric, precision: 50)
 
-      timestamps(null: false, type: :utc_datetime)
+      timestamps(null: false, type: :utc_datetime_usec)
     end
 
     create(index(:blocks, [:timestamp]))

@@ -4,12 +4,16 @@ defmodule BlockScoutWeb.ViewingAppTest do
   use BlockScoutWeb.FeatureCase, async: true
 
   alias BlockScoutWeb.{AppPage, Notifier}
+  alias Explorer.Counters.AddressesWithBalanceCounter
 
   describe "loading bar when indexing" do
     test "shows blocks indexed percentage", %{session: session} do
       for index <- 5..9 do
         insert(:block, number: index)
       end
+
+      start_supervised!(AddressesWithBalanceCounter)
+      AddressesWithBalanceCounter.consolidate()
 
       assert Explorer.Chain.indexed_ratio() == 0.5
 
@@ -23,6 +27,9 @@ defmodule BlockScoutWeb.ViewingAppTest do
         insert(:block, number: index)
       end
 
+      start_supervised!(AddressesWithBalanceCounter)
+      AddressesWithBalanceCounter.consolidate()
+
       assert Explorer.Chain.indexed_ratio() == 1.0
 
       session
@@ -34,6 +41,9 @@ defmodule BlockScoutWeb.ViewingAppTest do
       for index <- 5..9 do
         insert(:block, number: index)
       end
+
+      start_supervised!(AddressesWithBalanceCounter)
+      AddressesWithBalanceCounter.consolidate()
 
       assert Explorer.Chain.indexed_ratio() == 0.5
 
@@ -52,6 +62,9 @@ defmodule BlockScoutWeb.ViewingAppTest do
         insert(:block, number: index)
       end
 
+      start_supervised!(AddressesWithBalanceCounter)
+      AddressesWithBalanceCounter.consolidate()
+
       assert Explorer.Chain.indexed_ratio() == 0.9
 
       session
@@ -69,6 +82,9 @@ defmodule BlockScoutWeb.ViewingAppTest do
         for index <- 0..9 do
           insert(:block, number: index)
         end
+
+      start_supervised!(AddressesWithBalanceCounter)
+      AddressesWithBalanceCounter.consolidate()
 
       assert Explorer.Chain.indexed_ratio() == 1.0
 

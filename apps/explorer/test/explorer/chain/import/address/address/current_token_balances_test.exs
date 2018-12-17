@@ -1,9 +1,9 @@
 defmodule Explorer.Chain.Import.Address.CurrentTokenBalancesTest do
   use Explorer.DataCase
 
+  alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Import.Address.CurrentTokenBalances
-
-  alias Explorer.Chain.{Address.CurrentTokenBalance}
+  alias Explorer.Repo
 
   describe "insert/2" do
     setup do
@@ -28,11 +28,11 @@ defmodule Explorer.Chain.Import.Address.CurrentTokenBalancesTest do
         }
       ]
 
-      CurrentTokenBalances.insert(changes, insert_options)
+      CurrentTokenBalances.insert(Repo, changes, insert_options)
 
       current_token_balances =
         CurrentTokenBalance
-        |> Explorer.Repo.all()
+        |> Repo.all()
         |> Enum.count()
 
       assert current_token_balances == 1
@@ -56,9 +56,9 @@ defmodule Explorer.Chain.Import.Address.CurrentTokenBalancesTest do
         }
       ]
 
-      CurrentTokenBalances.insert(changes, insert_options)
+      CurrentTokenBalances.insert(Repo, changes, insert_options)
 
-      current_token_balance = Explorer.Repo.get_by(CurrentTokenBalance, address_hash: address.hash)
+      current_token_balance = Repo.get_by(CurrentTokenBalance, address_hash: address.hash)
 
       assert current_token_balance.block_number == 2
       assert current_token_balance.value == Decimal.new(200)
@@ -84,9 +84,9 @@ defmodule Explorer.Chain.Import.Address.CurrentTokenBalancesTest do
         }
       ]
 
-      CurrentTokenBalances.insert(changes, insert_options)
+      CurrentTokenBalances.insert(Repo, changes, insert_options)
 
-      current_token_balance = Explorer.Repo.get_by(CurrentTokenBalance, address_hash: address.hash)
+      current_token_balance = Repo.get_by(CurrentTokenBalance, address_hash: address.hash)
 
       assert current_token_balance.block_number == 4
       assert current_token_balance.value == Decimal.new(200)

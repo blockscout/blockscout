@@ -11,6 +11,27 @@ defmodule Explorer.Counters.TokenTransferCounter do
 
   @table :token_transfer_counter
 
+  # It is undesirable to automatically start the consolidation in all environments.
+  # Consider the test environment: if the consolidation initiates but does not
+  # finish before a test ends, that test will fail. This way, hundreds of
+  # tests were failing before disabling the consolidation and the scheduler in
+  # the test env.
+  config = Application.get_env(:explorer, Explorer.Counters.TokenHoldersCounter)
+  @enable_consolidation Keyword.get(config, :enable_consolidation)
+
+  @doc """
+  Returns a boolean that indicates whether consolidation is enabled
+
+  In order to choose whether or not to enable the initial consolidation, change the following Explorer config:
+
+  `config :explorer, Explorer.Counters.TokenTransferCounter, enable_consolidation: true`
+
+  to:
+
+  `config :explorer, Explorer.Counters.TokenTransferCounter, enable_consolidation: false`
+  """
+  def enable_consolidation?, do: @enable_consolidation
+
   def table_name do
     @table
   end
@@ -28,7 +49,9 @@ defmodule Explorer.Counters.TokenTransferCounter do
   def init(args) do
     create_table()
 
-    Task.start_link(&consolidate/0)
+    if enable_consolidation?() do
+      Task.start_link(&consolidate/0)
+    end
 
     Chain.subscribe_to_events(:token_transfers)
 

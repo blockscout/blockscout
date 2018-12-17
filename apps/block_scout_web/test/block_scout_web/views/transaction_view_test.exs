@@ -94,7 +94,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
 
     test "with fee" do
       {:ok, gas_price} = Wei.cast(3_000_000_000)
-      transaction = build(:transaction, gas_price: gas_price, gas_used: Decimal.new(1_034_234.0))
+      transaction = build(:transaction, gas_price: gas_price, gas_used: Decimal.from_float(1_034_234.0))
 
       expected_value = "0.003102702 POA"
       assert expected_value == TransactionView.formatted_fee(transaction, denomination: :ether)

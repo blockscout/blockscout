@@ -5,25 +5,27 @@ config :bcrypt_elixir, log_rounds: 4
 
 # Configure your database
 config :explorer, Explorer.Repo,
-  adapter: Ecto.Adapters.Postgres,
   database: "explorer_test",
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox,
   # Default of `5_000` was too low for `BlockFetcher` test
-  pool_timeout: 10_000,
   ownership_timeout: 60_000
 
 config :explorer, Explorer.ExchangeRates, enabled: false, store: :ets
 
+config :explorer, Explorer.Counters.AddressesWithBalanceCounter, enabled: false, enable_consolidation: false
+
+config :explorer, Explorer.Counters.BlockValidationCounter, enabled: false, enable_consolidation: true
+
+config :explorer, Explorer.Counters.BlockValidationCounter, enabled: false, enable_consolidation: false
+
+config :explorer, Explorer.Counters.TokenHoldersCounter, enabled: false, enable_consolidation: false
+
+config :explorer, Explorer.Counters.TokenTransferCounter, enabled: false, enable_consolidation: false
+
 config :explorer, Explorer.Market.History.Cataloger, enabled: false
 
 config :explorer, Explorer.Tracer, disabled?: false
-
-config :explorer, Explorer.Counters.BlockValidationCounter, enabled: true, enable_consolidation: false
-
-config :explorer, Explorer.Counters.TokenHoldersCounter, enabled: true, enable_consolidation: false
-
-config :explorer, Explorer.Counters.AddessesWithBalanceCounter, enabled: true, enable_consolidation: false
 
 config :logger, :explorer,
   level: :warn,

@@ -42,13 +42,14 @@ defmodule Explorer.Chain do
   alias Explorer.{PagingOptions, Repo}
 
   alias Explorer.Counters.{
-    AddessesWithBalanceCounter,
+    AddressesWithBalanceCounter,
     BlockValidationCounter,
     TokenHoldersCounter,
     TokenTransferCounter
   }
 
   alias Dataloader.Ecto, as: DataloaderEcto
+  alias Timex.Duration
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -93,7 +94,7 @@ defmodule Explorer.Chain do
   """
   @spec count_addresses_with_balance_from_cache :: non_neg_integer()
   def count_addresses_with_balance_from_cache do
-    AddessesWithBalanceCounter.fetch()
+    AddressesWithBalanceCounter.fetch()
   end
 
   @doc """
@@ -280,7 +281,7 @@ defmodule Explorer.Chain do
   """
   @spec average_block_time :: %Timex.Duration{}
   def average_block_time do
-    {:ok, %Postgrex.Result{rows: [[rows]]}} =
+    {:ok, %Postgrex.Result{rows: [[%Postgrex.Interval{months: 0, days: days, secs: seconds}]]}} =
       SQL.query(
         Repo,
         """
@@ -294,9 +295,10 @@ defmodule Explorer.Chain do
         []
       )
 
-    {:ok, value} = Timex.Ecto.Time.load(rows)
-
-    value
+    hours = days * 24
+    minutes = 0
+    microseconds = 0
+    Duration.from_clock({hours, minutes, seconds, microseconds})
   end
 
   @doc """
@@ -1256,24 +1258,24 @@ defmodule Explorer.Chain do
           missing_block_number_range in fragment(
             # adapted from https://www.xaprb.com/blog/2006/03/22/find-contiguous-ranges-with-sql/
             """
-            WITH missing_blocks AS
-                 (SELECT number
-                  FROM generate_series(? :: bigint, ? :: bigint, ? :: bigint) AS number
-                  EXCEPT
-                  SELECT blocks.number
-                  FROM blocks
-                  WHERE blocks.consensus = true)
-            SELECT no_previous.number AS minimum,
-                   (SELECT MIN(no_next.number)
-                    FROM missing_blocks AS no_next
-                    LEFT OUTER JOIN missing_blocks AS next
-                    ON no_next.number = next.number - 1
-                    WHERE next.number IS NULL AND
-                          no_next.number >= no_previous.number) AS maximum
-            FROM missing_blocks as no_previous
-            LEFT OUTER JOIN missing_blocks AS previous
-            ON previous.number = no_previous.number - 1
-            WHERE previous.number IS NULL
+            (WITH missing_blocks AS
+                  (SELECT number
+                   FROM generate_series(? :: bigint, ? :: bigint, ? :: bigint) AS number
+                   EXCEPT
+                   SELECT blocks.number
+                   FROM blocks
+                   WHERE blocks.consensus = true)
+             SELECT no_previous.number AS minimum,
+                    (SELECT MIN(no_next.number)
+                     FROM missing_blocks AS no_next
+                     LEFT OUTER JOIN missing_blocks AS next
+                     ON no_next.number = next.number - 1
+                     WHERE next.number IS NULL AND
+                           no_next.number >= no_previous.number) AS maximum
+             FROM missing_blocks as no_previous
+             LEFT OUTER JOIN missing_blocks AS previous
+             ON previous.number = no_previous.number - 1
+             WHERE previous.number IS NULL)
             """,
             ^range_start,
             ^range_end,
@@ -1699,8 +1701,8 @@ defmodule Explorer.Chain do
     insert_result =
       Multi.new()
       |> Multi.insert(:smart_contract, smart_contract_changeset)
-      |> Multi.run(:clear_primary_address_names, &clear_primary_address_names/1)
-      |> Multi.run(:insert_address_name, &create_address_name/1)
+      |> Multi.run(:clear_primary_address_names, &clear_primary_address_names/2)
+      |> Multi.run(:insert_address_name, &create_address_name/2)
       |> Repo.transaction()
 
     with {:ok, %{smart_contract: smart_contract}} <- insert_result do
@@ -1711,7 +1713,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp clear_primary_address_names(%{smart_contract: %SmartContract{address_hash: address_hash}}) do
+  defp clear_primary_address_names(repo, %{smart_contract: %SmartContract{address_hash: address_hash}}) do
     clear_primary_query =
       from(
         address_name in Address.Name,
@@ -1719,12 +1721,12 @@ defmodule Explorer.Chain do
         update: [set: [primary: false]]
       )
 
-    Repo.update_all(clear_primary_query, [])
+    repo.update_all(clear_primary_query, [])
 
     {:ok, []}
   end
 
-  defp create_address_name(%{smart_contract: %SmartContract{name: name, address_hash: address_hash}}) do
+  defp create_address_name(repo, %{smart_contract: %SmartContract{name: name, address_hash: address_hash}}) do
     params = %{
       address_hash: address_hash,
       name: name,
@@ -1733,7 +1735,7 @@ defmodule Explorer.Chain do
 
     %Address.Name{}
     |> Address.Name.changeset(params)
-    |> Repo.insert(on_conflict: :nothing, conflict_target: [:address_hash, :name])
+    |> repo.insert(on_conflict: :nothing, conflict_target: [:address_hash, :name])
   end
 
   @spec address_hash_to_smart_contract(%Explorer.Chain.Hash{}) :: %Explorer.Chain.SmartContract{} | nil
@@ -2030,8 +2032,8 @@ defmodule Explorer.Chain do
       |> Multi.insert(:token, token_changeset, token_opts)
       |> Multi.run(
         :address_name,
-        fn _ ->
-          {:ok, Repo.insert(address_name_changeset, address_name_opts)}
+        fn repo, _ ->
+          {:ok, repo.insert(address_name_changeset, address_name_opts)}
         end
       )
       |> Repo.transaction()
@@ -2077,17 +2079,10 @@ defmodule Explorer.Chain do
 
   defp normalize_balances_by_day(balances_by_day) do
     balances_by_day
-    |> Enum.map(fn day -> Map.update(day, :date, nil, &tuple_to_date(&1)) end)
     |> Enum.map(fn day -> Map.take(day, [:date, :value]) end)
     |> Enum.filter(fn day -> day.value end)
     |> Enum.map(fn day -> Map.update!(day, :date, &to_string(&1)) end)
     |> Enum.map(fn day -> Map.update!(day, :value, &Wei.to(&1, :ether)) end)
-  end
-
-  defp tuple_to_date({date_tuple, _time_tuple}) do
-    case Date.from_erl(date_tuple) do
-      {:ok, date} -> date
-    end
   end
 
   @spec fetch_token_holders_from_token_hash(Hash.Address.t(), [paging_options]) :: [TokenBalance.t()]

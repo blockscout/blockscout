@@ -1,9 +1,12 @@
 defmodule BlockScoutWeb.AddressTransactionControllerTest do
-  use BlockScoutWeb.ConnCase
+  use BlockScoutWeb.ConnCase,
+    # ETS table is shared in `Explorer.Counters.BlockValidationCounter`
+    async: false
 
   import BlockScoutWeb.Router.Helpers, only: [address_transaction_path: 3, address_transaction_path: 4]
 
-  alias Explorer.Chain.{Block, Transaction}
+  alias Explorer.Chain.Transaction
+  alias Explorer.Counters.BlockValidationCounter
   alias Explorer.ExchangeRates.Token
 
   describe "GET index/2" do
@@ -47,6 +50,8 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
     test "includes USD exchange rate value for address in assigns", %{conn: conn} do
       address = insert(:address)
 
+      start_supervised!(BlockValidationCounter)
+
       conn = get(conn, address_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash))
 
       assert %Token{} = conn.assigns.exchange_rate
@@ -82,7 +87,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
 
     test "next_page_params exist if not on last page", %{conn: conn} do
       address = insert(:address)
-      block = %Block{number: number} = insert(:block)
+      block = insert(:block)
 
       60
       |> insert_list(:transaction, from_address: address)

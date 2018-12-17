@@ -71,7 +71,7 @@ defmodule Explorer.Chain.Block do
     field(:nonce, Hash.Nonce)
     field(:number, :integer)
     field(:size, :integer)
-    field(:timestamp, :utc_datetime)
+    field(:timestamp, :utc_datetime_usec)
     field(:total_difficulty, :decimal)
 
     timestamps()

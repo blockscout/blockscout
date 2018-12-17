@@ -24,7 +24,7 @@ defmodule Explorer.ChainTest do
 
   alias Explorer.Chain.Supply.ProofOfAuthority
 
-  alias Explorer.Counters.{AddessesWithBalanceCounter, TokenHoldersCounter}
+  alias Explorer.Counters.{AddressesWithBalanceCounter, TokenHoldersCounter}
 
   doctest Explorer.Chain
 
@@ -34,7 +34,8 @@ defmodule Explorer.ChainTest do
       insert(:address, fetched_coin_balance: 1)
       insert(:address, fetched_coin_balance: 2)
 
-      AddessesWithBalanceCounter.consolidate()
+      start_supervised!(AddressesWithBalanceCounter)
+      AddressesWithBalanceCounter.consolidate()
 
       addresses_with_balance = Chain.count_addresses_with_balance_from_cache()
 
@@ -3002,6 +3003,7 @@ defmodule Explorer.ChainTest do
         value: 1000
       )
 
+      start_supervised!(TokenHoldersCounter)
       TokenHoldersCounter.consolidate()
 
       assert Chain.count_token_holders_from_token_hash(contract_address_hash) == 2

@@ -3,7 +3,7 @@ defmodule Explorer.Admin.Administrator do
   Represents a user with administrative privileges.
   """
 
-  use Ecto.Schema
+  use Explorer.Schema
 
   import Ecto.Changeset
 

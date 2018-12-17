@@ -12,6 +12,8 @@ defmodule Explorer.Application do
   def start(_type, _args) do
     PrometheusLogger.setup()
 
+    Telemetry.attach("prometheus-ecto", [:explorer, :repo, :query], Explorer.Repo.PrometheusLogger, :handle_event, %{})
+
     # Children to start in all environments
     base_children = [
       Explorer.Repo,
@@ -36,7 +38,7 @@ defmodule Explorer.Application do
       configure(Explorer.Counters.TokenHoldersCounter),
       configure(Explorer.Counters.TokenTransferCounter),
       configure(Explorer.Counters.BlockValidationCounter),
-      configure(Explorer.Counters.AddessesWithBalanceCounter)
+      configure(Explorer.Counters.AddressesWithBalanceCounter)
     ]
     |> List.flatten()
   end

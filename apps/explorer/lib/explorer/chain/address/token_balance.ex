@@ -7,7 +7,8 @@ defmodule Explorer.Chain.Address.TokenBalance do
   `Address.CurrentTokenBalance` instead.
   """
 
-  use Ecto.Schema
+  use Explorer.Schema
+
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2, subquery: 1]
 
@@ -37,7 +38,7 @@ defmodule Explorer.Chain.Address.TokenBalance do
   schema "address_token_balances" do
     field(:value, :decimal)
     field(:block_number, :integer)
-    field(:value_fetched_at, :utc_datetime)
+    field(:value_fetched_at, :utc_datetime_usec)
 
     belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address)
 

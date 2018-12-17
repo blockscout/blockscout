@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Import.Block.Rewards do
 
   import Ecto.Query, only: [from: 2]
 
-  alias Ecto.{Changeset, Multi}
+  alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import
 
@@ -37,19 +37,20 @@ defmodule Explorer.Chain.Import.Block.Rewards do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    Multi.run(multi, option_key(), fn _ -> insert(changes_list, insert_options) end)
+    Multi.run(multi, option_key(), fn repo, _ -> insert(repo, changes_list, insert_options) end)
   end
 
   @impl Import.Runner
   def timeout, do: @timeout
 
-  @spec insert([map()], %{
+  @spec insert(Repo.t(), [map()], %{
           required(:timeout) => timeout,
           required(:timestamps) => Import.timestamps()
         }) :: {:ok, [Reward.t()]} | {:error, [Changeset.t()]}
-  defp insert(changes_list, %{timeout: timeout, timestamps: timestamps})
+  defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps})
        when is_list(changes_list) do
     Import.insert_changes_list(
+      repo,
       changes_list,
       conflict_target: [:address_hash, :address_type, :block_hash],
       on_conflict: on_conflict(),
