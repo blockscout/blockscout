@@ -81,7 +81,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
     end
   end
 
-  def get_contract_info(contracts, _) when contracts == %{}, do: %{"errors" => []}
+  def get_contract_info(contracts, _) when contracts == %{}, do: {:error, :compilation}
 
   def get_contract_info(contracts, name) do
     new_versions_name = ":" <> name

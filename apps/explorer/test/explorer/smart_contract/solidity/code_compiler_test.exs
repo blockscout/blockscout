@@ -108,12 +108,12 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
       assert {:error, :name} == response
     end
 
-    test "returns an empty list of errors for empty info" do
+    test "returns compilation error for empty info" do
       name = "Name"
 
       response = CodeCompiler.get_contract_info(%{}, name)
 
-      assert %{"errors" => []} == response
+      assert {:error, :compilation} == response
     end
 
     test "the contract info is returned when the name matches" do
