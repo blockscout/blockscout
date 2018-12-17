@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Import.Transaction.Forks do
+defmodule Explorer.Chain.Import.Runner.Transaction.Forks do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.Transaction.Fork.t/0`.
   """

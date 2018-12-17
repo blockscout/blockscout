@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Import.Address.CoinBalances do
+defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.Address.CoinBalance.t/0`.
   """

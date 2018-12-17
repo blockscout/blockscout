@@ -20,8 +20,6 @@ defmodule Explorer.Chain do
   alias Ecto.Adapters.SQL
   alias Ecto.Multi
 
-  alias Explorer.Chain
-
   alias Explorer.Chain.{
     Address,
     Address.CoinBalance,
@@ -41,6 +39,7 @@ defmodule Explorer.Chain do
   }
 
   alias Explorer.Chain.Block.EmissionReward
+  alias Explorer.Chain.Import.Runner
   alias Explorer.{PagingOptions, Repo}
 
   alias Explorer.Counters.{
@@ -632,13 +631,13 @@ defmodule Explorer.Chain do
   """
   @spec find_or_insert_address_from_hash(Hash.Address.t()) :: {:ok, Address.t()}
   def find_or_insert_address_from_hash(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash) do
-    case Chain.hash_to_address(hash) do
+    case hash_to_address(hash) do
       {:ok, address} ->
         {:ok, address}
 
       {:error, :not_found} ->
-        Chain.create_address(%{hash: to_string(hash)})
-        Chain.hash_to_address(hash)
+        create_address(%{hash: to_string(hash)})
+        hash_to_address(hash)
     end
   end
 
@@ -1968,7 +1967,7 @@ defmodule Explorer.Chain do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_cataloged_token_contract_address_hashes(initial, reducer) when is_function(reducer, 2) do
-    Chain.Token.cataloged_tokens()
+    Token.cataloged_tokens()
     |> order_by(asc: :updated_at)
     |> Repo.stream_reduce(initial, reducer)
   end
@@ -2048,7 +2047,7 @@ defmodule Explorer.Chain do
     token_changeset = Token.changeset(token, params)
     address_name_changeset = Address.Name.changeset(%Address.Name{}, Map.put(params, :address_hash, address_hash))
 
-    token_opts = [on_conflict: Import.Tokens.default_on_conflict(), conflict_target: :contract_address_hash]
+    token_opts = [on_conflict: Runner.Tokens.default_on_conflict(), conflict_target: :contract_address_hash]
     address_name_opts = [on_conflict: :nothing, conflict_target: [:address_hash, :name]]
 
     insert_result =

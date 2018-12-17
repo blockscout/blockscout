@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Import.Tokens do
+defmodule Explorer.Chain.Import.Runner.Tokens do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.Token.t/0`.
   """
