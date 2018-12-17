@@ -32,7 +32,8 @@ var compiled_code = solc.loadRemoteVersion(version, function (err, solcSnapshot)
     }
 
     const output = JSON.parse(solcSnapshot.compile(JSON.stringify(input)))
-    const response = output.contracts['New.sol']
+    /** Older solc-bin versions don't use filename as contract key */
+    const response = output.contracts['New.sol'] || output.contracts['']
     console.log(JSON.stringify(response));
   }
 });
