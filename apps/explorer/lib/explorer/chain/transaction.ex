@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Transaction do
 
   require Logger
 
-  import Ecto.Query, only: [from: 2, preload: 3, subquery: 1, where: 3]
+  import Ecto.Query, only: [from: 2, order_by: 3, preload: 3, subquery: 1, where: 3]
 
   alias ABI.FunctionSelector
 
@@ -151,7 +151,7 @@ defmodule Explorer.Chain.Transaction do
     field(:gas_price, Wei)
     field(:gas_used, :decimal)
     field(:index, :integer)
-    field(:internal_transactions_indexed_at, :utc_datetime)
+    field(:internal_transactions_indexed_at, :utc_datetime_usec)
     field(:input, Data)
     field(:nonce, :integer)
     field(:r, :decimal)
@@ -468,15 +468,15 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
-  Adds to the given transaction's query a `where` with one of the conditions that the matched
-  function returns.
+  Builds a query that will check for transactions within the hashes params.
 
-  `where_address_fields_match(query, address, address_field)`
-  - returns a query constraining the given address_hash to be equal to the given
-    address field from transactions' table.
+  Be careful to not pass a large list, because this will lead to performance
+  problems.
   """
-  def where_address_fields_match(query, address_hash, address_field) do
-    where(query, [t], field(t, ^address_field) == ^address_hash)
+  def where_transaction_hashes_match(transaction_hashes) do
+    Transaction
+    |> where([t], t.hash == fragment("ANY (?)", ^transaction_hashes))
+    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
   end
 
   @collated_fields ~w(block_number cumulative_gas_used gas_used index)a

@@ -3,7 +3,7 @@ import _ from 'lodash'
 import URI from 'urijs'
 import humps from 'humps'
 import numeral from 'numeral'
-import socket from '../socket'
+import socket, { subscribeChannel } from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
 import { updateAllCalculatedUsdValues } from '../lib/currency.js'
 import { loadTokenBalanceDropdown } from '../lib/token_balance_dropdown'
@@ -105,8 +105,8 @@ if ($addressDetailsPage.length) {
   })
   connectElements({ store, elements })
 
-  const addressChannel = socket.channel(`addresses:${addressHash}`, {})
-  addressChannel.join()
+  const addressChannel = subscribeChannel(`addresses:${addressHash}`)
+
   addressChannel.onError(() => store.dispatch({
     type: 'CHANNEL_DISCONNECTED'
   }))

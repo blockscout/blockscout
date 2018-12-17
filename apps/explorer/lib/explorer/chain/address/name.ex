@@ -3,7 +3,7 @@ defmodule Explorer.Chain.Address.Name do
   Represents a name for an Address.
   """
 
-  use Ecto.Schema
+  use Explorer.Schema
 
   import Ecto.Changeset
 

@@ -1,4 +1,4 @@
-defmodule Explorer.Counters.AddessesWithBalanceCounter do
+defmodule Explorer.Counters.AddressesWithBalanceCounter do
   @moduledoc """
   Caches the number of addresses with fetched coin balance > 0.
 
@@ -26,7 +26,7 @@ defmodule Explorer.Counters.AddessesWithBalanceCounter do
   # finish before a test ends, that test will fail. This way, hundreds of
   # tests were failing before disabling the consolidation and the scheduler in
   # the test env.
-  config = Application.get_env(:explorer, Explorer.Counters.AddessesWithBalanceCounter)
+  config = Application.get_env(:explorer, Explorer.Counters.AddressesWithBalanceCounter)
   @enable_consolidation Keyword.get(config, :enable_consolidation)
 
   @doc """

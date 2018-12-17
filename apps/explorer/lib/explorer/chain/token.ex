@@ -17,7 +17,7 @@ defmodule Explorer.Chain.Token do
   * [ERC-1155](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1155.md)
   """
 
-  use Ecto.Schema
+  use Explorer.Schema
 
   import Ecto.{Changeset, Query}
 

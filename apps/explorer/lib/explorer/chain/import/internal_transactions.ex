@@ -5,9 +5,8 @@ defmodule Explorer.Chain.Import.InternalTransactions do
 
   require Ecto.Query
 
-  alias Ecto.{Changeset, Multi}
+  alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Hash, Import, InternalTransaction, Transaction}
-  alias Explorer.Repo
 
   import Ecto.Query, only: [from: 2]
 
@@ -48,26 +47,27 @@ defmodule Explorer.Chain.Import.InternalTransactions do
     update_transactions_options = %{timeout: transactions_timeout, timestamps: timestamps}
 
     multi
-    |> Multi.run(:internal_transactions, fn _ ->
-      insert(changes_list, insert_options)
+    |> Multi.run(:internal_transactions, fn repo, _ ->
+      insert(repo, changes_list, insert_options)
     end)
-    |> Multi.run(:internal_transactions_indexed_at_transactions, fn %{internal_transactions: internal_transactions}
+    |> Multi.run(:internal_transactions_indexed_at_transactions, fn repo,
+                                                                    %{internal_transactions: internal_transactions}
                                                                     when is_list(internal_transactions) ->
-      update_transactions(internal_transactions, update_transactions_options)
+      update_transactions(repo, internal_transactions, update_transactions_options)
     end)
   end
 
   @impl Import.Runner
   def timeout, do: @timeout
 
-  @spec insert([map], %{
+  @spec insert(Repo.t(), [map], %{
           optional(:on_conflict) => Import.Runner.on_conflict(),
           required(:timeout) => timeout,
           required(:timestamps) => Import.timestamps()
         }) ::
           {:ok, [%{index: non_neg_integer, transaction_hash: Hash.t()}]}
           | {:error, [Changeset.t()]}
-  defp insert(changes_list, %{timeout: timeout, timestamps: timestamps} = options)
+  defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options)
        when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
@@ -76,6 +76,7 @@ defmodule Explorer.Chain.Import.InternalTransactions do
 
     {:ok, internal_transactions} =
       Import.insert_changes_list(
+        repo,
         ordered_changes_list,
         conflict_target: [:transaction_hash, :index],
         for: InternalTransaction,
@@ -122,7 +123,7 @@ defmodule Explorer.Chain.Import.InternalTransactions do
     )
   end
 
-  defp update_transactions(internal_transactions, %{
+  defp update_transactions(repo, internal_transactions, %{
          timeout: timeout,
          timestamps: timestamps
        })
@@ -164,7 +165,7 @@ defmodule Explorer.Chain.Import.InternalTransactions do
     transaction_count = Enum.count(ordered_transaction_hashes)
 
     try do
-      {^transaction_count, result} = Repo.update_all(query, [], timeout: timeout)
+      {^transaction_count, result} = repo.update_all(query, [], timeout: timeout)
 
       {:ok, result}
     rescue

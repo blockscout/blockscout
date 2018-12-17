@@ -16,12 +16,12 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias EthereumJSONRPC.{FetchedBalances, Subscription}
   alias Explorer.Chain
   alias Indexer.{AddressExtraction, Block, TokenBalances, Tracer}
-  alias Indexer.Block.Realtime.TaskSupervisor
+  alias Indexer.Block.Realtime.{ConsensusEnsurer, TaskSupervisor}
 
   @behaviour Block.Fetcher
 
   @enforce_keys ~w(block_fetcher)a
-  defstruct ~w(block_fetcher subscription previous_number)a
+  defstruct ~w(block_fetcher subscription previous_number max_number_seen)a
 
   @type t :: %__MODULE__{
           block_fetcher: %Block.Fetcher{
@@ -32,7 +32,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
             receipts_concurrency: pos_integer()
           },
           subscription: Subscription.t(),
-          previous_number: pos_integer() | nil
+          previous_number: pos_integer() | nil,
+          max_number_seen: pos_integer() | nil
         }
 
   def start_link([arguments, gen_server_options]) do
@@ -42,6 +43,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
   @impl GenServer
   def init(%{block_fetcher: %Block.Fetcher{} = block_fetcher, subscribe_named_arguments: subscribe_named_arguments})
       when is_list(subscribe_named_arguments) do
+    Logger.metadata(fetcher: :block_realtime)
+
     {:ok, %__MODULE__{block_fetcher: %Block.Fetcher{block_fetcher | broadcast: :realtime, callback_module: __MODULE__}},
      {:continue, {:init, subscribe_named_arguments}}}
   end
@@ -61,7 +64,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
         %__MODULE__{
           block_fetcher: %Block.Fetcher{} = block_fetcher,
           subscription: %Subscription{} = subscription,
-          previous_number: previous_number
+          previous_number: previous_number,
+          max_number_seen: max_number_seen
         } = state
       )
       when is_binary(quantity) do
@@ -69,10 +73,16 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
     # Subscriptions don't support getting all the blocks and transactions data,
     # so we need to go back and get the full block
-    start_fetch_and_import(number, block_fetcher, previous_number)
+    start_fetch_and_import(number, block_fetcher, previous_number, max_number_seen)
 
-    {:noreply, %{state | previous_number: number}}
+    new_max_number = new_max_number(number, max_number_seen)
+
+    {:noreply, %{state | previous_number: number, max_number_seen: new_max_number}}
   end
+
+  defp new_max_number(number, nil), do: number
+
+  defp new_max_number(number, max_number_seen), do: max(number, max_number_seen)
 
   @import_options ~w(address_hash_to_fetched_balance_block_number transaction_hash_to_block_number)a
 
@@ -118,51 +128,83 @@ defmodule Indexer.Block.Realtime.Fetcher do
     end
   end
 
-  defp start_fetch_and_import(number, block_fetcher, previous_number) do
-    start_at = if is_integer(previous_number), do: previous_number + 1, else: number
+  defp start_fetch_and_import(number, block_fetcher, previous_number, max_number_seen) do
+    start_at = determine_start_at(number, previous_number, max_number_seen)
 
     for block_number_to_fetch <- start_at..number do
-      args = [block_number_to_fetch, block_fetcher]
+      args = [block_number_to_fetch, block_fetcher, reorg?(number, max_number_seen)]
       Task.Supervisor.start_child(TaskSupervisor, __MODULE__, :fetch_and_import_block, args)
     end
   end
 
+  defp determine_start_at(number, nil, nil), do: number
+
+  defp determine_start_at(number, previous_number, max_number_seen) do
+    if reorg?(number, max_number_seen) do
+      # set start_at to NOT fill in skipped numbers
+      number
+    else
+      # set start_at to fill in skipped numbers, if any
+      previous_number + 1
+    end
+  end
+
+  defp reorg?(number, max_number_seen) when is_integer(max_number_seen) and number <= max_number_seen do
+    true
+  end
+
+  defp reorg?(_, _), do: false
+
+  @reorg_delay 5_000
+
   @decorate trace(name: "fetch", resource: "Indexer.Block.Realtime.Fetcher.fetch_and_import_block/3", tracer: Tracer)
-  def fetch_and_import_block(block_number_to_fetch, block_fetcher, retry \\ 3) do
-    do_fetch_and_import_block(block_number_to_fetch, block_fetcher, retry)
+  def fetch_and_import_block(block_number_to_fetch, block_fetcher, reorg?, retry \\ 3) do
+    Indexer.Logger.metadata(
+      fn ->
+        if reorg? do
+          # give previous fetch attempt (for same block number) a chance to finish
+          # before fetching again, to reduce block consensus mistakes
+          :timer.sleep(@reorg_delay)
+        end
+
+        do_fetch_and_import_block(block_number_to_fetch, block_fetcher, retry)
+      end,
+      fetcher: :block_realtime,
+      block_number: block_number_to_fetch
+    )
   end
 
   @decorate span(tracer: Tracer)
   defp do_fetch_and_import_block(block_number_to_fetch, block_fetcher, retry) do
     case fetch_and_import_range(block_fetcher, block_number_to_fetch..block_number_to_fetch) do
-      {:ok, %{inserted: _, errors: []}} ->
-        Logger.debug(fn ->
-          ["realtime indexer fetched and imported block ", to_string(block_number_to_fetch)]
-        end)
+      {:ok, %{inserted: inserted, errors: []}} ->
+        for block <- Map.get(inserted, :blocks, []) do
+          args = [block.parent_hash, block.number - 1, block_fetcher]
+          Task.Supervisor.start_child(TaskSupervisor, ConsensusEnsurer, :perform, args)
+        end
+
+        Logger.debug("Fetched and imported.")
 
       {:ok, %{inserted: _, errors: [_ | _] = errors}} ->
         Logger.error(fn ->
           [
-            "realtime indexer failed to fetch block",
-            to_string(block_number_to_fetch),
-            ": ",
+            "failed to fetch block: ",
             inspect(errors),
             ".  Block will be retried by catchup indexer."
           ]
         end)
 
       {:error, {step, reason}} ->
-        Logger.error(fn ->
-          [
-            "realtime indexer failed to fetch ",
-            to_string(step),
-            " for block ",
-            to_string(block_number_to_fetch),
-            ": ",
-            inspect(reason),
-            ".  Block will be retried by catchup indexer."
-          ]
-        end)
+        Logger.error(
+          fn ->
+            [
+              "failed to fetch: ",
+              inspect(reason),
+              ".  Block will be retried by catchup indexer."
+            ]
+          end,
+          step: step
+        )
 
       {:error, [%Changeset{} | _] = changesets} ->
         params = %{
@@ -175,7 +217,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
         if retry_fetch_and_import_block(params) == :ignore do
           Logger.error(fn ->
             [
-              "realtime indexer failed to validate for block ",
+              "failed to validate for block ",
               to_string(block_number_to_fetch),
               ": ",
               inspect(changesets),
@@ -185,17 +227,16 @@ defmodule Indexer.Block.Realtime.Fetcher do
         end
 
       {:error, {step, failed_value, _changes_so_far}} ->
-        Logger.error(fn ->
-          [
-            "realtime indexer failed to insert ",
-            to_string(step),
-            " for block ",
-            to_string(block_number_to_fetch),
-            ": ",
-            inspect(failed_value),
-            ".  Block will be retried by catchup indexer."
-          ]
-        end)
+        Logger.error(
+          fn ->
+            [
+              "failed to insert: ",
+              inspect(failed_value),
+              ".  Block will be retried by catchup indexer."
+            ]
+          end,
+          step: step
+        )
     end
   end
 

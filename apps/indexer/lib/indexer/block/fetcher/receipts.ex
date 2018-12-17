@@ -13,7 +13,7 @@ defmodule Indexer.Block.Fetcher.Receipts do
         %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = state,
         transaction_params
       ) do
-    Logger.debug(fn -> "fetching #{length(transaction_params)} transaction receipts" end)
+    Logger.debug("fetching transaction receipts", count: Enum.count(transaction_params))
     stream_opts = [max_concurrency: state.receipts_concurrency, timeout: :infinity]
 
     transaction_params

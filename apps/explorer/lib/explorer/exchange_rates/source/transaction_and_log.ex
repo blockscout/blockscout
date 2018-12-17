@@ -7,17 +7,20 @@ defmodule Explorer.ExchangeRates.Source.TransactionAndLog do
   alias Explorer.Chain
   alias Explorer.ExchangeRates.{Source, Token}
 
+  import Source, only: [to_decimal: 1]
+
   @behaviour Source
 
   @impl Source
-  def fetch_exchange_rates do
+  def format_data(data) do
+    data = secondary_source().format_data(data)
+
     token_data =
-      secondary_source().fetch_exchange_rates()
-      |> elem(1)
+      data
       |> Enum.find(fn token -> token.symbol == Explorer.coin() end)
       |> build_struct
 
-    {:ok, [token_data]}
+    [token_data]
   end
 
   defp build_struct(original_token) do
@@ -34,8 +37,9 @@ defmodule Explorer.ExchangeRates.Source.TransactionAndLog do
     }
   end
 
-  defp to_decimal(value) do
-    Decimal.new(value)
+  @impl Source
+  def source_url do
+    secondary_source().source_url()
   end
 
   @spec secondary_source() :: module()

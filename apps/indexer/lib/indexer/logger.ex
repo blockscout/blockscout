@@ -1,7 +1,21 @@
 defmodule Indexer.Logger do
   @moduledoc """
-  Helpers for formatting `Logger` data as `t:iodata/0`.
+  Helpers for `Logger`.
   """
+
+  @doc """
+  Sets `keyword` in `Logger.metadata/1` around `fun`.
+  """
+  def metadata(fun, keyword) when is_function(fun, 0) and is_list(keyword) do
+    metadata_before = Logger.metadata()
+
+    try do
+      Logger.metadata(keyword)
+      fun.()
+    after
+      Logger.reset_metadata(metadata_before)
+    end
+  end
 
   @doc """
   The PID and its registered name (if it has one) as `t:iodata/0`.

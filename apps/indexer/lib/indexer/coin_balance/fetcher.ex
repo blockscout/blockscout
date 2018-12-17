@@ -19,9 +19,10 @@ defmodule Indexer.CoinBalance.Fetcher do
 
   @defaults [
     flush_interval: :timer.seconds(3),
-    max_batch_size: 400,
-    max_concurrency: 5,
-    task_supervisor: Indexer.CoinBalance.TaskSupervisor
+    max_batch_size: 500,
+    max_concurrency: 4,
+    task_supervisor: Indexer.CoinBalance.TaskSupervisor,
+    metadata: [fetcher: :coin_balance]
   ]
 
   @doc """
@@ -73,7 +74,10 @@ defmodule Indexer.CoinBalance.Fetcher do
     # `{address, block}`, so take unique params only
     unique_entries = Enum.uniq(entries)
 
-    Logger.debug(fn -> "fetching #{length(unique_entries)} balances" end)
+    unique_entry_count = Enum.count(unique_entries)
+    Logger.metadata(count: unique_entry_count)
+
+    Logger.debug(fn -> "fetching" end)
 
     unique_entries
     |> Enum.map(&entry_to_params/1)
@@ -83,9 +87,12 @@ defmodule Indexer.CoinBalance.Fetcher do
         run_fetched_balances(fetched_balances, unique_entries)
 
       {:error, reason} ->
-        Logger.error(fn ->
-          ["failed to fetch ", unique_entries |> length() |> to_string(), " balances, ", inspect(reason)]
-        end)
+        Logger.error(
+          fn ->
+            ["failed to fetch: ", inspect(reason)]
+          end,
+          error_count: unique_entry_count
+        )
 
         {:retry, unique_entries}
     end
@@ -114,7 +121,7 @@ defmodule Indexer.CoinBalance.Fetcher do
 
   defp run_fetched_balances(%FetchedBalances{params_list: []}, original_entries), do: {:retry, original_entries}
 
-  defp run_fetched_balances(%FetchedBalances{params_list: params_list, errors: errors}, original_entries) do
+  defp run_fetched_balances(%FetchedBalances{params_list: params_list, errors: errors}, _) do
     value_fetched_at = DateTime.utc_now()
 
     importable_balances_params = Enum.map(params_list, &Map.put(&1, :value_fetched_at, value_fetched_at))
@@ -127,24 +134,23 @@ defmodule Indexer.CoinBalance.Fetcher do
         address_coin_balances: %{params: importable_balances_params}
       })
 
-    retry(errors, original_entries)
+    retry(errors)
   end
 
-  defp retry([], _), do: :ok
+  defp retry([]), do: :ok
 
-  defp retry(errors, original_entries) when is_list(errors) do
+  defp retry(errors) when is_list(errors) do
     retried_entries = fetched_balances_errors_to_entries(errors)
 
-    Logger.error(fn ->
-      [
-        "failed to fetch ",
-        retried_entries |> length() |> to_string(),
-        "/",
-        original_entries |> length() |> to_string(),
-        " balances: ",
-        fetched_balance_errors_to_iodata(errors)
-      ]
-    end)
+    Logger.error(
+      fn ->
+        [
+          "failed to fetch: ",
+          fetched_balance_errors_to_iodata(errors)
+        ]
+      end,
+      error_count: Enum.count(retried_entries)
+    )
 
     {:retry, retried_entries}
   end
