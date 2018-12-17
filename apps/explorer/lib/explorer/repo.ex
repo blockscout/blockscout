@@ -57,7 +57,7 @@ defmodule Explorer.Repo do
             Logger.configure(truncate: old_truncate)
 
             # reraise to kill caller
-            raise exception
+            reraise exception, __STACKTRACE__
         end
 
       if returning do
