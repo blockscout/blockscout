@@ -220,6 +220,13 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
         error
     end
+  rescue
+    exception ->
+      Logger.error(fn -> [Exception.format(:error, exception, __STACKTRACE__), ?\n, ?\n, "Retrying."] end)
+
+      push_back(sequence, range)
+
+      {:error, exception}
   end
 
   defp cap_seq(seq, errors) do
