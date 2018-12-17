@@ -95,10 +95,8 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event(_), do: nil
 
   defp broadcast_address_coin_balance(%{address_hash: address_hash, block_number: block_number}) do
-    coin_balance = Chain.get_coin_balance(address_hash, block_number)
-
     Endpoint.broadcast("addresses:#{address_hash}", "coin_balance", %{
-      coin_balance: coin_balance
+      block_number: block_number
     })
   end
 
