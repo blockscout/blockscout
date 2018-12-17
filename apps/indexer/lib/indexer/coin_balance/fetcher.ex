@@ -20,7 +20,7 @@ defmodule Indexer.CoinBalance.Fetcher do
   @defaults [
     flush_interval: :timer.seconds(3),
     max_batch_size: 400,
-    max_concurrency: 7,
+    max_concurrency: 5,
     task_supervisor: Indexer.CoinBalance.TaskSupervisor
   ]
 

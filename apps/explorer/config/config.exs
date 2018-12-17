@@ -32,7 +32,7 @@ config :explorer, Explorer.Counters.TokenTransferCounter, enabled: true
 
 config :explorer, Explorer.Counters.BlockValidationCounter, enabled: true, enable_consolidation: true
 
-config :explorer, Explorer.Counters.TokenHoldersCounter, enabled: true, enable_consolidation: true
+config :explorer, Explorer.Counters.TokenHoldersCounter, enabled: true, enable_consolidation: false
 
 config :explorer, Explorer.Counters.AddessesWithBalanceCounter, enabled: true, enable_consolidation: true
 
