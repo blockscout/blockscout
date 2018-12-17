@@ -36,6 +36,10 @@ if System.get_env("METADATA_CONTRACT") && System.get_env("VALIDATORS_CONTRACT") 
   config :explorer, Explorer.Validator.MetadataRetriever,
     metadata_contract_address: System.get_env("METADATA_CONTRACT"),
     validators_contract_address: System.get_env("VALIDATORS_CONTRACT")
+
+  config :explorer, Explorer.Validator.MetadataProcessor, enabled: true
+else
+  config :explorer, Explorer.Validator.MetadataProcessor, enabled: false
 end
 
 if System.get_env("SUPPLY_MODULE") == "TransactionAndLog" do
