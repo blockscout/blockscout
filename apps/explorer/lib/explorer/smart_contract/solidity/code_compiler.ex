@@ -71,18 +71,10 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
         ]
       )
 
-    with %{"contracts" => contracts} <- Jason.decode!(response),
-         %{"interface" => abi, "runtimeBytecode" => bytecode, "opcodes" => opcodes} <-
+    with contracts <- Jason.decode!(response),
+         %{"abi" => abi, "evm" => %{"deployedBytecode" => %{"object" => bytecode, "opcodes" => opcodes}}} <-
            get_contract_info(contracts, name) do
-      {
-        :ok,
-        %{
-          "abi" => Jason.decode!(abi),
-          "bytecode" => bytecode,
-          "name" => name,
-          "opcodes" => opcodes
-        }
-      }
+      {:ok, %{"abi" => abi, "bytecode" => bytecode, "name" => name, "opcodes" => opcodes}}
     else
       error ->
         parse_error(error)
