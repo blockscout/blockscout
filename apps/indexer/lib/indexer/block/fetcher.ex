@@ -149,7 +149,7 @@ defmodule Indexer.Block.Fetcher do
       {:ok, %{inserted: inserted, errors: blocks_errors ++ beneficiaries_errors}}
     else
       {step, {:error, reason}} -> {:error, {step, reason}}
-      {:error, step, failed_value, changes_so_far} -> {:error, {step, failed_value, changes_so_far}}
+      {step, {:error, step, failed_value, changes_so_far}} -> {:error, {step, failed_value, changes_so_far}}
     end
   end
 
