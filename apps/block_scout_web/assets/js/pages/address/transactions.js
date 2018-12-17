@@ -2,7 +2,7 @@ import $ from 'jquery'
 import _ from 'lodash'
 import URI from 'urijs'
 import humps from 'humps'
-import socket from '../../socket'
+import { subscribeChannel } from '../../socket'
 import { connectElements } from '../../lib/redux_helpers.js'
 import { createAsyncLoadStore } from '../../lib/async_listing_load'
 
@@ -61,8 +61,8 @@ if ($('[data-page="address-transactions"]').length) {
     beyondPageOne: !!blockNumber
   })
 
-  const addressChannel = socket.channel(`addresses:${addressHash}`, {})
-  addressChannel.join()
+  const addressChannel = subscribeChannel(`addresses:${addressHash}`)
+
   addressChannel.onError(() => store.dispatch({ type: 'CHANNEL_DISCONNECTED' }))
   addressChannel.on('transaction', (msg) => {
     store.dispatch({

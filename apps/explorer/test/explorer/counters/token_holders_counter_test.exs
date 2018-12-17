@@ -4,6 +4,12 @@ defmodule Explorer.Counters.TokenHoldersCounterTest do
   alias Explorer.Chain.Token
   alias Explorer.Counters.TokenHoldersCounter
 
+  setup do
+    start_supervised!(TokenHoldersCounter)
+
+    :ok
+  end
+
   describe "consolidate/0" do
     test "consolidates the token holders info with the most current database info" do
       address_a = insert(:address, hash: "0xe49fedd93960a0267b3c3b2c1e2d66028e013fee")

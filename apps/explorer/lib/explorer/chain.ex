@@ -11,6 +11,8 @@ defmodule Explorer.Chain do
       order_by: 2,
       order_by: 3,
       preload: 2,
+      subquery: 1,
+      union_all: 2,
       where: 2,
       where: 3
     ]
@@ -38,17 +40,18 @@ defmodule Explorer.Chain do
     Wei
   }
 
-  alias Explorer.Chain.Block.Reward
+  alias Explorer.Chain.Block.EmissionReward
   alias Explorer.{PagingOptions, Repo}
 
   alias Explorer.Counters.{
-    AddessesWithBalanceCounter,
+    AddressesWithBalanceCounter,
     BlockValidationCounter,
     TokenHoldersCounter,
     TokenTransferCounter
   }
 
   alias Dataloader.Ecto, as: DataloaderEcto
+  alias Timex.Duration
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -86,13 +89,14 @@ defmodule Explorer.Chain do
 
   @typep necessity_by_association_option :: {:necessity_by_association, necessity_by_association}
   @typep paging_options :: {:paging_options, PagingOptions.t()}
+  @typep balance_by_day :: %{date: String.t(), value: Wei.t()}
 
   @doc """
   Gets from the cache the count of `t:Explorer.Chain.Address.t/0`'s where the `fetched_coin_balance` is > 0
   """
   @spec count_addresses_with_balance_from_cache :: non_neg_integer()
   def count_addresses_with_balance_from_cache do
-    AddessesWithBalanceCounter.fetch()
+    AddressesWithBalanceCounter.fetch()
   end
 
   @doc """
@@ -173,7 +177,18 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  `t:Explorer.Chain.Transaction/0`s from `address`.
+  Fetches the transactions related to the given address, including transactions
+  that only have the address in the `token_transfers` related table.
+
+  This query is divided into multiple subqueries intentionally in order to
+  improve the listing performance.
+
+  The `token_trasfers` table tends to grow exponentially, and the query results
+  with a `transactions` `join` statement takes too long.
+
+  To solve this the `transaction_hashes` are fetched in a separate query, and
+  paginated through the `block_number` already present in the `token_transfers`
+  table.
 
   ## Options
 
@@ -195,19 +210,21 @@ defmodule Explorer.Chain do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    {:ok, address_bytes} = Explorer.Chain.Hash.Address.dump(address_hash)
+    transaction_hashes_from_token_transfers =
+      TokenTransfer.where_any_address_fields_match(direction, address_hash, paging_options)
 
-    token_transfers_dynamic = TokenTransfer.dynamic_any_address_fields_match(direction, address_bytes)
+    token_transfers_query =
+      transaction_hashes_from_token_transfers
+      |> Transaction.where_transaction_hashes_match()
+      |> join_associations(necessity_by_association)
+      |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
+      |> Transaction.preload_token_transfers(address_hash)
 
     base_query =
       paging_options
       |> fetch_transactions()
       |> join_associations(necessity_by_association)
       |> Transaction.preload_token_transfers(address_hash)
-
-    token_transfers_query =
-      base_query
-      |> from(where: ^token_transfers_dynamic)
 
     from_address_query =
       base_query
@@ -266,7 +283,7 @@ defmodule Explorer.Chain do
   """
   @spec average_block_time :: %Timex.Duration{}
   def average_block_time do
-    {:ok, %Postgrex.Result{rows: [[rows]]}} =
+    {:ok, %Postgrex.Result{rows: [[%Postgrex.Interval{months: 0, days: days, secs: seconds}]]}} =
       SQL.query(
         Repo,
         """
@@ -280,9 +297,10 @@ defmodule Explorer.Chain do
         []
       )
 
-    {:ok, value} = Timex.Ecto.Time.load(rows)
-
-    value
+    hours = days * 24
+    minutes = 0
+    microseconds = 0
+    Duration.from_clock({hours, minutes, seconds, microseconds})
   end
 
   @doc """
@@ -352,15 +370,15 @@ defmodule Explorer.Chain do
       from(
         block in Block,
         left_join: transaction in assoc(block, :transactions),
-        inner_join: block_reward in Reward,
-        on: fragment("? <@ ?", block.number, block_reward.block_range),
+        inner_join: emission_reward in EmissionReward,
+        on: fragment("? <@ ?", block.number, emission_reward.block_range),
         where: block.number == ^block_number,
-        group_by: block_reward.reward,
+        group_by: emission_reward.reward,
         select: %{
           transaction_reward: %Wei{
             value: default_if_empty(sum_of_products(transaction.gas_used, transaction.gas_price), 0)
           },
-          static_reward: block_reward.reward
+          static_reward: emission_reward.reward
         }
       )
 
@@ -913,6 +931,7 @@ defmodule Explorer.Chain do
       from(a in Address,
         where: a.fetched_coin_balance > ^0,
         order_by: [desc: a.fetched_coin_balance, asc: a.hash],
+        preload: [:names],
         select: {a, fragment("coalesce(1 + ?, 0)", a.nonce)},
         limit: 250
       )
@@ -953,7 +972,7 @@ defmodule Explorer.Chain do
   @doc """
   Counts all of the block validations and groups by the `miner_hash`.
   """
-  def group_block_validations_by_address do
+  def each_address_block_validation_count(fun) when is_function(fun, 1) do
     query =
       from(
         b in Block,
@@ -963,7 +982,7 @@ defmodule Explorer.Chain do
         group_by: b.miner_hash
       )
 
-    Repo.all(query)
+    Repo.stream_each(query, fun)
   end
 
   @doc """
@@ -1005,21 +1024,14 @@ defmodule Explorer.Chain do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_unfetched_balances(initial, reducer) when is_function(reducer, 2) do
-    Repo.transaction(
-      fn ->
-        query =
-          from(
-            balance in CoinBalance,
-            where: is_nil(balance.value_fetched_at),
-            select: %{address_hash: balance.address_hash, block_number: balance.block_number}
-          )
+    query =
+      from(
+        balance in CoinBalance,
+        where: is_nil(balance.value_fetched_at),
+        select: %{address_hash: balance.address_hash, block_number: balance.block_number}
+      )
 
-        query
-        |> Repo.stream(timeout: :infinity)
-        |> Enum.reduce(initial, reducer)
-      end,
-      timeout: :infinity
-    )
+    Repo.stream_reduce(query, initial, reducer)
   end
 
   @doc """
@@ -1031,16 +1043,8 @@ defmodule Explorer.Chain do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_unfetched_token_balances(initial, reducer) when is_function(reducer, 2) do
-    Repo.transaction(
-      fn ->
-        query = TokenBalance.unfetched_token_balances()
-
-        query
-        |> Repo.stream(timeout: :infinity)
-        |> Enum.reduce(initial, reducer)
-      end,
-      timeout: :infinity
-    )
+    TokenBalance.unfetched_token_balances()
+    |> Repo.stream_reduce(initial, reducer)
   end
 
   @doc """
@@ -1095,22 +1099,15 @@ defmodule Explorer.Chain do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_transactions_with_unfetched_internal_transactions(fields, initial, reducer) when is_function(reducer, 2) do
-    Repo.transaction(
-      fn ->
-        query =
-          from(
-            t in Transaction,
-            # exclude pending transactions
-            where: not is_nil(t.block_hash) and is_nil(t.internal_transactions_indexed_at),
-            select: ^fields
-          )
+    query =
+      from(
+        t in Transaction,
+        # exclude pending transactions
+        where: not is_nil(t.block_hash) and is_nil(t.internal_transactions_indexed_at),
+        select: ^fields
+      )
 
-        query
-        |> Repo.stream(timeout: :infinity)
-        |> Enum.reduce(initial, reducer)
-      end,
-      timeout: :infinity
-    )
+    Repo.stream_reduce(query, initial, reducer)
   end
 
   @doc """
@@ -1127,21 +1124,14 @@ defmodule Explorer.Chain do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_unfetched_uncle_hashes(initial, reducer) when is_function(reducer, 2) do
-    Repo.transaction(
-      fn ->
-        query =
-          from(bsdr in Block.SecondDegreeRelation,
-            where: is_nil(bsdr.uncle_fetched_at),
-            select: bsdr.uncle_hash,
-            group_by: bsdr.uncle_hash
-          )
+    query =
+      from(bsdr in Block.SecondDegreeRelation,
+        where: is_nil(bsdr.uncle_fetched_at),
+        select: bsdr.uncle_hash,
+        group_by: bsdr.uncle_hash
+      )
 
-        query
-        |> Repo.stream(timeout: :infinity)
-        |> Enum.reduce(initial, reducer)
-      end,
-      timeout: :infinity
-    )
+    Repo.stream_reduce(query, initial, reducer)
   end
 
   @doc """
@@ -1256,54 +1246,76 @@ defmodule Explorer.Chain do
   def missing_block_number_ranges(range)
 
   def missing_block_number_ranges(range_start..range_end) do
-    {step, first, last, direction} =
-      if range_start <= range_end do
-        {1, :minimum, :maximum, :asc}
-      else
-        {-1, :maximum, :minimum, :desc}
-      end
+    # subquery so we can check for NULL in `range_min_query`, which happens for empty table
+    min_query = from(block in Block, select: %{number: min(block.number)}, where: block.consensus == true)
+    # this acts a fake found block, so it has to before the range of blocks we actually care to check
+    before_range_min = min(range_start, range_end) - 1
 
-    query =
-      from(
-        b in Block,
-        right_join:
-          missing_block_number_range in fragment(
-            # adapted from https://www.xaprb.com/blog/2006/03/22/find-contiguous-ranges-with-sql/
-            """
-            WITH missing_blocks AS
-                 (SELECT number
-                  FROM generate_series(? :: bigint, ? :: bigint, ? :: bigint) AS number
-                  EXCEPT
-                  SELECT blocks.number
-                  FROM blocks
-                  WHERE blocks.consensus = true)
-            SELECT no_previous.number AS minimum,
-                   (SELECT MIN(no_next.number)
-                    FROM missing_blocks AS no_next
-                    LEFT OUTER JOIN missing_blocks AS next
-                    ON no_next.number = next.number - 1
-                    WHERE next.number IS NULL AND
-                          no_next.number >= no_previous.number) AS maximum
-            FROM missing_blocks as no_previous
-            LEFT OUTER JOIN missing_blocks AS previous
-            ON previous.number = no_previous.number - 1
-            WHERE previous.number IS NULL
-            """,
-            ^range_start,
-            ^range_end,
-            ^step
-          ),
-        select: %Range{
-          first: field(missing_block_number_range, ^first),
-          last: field(missing_block_number_range, ^last)
+    range_min_query =
+      from(min_block in subquery(min_query),
+        select: %{
+          # `LEAST` ignores `NULL`, so it picks the fake range when there is no `min_block.number`
+          # because `blocks` is empty
+          number: fragment("LEAST(?, ?)", min_block.number, ^before_range_min)
         },
-        order_by: [{^direction, field(missing_block_number_range, ^first)}],
-        # needed because the join makes a cartesian product with all block rows, but we need to use Block to make
-        # Ecto work.
-        distinct: true
+        # `blocks` is empty
+        # same number will not be returned by `number_query`
+        where: is_nil(min_block.number) or min_block.number != ^before_range_min
       )
 
-    Repo.all(query, timeout: :infinity)
+    number_query = from(block in Block, select: %{number: block.number}, where: block.consensus == true)
+
+    # subquery so we can check for NULL in `range_max_query`, which happens for empty table
+    max_query = from(block in Block, select: %{number: max(block.number)}, where: block.consensus == true)
+    # this acts a fake found block, so it has to after the range of blocks we actually care to check
+    after_range_max = max(range_start, range_end) + 1
+
+    range_max_query =
+      from(max_block in subquery(max_query),
+        select: %{
+          # `GREATEST` ignores `NULL`, so it picks the fake range when there is no `max_block.number`
+          # because `blocks` is empty
+          number: fragment("GREATEST(?, ?)", max_block.number, ^after_range_max)
+        },
+        # blocks is empty
+        # same number will not be returned by `number_query`
+        where: is_nil(max_block.number) or max_block.number != ^after_range_max
+      )
+
+    # The actual blocks and a boundary of fake found blocks outside of `range_start..range_end` so that there is always
+    # a `lag` block
+    search_range_query =
+      number_query
+      |> union_all(^range_min_query)
+      |> union_all(^range_max_query)
+
+    # Gaps and Islands is the term-of-art for finding the runs of missing (gaps) and existing (islands) data.  If you
+    # Google for `sql missing ranges` you won't find much, but `sql gaps and islands` will get a lot of hits.
+
+    island_query =
+      from(
+        search_block in subquery(search_range_query),
+        windows: [w: [order_by: search_block.number]],
+        select: %{last_number: search_block.number |> lag() |> over(:w), next_number: search_block.number}
+      )
+
+    gap_query =
+      from(
+        island in subquery(island_query),
+        where: island.last_number != island.next_number - 1,
+        select: %Range{first: island.last_number + 1, last: island.next_number - 1},
+        order_by: island.last_number
+      )
+
+    ascending = Repo.all(gap_query, timeout: :infinity)
+
+    if range_start <= range_end do
+      ascending
+    else
+      ascending
+      |> Enum.reverse()
+      |> Enum.map(fn first..last -> last..first end)
+    end
   end
 
   @doc """
@@ -1713,8 +1725,8 @@ defmodule Explorer.Chain do
     insert_result =
       Multi.new()
       |> Multi.insert(:smart_contract, smart_contract_changeset)
-      |> Multi.run(:clear_primary_address_names, &clear_primary_address_names/1)
-      |> Multi.run(:insert_address_name, &create_address_name/1)
+      |> Multi.run(:clear_primary_address_names, &clear_primary_address_names/2)
+      |> Multi.run(:insert_address_name, &create_address_name/2)
       |> Repo.transaction()
 
     with {:ok, %{smart_contract: smart_contract}} <- insert_result do
@@ -1725,7 +1737,7 @@ defmodule Explorer.Chain do
     end
   end
 
-  defp clear_primary_address_names(%{smart_contract: %SmartContract{address_hash: address_hash}}) do
+  defp clear_primary_address_names(repo, %{smart_contract: %SmartContract{address_hash: address_hash}}) do
     clear_primary_query =
       from(
         address_name in Address.Name,
@@ -1733,12 +1745,12 @@ defmodule Explorer.Chain do
         update: [set: [primary: false]]
       )
 
-    Repo.update_all(clear_primary_query, [])
+    repo.update_all(clear_primary_query, [])
 
     {:ok, []}
   end
 
-  defp create_address_name(%{smart_contract: %SmartContract{name: name, address_hash: address_hash}}) do
+  defp create_address_name(repo, %{smart_contract: %SmartContract{name: name, address_hash: address_hash}}) do
     params = %{
       address_hash: address_hash,
       name: name,
@@ -1747,7 +1759,7 @@ defmodule Explorer.Chain do
 
     %Address.Name{}
     |> Address.Name.changeset(params)
-    |> Repo.insert(on_conflict: :nothing, conflict_target: [:address_hash, :name])
+    |> repo.insert(on_conflict: :nothing, conflict_target: [:address_hash, :name])
   end
 
   @spec address_hash_to_smart_contract(%Explorer.Chain.Hash{}) :: %Explorer.Chain.SmartContract{} | nil
@@ -1818,6 +1830,12 @@ defmodule Explorer.Chain do
 
   defp page_blocks(query, %PagingOptions{key: {block_number}}) do
     where(query, [block], block.number < ^block_number)
+  end
+
+  defp page_coin_balances(query, %PagingOptions{key: nil}), do: query
+
+  defp page_coin_balances(query, %PagingOptions{key: {block_number}}) do
+    where(query, [coin_balance], coin_balance.block_number < ^block_number)
   end
 
   defp page_internal_transaction(query, %PagingOptions{key: nil}), do: query
@@ -1930,22 +1948,15 @@ defmodule Explorer.Chain do
           reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator)
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_uncataloged_token_contract_address_hashes(initial_acc, reducer) when is_function(reducer, 2) do
-    Repo.transaction(
-      fn ->
-        query =
-          from(
-            token in Token,
-            where: token.cataloged == false,
-            select: token.contract_address_hash
-          )
+  def stream_uncataloged_token_contract_address_hashes(initial, reducer) when is_function(reducer, 2) do
+    query =
+      from(
+        token in Token,
+        where: token.cataloged == false,
+        select: token.contract_address_hash
+      )
 
-        query
-        |> Repo.stream(timeout: :infinity)
-        |> Enum.reduce(initial_acc, reducer)
-      end,
-      timeout: :infinity
-    )
+    Repo.stream_reduce(query, initial, reducer)
   end
 
   @doc """
@@ -1956,16 +1967,10 @@ defmodule Explorer.Chain do
           reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator)
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_cataloged_token_contract_address_hashes(initial_acc, reducer) when is_function(reducer, 2) do
-    Repo.transaction(
-      fn ->
-        Chain.Token.cataloged_tokens()
-        |> order_by(asc: :updated_at)
-        |> Repo.stream(timeout: :infinity)
-        |> Enum.reduce(initial_acc, reducer)
-      end,
-      timeout: :infinity
-    )
+  def stream_cataloged_token_contract_address_hashes(initial, reducer) when is_function(reducer, 2) do
+    Chain.Token.cataloged_tokens()
+    |> order_by(asc: :updated_at)
+    |> Repo.stream_reduce(initial, reducer)
   end
 
   @doc """
@@ -1984,14 +1989,7 @@ defmodule Explorer.Chain do
         distinct: t.block_number
       )
 
-    Repo.transaction(
-      fn ->
-        query
-        |> Repo.stream(timeout: :infinity)
-        |> Enum.reduce([], &[&1 | &2])
-      end,
-      timeout: :infinity
-    )
+    Repo.stream_reduce(query, [], &[&1 | &2])
   end
 
   @doc """
@@ -2058,8 +2056,8 @@ defmodule Explorer.Chain do
       |> Multi.insert(:token, token_changeset, token_opts)
       |> Multi.run(
         :address_name,
-        fn _ ->
-          {:ok, Repo.insert(address_name_changeset, address_name_opts)}
+        fn repo, _ ->
+          {:ok, repo.insert(address_name_changeset, address_name_opts)}
         end
       )
       |> Repo.transaction()
@@ -2075,8 +2073,40 @@ defmodule Explorer.Chain do
   @spec fetch_last_token_balances(Hash.Address.t()) :: []
   def fetch_last_token_balances(address_hash) do
     address_hash
-    |> TokenBalance.last_token_balances()
+    |> CurrentTokenBalance.last_token_balances()
     |> Repo.all()
+  end
+
+  @spec address_to_coin_balances(Hash.Address.t(), [paging_options]) :: []
+  def address_to_coin_balances(address_hash, options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    address_hash
+    |> CoinBalance.fetch_coin_balances(paging_options)
+    |> page_coin_balances(paging_options)
+    |> Repo.all()
+  end
+
+  def get_coin_balance(address_hash, block_number) do
+    query = CoinBalance.fetch_coin_balance(address_hash, block_number)
+
+    Repo.one(query)
+  end
+
+  @spec address_to_balances_by_day(Hash.Address.t()) :: [balance_by_day]
+  def address_to_balances_by_day(address_hash) do
+    address_hash
+    |> CoinBalance.balances_by_day()
+    |> Repo.all()
+    |> normalize_balances_by_day()
+  end
+
+  defp normalize_balances_by_day(balances_by_day) do
+    balances_by_day
+    |> Enum.map(fn day -> Map.take(day, [:date, :value]) end)
+    |> Enum.filter(fn day -> day.value end)
+    |> Enum.map(fn day -> Map.update!(day, :date, &to_string(&1)) end)
+    |> Enum.map(fn day -> Map.update!(day, :value, &Wei.to(&1, :ether)) end)
   end
 
   @spec fetch_token_holders_from_token_hash(Hash.Address.t(), [paging_options]) :: [TokenBalance.t()]
@@ -2109,4 +2139,22 @@ defmodule Explorer.Chain do
 
   @spec data() :: Dataloader.Ecto.t()
   def data, do: DataloaderEcto.new(Repo)
+
+  @doc """
+  Returns a list of block numbers with invalid consensus.
+  """
+  @spec list_block_numbers_with_invalid_consensus :: [integer()]
+  def list_block_numbers_with_invalid_consensus do
+    query =
+      from(
+        block in Block,
+        join: parent in Block,
+        on: parent.hash == block.parent_hash,
+        where: block.consensus == true,
+        where: parent.consensus == false,
+        select: parent.number
+      )
+
+    Repo.all(query, timeout: :infinity)
+  end
 end

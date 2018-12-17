@@ -15,6 +15,7 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
     # Use TestSource mock and ets table for this test set
     configuration = Application.get_env(:explorer, Explorer.ExchangeRates)
     Application.put_env(:explorer, Explorer.ExchangeRates, source: TestSource)
+    Application.put_env(:explorer, Explorer.ExchangeRates, table_name: :rates)
 
     ExchangeRates.init([])
 

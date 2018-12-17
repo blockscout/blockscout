@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Import.Address.CoinBalances do
 
   import Ecto.Query, only: [from: 2]
 
-  alias Ecto.{Changeset, Multi}
+  alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Address.CoinBalance
   alias Explorer.Chain.{Block, Hash, Import, Wei}
 
@@ -43,8 +43,8 @@ defmodule Explorer.Chain.Import.Address.CoinBalances do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    Multi.run(multi, :address_coin_balances, fn _ ->
-      insert(changes_list, insert_options)
+    Multi.run(multi, :address_coin_balances, fn repo, _ ->
+      insert(repo, changes_list, insert_options)
     end)
   end
 
@@ -52,6 +52,7 @@ defmodule Explorer.Chain.Import.Address.CoinBalances do
   def timeout, do: @timeout
 
   @spec insert(
+          Repo.t(),
           [
             %{
               required(:address_hash) => Hash.Address.t(),
@@ -67,7 +68,7 @@ defmodule Explorer.Chain.Import.Address.CoinBalances do
         ) ::
           {:ok, [%{required(:address_hash) => Hash.Address.t(), required(:block_number) => Block.block_number()}]}
           | {:error, [Changeset.t()]}
-  defp insert(changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
+  defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # order so that row ShareLocks are grabbed in a consistent order
@@ -75,6 +76,7 @@ defmodule Explorer.Chain.Import.Address.CoinBalances do
 
     {:ok, _} =
       Import.insert_changes_list(
+        repo,
         ordered_changes_list,
         conflict_target: [:address_hash, :block_number],
         on_conflict: on_conflict,

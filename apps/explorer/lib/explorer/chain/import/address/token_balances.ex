@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Import.Address.TokenBalances do
 
   import Ecto.Query, only: [from: 2]
 
-  alias Ecto.{Changeset, Multi}
+  alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Address.TokenBalance
   alias Explorer.Chain.Import
 
@@ -41,22 +41,22 @@ defmodule Explorer.Chain.Import.Address.TokenBalances do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    Multi.run(multi, :address_token_balances, fn _ ->
-      insert(changes_list, insert_options)
+    Multi.run(multi, :address_token_balances, fn repo, _ ->
+      insert(repo, changes_list, insert_options)
     end)
   end
 
   @impl Import.Runner
   def timeout, do: @timeout
 
-  @spec insert([map()], %{
+  @spec insert(Repo.t(), [map()], %{
           optional(:on_conflict) => Import.Runner.on_conflict(),
           required(:timeout) => timeout(),
           required(:timestamps) => Import.timestamps()
         }) ::
           {:ok, [TokenBalance.t()]}
           | {:error, [Changeset.t()]}
-  def insert(changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
+  def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # order so that row ShareLocks are grabbed in a consistent order
@@ -64,6 +64,7 @@ defmodule Explorer.Chain.Import.Address.TokenBalances do
 
     {:ok, _} =
       Import.insert_changes_list(
+        repo,
         ordered_changes_list,
         conflict_target: ~w(address_hash token_contract_address_hash block_number)a,
         on_conflict: on_conflict,

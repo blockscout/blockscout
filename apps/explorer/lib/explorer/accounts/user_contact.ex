@@ -6,7 +6,7 @@ defmodule Explorer.Accounts.UserContact do
   given user. Additionally, a user can only have 1 primary contact at a time.
   """
 
-  use Ecto.Schema
+  use Explorer.Schema
 
   import Ecto.Changeset
 

@@ -12,6 +12,7 @@ defmodule Explorer.Chain.Import do
     Import.Addresses,
     Import.Address.CoinBalances,
     Import.Blocks,
+    Import.Block.Rewards,
     Import.Block.SecondDegreeRelations,
     Import.Transactions,
     Import.Transaction.Forks,
@@ -295,13 +296,13 @@ defmodule Explorer.Chain.Import do
     end)
   end
 
-  def insert_changes_list(changes_list, options) when is_list(changes_list) do
+  def insert_changes_list(repo, changes_list, options) when is_atom(repo) and is_list(changes_list) do
     ecto_schema_module = Keyword.fetch!(options, :for)
 
     timestamped_changes_list = timestamp_changes_list(changes_list, Keyword.fetch!(options, :timestamps))
 
     {_, inserted} =
-      Repo.safe_insert_all(
+      repo.safe_insert_all(
         ecto_schema_module,
         timestamped_changes_list,
         Keyword.delete(options, :for)
