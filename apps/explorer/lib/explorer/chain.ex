@@ -2156,4 +2156,24 @@ defmodule Explorer.Chain do
 
     Repo.all(query, timeout: :infinity)
   end
+
+  @doc """
+  Combined block reward from all the fees.
+  """
+  @spec block_combined_rewards(Block.t()) :: Wei.t()
+  def block_combined_rewards(block) do
+    {:ok, value} =
+      block.rewards
+      |> Enum.reduce(
+        0,
+        fn block_reward, acc ->
+          {:ok, decimal} = Wei.dump(block_reward.reward)
+
+          Decimal.add(decimal, acc)
+        end
+      )
+      |> Wei.cast()
+
+    value
+  end
 end

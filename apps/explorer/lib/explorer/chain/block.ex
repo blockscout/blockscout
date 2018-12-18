@@ -7,7 +7,8 @@ defmodule Explorer.Chain.Block do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, Block.SecondDegreeRelation, Gas, Hash, Transaction}
+  alias Explorer.Chain.{Address, Gas, Hash, Transaction}
+  alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
 
   @required_attrs ~w(consensus difficulty gas_limit gas_used hash miner_hash nonce number parent_hash size timestamp
                      total_difficulty)a
@@ -87,6 +88,8 @@ defmodule Explorer.Chain.Block do
     has_many(:uncles, through: [:uncle_relations, :uncle])
 
     has_many(:transactions, Transaction)
+
+    has_many(:rewards, Reward, foreign_key: :block_hash)
   end
 
   def changeset(%__MODULE__{} = block, attrs) do
