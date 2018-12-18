@@ -11,8 +11,11 @@ defmodule Indexer.PendingTransaction.Fetcher do
 
   import EthereumJSONRPC, only: [fetch_pending_transactions: 1]
 
+  alias Ecto.Changeset
   alias Explorer.Chain
   alias Indexer.{AddressExtraction, PendingTransaction}
+
+  @chunk_size 250
 
   # milliseconds
   @default_interval 1_000
@@ -106,17 +109,9 @@ defmodule Indexer.PendingTransaction.Fetcher do
 
     case fetch_pending_transactions(json_rpc_named_arguments) do
       {:ok, transactions_params} ->
-        addresses_params = AddressExtraction.extract_addresses(%{transactions: transactions_params}, pending: true)
-
-        # There's no need to queue up fetching the address balance since theses are pending transactions and cannot have
-        # affected the address balance yet since address balance is a balance at a give block and these transactions are
-        # blockless.
-        {:ok, _} =
-          Chain.import(%{
-            addresses: %{params: addresses_params},
-            broadcast: :realtime,
-            transactions: %{params: transactions_params, on_conflict: :nothing}
-          })
+        transactions_params
+        |> Stream.chunk_every(@chunk_size)
+        |> Enum.each(&import_chunk/1)
 
       :ignore ->
         :ok
@@ -124,6 +119,33 @@ defmodule Indexer.PendingTransaction.Fetcher do
       {:error, :timeout} ->
         Logger.error("timeout")
 
+        :ok
+    end
+  end
+
+  defp import_chunk(transactions_params) do
+    addresses_params = AddressExtraction.extract_addresses(%{transactions: transactions_params}, pending: true)
+
+    # There's no need to queue up fetching the address balance since theses are pending transactions and cannot have
+    # affected the address balance yet since address balance is a balance at a give block and these transactions are
+    # blockless.
+    case Chain.import(%{
+           addresses: %{params: addresses_params, on_conflict: :nothing},
+           broadcast: :realtime,
+           transactions: %{params: transactions_params, on_conflict: :nothing}
+         }) do
+      {:ok, _} ->
+        :ok
+
+      {:error, [%Changeset{} | _] = changesets} ->
+        Logger.error(fn -> ["Failed to validate: ", inspect(changesets)] end, step: :import)
+        :ok
+
+      {:error, reason} ->
+        Logger.error(fn -> inspect(reason) end, step: :import)
+
+      {:error, step, failed_value, _changes_so_far} ->
+        Logger.error(fn -> ["Failed to import: ", inspect(failed_value)] end, step: step)
         :ok
     end
   end
