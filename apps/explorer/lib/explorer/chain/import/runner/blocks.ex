@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Import.Blocks do
+defmodule Explorer.Chain.Import.Runner.Blocks do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.Block.t/0`.
   """
@@ -10,21 +10,22 @@ defmodule Explorer.Chain.Import.Blocks do
   alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Block, Import, InternalTransaction, Transaction}
+  alias Explorer.Chain.Import.Runner
 
-  @behaviour Import.Runner
+  @behaviour Runner
 
   # milliseconds
   @timeout 60_000
 
   @type imported :: [Block.t()]
 
-  @impl Import.Runner
+  @impl Runner
   def ecto_schema_module, do: Block
 
-  @impl Import.Runner
+  @impl Runner
   def option_key, do: :blocks
 
-  @impl Import.Runner
+  @impl Runner
   def imported_table_row do
     %{
       value_type: "[#{ecto_schema_module()}.t()]",
@@ -32,7 +33,7 @@ defmodule Explorer.Chain.Import.Blocks do
     }
   end
 
-  @impl Import.Runner
+  @impl Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) do
     insert_options =
       options
@@ -47,7 +48,7 @@ defmodule Explorer.Chain.Import.Blocks do
     |> Multi.run(:derive_transaction_forks, fn repo, _ ->
       derive_transaction_forks(%{
         repo: repo,
-        timeout: options[Import.Transaction.Forks.option_key()][:timeout] || Import.Transaction.Forks.timeout(),
+        timeout: options[Runner.Transaction.Forks.option_key()][:timeout] || Runner.Transaction.Forks.timeout(),
         timestamps: timestamps,
         where_forked: where_forked
       })
@@ -56,7 +57,7 @@ defmodule Explorer.Chain.Import.Blocks do
     |> Multi.run(:fork_transactions, fn repo, _ ->
       fork_transactions(%{
         repo: repo,
-        timeout: options[Import.Transactions.option_key()][:timeout] || Import.Transactions.timeout(),
+        timeout: options[Runner.Transactions.option_key()][:timeout] || Runner.Transactions.timeout(),
         timestamps: timestamps,
         where_forked: where_forked
       })
@@ -73,8 +74,8 @@ defmodule Explorer.Chain.Import.Blocks do
         blocks,
         %{
           timeout:
-            options[Import.Block.SecondDegreeRelations.option_key()][:timeout] ||
-              Import.Block.SecondDegreeRelations.timeout(),
+            options[Runner.Block.SecondDegreeRelations.option_key()][:timeout] ||
+              Runner.Block.SecondDegreeRelations.timeout(),
           timestamps: timestamps
         }
       )
@@ -106,7 +107,7 @@ defmodule Explorer.Chain.Import.Blocks do
     )
   end
 
-  @impl Import.Runner
+  @impl Runner
   def timeout, do: @timeout
 
   # sobelow_skip ["SQL.Query"]
@@ -182,7 +183,7 @@ defmodule Explorer.Chain.Import.Blocks do
   end
 
   @spec insert(Repo.t(), [map()], %{
-          optional(:on_conflict) => Import.Runner.on_conflict(),
+          optional(:on_conflict) => Runner.on_conflict(),
           required(:timeout) => timeout,
           required(:timestamps) => Import.timestamps()
         }) :: {:ok, [Block.t()]} | {:error, [Changeset.t()]}

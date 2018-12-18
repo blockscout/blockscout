@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Import.Address.CurrentTokenBalances do
+defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.Address.CurrentTokenBalance.t/0`.
   """

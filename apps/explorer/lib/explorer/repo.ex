@@ -13,6 +13,22 @@ defmodule Explorer.Repo do
     {:ok, Keyword.put(opts, :url, System.get_env("DATABASE_URL"))}
   end
 
+  def logged_transaction(fun_or_multi, opts \\ []) do
+    transaction_id = :erlang.unique_integer([:positive])
+
+    Explorer.Logger.metadata(
+      fn ->
+        {microseconds, value} = :timer.tc(__MODULE__, :transaction, [fun_or_multi, opts])
+
+        milliseconds = div(microseconds, 100) / 10.0
+        Logger.debug(["transaction_time=", :io_lib_format.fwrite_g(milliseconds), ?m, ?s])
+
+        value
+      end,
+      transaction_id: transaction_id
+    )
+  end
+
   @doc """
   Chunks elements into multiple `insert_all`'s to avoid DB driver param limits.
 

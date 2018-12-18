@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Import.InternalTransactions do
+defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.InternalTransactions.t/0`.
   """
@@ -7,10 +7,11 @@ defmodule Explorer.Chain.Import.InternalTransactions do
 
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Hash, Import, InternalTransaction, Transaction}
+  alias Explorer.Chain.Import.Runner
 
   import Ecto.Query, only: [from: 2]
 
-  @behaviour Import.Runner
+  @behaviour Runner
 
   # milliseconds
   @timeout 60_000
@@ -19,13 +20,13 @@ defmodule Explorer.Chain.Import.InternalTransactions do
           %{required(:index) => non_neg_integer(), required(:transaction_hash) => Hash.Full.t()}
         ]
 
-  @impl Import.Runner
+  @impl Runner
   def ecto_schema_module, do: InternalTransaction
 
-  @impl Import.Runner
+  @impl Runner
   def option_key, do: :internal_transactions
 
-  @impl Import.Runner
+  @impl Runner
   def imported_table_row do
     %{
       value_type: "[%{index: non_neg_integer(), transaction_hash: Explorer.Chain.Hash.t()}]",
@@ -33,7 +34,7 @@ defmodule Explorer.Chain.Import.InternalTransactions do
     }
   end
 
-  @impl Import.Runner
+  @impl Runner
   def run(multi, changes_list, %{timestamps: timestamps} = options) when is_map(options) do
     insert_options =
       options
@@ -42,7 +43,7 @@ defmodule Explorer.Chain.Import.InternalTransactions do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    transactions_timeout = options[Import.Transactions.option_key()][:timeout] || Import.Transactions.timeout()
+    transactions_timeout = options[Runner.Transactions.option_key()][:timeout] || Runner.Transactions.timeout()
 
     update_transactions_options = %{timeout: transactions_timeout, timestamps: timestamps}
 
@@ -57,11 +58,11 @@ defmodule Explorer.Chain.Import.InternalTransactions do
     end)
   end
 
-  @impl Import.Runner
+  @impl Runner
   def timeout, do: @timeout
 
   @spec insert(Repo.t(), [map], %{
-          optional(:on_conflict) => Import.Runner.on_conflict(),
+          optional(:on_conflict) => Runner.on_conflict(),
           required(:timeout) => timeout,
           required(:timestamps) => Import.timestamps()
         }) ::
