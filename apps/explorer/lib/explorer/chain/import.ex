@@ -53,7 +53,7 @@ defmodule Explorer.Chain.Import do
 
   @type all_result ::
           {:ok, %{unquote_splicing(quoted_runner_imported)}}
-          | {:error, [Changeset.t()]}
+          | {:error, [Changeset.t()] | :timeout}
           | {:error, step :: Ecto.Multi.name(), failed_value :: any(),
              changes_so_far :: %{optional(Ecto.Multi.name()) => any()}}
 
@@ -334,6 +334,12 @@ defmodule Explorer.Chain.Import do
         {:error, _, _, _} = error -> {:halt, error}
       end
     end)
+  rescue
+    exception in DBConnection.ConnectionError ->
+      case Exception.message(exception) do
+        "tcp recv: closed" <> _ -> {:error, :timeout}
+        _ -> reraise exception, __STACKTRACE__
+      end
   end
 
   defp import_transaction(multi, options) when is_map(options) do
