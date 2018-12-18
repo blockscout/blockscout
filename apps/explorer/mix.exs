@@ -101,7 +101,7 @@ defmodule Explorer.Mixfile do
         github: "deadtrickster/prometheus-ecto", ref: "650a403183f6a2fb6b682d7fbcba8bf9d24fe1e4"
       },
       # bypass optional dependency
-      {:plug_cowboy, "~> 1.0", only: :test},
+      {:plug_cowboy, "~> 1.0", only: [:dev, :test]},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
       # Tracing
       {:spandex, github: "spandex-project/spandex", branch: "allow-setting-trace-key", override: true},
