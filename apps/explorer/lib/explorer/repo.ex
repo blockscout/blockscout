@@ -54,6 +54,9 @@ defmodule Explorer.Repo do
                 to_string(kind),
                 " using options because of error.\n",
                 "\n",
+                "Chunk Size: ",
+                chunk |> length() |> to_string(),
+                "\n",
                 "Chunk:\n",
                 "\n",
                 inspect(chunk, limit: :infinity, printable_limit: :infinity),
@@ -66,7 +69,7 @@ defmodule Explorer.Repo do
                 "\n",
                 "Exception:\n",
                 "\n",
-                Exception.format(:error, exception)
+                Exception.format(:error, exception, __STACKTRACE__)
               ]
             end)
 

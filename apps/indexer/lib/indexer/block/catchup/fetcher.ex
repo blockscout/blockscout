@@ -187,10 +187,15 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
         {:ok, inserted: inserted}
 
-      {:error, {:import, [%Changeset{} | _] = changesets}} = error ->
-        Logger.error(fn ->
-          ["failed to validate: ", inspect(changesets), ". Retrying."]
-        end)
+      {:error, {:import = step, [%Changeset{} | _] = changesets}} = error ->
+        Logger.error(fn -> ["failed to validate: ", inspect(changesets), ". Retrying."] end, step: step)
+
+        push_back(sequence, range)
+
+        error
+
+      {:error, {:import = step, reason}} = error ->
+        Logger.error(fn -> [inspect(reason), ". Retrying."] end, step: step)
 
         push_back(sequence, range)
 
