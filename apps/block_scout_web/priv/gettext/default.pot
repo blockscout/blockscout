@@ -13,13 +13,6 @@ msgstr[0] ""
 msgstr[1] ""
 
 #, elixir-format
-#: lib/block_scout_web/views/address_token_view.ex:5
-msgid "%{count} transfer"
-msgid_plural "%{count} transfers"
-msgstr[0] ""
-msgstr[1] ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/address/_metatags.html.eex:3
 msgid "%{address} - %{subnetwork} Explorer"
 msgstr ""
