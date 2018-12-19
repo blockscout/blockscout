@@ -47,7 +47,7 @@ defmodule Explorer.Validator.MetadataRetrieverTest do
     expect(
       EthereumJSONRPC.Mox,
       :json_rpc,
-      fn [%{id: id, method: _, params: _}], _options ->
+      fn [%{id: ^id, method: _, params: _}], _options ->
         {:ok,
          [
            %{

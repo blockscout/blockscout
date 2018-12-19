@@ -22,8 +22,6 @@ defmodule Explorer.ChainTest do
     Wei
   }
 
-  alias Explorer.Chain.Block.Reward
-
   alias Explorer.Chain.Supply.ProofOfAuthority
 
   alias Explorer.Counters.{AddressesWithBalanceCounter, TokenHoldersCounter}

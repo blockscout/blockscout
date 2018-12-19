@@ -77,7 +77,13 @@ defmodule Explorer.Chain.Import.Runner.Block.SecondDegreeRelations do
           uncle_fetched_at:
             fragment("LEAST(?, EXCLUDED.uncle_fetched_at)", block_second_degree_relation.uncle_fetched_at)
         ]
-      ]
+      ],
+      where:
+        fragment(
+          "LEAST(?, EXCLUDED.uncle_fetched_at) IS DISTINCT FROM ?",
+          block_second_degree_relation.uncle_fetched_at,
+          block_second_degree_relation.uncle_fetched_at
+        )
     )
   end
 end

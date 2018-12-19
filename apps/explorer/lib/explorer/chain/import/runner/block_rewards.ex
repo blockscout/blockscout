@@ -3,8 +3,6 @@ defmodule Explorer.Chain.Import.Runner.Block.Rewards do
   Bulk imports `t:Explorer.Chain.Block.Reward.t/0`.
   """
 
-  import Ecto.Query, only: [from: 2]
-
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import
@@ -53,27 +51,11 @@ defmodule Explorer.Chain.Import.Runner.Block.Rewards do
       repo,
       changes_list,
       conflict_target: [:address_hash, :address_type, :block_hash],
-      on_conflict: on_conflict(),
+      on_conflict: :nothing,
       for: ecto_schema_module(),
       returning: true,
       timeout: timeout,
       timestamps: timestamps
-    )
-  end
-
-  defp on_conflict do
-    from(
-      block_reward in Reward,
-      update: [
-        set: [
-          address_hash: block_reward.address_hash,
-          address_type: block_reward.address_type,
-          block_hash: block_reward.block_hash,
-          reward: block_reward.reward,
-          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", block_reward.inserted_at),
-          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", block_reward.updated_at)
-        ]
-      ]
     )
   end
 end

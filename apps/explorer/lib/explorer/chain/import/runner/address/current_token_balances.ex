@@ -89,38 +89,14 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
       current_token_balance in CurrentTokenBalance,
       update: [
         set: [
-          block_number:
-            fragment(
-              "CASE WHEN EXCLUDED.block_number > ? THEN EXCLUDED.block_number ELSE ? END",
-              current_token_balance.block_number,
-              current_token_balance.block_number
-            ),
-          inserted_at:
-            fragment(
-              "CASE WHEN EXCLUDED.block_number > ? THEN EXCLUDED.inserted_at ELSE ? END",
-              current_token_balance.block_number,
-              current_token_balance.inserted_at
-            ),
-          updated_at:
-            fragment(
-              "CASE WHEN EXCLUDED.block_number > ? THEN EXCLUDED.updated_at ELSE ? END",
-              current_token_balance.block_number,
-              current_token_balance.updated_at
-            ),
-          value:
-            fragment(
-              "CASE WHEN EXCLUDED.block_number > ? THEN EXCLUDED.value ELSE ? END",
-              current_token_balance.block_number,
-              current_token_balance.value
-            ),
-          value_fetched_at:
-            fragment(
-              "CASE WHEN EXCLUDED.block_number > ? THEN EXCLUDED.value_fetched_at ELSE ? END",
-              current_token_balance.block_number,
-              current_token_balance.value_fetched_at
-            )
+          block_number: fragment("EXCLUDED.block_number"),
+          value: fragment("EXCLUDED.value"),
+          value_fetched_at: fragment("EXCLUDED.value_fetched_at"),
+          inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", current_token_balance.inserted_at),
+          updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", current_token_balance.updated_at)
         ]
-      ]
+      ],
+      where: fragment("? < EXCLUDED.block_number", current_token_balance.block_number)
     )
   end
 end

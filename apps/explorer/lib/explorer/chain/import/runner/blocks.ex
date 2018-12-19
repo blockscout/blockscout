@@ -205,6 +205,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     )
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp default_on_conflict do
     from(
       block in Block,
@@ -225,7 +226,14 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", block.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", block.updated_at)
         ]
-      ]
+      ],
+      where:
+        fragment("EXCLUDED.consensus <> ?", block.consensus) or fragment("EXCLUDED.difficulty <> ?", block.difficulty) or
+          fragment("EXCLUDED.gas_limit <> ?", block.gas_limit) or fragment("EXCLUDED.gas_used <> ?", block.gas_used) or
+          fragment("EXCLUDED.miner_hash <> ?", block.miner_hash) or fragment("EXCLUDED.nonce <> ?", block.nonce) or
+          fragment("EXCLUDED.number <> ?", block.number) or fragment("EXCLUDED.parent_hash <> ?", block.parent_hash) or
+          fragment("EXCLUDED.size <> ?", block.size) or fragment("EXCLUDED.timestamp <> ?", block.timestamp) or
+          fragment("EXCLUDED.total_difficulty <> ?", block.total_difficulty)
     )
   end
 
