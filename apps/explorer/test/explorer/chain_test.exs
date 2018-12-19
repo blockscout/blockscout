@@ -3177,4 +3177,40 @@ defmodule Explorer.ChainTest do
                [block2_with_invalid_consensus.number, block8_with_invalid_consensus.number]
     end
   end
+
+  describe "block_combined_rewards/1" do
+    test "sums the block_rewards values" do
+      block = insert(:block)
+
+      insert(
+        :reward,
+        address_hash: block.miner_hash,
+        block_hash: block.hash,
+        address_type: :validator,
+        reward: Decimal.new(1_000_000_000_000_000_000)
+      )
+
+      insert(
+        :reward,
+        address_hash: block.miner_hash,
+        block_hash: block.hash,
+        address_type: :emission_funds,
+        reward: Decimal.new(1_000_000_000_000_000_000)
+      )
+
+      insert(
+        :reward,
+        address_hash: block.miner_hash,
+        block_hash: block.hash,
+        address_type: :uncle,
+        reward: Decimal.new(1_000_000_000_000_000_000)
+      )
+
+      block = Repo.preload(block, :rewards)
+
+      {:ok, expected_value} = Wei.cast(3_000_000_000_000_000_000)
+
+      assert Chain.block_combined_rewards(block) == expected_value
+    end
+  end
 end

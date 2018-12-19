@@ -32,6 +32,16 @@ config :explorer, Explorer.Tracer,
   adapter: SpandexDatadog.Adapter,
   trace_key: :blockscout
 
+if System.get_env("METADATA_CONTRACT") && System.get_env("VALIDATORS_CONTRACT") do
+  config :explorer, Explorer.Validator.MetadataRetriever,
+    metadata_contract_address: System.get_env("METADATA_CONTRACT"),
+    validators_contract_address: System.get_env("VALIDATORS_CONTRACT")
+
+  config :explorer, Explorer.Validator.MetadataProcessor, enabled: true
+else
+  config :explorer, Explorer.Validator.MetadataProcessor, enabled: false
+end
+
 if System.get_env("SUPPLY_MODULE") == "TransactionAndLog" do
   config :explorer, supply: Explorer.Chain.Supply.TransactionAndLog
 end
@@ -48,7 +58,7 @@ config :logger, :explorer,
   format: "$dateT$time $metadata[$level] $message\n",
   metadata:
     ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
-       block_number step count error_count shrunk)a,
+       block_number step count error_count shrunk import_id transaction_id)a,
   metadata_filter: [application: :explorer]
 
 config :spandex_ecto, SpandexEcto.EctoLogger,

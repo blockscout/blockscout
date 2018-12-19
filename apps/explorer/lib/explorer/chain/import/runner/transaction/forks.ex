@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Import.Transaction.Forks do
+defmodule Explorer.Chain.Import.Runner.Transaction.Forks do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.Transaction.Fork.t/0`.
   """
@@ -80,7 +80,8 @@ defmodule Explorer.Chain.Import.Transaction.Forks do
         set: [
           hash: fragment("EXCLUDED.hash")
         ]
-      ]
+      ],
+      where: fragment("EXCLUDED.hash <> ?", transaction_fork.hash)
     )
   end
 end

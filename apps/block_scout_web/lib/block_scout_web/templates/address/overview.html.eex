@@ -14,6 +14,13 @@
                 <i class="fas fa-qrcode"></i>
               </button>
             </span>
+            <%= if validator_metadata = primary_validator_metadata(@address) do %>
+              <span data-toggle="modal" data-target="#validatorModal">
+                <button type="button" class="icon-link"  data-toggle="tooltip" data-placement="top" title="<%= gettext("Validator Info") %>" aria-label="<%= gettext("Show Validator Info") %>">
+                  <i class="fas fa-address-card"></i>
+                </button>
+              </span>
+            <% end %>
           </div>
           <h1 class="card-title"><%= address_title(@address) %> <%= gettext "Details" %> </h1>
           <h3 class="<%= if BlockScoutWeb.AddressView.contract?(@address) do %>contract-address<% end %>" data-test="address_detail_hash"><%= @address.hash %></h3>
@@ -65,7 +72,7 @@
   </div>
 </section>
 
-<!-- Modal -->
+<!-- Modal QR -->
 <div class="modal fade" id="qrModal" tabindex="-1" role="dialog" aria-labelledby="qrModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-sm" role="document">
     <div class="modal-content">
@@ -84,3 +91,8 @@
     </div>
   </div>
 </div>
+
+<!-- Modal Validator -->
+<%= if validator_metadata do %>
+  <%= render BlockScoutWeb.AddressView, "_validator_metadata_modal.html", address_name: address_name, validator_metadata: validator_metadata %>
+<% end %>

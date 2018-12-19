@@ -1,8 +1,8 @@
-defmodule Explorer.Chain.Import.Address.CurrentTokenBalancesTest do
+defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
   use Explorer.DataCase
 
   alias Explorer.Chain.Address.CurrentTokenBalance
-  alias Explorer.Chain.Import.Address.CurrentTokenBalances
+  alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
   alias Explorer.Repo
 
   describe "insert/2" do

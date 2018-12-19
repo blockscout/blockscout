@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Import.Address.CoinBalances do
+defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.Address.CoinBalance.t/0`.
   """
@@ -93,8 +93,6 @@ defmodule Explorer.Chain.Import.Address.CoinBalances do
       balance in CoinBalance,
       update: [
         set: [
-          inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", balance.inserted_at),
-          updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", balance.updated_at),
           value:
             fragment(
               """
@@ -120,9 +118,14 @@ defmodule Explorer.Chain.Import.Address.CoinBalances do
               balance.value_fetched_at,
               balance.value_fetched_at,
               balance.value_fetched_at
-            )
+            ),
+          inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", balance.inserted_at),
+          updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", balance.updated_at)
         ]
-      ]
+      ],
+      where:
+        fragment("EXCLUDED.value IS NOT NULL") and
+          (is_nil(balance.value_fetched_at) or fragment("EXCLUDED.value_fetched_at > ?", balance.value_fetched_at))
     )
   end
 end

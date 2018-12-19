@@ -1,0 +1,41 @@
+  <div class="modal fade" id="validatorModal" tabindex="-1" role="dialog" aria-labelledby="validatorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title" id="validatorModalLabel"><%= gettext"Validator Data" %></h2>
+        </div>
+        <div class="modal-body">
+          <h1 class="text-center"><%= @address_name %></h1>
+          <div class="row mt-2">
+            <div class="col-sm-4 text-right text-muted"><%= gettext"License ID" %></div>
+            <div class="col-sm-8">
+              <%= @validator_metadata["license_id"] %>
+            </div>
+          </div>
+          <div class="row mt-2">
+            <div class="col-sm-4 text-right text-muted"><%= gettext"Address" %></div>
+            <div class="col-sm-8">
+             <%= @validator_metadata["address"] %>,
+             <%= @validator_metadata["state"] %>,
+             <%= @validator_metadata["zipcode"] %>
+            </div>
+          </div>
+          <div class="row mt-2">
+            <div class="col-sm-4 text-right text-muted"><%= gettext"License Expires" %></div>
+            <div class="col-sm-8">
+             <%= format_datetime_string(@validator_metadata["expiration_date"]) %>
+            </div>
+          </div>
+          <div class="row mt-2">
+            <div class="col-sm-4 text-right text-muted"><%= gettext"Validator Creation Date" %></div>
+            <div class="col-sm-8">
+              <%= format_datetime_string(@validator_metadata["created_date"]) %>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-dismiss="modal"><%= gettext "Close" %></button>
+        </div>
+      </div>
+    </div>
+  </div>

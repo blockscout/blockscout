@@ -8,6 +8,7 @@ defmodule Indexer.Block.Uncle.Fetcher do
 
   require Logger
 
+  alias Ecto.Changeset
   alias EthereumJSONRPC.Blocks
   alias Explorer.Chain
   alias Explorer.Chain.Hash
@@ -117,6 +118,16 @@ defmodule Indexer.Block.Uncle.Fetcher do
          }) do
       {:ok, _} ->
         retry(errors)
+
+      {:error, {:import = step, [%Changeset{} | _] = changesets}} ->
+        Logger.error(fn -> ["Failed to validate: ", inspect(changesets)] end, step: step)
+
+        {:retry, original_entries}
+
+      {:error, {:import = step, reason}} ->
+        Logger.error(fn -> inspect(reason) end, step: step)
+
+        {:retry, original_entries}
 
       {:error, step, failed_value, _changes_so_far} ->
         Logger.error(fn -> ["failed to import: ", inspect(failed_value)] end,

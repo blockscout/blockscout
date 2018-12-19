@@ -13,13 +13,6 @@ msgstr[0] ""
 msgstr[1] ""
 
 #, elixir-format
-#: lib/block_scout_web/views/address_token_view.ex:5
-msgid "%{count} transfer"
-msgid_plural "%{count} transfers"
-msgstr[0] ""
-msgstr[1] ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/address/_metatags.html.eex:3
 msgid "%{address} - %{subnetwork} Explorer"
 msgstr ""
@@ -104,6 +97,7 @@ msgid "Action"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:16
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:15
 #: lib/block_scout_web/views/address_view.ex:92
 msgid "Address"
@@ -195,10 +189,10 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:40
 #: lib/block_scout_web/templates/address/_tabs.html.eex:103
-#: lib/block_scout_web/templates/address/overview.html.eex:37
+#: lib/block_scout_web/templates/address/overview.html.eex:44
 #: lib/block_scout_web/templates/address_validation/index.html.eex:30
 #: lib/block_scout_web/templates/address_validation/index.html.eex:57
-#: lib/block_scout_web/views/address_view.ex:225
+#: lib/block_scout_web/views/address_view.ex:253
 msgid "Blocks Validated"
 msgstr ""
 
@@ -214,8 +208,9 @@ msgid "Clear"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:74
-#: lib/block_scout_web/templates/address/overview.html.eex:82
+#: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:37
+#: lib/block_scout_web/templates/address/overview.html.eex:81
+#: lib/block_scout_web/templates/address/overview.html.eex:89
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:84
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:92
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:94
@@ -229,7 +224,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_validation/index.html.eex:39
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:119
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:141
-#: lib/block_scout_web/views/address_view.ex:222
+#: lib/block_scout_web/views/address_view.ex:250
 msgid "Code"
 msgstr ""
 
@@ -347,7 +342,7 @@ msgid "Copyright %{year} POA"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:43
+#: lib/block_scout_web/templates/address/overview.html.eex:50
 msgid "Created by"
 msgstr ""
 
@@ -370,7 +365,7 @@ msgid "Description"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:18
+#: lib/block_scout_web/templates/address/overview.html.eex:25
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:120
 msgid "Details"
 msgstr ""
@@ -455,14 +450,16 @@ msgid "Gas"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/_tile.html.eex:48
-#: lib/block_scout_web/templates/block/overview.html.eex:126
+#: lib/block_scout_web/templates/block/_tile.html.eex:57
+#: lib/block_scout_web/templates/block/overview.html.eex:102
+#: lib/block_scout_web/templates/block/overview.html.eex:157
 msgid "Gas Limit"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/_tile.html.eex:53
-#: lib/block_scout_web/templates/block/overview.html.eex:118
+#: lib/block_scout_web/templates/block/_tile.html.eex:62
+#: lib/block_scout_web/templates/block/overview.html.eex:94
+#: lib/block_scout_web/templates/block/overview.html.eex:148
 msgid "Gas Used"
 msgstr ""
 
@@ -472,7 +469,7 @@ msgid "Github"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_view.ex:18
+#: lib/block_scout_web/views/block_view.ex:20
 #: lib/block_scout_web/views/wei_helpers.ex:71
 msgid "Gwei"
 msgstr ""
@@ -511,7 +508,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:14
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:43
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:10
-#: lib/block_scout_web/views/address_view.ex:221
+#: lib/block_scout_web/views/address_view.ex:249
 #: lib/block_scout_web/views/transaction_view.ex:190
 msgid "Internal Transactions"
 msgstr ""
@@ -556,7 +553,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:37
-#: lib/block_scout_web/templates/block/overview.html.eex:99
+#: lib/block_scout_web/templates/block/overview.html.eex:117
 #: lib/block_scout_web/templates/chain/_block.html.eex:14
 msgid "Miner"
 msgstr "Validator"
@@ -713,7 +710,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:13
-#: lib/block_scout_web/templates/address/overview.html.eex:73
+#: lib/block_scout_web/templates/address/overview.html.eex:80
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:13
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:13
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:83
@@ -730,7 +727,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_tabs.html.eex:122
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:33
 #: lib/block_scout_web/templates/tokens/overview/_tabs.html.eex:75
-#: lib/block_scout_web/views/address_view.ex:223
+#: lib/block_scout_web/views/address_view.ex:251
 #: lib/block_scout_web/views/tokens/overview_view.ex:37
 msgid "Read Contract"
 msgstr ""
@@ -928,7 +925,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:12
 #: lib/block_scout_web/templates/address_validation/index.html.eex:11
 #: lib/block_scout_web/templates/address_validation/index.html.eex:19
-#: lib/block_scout_web/views/address_view.ex:219
+#: lib/block_scout_web/views/address_view.ex:247
 msgid "Tokens"
 msgstr ""
 
@@ -989,13 +986,13 @@ msgstr ""
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:35
 #: lib/block_scout_web/templates/chain/show.html.eex:69
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:35
-#: lib/block_scout_web/views/address_view.ex:220
+#: lib/block_scout_web/views/address_view.ex:248
 msgid "Transactions"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tile.html.eex:19
-#: lib/block_scout_web/templates/address/overview.html.eex:33
+#: lib/block_scout_web/templates/address/overview.html.eex:40
 msgid "Transactions sent"
 msgstr ""
 
@@ -1122,7 +1119,7 @@ msgid "Yes"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address/overview.html.eex:49
+#: lib/block_scout_web/templates/address/overview.html.eex:56
 msgid "at"
 msgstr ""
 
@@ -1170,6 +1167,8 @@ msgid "Delegate Call"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/block/_tile.html.eex:48
+#: lib/block_scout_web/templates/chain/_block.html.eex:24
 #: lib/block_scout_web/views/internal_transaction_view.ex:27
 msgid "Reward"
 msgstr ""
@@ -1444,7 +1443,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tabs.html.eex:30
 #: lib/block_scout_web/templates/address/_tabs.html.eex:96
-#: lib/block_scout_web/views/address_view.ex:224
+#: lib/block_scout_web/views/address_view.ex:252
 msgid "Coin Balance History"
 msgstr ""
 
@@ -1476,4 +1475,54 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/block/index.html.eex:21
 msgid "There are no blocks."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:24
+msgid "License Expires"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:10
+msgid "License ID"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/overview.html.eex:19
+msgid "Show Validator Info"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:30
+msgid "Validator Creation Date"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:5
+msgid "Validator Data"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/overview.html.eex:19
+msgid "Validator Info"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/block/overview.html.eex:137
+msgid "Block Rewards"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/block_view.ex:60
+msgid "Emission Reward"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/block_view.ex:56
+msgid "Miner Reward"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/block_view.ex:64
+msgid "Uncle Reward"
 msgstr ""

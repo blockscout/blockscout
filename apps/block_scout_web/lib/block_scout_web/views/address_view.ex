@@ -148,6 +148,34 @@ defmodule BlockScoutWeb.AddressView do
 
   def primary_name(%Address{names: _}), do: nil
 
+  def primary_validator_metadata(%Address{names: [_ | _] = address_names}) do
+    case Enum.find(address_names, &(&1.primary == true)) do
+      %Address.Name{
+        metadata:
+          metadata = %{
+            "license_id" => _,
+            "address" => _,
+            "state" => _,
+            "zipcode" => _,
+            "expiration_date" => _,
+            "created_date" => _
+          }
+      } ->
+        metadata
+
+      _ ->
+        nil
+    end
+  end
+
+  def primary_validator_metadata(%Address{names: _}), do: nil
+
+  def format_datetime_string(unix_date) do
+    unix_date
+    |> DateTime.from_unix!()
+    |> Timex.format!("{M}-{D}-{YYYY}")
+  end
+
   def qr_code(%Address{hash: hash}) do
     hash
     |> to_string()

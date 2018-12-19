@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Import.Addresses do
+defmodule Explorer.Chain.Import.Runner.Addresses do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.Address.t/0`.
   """
@@ -101,7 +101,16 @@ defmodule Explorer.Chain.Import.Addresses do
             ),
           nonce: fragment("GREATEST(EXCLUDED.nonce, ?)", address.nonce)
         ]
-      ]
+      ],
+      # where any of `set`s would make a change
+      # This is so that tuples are only generated when a change would occur
+      where:
+        fragment("COALESCE(?, EXCLUDED.contract_code) IS DISTINCT FROM ?", address.contract_code, address.contract_code) or
+          fragment(
+            "EXCLUDED.fetched_coin_balance_block_number IS NOT NULL AND (? IS NULL OR EXCLUDED.fetched_coin_balance_block_number >= ?)",
+            address.fetched_coin_balance_block_number,
+            address.fetched_coin_balance_block_number
+          ) or fragment("GREATEST(?, EXCLUDED.nonce) IS DISTINCT FROM  ?", address.nonce, address.nonce)
     )
   end
 

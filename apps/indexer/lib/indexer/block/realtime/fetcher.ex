@@ -198,7 +198,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
           ]
         end)
 
-      {:error, {:import, [%Changeset{} | _] = changesets}} ->
+      {:error, {:import = step, [%Changeset{} | _] = changesets}} ->
         params = %{
           changesets: changesets,
           block_number_to_fetch: block_number_to_fetch,
@@ -207,16 +207,22 @@ defmodule Indexer.Block.Realtime.Fetcher do
         }
 
         if retry_fetch_and_import_block(params) == :ignore do
-          Logger.error(fn ->
-            [
-              "failed to validate for block ",
-              to_string(block_number_to_fetch),
-              ": ",
-              inspect(changesets),
-              ".  Block will be retried by catchup indexer."
-            ]
-          end)
+          Logger.error(
+            fn ->
+              [
+                "failed to validate for block ",
+                to_string(block_number_to_fetch),
+                ": ",
+                inspect(changesets),
+                ".  Block will be retried by catchup indexer."
+              ]
+            end,
+            step: step
+          )
         end
+
+      {:error, {:import = step, reason}} ->
+        Logger.error(fn -> inspect(reason) end, step: step)
 
       {:error, {step, reason}} ->
         Logger.error(

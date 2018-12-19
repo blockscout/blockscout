@@ -103,6 +103,27 @@ describe('RECEIVED_NEW_BLOCK', () => {
         '<div data-block-number="4"></div>'
     ])
   })
+  test('replaces duplicated block older than last one', () => {
+    const state = Object.assign({}, initialState, {
+      items: [
+        '<div data-block-number="5"></div>',
+        '<div data-block-number="4"></div>'
+      ],
+      blockType: 'block'
+    })
+    const action = {
+      type: 'RECEIVED_NEW_BLOCK',
+      msg: {
+        blockHtml: '<div data-block-number="4" class="new"></div>',
+      }
+    }
+    const output = reducer(state, action)
+
+    expect(output.items).toEqual([
+        '<div data-block-number="5"></div>',
+        '<div data-block-number="4" class="new"></div>'
+    ])
+  })
   test('skips if new block height is lower than lowest on page', () => {
     const state = Object.assign({}, initialState, {
       items: [

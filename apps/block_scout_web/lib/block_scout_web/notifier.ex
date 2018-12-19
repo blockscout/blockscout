@@ -95,10 +95,8 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event(_), do: nil
 
   defp broadcast_address_coin_balance(%{address_hash: address_hash, block_number: block_number}) do
-    coin_balance = Chain.get_coin_balance(address_hash, block_number)
-
     Endpoint.broadcast("addresses:#{address_hash}", "coin_balance", %{
-      coin_balance: coin_balance
+      block_number: block_number
     })
   end
 
@@ -110,7 +108,7 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   defp broadcast_block(block) do
-    preloaded_block = Repo.preload(block, [[miner: :names], :transactions])
+    preloaded_block = Repo.preload(block, [[miner: :names], :transactions, :rewards])
     average_block_time = Chain.average_block_time()
 
     Endpoint.broadcast("blocks:new_block", "new_block", %{
