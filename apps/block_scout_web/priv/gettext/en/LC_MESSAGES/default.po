@@ -450,14 +450,16 @@ msgid "Gas"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/_tile.html.eex:48
-#: lib/block_scout_web/templates/block/overview.html.eex:126
+#: lib/block_scout_web/templates/block/_tile.html.eex:57
+#: lib/block_scout_web/templates/block/overview.html.eex:102
+#: lib/block_scout_web/templates/block/overview.html.eex:157
 msgid "Gas Limit"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/_tile.html.eex:53
-#: lib/block_scout_web/templates/block/overview.html.eex:118
+#: lib/block_scout_web/templates/block/_tile.html.eex:62
+#: lib/block_scout_web/templates/block/overview.html.eex:94
+#: lib/block_scout_web/templates/block/overview.html.eex:148
 msgid "Gas Used"
 msgstr ""
 
@@ -467,7 +469,7 @@ msgid "Github"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_view.ex:18
+#: lib/block_scout_web/views/block_view.ex:20
 #: lib/block_scout_web/views/wei_helpers.ex:71
 msgid "Gwei"
 msgstr ""
@@ -551,7 +553,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:37
-#: lib/block_scout_web/templates/block/overview.html.eex:99
+#: lib/block_scout_web/templates/block/overview.html.eex:117
 #: lib/block_scout_web/templates/chain/_block.html.eex:14
 msgid "Miner"
 msgstr ""
@@ -1165,6 +1167,8 @@ msgid "Delegate Call"
 msgstr ""
 
 #, elixir-format
+#: lib/block_scout_web/templates/block/_tile.html.eex:48
+#: lib/block_scout_web/templates/chain/_block.html.eex:24
 #: lib/block_scout_web/views/internal_transaction_view.ex:27
 msgid "Reward"
 msgstr ""
@@ -1501,4 +1505,24 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:19
 msgid "Validator Info"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/block/overview.html.eex:137
+msgid "Block Rewards"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/block_view.ex:60
+msgid "Emission Reward"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/block_view.ex:56
+msgid "Miner Reward"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/block_view.ex:64
+msgid "Uncle Reward"
 msgstr ""
