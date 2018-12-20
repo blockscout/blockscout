@@ -16,7 +16,7 @@ defmodule Indexer.SequenceTest do
       {child_pid, child_ref} =
         spawn_monitor(fn ->
           Sequence.start_link(first: 1, step: -1)
-          Process.sleep(5_000)
+          Process.sleep(:timer.seconds(5))
         end)
 
       assert_receive {:DOWN, ^child_ref, :process, ^child_pid,
@@ -27,7 +27,7 @@ defmodule Indexer.SequenceTest do
       {child_pid, child_ref} =
         spawn_monitor(fn ->
           Sequence.start_link(step: -1)
-          Process.sleep(5_000)
+          Process.sleep(:timer.seconds(5))
         end)
 
       assert_receive {:DOWN, ^child_ref, :process, ^child_pid, "either :ranges or :first must be set"}
@@ -47,7 +47,7 @@ defmodule Indexer.SequenceTest do
       {child_pid, child_ref} =
         spawn_monitor(fn ->
           Sequence.start_link(ranges: [1..0], first: 1, step: -1)
-          Process.sleep(5_000)
+          Process.sleep(:timer.seconds(5))
         end)
 
       assert_receive {:DOWN, ^child_ref, :process, ^child_pid,

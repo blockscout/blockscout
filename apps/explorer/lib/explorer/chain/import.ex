@@ -60,7 +60,7 @@ defmodule Explorer.Chain.Import do
   @type timestamps :: %{inserted_at: DateTime.t(), updated_at: DateTime.t()}
 
   # milliseconds
-  @transaction_timeout 240_000
+  @transaction_timeout :timer.minutes(4)
 
   @imported_table_rows @runners
                        |> Stream.map(&Map.put(&1.imported_table_row(), :key, &1.option_key()))

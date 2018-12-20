@@ -21,7 +21,7 @@ config :explorer, Explorer.Counters.BlockValidationCounter, enabled: true, enabl
 
 config :explorer, Explorer.ExchangeRates, enabled: true, store: :ets
 
-config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: 2_000
+config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :timer.seconds(2)
 
 config :explorer, Explorer.Market.History.Cataloger, enabled: true
 
