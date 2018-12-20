@@ -109,6 +109,17 @@ _Additional runtime options:_
 *  Run Phoenix Server with real time indexer
 `iex -S mix phx.server`
 
+### Automating Restarts
+
+By default `blockscout` does not restart if it crashes. To enable automated
+restarts, set the environment variable `HEART_COMMAND` to whatever you run to
+start `blockscout`. You can configure the heart beat timeout, which will change
+how long it will wait before considering the application to be unresponsive. At
+that point, it will kill the current blockscout and execute `HEART_COMMAND`.
+By default a crash dump is not written unless you set `ERL_CRASH_DUMP_SECONDS`
+to a positive or negative integer. See the documentation for
+[heart](http://erlang.org/doc/man/heart.html) for more information.
+
 ### BlockScout Visual Interface
 
 ![BlockScout Example](explorer_example.gif)
