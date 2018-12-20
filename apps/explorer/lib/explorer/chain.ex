@@ -64,6 +64,7 @@ defmodule Explorer.Chain do
           :addresses
           | :address_coin_balances
           | :blocks
+          | :block_rewards
           | :exchange_rate
           | :internal_transactions
           | :logs
