@@ -429,7 +429,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         token_contract_address: contract_address
       )
 
-      insert(:token_balance, address: lincoln, token_contract_address_hash: contract_address.hash)
+      insert(:address_current_token_balance, address: lincoln, token_contract_address_hash: contract_address.hash)
 
       start_supervised!(BlockValidationCounter)
       BlockValidationCounter.consolidate_blocks()

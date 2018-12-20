@@ -13,7 +13,8 @@ defmodule BlockScoutWeb.BlockTransactionController do
              necessity_by_association: %{
                [miner: :names] => :required,
                :uncles => :optional,
-               :nephews => :optional
+               :nephews => :optional,
+               :rewards => :optional
              }
            ) do
       block_transaction_count = Chain.block_to_transaction_count(block)

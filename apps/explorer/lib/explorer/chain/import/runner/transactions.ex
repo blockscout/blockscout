@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Import.Transactions do
+defmodule Explorer.Chain.Import.Runner.Transactions do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.Transaction.t/0`.
   """
@@ -103,7 +103,30 @@ defmodule Explorer.Chain.Import.Transactions do
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", transaction.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", transaction.updated_at)
         ]
-      ]
+      ],
+      where:
+        fragment(
+          "(EXCLUDED.block_hash, EXCLUDED.block_number, EXCLUDED.created_contract_address_hash, EXCLUDED.cumulative_gas_used, EXCLUDED.cumulative_gas_used, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_price, EXCLUDED.gas_used, EXCLUDED.index, EXCLUDED.internal_transactions_indexed_at, EXCLUDED.input, EXCLUDED.nonce, EXCLUDED.r, EXCLUDED.s, EXCLUDED.status, EXCLUDED.to_address_hash, EXCLUDED.v, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          transaction.block_hash,
+          transaction.block_number,
+          transaction.created_contract_address_hash,
+          transaction.cumulative_gas_used,
+          transaction.cumulative_gas_used,
+          transaction.from_address_hash,
+          transaction.gas,
+          transaction.gas_price,
+          transaction.gas_used,
+          transaction.index,
+          transaction.internal_transactions_indexed_at,
+          transaction.input,
+          transaction.nonce,
+          transaction.r,
+          transaction.s,
+          transaction.status,
+          transaction.to_address_hash,
+          transaction.v,
+          transaction.value
+        )
     )
   end
 end

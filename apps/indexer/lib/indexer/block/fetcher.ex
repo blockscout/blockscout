@@ -83,8 +83,7 @@ defmodule Indexer.Block.Fetcher do
   @spec fetch_and_import_range(t, Range.t()) ::
           {:ok, %{inserted: %{}, errors: [EthereumJSONRPC.Transport.error()]}}
           | {:error,
-             {step :: atom(), reason :: term()}
-             | [%Ecto.Changeset{}]
+             {step :: atom(), reason :: [%Ecto.Changeset{}] | term()}
              | {step :: atom(), failed_value :: term(), changes_so_far :: term()}}
   def fetch_and_import_range(
         %__MODULE__{
@@ -146,9 +145,7 @@ defmodule Indexer.Block.Fetcher do
       {:ok, %{inserted: inserted, errors: blocks_errors}}
     else
       {step, {:error, reason}} -> {:error, {step, reason}}
-      {:error, :timeout} = error -> error
-      {:error, changesets} = error when is_list(changesets) -> error
-      {:error, step, failed_value, changes_so_far} -> {:error, {step, failed_value, changes_so_far}}
+      {:import, {:error, step, failed_value, changes_so_far}} -> {:error, {step, failed_value, changes_so_far}}
     end
   end
 

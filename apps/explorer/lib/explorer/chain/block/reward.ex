@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Block.Reward do
   use Explorer.Schema
 
   alias Explorer.Chain.Block.Reward.AddressType
-  alias Explorer.Chain.{Hash, Wei}
+  alias Explorer.Chain.{Address, Block, Hash, Wei}
 
   @required_attrs ~w(address_hash address_type block_hash reward)a
 
@@ -19,18 +19,34 @@ defmodule Explorer.Chain.Block.Reward do
   * `:reward` - Total block reward
   """
   @type t :: %__MODULE__{
+          address: %Ecto.Association.NotLoaded{} | Address.t() | nil,
           address_hash: Hash.Address.t(),
           address_type: AddressType.t(),
+          block: %Ecto.Association.NotLoaded{} | Block.t() | nil,
           block_hash: Hash.Full.t(),
           reward: Wei.t()
         }
 
   @primary_key false
   schema "block_rewards" do
-    field(:address_hash, Hash.Address)
     field(:address_type, AddressType)
-    field(:block_hash, Hash.Full)
     field(:reward, Wei)
+
+    belongs_to(
+      :address,
+      Address,
+      foreign_key: :address_hash,
+      references: :hash,
+      type: Hash.Address
+    )
+
+    belongs_to(
+      :block,
+      Block,
+      foreign_key: :block_hash,
+      references: :hash,
+      type: Hash.Full
+    )
 
     timestamps()
   end

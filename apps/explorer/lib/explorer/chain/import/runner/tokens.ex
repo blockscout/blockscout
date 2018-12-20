@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Import.Tokens do
+defmodule Explorer.Chain.Import.Runner.Tokens do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.Token.t/0`.
   """
@@ -86,7 +86,17 @@ defmodule Explorer.Chain.Import.Tokens do
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", token.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token.updated_at)
         ]
-      ]
+      ],
+      where:
+        fragment(
+          "(EXCLUDED.name, EXCLUDED.symbol, EXCLUDED.total_supply, EXCLUDED.decimals, EXCLUDED.type, EXCLUDED.cataloged) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
+          token.name,
+          token.symbol,
+          token.total_supply,
+          token.decimals,
+          token.type,
+          token.cataloged
+        )
     )
   end
 end

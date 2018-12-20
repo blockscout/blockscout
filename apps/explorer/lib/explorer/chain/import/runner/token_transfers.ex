@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Import.TokenTransfers do
+defmodule Explorer.Chain.Import.Runner.TokenTransfers do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.TokenTransfer.t/0`.
   """
@@ -85,7 +85,16 @@ defmodule Explorer.Chain.Import.TokenTransfers do
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", token_transfer.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token_transfer.updated_at)
         ]
-      ]
+      ],
+      where:
+        fragment(
+          "(EXCLUDED.amount, EXCLUDED.from_address_hash, EXCLUDED.to_address_hash, EXCLUDED.token_contract_address_hash, EXCLUDED.token_id) IS DISTINCT FROM (?, ? ,? , ?, ?)",
+          token_transfer.amount,
+          token_transfer.from_address_hash,
+          token_transfer.to_address_hash,
+          token_transfer.token_contract_address_hash,
+          token_transfer.token_id
+        )
     )
   end
 end

@@ -16,9 +16,10 @@ defmodule Explorer.Chain.Address.Token do
   import Ecto.Query
 
   alias Explorer.{Chain, PagingOptions}
-  alias Explorer.Chain.{Address, Address.TokenBalance, Hash}
+  alias Explorer.Chain.{Address, Hash}
+  alias Explorer.Chain.Address.CurrentTokenBalance
 
-  @enforce_keys [:contract_address_hash, :inserted_at, :name, :symbol, :balance, :decimals, :type, :transfers_count]
+  @enforce_keys [:contract_address_hash, :inserted_at, :name, :symbol, :balance, :decimals, :type]
   defstruct @enforce_keys
 
   @default_paging_options %PagingOptions{page_size: 50}
@@ -31,20 +32,18 @@ defmodule Explorer.Chain.Address.Token do
   def list_address_tokens_with_balance(address_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
-    Chain.Token
-    |> Chain.Token.join_with_transfers()
-    |> join_with_last_balance(address_hash)
-    |> order_filter_and_group(address_hash)
+    address_hash
+    |> join_with_last_balance()
+    |> order_filter_and_group()
     |> page_tokens(paging_options)
     |> limit(^paging_options.page_size)
   end
 
-  defp order_filter_and_group(query, address_hash) do
+  defp order_filter_and_group(query) do
     from(
-      [token, transfer, balance] in query,
+      [token, balance] in query,
       order_by: fragment("? DESC, LOWER(?) ASC NULLS LAST", token.type, token.name),
-      where:
-        (transfer.to_address_hash == ^address_hash or transfer.from_address_hash == ^address_hash) and balance.value > 0,
+      where: balance.value > 0,
       group_by: [token.name, token.symbol, balance.value, token.type, token.contract_address_hash],
       select: %Address.Token{
         contract_address_hash: token.contract_address_hash,
@@ -53,24 +52,21 @@ defmodule Explorer.Chain.Address.Token do
         symbol: token.symbol,
         balance: balance.value,
         decimals: max(token.decimals),
-        type: token.type,
-        transfers_count: count(token.contract_address_hash)
+        type: token.type
       }
     )
   end
 
-  defp join_with_last_balance(queryable, address_hash) do
+  defp join_with_last_balance(address_hash) do
     last_balance_query =
       from(
-        tb in TokenBalance,
+        tb in CurrentTokenBalance,
         where: tb.address_hash == ^address_hash,
-        distinct: :token_contract_address_hash,
-        order_by: [desc: :block_number],
         select: %{value: tb.value, token_contract_address_hash: tb.token_contract_address_hash}
       )
 
     from(
-      t in queryable,
+      t in Chain.Token,
       join: tb in subquery(last_balance_query),
       on: tb.token_contract_address_hash == t.contract_address_hash
     )

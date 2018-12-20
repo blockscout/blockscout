@@ -33,14 +33,14 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
         |> insert(name: "token2")
 
       insert(
-        :token_balance,
+        :address_current_token_balance,
         address: address,
         token_contract_address_hash: token1.contract_address_hash,
         value: 1000
       )
 
       insert(
-        :token_balance,
+        :address_current_token_balance,
         address: address,
         token_contract_address_hash: token2.contract_address_hash,
         value: 0
@@ -82,13 +82,12 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
           token = insert(:token, name: "A Token#{i}", type: "ERC-20")
 
           insert(
-            :token_balance,
+            :address_current_token_balance,
             token_contract_address_hash: token.contract_address_hash,
             address: address,
             value: 1000
           )
 
-          insert(:token_transfer, token_contract_address: token.contract_address, from_address: address)
           acc ++ [token.name]
         end)
         |> Enum.sort()
@@ -96,21 +95,21 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
       token = insert(:token, name: "Another Token", type: "ERC-721")
 
       insert(
-        :token_balance,
+        :address_current_token_balance,
         token_contract_address_hash: token.contract_address_hash,
         address: address,
         value: 1000
       )
 
-      insert(:token_transfer, token: token, from_address: address)
-      %Token{name: name, type: type} = token
+      %Token{name: name, type: type, inserted_at: inserted_at} = token
 
       start_supervised!(BlockValidationCounter)
 
       conn =
         get(conn, address_token_path(BlockScoutWeb.Endpoint, :index, address.hash), %{
-          "name" => name,
-          "type" => type
+          "token_name" => name,
+          "token_type" => type,
+          "token_inserted_at" => inserted_at
         })
 
       actual_tokens =
@@ -128,7 +127,7 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
         token = insert(:token, name: "A Token#{i}", type: "ERC-20")
 
         insert(
-          :token_balance,
+          :address_current_token_balance,
           token_contract_address_hash: token.contract_address_hash,
           address: address,
           value: 1000

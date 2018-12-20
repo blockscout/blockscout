@@ -1,4 +1,4 @@
-defmodule Explorer.Chain.Import.Address.TokenBalances do
+defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.Address.TokenBalance.t/0`.
   """
@@ -80,36 +80,16 @@ defmodule Explorer.Chain.Import.Address.TokenBalances do
       token_balance in TokenBalance,
       update: [
         set: [
+          value: fragment("EXCLUDED.value"),
+          value_fetched_at: fragment("EXCLUDED.value_fetched_at"),
           inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", token_balance.inserted_at),
-          updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", token_balance.updated_at),
-          value:
-            fragment(
-              """
-              CASE WHEN EXCLUDED.value IS NOT NULL AND (? IS NULL OR EXCLUDED.value_fetched_at > ?) THEN
-                     EXCLUDED.value
-                   ELSE
-                     ?
-              END
-              """,
-              token_balance.value_fetched_at,
-              token_balance.value_fetched_at,
-              token_balance.value
-            ),
-          value_fetched_at:
-            fragment(
-              """
-              CASE WHEN EXCLUDED.value IS NOT NULL AND (? IS NULL OR EXCLUDED.value_fetched_at > ?) THEN
-                     EXCLUDED.value_fetched_at
-                   ELSE
-                     ?
-              END
-              """,
-              token_balance.value_fetched_at,
-              token_balance.value_fetched_at,
-              token_balance.value_fetched_at
-            )
+          updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", token_balance.updated_at)
         ]
-      ]
+      ],
+      where:
+        fragment("EXCLUDED.value IS NOT NULL") and
+          (is_nil(token_balance.value_fetched_at) or
+             fragment("? < EXCLUDED.value_fetched_at", token_balance.value_fetched_at))
     )
   end
 end

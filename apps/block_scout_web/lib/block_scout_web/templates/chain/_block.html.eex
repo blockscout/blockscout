@@ -18,5 +18,13 @@
         address: @block.miner,
         contract: false %>
     </span>
+
+    <%= if BlockScoutWeb.BlockView.show_reward?(@block.rewards) do %>
+      <span class="text-truncate">
+        <%= gettext "Reward" %>
+
+        <%= BlockScoutWeb.BlockView.combined_rewards_value(@block) %>
+      </span>
+    <% end %>
   </div>
 </div>
