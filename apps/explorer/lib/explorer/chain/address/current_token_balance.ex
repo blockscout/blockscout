@@ -1,9 +1,13 @@
 defmodule Explorer.Chain.Address.CurrentTokenBalance do
   @moduledoc """
   Represents the current token balance from addresses according to the last block.
+
+  In this table we can see only the last balance from addresses. If you want to see the history of
+  token balances look at the `Address.TokenBalance` instead.
   """
 
-  use Ecto.Schema
+  use Explorer.Schema
+
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2, limit: 2, order_by: 3, preload: 2, where: 3]
 
@@ -34,7 +38,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   schema "address_current_token_balances" do
     field(:value, :decimal)
     field(:block_number, :integer)
-    field(:value_fetched_at, :utc_datetime)
+    field(:value_fetched_at, :utc_datetime_usec)
 
     belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address)
 
@@ -85,6 +89,18 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     |> order_by([tb], desc: :value)
     |> page_token_balances(paging_options)
     |> limit(^paging_options.page_size)
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch the current token balances of the given address.
+  """
+  def last_token_balances(address_hash) do
+    from(
+      tb in __MODULE__,
+      where: tb.address_hash == ^address_hash,
+      where: tb.value > 0,
+      preload: :token
+    )
   end
 
   defp token_holders_query(token_contract_address_hash) do

@@ -9,7 +9,15 @@ defmodule BlockScoutWeb.AddressView do
 
   @dialyzer :no_match
 
-  @tabs ["tokens", "transactions", "internal_transactions", "contracts", "read_contract"]
+  @tabs [
+    "coin_balances",
+    "contracts",
+    "internal_transactions",
+    "read_contract",
+    "tokens",
+    "transactions",
+    "validations"
+  ]
 
   def address_partial_selector(struct_to_render_from, direction, current_address, truncate \\ false)
 
@@ -140,6 +148,34 @@ defmodule BlockScoutWeb.AddressView do
 
   def primary_name(%Address{names: _}), do: nil
 
+  def primary_validator_metadata(%Address{names: [_ | _] = address_names}) do
+    case Enum.find(address_names, &(&1.primary == true)) do
+      %Address.Name{
+        metadata:
+          metadata = %{
+            "license_id" => _,
+            "address" => _,
+            "state" => _,
+            "zipcode" => _,
+            "expiration_date" => _,
+            "created_date" => _
+          }
+      } ->
+        metadata
+
+      _ ->
+        nil
+    end
+  end
+
+  def primary_validator_metadata(%Address{names: _}), do: nil
+
+  def format_datetime_string(unix_date) do
+    unix_date
+    |> DateTime.from_unix!()
+    |> Timex.format!("{M}-{D}-{YYYY}")
+  end
+
   def qr_code(%Address{hash: hash}) do
     hash
     |> to_string()
@@ -213,6 +249,8 @@ defmodule BlockScoutWeb.AddressView do
   defp tab_name(["internal_transactions"]), do: gettext("Internal Transactions")
   defp tab_name(["contracts"]), do: gettext("Code")
   defp tab_name(["read_contract"]), do: gettext("Read Contract")
+  defp tab_name(["coin_balances"]), do: gettext("Coin Balance History")
+  defp tab_name(["validations"]), do: gettext("Blocks Validated")
 
   def short_hash(%Address{hash: hash}) do
     <<

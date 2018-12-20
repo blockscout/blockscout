@@ -6,5 +6,8 @@ defmodule Explorer.ExchangeRates.Source.NoOpSource do
   @behaviour Source
 
   @impl Source
-  def fetch_exchange_rates, do: {:ok, []}
+  def format_data(_), do: []
+
+  @impl Source
+  def source_url, do: ""
 end

@@ -3,6 +3,12 @@ defmodule Explorer.Counters.BlockValidationCounterTest do
 
   alias Explorer.Counters.BlockValidationCounter
 
+  setup do
+    start_supervised!(BlockValidationCounter)
+
+    :ok
+  end
+
   describe "consolidate/0" do
     test "loads the address' validations consolidated info" do
       address = insert(:address)

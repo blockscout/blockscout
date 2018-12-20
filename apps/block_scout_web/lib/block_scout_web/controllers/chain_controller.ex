@@ -10,7 +10,7 @@ defmodule BlockScoutWeb.ChainController do
     blocks =
       [paging_options: %PagingOptions{page_size: 4}]
       |> Chain.list_blocks()
-      |> Repo.preload([[miner: :names], :transactions])
+      |> Repo.preload([[miner: :names], :transactions, :rewards])
 
     transaction_estimated_count = Chain.transaction_estimated_count()
 

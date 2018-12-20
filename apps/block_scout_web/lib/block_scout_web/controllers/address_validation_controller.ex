@@ -23,7 +23,8 @@ defmodule BlockScoutWeb.AddressValidationController do
             necessity_by_association: %{
               miner: :required,
               nephews: :optional,
-              transactions: :optional
+              transactions: :optional,
+              rewards: :optional
             }
           ],
           paging_options(params)

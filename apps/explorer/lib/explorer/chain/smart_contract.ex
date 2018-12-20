@@ -45,10 +45,15 @@ defmodule Explorer.Chain.SmartContract do
     |> unique_constraint(:address_hash)
   end
 
-  def invalid_contract_changeset(%__MODULE__{} = smart_contract, attrs) do
+  def invalid_contract_changeset(%__MODULE__{} = smart_contract, attrs, error) do
     smart_contract
     |> cast(attrs, [:name, :compiler_version, :optimization, :contract_source_code, :address_hash])
     |> validate_required([:name, :compiler_version, :optimization, :address_hash])
-    |> add_error(:contract_source_code, "there was an error validating your contract, please try again.")
+    |> add_error(:contract_source_code, error_message(error))
   end
+
+  defp error_message(:compilation), do: "There was an error compiling your contract."
+  defp error_message(:generated_bytecode), do: "Bytecode does not match, please try again."
+  defp error_message(:name), do: "Wrong contract name, please try again."
+  defp error_message(_), do: "There was an error validating your contract, please try again."
 end

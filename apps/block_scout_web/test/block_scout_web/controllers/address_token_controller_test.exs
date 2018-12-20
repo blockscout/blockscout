@@ -1,9 +1,12 @@
 defmodule BlockScoutWeb.AddressTokenControllerTest do
-  use BlockScoutWeb.ConnCase
+  use BlockScoutWeb.ConnCase,
+    # ETS table is shared in `Explorer.Counters.BlockValidationCounter`
+    async: false
 
   import BlockScoutWeb.Router.Helpers, only: [address_token_path: 3]
 
   alias Explorer.Chain.{Token}
+  alias Explorer.Counters.BlockValidationCounter
 
   describe "GET index/2" do
     test "with invalid address hash", %{conn: conn} do
@@ -30,14 +33,14 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
         |> insert(name: "token2")
 
       insert(
-        :token_balance,
+        :address_current_token_balance,
         address: address,
         token_contract_address_hash: token1.contract_address_hash,
         value: 1000
       )
 
       insert(
-        :token_balance,
+        :address_current_token_balance,
         address: address,
         token_contract_address_hash: token2.contract_address_hash,
         value: 0
@@ -56,6 +59,8 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
         from_address: build(:address),
         to_address: address
       )
+
+      start_supervised!(BlockValidationCounter)
 
       conn = get(conn, address_token_path(conn, :index, address))
 
@@ -77,13 +82,12 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
           token = insert(:token, name: "A Token#{i}", type: "ERC-20")
 
           insert(
-            :token_balance,
+            :address_current_token_balance,
             token_contract_address_hash: token.contract_address_hash,
             address: address,
             value: 1000
           )
 
-          insert(:token_transfer, token_contract_address: token.contract_address, from_address: address)
           acc ++ [token.name]
         end)
         |> Enum.sort()
@@ -91,19 +95,21 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
       token = insert(:token, name: "Another Token", type: "ERC-721")
 
       insert(
-        :token_balance,
+        :address_current_token_balance,
         token_contract_address_hash: token.contract_address_hash,
         address: address,
         value: 1000
       )
 
-      insert(:token_transfer, token: token, from_address: address)
-      %Token{name: name, type: type} = token
+      %Token{name: name, type: type, inserted_at: inserted_at} = token
+
+      start_supervised!(BlockValidationCounter)
 
       conn =
         get(conn, address_token_path(BlockScoutWeb.Endpoint, :index, address.hash), %{
-          "name" => name,
-          "type" => type
+          "token_name" => name,
+          "token_type" => type,
+          "token_inserted_at" => inserted_at
         })
 
       actual_tokens =
@@ -121,7 +127,7 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
         token = insert(:token, name: "A Token#{i}", type: "ERC-20")
 
         insert(
-          :token_balance,
+          :address_current_token_balance,
           token_contract_address_hash: token.contract_address_hash,
           address: address,
           value: 1000
@@ -129,6 +135,8 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
 
         insert(:token_transfer, token_contract_address: token.contract_address, from_address: address)
       end)
+
+      start_supervised!(BlockValidationCounter)
 
       conn = get(conn, address_token_path(BlockScoutWeb.Endpoint, :index, address.hash))
 
@@ -139,6 +147,8 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
       address = insert(:address)
       token = insert(:token)
       insert(:token_transfer, token_contract_address: token.contract_address, from_address: address)
+
+      start_supervised!(BlockValidationCounter)
 
       conn = get(conn, address_token_path(BlockScoutWeb.Endpoint, :index, address.hash))
 

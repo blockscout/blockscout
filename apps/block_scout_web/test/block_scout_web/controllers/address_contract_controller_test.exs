@@ -1,9 +1,12 @@
 defmodule BlockScoutWeb.AddressContractControllerTest do
-  use BlockScoutWeb.ConnCase
+  use BlockScoutWeb.ConnCase,
+    # ETS table is shared in `Explorer.Counters.BlockValidationCounter`
+    async: false
 
   import BlockScoutWeb.Router.Helpers, only: [address_contract_path: 3]
 
   alias Explorer.Chain.Hash
+  alias Explorer.Counters.BlockValidationCounter
   alias Explorer.ExchangeRates.Token
   alias Explorer.Factory
 
@@ -43,6 +46,8 @@ defmodule BlockScoutWeb.AddressContractControllerTest do
         transaction: transaction,
         created_contract_address: address
       )
+
+      start_supervised!(BlockValidationCounter)
 
       conn = get(conn, address_contract_path(BlockScoutWeb.Endpoint, :index, address))
 

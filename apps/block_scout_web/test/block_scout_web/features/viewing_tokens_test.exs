@@ -1,10 +1,10 @@
 defmodule BlockScoutWeb.ViewingTokensTest do
   use BlockScoutWeb.FeatureCase, async: true
 
+  alias Explorer.Counters.{TokenHoldersCounter, TokenTransferCounter}
   alias BlockScoutWeb.TokenPage
 
   describe "viewing token holders" do
-    @tag :skip
     test "list the token holders", %{session: session} do
       token = insert(:token)
 
@@ -13,6 +13,12 @@ defmodule BlockScoutWeb.ViewingTokensTest do
         :address_current_token_balance,
         token_contract_address_hash: token.contract_address_hash
       )
+
+      start_supervised!(TokenHoldersCounter)
+      TokenHoldersCounter.consolidate()
+
+      start_supervised!(TokenTransferCounter)
+      TokenTransferCounter.consolidate()
 
       session
       |> TokenPage.visit_page(token.contract_address)

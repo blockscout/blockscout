@@ -3,14 +3,10 @@ import _ from 'lodash'
 import URI from 'urijs'
 import humps from 'humps'
 import numeral from 'numeral'
-import socket from '../socket'
+import socket, { subscribeChannel } from '../socket'
 import { createStore, connectElements } from '../lib/redux_helpers.js'
-import { batchChannel } from '../lib/utils'
-import listMorph from '../lib/list_morph'
 import { updateAllCalculatedUsdValues } from '../lib/currency.js'
 import { loadTokenBalanceDropdown } from '../lib/token_balance_dropdown'
-
-const BATCH_THRESHOLD = 10
 
 export const initialState = {
   channelDisconnected: false,
@@ -20,12 +16,7 @@ export const initialState = {
 
   balance: null,
   transactionCount: null,
-  validationCount: null,
-
-  internalTransactions: [],
-  internalTransactionsBatch: [],
-  validatedBlocks: [],
-  beyondPageOne: false
+  validationCount: null
 }
 
 export function reducer (state = initialState, action) {
@@ -38,8 +29,7 @@ export function reducer (state = initialState, action) {
       if (state.beyondPageOne) return state
 
       return Object.assign({}, state, {
-        channelDisconnected: true,
-        internalTransactionsBatch: []
+        channelDisconnected: true
       })
     }
     case 'RECEIVED_NEW_BLOCK': {
@@ -47,32 +37,6 @@ export function reducer (state = initialState, action) {
 
       const validationCount = state.validationCount + 1
       return Object.assign({}, state, { validationCount })
-    }
-    case 'RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH': {
-      if (state.channelDisconnected || state.beyondPageOne) return state
-
-      const incomingInternalTransactions = action.msgs
-        .filter(({toAddressHash, fromAddressHash}) => (
-          !state.filter ||
-          (state.filter === 'to' && toAddressHash === state.addressHash) ||
-          (state.filter === 'from' && fromAddressHash === state.addressHash)
-        ))
-
-      if (!state.internalTransactionsBatch.length && incomingInternalTransactions.length < BATCH_THRESHOLD) {
-        return Object.assign({}, state, {
-          internalTransactions: [
-            ...incomingInternalTransactions.reverse(),
-            ...state.internalTransactions
-          ]
-        })
-      } else {
-        return Object.assign({}, state, {
-          internalTransactionsBatch: [
-            ...incomingInternalTransactions.reverse(),
-            ...state.internalTransactionsBatch
-          ]
-        })
-      }
     }
     case 'RECEIVED_NEW_TRANSACTION': {
       if (state.channelDisconnected) return state
@@ -125,29 +89,6 @@ const elements = {
       if (oldState.validationCount === state.validationCount) return
       $el.empty().append(numeral(state.validationCount).format())
     }
-  },
-  '[data-selector="internal-transactions-list"]': {
-    load ($el) {
-      return {
-        internalTransactions: $el.children().map((index, el) => ({
-          internalTransactionHtml: el.outerHTML
-        })).toArray()
-      }
-    },
-    render ($el, state, oldState) {
-      if (oldState.internalTransactions === state.internalTransactions) return
-      const container = $el[0]
-      const newElements = _.map(state.internalTransactions, ({ internalTransactionHtml }) => $(internalTransactionHtml)[0])
-      listMorph(container, newElements, { key: 'dataset.key' })
-    }
-  },
-  '[data-selector="channel-batching-count"]': {
-    render ($el, state, oldState) {
-      const $channelBatching = $('[data-selector="channel-batching-message"]')
-      if (!state.internalTransactionsBatch.length) return $channelBatching.hide()
-      $channelBatching.show()
-      $el[0].innerHTML = numeral(state.internalTransactionsBatch.length).format()
-    }
   }
 }
 
@@ -164,8 +105,8 @@ if ($addressDetailsPage.length) {
   })
   connectElements({ store, elements })
 
-  const addressChannel = socket.channel(`addresses:${addressHash}`, {})
-  addressChannel.join()
+  const addressChannel = subscribeChannel(`addresses:${addressHash}`)
+
   addressChannel.onError(() => store.dispatch({
     type: 'CHANNEL_DISCONNECTED'
   }))
@@ -173,10 +114,6 @@ if ($addressDetailsPage.length) {
     type: 'RECEIVED_UPDATED_BALANCE',
     msg: humps.camelizeKeys(msg)
   }))
-  addressChannel.on('internal_transaction', batchChannel((msgs) => store.dispatch({
-    type: 'RECEIVED_NEW_INTERNAL_TRANSACTION_BATCH',
-    msgs: humps.camelizeKeys(msgs)
-  })))
   addressChannel.on('transaction', (msg) => {
     store.dispatch({
       type: 'RECEIVED_NEW_TRANSACTION',

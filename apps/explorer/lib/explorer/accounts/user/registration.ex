@@ -3,7 +3,7 @@ defmodule Explorer.Accounts.User.Registration do
   Represents the data required to register a new account.
   """
 
-  use Ecto.Schema
+  use Explorer.Schema
 
   import Ecto.Changeset
 

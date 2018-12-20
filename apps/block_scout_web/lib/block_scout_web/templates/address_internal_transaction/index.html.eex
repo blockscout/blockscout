@@ -1,7 +1,7 @@
 <section class="container">
   <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
 
-  <section>
+  <section data-page="address-internal-transactions">
     <div class="card">
       <div class="card-header">
         <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>

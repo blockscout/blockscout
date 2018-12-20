@@ -146,8 +146,8 @@ defmodule Explorer.Chain.TokenTransferTest do
     end
   end
 
-  describe "count_token_transfers/0" do
-    test "returns token transfers grouped by tokens" do
+  describe "each_count/0" do
+    test "streams token transfers grouped by tokens" do
       token_contract_address = insert(:contract_address)
       token = insert(:token, contract_address: token_contract_address)
 
@@ -172,7 +172,11 @@ defmodule Explorer.Chain.TokenTransferTest do
         token: token
       )
 
-      results = TokenTransfer.count_token_transfers()
+      {:ok, agent_pid} = Agent.start_link(fn -> [] end)
+
+      TokenTransfer.each_count(fn entry -> Agent.update(agent_pid, &[entry | &1]) end)
+
+      results = Agent.get(agent_pid, fn entries -> Enum.reverse(entries) end)
 
       assert length(results) == 1
       assert List.first(results) == {token.contract_address_hash, 2}
@@ -245,6 +249,182 @@ defmodule Explorer.Chain.TokenTransferTest do
         |> Repo.all()
 
       assert results == []
+    end
+  end
+
+  describe "where_any_address_fields_match/3" do
+    test "when to_address_hash match returns transactions hashes list" do
+      john = insert(:address)
+      paul = insert(:address)
+      contract_address = insert(:contract_address)
+
+      transaction =
+        :transaction
+        |> insert(
+          from_address: john,
+          from_address_hash: john.hash,
+          to_address: contract_address,
+          to_address_hash: contract_address.hash
+        )
+        |> with_block()
+
+      insert(
+        :token_transfer,
+        from_address: john,
+        to_address: paul,
+        transaction: transaction,
+        amount: 1
+      )
+
+      insert(
+        :token_transfer,
+        from_address: john,
+        to_address: paul,
+        transaction: transaction,
+        amount: 1
+      )
+
+      transactions_hashes = TokenTransfer.where_any_address_fields_match(:to, paul.hash, %PagingOptions{page_size: 1})
+
+      assert Enum.member?(transactions_hashes, transaction.hash) == true
+    end
+
+    test "when from_address_hash match returns transactions hashes list" do
+      john = insert(:address)
+      paul = insert(:address)
+      contract_address = insert(:contract_address)
+
+      transaction =
+        :transaction
+        |> insert(
+          from_address: john,
+          from_address_hash: john.hash,
+          to_address: contract_address,
+          to_address_hash: contract_address.hash
+        )
+        |> with_block()
+
+      insert(
+        :token_transfer,
+        from_address: john,
+        to_address: paul,
+        transaction: transaction,
+        amount: 1
+      )
+
+      insert(
+        :token_transfer,
+        from_address: john,
+        to_address: paul,
+        transaction: transaction,
+        amount: 1
+      )
+
+      transactions_hashes = TokenTransfer.where_any_address_fields_match(:from, john.hash, %PagingOptions{page_size: 1})
+
+      assert Enum.member?(transactions_hashes, transaction.hash) == true
+    end
+
+    test "when to_from_address_hash or from_address_hash match returns transactions hashes list" do
+      john = insert(:address)
+      paul = insert(:address)
+      contract_address = insert(:contract_address)
+
+      transaction_one =
+        :transaction
+        |> insert(
+          from_address: john,
+          from_address_hash: john.hash,
+          to_address: contract_address,
+          to_address_hash: contract_address.hash
+        )
+        |> with_block()
+
+      insert(
+        :token_transfer,
+        from_address: john,
+        to_address: paul,
+        transaction: transaction_one,
+        amount: 1
+      )
+
+      transaction_two =
+        :transaction
+        |> insert(
+          from_address: john,
+          from_address_hash: john.hash,
+          to_address: contract_address,
+          to_address_hash: contract_address.hash
+        )
+        |> with_block()
+
+      insert(
+        :token_transfer,
+        from_address: paul,
+        to_address: john,
+        transaction: transaction_two,
+        amount: 1
+      )
+
+      {:ok, transaction_one_bytes} = Explorer.Chain.Hash.Full.dump(transaction_one.hash)
+      {:ok, transaction_two_bytes} = Explorer.Chain.Hash.Full.dump(transaction_two.hash)
+
+      transactions_hashes = TokenTransfer.where_any_address_fields_match(nil, john.hash, %PagingOptions{page_size: 2})
+
+      assert Enum.member?(transactions_hashes, transaction_one_bytes) == true
+      assert Enum.member?(transactions_hashes, transaction_two_bytes) == true
+    end
+
+    test "paginates result from to_from_address_hash and from_address_hash match" do
+      john = insert(:address)
+      paul = insert(:address)
+      contract_address = insert(:contract_address)
+
+      transaction_one =
+        :transaction
+        |> insert(
+          from_address: paul,
+          from_address_hash: paul.hash,
+          to_address: contract_address,
+          to_address_hash: contract_address.hash
+        )
+        |> with_block(number: 1)
+
+      insert(
+        :token_transfer,
+        from_address: john,
+        to_address: paul,
+        transaction: transaction_one,
+        amount: 1
+      )
+
+      transaction_two =
+        :transaction
+        |> insert(
+          from_address: paul,
+          from_address_hash: paul.hash,
+          to_address: contract_address,
+          to_address_hash: contract_address.hash
+        )
+        |> with_block(number: 2)
+
+      insert(
+        :token_transfer,
+        from_address: paul,
+        to_address: john,
+        transaction: transaction_two,
+        amount: 1
+      )
+
+      {:ok, transaction_one_bytes} = Explorer.Chain.Hash.Full.dump(transaction_one.hash)
+
+      page_two =
+        TokenTransfer.where_any_address_fields_match(nil, john.hash, %PagingOptions{
+          page_size: 1,
+          key: {transaction_two.block_number, transaction_two.index}
+        })
+
+      assert Enum.member?(page_two, transaction_one_bytes) == true
     end
   end
 end
