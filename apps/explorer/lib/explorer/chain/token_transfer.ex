@@ -133,6 +133,18 @@ defmodule Explorer.Chain.TokenTransfer do
     |> Repo.all()
   end
 
+  @spec count_token_transfers_from_token_hash(Hash.t()) :: non_neg_integer()
+  def count_token_transfers_from_token_hash(token_address_hash) do
+    query =
+      from(
+        tt in TokenTransfer,
+        where: tt.token_contract_address_hash == ^token_address_hash,
+        select: fragment("COUNT(*)")
+      )
+
+    Repo.one(query)
+  end
+
   def page_token_transfer(query, %PagingOptions{key: nil}), do: query
 
   def page_token_transfer(query, %PagingOptions{key: {token_id}}) do
@@ -271,21 +283,5 @@ defmodule Explorer.Chain.TokenTransfer do
       preload: [:to_address],
       select: tt
     )
-  end
-
-  @doc """
-  Counts all the token transfers and groups by token contract address hash.
-  """
-  def each_count(fun) when is_function(fun, 1) do
-    query =
-      from(
-        tt in TokenTransfer,
-        join: t in Token,
-        on: tt.token_contract_address_hash == t.contract_address_hash,
-        select: {tt.token_contract_address_hash, fragment("COUNT(*)")},
-        group_by: tt.token_contract_address_hash
-      )
-
-    Repo.stream_each(query, fun)
   end
 end

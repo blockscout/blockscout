@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.AddressControllerTest do
     # ETS tables are shared in `Explorer.Counters.*`
     async: false
 
-  alias Explorer.Counters.{AddressesWithBalanceCounter, BlockValidationCounter}
+  alias Explorer.Counters.AddressesWithBalanceCounter
 
   describe "GET index/2" do
     test "returns top addresses", %{conn: conn} do
@@ -14,8 +14,6 @@ defmodule BlockScoutWeb.AddressControllerTest do
 
       start_supervised!(AddressesWithBalanceCounter)
       AddressesWithBalanceCounter.consolidate()
-
-      start_supervised!(BlockValidationCounter)
 
       conn = get(conn, address_path(conn, :index))
 
@@ -30,8 +28,6 @@ defmodule BlockScoutWeb.AddressControllerTest do
 
       start_supervised!(AddressesWithBalanceCounter)
       AddressesWithBalanceCounter.consolidate()
-
-      start_supervised!(BlockValidationCounter)
 
       conn = get(conn, address_path(conn, :index))
 

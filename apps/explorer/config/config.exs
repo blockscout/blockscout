@@ -15,10 +15,6 @@ config :explorer, Explorer.Counters.AddressesWithBalanceCounter, enabled: true, 
 
 config :explorer, Explorer.Counters.TokenHoldersCounter, enabled: true, enable_consolidation: true
 
-config :explorer, Explorer.Counters.TokenTransferCounter, enabled: true, enable_consolidation: true
-
-config :explorer, Explorer.Counters.BlockValidationCounter, enabled: true, enable_consolidation: true
-
 config :explorer, Explorer.ExchangeRates, enabled: true, store: :ets
 
 config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :timer.seconds(2)

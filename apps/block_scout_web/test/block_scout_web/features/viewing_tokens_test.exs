@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.ViewingTokensTest do
   use BlockScoutWeb.FeatureCase, async: true
 
-  alias Explorer.Counters.{TokenHoldersCounter, TokenTransferCounter}
+  alias Explorer.Counters.TokenHoldersCounter
   alias BlockScoutWeb.TokenPage
 
   describe "viewing token holders" do
@@ -16,9 +16,6 @@ defmodule BlockScoutWeb.ViewingTokensTest do
 
       start_supervised!(TokenHoldersCounter)
       TokenHoldersCounter.consolidate()
-
-      start_supervised!(TokenTransferCounter)
-      TokenTransferCounter.consolidate()
 
       session
       |> TokenPage.visit_page(token.contract_address)
