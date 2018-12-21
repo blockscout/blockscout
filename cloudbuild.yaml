@@ -5,7 +5,7 @@ steps:
   - name: "gcr.io/cloud-builders/docker"
     args: ["build", "-f", "Dockerfile.indexer", "-t", "gcr.io/$PROJECT_ID/blockscout:indexer-$COMMIT_SHA", "."]
     waitFor: ["-"]
-
+timeout: 1200s
 images:
   - "gcr.io/$PROJECT_ID/blockscout:web-$COMMIT_SHA"
   - "gcr.io/$PROJECT_ID/blockscout:indexer-$COMMIT_SHA"
