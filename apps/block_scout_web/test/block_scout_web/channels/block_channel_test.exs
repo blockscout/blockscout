@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.BlockChannelTest do
       %Phoenix.Socket.Broadcast{topic: ^topic, event: "new_block", payload: %{block: _}} ->
         assert true
     after
-      5_000 ->
+      :timer.seconds(5) ->
         assert false, "Expected message received nothing."
     end
   end
@@ -30,7 +30,7 @@ defmodule BlockScoutWeb.BlockChannelTest do
       %Phoenix.Socket.Broadcast{topic: ^topic, event: "index_status", payload: %{}} ->
         assert true
     after
-      5_000 ->
+      :timer.seconds(5) ->
         assert false, "Expected message received nothing."
     end
   end
