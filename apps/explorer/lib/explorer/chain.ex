@@ -18,7 +18,7 @@ defmodule Explorer.Chain do
     ]
 
   alias Ecto.Adapters.SQL
-  alias Ecto.Multi
+  alias Ecto.{Changeset, Multi}
 
   alias Explorer.Chain.{
     Address,
@@ -2047,12 +2047,27 @@ defmodule Explorer.Chain do
     token_changeset = Token.changeset(token, params)
     address_name_changeset = Address.Name.changeset(%Address.Name{}, Map.put(params, :address_hash, address_hash))
 
-    token_opts = [on_conflict: Runner.Tokens.default_on_conflict(), conflict_target: :contract_address_hash]
+    stale_error_field = :contract_address_hash
+    stale_error_message = "is up to date"
+
+    token_opts = [
+      on_conflict: Runner.Tokens.default_on_conflict(),
+      conflict_target: :contract_address_hash,
+      stale_error_field: stale_error_field,
+      stale_error_message: stale_error_message
+    ]
+
     address_name_opts = [on_conflict: :nothing, conflict_target: [:address_hash, :name]]
 
     insert_result =
       Multi.new()
-      |> Multi.insert(:token, token_changeset, token_opts)
+      |> Multi.run(:token, fn repo, _ ->
+        with {:error, %Changeset{errors: [{^stale_error_field, {^stale_error_message, []}}]}} <-
+               repo.insert(token_changeset, token_opts) do
+          # the original token passed into `update_token/2` as stale error means it is unchanged
+          {:ok, token}
+        end
+      end)
       |> Multi.run(
         :address_name,
         fn repo, _ ->
@@ -2155,5 +2170,25 @@ defmodule Explorer.Chain do
       )
 
     Repo.all(query, timeout: :infinity)
+  end
+
+  @doc """
+  Combined block reward from all the fees.
+  """
+  @spec block_combined_rewards(Block.t()) :: Wei.t()
+  def block_combined_rewards(block) do
+    {:ok, value} =
+      block.rewards
+      |> Enum.reduce(
+        0,
+        fn block_reward, acc ->
+          {:ok, decimal} = Wei.dump(block_reward.reward)
+
+          Decimal.add(decimal, acc)
+        end
+      )
+      |> Wei.cast()
+
+    value
   end
 end

@@ -80,7 +80,8 @@ defmodule Explorer.Chain.Import.Runner.Transaction.Forks do
         set: [
           hash: fragment("EXCLUDED.hash")
         ]
-      ]
+      ],
+      where: fragment("EXCLUDED.hash <> ?", transaction_fork.hash)
     )
   end
 end

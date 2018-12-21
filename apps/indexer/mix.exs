@@ -44,6 +44,7 @@ defmodule Indexer.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:plug_cowboy, "~> 1.0"},
       # Optional dependency of `:spandex` for `Spandex.Decorators`
       {:decorator, "~> 1.2"},
       # JSONRPC access to Parity for `Explorer.Indexer`

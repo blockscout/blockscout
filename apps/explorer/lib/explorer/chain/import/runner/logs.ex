@@ -91,7 +91,18 @@ defmodule Explorer.Chain.Import.Runner.Logs do
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", log.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", log.updated_at)
         ]
-      ]
+      ],
+      where:
+        fragment(
+          "(EXCLUDED.address_hash, EXCLUDED.data, EXCLUDED.first_topic, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic, EXCLUDED.type) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?)",
+          log.address_hash,
+          log.data,
+          log.first_topic,
+          log.second_topic,
+          log.third_topic,
+          log.fourth_topic,
+          log.type
+        )
     )
   end
 end

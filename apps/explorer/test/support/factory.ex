@@ -9,7 +9,7 @@ defmodule Explorer.Factory do
   alias Comeonin.Bcrypt
   alias Explorer.Accounts.{User, UserContact}
   alias Explorer.Admin.Administrator
-  alias Explorer.Chain.Block.{EmissionReward, Range}
+  alias Explorer.Chain.Block.{EmissionReward, Range, Reward}
 
   alias Explorer.Chain.{
     Address,
@@ -422,6 +422,15 @@ defmodule Explorer.Factory do
     %EmissionReward{
       block_range: %Range{from: lower, to: upper},
       reward: reward
+    }
+  end
+
+  def reward_factory do
+    %Reward{
+      address_hash: build(:address).hash,
+      address_type: :validator,
+      block_hash: build(:block).hash,
+      reward: Decimal.new(3)
     }
   end
 
