@@ -44,7 +44,6 @@ defmodule Explorer.Chain do
 
   alias Explorer.Counters.{
     AddressesWithBalanceCounter,
-    BlockValidationCounter,
     TokenHoldersCounter
   }
 
@@ -988,7 +987,9 @@ defmodule Explorer.Chain do
   """
   @spec address_to_validation_count(Address.t()) :: non_neg_integer()
   def address_to_validation_count(%Address{hash: hash}) do
-    BlockValidationCounter.fetch(hash)
+    query = from(block in Block, where: block.miner_hash == ^hash, select: fragment("COUNT(*)"))
+
+    Repo.one(query)
   end
 
   @doc """
