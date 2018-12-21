@@ -1,6 +1,6 @@
 defmodule BlockScoutWeb.Notifier do
   @moduledoc """
-  Responds to events from EventHandler by sending appropriate channel updates to front-end.
+  Responds to events by sending appropriate channel updates to front-end.
   """
 
   alias Absinthe.Subscription
@@ -19,22 +19,6 @@ defmodule BlockScoutWeb.Notifier do
 
   def handle_event({:chain_event, :address_coin_balances, :realtime, address_coin_balances}) do
     Enum.each(address_coin_balances, &broadcast_address_coin_balance/1)
-  end
-
-  def handle_event({:chain_event, :blocks, :catchup, _blocks}) do
-    ratio = Chain.indexed_ratio()
-
-    finished? =
-      if ratio < 1 do
-        false
-      else
-        Chain.finished_indexing?()
-      end
-
-    Endpoint.broadcast("blocks:indexing", "index_status", %{
-      ratio: ratio,
-      finished: finished?
-    })
   end
 
   def handle_event({:chain_event, :blocks, :realtime, blocks}) do

@@ -2906,12 +2906,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  test "subscribe_to_events/1" do
-    assert :ok == Chain.subscribe_to_events(:logs)
-    current_pid = self()
-    assert [{^current_pid, _}] = Registry.lookup(Registry.ChainEvents, :logs)
-  end
-
   describe "token_from_address_hash/1" do
     test "with valid hash" do
       token = insert(:token)
