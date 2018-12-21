@@ -78,6 +78,16 @@ defmodule BlockScoutWeb.Notifier do
 
   def handle_event(_), do: nil
 
+  @doc """
+  Broadcast the percentage of blocks indexed so far.
+  """
+  def broadcast_blocks_indexed_ratio(ratio, finished?) do
+    Endpoint.broadcast("blocks:indexing", "index_status", %{
+      ratio: ratio,
+      finished: finished?
+    })
+  end
+
   defp broadcast_address_coin_balance(%{address_hash: address_hash, block_number: block_number}) do
     Endpoint.broadcast("addresses:#{address_hash}", "coin_balance", %{
       block_number: block_number

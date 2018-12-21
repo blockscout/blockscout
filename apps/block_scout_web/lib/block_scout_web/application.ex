@@ -20,7 +20,8 @@ defmodule BlockScoutWeb.Application do
       # Start the endpoint when the application starts
       supervisor(Endpoint, []),
       supervisor(Absinthe.Subscription, [Endpoint]),
-      {RealtimeEventHandler, name: RealtimeEventHandler}
+      {RealtimeEventHandler, name: RealtimeEventHandler},
+      {BlocksIndexedCounter, name: BlocksIndexedCounter}
     ]
 
     opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor]
