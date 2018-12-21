@@ -937,6 +937,24 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Finds blocks without a reward associated, up to the specified limit
+  """
+  def get_blocks_without_reward(limit \\ 250) do
+    Block.get_blocks_without_reward()
+    |> limit(^limit)
+    |> Repo.all()
+  end
+
+  @doc """
+  Finds all transactions of a certain block number
+  """
+  def get_transactions_of_block_number(block_number) do
+    block_number
+    |> Transaction.transactions_with_block_number()
+    |> Repo.all()
+  end
+
+  @doc """
   Finds all Blocks validated by the address given.
 
     ## Options
