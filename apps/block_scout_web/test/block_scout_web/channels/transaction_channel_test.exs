@@ -19,7 +19,7 @@ defmodule BlockScoutWeb.TransactionChannelTest do
       %Phoenix.Socket.Broadcast{topic: ^topic, event: "transaction", payload: payload} ->
         assert payload.transaction.hash == transaction.hash
     after
-      5_000 ->
+      :timer.seconds(5) ->
         assert false, "Expected message received nothing."
     end
   end
@@ -36,7 +36,7 @@ defmodule BlockScoutWeb.TransactionChannelTest do
       %Phoenix.Socket.Broadcast{topic: ^topic, event: "pending_transaction", payload: payload} ->
         assert payload.transaction.hash == pending.hash
     after
-      5_000 ->
+      :timer.seconds(5) ->
         assert false, "Expected message received nothing."
     end
   end
@@ -56,7 +56,7 @@ defmodule BlockScoutWeb.TransactionChannelTest do
       %Phoenix.Socket.Broadcast{topic: ^topic, event: "collated", payload: %{}} ->
         assert true
     after
-      5_000 ->
+      :timer.seconds(5) ->
         assert false, "Expected message received nothing."
     end
   end
