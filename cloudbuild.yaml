@@ -1,6 +1,11 @@
 steps:
   - name: "gcr.io/cloud-builders/docker"
-    args: ["build", "-t", "gcr.io/$PROJECT_ID/blockscout:$COMMIT_SHA", "."]
+    args: ["build", "-f", "Dockerfile.web", "-t", "gcr.io/$PROJECT_ID/blockscout:web-$COMMIT_SHA", "."]
     waitFor: ["-"]
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["build", "-f", "Dockerfile.indexer", "-t", "gcr.io/$PROJECT_ID/blockscout:indexer-$COMMIT_SHA", "."]
+    waitFor: ["-"]
+
 images:
-  - "gcr.io/$PROJECT_ID/blockscout:$COMMIT_SHA"
+  - "gcr.io/$PROJECT_ID/blockscout:web-$COMMIT_SHA"
+  - "gcr.io/$PROJECT_ID/blockscout:indexer-$COMMIT_SHA"
