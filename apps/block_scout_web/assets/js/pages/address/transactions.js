@@ -48,7 +48,7 @@ const elements = {
 }
 
 if ($('[data-page="address-transactions"]').length) {
-  const store = createAsyncLoadStore(reducer, initialState, 'dataset.transactionHash')
+  const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierHash')
   const addressHash = $('[data-page="address-details"]')[0].dataset.pageAddressHash
   const { filter, blockNumber } = humps.camelizeKeys(URI(window.location).query(true))
 
