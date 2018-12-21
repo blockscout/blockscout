@@ -1245,76 +1245,69 @@ defmodule Explorer.Chain do
   def missing_block_number_ranges(range)
 
   def missing_block_number_ranges(range_start..range_end) do
-    # subquery so we can check for NULL in `range_min_query`, which happens for empty table
-    min_query = from(block in Block, select: %{number: min(block.number)}, where: block.consensus == true)
-    # this acts a fake found block, so it has to before the range of blocks we actually care to check
-    before_range_min = min(range_start, range_end) - 1
+    range_min = min(range_start, range_end)
+    range_max = max(range_start, range_end)
 
-    range_min_query =
-      from(min_block in subquery(min_query),
-        select: %{
-          # `LEAST` ignores `NULL`, so it picks the fake range when there is no `min_block.number`
-          # because `blocks` is empty
-          number: fragment("LEAST(?, ?)", min_block.number, ^before_range_min)
-        },
-        # `blocks` is empty
-        # same number will not be returned by `number_query`
-        where: is_nil(min_block.number) or min_block.number != ^before_range_min
+    missing_prefix_query =
+      from(block in Block,
+        select: %{min: type(^range_min, block.number), max: min(block.number) - 1},
+        where: block.consensus == true,
+        having: ^range_min < min(block.number) and min(block.number) < ^range_max
       )
 
-    number_query = from(block in Block, select: %{number: block.number}, where: block.consensus == true)
-
-    # subquery so we can check for NULL in `range_max_query`, which happens for empty table
-    max_query = from(block in Block, select: %{number: max(block.number)}, where: block.consensus == true)
-    # this acts a fake found block, so it has to after the range of blocks we actually care to check
-    after_range_max = max(range_start, range_end) + 1
-
-    range_max_query =
-      from(max_block in subquery(max_query),
-        select: %{
-          # `GREATEST` ignores `NULL`, so it picks the fake range when there is no `max_block.number`
-          # because `blocks` is empty
-          number: fragment("GREATEST(?, ?)", max_block.number, ^after_range_max)
-        },
-        # blocks is empty
-        # same number will not be returned by `number_query`
-        where: is_nil(max_block.number) or max_block.number != ^after_range_max
+    missing_suffix_query =
+      from(block in Block,
+        select: %{min: max(block.number) + 1, max: type(^range_max, block.number)},
+        where: block.consensus == true,
+        having: ^range_min < max(block.number) and max(block.number) < ^range_max
       )
 
-    # The actual blocks and a boundary of fake found blocks outside of `range_start..range_end` so that there is always
-    # a `lag` block
-    search_range_query =
-      number_query
-      |> union_all(^range_min_query)
-      |> union_all(^range_max_query)
+    missing_infix_query =
+      from(block in Block,
+        select: %{min: type(^range_min, block.number), max: type(^range_max, block.number)},
+        where: block.consensus == true,
+        having:
+          (is_nil(min(block.number)) and is_nil(max(block.number))) or
+            (^range_max < min(block.number) or max(block.number) < ^range_min)
+      )
 
     # Gaps and Islands is the term-of-art for finding the runs of missing (gaps) and existing (islands) data.  If you
     # Google for `sql missing ranges` you won't find much, but `sql gaps and islands` will get a lot of hits.
 
-    island_query =
-      from(
-        search_block in subquery(search_range_query),
-        windows: [w: [order_by: search_block.number]],
-        select: %{last_number: search_block.number |> lag() |> over(:w), next_number: search_block.number}
+    land_query =
+      from(block in Block,
+        where: block.consensus == true and ^range_min <= block.number and block.number <= ^range_max,
+        windows: [w: [order_by: block.number]],
+        select: %{last_number: block.number |> lag() |> over(:w), next_number: block.number}
       )
 
     gap_query =
       from(
-        island in subquery(island_query),
-        where: island.last_number != island.next_number - 1,
-        select: %Range{first: island.last_number + 1, last: island.next_number - 1},
-        order_by: island.last_number
+        coastline in subquery(land_query),
+        where: coastline.last_number != coastline.next_number - 1,
+        select: %{min: coastline.last_number + 1, max: coastline.next_number - 1}
       )
 
-    ascending = Repo.all(gap_query, timeout: :infinity)
+    missing_query =
+      missing_prefix_query
+      |> union_all(^missing_infix_query)
+      |> union_all(^gap_query)
+      |> union_all(^missing_suffix_query)
 
-    if range_start <= range_end do
-      ascending
-    else
-      ascending
-      |> Enum.reverse()
-      |> Enum.map(fn first..last -> last..first end)
-    end
+    {first, last, direction} =
+      if range_start <= range_end do
+        {:min, :max, :asc}
+      else
+        {:max, :min, :desc}
+      end
+
+    ordered_missing_query =
+      from(missing_range in subquery(missing_query),
+        select: %Range{first: field(missing_range, ^first), last: field(missing_range, ^last)},
+        order_by: [{^direction, field(missing_range, ^first)}]
+      )
+
+    Repo.all(ordered_missing_query, timeout: :infinity)
   end
 
   @doc """

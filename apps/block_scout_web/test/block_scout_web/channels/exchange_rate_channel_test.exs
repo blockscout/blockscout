@@ -52,7 +52,7 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
           assert payload.exchange_rate == token
           assert payload.market_history_data == []
       after
-        5_000 ->
+        :timer.seconds(5) ->
           assert false, "Expected message received nothing."
       end
     end
@@ -84,7 +84,7 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
           assert payload.exchange_rate == token
           assert payload.market_history_data == records
       after
-        5_000 ->
+        :timer.seconds(5) ->
           assert false, "Expected message received nothing."
       end
     end
