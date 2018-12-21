@@ -21,8 +21,6 @@ config :explorer, Explorer.Counters.BlockValidationCounter, enabled: false, enab
 
 config :explorer, Explorer.Counters.TokenHoldersCounter, enabled: false, enable_consolidation: false
 
-config :explorer, Explorer.Counters.TokenTransferCounter, enabled: false, enable_consolidation: false
-
 config :explorer, Explorer.Market.History.Cataloger, enabled: false
 
 config :explorer, Explorer.Tracer, disabled?: false

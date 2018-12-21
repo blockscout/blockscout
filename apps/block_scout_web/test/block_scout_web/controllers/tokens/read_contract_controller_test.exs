@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.Tokens.ReadContractControllerTest do
     # ETS tables are shared in `Explorer.Counters.*`
     async: false
 
-  alias Explorer.Counters.{TokenHoldersCounter, TokenTransferCounter}
+  alias Explorer.Counters.TokenHoldersCounter
 
   describe "GET index/3" do
     test "with invalid address hash", %{conn: conn} do
@@ -32,9 +32,6 @@ defmodule BlockScoutWeb.Tokens.ReadContractControllerTest do
 
       start_supervised!(TokenHoldersCounter)
       TokenHoldersCounter.consolidate()
-
-      start_supervised!(TokenTransferCounter)
-      TokenTransferCounter.consolidate()
 
       conn = get(conn, token_read_contract_path(BlockScoutWeb.Endpoint, :index, token.contract_address_hash))
 

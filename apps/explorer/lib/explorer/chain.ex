@@ -45,8 +45,7 @@ defmodule Explorer.Chain do
   alias Explorer.Counters.{
     AddressesWithBalanceCounter,
     BlockValidationCounter,
-    TokenHoldersCounter,
-    TokenTransferCounter
+    TokenHoldersCounter
   }
 
   alias Dataloader.Ecto, as: DataloaderEcto
@@ -2012,7 +2011,7 @@ defmodule Explorer.Chain do
 
   @spec count_token_transfers_from_token_hash(Hash.t()) :: non_neg_integer()
   def count_token_transfers_from_token_hash(token_address_hash) do
-    TokenTransferCounter.fetch(token_address_hash)
+    TokenTransfer.count_token_transfers_from_token_hash(token_address_hash)
   end
 
   @spec transaction_has_token_transfers?(Hash.t()) :: boolean()
