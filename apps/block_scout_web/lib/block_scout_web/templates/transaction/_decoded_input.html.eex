@@ -3,9 +3,9 @@
     <h1 class="card-title"><%= gettext "Input" %> </h1>
     <!-- Input -->
     <%= case @decoded_input_data do %>
-    <% {:error, :contract_not_verified} -> %>
-    <div class="alert alert-info">
-      <%= gettext "To see decoded input data, the contract must be verified." %>
+    <% {:error, :contract_not_verified, candidates} -> %>
+    <div class="alert alert-danger">
+      <%= gettext "To see accurate decoded input data, the contract must be verified." %>
       <%= case @transaction do %>
         <% %{to_address: %{hash: hash}} -> %>
           <%= gettext "Verify the contract " %><a href="<%= address_verify_contract_path(@conn, :new, hash)%>"><%= gettext "here" %></a>
@@ -13,57 +13,23 @@
           <%= nil %>
       <% end %>
     </div>
+    <%= unless Enum.empty?(candidates) do %>
+      <h3><%= gettext "Potential matches from our contract method database:" %></h3>
+      <%= gettext "IMPORTANT: This information is a best guess based on similar functions from other verified contracts." %>
+      <%= gettext "To have guaranteed accuracy, use the link above to verify the contract's source code." %>
+
+      <%= for {:ok, method_id, text, mapping} <- candidates do %>
+        <hr>
+
+        <%= render(BlockScoutWeb.TransactionView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping) %>
+      <% end %>
+    <% end %>
     <% {:ok, method_id, text, mapping} -> %>
-    <table summary="<%= gettext "Transaction Info" %>" class="table thead-light table-bordered table-responsive transaction-info-table">
-      <tr>
-        <td><%= gettext "Method Id" %></td>
-        <td colspan="3"><code>0x<%= method_id %></code></td>
-      </tr>
-      <tr>
-        <td>Call</td>
-        <td colspan="3"><code><%= text %></code></td>
-      </tr>
-    </table>
-
-    <table summary="<%= gettext "Transaction Inputs" %>" class="table thead-light table-bordered table-responsive">
-      <tr>
-        <th scope="col"></th>
-        <th scope="col"><%= gettext "Name" %></th>
-        <th scope="col"><%= gettext "Type" %></th>
-        <th scope="col"><%= gettext "Data" %></th>
-      <tr>
-        <%= for {name, type, value} <- mapping do %>
-            <tr>
-              <th scope="row">
-                <%= case BlockScoutWeb.ABIEncodedValueView.copy_text(type, value) do %>
-                  <% :error -> %>
-                    <%= nil %>
-                  <% copy_text -> %>
-                    <button type="button" class="copy icon-link" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= copy_text %>" aria-label="<%= gettext "Copy Value" %>">
-                      <i class="fas fa-clone"></i>
-                    </button>
-                 <% end %>
-              </th>
-              <td><%= name %></td>
-              <td><%= type %></td>
-              <td>
-                <%= case BlockScoutWeb.ABIEncodedValueView.value_html(type, value) do %>
-                  <% :error -> %>
-                    <div class="alert alert-danger">
-                      <%= gettext "Error rendering value" %>
-                    </div>
-                  <% value -> %>
-                    <pre class="transaction-input-text tile"><code><%= value %></code></pre>
-                <% end %>
-
-              </td>
-            </tr>
-            <% end %>
-    </table>
+      <%= render(BlockScoutWeb.TransactionView, "_decoded_input_body.html", method_id: method_id, text: text, mapping: mapping) %>
     <% _ -> %>
         <div class="alert alert-danger">
           <%= gettext "Failed to decode input data." %>
         </div>
-        <% end %>
+    <% end %>
   </div>
 </div>
