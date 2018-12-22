@@ -8,9 +8,11 @@ defmodule Explorer.Chain.SmartContract do
   http://solidity.readthedocs.io/en/v0.4.24/introduction-to-smart-contracts.html
   """
 
-  alias Explorer.Chain.{Address, Hash}
+  require Logger
 
   use Explorer.Schema
+
+  alias Explorer.Chain.{Address, ContractMethod, Hash}
 
   @typedoc """
   The name of a parameter to a function or event.
@@ -189,6 +191,7 @@ defmodule Explorer.Chain.SmartContract do
   * `abi` - The [JSON ABI specification](https://solidity.readthedocs.io/en/develop/abi-spec.html#json) for this
     contract.
   """
+
   @type t :: %Explorer.Chain.SmartContract{
           name: String.t(),
           compiler_version: String.t(),
@@ -229,6 +232,7 @@ defmodule Explorer.Chain.SmartContract do
     ])
     |> validate_required([:name, :compiler_version, :optimization, :contract_source_code, :abi, :address_hash])
     |> unique_constraint(:address_hash)
+    |> prepare_changes(&upsert_contract_methods/1)
   end
 
   def invalid_contract_changeset(%__MODULE__{} = smart_contract, attrs, error) do
@@ -237,6 +241,21 @@ defmodule Explorer.Chain.SmartContract do
     |> validate_required([:name, :compiler_version, :optimization, :address_hash])
     |> add_error(:contract_source_code, error_message(error))
   end
+
+  defp upsert_contract_methods(%Ecto.Changeset{changes: %{abi: abi}} = changeset) do
+    ContractMethod.upsert_from_abi(abi, get_field(changeset, :address_hash))
+
+    changeset
+  rescue
+    exception ->
+      message = Exception.format(:error, exception, __STACKTRACE__)
+
+      Logger.error(fn -> ["Error while upserting contract methods: ", message] end)
+
+      changeset
+  end
+
+  defp upsert_contract_methods(changeset), do: changeset
 
   defp error_message(:compilation), do: "There was an error compiling your contract."
   defp error_message(:generated_bytecode), do: "Bytecode does not match, please try again."
