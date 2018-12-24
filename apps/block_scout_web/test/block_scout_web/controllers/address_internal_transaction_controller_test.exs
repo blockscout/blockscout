@@ -1,13 +1,10 @@
 defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
-  use BlockScoutWeb.ConnCase,
-    # ETS table is shared in `Explorer.Counters.BlockValidationCounter`
-    async: false
+  use BlockScoutWeb.ConnCase, async: true
 
   import BlockScoutWeb.Router.Helpers,
     only: [address_internal_transaction_path: 3, address_internal_transaction_path: 4]
 
   alias Explorer.Chain.{Block, InternalTransaction, Transaction}
-  alias Explorer.Counters.BlockValidationCounter
   alias Explorer.ExchangeRates.Token
 
   describe "GET index/3" do
@@ -27,8 +24,6 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
 
     test "includes USD exchange rate value for address in assigns", %{conn: conn} do
       address = insert(:address)
-
-      start_supervised!(BlockValidationCounter)
 
       conn = get(conn, address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash))
 

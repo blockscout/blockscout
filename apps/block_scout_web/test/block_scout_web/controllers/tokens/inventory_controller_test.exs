@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.Tokens.InventoryControllerTest do
     # ETS table is shared in `Explorer.Counters.*`
     async: false
 
-  alias Explorer.Counters.{TokenHoldersCounter, TokenTransferCounter}
+  alias Explorer.Counters.TokenHoldersCounter
 
   describe "GET index/3" do
     test "with invalid address hash", %{conn: conn} do
@@ -38,9 +38,6 @@ defmodule BlockScoutWeb.Tokens.InventoryControllerTest do
       start_supervised!(TokenHoldersCounter)
       TokenHoldersCounter.consolidate()
 
-      start_supervised!(TokenTransferCounter)
-      TokenTransferCounter.consolidate()
-
       conn =
         get(
           conn,
@@ -72,9 +69,6 @@ defmodule BlockScoutWeb.Tokens.InventoryControllerTest do
 
       start_supervised!(TokenHoldersCounter)
       TokenHoldersCounter.consolidate()
-
-      start_supervised!(TokenTransferCounter)
-      TokenTransferCounter.consolidate()
 
       conn =
         get(conn, token_inventory_path(conn, :index, token.contract_address_hash), %{
@@ -111,9 +105,6 @@ defmodule BlockScoutWeb.Tokens.InventoryControllerTest do
       start_supervised!(TokenHoldersCounter)
       TokenHoldersCounter.consolidate()
 
-      start_supervised!(TokenTransferCounter)
-      TokenTransferCounter.consolidate()
-
       conn = get(conn, token_inventory_path(conn, :index, token.contract_address_hash))
 
       assert conn.assigns.next_page_params == expected_next_page_params
@@ -137,9 +128,6 @@ defmodule BlockScoutWeb.Tokens.InventoryControllerTest do
 
       start_supervised!(TokenHoldersCounter)
       TokenHoldersCounter.consolidate()
-
-      start_supervised!(TokenTransferCounter)
-      TokenTransferCounter.consolidate()
 
       conn = get(conn, token_inventory_path(conn, :index, token.contract_address_hash))
 

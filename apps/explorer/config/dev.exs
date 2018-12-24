@@ -5,7 +5,7 @@ config :explorer, Explorer.Repo,
   database: "explorer_dev",
   hostname: "localhost",
   pool_size: 20,
-  timeout: 80_000
+  timeout: :timer.seconds(80)
 
 config :explorer, Explorer.Tracer, env: "dev", disabled?: true
 

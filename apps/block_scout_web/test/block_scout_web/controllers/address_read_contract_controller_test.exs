@@ -1,9 +1,6 @@
 defmodule BlockScoutWeb.AddressReadContractControllerTest do
-  use BlockScoutWeb.ConnCase,
-    # ETS table is shared in `Explorer.Counters.BlockValidationCounter`
-    async: false
+  use BlockScoutWeb.ConnCase, async: true
 
-  alias Explorer.Counters.BlockValidationCounter
   alias Explorer.ExchangeRates.Token
 
   describe "GET index/3" do
@@ -25,9 +22,6 @@ defmodule BlockScoutWeb.AddressReadContractControllerTest do
       contract_address = insert(:contract_address)
 
       transaction = insert(:transaction, from_address: contract_address)
-
-      start_supervised!(BlockValidationCounter)
-      BlockValidationCounter.consolidate_blocks()
 
       insert(
         :internal_transaction_create,
