@@ -7,7 +7,7 @@ defmodule Indexer.Block.Fetcher do
 
   require Logger
 
-  alias EthereumJSONRPC.{Blocks}
+  alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
   alias Explorer.Chain.{Address, Block, Import}
   alias Indexer.{AddressExtraction, CoinBalance, MintTransfer, Token, TokenTransfers, Tracer}
   alias Indexer.Address.{CoinBalances, TokenBalances}
@@ -108,8 +108,12 @@ defmodule Indexer.Block.Fetcher do
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfer.parse(logs),
+         {:beneficiaries,
+          {:ok, %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors}}} <-
+           fetch_beneficiaries(range, json_rpc_named_arguments),
          addresses =
            AddressExtraction.extract_addresses(%{
+             block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set),
              blocks: blocks,
              logs: logs,
              mint_transfers: mint_transfers,
@@ -142,7 +146,7 @@ defmodule Indexer.Block.Fetcher do
                transactions: %{params: transactions_with_receipts}
              }
            ) do
-      {:ok, %{inserted: inserted, errors: blocks_errors}}
+      {:ok, %{inserted: inserted, errors: blocks_errors ++ beneficiaries_errors}}
     else
       {step, {:error, reason}} -> {:error, {step, reason}}
       {:import, {:error, step, failed_value, changes_so_far}} -> {:error, {step, failed_value, changes_so_far}}
