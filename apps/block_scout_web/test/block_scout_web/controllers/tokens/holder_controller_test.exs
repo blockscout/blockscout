@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.Tokens.HolderControllerTest do
     async: false
 
   alias Explorer.Chain.Hash
-  alias Explorer.Counters.{TokenHoldersCounter, TokenTransferCounter}
+  alias Explorer.Counters.TokenHoldersCounter
 
   describe "GET index/3" do
     test "with invalid address hash", %{conn: conn} do
@@ -31,9 +31,6 @@ defmodule BlockScoutWeb.Tokens.HolderControllerTest do
 
       start_supervised!(TokenHoldersCounter)
       TokenHoldersCounter.consolidate()
-
-      start_supervised!(TokenTransferCounter)
-      TokenTransferCounter.consolidate()
 
       conn =
         get(

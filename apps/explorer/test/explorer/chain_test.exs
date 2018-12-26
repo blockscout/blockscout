@@ -2191,6 +2191,117 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "missing_block_number_ranges/1" do
+    # 0000
+    test "0..0 without blocks" do
+      assert Chain.missing_block_number_ranges(0..0) == [0..0]
+    end
+
+    # 0001
+    test "0..0 with block 3" do
+      insert(:block, number: 3)
+
+      assert Chain.missing_block_number_ranges(0..0) == [0..0]
+    end
+
+    # 0010
+    test "0..0 with block 2" do
+      insert(:block, number: 2)
+
+      assert Chain.missing_block_number_ranges(0..0) == [0..0]
+    end
+
+    # 0011
+    test "0..0 with blocks 2,3" do
+      Enum.each([2, 3], &insert(:block, number: &1))
+
+      assert Chain.missing_block_number_ranges(0..0) == [0..0]
+    end
+
+    # 0100
+    test "0..0 with block 1" do
+      insert(:block, number: 1)
+
+      assert Chain.missing_block_number_ranges(0..0) == [0..0]
+    end
+
+    # 0101
+    test "0..0 with blocks 1,3" do
+      Enum.each([1, 3], &insert(:block, number: &1))
+
+      assert Chain.missing_block_number_ranges(0..0) == [0..0]
+    end
+
+    # 0111
+    test "0..0 with blocks 1..3" do
+      Enum.each(1..3, &insert(:block, number: &1))
+
+      assert Chain.missing_block_number_ranges(0..0) == [0..0]
+    end
+
+    # 1000
+    test "0..0 with block 0" do
+      insert(:block, number: 0)
+
+      assert Chain.missing_block_number_ranges(0..0) == []
+    end
+
+    # 1001
+    test "0..0 with blocks 0,3" do
+      Enum.each([0, 3], &insert(:block, number: &1))
+
+      assert Chain.missing_block_number_ranges(0..0) == []
+    end
+
+    # 1010
+    test "0..0 with blocks 0,2" do
+      Enum.each([0, 2], &insert(:block, number: &1))
+
+      assert Chain.missing_block_number_ranges(0..0) == []
+    end
+
+    # 1011
+    test "0..0 with blocks 0,2,3" do
+      Enum.each([0, 2, 3], &insert(:block, number: &1))
+
+      assert Chain.missing_block_number_ranges(0..0) == []
+    end
+
+    # 1100
+    test "0..0 with blocks 0..1" do
+      Enum.each(0..1, &insert(:block, number: &1))
+
+      assert Chain.missing_block_number_ranges(0..0) == []
+    end
+
+    # 1101
+    test "0..0 with blocks 0,1,3" do
+      Enum.each([0, 1, 3], &insert(:block, number: &1))
+
+      assert Chain.missing_block_number_ranges(0..0) == []
+    end
+
+    # 1110
+    test "0..0 with blocks 0..2" do
+      Enum.each(0..2, &insert(:block, number: &1))
+
+      assert Chain.missing_block_number_ranges(0..0) == []
+    end
+
+    # 1111
+    test "0..0 with blocks 0..3" do
+      Enum.each(0..2, &insert(:block, number: &1))
+
+      assert Chain.missing_block_number_ranges(0..0) == []
+    end
+
+    test "0..2 with block 1" do
+      insert(:block, number: 1)
+
+      assert Chain.missing_block_number_ranges(0..2) == [0..0, 2..2]
+    end
+  end
+
   describe "recent_collated_transactions/1" do
     test "with no collated transactions it returns an empty list" do
       assert [] == Explorer.Chain.recent_collated_transactions()
@@ -2793,12 +2904,6 @@ defmodule Explorer.ChainTest do
 
       assert ^smart_contract = Chain.address_hash_to_smart_contract(smart_contract.address_hash)
     end
-  end
-
-  test "subscribe_to_events/1" do
-    assert :ok == Chain.subscribe_to_events(:logs)
-    current_pid = self()
-    assert [{^current_pid, _}] = Registry.lookup(Registry.ChainEvents, :logs)
   end
 
   describe "token_from_address_hash/1" do
