@@ -60,6 +60,8 @@ config :wobserver,
   discovery: :none,
   mode: :plug
 
+config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

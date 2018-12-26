@@ -1521,35 +1521,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Subscribes the caller process to a specified subset of chain-related events.
-
-  ## Handling An Event
-
-  A subscribed process should handle an event message. The message is in the
-  format of a three-element tuple.
-
-  * Element 0 - `:chain_event`
-  * Element 1 - event subscribed to
-  * Element 2 - event data in list form
-
-  # A new block event in a GenServer
-  def handle_info({:chain_event, :blocks, blocks}, state) do
-  # Do something with the blocks
-  end
-
-  ## Example
-
-  iex> Explorer.Chain.subscribe_to_events(:blocks)
-  :ok
-  """
-  @spec subscribe_to_events(chain_event()) :: :ok
-  def subscribe_to_events(event_type)
-      when event_type in ~w(addresses address_coin_balances blocks exchange_rate internal_transactions logs token_transfers transactions)a do
-    Registry.register(Registry.ChainEvents, event_type, [])
-    :ok
-  end
-
-  @doc """
   Estimated count of `t:Explorer.Chain.Transaction.t/0`.
 
   Estimated count of both collated and pending transactions using the transactions table statistics.
