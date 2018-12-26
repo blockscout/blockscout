@@ -3,7 +3,7 @@ defmodule Explorer.Accounts.User do
   An Explorer user.
   """
 
-  use Ecto.Schema
+  use Explorer.Schema
 
   import Ecto.Changeset
 

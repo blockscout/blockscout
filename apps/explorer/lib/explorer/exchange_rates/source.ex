@@ -43,7 +43,11 @@ defmodule Explorer.ExchangeRates.Source do
 
   def to_decimal(nil), do: nil
 
-  def to_decimal(value) do
+  def to_decimal(value) when is_float(value) do
+    Decimal.from_float(value)
+  end
+
+  def to_decimal(value) when is_integer(value) or is_binary(value) do
     Decimal.new(value)
   end
 

@@ -8,6 +8,7 @@ defmodule Indexer.Block.Uncle.Fetcher do
 
   require Logger
 
+  alias Ecto.Changeset
   alias EthereumJSONRPC.Blocks
   alias Explorer.Chain
   alias Explorer.Chain.Hash
@@ -20,7 +21,8 @@ defmodule Indexer.Block.Uncle.Fetcher do
     flush_interval: :timer.seconds(3),
     max_batch_size: 10,
     max_concurrency: 10,
-    task_supervisor: Indexer.Block.Uncle.TaskSupervisor
+    task_supervisor: Indexer.Block.Uncle.TaskSupervisor,
+    metadata: [fetcher: :block_uncle]
   ]
 
   @doc """
@@ -73,16 +75,22 @@ defmodule Indexer.Block.Uncle.Fetcher do
     # the same block could be included as an uncle on multiple blocks, but we only want to fetch it once
     unique_hashes = Enum.uniq(hashes)
 
-    Logger.debug(fn -> "fetching #{length(unique_hashes)} uncle blocks" end)
+    unique_hash_count = Enum.count(unique_hashes)
+    Logger.metadata(count: unique_hash_count)
+
+    Logger.debug("fetching")
 
     case EthereumJSONRPC.fetch_blocks_by_hash(unique_hashes, json_rpc_named_arguments) do
       {:ok, blocks} ->
         run_blocks(blocks, block_fetcher, unique_hashes)
 
       {:error, reason} ->
-        Logger.error(fn ->
-          ["failed to fetch ", unique_hashes |> length |> to_string(), " uncle blocks: ", inspect(reason)]
-        end)
+        Logger.error(
+          fn ->
+            ["failed to fetch: ", inspect(reason)]
+          end,
+          error_count: unique_hash_count
+        )
 
         {:retry, unique_hashes}
     end
@@ -109,19 +117,23 @@ defmodule Indexer.Block.Uncle.Fetcher do
            transactions: %{params: transactions_params, on_conflict: :nothing}
          }) do
       {:ok, _} ->
-        retry(errors, original_entries)
+        retry(errors)
+
+      {:error, {:import = step, [%Changeset{} | _] = changesets}} ->
+        Logger.error(fn -> ["Failed to validate: ", inspect(changesets)] end, step: step)
+
+        {:retry, original_entries}
+
+      {:error, {:import = step, reason}} ->
+        Logger.error(fn -> inspect(reason) end, step: step)
+
+        {:retry, original_entries}
 
       {:error, step, failed_value, _changes_so_far} ->
-        Logger.error(fn ->
-          [
-            "failed to import ",
-            original_entries |> length() |> to_string(),
-            "uncle blocks in step ",
-            inspect(step),
-            ": ",
-            inspect(failed_value)
-          ]
-        end)
+        Logger.error(fn -> ["failed to import: ", inspect(failed_value)] end,
+          step: step,
+          error_count: Enum.count(original_entries)
+        )
 
         {:retry, original_entries}
     end
@@ -184,20 +196,32 @@ defmodule Indexer.Block.Uncle.Fetcher do
     end)
   end
 
-  defp retry([], _), do: :ok
+  defp retry([]), do: :ok
 
-  defp retry(errors, original_entries) when is_list(errors) do
+  defp retry(errors) when is_list(errors) do
     retried_entries = errors_to_entries(errors)
+    loggable_errors = loggable_errors(errors)
+    loggable_error_count = Enum.count(loggable_errors)
 
-    Logger.error(fn ->
-      [
-        "failed to fetch ",
-        retried_entries |> length() |> to_string(),
-        "/",
-        original_entries |> length() |> to_string(),
-        " uncles: ",
-        errors_to_iodata(errors)
-      ]
+    unless loggable_error_count == 0 do
+      Logger.error(
+        fn ->
+          [
+            "failed to fetch: ",
+            errors_to_iodata(loggable_errors)
+          ]
+        end,
+        error_count: loggable_error_count
+      )
+    end
+
+    {:retry, retried_entries}
+  end
+
+  defp loggable_errors(errors) when is_list(errors) do
+    Enum.filter(errors, fn
+      %{code: 404, message: "Not Found"} -> false
+      _ -> true
     end)
   end
 

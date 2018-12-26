@@ -7,10 +7,7 @@ defmodule Explorer.Schema do
 
       import Ecto.{Changeset, Query}
 
-      @timestamps_opts [
-        type: :utc_datetime,
-        usec: true
-      ]
+      @timestamps_opts [type: :utc_datetime_usec]
     end
   end
 end

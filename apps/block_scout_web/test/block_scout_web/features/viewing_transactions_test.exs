@@ -3,8 +3,8 @@ defmodule BlockScoutWeb.ViewingTransactionsTest do
 
   use BlockScoutWeb.FeatureCase, async: true
 
-  alias Explorer.Chain.Wei
   alias BlockScoutWeb.{AddressPage, TransactionListPage, TransactionLogsPage, TransactionPage}
+  alias Explorer.Chain.Wei
 
   setup do
     block =

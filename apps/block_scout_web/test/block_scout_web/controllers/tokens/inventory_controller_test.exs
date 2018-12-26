@@ -1,5 +1,9 @@
 defmodule BlockScoutWeb.Tokens.InventoryControllerTest do
-  use BlockScoutWeb.ConnCase
+  use BlockScoutWeb.ConnCase,
+    # ETS table is shared in `Explorer.Counters.*`
+    async: false
+
+  alias Explorer.Counters.TokenHoldersCounter
 
   describe "GET index/3" do
     test "with invalid address hash", %{conn: conn} do
@@ -31,6 +35,9 @@ defmodule BlockScoutWeb.Tokens.InventoryControllerTest do
         token: token
       )
 
+      start_supervised!(TokenHoldersCounter)
+      TokenHoldersCounter.consolidate()
+
       conn =
         get(
           conn,
@@ -59,6 +66,9 @@ defmodule BlockScoutWeb.Tokens.InventoryControllerTest do
             token_id: &1 + 1000
           )
         )
+
+      start_supervised!(TokenHoldersCounter)
+      TokenHoldersCounter.consolidate()
 
       conn =
         get(conn, token_inventory_path(conn, :index, token.contract_address_hash), %{
@@ -92,6 +102,9 @@ defmodule BlockScoutWeb.Tokens.InventoryControllerTest do
         "unique_token" => 1050
       }
 
+      start_supervised!(TokenHoldersCounter)
+      TokenHoldersCounter.consolidate()
+
       conn = get(conn, token_inventory_path(conn, :index, token.contract_address_hash))
 
       assert conn.assigns.next_page_params == expected_next_page_params
@@ -112,6 +125,9 @@ defmodule BlockScoutWeb.Tokens.InventoryControllerTest do
         token: token,
         token_id: 1000
       )
+
+      start_supervised!(TokenHoldersCounter)
+      TokenHoldersCounter.consolidate()
 
       conn = get(conn, token_inventory_path(conn, :index, token.contract_address_hash))
 

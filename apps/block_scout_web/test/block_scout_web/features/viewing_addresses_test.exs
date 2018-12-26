@@ -1,6 +1,9 @@
 defmodule BlockScoutWeb.ViewingAddressesTest do
-  use BlockScoutWeb.FeatureCase, async: true
+  use BlockScoutWeb.FeatureCase,
+    # Because ETS tables is shared for `Explorer.Counters.*`
+    async: false
 
+  alias Explorer.Counters.AddressesWithBalanceCounter
   alias BlockScoutWeb.{AddressPage, AddressView, Notifier}
 
   setup do
@@ -37,6 +40,9 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
     test "lists top addresses", %{session: session, addresses: addresses} do
       [first_address | _] = addresses
       [last_address | _] = Enum.reverse(addresses)
+
+      start_supervised!(AddressesWithBalanceCounter)
+      AddressesWithBalanceCounter.consolidate()
 
       session
       |> AddressPage.visit_page()
@@ -386,7 +392,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         token_contract_address: contract_address
       )
 
-      insert(:token_balance, address: lincoln, token_contract_address_hash: contract_address.hash)
+      insert(:address_current_token_balance, address: lincoln, token_contract_address_hash: contract_address.hash)
 
       session
       |> AddressPage.visit_page(lincoln)
@@ -421,7 +427,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         token_contract_address: contract_address
       )
 
-      insert(:token_balance, address: lincoln, token_contract_address_hash: contract_address.hash)
+      insert(:address_current_token_balance, address: lincoln, token_contract_address_hash: contract_address.hash)
 
       contract_address_2 = insert(:contract_address)
       insert(:token, name: "token2", symbol: "T2", contract_address: contract_address_2, type: "ERC-20")
@@ -439,7 +445,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         token_contract_address: contract_address_2
       )
 
-      insert(:token_balance, address: lincoln, token_contract_address_hash: contract_address_2.hash)
+      insert(:address_current_token_balance, address: lincoln, token_contract_address_hash: contract_address_2.hash)
 
       {:ok, lincoln: lincoln}
     end

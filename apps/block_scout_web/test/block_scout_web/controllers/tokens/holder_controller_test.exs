@@ -1,7 +1,10 @@
 defmodule BlockScoutWeb.Tokens.HolderControllerTest do
-  use BlockScoutWeb.ConnCase
+  use BlockScoutWeb.ConnCase,
+    # ETS table is shared in `Explorer.Counters.TokenHoldersCounter`
+    async: false
 
   alias Explorer.Chain.Hash
+  alias Explorer.Counters.TokenHoldersCounter
 
   describe "GET index/3" do
     test "with invalid address hash", %{conn: conn} do
@@ -25,6 +28,9 @@ defmodule BlockScoutWeb.Tokens.HolderControllerTest do
         :address_current_token_balance,
         token_contract_address_hash: token.contract_address_hash
       )
+
+      start_supervised!(TokenHoldersCounter)
+      TokenHoldersCounter.consolidate()
 
       conn =
         get(

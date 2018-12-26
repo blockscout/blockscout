@@ -1,6 +1,6 @@
 defmodule BlockScoutWeb.Notifier do
   @moduledoc """
-  Responds to events from EventHandler by sending appropriate channel updates to front-end.
+  Responds to events by sending appropriate channel updates to front-end.
   """
 
   alias Absinthe.Subscription
@@ -19,22 +19,6 @@ defmodule BlockScoutWeb.Notifier do
 
   def handle_event({:chain_event, :address_coin_balances, :realtime, address_coin_balances}) do
     Enum.each(address_coin_balances, &broadcast_address_coin_balance/1)
-  end
-
-  def handle_event({:chain_event, :blocks, :catchup, _blocks}) do
-    ratio = Chain.indexed_ratio()
-
-    finished? =
-      if ratio < 1 do
-        false
-      else
-        Chain.finished_indexing?()
-      end
-
-    Endpoint.broadcast("blocks:indexing", "index_status", %{
-      ratio: ratio,
-      finished: finished?
-    })
   end
 
   def handle_event({:chain_event, :blocks, :realtime, blocks}) do
@@ -94,11 +78,19 @@ defmodule BlockScoutWeb.Notifier do
 
   def handle_event(_), do: nil
 
-  defp broadcast_address_coin_balance(%{address_hash: address_hash, block_number: block_number}) do
-    coin_balance = Chain.get_coin_balance(address_hash, block_number)
+  @doc """
+  Broadcast the percentage of blocks indexed so far.
+  """
+  def broadcast_blocks_indexed_ratio(ratio, finished?) do
+    Endpoint.broadcast("blocks:indexing", "index_status", %{
+      ratio: ratio,
+      finished: finished?
+    })
+  end
 
+  defp broadcast_address_coin_balance(%{address_hash: address_hash, block_number: block_number}) do
     Endpoint.broadcast("addresses:#{address_hash}", "coin_balance", %{
-      coin_balance: coin_balance
+      block_number: block_number
     })
   end
 
@@ -110,7 +102,7 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   defp broadcast_block(block) do
-    preloaded_block = Repo.preload(block, [[miner: :names], :transactions])
+    preloaded_block = Repo.preload(block, [[miner: :names], :transactions, :rewards])
     average_block_time = Chain.average_block_time()
 
     Endpoint.broadcast("blocks:new_block", "new_block", %{

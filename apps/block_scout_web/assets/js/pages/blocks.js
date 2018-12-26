@@ -56,14 +56,15 @@ function withMissingBlocks (reducer) {
 
     if (result.items.length < 2) return result
 
-    const maxBlock = getBlockNumber(_.first(result.items))
-    const minBlock = getBlockNumber(_.last(result.items))
-
     const blockNumbersToItems = result.items.reduce((acc, item) => {
       const blockNumber = getBlockNumber(item)
       acc[blockNumber] = acc[blockNumber] || item
       return acc
     }, {})
+
+    const blockNumbers = _(blockNumbersToItems).keys().map(x => parseInt(x, 10)).value()
+    const minBlock = _.min(blockNumbers)
+    const maxBlock = _.max(blockNumbers)
 
     return Object.assign({}, result, {
       items: _.rangeRight(minBlock, maxBlock + 1)

@@ -611,7 +611,7 @@ defmodule Indexer.Block.FetcherTest do
   end
 
   defp wait_for_tasks(buffered_task) do
-    wait_until(10_000, fn ->
+    wait_until(:timer.seconds(10), fn ->
       counts = BufferedTask.debug_count(buffered_task)
       counts.buffer == 0 and counts.tasks == 0
     end)

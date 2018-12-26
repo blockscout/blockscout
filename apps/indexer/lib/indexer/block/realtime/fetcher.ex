@@ -16,7 +16,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias EthereumJSONRPC.{FetchedBalances, Subscription}
   alias Explorer.Chain
   alias Indexer.{AddressExtraction, Block, TokenBalances, Tracer}
-  alias Indexer.Block.Realtime.TaskSupervisor
+  alias Indexer.Block.Realtime.{ConsensusEnsurer, TaskSupervisor}
 
   @behaviour Block.Fetcher
 
@@ -43,6 +43,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
   @impl GenServer
   def init(%{block_fetcher: %Block.Fetcher{} = block_fetcher, subscribe_named_arguments: subscribe_named_arguments})
       when is_list(subscribe_named_arguments) do
+    Logger.metadata(fetcher: :block_realtime)
+
     {:ok, %__MODULE__{block_fetcher: %Block.Fetcher{block_fetcher | broadcast: :realtime, callback_module: __MODULE__}},
      {:continue, {:init, subscribe_named_arguments}}}
   end
@@ -95,22 +97,26 @@ defmodule Indexer.Block.Realtime.Fetcher do
           transactions: %{params: transactions_params}
         } = options
       ) do
-    with {:ok,
-          %{
-            addresses_params: internal_transactions_addresses_params,
-            internal_transactions_params: internal_transactions_params
-          }} <-
-           internal_transactions(block_fetcher, %{
-             addresses_params: addresses_params,
-             transactions_params: transactions_params
-           }),
-         {:ok, %{addresses_params: balances_addresses_params, balances_params: balances_params}} <-
-           balances(block_fetcher, %{
-             address_hash_to_block_number: address_hash_to_block_number,
+    with {:internal_transactions,
+          {:ok,
+           %{
              addresses_params: internal_transactions_addresses_params,
-             balances_params: address_coin_balances_params
-           }),
-         {:ok, address_token_balances} <- fetch_token_balances(address_token_balances_params),
+             internal_transactions_params: internal_transactions_params
+           }}} <-
+           {:internal_transactions,
+            internal_transactions(block_fetcher, %{
+              addresses_params: addresses_params,
+              transactions_params: transactions_params
+            })},
+         {:balances, {:ok, %{addresses_params: balances_addresses_params, balances_params: balances_params}}} <-
+           {:balances,
+            balances(block_fetcher, %{
+              address_hash_to_block_number: address_hash_to_block_number,
+              addresses_params: internal_transactions_addresses_params,
+              balances_params: address_coin_balances_params
+            })},
+         {:address_token_balances, {:ok, address_token_balances}} <-
+           {:address_token_balances, fetch_token_balances(address_token_balances_params)},
          chain_import_options =
            options
            |> Map.drop(@import_options)
@@ -120,7 +126,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
            |> put_in([Access.key(:address_current_token_balances, %{}), :params], address_token_balances)
            |> put_in([Access.key(:address_token_balances), :params], address_token_balances)
            |> put_in([Access.key(:internal_transactions, %{}), :params], internal_transactions_params),
-         {:ok, imported} = ok <- Chain.import(chain_import_options) do
+         {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
       async_import_remaining_block_data(imported)
       ok
     end
@@ -157,48 +163,42 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   @decorate trace(name: "fetch", resource: "Indexer.Block.Realtime.Fetcher.fetch_and_import_block/3", tracer: Tracer)
   def fetch_and_import_block(block_number_to_fetch, block_fetcher, reorg?, retry \\ 3) do
-    if reorg? do
-      # give previous fetch attempt (for same block number) a chance to finish
-      # before fetching again, to reduce block consensus mistakes
-      :timer.sleep(@reorg_delay)
-    end
+    Indexer.Logger.metadata(
+      fn ->
+        if reorg? do
+          # give previous fetch attempt (for same block number) a chance to finish
+          # before fetching again, to reduce block consensus mistakes
+          :timer.sleep(@reorg_delay)
+        end
 
-    do_fetch_and_import_block(block_number_to_fetch, block_fetcher, retry)
+        do_fetch_and_import_block(block_number_to_fetch, block_fetcher, retry)
+      end,
+      fetcher: :block_realtime,
+      block_number: block_number_to_fetch
+    )
   end
 
   @decorate span(tracer: Tracer)
   defp do_fetch_and_import_block(block_number_to_fetch, block_fetcher, retry) do
     case fetch_and_import_range(block_fetcher, block_number_to_fetch..block_number_to_fetch) do
-      {:ok, %{inserted: _, errors: []}} ->
-        Logger.debug(fn ->
-          ["realtime indexer fetched and imported block ", to_string(block_number_to_fetch)]
-        end)
+      {:ok, %{inserted: inserted, errors: []}} ->
+        for block <- Map.get(inserted, :blocks, []) do
+          args = [block.parent_hash, block.number - 1, block_fetcher]
+          Task.Supervisor.start_child(TaskSupervisor, ConsensusEnsurer, :perform, args)
+        end
+
+        Logger.debug("Fetched and imported.")
 
       {:ok, %{inserted: _, errors: [_ | _] = errors}} ->
         Logger.error(fn ->
           [
-            "realtime indexer failed to fetch block",
-            to_string(block_number_to_fetch),
-            ": ",
+            "failed to fetch block: ",
             inspect(errors),
             ".  Block will be retried by catchup indexer."
           ]
         end)
 
-      {:error, {step, reason}} ->
-        Logger.error(fn ->
-          [
-            "realtime indexer failed to fetch ",
-            to_string(step),
-            " for block ",
-            to_string(block_number_to_fetch),
-            ": ",
-            inspect(reason),
-            ".  Block will be retried by catchup indexer."
-          ]
-        end)
-
-      {:error, [%Changeset{} | _] = changesets} ->
+      {:error, {:import = step, [%Changeset{} | _] = changesets}} ->
         params = %{
           changesets: changesets,
           block_number_to_fetch: block_number_to_fetch,
@@ -207,29 +207,46 @@ defmodule Indexer.Block.Realtime.Fetcher do
         }
 
         if retry_fetch_and_import_block(params) == :ignore do
-          Logger.error(fn ->
-            [
-              "realtime indexer failed to validate for block ",
-              to_string(block_number_to_fetch),
-              ": ",
-              inspect(changesets),
-              ".  Block will be retried by catchup indexer."
-            ]
-          end)
+          Logger.error(
+            fn ->
+              [
+                "failed to validate for block ",
+                to_string(block_number_to_fetch),
+                ": ",
+                inspect(changesets),
+                ".  Block will be retried by catchup indexer."
+              ]
+            end,
+            step: step
+          )
         end
 
+      {:error, {:import = step, reason}} ->
+        Logger.error(fn -> inspect(reason) end, step: step)
+
+      {:error, {step, reason}} ->
+        Logger.error(
+          fn ->
+            [
+              "failed to fetch: ",
+              inspect(reason),
+              ".  Block will be retried by catchup indexer."
+            ]
+          end,
+          step: step
+        )
+
       {:error, {step, failed_value, _changes_so_far}} ->
-        Logger.error(fn ->
-          [
-            "realtime indexer failed to insert ",
-            to_string(step),
-            " for block ",
-            to_string(block_number_to_fetch),
-            ": ",
-            inspect(failed_value),
-            ".  Block will be retried by catchup indexer."
-          ]
-        end)
+        Logger.error(
+          fn ->
+            [
+              "failed to insert: ",
+              inspect(failed_value),
+              ".  Block will be retried by catchup indexer."
+            ]
+          end,
+          step: step
+        )
     end
   end
 
