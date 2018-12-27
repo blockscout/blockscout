@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.ChainControllerTest do
 
   import BlockScoutWeb.Router.Helpers, only: [chain_path: 2, block_path: 3, transaction_path: 3, address_path: 3]
 
-  alias Explorer.Chain.Block
+  alias Explorer.Chain.{Block, Hash}
   alias Explorer.Counters.AddressesWithBalanceCounter
 
   describe "GET index/2" do
@@ -39,39 +39,6 @@ defmodule BlockScoutWeb.ChainControllerTest do
       conn = get(conn, "/")
 
       refute(Enum.member?(conn.assigns.blocks, old_block))
-    end
-
-    test "only returns transactions with an associated block", %{conn: conn} do
-      associated =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      unassociated = insert(:transaction)
-
-      start_supervised!(AddressesWithBalanceCounter)
-      AddressesWithBalanceCounter.consolidate()
-
-      conn = get(conn, "/")
-
-      transaction_hashes = Enum.map(conn.assigns.transactions, fn transaction -> transaction.hash end)
-
-      assert(Enum.member?(transaction_hashes, associated.hash))
-      refute(Enum.member?(transaction_hashes, unassociated.hash))
-    end
-
-    test "returns a transaction", %{conn: conn} do
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      start_supervised!(AddressesWithBalanceCounter)
-      AddressesWithBalanceCounter.consolidate()
-
-      conn = get(conn, "/")
-
-      assert(List.first(conn.assigns.transactions).hash == transaction.hash)
     end
 
     test "returns market history data", %{conn: conn} do

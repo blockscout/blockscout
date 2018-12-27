@@ -76,6 +76,8 @@ defmodule BlockScoutWeb.Router do
 
     resources("/pending_transactions", PendingTransactionController, only: [:index])
 
+    resources("/recent_transactions", RecentTransactionsController, only: [:index])
+
     get("/txs", TransactionController, :index)
 
     resources "/tx", TransactionController, only: [:show] do

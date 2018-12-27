@@ -72,10 +72,19 @@
           <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>
         </div>
       </div>
-      <span data-selector="transactions-list">
-        <%= for transaction <- @transactions do %>
-          <%= render BlockScoutWeb.TransactionView, "_tile.html", transaction: transaction %>
-        <% end %>
+      <span data-selector="transactions-list" data-transactions-path="<%= @transactions_path %>">
+        <button data-selector="error-message" class="alert alert-danger col-12 text-left" style="display: none;">
+          <span class="alert-link">
+            <%= gettext "Something went wrong, click to retry." %>
+          </span>
+        </button>
+        <div data-selector="loading-message" class="tile tile-muted text-center mt-3">
+          <span class="loading-spinner-small mr-2">
+            <span class="loading-spinner-block-1"></span>
+            <span class="loading-spinner-block-2"></span>
+          </span>
+          <%= gettext("Loading...") %>
+        </div>
       </span>
     </div>
   </div>
