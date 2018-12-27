@@ -45,7 +45,7 @@ defmodule Explorer.RepoTest do
       assert log =~ "Options:\n\n[conflict_target: [:transaction_hash, :index], on_conflict: :replace_all]\n\n"
 
       assert log =~
-               "Exception:\n\n** (Postgrex.Error) ERROR 21000 (cardinality_violation): ON CONFLICT DO UPDATE command cannot affect row a second time\n"
+               "Exception:\n\n** (Postgrex.Error) ERROR 21000 (cardinality_violation) ON CONFLICT DO UPDATE command cannot affect row a second time\n"
     end
   end
 end

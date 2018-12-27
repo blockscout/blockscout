@@ -47,6 +47,10 @@ defmodule BlockScoutWeb.AddressPage do
     click(session, css("[data-test='tokens_tab_link']"))
   end
 
+  def click_coin_balance_history(session) do
+    click(session, css("[data-test='coin_balance_tab_link']"))
+  end
+
   def click_balance_dropdown_toggle(session) do
     click(session, css("[data-dropdown-toggle]"))
   end
@@ -65,6 +69,10 @@ defmodule BlockScoutWeb.AddressPage do
 
   def click_show_pending_transactions(session) do
     click(session, css("[data-selector='pending-transactions-open']"))
+  end
+
+  def coin_balances(count: count) do
+    css("[data-test='coin_balance']", count: count)
   end
 
   def contract_creation(%InternalTransaction{created_contract_address_hash: hash}) do
@@ -122,34 +130,34 @@ defmodule BlockScoutWeb.AddressPage do
   end
 
   def transaction(transaction_hash) do
-    css("[data-transaction-hash='#{transaction_hash}']")
+    css("[data-identifier-hash='#{transaction_hash}']")
   end
 
   def transaction_address_link(%Transaction{hash: hash, from_address_hash: address_hash}, :from) do
-    css("[data-transaction-hash='#{hash}'] [data-test='address_hash_link'] [data-address-hash='#{address_hash}']")
+    css("[data-identifier-hash='#{hash}'] [data-test='address_hash_link'] [data-address-hash='#{address_hash}']")
   end
 
   def transaction_address_link(%Transaction{hash: hash, to_address_hash: address_hash}, :to) do
-    css("[data-transaction-hash='#{hash}'] [data-test='address_hash_link'] [data-address-hash='#{address_hash}']")
+    css("[data-identifier-hash='#{hash}'] [data-test='address_hash_link'] [data-address-hash='#{address_hash}']")
   end
 
   def transaction_status(%Transaction{hash: transaction_hash}) do
-    css("[data-transaction-hash='#{transaction_hash}'] [data-test='transaction_status']")
+    css("[data-identifier-hash='#{transaction_hash}'] [data-test='transaction_status']")
   end
 
   def token_transfer(%Transaction{hash: transaction_hash}, %Address{hash: address_hash}, count: count) do
     css(
-      "[data-transaction-hash='#{transaction_hash}'] [data-test='token_transfer'] [data-address-hash='#{address_hash}']",
+      "[data-identifier-hash='#{transaction_hash}'] [data-test='token_transfer'] [data-address-hash='#{address_hash}']",
       count: count
     )
   end
 
   def token_transfers(%Transaction{hash: transaction_hash}, count: count) do
-    css("[data-transaction-hash='#{transaction_hash}'] [data-test='token_transfer']", count: count)
+    css("[data-identifier-hash='#{transaction_hash}'] [data-test='token_transfer']", count: count)
   end
 
   def token_transfers_expansion(%Transaction{hash: transaction_hash}) do
-    css("[data-transaction-hash='#{transaction_hash}'] [data-test='token_transfers_expansion']")
+    css("[data-identifier-hash='#{transaction_hash}'] [data-test='token_transfers_expansion']")
   end
 
   def visit_page(session, %Address{hash: address_hash}), do: visit_page(session, address_hash)

@@ -1,5 +1,7 @@
 defmodule Explorer.Repo do
-  use Ecto.Repo, otp_app: :explorer
+  use Ecto.Repo,
+    otp_app: :explorer,
+    adapter: Ecto.Adapters.Postgres
 
   require Logger
 
@@ -11,6 +13,22 @@ defmodule Explorer.Repo do
     {:ok, Keyword.put(opts, :url, System.get_env("DATABASE_URL"))}
   end
 
+  def logged_transaction(fun_or_multi, opts \\ []) do
+    transaction_id = :erlang.unique_integer([:positive])
+
+    Explorer.Logger.metadata(
+      fn ->
+        {microseconds, value} = :timer.tc(__MODULE__, :transaction, [fun_or_multi, opts])
+
+        milliseconds = div(microseconds, 100) / 10.0
+        Logger.debug(["transaction_time=", :io_lib_format.fwrite_g(milliseconds), ?m, ?s])
+
+        value
+      end,
+      transaction_id: transaction_id
+    )
+  end
+
   @doc """
   Chunks elements into multiple `insert_all`'s to avoid DB driver param limits.
 
@@ -20,7 +38,7 @@ defmodule Explorer.Repo do
     returning = opts[:returning]
 
     elements
-    |> Enum.chunk_every(1000)
+    |> Enum.chunk_every(500)
     |> Enum.reduce({0, []}, fn chunk, {total_count, acc} ->
       {count, inserted} =
         try do
@@ -36,6 +54,9 @@ defmodule Explorer.Repo do
                 to_string(kind),
                 " using options because of error.\n",
                 "\n",
+                "Chunk Size: ",
+                chunk |> length() |> to_string(),
+                "\n",
                 "Chunk:\n",
                 "\n",
                 inspect(chunk, limit: :infinity, printable_limit: :infinity),
@@ -48,14 +69,14 @@ defmodule Explorer.Repo do
                 "\n",
                 "Exception:\n",
                 "\n",
-                Exception.format(:error, exception)
+                Exception.format(:error, exception, __STACKTRACE__)
               ]
             end)
 
             Logger.configure(truncate: old_truncate)
 
             # reraise to kill caller
-            raise exception
+            reraise exception, __STACKTRACE__
         end
 
       if returning do
@@ -64,5 +85,24 @@ defmodule Explorer.Repo do
         {count + total_count, nil}
       end
     end)
+  end
+
+  def stream_in_transaction(query, fun) when is_function(fun, 1) do
+    transaction(
+      fn ->
+        query
+        |> stream(timeout: :infinity)
+        |> fun.()
+      end,
+      timeout: :infinity
+    )
+  end
+
+  def stream_each(query, fun) when is_function(fun, 1) do
+    stream_in_transaction(query, &Enum.each(&1, fun))
+  end
+
+  def stream_reduce(query, initial, reducer) when is_function(reducer, 2) do
+    stream_in_transaction(query, &Enum.reduce(&1, initial, reducer))
   end
 end

@@ -13,6 +13,6 @@
   },
   "scripts": {},
   "dependencies": {
-    "solc-js": "^0.4.20-browser.1"
+    "solc": "^0.5"
   }
 }

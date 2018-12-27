@@ -15,6 +15,7 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
     # Use TestSource mock and ets table for this test set
     configuration = Application.get_env(:explorer, Explorer.ExchangeRates)
     Application.put_env(:explorer, Explorer.ExchangeRates, source: TestSource)
+    Application.put_env(:explorer, Explorer.ExchangeRates, table_name: :rates)
 
     ExchangeRates.init([])
 
@@ -51,7 +52,7 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
           assert payload.exchange_rate == token
           assert payload.market_history_data == []
       after
-        5_000 ->
+        :timer.seconds(5) ->
           assert false, "Expected message received nothing."
       end
     end
@@ -83,7 +84,7 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
           assert payload.exchange_rate == token
           assert payload.market_history_data == records
       after
-        5_000 ->
+        :timer.seconds(5) ->
           assert false, "Expected message received nothing."
       end
     end

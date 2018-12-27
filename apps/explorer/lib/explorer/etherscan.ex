@@ -9,7 +9,7 @@ defmodule Explorer.Etherscan do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Address.TokenBalance
   alias Explorer.Chain.{Block, Hash, InternalTransaction, Transaction, Wei}
-  alias Explorer.Chain.Block.Reward
+  alias Explorer.Chain.Block.EmissionReward
 
   @default_options %{
     order_by_direction: :asc,
@@ -186,7 +186,7 @@ defmodule Explorer.Etherscan do
       from(
         b in Block,
         left_join: t in assoc(b, :transactions),
-        inner_join: r in Reward,
+        inner_join: r in EmissionReward,
         on: fragment("? <@ ?", b.number, r.block_range),
         where: b.miner_hash == ^address_hash,
         order_by: [desc: b.number],

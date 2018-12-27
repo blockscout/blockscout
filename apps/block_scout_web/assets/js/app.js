@@ -21,6 +21,7 @@ import 'bootstrap'
 import './locale'
 
 import './pages/address'
+import './pages/address/coin_balances'
 import './pages/address/transactions'
 import './pages/address/validations'
 import './pages/address/internal_transactions'

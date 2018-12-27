@@ -4,27 +4,12 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
   """
 
   alias Explorer.ExchangeRates.{Source, Token}
-  alias HTTPoison.{Error, Response}
+
+  import Source, only: [decode_json: 1, to_decimal: 1]
 
   @behaviour Source
 
   @impl Source
-  def fetch_exchange_rates do
-    headers = [{"Content-Type", "application/json"}]
-
-    case HTTPoison.get(source_url(), headers) do
-      {:ok, %Response{body: body, status_code: 200}} ->
-        {:ok, format_data(body)}
-
-      {:ok, %Response{body: body, status_code: status_code}} when status_code in 400..499 ->
-        {:error, decode_json(body)["error"]}
-
-      {:error, %Error{reason: reason}} ->
-        {:error, reason}
-    end
-  end
-
-  @doc false
   def format_data(data) do
     for item <- decode_json(data), not is_nil(item["last_updated"]) do
       {last_updated_as_unix, _} = Integer.parse(item["last_updated"])
@@ -44,22 +29,17 @@ defmodule Explorer.ExchangeRates.Source.CoinMarketCap do
     end
   end
 
-  defp base_url do
-    configured_url = Application.get_env(:explorer, __MODULE__, [])[:base_url]
-    configured_url || "https://api.coinmarketcap.com"
-  end
-
-  defp decode_json(data) do
-    Jason.decode!(data)
-  end
-
-  defp to_decimal(nil), do: nil
-
-  defp to_decimal(value) do
-    Decimal.new(value)
-  end
-
-  defp source_url do
+  @impl Source
+  def source_url do
     "#{base_url()}/v1/ticker/?limit=0"
+  end
+
+  defp base_url do
+    config(:base_url) || "https://api.coinmarketcap.com"
+  end
+
+  @spec config(atom()) :: term
+  defp config(key) do
+    Application.get_env(:explorer, __MODULE__, [])[key]
   end
 end

@@ -1,6 +1,6 @@
 defmodule BlockScoutWeb.Notifier do
   @moduledoc """
-  Responds to events from EventHandler by sending appropriate channel updates to front-end.
+  Responds to events by sending appropriate channel updates to front-end.
   """
 
   alias Absinthe.Subscription
@@ -17,20 +17,14 @@ defmodule BlockScoutWeb.Notifier do
     |> Enum.each(&broadcast_balance/1)
   end
 
-  def handle_event({:chain_event, :blocks, :catchup, _blocks}) do
-    ratio = Chain.indexed_ratio()
+  def handle_event({:chain_event, :address_coin_balances, :realtime, address_coin_balances}) do
+    Enum.each(address_coin_balances, &broadcast_address_coin_balance/1)
+  end
 
-    finished? =
-      if ratio < 1 do
-        false
-      else
-        Chain.finished_indexing?()
-      end
-
-    Endpoint.broadcast("blocks:indexing", "index_status", %{
-      ratio: ratio,
-      finished: finished?
-    })
+  def handle_event({:chain_event, :block_rewards, :realtime, rewards}) do
+    if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] do
+      broadcast_rewards(rewards)
+    end
   end
 
   def handle_event({:chain_event, :blocks, :realtime, blocks}) do
@@ -90,6 +84,22 @@ defmodule BlockScoutWeb.Notifier do
 
   def handle_event(_), do: nil
 
+  @doc """
+  Broadcast the percentage of blocks indexed so far.
+  """
+  def broadcast_blocks_indexed_ratio(ratio, finished?) do
+    Endpoint.broadcast("blocks:indexing", "index_status", %{
+      ratio: ratio,
+      finished: finished?
+    })
+  end
+
+  defp broadcast_address_coin_balance(%{address_hash: address_hash, block_number: block_number}) do
+    Endpoint.broadcast("addresses:#{address_hash}", "coin_balance", %{
+      block_number: block_number
+    })
+  end
+
   defp broadcast_balance(%Address{hash: address_hash} = address) do
     Endpoint.broadcast("addresses:#{address_hash}", "balance_update", %{
       address: address,
@@ -98,7 +108,7 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   defp broadcast_block(block) do
-    preloaded_block = Repo.preload(block, [[miner: :names], :transactions])
+    preloaded_block = Repo.preload(block, [[miner: :names], :transactions, :rewards])
     average_block_time = Chain.average_block_time()
 
     Endpoint.broadcast("blocks:new_block", "new_block", %{
@@ -110,6 +120,17 @@ defmodule BlockScoutWeb.Notifier do
       block: preloaded_block,
       average_block_time: average_block_time
     })
+  end
+
+  defp broadcast_rewards(rewards) do
+    preloaded_rewards = Repo.preload(rewards, [:address, :block])
+
+    Enum.each(preloaded_rewards, fn reward ->
+      Endpoint.broadcast("rewards:#{to_string(reward.address_hash)}", "new_reward", %{
+        emission_funds: Enum.at(preloaded_rewards, 1),
+        validator: Enum.at(preloaded_rewards, 0)
+      })
+    end)
   end
 
   defp broadcast_internal_transaction(internal_transaction) do

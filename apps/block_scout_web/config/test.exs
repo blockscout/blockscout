@@ -17,3 +17,7 @@ config :logger, :block_scout_web,
 
 # Configure wallaby
 config :wallaby, screenshot_on_failure: true
+
+config :explorer, Explorer.ExchangeRates, enabled: false, store: :none
+
+config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: false

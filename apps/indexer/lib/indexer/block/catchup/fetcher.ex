@@ -10,6 +10,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
   import Indexer.Block.Fetcher,
     only: [async_import_coin_balances: 2, async_import_tokens: 1, async_import_uncles: 1, fetch_and_import_range: 2]
 
+  alias Ecto.Changeset
   alias Explorer.Chain
   alias Indexer.{Block, InternalTransaction, Sequence, TokenBalance, Tracer}
   alias Indexer.Memory.Shrinkable
@@ -58,6 +59,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
           block_fetcher: %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
         } = state
       ) do
+    Logger.metadata(fetcher: :block_catchup)
+
     {:ok, latest_block_number} = EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments)
 
     case latest_block_number do
@@ -69,6 +72,9 @@ defmodule Indexer.Block.Catchup.Fetcher do
         # realtime indexer gets the current latest block
         first = latest_block_number - 20
         last = 0
+
+        Logger.metadata(first_block_number: first, last_block_number: last)
+
         missing_ranges = Chain.missing_block_number_ranges(first..last)
         range_count = Enum.count(missing_ranges)
 
@@ -77,9 +83,10 @@ defmodule Indexer.Block.Catchup.Fetcher do
           |> Stream.map(&Enum.count/1)
           |> Enum.sum()
 
-        Logger.debug(fn ->
-          "#{missing_block_count} missed blocks in #{range_count} ranges between #{first} and #{last}"
-        end)
+        Logger.debug(fn -> "Missed blocks in ranges." end,
+          missing_block_range_count: range_count,
+          missing_block_count: missing_block_count
+        )
 
         shrunk =
           case missing_block_count do
@@ -108,10 +115,9 @@ defmodule Indexer.Block.Catchup.Fetcher do
     {async_import_remaining_block_data_options, chain_import_options} =
       Map.split(options, @async_import_remaining_block_data_options)
 
-    with {:ok, imported} = ok <-
-           chain_import_options
-           |> put_in([:blocks, :params, Access.all(), :consensus], true)
-           |> Chain.import() do
+    full_chain_import_options = put_in(chain_import_options, [:blocks, :params, Access.all(), :consensus], true)
+
+    with {:import, {:ok, imported} = ok} <- {:import, Chain.import(full_chain_import_options)} do
       async_import_remaining_block_data(
         imported,
         async_import_remaining_block_data_options
@@ -169,47 +175,66 @@ defmodule Indexer.Block.Catchup.Fetcher do
             )
   defp fetch_and_import_range_from_sequence(
          %__MODULE__{block_fetcher: %Block.Fetcher{} = block_fetcher},
-         _.._ = range,
+         first..last = range,
          sequence
        ) do
+    Logger.metadata(fetcher: :block_catchup, first_block_number: first, last_block_number: last)
+
     case fetch_and_import_range(block_fetcher, range) do
       {:ok, %{inserted: inserted, errors: errors}} ->
-        errors = cap_seq(sequence, errors, range)
+        errors = cap_seq(sequence, errors)
         retry(sequence, errors)
 
         {:ok, inserted: inserted}
 
-      {:error, {step, reason}} = error ->
-        Logger.error(fn ->
-          first..last = range
-          "failed to fetch #{step} for blocks #{first} - #{last}: #{inspect(reason)}. Retrying block range."
-        end)
+      {:error, {:import = step, [%Changeset{} | _] = changesets}} = error ->
+        Logger.error(fn -> ["failed to validate: ", inspect(changesets), ". Retrying."] end, step: step)
 
         push_back(sequence, range)
 
         error
 
-      {:error, changesets} = error when is_list(changesets) ->
-        Logger.error(fn ->
-          "failed to validate blocks #{inspect(range)}: #{inspect(changesets)}. Retrying"
-        end)
+      {:error, {:import = step, reason}} = error ->
+        Logger.error(fn -> [inspect(reason), ". Retrying."] end, step: step)
+
+        push_back(sequence, range)
+
+        error
+
+      {:error, {step, reason}} = error ->
+        Logger.error(
+          fn ->
+            ["failed to fetch: ", inspect(reason), ". Retrying."]
+          end,
+          step: step
+        )
 
         push_back(sequence, range)
 
         error
 
       {:error, {step, failed_value, _changes_so_far}} = error ->
-        Logger.error(fn ->
-          "failed to insert blocks during #{step} #{inspect(range)}: #{inspect(failed_value)}. Retrying"
-        end)
+        Logger.error(
+          fn ->
+            ["failed to insert: ", inspect(failed_value), ". Retrying."]
+          end,
+          step: step
+        )
 
         push_back(sequence, range)
 
         error
     end
+  rescue
+    exception ->
+      Logger.error(fn -> [Exception.format(:error, exception, __STACKTRACE__), ?\n, ?\n, "Retrying."] end)
+
+      push_back(sequence, range)
+
+      {:error, exception}
   end
 
-  defp cap_seq(seq, errors, range) do
+  defp cap_seq(seq, errors) do
     {not_founds, other_errors} =
       Enum.split_with(errors, fn
         %{code: 404, data: %{number: _}} -> true
@@ -218,10 +243,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
     case not_founds do
       [] ->
-        Logger.debug(fn ->
-          first_block_number..last_block_number = range
-          "got blocks #{first_block_number} - #{last_block_number}"
-        end)
+        Logger.debug("got blocks")
 
         other_errors
 
@@ -235,7 +257,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
   defp push_back(sequence, range) do
     case Sequence.push_back(sequence, range) do
       :ok -> :ok
-      {:error, reason} -> Logger.error(fn -> ["Could not push block range to back to Sequence: ", inspect(reason)] end)
+      {:error, reason} -> Logger.error(fn -> ["Could not push back to Sequence: ", inspect(reason)] end)
     end
   end
 
