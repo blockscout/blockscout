@@ -1189,6 +1189,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:19
 #: lib/block_scout_web/templates/address_validation/index.html.eex:63
 #: lib/block_scout_web/templates/address_validation/index.html.eex:82
+#: lib/block_scout_web/templates/chain/show.html.eex:86
 #: lib/block_scout_web/templates/tokens/read_contract/index.html.eex:25
 msgid "Loading..."
 msgstr ""
@@ -1531,4 +1532,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/_emission_reward_tile.html.eex:5
 msgid "Emission Contract"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/chain/show.html.eex:78
+msgid "Something went wrong, click to retry."
 msgstr ""
