@@ -13,20 +13,13 @@ defmodule BlockScoutWeb.ChainController do
 
     exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
 
-    market_history_data =
-      case Market.fetch_recent_history(30) do
-        [today | the_rest] -> [%{today | closing_price: exchange_rate.usd_value} | the_rest]
-        data -> data
-      end
-
     render(
       conn,
       "show.html",
       address_count: Chain.count_addresses_with_balance_from_cache(),
       average_block_time: Chain.average_block_time(),
       exchange_rate: exchange_rate,
-      available_supply: available_supply(Chain.supply_for_days(30), exchange_rate),
-      market_history_data: market_history_data,
+      chart_data_path: market_history_chart_path(conn, :show),
       transaction_estimated_count: transaction_estimated_count,
       transactions_path: recent_transactions_path(conn, :index)
     )
@@ -87,18 +80,5 @@ defmodule BlockScoutWeb.ChainController do
           item
         )
     )
-  end
-
-  defp available_supply(:ok, exchange_rate) do
-    to_string(exchange_rate.available_supply || 0)
-  end
-
-  defp available_supply({:ok, supply_for_days}, _exchange_rate) do
-    supply_for_days
-    |> Jason.encode()
-    |> case do
-      {:ok, data} -> data
-      _ -> []
-    end
   end
 end
