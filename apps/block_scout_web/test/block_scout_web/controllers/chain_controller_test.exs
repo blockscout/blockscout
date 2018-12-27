@@ -8,45 +8,50 @@ defmodule BlockScoutWeb.ChainControllerTest do
   alias Explorer.Chain.{Block, Hash}
   alias Explorer.Counters.AddressesWithBalanceCounter
 
+  setup do
+    start_supervised!(AddressesWithBalanceCounter)
+    AddressesWithBalanceCounter.consolidate()
+
+    :ok
+  end
+
   describe "GET index/2" do
     test "returns a welcome message", %{conn: conn} do
-      start_supervised!(AddressesWithBalanceCounter)
-      AddressesWithBalanceCounter.consolidate()
-
       conn = get(conn, chain_path(BlockScoutWeb.Endpoint, :show))
 
       assert(html_response(conn, 200) =~ "POA")
     end
 
-    test "returns a block", %{conn: conn} do
+    test "returns a block" do
       insert(:block, %{number: 23})
 
-      start_supervised!(AddressesWithBalanceCounter)
-      AddressesWithBalanceCounter.consolidate()
+      conn =
+        build_conn()
+        |> put_req_header("x-requested-with", "xmlhttprequest")
+        |> get("/chain_blocks")
 
-      conn = get(conn, "/")
+      response = json_response(conn, 200)
 
-      assert(List.first(conn.assigns.blocks).number == 23)
+      assert(List.first(response["blocks"])["block_number"] == 23)
     end
 
-    test "excludes all but the most recent five blocks", %{conn: conn} do
+    test "excludes all but the most recent five blocks" do
       old_block = insert(:block)
       insert_list(5, :block)
 
-      start_supervised!(AddressesWithBalanceCounter)
-      AddressesWithBalanceCounter.consolidate()
+      conn =
+        build_conn()
+        |> put_req_header("x-requested-with", "xmlhttprequest")
+        |> get("/chain_blocks")
 
-      conn = get(conn, "/")
+      response = json_response(conn, 200)
 
-      refute(Enum.member?(conn.assigns.blocks, old_block))
+      refute(Enum.member?(response["blocks"], old_block))
     end
 
     test "returns market history data", %{conn: conn} do
       today = Date.utc_today()
       for day <- -40..0, do: insert(:market_history, date: Date.add(today, day))
-
-      start_supervised!(AddressesWithBalanceCounter)
-      AddressesWithBalanceCounter.consolidate()
 
       conn = get(conn, "/")
 
@@ -54,17 +59,20 @@ defmodule BlockScoutWeb.ChainControllerTest do
       assert length(conn.assigns.market_history_data) == 30
     end
 
-    test "displays miner primary address names", %{conn: conn} do
+    test "displays miner primary address names" do
       miner_name = "POA Miner Pool"
       %{address: miner_address} = insert(:address_name, name: miner_name, primary: true)
 
       insert(:block, miner: miner_address, miner_hash: nil)
 
-      start_supervised!(AddressesWithBalanceCounter)
-      AddressesWithBalanceCounter.consolidate()
+      conn =
+        build_conn()
+        |> put_req_header("x-requested-with", "xmlhttprequest")
+        |> get("/chain_blocks")
 
-      conn = get(conn, chain_path(conn, :show))
-      assert html_response(conn, 200) =~ miner_name
+      response = List.first(json_response(conn, 200)["blocks"])
+
+      assert response["chain_block_html"] =~ miner_name
     end
   end
 
