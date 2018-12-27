@@ -14,12 +14,13 @@ defmodule BlockScoutWeb.RealtimeEventHandler do
 
   @impl true
   def init([]) do
-    Subscriber.to(:addresses, :realtime)
     Subscriber.to(:address_coin_balances, :realtime)
+    Subscriber.to(:addresses, :realtime)
+    Subscriber.to(:block_rewards, :realtime)
     Subscriber.to(:blocks, :realtime)
     Subscriber.to(:internal_transactions, :realtime)
-    Subscriber.to(:transactions, :realtime)
     Subscriber.to(:token_transfers, :realtime)
+    Subscriber.to(:transactions, :realtime)
     # Does not come from the indexer
     Subscriber.to(:exchange_rate)
     {:ok, []}

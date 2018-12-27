@@ -162,7 +162,7 @@ const elements = {
     load ($el) {
       return {
         transactions: $el.children().map((index, el) => ({
-          transactionHash: el.dataset.transactionHash,
+          transactionHash: el.dataset.identifierHash,
           transactionHtml: el.outerHTML
         })).toArray()
       }
@@ -171,7 +171,7 @@ const elements = {
       if (oldState.transactions === state.transactions) return
       const container = $el[0]
       const newElements = _.map(state.transactions, ({ transactionHtml }) => $(transactionHtml)[0])
-      listMorph(container, newElements, { key: 'dataset.transactionHash' })
+      listMorph(container, newElements, { key: 'dataset.identifierHash' })
     }
   },
   '[data-selector="channel-batching-count"]': {
