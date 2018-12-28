@@ -14,7 +14,8 @@ config :block_scout_web, BlockScoutWeb.Chain,
   network: System.get_env("NETWORK"),
   subnetwork: System.get_env("SUBNETWORK"),
   network_icon: System.get_env("NETWORK_ICON"),
-  logo: System.get_env("LOGO") || "/images/poa_logo.svg"
+  logo: System.get_env("LOGO") || "/images/poa_logo.svg",
+  has_emission_funds: true
 
 # Configures the endpoint
 config :block_scout_web, BlockScoutWeb.Endpoint,

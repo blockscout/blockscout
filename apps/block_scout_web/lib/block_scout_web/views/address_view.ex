@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.AddressView do
   alias BlockScoutWeb.LayoutView
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
+  alias Explorer.Chain.Block.Reward
 
   @dialyzer :no_match
 
@@ -83,6 +84,10 @@ defmodule BlockScoutWeb.AddressView do
 
   def address_partial_selector(%Transaction{from_address: address}, :from, current_address, truncate) do
     matching_address_check(current_address, address, contract?(address), truncate)
+  end
+
+  def address_partial_selector(%Reward{address: address}, _, current_address, truncate) do
+    matching_address_check(current_address, address, false, truncate)
   end
 
   def address_title(%Address{} = address) do
