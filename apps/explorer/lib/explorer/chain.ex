@@ -38,7 +38,7 @@ defmodule Explorer.Chain do
     Wei
   }
 
-  alias Explorer.Chain.Block.EmissionReward
+  alias Explorer.Chain.Block.{EmissionReward, Reward}
   alias Explorer.Chain.Import.Runner
   alias Explorer.{PagingOptions, Repo}
 
@@ -64,6 +64,7 @@ defmodule Explorer.Chain do
           :addresses
           | :address_coin_balances
           | :blocks
+          | :block_rewards
           | :exchange_rate
           | :internal_transactions
           | :logs
@@ -175,7 +176,8 @@ defmodule Explorer.Chain do
 
   @doc """
   Fetches the transactions related to the given address, including transactions
-  that only have the address in the `token_transfers` related table.
+  that only have the address in the `token_transfers` related table and rewards
+  for block validation.
 
   This query is divided into multiple subqueries intentionally in order to
   improve the listing performance.
@@ -197,8 +199,10 @@ defmodule Explorer.Chain do
       the `block_number` and `index` that are passed.
 
   """
-  @spec address_to_transactions(Address.t(), [paging_options | necessity_by_association_option]) :: [Transaction.t()]
-  def address_to_transactions(
+  @spec address_to_transactions_with_rewards(Address.t(), [paging_options | necessity_by_association_option]) :: [
+          Transaction.t()
+        ]
+  def address_to_transactions_with_rewards(
         %Address{hash: %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash},
         options \\ []
       )
@@ -243,15 +247,27 @@ defmodule Explorer.Chain do
           _ -> [from_address_query, to_address_query, created_contract_query]
         end
 
-    result = Enum.flat_map(queries, &Repo.all/1)
+    rewards_list =
+      if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] do
+        Reward.fetch_emission_rewards_tuples(address_hash, paging_options)
+      else
+        []
+      end
 
-    sorted_result =
-      result
-      |> Enum.uniq()
-      |> Enum.sort_by(fn x -> {-x.block_number, -x.index} end)
-      |> Enum.take(paging_options.page_size)
+    queries
+    |> Stream.flat_map(&Repo.all/1)
+    |> Stream.uniq()
+    |> Stream.concat(rewards_list)
+    |> Enum.sort_by(fn item ->
+      case item do
+        {%Reward{} = emission_reward, _} ->
+          {-emission_reward.block.number, 1}
 
-    sorted_result
+        item ->
+          {-item.block_number, -item.index}
+      end
+    end)
+    |> Enum.take(paging_options.page_size)
   end
 
   @doc """

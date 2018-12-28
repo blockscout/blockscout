@@ -9,6 +9,9 @@
         <%= token_name(@token) %>
       <% end %>
       <span><%= @token.type %> - <%= @token.contract_address_hash %></span>
+      <%= if @token.usd_value do %>
+        <span data-selector="token-price" data-usd-value="<%= @token.usd_value %>"></span>
+      <% end %>
     </div>
     <div class="col-md-5 d-flex flex-column text-md-right mt-3 mt-md-0">
       <span class="tile-title-lg text-md-right align-bottom">

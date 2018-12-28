@@ -22,10 +22,27 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> insert(from_address: lincoln, to_address: taft)
       |> with_block(block)
 
+    lincoln_reward =
+      :reward
+      |> insert(
+        address_hash: lincoln.hash,
+        block_hash: block.hash,
+        address_type: :emission_funds
+      )
+
+    taft_reward =
+      :reward
+      |> insert(
+        address_hash: taft.hash,
+        block_hash: block.hash,
+        address_type: :validator
+      )
+
     {:ok,
      %{
        addresses: %{lincoln: lincoln, taft: taft},
        block: block,
+       rewards: {lincoln_reward, taft_reward},
        transactions: %{from_lincoln: from_lincoln, from_taft: from_taft}
      }}
   end
@@ -162,6 +179,21 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> AddressPage.visit_page(addresses.lincoln)
       |> assert_has(AddressPage.transaction_address_link(transactions.from_lincoln, :to))
       |> refute_has(AddressPage.transaction_address_link(transactions.from_lincoln, :from))
+    end
+
+    test "sees rewards to and from an address alongside transactions", %{
+      addresses: addresses,
+      session: session,
+      transactions: transactions
+    } do
+      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: true)
+
+      session
+      |> AddressPage.visit_page(addresses.lincoln)
+      |> assert_has(AddressPage.transaction(transactions.from_taft))
+      |> assert_has(AddressPage.transaction(transactions.from_lincoln))
+
+      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
     end
   end
 

@@ -44,13 +44,13 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "address_to_transactions/2" do
+  describe "address_to_transactions_with_rewards/2" do
     test "without transactions" do
       address = insert(:address)
 
       assert Repo.aggregate(Transaction, :count, :hash) == 0
 
-      assert [] == Chain.address_to_transactions(address)
+      assert [] == Chain.address_to_transactions_with_rewards(address)
     end
 
     test "with from transactions" do
@@ -63,7 +63,7 @@ defmodule Explorer.ChainTest do
         |> Repo.preload(:token_transfers)
 
       assert [transaction] ==
-               Chain.address_to_transactions(address, direction: :from)
+               Chain.address_to_transactions_with_rewards(address, direction: :from)
                |> Repo.preload([:block, :to_address, :from_address])
     end
 
@@ -77,7 +77,7 @@ defmodule Explorer.ChainTest do
         |> Repo.preload(:token_transfers)
 
       assert [transaction] ==
-               Chain.address_to_transactions(address, direction: :to)
+               Chain.address_to_transactions_with_rewards(address, direction: :to)
                |> Repo.preload([:block, :to_address, :from_address])
     end
 
@@ -92,7 +92,7 @@ defmodule Explorer.ChainTest do
 
       # only contains "from" transaction
       assert [transaction] ==
-               Chain.address_to_transactions(address, direction: :from)
+               Chain.address_to_transactions_with_rewards(address, direction: :from)
                |> Repo.preload([:block, :to_address, :from_address])
     end
 
@@ -106,7 +106,7 @@ defmodule Explorer.ChainTest do
         |> Repo.preload(:token_transfers)
 
       assert [transaction] ==
-               Chain.address_to_transactions(address, direction: :to)
+               Chain.address_to_transactions_with_rewards(address, direction: :to)
                |> Repo.preload([:block, :to_address, :from_address])
     end
 
@@ -127,7 +127,7 @@ defmodule Explorer.ChainTest do
         |> Repo.preload(:token_transfers)
 
       assert [transaction2, transaction1] ==
-               Chain.address_to_transactions(address)
+               Chain.address_to_transactions_with_rewards(address)
                |> Repo.preload([:block, :to_address, :from_address])
     end
 
@@ -146,7 +146,7 @@ defmodule Explorer.ChainTest do
           transaction_index: transaction.index
         )
 
-      assert [] == Chain.address_to_transactions(address)
+      assert [] == Chain.address_to_transactions_with_rewards(address)
     end
 
     test "returns transactions that have token transfers for the given to_address" do
@@ -164,7 +164,7 @@ defmodule Explorer.ChainTest do
       )
 
       assert [transaction.hash] ==
-               Chain.address_to_transactions(address)
+               Chain.address_to_transactions_with_rewards(address)
                |> Enum.map(& &1.hash)
     end
 
@@ -191,7 +191,7 @@ defmodule Explorer.ChainTest do
 
       transaction =
         address
-        |> Chain.address_to_transactions()
+        |> Chain.address_to_transactions_with_rewards()
         |> List.first()
 
       token_transfers_related =
@@ -232,7 +232,7 @@ defmodule Explorer.ChainTest do
 
       transaction =
         contract_address
-        |> Chain.address_to_transactions()
+        |> Chain.address_to_transactions_with_rewards()
         |> List.first()
 
       token_transfers_contract_address =
@@ -268,7 +268,7 @@ defmodule Explorer.ChainTest do
         transaction: transaction
       )
 
-      transaction = Chain.address_to_transactions(contract_address) |> List.first()
+      transaction = Chain.address_to_transactions_with_rewards(contract_address) |> List.first()
       assert Enum.count(transaction.token_transfers) == 2
     end
 
@@ -315,7 +315,7 @@ defmodule Explorer.ChainTest do
 
       transactions_hashes =
         paul
-        |> Chain.address_to_transactions()
+        |> Chain.address_to_transactions_with_rewards()
         |> Enum.map(& &1.hash)
 
       assert Enum.member?(transactions_hashes, transaction_one.hash) == true
@@ -338,7 +338,7 @@ defmodule Explorer.ChainTest do
 
       assert second_page_hashes ==
                address
-               |> Chain.address_to_transactions(
+               |> Chain.address_to_transactions_with_rewards(
                  paging_options: %PagingOptions{
                    key: {block_number, index},
                    page_size: 2
@@ -387,10 +387,85 @@ defmodule Explorer.ChainTest do
 
       result =
         address
-        |> Chain.address_to_transactions()
+        |> Chain.address_to_transactions_with_rewards()
         |> Enum.map(& &1.hash)
 
       assert [fourth, third, second, first, sixth, fifth] == result
+    end
+
+    test "with emission rewards" do
+      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: true)
+
+      block = insert(:block)
+
+      insert(
+        :reward,
+        address_hash: block.miner_hash,
+        block_hash: block.hash,
+        address_type: :validator
+      )
+
+      insert(
+        :reward,
+        address_hash: block.miner_hash,
+        block_hash: block.hash,
+        address_type: :emission_funds
+      )
+
+      assert [{_, _}] = Chain.address_to_transactions_with_rewards(block.miner)
+
+      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
+    end
+
+    test "with emission rewards and transactions" do
+      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: true)
+
+      block = insert(:block)
+
+      insert(
+        :reward,
+        address_hash: block.miner_hash,
+        block_hash: block.hash,
+        address_type: :validator
+      )
+
+      insert(
+        :reward,
+        address_hash: block.miner_hash,
+        block_hash: block.hash,
+        address_type: :emission_funds
+      )
+
+      :transaction
+      |> insert(from_address: block.miner)
+      |> with_block()
+      |> Repo.preload(:token_transfers)
+
+      assert [_, {_, _}] = Chain.address_to_transactions_with_rewards(block.miner, direction: :from)
+
+      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
+    end
+
+    test "with emissions rewards, but feature disabled" do
+      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
+
+      block = insert(:block)
+
+      insert(
+        :reward,
+        address_hash: block.miner_hash,
+        block_hash: block.hash,
+        address_type: :validator
+      )
+
+      insert(
+        :reward,
+        address_hash: block.miner_hash,
+        block_hash: block.hash,
+        address_type: :emission_funds
+      )
+
+      assert [] == Chain.address_to_transactions_with_rewards(block.miner)
     end
   end
 

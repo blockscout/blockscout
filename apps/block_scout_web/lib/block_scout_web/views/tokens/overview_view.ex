@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
 
   alias Explorer.Chain.{Address, SmartContract, Token}
 
-  alias BlockScoutWeb.LayoutView
+  alias BlockScoutWeb.{CurrencyHelpers, LayoutView}
 
   @tabs ["token_transfers", "token_holders", "read_contract", "inventory"]
 
@@ -47,4 +47,13 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
   end
 
   def smart_contract_with_read_only_functions?(%Token{contract_address: %Address{smart_contract: nil}}), do: false
+
+  @doc """
+  Get the total value of the token supply in USD.
+  """
+  def total_supply_usd(token) do
+    tokens = CurrencyHelpers.divide_decimals(token.total_supply, token.decimals)
+    price = token.usd_value
+    Decimal.mult(tokens, price)
+  end
 end

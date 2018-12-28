@@ -7,6 +7,7 @@ defmodule Explorer.Chain.Block.Reward do
 
   alias Explorer.Chain.Block.Reward.AddressType
   alias Explorer.Chain.{Address, Block, Hash, Wei}
+  alias Explorer.{PagingOptions, Repo}
 
   @required_attrs ~w(address_hash address_type block_hash reward)a
 
@@ -55,5 +56,65 @@ defmodule Explorer.Chain.Block.Reward do
     reward
     |> cast(attrs, @required_attrs)
     |> validate_required(@required_attrs)
+  end
+
+  def paginate(query, %PagingOptions{key: nil}), do: query
+
+  def paginate(query, %PagingOptions{key: {block_number, _}}) do
+    where(query, [_, block], block.number < ^block_number)
+  end
+
+  @doc """
+  Returns a list of tuples representing rewards by the EmissionFunds on POA chains.
+  The tuples have the format {EmissionFunds, Validator}
+  """
+  @spec fetch_emission_rewards_tuples(Hash.Address.t(), PagingOptions.t()) :: [{t(), t()}]
+  def fetch_emission_rewards_tuples(address_hash, paging_options) do
+    address_rewards =
+      __MODULE__
+      |> join_associations()
+      |> paginate(paging_options)
+      |> limit(^paging_options.page_size)
+      |> order_by([_, block], desc: block.number)
+      |> where([reward], reward.address_hash == ^address_hash)
+      |> Repo.all()
+
+    case List.first(address_rewards) do
+      nil ->
+        []
+
+      reward ->
+        block_hashes = Enum.map(address_rewards, & &1.block_hash)
+
+        other_type =
+          case reward.address_type do
+            :validator ->
+              :emission_funds
+
+            :emission_funds ->
+              :validator
+          end
+
+        other_rewards =
+          __MODULE__
+          |> join_associations()
+          |> order_by([_, block], desc: block.number)
+          |> where([reward], reward.address_type == ^other_type)
+          |> where([reward], reward.block_hash in ^block_hashes)
+          |> Repo.all()
+
+        if other_type == :emission_funds do
+          Enum.zip(other_rewards, address_rewards)
+        else
+          Enum.zip(address_rewards, other_rewards)
+        end
+    end
+  end
+
+  defp join_associations(query) do
+    query
+    |> preload(:address)
+    |> join(:inner, [reward], block in assoc(reward, :block))
+    |> preload(:block)
   end
 end

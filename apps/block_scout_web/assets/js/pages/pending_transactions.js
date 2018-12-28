@@ -99,7 +99,7 @@ const elements = {
 
 const $transactionPendingListPage = $('[data-page="transaction-pending-list"]')
 if ($transactionPendingListPage.length) {
-  const store = createAsyncLoadStore(reducer, initialState, 'dataset.transactionHash')
+  const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierHash')
   connectElements({ store, elements })
 
   const transactionsChannel = socket.channel(`transactions:new_transaction`)
