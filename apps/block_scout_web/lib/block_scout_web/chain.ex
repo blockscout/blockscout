@@ -14,6 +14,8 @@ defmodule BlockScoutWeb.Chain do
       string_to_transaction_hash: 1
     ]
 
+  alias Explorer.Chain.Block.Reward
+
   alias Explorer.Chain.{
     Address,
     Address.CoinBalance,
@@ -157,6 +159,10 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
+  defp paging_params({%Reward{block: %{number: number}}, _}) do
+    %{"block_number" => number, "index" => 0}
+  end
+
   defp paging_params(%Block{number: number}) do
     %{"block_number" => number}
   end
@@ -183,10 +189,7 @@ defmodule BlockScoutWeb.Chain do
   end
 
   defp paging_params(%Address.Token{name: name, type: type, inserted_at: inserted_at}) do
-    inserted_at_datetime =
-      inserted_at
-      |> DateTime.from_naive!("Etc/UTC")
-      |> DateTime.to_iso8601()
+    inserted_at_datetime = DateTime.to_iso8601(inserted_at)
 
     %{"token_name" => name, "token_type" => type, "token_inserted_at" => inserted_at_datetime}
   end

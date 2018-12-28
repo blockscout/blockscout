@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.AddressView do
   alias BlockScoutWeb.LayoutView
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
+  alias Explorer.Chain.Block.Reward
 
   @dialyzer :no_match
 
@@ -85,6 +86,10 @@ defmodule BlockScoutWeb.AddressView do
     matching_address_check(current_address, address, contract?(address), truncate)
   end
 
+  def address_partial_selector(%Reward{address: address}, _, current_address, truncate) do
+    matching_address_check(current_address, address, false, truncate)
+  end
+
   def address_title(%Address{} = address) do
     if contract?(address) do
       gettext("Contract Address")
@@ -147,6 +152,34 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def primary_name(%Address{names: _}), do: nil
+
+  def primary_validator_metadata(%Address{names: [_ | _] = address_names}) do
+    case Enum.find(address_names, &(&1.primary == true)) do
+      %Address.Name{
+        metadata:
+          metadata = %{
+            "license_id" => _,
+            "address" => _,
+            "state" => _,
+            "zipcode" => _,
+            "expiration_date" => _,
+            "created_date" => _
+          }
+      } ->
+        metadata
+
+      _ ->
+        nil
+    end
+  end
+
+  def primary_validator_metadata(%Address{names: _}), do: nil
+
+  def format_datetime_string(unix_date) do
+    unix_date
+    |> DateTime.from_unix!()
+    |> Timex.format!("{M}-{D}-{YYYY}")
+  end
 
   def qr_code(%Address{hash: hash}) do
     hash

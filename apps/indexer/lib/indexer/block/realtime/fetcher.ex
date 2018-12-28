@@ -97,22 +97,26 @@ defmodule Indexer.Block.Realtime.Fetcher do
           transactions: %{params: transactions_params}
         } = options
       ) do
-    with {:ok,
-          %{
-            addresses_params: internal_transactions_addresses_params,
-            internal_transactions_params: internal_transactions_params
-          }} <-
-           internal_transactions(block_fetcher, %{
-             addresses_params: addresses_params,
-             transactions_params: transactions_params
-           }),
-         {:ok, %{addresses_params: balances_addresses_params, balances_params: balances_params}} <-
-           balances(block_fetcher, %{
-             address_hash_to_block_number: address_hash_to_block_number,
+    with {:internal_transactions,
+          {:ok,
+           %{
              addresses_params: internal_transactions_addresses_params,
-             balances_params: address_coin_balances_params
-           }),
-         {:ok, address_token_balances} <- fetch_token_balances(address_token_balances_params),
+             internal_transactions_params: internal_transactions_params
+           }}} <-
+           {:internal_transactions,
+            internal_transactions(block_fetcher, %{
+              addresses_params: addresses_params,
+              transactions_params: transactions_params
+            })},
+         {:balances, {:ok, %{addresses_params: balances_addresses_params, balances_params: balances_params}}} <-
+           {:balances,
+            balances(block_fetcher, %{
+              address_hash_to_block_number: address_hash_to_block_number,
+              addresses_params: internal_transactions_addresses_params,
+              balances_params: address_coin_balances_params
+            })},
+         {:address_token_balances, {:ok, address_token_balances}} <-
+           {:address_token_balances, fetch_token_balances(address_token_balances_params)},
          chain_import_options =
            options
            |> Map.drop(@import_options)
@@ -122,7 +126,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
            |> put_in([Access.key(:address_current_token_balances, %{}), :params], address_token_balances)
            |> put_in([Access.key(:address_token_balances), :params], address_token_balances)
            |> put_in([Access.key(:internal_transactions, %{}), :params], internal_transactions_params),
-         {:ok, imported} = ok <- Chain.import(chain_import_options) do
+         {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
       async_import_remaining_block_data(imported)
       ok
     end
@@ -194,6 +198,32 @@ defmodule Indexer.Block.Realtime.Fetcher do
           ]
         end)
 
+      {:error, {:import = step, [%Changeset{} | _] = changesets}} ->
+        params = %{
+          changesets: changesets,
+          block_number_to_fetch: block_number_to_fetch,
+          block_fetcher: block_fetcher,
+          retry: retry
+        }
+
+        if retry_fetch_and_import_block(params) == :ignore do
+          Logger.error(
+            fn ->
+              [
+                "failed to validate for block ",
+                to_string(block_number_to_fetch),
+                ": ",
+                inspect(changesets),
+                ".  Block will be retried by catchup indexer."
+              ]
+            end,
+            step: step
+          )
+        end
+
+      {:error, {:import = step, reason}} ->
+        Logger.error(fn -> inspect(reason) end, step: step)
+
       {:error, {step, reason}} ->
         Logger.error(
           fn ->
@@ -205,26 +235,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
           end,
           step: step
         )
-
-      {:error, [%Changeset{} | _] = changesets} ->
-        params = %{
-          changesets: changesets,
-          block_number_to_fetch: block_number_to_fetch,
-          block_fetcher: block_fetcher,
-          retry: retry
-        }
-
-        if retry_fetch_and_import_block(params) == :ignore do
-          Logger.error(fn ->
-            [
-              "failed to validate for block ",
-              to_string(block_number_to_fetch),
-              ": ",
-              inspect(changesets),
-              ".  Block will be retried by catchup indexer."
-            ]
-          end)
-        end
 
       {:error, {step, failed_value, _changes_so_far}} ->
         Logger.error(

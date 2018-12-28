@@ -151,7 +151,7 @@ defmodule Explorer.Chain.Transaction do
     field(:gas_price, Wei)
     field(:gas_used, :decimal)
     field(:index, :integer)
-    field(:internal_transactions_indexed_at, :utc_datetime)
+    field(:internal_transactions_indexed_at, :utc_datetime_usec)
     field(:input, Data)
     field(:nonce, :integer)
     field(:r, :decimal)
@@ -593,6 +593,16 @@ defmodule Explorer.Chain.Transaction do
       where: tt.token_contract_address_hash == ^token_hash,
       where: tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash,
       distinct: :hash
+    )
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch transactions with the specified block_number
+  """
+  def transactions_with_block_number(block_number) do
+    from(
+      t in Transaction,
+      where: t.block_number == ^block_number
     )
   end
 

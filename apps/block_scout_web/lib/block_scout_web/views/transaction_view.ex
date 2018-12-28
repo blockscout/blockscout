@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.TransactionView do
 
   alias Cldr.Number
   alias Explorer.Chain
+  alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
   alias BlockScoutWeb.{AddressView, BlockView, TabHelpers}
 
@@ -16,9 +17,11 @@ defmodule BlockScoutWeb.TransactionView do
 
   def block_number(%Transaction{block_number: nil}), do: gettext("Block Pending")
   def block_number(%Transaction{block: block}), do: [view_module: BlockView, partial: "_link.html", block: block]
+  def block_number(%Reward{block: block}), do: [view_module: BlockView, partial: "_link.html", block: block]
 
   def block_timestamp(%Transaction{block_number: nil, inserted_at: time}), do: time
   def block_timestamp(%Transaction{block: %Block{timestamp: time}}), do: time
+  def block_timestamp(%Reward{block: %Block{timestamp: time}}), do: time
 
   def value_transfer?(%Transaction{input: %{bytes: bytes}}) when bytes in [<<>>, nil] do
     true
@@ -162,6 +165,10 @@ defmodule BlockScoutWeb.TransactionView do
   def value(%mod{value: value}, opts \\ []) when is_transaction_type(mod) do
     include_label? = Keyword.get(opts, :include_label, true)
     format_wei_value(value, :ether, include_unit_label: include_label?)
+  end
+
+  def format_wei_value(value) do
+    format_wei_value(value, :ether, include_unit_label: false)
   end
 
   defp fee_to_denomination({fee_type, fee}, opts) do

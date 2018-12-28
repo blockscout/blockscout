@@ -1,9 +1,9 @@
 defmodule BlockScoutWeb.AddressTransactionControllerTest do
-  use BlockScoutWeb.ConnCase
+  use BlockScoutWeb.ConnCase, async: true
 
   import BlockScoutWeb.Router.Helpers, only: [address_transaction_path: 3, address_transaction_path: 4]
 
-  alias Explorer.Chain.{Block, Transaction}
+  alias Explorer.Chain.Transaction
   alias Explorer.ExchangeRates.Token
 
   describe "GET index/2" do
@@ -82,7 +82,7 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
 
     test "next_page_params exist if not on last page", %{conn: conn} do
       address = insert(:address)
-      block = %Block{number: number} = insert(:block)
+      block = insert(:block)
 
       60
       |> insert_list(:transaction, from_address: address)

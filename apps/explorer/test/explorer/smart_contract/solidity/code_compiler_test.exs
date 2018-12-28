@@ -24,8 +24,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
               %{
                 "abi" => _,
                 "bytecode" => _,
-                "name" => _,
-                "opcodes" => _
+                "name" => _
               }} = response
     end
 
@@ -44,8 +43,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
               %{
                 "abi" => _,
                 "bytecode" => _,
-                "name" => _,
-                "opcodes" => _
+                "name" => _
               }} = response
     end
 
@@ -75,12 +73,11 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
               %{
                 "abi" => _,
                 "bytecode" => _,
-                "name" => _,
-                "opcodes" => _
+                "name" => _
               }} = response
     end
 
-    test "returns a list of errors the compilation isn't possible", %{
+    test "returns compilation error when compilation isn't possible", %{
       contract_code_info: contract_code_info
     } do
       wrong_code = "pragma solidity ^0.4.24; cont SimpleStorage { "
@@ -93,8 +90,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
           contract_code_info.optimized
         )
 
-      assert {:error, errors} = response
-      assert is_list(errors)
+      assert {:error, :compilation} = response
     end
   end
 
@@ -108,16 +104,16 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
       assert {:error, :name} == response
     end
 
-    test "returns an empty list of errors for empty info" do
+    test "returns compilation error for empty info" do
       name = "Name"
 
       response = CodeCompiler.get_contract_info(%{}, name)
 
-      assert %{"errors" => []} == response
+      assert {:error, :compilation} == response
     end
 
     test "the contract info is returned when the name matches" do
-      contract_inner_info = %{"abi" => %{}, "bytecode" => "", "opcodes" => ""}
+      contract_inner_info = %{"abi" => %{}, "bytecode" => ""}
       name = "Name"
       contract_info = %{name => contract_inner_info}
 
@@ -129,7 +125,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
     test "the contract info is returned when the name matches with a `:` suffix" do
       name = "Name"
       name_with_suffix = ":Name"
-      contract_inner_info = %{"abi" => %{}, "bytecode" => "", "opcodes" => ""}
+      contract_inner_info = %{"abi" => %{}, "bytecode" => ""}
       contract_info = %{name_with_suffix => contract_inner_info}
 
       response = CodeCompiler.get_contract_info(contract_info, name)

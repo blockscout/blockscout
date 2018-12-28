@@ -5,36 +5,38 @@
 # is restricted to this project.
 use Mix.Config
 
-config :ecto, json_library: Jason
-
 # General application configuration
 config :explorer,
   ecto_repos: [Explorer.Repo],
   coin: System.get_env("COIN") || "POA",
   token_functions_reader_max_retries: 3
 
-config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: 2_000
+config :explorer, Explorer.Counters.AddressesWithBalanceCounter, enabled: true, enable_consolidation: true
+
+config :explorer, Explorer.Counters.TokenHoldersCounter, enabled: true, enable_consolidation: true
 
 config :explorer, Explorer.ExchangeRates, enabled: true, store: :ets
 
+config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :timer.seconds(2)
+
 config :explorer, Explorer.Market.History.Cataloger, enabled: true
 
-config :explorer, Explorer.Repo,
-  loggers: [Explorer.Repo.PrometheusLogger, Ecto.LogEntry],
-  migration_timestamps: [type: :utc_datetime]
+config :explorer, Explorer.Repo, migration_timestamps: [type: :utc_datetime_usec]
 
 config :explorer, Explorer.Tracer,
   service: :explorer,
   adapter: SpandexDatadog.Adapter,
   trace_key: :blockscout
 
-config :explorer, Explorer.Counters.TokenTransferCounter, enabled: true
+if System.get_env("METADATA_CONTRACT") && System.get_env("VALIDATORS_CONTRACT") do
+  config :explorer, Explorer.Validator.MetadataRetriever,
+    metadata_contract_address: System.get_env("METADATA_CONTRACT"),
+    validators_contract_address: System.get_env("VALIDATORS_CONTRACT")
 
-config :explorer, Explorer.Counters.BlockValidationCounter, enabled: true, enable_consolidation: true
-
-config :explorer, Explorer.Counters.TokenHoldersCounter, enabled: true, enable_consolidation: true
-
-config :explorer, Explorer.Counters.AddessesWithBalanceCounter, enabled: true, enable_consolidation: true
+  config :explorer, Explorer.Validator.MetadataProcessor, enabled: true
+else
+  config :explorer, Explorer.Validator.MetadataProcessor, enabled: false
+end
 
 if System.get_env("SUPPLY_MODULE") == "TransactionAndLog" do
   config :explorer, supply: Explorer.Chain.Supply.TransactionAndLog
@@ -52,7 +54,7 @@ config :logger, :explorer,
   format: "$dateT$time $metadata[$level] $message\n",
   metadata:
     ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
-       block_number step count error_count shrunk)a,
+       block_number step count error_count shrunk import_id transaction_id)a,
   metadata_filter: [application: :explorer]
 
 config :spandex_ecto, SpandexEcto.EctoLogger,

@@ -39,10 +39,7 @@ defmodule BlockScoutWeb.ContractVerifyPage do
   end
 
   def validation_error do
-    css(
-      "[data-test='contract-source-code-error']",
-      text: "there was an error validating your contract, please try again."
-    )
+    css("[data-test='contract-source-code-error']")
   end
 
   def verify_and_publish(session) do

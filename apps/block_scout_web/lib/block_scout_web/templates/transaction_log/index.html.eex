@@ -27,7 +27,7 @@
               <dd class="col-md-11">
                 <%= case decode(log, @transaction) do %>
                   <% {:error, :contract_not_verified} -> %>
-                    <div class="alert alert-danger">
+                    <div class="alert alert-info">
                       <%= gettext "To see decoded input data, the contract must be verified." %>
                       <%= case @transaction do %>
                         <% %{to_address: %{hash: hash}} -> %>
