@@ -8,12 +8,17 @@ export function formatUsdValue (value) {
   return `${formatCurrencyValue(value)} USD`
 }
 
-function formatCurrencyValue (value) {
-  if (value === 0) return '$0.000000'
-  if (value < 0.000001) return `${window.localized['Less than']} $0.000001`
-  if (value < 1) return `$${numeral(value).format('0.000000')}`
-  if (value < 100000) return `$${numeral(value).format('0,0.00')}`
-  return `$${numeral(value).format('0,0')}`
+function formatTokenUsdValue (value) {
+  return formatCurrencyValue(value, '@')
+}
+
+function formatCurrencyValue (value, symbol) {
+  symbol = symbol || '$'
+  if (value === 0) return `${symbol}0.000000`
+  if (value < 0.000001) return `${window.localized['Less than']} ${symbol}0.000001`
+  if (value < 1) return `${symbol}${numeral(value).format('0.000000')}`
+  if (value < 100000) return `${symbol}${numeral(value).format('0,0.00')}`
+  return `${symbol}${numeral(value).format('0,0')}`
 }
 
 function weiToEther (wei) {
@@ -24,10 +29,17 @@ function etherToUSD (ether, usdExchangeRate) {
   return new BigNumber(ether).multipliedBy(usdExchangeRate).toNumber()
 }
 
-function formatAllUsdValues () {
-  $('[data-usd-value]').each((i, el) => {
+export function formatAllUsdValues (root) {
+  root = root || $(':root')
+
+  root.find('[data-usd-value]').each((i, el) => {
     el.innerHTML = formatUsdValue(el.dataset.usdValue)
   })
+  root.find('[data-token-usd-value]').each((i, el) => {
+    el.innerHTML = formatTokenUsdValue(el.dataset.tokenUsdValue)
+  })
+
+  return root
 }
 formatAllUsdValues()
 

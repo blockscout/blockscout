@@ -1,5 +1,5 @@
 #, elixir-format
-#: lib/block_scout_web/views/address_token_balance_view.ex:5
+#: lib/block_scout_web/views/address_token_balance_view.ex:7
 msgid "%{count} token"
 msgid_plural "%{count} tokens"
 msgstr[0] ""
@@ -211,8 +211,8 @@ msgstr ""
 #: lib/block_scout_web/templates/address/_validator_metadata_modal.html.eex:37
 #: lib/block_scout_web/templates/address/overview.html.eex:81
 #: lib/block_scout_web/templates/address/overview.html.eex:89
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:84
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:92
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:93
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:101
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:94
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:133
 msgid "Close"
@@ -713,7 +713,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address/overview.html.eex:80
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:13
 #: lib/block_scout_web/templates/tokens/overview/_details.html.eex:13
-#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:83
+#: lib/block_scout_web/templates/tokens/overview/_details.html.eex:92
 msgid "QR Code"
 msgstr ""
 
