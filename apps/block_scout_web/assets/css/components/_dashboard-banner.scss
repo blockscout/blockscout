@@ -63,6 +63,8 @@
 .dashboard-banner-chart {
   grid-area: chart;
   padding: 1rem 1rem 1rem 0;
+  width: calc(350px + 1rem);
+  height: calc(152px + 1rem);
 }
 
 .dashboard-banner-chart-legend {

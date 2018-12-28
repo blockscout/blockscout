@@ -49,16 +49,6 @@ defmodule BlockScoutWeb.ChainControllerTest do
       refute(Enum.member?(response["blocks"], old_block))
     end
 
-    test "returns market history data", %{conn: conn} do
-      today = Date.utc_today()
-      for day <- -40..0, do: insert(:market_history, date: Date.add(today, day))
-
-      conn = get(conn, "/")
-
-      assert Map.has_key?(conn.assigns, :market_history_data)
-      assert length(conn.assigns.market_history_data) == 30
-    end
-
     test "displays miner primary address names" do
       miner_name = "POA Miner Pool"
       %{address: miner_address} = insert(:address_name, name: miner_name, primary: true)
