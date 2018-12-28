@@ -1520,7 +1520,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/views/block_view.ex:56
 msgid "Miner Reward"
-msgstr ""
+msgstr "Validator Reward"
 
 #, elixir-format
 #: lib/block_scout_web/views/block_view.ex:64
