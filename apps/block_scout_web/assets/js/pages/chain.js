@@ -17,6 +17,8 @@ export const initialState = {
   averageBlockTime: null,
   marketHistoryData: null,
   blocks: [],
+  blocksLoading: true,
+  blocksError: false,
   transactions: [],
   transactionsBatch: [],
   transactionsError: false,
@@ -51,6 +53,18 @@ function baseReducer (state = initialState, action) {
           blocks: state.blocks.map((block) => block.blockNumber === action.msg.blockNumber ? action.msg : block)
         })
       }
+    }
+    case 'START_BLOCKS_FETCH': {
+      return Object.assign({}, state, { blocksError: false, blocksLoading: true })
+    }
+    case 'BLOCKS_FINISH_REQUEST': {
+      return Object.assign({}, state, { blocksLoading: false })
+    }
+    case 'BLOCKS_FETCHED': {
+      return Object.assign({}, state, { blocks: [...action.msg.blocks] })
+    }
+    case 'BLOCKS_REQUEST_ERROR': {
+      return Object.assign({}, state, { blocksError: true })
     }
     case 'RECEIVED_NEW_EXCHANGE_RATE': {
       return Object.assign({}, state, {
@@ -159,17 +173,36 @@ const elements = {
   '[data-selector="chain-block-list"]': {
     load ($el) {
       return {
-        blocks: $el.children().map((index, el) => ({
-          blockNumber: parseInt(el.dataset.blockNumber),
-          chainBlockHtml: el.outerHTML
-        })).toArray()
+        blocksPath: $el[0].dataset.url
       }
     },
     render ($el, state, oldState) {
       if (oldState.blocks === state.blocks) return
+
       const container = $el[0]
-      const newElements = _.map(state.blocks, ({ chainBlockHtml }) => $(chainBlockHtml)[0])
-      listMorph(container, newElements, { key: 'dataset.blockNumber', horizontal: true })
+
+      if (state.blocksLoading === false) {
+        const blocks = _.map(state.blocks, ({ chainBlockHtml }) => $(chainBlockHtml)[0])
+        listMorph(container, blocks, { key: 'dataset.blockNumber', horizontal: true })
+      }
+    }
+  },
+  '[data-selector="chain-block-list"] [data-selector="error-message"]': {
+    render ($el, state, oldState) {
+      if (state.blocksError) {
+        $el.show()
+      } else {
+        $el.hide()
+      }
+    }
+  },
+  '[data-selector="chain-block-list"] [data-selector="loading-message"]': {
+    render ($el, state, oldState) {
+      if (state.blocksLoading) {
+        $el.show()
+      } else {
+        $el.hide()
+      }
     }
   },
   '[data-selector="transactions-list"] [data-selector="error-message"]': {
@@ -207,8 +240,12 @@ const $chainDetailsPage = $('[data-page="chain-details"]')
 if ($chainDetailsPage.length) {
   const store = createStore(reducer)
   connectElements({ store, elements })
+
   loadTransactions(store)
-  $('[data-selector="transactions-list"] [data-selector="error-message"]').on('click', _event => loadTransactions(store))
+  bindTransactionErrorMessage(store)
+
+  loadBlocks(store)
+  bindBlockErrorMessage(store)
 
   exchangeRateChannel.on('new_rate', (msg) => store.dispatch({
     type: 'RECEIVED_NEW_EXCHANGE_RATE',
@@ -246,6 +283,10 @@ function loadTransactions (store) {
     .always(() => store.dispatch({type: 'FINISH_TRANSACTIONS_FETCH'}))
 }
 
+function bindTransactionErrorMessage (store) {
+  $('[data-selector="transactions-list"] [data-selector="error-message"]').on('click', _event => loadTransactions(store))
+}
+
 export function placeHolderBlock (blockNumber) {
   return `
     <div
@@ -269,4 +310,21 @@ export function placeHolderBlock (blockNumber) {
       </div>
     </div>
   `
+}
+
+function loadBlocks (store) {
+  const url = store.getState().blocksPath
+
+  store.dispatch({type: 'START_BLOCKS_FETCH'})
+
+  $.getJSON(url)
+    .done(response => {
+      store.dispatch({type: 'BLOCKS_FETCHED', msg: humps.camelizeKeys(response)})
+    })
+    .fail(() => store.dispatch({type: 'BLOCKS_REQUEST_ERROR'}))
+    .always(() => store.dispatch({type: 'BLOCKS_FINISH_REQUEST'}))
+}
+
+function bindBlockErrorMessage (store) {
+  $('[data-selector="chain-block-list"] [data-selector="error-message"]').on('click', _event => loadBlocks(store))
 }

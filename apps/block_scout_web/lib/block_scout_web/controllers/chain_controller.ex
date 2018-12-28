@@ -1,17 +1,14 @@
 defmodule BlockScoutWeb.ChainController do
   use BlockScoutWeb, :controller
 
+  alias BlockScoutWeb.ChainView
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Block, Transaction}
   alias Explorer.ExchangeRates.Token
   alias Explorer.Market
+  alias Phoenix.View
 
   def show(conn, _params) do
-    blocks =
-      [paging_options: %PagingOptions{page_size: 4}]
-      |> Chain.list_blocks()
-      |> Repo.preload([[miner: :names], :transactions, :rewards])
-
     transaction_estimated_count = Chain.transaction_estimated_count()
 
     exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
@@ -27,7 +24,6 @@ defmodule BlockScoutWeb.ChainController do
       "show.html",
       address_count: Chain.count_addresses_with_balance_from_cache(),
       average_block_time: Chain.average_block_time(),
-      blocks: blocks,
       exchange_rate: exchange_rate,
       available_supply: available_supply(Chain.supply_for_days(30), exchange_rate),
       market_history_data: market_history_data,
@@ -46,6 +42,30 @@ defmodule BlockScoutWeb.ChainController do
 
       {:error, :not_found} ->
         not_found(conn)
+    end
+  end
+
+  def chain_blocks(conn, _params) do
+    if ajax?(conn) do
+      blocks =
+        [paging_options: %PagingOptions{page_size: 4}]
+        |> Chain.list_blocks()
+        |> Repo.preload([[miner: :names], :transactions, :rewards])
+        |> Enum.map(fn block ->
+          %{
+            chain_block_html:
+              View.render_to_string(
+                ChainView,
+                "_block.html",
+                block: block
+              ),
+            block_number: block.number
+          }
+        end)
+
+      json(conn, %{blocks: blocks})
+    else
+      unprocessable_entity(conn)
     end
   end
 
