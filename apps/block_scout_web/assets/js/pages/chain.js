@@ -242,7 +242,7 @@ if ($chainDetailsPage.length) {
   connectElements({ store, elements })
 
   loadTransactions(store)
-  $('[data-selector="transactions-list"] [data-selector="error-message"]').on('click', _event => loadTransactions(store))
+  bindTransactionErrorMessage(store)
 
   loadBlocks(store)
   bindBlockErrorMessage(store)
@@ -281,6 +281,10 @@ function loadTransactions (store) {
     .done(response => store.dispatch({type: 'TRANSACTIONS_FETCHED', msg: humps.camelizeKeys(response)}))
     .fail(() => store.dispatch({type: 'TRANSACTIONS_FETCH_ERROR'}))
     .always(() => store.dispatch({type: 'FINISH_TRANSACTIONS_FETCH'}))
+}
+
+function bindTransactionErrorMessage (store) {
+  $('[data-selector="transactions-list"] [data-selector="error-message"]').on('click', _event => loadTransactions(store))
 }
 
 export function placeHolderBlock (blockNumber) {
