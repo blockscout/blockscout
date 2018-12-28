@@ -14,17 +14,6 @@ defmodule BlockScoutWeb.ChainController do
 
     transaction_estimated_count = Chain.transaction_estimated_count()
 
-    transactions =
-      Chain.recent_collated_transactions(
-        necessity_by_association: %{
-          :block => :required,
-          [created_contract_address: :names] => :optional,
-          [from_address: :names] => :required,
-          [to_address: :names] => :optional
-        },
-        paging_options: %PagingOptions{page_size: 5}
-      )
-
     exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
 
     market_history_data =
@@ -43,7 +32,7 @@ defmodule BlockScoutWeb.ChainController do
       available_supply: available_supply(Chain.supply_for_days(30), exchange_rate),
       market_history_data: market_history_data,
       transaction_estimated_count: transaction_estimated_count,
-      transactions: transactions
+      transactions_path: recent_transactions_path(conn, :index)
     )
   end
 

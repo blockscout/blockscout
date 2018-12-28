@@ -19,6 +19,8 @@ export const initialState = {
   blocks: [],
   transactions: [],
   transactionsBatch: [],
+  transactionsError: false,
+  transactionsLoading: true,
   transactionCount: null,
   usdMarketCap: null
 }
@@ -62,6 +64,10 @@ function baseReducer (state = initialState, action) {
 
       const transactionCount = state.transactionCount + action.msgs.length
 
+      if (state.transactionsLoading || state.transactionsError) {
+        return Object.assign({}, state, { transactionCount })
+      }
+
       if (!state.transactionsBatch.length && action.msgs.length < BATCH_THRESHOLD) {
         return Object.assign({}, state, {
           transactions: [
@@ -80,6 +86,14 @@ function baseReducer (state = initialState, action) {
         })
       }
     }
+    case 'START_TRANSACTIONS_FETCH':
+      return Object.assign({}, state, { transactionsError: false, transactionsLoading: true })
+    case 'TRANSACTIONS_FETCHED':
+      return Object.assign({}, state, { transactions: [...action.msg.transactions] })
+    case 'TRANSACTIONS_FETCH_ERROR':
+      return Object.assign({}, state, { transactionsError: true })
+    case 'FINISH_TRANSACTIONS_FETCH':
+      return Object.assign({}, state, { transactionsLoading: false })
     default:
       return state
   }
@@ -158,14 +172,19 @@ const elements = {
       listMorph(container, newElements, { key: 'dataset.blockNumber', horizontal: true })
     }
   },
+  '[data-selector="transactions-list"] [data-selector="error-message"]': {
+    render ($el, state, oldState) {
+      $el.toggle(state.transactionsError)
+    }
+  },
+  '[data-selector="transactions-list"] [data-selector="loading-message"]': {
+    render ($el, state, oldState) {
+      $el.toggle(state.transactionsLoading)
+    }
+  },
   '[data-selector="transactions-list"]': {
     load ($el) {
-      return {
-        transactions: $el.children().map((index, el) => ({
-          transactionHash: el.dataset.identifierHash,
-          transactionHtml: el.outerHTML
-        })).toArray()
-      }
+      return { transactionsPath: $el[0].dataset.transactionsPath }
     },
     render ($el, state, oldState) {
       if (oldState.transactions === state.transactions) return
@@ -188,6 +207,8 @@ const $chainDetailsPage = $('[data-page="chain-details"]')
 if ($chainDetailsPage.length) {
   const store = createStore(reducer)
   connectElements({ store, elements })
+  loadTransactions(store)
+  $('[data-selector="transactions-list"] [data-selector="error-message"]').on('click', _event => loadTransactions(store))
 
   exchangeRateChannel.on('new_rate', (msg) => store.dispatch({
     type: 'RECEIVED_NEW_EXCHANGE_RATE',
@@ -214,6 +235,15 @@ if ($chainDetailsPage.length) {
     type: 'RECEIVED_NEW_TRANSACTION_BATCH',
     msgs: humps.camelizeKeys(msgs)
   })))
+}
+
+function loadTransactions (store) {
+  const path = store.getState().transactionsPath
+  store.dispatch({type: 'START_TRANSACTIONS_FETCH'})
+  $.getJSON(path)
+    .done(response => store.dispatch({type: 'TRANSACTIONS_FETCHED', msg: humps.camelizeKeys(response)}))
+    .fail(() => store.dispatch({type: 'TRANSACTIONS_FETCH_ERROR'}))
+    .always(() => store.dispatch({type: 'FINISH_TRANSACTIONS_FETCH'}))
 }
 
 export function placeHolderBlock (blockNumber) {
