@@ -10,6 +10,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
   import Indexer.Block.Fetcher,
     only: [async_import_coin_balances: 2, async_import_tokens: 1, async_import_uncles: 1, fetch_and_import_range: 2]
 
+  alias Ecto.Changeset
   alias Explorer.Chain
   alias Indexer.{Block, InternalTransaction, Sequence, TokenBalance, Tracer}
   alias Indexer.Memory.Shrinkable
@@ -114,10 +115,9 @@ defmodule Indexer.Block.Catchup.Fetcher do
     {async_import_remaining_block_data_options, chain_import_options} =
       Map.split(options, @async_import_remaining_block_data_options)
 
-    with {:ok, imported} = ok <-
-           chain_import_options
-           |> put_in([:blocks, :params, Access.all(), :consensus], true)
-           |> Chain.import() do
+    full_chain_import_options = put_in(chain_import_options, [:blocks, :params, Access.all(), :consensus], true)
+
+    with {:import, {:ok, imported} = ok} <- {:import, Chain.import(full_chain_import_options)} do
       async_import_remaining_block_data(
         imported,
         async_import_remaining_block_data_options
@@ -187,6 +187,20 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
         {:ok, inserted: inserted}
 
+      {:error, {:import = step, [%Changeset{} | _] = changesets}} = error ->
+        Logger.error(fn -> ["failed to validate: ", inspect(changesets), ". Retrying."] end, step: step)
+
+        push_back(sequence, range)
+
+        error
+
+      {:error, {:import = step, reason}} = error ->
+        Logger.error(fn -> [inspect(reason), ". Retrying."] end, step: step)
+
+        push_back(sequence, range)
+
+        error
+
       {:error, {step, reason}} = error ->
         Logger.error(
           fn ->
@@ -194,15 +208,6 @@ defmodule Indexer.Block.Catchup.Fetcher do
           end,
           step: step
         )
-
-        push_back(sequence, range)
-
-        error
-
-      {:error, changesets} = error when is_list(changesets) ->
-        Logger.error(fn ->
-          ["failed to validate: ", inspect(changesets), ". Retrying."]
-        end)
 
         push_back(sequence, range)
 
@@ -220,6 +225,13 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
         error
     end
+  rescue
+    exception ->
+      Logger.error(fn -> [Exception.format(:error, exception, __STACKTRACE__), ?\n, ?\n, "Retrying."] end)
+
+      push_back(sequence, range)
+
+      {:error, exception}
   end
 
   defp cap_seq(seq, errors) do

@@ -15,6 +15,10 @@ defmodule Indexer.TokenBalances do
   # The timeout used for each process opened by Task.async_stream/3. Default 15s.
   @task_timeout 15000
 
+  def fetch_token_balances_from_blockchain(token_balances) do
+    fetch_token_balances_from_blockchain(token_balances, [])
+  end
+
   @doc """
   Fetches TokenBalances from specific Addresses and Blocks in the Blockchain
 
@@ -30,10 +34,10 @@ defmodule Indexer.TokenBalances do
   * `address_hash` - The address_hash that we want to know the balance.
   * `block_number` - The block number that the address_hash has the balance.
   """
-  def fetch_token_balances_from_blockchain([]), do: {:ok, []}
+  def fetch_token_balances_from_blockchain([], _opts), do: {:ok, []}
 
   @decorate span(tracer: Tracer)
-  def fetch_token_balances_from_blockchain(token_balances, opts \\ []) do
+  def fetch_token_balances_from_blockchain(token_balances, opts) do
     Logger.debug("fetching token balances", count: Enum.count(token_balances))
 
     task_timeout = Keyword.get(opts, :timeout, @task_timeout)

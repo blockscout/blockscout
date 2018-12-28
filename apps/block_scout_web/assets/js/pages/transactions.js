@@ -81,7 +81,7 @@ const elements = {
 
 const $transactionListPage = $('[data-page="transaction-list"]')
 if ($transactionListPage.length) {
-  const store = createAsyncLoadStore(reducer, initialState, 'dataset.transactionHash')
+  const store = createAsyncLoadStore(reducer, initialState, 'dataset.identifierHash')
 
   connectElements({ store, elements })
 

@@ -1,9 +1,9 @@
 defmodule BlockScoutWeb.AddressContractVerificationTest do
   use BlockScoutWeb.FeatureCase, async: true
 
-  alias Plug.Conn
-  alias Explorer.Factory
   alias BlockScoutWeb.{AddressContractPage, ContractVerifyPage}
+  alias Explorer.Factory
+  alias Plug.Conn
 
   setup do
     bypass = Bypass.open()

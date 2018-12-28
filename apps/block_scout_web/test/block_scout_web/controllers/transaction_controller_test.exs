@@ -1,9 +1,10 @@
 defmodule BlockScoutWeb.TransactionControllerTest do
   use BlockScoutWeb.ConnCase
-  alias Explorer.Chain.{Block, Transaction}
 
   import BlockScoutWeb.Router.Helpers,
     only: [transaction_path: 3, transaction_internal_transaction_path: 3, transaction_token_transfer_path: 3]
+
+  alias Explorer.Chain.Transaction
 
   describe "GET index/2" do
     test "returns a collated transactions", %{conn: conn} do

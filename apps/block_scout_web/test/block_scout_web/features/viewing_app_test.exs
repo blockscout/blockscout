@@ -3,7 +3,16 @@ defmodule BlockScoutWeb.ViewingAppTest do
 
   use BlockScoutWeb.FeatureCase, async: true
 
-  alias BlockScoutWeb.{AppPage, Notifier}
+  alias BlockScoutWeb.AppPage
+  alias BlockScoutWeb.Counters.BlocksIndexedCounter
+  alias Explorer.Counters.AddressesWithBalanceCounter
+
+  setup do
+    start_supervised!(AddressesWithBalanceCounter)
+    AddressesWithBalanceCounter.consolidate()
+
+    :ok
+  end
 
   describe "loading bar when indexing" do
     test "shows blocks indexed percentage", %{session: session} do
@@ -30,10 +39,12 @@ defmodule BlockScoutWeb.ViewingAppTest do
       |> assert_has(AppPage.indexed_status("Indexing Tokens"))
     end
 
-    test "live updates blocks indexed percentage", %{session: session} do
+    test "updates blocks indexed percentage", %{session: session} do
       for index <- 5..9 do
         insert(:block, number: index)
       end
+
+      BlocksIndexedCounter.calculate_blocks_indexed()
 
       assert Explorer.Chain.indexed_ratio() == 0.5
 
@@ -42,15 +53,18 @@ defmodule BlockScoutWeb.ViewingAppTest do
       |> assert_has(AppPage.indexed_status("50% Blocks Indexed"))
 
       insert(:block, number: 4)
-      Notifier.handle_event({:chain_event, :blocks, :catchup, []})
+
+      BlocksIndexedCounter.calculate_blocks_indexed()
 
       assert_has(session, AppPage.indexed_status("60% Blocks Indexed"))
     end
 
-    test "live updates when blocks are fully indexed", %{session: session} do
+    test "updates when blocks are fully indexed", %{session: session} do
       for index <- 1..9 do
         insert(:block, number: index)
       end
+
+      BlocksIndexedCounter.calculate_blocks_indexed()
 
       assert Explorer.Chain.indexed_ratio() == 0.9
 
@@ -59,16 +73,19 @@ defmodule BlockScoutWeb.ViewingAppTest do
       |> assert_has(AppPage.indexed_status("90% Blocks Indexed"))
 
       insert(:block, number: 0)
-      Notifier.handle_event({:chain_event, :blocks, :catchup, []})
+
+      BlocksIndexedCounter.calculate_blocks_indexed()
 
       assert_has(session, AppPage.indexed_status("Indexing Tokens"))
     end
 
-    test "live removes message when chain is indexed", %{session: session} do
+    test "removes message when chain is indexed", %{session: session} do
       [block | _] =
         for index <- 0..9 do
           insert(:block, number: index)
         end
+
+      BlocksIndexedCounter.calculate_blocks_indexed()
 
       assert Explorer.Chain.indexed_ratio() == 1.0
 
@@ -80,7 +97,7 @@ defmodule BlockScoutWeb.ViewingAppTest do
       |> insert()
       |> with_block(block, internal_transactions_indexed_at: DateTime.utc_now())
 
-      Notifier.handle_event({:chain_event, :blocks, :catchup, []})
+      BlocksIndexedCounter.calculate_blocks_indexed()
 
       refute_has(session, AppPage.still_indexing?())
     end

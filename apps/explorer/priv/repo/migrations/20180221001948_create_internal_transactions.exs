@@ -21,7 +21,7 @@ defmodule Explorer.Repo.Migrations.CreateInternalTransactions do
       add(:type, :string, null: false)
       add(:value, :numeric, precision: 100, null: false)
 
-      timestamps(null: false, type: :utc_datetime)
+      timestamps(null: false, type: :utc_datetime_usec)
 
       # Nullability controlled by create_has_created constraint below
       add(:created_contract_address_hash, references(:addresses, column: :hash, type: :bytea), null: true)
