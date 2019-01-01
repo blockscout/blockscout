@@ -20,4 +20,6 @@ config :wallaby, screenshot_on_failure: true
 
 config :explorer, Explorer.ExchangeRates, enabled: false, store: :none
 
+config :explorer, Explorer.KnownTokens, enabled: false, store: :none
+
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: false
