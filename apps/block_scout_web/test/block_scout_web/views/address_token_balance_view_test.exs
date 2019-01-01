@@ -68,4 +68,43 @@ defmodule BlockScoutWeb.AddressTokenBalanceViewTest do
       assert AddressTokenBalanceView.sort_by_name(token_balances) == expected
     end
   end
+
+  describe "balance_in_usd/1" do
+    test "return balance in usd" do
+      token =
+        :token
+        |> build(decimals: Decimal.new(0))
+        |> Map.put(:usd_value, Decimal.new(3))
+
+      token_balance = build(:token_balance, value: Decimal.new(10), token: token)
+
+      result = AddressTokenBalanceView.balance_in_usd(token_balance)
+
+      assert Decimal.cmp(result, 30) == :eq
+    end
+
+    test "return nil if usd_value is not present" do
+      token =
+        :token
+        |> build(decimals: Decimal.new(0))
+        |> Map.put(:usd_value, nil)
+
+      token_balance = build(:token_balance, value: 10, token: token)
+
+      assert AddressTokenBalanceView.balance_in_usd(token_balance) == nil
+    end
+
+    test "consider decimals when computing value" do
+      token =
+        :token
+        |> build(decimals: Decimal.new(2))
+        |> Map.put(:usd_value, Decimal.new(3))
+
+      token_balance = build(:token_balance, value: Decimal.new(10), token: token)
+
+      result = AddressTokenBalanceView.balance_in_usd(token_balance)
+
+      assert Decimal.cmp(result, Decimal.from_float(0.3)) == :eq
+    end
+  end
 end

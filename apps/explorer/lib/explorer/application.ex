@@ -34,6 +34,7 @@ defmodule Explorer.Application do
   defp configurable_children do
     [
       configure(Explorer.ExchangeRates),
+      configure(Explorer.KnownTokens),
       configure(Explorer.Market.History.Cataloger),
       configure(Explorer.Counters.TokenHoldersCounter),
       configure(Explorer.Counters.AddressesWithBalanceCounter),
