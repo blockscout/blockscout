@@ -87,13 +87,7 @@
               </dd>
               <dt class="col-md-1"><%= gettext "Topics" %></dt>
               <dd class="col-md-11">
-                <div swappable-item>
-                  <button swapper class="button button-primary"><%= gettext "Show Raw Topics"%></button>
-                </div>
-                <div swappable-item class="raw-transaction-log-topics">
-                  <button swapper type="button" class="close pr-2" aria-label="<%= gettext "Close" %>">
-                    <span aria-hidden="true">&times;</span>
-                  </button>
+                <div class="raw-transaction-log-topics">
                   <%= unless is_nil(log.first_topic) do %>
                     <div class="text-dark">
                       <span class="text-dark">[0]</span>
@@ -125,14 +119,7 @@
               </dt>
               <dd class="col-md-11">
                 <%= unless is_nil(log.data) do %>
-                  <div swappable-item>
-                    <button swapper class="button button-primary"><%= gettext "Show Raw Data"%></button>
-                  </div>
-
-                  <div swappable-item class="text-dark raw-transaction-log-data">
-                    <button swapper type="button" class="close pr-2" aria-label="<%= gettext "Close" %>">
-                      <span aria-hidden="true">&times;</span>
-                    </button>
+                  <div class="text-dark raw-transaction-log-data">
                     <%= log.data %>
                   </div>
                 <% end %>

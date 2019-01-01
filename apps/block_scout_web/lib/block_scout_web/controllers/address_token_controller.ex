@@ -21,7 +21,7 @@ defmodule BlockScoutWeb.AddressTokenController do
         transaction_count: transaction_count(address),
         validation_count: validation_count(address),
         next_page_params: next_page_params(next_page, tokens, params),
-        tokens: tokens
+        tokens: Market.add_price(tokens)
       )
     else
       :error ->

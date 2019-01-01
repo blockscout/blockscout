@@ -3,7 +3,17 @@
   <div class="container">
     <div class="dashboard-banner">
       <div class="dashboard-banner-chart">
-        <canvas data-chart="marketHistoryChart" data-available_supply='<%=raw @available_supply %>' data-market_history_data='<%=raw encode_market_history_data(@market_history_data) %>' width="350" height="152"></canvas>
+        <div data-chart-loading-message class="tile tile-muted text-center mt-5">
+          <span class="loading-spinner-small mr-2">
+            <span class="loading-spinner-block-1"></span>
+            <span class="loading-spinner-block-2"></span>
+          </span>
+          <%= gettext("Loading chart") %>...
+        </div>
+        <button data-chart-error-message class="alert alert-danger col-12 text-left mt-5" style="display: none;">
+          <span><%= gettext("There was a problem loading the chart.") %></span>
+        </button>
+        <canvas data-chart="marketHistoryChart" data-market_history_chart_path="<%= @chart_data_path %>" width="350" height="152" style="display: none;"></canvas>
       </div>
       <div class="dashboard-banner-chart-legend">
         <div class="dashboard-banner-chart-legend-item">
@@ -55,10 +65,19 @@
     <div class="card-body">
       <%= link(gettext("View All Blocks →"), to: block_path(BlockScoutWeb.Endpoint, :index), class: "button button-secondary button-xsmall float-right") %>
       <h2 class="card-title"><%= gettext "Blocks" %></h2>
-      <div class="row" data-selector="chain-block-list">
-        <%= for block <- @blocks do %>
-          <%= render BlockScoutWeb.ChainView, "_block.html", block: block %>
-        <% end %>
+      <div class="row" data-selector="chain-block-list" data-url="<%= chain_blocks_path(@conn, :chain_blocks) %>">
+        <button data-selector="error-message" class="alert alert-danger col-12 text-left" style="display: none;">
+          <span class="alert-link">
+            <%= gettext "Something went wrong, click to reload." %>
+          </span>
+        </button>
+        <div data-selector="loading-message" class="tile tile-muted text-center mt-3 w-100">
+          <span class="loading-spinner-small mr-2">
+            <span class="loading-spinner-block-1"></span>
+            <span class="loading-spinner-block-2"></span>
+          </span>
+          <%= gettext("Loading...") %>
+        </div>
       </div>
     </div>
   </div>
@@ -72,10 +91,19 @@
           <a href="#" class="alert-link"><span data-selector="channel-batching-count"></span> <%= gettext "More transactions have come in" %></a>
         </div>
       </div>
-      <span data-selector="transactions-list">
-        <%= for transaction <- @transactions do %>
-          <%= render BlockScoutWeb.TransactionView, "_tile.html", transaction: transaction %>
-        <% end %>
+      <span data-selector="transactions-list" data-transactions-path="<%= @transactions_path %>">
+        <button data-selector="error-message" class="alert alert-danger col-12 text-left" style="display: none;">
+          <span class="alert-link">
+            <%= gettext "Something went wrong, click to retry." %>
+          </span>
+        </button>
+        <div data-selector="loading-message" class="tile tile-muted text-center mt-3">
+          <span class="loading-spinner-small mr-2">
+            <span class="loading-spinner-block-1"></span>
+            <span class="loading-spinner-block-2"></span>
+          </span>
+          <%= gettext("Loading...") %>
+        </div>
       </span>
     </div>
   </div>
