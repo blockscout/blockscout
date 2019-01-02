@@ -40,12 +40,8 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Block.{EmissionReward, Reward}
   alias Explorer.Chain.Import.Runner
+  alias Explorer.Counters.AddressesWithBalanceCounter
   alias Explorer.{PagingOptions, Repo}
-
-  alias Explorer.Counters.{
-    AddressesWithBalanceCounter,
-    TokenHoldersCounter
-  }
 
   alias Dataloader.Ecto, as: DataloaderEcto
   alias Timex.Duration
@@ -2130,12 +2126,9 @@ defmodule Explorer.Chain do
 
   @spec count_token_holders_from_token_hash(Hash.Address.t()) :: non_neg_integer()
   def count_token_holders_from_token_hash(contract_address_hash) do
-    TokenHoldersCounter.fetch(contract_address_hash)
-  end
+    query = from(ctb in CurrentTokenBalance.token_holders_query(contract_address_hash), select: fragment("COUNT(*)"))
 
-  @spec token_holders_counter_consolidation_enabled? :: boolean()
-  def token_holders_counter_consolidation_enabled? do
-    TokenHoldersCounter.enable_consolidation?()
+    Repo.one!(query)
   end
 
   @spec address_to_unique_tokens(Hash.Address.t(), [paging_options]) :: [TokenTransfer.t()]
