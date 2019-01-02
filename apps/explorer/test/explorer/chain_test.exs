@@ -490,20 +490,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "average_block_time/0" do
-    test "without blocks duration is 0" do
-      assert Chain.average_block_time() == Timex.Duration.parse!("PT0S")
-    end
-
-    test "with blocks is average duration between blocks" do
-      first_block = insert(:block)
-      second_block = insert(:block, timestamp: Timex.shift(first_block.timestamp, seconds: 3))
-      insert(:block, timestamp: Timex.shift(second_block.timestamp, seconds: 9))
-
-      assert Chain.average_block_time() == Timex.Duration.parse!("PT6S")
-    end
-  end
-
   describe "balance/2" do
     test "with Address.t with :wei" do
       assert Chain.balance(%Address{fetched_coin_balance: %Wei{value: Decimal.new(1)}}, :wei) == Decimal.new(1)
