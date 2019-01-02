@@ -13,8 +13,6 @@ config :explorer,
 
 config :explorer, Explorer.Counters.AddressesWithBalanceCounter, enabled: true, enable_consolidation: true
 
-config :explorer, Explorer.Counters.TokenHoldersCounter, enabled: true, enable_consolidation: true
-
 config :explorer, Explorer.ExchangeRates, enabled: true, store: :ets
 
 config :explorer, Explorer.KnownTokens, enabled: true, store: :ets
