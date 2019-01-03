@@ -16,7 +16,10 @@ defmodule Indexer.Block.UncatalogedRewards.ImporterTest do
     @tag :no_geth
     test "return `{:ok, [transactions executed]}`" do
       address = insert(:address)
+      address_hash = address.hash
+
       block = insert(:block, number: 1234, miner: address)
+      block_hash = block.hash
 
       expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, method: "trace_block", params: _params}], _options ->
         {:ok,
@@ -26,12 +29,12 @@ defmodule Indexer.Block.UncatalogedRewards.ImporterTest do
              result: [
                %{
                  "action" => %{
-                   "author" => to_string(address.hash),
+                   "author" => to_string(address_hash),
                    "rewardType" => "external",
                    "value" => "0xde0b6b3a7640000"
                  },
-                 "blockHash" => to_string(block.hash),
-                 "blockNumber" => 1234,
+                 "blockHash" => to_string(block_hash),
+                 "blockNumber" => block.number,
                  "result" => nil,
                  "subtraces" => 0,
                  "traceAddress" => [],
@@ -44,20 +47,16 @@ defmodule Indexer.Block.UncatalogedRewards.ImporterTest do
          ]}
       end)
 
-      expected =
-        {:ok,
-         [
-           ok: %{
-             "insert_0" => %Reward{
-               address_hash: address.hash,
-               block_hash: block.hash,
-               address_type: :validator
-             }
-           }
-         ]}
-
-      result = Importer.fetch_and_import_rewards([block])
-      assert result = expected
+      assert {:ok,
+              [
+                ok: %{
+                  "insert_0" => %Reward{
+                    address_hash: ^address_hash,
+                    block_hash: ^block_hash,
+                    address_type: :validator
+                  }
+                }
+              ]} = Importer.fetch_and_import_rewards([block])
     end
 
     @tag :no_geth
