@@ -52,10 +52,9 @@ defmodule BlockScoutWeb.CurrencyHelpers do
   end
 
   @spec format_according_to_decimals(Decimal.t(), Decimal.t()) :: String.t()
-  def format_according_to_decimals(%Decimal{sign: sign, coef: coef, exp: exp}, decimals) do
-    sign
-    |> Decimal.new(coef, exp - Decimal.to_integer(decimals))
-    |> Decimal.reduce()
+  def format_according_to_decimals(value, decimals) do
+    value
+    |> divide_decimals(decimals)
     |> thousands_separator()
   end
 
@@ -65,5 +64,12 @@ defmodule BlockScoutWeb.CurrencyHelpers do
     else
       Decimal.to_string(value, :normal)
     end
+  end
+
+  @spec divide_decimals(Decimal.t(), Decimal.t()) :: Decimal.t()
+  def divide_decimals(%{sign: sign, coef: coef, exp: exp}, decimals) do
+    sign
+    |> Decimal.new(coef, exp - Decimal.to_integer(decimals))
+    |> Decimal.reduce()
   end
 end

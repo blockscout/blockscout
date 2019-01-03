@@ -1,6 +1,9 @@
 defmodule BlockScoutWeb.ViewingAddressesTest do
-  use BlockScoutWeb.FeatureCase, async: true
+  use BlockScoutWeb.FeatureCase,
+    # Because ETS tables is shared for `Explorer.Counters.*`
+    async: false
 
+  alias Explorer.Counters.AddressesWithBalanceCounter
   alias BlockScoutWeb.{AddressPage, AddressView, Notifier}
 
   setup do
@@ -19,10 +22,27 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> insert(from_address: lincoln, to_address: taft)
       |> with_block(block)
 
+    lincoln_reward =
+      :reward
+      |> insert(
+        address_hash: lincoln.hash,
+        block_hash: block.hash,
+        address_type: :emission_funds
+      )
+
+    taft_reward =
+      :reward
+      |> insert(
+        address_hash: taft.hash,
+        block_hash: block.hash,
+        address_type: :validator
+      )
+
     {:ok,
      %{
        addresses: %{lincoln: lincoln, taft: taft},
        block: block,
+       rewards: {lincoln_reward, taft_reward},
        transactions: %{from_lincoln: from_lincoln, from_taft: from_taft}
      }}
   end
@@ -37,6 +57,9 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
     test "lists top addresses", %{session: session, addresses: addresses} do
       [first_address | _] = addresses
       [last_address | _] = Enum.reverse(addresses)
+
+      start_supervised!(AddressesWithBalanceCounter)
+      AddressesWithBalanceCounter.consolidate()
 
       session
       |> AddressPage.visit_page()
@@ -147,35 +170,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> assert_has(AddressPage.transaction(transactions.from_taft))
     end
 
-    test "contract creation is shown for to_address on list page", %{
-      addresses: addresses,
-      block: block,
-      session: session
-    } do
-      lincoln = addresses.lincoln
-
-      contract_address = insert(:contract_address)
-
-      from_lincoln =
-        :transaction
-        |> insert(from_address: lincoln, to_address: nil)
-        |> with_contract_creation(contract_address)
-        |> with_block(block)
-
-      internal_transaction =
-        :internal_transaction_create
-        |> insert(
-          transaction: from_lincoln,
-          from_address: lincoln,
-          index: 1
-        )
-        |> with_contract_creation(contract_address)
-
-      session
-      |> AddressPage.visit_page(addresses.lincoln)
-      |> assert_has(AddressPage.contract_creation(internal_transaction))
-    end
-
     test "only addresses not matching the page are links", %{
       addresses: addresses,
       session: session,
@@ -185,6 +179,21 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> AddressPage.visit_page(addresses.lincoln)
       |> assert_has(AddressPage.transaction_address_link(transactions.from_lincoln, :to))
       |> refute_has(AddressPage.transaction_address_link(transactions.from_lincoln, :from))
+    end
+
+    test "sees rewards to and from an address alongside transactions", %{
+      addresses: addresses,
+      session: session,
+      transactions: transactions
+    } do
+      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: true)
+
+      session
+      |> AddressPage.visit_page(addresses.lincoln)
+      |> assert_has(AddressPage.transaction(transactions.from_taft))
+      |> assert_has(AddressPage.transaction(transactions.from_lincoln))
+
+      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
     end
   end
 
@@ -211,29 +220,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       )
 
       {:ok, %{internal_transaction_lincoln_to_address: internal_transaction_lincoln_to_address}}
-    end
-
-    test "can see internal transactions for an address", %{addresses: addresses, session: session} do
-      session
-      |> AddressPage.visit_page(addresses.lincoln)
-      |> AddressPage.click_internal_transactions()
-      |> assert_has(AddressPage.internal_transactions(count: 2))
-    end
-
-    test "can filter to only see internal transactions from an address", %{addresses: addresses, session: session} do
-      session
-      |> AddressPage.visit_page(addresses.lincoln)
-      |> AddressPage.click_internal_transactions()
-      |> AddressPage.apply_filter("From")
-      |> assert_has(AddressPage.internal_transactions(count: 1))
-    end
-
-    test "can filter to only see internal transactions to an address", %{addresses: addresses, session: session} do
-      session
-      |> AddressPage.visit_page(addresses.lincoln)
-      |> AddressPage.click_internal_transactions()
-      |> AddressPage.apply_filter("To")
-      |> assert_has(AddressPage.internal_transactions(count: 1))
     end
 
     test "only addresses not matching the page are links", %{
@@ -274,37 +260,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> assert_has(AddressPage.internal_transactions(count: 3))
       |> assert_has(AddressPage.internal_transaction(internal_transaction))
     end
-  end
-
-  test "contract creation is shown for to_address on list page", %{
-    addresses: addresses,
-    block: block,
-    session: session
-  } do
-    lincoln = addresses.lincoln
-    contract_address = insert(:contract_address)
-
-    from_lincoln =
-      :transaction
-      |> insert(from_address: lincoln, to_address: nil)
-      |> with_block(block)
-      |> with_contract_creation(contract_address)
-
-    internal_transaction =
-      :internal_transaction_create
-      |> insert(
-        transaction: from_lincoln,
-        from_address: lincoln,
-        index: 1,
-        block_number: from_lincoln.block_number,
-        transaction_index: from_lincoln.index
-      )
-      |> with_contract_creation(contract_address)
-
-    session
-    |> AddressPage.visit_page(addresses.lincoln)
-    |> AddressPage.click_internal_transactions()
-    |> assert_has(AddressPage.contract_creation(internal_transaction))
   end
 
   describe "viewing token transfers" do
@@ -469,7 +424,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         token_contract_address: contract_address
       )
 
-      insert(:token_balance, address: lincoln, token_contract_address_hash: contract_address.hash)
+      insert(:address_current_token_balance, address: lincoln, token_contract_address_hash: contract_address.hash)
 
       session
       |> AddressPage.visit_page(lincoln)
@@ -504,7 +459,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         token_contract_address: contract_address
       )
 
-      insert(:token_balance, address: lincoln, token_contract_address_hash: contract_address.hash)
+      insert(:address_current_token_balance, address: lincoln, token_contract_address_hash: contract_address.hash)
 
       contract_address_2 = insert(:contract_address)
       insert(:token, name: "token2", symbol: "T2", contract_address: contract_address_2, type: "ERC-20")
@@ -522,7 +477,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         token_contract_address: contract_address_2
       )
 
-      insert(:token_balance, address: lincoln, token_contract_address_hash: contract_address_2.hash)
+      insert(:address_current_token_balance, address: lincoln, token_contract_address_hash: contract_address_2.hash)
 
       {:ok, lincoln: lincoln}
     end
@@ -557,6 +512,26 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> assert_has(AddressPage.token_balance_counter("1"))
       |> AddressPage.click_outside_of_the_dropdown()
       |> assert_has(AddressPage.token_balance_counter("2"))
+    end
+  end
+
+  describe "viewing coin balance history" do
+    setup do
+      address = insert(:address, fetched_coin_balance: 5)
+      noon = Timex.now() |> Timex.beginning_of_day() |> Timex.set(hour: 12)
+      block = insert(:block, timestamp: noon)
+      block_one_day_ago = insert(:block, timestamp: Timex.shift(noon, days: -1))
+      insert(:fetched_balance, address_hash: address.hash, value: 5, block_number: block.number)
+      insert(:fetched_balance, address_hash: address.hash, value: 10, block_number: block_one_day_ago.number)
+
+      {:ok, address: address}
+    end
+
+    test "see list of coin balances", %{session: session, address: address} do
+      session
+      |> AddressPage.visit_page(address)
+      |> AddressPage.click_coin_balance_history()
+      |> assert_has(AddressPage.coin_balances(count: 2))
     end
   end
 end

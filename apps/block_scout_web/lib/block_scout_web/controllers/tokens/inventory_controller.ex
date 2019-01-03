@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.Tokens.InventoryController do
   use BlockScoutWeb, :controller
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, Market}
   alias Explorer.Chain.TokenTransfer
 
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, default_paging_options: 0]
@@ -20,9 +20,8 @@ defmodule BlockScoutWeb.Tokens.InventoryController do
       render(
         conn,
         "index.html",
-        token: token,
+        token: Market.add_price(token),
         unique_tokens: unique_tokens_paginated,
-        holders_count_consolidation_enabled: Chain.token_holders_counter_consolidation_enabled?(),
         total_token_transfers: Chain.count_token_transfers_from_token_hash(address_hash),
         total_token_holders: Chain.count_token_holders_from_token_hash(address_hash),
         next_page_params: unique_tokens_next_page(next_page, unique_tokens_paginated, params)

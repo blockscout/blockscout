@@ -5,6 +5,8 @@ defmodule EthereumJSONRPC.ParityTest do
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
   import Mox
 
+  alias EthereumJSONRPC.FetchedBeneficiaries
+
   setup :verify_on_exit!
 
   doctest EthereumJSONRPC.Parity
@@ -239,317 +241,396 @@ defmodule EthereumJSONRPC.ParityTest do
     test "with valid block range, returns {:ok, addresses}", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
+      block_hash = "0x52a8d2185282506ce681364d2aa0c085ba45fdeb5d6c0ddec1131617a71ee2ca"
       block_number = 5_080_887
       block_quantity = EthereumJSONRPC.integer_to_quantity(block_number)
       hash1 = "0xef481b4e2c3ed62265617f2e9dfcdf3cf3efc11a"
       hash2 = "0x523b6539ff08d72a6c8bb598af95bf50c1ea839c"
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
-        expect(EthereumJSONRPC.Mox, :json_rpc, fn %{params: [^block_quantity]}, _options ->
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, params: [^block_quantity]}], _options ->
           {:ok,
            [
              %{
-               "action" => %{
-                 "author" => hash1,
-                 "rewardType" => "block",
-                 "value" => "0xde0b6b3a7640000"
-               },
-               "blockHash" => "0x52a8d2185282506ce681364d2aa0c085ba45fdeb5d6c0ddec1131617a71ee2ca",
-               "blockNumber" => block_number,
-               "result" => nil,
-               "subtraces" => 0,
-               "traceAddress" => [],
-               "transactionHash" => nil,
-               "transactionPosition" => nil,
-               "type" => "reward"
-             },
-             %{
-               "action" => %{
-                 "author" => hash2,
-                 "rewardType" => "block",
-                 "value" => "0xde0b6b3a7640000"
-               },
-               "blockHash" => "0x52a8d2185282506ce681364d2aa0c085ba45fdeb5d6c0ddec1131617a71ee2ca",
-               "blockNumber" => block_number,
-               "result" => nil,
-               "subtraces" => 0,
-               "traceAddress" => [],
-               "transactionHash" => nil,
-               "transactionPosition" => nil,
-               "type" => "reward"
+               id: id,
+               result: [
+                 %{
+                   "action" => %{
+                     "author" => hash1,
+                     "rewardType" => "block",
+                     "value" => "0xde0b6b3a7640000"
+                   },
+                   "blockHash" => block_hash,
+                   "blockNumber" => block_number,
+                   "result" => nil,
+                   "subtraces" => 0,
+                   "traceAddress" => [],
+                   "transactionHash" => nil,
+                   "transactionPosition" => nil,
+                   "type" => "reward"
+                 },
+                 %{
+                   "action" => %{
+                     "author" => hash2,
+                     "rewardType" => "block",
+                     "value" => "0xde0b6b3a7640000"
+                   },
+                   "blockHash" => "0x52a8d2185282506ce681364d2aa0c085ba45fdeb5d6c0ddec1131617a71ee2ca",
+                   "blockNumber" => block_number,
+                   "result" => nil,
+                   "subtraces" => 0,
+                   "traceAddress" => [],
+                   "transactionHash" => nil,
+                   "transactionPosition" => nil,
+                   "type" => "reward"
+                 }
+               ]
              }
            ]}
         end)
       end
 
-      expected_beneficiaries =
-        MapSet.new([
-          %{block_number: block_number, address_hash: hash2},
-          %{block_number: block_number, address_hash: hash1}
-        ])
+      assert {:ok, %FetchedBeneficiaries{params_set: params_set}} =
+               EthereumJSONRPC.Parity.fetch_beneficiaries(5_080_887..5_080_887, json_rpc_named_arguments)
 
-      {:ok, fetched_beneficiaries} =
-        EthereumJSONRPC.Parity.fetch_beneficiaries(5_080_887..5_080_887, json_rpc_named_arguments)
+      assert Enum.count(params_set) == 2
 
-      assert fetched_beneficiaries == expected_beneficiaries
+      assert %{
+               block_number: block_number,
+               block_hash: block_hash,
+               address_hash: hash2,
+               address_type: :validator,
+               reward: "0xde0b6b3a7640000"
+             } in params_set
+
+      assert %{
+               block_number: block_number,
+               block_hash: block_hash,
+               address_hash: hash1,
+               address_type: :validator,
+               reward: "0xde0b6b3a7640000"
+             } in params_set
     end
 
     test "with 'external' 'rewardType'", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
+      block_hash = "0xf19a4ea2bb4f2d8839f4c3ec11e0e86c29d57799d7073713958fe1990e197cf5"
       block_number = 5_609_295
       block_quantity = EthereumJSONRPC.integer_to_quantity(block_number)
       hash1 = "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
       hash2 = "0x523b6539ff08d72a6c8bb598af95bf50c1ea839c"
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
-        expect(EthereumJSONRPC.Mox, :json_rpc, fn %{params: [^block_quantity]}, _options ->
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, params: [^block_quantity]}], _options ->
           {:ok,
            [
              %{
-               "action" => %{
-                 "author" => hash1,
-                 "rewardType" => "external",
-                 "value" => "0xde0b6b3a7640000"
-               },
-               "blockHash" => "0xf19a4ea2bb4f2d8839f4c3ec11e0e86c29d57799d7073713958fe1990e197cf5",
-               "blockNumber" => 5_609_295,
-               "result" => nil,
-               "subtraces" => 0,
-               "traceAddress" => [],
-               "transactionHash" => nil,
-               "transactionPosition" => nil,
-               "type" => "reward"
-             },
-             %{
-               "action" => %{
-                 "author" => hash2,
-                 "rewardType" => "external",
-                 "value" => "0xde0b6b3a7640000"
-               },
-               "blockHash" => "0xf19a4ea2bb4f2d8839f4c3ec11e0e86c29d57799d7073713958fe1990e197cf5",
-               "blockNumber" => 5_609_295,
-               "result" => nil,
-               "subtraces" => 0,
-               "traceAddress" => [],
-               "transactionHash" => nil,
-               "transactionPosition" => nil,
-               "type" => "reward"
+               id: id,
+               result: [
+                 %{
+                   "action" => %{
+                     "author" => hash1,
+                     "rewardType" => "external",
+                     "value" => "0xde0b6b3a7640000"
+                   },
+                   "blockHash" => block_hash,
+                   "blockNumber" => 5_609_295,
+                   "result" => nil,
+                   "subtraces" => 0,
+                   "traceAddress" => [],
+                   "transactionHash" => nil,
+                   "transactionPosition" => nil,
+                   "type" => "reward"
+                 },
+                 %{
+                   "action" => %{
+                     "author" => hash2,
+                     "rewardType" => "external",
+                     "value" => "0xde0b6b3a7640000"
+                   },
+                   "blockHash" => "0xf19a4ea2bb4f2d8839f4c3ec11e0e86c29d57799d7073713958fe1990e197cf5",
+                   "blockNumber" => 5_609_295,
+                   "result" => nil,
+                   "subtraces" => 0,
+                   "traceAddress" => [],
+                   "transactionHash" => nil,
+                   "transactionPosition" => nil,
+                   "type" => "reward"
+                 }
+               ]
              }
            ]}
         end)
       end
 
-      expected_beneficiaries =
-        MapSet.new([
-          %{block_number: block_number, address_hash: hash2},
-          %{block_number: block_number, address_hash: hash1}
-        ])
+      assert {:ok, %FetchedBeneficiaries{params_set: params_set, errors: []}} =
+               EthereumJSONRPC.Parity.fetch_beneficiaries(5_609_295..5_609_295, json_rpc_named_arguments)
 
-      {:ok, fetched_beneficiaries} =
-        EthereumJSONRPC.Parity.fetch_beneficiaries(5_609_295..5_609_295, json_rpc_named_arguments)
+      assert Enum.count(params_set) == 2
 
-      assert fetched_beneficiaries == expected_beneficiaries
+      assert %{
+               block_number: block_number,
+               block_hash: block_hash,
+               address_hash: hash1,
+               address_type: :validator,
+               reward: "0xde0b6b3a7640000"
+             } in params_set
+
+      assert %{
+               block_number: block_number,
+               block_hash: block_hash,
+               address_hash: hash2,
+               address_type: :emission_funds,
+               reward: "0xde0b6b3a7640000"
+             } in params_set
     end
 
     test "with no rewards, returns {:ok, []}", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
-        expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
-          {:ok, []}
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn requests, _options when is_list(requests) ->
+          responses = Enum.map(requests, fn %{id: id} -> %{id: id, result: []} end)
+          {:ok, responses}
         end)
 
-        {:ok, fetched_beneficiaries} =
-          EthereumJSONRPC.Parity.fetch_beneficiaries(5_080_887..5_080_887, json_rpc_named_arguments)
+        assert {:ok, %FetchedBeneficiaries{params_set: params_set}} =
+                 EthereumJSONRPC.Parity.fetch_beneficiaries(5_080_887..5_080_887, json_rpc_named_arguments)
 
-        assert fetched_beneficiaries == MapSet.new()
-      end
-    end
-
-    test "with nil rewards, returns {:error, reason}", %{
-      json_rpc_named_arguments: json_rpc_named_arguments
-    } do
-      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
-        expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
-          {:ok, nil}
-        end)
-
-        result = EthereumJSONRPC.Parity.fetch_beneficiaries(5_080_887..5_080_887, json_rpc_named_arguments)
-
-        assert result == {:error, "Error fetching block reward contract beneficiaries"}
+        assert Enum.empty?(params_set)
       end
     end
 
     test "ignores non-reward traces", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
+      block_hash = "0x6659a4926d833a7eab74379fa647ec74c9f5e65f8029552a35264126560f300a"
       block_number = 5_077_429
       block_quantity = EthereumJSONRPC.integer_to_quantity(block_number)
       hash1 = "0xcfa53498686e00d3b4b41f3bea61604038eebb58"
       hash2 = "0x523b6539ff08d72a6c8bb598af95bf50c1ea839c"
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
-        expect(EthereumJSONRPC.Mox, :json_rpc, fn %{params: [^block_quantity]}, _options ->
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, params: [^block_quantity]}], _options ->
           {:ok,
            [
              %{
-               "action" => %{
-                 "callType" => "call",
-                 "from" => "0x95426f2bc716022fcf1def006dbc4bb81f5b5164",
-                 "gas" => "0x0",
-                 "input" => "0x",
-                 "to" => "0xe797a1da01eb0f951e0e400f9343de9d17a06bac",
-                 "value" => "0x4a817c800"
-               },
-               "blockHash" => "0x6659a4926d833a7eab74379fa647ec74c9f5e65f8029552a35264126560f300a",
-               "blockNumber" => block_number,
-               "result" => %{"gasUsed" => "0x0", "output" => "0x"},
-               "subtraces" => 0,
-               "traceAddress" => [],
-               "transactionHash" => "0x5acf90f846b8216bdbc309cf4eb24adc69d730bf29304dc0e740cf6df850666e",
-               "transactionPosition" => 0,
-               "type" => "call"
-             },
-             %{
-               "action" => %{
-                 "author" => hash1,
-                 "rewardType" => "block",
-                 "value" => "0xde0b6b3a7640000"
-               },
-               "blockHash" => "0x6659a4926d833a7eab74379fa647ec74c9f5e65f8029552a35264126560f300a",
-               "blockNumber" => block_number,
-               "result" => nil,
-               "subtraces" => 0,
-               "traceAddress" => [],
-               "transactionHash" => nil,
-               "transactionPosition" => nil,
-               "type" => "reward"
-             },
-             %{
-               "action" => %{
-                 "author" => hash2,
-                 "rewardType" => "block",
-                 "value" => "0xde0b6b3a7640000"
-               },
-               "blockHash" => "0x6659a4926d833a7eab74379fa647ec74c9f5e65f8029552a35264126560f300a",
-               "blockNumber" => block_number,
-               "result" => nil,
-               "subtraces" => 0,
-               "traceAddress" => [],
-               "transactionHash" => nil,
-               "transactionPosition" => nil,
-               "type" => "reward"
+               id: id,
+               result: [
+                 %{
+                   "action" => %{
+                     "callType" => "call",
+                     "from" => "0x95426f2bc716022fcf1def006dbc4bb81f5b5164",
+                     "gas" => "0x0",
+                     "input" => "0x",
+                     "to" => "0xe797a1da01eb0f951e0e400f9343de9d17a06bac",
+                     "value" => "0x4a817c800"
+                   },
+                   "blockHash" => block_hash,
+                   "blockNumber" => block_number,
+                   "result" => %{"gasUsed" => "0x0", "output" => "0x"},
+                   "subtraces" => 0,
+                   "traceAddress" => [],
+                   "transactionHash" => "0x5acf90f846b8216bdbc309cf4eb24adc69d730bf29304dc0e740cf6df850666e",
+                   "transactionPosition" => 0,
+                   "type" => "call"
+                 },
+                 %{
+                   "action" => %{
+                     "author" => hash1,
+                     "rewardType" => "block",
+                     "value" => "0xde0b6b3a7640000"
+                   },
+                   "blockHash" => block_hash,
+                   "blockNumber" => block_number,
+                   "result" => nil,
+                   "subtraces" => 0,
+                   "traceAddress" => [],
+                   "transactionHash" => nil,
+                   "transactionPosition" => nil,
+                   "type" => "reward"
+                 },
+                 %{
+                   "action" => %{
+                     "author" => hash2,
+                     "rewardType" => "block",
+                     "value" => "0xde0b6b3a7640000"
+                   },
+                   "blockHash" => block_hash,
+                   "blockNumber" => block_number,
+                   "result" => nil,
+                   "subtraces" => 0,
+                   "traceAddress" => [],
+                   "transactionHash" => nil,
+                   "transactionPosition" => nil,
+                   "type" => "reward"
+                 }
+               ]
              }
            ]}
         end)
       end
 
-      expected_beneficiaries =
-        MapSet.new([
-          %{block_number: block_number, address_hash: hash2},
-          %{block_number: block_number, address_hash: hash1}
-        ])
+      assert {:ok, %FetchedBeneficiaries{params_set: params_set}} =
+               EthereumJSONRPC.Parity.fetch_beneficiaries(5_077_429..5_077_429, json_rpc_named_arguments)
 
-      {:ok, fetched_beneficiaries} =
-        EthereumJSONRPC.Parity.fetch_beneficiaries(5_077_429..5_077_429, json_rpc_named_arguments)
+      assert Enum.count(params_set) == 2
 
-      assert fetched_beneficiaries == expected_beneficiaries
+      assert %{
+               block_number: block_number,
+               block_hash: block_hash,
+               address_hash: hash2,
+               address_type: :validator,
+               reward: "0xde0b6b3a7640000"
+             } in params_set
+
+      assert %{
+               block_number: block_number,
+               block_hash: block_hash,
+               address_hash: hash1,
+               address_type: :validator,
+               reward: "0xde0b6b3a7640000"
+             } in params_set
     end
 
     test "with multiple blocks with repeat beneficiaries", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
+      block_hash1 = "0xd2170e27857452d130128ac94c5258828a22cc69b07ab6e7fc12f7dd9938ff1c"
       block_number1 = 5_080_886
       block_quantity1 = EthereumJSONRPC.integer_to_quantity(block_number1)
+
+      block_hash2 = "0x52a8d2185282506ce681364d2aa0c085ba45fdeb5d6c0ddec1131617a71ee2ca"
       block_number2 = 5_080_887
       block_quantity2 = EthereumJSONRPC.integer_to_quantity(block_number2)
+
       hash1 = "0xadc702c4bb09fbc502dd951856b9c7a1528a88de"
       hash2 = "0xef481b4e2c3ed62265617f2e9dfcdf3cf3efc11a"
       hash3 = "0x523b6539ff08d72a6c8bb598af95bf50c1ea839c"
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
-        expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn
-          %{params: [^block_quantity1]} = _json, _options ->
-            {:ok,
-             [
-               %{
-                 "action" => %{
-                   "author" => hash1,
-                   "rewardType" => "block",
-                   "value" => "0xde0b6b3a7640000"
-                 },
-                 "blockNumber" => block_number1,
-                 "result" => nil,
-                 "subtraces" => 0,
-                 "traceAddress" => [],
-                 "transactionHash" => nil,
-                 "transactionPosition" => nil,
-                 "type" => "reward"
-               },
-               %{
-                 "action" => %{
-                   "author" => hash3,
-                   "rewardType" => "block",
-                   "value" => "0xde0b6b3a7640000"
-                 },
-                 "blockNumber" => block_number1,
-                 "result" => nil,
-                 "subtraces" => 0,
-                 "traceAddress" => [],
-                 "transactionHash" => nil,
-                 "transactionPosition" => nil,
-                 "type" => "reward"
-               }
-             ]}
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn requests, _options when is_list(requests) ->
+          responses =
+            Enum.map(requests, fn
+              %{id: id, params: [^block_quantity1]} ->
+                %{
+                  id: id,
+                  result: [
+                    %{
+                      "action" => %{
+                        "author" => hash1,
+                        "rewardType" => "block",
+                        "value" => "0xde0b6b3a7640000"
+                      },
+                      "blockHash" => block_hash1,
+                      "blockNumber" => block_number1,
+                      "result" => nil,
+                      "subtraces" => 0,
+                      "traceAddress" => [],
+                      "transactionHash" => nil,
+                      "transactionPosition" => nil,
+                      "type" => "reward"
+                    },
+                    %{
+                      "action" => %{
+                        "author" => hash3,
+                        "rewardType" => "block",
+                        "value" => "0xde0b6b3a7640000"
+                      },
+                      "blockHash" => block_hash1,
+                      "blockNumber" => block_number1,
+                      "result" => nil,
+                      "subtraces" => 0,
+                      "traceAddress" => [],
+                      "transactionHash" => nil,
+                      "transactionPosition" => nil,
+                      "type" => "reward"
+                    }
+                  ]
+                }
 
-          %{params: [^block_quantity2]} = _json, _options ->
-            {:ok,
-             [
-               %{
-                 "action" => %{
-                   "author" => hash2,
-                   "rewardType" => "block",
-                   "value" => "0xde0b6b3a7640000"
-                 },
-                 "blockNumber" => block_number2,
-                 "result" => nil,
-                 "subtraces" => 0,
-                 "traceAddress" => [],
-                 "transactionHash" => nil,
-                 "transactionPosition" => nil,
-                 "type" => "reward"
-               },
-               %{
-                 "action" => %{
-                   "author" => hash3,
-                   "rewardType" => "block",
-                   "value" => "0xde0b6b3a7640000"
-                 },
-                 "blockNumber" => block_number2,
-                 "result" => nil,
-                 "subtraces" => 0,
-                 "traceAddress" => [],
-                 "transactionHash" => nil,
-                 "transactionPosition" => nil,
-                 "type" => "reward"
-               }
-             ]}
+              %{id: id, params: [^block_quantity2]} ->
+                %{
+                  id: id,
+                  result: [
+                    %{
+                      "action" => %{
+                        "author" => hash2,
+                        "rewardType" => "block",
+                        "value" => "0xde0b6b3a7640000"
+                      },
+                      "blockHash" => block_hash2,
+                      "blockNumber" => block_number2,
+                      "result" => nil,
+                      "subtraces" => 0,
+                      "traceAddress" => [],
+                      "transactionHash" => nil,
+                      "transactionPosition" => nil,
+                      "type" => "reward"
+                    },
+                    %{
+                      "action" => %{
+                        "author" => hash3,
+                        "rewardType" => "block",
+                        "value" => "0xde0b6b3a7640000"
+                      },
+                      "blockHash" => block_hash2,
+                      "blockNumber" => block_number2,
+                      "result" => nil,
+                      "subtraces" => 0,
+                      "traceAddress" => [],
+                      "transactionHash" => nil,
+                      "transactionPosition" => nil,
+                      "type" => "reward"
+                    }
+                  ]
+                }
+            end)
+
+          {:ok, responses}
         end)
       end
 
-      expected_beneficiaries =
-        MapSet.new([
-          %{block_number: block_number1, address_hash: hash3},
-          %{block_number: block_number2, address_hash: hash3},
-          %{block_number: block_number2, address_hash: hash2},
-          %{block_number: block_number1, address_hash: hash1}
-        ])
+      assert {:ok, %FetchedBeneficiaries{params_set: params_set}} =
+               EthereumJSONRPC.Parity.fetch_beneficiaries(
+                 block_number1..block_number2,
+                 json_rpc_named_arguments
+               )
 
-      {:ok, fetched_beneficiaries} =
-        EthereumJSONRPC.Parity.fetch_beneficiaries(5_080_886..5_080_887, json_rpc_named_arguments)
+      assert Enum.count(params_set) == 4
 
-      assert fetched_beneficiaries == expected_beneficiaries
+      assert %{
+               block_number: block_number1,
+               block_hash: block_hash1,
+               address_hash: hash1,
+               address_type: :validator,
+               reward: "0xde0b6b3a7640000"
+             } in params_set
+
+      assert %{
+               block_number: block_number1,
+               block_hash: block_hash1,
+               address_hash: hash3,
+               address_type: :validator,
+               reward: "0xde0b6b3a7640000"
+             } in params_set
+
+      assert %{
+               block_number: block_number2,
+               block_hash: block_hash2,
+               address_hash: hash2,
+               address_type: :validator,
+               reward: "0xde0b6b3a7640000"
+             } in params_set
+
+      assert %{
+               block_number: block_number2,
+               block_hash: block_hash2,
+               address_hash: hash3,
+               address_type: :validator,
+               reward: "0xde0b6b3a7640000"
+             } in params_set
     end
 
     test "with error, returns {:error, reason}", %{
@@ -560,9 +641,8 @@ defmodule EthereumJSONRPC.ParityTest do
           {:error, "oops"}
         end)
 
-        result = EthereumJSONRPC.Parity.fetch_beneficiaries(5_080_887..5_080_887, json_rpc_named_arguments)
-
-        assert result == {:error, "Error fetching block reward contract beneficiaries"}
+        assert {:error, "oops"} =
+                 EthereumJSONRPC.Parity.fetch_beneficiaries(5_080_887..5_080_887, json_rpc_named_arguments)
       end
     end
   end

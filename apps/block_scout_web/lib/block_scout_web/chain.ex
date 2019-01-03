@@ -14,8 +14,11 @@ defmodule BlockScoutWeb.Chain do
       string_to_transaction_hash: 1
     ]
 
+  alias Explorer.Chain.Block.Reward
+
   alias Explorer.Chain.{
     Address,
+    Address.CoinBalance,
     Address.CurrentTokenBalance,
     Block,
     InternalTransaction,
@@ -130,9 +133,6 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  def paging_options(%{"inserted_at" => inserted_at}),
-    do: [paging_options: %{@default_paging_options | key: inserted_at}]
-
   def paging_options(%{"token_name" => name, "token_type" => type, "token_inserted_at" => inserted_at}),
     do: [paging_options: %{@default_paging_options | key: {name, type, inserted_at}}]
 
@@ -159,6 +159,10 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
+  defp paging_params({%Reward{block: %{number: number}}, _}) do
+    %{"block_number" => number, "index" => 0}
+  end
+
   defp paging_params(%Block{number: number}) do
     %{"block_number" => number}
   end
@@ -180,26 +184,22 @@ defmodule BlockScoutWeb.Chain do
     %{"block_number" => block_number, "index" => index}
   end
 
-  defp paging_params(%TokenTransfer{inserted_at: inserted_at}) do
-    inserted_at_datetime =
-      inserted_at
-      |> DateTime.from_naive!("Etc/UTC")
-      |> DateTime.to_iso8601()
-
-    %{"inserted_at" => inserted_at_datetime}
+  defp paging_params(%TokenTransfer{block_number: block_number, log_index: index}) do
+    %{"block_number" => block_number, "index" => index}
   end
 
   defp paging_params(%Address.Token{name: name, type: type, inserted_at: inserted_at}) do
-    inserted_at_datetime =
-      inserted_at
-      |> DateTime.from_naive!("Etc/UTC")
-      |> DateTime.to_iso8601()
+    inserted_at_datetime = DateTime.to_iso8601(inserted_at)
 
     %{"token_name" => name, "token_type" => type, "token_inserted_at" => inserted_at_datetime}
   end
 
   defp paging_params(%CurrentTokenBalance{address_hash: address_hash, value: value}) do
     %{"address_hash" => to_string(address_hash), "value" => Decimal.to_integer(value)}
+  end
+
+  defp paging_params(%CoinBalance{block_number: block_number}) do
+    %{"block_number" => block_number}
   end
 
   defp block_or_transaction_from_param(param) do

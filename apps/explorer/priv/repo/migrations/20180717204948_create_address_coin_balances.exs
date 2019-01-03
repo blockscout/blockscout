@@ -8,9 +8,9 @@ defmodule Explorer.Repo.Migrations.CreateCoinBalances do
 
       # null until fetched
       add(:value, :numeric, precision: 100, default: fragment("NULL"), null: true)
-      add(:value_fetched_at, :utc_datetime, default: fragment("NULL"), null: true)
+      add(:value_fetched_at, :utc_datetime_usec, default: fragment("NULL"), null: true)
 
-      timestamps(null: false, type: :utc_datetime)
+      timestamps(null: false, type: :utc_datetime_usec)
     end
 
     create(unique_index(:address_coin_balances, [:address_hash, :block_number]))

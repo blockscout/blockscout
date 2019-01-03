@@ -122,6 +122,7 @@ jobs:
             - mix.exs
             - mix.lock
             - appspec.yml
+            - rel
   check_formatted:
     docker:
       # Ensure .tool-versions matches
@@ -279,6 +280,32 @@ jobs:
           name: Jest
           command: ./node_modules/.bin/jest
           working_directory: apps/block_scout_web/assets
+  release:
+    docker:
+      # Ensure .tool-versions matches
+      - image: circleci/elixir:1.7.2
+        environment:
+          MIX_ENV: prod
+
+    working_directory: ~/app
+
+    steps:
+      - attach_workspace:
+          at: .
+
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+      - run: mix release --verbose --env prod
+      - run:
+          name: Collecting artifacts
+          command: |
+            find -name 'blockscout.tar.gz' -exec sh -c 'mkdir -p ci_artifact && cp "$@" ci_artifact/ci_artifact_blockscout.tar.gz' _ {} +
+          when: always
+
+      - store_artifacts:
+          name: Uploading CI artifacts
+          path: ci_artifact/ci_artifact_blockscout.tar.gz
+          destination: ci_artifact_blockscout.tar.gz
   sobelow:
     docker:
       # Ensure .tool-versions matches
@@ -559,6 +586,9 @@ workflows:
           requires:
             - build
       - jest:
+          requires:
+            - build
+      - release:
           requires:
             - build
       - sobelow:

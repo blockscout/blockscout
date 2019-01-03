@@ -22,17 +22,19 @@ defmodule Explorer.Chain.TokenTransfer do
   | `:index`            | `:log_index`                   | Index of log in transaction     |
   """
 
-  use Ecto.Schema
+  use Explorer.Schema
 
-  import Ecto.{Changeset, Query}
+  import Ecto.Changeset
+  import Ecto.Query, only: [from: 2, limit: 2, where: 3]
 
-  alias Explorer.Chain.{Address, Block, Hash, Token, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Hash, Token, TokenTransfer, Transaction}
   alias Explorer.{PagingOptions, Repo}
 
   @default_paging_options %PagingOptions{page_size: 50}
 
   @typedoc """
   * `:amount` - The token transferred amount
+  * `:block_number` - The block number that the transfer took place.
   * `:from_address` - The `t:Explorer.Chain.Address.t/0` that sent the tokens
   * `:from_address_hash` - Address hash foreign key
   * `:to_address` - The `t:Explorer.Chain.Address.t/0` that received the tokens
@@ -46,6 +48,7 @@ defmodule Explorer.Chain.TokenTransfer do
   """
   @type t :: %TokenTransfer{
           amount: Decimal.t(),
+          block_number: non_neg_integer() | nil,
           from_address: %Ecto.Association.NotLoaded{} | Address.t(),
           from_address_hash: Hash.Address.t(),
           to_address: %Ecto.Association.NotLoaded{} | Address.t(),
@@ -65,6 +68,7 @@ defmodule Explorer.Chain.TokenTransfer do
   @primary_key false
   schema "token_transfers" do
     field(:amount, :decimal)
+    field(:block_number, :integer)
     field(:log_index, :integer, primary_key: true)
     field(:token_id, :decimal)
 
@@ -91,7 +95,7 @@ defmodule Explorer.Chain.TokenTransfer do
     timestamps()
   end
 
-  @required_attrs ~w(log_index from_address_hash to_address_hash token_contract_address_hash transaction_hash)a
+  @required_attrs ~w(block_number log_index from_address_hash to_address_hash token_contract_address_hash transaction_hash)a
   @optional_attrs ~w(amount token_id)a
 
   @doc false
@@ -118,13 +122,9 @@ defmodule Explorer.Chain.TokenTransfer do
     query =
       from(
         tt in TokenTransfer,
-        join: t in Transaction,
-        on: tt.transaction_hash == t.hash,
-        join: b in Block,
-        on: t.block_hash == b.hash,
         where: tt.token_contract_address_hash == ^token_address_hash,
         preload: [{:transaction, :block}, :token, :from_address, :to_address],
-        order_by: [desc: b.timestamp]
+        order_by: [desc: tt.block_number, desc: tt.log_index]
       )
 
     query
@@ -133,74 +133,132 @@ defmodule Explorer.Chain.TokenTransfer do
     |> Repo.all()
   end
 
+  @spec count_token_transfers_from_token_hash(Hash.t()) :: non_neg_integer()
+  def count_token_transfers_from_token_hash(token_address_hash) do
+    query =
+      from(
+        tt in TokenTransfer,
+        where: tt.token_contract_address_hash == ^token_address_hash,
+        select: fragment("COUNT(*)")
+      )
+
+    Repo.one(query)
+  end
+
   def page_token_transfer(query, %PagingOptions{key: nil}), do: query
 
   def page_token_transfer(query, %PagingOptions{key: {token_id}}) do
-    where(
-      query,
-      [token_transfer],
-      token_transfer.token_id > ^token_id
-    )
+    where(query, [token_transfer], token_transfer.token_id > ^token_id)
   end
 
-  def page_token_transfer(query, %PagingOptions{key: inserted_at}) do
+  def page_token_transfer(query, %PagingOptions{key: {block_number, log_index}}) do
     where(
       query,
-      [token_transfer],
-      token_transfer.inserted_at < ^inserted_at
+      [tt],
+      tt.block_number < ^block_number or (tt.block_number == ^block_number and tt.log_index < ^log_index)
     )
   end
 
   @doc """
-  Builds a dynamic query expression to identify if there is a token transfer
-  related to the hash.
+  Fetches the transaction hashes from token transfers according
+  to the address hash.
   """
-  def dynamic_any_address_fields_match(:to, address_bytes) do
-    dynamic(
-      [t],
-      t.hash ==
-        fragment(
-          ~s"""
-          (SELECT tt.transaction_hash
-          FROM "token_transfers" AS tt
-          WHERE (tt."to_address_hash" = ?)
-          LIMIT 1)
-          """,
-          ^address_bytes
-        )
-    )
+  def where_any_address_fields_match(:to, address_hash, paging_options) do
+    query =
+      from(
+        tt in TokenTransfer,
+        where: tt.to_address_hash == ^address_hash,
+        select: tt.transaction_hash
+      )
+
+    query
+    |> page_transaction_hashes_from_token_transfers(paging_options)
+    |> limit(^paging_options.page_size)
+    |> Repo.all()
   end
 
-  def dynamic_any_address_fields_match(:from, address_bytes) do
-    dynamic(
-      [t],
-      t.hash ==
-        fragment(
-          ~s"""
-          (SELECT tt.transaction_hash
-          FROM "token_transfers" AS tt
-          WHERE (tt."from_address_hash" = ?)
-          LIMIT 1)
-          """,
-          ^address_bytes
-        )
-    )
+  def where_any_address_fields_match(:from, address_hash, paging_options) do
+    query =
+      from(
+        tt in TokenTransfer,
+        where: tt.from_address_hash == ^address_hash,
+        select: tt.transaction_hash
+      )
+
+    query
+    |> page_transaction_hashes_from_token_transfers(paging_options)
+    |> limit(^paging_options.page_size)
+    |> Repo.all()
   end
 
-  def dynamic_any_address_fields_match(_, address_bytes) do
-    dynamic(
-      [t],
-      t.hash ==
-        fragment(
-          ~s"""
-          (SELECT tt.transaction_hash
-          FROM "token_transfers" AS tt
-          WHERE ((tt."to_address_hash" = ?) OR (tt."from_address_hash" = ?))
-          LIMIT 1)
-          """,
-          ^address_bytes,
-          ^address_bytes
-        )
+  def where_any_address_fields_match(_, address_hash, paging_options) do
+    {:ok, address_bytes} = Explorer.Chain.Hash.Address.dump(address_hash)
+
+    transaction_hashes_from_token_transfers_sql(address_bytes, paging_options)
+  end
+
+  defp transaction_hashes_from_token_transfers_sql(address_bytes, %PagingOptions{key: nil, page_size: page_size}) do
+    {:ok, %Postgrex.Result{rows: transaction_hashes_from_token_transfers}} =
+      Repo.query(
+        """
+          SELECT transaction_hash
+          FROM
+          (
+          SELECT transaction_hash
+          FROM token_transfers
+          WHERE from_address_hash = $1
+
+          UNION
+
+          SELECT transaction_hash
+          FROM token_transfers
+          WHERE to_address_hash = $1
+          ) as token_transfers_transaction_hashes
+          LIMIT $2
+        """,
+        [address_bytes, page_size]
+      )
+
+    List.flatten(transaction_hashes_from_token_transfers)
+  end
+
+  defp transaction_hashes_from_token_transfers_sql(address_bytes, %PagingOptions{
+         key: {block_number, _index},
+         page_size: page_size
+       }) do
+    {:ok, %Postgrex.Result{rows: transaction_hashes_from_token_transfers}} =
+      Repo.query(
+        """
+          SELECT transaction_hash
+          FROM
+          (
+          SELECT transaction_hash
+          FROM token_transfers
+          WHERE from_address_hash = $1
+          AND block_number < $2
+
+          UNION
+
+          SELECT transaction_hash
+          FROM token_transfers
+          WHERE to_address_hash = $1
+          AND block_number < $2
+          ) as token_transfers_transaction_hashes
+          LIMIT $3
+        """,
+        [address_bytes, block_number, page_size]
+      )
+
+    List.flatten(transaction_hashes_from_token_transfers)
+  end
+
+  defp page_transaction_hashes_from_token_transfers(query, %PagingOptions{key: nil}), do: query
+
+  defp page_transaction_hashes_from_token_transfers(query, %PagingOptions{key: {block_number, _index}}) do
+    where(
+      query,
+      [tt],
+      tt.block_number < ^block_number
     )
   end
 
@@ -225,21 +283,5 @@ defmodule Explorer.Chain.TokenTransfer do
       preload: [:to_address],
       select: tt
     )
-  end
-
-  @doc """
-  Counts all the token transfers and groups by token contract address hash.
-  """
-  def count_token_transfers do
-    query =
-      from(
-        tt in TokenTransfer,
-        join: t in Token,
-        on: tt.token_contract_address_hash == t.contract_address_hash,
-        select: {tt.token_contract_address_hash, fragment("COUNT(*)")},
-        group_by: tt.token_contract_address_hash
-      )
-
-    Repo.all(query)
   end
 end

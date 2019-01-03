@@ -1,15 +1,15 @@
 use Mix.Config
 
 config :indexer,
-  block_interval: 5_000,
+  block_interval: :timer.seconds(5),
   json_rpc_named_arguments: [
     transport: EthereumJSONRPC.HTTP,
     transport_options: [
       http: EthereumJSONRPC.HTTP.HTTPoison,
       url: System.get_env("ETHEREUM_JSONRPC_HTTP_URL") || "http://localhost:7545",
-      http_options: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :ethereum_jsonrpc]]
+      http_options: [recv_timeout: :timer.minutes(1), timeout: :timer.minutes(1), hackney: [pool: :ethereum_jsonrpc]]
     ],
-    variant: EthereumJSONRPC.Geth
+    variant: EthereumJSONRPC.Ganache
   ],
   subscribe_named_arguments: [
     transport: EthereumJSONRPC.WebSocket,

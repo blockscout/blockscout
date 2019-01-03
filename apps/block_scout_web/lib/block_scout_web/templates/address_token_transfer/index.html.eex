@@ -7,41 +7,36 @@
         <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
       </div>
 
-      <div class="card-body">
+      <div data-async-load data-async-listing="<%= @current_path %>" class="card-body">
         <h2 class="card-title">
           <span class="text-muted"><%= gettext "Tokens" %></span> / <%= token_name(@token) %>
         </h2>
-
-        <%= if Enum.any?(@transactions) do %>
-          <span data-selector="transactions-list">
-            <%= for transaction <- @transactions do %>
-              <%= render(
-                  BlockScoutWeb.TransactionView,
-                  "_tile.html",
-                  transaction: transaction,
-                  current_address: @address
-                  ) %>
-            <% end %>
+        <div data-loading-message class="tile tile-muted text-center mt-3">
+          <span class="loading-spinner-small mr-2">
+            <span class="loading-spinner-block-1"></span>
+            <span class="loading-spinner-block-2"></span>
           </span>
-        <% else %>
-          <div class="tile tile-muted text-center">
-            <span><%= gettext "There are no token transfers for this address." %></span>
-          </div>
-        <% end %>
-
-        <%= if @next_page_params do %>
-          <%= link(
-            gettext("Next"),
-            class: "button button-secondary button-sm float-right mt-3",
-            to: address_token_transfers_path(
-              @conn,
-              :index,
-              @address.hash,
-              @token.contract_address_hash,
-              @next_page_params
-            )
-          ) %>
-        <% end %>
+          <%= gettext("Loading...") %>
+        </div>
+        <div data-empty-response-message class="tile tile-muted text-center" style="display: none;">
+          <span><%= gettext "There are no token transfers for this address." %></span>
+        </div>
+        <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
+          <span class="alert-link">
+            <%= gettext "Something went wrong, click to reload." %>
+          </span>
+        </button>
+        <div data-items></div>
+        <a data-next-page-button href="#" class="button button-secondary button-small float-right mt-4" style="display: none;">
+          <%= gettext("Older") %>
+        </a>
+        <div data-loading-button class="button button-secondary button-small float-right mt-4" style="display: none;">
+          <span class="loading-spinner-small mr-2">
+            <span class="loading-spinner-block-1"></span>
+            <span class="loading-spinner-block-2"></span>
+          </span>
+          <%= gettext("Loading") %>...
+        </div>
       </div>
     </div>
   </section>

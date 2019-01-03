@@ -76,6 +76,10 @@ defmodule EthereumJsonrpc.MixProject do
       {:logger_file_backend, "~> 0.0.10"},
       # Mocking `EthereumJSONRPC.Transport` and `EthereumJSONRPC.HTTP` so we avoid hitting real chains for local testing
       {:mox, "~> 0.4", only: [:test]},
+      # Tracing
+      {:spandex, github: "spandex-project/spandex", branch: "allow-setting-trace-key", override: true},
+      # `:spandex` integration with Datadog
+      {:spandex_datadog, "~> 0.3.1"},
       # Convert unix timestamps in JSONRPC to DateTimes
       {:timex, "~> 3.4"},
       # Encode/decode function names and arguments
@@ -83,7 +87,9 @@ defmodule EthereumJsonrpc.MixProject do
       # `:verify_fun` for `Socket.Web.connect`
       {:ssl_verify_fun, "~> 1.1"},
       # `EthereumJSONRPC.WebSocket`
-      {:websocket_client, "~> 1.3"}
+      {:websocket_client, "~> 1.3"},
+      {:decimal, "~> 1.0"},
+      {:decorator, "~> 1.2"}
     ]
   end
 end

@@ -109,8 +109,8 @@ defmodule Indexer.Block.FetcherTest do
                  }
                ]}
             end)
-            |> expect(:json_rpc, fn %{id: _id, method: "trace_block", params: [^block_quantity]}, _options ->
-              {:ok, []}
+            |> expect(:json_rpc, fn [%{id: id, method: "trace_block", params: [^block_quantity]}], _options ->
+              {:ok, [%{id: id, result: []}]}
             end)
             |> expect(:json_rpc, fn [
                                       %{
@@ -214,10 +214,13 @@ defmodule Indexer.Block.FetcherTest do
         fn -> Fetcher.fetch_and_import_range(block_fetcher, block_number..block_number) end,
         fn result ->
           assert {:ok,
-                  {%{
-                     addresses: [%Address{hash: ^address_hash}],
-                     blocks: [%Chain.Block{hash: ^block_hash}]
-                   }, :more}} = result
+                  %{
+                    inserted: %{
+                      addresses: [%Address{hash: ^address_hash}],
+                      blocks: [%Chain.Block{hash: ^block_hash}]
+                    },
+                    errors: []
+                  }} = result
 
           wait_for_tasks(InternalTransaction.Fetcher)
           wait_for_tasks(CoinBalance.Fetcher)
@@ -359,9 +362,8 @@ defmodule Indexer.Block.FetcherTest do
                  }
                ]}
             end)
-            |> expect(:json_rpc, fn json, _options ->
-              assert %{id: _id, method: "trace_block", params: [^block_quantity]} = json
-              {:ok, []}
+            |> expect(:json_rpc, fn [%{id: id, method: "trace_block", params: [^block_quantity]}], _options ->
+              {:ok, [%{id: id, result: []}]}
             end)
             # async requests need to be grouped in one expect because the order is non-deterministic while multiple expect
             # calls on the same name/arity are used in order
@@ -507,57 +509,60 @@ defmodule Indexer.Block.FetcherTest do
 
         EthereumJSONRPC.Parity ->
           assert {:ok,
-                  {%{
-                     addresses: [
-                       %Address{
-                         hash:
-                           %Explorer.Chain.Hash{
-                             byte_count: 20,
-                             bytes:
-                               <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179, 223,
-                                 65, 91>>
-                           } = first_address_hash
-                       },
-                       %Address{
-                         hash:
-                           %Explorer.Chain.Hash{
-                             byte_count: 20,
-                             bytes:
-                               <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132, 89, 192, 16, 79, 223, 94, 152,
-                                 122, 202>>
-                           } = second_address_hash
-                       }
-                     ],
-                     blocks: [
-                       %Chain.Block{
-                         hash: %Explorer.Chain.Hash{
-                           byte_count: 32,
-                           bytes:
-                             <<246, 180, 184, 200, 141, 243, 235, 210, 82, 236, 71, 99, 40, 51, 77, 192, 38, 207, 102,
-                               96, 106, 132, 251, 118, 155, 61, 60, 188, 204, 132, 113, 189>>
-                         }
-                       }
-                     ],
-                     logs: [
-                       %Log{
-                         index: 0,
-                         transaction_hash: %Explorer.Chain.Hash{
-                           byte_count: 32,
-                           bytes:
-                             <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35,
-                               77, 57, 101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
-                         }
-                       }
-                     ],
-                     transactions: [
-                       %Explorer.Chain.Hash{
-                         byte_count: 32,
-                         bytes:
-                           <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77,
-                             57, 101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
-                       }
-                     ]
-                   }, :more}} = Fetcher.fetch_and_import_range(block_fetcher, block_number..block_number)
+                  %{
+                    inserted: %{
+                      addresses: [
+                        %Address{
+                          hash:
+                            %Explorer.Chain.Hash{
+                              byte_count: 20,
+                              bytes:
+                                <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179,
+                                  223, 65, 91>>
+                            } = first_address_hash
+                        },
+                        %Address{
+                          hash:
+                            %Explorer.Chain.Hash{
+                              byte_count: 20,
+                              bytes:
+                                <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132, 89, 192, 16, 79, 223, 94, 152,
+                                  122, 202>>
+                            } = second_address_hash
+                        }
+                      ],
+                      blocks: [
+                        %Chain.Block{
+                          hash: %Explorer.Chain.Hash{
+                            byte_count: 32,
+                            bytes:
+                              <<246, 180, 184, 200, 141, 243, 235, 210, 82, 236, 71, 99, 40, 51, 77, 192, 38, 207, 102,
+                                96, 106, 132, 251, 118, 155, 61, 60, 188, 204, 132, 113, 189>>
+                          }
+                        }
+                      ],
+                      logs: [
+                        %Log{
+                          index: 0,
+                          transaction_hash: %Explorer.Chain.Hash{
+                            byte_count: 32,
+                            bytes:
+                              <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35,
+                                77, 57, 101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
+                          }
+                        }
+                      ],
+                      transactions: [
+                        %Explorer.Chain.Hash{
+                          byte_count: 32,
+                          bytes:
+                            <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77,
+                              57, 101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
+                        }
+                      ]
+                    },
+                    errors: []
+                  }} = Fetcher.fetch_and_import_range(block_fetcher, block_number..block_number)
 
           wait_for_tasks(InternalTransaction.Fetcher)
           wait_for_tasks(CoinBalance.Fetcher)
@@ -606,7 +611,7 @@ defmodule Indexer.Block.FetcherTest do
   end
 
   defp wait_for_tasks(buffered_task) do
-    wait_until(10_000, fn ->
+    wait_until(:timer.seconds(10), fn ->
       counts = BufferedTask.debug_count(buffered_task)
       counts.buffer == 0 and counts.tasks == 0
     end)

@@ -100,4 +100,34 @@ defmodule Explorer.Chain.WeiTest do
       assert Explorer.Chain.Wei.sub(first, second) == %Explorer.Chain.Wei{value: Decimal.new(-77)}
     end
   end
+
+  describe "mult/1" do
+    test "with one negative parameter return a negative value" do
+      first = %Explorer.Chain.Wei{value: Decimal.new(123)}
+      second = %Explorer.Chain.Wei{value: Decimal.new(-1)}
+
+      assert Explorer.Chain.Wei.mult(first, second) == %Explorer.Chain.Wei{value: Decimal.new(-123)}
+    end
+
+    test "with two negative parameter return positive number" do
+      first = %Explorer.Chain.Wei{value: Decimal.new(-123)}
+      second = %Explorer.Chain.Wei{value: Decimal.new(-100)}
+
+      assert Explorer.Chain.Wei.mult(first, second) == %Explorer.Chain.Wei{value: Decimal.new(12300)}
+    end
+
+    test "with two positive parameters return a positive number" do
+      first = %Explorer.Chain.Wei{value: Decimal.new(123)}
+      second = %Explorer.Chain.Wei{value: Decimal.new(100)}
+
+      assert Explorer.Chain.Wei.mult(first, second) == %Explorer.Chain.Wei{value: Decimal.new(12300)}
+    end
+
+    test "the order of the paramete matters not" do
+      first = %Explorer.Chain.Wei{value: Decimal.new(123)}
+      second = %Explorer.Chain.Wei{value: Decimal.new(-10)}
+
+      assert Explorer.Chain.Wei.mult(first, second) == Explorer.Chain.Wei.mult(second, first)
+    end
+  end
 end

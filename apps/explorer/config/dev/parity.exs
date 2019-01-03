@@ -11,7 +11,7 @@ config :explorer,
         eth_getBalance: System.get_env("ETHEREUM_JSONRPC_TRACE_URL") || "https://explorer-node.fuse.io",
         trace_replayTransaction: System.get_env("ETHEREUM_JSONRPC_TRACE_URL") || "https://explorer-node.fuse.io"
       ],
-      http_options: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :ethereum_jsonrpc]]
+      http_options: [recv_timeout: :timer.minutes(1), timeout: :timer.minutes(1), hackney: [pool: :ethereum_jsonrpc]]
     ],
     variant: EthereumJSONRPC.Parity
   ],

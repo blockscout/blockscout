@@ -10,7 +10,6 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   alias BlockScoutWeb.TransactionView
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.Hash
   alias Explorer.ExchangeRates.Token
   alias Phoenix.View
 
@@ -35,11 +34,11 @@ defmodule BlockScoutWeb.AddressTransactionController do
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
 
-      transactions_plus_one = Chain.address_to_transactions(address, options)
-      {transactions, next_page} = split_list_by_page(transactions_plus_one)
+      results_plus_one = Chain.address_to_transactions_with_rewards(address, options)
+      {results, next_page} = split_list_by_page(results_plus_one)
 
       next_page_url =
-        case next_page_params(next_page, transactions, params) do
+        case next_page_params(next_page, results, params) do
           nil ->
             nil
 
@@ -48,29 +47,33 @@ defmodule BlockScoutWeb.AddressTransactionController do
               conn,
               :index,
               address,
-              next_page_params
+              Map.delete(next_page_params, "type")
             )
         end
 
-      json(
-        conn,
-        %{
-          transactions:
-            Enum.map(transactions, fn transaction ->
-              %{
-                transaction_hash: Hash.to_string(transaction.hash),
-                transaction_html:
-                  View.render_to_string(
-                    TransactionView,
-                    "_tile.html",
-                    current_address: address,
-                    transaction: transaction
-                  )
-              }
-            end),
-          next_page_url: next_page_url
-        }
-      )
+      items_json =
+        Enum.map(results, fn result ->
+          case result do
+            {%Chain.Block.Reward{} = emission_reward, %Chain.Block.Reward{} = validator_reward} ->
+              View.render_to_string(
+                TransactionView,
+                "_emission_reward_tile.html",
+                current_address: address,
+                emission_funds: emission_reward,
+                validator: validator_reward
+              )
+
+            %Chain.Transaction{} = transaction ->
+              View.render_to_string(
+                TransactionView,
+                "_tile.html",
+                current_address: address,
+                transaction: transaction
+              )
+          end
+        end)
+
+      json(conn, %{items: items_json, next_page_path: next_page_url})
     else
       :error ->
         unprocessable_entity(conn)
@@ -90,7 +93,8 @@ defmodule BlockScoutWeb.AddressTransactionController do
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
         transaction_count: transaction_count(address),
-        validation_count: validation_count(address)
+        validation_count: validation_count(address),
+        current_path: current_path(conn)
       )
     else
       :error ->

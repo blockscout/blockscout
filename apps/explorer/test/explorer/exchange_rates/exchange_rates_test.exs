@@ -3,6 +3,7 @@ defmodule Explorer.ExchangeRatesTest do
 
   import Mox
 
+  alias Plug.Conn
   alias Explorer.ExchangeRates
   alias Explorer.ExchangeRates.Token
   alias Explorer.ExchangeRates.Source.TestSource
@@ -13,19 +14,16 @@ defmodule Explorer.ExchangeRatesTest do
 
   setup do
     # Use TestSource mock and ets table for this test set
-    configuration = Application.get_env(:explorer, Explorer.ExchangeRates)
-    Application.put_env(:explorer, Explorer.ExchangeRates, source: TestSource)
+    source_configuration = Application.get_env(:explorer, Explorer.ExchangeRates.Source)
+    rates_configuration = Application.get_env(:explorer, Explorer.ExchangeRates)
+
+    Application.put_env(:explorer, Explorer.ExchangeRates.Source, source: TestSource)
+    Application.put_env(:explorer, Explorer.ExchangeRates, table_name: :rates)
 
     on_exit(fn ->
-      Application.put_env(:explorer, Explorer.ExchangeRates, configuration)
+      Application.put_env(:explorer, Explorer.ExchangeRates.Source, source_configuration)
+      Application.put_env(:explorer, Explorer.ExchangeRates, rates_configuration)
     end)
-  end
-
-  test "start_link" do
-    stub(TestSource, :fetch_exchange_rates, fn -> {:ok, [Token.null()]} end)
-    set_mox_global()
-
-    assert {:ok, _} = ExchangeRates.start_link([])
   end
 
   test "init" do
@@ -43,10 +41,18 @@ defmodule Explorer.ExchangeRatesTest do
   end
 
   test "handle_info with :update" do
+    bypass = Bypass.open()
+
+    Bypass.expect(bypass, "GET", "/", fn conn ->
+      Conn.resp(conn, 200, "{}")
+    end)
+
+    stub(TestSource, :source_url, fn -> "http://localhost:#{bypass.port}" end)
+
     ExchangeRates.init([])
     state = %{}
 
-    expect(TestSource, :fetch_exchange_rates, fn -> {:ok, [Token.null()]} end)
+    expect(TestSource, :format_data, fn _ -> [Token.null()] end)
     set_mox_global()
 
     assert {:noreply, ^state} = ExchangeRates.handle_info(:update, state)
@@ -83,9 +89,17 @@ defmodule Explorer.ExchangeRatesTest do
     end
 
     test "with failed fetch" do
+      bypass = Bypass.open()
+
+      Bypass.expect(bypass, "GET", "/", fn conn ->
+        Conn.resp(conn, 200, "{}")
+      end)
+
+      stub(TestSource, :source_url, fn -> "http://localhost:#{bypass.port}" end)
+
       state = %{}
 
-      expect(TestSource, :fetch_exchange_rates, fn -> {:ok, [Token.null()]} end)
+      expect(TestSource, :format_data, fn _ -> [Token.null()] end)
       set_mox_global()
 
       assert {:noreply, ^state} = ExchangeRates.handle_info({nil, {:error, "some error"}}, state)

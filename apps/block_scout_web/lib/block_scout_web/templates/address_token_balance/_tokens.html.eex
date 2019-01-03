@@ -14,10 +14,24 @@
             to: token_path(@conn, :show, token_balance.token.contract_address_hash),
             class: "dropdown-item"
           ) do %>
-        <p class="mb-0"><%= token_name(token_balance.token) %></p>
-        <p class="mb-0">
-          <%= format_according_to_decimals(token_balance.value, token_balance.token.decimals) %> <%= token_balance.token.symbol %>
-        </p>
+        <div class="row">
+          <p class="mb-0 col-md-6"><%= token_name(token_balance.token) %></p>
+          <%= if token_balance.token.usd_value do %>
+            <p class="mb-0 col-md-6 text-right">
+              <span data-selector="token-balance-usd" data-usd-value="<%= balance_in_usd(token_balance) %>"></span>
+            </p>
+          <% end %>
+        </div>
+        <div class="row">
+          <p class="mb-0 col-md-6">
+            <%= format_according_to_decimals(token_balance.value, token_balance.token.decimals) %> <%= token_balance.token.symbol %>
+          </p>
+          <%= if token_balance.token.usd_value do %>
+            <p class="mb-0 col-md-6 text-right text-muted">
+              <span data-selector="token-price" data-token-usd-value="<%= token_balance.token.usd_value %>"></span>
+            </p>
+          <% end %>
+        </div>
       <% end %>
     </div>
   <% end %>

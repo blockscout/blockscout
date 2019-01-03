@@ -5,7 +5,9 @@ defmodule BlockScoutWeb.Application do
 
   use Application
 
-  alias BlockScoutWeb.{Endpoint, EventHandler, Prometheus}
+  alias BlockScoutWeb.Counters.BlocksIndexedCounter
+  alias BlockScoutWeb.{Endpoint, Prometheus}
+  alias BlockScoutWeb.RealtimeEventHandler
 
   def start(_type, _args) do
     import Supervisor.Spec
@@ -18,7 +20,8 @@ defmodule BlockScoutWeb.Application do
       # Start the endpoint when the application starts
       supervisor(Endpoint, []),
       supervisor(Absinthe.Subscription, [Endpoint]),
-      {EventHandler, name: EventHandler}
+      {RealtimeEventHandler, name: RealtimeEventHandler},
+      {BlocksIndexedCounter, name: BlocksIndexedCounter}
     ]
 
     opts = [strategy: :one_for_one, name: BlockScoutWeb.Supervisor]

@@ -65,13 +65,13 @@ Available options are:
 
 `ETHEREUM_JSONRPC_HTTP_URL` default values:
 
- * For `parity` - `https://sokol.poa.network`
+ * For `parity` - `http://localhost:8545`
  * For `geth` - `https://mainnet.infura.io/8lTvJTKmHPCHazkneJsY`
  * For `ganache` - `http://localhost:7545`
 
 `ETHEREUM_JSONRPC_WS_URL` default values:
 
- * For `parity` - `wss://sokol-ws.poa.network/ws`
+ * For `parity` - `ws://localhost:8546`
  * For `geth` - `wss://mainnet.infura.io/8lTvJTKmHPCHazkneJsY/ws`
  * For `ganache` - `ws://localhost:7545`
 

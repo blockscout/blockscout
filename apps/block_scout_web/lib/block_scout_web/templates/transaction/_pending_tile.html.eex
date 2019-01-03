@@ -1,4 +1,4 @@
-<div class="tile tile-type-<%= BlockScoutWeb.TransactionView.type_suffix(@transaction) %> fade-in" data-test="<%= BlockScoutWeb.TransactionView.type_suffix(@transaction) %>" data-transaction-hash="<%= @transaction.hash %>">
+<div class="tile tile-type-<%= BlockScoutWeb.TransactionView.type_suffix(@transaction) %> fade-in" data-test="<%= BlockScoutWeb.TransactionView.type_suffix(@transaction) %>" data-identifier-hash="<%= @transaction.hash %>">
   <div class="row" data-test="chain_transaction">
     <div class="col-md-2 d-flex flex-row flex-md-column align-items-left justify-content-start justify-content-lg-center mb-1 mb-md-0 pl-md-4">
       <span class="tile-label" data-test="transaction_type"> <%= BlockScoutWeb.TransactionView.transaction_display_type(@transaction) %></span>

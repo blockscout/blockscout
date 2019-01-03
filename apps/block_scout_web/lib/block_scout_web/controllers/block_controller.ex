@@ -11,7 +11,8 @@ defmodule BlockScoutWeb.BlockController do
     [
       necessity_by_association: %{
         :transactions => :optional,
-        [miner: :names] => :optional
+        [miner: :names] => :optional,
+        :rewards => :optional
       }
     ]
     |> handle_render(conn, params)
@@ -25,7 +26,8 @@ defmodule BlockScoutWeb.BlockController do
     [
       necessity_by_association: %{
         :transactions => :optional,
-        [miner: :names] => :optional
+        [miner: :names] => :optional,
+        :rewards => :optional
       },
       block_type: "Reorg"
     ]
@@ -37,7 +39,8 @@ defmodule BlockScoutWeb.BlockController do
       necessity_by_association: %{
         :transactions => :optional,
         [miner: :names] => :optional,
-        :nephews => :required
+        :nephews => :required,
+        :rewards => :optional
       },
       block_type: "Uncle"
     ]
@@ -52,7 +55,7 @@ defmodule BlockScoutWeb.BlockController do
 
     {blocks, next_page} = split_list_by_page(blocks_plus_one)
 
-    next_page_url =
+    next_page_path =
       case next_page_params(next_page, blocks, params) do
         nil ->
           nil
@@ -61,7 +64,7 @@ defmodule BlockScoutWeb.BlockController do
           block_path(
             conn,
             :index,
-            next_page_params
+            Map.delete(next_page_params, "type")
           )
       end
 
@@ -70,35 +73,23 @@ defmodule BlockScoutWeb.BlockController do
     json(
       conn,
       %{
-        blocks:
+        items:
           Enum.map(blocks, fn block ->
-            %{
-              block_number: block.number,
-              block_html:
-                View.render_to_string(
-                  BlockView,
-                  "_tile.html",
-                  block: block,
-                  block_type: block_type
-                )
-            }
+            View.render_to_string(
+              BlockView,
+              "_tile.html",
+              block: block,
+              block_type: block_type
+            )
           end),
-        next_page_url: next_page_url
+        next_page_path: next_page_path
       }
     )
   end
 
-  defp handle_render(full_options, conn, params) do
-    blocks_plus_one =
-      full_options
-      |> Keyword.merge(paging_options(%{}))
-      |> Chain.list_blocks()
-
-    {blocks, next_page} = split_list_by_page(blocks_plus_one)
-
+  defp handle_render(full_options, conn, _params) do
     render(conn, "index.html",
-      blocks: blocks,
-      next_page_params: next_page_params(next_page, blocks, params),
+      current_path: current_path(conn),
       block_type: Keyword.get(full_options, :block_type, "Block")
     )
   end

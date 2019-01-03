@@ -99,4 +99,18 @@ defmodule BlockScoutWeb.Schema.Scalars do
     value(:ok)
     value(:error)
   end
+
+  enum :call_type do
+    value(:call)
+    value(:callcode)
+    value(:delegatecall)
+    value(:staticcall)
+  end
+
+  enum :type do
+    value(:call)
+    value(:create)
+    value(:reward)
+    value(:selfdestruct)
+  end
 end

@@ -71,8 +71,10 @@ defmodule Explorer.Mixfile do
       {:dataloader, "~> 1.0.0"},
       {:decimal, "~> 1.0"},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
-      # Casting Ethereum-native types to Elixir-native types
-      {:ecto, "~> 2.2"},
+      # `override: true` for `ex_machina` compatibility
+      {:ecto, "~> 3.0", override: true},
+      # Storing blockchain data and derived data in PostgreSQL.
+      {:ecto_sql, "~> 3.0"},
       # JSONRPC access to query smart contracts
       {:ethereum_jsonrpc, in_umbrella: true},
       # Data factory for testing
@@ -88,17 +90,30 @@ defmodule Explorer.Mixfile do
       {:math, "~> 0.3.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:mox, "~> 0.4", only: [:test]},
+      {:poison, "~> 3.1", only: [:test]},
       {:postgrex, ">= 0.0.0"},
       # For compatibility with `prometheus_process_collector`, which hasn't been updated yet
       {:prometheus, "~> 4.0", override: true},
       # Prometheus metrics for query duration
-      {:prometheus_ecto, "~> 1.3"},
+      {
+        :prometheus_ecto,
+        "~> 1.3",
+        # Ecto 3.0 compatibility
+        github: "deadtrickster/prometheus-ecto", ref: "650a403183f6a2fb6b682d7fbcba8bf9d24fe1e4"
+      },
       # bypass optional dependency
-      {:plug_cowboy, "~> 1.0", only: :test},
+      {:plug_cowboy, "~> 1.0", only: [:dev, :test]},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
-      {:timex, "~> 3.4"},
+      # Tracing
+      {:spandex, github: "spandex-project/spandex", branch: "allow-setting-trace-key", override: true},
+      # `:spandex` integration with Datadog
+      {:spandex_datadog, "~> 0.3.1"},
+      # `:spandex` tracing of `:ecto`
+      {:spandex_ecto, "~> 0.4.0"},
+      # Attach `:prometheus_ecto` to `:ecto`
+      {:telemetry, "~> 0.2.0"},
       # `Timex.Duration` for `Explorer.Chain.average_block_time/0`
-      {:timex_ecto, "~> 3.3"}
+      {:timex, "~> 3.4"}
     ]
   end
 

@@ -9,7 +9,8 @@ defmodule Explorer.ExchangeRates do
 
   require Logger
 
-  alias Explorer.ExchangeRates.Token
+  alias Explorer.Chain.Events.Publisher
+  alias Explorer.ExchangeRates.{Source, Token}
 
   @interval :timer.minutes(5)
   @table_name :exchange_rates
@@ -99,15 +100,13 @@ defmodule Explorer.ExchangeRates do
 
   @doc false
   @spec table_name() :: atom()
-  def table_name, do: @table_name
+  def table_name do
+    config(:table_name) || @table_name
+  end
 
   @spec broadcast_event(atom()) :: :ok
   defp broadcast_event(event_type) do
-    Registry.dispatch(Registry.ChainEvents, event_type, fn entries ->
-      for {pid, _registered_val} <- entries do
-        send(pid, {:chain_event, event_type})
-      end
-    end)
+    Publisher.broadcast(event_type)
   end
 
   @spec config(atom()) :: term
@@ -115,15 +114,10 @@ defmodule Explorer.ExchangeRates do
     Application.get_env(:explorer, __MODULE__, [])[key]
   end
 
-  @spec exchange_rates_source() :: module()
-  defp exchange_rates_source do
-    config(:source) || Explorer.ExchangeRates.Source.CoinMarketCap
-  end
-
   @spec fetch_rates :: Task.t()
   defp fetch_rates do
     Task.Supervisor.async_nolink(Explorer.MarketTaskSupervisor, fn ->
-      exchange_rates_source().fetch_exchange_rates()
+      Source.fetch_exchange_rates()
     end)
   end
 

@@ -13,3 +13,5 @@ config :logger, :error, path: Path.absname("logs/test/error.log")
 config :explorer, Explorer.ExchangeRates,
   source: Explorer.ExchangeRates.Source.NoOpSource,
   store: :none
+
+config :explorer, Explorer.KnownTokens, store: :none
