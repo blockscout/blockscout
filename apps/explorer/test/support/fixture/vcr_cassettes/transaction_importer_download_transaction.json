@@ -8,7 +8,7 @@
       "method": "post",
       "options": [],
       "request_body": "",
-      "url": "http://3.85.253.242:8545"
+      "url": "https://explorer-node.fuse.io"
     },
     "response": {
       "binary": false,

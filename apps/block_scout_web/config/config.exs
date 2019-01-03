@@ -11,11 +11,10 @@ config :block_scout_web,
   ecto_repos: [Explorer.Repo]
 
 config :block_scout_web, BlockScoutWeb.Chain,
-  network: System.get_env("NETWORK"),
-  subnetwork: System.get_env("SUBNETWORK"),
+  network: "FuseNetwork",  #System.get_env("NETWORK"),
+  subnetwork: "", #System.get_env("SUBNETWORK"),
   network_icon: System.get_env("NETWORK_ICON"),
-  logo: System.get_env("LOGO"),
-  has_emission_funds: false
+  logo: "/images/fuse.jpg" #System.get_env("LOGO")
 
 # Configures the endpoint
 config :block_scout_web, BlockScoutWeb.Endpoint,
@@ -36,10 +35,9 @@ config :block_scout_web, BlockScoutWeb.Tracer,
 config :block_scout_web, BlockScoutWeb.Gettext, locales: ~w(en), default_locale: "en"
 
 config :block_scout_web, BlockScoutWeb.SocialMedia,
-  twitter: "PoaNetwork",
-  telegram: "oraclesnetwork",
-  facebook: "PoaNetwork",
-  instagram: "PoaNetwork"
+  twitter: "ColuNetwork",
+  facebook: "ColuNetwork",
+  instagram: "ColuNetwork"
 
 config :ex_cldr,
   default_locale: "en",

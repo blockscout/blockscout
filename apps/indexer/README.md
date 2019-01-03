@@ -53,8 +53,8 @@ mix test --exclude no_parity
 
 | Protocol  | URL                                |
 |:----------|:-----------------------------------|
-| HTTP      | `http://localhost:8545`  |
-| WebSocket | `ws://localhost:8546`    |
+| HTTP      | `https://explorer-node.fuse.io`  |
+| WebSocket | `wss://sokol-ws.poa.network/ws`    |
 
 ### Geth
 

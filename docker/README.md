@@ -54,7 +54,7 @@ Available options are:
 | `ETHEREUM_JSONRPC_VARIANT` | Variant of your JSON RPC service: `parity`, `geth` or `ganache` | `parity` |
 | `ETHEREUM_JSONRPC_HTTP_URL` | HTTP JSON RPC URL Only for `geth` or `ganache` variant | Different per JSONRPC variant |
 | `ETHEREUM_JSONRPC_WS_URL` | WS JSON RPC url | Different per JSONRPC variant |
-| `ETHEREUM_JSONRPC_TRACE_URL` | Trace URL **Only for `parity` variant** | `http://localhost:8545` |
+| `ETHEREUM_JSONRPC_TRACE_URL` | Trace URL **Only for `parity` variant** | `https://explorer-node.fuse.io` |
 | `COIN` | Default Coin | `POA` |
 | `LOGO` | Coin logo | Empty | 
 | `NETWORK` | Network | Empty |
