@@ -26,7 +26,7 @@ defmodule Explorer.Counters.AverageBlockTime do
       |> Keyword.fetch!(:enabled)
 
     if enabled? do
-      block = if block, do: {block.number, DateTime.to_unix(block.timestamp)}
+      block = if block, do: {block.number, DateTime.to_unix(block.timestamp, :millisecond)}
       GenServer.call(__MODULE__, {:average_block_time, block})
     else
       {:error, :disabled}
@@ -48,7 +48,7 @@ defmodule Explorer.Counters.AverageBlockTime do
       timestamps_query
       |> Repo.all()
       |> Enum.map(fn {number, timestamp} ->
-        {number, DateTime.to_unix(timestamp)}
+        {number, DateTime.to_unix(timestamp, :millisecond)}
       end)
 
     {:ok, %{timestamps: timestamps, average: average_distance(timestamps)}}
@@ -73,8 +73,8 @@ defmodule Explorer.Counters.AverageBlockTime do
     %{state | timestamps: timestamps, average: average_distance(timestamps)}
   end
 
-  defp average_distance([]), do: Duration.from_seconds(0)
-  defp average_distance([_]), do: Duration.from_seconds(0)
+  defp average_distance([]), do: Duration.from_milliseconds(0)
+  defp average_distance([_]), do: Duration.from_milliseconds(0)
 
   defp average_distance(timestamps) do
     durations = durations(timestamps)
@@ -88,7 +88,7 @@ defmodule Explorer.Counters.AverageBlockTime do
 
     average
     |> round()
-    |> Duration.from_seconds()
+    |> Duration.from_milliseconds()
   end
 
   defp durations(timestamps) do
