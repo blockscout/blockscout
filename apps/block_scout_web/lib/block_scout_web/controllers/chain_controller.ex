@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.ChainController do
   alias BlockScoutWeb.ChainView
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Block, Transaction}
+  alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
   alias Explorer.Market
   alias Phoenix.View
@@ -17,7 +18,7 @@ defmodule BlockScoutWeb.ChainController do
       conn,
       "show.html",
       address_count: Chain.count_addresses_with_balance_from_cache(),
-      average_block_time: Chain.average_block_time(),
+      average_block_time: AverageBlockTime.average_block_time(),
       exchange_rate: exchange_rate,
       chart_data_path: market_history_chart_path(conn, :show),
       transaction_estimated_count: transaction_estimated_count,

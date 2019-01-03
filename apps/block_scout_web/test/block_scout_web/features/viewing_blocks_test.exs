@@ -1,5 +1,5 @@
 defmodule BlockScoutWeb.ViewingBlocksTest do
-  use BlockScoutWeb.FeatureCase, async: true
+  use BlockScoutWeb.FeatureCase, async: false
 
   alias BlockScoutWeb.{BlockListPage, BlockPage}
   alias Explorer.Chain.Block
