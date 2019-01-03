@@ -40,15 +40,10 @@ defmodule Explorer.Chain do
 
   alias Explorer.Chain.Block.{EmissionReward, Reward}
   alias Explorer.Chain.Import.Runner
+  alias Explorer.Counters.AddressesWithBalanceCounter
   alias Explorer.{PagingOptions, Repo}
 
-  alias Explorer.Counters.{
-    AddressesWithBalanceCounter,
-    TokenHoldersCounter
-  }
-
   alias Dataloader.Ecto, as: DataloaderEcto
-  alias Timex.Duration
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -289,31 +284,6 @@ defmodule Explorer.Chain do
     |> Transaction.preload_token_transfers(address_hash)
     |> handle_paging_options(paging_options)
     |> Repo.all()
-  end
-
-  @doc """
-  The average time it took to mine/validate the last <= 100 `t:Explorer.Chain.Block.t/0`
-  """
-  @spec average_block_time :: %Timex.Duration{}
-  def average_block_time do
-    {:ok, %Postgrex.Result{rows: [[%Postgrex.Interval{months: 0, days: days, secs: seconds}]]}} =
-      SQL.query(
-        Repo,
-        """
-          SELECT coalesce(avg(difference), interval '0 seconds')
-          FROM (
-            SELECT b.timestamp - lag(b.timestamp) over (order by b.timestamp) as difference
-            FROM (SELECT * FROM blocks ORDER BY number DESC LIMIT 101) b
-            LIMIT 100 OFFSET 1
-          ) t
-        """,
-        []
-      )
-
-    hours = days * 24
-    minutes = 0
-    microseconds = 0
-    Duration.from_clock({hours, minutes, seconds, microseconds})
   end
 
   @doc """
@@ -2130,12 +2100,9 @@ defmodule Explorer.Chain do
 
   @spec count_token_holders_from_token_hash(Hash.Address.t()) :: non_neg_integer()
   def count_token_holders_from_token_hash(contract_address_hash) do
-    TokenHoldersCounter.fetch(contract_address_hash)
-  end
+    query = from(ctb in CurrentTokenBalance.token_holders_query(contract_address_hash), select: fragment("COUNT(*)"))
 
-  @spec token_holders_counter_consolidation_enabled? :: boolean()
-  def token_holders_counter_consolidation_enabled? do
-    TokenHoldersCounter.enable_consolidation?()
+    Repo.one!(query)
   end
 
   @spec address_to_unique_tokens(Hash.Address.t(), [paging_options]) :: [TokenTransfer.t()]

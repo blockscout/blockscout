@@ -8,7 +8,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
   import Ecto.Query, only: [from: 2]
 
   alias Ecto.{Multi, Repo}
-  alias Explorer.Chain.{Hash, Import, Transaction}
+  alias Explorer.Chain.{Data, Hash, Import, Transaction}
 
   @behaviour Import.Runner
 
@@ -53,26 +53,26 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
           required(:timeout) => timeout,
           required(:timestamps) => Import.timestamps()
         }) :: {:ok, [Hash.t()]}
-  defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options)
+  defp insert(repo, changes_list, %{timeout: timeout, timestamps: %{inserted_at: inserted_at} = timestamps} = options)
        when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    # order so that row ShareLocks are grabbed in a consistent order
-    ordered_changes_list = Enum.sort_by(changes_list, & &1.hash)
+    ordered_changes_list =
+      changes_list
+      |> timestamp_ok_value_transfers(inserted_at)
+      # order so that row ShareLocks are grabbed in a consistent order
+      |> Enum.sort_by(& &1.hash)
 
-    {:ok, transactions} =
-      Import.insert_changes_list(
-        repo,
-        ordered_changes_list,
-        conflict_target: :hash,
-        on_conflict: on_conflict,
-        for: Transaction,
-        returning: [:hash],
-        timeout: timeout,
-        timestamps: timestamps
-      )
-
-    {:ok, for(transaction <- transactions, do: transaction.hash)}
+    Import.insert_changes_list(
+      repo,
+      ordered_changes_list,
+      conflict_target: :hash,
+      on_conflict: on_conflict,
+      for: Transaction,
+      returning: ~w(block_number index hash internal_transactions_indexed_at)a,
+      timeout: timeout,
+      timestamps: timestamps
+    )
   end
 
   defp default_on_conflict do
@@ -129,4 +129,16 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
         )
     )
   end
+
+  defp timestamp_ok_value_transfers(changes_list, timestamp) when is_list(changes_list) do
+    Enum.map(changes_list, &timestamp_ok_value_transfer(&1, timestamp))
+  end
+
+  # A post-Byzantium validated transaction will have a status and if it has no input, it is a value transfer only.
+  # Internal transactions are only needed when status is `:error` to set `error`.
+  defp timestamp_ok_value_transfer(%{status: :ok, input: %Data{bytes: <<>>}} = changes, timestamp) do
+    Map.put(changes, :internal_transactions_indexed_at, timestamp)
+  end
+
+  defp timestamp_ok_value_transfer(changes, _), do: changes
 end

@@ -54,7 +54,7 @@ defmodule BlockScoutWeb.AddressChannelTest do
     test "notified of new_pending_transaction for matching from_address", %{address: address, topic: topic} do
       pending = insert(:transaction, from_address: address)
 
-      Notifier.handle_event({:chain_event, :transactions, :realtime, [pending.hash]})
+      Notifier.handle_event({:chain_event, :transactions, :realtime, [pending]})
 
       assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "pending_transaction", payload: payload},
                      :timer.seconds(5)
@@ -69,7 +69,7 @@ defmodule BlockScoutWeb.AddressChannelTest do
         |> insert(from_address: address)
         |> with_block()
 
-      Notifier.handle_event({:chain_event, :transactions, :realtime, [transaction.hash]})
+      Notifier.handle_event({:chain_event, :transactions, :realtime, [transaction]})
 
       assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "transaction", payload: payload}, :timer.seconds(5)
       assert payload.address.hash == address.hash
@@ -82,7 +82,7 @@ defmodule BlockScoutWeb.AddressChannelTest do
         |> insert(to_address: address)
         |> with_block()
 
-      Notifier.handle_event({:chain_event, :transactions, :realtime, [transaction.hash]})
+      Notifier.handle_event({:chain_event, :transactions, :realtime, [transaction]})
 
       assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "transaction", payload: payload}, :timer.seconds(5)
       assert payload.address.hash == address.hash
@@ -95,7 +95,7 @@ defmodule BlockScoutWeb.AddressChannelTest do
         |> insert(from_address: address, to_address: address)
         |> with_block()
 
-      Notifier.handle_event({:chain_event, :transactions, :realtime, [transaction.hash]})
+      Notifier.handle_event({:chain_event, :transactions, :realtime, [transaction]})
 
       assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "transaction", payload: payload}, :timer.seconds(5)
       assert payload.address.hash == address.hash
