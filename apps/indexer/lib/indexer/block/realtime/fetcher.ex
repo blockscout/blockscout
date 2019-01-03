@@ -117,13 +117,14 @@ defmodule Indexer.Block.Realtime.Fetcher do
             })},
          {:address_token_balances, {:ok, address_token_balances}} <-
            {:address_token_balances, fetch_token_balances(address_token_balances_params)},
+         address_current_token_balances = TokenBalances.to_address_current_token_balances(address_token_balances),
          chain_import_options =
            options
            |> Map.drop(@import_options)
            |> put_in([:addresses, :params], balances_addresses_params)
            |> put_in([:blocks, :params, Access.all(), :consensus], true)
            |> put_in([Access.key(:address_coin_balances, %{}), :params], balances_params)
-           |> put_in([Access.key(:address_current_token_balances, %{}), :params], address_token_balances)
+           |> put_in([Access.key(:address_current_token_balances, %{}), :params], address_current_token_balances)
            |> put_in([Access.key(:address_token_balances), :params], address_token_balances)
            |> put_in([Access.key(:internal_transactions, %{}), :params], internal_transactions_params),
          {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
