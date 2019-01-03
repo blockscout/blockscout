@@ -12,7 +12,7 @@ defmodule EthereumJSONRPC.Case.Parity.HTTPWebSocket do
       transport_options: [
         http: EthereumJSONRPC.HTTP.HTTPoison,
         http_options: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :ethereum_jsonrpc]],
-        url: "https://sokol-trace.poa.network"
+        url: "https://explorer-node.fuse.io"
       ],
       variant: EthereumJSONRPC.Parity
     )

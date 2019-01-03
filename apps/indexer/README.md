@@ -53,7 +53,7 @@ mix test --exclude no_parity
 
 | Protocol  | URL                                |
 |:----------|:-----------------------------------|
-| HTTP      | `https://sokol-trace.poa.network`  |
+| HTTP      | `https://explorer-node.fuse.io`  |
 | WebSocket | `wss://sokol-ws.poa.network/ws`    |
 
 ### Geth

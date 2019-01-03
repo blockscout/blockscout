@@ -10,7 +10,7 @@ config:
 ```elixir
 config :ethereum_jsonrpc,
   url: "https://sokol.poa.network",
-  trace_url: "https://sokol-trace.poa.network",
+  trace_url: "https://explorer-node.fuse.io",
   http: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :ethereum_jsonrpc]]
 ```
 
@@ -44,7 +44,7 @@ mix test --exclude no_parity
 
 | Protocol  | URL                                |
 |:----------|:-----------------------------------|
-| HTTP      | `https://sokol-trace.poa.network`  |
+| HTTP      | `https://explorer-node.fuse.io`  |
 | WebSocket | `wss://sokol-ws.poa.network/ws`    |
 
 ### Geth

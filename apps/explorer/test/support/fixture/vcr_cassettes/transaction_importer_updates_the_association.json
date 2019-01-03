@@ -8,7 +8,7 @@
       "method": "post",
       "options": [],
       "request_body": "",
-      "url": "https://sokol-trace.poa.network"
+      "url": "https://explorer-node.fuse.io"
     },
     "response": {
       "binary": false,
