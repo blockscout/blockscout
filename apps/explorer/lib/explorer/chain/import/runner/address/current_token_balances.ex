@@ -60,10 +60,13 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
       when is_atom(repo) and is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
+    # order so that row ShareLocks are grabbed in a consistent order
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.address_hash, &1.token_contract_address_hash})
+
     {:ok, _} =
       Import.insert_changes_list(
         repo,
-        unique_token_balances(changes_list),
+        ordered_changes_list,
         conflict_target: ~w(address_hash token_contract_address_hash)a,
         on_conflict: on_conflict,
         for: CurrentTokenBalance,
@@ -71,17 +74,6 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
         timeout: timeout,
         timestamps: timestamps
       )
-  end
-
-  # Remove duplicated token balances based on `{address_hash, token_hash}` considering the last block
-  # to avoid `cardinality_violation` error in Postgres. This error happens when there are duplicated
-  # rows being inserted.
-  defp unique_token_balances(changes_list) do
-    changes_list
-    |> Enum.sort(&(&1.block_number > &2.block_number))
-    |> Enum.uniq_by(fn %{address_hash: address_hash, token_contract_address_hash: token_hash} ->
-      {address_hash, token_hash}
-    end)
   end
 
   defp default_on_conflict do
