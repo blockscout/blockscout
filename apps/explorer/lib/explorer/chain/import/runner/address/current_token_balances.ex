@@ -60,10 +60,13 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
       when is_atom(repo) and is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
+    # order so that row ShareLocks are grabbed in a consistent order
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.address_hash, &1.token_contract_address_hash})
+
     {:ok, _} =
       Import.insert_changes_list(
         repo,
-        changes_list,
+        ordered_changes_list,
         conflict_target: ~w(address_hash token_contract_address_hash)a,
         on_conflict: on_conflict,
         for: CurrentTokenBalance,
