@@ -11,9 +11,9 @@ config :explorer,
   coin: System.get_env("COIN") || "POA",
   token_functions_reader_max_retries: 3
 
-config :explorer, Explorer.Counters.AddressesWithBalanceCounter, enabled: true, enable_consolidation: true
+config :explorer, Explorer.Counters.AverageBlockTime, enabled: true
 
-config :explorer, Explorer.Counters.TokenHoldersCounter, enabled: true, enable_consolidation: true
+config :explorer, Explorer.Counters.AddressesWithBalanceCounter, enabled: true, enable_consolidation: true
 
 config :explorer, Explorer.ExchangeRates, enabled: true, store: :ets
 

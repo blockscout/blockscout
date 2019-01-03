@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.ChainControllerTest do
 
   import BlockScoutWeb.Router.Helpers, only: [chain_path: 2, block_path: 3, transaction_path: 3, address_path: 3]
 
-  alias Explorer.Chain.{Block, Hash}
+  alias Explorer.Chain.Block
   alias Explorer.Counters.AddressesWithBalanceCounter
 
   setup do

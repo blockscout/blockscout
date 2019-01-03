@@ -23,8 +23,7 @@ defmodule Explorer.ChainTest do
   }
 
   alias Explorer.Chain.Supply.ProofOfAuthority
-
-  alias Explorer.Counters.{AddressesWithBalanceCounter, TokenHoldersCounter}
+  alias Explorer.Counters.AddressesWithBalanceCounter
 
   doctest Explorer.Chain
 
@@ -488,20 +487,6 @@ defmodule Explorer.ChainTest do
       |> with_block(insert(:block, number: 1000))
 
       assert Chain.total_transactions_sent_by_address(address) == 0
-    end
-  end
-
-  describe "average_block_time/0" do
-    test "without blocks duration is 0" do
-      assert Chain.average_block_time() == Timex.Duration.parse!("PT0S")
-    end
-
-    test "with blocks is average duration between blocks" do
-      first_block = insert(:block)
-      second_block = insert(:block, timestamp: Timex.shift(first_block.timestamp, seconds: 3))
-      insert(:block, timestamp: Timex.shift(second_block.timestamp, seconds: 9))
-
-      assert Chain.average_block_time() == Timex.Duration.parse!("PT6S")
     end
   end
 
@@ -3168,7 +3153,7 @@ defmodule Explorer.ChainTest do
       %Token{contract_address_hash: contract_address_hash} = insert(:token)
 
       insert(
-        :token_balance,
+        :address_current_token_balance,
         address: address_a,
         block_number: 1000,
         token_contract_address_hash: contract_address_hash,
@@ -3176,15 +3161,12 @@ defmodule Explorer.ChainTest do
       )
 
       insert(
-        :token_balance,
+        :address_current_token_balance,
         address: address_b,
         block_number: 1002,
         token_contract_address_hash: contract_address_hash,
         value: 1000
       )
-
-      start_supervised!(TokenHoldersCounter)
-      TokenHoldersCounter.consolidate()
 
       assert Chain.count_token_holders_from_token_hash(contract_address_hash) == 2
     end

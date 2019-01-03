@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.Notifier do
   alias BlockScoutWeb.Endpoint
   alias Explorer.{Chain, Market, Repo}
   alias Explorer.Chain.{Address, InternalTransaction, Transaction}
+  alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
 
   def handle_event({:chain_event, :addresses, :realtime, addresses}) do
@@ -109,7 +110,7 @@ defmodule BlockScoutWeb.Notifier do
 
   defp broadcast_block(block) do
     preloaded_block = Repo.preload(block, [[miner: :names], :transactions, :rewards])
-    average_block_time = Chain.average_block_time()
+    average_block_time = AverageBlockTime.average_block_time(preloaded_block)
 
     Endpoint.broadcast("blocks:new_block", "new_block", %{
       block: preloaded_block,
