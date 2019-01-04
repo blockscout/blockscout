@@ -146,43 +146,6 @@ defmodule Explorer.Chain.TokenTransferTest do
     end
   end
 
-  describe "each_count/0" do
-    test "streams token transfers grouped by tokens" do
-      token_contract_address = insert(:contract_address)
-      token = insert(:token, contract_address: token_contract_address)
-
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      insert(
-        :token_transfer,
-        to_address: build(:address),
-        transaction: transaction,
-        token_contract_address: token_contract_address,
-        token: token
-      )
-
-      insert(
-        :token_transfer,
-        to_address: build(:address),
-        transaction: transaction,
-        token_contract_address: token_contract_address,
-        token: token
-      )
-
-      {:ok, agent_pid} = Agent.start_link(fn -> [] end)
-
-      TokenTransfer.each_count(fn entry -> Agent.update(agent_pid, &[entry | &1]) end)
-
-      results = Agent.get(agent_pid, fn entries -> Enum.reverse(entries) end)
-
-      assert length(results) == 1
-      assert List.first(results) == {token.contract_address_hash, 2}
-    end
-  end
-
   describe "address_to_unique_tokens/2" do
     test "returns list of unique tokens for a token contract" do
       token_contract_address = insert(:contract_address)

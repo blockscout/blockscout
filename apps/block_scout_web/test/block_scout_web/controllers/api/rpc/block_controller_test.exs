@@ -41,7 +41,7 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
     end
 
     test "with a valid block", %{conn: conn} do
-      %{block_range: range} = block_reward = insert(:block_reward)
+      %{block_range: range} = emission_reward = insert(:emission_reward)
       block = insert(:block, number: Enum.random(Range.new(range.from, range.to)))
 
       :transaction
@@ -49,7 +49,7 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
       |> with_block(block, gas_used: 1)
 
       expected_reward =
-        block_reward.reward
+        emission_reward.reward
         |> Wei.to(:wei)
         |> Decimal.add(Decimal.new(1))
         |> Decimal.to_string(:normal)

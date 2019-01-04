@@ -84,7 +84,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   defp new_max_number(number, max_number_seen), do: max(number, max_number_seen)
 
-  @import_options ~w(address_hash_to_fetched_balance_block_number transaction_hash_to_block_number)a
+  @import_options ~w(address_hash_to_fetched_balance_block_number)a
 
   @impl Block.Fetcher
   def import(
@@ -94,35 +94,42 @@ defmodule Indexer.Block.Realtime.Fetcher do
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number,
           address_token_balances: %{params: address_token_balances_params},
           addresses: %{params: addresses_params},
-          transactions: %{params: transactions_params}
+          transactions: %{params: transactions_params},
+          token_transfers: %{params: token_transfers_params}
         } = options
       ) do
-    with {:ok,
-          %{
-            addresses_params: internal_transactions_addresses_params,
-            internal_transactions_params: internal_transactions_params
-          }} <-
-           internal_transactions(block_fetcher, %{
-             addresses_params: addresses_params,
-             transactions_params: transactions_params
-           }),
-         {:ok, %{addresses_params: balances_addresses_params, balances_params: balances_params}} <-
-           balances(block_fetcher, %{
-             address_hash_to_block_number: address_hash_to_block_number,
+    with {:internal_transactions,
+          {:ok,
+           %{
              addresses_params: internal_transactions_addresses_params,
-             balances_params: address_coin_balances_params
-           }),
-         {:ok, address_token_balances} <- fetch_token_balances(address_token_balances_params),
+             internal_transactions_params: internal_transactions_params
+           }}} <-
+           {:internal_transactions,
+            internal_transactions(block_fetcher, %{
+              addresses_params: addresses_params,
+              token_transfers_params: token_transfers_params,
+              transactions_params: transactions_params
+            })},
+         {:balances, {:ok, %{addresses_params: balances_addresses_params, balances_params: balances_params}}} <-
+           {:balances,
+            balances(block_fetcher, %{
+              address_hash_to_block_number: address_hash_to_block_number,
+              addresses_params: internal_transactions_addresses_params,
+              balances_params: address_coin_balances_params
+            })},
+         {:address_token_balances, {:ok, address_token_balances}} <-
+           {:address_token_balances, fetch_token_balances(address_token_balances_params)},
+         address_current_token_balances = TokenBalances.to_address_current_token_balances(address_token_balances),
          chain_import_options =
            options
            |> Map.drop(@import_options)
            |> put_in([:addresses, :params], balances_addresses_params)
            |> put_in([:blocks, :params, Access.all(), :consensus], true)
            |> put_in([Access.key(:address_coin_balances, %{}), :params], balances_params)
-           |> put_in([Access.key(:address_current_token_balances, %{}), :params], address_token_balances)
+           |> put_in([Access.key(:address_current_token_balances, %{}), :params], address_current_token_balances)
            |> put_in([Access.key(:address_token_balances), :params], address_token_balances)
            |> put_in([Access.key(:internal_transactions, %{}), :params], internal_transactions_params),
-         {:ok, imported} = ok <- Chain.import(chain_import_options) do
+         {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
       async_import_remaining_block_data(imported)
       ok
     end
@@ -194,6 +201,32 @@ defmodule Indexer.Block.Realtime.Fetcher do
           ]
         end)
 
+      {:error, {:import = step, [%Changeset{} | _] = changesets}} ->
+        params = %{
+          changesets: changesets,
+          block_number_to_fetch: block_number_to_fetch,
+          block_fetcher: block_fetcher,
+          retry: retry
+        }
+
+        if retry_fetch_and_import_block(params) == :ignore do
+          Logger.error(
+            fn ->
+              [
+                "failed to validate for block ",
+                to_string(block_number_to_fetch),
+                ": ",
+                inspect(changesets),
+                ".  Block will be retried by catchup indexer."
+              ]
+            end,
+            step: step
+          )
+        end
+
+      {:error, {:import = step, reason}} ->
+        Logger.error(fn -> inspect(reason) end, step: step)
+
       {:error, {step, reason}} ->
         Logger.error(
           fn ->
@@ -205,26 +238,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
           end,
           step: step
         )
-
-      {:error, [%Changeset{} | _] = changesets} ->
-        params = %{
-          changesets: changesets,
-          block_number_to_fetch: block_number_to_fetch,
-          block_fetcher: block_fetcher,
-          retry: retry
-        }
-
-        if retry_fetch_and_import_block(params) == :ignore do
-          Logger.error(fn ->
-            [
-              "failed to validate for block ",
-              to_string(block_number_to_fetch),
-              ": ",
-              inspect(changesets),
-              ".  Block will be retried by catchup indexer."
-            ]
-          end)
-        end
 
       {:error, {step, failed_value, _changes_so_far}} ->
         Logger.error(
@@ -268,10 +281,14 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   defp internal_transactions(
          %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments},
-         %{addresses_params: addresses_params, transactions_params: transactions_params}
+         %{
+           addresses_params: addresses_params,
+           token_transfers_params: token_transfers_params,
+           transactions_params: transactions_params
+         }
        ) do
     case transactions_params
-         |> transactions_params_to_fetch_internal_transactions_params()
+         |> transactions_params_to_fetch_internal_transactions_params(token_transfers_params)
          |> EthereumJSONRPC.fetch_internal_transactions(json_rpc_named_arguments) do
       {:ok, internal_transactions_params} ->
         merged_addresses_params =
@@ -290,18 +307,35 @@ defmodule Indexer.Block.Realtime.Fetcher do
     end
   end
 
-  defp transactions_params_to_fetch_internal_transactions_params(transactions_params) do
-    Enum.map(transactions_params, &transaction_params_to_fetch_internal_transaction_params/1)
+  defp transactions_params_to_fetch_internal_transactions_params(transactions_params, token_transfers_params) do
+    token_transfer_transaction_hash_set = MapSet.new(token_transfers_params, & &1.transaction_hash)
+
+    Enum.flat_map(
+      transactions_params,
+      &transaction_params_to_fetch_internal_transaction_params_list(&1, token_transfer_transaction_hash_set)
+    )
   end
 
-  defp transaction_params_to_fetch_internal_transaction_params(%{
-         block_number: block_number,
-         hash: hash,
-         transaction_index: transaction_index
-       })
-       when is_integer(block_number) do
-    %{block_number: block_number, hash_data: to_string(hash), transaction_index: transaction_index}
+  defp transaction_params_to_fetch_internal_transaction_params_list(
+         %{block_number: block_number, transaction_index: transaction_index, hash: hash} = transaction_params,
+         token_transfer_transaction_hash_set
+       )
+       when is_integer(block_number) and is_integer(transaction_index) and is_binary(hash) do
+    token_transfer? = hash in token_transfer_transaction_hash_set
+
+    if fetch_internal_transactions?(transaction_params, token_transfer?) do
+      [%{block_number: block_number, transaction_index: transaction_index, hash_data: hash}]
+    else
+      []
+    end
   end
+
+  # Input-less transactions are value-transfers only, so their internal transactions do not need to be indexed
+  defp fetch_internal_transactions?(%{status: :ok, created_contract_address_hash: nil, input: "0x"}, _), do: false
+  # Token transfers not transferred during contract creation don't need internal transactions as the token transfers
+  # derive completely from the logs.
+  defp fetch_internal_transactions?(%{status: :ok, created_contract_address_hash: nil}, true), do: false
+  defp fetch_internal_transactions?(_, _), do: true
 
   defp balances(
          %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments},

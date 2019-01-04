@@ -9,6 +9,7 @@ defmodule Explorer.ExchangeRates do
 
   require Logger
 
+  alias Explorer.Chain.Events.Publisher
   alias Explorer.ExchangeRates.{Source, Token}
 
   @interval :timer.minutes(5)
@@ -105,11 +106,7 @@ defmodule Explorer.ExchangeRates do
 
   @spec broadcast_event(atom()) :: :ok
   defp broadcast_event(event_type) do
-    Registry.dispatch(Registry.ChainEvents, event_type, fn entries ->
-      for {pid, _registered_val} <- entries do
-        send(pid, {:chain_event, event_type})
-      end
-    end)
+    Publisher.broadcast(event_type)
   end
 
   @spec config(atom()) :: term

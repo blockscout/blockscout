@@ -2,8 +2,8 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
   use Explorer.DataCase
 
   alias Ecto.Changeset
+  alias Explorer.Chain.{Block, Wei}
   alias Explorer.Chain.Address.CoinBalance
-  alias Explorer.Chain.Wei
   alias Explorer.PagingOptions
 
   describe "changeset/2" do
@@ -183,7 +183,7 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
     test "returns dates at midnight" do
       address = insert(:address)
       noon = Timex.now() |> Timex.beginning_of_day() |> Timex.set(hour: 12)
-      block = insert(:block, timestamp: noon)
+      block = %Block{timestamp: noon_with_usec} = insert(:block, timestamp: noon)
       block_one_day_ago = insert(:block, timestamp: Timex.shift(noon, days: -1))
       insert(:fetched_balance, address_hash: address.hash, value: 1000, block_number: block.number)
       insert(:fetched_balance, address_hash: address.hash, value: 2000, block_number: block_one_day_ago.number)
@@ -195,13 +195,17 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
 
       assert(length(result) == 2)
 
-      dates = result |> Enum.map(& &1.date) |> Enum.map(&Ecto.DateTime.cast!/1)
+      dates = Enum.map(result, & &1.date)
 
-      today = Timex.beginning_of_day(noon)
+      today = Timex.beginning_of_day(noon_with_usec)
       yesterday = today |> Timex.shift(days: -1)
-      expected_dates = [yesterday, today] |> Enum.map(&Ecto.DateTime.cast!/1)
+      expected_dates = Enum.map([yesterday, today], &DateTime.to_date/1)
 
-      assert(dates == expected_dates)
+      dates
+      |> Stream.zip(expected_dates)
+      |> Enum.each(fn {date, expected_date} ->
+        assert Date.compare(date, expected_date) == :eq
+      end)
     end
 
     test "gets the max value of the day (value is at the beginning)" do

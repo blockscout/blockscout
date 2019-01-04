@@ -2,7 +2,8 @@ defmodule Explorer.Market.MarketHistory do
   @moduledoc """
   Represents market history of configured coin to USD.
   """
-  use Ecto.Schema
+
+  use Explorer.Schema
 
   schema "market_history" do
     field(:closing_price, :decimal)

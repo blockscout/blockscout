@@ -28,8 +28,8 @@ defmodule Explorer.SmartContract.Publisher do
       {:ok, %{abi: abi}} ->
         publish_smart_contract(address_hash, params, abi)
 
-      {:error, _} ->
-        {:error, unverified_smart_contract(address_hash, params)}
+      {:error, error} ->
+        {:error, unverified_smart_contract(address_hash, params, error)}
     end
   end
 
@@ -39,13 +39,14 @@ defmodule Explorer.SmartContract.Publisher do
     |> Chain.create_smart_contract()
   end
 
-  defp unverified_smart_contract(address_hash, params) do
+  defp unverified_smart_contract(address_hash, params, error) do
     attrs = attributes(address_hash, params)
 
     changeset =
       SmartContract.invalid_contract_changeset(
         %SmartContract{address_hash: address_hash},
-        attrs
+        attrs,
+        error
       )
 
     %{changeset | action: :insert}

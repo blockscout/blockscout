@@ -14,7 +14,8 @@ config :block_scout_web, BlockScoutWeb.Chain,
   network: System.get_env("NETWORK"),
   subnetwork: "Görli Testnet",
   network_icon: System.get_env("NETWORK_ICON"),
-  logo: System.get_env("LOGO") || "/images/goerli_logo.png"
+  logo: System.get_env("LOGO") || "/images/goerli_logo.png",
+  has_emission_funds: false
 
 # Configures the endpoint
 config :block_scout_web, BlockScoutWeb.Endpoint,
@@ -50,7 +51,7 @@ config :logger, :block_scout_web,
   format: "$dateT$time $metadata[$level] $message\n",
   metadata:
     ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
-       block_number step count error_count shrunk)a,
+       block_number step count error_count shrunk import_id transaction_id)a,
   metadata_filter: [application: :block_scout_web]
 
 config :spandex_phoenix, tracer: BlockScoutWeb.Tracer
@@ -59,6 +60,8 @@ config :wobserver,
   # return only the local node
   discovery: :none,
   mode: :plug
+
+config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

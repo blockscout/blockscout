@@ -1,5 +1,9 @@
 defmodule BlockScoutWeb.AddressControllerTest do
-  use BlockScoutWeb.ConnCase
+  use BlockScoutWeb.ConnCase,
+    # ETS tables are shared in `Explorer.Counters.*`
+    async: false
+
+  alias Explorer.Counters.AddressesWithBalanceCounter
 
   describe "GET index/2" do
     test "returns top addresses", %{conn: conn} do
@@ -7,6 +11,9 @@ defmodule BlockScoutWeb.AddressControllerTest do
         4..1
         |> Enum.map(&insert(:address, fetched_coin_balance: &1))
         |> Enum.map(& &1.hash)
+
+      start_supervised!(AddressesWithBalanceCounter)
+      AddressesWithBalanceCounter.consolidate()
 
       conn = get(conn, address_path(conn, :index))
 
@@ -18,6 +25,9 @@ defmodule BlockScoutWeb.AddressControllerTest do
     test "returns an address's primary name when present", %{conn: conn} do
       address = insert(:address, fetched_coin_balance: 1)
       address_name = insert(:address_name, address: address, primary: true, name: "POA Wallet")
+
+      start_supervised!(AddressesWithBalanceCounter)
+      AddressesWithBalanceCounter.consolidate()
 
       conn = get(conn, address_path(conn, :index))
 

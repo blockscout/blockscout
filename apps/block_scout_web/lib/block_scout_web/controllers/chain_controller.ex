@@ -1,49 +1,28 @@
 defmodule BlockScoutWeb.ChainController do
   use BlockScoutWeb, :controller
 
+  alias BlockScoutWeb.ChainView
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Block, Transaction}
+  alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
   alias Explorer.Market
+  alias Phoenix.View
 
   def show(conn, _params) do
-    blocks =
-      [paging_options: %PagingOptions{page_size: 4}]
-      |> Chain.list_blocks()
-      |> Repo.preload([[miner: :names], :transactions])
-
     transaction_estimated_count = Chain.transaction_estimated_count()
 
-    transactions =
-      Chain.recent_collated_transactions(
-        necessity_by_association: %{
-          :block => :required,
-          [created_contract_address: :names] => :optional,
-          [from_address: :names] => :required,
-          [to_address: :names] => :optional
-        },
-        paging_options: %PagingOptions{page_size: 5}
-      )
-
     exchange_rate = Market.get_exchange_rate(Explorer.coin()) || Token.null()
-
-    market_history_data =
-      case Market.fetch_recent_history(30) do
-        [today | the_rest] -> [%{today | closing_price: exchange_rate.usd_value} | the_rest]
-        data -> data
-      end
 
     render(
       conn,
       "show.html",
       address_count: Chain.count_addresses_with_balance_from_cache(),
-      average_block_time: Chain.average_block_time(),
-      blocks: blocks,
+      average_block_time: AverageBlockTime.average_block_time(),
       exchange_rate: exchange_rate,
-      available_supply: available_supply(Chain.supply_for_days(30), exchange_rate),
-      market_history_data: market_history_data,
+      chart_data_path: market_history_chart_path(conn, :show),
       transaction_estimated_count: transaction_estimated_count,
-      transactions: transactions
+      transactions_path: recent_transactions_path(conn, :index)
     )
   end
 
@@ -57,6 +36,30 @@ defmodule BlockScoutWeb.ChainController do
 
       {:error, :not_found} ->
         not_found(conn)
+    end
+  end
+
+  def chain_blocks(conn, _params) do
+    if ajax?(conn) do
+      blocks =
+        [paging_options: %PagingOptions{page_size: 4}]
+        |> Chain.list_blocks()
+        |> Repo.preload([[miner: :names], :transactions, :rewards])
+        |> Enum.map(fn block ->
+          %{
+            chain_block_html:
+              View.render_to_string(
+                ChainView,
+                "_block.html",
+                block: block
+              ),
+            block_number: block.number
+          }
+        end)
+
+      json(conn, %{blocks: blocks})
+    else
+      unprocessable_entity(conn)
     end
   end
 
@@ -78,18 +81,5 @@ defmodule BlockScoutWeb.ChainController do
           item
         )
     )
-  end
-
-  defp available_supply(:ok, exchange_rate) do
-    to_string(exchange_rate.available_supply || 0)
-  end
-
-  defp available_supply({:ok, supply_for_days}, _exchange_rate) do
-    supply_for_days
-    |> Jason.encode()
-    |> case do
-      {:ok, data} -> data
-      _ -> []
-    end
   end
 end

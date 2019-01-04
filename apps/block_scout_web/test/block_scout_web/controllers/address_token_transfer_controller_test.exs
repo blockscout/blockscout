@@ -95,7 +95,7 @@ defmodule BlockScoutWeb.AddressTokenTransferControllerTest do
                Enum.any?(response_items, fn item ->
                  String.contains?(
                    item,
-                   "data-transaction-hash=\"#{to_string(transaction.hash)}\""
+                   "data-identifier-hash=\"#{to_string(transaction.hash)}\""
                  )
                end)
              end)

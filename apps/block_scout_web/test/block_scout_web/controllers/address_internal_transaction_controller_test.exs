@@ -1,5 +1,5 @@
 defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
-  use BlockScoutWeb.ConnCase
+  use BlockScoutWeb.ConnCase, async: true
 
   import BlockScoutWeb.Router.Helpers,
     only: [address_internal_transaction_path: 3, address_internal_transaction_path: 4]

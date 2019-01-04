@@ -59,12 +59,9 @@ defmodule BlockScoutWeb.PendingTransactionControllerTest do
     end
 
     test "next_page_path exist if not on last page", %{conn: conn} do
-      %Transaction{inserted_at: inserted_at, hash: hash} =
-        60
-        |> insert_list(:transaction)
-        |> Enum.fetch!(10)
-
-      converted_date = DateTime.to_iso8601(inserted_at)
+      60
+      |> insert_list(:transaction)
+      |> Enum.fetch!(10)
 
       conn = get(conn, pending_transaction_path(BlockScoutWeb.Endpoint, :index, %{"type" => "JSON"}))
 

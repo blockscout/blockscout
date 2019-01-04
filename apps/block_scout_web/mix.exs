@@ -74,6 +74,9 @@ defmodule BlockScoutWeb.Mixfile do
       # For Absinthe to load data in batches
       {:dataloader, "~> 1.0.0"},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
+      # Need until https://github.com/absinthe-graphql/absinthe_relay/pull/125 is released, then can be removed
+      # The current `absinthe_relay` is compatible though as shown from that PR
+      {:ecto, "~> 3.0", override: true},
       {:ex_cldr_numbers, "~> 1.0"},
       {:ex_cldr_units, "~> 1.0"},
       {:ex_machina, "~> 2.1", only: [:test]},
@@ -119,7 +122,7 @@ defmodule BlockScoutWeb.Mixfile do
       # `:spandex` integration with Datadog
       {:spandex_datadog, "~> 0.3.1"},
       # `:spandex` tracing of `:phoenix`
-      {:spandex_phoenix, "~> 0.3.0"},
+      {:spandex_phoenix, "~> 0.3.1"},
       {:timex, "~> 3.4"},
       {:wallaby, "~> 0.20", only: [:test], runtime: false},
       {:wobserver, "~> 0.1.8"}

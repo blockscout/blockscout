@@ -7,9 +7,10 @@ defmodule Explorer.Chain.Address.TokenBalance do
   `Address.CurrentTokenBalance` instead.
   """
 
-  use Ecto.Schema
+  use Explorer.Schema
+
   import Ecto.Changeset
-  import Ecto.Query, only: [from: 2, subquery: 1]
+  import Ecto.Query, only: [from: 2]
 
   alias Explorer.Chain
   alias Explorer.Chain.Address.TokenBalance
@@ -37,7 +38,7 @@ defmodule Explorer.Chain.Address.TokenBalance do
   schema "address_token_balances" do
     field(:value, :decimal)
     field(:block_number, :integer)
-    field(:value_fetched_at, :utc_datetime)
+    field(:value_fetched_at, :utc_datetime_usec)
 
     belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address)
 
@@ -68,29 +69,6 @@ defmodule Explorer.Chain.Address.TokenBalance do
 
   {:ok, burn_address_hash} = Chain.string_to_address_hash("0x0000000000000000000000000000000000000000")
   @burn_address_hash burn_address_hash
-
-  @doc """
-  Builds an `Ecto.Query` to group all tokens with their number of holders.
-  """
-  def tokens_grouped_by_number_of_holders do
-    query = unique_holders()
-
-    from(
-      tb in subquery(query),
-      where: tb.value > 0,
-      select: {tb.token_contract_address_hash, count(tb.address_hash)},
-      group_by: tb.token_contract_address_hash
-    )
-  end
-
-  defp unique_holders do
-    from(
-      tb in TokenBalance,
-      distinct: [:address_hash, :token_contract_address_hash],
-      where: tb.address_hash != ^@burn_address_hash,
-      order_by: [desc: :block_number]
-    )
-  end
 
   @doc """
   Builds an `Ecto.Query` to fetch the unfetched token balances.

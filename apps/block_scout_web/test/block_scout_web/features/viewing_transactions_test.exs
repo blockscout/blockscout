@@ -1,10 +1,10 @@
 defmodule BlockScoutWeb.ViewingTransactionsTest do
   @moduledoc false
 
-  use BlockScoutWeb.FeatureCase, async: true
+  use BlockScoutWeb.FeatureCase, async: false
 
-  alias Explorer.Chain.Wei
   alias BlockScoutWeb.{AddressPage, TransactionListPage, TransactionLogsPage, TransactionPage}
+  alias Explorer.Chain.Wei
 
   setup do
     block =
