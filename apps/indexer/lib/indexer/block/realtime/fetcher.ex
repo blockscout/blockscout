@@ -94,7 +94,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number,
           address_token_balances: %{params: address_token_balances_params},
           addresses: %{params: addresses_params},
-          transactions: %{params: transactions_params}
+          transactions: %{params: transactions_params},
+          token_transfers: %{params: token_transfers_params}
         } = options
       ) do
     with {:internal_transactions,
@@ -106,6 +107,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
            {:internal_transactions,
             internal_transactions(block_fetcher, %{
               addresses_params: addresses_params,
+              token_transfers_params: token_transfers_params,
               transactions_params: transactions_params
             })},
          {:balances, {:ok, %{addresses_params: balances_addresses_params, balances_params: balances_params}}} <-
@@ -279,10 +281,14 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   defp internal_transactions(
          %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments},
-         %{addresses_params: addresses_params, transactions_params: transactions_params}
+         %{
+           addresses_params: addresses_params,
+           token_transfers_params: token_transfers_params,
+           transactions_params: transactions_params
+         }
        ) do
     case transactions_params
-         |> transactions_params_to_fetch_internal_transactions_params()
+         |> transactions_params_to_fetch_internal_transactions_params(token_transfers_params)
          |> EthereumJSONRPC.fetch_internal_transactions(json_rpc_named_arguments) do
       {:ok, internal_transactions_params} ->
         merged_addresses_params =
@@ -301,23 +307,35 @@ defmodule Indexer.Block.Realtime.Fetcher do
     end
   end
 
-  defp transactions_params_to_fetch_internal_transactions_params(transactions_params) do
-    Enum.flat_map(transactions_params, &transaction_params_to_fetch_internal_transaction_params_list/1)
+  defp transactions_params_to_fetch_internal_transactions_params(transactions_params, token_transfers_params) do
+    token_transfer_transaction_hash_set = MapSet.new(token_transfers_params, & &1.transaction_hash)
+
+    Enum.flat_map(
+      transactions_params,
+      &transaction_params_to_fetch_internal_transaction_params_list(&1, token_transfer_transaction_hash_set)
+    )
+  end
+
+  defp transaction_params_to_fetch_internal_transaction_params_list(
+         %{block_number: block_number, transaction_index: transaction_index, hash: hash} = transaction_params,
+         token_transfer_transaction_hash_set
+       )
+       when is_integer(block_number) and is_integer(transaction_index) and is_binary(hash) do
+    token_transfer? = hash in token_transfer_transaction_hash_set
+
+    if fetch_internal_transactions?(transaction_params, token_transfer?) do
+      [%{block_number: block_number, transaction_index: transaction_index, hash_data: hash}]
+    else
+      []
+    end
   end
 
   # Input-less transactions are value-transfers only, so their internal transactions do not need to be indexed
-  defp transaction_params_to_fetch_internal_transaction_params_list(%{input: "0x"}) do
-    []
-  end
-
-  defp transaction_params_to_fetch_internal_transaction_params_list(%{
-         block_number: block_number,
-         hash: hash,
-         transaction_index: transaction_index
-       })
-       when is_integer(block_number) do
-    [%{block_number: block_number, hash_data: to_string(hash), transaction_index: transaction_index}]
-  end
+  defp fetch_internal_transactions?(%{status: :ok, created_contract_address_hash: nil, input: "0x"}, _), do: false
+  # Token transfers not transferred during contract creation don't need internal transactions as the token transfers
+  # derive completely from the logs.
+  defp fetch_internal_transactions?(%{status: :ok, created_contract_address_hash: nil}, true), do: false
+  defp fetch_internal_transactions?(_, _), do: true
 
   defp balances(
          %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments},
