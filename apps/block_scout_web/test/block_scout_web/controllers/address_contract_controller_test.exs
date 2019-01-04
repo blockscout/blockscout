@@ -1,5 +1,5 @@
 defmodule BlockScoutWeb.AddressContractControllerTest do
-  use BlockScoutWeb.ConnCase
+  use BlockScoutWeb.ConnCase, async: true
 
   import BlockScoutWeb.Router.Helpers, only: [address_contract_path: 3]
 

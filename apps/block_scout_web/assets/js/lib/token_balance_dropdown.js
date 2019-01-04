@@ -1,4 +1,5 @@
 import $ from 'jquery'
+import { formatAllUsdValues } from './currency'
 
 const tokenBalanceDropdown = (element) => {
   const $element = $(element)
@@ -7,7 +8,10 @@ const tokenBalanceDropdown = (element) => {
   const apiPath = element.dataset.api_path
 
   $.get(apiPath)
-    .done(response => $element.html(response))
+    .done(response => {
+      const responseHtml = formatAllUsdValues($(response))
+      $element.html(responseHtml)
+    })
     .fail(() => {
       $loading.hide()
       $errorMessage.show()
@@ -17,4 +21,3 @@ const tokenBalanceDropdown = (element) => {
 export function loadTokenBalanceDropdown () {
   $('[data-token-balance-dropdown]').each((_index, element) => tokenBalanceDropdown(element))
 }
-loadTokenBalanceDropdown()

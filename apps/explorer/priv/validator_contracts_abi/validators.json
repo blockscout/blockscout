@@ -1,0 +1,462 @@
+[
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "pendingList",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x03aca792"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getCurrentValidatorsLength",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x0eaba26a"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_newAddress",
+          "type": "address"
+        }
+      ],
+      "name": "setProxyStorage",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0x10855269"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_validator",
+          "type": "address"
+        },
+        {
+          "name": "_shouldFireEvent",
+          "type": "bool"
+        }
+      ],
+      "name": "addValidator",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0x21a3fb85"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "isMasterOfCeremonyRemovedPending",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x273cb593"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "isMasterOfCeremonyRemoved",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x379fed9a"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "validatorsState",
+      "outputs": [
+        {
+          "name": "isValidator",
+          "type": "bool"
+        },
+        {
+          "name": "isValidatorFinalized",
+          "type": "bool"
+        },
+        {
+          "name": "index",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x4110a489"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getPendingList",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address[]"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x45199e0a"
+    },
+    {
+      "constant": false,
+      "inputs": [],
+      "name": "finalizeChange",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0x75286211"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_newKey",
+          "type": "address"
+        },
+        {
+          "name": "_oldKey",
+          "type": "address"
+        }
+      ],
+      "name": "swapValidatorKey",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0x879736b2"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_someone",
+          "type": "address"
+        }
+      ],
+      "name": "isValidatorFinalized",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x8f2eabe1"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "currentValidators",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x900eb5a8"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getKeysManager",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0x9a573786"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "wasProxyStorageSet",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xa5f8b874"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getCurrentValidatorsLengthWithoutMoC",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xa8756337"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "proxyStorage",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xae4b1b5b"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "finalized",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xb3f05b97"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getValidators",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address[]"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xb7ab4db5"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "systemAddress",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xd3e848f1"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "masterOfCeremonyPending",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xec7de1e9"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_validator",
+          "type": "address"
+        },
+        {
+          "name": "_shouldFireEvent",
+          "type": "bool"
+        }
+      ],
+      "name": "removeValidator",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function",
+      "signature": "0xf89a77b1"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "masterOfCeremony",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xfa81b200"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_someone",
+          "type": "address"
+        }
+      ],
+      "name": "isValidator",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function",
+      "signature": "0xfacd743b"
+    },
+    {
+      "inputs": [
+        {
+          "name": "_masterOfCeremony",
+          "type": "address"
+        },
+        {
+          "name": "validators",
+          "type": "address[]"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "constructor",
+      "signature": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "parentHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "name": "newSet",
+          "type": "address[]"
+        }
+      ],
+      "name": "InitiateChange",
+      "type": "event",
+      "signature": "0x55252fa6eee4741b4e24a74a70e9c11fd2c2281df8d6ea13126ff845f7825c89"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "newSet",
+          "type": "address[]"
+        }
+      ],
+      "name": "ChangeFinalized",
+      "type": "event",
+      "signature": "0x8564cd629b15f47dc310d45bcbfc9bcf5420b0d51bf0659a16c67f91d2763253"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "proxyStorage",
+          "type": "address"
+        }
+      ],
+      "name": "MoCInitializedProxyStorage",
+      "type": "event",
+      "signature": "0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22"
+    }
+  ]

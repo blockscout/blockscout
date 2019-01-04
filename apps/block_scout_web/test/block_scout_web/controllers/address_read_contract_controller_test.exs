@@ -1,5 +1,5 @@
 defmodule BlockScoutWeb.AddressReadContractControllerTest do
-  use BlockScoutWeb.ConnCase
+  use BlockScoutWeb.ConnCase, async: true
 
   alias Explorer.ExchangeRates.Token
 

@@ -38,7 +38,7 @@
     <li class="nav-item">
       <%= link(
         gettext("Blocks Validated"),
-        class: "nav-link",
+        class: "nav-link #{tab_status("validations", @conn.request_path)}",
         "data-test": "validations_tab_link",
         to: address_validation_path(@conn, :index, @address.hash)
       ) %>

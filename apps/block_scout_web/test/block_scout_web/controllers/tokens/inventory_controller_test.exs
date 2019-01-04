@@ -1,5 +1,5 @@
 defmodule BlockScoutWeb.Tokens.InventoryControllerTest do
-  use BlockScoutWeb.ConnCase
+  use BlockScoutWeb.ConnCase, async: false
 
   describe "GET index/3" do
     test "with invalid address hash", %{conn: conn} do

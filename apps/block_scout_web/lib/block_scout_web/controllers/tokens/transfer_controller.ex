@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.Tokens.TransferController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.Tokens.TransferView
-  alias Explorer.Chain
+  alias Explorer.{Chain, Market}
   alias Phoenix.View
 
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, paging_options: 1, next_page_params: 3]
@@ -50,8 +50,7 @@ defmodule BlockScoutWeb.Tokens.TransferController do
         conn,
         "index.html",
         current_path: current_path(conn),
-        token: token,
-        holders_count_consolidation_enabled: Chain.token_holders_counter_consolidation_enabled?(),
+        token: Market.add_price(token),
         total_token_transfers: Chain.count_token_transfers_from_token_hash(address_hash),
         total_token_holders: Chain.count_token_holders_from_token_hash(address_hash)
       )

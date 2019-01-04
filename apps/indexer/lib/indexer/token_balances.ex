@@ -15,6 +15,10 @@ defmodule Indexer.TokenBalances do
   # The timeout used for each process opened by Task.async_stream/3. Default 15s.
   @task_timeout 15000
 
+  def fetch_token_balances_from_blockchain(token_balances) do
+    fetch_token_balances_from_blockchain(token_balances, [])
+  end
+
   @doc """
   Fetches TokenBalances from specific Addresses and Blocks in the Blockchain
 
@@ -30,11 +34,11 @@ defmodule Indexer.TokenBalances do
   * `address_hash` - The address_hash that we want to know the balance.
   * `block_number` - The block number that the address_hash has the balance.
   """
-  def fetch_token_balances_from_blockchain([]), do: {:ok, []}
+  def fetch_token_balances_from_blockchain([], _opts), do: {:ok, []}
 
   @decorate span(tracer: Tracer)
-  def fetch_token_balances_from_blockchain(token_balances, opts \\ []) do
-    Logger.debug(fn -> "fetching #{Enum.count(token_balances)} token balances" end)
+  def fetch_token_balances_from_blockchain(token_balances, opts) do
+    Logger.debug("fetching token balances", count: Enum.count(token_balances))
 
     task_timeout = Keyword.get(opts, :timeout, @task_timeout)
 
@@ -54,6 +58,16 @@ defmodule Indexer.TokenBalances do
     |> schedule_token_balances
 
     {:ok, fetched_token_balances}
+  end
+
+  def to_address_current_token_balances(address_token_balances) when is_list(address_token_balances) do
+    address_token_balances
+    |> Enum.group_by(fn %{address_hash: address_hash, token_contract_address_hash: token_contract_address_hash} ->
+      {address_hash, token_contract_address_hash}
+    end)
+    |> Enum.map(fn {_, grouped_address_token_balances} ->
+      Enum.max_by(grouped_address_token_balances, fn %{block_number: block_number} -> block_number end)
+    end)
   end
 
   defp traced_fetch_token_balance_callback(%Spandex.Span{} = span) do

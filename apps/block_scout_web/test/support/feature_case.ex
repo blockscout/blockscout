@@ -20,8 +20,12 @@ defmodule BlockScoutWeb.FeatureCase do
     end
   end
 
-  setup do
+  setup tags do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo)
+
+    unless tags[:async] do
+      Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, {:shared, self()})
+    end
 
     metadata = Phoenix.Ecto.SQL.Sandbox.metadata_for(Explorer.Repo, self())
     {:ok, session} = Wallaby.start_session(metadata: metadata)

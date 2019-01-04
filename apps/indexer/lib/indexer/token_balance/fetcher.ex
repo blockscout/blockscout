@@ -93,10 +93,11 @@ defmodule Indexer.TokenBalance.Fetcher do
   end
 
   def fetch_from_blockchain(params_list) do
-    {:ok, token_balances} =
-      params_list
-      |> Enum.filter(&(&1.retries_count <= @max_retries))
-      |> TokenBalances.fetch_token_balances_from_blockchain()
+    retryable_params_list = Enum.filter(params_list, &(&1.retries_count <= @max_retries))
+
+    Logger.metadata(count: Enum.count(retryable_params_list))
+
+    {:ok, token_balances} = TokenBalances.fetch_token_balances_from_blockchain(retryable_params_list)
 
     token_balances
   end
@@ -107,7 +108,7 @@ defmodule Indexer.TokenBalance.Fetcher do
     import_params = %{
       addresses: %{params: addresses_params},
       address_token_balances: %{params: token_balances_params},
-      address_current_token_balances: %{params: token_balances_params},
+      address_current_token_balances: %{params: TokenBalances.to_address_current_token_balances(token_balances_params)},
       timeout: :infinity
     }
 
@@ -116,7 +117,9 @@ defmodule Indexer.TokenBalance.Fetcher do
         :ok
 
       {:error, reason} ->
-        Logger.debug(fn -> "failed to import #{length(token_balances_params)} token balances, #{inspect(reason)}" end)
+        Logger.debug(fn -> ["failed to import token balances: ", inspect(reason)] end,
+          error_count: Enum.count(token_balances_params)
+        )
 
         :error
     end

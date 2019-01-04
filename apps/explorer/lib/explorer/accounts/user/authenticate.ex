@@ -3,7 +3,7 @@ defmodule Explorer.Accounts.User.Authenticate do
   Represents the data required to authenticate a user.
   """
 
-  use Ecto.Schema
+  use Explorer.Schema
 
   import Ecto.Changeset
 

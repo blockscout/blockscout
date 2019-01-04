@@ -76,7 +76,10 @@ defmodule Indexer.TokenTransfer.Uncataloged.Worker do
   end
 
   def handle_info({ref, {:error, reason}}, %{task_ref: ref, retry_interval: millis} = state) do
-    Logger.error(fn -> inspect(reason) end)
+    case reason do
+      :queue_unavailable -> :ok
+      _ -> Logger.error(fn -> inspect(reason) end)
+    end
 
     Process.demonitor(ref, [:flush])
     Process.send_after(self(), :push_front_blocks, millis)

@@ -15,7 +15,6 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.Block.Transform
 
   @type address_hash_to_fetched_balance_block_number :: %{String.t() => Block.block_number()}
-  @type transaction_hash_to_block_number :: %{String.t() => Block.block_number()}
 
   @type t :: %__MODULE__{}
 
@@ -26,12 +25,12 @@ defmodule Indexer.Block.Fetcher do
               t,
               %{
                 address_hash_to_fetched_balance_block_number: address_hash_to_fetched_balance_block_number,
-                transaction_hash_to_block_number_option: transaction_hash_to_block_number,
                 addresses: Import.Runner.options(),
                 address_coin_balances: Import.Runner.options(),
                 address_token_balances: Import.Runner.options(),
                 blocks: Import.Runner.options(),
                 block_second_degree_relations: Import.Runner.options(),
+                block_rewards: Import.Runner.options(),
                 broadcast: term(),
                 logs: Import.Runner.options(),
                 token_transfers: Import.Runner.options(),
@@ -82,8 +81,7 @@ defmodule Indexer.Block.Fetcher do
   @spec fetch_and_import_range(t, Range.t()) ::
           {:ok, %{inserted: %{}, errors: [EthereumJSONRPC.Transport.error()]}}
           | {:error,
-             {step :: atom(), reason :: term()}
-             | [%Ecto.Changeset{}]
+             {step :: atom(), reason :: [%Ecto.Changeset{}] | term()}
              | {step :: atom(), failed_value :: term(), changes_so_far :: term()}}
   def fetch_and_import_range(
         %__MODULE__{
@@ -122,12 +120,13 @@ defmodule Indexer.Block.Fetcher do
            }),
          coin_balances_params_set =
            %{
+             beneficiary_params: MapSet.to_list(beneficiary_params_set),
              blocks_params: blocks,
              logs_params: logs,
              transactions_params: transactions_with_receipts
            }
-           |> CoinBalances.params_set()
-           |> MapSet.union(beneficiary_params_set),
+           |> CoinBalances.params_set(),
+         block_rewards <- fetch_block_rewards(beneficiary_params_set, transactions_with_receipts),
          address_token_balances = TokenBalances.params_set(%{token_transfers_params: token_transfers}),
          {:ok, inserted} <-
            __MODULE__.import(
@@ -138,6 +137,7 @@ defmodule Indexer.Block.Fetcher do
                address_token_balances: %{params: address_token_balances},
                blocks: %{params: blocks},
                block_second_degree_relations: %{params: block_second_degree_relations_params},
+               block_rewards: %{params: block_rewards},
                logs: %{params: logs},
                token_transfers: %{params: token_transfers},
                tokens: %{on_conflict: :nothing, params: tokens},
@@ -147,9 +147,7 @@ defmodule Indexer.Block.Fetcher do
       {:ok, %{inserted: inserted, errors: blocks_errors ++ beneficiaries_errors}}
     else
       {step, {:error, reason}} -> {:error, {step, reason}}
-      {:error, :timeout} = error -> error
-      {:error, changesets} = error when is_list(changesets) -> error
-      {:error, step, failed_value, changes_so_far} -> {:error, {step, failed_value, changes_so_far}}
+      {:import, {:error, step, failed_value, changes_so_far}} -> {:error, {step, failed_value, changes_so_far}}
     end
   end
 
@@ -161,15 +159,12 @@ defmodule Indexer.Block.Fetcher do
     {address_hash_to_fetched_balance_block_number, import_options} =
       pop_address_hash_to_fetched_balance_block_number(options)
 
-    transaction_hash_to_block_number = get_transaction_hash_to_block_number(import_options)
-
     options_with_broadcast =
       Map.merge(
         import_options,
         %{
           address_hash_to_fetched_balance_block_number: address_hash_to_fetched_balance_block_number,
-          broadcast: broadcast,
-          transaction_hash_to_block_number: transaction_hash_to_block_number
+          broadcast: broadcast
         }
       )
 
@@ -214,6 +209,29 @@ defmodule Indexer.Block.Fetcher do
     {:beneficiaries, result}
   end
 
+  defp fetch_block_rewards(beneficiaries, transactions) do
+    Enum.map(beneficiaries, fn beneficiary ->
+      case beneficiary.address_type do
+        :validator ->
+          validation_reward = fetch_validation_reward(beneficiary, transactions)
+
+          "0x" <> reward_hex = beneficiary.reward
+          {reward, _} = Integer.parse(reward_hex, 16)
+
+          %{beneficiary | reward: reward + validation_reward}
+
+        _ ->
+          beneficiary
+      end
+    end)
+  end
+
+  defp fetch_validation_reward(beneficiary, transactions) do
+    transactions
+    |> Stream.filter(fn t -> t.block_number == beneficiary.block_number end)
+    |> Enum.reduce(0, fn t, acc -> acc + t.gas_used * t.gas_price end)
+  end
+
   # `fetched_balance_block_number` is needed for the `CoinBalanceFetcher`, but should not be used for `import` because the
   # balance is not known yet.
   defp pop_address_hash_to_fetched_balance_block_number(options) do
@@ -221,15 +239,8 @@ defmodule Indexer.Block.Fetcher do
       get_and_update_in(options, [:addresses, :params, Access.all()], &pop_hash_fetched_balance_block_number/1)
 
     address_hash_to_fetched_balance_block_number = Map.new(address_hash_fetched_balance_block_number_pairs)
-    {address_hash_to_fetched_balance_block_number, import_options}
-  end
 
-  defp get_transaction_hash_to_block_number(options) do
-    options
-    |> get_in([:transactions, :params, Access.all()])
-    |> Enum.into(%{}, fn %{block_number: block_number, hash: hash, index: index} ->
-      {hash, %{block_number: block_number, index: index}}
-    end)
+    {address_hash_to_fetched_balance_block_number, import_options}
   end
 
   defp pop_hash_fetched_balance_block_number(
