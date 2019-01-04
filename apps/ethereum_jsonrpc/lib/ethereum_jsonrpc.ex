@@ -45,6 +45,11 @@ defmodule EthereumJSONRPC do
   @type address :: String.t()
 
   @typedoc """
+  A block number as an Elixir `t:non_neg_integer/0` instead of `t:data/0`.
+  """
+  @type block_number :: non_neg_integer()
+
+  @typedoc """
   Binary data encoded as a single hexadecimal number in a `String.t`
   """
   @type data :: String.t()

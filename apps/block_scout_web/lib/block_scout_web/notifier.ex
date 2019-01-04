@@ -69,8 +69,9 @@ defmodule BlockScoutWeb.Notifier do
     end
   end
 
-  def handle_event({:chain_event, :transactions, :realtime, transaction_hashes}) do
-    transaction_hashes
+  def handle_event({:chain_event, :transactions, :realtime, transactions}) do
+    transactions
+    |> Enum.map(& &1.hash)
     |> Chain.hashes_to_transactions(
       necessity_by_association: %{
         :block => :optional,

@@ -84,7 +84,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   defp new_max_number(number, max_number_seen), do: max(number, max_number_seen)
 
-  @import_options ~w(address_hash_to_fetched_balance_block_number transaction_hash_to_block_number)a
+  @import_options ~w(address_hash_to_fetched_balance_block_number)a
 
   @impl Block.Fetcher
   def import(
@@ -302,16 +302,21 @@ defmodule Indexer.Block.Realtime.Fetcher do
   end
 
   defp transactions_params_to_fetch_internal_transactions_params(transactions_params) do
-    Enum.map(transactions_params, &transaction_params_to_fetch_internal_transaction_params/1)
+    Enum.flat_map(transactions_params, &transaction_params_to_fetch_internal_transaction_params_list/1)
   end
 
-  defp transaction_params_to_fetch_internal_transaction_params(%{
+  # Input-less transactions are value-transfers only, so their internal transactions do not need to be indexed
+  defp transaction_params_to_fetch_internal_transaction_params_list(%{input: "0x"}) do
+    []
+  end
+
+  defp transaction_params_to_fetch_internal_transaction_params_list(%{
          block_number: block_number,
          hash: hash,
          transaction_index: transaction_index
        })
        when is_integer(block_number) do
-    %{block_number: block_number, hash_data: to_string(hash), transaction_index: transaction_index}
+    [%{block_number: block_number, hash_data: to_string(hash), transaction_index: transaction_index}]
   end
 
   defp balances(
