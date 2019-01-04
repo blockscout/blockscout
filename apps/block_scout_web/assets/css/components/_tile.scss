@@ -152,15 +152,6 @@
         color: $danger;
       }
     }
-    &--awaiting-internal-transactions {
-      border-top: 2px solid lighten($warning, 10%);
-      border-right: 2px solid lighten($warning, 10%);
-      border-bottom: 2px solid lighten($warning, 10%);
-
-      .tile-status-label {
-        color: $warning;
-      }
-    }
   }
 }
 
