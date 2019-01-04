@@ -3,10 +3,9 @@ defmodule Indexer.Block.UncatalogedRewards.ImporterTest do
   use Explorer.DataCase
 
   import Mox
-  import EthereumJSONRPC, only: [integer_to_quantity: 1]
-  import EthereumJSONRPC.Case
 
-  alias Explorer.Chain
+  alias Explorer.Chain.Wei
+  alias Explorer.Chain.Block.Reward
   alias Indexer.Block.UncatalogedRewards.Importer
 
   describe "fetch_and_import_rewards/1" do
@@ -17,7 +16,10 @@ defmodule Indexer.Block.UncatalogedRewards.ImporterTest do
     @tag :no_geth
     test "return `{:ok, [transactions executed]}`" do
       address = insert(:address)
+      address_hash = address.hash
+
       block = insert(:block, number: 1234, miner: address)
+      block_hash = block.hash
 
       expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, method: "trace_block", params: _params}], _options ->
         {:ok,
@@ -27,12 +29,12 @@ defmodule Indexer.Block.UncatalogedRewards.ImporterTest do
              result: [
                %{
                  "action" => %{
-                   "author" => to_string(address.hash),
+                   "author" => to_string(address_hash),
                    "rewardType" => "external",
                    "value" => "0xde0b6b3a7640000"
                  },
-                 "blockHash" => to_string(block.hash),
-                 "blockNumber" => 1234,
+                 "blockHash" => to_string(block_hash),
+                 "blockNumber" => block.number,
                  "result" => nil,
                  "subtraces" => 0,
                  "traceAddress" => [],
@@ -45,20 +47,58 @@ defmodule Indexer.Block.UncatalogedRewards.ImporterTest do
          ]}
       end)
 
-      expected =
+      assert {:ok,
+              [
+                ok: %{
+                  "insert_0" => %Reward{
+                    address_hash: ^address_hash,
+                    block_hash: ^block_hash,
+                    address_type: :validator
+                  }
+                }
+              ]} = Importer.fetch_and_import_rewards([block])
+    end
+
+    @tag :no_geth
+    test "replaces reward on conflict" do
+      miner = insert(:address)
+      block = insert(:block, miner: miner)
+      block_hash = block.hash
+      address_type = :validator
+      insert(:reward, block_hash: block_hash, address_hash: miner.hash, address_type: address_type, reward: 1)
+      value = "0x2"
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, method: "trace_block"}], _options ->
         {:ok,
          [
-           ok: %{
-             "insert_0" => %Explorer.Chain.Block.Reward{
-               address_hash: address.hash,
-               block_hash: block.hash,
-               address_type: :validator
-             }
+           %{
+             id: id,
+             result: [
+               %{
+                 "action" => %{
+                   "author" => to_string(miner),
+                   "rewardType" => "external",
+                   "value" => value
+                 },
+                 "blockHash" => to_string(block_hash),
+                 "blockNumber" => block.number,
+                 "result" => nil,
+                 "subtraces" => 0,
+                 "traceAddress" => [],
+                 "transactionHash" => nil,
+                 "transactionPosition" => nil,
+                 "type" => "reward"
+               }
+             ]
            }
          ]}
+      end)
 
-      result = Importer.fetch_and_import_rewards([block])
-      assert result = expected
+      {:ok, reward} = Wei.cast(value)
+
+      assert {:ok,
+              [ok: %{"insert_0" => %Reward{block_hash: ^block_hash, address_type: ^address_type, reward: ^reward}}]} =
+               Importer.fetch_and_import_rewards([block])
     end
   end
 end
