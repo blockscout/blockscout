@@ -100,7 +100,10 @@ defmodule Indexer.Block.UncatalogedRewards.Importer do
   defp insert_reward_group(rewards) do
     rewards
     |> Enum.reduce({Multi.new(), 0}, fn changeset, {multi, index} ->
-      {Multi.insert(multi, "insert_#{index}", changeset), index + 1}
+      {Multi.insert(multi, "insert_#{index}", changeset,
+         conflict_target: ~w(address_hash address_type block_hash),
+         on_conflict: {:replace, [:reward]}
+       ), index + 1}
     end)
     |> elem(0)
     |> Explorer.Repo.transaction()
