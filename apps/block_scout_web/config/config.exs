@@ -14,7 +14,8 @@ config :block_scout_web, BlockScoutWeb.Chain,
   network: System.get_env("NETWORK"),
   subnetwork: System.get_env("SUBNETWORK"),
   network_icon: System.get_env("NETWORK_ICON"),
-  logo: "/images/dai_logo.svg"
+  logo: System.get_env("LOGO") || "/images/dai_logo.svg",
+  has_emission_funds: false
 
 # Configures the endpoint
 config :block_scout_web, BlockScoutWeb.Endpoint,
@@ -59,6 +60,8 @@ config :wobserver,
   # return only the local node
   discovery: :none,
   mode: :plug
+
+config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

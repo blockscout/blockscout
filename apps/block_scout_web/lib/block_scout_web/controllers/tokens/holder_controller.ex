@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.Tokens.HolderController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.Tokens.HolderView
-  alias Explorer.Chain
+  alias Explorer.{Chain, Market}
   alias Phoenix.View
 
   import BlockScoutWeb.Chain,
@@ -49,8 +49,7 @@ defmodule BlockScoutWeb.Tokens.HolderController do
         conn,
         "index.html",
         current_path: current_path(conn),
-        holders_count_consolidation_enabled: Chain.token_holders_counter_consolidation_enabled?(),
-        token: token,
+        token: Market.add_price(token),
         total_token_holders: Chain.count_token_holders_from_token_hash(address_hash),
         total_token_transfers: Chain.count_token_transfers_from_token_hash(address_hash)
       )

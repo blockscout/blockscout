@@ -1,12 +1,9 @@
 defmodule BlockScoutWeb.AddressTokenControllerTest do
-  use BlockScoutWeb.ConnCase,
-    # ETS table is shared in `Explorer.Counters.BlockValidationCounter`
-    async: false
+  use BlockScoutWeb.ConnCase, async: true
 
   import BlockScoutWeb.Router.Helpers, only: [address_token_path: 3]
 
   alias Explorer.Chain.{Token}
-  alias Explorer.Counters.BlockValidationCounter
 
   describe "GET index/2" do
     test "with invalid address hash", %{conn: conn} do
@@ -60,8 +57,6 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
         to_address: address
       )
 
-      start_supervised!(BlockValidationCounter)
-
       conn = get(conn, address_token_path(conn, :index, address))
 
       actual_token_hashes =
@@ -103,8 +98,6 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
 
       %Token{name: name, type: type, inserted_at: inserted_at} = token
 
-      start_supervised!(BlockValidationCounter)
-
       conn =
         get(conn, address_token_path(BlockScoutWeb.Endpoint, :index, address.hash), %{
           "token_name" => name,
@@ -136,8 +129,6 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
         insert(:token_transfer, token_contract_address: token.contract_address, from_address: address)
       end)
 
-      start_supervised!(BlockValidationCounter)
-
       conn = get(conn, address_token_path(BlockScoutWeb.Endpoint, :index, address.hash))
 
       assert conn.assigns.next_page_params
@@ -147,8 +138,6 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
       address = insert(:address)
       token = insert(:token)
       insert(:token_transfer, token_contract_address: token.contract_address, from_address: address)
-
-      start_supervised!(BlockValidationCounter)
 
       conn = get(conn, address_token_path(BlockScoutWeb.Endpoint, :index, address.hash))
 

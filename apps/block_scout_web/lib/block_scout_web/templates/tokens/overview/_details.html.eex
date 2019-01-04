@@ -36,9 +36,7 @@
             </span>
             <div class="d-flex flex-row justify-content-start text-muted">
               <span class="mr-4"> <%= @token.type %> </span>
-              <%= if @holders_count_consolidation_enabled do %>
-                <span class="mr-4"><%= @total_token_holders %>  <%= gettext "Addresses" %></span>
-              <% end %>
+              <span class="mr-4"><%= @total_token_holders %>  <%= gettext "Addresses" %></span>
               <span class="mr-4"><%= @total_token_transfers %> <%= gettext "Transfers" %></span>
               <%= if decimals?(@token) do %>
                 <span class="mr-4"><%= @token.decimals %> <%= gettext "Decimals" %></span>
@@ -67,7 +65,16 @@
 
                 <%= @token.symbol %>
               </h3>
-              <br />
+
+              <%= if @token.usd_value do %>
+                <div class="text-uppercase text-muted">
+                  <span data-selector="token-supply-usd" data-usd-value="<%= total_supply_usd(@token) %>"></span>
+                  |
+                  <span data-selector="token-price" data-token-usd-value="<%= @token.usd_value %>"></span>
+                </div>
+              <% else %>
+                <br />
+              <% end %>
             </div>
           </div>
         </div>

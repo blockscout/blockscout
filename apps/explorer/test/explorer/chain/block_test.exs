@@ -42,4 +42,20 @@ defmodule Explorer.Chain.BlockTest do
                |> Repo.insert()
     end
   end
+
+  describe "get_blocks_without_reward/1" do
+    test "finds only blocks without rewards" do
+      rewarded_block = insert(:block)
+      insert(:reward, address_hash: insert(:address).hash, block_hash: rewarded_block.hash)
+      unrewarded_block = insert(:block)
+
+      results =
+        Block.get_blocks_without_reward()
+        |> Repo.all()
+        |> Enum.map(& &1.hash)
+
+      refute Enum.member?(results, rewarded_block.hash)
+      assert Enum.member?(results, unrewarded_block.hash)
+    end
+  end
 end

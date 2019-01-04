@@ -133,6 +133,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     insert_sql = """
     INSERT INTO transaction_forks (uncle_hash, index, hash, inserted_at, updated_at)
     #{select_sql}
+    ON CONFLICT (uncle_hash, index)
+    DO UPDATE SET hash = EXCLUDED.hash
+    WHERE EXCLUDED.hash <> transaction_forks.hash
     RETURNING uncle_hash, hash
     """
 

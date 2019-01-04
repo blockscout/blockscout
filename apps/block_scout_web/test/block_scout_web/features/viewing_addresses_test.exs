@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
     # Because ETS tables is shared for `Explorer.Counters.*`
     async: false
 
-  alias Explorer.Counters.{AddressesWithBalanceCounter, BlockValidationCounter}
+  alias Explorer.Counters.AddressesWithBalanceCounter
   alias BlockScoutWeb.{AddressPage, AddressView, Notifier}
 
   setup do
@@ -22,10 +22,27 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> insert(from_address: lincoln, to_address: taft)
       |> with_block(block)
 
+    lincoln_reward =
+      :reward
+      |> insert(
+        address_hash: lincoln.hash,
+        block_hash: block.hash,
+        address_type: :emission_funds
+      )
+
+    taft_reward =
+      :reward
+      |> insert(
+        address_hash: taft.hash,
+        block_hash: block.hash,
+        address_type: :validator
+      )
+
     {:ok,
      %{
        addresses: %{lincoln: lincoln, taft: taft},
        block: block,
+       rewards: {lincoln_reward, taft_reward},
        transactions: %{from_lincoln: from_lincoln, from_taft: from_taft}
      }}
   end
@@ -41,9 +58,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       [first_address | _] = addresses
       [last_address | _] = Enum.reverse(addresses)
 
-      start_supervised!(BlockValidationCounter)
-      BlockValidationCounter.consolidate_blocks()
-
       start_supervised!(AddressesWithBalanceCounter)
       AddressesWithBalanceCounter.consolidate()
 
@@ -56,9 +70,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
 
   test "viewing address overview information", %{session: session} do
     address = insert(:address, fetched_coin_balance: 500)
-
-    start_supervised!(BlockValidationCounter)
-    BlockValidationCounter.consolidate_blocks()
 
     session
     |> AddressPage.visit_page(address)
@@ -79,9 +90,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
           from_address: address,
           created_contract_address: contract
         )
-
-      start_supervised!(BlockValidationCounter)
-      BlockValidationCounter.consolidate_blocks()
 
       address_hash = AddressView.trimmed_hash(address.hash)
       transaction_hash = AddressView.trimmed_hash(transaction.hash)
@@ -116,9 +124,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
           created_contract_address: another_contract
         )
 
-      start_supervised!(BlockValidationCounter)
-      BlockValidationCounter.consolidate_blocks()
-
       contract_hash = AddressView.trimmed_hash(contract.hash)
       transaction_hash = AddressView.trimmed_hash(transaction.hash)
 
@@ -129,13 +134,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
   end
 
   describe "viewing transactions" do
-    setup do
-      start_supervised!(BlockValidationCounter)
-      BlockValidationCounter.consolidate_blocks()
-
-      :ok
-    end
-
     test "sees all addresses transactions by default", %{
       addresses: addresses,
       session: session,
@@ -182,6 +180,21 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> assert_has(AddressPage.transaction_address_link(transactions.from_lincoln, :to))
       |> refute_has(AddressPage.transaction_address_link(transactions.from_lincoln, :from))
     end
+
+    test "sees rewards to and from an address alongside transactions", %{
+      addresses: addresses,
+      session: session,
+      transactions: transactions
+    } do
+      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: true)
+
+      session
+      |> AddressPage.visit_page(addresses.lincoln)
+      |> assert_has(AddressPage.transaction(transactions.from_taft))
+      |> assert_has(AddressPage.transaction(transactions.from_lincoln))
+
+      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, has_emission_funds: false)
+    end
   end
 
   describe "viewing internal transactions" do
@@ -214,9 +227,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       internal_transaction_lincoln_to_address: internal_transaction,
       session: session
     } do
-      start_supervised!(BlockValidationCounter)
-      BlockValidationCounter.consolidate_blocks()
-
       session
       |> AddressPage.visit_page(addresses.lincoln)
       |> AddressPage.click_internal_transactions()
@@ -229,9 +239,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         :transaction
         |> insert(from_address: addresses.lincoln)
         |> with_block(insert(:block, number: 7000))
-
-      start_supervised!(BlockValidationCounter)
-      BlockValidationCounter.consolidate_blocks()
 
       session
       |> AddressPage.visit_page(addresses.lincoln)
@@ -280,9 +287,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         token_contract_address: contract_address
       )
 
-      start_supervised!(BlockValidationCounter)
-      BlockValidationCounter.consolidate_blocks()
-
       session
       |> AddressPage.visit_page(lincoln)
       |> assert_has(AddressPage.token_transfers(transaction, count: 1))
@@ -324,9 +328,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         token_contract_address: contract_address
       )
 
-      start_supervised!(BlockValidationCounter)
-      BlockValidationCounter.consolidate_blocks()
-
       session
       |> AddressPage.visit_page(morty)
       |> assert_has(AddressPage.token_transfers(transaction, count: 1))
@@ -361,9 +362,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         token_contract_address: contract_address
       )
 
-      start_supervised!(BlockValidationCounter)
-      BlockValidationCounter.consolidate_blocks()
-
       session
       |> AddressPage.visit_page(lincoln)
       |> assert_has(AddressPage.token_transfers(transaction, count: 1))
@@ -393,9 +391,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         transaction: transaction,
         token_contract_address: contract_address
       )
-
-      start_supervised!(BlockValidationCounter)
-      BlockValidationCounter.consolidate_blocks()
 
       session
       |> AddressPage.visit_page(lincoln)
@@ -430,9 +425,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       )
 
       insert(:address_current_token_balance, address: lincoln, token_contract_address_hash: contract_address.hash)
-
-      start_supervised!(BlockValidationCounter)
-      BlockValidationCounter.consolidate_blocks()
 
       session
       |> AddressPage.visit_page(lincoln)
@@ -487,9 +479,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
 
       insert(:address_current_token_balance, address: lincoln, token_contract_address_hash: contract_address_2.hash)
 
-      start_supervised!(BlockValidationCounter)
-      BlockValidationCounter.consolidate_blocks()
-
       {:ok, lincoln: lincoln}
     end
 
@@ -534,9 +523,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       block_one_day_ago = insert(:block, timestamp: Timex.shift(noon, days: -1))
       insert(:fetched_balance, address_hash: address.hash, value: 5, block_number: block.number)
       insert(:fetched_balance, address_hash: address.hash, value: 10, block_number: block_one_day_ago.number)
-
-      start_supervised!(BlockValidationCounter)
-      BlockValidationCounter.consolidate_blocks()
 
       {:ok, address: address}
     end

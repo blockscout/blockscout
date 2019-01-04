@@ -178,6 +178,33 @@ defmodule Explorer.Chain.TransactionTest do
     end
   end
 
+  describe "transaction_hash_to_block_number/1" do
+    test "returns only transactions with the specified block number" do
+      target_block = insert(:block, number: 1_000_000)
+
+      :transaction
+      |> insert()
+      |> with_block(target_block)
+
+      :transaction
+      |> insert()
+      |> with_block(target_block)
+
+      :transaction
+      |> insert()
+      |> with_block(insert(:block, number: 1_001_101))
+
+      result =
+        1_000_000
+        |> Transaction.transactions_with_block_number()
+        |> Repo.all()
+        |> Enum.map(& &1.block_number)
+
+      refute Enum.any?(result, fn block_number -> 1_001_101 == block_number end)
+      assert Enum.all?(result, fn block_number -> 1_000_000 == block_number end)
+    end
+  end
+
   describe "last_nonce_by_address_query/1" do
     test "returns the nonce value from the last block" do
       address = insert(:address)

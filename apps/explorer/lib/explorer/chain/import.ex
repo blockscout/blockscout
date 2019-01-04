@@ -4,6 +4,7 @@ defmodule Explorer.Chain.Import do
   """
 
   alias Ecto.Changeset
+  alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import
   alias Explorer.Repo
 
@@ -60,7 +61,7 @@ defmodule Explorer.Chain.Import do
   @type timestamps :: %{inserted_at: DateTime.t(), updated_at: DateTime.t()}
 
   # milliseconds
-  @transaction_timeout 120_000
+  @transaction_timeout :timer.minutes(4)
 
   @imported_table_rows @runners
                        |> Stream.map(&Map.put(&1.imported_table_row(), :key, &1.option_key()))
@@ -107,7 +108,7 @@ defmodule Explorer.Chain.Import do
   ## Data Notifications
 
   On successful inserts, processes interested in certain domains of data will be notified
-  that new data has been inserted. See `Explorer.Chain.subscribe_to_events/1` for more information.
+  that new data has been inserted. See `Explorer.Chain.Events.Subscriber.to_events/2` for more information.
 
   ## Options
 
@@ -122,26 +123,9 @@ defmodule Explorer.Chain.Import do
          {:ok, valid_runner_option_pairs} <- validate_runner_options_pairs(runner_options_pairs),
          {:ok, runner_to_changes_list} <- runner_to_changes_list(valid_runner_option_pairs),
          {:ok, data} <- insert_runner_to_changes_list(runner_to_changes_list, options) do
-      broadcast_events(data, Map.get(options, :broadcast, false))
+      Publisher.broadcast(data, Map.get(options, :broadcast, false))
       {:ok, data}
     end
-  end
-
-  defp broadcast_events(_data, false), do: nil
-
-  defp broadcast_events(data, broadcast_type) do
-    for {event_type, event_data} <- data,
-        event_type in ~w(addresses address_coin_balances blocks internal_transactions logs token_transfers transactions)a do
-      broadcast_event_data(event_type, broadcast_type, event_data)
-    end
-  end
-
-  defp broadcast_event_data(event_type, broadcast_type, event_data) do
-    Registry.dispatch(Registry.ChainEvents, event_type, fn entries ->
-      for {pid, _registered_val} <- entries do
-        send(pid, {:chain_event, event_type, broadcast_type, event_data})
-      end
-    end)
   end
 
   defp runner_to_changes_list(runner_options_pairs) when is_list(runner_options_pairs) do

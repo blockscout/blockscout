@@ -122,7 +122,7 @@ defmodule BlockScoutWeb.Mixfile do
       # `:spandex` integration with Datadog
       {:spandex_datadog, "~> 0.3.1"},
       # `:spandex` tracing of `:phoenix`
-      {:spandex_phoenix, "~> 0.3.0"},
+      {:spandex_phoenix, "~> 0.3.1"},
       {:timex, "~> 3.4"},
       {:wallaby, "~> 0.20", only: [:test], runtime: false},
       {:wobserver, "~> 0.1.8"}

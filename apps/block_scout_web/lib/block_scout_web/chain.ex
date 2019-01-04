@@ -14,6 +14,8 @@ defmodule BlockScoutWeb.Chain do
       string_to_transaction_hash: 1
     ]
 
+  alias Explorer.Chain.Block.Reward
+
   alias Explorer.Chain.{
     Address,
     Address.CoinBalance,
@@ -155,6 +157,10 @@ defmodule BlockScoutWeb.Chain do
     else
       :error -> {:error, :not_found}
     end
+  end
+
+  defp paging_params({%Reward{block: %{number: number}}, _}) do
+    %{"block_number" => number, "index" => 0}
   end
 
   defp paging_params(%Block{number: number}) do
