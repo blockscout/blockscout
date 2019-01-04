@@ -96,7 +96,18 @@ defmodule Explorer.Chain.Transaction do
    * `input`- data sent along with the transaction
    * `internal_transactions` - transactions (value transfers) created while executing contract used for this
      transaction
-   * `internal_transactions_indexed_at` - when `internal_transactions` were fetched by `Indexer`.
+   * `internal_transactions_indexed_at` - when `internal_transactions` were fetched by `Indexer` or when they do not
+     need to be fetched at `inserted_at`.
+
+     | `status` | `contract_creation_address_hash` | `input`    | Token Transfer? | `internal_transactions_indexed_at`        | `internal_transactions` | Description                                                                                         |
+     |----------|----------------------------------|------------|-----------------|-------------------------------------------|-------------------------|-----------------------------------------------------------------------------------------------------|
+     | `:ok`    | `nil`                            | Empty      | Don't Care      | `inserted_at`                             | Unfetched               | Simple `value` transfer transaction succeeded.  Internal transactions would be same value transfer. |
+     | `:ok`    | `nil`                            | Don't Care | `true`          | `inserted_at`                             | Unfetched               | Token transfer (from `logs`) that didn't happen during a contract creation.                         |
+     | `:ok`    | Don't Care                       | Non-Empty  | Don't Care      | When `internal_transactions` are indexed. | Fetched                 | A contract call that succeeded.                                                                     |
+     | `:error` | nil                              | Empty      | Don't Care      | When `internal_transactions` are indexed. | Fetched                 | Simple `value` transfer transaction failed. Internal transactions fetched for `error`.              |
+     | `:error` | Don't Care                       | Non-Empty  | Don't Care      | When `internal_transactions` are indexed. | Fetched                 | A contract call that failed.                                                                        |
+     | `nil`    | Don't Care                       | Don't Care | Don't Care      | When `internal_transactions` are indexed. | Depends                 | A pending post-Byzantium transaction will only know its status from receipt.                        |
+     | `nil`    | Don't Care                       | Don't Care | Don't Care      | When `internal_transactions` are indexed. | Fetched                 | A pre-Byzantium transaction requires internal transactions to determine status.                     |
    * `logs` - events that occurred while mining the `transaction`.
    * `nonce` - the number of transaction made by the sender prior to this one
    * `r` - the R field of the signature. The (r, s) is the normal output of an ECDSA signature, where r is computed as
@@ -593,6 +604,16 @@ defmodule Explorer.Chain.Transaction do
       where: tt.token_contract_address_hash == ^token_hash,
       where: tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash,
       distinct: :hash
+    )
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch transactions with the specified block_number
+  """
+  def transactions_with_block_number(block_number) do
+    from(
+      t in Transaction,
+      where: t.block_number == ^block_number
     )
   end
 

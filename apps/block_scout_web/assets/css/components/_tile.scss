@@ -41,6 +41,14 @@
       }
     }
 
+    &-emission-reward {
+      border-left: 4px solid $lilac;
+
+      .tile-label {
+        color: $lilac;
+      }
+    }
+
     &-transaction {
       border-left: 4px solid $blue;
 

@@ -8,7 +8,8 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
   import Ecto.Query, only: [from: 2]
 
   alias Ecto.{Multi, Repo}
-  alias Explorer.Chain.{Hash, Import, Transaction}
+  alias Explorer.Chain.{Data, Hash, Import, Transaction}
+  alias Explorer.Chain.Import.Runner.TokenTransfers
 
   @behaviour Import.Runner
 
@@ -39,6 +40,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
       |> Map.take(~w(on_conflict timeout)a)
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
+      |> Map.put(:token_transfer_transaction_hash_set, token_transfer_transaction_hash_set(options))
 
     Multi.run(multi, :transactions, fn repo, _ ->
       insert(repo, changes_list, insert_options)
@@ -48,31 +50,46 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
   @impl Import.Runner
   def timeout, do: @timeout
 
+  defp token_transfer_transaction_hash_set(options) do
+    token_transfers_params = options[TokenTransfers.option_key()][:params] || []
+
+    MapSet.new(token_transfers_params, & &1.transaction_hash)
+  end
+
   @spec insert(Repo.t(), [map()], %{
           optional(:on_conflict) => Import.Runner.on_conflict(),
           required(:timeout) => timeout,
-          required(:timestamps) => Import.timestamps()
+          required(:timestamps) => Import.timestamps(),
+          required(:token_transfer_transaction_hash_set) => MapSet.t()
         }) :: {:ok, [Hash.t()]}
-  defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options)
+  defp insert(
+         repo,
+         changes_list,
+         %{
+           timeout: timeout,
+           timestamps: %{inserted_at: inserted_at} = timestamps,
+           token_transfer_transaction_hash_set: token_transfer_transaction_hash_set
+         } = options
+       )
        when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    # order so that row ShareLocks are grabbed in a consistent order
-    ordered_changes_list = Enum.sort_by(changes_list, & &1.hash)
+    ordered_changes_list =
+      changes_list
+      |> put_internal_transactions_indexed_at(inserted_at, token_transfer_transaction_hash_set)
+      # order so that row ShareLocks are grabbed in a consistent order
+      |> Enum.sort_by(& &1.hash)
 
-    {:ok, transactions} =
-      Import.insert_changes_list(
-        repo,
-        ordered_changes_list,
-        conflict_target: :hash,
-        on_conflict: on_conflict,
-        for: Transaction,
-        returning: [:hash],
-        timeout: timeout,
-        timestamps: timestamps
-      )
-
-    {:ok, for(transaction <- transactions, do: transaction.hash)}
+    Import.insert_changes_list(
+      repo,
+      ordered_changes_list,
+      conflict_target: :hash,
+      on_conflict: on_conflict,
+      for: Transaction,
+      returning: ~w(block_number index hash internal_transactions_indexed_at)a,
+      timeout: timeout,
+      timestamps: timestamps
+    )
   end
 
   defp default_on_conflict do
@@ -129,4 +146,36 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
         )
     )
   end
+
+  defp put_internal_transactions_indexed_at(changes_list, timestamp, token_transfer_transaction_hash_set)
+       when is_list(changes_list) do
+    Enum.map(changes_list, &put_internal_transactions_indexed_at(&1, timestamp, token_transfer_transaction_hash_set))
+  end
+
+  defp put_internal_transactions_indexed_at(%{hash: hash} = changes, timestamp, token_transfer_transaction_hash_set) do
+    token_transfer? = to_string(hash) in token_transfer_transaction_hash_set
+
+    if put_internal_transactions_indexed_at?(changes, token_transfer?) do
+      Map.put(changes, :internal_transactions_indexed_at, timestamp)
+    else
+      changes
+    end
+  end
+
+  # A post-Byzantium validated transaction will have a status and if it has no input, it is a value transfer only.
+  # Internal transactions are only needed when status is `:error` to set `error`.
+  defp put_internal_transactions_indexed_at?(%{status: :ok, input: %Data{bytes: <<>>}}, _), do: true
+
+  # A post-Byzantium validated transaction will have a status and if it transfers tokens, the token transfer is in the
+  # log and the internal transactions.
+  # `created_contract_address_hash` must be `nil` because if a contract is created the internal transactions are needed
+  # to get
+  defp put_internal_transactions_indexed_at?(%{status: :ok} = changes, true) do
+    case Map.fetch(changes, :created_contract_address_hash) do
+      {:ok, created_contract_address_hash} when not is_nil(created_contract_address_hash) -> false
+      :error -> true
+    end
+  end
+
+  defp put_internal_transactions_indexed_at?(_, _), do: false
 end

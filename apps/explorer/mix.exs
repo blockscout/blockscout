@@ -90,6 +90,7 @@ defmodule Explorer.Mixfile do
       {:math, "~> 0.3.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:mox, "~> 0.4", only: [:test]},
+      {:poison, "~> 3.1", only: [:test]},
       {:postgrex, ">= 0.0.0"},
       # For compatibility with `prometheus_process_collector`, which hasn't been updated yet
       {:prometheus, "~> 4.0", override: true},
@@ -111,7 +112,7 @@ defmodule Explorer.Mixfile do
       {:spandex_ecto, "~> 0.4.0"},
       # Attach `:prometheus_ecto` to `:ecto`
       {:telemetry, "~> 0.2.0"},
-      # `Timex.Duration` for `Explorer.Chain.average_block_time/0`
+      # `Timex.Duration` for `Explorer.Counters.AverageBlockTime.average_block_time/0`
       {:timex, "~> 3.4"}
     ]
   end

@@ -12,7 +12,7 @@ defmodule EthereumJSONRPC.Case.Parity.HTTPWebSocket do
       transport_options: [
         http: EthereumJSONRPC.HTTP.HTTPoison,
         http_options: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :ethereum_jsonrpc]],
-        url: "http://18.207.247.30:8545"
+        url: "http://3.85.253.242:8545"
       ],
       variant: EthereumJSONRPC.Parity
     )

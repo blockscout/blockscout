@@ -15,7 +15,6 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.Block.Transform
 
   @type address_hash_to_fetched_balance_block_number :: %{String.t() => Block.block_number()}
-  @type transaction_hash_to_block_number :: %{String.t() => Block.block_number()}
 
   @type t :: %__MODULE__{}
 
@@ -26,7 +25,6 @@ defmodule Indexer.Block.Fetcher do
               t,
               %{
                 address_hash_to_fetched_balance_block_number: address_hash_to_fetched_balance_block_number,
-                transaction_hash_to_block_number_option: transaction_hash_to_block_number,
                 addresses: Import.Runner.options(),
                 address_coin_balances: Import.Runner.options(),
                 address_token_balances: Import.Runner.options(),
@@ -161,15 +159,12 @@ defmodule Indexer.Block.Fetcher do
     {address_hash_to_fetched_balance_block_number, import_options} =
       pop_address_hash_to_fetched_balance_block_number(options)
 
-    transaction_hash_to_block_number = get_transaction_hash_to_block_number(import_options)
-
     options_with_broadcast =
       Map.merge(
         import_options,
         %{
           address_hash_to_fetched_balance_block_number: address_hash_to_fetched_balance_block_number,
-          broadcast: broadcast,
-          transaction_hash_to_block_number: transaction_hash_to_block_number
+          broadcast: broadcast
         }
       )
 
@@ -246,14 +241,6 @@ defmodule Indexer.Block.Fetcher do
     address_hash_to_fetched_balance_block_number = Map.new(address_hash_fetched_balance_block_number_pairs)
 
     {address_hash_to_fetched_balance_block_number, import_options}
-  end
-
-  defp get_transaction_hash_to_block_number(options) do
-    options
-    |> get_in([:transactions, :params, Access.all()])
-    |> Enum.into(%{}, fn %{block_number: block_number, hash: hash, index: index} ->
-      {hash, %{block_number: block_number, index: index}}
-    end)
   end
 
   defp pop_hash_fetched_balance_block_number(

@@ -136,4 +136,28 @@ defmodule BlockScoutWeb.Tokens.OverviewViewTest do
       refute OverviewView.smart_contract_with_read_only_functions?(token)
     end
   end
+
+  describe "total_supply_usd/1" do
+    test "returns the correct total supply value" do
+      token =
+        :token
+        |> build(decimals: Decimal.new(0), total_supply: Decimal.new(20))
+        |> Map.put(:usd_value, Decimal.new(10))
+
+      result = OverviewView.total_supply_usd(token)
+
+      assert Decimal.cmp(result, Decimal.new(200)) == :eq
+    end
+
+    test "takes decimals into account" do
+      token =
+        :token
+        |> build(decimals: Decimal.new(1), total_supply: Decimal.new(20))
+        |> Map.put(:usd_value, Decimal.new(10))
+
+      result = OverviewView.total_supply_usd(token)
+
+      assert Decimal.cmp(result, Decimal.new(20)) == :eq
+    end
+  end
 end

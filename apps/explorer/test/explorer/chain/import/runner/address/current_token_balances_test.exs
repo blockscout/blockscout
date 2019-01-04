@@ -63,33 +63,5 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
       assert current_token_balance.block_number == 2
       assert current_token_balance.value == Decimal.new(200)
     end
-
-    test "considers the last block when there are duplicated params", %{
-      address: address,
-      token: token,
-      insert_options: insert_options
-    } do
-      changes = [
-        %{
-          address_hash: address.hash,
-          block_number: 4,
-          token_contract_address_hash: token.contract_address_hash,
-          value: Decimal.new(200)
-        },
-        %{
-          address_hash: address.hash,
-          block_number: 1,
-          token_contract_address_hash: token.contract_address_hash,
-          value: Decimal.new(100)
-        }
-      ]
-
-      CurrentTokenBalances.insert(Repo, changes, insert_options)
-
-      current_token_balance = Repo.get_by(CurrentTokenBalance, address_hash: address.hash)
-
-      assert current_token_balance.block_number == 4
-      assert current_token_balance.value == Decimal.new(200)
-    end
   end
 end

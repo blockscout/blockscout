@@ -17,6 +17,8 @@ defmodule Explorer.Chain.ImportTest do
     Transaction
   }
 
+  alias Explorer.Chain.Events.Subscriber
+
   @moduletag :capturelog
 
   doctest Import
@@ -295,11 +297,17 @@ defmodule Explorer.Chain.ImportTest do
                   }
                 ],
                 transactions: [
-                  %Hash{
-                    byte_count: 32,
-                    bytes:
-                      <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57,
-                        101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
+                  %Transaction{
+                    block_number: 37,
+                    index: 0,
+                    hash: %Hash{
+                      byte_count: 32,
+                      bytes:
+                        <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57,
+                          101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
+                    },
+                    # because there are successful, non-contract-creation token transfer
+                    internal_transactions_indexed_at: %DateTime{}
                   }
                 ],
                 tokens: [
@@ -451,12 +459,6 @@ defmodule Explorer.Chain.ImportTest do
       assert {:ok, %{}} == Import.all(%{})
     end
 
-    test "publishes data to subscribers on insert" do
-      Chain.subscribe_to_events(:logs)
-      Import.all(@import_data)
-      assert_received {:chain_event, :logs, :realtime, [%Log{}]}
-    end
-
     test "with invalid data" do
       invalid_import_data =
         update_in(@import_data, [:internal_transactions, :params, Access.at(0)], &Map.delete(&1, :call_type))
@@ -466,39 +468,33 @@ defmodule Explorer.Chain.ImportTest do
     end
 
     test "publishes addresses with updated fetched_coin_balance data to subscribers on insert" do
-      Chain.subscribe_to_events(:addresses)
+      Subscriber.to(:addresses, :realtime)
       Import.all(@import_data)
       assert_received {:chain_event, :addresses, :realtime, [%Address{}, %Address{}, %Address{}]}
     end
 
     test "publishes block data to subscribers on insert" do
-      Chain.subscribe_to_events(:blocks)
+      Subscriber.to(:blocks, :realtime)
       Import.all(@import_data)
       assert_received {:chain_event, :blocks, :realtime, [%Block{}]}
     end
 
     test "publishes internal_transaction data to subscribers on insert" do
-      Chain.subscribe_to_events(:internal_transactions)
+      Subscriber.to(:internal_transactions, :realtime)
       Import.all(@import_data)
 
       assert_received {:chain_event, :internal_transactions, :realtime,
                        [%{transaction_hash: _, index: _}, %{transaction_hash: _, index: _}]}
     end
 
-    test "publishes log data to subscribers on insert" do
-      Chain.subscribe_to_events(:logs)
+    test "publishes transactions data to subscribers on insert" do
+      Subscriber.to(:transactions, :realtime)
       Import.all(@import_data)
-      assert_received {:chain_event, :logs, :realtime, [%Log{}]}
-    end
-
-    test "publishes transaction hashes data to subscribers on insert" do
-      Chain.subscribe_to_events(:transactions)
-      Import.all(@import_data)
-      assert_received {:chain_event, :transactions, :realtime, [%Hash{}]}
+      assert_received {:chain_event, :transactions, :realtime, [%Transaction{}]}
     end
 
     test "publishes token_transfers data to subscribers on insert" do
-      Chain.subscribe_to_events(:token_transfers)
+      Subscriber.to(:token_transfers, :realtime)
 
       Import.all(@import_data)
 
@@ -508,9 +504,9 @@ defmodule Explorer.Chain.ImportTest do
     test "does not broadcast if broadcast option is false" do
       non_broadcast_data = Map.merge(@import_data, %{broadcast: false})
 
-      Chain.subscribe_to_events(:logs)
+      Subscriber.to(:addresses, :realtime)
       Import.all(non_broadcast_data)
-      refute_received {:chain_event, :logs, :realtime, [%Log{}]}
+      refute_received {:chain_event, :addresses, :realtime, [%Address{}]}
     end
 
     test "updates address with contract code" do

@@ -60,6 +60,16 @@ defmodule Indexer.TokenBalances do
     {:ok, fetched_token_balances}
   end
 
+  def to_address_current_token_balances(address_token_balances) when is_list(address_token_balances) do
+    address_token_balances
+    |> Enum.group_by(fn %{address_hash: address_hash, token_contract_address_hash: token_contract_address_hash} ->
+      {address_hash, token_contract_address_hash}
+    end)
+    |> Enum.map(fn {_, grouped_address_token_balances} ->
+      Enum.max_by(grouped_address_token_balances, fn %{block_number: block_number} -> block_number end)
+    end)
+  end
+
   defp traced_fetch_token_balance_callback(%Spandex.Span{} = span) do
     fn balance ->
       try do

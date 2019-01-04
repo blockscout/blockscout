@@ -38,17 +38,12 @@ defmodule Explorer.Chain do
     Wei
   }
 
-  alias Explorer.Chain.Block.EmissionReward
+  alias Explorer.Chain.Block.{EmissionReward, Reward}
   alias Explorer.Chain.Import.Runner
+  alias Explorer.Counters.AddressesWithBalanceCounter
   alias Explorer.{PagingOptions, Repo}
 
-  alias Explorer.Counters.{
-    AddressesWithBalanceCounter,
-    TokenHoldersCounter
-  }
-
   alias Dataloader.Ecto, as: DataloaderEcto
-  alias Timex.Duration
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -64,6 +59,7 @@ defmodule Explorer.Chain do
           :addresses
           | :address_coin_balances
           | :blocks
+          | :block_rewards
           | :exchange_rate
           | :internal_transactions
           | :logs
@@ -175,7 +171,8 @@ defmodule Explorer.Chain do
 
   @doc """
   Fetches the transactions related to the given address, including transactions
-  that only have the address in the `token_transfers` related table.
+  that only have the address in the `token_transfers` related table and rewards
+  for block validation.
 
   This query is divided into multiple subqueries intentionally in order to
   improve the listing performance.
@@ -197,8 +194,10 @@ defmodule Explorer.Chain do
       the `block_number` and `index` that are passed.
 
   """
-  @spec address_to_transactions(Address.t(), [paging_options | necessity_by_association_option]) :: [Transaction.t()]
-  def address_to_transactions(
+  @spec address_to_transactions_with_rewards(Address.t(), [paging_options | necessity_by_association_option]) :: [
+          Transaction.t()
+        ]
+  def address_to_transactions_with_rewards(
         %Address{hash: %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash},
         options \\ []
       )
@@ -243,15 +242,27 @@ defmodule Explorer.Chain do
           _ -> [from_address_query, to_address_query, created_contract_query]
         end
 
-    result = Enum.flat_map(queries, &Repo.all/1)
+    rewards_list =
+      if Application.get_env(:block_scout_web, BlockScoutWeb.Chain)[:has_emission_funds] do
+        Reward.fetch_emission_rewards_tuples(address_hash, paging_options)
+      else
+        []
+      end
 
-    sorted_result =
-      result
-      |> Enum.uniq()
-      |> Enum.sort_by(fn x -> {-x.block_number, -x.index} end)
-      |> Enum.take(paging_options.page_size)
+    queries
+    |> Stream.flat_map(&Repo.all/1)
+    |> Stream.uniq()
+    |> Stream.concat(rewards_list)
+    |> Enum.sort_by(fn item ->
+      case item do
+        {%Reward{} = emission_reward, _} ->
+          {-emission_reward.block.number, 1}
 
-    sorted_result
+        item ->
+          {-item.block_number, -item.index}
+      end
+    end)
+    |> Enum.take(paging_options.page_size)
   end
 
   @doc """
@@ -273,31 +284,6 @@ defmodule Explorer.Chain do
     |> Transaction.preload_token_transfers(address_hash)
     |> handle_paging_options(paging_options)
     |> Repo.all()
-  end
-
-  @doc """
-  The average time it took to mine/validate the last <= 100 `t:Explorer.Chain.Block.t/0`
-  """
-  @spec average_block_time :: %Timex.Duration{}
-  def average_block_time do
-    {:ok, %Postgrex.Result{rows: [[%Postgrex.Interval{months: 0, days: days, secs: seconds}]]}} =
-      SQL.query(
-        Repo,
-        """
-          SELECT coalesce(avg(difference), interval '0 seconds')
-          FROM (
-            SELECT b.timestamp - lag(b.timestamp) over (order by b.timestamp) as difference
-            FROM (SELECT * FROM blocks ORDER BY number DESC LIMIT 101) b
-            LIMIT 100 OFFSET 1
-          ) t
-        """,
-        []
-      )
-
-    hours = days * 24
-    minutes = 0
-    microseconds = 0
-    Duration.from_clock({hours, minutes, seconds, microseconds})
   end
 
   @doc """
@@ -937,6 +923,24 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Finds blocks without a reward associated, up to the specified limit
+  """
+  def get_blocks_without_reward(limit \\ 250) do
+    Block.get_blocks_without_reward()
+    |> limit(^limit)
+    |> Repo.all()
+  end
+
+  @doc """
+  Finds all transactions of a certain block number
+  """
+  def get_transactions_of_block_number(block_number) do
+    block_number
+    |> Transaction.transactions_with_block_number()
+    |> Repo.all()
+  end
+
+  @doc """
   Finds all Blocks validated by the address given.
 
     ## Options
@@ -1500,35 +1504,6 @@ defmodule Explorer.Chain do
   @spec string_to_transaction_hash(String.t()) :: {:ok, Hash.t()} | :error
   def string_to_transaction_hash(string) when is_binary(string) do
     Hash.Full.cast(string)
-  end
-
-  @doc """
-  Subscribes the caller process to a specified subset of chain-related events.
-
-  ## Handling An Event
-
-  A subscribed process should handle an event message. The message is in the
-  format of a three-element tuple.
-
-  * Element 0 - `:chain_event`
-  * Element 1 - event subscribed to
-  * Element 2 - event data in list form
-
-  # A new block event in a GenServer
-  def handle_info({:chain_event, :blocks, blocks}, state) do
-  # Do something with the blocks
-  end
-
-  ## Example
-
-  iex> Explorer.Chain.subscribe_to_events(:blocks)
-  :ok
-  """
-  @spec subscribe_to_events(chain_event()) :: :ok
-  def subscribe_to_events(event_type)
-      when event_type in ~w(addresses address_coin_balances blocks exchange_rate internal_transactions logs token_transfers transactions)a do
-    Registry.register(Registry.ChainEvents, event_type, [])
-    :ok
   end
 
   @doc """
@@ -2125,12 +2100,9 @@ defmodule Explorer.Chain do
 
   @spec count_token_holders_from_token_hash(Hash.Address.t()) :: non_neg_integer()
   def count_token_holders_from_token_hash(contract_address_hash) do
-    TokenHoldersCounter.fetch(contract_address_hash)
-  end
+    query = from(ctb in CurrentTokenBalance.token_holders_query(contract_address_hash), select: fragment("COUNT(*)"))
 
-  @spec token_holders_counter_consolidation_enabled? :: boolean()
-  def token_holders_counter_consolidation_enabled? do
-    TokenHoldersCounter.enable_consolidation?()
+    Repo.one!(query)
   end
 
   @spec address_to_unique_tokens(Hash.Address.t(), [paging_options]) :: [TokenTransfer.t()]

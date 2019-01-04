@@ -108,7 +108,7 @@ defmodule Indexer.TokenBalance.Fetcher do
     import_params = %{
       addresses: %{params: addresses_params},
       address_token_balances: %{params: token_balances_params},
-      address_current_token_balances: %{params: token_balances_params},
+      address_current_token_balances: %{params: TokenBalances.to_address_current_token_balances(token_balances_params)},
       timeout: :infinity
     }
 

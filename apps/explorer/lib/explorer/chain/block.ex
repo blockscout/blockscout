@@ -100,6 +100,15 @@ defmodule Explorer.Chain.Block do
     |> unique_constraint(:hash, name: :blocks_pkey)
   end
 
+  def get_blocks_without_reward(query \\ __MODULE__) do
+    from(
+      b in query,
+      left_join: r in Reward,
+      on: [block_hash: b.hash],
+      where: is_nil(r.block_hash)
+    )
+  end
+
   @doc """
   Adds to the given block's query a `where` with conditions to filter by the type of block;
   `Uncle`, `Reorg`, or `Block`.
