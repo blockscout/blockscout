@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias BlockScoutWeb.API.RPC.LogsController
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{Log, Transaction}
 
   describe "getLogs" do
     test "without fromBlock, toBlock, address, and topic{x}", %{conn: conn} do
@@ -749,10 +749,13 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
     end
   end
 
-  defp get_topics(log) do
-    log
-    |> Map.take([:first_topic, :second_topic, :third_topic, :fourth_topic])
-    |> Map.values()
+  defp get_topics(%Log{
+         first_topic: first_topic,
+         second_topic: second_topic,
+         third_topic: third_topic,
+         fourth_topic: fourth_topic
+       }) do
+    [first_topic, second_topic, third_topic, fourth_topic]
   end
 
   defp integer_to_hex(integer), do: Integer.to_string(integer, 16)
