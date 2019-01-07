@@ -10,6 +10,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Block, Import, InternalTransaction, Transaction}
+  alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import.Runner
 
   @behaviour Runner
@@ -64,6 +65,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     end)
     |> Multi.run(:lose_consenus, fn repo, _ ->
       lose_consensus(repo, changes_list, insert_options)
+    end)
+    |> Multi.run(:remove_rewards, fn repo, _ ->
+      delete_rewards(repo, changes_list, insert_options)
     end)
     |> Multi.run(:blocks, fn repo, _ ->
       insert(repo, changes_list, insert_options)
@@ -273,6 +277,34 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     rescue
       postgrex_error in Postgrex.Error ->
         {:error, %{exception: postgrex_error, consensus_block_numbers: ordered_consensus_block_number}}
+    end
+  end
+
+  # `block_rewards` are linked to `blocks.hash`, but fetched by `blocks.number`, so when a block with the same number is
+  # inserted, the old block rewards need to be deleted, so that the old and new rewards aren't combined.
+  defp delete_rewards(repo, blocks_changes, %{timeout: timeout}) do
+    {hashes, numbers} =
+      Enum.reduce(blocks_changes, {[], []}, fn
+        %{consensus: false, hash: hash}, {acc_hashes, acc_numbers} ->
+          {[hash | acc_hashes], acc_numbers}
+
+        %{consensus: true, number: number}, {acc_hashes, acc_numbers} ->
+          {acc_hashes, [number | acc_numbers]}
+      end)
+
+    query =
+      from(reward in Reward,
+        inner_join: block in assoc(reward, :block),
+        where: block.hash in ^hashes or block.number in ^numbers
+      )
+
+    try do
+      {count, nil} = repo.delete_all(query, timeout: timeout)
+
+      {:ok, count}
+    rescue
+      postgrex_error in Postgrex.Error ->
+        {:error, %{exception: postgrex_error, blocks_changes: blocks_changes}}
     end
   end
 
