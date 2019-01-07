@@ -105,7 +105,7 @@ defmodule Explorer.Chain.Block do
       b in query,
       left_join: r in Reward,
       on: [block_hash: b.hash],
-      where: is_nil(r.block_hash)
+      where: is_nil(r.block_hash) and b.consensus == true
     )
   end
 
