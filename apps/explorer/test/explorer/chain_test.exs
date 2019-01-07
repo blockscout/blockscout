@@ -1315,6 +1315,28 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "get_blocks_without_reward/1" do
+    test "includes consensus blocks" do
+      %Block{hash: consensus_hash} = insert(:block, consensus: true)
+
+      assert [%Block{hash: ^consensus_hash}] = Chain.get_blocks_without_reward()
+    end
+
+    test "does not include consensus block that has a reward" do
+      %Block{hash: consensus_hash, miner_hash: miner_hash} = insert(:block, consensus: true)
+      insert(:reward, address_hash: miner_hash, block_hash: consensus_hash)
+
+      assert [] = Chain.get_blocks_without_reward()
+    end
+
+    # https://github.com/poanetwork/blockscout/issues/1310 regression test
+    test "does not include non-consensus blocks" do
+      insert(:block, consensus: false)
+
+      assert [] = Chain.get_blocks_without_reward()
+    end
+  end
+
   describe "get_blocks_validated_by_address/2" do
     test "returns nothing when there are no blocks" do
       address = insert(:address)
