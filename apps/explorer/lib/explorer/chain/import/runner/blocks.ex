@@ -129,7 +129,10 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           transaction.hash,
           type(^inserted_at, transaction.inserted_at),
           type(^updated_at, transaction.updated_at)
-        ]
+        ],
+        # order so that row ShareLocks are grabbed in a consistent order with
+        # `Explorer.Chain.Import.Runner.Transactions.insert`
+        order_by: transaction.hash
       )
 
     {select_sql, parameters} = SQL.to_sql(:all, repo, query)
