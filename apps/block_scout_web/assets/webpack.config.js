@@ -3,8 +3,6 @@ const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const glob = require("glob");
 
-const viewScripts = glob.sync('./js/view_specific/**/*.js');
-
 function transpileViewScript(file) {
   return {
     entry: file,
@@ -25,8 +23,6 @@ function transpileViewScript(file) {
     }
   }
 };
-
-
 
 const appJs =
   {
@@ -82,4 +78,6 @@ const appJs =
     ]
   }
 
-module.exports = viewScripts.map(transpileViewScript).concat(appJs);
+const viewScripts = glob.sync('./js/view_specific/**/*.js').map(transpileViewScript);
+
+module.exports = viewScripts.concat(appJs);
