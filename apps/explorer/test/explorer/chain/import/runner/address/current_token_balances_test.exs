@@ -38,7 +38,11 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
       assert current_token_balances == 1
     end
 
-    test "considers the last block upserting", %{address: address, token: token, insert_options: insert_options} do
+    test "updates when the new block number is greater", %{
+      address: address,
+      token: token,
+      insert_options: insert_options
+    } do
       insert(
         :address_current_token_balance,
         address: address,
@@ -53,6 +57,36 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
           block_number: 2,
           token_contract_address_hash: token.contract_address_hash,
           value: Decimal.new(200)
+        }
+      ]
+
+      CurrentTokenBalances.insert(Repo, changes, insert_options)
+
+      current_token_balance = Repo.get_by(CurrentTokenBalance, address_hash: address.hash)
+
+      assert current_token_balance.block_number == 2
+      assert current_token_balance.value == Decimal.new(200)
+    end
+
+    test "ignores when the new block number is lesser", %{
+      address: address,
+      token: token,
+      insert_options: insert_options
+    } do
+      insert(
+        :address_current_token_balance,
+        address: address,
+        block_number: 2,
+        token_contract_address_hash: token.contract_address_hash,
+        value: 200
+      )
+
+      changes = [
+        %{
+          address_hash: address.hash,
+          block_number: 1,
+          token_contract_address_hash: token.contract_address_hash,
+          value: Decimal.new(100)
         }
       ]
 
