@@ -53,6 +53,11 @@ defmodule Explorer.Chain do
   @type association :: atom()
 
   @typedoc """
+  The max `t:Explorer.Chain.Block.block_number/0` for `consensus` `true` `t:Explorer.Chain.Block.t/0`s.
+  """
+  @type block_height :: Block.block_number()
+
+  @typedoc """
   Event type where data is broadcasted whenever data is inserted from chain indexing.
   """
   @type chain_event ::
@@ -415,13 +420,47 @@ defmodule Explorer.Chain do
 
   @doc """
   How many blocks have confirmed `block` based on the current `max_block_number`
-  """
-  @spec confirmations(Block.t(), [{:max_block_number, Block.block_number()}]) :: non_neg_integer()
-  def confirmations(%Block{number: number}, named_arguments) when is_list(named_arguments) do
-    max_block_number = Keyword.fetch!(named_arguments, :max_block_number)
 
-    max_block_number - number
+  A consensus block's number of confirmations is the difference between its number and the current block height.
+
+      iex> block = insert(:block, number: 1)
+      iex> Explorer.Chain.confirmations(block, block_height: 2)
+      {:ok, 1}
+
+  The newest block at the block height has no confirmations.
+
+      iex> block = insert(:block, number: 1)
+      iex> Explorer.Chain.confirmations(block, block_height: 1)
+      {:ok, 0}
+
+  A non-consensus block has no confirmations and is orphaned even if there are child blocks of it on an orphaned chain.
+
+      iex> parent_block = insert(:block, consensus: false, number: 1)
+      iex> insert(
+      ...>   :block,
+      ...>   parent_hash: parent_block.hash,
+      ...>   consensus: false,
+      ...>   number: parent_block.number + 1
+      ...> )
+      iex> Explorer.Chain.confirmations(parent_block, block_height: 3)
+      {:error, :non_consensus}
+
+  If you calculate the block height and then get a newer block, the confirmations will be `0` instead of negative.
+
+      iex> block = insert(:block, number: 1)
+      iex> Explorer.Chain.confirmations(block, block_height: 0)
+      {:ok, 0}
+  """
+  @spec confirmations(Block.t(), [{:block_height, block_height()}]) ::
+          {:ok, non_neg_integer()} | {:error, :non_consensus}
+
+  def confirmations(%Block{consensus: true, number: number}, named_arguments) when is_list(named_arguments) do
+    max_consensus_block_number = Keyword.fetch!(named_arguments, :block_height)
+
+    {:ok, max(max_consensus_block_number - number, 0)}
   end
+
+  def confirmations(%Block{consensus: false}, _), do: {:error, :non_consensus}
 
   @doc """
   Creates an address.
@@ -1164,43 +1203,78 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Aggregate of consensus block numbers.
+  Max consensus block numbers.
 
-  If blocks are skipped and inserted out of number order, the `:max` and `:min` numbers are still returned
+  If blocks are skipped and inserted out of number order, the max number is still returned
 
       iex> insert(:block, number: 2)
       iex> insert(:block, number: 1)
-      iex> Explorer.Chain.consensus_block_number(:min)
-      {:ok, 1}
-      iex> Explorer.Chain.consensus_block_number(:max)
+      iex> Explorer.Chain.max_consensus_block_number()
       {:ok, 2}
 
   Non-consensus blocks are ignored
 
       iex> insert(:block, number: 3, consensus: false)
       iex> insert(:block, number: 2, consensus: true)
-      iex> insert(:block, number: 1, consensus: false)
-      iex> Explorer.Chain.consensus_block_number(:min)
-      {:ok, 2}
-      iex> Explorer.Chain.consensus_block_number(:max)
+      iex> Explorer.Chain.max_consensus_block_number()
       {:ok, 2}
 
   If there are no blocks, `{:error, :not_found}` is returned
 
-      iex> Explorer.Chain.consensus_block_number(:min)
-      {:error, :not_found}
-      iex> Explorer.Chain.consensus_block_number(:max)
+      iex> Explorer.Chain.max_consensus_block_number()
       {:error, :not_found}
 
   """
-  def consensus_block_number(aggregate) do
+  @spec max_consensus_block_number() :: {:ok, Block.block_number()} | {:error, :not_found}
+  def max_consensus_block_number do
     Block
     |> where(consensus: true)
-    |> Repo.aggregate(aggregate, :number)
+    |> Repo.aggregate(:max, :number)
     |> case do
       nil -> {:error, :not_found}
       number -> {:ok, number}
     end
+  end
+
+  @doc """
+  The height of the chain.
+
+      iex> insert(:block, number: 0)
+      iex> Explorer.Chain.block_height()
+      0
+      iex> insert(:block, number: 1)
+      iex> Explorer.Chain.block_height()
+      1
+
+  If there are no blocks, then the `t:block_height/0` is `0`, unlike `max_consensus_block_chain/0` where it is not found.
+
+      iex> Explorer.Chain.block_height()
+      0
+      iex> Explorer.Chain.max_consensus_block_number()
+      {:error, :not_found}
+
+  It is not possible to differentiate only the genesis block (`number` `0`) and no blocks.  Use
+  `max_consensus_block_chain/0` if you need to differentiate those two scenarios.
+
+      iex> Explorer.Chain.block_height()
+      0
+      iex> insert(:block, number: 0)
+      iex> Explorer.Chain.block_height()
+      0
+
+  Non-consensus blocks are ignored.
+
+      iex> insert(:block, number: 2, consensus: false)
+      iex> insert(:block, number: 1, consensus: true)
+      iex> Explorer.Chain.block_height()
+      1
+
+  """
+  @spec block_height() :: block_height()
+  def block_height do
+    query = from(block in Block, select: coalesce(max(block.number), 0), where: block.consensus == true)
+
+    Repo.one!(query)
   end
 
   @doc """

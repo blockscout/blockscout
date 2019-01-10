@@ -39,7 +39,7 @@ defmodule BlockScoutWeb.TransactionLogController do
         conn,
         "index.html",
         logs: logs,
-        max_block_number: max_block_number(),
+        block_height: Chain.block_height(),
         show_token_transfers: Chain.transaction_has_token_transfers?(transaction_hash),
         next_page_params: next_page_params(next_page, logs, params),
         transaction: transaction,
@@ -57,13 +57,6 @@ defmodule BlockScoutWeb.TransactionLogController do
         |> put_status(404)
         |> put_view(TransactionView)
         |> render("not_found.html", transaction_hash: transaction_hash_string)
-    end
-  end
-
-  defp max_block_number do
-    case Chain.consensus_block_number(:max) do
-      {:ok, number} -> number
-      {:error, :not_found} -> 0
     end
   end
 end

@@ -82,11 +82,7 @@ defmodule BlockScoutWeb.BlockTransactionController do
   defp block_above_tip?("0x" <> _), do: nil
 
   defp block_above_tip?(block_hash_or_number) when is_binary(block_hash_or_number) do
-    with {:ok, max_block_number} <- Chain.consensus_block_number(:max) do
-      {block_number, _} = Integer.parse(block_hash_or_number)
-      block_number > max_block_number
-    else
-      _ -> true
-    end
+    {block_number, ""} = Integer.parse(block_hash_or_number)
+    block_number > Chain.block_height()
   end
 end

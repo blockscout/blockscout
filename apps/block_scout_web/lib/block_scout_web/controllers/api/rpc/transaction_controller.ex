@@ -7,10 +7,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
     with {:txhash_param, {:ok, txhash_param}} <- fetch_txhash(params),
          {:format, {:ok, transaction_hash}} <- to_transaction_hash(txhash_param),
          {:transaction, {:ok, transaction}} <- transaction_from_hash(transaction_hash) do
-      max_block_number = max_block_number()
-
       logs = Chain.transaction_to_logs(transaction)
-      render(conn, :gettxinfo, %{transaction: transaction, max_block_number: max_block_number, logs: logs})
+      render(conn, :gettxinfo, %{transaction: transaction, block_height: Chain.block_height(), logs: logs})
     else
       {:transaction, :error} ->
         render(conn, :error, error: "Transaction not found")
@@ -79,13 +77,6 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
       error
     else
       _ -> ""
-    end
-  end
-
-  defp max_block_number do
-    case Chain.consensus_block_number(:max) do
-      {:ok, number} -> number
-      {:error, :not_found} -> 0
     end
   end
 end

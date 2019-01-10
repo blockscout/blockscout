@@ -43,7 +43,7 @@ defmodule Explorer.Etherscan do
         %Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash,
         options \\ @default_options
       ) do
-    case Chain.consensus_block_number(:max) do
+    case Chain.max_consensus_block_number() do
       {:ok, max_block_number} ->
         merged_options = Map.merge(@default_options, options)
         list_transactions(address_hash, max_block_number, merged_options)
@@ -152,10 +152,10 @@ defmodule Explorer.Etherscan do
         contract_address_hash,
         options \\ @default_options
       ) do
-    case Chain.consensus_block_number(:max) do
-      {:ok, max_block_number} ->
+    case Chain.max_consensus_block_number() do
+      {:ok, block_height} ->
         merged_options = Map.merge(@default_options, options)
-        list_token_transfers(address_hash, contract_address_hash, max_block_number, merged_options)
+        list_token_transfers(address_hash, contract_address_hash, block_height, merged_options)
 
       _ ->
         []
@@ -319,7 +319,7 @@ defmodule Explorer.Etherscan do
     amount
   )a
 
-  defp list_token_transfers(address_hash, contract_address_hash, max_block_number, options) do
+  defp list_token_transfers(address_hash, contract_address_hash, block_height, options) do
     query =
       from(
         t in Transaction,
@@ -343,7 +343,7 @@ defmodule Explorer.Etherscan do
             block_hash: b.hash,
             block_number: b.number,
             block_timestamp: b.timestamp,
-            confirmations: fragment("? - ?", ^max_block_number, t.block_number),
+            confirmations: fragment("? - ?", ^block_height, t.block_number),
             token_id: tt.token_id,
             token_name: tkn.name,
             token_symbol: tkn.symbol,

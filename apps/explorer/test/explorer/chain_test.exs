@@ -592,21 +592,21 @@ defmodule Explorer.ChainTest do
   end
 
   describe "confirmations/1" do
-    test "with block.number == max_block_number " do
+    test "with block.number == block_height " do
       block = insert(:block)
-      {:ok, max_block_number} = Chain.consensus_block_number(:max)
+      block_height = Chain.block_height()
 
-      assert block.number == max_block_number
-      assert Chain.confirmations(block, max_block_number: max_block_number) == 0
+      assert block.number == block_height
+      assert {:ok, 0} = Chain.confirmations(block, block_height: block_height)
     end
 
-    test "with block.number < max_block_number" do
+    test "with block.number < block_height" do
       block = insert(:block)
-      max_block_number = block.number + 2
+      block_height = block.number + 2
 
-      assert block.number < max_block_number
-
-      assert Chain.confirmations(block, max_block_number: max_block_number) == max_block_number - block.number
+      assert block.number < block_height
+      assert {:ok, confirmations} = Chain.confirmations(block, block_height: block_height)
+      assert confirmations == block_height - block.number
     end
   end
 
