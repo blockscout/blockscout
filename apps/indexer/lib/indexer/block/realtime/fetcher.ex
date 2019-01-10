@@ -23,7 +23,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   @behaviour Block.Fetcher
 
   @enforce_keys ~w(block_fetcher)a
-  defstruct ~w(block_fetcher last_block_number_received_timestamp subscription previous_number max_number_seen)a
+  defstruct ~w(block_fetcher  subscription previous_number max_number_seen)a
 
   @type t :: %__MODULE__{
           block_fetcher: %Block.Fetcher{
@@ -33,7 +33,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
             receipts_batch_size: pos_integer(),
             receipts_concurrency: pos_integer()
           },
-          last_block_number_received_timestamp: pos_integer() | nil,
           subscription: Subscription.t(),
           previous_number: pos_integer() | nil,
           max_number_seen: pos_integer() | nil
@@ -79,7 +78,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
     start_fetch_and_import(number, block_fetcher, previous_number, max_number_seen)
 
     new_max_number = new_max_number(number, max_number_seen)
-    last_block_number_received_timestamp = System.system_time(:second)
 
     schedule_polling()
 
@@ -87,8 +85,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
      %{
        state
        | previous_number: number,
-         max_number_seen: new_max_number,
-         last_block_number_received_timestamp: last_block_number_received_timestamp
+         max_number_seen: new_max_number
      }}
   end
 
@@ -97,19 +94,19 @@ defmodule Indexer.Block.Realtime.Fetcher do
         :poll_latest_block_number,
         %__MODULE__{
           block_fetcher: %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher,
-          last_block_number_received_timestamp: last_block_number_timestamp,
           previous_number: previous_number,
           max_number_seen: max_number_seen
         } = state
       ) do
-    block_number_timestamp =
+    {number, new_max_number} =
       case EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments) do
         {:ok, number} ->
           start_fetch_and_import(number, block_fetcher, previous_number, max_number_seen)
-          System.system_time(:second)
+
+          {number, new_max_number(number, max_number_seen)}
 
         {:error, _} ->
-          last_block_number_timestamp
+          {previous_number, max_number_seen}
       end
 
     schedule_polling()
@@ -117,7 +114,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
     {:noreply,
      %{
        state
-       | last_block_number_received_timestamp: block_number_timestamp
+       | previous_number: number,
+         max_number_seen: new_max_number
      }}
   end
 
