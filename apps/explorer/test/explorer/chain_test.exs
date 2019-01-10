@@ -594,7 +594,7 @@ defmodule Explorer.ChainTest do
   describe "confirmations/1" do
     test "with block.number == max_block_number " do
       block = insert(:block)
-      {:ok, max_block_number} = Chain.max_block_number()
+      {:ok, max_block_number} = Chain.consensus_block_number(:max)
 
       assert block.number == max_block_number
       assert Chain.confirmations(block, max_block_number: max_block_number) == 0

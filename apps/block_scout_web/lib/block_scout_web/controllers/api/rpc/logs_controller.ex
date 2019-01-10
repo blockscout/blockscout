@@ -183,7 +183,7 @@ defmodule BlockScoutWeb.API.RPC.LogsController do
   defp to_block_number(params, param_key) do
     case params[param_key] do
       "latest" ->
-        Chain.max_block_number()
+        Chain.consensus_block_number(:max)
 
       _ ->
         to_integer(params, param_key)

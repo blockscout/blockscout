@@ -845,8 +845,8 @@ defmodule Explorer.Chain do
   """
   @spec indexed_ratio() :: float()
   def indexed_ratio do
-    with {:ok, min_block_number} <- min_block_number(),
-         {:ok, max_block_number} <- max_block_number() do
+    with {:ok, min_block_number} <- consensus_block_number(:min),
+         {:ok, max_block_number} <- consensus_block_number(:max) do
       indexed_blocks = max_block_number - min_block_number + 1
       indexed_blocks / (max_block_number + 1)
     else
@@ -1156,48 +1156,40 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  The maximum `t:Explorer.Chain.Block.t/0` `number`
+  Aggregate of consensus block numbers.
 
-  If blocks are skipped and inserted out of number order, the max number is still returned
+  If blocks are skipped and inserted out of number order, the `:max` and `:min` numbers are still returned
 
       iex> insert(:block, number: 2)
       iex> insert(:block, number: 1)
-      iex> Explorer.Chain.max_block_number()
+      iex> Explorer.Chain.consensus_block_number(:min)
+      {:ok, 1}
+      iex> Explorer.Chain.consensus_block_number(:max)
+      {:ok, 2}
+
+  Non-consensus blocks are ignored
+
+      iex> insert(:block, number: 3, consensus: false)
+      iex> insert(:block, number: 2, consensus: true)
+      iex> insert(:block, number: 1, consensus: false)
+      iex> Explorer.Chain.consensus_block_number(:min)
+      {:ok, 2}
+      iex> Explorer.Chain.consensus_block_number(:max)
       {:ok, 2}
 
   If there are no blocks, `{:error, :not_found}` is returned
 
-      iex> Explorer.Chain.max_block_number()
+      iex> Explorer.Chain.consensus_block_number(:min)
+      {:error, :not_found}
+      iex> Explorer.Chain.consensus_block_number(:max)
       {:error, :not_found}
 
   """
-  @spec max_block_number() :: {:ok, Block.block_number()} | {:error, :not_found}
-  def max_block_number do
-    case Repo.aggregate(Block, :max, :number) do
-      nil -> {:error, :not_found}
-      number -> {:ok, number}
-    end
-  end
-
-  @doc """
-  The minimum `t:Explorer.Chain.Block.t/0` `number` (used to show loading status while indexing)
-
-  If blocks are skipped and inserted out of number order, the min number is still returned
-
-      iex> insert(:block, number: 2)
-      iex> insert(:block, number: 1)
-      iex> Explorer.Chain.min_block_number()
-      {:ok, 1}
-
-  If there are no blocks, `{:error, :not_found}` is returned
-
-      iex> Explorer.Chain.min_block_number()
-      {:error, :not_found}
-
-  """
-  @spec min_block_number() :: {:ok, Block.block_number()} | {:error, :not_found}
-  def min_block_number do
-    case Repo.aggregate(Block, :min, :number) do
+  def consensus_block_number(aggregate) do
+    Block
+    |> where(consensus: true)
+    |> Repo.aggregate(aggregate, :number)
+    |> case do
       nil -> {:error, :not_found}
       number -> {:ok, number}
     end

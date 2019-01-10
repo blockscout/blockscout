@@ -122,7 +122,7 @@ defmodule Explorer.EtherscanTest do
 
       [found_transaction] = Etherscan.list_transactions(address.hash)
 
-      {:ok, max_block_number} = Chain.max_block_number()
+      {:ok, max_block_number} = Chain.consensus_block_number(:max)
       expected_confirmations = max_block_number - transaction.block_number
 
       assert found_transaction.confirmations == expected_confirmations
@@ -888,7 +888,7 @@ defmodule Explorer.EtherscanTest do
 
       [found_token_transfer] = Etherscan.list_token_transfers(token_transfer.from_address_hash, nil)
 
-      {:ok, max_block_number} = Chain.max_block_number()
+      {:ok, max_block_number} = Chain.consensus_block_number(:max)
       expected_confirmations = max_block_number - transaction.block_number
 
       assert found_token_transfer.confirmations == expected_confirmations

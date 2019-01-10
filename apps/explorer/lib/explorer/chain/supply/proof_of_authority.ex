@@ -41,7 +41,7 @@ defmodule Explorer.Chain.Supply.ProofOfAuthority do
   end
 
   defp block_height do
-    case Chain.max_block_number() do
+    case Chain.consensus_block_number(:max) do
       {:ok, height} -> height
       _ -> 0
     end

@@ -65,7 +65,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
   end
 
   defp max_block_number do
-    case Chain.max_block_number() do
+    case Chain.consensus_block_number(:max) do
       {:ok, number} -> number
       {:error, :not_found} -> 0
     end
