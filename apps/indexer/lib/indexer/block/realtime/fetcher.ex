@@ -18,6 +18,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Indexer.{AddressExtraction, Block, TokenBalances, Tracer}
   alias Indexer.Block.Realtime.{ConsensusEnsurer, TaskSupervisor}
 
+  @polling_period 2_000
+
   @behaviour Block.Fetcher
 
   @enforce_keys ~w(block_fetcher)a
@@ -77,12 +79,53 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
     new_max_number = new_max_number(number, max_number_seen)
 
-    {:noreply, %{state | previous_number: number, max_number_seen: new_max_number}}
+    schedule_polling()
+
+    {:noreply,
+     %{
+       state
+       | previous_number: number,
+         max_number_seen: new_max_number
+     }}
+  end
+
+  @impl GenServer
+  def handle_info(
+        :poll_latest_block_number,
+        %__MODULE__{
+          block_fetcher: %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher,
+          previous_number: previous_number,
+          max_number_seen: max_number_seen
+        } = state
+      ) do
+    {number, new_max_number} =
+      case EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments) do
+        {:ok, number} ->
+          start_fetch_and_import(number, block_fetcher, previous_number, max_number_seen)
+
+          {number, new_max_number(number, max_number_seen)}
+
+        {:error, _} ->
+          {previous_number, max_number_seen}
+      end
+
+    schedule_polling()
+
+    {:noreply,
+     %{
+       state
+       | previous_number: number,
+         max_number_seen: new_max_number
+     }}
   end
 
   defp new_max_number(number, nil), do: number
 
   defp new_max_number(number, max_number_seen), do: max(number, max_number_seen)
+
+  defp schedule_polling do
+    Process.send_after(self(), :poll_latest_block_number, @polling_period)
+  end
 
   @import_options ~w(address_hash_to_fetched_balance_block_number)a
 
