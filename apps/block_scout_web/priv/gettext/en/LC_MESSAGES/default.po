@@ -1123,7 +1123,7 @@ msgid "at"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/address_contract_view.ex:16
+#: lib/block_scout_web/views/address_contract_view.ex:20
 msgid "false"
 msgstr ""
 
@@ -1146,7 +1146,7 @@ msgid "total addresses with a balance"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/address_contract_view.ex:15
+#: lib/block_scout_web/views/address_contract_view.ex:19
 msgid "true"
 msgstr ""
 
