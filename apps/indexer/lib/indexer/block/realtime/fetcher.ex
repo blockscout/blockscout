@@ -23,7 +23,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   @behaviour Block.Fetcher
 
   @enforce_keys ~w(block_fetcher)a
-  defstruct ~w(block_fetcher  subscription previous_number max_number_seen)a
+  defstruct ~w(block_fetcher subscription previous_number max_number_seen)a
 
   @type t :: %__MODULE__{
           block_fetcher: %Block.Fetcher{
