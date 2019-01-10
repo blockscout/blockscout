@@ -921,11 +921,11 @@ defmodule Explorer.ChainTest do
         insert(:block, number: index)
       end
 
-      assert 0.5 == Chain.indexed_ratio()
+      assert Decimal.cmp(Chain.indexed_ratio(), Decimal.from_float(0.5)) == :eq
     end
 
     test "returns 0 if no blocks" do
-      assert 0 == Chain.indexed_ratio()
+      assert Decimal.new(0) == Chain.indexed_ratio()
     end
 
     test "returns 1.0 if fully indexed blocks" do
@@ -933,7 +933,7 @@ defmodule Explorer.ChainTest do
         insert(:block, number: index)
       end
 
-      assert 1.0 == Chain.indexed_ratio()
+      assert Decimal.cmp(Chain.indexed_ratio(), 1) == :eq
     end
   end
 

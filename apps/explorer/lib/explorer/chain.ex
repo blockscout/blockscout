@@ -835,23 +835,31 @@ defmodule Explorer.Chain do
       ...>   insert(:block, number: index)
       ...> end
       iex> Explorer.Chain.indexed_ratio()
-      0.5
+      Decimal.new(1, 50000000000000000000, -20)
 
   If there are no blocks, the percentage is 0.
 
       iex> Explorer.Chain.indexed_ratio()
-      0
+      Decimal.new(0)
 
   """
-  @spec indexed_ratio() :: float()
+  @spec indexed_ratio() :: Decimal.t()
   def indexed_ratio do
-    with {:ok, min_block_number} <- consensus_block_number(:min),
-         {:ok, max_block_number} <- consensus_block_number(:max) do
-      indexed_blocks = max_block_number - min_block_number + 1
-      indexed_blocks / (max_block_number + 1)
-    else
-      {:error, _} -> 0
-    end
+    # subquery so we need to cast less
+    decimal_min_max_query =
+      from(block in Block,
+        select: %{min_number: type(min(block.number), :decimal), max_number: type(max(block.number), :decimal)},
+        where: block.consensus == true
+      )
+
+    query =
+      from(decimal_min_max in subquery(decimal_min_max_query),
+        # math on `NULL` returns `NULL` so `coalesce` works as expected
+        select:
+          coalesce((decimal_min_max.max_number - decimal_min_max.min_number + 1) / (decimal_min_max.max_number + 1), 0)
+      )
+
+    Repo.one!(query)
   end
 
   @doc """
