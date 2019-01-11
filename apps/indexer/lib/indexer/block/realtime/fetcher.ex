@@ -88,12 +88,12 @@ defmodule Indexer.Block.Realtime.Fetcher do
     new_timer = schedule_polling()
 
     {:noreply,
-    %{
-      state
-      | previous_number: number,
-        max_number_seen: new_max_number,
-        timer: new_timer
-    }}
+     %{
+       state
+       | previous_number: number,
+         max_number_seen: new_max_number,
+         timer: new_timer
+     }}
   end
 
   @impl GenServer
