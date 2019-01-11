@@ -54,8 +54,12 @@ defmodule Indexer.Block.Realtime.Fetcher do
   @impl GenServer
   def handle_continue({:init, subscribe_named_arguments}, %__MODULE__{subscription: nil} = state)
       when is_list(subscribe_named_arguments) do
+
     case EthereumJSONRPC.subscribe("newHeads", subscribe_named_arguments) do
-      {:ok, subscription} -> {:noreply, %__MODULE__{state | subscription: subscription}}
+      {:ok, subscription} ->
+        schedule_polling()
+
+        {:noreply, %__MODULE__{state | subscription: subscription}}
       {:error, reason} -> {:stop, reason, state}
     end
   end
@@ -79,8 +83,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
     new_max_number = new_max_number(number, max_number_seen)
 
-    schedule_polling()
-
     {:noreply,
      %{
        state
@@ -100,11 +102,10 @@ defmodule Indexer.Block.Realtime.Fetcher do
       ) do
     {number, new_max_number} =
       case EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments) do
-        {:ok, number} ->
+        {:ok, number} when number > max_number_seen ->
           start_fetch_and_import(number, block_fetcher, previous_number, max_number_seen)
 
-          {number, new_max_number(number, max_number_seen)}
-
+          {max_number_seen, number}
         {:error, _} ->
           {previous_number, max_number_seen}
       end
