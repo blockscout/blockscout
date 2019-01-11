@@ -64,13 +64,17 @@ defmodule Explorer.Counters.AverageBlockTime do
 
   # This is pretty naive, but we'll only ever be sorting 100 dates so I don't think
   # complex logic is really necessary here.
-  defp add_block(%{timestamps: timestamps} = state, block) do
-    timestamps =
-      [block | timestamps]
-      |> Enum.sort_by(fn {number, _} -> number end, &Kernel.>/2)
-      |> Enum.take(100)
+  defp add_block(%{timestamps: timestamps} = state, {new_number, _} = block) do
+    if Enum.any?(timestamps, fn {number, _} -> number == new_number end) do
+      state
+    else
+      timestamps =
+        [block | timestamps]
+        |> Enum.sort_by(fn {number, _} -> number end, &Kernel.>/2)
+        |> Enum.take(100)
 
-    %{state | timestamps: timestamps, average: average_distance(timestamps)}
+      %{state | timestamps: timestamps, average: average_distance(timestamps)}
+    end
   end
 
   defp average_distance([]), do: Duration.from_milliseconds(0)
