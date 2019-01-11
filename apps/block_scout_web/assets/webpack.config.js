@@ -5,6 +5,8 @@ const glob = require("glob");
 
 function transpileViewScript(file) {
   return {
+    devtool: 'none',
+    mode: 'production',
     entry: file,
     output: {
       filename: file.replace('./js/view_specific/', ''),
@@ -26,6 +28,8 @@ function transpileViewScript(file) {
 
 const appJs =
   {
+    devtool: 'none',
+    mode: 'production',
     entry: './js/app.js',
     output: {
       filename: 'app.js',
