@@ -741,11 +741,11 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       # We insert a block, try again, and assert 'latest' points to the latest
       # block number.
       insert(:block)
-      {:ok, max_block_number} = Explorer.Chain.max_block_number()
+      {:ok, max_consensus_block_number} = Explorer.Chain.max_consensus_block_number()
 
       assert {_, {:ok, validated_params}} = LogsController.to_valid_format(params)
-      assert validated_params.from_block == max_block_number
-      assert validated_params.to_block == max_block_number
+      assert validated_params.from_block == max_consensus_block_number
+      assert validated_params.to_block == max_consensus_block_number
     end
   end
 
