@@ -1254,12 +1254,12 @@ msgid "Block not found, please try again later."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_transaction_view.ex:9
+#: lib/block_scout_web/views/block_transaction_view.ex:7
 msgid "Easy Cowboy! This block does not exist yet!"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_transaction_view.ex:12
+#: lib/block_scout_web/views/block_transaction_view.ex:11
 msgid "This block has not been processed yet."
 msgstr ""
 
