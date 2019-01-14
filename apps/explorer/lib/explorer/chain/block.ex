@@ -88,6 +88,7 @@ defmodule Explorer.Chain.Block do
     has_many(:uncles, through: [:uncle_relations, :uncle])
 
     has_many(:transactions, Transaction)
+    has_many(:transaction_forks, Transaction.Fork, foreign_key: :uncle_hash)
 
     has_many(:rewards, Reward, foreign_key: :block_hash)
   end
@@ -105,7 +106,7 @@ defmodule Explorer.Chain.Block do
       b in query,
       left_join: r in Reward,
       on: [block_hash: b.hash],
-      where: is_nil(r.block_hash)
+      where: is_nil(r.block_hash) and b.consensus == true
     )
   end
 

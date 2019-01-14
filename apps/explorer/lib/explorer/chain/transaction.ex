@@ -99,14 +99,15 @@ defmodule Explorer.Chain.Transaction do
    * `internal_transactions_indexed_at` - when `internal_transactions` were fetched by `Indexer` or when they do not
      need to be fetched at `inserted_at`.
 
-     | `status` | `input`    | `internal_transactions_indexed_at`        | `internal_transactions` | Description                                                                             |
-     |----------|------------|-------------------------------------------|-------------------------|-----------------------------------------------------------------------------------------|
-     | `:ok`    | Empty      | `inserted_at`                             | Unfetched               | Simple `value` transfer succeeded.  Internal transactions would be same value transfer. |
-     | `:ok`    | Non-Empty  | When `internal_transactions` are indexed. | Fetched                 | A contract call that succeeded.                                                         |
-     | `:error` | Empty      | When `internal_transactions` are indexed. | Fetched                 | Simple `value` transfer failed. Internal transactions fetched for `error`.              |
-     | `:error` | Non-Empty  | When `internal_transactions` are indexed. | Fetched                 | A contract call that failed.                                                            |
-     | `nil`    | Don't Care | When `internal_transactions` are indexed. | Depends                 | A pending post-Byzantium transaction will only know its status from  receipt.           |
-     | `nil`    | Don't Care | When `internal_transactions` are indexed. | Fetched                 | A pre-Byzantium transaction requires internal transactions to determine status          |
+     | `status` | `contract_creation_address_hash` | `input`    | Token Transfer? | `internal_transactions_indexed_at`        | `internal_transactions` | Description                                                                                         |
+     |----------|----------------------------------|------------|-----------------|-------------------------------------------|-------------------------|-----------------------------------------------------------------------------------------------------|
+     | `:ok`    | `nil`                            | Empty      | Don't Care      | `inserted_at`                             | Unfetched               | Simple `value` transfer transaction succeeded.  Internal transactions would be same value transfer. |
+     | `:ok`    | `nil`                            | Don't Care | `true`          | `inserted_at`                             | Unfetched               | Token transfer (from `logs`) that didn't happen during a contract creation.                         |
+     | `:ok`    | Don't Care                       | Non-Empty  | Don't Care      | When `internal_transactions` are indexed. | Fetched                 | A contract call that succeeded.                                                                     |
+     | `:error` | nil                              | Empty      | Don't Care      | When `internal_transactions` are indexed. | Fetched                 | Simple `value` transfer transaction failed. Internal transactions fetched for `error`.              |
+     | `:error` | Don't Care                       | Non-Empty  | Don't Care      | When `internal_transactions` are indexed. | Fetched                 | A contract call that failed.                                                                        |
+     | `nil`    | Don't Care                       | Don't Care | Don't Care      | When `internal_transactions` are indexed. | Depends                 | A pending post-Byzantium transaction will only know its status from receipt.                        |
+     | `nil`    | Don't Care                       | Don't Care | Don't Care      | When `internal_transactions` are indexed. | Fetched                 | A pre-Byzantium transaction requires internal transactions to determine status.                     |
    * `logs` - events that occurred while mining the `transaction`.
    * `nonce` - the number of transaction made by the sender prior to this one
    * `r` - the R field of the signature. The (r, s) is the normal output of an ECDSA signature, where r is computed as
