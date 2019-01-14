@@ -12,6 +12,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
   import Indexer.Block.Fetcher, only: [async_import_tokens: 1, async_import_uncles: 1, fetch_and_import_range: 2]
 
+  alias ABI.TypeDecoder
   alias Ecto.Changeset
   alias EthereumJSONRPC.{FetchedBalances, Subscription}
   alias Explorer.Chain
@@ -333,8 +334,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
        ) do
     case transactions_params
          |> transactions_params_to_fetch_internal_transactions_params(token_transfers_params)
-         |> EthereumJSONRPC.fetch_internal_transactions(json_rpc_named_arguments)
-         |> reject_simple_token_transfer_internal_transactions() do
+         |> EthereumJSONRPC.fetch_internal_transactions(json_rpc_named_arguments) do
       {:ok, internal_transactions_params} ->
         merged_addresses_params =
           %{internal_transactions: internal_transactions_params}
@@ -375,20 +375,30 @@ defmodule Indexer.Block.Realtime.Fetcher do
     end
   end
 
-  defp reject_simple_token_transfer_internal_transactions({:ok, internal_transaction_params}) do
-    # 0xa9059cbb - signature of the transfer(address,uint256) function from the ERC-20 token specification.
-    # Although transaction input data can be faked we use this heuristics to filter simple token transfer internal transactions from indexing because they slow down realtime fetcher
+  # 0xa9059cbb - signature of the transfer(address,uint256) function from the ERC-20 token specification.
+  # Although transaction input data can be faked we use this heuristics to filter simple token transfer internal transactions from indexing because they slow down realtime fetcher
+  defp fetch_internal_transactions?(
+         %{
+           status: :ok,
+           created_contract_address_hash: nil,
+           input: unquote(TokenTransfer.transfer_function_signature()) <> params,
+           value: 0
+         },
+         _
+       ) do
+    types = [:address, {:uint, 256}]
 
-    filtered_internal_transaction =
-      Enum.reject(internal_transaction_params, fn internal_transaction ->
-        internal_transaction.value == 0 &&
-          String.starts_with?(internal_transaction.input, TokenTransfer.transfer_function_signature())
-      end)
+    try do
+      [_address, _value] =
+        params
+        |> Base.decode16!(case: :mixed)
+        |> TypeDecoder.decode_raw(types)
 
-    {:ok, filtered_internal_transaction}
+      false
+    rescue
+      _ -> true
+    end
   end
-
-  defp reject_simple_token_transfer_internal_transactions(result), do: result
 
   # Input-less transactions are value-transfers only, so their internal transactions do not need to be indexed
   defp fetch_internal_transactions?(%{status: :ok, created_contract_address_hash: nil, input: "0x"}, _), do: false
