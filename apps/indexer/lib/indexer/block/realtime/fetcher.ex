@@ -12,9 +12,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
   import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
   import Indexer.Block.Fetcher, only: [async_import_tokens: 1, async_import_uncles: 1, fetch_and_import_range: 2]
 
+  alias ABI.TypeDecoder
   alias Ecto.Changeset
   alias EthereumJSONRPC.{FetchedBalances, Subscription}
   alias Explorer.Chain
+  alias Explorer.Chain.TokenTransfer
   alias Explorer.Counters.AverageBlockTime
   alias Indexer.{AddressExtraction, Block, TokenBalances, Tracer}
   alias Indexer.Block.Realtime.{ConsensusEnsurer, TaskSupervisor}
@@ -384,6 +386,31 @@ defmodule Indexer.Block.Realtime.Fetcher do
       [%{block_number: block_number, transaction_index: transaction_index, hash_data: hash}]
     else
       []
+    end
+  end
+
+  # 0xa9059cbb - signature of the transfer(address,uint256) function from the ERC-20 token specification.
+  # Although transaction input data can be faked we use this heuristics to filter simple token transfer internal transactions from indexing because they slow down realtime fetcher
+  defp fetch_internal_transactions?(
+         %{
+           status: :ok,
+           created_contract_address_hash: nil,
+           input: unquote(TokenTransfer.transfer_function_signature()) <> params,
+           value: 0
+         },
+         _
+       ) do
+    types = [:address, {:uint, 256}]
+
+    try do
+      [_address, _value] =
+        params
+        |> Base.decode16!(case: :mixed)
+        |> TypeDecoder.decode_raw(types)
+
+      false
+    rescue
+      _ -> true
     end
   end
 
