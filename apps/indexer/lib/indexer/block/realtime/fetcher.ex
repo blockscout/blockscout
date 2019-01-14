@@ -15,15 +15,15 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Ecto.Changeset
   alias EthereumJSONRPC.{FetchedBalances, Subscription}
   alias Explorer.Chain
+  alias Explorer.Counters.AverageBlockTime
   alias Indexer.{AddressExtraction, Block, TokenBalances, Tracer}
   alias Indexer.Block.Realtime.{ConsensusEnsurer, TaskSupervisor}
-
-  @polling_period 2_000
+  alias Timex.Duration
 
   @behaviour Block.Fetcher
 
   @enforce_keys ~w(block_fetcher)a
-  defstruct ~w(block_fetcher subscription previous_number max_number_seen)a
+  defstruct ~w(block_fetcher subscription previous_number max_number_seen timer)a
 
   @type t :: %__MODULE__{
           block_fetcher: %Block.Fetcher{
@@ -55,8 +55,13 @@ defmodule Indexer.Block.Realtime.Fetcher do
   def handle_continue({:init, subscribe_named_arguments}, %__MODULE__{subscription: nil} = state)
       when is_list(subscribe_named_arguments) do
     case EthereumJSONRPC.subscribe("newHeads", subscribe_named_arguments) do
-      {:ok, subscription} -> {:noreply, %__MODULE__{state | subscription: subscription}}
-      {:error, reason} -> {:stop, reason, state}
+      {:ok, subscription} ->
+        timer = schedule_polling()
+
+        {:noreply, %__MODULE__{state | subscription: subscription, timer: timer}}
+
+      {:error, reason} ->
+        {:stop, reason, state}
     end
   end
 
@@ -67,25 +72,27 @@ defmodule Indexer.Block.Realtime.Fetcher do
           block_fetcher: %Block.Fetcher{} = block_fetcher,
           subscription: %Subscription{} = subscription,
           previous_number: previous_number,
-          max_number_seen: max_number_seen
+          max_number_seen: max_number_seen,
+          timer: timer
         } = state
       )
       when is_binary(quantity) do
     number = quantity_to_integer(quantity)
-
     # Subscriptions don't support getting all the blocks and transactions data,
     # so we need to go back and get the full block
     start_fetch_and_import(number, block_fetcher, previous_number, max_number_seen)
 
     new_max_number = new_max_number(number, max_number_seen)
 
-    schedule_polling()
+    :timer.cancel(timer)
+    new_timer = schedule_polling()
 
     {:noreply,
      %{
        state
        | previous_number: number,
-         max_number_seen: new_max_number
+         max_number_seen: new_max_number,
+         timer: new_timer
      }}
   end
 
@@ -100,22 +107,23 @@ defmodule Indexer.Block.Realtime.Fetcher do
       ) do
     {number, new_max_number} =
       case EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments) do
-        {:ok, number} ->
-          start_fetch_and_import(number, block_fetcher, previous_number, max_number_seen)
+        {:ok, number} when is_nil(max_number_seen) or number > max_number_seen ->
+          start_fetch_and_import(number, block_fetcher, previous_number, number)
 
-          {number, new_max_number(number, max_number_seen)}
+          {max_number_seen, number}
 
-        {:error, _} ->
+        _ ->
           {previous_number, max_number_seen}
       end
 
-    schedule_polling()
+    timer = schedule_polling()
 
     {:noreply,
      %{
        state
        | previous_number: number,
-         max_number_seen: new_max_number
+         max_number_seen: new_max_number,
+         timer: timer
      }}
   end
 
@@ -124,7 +132,13 @@ defmodule Indexer.Block.Realtime.Fetcher do
   defp new_max_number(number, max_number_seen), do: max(number, max_number_seen)
 
   defp schedule_polling do
-    Process.send_after(self(), :poll_latest_block_number, @polling_period)
+    polling_period =
+      case AverageBlockTime.average_block_time() do
+        {:error, :disabled} -> 2_000
+        block_time -> round(Duration.to_milliseconds(block_time) * 2)
+      end
+
+    Process.send_after(self(), :poll_latest_block_number, polling_period)
   end
 
   @import_options ~w(address_hash_to_fetched_balance_block_number)a
