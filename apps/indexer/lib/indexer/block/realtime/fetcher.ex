@@ -15,6 +15,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Ecto.Changeset
   alias EthereumJSONRPC.{FetchedBalances, Subscription}
   alias Explorer.Chain
+  alias Explorer.Chain.TokenTransfer
   alias Indexer.{AddressExtraction, Block, TokenBalances, Tracer}
   alias Indexer.Block.Realtime.{ConsensusEnsurer, TaskSupervisor}
 
@@ -332,7 +333,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
        ) do
     case transactions_params
          |> transactions_params_to_fetch_internal_transactions_params(token_transfers_params)
-         |> EthereumJSONRPC.fetch_internal_transactions(json_rpc_named_arguments) do
+         |> EthereumJSONRPC.fetch_internal_transactions(json_rpc_named_arguments)
+         |> reject_simple_token_transfer_internal_transactions() do
       {:ok, internal_transactions_params} ->
         merged_addresses_params =
           %{internal_transactions: internal_transactions_params}
@@ -372,6 +374,21 @@ defmodule Indexer.Block.Realtime.Fetcher do
       []
     end
   end
+
+  defp reject_simple_token_transfer_internal_transactions({:ok, internal_transaction_params}) do
+    # 0xa9059cbb - signature of the transfer(address,uint256) function from the ERC-20 token specification.
+    # Although transaction input data can be faked we use this heuristics to filter simple token transfer internal transactions from indexing because they slow down realtime fetcher
+
+    filtered_internal_transaction =
+      Enum.reject(internal_transaction_params, fn internal_transaction ->
+        internal_transaction.value == 0 &&
+          String.starts_with?(internal_transaction.input, TokenTransfer.transfer_function_signature())
+      end)
+
+    {:ok, filtered_internal_transaction}
+  end
+
+  defp reject_simple_token_transfer_internal_transactions(result), do: result
 
   # Input-less transactions are value-transfers only, so their internal transactions do not need to be indexed
   defp fetch_internal_transactions?(%{status: :ok, created_contract_address_hash: nil, input: "0x"}, _), do: false
