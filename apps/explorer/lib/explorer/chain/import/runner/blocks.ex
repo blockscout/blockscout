@@ -80,6 +80,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
                                                             } ->
       derive_address_current_token_balances(repo, deleted_address_current_token_balances, insert_options)
     end)
+    |> Multi.run(:update_token_holder_counts, fn repo, changes_so_far ->
+      update_token_holder_counts(repo, changes_so_far, insert_options)
+    end)
     |> Multi.run(:delete_rewards, fn repo, _ ->
       delete_rewards(repo, changes_list, insert_options)
     end)
@@ -356,7 +359,15 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     query =
       from(address_current_token_balance in Address.CurrentTokenBalance,
-        select: map(address_current_token_balance, [:address_hash, :token_contract_address_hash]),
+        select:
+          map(address_current_token_balance, [
+            :address_hash,
+            :token_contract_address_hash,
+            # Used to determine if `address_hash` was a holder of `token_contract_address_hash` before
+
+            # `address_current_token_balance` is deleted in `update_tokens_holder_count`.
+            :value
+          ]),
         inner_join: ordered_address_current_token_balance in subquery(ordered_query),
         on:
           ordered_address_current_token_balance.address_hash == address_current_token_balance.address_hash and
@@ -431,29 +442,196 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     insert_sql = """
     INSERT INTO address_current_token_balances (address_hash, token_contract_address_hash, block_number, value, inserted_at, updated_at)
     #{select_sql}
-    RETURNING address_hash, token_contract_address_hash, block_number
+    RETURNING address_hash, token_contract_address_hash, block_number, value
     """
 
     with {:ok,
           %Postgrex.Result{
-            columns: ["address_hash", "token_contract_address_hash", "block_number"],
+            columns: [
+              "address_hash",
+              "token_contract_address_hash",
+              "block_number",
+              # needed for `update_tokens_holder_count`
+              "value"
+            ],
             command: :insert,
             rows: rows
           }} <- SQL.query(repo, insert_sql, parameters, timeout: timeout) do
       derived_address_current_token_balances =
-        Enum.map(rows, fn [address_hash_bytes, token_contract_address_hash_bytes, block_number] ->
+        Enum.map(rows, fn [address_hash_bytes, token_contract_address_hash_bytes, block_number, value] ->
           {:ok, address_hash} = Hash.Address.load(address_hash_bytes)
           {:ok, token_contract_address_hash} = Hash.Address.load(token_contract_address_hash_bytes)
 
           %{
             address_hash: address_hash,
             token_contract_address_hash: token_contract_address_hash,
-            block_number: block_number
+            block_number: block_number,
+            value: value
           }
         end)
 
       {:ok, derived_address_current_token_balances}
     end
+  end
+
+  # sobelow_skip ["SQL.Query"]
+  defp update_token_holder_counts(repo, changes_so_far, options) when is_map(changes_so_far) do
+    parameters = update_token_holder_counts_parameters(changes_so_far)
+
+    update_token_holder_counts(repo, parameters, options)
+  end
+
+  defp update_token_holder_counts(_, [], _), do: {:ok, []}
+
+  defp update_token_holder_counts(repo, parameters, %{timeout: timeout}) do
+    update_sql = update_token_holder_counts_sql(parameters)
+
+    with {:ok, %Postgrex.Result{columns: ["contract_address_hash", "holder_count"], command: :update, rows: rows}} <-
+           SQL.query(repo, update_sql, parameters, timeout: timeout) do
+      update_token_holder_counts =
+        Enum.map(rows, fn [contract_address_hash_bytes, holder_count] ->
+          {:ok, contract_address_hash} = Hash.Address.cast(contract_address_hash_bytes)
+          %{contract_address_hash: contract_address_hash, holder_count: holder_count}
+        end)
+
+      {:ok, update_token_holder_counts}
+    end
+  end
+
+  defp update_token_holder_counts_parameters(%{
+         delete_address_current_token_balances: deleted_address_current_token_balances,
+         derive_address_current_token_balances: derived_address_current_token_balances
+       }) do
+    previous_holder_address_hash_set_by_token_contract_address_hash =
+      address_current_token_balances_to_holder_address_hash_set_by_token_contract_address_hash(
+        deleted_address_current_token_balances
+      )
+
+    current_holder_address_hash_set_by_token_contract_address_hash =
+      address_current_token_balances_to_holder_address_hash_set_by_token_contract_address_hash(
+        derived_address_current_token_balances
+      )
+
+    ordered_token_contract_address_hashes =
+      ordered_token_contract_address_hashes([
+        previous_holder_address_hash_set_by_token_contract_address_hash,
+        current_holder_address_hash_set_by_token_contract_address_hash
+      ])
+
+    Enum.flat_map(ordered_token_contract_address_hashes, fn token_contract_address_hash ->
+      holder_count_delta =
+        holder_count_delta(%{
+          previous_holder_address_hash_set_by_token_contract_address_hash:
+            previous_holder_address_hash_set_by_token_contract_address_hash,
+          current_holder_address_hash_set_by_token_contract_address_hash:
+            current_holder_address_hash_set_by_token_contract_address_hash,
+          token_contract_address_hash: token_contract_address_hash
+        })
+
+      case holder_count_delta do
+        0 ->
+          []
+
+        _ ->
+          {:ok, token_contract_address_hash_bytes} = Hash.Address.dump(token_contract_address_hash)
+          [token_contract_address_hash_bytes, holder_count_delta]
+      end
+    end)
+  end
+
+  defp ordered_token_contract_address_hashes(holder_address_hash_set_by_token_contract_address_hash_list)
+       when is_list(holder_address_hash_set_by_token_contract_address_hash_list) do
+    holder_address_hash_set_by_token_contract_address_hash_list
+    |> Enum.reduce(MapSet.new(), fn holder_address_hash_set_by_token_contract_address_hash, acc ->
+      holder_address_hash_set_by_token_contract_address_hash
+      |> Map.keys()
+      |> MapSet.new()
+      |> MapSet.union(acc)
+    end)
+    |> Enum.sort()
+  end
+
+  defp holder_count_delta(%{
+         previous_holder_address_hash_set_by_token_contract_address_hash:
+           previous_holder_address_hash_set_by_token_contract_address_hash,
+         current_holder_address_hash_set_by_token_contract_address_hash:
+           current_holder_address_hash_set_by_token_contract_address_hash,
+         token_contract_address_hash: token_contract_address_hash
+       }) do
+    case {previous_holder_address_hash_set_by_token_contract_address_hash[token_contract_address_hash],
+          current_holder_address_hash_set_by_token_contract_address_hash[token_contract_address_hash]} do
+      {previous_holder_address_hash_set, nil} ->
+        -1 * Enum.count(previous_holder_address_hash_set)
+
+      {nil, current_holder_address_hash_set} ->
+        Enum.count(current_holder_address_hash_set)
+
+      {previous_holder_address_hash_set, current_holder_address_hash_set} ->
+        added_holder_address_hash_count =
+          current_holder_address_hash_set
+          |> MapSet.difference(previous_holder_address_hash_set)
+          |> Enum.count()
+
+        removed_holder_address_hash_count =
+          previous_holder_address_hash_set
+          |> MapSet.difference(current_holder_address_hash_set)
+          |> Enum.count()
+
+        added_holder_address_hash_count - removed_holder_address_hash_count
+    end
+  end
+
+  defp update_token_holder_counts_sql(parameters) when is_list(parameters) do
+    parameters
+    |> Enum.count()
+    |> div(2)
+    |> update_token_holder_counts_sql()
+  end
+
+  defp update_token_holder_counts_sql(row_count) when is_integer(row_count) do
+    parameters_sql = update_token_holder_counts_parameters_sql(row_count)
+
+    """
+    UPDATE tokens
+    SET holder_count = holder_count + holder_counts.delta
+    FROM (
+        VALUES
+          #{parameters_sql}
+      ) AS holder_counts(contract_address_hash, delta)
+    WHERE tokens.contract_address_hash = holder_counts.contract_address_hash AND
+          holder_count IS NOT NULL
+    RETURNING tokens.contract_address_hash, tokens.holder_count
+    """
+  end
+
+  defp update_token_holder_counts_parameters_sql(row_count) when is_integer(row_count) do
+    Enum.map_join(0..(row_count - 1), ",\n      ", fn i ->
+      contract_address_hash_parameter_number = 2 * i + 1
+      holder_count_number = contract_address_hash_parameter_number + 1
+
+      "($#{contract_address_hash_parameter_number}::bytea, $#{holder_count_number}::bigint)"
+    end)
+  end
+
+  defp address_current_token_balances_to_holder_address_hash_set_by_token_contract_address_hash(
+         address_current_token_balances
+       )
+       when is_list(address_current_token_balances) do
+    address_current_token_balances
+    |> Stream.filter(fn %{value: value} -> Decimal.cmp(value, 0) == :gt end)
+    |> Enum.reduce(%{}, fn %{token_contract_address_hash: token_contract_address_hash, address_hash: address_hash},
+                           acc_holder_address_hash_set_by_token_contract_address_hash ->
+      updated_holder_address_hash_set =
+        acc_holder_address_hash_set_by_token_contract_address_hash
+        |> Map.get_lazy(token_contract_address_hash, &MapSet.new/0)
+        |> MapSet.put(address_hash)
+
+      Map.put(
+        acc_holder_address_hash_set_by_token_contract_address_hash,
+        token_contract_address_hash,
+        updated_holder_address_hash_set
+      )
+    end)
   end
 
   # `block_rewards` are linked to `blocks.hash`, but fetched by `blocks.number`, so when a block with the same number is
