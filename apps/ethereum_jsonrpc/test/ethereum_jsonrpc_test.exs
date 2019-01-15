@@ -173,7 +173,7 @@ defmodule EthereumJSONRPCTest do
     end
   end
 
-  describe "fetch_balances/2" do
+  describe "fetch_codes/2" do
     test "returns both codes and errors", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
