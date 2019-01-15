@@ -65,6 +65,8 @@ defmodule Explorer.Chain.TokenTransfer do
 
   @constant "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 
+  @transfer_function_signature "0xa9059cbb"
+
   @primary_key false
   schema "token_transfers" do
     field(:amount, :decimal)
@@ -114,6 +116,11 @@ defmodule Explorer.Chain.TokenTransfer do
   `first_topic` field.
   """
   def constant, do: @constant
+
+  @doc """
+  ERC 20's transfer(address,uint256) function signature
+  """
+  def transfer_function_signature, do: @transfer_function_signature
 
   @spec fetch_token_transfers_from_token_hash(Hash.t(), [paging_options]) :: []
   def fetch_token_transfers_from_token_hash(token_address_hash, options) do
