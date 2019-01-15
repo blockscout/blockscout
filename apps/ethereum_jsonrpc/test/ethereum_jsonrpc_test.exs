@@ -4,7 +4,7 @@ defmodule EthereumJSONRPCTest do
   import EthereumJSONRPC.Case
   import Mox
 
-  alias EthereumJSONRPC.{Blocks, FetchedBalances, FetchedBeneficiaries, Subscription}
+  alias EthereumJSONRPC.{Blocks, FetchedBalances, FetchedBeneficiaries, FetchedCodes, Subscription}
   alias EthereumJSONRPC.WebSocket.WebSocketClient
 
   setup :verify_on_exit!
@@ -170,6 +170,86 @@ defmodule EthereumJSONRPCTest do
 
       assert is_list(errors)
       assert length(errors) > 1
+    end
+  end
+
+  describe "fetch_balances/2" do
+    test "returns both codes and errors", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
+          {
+            :ok,
+            [
+              %{
+                id: 0,
+                result:
+                  "0x600160008035811a818181146012578301005b601b6001356025565b8060005260206000f25b600060078202905091905056"
+              },
+              %{
+                id: 1,
+                error: %{
+                  code: -32602,
+                  message:
+                    "Invalid params: invalid length 1, expected a 0x-prefixed, padded, hex-encoded hash with length 40."
+                }
+              },
+              %{
+                id: 2,
+                result:
+                  "0x7009600160008035811a818181146012578301005b601b6001356025565b8060005260206000f25b600060078202905091905"
+              }
+            ]
+          }
+        end)
+      end
+
+      assert {:ok, %FetchedCodes{params_list: params_list, errors: errors}} =
+               EthereumJSONRPC.fetch_codes(
+                 [
+                   # start with :ok
+                   %{
+                     block_quantity: "0x1",
+                     address: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
+                   },
+                   # :ok, :error clause
+                   %{
+                     block_quantity: "0x2",
+                     address: "0x3"
+                   },
+                   # :error, :ok clause
+                   %{
+                     block_quantity: "0x35",
+                     address: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
+                   }
+                 ],
+                 json_rpc_named_arguments
+               )
+
+      assert params_list == [
+               %{
+                 address: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+                 block_number: 53,
+                 code:
+                   "0x7009600160008035811a818181146012578301005b601b6001356025565b8060005260206000f25b600060078202905091905"
+               },
+               %{
+                 address: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+                 block_number: 1,
+                 code:
+                   "0x600160008035811a818181146012578301005b601b6001356025565b8060005260206000f25b600060078202905091905056"
+               }
+             ]
+
+      assert errors == [
+               %{
+                 code: -32602,
+                 data: %{address: "0x3", block_quantity: "0x2"},
+                 message:
+                   "Invalid params: invalid length 1, expected a 0x-prefixed, padded, hex-encoded hash with length 40."
+               }
+             ]
     end
   end
 
