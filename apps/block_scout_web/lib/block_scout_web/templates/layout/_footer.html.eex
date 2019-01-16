@@ -1,7 +1,7 @@
 <footer class="footer">
   <div class="footer-body container">
     <%= link to: chain_path(@conn, :show), class: "footer-brand" do %>
-      <img class="footer-logo" src="<%= logo() %>" />
+      <img class="footer-logo" src="<%= logo() %>" alt="<%= subnetwork_title() %>" />
     <% end %>
     <div class="icon-links icon-links-primary">
       <a href="https://github.com/poanetwork" target="_blank" class="icon-link" data-toggle="tooltip" data-placement="top" title="<%= gettext("Github") %>">
