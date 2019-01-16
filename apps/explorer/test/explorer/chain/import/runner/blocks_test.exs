@@ -3,9 +3,11 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
   import Ecto.Query, only: [from: 2, select: 2, where: 2]
 
+  import Explorer.Chain.Import.RunnerCase, only: [insert_address_with_token_balances: 1, update_holder_count!: 2]
+
   alias Ecto.Multi
   alias Explorer.Chain.Import.Runner.{Blocks, Transaction}
-  alias Explorer.Chain.{Address, Block, Token, Transaction}
+  alias Explorer.Chain.{Address, Block, Transaction}
   alias Explorer.Repo
 
   describe "run/1" do
@@ -122,7 +124,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
           token_contract_address_hash: token_contract_address_hash
         })
 
-      # Token must exist with non-`nil` `holder_count` for `update_token_holder_counts` to update
+      # Token must exist with non-`nil` `holder_count` for `blocks_update_token_holder_counts` to update
       update_holder_count!(token_contract_address_hash, 1)
 
       assert count(Address.TokenBalance) == 2
@@ -153,7 +155,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
                   }
                 ],
                 # no updates because it both deletes and derives a holder
-                update_token_holder_counts: []
+                blocks_update_token_holder_counts: []
               }} = run_block_consensus_change(block, true, options)
 
       assert count(Address.TokenBalance) == 1
@@ -178,7 +180,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
         token_contract_address_hash: token_contract_address_hash
       })
 
-      # Token must exist with non-`nil` `holder_count` for `update_token_holder_counts` to update
+      # Token must exist with non-`nil` `holder_count` for `blocks_update_token_holder_counts` to update
       update_holder_count!(token_contract_address_hash, 0)
 
       block_params = params_for(:block, hash: block_hash, miner_hash: miner_hash, number: block_number, consensus: true)
@@ -188,7 +190,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
       assert {:ok,
               %{
-                update_token_holder_counts: [
+                blocks_update_token_holder_counts: [
                   %{
                     contract_address_hash: ^token_contract_address_hash,
                     holder_count: 1
@@ -210,7 +212,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
         token_contract_address_hash: token_contract_address_hash
       })
 
-      # Token must exist with non-`nil` `holder_count` for `update_token_holder_counts` to update
+      # Token must exist with non-`nil` `holder_count` for `blocks_update_token_holder_counts` to update
       update_holder_count!(token_contract_address_hash, 1)
 
       block_params = params_for(:block, hash: block_hash, miner_hash: miner_hash, number: block_number, consensus: true)
@@ -220,7 +222,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
       assert {:ok,
               %{
-                update_token_holder_counts: [
+                blocks_update_token_holder_counts: [
                   %{
                     contract_address_hash: ^token_contract_address_hash,
                     holder_count: 0
@@ -247,13 +249,13 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
         token_contract_address_hash: token_contract_address_hash
       })
 
-      # Token must exist with non-`nil` `holder_count` for `update_token_holder_counts` to update
+      # Token must exist with non-`nil` `holder_count` for `blocks_update_token_holder_counts` to update
       update_holder_count!(token_contract_address_hash, 1)
 
       assert {:ok,
               %{
                 # cancels out to no change
-                update_token_holder_counts: []
+                blocks_update_token_holder_counts: []
               }} = run_block_consensus_change(block, true, options)
     end
   end
@@ -284,52 +286,6 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
     })
   end
 
-  defp insert_address_with_token_balances(%{
-         previous: %{value: previous_value},
-         current: %{block_number: current_block_number, value: current_value},
-         token_contract_address_hash: token_contract_address_hash
-       }) do
-    %Address.TokenBalance{
-      address_hash: address_hash,
-      token_contract_address_hash: ^token_contract_address_hash
-    } =
-      insert(:token_balance,
-        token_contract_address_hash: token_contract_address_hash,
-        block_number: current_block_number - 1,
-        value: previous_value
-      )
-
-    address = Repo.get(Address, address_hash)
-
-    %Address.TokenBalance{
-      address_hash: ^address_hash,
-      token_contract_address_hash: ^token_contract_address_hash,
-      block_number: ^current_block_number,
-      value: holder_current_value
-    } =
-      insert(:token_balance,
-        address: address,
-        token_contract_address_hash: token_contract_address_hash,
-        block_number: current_block_number,
-        value: current_value
-      )
-
-    %Address.CurrentTokenBalance{
-      address_hash: ^address_hash,
-      token_contract_address_hash: ^token_contract_address_hash,
-      block_number: ^current_block_number,
-      value: ^holder_current_value
-    } =
-      insert(:address_current_token_balance,
-        address: address,
-        token_contract_address_hash: token_contract_address_hash,
-        block_number: current_block_number,
-        value: holder_current_value
-      )
-
-    address
-  end
-
   defp run_block_consensus_change(
          %Block{hash: block_hash, miner_hash: miner_hash, number: block_number},
          consensus,
@@ -344,16 +300,5 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
     Multi.new()
     |> Blocks.run(changes_list, options)
     |> Repo.transaction()
-  end
-
-  defp update_holder_count!(contract_address_hash, holder_count) do
-    {1, [%{holder_count: ^holder_count}]} =
-      Repo.update_all(
-        from(token in Token,
-          where: token.contract_address_hash == ^contract_address_hash,
-          select: map(token, [:holder_count])
-        ),
-        set: [holder_count: holder_count]
-      )
   end
 end
