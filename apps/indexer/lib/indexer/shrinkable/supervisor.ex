@@ -7,8 +7,8 @@ defmodule Indexer.Shrinkable.Supervisor do
 
   alias Indexer.{
     Block,
+    Code,
     CoinBalance,
-    InternalTransaction,
     PendingTransaction,
     Token,
     TokenBalance,
@@ -60,10 +60,10 @@ defmodule Indexer.Shrinkable.Supervisor do
          ]},
         {PendingTransaction.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments], [name: PendingTransactionFetcher]]},
-        {InternalTransaction.Supervisor,
+        {Code.Supervisor,
          [
            [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor],
-           [name: InternalTransaction.Supervisor]
+           [name: Code.Supervisor]
          ]},
         {Token.Supervisor,
          [

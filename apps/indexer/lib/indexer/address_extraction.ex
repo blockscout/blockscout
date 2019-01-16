@@ -374,6 +374,13 @@ defmodule Indexer.AddressExtraction do
               optional(:created_contract_code) => String.t()
             }
           ],
+          optional(:codes) => [
+            %{
+              required(:code) => String.t(),
+              required(:address) => String.t(),
+              required(:block_number) => non_neg_integer
+            }
+          ],
           optional(:transactions) => [
             %{
               required(:block_number) => non_neg_integer(),
