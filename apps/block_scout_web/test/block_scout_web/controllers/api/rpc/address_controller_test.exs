@@ -436,8 +436,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         "address" => "#{address.hash}"
       }
 
-      {:ok, max_block_number} = Chain.max_block_number()
-      expected_confirmations = max_block_number - transaction.block_number
+      block_height = Chain.block_height()
+      expected_confirmations = block_height - transaction.block_number
 
       assert %{"result" => [returned_transaction]} =
                conn

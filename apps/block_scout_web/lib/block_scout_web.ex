@@ -50,6 +50,7 @@ defmodule BlockScoutWeb do
         Router.Helpers,
         TabHelpers,
         Tokens.Helpers,
+        Views.ScriptHelpers,
         WeiHelpers
       }
     end
