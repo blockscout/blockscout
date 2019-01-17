@@ -31,8 +31,8 @@ defmodule BlockScoutWeb.AddressPage do
     css("[data-number-of-tokens-by-type='#{type}']", text: text)
   end
 
-  def address(%Address{hash: hash}) do
-    css("[data-address-hash='#{hash}']", text: to_string(hash))
+  def address(%Address{} = address) do
+    css("[data-address-hash='#{address}']", text: to_string(address))
   end
 
   def contract_creator do

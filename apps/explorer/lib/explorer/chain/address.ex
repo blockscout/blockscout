@@ -3,6 +3,8 @@ defmodule Explorer.Chain.Address do
   A stored representation of a web3 address.
   """
 
+  require Bitwise
+
   use Explorer.Schema
 
   alias Ecto.Changeset
@@ -83,28 +85,61 @@ defmodule Explorer.Chain.Address do
     |> unique_constraint(:hash)
   end
 
-  defimpl String.Chars do
-    @doc """
-    Uses `hash` as string representation
+  def checksum(%__MODULE__{hash: hash}, iodata? \\ false) do
+    "0x" <> string_hash = to_string(hash)
 
-        iex> address = %Explorer.Chain.Address{
-        ...>   hash: %Explorer.Chain.Hash{
-        ...>     byte_count: 20,
-        ...>     bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211,
-        ...>              165, 101, 32, 167, 106, 179, 223, 65, 91>>
-        ...>   }
-        ...> }
-        iex> to_string(address)
-        "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
-        iex> to_string(address.hash)
-        "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
-        iex> to_string(address) == to_string(address.hash)
-        true
+    match_byte_stream = stream_every_four_bytes_of_sha256(string_hash)
 
-    """
-    def to_string(%@for{hash: hash}) do
-      @protocol.to_string(hash)
+    checksum_formatted =
+      string_hash
+      |> stream_binary()
+      |> Stream.zip(match_byte_stream)
+      |> Enum.map(fn
+        {digit, _} when digit in '0123456789' ->
+          digit
+
+        {alpha, 1} ->
+          alpha - 32
+
+        {alpha, _} ->
+          alpha
+      end)
+
+    if iodata? do
+      ["0x" | checksum_formatted]
+    else
+      to_string(["0x" | checksum_formatted])
     end
+  end
+
+  defp stream_every_four_bytes_of_sha256(value) do
+    :sha3_256
+    |> :keccakf1600.hash(value)
+    |> stream_binary()
+    |> Stream.map(&Bitwise.band(&1, 136))
+    |> Stream.flat_map(fn
+      136 ->
+        [1, 1]
+
+      128 ->
+        [1, 0]
+
+      8 ->
+        [0, 1]
+
+      _ ->
+        [0, 0]
+    end)
+  end
+
+  defp stream_binary(string) do
+    Stream.unfold(string, fn
+      <<char::integer, rest::binary>> ->
+        {char, rest}
+
+      _ ->
+        nil
+    end)
   end
 
   @doc """
@@ -116,5 +151,30 @@ defmodule Explorer.Chain.Address do
       select: fragment("COUNT(*)"),
       where: a.fetched_coin_balance > ^0
     )
+  end
+
+  defimpl String.Chars do
+    @doc """
+    Uses `hash` as string representation, formatting it according to the eip-55 specification
+
+    For more information: https://github.com/ethereum/EIPs/blob/master/EIPS/eip-55.md#specification
+
+    To bypass the checksum formatting, use `to_string/1` on the hash itself.
+
+        iex> address = %Explorer.Chain.Address{
+        ...>   hash: %Explorer.Chain.Hash{
+        ...>     byte_count: 20,
+        ...>     bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211,
+        ...>              165, 101, 32, 167, 106, 179, 223, 65, 91>>
+        ...>   }
+        ...> }
+        iex> to_string(address)
+        "0x8Bf38d4764929064f2d4d3a56520A76AB3df415b"
+        iex> to_string(address.hash)
+        "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
+    """
+    def to_string(%@for{} = address) do
+      @for.checksum(address)
+    end
   end
 end

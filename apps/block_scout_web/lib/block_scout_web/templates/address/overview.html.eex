@@ -23,7 +23,7 @@
             <% end %>
           </div>
           <h1 class="card-title"><%= address_title(@address) %> <%= gettext "Details" %> </h1>
-          <h3 class="<%= if BlockScoutWeb.AddressView.contract?(@address) do %>contract-address<% end %>" data-test="address_detail_hash"><%= @address.hash %></h3>
+          <h3 class="<%= if BlockScoutWeb.AddressView.contract?(@address) do %>contract-address<% end %>" data-test="address_detail_hash"><%= @address %></h3>
           <div class="d-flex flex-column flex-lg-row justify-content-start text-muted">
             <%= if address_name = primary_name(@address) do %>
               <strong class="mr-4 mb-2 text-primary"><%= address_name %></strong>
