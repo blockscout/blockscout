@@ -89,10 +89,10 @@ defmodule Indexer.Code.Fetcher do
     |> EthereumJSONRPC.fetch_codes(json_rpc_named_arguments)
     |> case do
       {:ok, create_address_codes} ->
-        addresses_params = AddressExtraction.extract_addresses(%{codes: create_address_codes})
+        addresses_params = AddressExtraction.extract_addresses(%{codes: create_address_codes.params_list})
 
         address_hash_to_block_number =
-          Enum.into(addresses_params, %{}, fn %{block_number: block_number, address: address} ->
+          Enum.into(addresses_params, %{}, fn %{fetched_coin_balance_block_number: block_number, hash: address} ->
             {address, block_number}
           end)
 
@@ -118,9 +118,6 @@ defmodule Indexer.Code.Fetcher do
 
             {:retry, entries}
         end
-
-      :ignore ->
-        :ok
     end
   end
 end
