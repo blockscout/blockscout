@@ -229,14 +229,14 @@ defmodule EthereumJSONRPCTest do
 
       assert params_list == [
                %{
-                 address: "0xe82719202e5965Cf5D9B6673B7503a3b92DE20be",
-                 block_number: 7006035,
+                 address: "0xbb9bc244d798123fde783fcc1c72d3bb8c189413",
+                 block_number: 7_076_683,
                  code:
                    "0x7009600160008035811a818181146012578301005b601b6001356025565b8060005260206000f25b600060078202905091905"
                },
                %{
-                 address: "0xbb9bc244d798123fde783fcc1c72d3bb8c189413",
-                 block_number: 7076683,
+                 address: "0xe82719202e5965Cf5D9B6673B7503a3b92DE20be",
+                 block_number: 7_006_035,
                  code:
                    "0x600160008035811a818181146012578301005b601b6001356025565b8060005260206000f25b600060078202905091905056"
                }
