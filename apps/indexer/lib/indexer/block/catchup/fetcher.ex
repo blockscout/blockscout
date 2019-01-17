@@ -159,7 +159,6 @@ defmodule Indexer.Block.Catchup.Fetcher do
         block_number: block_number,
         index: index,
         hash: hash,
-        created_contract_address_hash: nil,
         internal_transactions_indexed_at: nil
       } ->
         [%{block_number: block_number, index: index, hash: hash}]
