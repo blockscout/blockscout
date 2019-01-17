@@ -12,7 +12,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   alias Ecto.Changeset
   alias Explorer.Chain
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{Hash, Transaction}
   alias Indexer.{Block, Code, InternalTransaction, Sequence, TokenBalance, Tracer}
   alias Indexer.Memory.Shrinkable
 
@@ -131,6 +131,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
   defp async_import_remaining_block_data(imported, options) do
     async_import_coin_balances(imported, options)
     async_import_created_contract_codes(imported)
+    async_import_internal_transactions(imported)
     async_import_tokens(imported)
     async_import_token_balances(imported)
     async_import_uncles(imported)
@@ -142,34 +143,36 @@ defmodule Indexer.Block.Catchup.Fetcher do
       %Transaction{
         block_number: block_number,
         hash: hash,
-        created_contract_address_hash: <<_::bytes>> = created_contract_address_hash,
+        created_contract_address_hash: %Hash{} = created_contract_address_hash,
         created_contract_code_indexed_at: nil,
         internal_transactions_indexed_at: nil
       } ->
         [%{block_number: block_number, hash: hash, created_contract_address_hash: created_contract_address_hash}]
 
-      _ ->
+      %Transaction{internal_transactions_indexed_at: %DateTime{}} ->
+        []
+
+      %Transaction{created_contract_address_hash: nil} ->
         []
     end)
     |> Code.Fetcher.async_fetch(10_000)
+  end
 
+  defp async_import_created_contract_codes(_), do: :ok
+
+  defp async_import_internal_transactions(%{transactions: transactions}) do
     transactions
     |> Enum.flat_map(fn
-      %Transaction{
-        block_number: block_number,
-        index: index,
-        hash: hash,
-        internal_transactions_indexed_at: nil
-      } ->
+      %Transaction{block_number: block_number, index: index, hash: hash, internal_transactions_indexed_at: nil} ->
         [%{block_number: block_number, index: index, hash: hash}]
 
-      _ ->
+      %Transaction{internal_transactions_indexed_at: %DateTime{}} ->
         []
     end)
     |> InternalTransaction.Fetcher.async_fetch(10_000)
   end
 
-  defp async_import_created_contract_codes(_), do: :ok
+  defp async_import_internal_transactions(_), do: :ok
 
   defp async_import_token_balances(%{address_token_balances: token_balances}) do
     TokenBalance.Fetcher.async_fetch(token_balances)
