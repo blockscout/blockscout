@@ -210,8 +210,8 @@ defmodule EthereumJSONRPCTest do
                  [
                    # start with :ok
                    %{
-                     block_quantity: "0x1",
-                     address: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
+                     block_quantity: "0x6ae753",
+                     address: "0xe82719202e5965Cf5D9B6673B7503a3b92DE20be"
                    },
                    # :ok, :error clause
                    %{
@@ -220,8 +220,8 @@ defmodule EthereumJSONRPCTest do
                    },
                    # :error, :ok clause
                    %{
-                     block_quantity: "0x35",
-                     address: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
+                     block_quantity: "0x6bfb4b",
+                     address: "0xbb9bc244d798123fde783fcc1c72d3bb8c189413"
                    }
                  ],
                  json_rpc_named_arguments
@@ -229,27 +229,20 @@ defmodule EthereumJSONRPCTest do
 
       assert params_list == [
                %{
-                 address: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
-                 block_number: 53,
+                 address: "0xe82719202e5965Cf5D9B6673B7503a3b92DE20be",
+                 block_number: 7006035,
                  code:
                    "0x7009600160008035811a818181146012578301005b601b6001356025565b8060005260206000f25b600060078202905091905"
                },
                %{
-                 address: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
-                 block_number: 1,
+                 address: "0xbb9bc244d798123fde783fcc1c72d3bb8c189413",
+                 block_number: 7076683,
                  code:
                    "0x600160008035811a818181146012578301005b601b6001356025565b8060005260206000f25b600060078202905091905056"
                }
              ]
 
-      assert errors == [
-               %{
-                 code: -32602,
-                 data: %{address: "0x3", block_quantity: "0x2"},
-                 message:
-                   "Invalid params: invalid length 1, expected a 0x-prefixed, padded, hex-encoded hash with length 40."
-               }
-             ]
+      assert Enum.count(errors) == 1
     end
   end
 
