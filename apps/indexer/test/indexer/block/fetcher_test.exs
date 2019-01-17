@@ -222,7 +222,7 @@ defmodule Indexer.Block.FetcherTest do
                     errors: []
                   }} = result
 
-          wait_for_tasks(InternalTransaction.Fetcher)
+          wait_for_tasks(Code.Fetcher)
           wait_for_tasks(CoinBalance.Fetcher)
 
           assert Repo.aggregate(Chain.Block, :count, :hash) == 1
@@ -579,7 +579,7 @@ defmodule Indexer.Block.FetcherTest do
                     errors: []
                   }} = Fetcher.fetch_and_import_range(block_fetcher, block_number..block_number)
 
-          wait_for_tasks(InternalTransaction.Fetcher)
+          wait_for_tasks(Code.Fetcher)
           wait_for_tasks(CoinBalance.Fetcher)
 
           assert Repo.aggregate(Chain.Block, :count, :hash) == 1

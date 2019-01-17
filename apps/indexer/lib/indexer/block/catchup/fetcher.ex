@@ -148,7 +148,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
       } ->
         [%{block_number: block_number, hash: hash, created_contract_address_hash: created_contract_address_hash}]
 
-      _  ->
+      _ ->
         []
     end)
     |> Code.Fetcher.async_fetch(10_000)
