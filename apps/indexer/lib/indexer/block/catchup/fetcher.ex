@@ -13,7 +13,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
   alias Ecto.Changeset
   alias Explorer.Chain
   alias Explorer.Chain.Transaction
-  alias Indexer.{Block, Code, Sequence, TokenBalance, Tracer}
+  alias Indexer.{Block, Code, InternalTransaction, Sequence, TokenBalance, Tracer}
   alias Indexer.Memory.Shrinkable
 
   @behaviour Block.Fetcher
@@ -152,6 +152,22 @@ defmodule Indexer.Block.Catchup.Fetcher do
         []
     end)
     |> Code.Fetcher.async_fetch(10_000)
+
+    transactions
+    |> Enum.flat_map(fn
+      %Transaction{
+        block_number: block_number,
+        index: index,
+        hash: hash,
+        created_contract_address_hash: nil,
+        internal_transactions_indexed_at: nil
+      } ->
+        [%{block_number: block_number, index: index, hash: hash}]
+
+      _ ->
+        []
+    end)
+    |> InternalTransaction.Fetcher.async_fetch(10_000)
   end
 
   defp async_import_created_contract_codes(_), do: :ok

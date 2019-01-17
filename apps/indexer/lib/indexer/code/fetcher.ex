@@ -1,4 +1,8 @@
 defmodule Indexer.Code.Fetcher do
+  @moduledoc """
+  Fetches `contract_code` `t:Explorer.Chain.Address.t/0`.
+  """
+
   use Spandex.Decorators
 
   require Logger
@@ -78,7 +82,7 @@ defmodule Indexer.Code.Fetcher do
               tracer: Tracer
             )
   def run(entries, json_rpc_named_arguments) do
-    Logger.debug("fetching internal transactions for transactions")
+    Logger.debug("fetching created_contract_code for transactions")
 
     entries
     |> Enum.map(&params/1)
@@ -105,7 +109,7 @@ defmodule Indexer.Code.Fetcher do
             Logger.error(
               fn ->
                 [
-                  "failed to import internal transactions for transactions: ",
+                  "failed to import created_contract_code for transactions: ",
                   inspect(reason)
                 ]
               end,
@@ -114,11 +118,6 @@ defmodule Indexer.Code.Fetcher do
 
             {:retry, entries}
         end
-
-      {:error, reason} ->
-        Logger.error(fn -> ["failed to fetch internal transactions for transactions: ", inspect(reason)] end)
-
-        {:retry, entries}
 
       :ignore ->
         :ok

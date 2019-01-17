@@ -3,7 +3,7 @@ defmodule Explorer.Repo.Migrations.AddCreatedContractIndexedAtToTransactions do
 
   def change do
     alter table(:transactions) do
-      # `null` when `internal_transactions` has never been fetched
+      # `null` when `created_contract_code` has never been fetched
       add(:created_contract_code_indexed_at, :utc_datetime_usec, null: true)
     end
   end
