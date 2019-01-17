@@ -174,6 +174,7 @@ defmodule EthereumJSONRPCTest do
   end
 
   describe "fetch_codes/2" do
+    @tag :no_parity
     test "returns both codes and errors", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
