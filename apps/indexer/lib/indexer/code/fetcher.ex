@@ -7,7 +7,7 @@ defmodule Indexer.Code.Fetcher do
 
   require Logger
 
-  import Indexer.Block.Fetcher, only: [async_import_coin_balances: 2]
+  import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
   alias Explorer.Chain
   alias Explorer.Chain.{Block, Hash}
@@ -22,7 +22,7 @@ defmodule Indexer.Code.Fetcher do
     max_concurrency: @max_concurrency,
     max_batch_size: @max_batch_size,
     task_supervisor: Indexer.Code.TaskSupervisor,
-    metadata: [fetcher: :internal_transaction]
+    metadata: [fetcher: :code]
   ]
 
   @spec async_fetch([%{required(:block_number) => Block.block_number(), required(:hash) => Hash.Full.t()}]) :: :ok
@@ -75,12 +75,11 @@ defmodule Indexer.Code.Fetcher do
     {block_number, created_contract_bytes, bytes}
   end
 
-  defp params({block_number, created_contract_address_hash_bytes, transaction_hash_bytes})
+  defp params({block_number, created_contract_address_hash_bytes, _transaction_hash_bytes})
        when is_integer(block_number) do
-    {:ok, transaction_hash} = Hash.Full.cast(transaction_hash_bytes)
-    {:ok, created_contract_address_hash} = Hash.Full.cast(created_contract_address_hash_bytes)
+    {:ok, created_contract_address_hash} = Hash.Address.cast(created_contract_address_hash_bytes)
 
-    %{block_quantity: block_number, address: created_contract_address_hash, transaction_hash: transaction_hash}
+    %{block_quantity: integer_to_quantity(block_number), address: to_string(created_contract_address_hash)}
   end
 
   @impl BufferedTask
@@ -100,23 +99,13 @@ defmodule Indexer.Code.Fetcher do
       {:ok, create_address_codes} ->
         addresses_params = AddressExtraction.extract_addresses(%{codes: create_address_codes.params_list})
 
-        address_hash_to_block_number =
-          Enum.into(addresses_params, %{}, fn %{fetched_coin_balance_block_number: block_number, hash: address} ->
-            {address, block_number}
-          end)
+        case Chain.import(%{
+               addresses: %{params: addresses_params},
+               timeout: :infinity
+             }) do
+          {:ok, _} ->
+            :ok
 
-        transaction_params = transaction_params(entries, addresses_params)
-
-        with {:ok, imported} <-
-               Chain.import(%{
-                 addresses: %{params: addresses_params},
-                 transactions: %{params: transaction_params},
-                 timeout: :infinity
-               }) do
-          async_import_coin_balances(imported, %{
-            address_hash_to_fetched_balance_block_number: address_hash_to_block_number
-          })
-        else
           {:error, step, reason, _changes_so_far} ->
             Logger.error(
               fn ->
@@ -131,21 +120,5 @@ defmodule Indexer.Code.Fetcher do
             {:retry, entries}
         end
     end
-  end
-
-  defp transaction_params(entries, addresses_params) do
-    entries
-    |> Enum.filter(fn %{address: created_contract_address_hash} ->
-      Enum.any?(addresses_params, fn %{hash: hash} ->
-        hash == created_contract_address_hash
-      end)
-    end)
-    |> Enum.map(fn %{address: created_contract_address_hash, transaction_hash: transaction_hash} ->
-      %{
-        created_contract_address_hash: created_contract_address_hash,
-        hash: transaction_hash,
-        created_contract_code_indexed_at: DateTime.utc_now()
-      }
-    end)
   end
 end

@@ -80,8 +80,7 @@ defmodule Indexer.AddressExtraction do
     codes: [
       [
         %{from: :code, to: :contract_code},
-        %{from: :address, to: :hash},
-        %{from: :block_number, to: :fetched_coin_balance_block_number}
+        %{from: :address, to: :hash}
       ]
     ],
     transactions: [

@@ -6,7 +6,8 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
   require Ecto.Query
 
   alias Ecto.{Multi, Repo}
-  alias Explorer.Chain.{Address, Hash, Import}
+  alias Explorer.Chain.{Address, Hash, Import, Transaction}
+  alias Explorer.Chain.Import.Runner
 
   import Ecto.Query, only: [from: 2]
 
@@ -40,8 +41,17 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
 
-    Multi.run(multi, :addresses, fn repo, _ ->
+    transactions_timeout = options[Runner.Transactions.option_key()][:timeout] || Runner.Transactions.timeout()
+
+    update_transactions_options = %{timeout: transactions_timeout, timestamps: timestamps}
+
+    multi
+    |> Multi.run(:addresses, fn repo, _ ->
       insert(repo, changes_list, insert_options)
+    end)
+    |> Multi.run(:created_address_code_indexed_at_transactions, fn repo, %{addresses: addresses}
+                                                                   when is_list(addresses) ->
+      update_transactions(repo, addresses, update_transactions_options)
     end)
   end
 
@@ -116,5 +126,30 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
 
   defp sort_changes_list(changes_list) do
     Enum.sort_by(changes_list, & &1.hash)
+  end
+
+  defp update_transactions(repo, addresses, %{timeout: timeout, timestamps: timestamps}) do
+    ordered_created_contract_hashes =
+      addresses
+      |> Enum.filter(& &1.contract_code)
+      |> MapSet.new(& &1.hash)
+      |> Enum.sort()
+
+    query =
+      from(t in Transaction,
+        where: t.created_contract_address_hash in ^ordered_created_contract_hashes,
+        update: [
+          set: [created_contract_code_indexed_at: ^timestamps.updated_at]
+        ]
+      )
+
+    try do
+      {_, result} = repo.update_all(query, [], timeout: timeout)
+
+      {:ok, result}
+    rescue
+      postgrex_error in Postgrex.Error ->
+        {:error, %{exception: postgrex_error, transaction_hashes: ordered_created_contract_hashes}}
+    end
   end
 end

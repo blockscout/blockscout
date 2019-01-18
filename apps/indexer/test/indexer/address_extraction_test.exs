@@ -87,13 +87,11 @@ defmodule Indexer.AddressExtractionTest do
         codes: [
           %{
             address: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
-            block_number: 53,
             code:
               "0x7009600160008035811a818181146012578301005b601b6001356025565b8060005260206000f25b600060078202905091905"
           },
           %{
             address: "0x1bf38d4764929064f2d4d3a56520a76ab3df415b",
-            block_number: 1,
             code:
               "0x600160008035811a818181146012578301005b601b6001356025565b8060005260206000f25b600060078202905091905056"
           }
@@ -104,13 +102,11 @@ defmodule Indexer.AddressExtractionTest do
                %{
                  contract_code:
                    "0x600160008035811a818181146012578301005b601b6001356025565b8060005260206000f25b600060078202905091905056",
-                 fetched_coin_balance_block_number: 1,
                  hash: "0x1bf38d4764929064f2d4d3a56520a76ab3df415b"
                },
                %{
                  contract_code:
                    "0x7009600160008035811a818181146012578301005b601b6001356025565b8060005260206000f25b600060078202905091905",
-                 fetched_coin_balance_block_number: 53,
                  hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
                }
              ]
