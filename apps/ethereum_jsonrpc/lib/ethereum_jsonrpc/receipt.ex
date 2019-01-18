@@ -282,6 +282,11 @@ defmodule EthereumJSONRPC.Receipt do
     end
   end
 
+  # fixes for latest ganache JSON RPC
+  defp entry_to_elixir({key, _}) when key in ~w(r s v) do
+    :ignore
+  end
+
   defp entry_to_elixir({key, value}) do
     {:error, {:unknown_key, %{key: key, value: value}}}
   end

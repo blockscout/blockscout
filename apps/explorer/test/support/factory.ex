@@ -176,7 +176,9 @@ defmodule Explorer.Factory do
     with_block(transaction, block, [])
   end
 
-  def with_block(transactions, %Block{} = block) when is_list(transactions) do
+  # The `transaction.block` must be consensus.  Non-consensus blocks can only be associated with the
+  # `transaction_forks`.
+  def with_block(transactions, %Block{consensus: true} = block) when is_list(transactions) do
     Enum.map(transactions, &with_block(&1, block))
   end
 
@@ -187,7 +189,9 @@ defmodule Explorer.Factory do
 
   def with_block(
         %Transaction{index: nil} = transaction,
-        %Block{hash: block_hash, number: block_number},
+        # The `transaction.block` must be consensus.  Non-consensus blocks can only be associated with the
+        # `transaction_forks`.
+        %Block{consensus: true, hash: block_hash, number: block_number},
         collated_params
       )
       when is_list(collated_params) do

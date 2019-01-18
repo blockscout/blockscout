@@ -17,6 +17,14 @@ defmodule BlockScoutWeb do
   and import those modules here.
   """
 
+  # This is intentionally compiled in. Version is set
+  # at compile time, and we don't want to make a system
+  # env call to retreive it every time anyone loads any
+  # page.
+  @version System.get_env("BLOCKSCOUT_VERSION") || "unknown"
+
+  def version(), do: @version
+
   def controller do
     quote do
       use Phoenix.Controller, namespace: BlockScoutWeb
@@ -50,6 +58,7 @@ defmodule BlockScoutWeb do
         Router.Helpers,
         TabHelpers,
         Tokens.Helpers,
+        Views.ScriptHelpers,
         WeiHelpers
       }
     end

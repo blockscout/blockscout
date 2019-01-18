@@ -22,7 +22,9 @@ defmodule Explorer.Chain.Address do
    * `fetched_coin_balance_block_number` - the `t:Explorer.Chain.Block.t/0` `t:Explorer.Chain.Block.block_number/0` for
      which `fetched_coin_balance` was fetched
    * `hash` - the hash of the address's public key
-   * `contract_code` - the code of the contract when an Address is a contract
+   * `contract_code` - the binary code of the contract when an Address is a contract.  The human-readable
+     Solidity source code is in `smart_contract` `t:Explorer.Chain.SmartContract.t/0` `contract_source_code` *if* the
+    contract has been verified
    * `names` - names known for the address
    * `inserted_at` - when this address was inserted
    * `updated_at` when this address was last updated
