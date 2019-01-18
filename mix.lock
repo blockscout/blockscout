@@ -96,7 +96,7 @@
   "qrcode": {:hex, :qrcode, "0.1.4", "544dc67ba42eed5ebce3d2a691d053387937740561d251f83f0a067917fae2dc", [:mix], [], "hexpm"},
   "ranch": {:hex, :ranch, "1.7.1", "6b1fab51b49196860b733a49c07604465a47bdb78aa10c1c16a3d199f7f8c881", [:rebar3], [], "hexpm"},
   "set_locale": {:git, "https://github.com/minifast/set_locale.git", "da9ae029642bc0fbd9212c2aaf86c0adca70c084", [branch: "master"]},
-  "sobelow": {:hex, :sobelow, "0.7.1", "01a52ea8a19be0aa41ce969746f057e90f3994f1607c771968359718bd0e6988", [:mix], [], "hexpm"},
+  "sobelow": {:hex, :sobelow, "0.7.4", "228cc6185b448b63ecc88429b43e864e8dd570e8e09f2d04b3aa71894db1bdbb", [:mix], [], "hexpm"},
   "spandex": {:git, "https://github.com/spandex-project/spandex.git", "92992b4aaf3d92e031c2417ff2e6c9e94d27fe36", [branch: "allow-setting-trace-key"]},
   "spandex_datadog": {:hex, :spandex_datadog, "0.3.1", "984d27ad1f45cfd243509692f0f63b900a23b79566c529a644c7f3a2b4120603", [:mix], [{:msgpax, "~> 1.1", [hex: :msgpax, repo: "hexpm", optional: false]}, {:spandex, "~> 2.3", [hex: :spandex, repo: "hexpm", optional: false]}], "hexpm"},
   "spandex_ecto": {:hex, :spandex_ecto, "0.4.0", "deaeaddc11a35f1c551206c53d09bb93a0da5808dbef751430e465c8c7de01d3", [:mix], [{:spandex, "~> 2.2", [hex: :spandex, repo: "hexpm", optional: false]}], "hexpm"},
