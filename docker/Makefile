@@ -63,8 +63,8 @@ migrate: build postgres
 					$(DOCKER_IMAGE) /bin/sh -c "echo $$MIX_ENV && mix do ecto.drop --force, ecto.create, ecto.migrate"
 
 
-PG_EXIST := $(shell docker ps -a | grep ${PG_CONTAINER_NAME})
-PG_STARTED := $(shell docker ps | grep ${PG_CONTAINER_NAME})
+PG_EXIST := $(shell docker ps -a --filter name=${PG_CONTAINER_NAME} | grep ${PG_CONTAINER_NAME})
+PG_STARTED := $(shell docker ps --filter name=${PG_CONTAINER_NAME} | grep ${PG_CONTAINER_NAME})
 postgres:
 ifdef PG_EXIST
 	@echo "==> Checking PostrgeSQL container"

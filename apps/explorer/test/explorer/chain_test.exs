@@ -592,21 +592,21 @@ defmodule Explorer.ChainTest do
   end
 
   describe "confirmations/1" do
-    test "with block.number == max_block_number " do
+    test "with block.number == block_height " do
       block = insert(:block)
-      {:ok, max_block_number} = Chain.max_block_number()
+      block_height = Chain.block_height()
 
-      assert block.number == max_block_number
-      assert Chain.confirmations(block, max_block_number: max_block_number) == 0
+      assert block.number == block_height
+      assert {:ok, 0} = Chain.confirmations(block, block_height: block_height)
     end
 
-    test "with block.number < max_block_number" do
+    test "with block.number < block_height" do
       block = insert(:block)
-      max_block_number = block.number + 2
+      block_height = block.number + 2
 
-      assert block.number < max_block_number
-
-      assert Chain.confirmations(block, max_block_number: max_block_number) == max_block_number - block.number
+      assert block.number < block_height
+      assert {:ok, confirmations} = Chain.confirmations(block, block_height: block_height)
+      assert confirmations == block_height - block.number
     end
   end
 
@@ -921,11 +921,11 @@ defmodule Explorer.ChainTest do
         insert(:block, number: index)
       end
 
-      assert 0.5 == Chain.indexed_ratio()
+      assert Decimal.cmp(Chain.indexed_ratio(), Decimal.from_float(0.5)) == :eq
     end
 
     test "returns 0 if no blocks" do
-      assert 0 == Chain.indexed_ratio()
+      assert Decimal.new(0) == Chain.indexed_ratio()
     end
 
     test "returns 1.0 if fully indexed blocks" do
@@ -933,7 +933,7 @@ defmodule Explorer.ChainTest do
         insert(:block, number: index)
       end
 
-      assert 1.0 == Chain.indexed_ratio()
+      assert Decimal.cmp(Chain.indexed_ratio(), 1) == :eq
     end
   end
 
@@ -1312,6 +1312,28 @@ defmodule Explorer.ChainTest do
                Chain.list_top_addresses()
                |> Enum.map(fn {address, _transaction_count} -> address end)
                |> Enum.map(& &1.hash)
+    end
+  end
+
+  describe "get_blocks_without_reward/1" do
+    test "includes consensus blocks" do
+      %Block{hash: consensus_hash} = insert(:block, consensus: true)
+
+      assert [%Block{hash: ^consensus_hash}] = Chain.get_blocks_without_reward()
+    end
+
+    test "does not include consensus block that has a reward" do
+      %Block{hash: consensus_hash, miner_hash: miner_hash} = insert(:block, consensus: true)
+      insert(:reward, address_hash: miner_hash, block_hash: consensus_hash)
+
+      assert [] = Chain.get_blocks_without_reward()
+    end
+
+    # https://github.com/poanetwork/blockscout/issues/1310 regression test
+    test "does not include non-consensus blocks" do
+      insert(:block, consensus: false)
+
+      assert [] = Chain.get_blocks_without_reward()
     end
   end
 

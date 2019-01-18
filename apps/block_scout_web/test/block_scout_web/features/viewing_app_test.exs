@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.ViewingAppTest do
         insert(:block, number: index)
       end
 
-      assert Explorer.Chain.indexed_ratio() == 0.5
+      assert Decimal.cmp(Explorer.Chain.indexed_ratio(), Decimal.from_float(0.5)) == :eq
 
       session
       |> AppPage.visit_page()
@@ -32,7 +32,7 @@ defmodule BlockScoutWeb.ViewingAppTest do
         insert(:block, number: index)
       end
 
-      assert Explorer.Chain.indexed_ratio() == 1.0
+      assert Decimal.cmp(Explorer.Chain.indexed_ratio(), 1) == :eq
 
       session
       |> AppPage.visit_page()
@@ -46,7 +46,7 @@ defmodule BlockScoutWeb.ViewingAppTest do
 
       BlocksIndexedCounter.calculate_blocks_indexed()
 
-      assert Explorer.Chain.indexed_ratio() == 0.5
+      assert Decimal.cmp(Explorer.Chain.indexed_ratio(), Decimal.from_float(0.5)) == :eq
 
       session
       |> AppPage.visit_page()
@@ -66,7 +66,7 @@ defmodule BlockScoutWeb.ViewingAppTest do
 
       BlocksIndexedCounter.calculate_blocks_indexed()
 
-      assert Explorer.Chain.indexed_ratio() == 0.9
+      assert Decimal.cmp(Explorer.Chain.indexed_ratio(), Decimal.from_float(0.9)) == :eq
 
       session
       |> AppPage.visit_page()
@@ -87,7 +87,7 @@ defmodule BlockScoutWeb.ViewingAppTest do
 
       BlocksIndexedCounter.calculate_blocks_indexed()
 
-      assert Explorer.Chain.indexed_ratio() == 1.0
+      assert Decimal.cmp(Explorer.Chain.indexed_ratio(), 1) == :eq
 
       session
       |> AppPage.visit_page()
