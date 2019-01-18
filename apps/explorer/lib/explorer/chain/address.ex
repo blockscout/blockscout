@@ -85,8 +85,17 @@ defmodule Explorer.Chain.Address do
     |> unique_constraint(:hash)
   end
 
-  def checksum(%__MODULE__{hash: hash}, iodata? \\ false) do
-    "0x" <> string_hash = to_string(hash)
+  def checksum(address_or_hash, iodata? \\ false)
+
+  def checksum(%__MODULE__{hash: hash}, iodata?) do
+    checksum(hash, iodata?)
+  end
+
+  def checksum(hash, iodata?) do
+    string_hash =
+      hash
+      |> to_string()
+      |> String.trim_leading("0x")
 
     match_byte_stream = stream_every_four_bytes_of_sha256(string_hash)
 
