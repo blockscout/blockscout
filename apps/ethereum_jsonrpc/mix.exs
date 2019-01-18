@@ -61,7 +61,7 @@ defmodule EthereumJsonrpc.MixProject do
       # CACerts bundle for `EthereumJSONRPC.WebSocket.WebSocketClient`
       {:certifi, "~> 2.3"},
       # WebSocket-server for testing `EthereumJSONRPC.WebSocket.WebSocketClient`.
-      {:cowboy, "~> 1.1", only: [:dev, :test]},
+      {:cowboy, "~> 2.0", only: [:dev, :test]},
       # Style Checking
       {:credo, "0.10.2", only: [:dev, :test], runtime: false},
       # Static Type Checking
