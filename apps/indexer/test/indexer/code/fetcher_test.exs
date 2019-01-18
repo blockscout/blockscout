@@ -31,12 +31,12 @@ defmodule Indexer.Code.FetcherTest do
         case variant do
           EthereumJSONRPC.Geth ->
             %{
-              block_number: 201_480,
-              code: "0x3838533838f3",
+              block_number: 1_000_071,
+              code:
+                "0x3660008037602060003660003473273930d21e01ee25e4c219b63259d214872220a261235a5a03f21560015760206000f3",
               address: %Explorer.Chain.Hash{
                 byte_count: 20,
-                bytes:
-                  <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132, 89, 192, 16, 79, 223, 94, 152, 122, 202>>
+                bytes: <<0x4615CC10092B514258577DAFCA98C142577F1578::big-integer-size(20)-unit(8)>>
               },
               hash: %Explorer.Chain.Hash{
                 byte_count: 32,
@@ -47,12 +47,12 @@ defmodule Indexer.Code.FetcherTest do
 
           EthereumJSONRPC.Parity ->
             %{
-              block_number: 34,
-              code: "0x3838533838f3",
+              block_number: 1_000_071,
+              code:
+                "0x3660008037602060003660003473273930d21e01ee25e4c219b63259d214872220a261235a5a03f21560015760206000f3",
               address: %Explorer.Chain.Hash{
                 byte_count: 20,
-                bytes:
-                  <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132, 89, 192, 16, 79, 223, 94, 152, 122, 202>>
+                bytes: <<0x4615CC10092B514258577DAFCA98C142577F1578::big-integer-size(20)-unit(8)>>
               },
               hash: %Explorer.Chain.Hash{
                 byte_count: 32,
@@ -68,8 +68,6 @@ defmodule Indexer.Code.FetcherTest do
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         block_quantity = integer_to_quantity(block_number)
         address = to_string(address)
-
-        {block_quantity, address} |> IO.inspect()
 
         EthereumJSONRPC.Mox
         |> expect(:json_rpc, fn [%{id: id, method: "eth_getCode", params: [^address, ^block_quantity]}], _options ->
