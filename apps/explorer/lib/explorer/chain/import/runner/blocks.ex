@@ -12,6 +12,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   alias Explorer.Chain.{Address, Block, Hash, Import, InternalTransaction, Transaction}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import.Runner
+  alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
+  alias Explorer.Chain.Import.Runner.Tokens
 
   @behaviour Runner
 
@@ -79,6 +81,14 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
                                                                 deleted_address_current_token_balances
                                                             } ->
       derive_address_current_token_balances(repo, deleted_address_current_token_balances, insert_options)
+    end)
+    |> Multi.run(:blocks_update_token_holder_counts, fn repo,
+                                                        %{
+                                                          delete_address_current_token_balances: deleted,
+                                                          derive_address_current_token_balances: inserted
+                                                        } ->
+      deltas = CurrentTokenBalances.token_holder_count_deltas(%{deleted: deleted, inserted: inserted})
+      Tokens.update_holder_counts_with_deltas(repo, deltas, insert_options)
     end)
     |> Multi.run(:delete_rewards, fn repo, _ ->
       delete_rewards(repo, changes_list, insert_options)
@@ -356,7 +366,15 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     query =
       from(address_current_token_balance in Address.CurrentTokenBalance,
-        select: map(address_current_token_balance, [:address_hash, :token_contract_address_hash]),
+        select:
+          map(address_current_token_balance, [
+            :address_hash,
+            :token_contract_address_hash,
+            # Used to determine if `address_hash` was a holder of `token_contract_address_hash` before
+
+            # `address_current_token_balance` is deleted in `update_tokens_holder_count`.
+            :value
+          ]),
         inner_join: ordered_address_current_token_balance in subquery(ordered_query),
         on:
           ordered_address_current_token_balance.address_hash == address_current_token_balance.address_hash and
@@ -431,24 +449,31 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     insert_sql = """
     INSERT INTO address_current_token_balances (address_hash, token_contract_address_hash, block_number, value, inserted_at, updated_at)
     #{select_sql}
-    RETURNING address_hash, token_contract_address_hash, block_number
+    RETURNING address_hash, token_contract_address_hash, block_number, value
     """
 
     with {:ok,
           %Postgrex.Result{
-            columns: ["address_hash", "token_contract_address_hash", "block_number"],
+            columns: [
+              "address_hash",
+              "token_contract_address_hash",
+              "block_number",
+              # needed for `update_tokens_holder_count`
+              "value"
+            ],
             command: :insert,
             rows: rows
           }} <- SQL.query(repo, insert_sql, parameters, timeout: timeout) do
       derived_address_current_token_balances =
-        Enum.map(rows, fn [address_hash_bytes, token_contract_address_hash_bytes, block_number] ->
+        Enum.map(rows, fn [address_hash_bytes, token_contract_address_hash_bytes, block_number, value] ->
           {:ok, address_hash} = Hash.Address.load(address_hash_bytes)
           {:ok, token_contract_address_hash} = Hash.Address.load(token_contract_address_hash_bytes)
 
           %{
             address_hash: address_hash,
             token_contract_address_hash: token_contract_address_hash,
-            block_number: block_number
+            block_number: block_number,
+            value: value
           }
         end)
 
