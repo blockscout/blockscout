@@ -41,7 +41,7 @@
                 <%= gettext "Average block time" %>
               </span>
               <span class="dashboard-banner-network-stats-value" data-selector="average-block-time">
-                <%= Timex.format_duration(average_block_time, :humanized) %>
+                <%= Timex.format_duration(average_block_time, Explorer.Counters.AverageBlockTimeDurationFormat) %>
               </span>
             </div>
         <% end %>

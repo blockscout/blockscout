@@ -6,7 +6,7 @@
           <h1 class="card-title" data-test="detail_type">
             <%= gettext("Block Details") %>
           </h1>
-          <div class="tile tile-muted text-center">
+          <div class="tile tile-muted text-center" data-selector="block-not-found-message">
             <%= block_not_found_message(@block_above_tip) %>
           </div>
         </div>

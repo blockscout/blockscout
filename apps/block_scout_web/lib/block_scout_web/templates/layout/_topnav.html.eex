@@ -1,7 +1,7 @@
 <nav class="navbar navbar-dark navbar-expand-lg navbar-primary" data-selector="navbar">
   <div class="container">
     <%= link to: chain_path(@conn, :show), class: "navbar-brand", "data-test": "header_logo" do %>
-      <img class="navbar-logo" src="<%= logo() %>" />
+      <img class="navbar-logo" src="<%= logo() %>" alt="<%= subnetwork_title() %>" />
     <% end %>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="<%= gettext("Toggle navigation") %>">
       <span class="navbar-toggler-icon"></span>
@@ -100,15 +100,9 @@
               Görli Testnet
             </a>
             <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-              <a class="dropdown-item" href="https://blockscout.com/poa/core"><%= gettext("POA Core") %></a>
-              <a class="dropdown-item" href="https://blockscout.com/poa/sokol"><%= gettext("POA Sokol") %></a>
-              <a class="dropdown-item" href="https://blockscout.com/poa/dai"><%= gettext("xDai Chain") %></a>
-              <a class="dropdown-item" href="https://blockscout.com/eth/mainnet"><%= gettext("Ethereum Mainnet") %></a>
-              <a class="dropdown-item" href="https://blockscout.com/eth/kovan"><%= gettext("Kovan Testnet") %></a>
-              <a class="dropdown-item" href="https://blockscout.com/eth/ropsten"><%= gettext("Ropsten Testnet") %></a>
-              <a class="dropdown-item" href="https://blockscout.com/eth/goerli"><%= gettext("Görli Testnet") %></a>
-              <a class="dropdown-item" href="https://blockscout.com/eth/rinkeby"><%= gettext("Rinkeby Testnet") %></a>
-              <a class="dropdown-item" href="https://blockscout.com/etc/mainnet"><%= gettext("Ethereum Classic") %></a>
+              <%= for %{url: url, title: title} <- other_networks() do %>
+                <a class="dropdown-item" href="<%= url%>"><%= title %></a>
+              <% end %>
             </div>
           </li>
         </ul>
