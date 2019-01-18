@@ -23,6 +23,7 @@ defmodule EthereumJsonrpc.MixProject do
         "coveralls.detail": :test,
         "coveralls.post": :test,
         "coveralls.html": :test,
+        credo: :test,
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
@@ -63,7 +64,7 @@ defmodule EthereumJsonrpc.MixProject do
       # WebSocket-server for testing `EthereumJSONRPC.WebSocket.WebSocketClient`.
       {:cowboy, "~> 2.0", only: [:dev, :test]},
       # Style Checking
-      {:credo, "0.10.2", only: [:dev, :test], runtime: false},
+      {:credo, "1.0.0", only: :test, runtime: false},
       # Static Type Checking
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       # Code coverage

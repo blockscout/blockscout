@@ -24,6 +24,7 @@ defmodule BlockScoutWeb.Mixfile do
         "coveralls.detail": :test,
         "coveralls.post": :test,
         "coveralls.html": :test,
+        credo: :test,
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
@@ -70,7 +71,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:bypass, "~> 1.0", only: :test},
       # To add (CORS)(https://www.w3.org/TR/cors/)
       {:cors_plug, "~> 2.0"},
-      {:credo, "0.10.2", only: [:dev, :test], runtime: false},
+      {:credo, "1.0.0", only: :test, runtime: false},
       # For Absinthe to load data in batches
       {:dataloader, "~> 1.0.0"},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},

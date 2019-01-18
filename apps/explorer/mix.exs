@@ -24,6 +24,7 @@ defmodule Explorer.Mixfile do
         "coveralls.detail": :test,
         "coveralls.post": :test,
         "coveralls.html": :test,
+        credo: :test,
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
@@ -66,7 +67,7 @@ defmodule Explorer.Mixfile do
       {:benchee_csv, "~> 0.8.0", only: :test},
       {:bypass, "~> 1.0", only: :test},
       {:comeonin, "~> 4.0"},
-      {:credo, "0.10.2", only: [:dev, :test], runtime: false},
+      {:credo, "1.0.0", only: :test, runtime: false},
       # For Absinthe to load data in batches
       {:dataloader, "~> 1.0.0"},
       {:decimal, "~> 1.0"},
