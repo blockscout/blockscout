@@ -54,7 +54,7 @@ defmodule Indexer.Code.Fetcher do
   def init(initial, reducer, _) do
     {:ok, final} =
       Chain.stream_transactions_with_unfetched_created_contract_codes(
-        [:block_number, :hash],
+        [:block_number, :created_contract_address_hash, :hash],
         initial,
         fn transaction_fields, acc ->
           transaction_fields
@@ -66,12 +66,21 @@ defmodule Indexer.Code.Fetcher do
     final
   end
 
-  defp entry(%{block_number: block_number, hash: %Hash{bytes: bytes}}) when is_integer(block_number) do
-    {block_number, bytes}
+  defp entry(%{
+         block_number: block_number,
+         created_contract_address_hash: %Hash{bytes: created_contract_bytes},
+         hash: %Hash{bytes: bytes}
+       })
+       when is_integer(block_number) do
+    {block_number, created_contract_bytes, bytes}
   end
 
-  defp params({block_number, _hash_bytes, created_contract_address_hash}) when is_integer(block_number) do
-    %{block_quantity: block_number, address: created_contract_address_hash}
+  defp params({block_number, created_contract_address_hash_bytes, transaction_hash_bytes})
+       when is_integer(block_number) do
+    {:ok, transaction_hash} = Hash.Full.cast(transaction_hash_bytes)
+    {:ok, created_contract_address_hash} = Hash.Full.cast(created_contract_address_hash_bytes)
+
+    %{block_quantity: block_number, address: created_contract_address_hash, transaction_hash: transaction_hash}
   end
 
   @impl BufferedTask
@@ -96,9 +105,12 @@ defmodule Indexer.Code.Fetcher do
             {address, block_number}
           end)
 
+        transaction_params = transaction_params(entries, addresses_params)
+
         with {:ok, imported} <-
                Chain.import(%{
                  addresses: %{params: addresses_params},
+                 transactions: %{params: transaction_params},
                  timeout: :infinity
                }) do
           async_import_coin_balances(imported, %{
@@ -119,5 +131,21 @@ defmodule Indexer.Code.Fetcher do
             {:retry, entries}
         end
     end
+  end
+
+  defp transaction_params(entries, addresses_params) do
+    entries
+    |> Enum.filter(fn %{address: created_contract_address_hash} ->
+      Enum.any?(addresses_params, fn %{hash: hash} ->
+        hash == created_contract_address_hash
+      end)
+    end)
+    |> Enum.map(fn %{address: created_contract_address_hash, transaction_hash: transaction_hash} ->
+      %{
+        created_contract_address_hash: created_contract_address_hash,
+        hash: transaction_hash,
+        created_contract_code_indexed_at: DateTime.utc_now()
+      }
+    end)
   end
 end

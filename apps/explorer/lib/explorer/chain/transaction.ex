@@ -98,7 +98,7 @@ defmodule Explorer.Chain.Transaction do
      transaction
    * `internal_transactions_indexed_at` - when `internal_transactions` were fetched by `Indexer` or when they do not
      need to be fetched at `inserted_at`.
-   * `created_address_code_indexed_at` - when created `address` code was fetched by `Indexer`
+   * `created_contract_code_indexed_at` - when created `address` code was fetched by `Indexer`
 
      | `status` | `contract_creation_address_hash` | `input`    | Token Transfer? | `internal_transactions_indexed_at`        | `internal_transactions` | Description                                                                                         |
      |----------|----------------------------------|------------|-----------------|-------------------------------------------|-------------------------|-----------------------------------------------------------------------------------------------------|

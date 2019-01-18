@@ -1186,7 +1186,9 @@ defmodule Explorer.Chain do
       when is_function(reducer, 2) do
     query =
       from(t in Transaction,
-        where: not is_nil(t.block_hash) and is_nil(t.created_contract_code_indexed_at),
+        where:
+          not is_nil(t.block_hash) and not is_nil(t.created_contract_address_hash) and
+            is_nil(t.created_contract_code_indexed_at),
         select: ^fields
       )
 
