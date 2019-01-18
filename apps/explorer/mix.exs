@@ -83,7 +83,7 @@ defmodule Explorer.Mixfile do
       # Code coverage
       {:excoveralls, "~> 0.10.0", only: [:test], github: "KronicDeth/excoveralls", branch: "circle-workflows"},
       {:exvcr, "~> 0.10", only: :test},
-      {:httpoison, "~> 1.0", override: true},
+      {:httpoison, "~> 1.0"},
       {:jason, "~> 1.0"},
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       # Log errors and application output to separate files

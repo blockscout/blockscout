@@ -89,7 +89,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:floki, "~> 0.20.1", only: :test},
       {:flow, "~> 0.12"},
       {:gettext, "~> 0.14.1"},
-      {:httpoison, "~> 1.0", override: true},
+      {:httpoison, "~> 1.0"},
       # JSON parser and generator
       {:jason, "~> 1.0"},
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
