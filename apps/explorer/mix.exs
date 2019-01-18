@@ -64,7 +64,7 @@ defmodule Explorer.Mixfile do
       {:benchee, "~> 0.13.1", only: :test},
       # CSV output for benchee
       {:benchee_csv, "~> 0.8.0", only: :test},
-      {:bypass, "~> 0.8", only: :test},
+      {:bypass, "~> 1.0", only: :test},
       {:comeonin, "~> 4.0"},
       {:credo, "0.10.2", only: [:dev, :test], runtime: false},
       # For Absinthe to load data in batches

@@ -12,7 +12,7 @@
   "benchee_csv": {:hex, :benchee_csv, "0.8.0", "0ca094677d6e2b2f601b7ee7864b754789ef9d24d079432e5e3d6f4fb83a4d80", [:mix], [{:benchee, "~> 0.12", [hex: :benchee, optional: false]}, {:csv, "~> 2.0", [hex: :csv, optional: false]}]},
   "binary": {:hex, :binary, "0.0.5", "20d816f7274ea34f1b673b4cff2fdb9ebec9391a7a68c349070d515c66b1b2cf", [:mix], []},
   "bunt": {:hex, :bunt, "0.2.0", "951c6e801e8b1d2cbe58ebbd3e616a869061ddadcc4863d0a2182541acae9a38", [:mix], []},
-  "bypass": {:hex, :bypass, "0.9.0", "4cedcd326eeec497e0090a73d351cbd0f11e39329ddf9095931b03da9b6dc417", [:mix], [{:cowboy, "~> 1.0 or ~> 2.0", [hex: :cowboy, repo: "hexpm", optional: false]}, {:plug, "~> 1.0", [hex: :plug, repo: "hexpm", optional: false]}], "hexpm"},
+  "bypass": {:hex, :bypass, "1.0.0", "b78b3dcb832a71aca5259c1a704b2e14b55fd4e1327ff942598b4e7d1a7ad83d", [:mix], [{:plug, "~> 1.7", [hex: :plug, repo: "hexpm", optional: false]}, {:plug_cowboy, "~> 1.0 or ~> 2.0", [hex: :plug_cowboy, repo: "hexpm", optional: false]}], "hexpm"},
   "certifi": {:hex, :certifi, "2.4.2", "75424ff0f3baaccfd34b1214184b6ef616d89e420b258bb0a5ea7d7bc628f7f0", [:rebar3], [{:parse_trans, "~>3.3", [hex: :parse_trans, repo: "hexpm", optional: false]}], "hexpm"},
   "combine": {:hex, :combine, "0.10.0", "eff8224eeb56498a2af13011d142c5e7997a80c8f5b97c499f84c841032e429f", [:mix], []},
   "comeonin": {:hex, :comeonin, "4.1.1", "c7304fc29b45b897b34142a91122bc72757bc0c295e9e824999d5179ffc08416", [:mix], [{:argon2_elixir, "~> 1.2", [hex: :argon2_elixir, optional: true]}, {:bcrypt_elixir, "~> 0.12.1 or ~> 1.0", [hex: :bcrypt_elixir, optional: true]}, {:pbkdf2_elixir, "~> 0.12", [hex: :pbkdf2_elixir, optional: true]}]},
