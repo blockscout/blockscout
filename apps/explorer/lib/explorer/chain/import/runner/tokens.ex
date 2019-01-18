@@ -66,8 +66,13 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
         }) :: {:ok, [Token.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
-    # order so that row ShareLocks are grabbed in a consistent order
-    ordered_changes_list = Enum.sort_by(changes_list, & &1.contract_address_hash)
+
+    ordered_changes_list =
+      changes_list
+      # brand new tokens start with no holders
+      |> Stream.map(&Map.put_new(&1, :holder_count, 0))
+      # order so that row ShareLocks are grabbed in a consistent order
+      |> Enum.sort_by(& &1.contract_address_hash)
 
     {:ok, _} =
       Import.insert_changes_list(
@@ -93,6 +98,8 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
           decimals: fragment("EXCLUDED.decimals"),
           type: fragment("EXCLUDED.type"),
           cataloged: fragment("EXCLUDED.cataloged"),
+          # `holder_count` is not updated as a pre-existing token means the `holder_count` is already initialized OR
+          #   need to be migrated with `priv/repo/migrations/scripts/update_new_tokens_holder_count_in_batches.sql.exs`
           # Don't update `contract_address_hash` as it is the primary key and used for the conflict target
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", token.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token.updated_at)
