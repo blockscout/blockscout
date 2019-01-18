@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
+  @moduletag capture_log: true
+
   describe "gettxreceiptstatus" do
     test "with missing txhash", %{conn: conn} do
       params = %{
