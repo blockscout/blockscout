@@ -335,11 +335,6 @@ msgid "Copy Txn Hash"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:18
-msgid "Copyright %{year} POA"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:50
 msgid "Created by"
 msgstr ""
@@ -462,7 +457,7 @@ msgid "Gas Used"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:7
+#: lib/block_scout_web/templates/layout/_footer.html.eex:14
 msgid "Github"
 msgstr ""
 
@@ -657,16 +652,6 @@ msgid "Owner Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:107
-msgid "POA Core"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:106
-msgid "POA Sokol"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:6
 msgid "POST"
 msgstr ""
@@ -802,7 +787,7 @@ msgid "TX Fee"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:13
+#: lib/block_scout_web/templates/layout/_footer.html.eex:20
 msgid "Telegram"
 msgstr ""
 
@@ -1006,7 +991,7 @@ msgid "Try it out"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:10
+#: lib/block_scout_web/templates/layout/_footer.html.eex:17
 msgid "Twitter"
 msgstr ""
 
@@ -1524,4 +1509,44 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/chain/show.html.eex:102
 msgid "Something went wrong, click to retry."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_footer.html.eex:29
+msgid "Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for Ethereum Networks."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_footer.html.eex:44
+msgid "Chat"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_footer.html.eex:43
+msgid "Contribute"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_footer.html.eex:51
+msgid "Main Networks"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_footer.html.eex:78
+msgid "Other Explorers"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_footer.html.eex:42
+msgid "Submit an Issue"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_footer.html.eex:65
+msgid "Test Networks"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_footer.html.eex:93
+msgid "Version"
 msgstr ""
