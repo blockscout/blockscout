@@ -12,7 +12,12 @@ defmodule Explorer.Application do
   def start(_type, _args) do
     PrometheusLogger.setup()
 
-    Telemetry.attach("prometheus-ecto", [:explorer, :repo, :query], Explorer.Repo.PrometheusLogger, :handle_event, %{})
+    :telemetry.attach(
+      "prometheus-ecto",
+      [:explorer, :repo, :query],
+      &PrometheusLogger.handle_event/4,
+      %{}
+    )
 
     # Children to start in all environments
     base_children = [
