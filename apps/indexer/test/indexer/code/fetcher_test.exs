@@ -24,6 +24,8 @@ defmodule Indexer.Code.FetcherTest do
   end
 
   describe "async_fetch/1" do
+    # geth test node on circle ci is synced farther than parity
+    @tag :no_parity
     test "fetched codes for address_hashes", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
 
