@@ -24,6 +24,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   @behaviour Block.Fetcher
 
+  @minimum_safe_polling_period :timer.seconds(10)
+
   @enforce_keys ~w(block_fetcher)a
   defstruct ~w(block_fetcher subscription previous_number max_number_seen timer)a
 
@@ -140,7 +142,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
         block_time -> round(Duration.to_milliseconds(block_time) * 2)
       end
 
-    Process.send_after(self(), :poll_latest_block_number, polling_period)
+    safe_polling_period = max(polling_period, @minimum_safe_polling_period)
+
+    Process.send_after(self(), :poll_latest_block_number, safe_polling_period)
   end
 
   @import_options ~w(address_hash_to_fetched_balance_block_number)a
