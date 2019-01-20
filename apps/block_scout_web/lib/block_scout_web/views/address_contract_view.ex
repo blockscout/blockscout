@@ -1,6 +1,10 @@
 defmodule BlockScoutWeb.AddressContractView do
   use BlockScoutWeb, :view
 
+  def render("scripts.html", %{conn: conn}) do
+    render_scripts(conn, "address_contract/code_highlighting.js")
+  end
+
   def format_smart_contract_abi(abi), do: Poison.encode!(abi, pretty: false)
 
   @doc """

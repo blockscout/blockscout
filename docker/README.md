@@ -15,7 +15,7 @@ Exmaple connecting to local `ganache` instance running on port `2000` on Mac/Win
 COIN=DAI \
 ETHEREUM_JSONRPC_VARIANT=ganache \ 
 ETHEREUM_JSONRPC_HTTP_URL=http://host.docker.internal:2000 \
-ETHEREUM_JSONRPC_WEB_SOCKET_URL=ws://host.docker.internal:2000 \
+ETHEREUM_JSONRPC_WS_URL=ws://host.docker.internal:2000 \
 make start
 ```
 

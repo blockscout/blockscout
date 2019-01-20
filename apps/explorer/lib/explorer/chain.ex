@@ -44,7 +44,6 @@ defmodule Explorer.Chain do
   alias Explorer.{PagingOptions, Repo}
 
   alias Dataloader.Ecto, as: DataloaderEcto
-  alias Timex.Duration
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -52,6 +51,11 @@ defmodule Explorer.Chain do
   The name of an association on the `t:Ecto.Schema.t/0`
   """
   @type association :: atom()
+
+  @typedoc """
+  The max `t:Explorer.Chain.Block.block_number/0` for `consensus` `true` `t:Explorer.Chain.Block.t/0`s.
+  """
+  @type block_height :: Block.block_number()
 
   @typedoc """
   Event type where data is broadcasted whenever data is inserted from chain indexing.
@@ -288,31 +292,6 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  The average time it took to mine/validate the last <= 100 `t:Explorer.Chain.Block.t/0`
-  """
-  @spec average_block_time :: %Timex.Duration{}
-  def average_block_time do
-    {:ok, %Postgrex.Result{rows: [[%Postgrex.Interval{months: 0, days: days, secs: seconds}]]}} =
-      SQL.query(
-        Repo,
-        """
-          SELECT coalesce(avg(difference), interval '0 seconds')
-          FROM (
-            SELECT b.timestamp - lag(b.timestamp) over (order by b.timestamp) as difference
-            FROM (SELECT * FROM blocks ORDER BY number DESC LIMIT 101) b
-            LIMIT 100 OFFSET 1
-          ) t
-        """,
-        []
-      )
-
-    hours = days * 24
-    minutes = 0
-    microseconds = 0
-    Duration.from_clock({hours, minutes, seconds, microseconds})
-  end
-
-  @doc """
   The `t:Explorer.Chain.Address.t/0` `balance` in `unit`.
   """
   @spec balance(Address.t(), :wei) :: Wei.wei() | nil
@@ -441,13 +420,47 @@ defmodule Explorer.Chain do
 
   @doc """
   How many blocks have confirmed `block` based on the current `max_block_number`
-  """
-  @spec confirmations(Block.t(), [{:max_block_number, Block.block_number()}]) :: non_neg_integer()
-  def confirmations(%Block{number: number}, named_arguments) when is_list(named_arguments) do
-    max_block_number = Keyword.fetch!(named_arguments, :max_block_number)
 
-    max_block_number - number
+  A consensus block's number of confirmations is the difference between its number and the current block height.
+
+      iex> block = insert(:block, number: 1)
+      iex> Explorer.Chain.confirmations(block, block_height: 2)
+      {:ok, 1}
+
+  The newest block at the block height has no confirmations.
+
+      iex> block = insert(:block, number: 1)
+      iex> Explorer.Chain.confirmations(block, block_height: 1)
+      {:ok, 0}
+
+  A non-consensus block has no confirmations and is orphaned even if there are child blocks of it on an orphaned chain.
+
+      iex> parent_block = insert(:block, consensus: false, number: 1)
+      iex> insert(
+      ...>   :block,
+      ...>   parent_hash: parent_block.hash,
+      ...>   consensus: false,
+      ...>   number: parent_block.number + 1
+      ...> )
+      iex> Explorer.Chain.confirmations(parent_block, block_height: 3)
+      {:error, :non_consensus}
+
+  If you calculate the block height and then get a newer block, the confirmations will be `0` instead of negative.
+
+      iex> block = insert(:block, number: 1)
+      iex> Explorer.Chain.confirmations(block, block_height: 0)
+      {:ok, 0}
+  """
+  @spec confirmations(Block.t(), [{:block_height, block_height()}]) ::
+          {:ok, non_neg_integer()} | {:error, :non_consensus}
+
+  def confirmations(%Block{consensus: true, number: number}, named_arguments) when is_list(named_arguments) do
+    max_consensus_block_number = Keyword.fetch!(named_arguments, :block_height)
+
+    {:ok, max(max_consensus_block_number - number, 0)}
   end
+
+  def confirmations(%Block{consensus: false}, _), do: {:error, :non_consensus}
 
   @doc """
   Creates an address.
@@ -861,23 +874,31 @@ defmodule Explorer.Chain do
       ...>   insert(:block, number: index)
       ...> end
       iex> Explorer.Chain.indexed_ratio()
-      0.5
+      Decimal.new(1, 50000000000000000000, -20)
 
   If there are no blocks, the percentage is 0.
 
       iex> Explorer.Chain.indexed_ratio()
-      0
+      Decimal.new(0)
 
   """
-  @spec indexed_ratio() :: float()
+  @spec indexed_ratio() :: Decimal.t()
   def indexed_ratio do
-    with {:ok, min_block_number} <- min_block_number(),
-         {:ok, max_block_number} <- max_block_number() do
-      indexed_blocks = max_block_number - min_block_number + 1
-      indexed_blocks / (max_block_number + 1)
-    else
-      {:error, _} -> 0
-    end
+    # subquery so we need to cast less
+    decimal_min_max_query =
+      from(block in Block,
+        select: %{min_number: type(min(block.number), :decimal), max_number: type(max(block.number), :decimal)},
+        where: block.consensus == true
+      )
+
+    query =
+      from(decimal_min_max in subquery(decimal_min_max_query),
+        # math on `NULL` returns `NULL` so `coalesce` works as expected
+        select:
+          coalesce((decimal_min_max.max_number - decimal_min_max.min_number + 1) / (decimal_min_max.max_number + 1), 0)
+      )
+
+    Repo.one!(query)
   end
 
   @doc """
@@ -1182,51 +1203,78 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  The maximum `t:Explorer.Chain.Block.t/0` `number`
+  Max consensus block numbers.
 
   If blocks are skipped and inserted out of number order, the max number is still returned
 
       iex> insert(:block, number: 2)
       iex> insert(:block, number: 1)
-      iex> Explorer.Chain.max_block_number()
+      iex> Explorer.Chain.max_consensus_block_number()
+      {:ok, 2}
+
+  Non-consensus blocks are ignored
+
+      iex> insert(:block, number: 3, consensus: false)
+      iex> insert(:block, number: 2, consensus: true)
+      iex> Explorer.Chain.max_consensus_block_number()
       {:ok, 2}
 
   If there are no blocks, `{:error, :not_found}` is returned
 
-      iex> Explorer.Chain.max_block_number()
+      iex> Explorer.Chain.max_consensus_block_number()
       {:error, :not_found}
 
   """
-  @spec max_block_number() :: {:ok, Block.block_number()} | {:error, :not_found}
-  def max_block_number do
-    case Repo.aggregate(Block, :max, :number) do
+  @spec max_consensus_block_number() :: {:ok, Block.block_number()} | {:error, :not_found}
+  def max_consensus_block_number do
+    Block
+    |> where(consensus: true)
+    |> Repo.aggregate(:max, :number)
+    |> case do
       nil -> {:error, :not_found}
       number -> {:ok, number}
     end
   end
 
   @doc """
-  The minimum `t:Explorer.Chain.Block.t/0` `number` (used to show loading status while indexing)
+  The height of the chain.
 
-  If blocks are skipped and inserted out of number order, the min number is still returned
-
-      iex> insert(:block, number: 2)
+      iex> insert(:block, number: 0)
+      iex> Explorer.Chain.block_height()
+      0
       iex> insert(:block, number: 1)
-      iex> Explorer.Chain.min_block_number()
-      {:ok, 1}
+      iex> Explorer.Chain.block_height()
+      1
 
-  If there are no blocks, `{:error, :not_found}` is returned
+  If there are no blocks, then the `t:block_height/0` is `0`, unlike `max_consensus_block_chain/0` where it is not found.
 
-      iex> Explorer.Chain.min_block_number()
+      iex> Explorer.Chain.block_height()
+      0
+      iex> Explorer.Chain.max_consensus_block_number()
       {:error, :not_found}
 
+  It is not possible to differentiate only the genesis block (`number` `0`) and no blocks.  Use
+  `max_consensus_block_chain/0` if you need to differentiate those two scenarios.
+
+      iex> Explorer.Chain.block_height()
+      0
+      iex> insert(:block, number: 0)
+      iex> Explorer.Chain.block_height()
+      0
+
+  Non-consensus blocks are ignored.
+
+      iex> insert(:block, number: 2, consensus: false)
+      iex> insert(:block, number: 1, consensus: true)
+      iex> Explorer.Chain.block_height()
+      1
+
   """
-  @spec min_block_number() :: {:ok, Block.block_number()} | {:error, :not_found}
-  def min_block_number do
-    case Repo.aggregate(Block, :min, :number) do
-      nil -> {:error, :not_found}
-      number -> {:ok, number}
-    end
+  @spec block_height() :: block_height()
+  def block_height do
+    query = from(block in Block, select: coalesce(max(block.number), 0), where: block.consensus == true)
+
+    Repo.one!(query)
   end
 
   @doc """

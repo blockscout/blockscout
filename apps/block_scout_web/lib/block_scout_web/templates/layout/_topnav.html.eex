@@ -1,7 +1,7 @@
 <nav class="navbar navbar-dark navbar-expand-lg navbar-primary" data-selector="navbar">
   <div class="container">
     <%= link to: chain_path(@conn, :show), class: "navbar-brand", "data-test": "header_logo" do %>
-      <img class="navbar-logo" src="<%= logo() %>" />
+      <img class="navbar-logo" src="<%= logo() %>" alt="<%= subnetwork_title() %>" />
     <% end %>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="<%= gettext("Toggle navigation") %>">
       <span class="navbar-toggler-icon"></span>
@@ -103,7 +103,9 @@
               <%= subnetwork_title() %>
             </a>
             <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-              <a class="dropdown-item" href="https://explorer.fuse.io/"><%= gettext("Fuse") %></a> 
+              <%= for %{url: url, title: title} <- other_networks() do %>
+                <a class="dropdown-item" href="https://explorer.fuse.io/"><%= gettext("Fuse") %></a>
+              <% end %>
             </div>
           </li>
         </ul>
