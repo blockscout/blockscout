@@ -127,6 +127,7 @@ to a positive or negative integer. See the documentation for
 ### Projects Utilizing BlockScout
 * [Oasis Labs](https://blockexplorer.oasiscloud.io/)
 * [Fuse Network](https://explorer.fuse.io/)
+* [ARTIS](https://explorer.sigma1.artis.network)
 
 ### Configuring Ethereum Classic and other EVM Chains
 **Note: Most of these modifications will be consolidated into a single file in the future.**

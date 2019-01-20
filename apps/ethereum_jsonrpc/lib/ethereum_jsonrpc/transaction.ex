@@ -311,6 +311,11 @@ defmodule EthereumJSONRPC.Transaction do
     {key, quantity_to_integer(quantity)}
   end
 
+  # as always ganache has it's own vision on JSON RPC standard
+  defp entry_to_elixir({key, nil}) when key in ~w(r s v) do
+    {key, 0}
+  end
+
   # quantity or nil for pending
   defp entry_to_elixir({key, quantity_or_nil}) when key in ~w(blockNumber transactionIndex) do
     elixir =

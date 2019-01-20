@@ -105,8 +105,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                  transactions: %{
                    params: [],
                    on_conflict: :nothing
-                 },
-                 transaction_hash_to_block_number: %{}
+                 }
                })
 
       assert_receive {:uncles, [^uncle_hash]}

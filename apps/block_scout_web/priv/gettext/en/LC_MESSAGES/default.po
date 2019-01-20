@@ -49,7 +49,7 @@ msgid "%{subnetwork} Explorer - BlockScout"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:67
+#: lib/block_scout_web/views/transaction_view.ex:71
 msgid "(Awaiting internal transactions for status)"
 msgstr ""
 
@@ -118,7 +118,7 @@ msgid "All"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:37
+#: lib/block_scout_web/templates/chain/show.html.eex:41
 msgid "Average block time"
 msgstr ""
 
@@ -175,7 +175,7 @@ msgid "BlockScout provides analytics data, API, and Smart Contract tools for the
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:67
+#: lib/block_scout_web/templates/chain/show.html.eex:72
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:16
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:20
 msgid "Blocks"
@@ -278,12 +278,12 @@ msgid "Contract Address Pending"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:144
+#: lib/block_scout_web/views/transaction_view.ex:148
 msgid "Contract Call"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:143
+#: lib/block_scout_web/views/transaction_view.ex:147
 msgid "Contract Creation"
 msgstr ""
 
@@ -332,11 +332,6 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/not_found.html.eex:9
 #: lib/block_scout_web/templates/transaction/overview.html.eex:11
 msgid "Copy Txn Hash"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:18
-msgid ""
 msgstr ""
 
 #, elixir-format
@@ -389,12 +384,12 @@ msgid "Error trying to fetch balances."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:71
+#: lib/block_scout_web/views/transaction_view.ex:75
 msgid "Error: %{reason}"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:69
+#: lib/block_scout_web/views/transaction_view.ex:73
 msgid "Error: (Awaiting internal transactions for reason)"
 msgstr ""
 
@@ -462,7 +457,7 @@ msgid "Gas Used"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:7
+#: lib/block_scout_web/templates/layout/_footer.html.eex:14
 msgid "Github"
 msgstr ""
 
@@ -507,7 +502,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:43
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:10
 #: lib/block_scout_web/views/address_view.ex:254
-#: lib/block_scout_web/views/transaction_view.ex:197
+#: lib/block_scout_web/views/transaction_view.ex:201
 msgid "Internal Transactions"
 msgstr ""
 
@@ -533,7 +528,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:21
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:48
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:10
-#: lib/block_scout_web/views/transaction_view.ex:198
+#: lib/block_scout_web/views/transaction_view.ex:202
 msgid "Logs"
 msgstr ""
 
@@ -545,7 +540,7 @@ msgid "Market Cap"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:58
+#: lib/block_scout_web/views/transaction_view.ex:62
 msgid "Max of"
 msgstr ""
 
@@ -572,7 +567,7 @@ msgid "More internal transactions have come in"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:91
+#: lib/block_scout_web/templates/chain/show.html.eex:96
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:14
 #: lib/block_scout_web/templates/transaction/index.html.eex:14
 msgid "More transactions have come in"
@@ -657,16 +652,6 @@ msgid "Owner Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:107
-msgid "POA Core"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:106
-msgid "POA Sokol"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:6
 msgid "POST"
 msgstr ""
@@ -684,8 +669,8 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:44
 #: lib/block_scout_web/templates/transaction/overview.html.eex:55
-#: lib/block_scout_web/views/transaction_view.ex:66
-#: lib/block_scout_web/views/transaction_view.ex:100
+#: lib/block_scout_web/views/transaction_view.ex:70
+#: lib/block_scout_web/views/transaction_view.ex:104
 msgid "Pending"
 msgstr ""
 
@@ -790,7 +775,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/_emission_reward_tile.html.eex:8
-#: lib/block_scout_web/views/transaction_view.ex:68
+#: lib/block_scout_web/views/transaction_view.ex:72
 msgid "Success"
 msgstr ""
 
@@ -802,7 +787,7 @@ msgid "TX Fee"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:13
+#: lib/block_scout_web/templates/layout/_footer.html.eex:20
 msgid "Telegram"
 msgstr ""
 
@@ -901,7 +886,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/transfer/_token_transfer.html.eex:4
 #: lib/block_scout_web/templates/transaction_token_transfer/_token_transfer.html.eex:4
-#: lib/block_scout_web/views/transaction_view.ex:142
+#: lib/block_scout_web/views/transaction_view.ex:146
 msgid "Token Transfer"
 msgstr ""
 
@@ -913,7 +898,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:36
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:10
 #: lib/block_scout_web/views/tokens/overview_view.ex:35
-#: lib/block_scout_web/views/transaction_view.ex:196
+#: lib/block_scout_web/views/transaction_view.ex:200
 msgid "Token Transfers"
 msgstr ""
 
@@ -949,12 +934,12 @@ msgid "Total Supply"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:45
+#: lib/block_scout_web/templates/chain/show.html.eex:50
 msgid "Total transactions"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:145
+#: lib/block_scout_web/views/transaction_view.ex:149
 msgid "Transaction"
 msgstr ""
 
@@ -983,7 +968,7 @@ msgstr ""
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:23
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:26
 #: lib/block_scout_web/templates/block_transaction/index.html.eex:35
-#: lib/block_scout_web/templates/chain/show.html.eex:88
+#: lib/block_scout_web/templates/chain/show.html.eex:93
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:35
 #: lib/block_scout_web/views/address_view.ex:253
 msgid "Transactions"
@@ -1006,7 +991,7 @@ msgid "Try it out"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:10
+#: lib/block_scout_web/templates/layout/_footer.html.eex:17
 msgid "Twitter"
 msgstr ""
 
@@ -1058,12 +1043,12 @@ msgid "Verify & publish"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:66
+#: lib/block_scout_web/templates/chain/show.html.eex:71
 msgid "View All Blocks →"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:87
+#: lib/block_scout_web/templates/chain/show.html.eex:92
 msgid "View All Transactions →"
 msgstr ""
 
@@ -1103,7 +1088,7 @@ msgid "WEI"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:53
+#: lib/block_scout_web/templates/chain/show.html.eex:58
 msgid "Wallet addresses"
 msgstr ""
 
@@ -1123,7 +1108,7 @@ msgid "at"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/address_contract_view.ex:16
+#: lib/block_scout_web/views/address_contract_view.ex:20
 msgid "false"
 msgstr ""
 
@@ -1146,7 +1131,7 @@ msgid "total addresses with a balance"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/address_contract_view.ex:15
+#: lib/block_scout_web/views/address_contract_view.ex:19
 msgid "true"
 msgstr ""
 
@@ -1187,8 +1172,8 @@ msgstr ""
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:19
 #: lib/block_scout_web/templates/address_validation/index.html.eex:63
 #: lib/block_scout_web/templates/address_validation/index.html.eex:82
-#: lib/block_scout_web/templates/chain/show.html.eex:79
-#: lib/block_scout_web/templates/chain/show.html.eex:105
+#: lib/block_scout_web/templates/chain/show.html.eex:84
+#: lib/block_scout_web/templates/chain/show.html.eex:110
 #: lib/block_scout_web/templates/tokens/read_contract/index.html.eex:24
 msgid "Loading..."
 msgstr ""
@@ -1254,12 +1239,12 @@ msgid "Block not found, please try again later."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_transaction_view.ex:9
+#: lib/block_scout_web/views/block_transaction_view.ex:7
 msgid "Easy Cowboy! This block does not exist yet!"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/block_transaction_view.ex:12
+#: lib/block_scout_web/views/block_transaction_view.ex:11
 msgid "This block has not been processed yet."
 msgstr ""
 
@@ -1399,7 +1384,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_token_transfer/index.html.eex:26
 #: lib/block_scout_web/templates/address_transaction/index.html.eex:55
 #: lib/block_scout_web/templates/address_validation/index.html.eex:70
-#: lib/block_scout_web/templates/chain/show.html.eex:71
+#: lib/block_scout_web/templates/chain/show.html.eex:76
 #: lib/block_scout_web/templates/pending_transaction/index.html.eex:23
 #: lib/block_scout_web/templates/tokens/holder/index.html.eex:22
 #: lib/block_scout_web/templates/tokens/transfer/index.html.eex:20
@@ -1522,6 +1507,46 @@ msgid "Emission Contract"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/chain/show.html.eex:97
+#: lib/block_scout_web/templates/chain/show.html.eex:102
 msgid "Something went wrong, click to retry."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_footer.html.eex:29
+msgid "Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for Ethereum Networks."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_footer.html.eex:44
+msgid "Chat"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_footer.html.eex:43
+msgid "Contribute"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_footer.html.eex:51
+msgid "Main Networks"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_footer.html.eex:78
+msgid "Other Explorers"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_footer.html.eex:42
+msgid "Submit an Issue"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_footer.html.eex:65
+msgid "Test Networks"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_footer.html.eex:93
+msgid "Version"
 msgstr ""

@@ -16,6 +16,57 @@ config :block_scout_web, BlockScoutWeb.Chain,
   network_icon: System.get_env("NETWORK_ICON"),
   logo: "/images/fuse.jpg" #System.get_env("LOGO")
 
+config :block_scout_web,
+  link_to_other_explorers: System.get_env("LINK_TO_OTHER_EXPLORERS") == "true",
+  other_explorers: %{
+    "Etherscan" => "https://etherscan.io/",
+    "EtherChain" => "https://www.etherchain.org/",
+    "Bloxy" => "https://bloxy.info/"
+  },
+  other_networks: [
+    %{
+      title: "POA Core",
+      url: "https://blockscout.com/poa/core"
+    },
+    %{
+      title: "POA Sokol",
+      url: "https://blockscout.com/poa/sokol",
+      test_net?: true
+    },
+    %{
+      title: "xDai Chain",
+      url: "https://blockscout.com/poa/dai"
+    },
+    %{
+      title: "Ethereum Mainnet",
+      url: "https://blockscout.com/eth/mainnet"
+    },
+    %{
+      title: "Kovan Testnet",
+      url: "https://blockscout.com/eth/kovan",
+      test_net?: true
+    },
+    %{
+      title: "Ropsten Testnet",
+      url: "https://blockscout.com/eth/ropsten",
+      test_net?: true
+    },
+    %{
+      title: "Goerli Testnet",
+      url: "https://blockscout.com/eth/goerli",
+      test_net?: true
+    },
+    %{
+      title: "Rinkeby Testnet",
+      url: "https://blockscout.com/eth/rinkeby",
+      test_net?: true
+    },
+    %{
+      title: "Ethereum Classic",
+      url: "https://blockscout.com/etc/mainnet"
+    }
+  ]
+
 # Configures the endpoint
 config :block_scout_web, BlockScoutWeb.Endpoint,
   instrumenters: [BlockScoutWeb.Prometheus.Instrumenter, SpandexPhoenix.Instrumenter],

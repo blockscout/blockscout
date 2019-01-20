@@ -32,14 +32,19 @@
         </div>
       </div>
       <div class="dashboard-banner-network-stats">
-        <div class="dashboard-banner-network-stats-item">
-          <span class="dashboard-banner-network-stats-label">
-            <%= gettext "Average block time" %>
-          </span>
-          <span class="dashboard-banner-network-stats-value" data-selector="average-block-time">
-            <%= Timex.format_duration(@average_block_time, :humanized) %>
-          </span>
-        </div>
+        <%= case @average_block_time do %>
+          <% {:error, :disabled} -> %>
+            <%= nil %>
+          <% average_block_time -> %>
+            <div class="dashboard-banner-network-stats-item">
+              <span class="dashboard-banner-network-stats-label">
+                <%= gettext "Average block time" %>
+              </span>
+              <span class="dashboard-banner-network-stats-value" data-selector="average-block-time">
+                <%= Timex.format_duration(average_block_time, Explorer.Counters.AverageBlockTimeDurationFormat) %>
+              </span>
+            </div>
+        <% end %>
         <div class="dashboard-banner-network-stats-item">
           <span class="dashboard-banner-network-stats-label">
             <%= gettext "Total transactions" %>

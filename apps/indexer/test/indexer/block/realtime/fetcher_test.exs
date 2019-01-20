@@ -5,7 +5,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
   import Mox
 
   alias Explorer.Chain
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, Transaction}
   alias Indexer.{Sequence, Token, TokenBalance}
   alias Indexer.Block.{Realtime, Uncle}
 
@@ -410,7 +410,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                     %{index: 4, transaction_hash: transaction_hash},
                     %{index: 5, transaction_hash: transaction_hash}
                   ],
-                  transactions: [transaction_hash]
+                  transactions: [%Transaction{hash: transaction_hash}]
                 },
                 errors: []
               }} = Indexer.Block.Fetcher.fetch_and_import_range(block_fetcher, 3_946_079..3_946_080)
