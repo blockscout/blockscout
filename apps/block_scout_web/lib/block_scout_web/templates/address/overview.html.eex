@@ -49,15 +49,15 @@
             <span class="text-muted" data-test="address_contract_creator">
               <%= gettext "Created by" %>
               <%= link(
-                trimmed_hash(@address.contracts_creation_internal_transaction.from_address_hash),
-                to: address_path(@conn, :show, @address.contracts_creation_internal_transaction.from_address_hash)
+                trimmed_hash(from_address_hash(@address)),
+                to: address_path(@conn, :show, from_address_hash(@address))
               ) %>
 
               <%= gettext "at" %>
 
               <%= link(
-                trimmed_hash(@address.contracts_creation_internal_transaction.transaction_hash),
-                to: transaction_path(@conn, :show, @address.contracts_creation_internal_transaction.transaction_hash),
+                trimmed_hash(transaction_hash(@address)),
+                to: transaction_path(@conn, :show, transaction_hash(@address)),
                 "data-test": "transaction_hash_link"
               ) %>
             </span>
