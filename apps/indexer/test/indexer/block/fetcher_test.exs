@@ -9,7 +9,7 @@ defmodule Indexer.Block.FetcherTest do
 
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Log, Transaction, Wei}
-  alias Indexer.{CoinBalance, BufferedTask, InternalTransaction, Token, TokenBalance}
+  alias Indexer.{CoinBalance, BufferedTask, Code, InternalTransaction, Token, TokenBalance}
   alias Indexer.Block.{Fetcher, Uncle}
 
   @moduletag capture_log: true
@@ -41,6 +41,7 @@ defmodule Indexer.Block.FetcherTest do
   describe "import_range/2" do
     setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
       CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      Code.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
