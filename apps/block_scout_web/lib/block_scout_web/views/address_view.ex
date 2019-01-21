@@ -211,6 +211,8 @@ defmodule BlockScoutWeb.AddressView do
     "#{String.slice(string_hash, 0..5)}–#{String.slice(string_hash, -6..-1)}"
   end
 
+  def trimmed_hash(_), do: ""
+
   def transaction_hash(%Address{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
     address.contracts_creation_internal_transaction.transaction_hash
   end
@@ -226,8 +228,6 @@ defmodule BlockScoutWeb.AddressView do
   def from_address_hash(%Address{contracts_creation_transaction: %Transaction{}} = address) do
     address.contracts_creation_transaction.from_address_hash
   end
-
-  def trimmed_hash(_), do: ""
 
   defp matching_address_check(%Address{hash: hash} = current_address, %Address{hash: hash}, contract?, truncate) do
     [
