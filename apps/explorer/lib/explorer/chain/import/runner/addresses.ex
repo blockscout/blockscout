@@ -135,21 +135,25 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
       |> MapSet.new(& &1.hash)
       |> Enum.sort()
 
-    query =
-      from(t in Transaction,
-        where: t.created_contract_address_hash in ^ordered_created_contract_hashes,
-        update: [
-          set: [created_contract_code_indexed_at: ^timestamps.updated_at]
-        ]
-      )
+    if Enum.empty?(ordered_created_contract_hashes) do
+      {:ok, []}
+    else
+      query =
+        from(t in Transaction,
+          where: t.created_contract_address_hash in ^ordered_created_contract_hashes,
+          update: [
+            set: [created_contract_code_indexed_at: ^timestamps.updated_at]
+          ]
+        )
 
-    try do
-      {_, result} = repo.update_all(query, [], timeout: timeout)
+      try do
+        {_, result} = repo.update_all(query, [], timeout: timeout)
 
-      {:ok, result}
-    rescue
-      postgrex_error in Postgrex.Error ->
-        {:error, %{exception: postgrex_error, transaction_hashes: ordered_created_contract_hashes}}
+        {:ok, result}
+      rescue
+        postgrex_error in Postgrex.Error ->
+          {:error, %{exception: postgrex_error, transaction_hashes: ordered_created_contract_hashes}}
+      end
     end
   end
 end

@@ -2,7 +2,7 @@ defmodule Indexer.Code.FetcherTest do
   use EthereumJSONRPC.Case, async: false
   use Explorer.DataCase
 
-  import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
+  import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
   import Mox
 
