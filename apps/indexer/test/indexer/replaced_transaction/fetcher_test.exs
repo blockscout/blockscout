@@ -6,6 +6,12 @@ defmodule Indexer.ReplacedTransaction.FetcherTest do
 
   @moduletag :capture_log
 
+  setup do
+    start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
+
+    :ok
+  end
+
   describe "start_link/1" do
     test "starts finding replaced transactions" do
       common_from_address_hash = %Explorer.Chain.Hash{
@@ -39,6 +45,7 @@ defmodule Indexer.ReplacedTransaction.FetcherTest do
         nonce: common_nonce,
         from_address: address,
         block_number: block.number,
+        block_hash: block.hash,
         cumulative_gas_used: 10,
         gas_used: 1,
         index: 0,

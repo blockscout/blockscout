@@ -14,6 +14,7 @@ defmodule Indexer.ReplacedTransaction.Fetcher do
 
   alias Explorer.Chain.Transaction
   alias Explorer.Repo
+  alias Indexer.ReplacedTransaction
 
   @default_interval 1_000
 
