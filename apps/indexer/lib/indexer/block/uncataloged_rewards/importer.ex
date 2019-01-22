@@ -24,7 +24,8 @@ defmodule Indexer.Block.UncatalogedRewards.Importer do
       |> Enum.reduce([], fn chunk, acc ->
         chunk
         |> fetch_beneficiaries()
-        |> fetch_block_rewards()
+        |> add_gas_payments()
+        |> Enum.map(&Reward.changeset(%Reward{}, &1))
         |> insert_reward_group()
         |> case do
           :empty -> acc
@@ -46,26 +47,23 @@ defmodule Indexer.Block.UncatalogedRewards.Importer do
     result
   end
 
-  defp fetch_block_rewards(beneficiaries) do
+  defp add_gas_payments(beneficiaries) do
     Enum.map(beneficiaries, fn beneficiary ->
-      beneficiary_changes =
-        case beneficiary.address_type do
-          :validator ->
-            validation_reward = fetch_validation_reward(beneficiary)
+      case beneficiary.address_type do
+        :validator ->
+          gas_payment = gas_payment(beneficiary)
 
-            {:ok, reward} = Wei.cast(beneficiary.reward)
+          {:ok, minted} = Wei.cast(beneficiary.reward)
 
-            %{beneficiary | reward: Wei.sum(reward, validation_reward)}
+          %{beneficiary | reward: Wei.sum(minted, gas_payment)}
 
-          _ ->
-            beneficiary
-        end
-
-      Reward.changeset(%Reward{}, beneficiary_changes)
+        _ ->
+          beneficiary
+      end
     end)
   end
 
-  defp fetch_validation_reward(beneficiary) do
+  defp gas_payment(beneficiary) do
     {:ok, accumulator} = Wei.cast(0)
 
     beneficiary.block_number

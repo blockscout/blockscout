@@ -126,7 +126,7 @@ defmodule Indexer.Block.Fetcher do
              transactions_params: transactions_with_receipts
            }
            |> CoinBalances.params_set(),
-         block_rewards <- fetch_block_rewards(beneficiary_params_set, transactions_with_receipts),
+         beneficiaries_with_gas_payment <- add_gas_payments(beneficiary_params_set, transactions_with_receipts),
          address_token_balances = TokenBalances.params_set(%{token_transfers_params: token_transfers}),
          {:ok, inserted} <-
            __MODULE__.import(
@@ -137,7 +137,7 @@ defmodule Indexer.Block.Fetcher do
                address_token_balances: %{params: address_token_balances},
                blocks: %{params: blocks},
                block_second_degree_relations: %{params: block_second_degree_relations_params},
-               block_rewards: %{params: block_rewards},
+               block_rewards: %{params: beneficiaries_with_gas_payment},
                logs: %{params: logs},
                token_transfers: %{params: token_transfers},
                tokens: %{on_conflict: :nothing, params: tokens},
@@ -212,16 +212,16 @@ defmodule Indexer.Block.Fetcher do
     {:beneficiaries, result}
   end
 
-  defp fetch_block_rewards(beneficiaries, transactions) do
+  defp add_gas_payments(beneficiaries, transactions) do
     Enum.map(beneficiaries, fn beneficiary ->
       case beneficiary.address_type do
         :validator ->
-          validation_reward = fetch_validation_reward(beneficiary, transactions)
+          gas_payment = gas_payment(beneficiary, transactions)
 
-          "0x" <> reward_hex = beneficiary.reward
-          {reward, _} = Integer.parse(reward_hex, 16)
+          "0x" <> minted_hex = beneficiary.reward
+          {minted, _} = Integer.parse(minted_hex, 16)
 
-          %{beneficiary | reward: reward + validation_reward}
+          %{beneficiary | reward: minted + gas_payment}
 
         _ ->
           beneficiary
@@ -229,7 +229,7 @@ defmodule Indexer.Block.Fetcher do
     end)
   end
 
-  defp fetch_validation_reward(beneficiary, transactions) do
+  defp gas_payment(beneficiary, transactions) do
     transactions
     |> Stream.filter(fn t -> t.block_number == beneficiary.block_number end)
     |> Enum.reduce(0, fn t, acc -> acc + t.gas_used * t.gas_price end)
