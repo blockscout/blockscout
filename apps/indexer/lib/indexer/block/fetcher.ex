@@ -213,10 +213,12 @@ defmodule Indexer.Block.Fetcher do
   end
 
   defp add_gas_payments(beneficiaries, transactions) do
+    transactions_by_block_number = Enum.group_by(transactions, & &1.block_number)
+
     Enum.map(beneficiaries, fn beneficiary ->
       case beneficiary.address_type do
         :validator ->
-          gas_payment = gas_payment(beneficiary, transactions)
+          gas_payment = gas_payment(beneficiary, transactions_by_block_number)
 
           "0x" <> minted_hex = beneficiary.reward
           {minted, _} = Integer.parse(minted_hex, 16)
@@ -229,10 +231,18 @@ defmodule Indexer.Block.Fetcher do
     end)
   end
 
-  defp gas_payment(beneficiary, transactions) do
+  defp gas_payment(transactions) when is_list(transactions) do
     transactions
-    |> Stream.filter(fn t -> t.block_number == beneficiary.block_number end)
-    |> Enum.reduce(0, fn t, acc -> acc + t.gas_used * t.gas_price end)
+    |> Stream.map(&(&1.gas_used * &1.gas_price))
+    |> Enum.sum()
+  end
+
+  defp gas_payment(%{block_number: block_number}, transactions_by_block_number)
+       when is_map(transactions_by_block_number) do
+    case Map.fetch(transactions_by_block_number, block_number) do
+      {:ok, transactions} -> gas_payment(transactions)
+      :error -> 0
+    end
   end
 
   # `fetched_balance_block_number` is needed for the `CoinBalanceFetcher`, but should not be used for `import` because the
