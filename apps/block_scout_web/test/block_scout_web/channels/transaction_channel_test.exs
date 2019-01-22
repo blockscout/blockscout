@@ -13,13 +13,13 @@ defmodule BlockScoutWeb.TransactionChannelTest do
       |> insert()
       |> with_block()
 
-    Notifier.handle_event({:chain_event, :transactions, :realtime, [transaction.hash]})
+    Notifier.handle_event({:chain_event, :transactions, :realtime, [transaction]})
 
     receive do
       %Phoenix.Socket.Broadcast{topic: ^topic, event: "transaction", payload: payload} ->
         assert payload.transaction.hash == transaction.hash
     after
-      5_000 ->
+      :timer.seconds(5) ->
         assert false, "Expected message received nothing."
     end
   end
@@ -30,13 +30,13 @@ defmodule BlockScoutWeb.TransactionChannelTest do
 
     pending = insert(:transaction)
 
-    Notifier.handle_event({:chain_event, :transactions, :realtime, [pending.hash]})
+    Notifier.handle_event({:chain_event, :transactions, :realtime, [pending]})
 
     receive do
       %Phoenix.Socket.Broadcast{topic: ^topic, event: "pending_transaction", payload: payload} ->
         assert payload.transaction.hash == pending.hash
     after
-      5_000 ->
+      :timer.seconds(5) ->
         assert false, "Expected message received nothing."
     end
   end
@@ -50,13 +50,13 @@ defmodule BlockScoutWeb.TransactionChannelTest do
     topic = "transactions:#{Hash.to_string(transaction.hash)}"
     @endpoint.subscribe(topic)
 
-    Notifier.handle_event({:chain_event, :transactions, :realtime, [transaction.hash]})
+    Notifier.handle_event({:chain_event, :transactions, :realtime, [transaction]})
 
     receive do
       %Phoenix.Socket.Broadcast{topic: ^topic, event: "collated", payload: %{}} ->
         assert true
     after
-      5_000 ->
+      :timer.seconds(5) ->
         assert false, "Expected message received nothing."
     end
   end

@@ -65,6 +65,8 @@ defmodule Explorer.Chain.TokenTransfer do
 
   @constant "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 
+  @transfer_function_signature "0xa9059cbb"
+
   @primary_key false
   schema "token_transfers" do
     field(:amount, :decimal)
@@ -115,6 +117,11 @@ defmodule Explorer.Chain.TokenTransfer do
   """
   def constant, do: @constant
 
+  @doc """
+  ERC 20's transfer(address,uint256) function signature
+  """
+  def transfer_function_signature, do: @transfer_function_signature
+
   @spec fetch_token_transfers_from_token_hash(Hash.t(), [paging_options]) :: []
   def fetch_token_transfers_from_token_hash(token_address_hash, options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
@@ -131,6 +138,18 @@ defmodule Explorer.Chain.TokenTransfer do
     |> page_token_transfer(paging_options)
     |> limit(^paging_options.page_size)
     |> Repo.all()
+  end
+
+  @spec count_token_transfers_from_token_hash(Hash.t()) :: non_neg_integer()
+  def count_token_transfers_from_token_hash(token_address_hash) do
+    query =
+      from(
+        tt in TokenTransfer,
+        where: tt.token_contract_address_hash == ^token_address_hash,
+        select: fragment("COUNT(*)")
+      )
+
+    Repo.one(query)
   end
 
   def page_token_transfer(query, %PagingOptions{key: nil}), do: query
@@ -271,21 +290,5 @@ defmodule Explorer.Chain.TokenTransfer do
       preload: [:to_address],
       select: tt
     )
-  end
-
-  @doc """
-  Counts all the token transfers and groups by token contract address hash.
-  """
-  def each_count(fun) when is_function(fun, 1) do
-    query =
-      from(
-        tt in TokenTransfer,
-        join: t in Token,
-        on: tt.token_contract_address_hash == t.contract_address_hash,
-        select: {tt.token_contract_address_hash, fragment("COUNT(*)")},
-        group_by: tt.token_contract_address_hash
-      )
-
-    Repo.stream_each(query, fun)
   end
 end

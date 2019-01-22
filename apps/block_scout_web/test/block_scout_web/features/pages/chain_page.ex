@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.ChainPage do
 
   import Wallaby.Query, only: [css: 1, css: 2]
 
-  alias Explorer.Chain.{Block, Transaction}
+  alias Explorer.Chain.{Address, Block, Transaction}
 
   def block(%Block{number: block_number}) do
     css("[data-block-number='#{block_number}']")
@@ -16,7 +16,8 @@ defmodule BlockScoutWeb.ChainPage do
   end
 
   def contract_creation(%Transaction{created_contract_address_hash: hash}) do
-    css("[data-test='contract-creation'] [data-address-hash='#{hash}']")
+    checksum = Address.checksum(hash)
+    css("[data-test='contract-creation'] [data-address-hash='#{checksum}']")
   end
 
   def place_holder_blocks(count) do
@@ -30,11 +31,11 @@ defmodule BlockScoutWeb.ChainPage do
   end
 
   def token_transfers(%Transaction{hash: transaction_hash}, count: count) do
-    css("[data-transaction-hash='#{transaction_hash}'] [data-test='token_transfer']", count: count)
+    css("[data-identifier-hash='#{transaction_hash}'] [data-test='token_transfer']", count: count)
   end
 
   def token_transfers_expansion(%Transaction{hash: transaction_hash}) do
-    css("[data-transaction-hash='#{transaction_hash}'] [data-test='token_transfers_expansion']")
+    css("[data-identifier-hash='#{transaction_hash}'] [data-test='token_transfers_expansion']")
   end
 
   def transactions(count: count) do

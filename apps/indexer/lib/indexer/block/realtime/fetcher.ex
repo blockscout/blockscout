@@ -12,16 +12,22 @@ defmodule Indexer.Block.Realtime.Fetcher do
   import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
   import Indexer.Block.Fetcher, only: [async_import_tokens: 1, async_import_uncles: 1, fetch_and_import_range: 2]
 
+  alias ABI.TypeDecoder
   alias Ecto.Changeset
   alias EthereumJSONRPC.{FetchedBalances, Subscription}
   alias Explorer.Chain
+  alias Explorer.Chain.TokenTransfer
+  alias Explorer.Counters.AverageBlockTime
   alias Indexer.{AddressExtraction, Block, TokenBalances, Tracer}
   alias Indexer.Block.Realtime.{ConsensusEnsurer, TaskSupervisor}
+  alias Timex.Duration
 
   @behaviour Block.Fetcher
 
+  @minimum_safe_polling_period :timer.seconds(10)
+
   @enforce_keys ~w(block_fetcher)a
-  defstruct ~w(block_fetcher subscription previous_number max_number_seen)a
+  defstruct ~w(block_fetcher subscription previous_number max_number_seen timer)a
 
   @type t :: %__MODULE__{
           block_fetcher: %Block.Fetcher{
@@ -53,8 +59,13 @@ defmodule Indexer.Block.Realtime.Fetcher do
   def handle_continue({:init, subscribe_named_arguments}, %__MODULE__{subscription: nil} = state)
       when is_list(subscribe_named_arguments) do
     case EthereumJSONRPC.subscribe("newHeads", subscribe_named_arguments) do
-      {:ok, subscription} -> {:noreply, %__MODULE__{state | subscription: subscription}}
-      {:error, reason} -> {:stop, reason, state}
+      {:ok, subscription} ->
+        timer = schedule_polling()
+
+        {:noreply, %__MODULE__{state | subscription: subscription, timer: timer}}
+
+      {:error, reason} ->
+        {:stop, reason, state}
     end
   end
 
@@ -65,26 +76,78 @@ defmodule Indexer.Block.Realtime.Fetcher do
           block_fetcher: %Block.Fetcher{} = block_fetcher,
           subscription: %Subscription{} = subscription,
           previous_number: previous_number,
-          max_number_seen: max_number_seen
+          max_number_seen: max_number_seen,
+          timer: timer
         } = state
       )
       when is_binary(quantity) do
     number = quantity_to_integer(quantity)
-
     # Subscriptions don't support getting all the blocks and transactions data,
     # so we need to go back and get the full block
     start_fetch_and_import(number, block_fetcher, previous_number, max_number_seen)
 
     new_max_number = new_max_number(number, max_number_seen)
 
-    {:noreply, %{state | previous_number: number, max_number_seen: new_max_number}}
+    :timer.cancel(timer)
+    new_timer = schedule_polling()
+
+    {:noreply,
+     %{
+       state
+       | previous_number: number,
+         max_number_seen: new_max_number,
+         timer: new_timer
+     }}
+  end
+
+  @impl GenServer
+  def handle_info(
+        :poll_latest_block_number,
+        %__MODULE__{
+          block_fetcher: %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher,
+          previous_number: previous_number,
+          max_number_seen: max_number_seen
+        } = state
+      ) do
+    {number, new_max_number} =
+      case EthereumJSONRPC.fetch_block_number_by_tag("latest", json_rpc_named_arguments) do
+        {:ok, number} when is_nil(max_number_seen) or number > max_number_seen ->
+          start_fetch_and_import(number, block_fetcher, previous_number, number)
+
+          {max_number_seen, number}
+
+        _ ->
+          {previous_number, max_number_seen}
+      end
+
+    timer = schedule_polling()
+
+    {:noreply,
+     %{
+       state
+       | previous_number: number,
+         max_number_seen: new_max_number,
+         timer: timer
+     }}
   end
 
   defp new_max_number(number, nil), do: number
 
   defp new_max_number(number, max_number_seen), do: max(number, max_number_seen)
 
-  @import_options ~w(address_hash_to_fetched_balance_block_number transaction_hash_to_block_number)a
+  defp schedule_polling do
+    polling_period =
+      case AverageBlockTime.average_block_time() do
+        {:error, :disabled} -> 2_000
+        block_time -> round(Duration.to_milliseconds(block_time) * 2)
+      end
+
+    safe_polling_period = max(polling_period, @minimum_safe_polling_period)
+
+    Process.send_after(self(), :poll_latest_block_number, safe_polling_period)
+  end
+
+  @import_options ~w(address_hash_to_fetched_balance_block_number)a
 
   @impl Block.Fetcher
   def import(
@@ -94,7 +157,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number,
           address_token_balances: %{params: address_token_balances_params},
           addresses: %{params: addresses_params},
-          transactions: %{params: transactions_params}
+          transactions: %{params: transactions_params},
+          token_transfers: %{params: token_transfers_params}
         } = options
       ) do
     with {:internal_transactions,
@@ -106,6 +170,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
            {:internal_transactions,
             internal_transactions(block_fetcher, %{
               addresses_params: addresses_params,
+              token_transfers_params: token_transfers_params,
               transactions_params: transactions_params
             })},
          {:balances, {:ok, %{addresses_params: balances_addresses_params, balances_params: balances_params}}} <-
@@ -117,13 +182,14 @@ defmodule Indexer.Block.Realtime.Fetcher do
             })},
          {:address_token_balances, {:ok, address_token_balances}} <-
            {:address_token_balances, fetch_token_balances(address_token_balances_params)},
+         address_current_token_balances = TokenBalances.to_address_current_token_balances(address_token_balances),
          chain_import_options =
            options
            |> Map.drop(@import_options)
            |> put_in([:addresses, :params], balances_addresses_params)
            |> put_in([:blocks, :params, Access.all(), :consensus], true)
            |> put_in([Access.key(:address_coin_balances, %{}), :params], balances_params)
-           |> put_in([Access.key(:address_current_token_balances, %{}), :params], address_token_balances)
+           |> put_in([Access.key(:address_current_token_balances, %{}), :params], address_current_token_balances)
            |> put_in([Access.key(:address_token_balances), :params], address_token_balances)
            |> put_in([Access.key(:internal_transactions, %{}), :params], internal_transactions_params),
          {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
@@ -278,10 +344,14 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   defp internal_transactions(
          %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments},
-         %{addresses_params: addresses_params, transactions_params: transactions_params}
+         %{
+           addresses_params: addresses_params,
+           token_transfers_params: token_transfers_params,
+           transactions_params: transactions_params
+         }
        ) do
     case transactions_params
-         |> transactions_params_to_fetch_internal_transactions_params()
+         |> transactions_params_to_fetch_internal_transactions_params(token_transfers_params)
          |> EthereumJSONRPC.fetch_internal_transactions(json_rpc_named_arguments) do
       {:ok, internal_transactions_params} ->
         merged_addresses_params =
@@ -300,18 +370,60 @@ defmodule Indexer.Block.Realtime.Fetcher do
     end
   end
 
-  defp transactions_params_to_fetch_internal_transactions_params(transactions_params) do
-    Enum.map(transactions_params, &transaction_params_to_fetch_internal_transaction_params/1)
+  defp transactions_params_to_fetch_internal_transactions_params(transactions_params, token_transfers_params) do
+    token_transfer_transaction_hash_set = MapSet.new(token_transfers_params, & &1.transaction_hash)
+
+    Enum.flat_map(
+      transactions_params,
+      &transaction_params_to_fetch_internal_transaction_params_list(&1, token_transfer_transaction_hash_set)
+    )
   end
 
-  defp transaction_params_to_fetch_internal_transaction_params(%{
-         block_number: block_number,
-         hash: hash,
-         transaction_index: transaction_index
-       })
-       when is_integer(block_number) do
-    %{block_number: block_number, hash_data: to_string(hash), transaction_index: transaction_index}
+  defp transaction_params_to_fetch_internal_transaction_params_list(
+         %{block_number: block_number, transaction_index: transaction_index, hash: hash} = transaction_params,
+         token_transfer_transaction_hash_set
+       )
+       when is_integer(block_number) and is_integer(transaction_index) and is_binary(hash) do
+    token_transfer? = hash in token_transfer_transaction_hash_set
+
+    if fetch_internal_transactions?(transaction_params, token_transfer?) do
+      [%{block_number: block_number, transaction_index: transaction_index, hash_data: hash}]
+    else
+      []
+    end
   end
+
+  # 0xa9059cbb - signature of the transfer(address,uint256) function from the ERC-20 token specification.
+  # Although transaction input data can be faked we use this heuristics to filter simple token transfer internal transactions from indexing because they slow down realtime fetcher
+  defp fetch_internal_transactions?(
+         %{
+           status: :ok,
+           created_contract_address_hash: nil,
+           input: unquote(TokenTransfer.transfer_function_signature()) <> params,
+           value: 0
+         },
+         _
+       ) do
+    types = [:address, {:uint, 256}]
+
+    try do
+      [_address, _value] =
+        params
+        |> Base.decode16!(case: :mixed)
+        |> TypeDecoder.decode_raw(types)
+
+      false
+    rescue
+      _ -> true
+    end
+  end
+
+  # Input-less transactions are value-transfers only, so their internal transactions do not need to be indexed
+  defp fetch_internal_transactions?(%{status: :ok, created_contract_address_hash: nil, input: "0x"}, _), do: false
+  # Token transfers not transferred during contract creation don't need internal transactions as the token transfers
+  # derive completely from the logs.
+  defp fetch_internal_transactions?(%{status: :ok, created_contract_address_hash: nil}, true), do: false
+  defp fetch_internal_transactions?(_, _), do: true
 
   defp balances(
          %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments},

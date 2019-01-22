@@ -5,10 +5,11 @@ defmodule BlockScoutWeb.BlockPage do
 
   import Wallaby.Query, only: [css: 1, css: 2]
 
-  alias Explorer.Chain.{Block, InternalTransaction, Transaction}
+  alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction}
 
   def contract_creation(%InternalTransaction{created_contract_address_hash: hash}) do
-    css("[data-address-hash='#{hash}']")
+    checksum = Address.checksum(hash)
+    css("[data-address-hash='#{checksum}']")
   end
 
   def detail_number(%Block{number: block_number}) do
@@ -20,19 +21,19 @@ defmodule BlockScoutWeb.BlockPage do
   end
 
   def token_transfers(%Transaction{hash: transaction_hash}, count: count) do
-    css("[data-transaction-hash='#{transaction_hash}'] [data-test='token_transfer']", count: count)
+    css("[data-identifier-hash='#{transaction_hash}'] [data-test='token_transfer']", count: count)
   end
 
   def token_transfers_expansion(%Transaction{hash: transaction_hash}) do
-    css("[data-transaction-hash='#{transaction_hash}'] [data-test='token_transfers_expansion']")
+    css("[data-identifier-hash='#{transaction_hash}'] [data-test='token_transfers_expansion']")
   end
 
   def transaction(%Transaction{hash: transaction_hash}) do
-    css("[data-transaction-hash='#{transaction_hash}']")
+    css("[data-identifier-hash='#{transaction_hash}']")
   end
 
   def transaction_status(%Transaction{hash: transaction_hash}) do
-    css("[data-transaction-hash='#{transaction_hash}'] [data-test='transaction_status']")
+    css("[data-identifier-hash='#{transaction_hash}'] [data-test='transaction_status']")
   end
 
   def uncle_link(%Block{hash: hash}) do

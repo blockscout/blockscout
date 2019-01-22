@@ -59,7 +59,7 @@
           <dl class="row">
             <dt class="col-sm-3 text-muted"> <%= gettext "Block Confirmations" %> </dt>
             <dd class="col-sm-9">
-              <span data-selector="block-confirmations"><%= confirmations(@transaction, max_block_number: @max_block_number) %></span>
+              <span data-selector="block-confirmations"><%= confirmations(@transaction, block_height: @block_height) %></span>
           </dd>
           </dl>
           <!-- Nonce -->
@@ -79,13 +79,7 @@
           <dl class="row">
             <dt class="col-sm-3 text-muted"><%= gettext "Raw Input" %></dt>
             <dd class="col-sm-9">
-              <div swappable-item>
-                <button swapper class="button button-primary"><%= gettext "Show Raw Input"%></button>
-              </div>
-              <div swappable-item class="raw-transaction-input">
-                <button swapper type="button" class="close pr-2" aria-label="Close">
-                  <span aria-hidden="true">&times;</span>
-                </button>
+              <div class="raw-transaction-input">
                 <button type="button" class="copy icon-link mb-1" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= @transaction.input %>" aria-label="Copy Value">
                   <i class="fas fa-clone"></i>
                 </button>

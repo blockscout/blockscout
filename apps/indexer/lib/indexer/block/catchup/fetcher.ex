@@ -12,7 +12,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   alias Ecto.Changeset
   alias Explorer.Chain
-  alias Indexer.{Block, InternalTransaction, Sequence, TokenBalance, Tracer}
+  alias Explorer.Chain.{Hash, Transaction}
+  alias Indexer.{Block, Code, InternalTransaction, Sequence, TokenBalance, Tracer}
   alias Indexer.Memory.Shrinkable
 
   @behaviour Block.Fetcher
@@ -108,7 +109,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
     end
   end
 
-  @async_import_remaining_block_data_options ~w(address_hash_to_fetched_balance_block_number transaction_hash_to_block_number)a
+  @async_import_remaining_block_data_options ~w(address_hash_to_fetched_balance_block_number)a
 
   @impl Block.Fetcher
   def import(_, options) when is_map(options) do
@@ -129,25 +130,49 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   defp async_import_remaining_block_data(imported, options) do
     async_import_coin_balances(imported, options)
-    async_import_internal_transactions(imported, options)
+    async_import_created_contract_codes(imported)
+    async_import_internal_transactions(imported)
     async_import_tokens(imported)
     async_import_token_balances(imported)
     async_import_uncles(imported)
   end
 
-  defp async_import_internal_transactions(%{transactions: transactions}, %{
-         transaction_hash_to_block_number: transaction_hash_to_block_number
-       }) do
+  defp async_import_created_contract_codes(%{transactions: transactions}) do
     transactions
-    |> Enum.map(fn transaction_hash ->
-      transaction = Map.fetch!(transaction_hash_to_block_number, to_string(transaction_hash))
+    |> Enum.flat_map(fn
+      %Transaction{
+        block_number: block_number,
+        hash: hash,
+        created_contract_address_hash: %Hash{} = created_contract_address_hash,
+        created_contract_code_indexed_at: nil,
+        internal_transactions_indexed_at: nil
+      } ->
+        [%{block_number: block_number, hash: hash, created_contract_address_hash: created_contract_address_hash}]
 
-      %{block_number: transaction[:block_number], hash: transaction_hash, index: transaction[:index]}
+      %Transaction{internal_transactions_indexed_at: %DateTime{}} ->
+        []
+
+      %Transaction{created_contract_address_hash: nil} ->
+        []
+    end)
+    |> Code.Fetcher.async_fetch(10_000)
+  end
+
+  defp async_import_created_contract_codes(_), do: :ok
+
+  defp async_import_internal_transactions(%{transactions: transactions}) do
+    transactions
+    |> Enum.flat_map(fn
+      %Transaction{block_number: block_number, index: index, hash: hash, internal_transactions_indexed_at: nil} ->
+        [%{block_number: block_number, index: index, hash: hash}]
+
+      %Transaction{internal_transactions_indexed_at: %DateTime{}} ->
+        []
     end)
     |> InternalTransaction.Fetcher.async_fetch(10_000)
   end
 
-  defp async_import_internal_transactions(_, _), do: :ok
+  defp async_import_internal_transactions(_), do: :ok
 
   defp async_import_token_balances(%{address_token_balances: token_balances}) do
     TokenBalance.Fetcher.async_fetch(token_balances)

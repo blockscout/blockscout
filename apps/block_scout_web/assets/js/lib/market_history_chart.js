@@ -1,3 +1,4 @@
+import $ from 'jquery'
 import Chart from 'chart.js'
 import humps from 'humps'
 import numeral from 'numeral'
@@ -122,8 +123,28 @@ class MarketHistoryChart {
 }
 
 export function createMarketHistoryChart (el) {
-  const availableSupply = JSON.parse(el.dataset.available_supply)
-  const marketHistoryData = humps.camelizeKeys(JSON.parse(el.dataset.market_history_data))
-
-  return new MarketHistoryChart(el, availableSupply, marketHistoryData)
+  const dataPath = el.dataset.market_history_chart_path
+  const $chartLoading = $('[data-chart-loading-message]')
+  const $chartError = $('[data-chart-error-message]')
+  const chart = new MarketHistoryChart(el, 0, [])
+  $.getJSON(dataPath, {type: 'JSON'})
+    .done(data => {
+      const availableSupply = JSON.parse(data.supply_data)
+      const marketHistoryData = humps.camelizeKeys(JSON.parse(data.history_data))
+      $(el).show()
+      chart.update(availableSupply, marketHistoryData)
+    })
+    .fail(() => {
+      $chartError.show()
+    })
+    .always(() => {
+      $chartLoading.hide()
+    })
+  return chart
 }
+
+$('[data-chart-error-message]').on('click', _event => {
+  $('[data-chart-loading-message]').show()
+  $('[data-chart-error-message]').hide()
+  createMarketHistoryChart($('[data-chart="marketHistoryChart"]')[0])
+})

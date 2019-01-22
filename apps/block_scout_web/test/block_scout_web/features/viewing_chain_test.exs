@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.ViewingChainTest do
 
   alias BlockScoutWeb.{AddressPage, BlockPage, ChainPage, TransactionPage}
   alias Explorer.Chain.Block
-  alias Explorer.Counters.{AddressesWithBalanceCounter, BlockValidationCounter}
+  alias Explorer.Counters.AddressesWithBalanceCounter
 
   setup do
     Enum.map(401..404, &insert(:block, number: &1))
@@ -34,9 +34,6 @@ defmodule BlockScoutWeb.ViewingChainTest do
 
       start_supervised!(AddressesWithBalanceCounter)
       AddressesWithBalanceCounter.consolidate()
-
-      start_supervised!(BlockValidationCounter)
-      BlockValidationCounter.consolidate_blocks()
 
       session
       |> ChainPage.visit_page()

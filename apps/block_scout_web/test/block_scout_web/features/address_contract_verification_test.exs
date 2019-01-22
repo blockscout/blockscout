@@ -2,7 +2,6 @@ defmodule BlockScoutWeb.AddressContractVerificationTest do
   use BlockScoutWeb.FeatureCase, async: true
 
   alias BlockScoutWeb.{AddressContractPage, ContractVerifyPage}
-  alias Explorer.Counters.BlockValidationCounter
   alias Explorer.Factory
   alias Plug.Conn
 
@@ -29,9 +28,6 @@ defmodule BlockScoutWeb.AddressContractVerificationTest do
       index: 0,
       transaction: transaction
     )
-
-    start_supervised!(BlockValidationCounter)
-    BlockValidationCounter.consolidate_blocks()
 
     session
     |> AddressContractPage.visit_page(address)

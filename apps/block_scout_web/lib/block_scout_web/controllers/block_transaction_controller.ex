@@ -57,7 +57,7 @@ defmodule BlockScoutWeb.BlockTransactionController do
         |> render(
           "404.html",
           block: nil,
-          block_above_tip: block_above_tip?(formatted_block_hash_or_number)
+          block_above_tip: block_above_tip(formatted_block_hash_or_number)
         )
     end
   end
@@ -79,14 +79,16 @@ defmodule BlockScoutWeb.BlockTransactionController do
     end
   end
 
-  defp block_above_tip?("0x" <> _), do: nil
+  defp block_above_tip("0x" <> _), do: {:error, :hash}
 
-  defp block_above_tip?(block_hash_or_number) when is_binary(block_hash_or_number) do
-    with {:ok, max_block_number} <- Chain.max_block_number() do
-      {block_number, _} = Integer.parse(block_hash_or_number)
-      block_number > max_block_number
-    else
-      _ -> true
+  defp block_above_tip(block_hash_or_number) when is_binary(block_hash_or_number) do
+    case Chain.max_consensus_block_number() do
+      {:ok, max_consensus_block_number} ->
+        {block_number, _} = Integer.parse(block_hash_or_number)
+        {:ok, block_number > max_consensus_block_number}
+
+      {:error, :not_found} ->
+        {:ok, true}
     end
   end
 end

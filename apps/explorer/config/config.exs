@@ -11,17 +11,15 @@ config :explorer,
   coin: System.get_env("COIN") || "POA",
   token_functions_reader_max_retries: 3
 
+config :explorer, Explorer.Counters.AverageBlockTime, enabled: true
+
 config :explorer, Explorer.Counters.AddressesWithBalanceCounter, enabled: true, enable_consolidation: true
-
-config :explorer, Explorer.Counters.TokenHoldersCounter, enabled: true, enable_consolidation: true
-
-config :explorer, Explorer.Counters.TokenTransferCounter, enabled: true, enable_consolidation: true
-
-config :explorer, Explorer.Counters.BlockValidationCounter, enabled: true, enable_consolidation: true
 
 config :explorer, Explorer.ExchangeRates, enabled: true, store: :ets
 
-config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: 2_000
+config :explorer, Explorer.KnownTokens, enabled: true, store: :ets
+
+config :explorer, Explorer.Integrations.EctoLogger, query_time_ms_threshold: :timer.seconds(2)
 
 config :explorer, Explorer.Market.History.Cataloger, enabled: true
 

@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.AddressChannelTest do
 
     Notifier.handle_event({:chain_event, :addresses, :realtime, [address]})
 
-    assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "count", payload: %{count: _}}, 5_000
+    assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "count", payload: %{count: _}}, :timer.seconds(5)
   end
 
   describe "user subscribed to address" do
@@ -36,7 +36,9 @@ defmodule BlockScoutWeb.AddressChannelTest do
 
       Notifier.handle_event({:chain_event, :addresses, :realtime, [address_with_balance]})
 
-      assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "balance_update", payload: payload}, 5_000
+      assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "balance_update", payload: payload},
+                     :timer.seconds(5)
+
       assert payload.address.hash == address_with_balance.hash
     end
 
@@ -52,9 +54,11 @@ defmodule BlockScoutWeb.AddressChannelTest do
     test "notified of new_pending_transaction for matching from_address", %{address: address, topic: topic} do
       pending = insert(:transaction, from_address: address)
 
-      Notifier.handle_event({:chain_event, :transactions, :realtime, [pending.hash]})
+      Notifier.handle_event({:chain_event, :transactions, :realtime, [pending]})
 
-      assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "pending_transaction", payload: payload}, 5_000
+      assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "pending_transaction", payload: payload},
+                     :timer.seconds(5)
+
       assert payload.address.hash == address.hash
       assert payload.transaction.hash == pending.hash
     end
@@ -65,9 +69,9 @@ defmodule BlockScoutWeb.AddressChannelTest do
         |> insert(from_address: address)
         |> with_block()
 
-      Notifier.handle_event({:chain_event, :transactions, :realtime, [transaction.hash]})
+      Notifier.handle_event({:chain_event, :transactions, :realtime, [transaction]})
 
-      assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "transaction", payload: payload}, 5_000
+      assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "transaction", payload: payload}, :timer.seconds(5)
       assert payload.address.hash == address.hash
       assert payload.transaction.hash == transaction.hash
     end
@@ -78,9 +82,9 @@ defmodule BlockScoutWeb.AddressChannelTest do
         |> insert(to_address: address)
         |> with_block()
 
-      Notifier.handle_event({:chain_event, :transactions, :realtime, [transaction.hash]})
+      Notifier.handle_event({:chain_event, :transactions, :realtime, [transaction]})
 
-      assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "transaction", payload: payload}, 5_000
+      assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "transaction", payload: payload}, :timer.seconds(5)
       assert payload.address.hash == address.hash
       assert payload.transaction.hash == transaction.hash
     end
@@ -91,9 +95,9 @@ defmodule BlockScoutWeb.AddressChannelTest do
         |> insert(from_address: address, to_address: address)
         |> with_block()
 
-      Notifier.handle_event({:chain_event, :transactions, :realtime, [transaction.hash]})
+      Notifier.handle_event({:chain_event, :transactions, :realtime, [transaction]})
 
-      assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "transaction", payload: payload}, 5_000
+      assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "transaction", payload: payload}, :timer.seconds(5)
       assert payload.address.hash == address.hash
       assert payload.transaction.hash == transaction.hash
 
@@ -118,7 +122,7 @@ defmodule BlockScoutWeb.AddressChannelTest do
                          internal_transaction: %{transaction_hash: transaction_hash, index: index}
                        }
                      },
-                     5_000
+                     :timer.seconds(5)
 
       assert address_hash == address.hash
       assert {transaction_hash, index} == {internal_transaction.transaction_hash, internal_transaction.index}
@@ -142,7 +146,7 @@ defmodule BlockScoutWeb.AddressChannelTest do
                          internal_transaction: %{transaction_hash: transaction_hash, index: index}
                        }
                      },
-                     5_000
+                     :timer.seconds(5)
 
       assert address_hash == address.hash
       assert {transaction_hash, index} == {internal_transaction.transaction_hash, internal_transaction.index}
@@ -170,7 +174,7 @@ defmodule BlockScoutWeb.AddressChannelTest do
                          internal_transaction: %{transaction_hash: transaction_hash, index: index}
                        }
                      },
-                     5_000
+                     :timer.seconds(5)
 
       assert address_hash == address.hash
       assert {transaction_hash, index} == {internal_transaction.transaction_hash, internal_transaction.index}

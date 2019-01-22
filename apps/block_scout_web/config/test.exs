@@ -5,7 +5,7 @@ config :block_scout_web, :sql_sandbox, true
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
 config :block_scout_web, BlockScoutWeb.Endpoint,
-  http: [port: 4001],
+  http: [port: 4002],
   secret_key_base: "27Swe6KtEtmN37WyEYRjKWyxYULNtrxlkCEKur4qoV+Lwtk8lafsR16ifz1XBBYj",
   server: true
 
@@ -19,3 +19,7 @@ config :logger, :block_scout_web,
 config :wallaby, screenshot_on_failure: true
 
 config :explorer, Explorer.ExchangeRates, enabled: false, store: :none
+
+config :explorer, Explorer.KnownTokens, enabled: false, store: :none
+
+config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: false

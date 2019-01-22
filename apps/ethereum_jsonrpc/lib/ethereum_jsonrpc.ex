@@ -29,6 +29,7 @@ defmodule EthereumJSONRPC do
     Block,
     Blocks,
     FetchedBalances,
+    FetchedCodes,
     Receipts,
     RequestCoordinator,
     Subscription,
@@ -45,9 +46,19 @@ defmodule EthereumJSONRPC do
   @type address :: String.t()
 
   @typedoc """
+  A block number as an Elixir `t:non_neg_integer/0` instead of `t:data/0`.
+  """
+  @type block_number :: non_neg_integer()
+
+  @typedoc """
   Binary data encoded as a single hexadecimal number in a `String.t`
   """
   @type data :: String.t()
+
+  @typedoc """
+  Contract code encoded as a single hexadecimal number in a `String.t`
+  """
+  @type code :: String.t()
 
   @typedoc """
   A full 32-byte [KECCAK-256](https://en.wikipedia.org/wiki/SHA-3) hash encoded as a hexadecimal number in a `String.t`
@@ -193,6 +204,25 @@ defmodule EthereumJSONRPC do
            |> FetchedBalances.requests()
            |> json_rpc(json_rpc_named_arguments) do
       {:ok, FetchedBalances.from_responses(responses, id_to_params)}
+    end
+  end
+
+  @doc """
+  Fetches code for each given `address` at the `block_number`.
+  """
+  @spec fetch_codes(
+          [%{required(:block_quantity) => quantity, required(:address) => address()}],
+          json_rpc_named_arguments
+        ) :: {:ok, FetchedCodes.t()} | {:error, reason :: term}
+  def fetch_codes(params_list, json_rpc_named_arguments)
+      when is_list(params_list) and is_list(json_rpc_named_arguments) do
+    id_to_params = id_to_params(params_list)
+
+    with {:ok, responses} <-
+           id_to_params
+           |> FetchedCodes.requests()
+           |> json_rpc(json_rpc_named_arguments) do
+      {:ok, FetchedCodes.from_responses(responses, id_to_params)}
     end
   end
 

@@ -27,10 +27,13 @@ defmodule BlockScoutWeb.API.RPC.LogsView do
     }
   end
 
-  defp get_topics(log) do
-    log
-    |> Map.take([:first_topic, :second_topic, :third_topic, :fourth_topic])
-    |> Map.values()
+  defp get_topics(%{
+         first_topic: first_topic,
+         second_topic: second_topic,
+         third_topic: third_topic,
+         fourth_topic: fourth_topic
+       }) do
+    [first_topic, second_topic, third_topic, fourth_topic]
   end
 
   defp integer_to_hex(integer), do: Integer.to_string(integer, 16)

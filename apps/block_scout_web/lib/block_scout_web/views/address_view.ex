@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.AddressView do
   alias BlockScoutWeb.LayoutView
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
+  alias Explorer.Chain.Block.Reward
 
   @dialyzer :no_match
 
@@ -83,6 +84,10 @@ defmodule BlockScoutWeb.AddressView do
 
   def address_partial_selector(%Transaction{from_address: address}, :from, current_address, truncate) do
     matching_address_check(current_address, address, contract?(address), truncate)
+  end
+
+  def address_partial_selector(%Reward{address: address}, _, current_address, truncate) do
+    matching_address_check(current_address, address, false, truncate)
   end
 
   def address_title(%Address{} = address) do
@@ -207,6 +212,22 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def trimmed_hash(_), do: ""
+
+  def transaction_hash(%Address{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
+    address.contracts_creation_internal_transaction.transaction_hash
+  end
+
+  def transaction_hash(%Address{contracts_creation_transaction: %Transaction{}} = address) do
+    address.contracts_creation_transaction.hash
+  end
+
+  def from_address_hash(%Address{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
+    address.contracts_creation_internal_transaction.from_address_hash
+  end
+
+  def from_address_hash(%Address{contracts_creation_transaction: %Transaction{}} = address) do
+    address.contracts_creation_transaction.from_address_hash
+  end
 
   defp matching_address_check(%Address{hash: hash} = current_address, %Address{hash: hash}, contract?, truncate) do
     [

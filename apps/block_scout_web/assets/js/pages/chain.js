@@ -17,8 +17,12 @@ export const initialState = {
   averageBlockTime: null,
   marketHistoryData: null,
   blocks: [],
+  blocksLoading: true,
+  blocksError: false,
   transactions: [],
   transactionsBatch: [],
+  transactionsError: false,
+  transactionsLoading: true,
   transactionCount: null,
   usdMarketCap: null
 }
@@ -50,6 +54,18 @@ function baseReducer (state = initialState, action) {
         })
       }
     }
+    case 'START_BLOCKS_FETCH': {
+      return Object.assign({}, state, { blocksError: false, blocksLoading: true })
+    }
+    case 'BLOCKS_FINISH_REQUEST': {
+      return Object.assign({}, state, { blocksLoading: false })
+    }
+    case 'BLOCKS_FETCHED': {
+      return Object.assign({}, state, { blocks: [...action.msg.blocks] })
+    }
+    case 'BLOCKS_REQUEST_ERROR': {
+      return Object.assign({}, state, { blocksError: true })
+    }
     case 'RECEIVED_NEW_EXCHANGE_RATE': {
       return Object.assign({}, state, {
         availableSupply: action.msg.exchangeRate.availableSupply,
@@ -61,6 +77,10 @@ function baseReducer (state = initialState, action) {
       if (state.channelDisconnected) return state
 
       const transactionCount = state.transactionCount + action.msgs.length
+
+      if (state.transactionsLoading || state.transactionsError) {
+        return Object.assign({}, state, { transactionCount })
+      }
 
       if (!state.transactionsBatch.length && action.msgs.length < BATCH_THRESHOLD) {
         return Object.assign({}, state, {
@@ -80,6 +100,14 @@ function baseReducer (state = initialState, action) {
         })
       }
     }
+    case 'START_TRANSACTIONS_FETCH':
+      return Object.assign({}, state, { transactionsError: false, transactionsLoading: true })
+    case 'TRANSACTIONS_FETCHED':
+      return Object.assign({}, state, { transactions: [...action.msg.transactions] })
+    case 'TRANSACTIONS_FETCH_ERROR':
+      return Object.assign({}, state, { transactionsError: true })
+    case 'FINISH_TRANSACTIONS_FETCH':
+      return Object.assign({}, state, { transactionsLoading: false })
     default:
       return state
   }
@@ -111,7 +139,7 @@ const elements = {
       chart = createMarketHistoryChart($el[0])
     },
     render ($el, state, oldState) {
-      if (oldState.availableSupply === state.availableSupply && oldState.marketHistoryData === state.marketHistoryData) return
+      if (!chart || (oldState.availableSupply === state.availableSupply && oldState.marketHistoryData === state.marketHistoryData)) return
       chart.update(state.availableSupply, state.marketHistoryData)
     }
   },
@@ -145,33 +173,57 @@ const elements = {
   '[data-selector="chain-block-list"]': {
     load ($el) {
       return {
-        blocks: $el.children().map((index, el) => ({
-          blockNumber: parseInt(el.dataset.blockNumber),
-          chainBlockHtml: el.outerHTML
-        })).toArray()
+        blocksPath: $el[0].dataset.url
       }
     },
     render ($el, state, oldState) {
       if (oldState.blocks === state.blocks) return
+
       const container = $el[0]
-      const newElements = _.map(state.blocks, ({ chainBlockHtml }) => $(chainBlockHtml)[0])
-      listMorph(container, newElements, { key: 'dataset.blockNumber', horizontal: true })
+
+      if (state.blocksLoading === false) {
+        const blocks = _.map(state.blocks, ({ chainBlockHtml }) => $(chainBlockHtml)[0])
+        listMorph(container, blocks, { key: 'dataset.blockNumber', horizontal: true })
+      }
+    }
+  },
+  '[data-selector="chain-block-list"] [data-selector="error-message"]': {
+    render ($el, state, oldState) {
+      if (state.blocksError) {
+        $el.show()
+      } else {
+        $el.hide()
+      }
+    }
+  },
+  '[data-selector="chain-block-list"] [data-selector="loading-message"]': {
+    render ($el, state, oldState) {
+      if (state.blocksLoading) {
+        $el.show()
+      } else {
+        $el.hide()
+      }
+    }
+  },
+  '[data-selector="transactions-list"] [data-selector="error-message"]': {
+    render ($el, state, oldState) {
+      $el.toggle(state.transactionsError)
+    }
+  },
+  '[data-selector="transactions-list"] [data-selector="loading-message"]': {
+    render ($el, state, oldState) {
+      $el.toggle(state.transactionsLoading)
     }
   },
   '[data-selector="transactions-list"]': {
     load ($el) {
-      return {
-        transactions: $el.children().map((index, el) => ({
-          transactionHash: el.dataset.transactionHash,
-          transactionHtml: el.outerHTML
-        })).toArray()
-      }
+      return { transactionsPath: $el[0].dataset.transactionsPath }
     },
     render ($el, state, oldState) {
       if (oldState.transactions === state.transactions) return
       const container = $el[0]
       const newElements = _.map(state.transactions, ({ transactionHtml }) => $(transactionHtml)[0])
-      listMorph(container, newElements, { key: 'dataset.transactionHash' })
+      listMorph(container, newElements, { key: 'dataset.identifierHash' })
     }
   },
   '[data-selector="channel-batching-count"]': {
@@ -188,6 +240,12 @@ const $chainDetailsPage = $('[data-page="chain-details"]')
 if ($chainDetailsPage.length) {
   const store = createStore(reducer)
   connectElements({ store, elements })
+
+  loadTransactions(store)
+  bindTransactionErrorMessage(store)
+
+  loadBlocks(store)
+  bindBlockErrorMessage(store)
 
   exchangeRateChannel.on('new_rate', (msg) => store.dispatch({
     type: 'RECEIVED_NEW_EXCHANGE_RATE',
@@ -216,6 +274,19 @@ if ($chainDetailsPage.length) {
   })))
 }
 
+function loadTransactions (store) {
+  const path = store.getState().transactionsPath
+  store.dispatch({type: 'START_TRANSACTIONS_FETCH'})
+  $.getJSON(path)
+    .done(response => store.dispatch({type: 'TRANSACTIONS_FETCHED', msg: humps.camelizeKeys(response)}))
+    .fail(() => store.dispatch({type: 'TRANSACTIONS_FETCH_ERROR'}))
+    .always(() => store.dispatch({type: 'FINISH_TRANSACTIONS_FETCH'}))
+}
+
+function bindTransactionErrorMessage (store) {
+  $('[data-selector="transactions-list"] [data-selector="error-message"]').on('click', _event => loadTransactions(store))
+}
+
 export function placeHolderBlock (blockNumber) {
   return `
     <div
@@ -239,4 +310,21 @@ export function placeHolderBlock (blockNumber) {
       </div>
     </div>
   `
+}
+
+function loadBlocks (store) {
+  const url = store.getState().blocksPath
+
+  store.dispatch({type: 'START_BLOCKS_FETCH'})
+
+  $.getJSON(url)
+    .done(response => {
+      store.dispatch({type: 'BLOCKS_FETCHED', msg: humps.camelizeKeys(response)})
+    })
+    .fail(() => store.dispatch({type: 'BLOCKS_REQUEST_ERROR'}))
+    .always(() => store.dispatch({type: 'BLOCKS_FINISH_REQUEST'}))
+}
+
+function bindBlockErrorMessage (store) {
+  $('[data-selector="chain-block-list"] [data-selector="error-message"]').on('click', _event => loadBlocks(store))
 }

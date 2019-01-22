@@ -9,7 +9,7 @@ defmodule Indexer.Block.FetcherTest do
 
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Log, Transaction, Wei}
-  alias Indexer.{CoinBalance, BufferedTask, InternalTransaction, Token, TokenBalance}
+  alias Indexer.{CoinBalance, BufferedTask, Code, InternalTransaction, Token, TokenBalance}
   alias Indexer.Block.{Fetcher, Uncle}
 
   @moduletag capture_log: true
@@ -41,6 +41,7 @@ defmodule Indexer.Block.FetcherTest do
   describe "import_range/2" do
     setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
       CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      Code.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
@@ -459,17 +460,27 @@ defmodule Indexer.Block.FetcherTest do
                     ],
                     logs: [],
                     transactions: [
-                      %Explorer.Chain.Hash{
-                        byte_count: 32,
-                        bytes:
-                          <<76, 188, 236, 37, 153, 153, 224, 115, 252, 79, 176, 224, 228, 166, 18, 66, 94, 61, 115, 57,
-                            47, 162, 37, 255, 36, 96, 161, 238, 171, 66, 99, 10>>
+                      %Transaction{
+                        block_number: block_number,
+                        index: 0,
+                        hash: %Explorer.Chain.Hash{
+                          byte_count: 32,
+                          bytes:
+                            <<76, 188, 236, 37, 153, 153, 224, 115, 252, 79, 176, 224, 228, 166, 18, 66, 94, 61, 115,
+                              57, 47, 162, 37, 255, 36, 96, 161, 238, 171, 66, 99, 10>>
+                        },
+                        internal_transactions_indexed_at: nil
                       },
-                      %Explorer.Chain.Hash{
-                        byte_count: 32,
-                        bytes:
-                          <<240, 237, 34, 44, 16, 174, 248, 135, 4, 196, 15, 198, 34, 220, 218, 174, 13, 208, 242, 122,
-                            154, 143, 4, 28, 171, 95, 190, 255, 254, 174, 75, 182>>
+                      %Transaction{
+                        block_number: block_number,
+                        index: 1,
+                        hash: %Explorer.Chain.Hash{
+                          byte_count: 32,
+                          bytes:
+                            <<240, 237, 34, 44, 16, 174, 248, 135, 4, 196, 15, 198, 34, 220, 218, 174, 13, 208, 242,
+                              122, 154, 143, 4, 28, 171, 95, 190, 255, 254, 174, 75, 182>>
+                        },
+                        internal_transactions_indexed_at: nil
                       }
                     ]
                   }} = Fetcher.fetch_and_import_range(block_fetcher, block_number..block_number)
@@ -553,11 +564,16 @@ defmodule Indexer.Block.FetcherTest do
                         }
                       ],
                       transactions: [
-                        %Explorer.Chain.Hash{
-                          byte_count: 32,
-                          bytes:
-                            <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77,
-                              57, 101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
+                        %Transaction{
+                          block_number: block_number,
+                          index: 0,
+                          hash: %Explorer.Chain.Hash{
+                            byte_count: 32,
+                            bytes:
+                              <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35,
+                                77, 57, 101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
+                          },
+                          internal_transactions_indexed_at: nil
                         }
                       ]
                     },
@@ -611,7 +627,7 @@ defmodule Indexer.Block.FetcherTest do
   end
 
   defp wait_for_tasks(buffered_task) do
-    wait_until(10_000, fn ->
+    wait_until(:timer.seconds(10), fn ->
       counts = BufferedTask.debug_count(buffered_task)
       counts.buffer == 0 and counts.tasks == 0
     end)
