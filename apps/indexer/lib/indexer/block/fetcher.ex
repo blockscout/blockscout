@@ -202,7 +202,10 @@ defmodule Indexer.Block.Fetcher do
 
   defp fetch_beneficiaries(range, json_rpc_named_arguments) do
     result =
-      with :ignore <- EthereumJSONRPC.fetch_beneficiaries(range, json_rpc_named_arguments) do
+      with :ignore <-
+             range
+             |> Enum.to_list()
+             |> EthereumJSONRPC.fetch_beneficiaries(json_rpc_named_arguments) do
         {:ok, %FetchedBeneficiaries{params_set: MapSet.new()}}
       end
 

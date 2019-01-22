@@ -16,10 +16,11 @@ defmodule Indexer.Block.UncatalogedRewards.Importer do
   @doc """
   receives a list of blocks and tries to fetch and insert rewards for them
   """
-  def fetch_and_import_rewards(blocks_batch) do
+  def fetch_and_import_rewards(blocks) when is_list(blocks) do
     result =
-      blocks_batch
-      |> break_into_chunks_of_block_numbers()
+      blocks
+      |> Stream.map(& &1.number)
+      |> Stream.chunk_every(@chunk_size)
       |> Enum.reduce([], fn chunk, acc ->
         chunk
         |> fetch_beneficiaries()
@@ -36,11 +37,9 @@ defmodule Indexer.Block.UncatalogedRewards.Importer do
     e in RuntimeError -> {:error, %{exception: e}}
   end
 
-  defp fetch_beneficiaries(chunk) do
-    {chunk_start, chunk_end} = Enum.min_max(chunk)
-
+  defp fetch_beneficiaries(block_numbers) when is_list(block_numbers) do
     {:ok, %FetchedBeneficiaries{params_set: result}} =
-      with :ignore <- EthereumJSONRPC.fetch_beneficiaries(chunk_start..chunk_end, json_rpc_named_arguments()) do
+      with :ignore <- EthereumJSONRPC.fetch_beneficiaries(block_numbers, json_rpc_named_arguments()) do
         {:ok, %FetchedBeneficiaries{params_set: MapSet.new()}}
       end
 
@@ -75,24 +74,6 @@ defmodule Indexer.Block.UncatalogedRewards.Importer do
       {:ok, price_as_wei} = Wei.cast(t.gas_used)
       price_as_wei |> Wei.mult(t.gas_price) |> Wei.sum(acc)
     end)
-  end
-
-  defp break_into_chunks_of_block_numbers(blocks) do
-    Enum.chunk_while(
-      blocks,
-      [],
-      fn block, acc ->
-        if (acc == [] || hd(acc) + 1 == block.number) && length(acc) < @chunk_size do
-          {:cont, [block.number | acc]}
-        else
-          {:cont, acc, [block.number]}
-        end
-      end,
-      fn
-        [] -> {:cont, []}
-        acc -> {:cont, acc, []}
-      end
-    )
   end
 
   defp insert_reward_group([]), do: :empty
