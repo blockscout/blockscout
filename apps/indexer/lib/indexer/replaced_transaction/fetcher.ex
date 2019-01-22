@@ -16,8 +16,8 @@ defmodule Indexer.ReplacedTransaction.Fetcher do
   alias Explorer.Repo
   alias Indexer.ReplacedTransaction
 
-  # 30 minutes
-  @default_interval 60_000 * 30
+  # 1 second
+  @default_interval 1_000
 
   # 60 seconds
   @query_timeout 60_000
@@ -53,7 +53,7 @@ defmodule Indexer.ReplacedTransaction.Fetcher do
 
     state =
       %__MODULE__{
-        interval: opts[:pending_transaction_interval] || @default_interval
+        interval: opts[:replaced_transaction_interval] || @default_interval
       }
       |> schedule_find()
 
