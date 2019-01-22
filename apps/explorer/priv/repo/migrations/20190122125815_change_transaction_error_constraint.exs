@@ -6,7 +6,8 @@ defmodule Explorer.Repo.Migrations.ChangeTransactionErrorConstraint do
       constraint(
         :transactions,
         :status
-      ))
+      )
+    )
 
     create(
       constraint(
@@ -39,13 +40,15 @@ defmodule Explorer.Repo.Migrations.ChangeTransactionErrorConstraint do
         (block_hash IS NOT NULL AND status IS NOT NULL) OR
         (status = 0 and error = 'dropped/replaced')
         """
-      ))
+      )
+    )
 
     drop(
       constraint(
         :transactions,
         :error
-      ))
+      )
+    )
 
     create(
       constraint(

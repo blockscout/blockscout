@@ -40,6 +40,7 @@ defmodule Indexer.ReplacedTransaction.FetcherTest do
       }
 
       block = insert(:block)
+
       insert(:transaction,
         hash: mined_transaction_hash,
         nonce: common_nonce,
