@@ -39,7 +39,7 @@
   "ex_cldr_units": {:hex, :ex_cldr_units, "1.1.1", "b3c7256709bdeb3740a5f64ce2bce659eb9cf4cc1afb4cf94aba033b4a18bc5f", [:mix], [{:ex_cldr, "~> 1.0", [hex: :ex_cldr, optional: false]}, {:ex_cldr_numbers, "~> 1.0", [hex: :ex_cldr_numbers, optional: false]}]},
   "ex_doc": {:hex, :ex_doc, "0.19.2", "6f4081ccd9ed081b6dc0bd5af97a41e87f5554de469e7d76025fba535180565f", [:mix], [{:earmark, "~> 1.2", [hex: :earmark, repo: "hexpm", optional: false]}, {:makeup_elixir, "~> 0.10", [hex: :makeup_elixir, repo: "hexpm", optional: false]}], "hexpm"},
   "ex_machina": {:hex, :ex_machina, "2.2.2", "d84217a6fb7840ff771d2561b8aa6d74a0d8968e4b10ecc0d7e9890dc8fb1c6a", [:mix], [{:ecto, "~> 2.2 or ~> 3.0", [hex: :ecto, repo: "hexpm", optional: true]}, {:ecto_sql, "~> 3.0", [hex: :ecto_sql, repo: "hexpm", optional: true]}], "hexpm"},
-  "ex_rlp": {:hex, :ex_rlp, "0.3.1", "190554f7b26f79734fc5a772241eec14a71b2e83576e43f451479feb017013e9", [:mix], [], "hexpm"},
+  "ex_rlp": {:hex, :ex_rlp, "0.5.2", "7f4ce7bd55e543c054ce6d49629b01e9833c3462e3d547952be89865f39f2c58", [:mix], [], "hexpm"},
   "exactor": {:hex, :exactor, "2.2.4", "5efb4ddeb2c48d9a1d7c9b465a6fffdd82300eb9618ece5d34c3334d5d7245b1", [:mix], []},
   "excoveralls": {:git, "https://github.com/KronicDeth/excoveralls.git", "0a859b68851eeba9b43eba59fbc8f9098299cfe1", [branch: "circle-workflows"]},
   "exjsx": {:hex, :exjsx, "4.0.0", "60548841e0212df401e38e63c0078ec57b33e7ea49b032c796ccad8cde794b5c", [:mix], [{:jsx, "~> 2.8.0", [hex: :jsx, optional: false]}]},
