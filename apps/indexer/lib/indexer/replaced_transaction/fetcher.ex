@@ -16,7 +16,8 @@ defmodule Indexer.ReplacedTransaction.Fetcher do
   alias Explorer.Repo
   alias Indexer.ReplacedTransaction
 
-  @default_interval 1_000
+  # 30 minutes
+  @default_interval 60_000 * 30
 
   # 60 seconds
   @query_timeout 60_000
@@ -101,7 +102,7 @@ defmodule Indexer.ReplacedTransaction.Fetcher do
       )
 
     try do
-      Repo.update_all(query, [])
+      Repo.update_all(query, [], timeout: @query_timeout)
     rescue
       error ->
         Logger.error(fn -> ["Failed to make pending transactions dropped: ", inspect(error)] end)
