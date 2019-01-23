@@ -2279,6 +2279,52 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "gas_payment_by_block_hash/1" do
+    setup do
+      number = 1
+
+      %{consensus_block: insert(:block, number: number, consensus: true), number: number}
+    end
+
+    test "without consensus block hash has no key", %{consensus_block: consensus_block, number: number} do
+      non_consensus_block = insert(:block, number: number, consensus: false)
+
+      :transaction
+      |> insert(gas_price: 1)
+      |> with_block(consensus_block, gas_used: 1)
+
+      :transaction
+      |> insert(gas_price: 1)
+      |> with_block(consensus_block, gas_used: 2)
+
+      assert Chain.gas_payment_by_block_hash([non_consensus_block.hash]) == %{}
+    end
+
+    test "with consensus block hash without transactions has key with 0 value", %{
+      consensus_block: %Block{hash: consensus_block_hash}
+    } do
+      assert Chain.gas_payment_by_block_hash([consensus_block_hash]) == %{
+               consensus_block_hash => %Wei{value: Decimal.new(0)}
+             }
+    end
+
+    test "with consensus block hash with transactions has key with value", %{
+      consensus_block: %Block{hash: consensus_block_hash} = consensus_block
+    } do
+      :transaction
+      |> insert(gas_price: 1)
+      |> with_block(consensus_block, gas_used: 2)
+
+      :transaction
+      |> insert(gas_price: 3)
+      |> with_block(consensus_block, gas_used: 4)
+
+      assert Chain.gas_payment_by_block_hash([consensus_block_hash]) == %{
+               consensus_block_hash => %Wei{value: Decimal.new(14)}
+             }
+    end
+  end
+
   describe "missing_block_number_ranges/1" do
     # 0000
     test "0..0 without blocks" do

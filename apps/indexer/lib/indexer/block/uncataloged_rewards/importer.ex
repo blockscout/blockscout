@@ -48,30 +48,21 @@ defmodule Indexer.Block.UncatalogedRewards.Importer do
   end
 
   defp add_gas_payments(beneficiaries) do
-    Enum.map(beneficiaries, fn beneficiary ->
-      case beneficiary.address_type do
-        :validator ->
-          gas_payment = gas_payment(beneficiary)
+    gas_payment_by_block_hash =
+      beneficiaries
+      |> Stream.filter(&(&1.address_type == :validator))
+      |> Enum.map(& &1.block_hash)
+      |> Chain.gas_payment_by_block_hash()
 
+    Enum.map(beneficiaries, fn %{block_hash: block_hash} = beneficiary ->
+      case gas_payment_by_block_hash do
+        %{^block_hash => gas_payment} ->
           {:ok, minted} = Wei.cast(beneficiary.reward)
-
           %{beneficiary | reward: Wei.sum(minted, gas_payment)}
 
         _ ->
           beneficiary
       end
-    end)
-  end
-
-  defp gas_payment(beneficiary) do
-    {:ok, initial} = Wei.cast(0)
-
-    beneficiary.block_number
-    |> Chain.get_transactions_of_block_number()
-    |> Enum.reduce(initial, fn %Transaction{gas_price: gas_price, gas_used: gas_used}, acc ->
-      gas_price
-      |> Wei.mult(gas_used)
-      |> Wei.sum(acc)
     end)
   end
 
