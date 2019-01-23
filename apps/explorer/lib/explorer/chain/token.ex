@@ -62,6 +62,7 @@ defmodule Explorer.Chain.Token do
       :contract_address,
       Address,
       foreign_key: :contract_address_hash,
+      primary_key: true,
       references: :hash,
       type: Hash.Address
     )
