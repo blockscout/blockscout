@@ -49,12 +49,10 @@ defmodule Indexer.Block.UncatalogedRewards.ImporterTest do
 
       assert {:ok,
               [
-                ok: %{
-                  "insert_0" => %Reward{
-                    address_hash: ^address_hash,
-                    block_hash: ^block_hash,
-                    address_type: :validator
-                  }
+                %Reward{
+                  address_hash: ^address_hash,
+                  block_hash: ^block_hash,
+                  address_type: :validator
                 }
               ]} = Importer.fetch_and_import_rewards([block])
     end
@@ -96,8 +94,7 @@ defmodule Indexer.Block.UncatalogedRewards.ImporterTest do
 
       {:ok, reward} = Wei.cast(value)
 
-      assert {:ok,
-              [ok: %{"insert_0" => %Reward{block_hash: ^block_hash, address_type: ^address_type, reward: ^reward}}]} =
+      assert {:ok, [%Reward{block_hash: ^block_hash, address_type: ^address_type, reward: ^reward}]} =
                Importer.fetch_and_import_rewards([block])
     end
   end

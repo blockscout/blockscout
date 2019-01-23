@@ -3,10 +3,9 @@ defmodule Indexer.Block.UncatalogedRewards.Importer do
   a module to fetch and import the rewards for blocks that were indexed without the reward
   """
 
-  alias Ecto.Multi
   alias EthereumJSONRPC.FetchedBeneficiaries
   alias Explorer.Chain
-  alias Explorer.Chain.{Block.Reward, Wei}
+  alias Explorer.Chain.Wei
 
   # max number of blocks in a single request
   # higher numbers may cause the requests to time out
@@ -17,25 +16,30 @@ defmodule Indexer.Block.UncatalogedRewards.Importer do
   receives a list of blocks and tries to fetch and insert rewards for them
   """
   def fetch_and_import_rewards(blocks) when is_list(blocks) do
-    result =
+    block_rewards =
       blocks
       |> Stream.map(& &1.number)
       |> Stream.chunk_every(@chunk_size)
-      |> Enum.reduce([], fn chunk, acc ->
-        chunk
-        |> fetch_beneficiaries()
-        |> add_gas_payments()
-        |> Enum.map(&Reward.changeset(%Reward{}, &1))
-        |> insert_reward_group()
-        |> case do
-          :empty -> acc
-          insert -> [insert | acc]
-        end
-      end)
+      |> Enum.flat_map(&block_numbers_to_rewards/1)
 
-    {:ok, result}
+    {:ok, block_rewards}
   rescue
     e in RuntimeError -> {:error, %{exception: e}}
+  end
+
+  defp block_numbers_to_rewards(block_numbers) when is_list(block_numbers) do
+    case fetch_beneficiaries(block_numbers) do
+      [] ->
+        []
+
+      beneficiaries_params ->
+        beneficiaries_params
+        |> add_gas_payments()
+        |> import_block_reward_params()
+        |> case do
+          {:ok, %{block_rewards: block_rewards}} -> block_rewards
+        end
+    end
   end
 
   defp fetch_beneficiaries(block_numbers) when is_list(block_numbers) do
@@ -44,7 +48,7 @@ defmodule Indexer.Block.UncatalogedRewards.Importer do
         {:ok, %FetchedBeneficiaries{params_set: MapSet.new()}}
       end
 
-    result
+    Enum.sort_by(result, &{&1.address_hash, &1.address_type, &1.block_hash})
   end
 
   defp add_gas_payments(beneficiaries) do
@@ -66,18 +70,8 @@ defmodule Indexer.Block.UncatalogedRewards.Importer do
     end)
   end
 
-  defp insert_reward_group([]), do: :empty
-
-  defp insert_reward_group(rewards) do
-    rewards
-    |> Enum.reduce({Multi.new(), 0}, fn changeset, {multi, index} ->
-      {Multi.insert(multi, "insert_#{index}", changeset,
-         conflict_target: ~w(address_hash address_type block_hash),
-         on_conflict: {:replace, [:reward]}
-       ), index + 1}
-    end)
-    |> elem(0)
-    |> Explorer.Repo.transaction()
+  defp import_block_reward_params(block_rewards_params) when is_list(block_rewards_params) do
+    Chain.import(%{block_rewards: %{params: block_rewards_params}})
   end
 
   defp json_rpc_named_arguments do
