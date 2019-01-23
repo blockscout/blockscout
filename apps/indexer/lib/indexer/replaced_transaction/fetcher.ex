@@ -53,7 +53,7 @@ defmodule Indexer.ReplacedTransaction.Fetcher do
     state =
       %__MODULE__{
         interval: opts[:replaced_transaction_interval] || @default_interval,
-        query_timeout: opts[:replaced_transaction_query_timeout] || @query_timeout,
+        query_timeout: opts[:replaced_transaction_query_timeout] || @query_timeout
       }
       |> schedule_find()
 
