@@ -321,24 +321,6 @@ defmodule Explorer.Chain do
     Repo.aggregate(Block, :count, :hash)
   end
 
-  @doc !"""
-       Returns a default value if no value is found.
-       """
-  defmacrop default_if_empty(value, default) do
-    quote do
-      fragment("coalesce(?, ?)", unquote(value), unquote(default))
-    end
-  end
-
-  @doc !"""
-       Sum of the products of two columns.
-       """
-  defmacrop sum_of_products(col_a, col_b) do
-    quote do
-      sum(fragment("?*?", unquote(col_a), unquote(col_b)))
-    end
-  end
-
   @doc """
   Reward for mining a block.
 
@@ -362,20 +344,12 @@ defmodule Explorer.Chain do
         on: fragment("? <@ ?", block.number, emission_reward.block_range),
         where: block.number == ^block_number,
         group_by: emission_reward.reward,
-        select: %{
-          transaction_reward: %Wei{
-            value: default_if_empty(sum_of_products(transaction.gas_used, transaction.gas_price), 0)
-          },
-          static_reward: emission_reward.reward
+        select: %Wei{
+          value: coalesce(sum(transaction.gas_used * transaction.gas_price), 0) + emission_reward.reward
         }
       )
 
-    %{
-      transaction_reward: transaction_reward,
-      static_reward: static_reward
-    } = Repo.one(query)
-
-    Wei.sum(transaction_reward, static_reward)
+    Repo.one!(query)
   end
 
   @doc """
