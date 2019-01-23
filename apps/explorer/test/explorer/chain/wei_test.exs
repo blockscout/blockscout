@@ -101,33 +101,33 @@ defmodule Explorer.Chain.WeiTest do
     end
   end
 
-  describe "mult/1" do
-    test "with one negative parameter return a negative value" do
-      first = %Explorer.Chain.Wei{value: Decimal.new(123)}
-      second = %Explorer.Chain.Wei{value: Decimal.new(-1)}
+  describe "mult/2" do
+    test "with positive Wei and positive multiplier returns positive Wei" do
+      wei = %Explorer.Chain.Wei{value: Decimal.new(123)}
+      multiplier = 100
 
-      assert Explorer.Chain.Wei.mult(first, second) == %Explorer.Chain.Wei{value: Decimal.new(-123)}
+      assert Explorer.Chain.Wei.mult(wei, multiplier) == %Explorer.Chain.Wei{value: Decimal.new(12300)}
     end
 
-    test "with two negative parameter return positive number" do
-      first = %Explorer.Chain.Wei{value: Decimal.new(-123)}
-      second = %Explorer.Chain.Wei{value: Decimal.new(-100)}
+    test "with positive Wei and negative multiplier returns positive Wei" do
+      wei = %Explorer.Chain.Wei{value: Decimal.new(123)}
+      multiplier = -1
 
-      assert Explorer.Chain.Wei.mult(first, second) == %Explorer.Chain.Wei{value: Decimal.new(12300)}
+      assert Explorer.Chain.Wei.mult(wei, multiplier) == %Explorer.Chain.Wei{value: Decimal.new(-123)}
     end
 
-    test "with two positive parameters return a positive number" do
-      first = %Explorer.Chain.Wei{value: Decimal.new(123)}
-      second = %Explorer.Chain.Wei{value: Decimal.new(100)}
+    test "with negative Wei and positive multiplier returns negative Wei" do
+      wei = %Explorer.Chain.Wei{value: Decimal.new(-123)}
+      multiplier = 100
 
-      assert Explorer.Chain.Wei.mult(first, second) == %Explorer.Chain.Wei{value: Decimal.new(12300)}
+      assert Explorer.Chain.Wei.mult(wei, multiplier) == %Explorer.Chain.Wei{value: Decimal.new(-12300)}
     end
 
-    test "the order of the paramete matters not" do
-      first = %Explorer.Chain.Wei{value: Decimal.new(123)}
-      second = %Explorer.Chain.Wei{value: Decimal.new(-10)}
+    test "with negative Wei and negative multiplier returns positive Wei" do
+      wei = %Explorer.Chain.Wei{value: Decimal.new(-123)}
+      multiplier = -100
 
-      assert Explorer.Chain.Wei.mult(first, second) == Explorer.Chain.Wei.mult(second, first)
+      assert Explorer.Chain.Wei.mult(wei, multiplier) == %Explorer.Chain.Wei{value: Decimal.new(12300)}
     end
   end
 end

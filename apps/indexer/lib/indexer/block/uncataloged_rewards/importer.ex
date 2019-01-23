@@ -64,13 +64,14 @@ defmodule Indexer.Block.UncatalogedRewards.Importer do
   end
 
   defp gas_payment(beneficiary) do
-    {:ok, accumulator} = Wei.cast(0)
+    {:ok, initial} = Wei.cast(0)
 
     beneficiary.block_number
     |> Chain.get_transactions_of_block_number()
-    |> Enum.reduce(accumulator, fn t, acc ->
-      {:ok, price_as_wei} = Wei.cast(t.gas_used)
-      price_as_wei |> Wei.mult(t.gas_price) |> Wei.sum(acc)
+    |> Enum.reduce(initial, fn %Transaction{gas_price: gas_price, gas_used: gas_used}, acc ->
+      gas_price
+      |> Wei.mult(gas_used)
+      |> Wei.sum(acc)
     end)
   end
 
