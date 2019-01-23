@@ -1164,7 +1164,7 @@ defmodule Explorer.Chain do
     query =
       from(
         t in Transaction,
-        # exclude pending transactions
+        # exclude pending transactions and replaced transactions
         where: not is_nil(t.block_hash) and is_nil(t.internal_transactions_indexed_at),
         select: ^fields
       )
@@ -1474,7 +1474,7 @@ defmodule Explorer.Chain do
   @spec pending_transaction_count() :: non_neg_integer()
   def pending_transaction_count do
     Transaction
-    |> where([transaction], is_nil(transaction.block_hash))
+    |> pending_transactions_query()
     |> Repo.aggregate(:count, :hash)
   end
 
@@ -1547,11 +1547,17 @@ defmodule Explorer.Chain do
     Transaction
     |> page_pending_transaction(paging_options)
     |> limit(^paging_options.page_size)
-    |> where([transaction], is_nil(transaction.block_hash))
+    |> pending_transactions_query()
     |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
     |> join_associations(necessity_by_association)
     |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
     |> Repo.all()
+  end
+
+  defp pending_transactions_query(query) do
+    from(transaction in query,
+      where: is_nil(transaction.block_hash) and is_nil(transaction.error)
+    )
   end
 
   @doc """
