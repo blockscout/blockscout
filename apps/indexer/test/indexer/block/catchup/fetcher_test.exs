@@ -2,6 +2,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
   use EthereumJSONRPC.Case, async: false
   use Explorer.DataCase
 
+  import EthereumJSONRPC, only: [integer_to_quantity: 1]
   import Mox
 
   alias Indexer.{Block, CoinBalance, InternalTransaction, Token, TokenBalance}
@@ -109,6 +110,107 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                })
 
       assert_receive {:uncles, [^uncle_hash]}
+    end
+  end
+
+  describe "task/1" do
+    test "ignores fetched beneficiaries with different hash for same number", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      latest_block_number = 1
+      latest_block_quantity = integer_to_quantity(latest_block_number)
+
+      block_number = latest_block_number - 1
+      block_hash = block_hash()
+      block_quantity = integer_to_quantity(block_number)
+
+      miner_hash = address_hash()
+      miner_hash_data = to_string(miner_hash)
+
+      new_block_hash = block_hash()
+
+      refute block_hash == new_block_hash
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn %{method: "eth_getBlockByNumber", params: ["latest", false]}, _options ->
+        {:ok, %{"number" => latest_block_quantity}}
+      end)
+      |> expect(:json_rpc, fn [
+                                %{
+                                  id: id,
+                                  jsonrpc: "2.0",
+                                  method: "eth_getBlockByNumber",
+                                  params: [^block_quantity, true]
+                                }
+                              ],
+                              _options ->
+        {:ok,
+         [
+           %{
+             id: id,
+             jsonrpc: "2.0",
+             result: %{
+               "hash" => to_string(block_hash),
+               "number" => block_quantity,
+               "difficulty" => "0x0",
+               "gasLimit" => "0x0",
+               "gasUsed" => "0x0",
+               "extraData" => "0x0",
+               "logsBloom" => "0x0",
+               "miner" => miner_hash_data,
+               "parentHash" =>
+                 block_hash()
+                 |> to_string(),
+               "receiptsRoot" => "0x0",
+               "size" => "0x0",
+               "sha3Uncles" => "0x0",
+               "stateRoot" => "0x0",
+               "timestamp" => "0x0",
+               "totalDifficulty" => "0x0",
+               "transactions" => [],
+               "transactionsRoot" => "0x0",
+               "uncles" => []
+             }
+           }
+         ]}
+      end)
+      |> expect(:json_rpc, fn [%{id: id, jsonrpc: "2.0", method: "trace_block", params: [^block_quantity]}], _options ->
+        {
+          :ok,
+          [
+            %{
+              id: id,
+              jsonrpc: "2.0",
+              result: [
+                %{
+                  "action" => %{
+                    "author" => miner_hash_data,
+                    "rewardType" => "external",
+                    "value" => "0x0"
+                  },
+                  "blockHash" => to_string(new_block_hash),
+                  "blockNumber" => block_number,
+                  "result" => nil,
+                  "subtraces" => 0,
+                  "traceAddress" => [],
+                  "transactionHash" => nil,
+                  "transactionPosition" => nil,
+                  "type" => "reward"
+                }
+              ]
+            }
+          ]
+        }
+      end)
+
+      assert {:ok, _} =
+               Fetcher.task(%Fetcher{
+                 blocks_batch_size: 1,
+                 block_fetcher: %Block.Fetcher{
+                   callback_module: Fetcher,
+                   json_rpc_named_arguments: json_rpc_named_arguments
+                 }
+               })
     end
   end
 end
