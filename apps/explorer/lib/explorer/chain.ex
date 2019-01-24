@@ -1556,7 +1556,7 @@ defmodule Explorer.Chain do
 
   defp pending_transactions_query(query) do
     from(transaction in query,
-      where: is_nil(transaction.block_hash) and is_nil(transaction.error)
+      where: is_nil(transaction.block_hash)
     )
   end
 
@@ -2129,26 +2129,6 @@ defmodule Explorer.Chain do
     address_hash
     |> Address.Token.list_address_tokens_with_balance(paging_options)
     |> Repo.all()
-  end
-
-  @doc """
-  Finds replaced/dropped transactions and sets their status to `:error` with `dropped/replaced` error.
-  """
-  @spec update_replaced_transactions(:infinity | non_neg_integer()) :: {integer(), nil | [term()]}
-  def update_replaced_transactions(timeout \\ :infinity) do
-    query =
-      from(transaction in Transaction,
-        where: is_nil(transaction.block_number),
-        join: mined_transaction in Transaction,
-        where:
-          transaction.from_address_hash == mined_transaction.from_address_hash and
-            transaction.nonce == mined_transaction.nonce and not is_nil(mined_transaction.block_number),
-        update: [
-          set: [status: ^:error, error: "dropped/replaced"]
-        ]
-      )
-
-    Repo.update_all(query, [], timeout: timeout)
   end
 
   @doc """

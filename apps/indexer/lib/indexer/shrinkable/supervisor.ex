@@ -11,7 +11,6 @@ defmodule Indexer.Shrinkable.Supervisor do
     CoinBalance,
     InternalTransaction,
     PendingTransaction,
-    ReplacedTransaction,
     Token,
     TokenBalance,
     TokenTransfer
@@ -62,7 +61,6 @@ defmodule Indexer.Shrinkable.Supervisor do
          ]},
         {PendingTransaction.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments], [name: PendingTransactionFetcher]]},
-        {ReplacedTransaction.Supervisor, [[], [name: ReplacedTransactionFetcher]]},
         {Code.Supervisor,
          [
            [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor],
