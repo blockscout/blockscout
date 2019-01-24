@@ -42,8 +42,16 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
       |> Map.put(:timestamps, timestamps)
       |> Map.put(:token_transfer_transaction_hash_set, token_transfer_transaction_hash_set(options))
 
-    Multi.run(multi, :transactions, fn repo, _ ->
+    transactions_timeout = options[option_key()][:timeout] || timeout()
+
+    update_transactions_options = %{timeout: transactions_timeout}
+
+    multi
+    |> Multi.run(:transactions, fn repo, _ ->
       insert(repo, changes_list, insert_options)
+    end)
+    |> Multi.run(:replaced_transactions, fn repo, %{transactions: transactions} ->
+      update_replaced_transactions(repo, transactions, update_transactions_options)
     end)
   end
 
@@ -178,4 +186,29 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
   end
 
   defp put_internal_transactions_indexed_at?(_, _), do: false
+
+  defp update_replaced_transactions(repo, transactions, %{timeout: timeout}) do
+    transactions
+    |> Enum.filter(& &1.transaction.block_hash)
+    |> Enum.map(fn transaction -> {transaction.nonce, transaction.from_address_hash} end)
+    |> Enum.uniq()
+    |> Enum.map(fn {nonce, from_address_hash} ->
+      from(t in Transaction,
+        where: t.nonce == ^nonce and t.from_address_hash == ^from_address_hash and is_nil(t.block_hash),
+        update: [
+          set: [status: ^:error, error: "dropped/replaced"]
+        ]
+      )
+    end)
+    |> Enum.map(fn query ->
+      try do
+        {_, result} = repo.update(query, [], timeout: timeout)
+
+        {:ok, result}
+      rescue
+        postgrex_error in Postgrex.Error ->
+          {:error, %{exception: postgrex_error, query: query}}
+      end
+    end)
+  end
 end
