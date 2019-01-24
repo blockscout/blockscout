@@ -191,7 +191,8 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
     filters =
       transactions
       |> Enum.filter(fn transaction ->
-        transaction.block_hash && transaction.block_number && transaction.nonce && transaction.from_address_hash
+        Map.get(transaction, :block_hash) && Map.get(transaction, :block_number) && Map.get(transaction, :nonce) &&
+          Map.get(transaction, :from_address_hash)
       end)
       |> Enum.map(fn transaction ->
         {transaction.nonce, transaction.from_address_hash}
