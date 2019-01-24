@@ -106,9 +106,8 @@ defmodule Indexer.Block.Fetcher do
          transactions_with_receipts = Receipts.put(transactions_params_without_receipts, receipts),
          %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfer.parse(logs),
-         {:beneficiaries,
-          {:ok, %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors}}} <-
-           fetch_beneficiaries(range, json_rpc_named_arguments),
+         %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
+           fetch_beneficiaries(blocks, json_rpc_named_arguments),
          addresses =
            AddressExtraction.extract_addresses(%{
              block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set),
@@ -200,16 +199,63 @@ defmodule Indexer.Block.Fetcher do
 
   def async_import_uncles(_), do: :ok
 
-  defp fetch_beneficiaries(range, json_rpc_named_arguments) do
-    result =
-      with :ignore <-
-             range
-             |> Enum.to_list()
-             |> EthereumJSONRPC.fetch_beneficiaries(json_rpc_named_arguments) do
-        {:ok, %FetchedBeneficiaries{params_set: MapSet.new()}}
-      end
+  defp fetch_beneficiaries(blocks, json_rpc_named_arguments) do
+    hash_by_number = Enum.into(blocks, %{}, &{&1.number, &1.hash})
 
-    {:beneficiaries, result}
+    hash_by_number
+    |> Map.keys()
+    |> EthereumJSONRPC.fetch_beneficiaries(json_rpc_named_arguments)
+    |> case do
+      {:ok, %FetchedBeneficiaries{params_set: params_set} = fetched_beneficiaries} ->
+        consensus_params_set = consensus_params_set(params_set, hash_by_number)
+
+        %FetchedBeneficiaries{fetched_beneficiaries | params_set: consensus_params_set}
+
+      {:error, reason} ->
+        Logger.error(fn -> ["Could not fetch beneficiaries: ", inspect(reason)] end)
+
+        error =
+          case reason do
+            %{code: code, message: message} -> %{code: code, message: message}
+            _ -> %{code: -1, message: inspect(reason)}
+          end
+
+        errors =
+          Enum.map(hash_by_number, fn {_, number} ->
+            Map.put(error, :data, %{block_number: number})
+          end)
+
+        %FetchedBeneficiaries{errors: errors}
+
+      :ignore ->
+        %FetchedBeneficiaries{}
+    end
+  end
+
+  defp consensus_params_set(params_set, hash_by_number) do
+    params_set
+    |> Enum.filter(fn %{block_number: block_number, block_hash: block_hash} ->
+      case Map.fetch!(hash_by_number, block_number) do
+        ^block_hash ->
+          true
+
+        other_block_hash ->
+          Logger.debug(fn ->
+            [
+              "fetch beneficiaries reported block number (",
+              to_string(block_number),
+              ") maps to different (",
+              other_block_hash,
+              ") block hash than the one from getBlock (",
+              block_hash,
+              "). A reorg has occurred."
+            ]
+          end)
+
+          false
+      end
+    end)
+    |> Enum.into(MapSet.new())
   end
 
   defp add_gas_payments(beneficiaries, transactions) do

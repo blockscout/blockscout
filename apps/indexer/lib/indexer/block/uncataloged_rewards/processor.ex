@@ -11,27 +11,42 @@ defmodule Indexer.Block.UncatalogedRewards.Processor do
   @max_batch_size 150
   @default_cooldown 300
 
-  def start_link(_) do
-    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
+  @doc false
+  def child_spec([json_rpc_named_arguments, gen_server_options]) do
+    Supervisor.child_spec({__MODULE__, [json_rpc_named_arguments, gen_server_options]}, id: __MODULE__)
   end
 
-  @impl true
-  def init(args) do
-    send(self(), :import_batch)
-    {:ok, args}
+  def start_link(init_options, gen_server_options) do
+    GenServer.start_link(__MODULE__, init_options, gen_server_options)
   end
 
-  @impl true
-  def handle_info(:import_batch, state) do
+  @impl GenServer
+  def init(json_rpc_named_arguments) do
+    {:ok, json_rpc_named_arguments, {:continue, :import_batch}}
+  end
+
+  @impl GenServer
+  def handle_continue(:import_batch, json_rpc_named_arguments) do
+    import_batch(json_rpc_named_arguments)
+
+    {:noreply, json_rpc_named_arguments}
+  end
+
+  @impl GenServer
+  def handle_info(:import_batch, json_rpc_named_arguments) do
+    import_batch(json_rpc_named_arguments)
+
+    {:noreply, json_rpc_named_arguments}
+  end
+
+  defp import_batch(json_rpc_named_arguments) do
     @max_batch_size
     |> Chain.get_blocks_without_reward()
-    |> import_or_try_later
-
-    {:noreply, state}
+    |> import_or_try_later(json_rpc_named_arguments)
   end
 
-  defp import_or_try_later(batch) do
-    import_results = Importer.fetch_and_import_rewards(batch)
+  defp import_or_try_later(batch, json_rpc_named_arguments) do
+    import_results = Importer.fetch_and_import_rewards(batch, json_rpc_named_arguments)
 
     wait_time = if import_results == {:ok, []}, do: :timer.hours(24), else: @default_cooldown
 

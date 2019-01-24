@@ -13,7 +13,13 @@ defmodule Indexer.Block.Supervisor do
   end
 
   @impl Supervisor
-  def init(%{block_interval: block_interval, subscribe_named_arguments: subscribe_named_arguments} = named_arguments) do
+  def init(
+        %{
+          block_interval: block_interval,
+          json_rpc_named_arguments: json_rpc_named_arguments,
+          subscribe_named_arguments: subscribe_named_arguments
+        } = named_arguments
+      ) do
     block_fetcher =
       named_arguments
       |> Map.drop(~w(block_interval memory_monitor subscribe_named_arguments)a)
@@ -35,7 +41,7 @@ defmodule Indexer.Block.Supervisor do
            [name: Realtime.Supervisor]
          ]},
         {Uncle.Supervisor, [[block_fetcher: block_fetcher, memory_monitor: memory_monitor], [name: Uncle.Supervisor]]},
-        UncatalogedRewards.Processor
+        {UncatalogedRewards.Processor, [json_rpc_named_arguments, [name: UncatalogedRewards.Processor]]}
       ],
       strategy: :one_for_one
     )

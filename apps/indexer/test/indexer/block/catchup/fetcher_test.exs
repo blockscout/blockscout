@@ -5,6 +5,8 @@ defmodule Indexer.Block.Catchup.FetcherTest do
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
   import Mox
 
+  alias Explorer.Chain.Block
+  alias Explorer.Chain.Block.Reward
   alias Indexer.{Block, CoinBalance, InternalTransaction, Token, TokenBalance}
   alias Indexer.Block.Catchup.Fetcher
 
@@ -117,6 +119,11 @@ defmodule Indexer.Block.Catchup.FetcherTest do
     test "ignores fetched beneficiaries with different hash for same number", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
+      CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
       latest_block_number = 1
       latest_block_quantity = integer_to_quantity(latest_block_number)
 
@@ -203,7 +210,9 @@ defmodule Indexer.Block.Catchup.FetcherTest do
         }
       end)
 
-      assert {:ok, _} =
+      assert count(Block) == 0
+
+      assert %{first_block_number: ^block_number, missing_block_count: 1, shrunk: false} =
                Fetcher.task(%Fetcher{
                  blocks_batch_size: 1,
                  block_fetcher: %Block.Fetcher{
@@ -211,6 +220,13 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                    json_rpc_named_arguments: json_rpc_named_arguments
                  }
                })
+
+      assert count(Block) == 1
+      assert count(Reward) == 0
     end
+  end
+
+  defp count(schema) do
+    Repo.one!(select(schema, fragment("COUNT(*)")))
   end
 end

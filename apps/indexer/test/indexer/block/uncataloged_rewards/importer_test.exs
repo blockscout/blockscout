@@ -9,12 +9,12 @@ defmodule Indexer.Block.UncatalogedRewards.ImporterTest do
   alias Indexer.Block.UncatalogedRewards.Importer
 
   describe "fetch_and_import_rewards/1" do
-    test "return `{:ok, []}` when receiving an empty list" do
-      assert Importer.fetch_and_import_rewards([]) == {:ok, []}
+    test "return `{:ok, []}` when receiving an empty list", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      assert Importer.fetch_and_import_rewards([], json_rpc_named_arguments) == {:ok, []}
     end
 
     @tag :no_geth
-    test "return `{:ok, [transactions executed]}`" do
+    test "return `{:ok, [transactions executed]}`", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       address = insert(:address)
       address_hash = address.hash
 
@@ -54,11 +54,11 @@ defmodule Indexer.Block.UncatalogedRewards.ImporterTest do
                   block_hash: ^block_hash,
                   address_type: :validator
                 }
-              ]} = Importer.fetch_and_import_rewards([block])
+              ]} = Importer.fetch_and_import_rewards([block], json_rpc_named_arguments)
     end
 
     @tag :no_geth
-    test "replaces reward on conflict" do
+    test "replaces reward on conflict", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       miner = insert(:address)
       block = insert(:block, miner: miner)
       block_hash = block.hash
@@ -95,11 +95,13 @@ defmodule Indexer.Block.UncatalogedRewards.ImporterTest do
       {:ok, reward} = Wei.cast(value)
 
       assert {:ok, [%Reward{block_hash: ^block_hash, address_type: ^address_type, reward: ^reward}]} =
-               Importer.fetch_and_import_rewards([block])
+               Importer.fetch_and_import_rewards([block], json_rpc_named_arguments)
     end
 
     # regression test for https://github.com/poanetwork/blockscout/issues/1337
-    test "with different block hash due to consensus switch between database query and trace_block" do
+    test "with different block hash due to consensus switch between database query and trace_block", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
       miner = insert(:address)
       block = insert(:block, miner: miner)
       block_hash = block.hash
@@ -137,9 +139,7 @@ defmodule Indexer.Block.UncatalogedRewards.ImporterTest do
          ]}
       end)
 
-      {:ok, reward} = Wei.cast(value)
-
-      assert {:ok, []} = Importer.fetch_and_import_rewards([block])
+      assert {:ok, []} = Importer.fetch_and_import_rewards([block], json_rpc_named_arguments)
     end
   end
 end
