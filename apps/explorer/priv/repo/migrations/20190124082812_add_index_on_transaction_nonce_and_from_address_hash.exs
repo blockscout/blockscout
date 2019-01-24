@@ -8,7 +8,7 @@ defmodule Explorer.Repo.Migrations.AddIndexOnTransactionNonceAndFromAddressHash 
   @timeout 60_000 * 30
 
   def change do
-    create(index(:transactions, [:nonce, :from_address_hash]))
+    create(index(:transactions, [:nonce, :from_address_hash, :block_hash]))
     # for replaced/dropeed transactions
     create(index(:transactions, [:block_hash, :error]))
 
@@ -20,6 +20,7 @@ defmodule Explorer.Repo.Migrations.AddIndexOnTransactionNonceAndFromAddressHash 
     SQL.query!(
       Repo,
       query,
+      [],
       timeout: @timeout
     )
   end

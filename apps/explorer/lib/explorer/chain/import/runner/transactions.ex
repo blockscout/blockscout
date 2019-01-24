@@ -188,27 +188,38 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
   defp put_internal_transactions_indexed_at?(_, _), do: false
 
   defp update_replaced_transactions(repo, transactions, %{timeout: timeout}) do
-    transactions
-    |> Enum.filter(& &1.transaction.block_hash)
-    |> Enum.map(fn transaction -> {transaction.nonce, transaction.from_address_hash} end)
-    |> Enum.uniq()
-    |> Enum.map(fn {nonce, from_address_hash} ->
-      from(t in Transaction,
-        where: t.nonce == ^nonce and t.from_address_hash == ^from_address_hash and is_nil(t.block_hash),
-        update: [
-          set: [status: ^:error, error: "dropped/replaced"]
-        ]
-      )
-    end)
-    |> Enum.map(fn query ->
-      try do
-        {_, result} = repo.update(query, [], timeout: timeout)
+    result =
+      transactions
+      |> Enum.filter(& &1.block_hash)
+      |> Enum.map(fn transaction -> {transaction.nonce, transaction.from_address_hash} end)
+      |> Enum.uniq()
+      |> Enum.map(fn {nonce, from_address_hash} ->
+        from(t in Transaction,
+          where: t.nonce == ^nonce and t.from_address_hash == ^from_address_hash and is_nil(t.block_hash),
+          update: [
+            set: [status: ^:error, error: "dropped/replaced"]
+          ]
+        )
+      end)
+      |> Enum.map(fn query ->
+        try do
+          {_, result} = repo.update_all(query, [], timeout: timeout)
 
-        {:ok, result}
-      rescue
-        postgrex_error in Postgrex.Error ->
-          {:error, %{exception: postgrex_error, query: query}}
-      end
-    end)
+          {:ok, result}
+        rescue
+          postgrex_error in Postgrex.Error ->
+            {:error, %{exception: postgrex_error, query: query}}
+        end
+      end)
+
+    first_error =
+      Enum.find(result, fn result ->
+        case result do
+          {:ok, _} -> false
+          {:error, _} -> true
+        end
+      end)
+
+    if first_error, do: first_error, else: {:ok, []}
   end
 end
