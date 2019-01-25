@@ -90,10 +90,9 @@ defmodule Indexer.ReplacedTransaction.Fetcher do
     Logger.debug("fetching replaced transactions for transactions")
 
     try do
-      {:ok, _} =
-        entries
-        |> Enum.map(&params/1)
-        |> Chain.update_replaced_transactions()
+      entries
+      |> Enum.map(&params/1)
+      |> Chain.update_replaced_transactions()
 
       :ok
     rescue
