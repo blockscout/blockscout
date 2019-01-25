@@ -7,6 +7,8 @@ defmodule Indexer.Block.Fetcher do
 
   require Logger
 
+  import EthereumJSONRPC, only: [quantity_to_integer: 1]
+
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
   alias Explorer.Chain.{Address, Block, Import}
   alias Indexer.{AddressExtraction, CoinBalance, MintTransfer, Token, TokenTransfers, Tracer}
@@ -136,14 +138,14 @@ defmodule Indexer.Block.Fetcher do
                address_token_balances: %{params: address_token_balances},
                blocks: %{params: blocks},
                block_second_degree_relations: %{params: block_second_degree_relations_params},
-               block_rewards: %{params: beneficiaries_with_gas_payment},
+               block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
                logs: %{params: logs},
                token_transfers: %{params: token_transfers},
                tokens: %{on_conflict: :nothing, params: tokens},
                transactions: %{params: transactions_with_receipts}
              }
            ) do
-      {:ok, %{inserted: inserted, errors: blocks_errors ++ beneficiaries_errors}}
+      {:ok, %{inserted: inserted, errors: blocks_errors}}
     else
       {step, {:error, reason}} -> {:error, {step, reason}}
       {:import, {:error, step, failed_value, changes_so_far}} -> {:error, {step, failed_value, changes_so_far}}
@@ -168,6 +170,14 @@ defmodule Indexer.Block.Fetcher do
       )
 
     callback_module.import(state, options_with_broadcast)
+  end
+
+  def async_import_block_rewards([]), do: :ok
+
+  def async_import_block_rewards(errors) when is_list(errors) do
+    errors
+    |> block_reward_errors_to_block_numbers()
+    |> Indexer.Block.Reward.Fetcher.async_fetch()
   end
 
   def async_import_coin_balances(%{addresses: addresses}, %{
@@ -199,15 +209,31 @@ defmodule Indexer.Block.Fetcher do
 
   def async_import_uncles(_), do: :ok
 
-  defp fetch_beneficiaries(blocks, json_rpc_named_arguments) do
-    hash_by_number = Enum.into(blocks, %{}, &{&1.number, &1.hash})
+  defp block_reward_errors_to_block_numbers(block_reward_errors) when is_list(block_reward_errors) do
+    Enum.map(block_reward_errors, &block_reward_error_to_block_number/1)
+  end
 
-    hash_by_number
+  defp block_reward_error_to_block_number(%{data: %{block_number: block_number}}) when is_integer(block_number) do
+    block_number
+  end
+
+  defp block_reward_error_to_block_number(%{data: %{block_quantity: block_quantity}}) when is_binary(block_quantity) do
+    quantity_to_integer(block_quantity)
+  end
+
+  defp fetch_beneficiaries(blocks, json_rpc_named_arguments) do
+    hash_string_by_number =
+      Enum.into(blocks, %{}, fn %{number: number, hash: hash_string}
+                                when is_integer(number) and is_binary(hash_string) ->
+        {number, hash_string}
+      end)
+
+    hash_string_by_number
     |> Map.keys()
     |> EthereumJSONRPC.fetch_beneficiaries(json_rpc_named_arguments)
     |> case do
       {:ok, %FetchedBeneficiaries{params_set: params_set} = fetched_beneficiaries} ->
-        consensus_params_set = consensus_params_set(params_set, hash_by_number)
+        consensus_params_set = consensus_params_set(params_set, hash_string_by_number)
 
         %FetchedBeneficiaries{fetched_beneficiaries | params_set: consensus_params_set}
 
@@ -221,7 +247,7 @@ defmodule Indexer.Block.Fetcher do
           end
 
         errors =
-          Enum.map(hash_by_number, fn {_, number} ->
+          Enum.map(hash_string_by_number, fn {number, _} when is_integer(number) ->
             Map.put(error, :data, %{block_number: number})
           end)
 
@@ -232,22 +258,23 @@ defmodule Indexer.Block.Fetcher do
     end
   end
 
-  defp consensus_params_set(params_set, hash_by_number) do
+  defp consensus_params_set(params_set, hash_string_by_number) do
     params_set
-    |> Enum.filter(fn %{block_number: block_number, block_hash: block_hash} ->
-      case Map.fetch!(hash_by_number, block_number) do
-        ^block_hash ->
+    |> Enum.filter(fn %{block_number: block_number, block_hash: block_hash_string}
+                      when is_integer(block_number) and is_binary(block_hash_string) ->
+      case Map.fetch!(hash_string_by_number, block_number) do
+        ^block_hash_string ->
           true
 
-        other_block_hash ->
+        other_block_hash_string ->
           Logger.debug(fn ->
             [
               "fetch beneficiaries reported block number (",
               to_string(block_number),
               ") maps to different (",
-              other_block_hash,
+              other_block_hash_string,
               ") block hash than the one from getBlock (",
-              block_hash,
+              block_hash_string,
               "). A reorg has occurred."
             ]
           end)

@@ -4,7 +4,7 @@ defmodule Indexer.Block.Supervisor do
   """
 
   alias Indexer.Block
-  alias Indexer.Block.{Catchup, InvalidConsensus, Realtime, UncatalogedRewards, Uncle}
+  alias Indexer.Block.{Catchup, InvalidConsensus, Realtime, Reward, Uncle}
 
   use Supervisor
 
@@ -41,7 +41,11 @@ defmodule Indexer.Block.Supervisor do
            [name: Realtime.Supervisor]
          ]},
         {Uncle.Supervisor, [[block_fetcher: block_fetcher, memory_monitor: memory_monitor], [name: Uncle.Supervisor]]},
-        {UncatalogedRewards.Processor, [json_rpc_named_arguments, [name: UncatalogedRewards.Processor]]}
+        {Reward.Supervisor,
+         [
+           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor],
+           [name: Reward.Supervisor]
+         ]}
       ],
       strategy: :one_for_one
     )

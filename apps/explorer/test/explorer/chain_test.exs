@@ -1274,6 +1274,24 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "block_hash_by_number/1" do
+    test "without blocks returns empty map" do
+      assert Chain.block_hash_by_number([]) == %{}
+    end
+
+    test "with consensus block returns mapping" do
+      block = insert(:block)
+
+      assert Chain.block_hash_by_number([block.number]) == %{block.number => block.hash}
+    end
+
+    test "with non-consensus block does not return mapping" do
+      block = insert(:block, consensus: false)
+
+      assert Chain.block_hash_by_number([block.number]) == %{}
+    end
+  end
+
   describe "list_top_addresses/0" do
     test "without addresses with balance > 0" do
       insert(:address, fetched_coin_balance: 0)
@@ -1315,25 +1333,25 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "get_blocks_without_reward/1" do
+  describe "stream_blocks_without_rewards/2" do
     test "includes consensus blocks" do
       %Block{hash: consensus_hash} = insert(:block, consensus: true)
 
-      assert [%Block{hash: ^consensus_hash}] = Chain.get_blocks_without_reward()
+      assert {:ok, [%Block{hash: ^consensus_hash}]} = Chain.stream_blocks_without_rewards([], &[&1 | &2])
     end
 
     test "does not include consensus block that has a reward" do
       %Block{hash: consensus_hash, miner_hash: miner_hash} = insert(:block, consensus: true)
       insert(:reward, address_hash: miner_hash, block_hash: consensus_hash)
 
-      assert [] = Chain.get_blocks_without_reward()
+      assert {:ok, []} = Chain.stream_blocks_without_rewards([], &[&1 | &2])
     end
 
     # https://github.com/poanetwork/blockscout/issues/1310 regression test
     test "does not include non-consensus blocks" do
       insert(:block, consensus: false)
 
-      assert [] = Chain.get_blocks_without_reward()
+      assert {:ok, []} = Chain.stream_blocks_without_rewards([], &[&1 | &2])
     end
   end
 

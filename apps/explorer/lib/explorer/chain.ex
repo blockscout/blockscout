@@ -959,6 +959,29 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Map `block_number`s to their `t:Explorer.Chain.Block.t/0` `hash` `t:Explorer.Chain.Hash.Full.t/0`.
+
+  Does not include non-consensus blocks.
+
+      iex> block = insert(:block, consensus: false)
+      iex> Explorer.Chain.block_hash_by_number([block.number])
+      %{}
+
+  """
+  @spec block_hash_by_number([Block.block_number()]) :: %{Block.block_number() => Hash.Full.t()}
+  def block_hash_by_number(block_numbers) when is_list(block_numbers) do
+    query =
+      from(block in Block,
+        where: block.consensus == true and block.number in ^block_numbers,
+        select: {block.number, block.hash}
+      )
+
+    query
+    |> Repo.all()
+    |> Enum.into(%{})
+  end
+
+  @doc """
   Lists the top 250 `t:Explorer.Chain.Address.t/0`'s' in descending order based on coin balance.
 
   """
@@ -977,12 +1000,11 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Finds blocks without a reward associated, up to the specified limit
+  Calls `reducer` on a stream of `t:Explorer.Chain.Block.t/0` without `t:Explorer.Chain.Block.Reward.t/0`.
   """
-  def get_blocks_without_reward(limit \\ 250) do
-    Block.get_blocks_without_reward()
-    |> limit(^limit)
-    |> Repo.all()
+  def stream_blocks_without_rewards(initial, reducer) when is_function(reducer, 2) do
+    Block.blocks_without_reward_query()
+    |> Repo.stream_reduce(initial, reducer)
   end
 
   @doc """
