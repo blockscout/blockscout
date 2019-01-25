@@ -2981,14 +2981,14 @@ defmodule Explorer.ChainTest do
         )
 
       second_mined_transaction_hash = "0x3a263224a95275d77bc30a7e131bc64d948777946a790c0915ab293791fbcb61"
-      block = insert(:block)
+      second_block = insert(:block)
 
       insert(:transaction,
         from_address: address,
         nonce: 1,
         index: 0,
-        block_hash: block.hash,
-        block_number: block.number,
+        block_hash: second_block.hash,
+        block_number: second_block.number,
         cumulative_gas_used: 1,
         gas_used: 1,
         hash: second_mined_transaction_hash
@@ -3013,10 +3013,10 @@ defmodule Explorer.ChainTest do
       assert found_mined_transaction.status == nil
       assert found_mined_transaction.error == nil
 
-      second_found_replaced_transaction = Repo.get(Transaction, second_mined_transaction_hash)
+      second_mined_transaction = Repo.get(Transaction, second_mined_transaction_hash)
 
-      assert second_found_replaced_transaction.status == nil
-      assert second_found_replaced_transaction.error == nil
+      assert second_mined_transaction.status == nil
+      assert second_mined_transaction.error == nil
     end
   end
 
