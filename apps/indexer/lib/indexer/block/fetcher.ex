@@ -8,8 +8,8 @@ defmodule Indexer.Block.Fetcher do
   require Logger
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
-  alias Explorer.Chain.{Address, Block, Import}
-  alias Indexer.{AddressExtraction, CoinBalance, MintTransfer, Token, TokenTransfers, Tracer}
+  alias Explorer.Chain.{Address, Block, Hash, Import, Transaction}
+  alias Indexer.{AddressExtraction, CoinBalance, MintTransfer, ReplacedTransaction, Token, TokenTransfers, Tracer}
   alias Indexer.Address.{CoinBalances, TokenBalances}
   alias Indexer.Block.Fetcher.Receipts
   alias Indexer.Block.Transform
@@ -199,6 +199,20 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_uncles(_), do: :ok
+
+  def async_import_replaced_transactions(%{transactions: transactions}) do
+    transactions
+    |> Enum.flat_map(fn
+      %Transaction{block_hash: %Hash{} = block_hash, nonce: nonce, from_address_hash: %Hash{} = from_address_hash} ->
+        [%{block_hash: block_hash, nonce: nonce, from_address_hash: from_address_hash}]
+
+      %Transaction{block_hash: nil} ->
+        []
+    end)
+    |> ReplacedTransaction.Fetcher.async_fetch(10_000)
+  end
+
+  def async_import_replaced_transactions(_), do: :ok
 
   defp fetch_beneficiaries(range, json_rpc_named_arguments) do
     result =

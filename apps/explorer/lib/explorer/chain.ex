@@ -2186,7 +2186,7 @@ defmodule Explorer.Chain do
     else
       query =
         filters
-        |> Enum.reduce(from(t in Transaction, where: is_nil(t.block_hash)), fn {nonce, from_address}, query ->
+        |> Enum.reduce(Transaction, fn {nonce, from_address}, query ->
           from(t in query,
             or_where: t.nonce == ^nonce and t.from_address_hash == ^from_address and is_nil(t.block_hash)
           )

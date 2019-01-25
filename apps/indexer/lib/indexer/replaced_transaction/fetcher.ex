@@ -1,4 +1,8 @@
 defmodule Indexer.ReplacedTransaction.Fetcher do
+  @moduledoc """
+  Finds and updates replaced transactions.
+  """
+
   use Spandex.Decorators
 
   require Logger
@@ -37,6 +41,7 @@ defmodule Indexer.ReplacedTransaction.Fetcher do
     merged_init_opts =
       @defaults
       |> Keyword.merge(init_options)
+      |> Keyword.put(:state, {})
 
     Supervisor.child_spec({BufferedTask, [{__MODULE__, merged_init_opts}, gen_server_options]}, id: __MODULE__)
   end
