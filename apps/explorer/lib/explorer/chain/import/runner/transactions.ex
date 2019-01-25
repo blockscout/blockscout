@@ -42,16 +42,8 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
       |> Map.put(:timestamps, timestamps)
       |> Map.put(:token_transfer_transaction_hash_set, token_transfer_transaction_hash_set(options))
 
-    transactions_timeout = options[option_key()][:timeout] || timeout()
-
-    update_transactions_options = %{timeout: transactions_timeout}
-
-    multi
-    |> Multi.run(:transactions, fn repo, _ ->
+    Multi.run(multi, :transactions, fn repo, _ ->
       insert(repo, changes_list, insert_options)
-    end)
-    |> Multi.run(:replaced_transactions, fn repo, _ ->
-      update_replaced_transactions(repo, changes_list, update_transactions_options)
     end)
   end
 
@@ -186,40 +178,4 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
   end
 
   defp put_internal_transactions_indexed_at?(_, _), do: false
-
-  defp update_replaced_transactions(repo, transactions, %{timeout: timeout}) do
-    filters =
-      transactions
-      |> Enum.filter(fn transaction ->
-        Map.get(transaction, :block_hash) && Map.get(transaction, :block_number) && Map.get(transaction, :nonce) &&
-          Map.get(transaction, :from_address_hash)
-      end)
-      |> Enum.map(fn transaction ->
-        {transaction.nonce, transaction.from_address_hash}
-      end)
-      |> Enum.uniq()
-
-    if Enum.empty?(filters) do
-      {:ok, []}
-    else
-      query =
-        filters
-        |> Enum.reduce(from(t in Transaction, where: is_nil(t.block_hash)), fn {nonce, from_address}, query ->
-          from(t in query,
-            or_where: t.nonce == ^nonce and t.from_address_hash == ^from_address and is_nil(t.block_hash)
-          )
-        end)
-
-      update_query = from(t in query, update: [set: [status: ^:error, error: "dropped/replaced"]])
-
-      try do
-        {_, result} = repo.update_all(update_query, [], timeout: timeout)
-
-        {:ok, result}
-      rescue
-        postgrex_error in Postgrex.Error ->
-          {:error, %{exception: postgrex_error, query: query}}
-      end
-    end
-  end
 end

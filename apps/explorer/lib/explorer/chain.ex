@@ -1207,6 +1207,38 @@ defmodule Explorer.Chain do
     Repo.stream_reduce(query, initial, reducer)
   end
 
+  @spec stream_mined_transactions(
+          fields :: [
+            :block_hash
+            | :internal_transactions_indexed_at
+            | :created_contract_code_indexed_at
+            | :from_address_hash
+            | :gas
+            | :gas_price
+            | :hash
+            | :index
+            | :input
+            | :nonce
+            | :r
+            | :s
+            | :to_address_hash
+            | :v
+            | :value
+          ],
+          initial :: accumulator,
+          reducer :: (entry :: term(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_mined_transactions(fields, initial, reducer) when is_function(reducer, 2) do
+    query =
+      from(t in Transaction,
+        where: not is_nil(t.block_hash) and not is_nil(t.nonce) and not is_nil(t.from_address_hash),
+        select: ^fields
+      )
+
+    Repo.stream_reduce(query, initial, reducer)
+  end
+
   @doc """
   Returns a stream of all `t:Explorer.Chain.Block.t/0` `hash`es that are marked as unfetched in
   `t:Explorer.Chain.Block.SecondDegreeRelation.t/0`.
@@ -2129,6 +2161,41 @@ defmodule Explorer.Chain do
     address_hash
     |> Address.Token.list_address_tokens_with_balance(paging_options)
     |> Repo.all()
+  end
+
+  @spec update_replaced_transactions([
+          %{
+            required(:nonce) => non_neg_integer,
+            required(:from_address_hash) => Hash.Address.t(),
+            required(:block_hash) => Hash.Full.t()
+          }
+        ]) :: {integer(), nil | [term()]}
+  def update_replaced_transactions(transactions, timeout \\ :infinity) do
+    filters =
+      transactions
+      |> Enum.filter(fn transaction ->
+        transaction.block_hash && transaction.nonce && transaction.from_address_hash
+      end)
+      |> Enum.map(fn transaction ->
+        {transaction.nonce, transaction.from_address_hash}
+      end)
+      |> Enum.uniq()
+
+    if Enum.empty?(filters) do
+      {:ok, []}
+    else
+      query =
+        filters
+        |> Enum.reduce(from(t in Transaction, where: is_nil(t.block_hash)), fn {nonce, from_address}, query ->
+          from(t in query,
+            or_where: t.nonce == ^nonce and t.from_address_hash == ^from_address and is_nil(t.block_hash)
+          )
+        end)
+
+      update_query = from(t in query, update: [set: [status: ^:error, error: "dropped/replaced"]])
+
+      Repo.update_all(update_query, [], timeout: timeout)
+    end
   end
 
   @doc """
