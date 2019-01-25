@@ -619,7 +619,13 @@ defmodule Explorer.Chain do
     query =
       from(
         address in Address,
-        preload: [:contracts_creation_internal_transaction, :names, :smart_contract, :token],
+        preload: [
+          :contracts_creation_internal_transaction,
+          :names,
+          :smart_contract,
+          :token,
+          :contracts_creation_transaction
+        ],
         where: address.hash == ^hash
       )
 
@@ -687,7 +693,13 @@ defmodule Explorer.Chain do
     query =
       from(
         address in Address,
-        preload: [:contracts_creation_internal_transaction, :names, :smart_contract, :token],
+        preload: [
+          :contracts_creation_internal_transaction,
+          :names,
+          :smart_contract,
+          :token,
+          :contracts_creation_transaction
+        ],
         where: address.hash == ^hash and not is_nil(address.contract_code)
       )
 
@@ -1154,6 +1166,41 @@ defmodule Explorer.Chain do
         t in Transaction,
         # exclude pending transactions
         where: not is_nil(t.block_hash) and is_nil(t.internal_transactions_indexed_at),
+        select: ^fields
+      )
+
+    Repo.stream_reduce(query, initial, reducer)
+  end
+
+  @spec stream_transactions_with_unfetched_created_contract_codes(
+          fields :: [
+            :block_hash
+            | :internal_transactions_indexed_at
+            | :created_contract_code_indexed_at
+            | :from_address_hash
+            | :gas
+            | :gas_price
+            | :hash
+            | :index
+            | :input
+            | :nonce
+            | :r
+            | :s
+            | :to_address_hash
+            | :v
+            | :value
+          ],
+          initial :: accumulator,
+          reducer :: (entry :: term(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_transactions_with_unfetched_created_contract_codes(fields, initial, reducer)
+      when is_function(reducer, 2) do
+    query =
+      from(t in Transaction,
+        where:
+          not is_nil(t.block_hash) and not is_nil(t.created_contract_address_hash) and
+            is_nil(t.created_contract_code_indexed_at),
         select: ^fields
       )
 

@@ -2235,10 +2235,10 @@ defmodule Explorer.ChainTest do
       assert {:error, :not_found} == response
     end
 
-    test "finds an contract address" do
+    test "finds a contract address" do
       address =
         insert(:address, contract_code: Factory.data("contract_code"), smart_contract: nil, names: [])
-        |> Repo.preload([:contracts_creation_internal_transaction, :token])
+        |> Repo.preload([:contracts_creation_internal_transaction, :contracts_creation_transaction, :token])
 
       response = Chain.find_contract_address(address.hash)
 
