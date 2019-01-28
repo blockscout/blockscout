@@ -13,7 +13,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
       async_import_coin_balances: 2,
       async_import_tokens: 1,
       async_import_uncles: 1,
-      fetch_and_import_range: 2
+      fetch_and_import_range: 2,
+      async_import_replaced_transactions: 1
     ]
 
   alias Ecto.Changeset
@@ -146,6 +147,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
     async_import_tokens(imported)
     async_import_token_balances(imported)
     async_import_uncles(imported)
+    async_import_replaced_transactions(imported)
   end
 
   defp async_import_created_contract_codes(%{transactions: transactions}) do

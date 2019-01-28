@@ -1181,7 +1181,7 @@ defmodule Explorer.Chain do
     query =
       from(
         t in Transaction,
-        # exclude pending transactions
+        # exclude pending transactions and replaced transactions
         where: not is_nil(t.block_hash) and is_nil(t.internal_transactions_indexed_at),
         select: ^fields
       )
@@ -1218,6 +1218,38 @@ defmodule Explorer.Chain do
         where:
           not is_nil(t.block_hash) and not is_nil(t.created_contract_address_hash) and
             is_nil(t.created_contract_code_indexed_at),
+        select: ^fields
+      )
+
+    Repo.stream_reduce(query, initial, reducer)
+  end
+
+  @spec stream_mined_transactions(
+          fields :: [
+            :block_hash
+            | :internal_transactions_indexed_at
+            | :created_contract_code_indexed_at
+            | :from_address_hash
+            | :gas
+            | :gas_price
+            | :hash
+            | :index
+            | :input
+            | :nonce
+            | :r
+            | :s
+            | :to_address_hash
+            | :v
+            | :value
+          ],
+          initial :: accumulator,
+          reducer :: (entry :: term(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_mined_transactions(fields, initial, reducer) when is_function(reducer, 2) do
+    query =
+      from(t in Transaction,
+        where: not is_nil(t.block_hash) and not is_nil(t.nonce) and not is_nil(t.from_address_hash),
         select: ^fields
       )
 
@@ -1491,7 +1523,7 @@ defmodule Explorer.Chain do
   @spec pending_transaction_count() :: non_neg_integer()
   def pending_transaction_count do
     Transaction
-    |> where([transaction], is_nil(transaction.block_hash))
+    |> pending_transactions_query()
     |> Repo.aggregate(:count, :hash)
   end
 
@@ -1564,11 +1596,17 @@ defmodule Explorer.Chain do
     Transaction
     |> page_pending_transaction(paging_options)
     |> limit(^paging_options.page_size)
-    |> where([transaction], is_nil(transaction.block_hash))
+    |> pending_transactions_query()
     |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
     |> join_associations(necessity_by_association)
     |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
     |> Repo.all()
+  end
+
+  defp pending_transactions_query(query) do
+    from(transaction in query,
+      where: is_nil(transaction.block_hash)
+    )
   end
 
   @doc """
@@ -2140,6 +2178,41 @@ defmodule Explorer.Chain do
     address_hash
     |> Address.Token.list_address_tokens_with_balance(paging_options)
     |> Repo.all()
+  end
+
+  @spec update_replaced_transactions([
+          %{
+            required(:nonce) => non_neg_integer,
+            required(:from_address_hash) => Hash.Address.t(),
+            required(:block_hash) => Hash.Full.t()
+          }
+        ]) :: {integer(), nil | [term()]}
+  def update_replaced_transactions(transactions, timeout \\ :infinity) do
+    filters =
+      transactions
+      |> Enum.filter(fn transaction ->
+        transaction.block_hash && transaction.nonce && transaction.from_address_hash
+      end)
+      |> Enum.map(fn transaction ->
+        {transaction.nonce, transaction.from_address_hash}
+      end)
+      |> Enum.uniq()
+
+    if Enum.empty?(filters) do
+      {:ok, []}
+    else
+      query =
+        filters
+        |> Enum.reduce(Transaction, fn {nonce, from_address}, query ->
+          from(t in query,
+            or_where: t.nonce == ^nonce and t.from_address_hash == ^from_address and is_nil(t.block_hash)
+          )
+        end)
+
+      update_query = from(t in query, update: [set: [status: ^:error, error: "dropped/replaced"]])
+
+      Repo.update_all(update_query, [], timeout: timeout)
+    end
   end
 
   @doc """
