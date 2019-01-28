@@ -32,7 +32,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   @behaviour Block.Fetcher
 
-  @minimum_safe_polling_period :timer.seconds(10)
+  @minimum_safe_polling_period :timer.seconds(60)
 
   @enforce_keys ~w(block_fetcher)a
   defstruct ~w(block_fetcher subscription previous_number max_number_seen timer)a
