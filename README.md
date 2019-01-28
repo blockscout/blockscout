@@ -95,6 +95,17 @@ The [development stack page](https://github.com/poanetwork/blockscout/wiki/Devel
 
   8. Update your JSON RPC Endpoint in `apps/explorer/config/dev/` and `apps/indexer/config/dev/`
   For the `variant` chosen in step 7, enter the correct information for the corresponding JSON RPC Endpoint in `parity.exs`, `geth.exs`, or `ganache.exs`
+  
+  9. Enable HTTPS in development. The Phoenix server only runs with HTTPS now.
+     * `cd apps/block_scout_web`
+     * `mix phx.gen.cert blockscout blockscout.local`
+     * Add blockscout and blockscout.local to your `/etc/hosts`
+     ```
+        127.0.0.1       localhost blockscout blockscout.local
+        255.255.255.255 broadcasthost
+        ::1             localhost blockscout blockscout.local
+      ```
+      * If using Chrome, Enable `chrome://flags/#allow-insecure-localhost`.
 
   9. Start Phoenix Server.  
   `mix phx.server`
@@ -127,6 +138,7 @@ to a positive or negative integer. See the documentation for
 ### Projects Utilizing BlockScout
 * [Oasis Labs](https://blockexplorer.oasiscloud.io/)
 * [Fuse Network](https://explorer.fuse.io/)
+* [ARTIS](https://explorer.sigma1.artis.network)
 
 ### Configuring Ethereum Classic and other EVM Chains
 **Note: Most of these modifications will be consolidated into a single file in the future.**
