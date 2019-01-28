@@ -12,7 +12,14 @@ defmodule Indexer.Block.Realtime.Fetcher do
   import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
 
   import Indexer.Block.Fetcher,
-    only: [async_import_block_rewards: 1, async_import_tokens: 1, async_import_uncles: 1, fetch_and_import_range: 2, async_import_replaced_transactions: 1]
+    only: [
+      async_import_block_rewards: 1,
+      async_import_tokens: 1,
+      async_import_uncles: 1,
+      fetch_and_import_range: 2,
+      async_import_replaced_transactions: 1
+    ]
+
   alias ABI.TypeDecoder
   alias Ecto.Changeset
   alias EthereumJSONRPC.{FetchedBalances, Subscription}
