@@ -1274,6 +1274,24 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "block_hash_by_number/1" do
+    test "without blocks returns empty map" do
+      assert Chain.block_hash_by_number([]) == %{}
+    end
+
+    test "with consensus block returns mapping" do
+      block = insert(:block)
+
+      assert Chain.block_hash_by_number([block.number]) == %{block.number => block.hash}
+    end
+
+    test "with non-consensus block does not return mapping" do
+      block = insert(:block, consensus: false)
+
+      assert Chain.block_hash_by_number([block.number]) == %{}
+    end
+  end
+
   describe "list_top_addresses/0" do
     test "without addresses with balance > 0" do
       insert(:address, fetched_coin_balance: 0)
@@ -1315,25 +1333,25 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "get_blocks_without_reward/1" do
+  describe "stream_blocks_without_rewards/2" do
     test "includes consensus blocks" do
       %Block{hash: consensus_hash} = insert(:block, consensus: true)
 
-      assert [%Block{hash: ^consensus_hash}] = Chain.get_blocks_without_reward()
+      assert {:ok, [%Block{hash: ^consensus_hash}]} = Chain.stream_blocks_without_rewards([], &[&1 | &2])
     end
 
     test "does not include consensus block that has a reward" do
       %Block{hash: consensus_hash, miner_hash: miner_hash} = insert(:block, consensus: true)
       insert(:reward, address_hash: miner_hash, block_hash: consensus_hash)
 
-      assert [] = Chain.get_blocks_without_reward()
+      assert {:ok, []} = Chain.stream_blocks_without_rewards([], &[&1 | &2])
     end
 
     # https://github.com/poanetwork/blockscout/issues/1310 regression test
     test "does not include non-consensus blocks" do
       insert(:block, consensus: false)
 
-      assert [] = Chain.get_blocks_without_reward()
+      assert {:ok, []} = Chain.stream_blocks_without_rewards([], &[&1 | &2])
     end
   end
 
@@ -2276,6 +2294,52 @@ defmodule Explorer.ChainTest do
 
     test "with block without transactions", %{block: block, emission_reward: emission_reward} do
       assert emission_reward.reward == Chain.block_reward(block)
+    end
+  end
+
+  describe "gas_payment_by_block_hash/1" do
+    setup do
+      number = 1
+
+      %{consensus_block: insert(:block, number: number, consensus: true), number: number}
+    end
+
+    test "without consensus block hash has no key", %{consensus_block: consensus_block, number: number} do
+      non_consensus_block = insert(:block, number: number, consensus: false)
+
+      :transaction
+      |> insert(gas_price: 1)
+      |> with_block(consensus_block, gas_used: 1)
+
+      :transaction
+      |> insert(gas_price: 1)
+      |> with_block(consensus_block, gas_used: 2)
+
+      assert Chain.gas_payment_by_block_hash([non_consensus_block.hash]) == %{}
+    end
+
+    test "with consensus block hash without transactions has key with 0 value", %{
+      consensus_block: %Block{hash: consensus_block_hash}
+    } do
+      assert Chain.gas_payment_by_block_hash([consensus_block_hash]) == %{
+               consensus_block_hash => %Wei{value: Decimal.new(0)}
+             }
+    end
+
+    test "with consensus block hash with transactions has key with value", %{
+      consensus_block: %Block{hash: consensus_block_hash} = consensus_block
+    } do
+      :transaction
+      |> insert(gas_price: 1)
+      |> with_block(consensus_block, gas_used: 2)
+
+      :transaction
+      |> insert(gas_price: 3)
+      |> with_block(consensus_block, gas_used: 4)
+
+      assert Chain.gas_payment_by_block_hash([consensus_block_hash]) == %{
+               consensus_block_hash => %Wei{value: Decimal.new(14)}
+             }
     end
   end
 

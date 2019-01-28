@@ -12,13 +12,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
 
   import Indexer.Block.Fetcher,
-    only: [
-      async_import_tokens: 1,
-      async_import_uncles: 1,
-      fetch_and_import_range: 2,
-      async_import_replaced_transactions: 1
-    ]
-
+    only: [async_import_block_rewards: 1, async_import_tokens: 1, async_import_uncles: 1, fetch_and_import_range: 2, async_import_replaced_transactions: 1]
   alias ABI.TypeDecoder
   alias Ecto.Changeset
   alias EthereumJSONRPC.{FetchedBalances, Subscription}
@@ -164,6 +158,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number,
           address_token_balances: %{params: address_token_balances_params},
           addresses: %{params: addresses_params},
+          block_rewards: block_rewards,
           transactions: %{params: transactions_params},
           token_transfers: %{params: token_transfers_params}
         } = options
@@ -190,17 +185,19 @@ defmodule Indexer.Block.Realtime.Fetcher do
          {:address_token_balances, {:ok, address_token_balances}} <-
            {:address_token_balances, fetch_token_balances(address_token_balances_params)},
          address_current_token_balances = TokenBalances.to_address_current_token_balances(address_token_balances),
+         {block_reward_errors, chain_import_block_rewards} = Map.pop(block_rewards, :errors),
          chain_import_options =
            options
            |> Map.drop(@import_options)
            |> put_in([:addresses, :params], balances_addresses_params)
            |> put_in([:blocks, :params, Access.all(), :consensus], true)
+           |> put_in([:block_rewards], chain_import_block_rewards)
            |> put_in([Access.key(:address_coin_balances, %{}), :params], balances_params)
            |> put_in([Access.key(:address_current_token_balances, %{}), :params], address_current_token_balances)
            |> put_in([Access.key(:address_token_balances), :params], address_token_balances)
            |> put_in([Access.key(:internal_transactions, %{}), :params], internal_transactions_params),
          {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
-      async_import_remaining_block_data(imported)
+      async_import_remaining_block_data(imported, %{block_rewards: %{errors: block_reward_errors}})
       ok
     end
   end
@@ -344,7 +341,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
     Enum.any?(changesets, &(Map.get(&1, :message) == "Unknown block number"))
   end
 
-  defp async_import_remaining_block_data(imported) do
+  defp async_import_remaining_block_data(imported, %{block_rewards: %{errors: block_reward_errors}}) do
+    async_import_block_rewards(block_reward_errors)
     async_import_tokens(imported)
     async_import_uncles(imported)
     async_import_replaced_transactions(imported)

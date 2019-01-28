@@ -101,9 +101,9 @@ defmodule Explorer.Chain.Block do
     |> unique_constraint(:hash, name: :blocks_pkey)
   end
 
-  def get_blocks_without_reward(query \\ __MODULE__) do
+  def blocks_without_reward_query do
     from(
-      b in query,
+      b in __MODULE__,
       left_join: r in Reward,
       on: [block_hash: b.hash],
       where: is_nil(r.block_hash) and b.consensus == true

@@ -9,6 +9,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   import Indexer.Block.Fetcher,
     only: [
+      async_import_block_rewards: 1,
       async_import_coin_balances: 2,
       async_import_tokens: 1,
       async_import_uncles: 1,
@@ -119,22 +120,27 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   @impl Block.Fetcher
   def import(_, options) when is_map(options) do
-    {async_import_remaining_block_data_options, chain_import_options} =
+    {async_import_remaining_block_data_options, options_with_block_rewards_errors} =
       Map.split(options, @async_import_remaining_block_data_options)
 
-    full_chain_import_options = put_in(chain_import_options, [:blocks, :params, Access.all(), :consensus], true)
+    {block_reward_errors, options_without_block_rewards_errors} =
+      pop_in(options_with_block_rewards_errors[:block_rewards][:errors])
+
+    full_chain_import_options =
+      put_in(options_without_block_rewards_errors, [:blocks, :params, Access.all(), :consensus], true)
 
     with {:import, {:ok, imported} = ok} <- {:import, Chain.import(full_chain_import_options)} do
       async_import_remaining_block_data(
         imported,
-        async_import_remaining_block_data_options
+        Map.put(async_import_remaining_block_data_options, :block_rewards, %{errors: block_reward_errors})
       )
 
       ok
     end
   end
 
-  defp async_import_remaining_block_data(imported, options) do
+  defp async_import_remaining_block_data(imported, %{block_rewards: %{errors: block_reward_errors}} = options) do
+    async_import_block_rewards(block_reward_errors)
     async_import_coin_balances(imported, options)
     async_import_created_contract_codes(imported)
     async_import_internal_transactions(imported)
@@ -293,19 +299,19 @@ defmodule Indexer.Block.Catchup.Fetcher do
     end
   end
 
-  defp retry(sequence, errors) when is_list(errors) do
-    errors
-    |> errors_to_ranges()
+  defp retry(sequence, block_errors) when is_list(block_errors) do
+    block_errors
+    |> block_errors_to_block_number_ranges()
     |> Enum.map(&push_back(sequence, &1))
   end
 
-  defp errors_to_ranges(errors) when is_list(errors) do
-    errors
-    |> Enum.flat_map(&error_to_numbers/1)
+  defp block_errors_to_block_number_ranges(block_errors) when is_list(block_errors) do
+    block_errors
+    |> Enum.map(&block_error_to_number/1)
     |> numbers_to_ranges()
   end
 
-  defp error_to_numbers(%{data: %{number: number}}) when is_integer(number), do: [number]
+  defp block_error_to_number(%{data: %{number: number}}) when is_integer(number), do: number
 
   defp numbers_to_ranges([]), do: []
 
