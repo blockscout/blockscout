@@ -3,7 +3,7 @@ DO $$
     total_count         integer                     := 0;
     completed_count     integer                     := 0;
     remaining_count     integer                     := 0;
-    batch_size          integer                     := 1000;
+    batch_size          integer                     := 10;
     iterator            integer                     := batch_size;
     updated_count       integer;
     deleted_count       integer;
@@ -57,7 +57,7 @@ DO $$
         WHERE transactions_dropped_replaced.row_number <= iterator AND
               transactions_dropped_replaced.nonce = transactions.nonce AND
               transactions_dropped_replaced.from_address_hash = transactions.from_address_hash AND
-              transactions.block_hash IS NOT NULL;
+              transactions.block_hash IS NULL;
 
         GET DIAGNOSTICS updated_count = ROW_COUNT;
         RAISE NOTICE '-> % transaction counts updated.', updated_count;
