@@ -30,7 +30,6 @@ defmodule EthereumJSONRPC.Parity.FetchedBeneficiaries do
     ...>         },
     ...>         %{
     ...>           "action" => %{"author" => "0x2", "rewardType" => "external", "value" => "0x0"},
-    ...>           "blockHash" => "0x52a8d2185282506ce681364d2aa0c085ba45fdeb5d6c0ddec1131617a71ee2ca",
     ...>           "blockHash" => "0xFFF",
     ...>           "blockNumber" => 12,
     ...>           "result" => nil,

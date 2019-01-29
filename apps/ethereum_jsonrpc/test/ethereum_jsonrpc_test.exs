@@ -241,7 +241,7 @@ defmodule EthereumJSONRPCTest do
           {:ok, []}
         end)
 
-        assert EthereumJSONRPC.fetch_beneficiaries(1..1, json_rpc_named_arguments) ==
+        assert EthereumJSONRPC.fetch_beneficiaries([1], json_rpc_named_arguments) ==
                  {:ok, %FetchedBeneficiaries{params_set: MapSet.new(), errors: []}}
       end
     end

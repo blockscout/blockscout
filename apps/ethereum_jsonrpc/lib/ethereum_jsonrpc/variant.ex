@@ -14,8 +14,7 @@ defmodule EthereumJSONRPC.Variant do
   @type internal_transaction_params :: map()
 
   @doc """
-  Fetch the block reward contract beneficiaries for a given block
-  range, from the variant of the Ethereum JSONRPC API.
+  Fetch the block reward contract beneficiaries for a given blocks from the variant of the Ethereum JSONRPC API.
 
   For more information on block reward contracts see:
   https://wiki.parity.io/Block-Reward-Contract.html
@@ -26,7 +25,7 @@ defmodule EthereumJSONRPC.Variant do
    * `{:error, reason}` - there was an error at the transport level
    * `:ignore` - the variant does not support fetching beneficiaries
   """
-  @callback fetch_beneficiaries(Range.t(), EthereumJSONRPC.json_rpc_named_arguments()) ::
+  @callback fetch_beneficiaries([EthereumJSONRPC.block_number()], EthereumJSONRPC.json_rpc_named_arguments()) ::
               {:ok, FetchedBeneficiaries.t()} | {:error, reason :: term} | :ignore
 
   @doc """

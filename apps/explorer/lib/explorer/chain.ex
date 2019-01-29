@@ -321,24 +321,6 @@ defmodule Explorer.Chain do
     Repo.aggregate(Block, :count, :hash)
   end
 
-  @doc !"""
-       Returns a default value if no value is found.
-       """
-  defmacrop default_if_empty(value, default) do
-    quote do
-      fragment("coalesce(?, ?)", unquote(value), unquote(default))
-    end
-  end
-
-  @doc !"""
-       Sum of the products of two columns.
-       """
-  defmacrop sum_of_products(col_a, col_b) do
-    quote do
-      sum(fragment("?*?", unquote(col_a), unquote(col_b)))
-    end
-  end
-
   @doc """
   Reward for mining a block.
 
@@ -362,20 +344,33 @@ defmodule Explorer.Chain do
         on: fragment("? <@ ?", block.number, emission_reward.block_range),
         where: block.number == ^block_number,
         group_by: emission_reward.reward,
-        select: %{
-          transaction_reward: %Wei{
-            value: default_if_empty(sum_of_products(transaction.gas_used, transaction.gas_price), 0)
-          },
-          static_reward: emission_reward.reward
+        select: %Wei{
+          value: coalesce(sum(transaction.gas_used * transaction.gas_price), 0) + emission_reward.reward
         }
       )
 
-    %{
-      transaction_reward: transaction_reward,
-      static_reward: static_reward
-    } = Repo.one(query)
+    Repo.one!(query)
+  end
 
-    Wei.sum(transaction_reward, static_reward)
+  @doc """
+  The `t:Explorer.Chain.Wei.t/0` paid to the miners of the `t:Explorer.Chain.Block.t/0`s with `hash`
+  `Explorer.Chain.Hash.Full.t/0` by the signers of the transactions in those blocks to cover the gas fee
+  (`gas_used * gas_price`).
+  """
+  @spec gas_payment_by_block_hash([Hash.Full.t()]) :: %{Hash.Full.t() => Wei.t()}
+  def gas_payment_by_block_hash(block_hashes) when is_list(block_hashes) do
+    query =
+      from(
+        block in Block,
+        left_join: transaction in assoc(block, :transactions),
+        where: block.hash in ^block_hashes and block.consensus == true,
+        group_by: block.hash,
+        select: {block.hash, %Wei{value: coalesce(sum(transaction.gas_used * transaction.gas_price), 0)}}
+      )
+
+    query
+    |> Repo.all()
+    |> Enum.into(%{})
   end
 
   @doc """
@@ -964,6 +959,29 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Map `block_number`s to their `t:Explorer.Chain.Block.t/0` `hash` `t:Explorer.Chain.Hash.Full.t/0`.
+
+  Does not include non-consensus blocks.
+
+      iex> block = insert(:block, consensus: false)
+      iex> Explorer.Chain.block_hash_by_number([block.number])
+      %{}
+
+  """
+  @spec block_hash_by_number([Block.block_number()]) :: %{Block.block_number() => Hash.Full.t()}
+  def block_hash_by_number(block_numbers) when is_list(block_numbers) do
+    query =
+      from(block in Block,
+        where: block.consensus == true and block.number in ^block_numbers,
+        select: {block.number, block.hash}
+      )
+
+    query
+    |> Repo.all()
+    |> Enum.into(%{})
+  end
+
+  @doc """
   Lists the top 250 `t:Explorer.Chain.Address.t/0`'s' in descending order based on coin balance.
 
   """
@@ -982,12 +1000,11 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Finds blocks without a reward associated, up to the specified limit
+  Calls `reducer` on a stream of `t:Explorer.Chain.Block.t/0` without `t:Explorer.Chain.Block.Reward.t/0`.
   """
-  def get_blocks_without_reward(limit \\ 250) do
-    Block.get_blocks_without_reward()
-    |> limit(^limit)
-    |> Repo.all()
+  def stream_blocks_without_rewards(initial, reducer) when is_function(reducer, 2) do
+    Block.blocks_without_reward_query()
+    |> Repo.stream_reduce(initial, reducer)
   end
 
   @doc """
@@ -1164,7 +1181,7 @@ defmodule Explorer.Chain do
     query =
       from(
         t in Transaction,
-        # exclude pending transactions
+        # exclude pending transactions and replaced transactions
         where: not is_nil(t.block_hash) and is_nil(t.internal_transactions_indexed_at),
         select: ^fields
       )
@@ -1201,6 +1218,38 @@ defmodule Explorer.Chain do
         where:
           not is_nil(t.block_hash) and not is_nil(t.created_contract_address_hash) and
             is_nil(t.created_contract_code_indexed_at),
+        select: ^fields
+      )
+
+    Repo.stream_reduce(query, initial, reducer)
+  end
+
+  @spec stream_mined_transactions(
+          fields :: [
+            :block_hash
+            | :internal_transactions_indexed_at
+            | :created_contract_code_indexed_at
+            | :from_address_hash
+            | :gas
+            | :gas_price
+            | :hash
+            | :index
+            | :input
+            | :nonce
+            | :r
+            | :s
+            | :to_address_hash
+            | :v
+            | :value
+          ],
+          initial :: accumulator,
+          reducer :: (entry :: term(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_mined_transactions(fields, initial, reducer) when is_function(reducer, 2) do
+    query =
+      from(t in Transaction,
+        where: not is_nil(t.block_hash) and not is_nil(t.nonce) and not is_nil(t.from_address_hash),
         select: ^fields
       )
 
@@ -1474,7 +1523,7 @@ defmodule Explorer.Chain do
   @spec pending_transaction_count() :: non_neg_integer()
   def pending_transaction_count do
     Transaction
-    |> where([transaction], is_nil(transaction.block_hash))
+    |> pending_transactions_query()
     |> Repo.aggregate(:count, :hash)
   end
 
@@ -1547,11 +1596,17 @@ defmodule Explorer.Chain do
     Transaction
     |> page_pending_transaction(paging_options)
     |> limit(^paging_options.page_size)
-    |> where([transaction], is_nil(transaction.block_hash))
+    |> pending_transactions_query()
     |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
     |> join_associations(necessity_by_association)
     |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
     |> Repo.all()
+  end
+
+  defp pending_transactions_query(query) do
+    from(transaction in query,
+      where: is_nil(transaction.block_hash)
+    )
   end
 
   @doc """
@@ -2123,6 +2178,41 @@ defmodule Explorer.Chain do
     address_hash
     |> Address.Token.list_address_tokens_with_balance(paging_options)
     |> Repo.all()
+  end
+
+  @spec update_replaced_transactions([
+          %{
+            required(:nonce) => non_neg_integer,
+            required(:from_address_hash) => Hash.Address.t(),
+            required(:block_hash) => Hash.Full.t()
+          }
+        ]) :: {integer(), nil | [term()]}
+  def update_replaced_transactions(transactions, timeout \\ :infinity) do
+    filters =
+      transactions
+      |> Enum.filter(fn transaction ->
+        transaction.block_hash && transaction.nonce && transaction.from_address_hash
+      end)
+      |> Enum.map(fn transaction ->
+        {transaction.nonce, transaction.from_address_hash}
+      end)
+      |> Enum.uniq()
+
+    if Enum.empty?(filters) do
+      {:ok, []}
+    else
+      query =
+        filters
+        |> Enum.reduce(Transaction, fn {nonce, from_address}, query ->
+          from(t in query,
+            or_where: t.nonce == ^nonce and t.from_address_hash == ^from_address and is_nil(t.block_hash)
+          )
+        end)
+
+      update_query = from(t in query, update: [set: [status: ^:error, error: "dropped/replaced"]])
+
+      Repo.update_all(update_query, [], timeout: timeout)
+    end
   end
 
   @doc """
