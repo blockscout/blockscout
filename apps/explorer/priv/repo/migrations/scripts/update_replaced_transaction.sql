@@ -3,7 +3,7 @@ DO $$
     total_count         integer                     := 0;
     completed_count     integer                     := 0;
     remaining_count     integer                     := 0;
-    batch_size          integer                     := 10;
+    batch_size          integer                     := 50;
     iterator            integer                     := batch_size;
     updated_count       integer;
     deleted_count       integer;
@@ -31,11 +31,13 @@ DO $$
     );
 
     INSERT INTO transactions_dropped_replaced
-    SELECT transactions.nonce,
-          transactions.from_address_hash,
+    SELECT t1.nonce,
+           t1.from_address_hash,
            ROW_NUMBER() OVER ()
-    FROM transactions
-    WHERE transactions.block_hash IS NULL;
+    FROM transactions t1
+      INNER JOIN transactions t2
+      ON t1.from_address_hash = t2.from_address_hash AND t1.nonce = t2.nonce AND t2.block_hash IS NOT NULL
+    WHERE t1.block_hash IS NULL;
 
     temp_end_time := clock_timestamp();
     temp_elapsed_time := temp_end_time - temp_start_time;
