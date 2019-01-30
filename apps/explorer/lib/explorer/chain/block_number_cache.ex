@@ -13,15 +13,17 @@ defmodule Explorer.Chain.BlockNumberCache do
 
   @spec setup(Keyword.t()) :: :ok
   def setup(opts \\ []) do
-    :ets.new(@tab, [
-      :set,
-      :named_table,
-      :public,
-      write_concurrency: true
-    ])
+    if :ets.whereis(@tab) == :undefined do
+      :ets.new(@tab, [
+        :set,
+        :named_table,
+        :public,
+        write_concurrency: true
+      ])
+    end
 
-    update_cache()
     setup_opts(opts)
+    update_cache()
 
     :ok
   end
