@@ -12,7 +12,6 @@ defmodule Explorer.Application do
   @impl Application
   def start(_type, _args) do
     PrometheusLogger.setup()
-    BlockNumberCache.setup()
 
     :telemetry.attach(
       "prometheus-ecto",
@@ -35,7 +34,11 @@ defmodule Explorer.Application do
 
     opts = [strategy: :one_for_one, name: Explorer.Supervisor]
 
-    Supervisor.start_link(children, opts)
+    res = Supervisor.start_link(children, opts)
+
+    BlockNumberCache.setup()
+
+    res
   end
 
   defp configurable_children do

@@ -1,4 +1,8 @@
 defmodule Explorer.Chain.BlockNumberCache do
+  @moduledoc """
+  Cache for max and min block numbers.
+  """
+
   alias Explorer.Chain
 
   @tab :block_number_cache

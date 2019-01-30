@@ -1,4 +1,4 @@
-defmodule Explorer.ChainTest do
+defmodule Explorer.Chain.BlockNumberCacheTest do
   use Explorer.DataCase
 
   alias Explorer.Chain.BlockNumberCache
