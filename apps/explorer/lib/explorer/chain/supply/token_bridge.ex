@@ -48,11 +48,15 @@ defmodule Explorer.Chain.Supply.TokenBridge do
   end
 
   defp minted_coins do
-    call_contract(@block_reward_contract_address, @total_minted_coins_abi, @total_minted_coins_params)
+    address = System.get_env("BLOCK_REWARD_CONTRACT") || @block_reward_contract_address
+
+    call_contract(address, @total_minted_coins_abi, @total_minted_coins_params)
   end
 
   defp burned_coins do
-    call_contract(@token_bridge_contract_address, @total_burned_coins_abi, @total_burned_coins_params)
+    address = System.get_env("TOKEN_BRIDGE_CONTRACT") || @token_bridge_contract_address
+
+    call_contract(address, @total_burned_coins_abi, @total_burned_coins_params)
   end
 
   defp call_contract(address, abi, params) do
