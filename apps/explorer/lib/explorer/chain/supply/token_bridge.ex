@@ -89,9 +89,7 @@ defmodule Explorer.Chain.Supply.TokenBridge do
     cache_key = @cache_key
 
     case :ets.lookup(@ets_table, @cache_key) do
-      [{^cache_key, {binary_coins, time}}] ->
-        coins = :erlang.binary_to_term(binary_coins)
-
+      [{^cache_key, {coins, time}}] ->
         {coins, time}
 
       _ ->
@@ -105,11 +103,9 @@ defmodule Explorer.Chain.Supply.TokenBridge do
       |> Wei.sub(burned_coins())
       |> Wei.to(:ether)
 
-    binary_total_coins = :erlang.term_to_binary(current_total_coins)
-
     current_time = current_time()
 
-    :ets.insert(@ets_table, {@cache_key, {binary_total_coins, current_time}})
+    :ets.insert(@ets_table, {@cache_key, {current_total_coins, current_time}})
 
     {current_total_coins, current_time}
   end
