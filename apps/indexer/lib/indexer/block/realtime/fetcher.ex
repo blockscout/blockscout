@@ -32,7 +32,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   @behaviour Block.Fetcher
 
-  @minimum_safe_polling_period :timer.seconds(10)
+  @minimum_safe_polling_period :timer.seconds(6000)
 
   @enforce_keys ~w(block_fetcher)a
   defstruct ~w(block_fetcher subscription previous_number max_number_seen timer)a
@@ -236,7 +236,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   defp reorg?(_, _), do: false
 
-  @reorg_delay 5_000
+  @reorg_delay 1_000
 
   @decorate trace(name: "fetch", resource: "Indexer.Block.Realtime.Fetcher.fetch_and_import_block/3", tracer: Tracer)
   def fetch_and_import_block(block_number_to_fetch, block_fetcher, reorg?, retry \\ 3) do
