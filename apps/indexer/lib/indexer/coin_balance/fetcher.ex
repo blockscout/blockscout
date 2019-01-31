@@ -38,6 +38,7 @@ defmodule Indexer.CoinBalance.Fetcher do
   end
 
   @doc false
+  # credo:disable-for-next-line Credo.Check.Design.DuplicatedCode
   def child_spec([init_options, gen_server_options]) do
     {state, mergeable_init_options} = Keyword.pop(init_options, :json_rpc_named_arguments)
 
