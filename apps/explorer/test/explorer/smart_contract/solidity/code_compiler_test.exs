@@ -6,6 +6,8 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
   alias Explorer.SmartContract.Solidity.CodeCompiler
   alias Explorer.Factory
 
+  @compiler_tests Jason.decode!(File.read!(System.cwd!() <> "/test/support/fixture/smart_contract/compiler_tests.json"))
+
   describe "run/2" do
     setup do
       {:ok, contract_code_info: Factory.contract_code_info()}
@@ -45,6 +47,19 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
                 "bytecode" => _,
                 "name" => _
               }} = response
+    end
+
+    test "compiles code with external libraries" do
+      {:ok, result} =
+        CodeCompiler.run(
+          "MintedTokenCappedCrowdsaleExt",
+          "v0.4.11+commit.68ef5810",
+          @compiler_tests["contract"],
+          true,
+          %{"SafeMathLibExt" => "0x54ca5a7c536dbed5897b78d30a93dcd0e46fbdac"}
+        )
+
+      assert result["bytecode"] == @compiler_tests["expected_bytecode"]
     end
 
     test "compile in an older solidity version" do
