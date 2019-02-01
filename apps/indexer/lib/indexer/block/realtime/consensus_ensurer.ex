@@ -22,7 +22,8 @@ defmodule Indexer.Block.Realtime.ConsensusEnsurer do
             "). A reorg initiated."
           ]
         end)
-        #trigger refetch if consensus=false or block was not found
+
+        # trigger refetch if consensus=false or block was not found
         Fetcher.fetch_and_import_block(number, block_fetcher, true)
     end
 
