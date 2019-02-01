@@ -1527,12 +1527,12 @@ msgid "Contribute"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:51
+#: lib/block_scout_web/templates/layout/_footer.html.eex:52
 msgid "Main Networks"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:78
+#: lib/block_scout_web/templates/layout/_footer.html.eex:79
 msgid "Other Explorers"
 msgstr ""
 
@@ -1542,11 +1542,16 @@ msgid "Submit an Issue"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:65
+#: lib/block_scout_web/templates/layout/_footer.html.eex:66
 msgid "Test Networks"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:93
+#: lib/block_scout_web/templates/layout/_footer.html.eex:94
 msgid "Version"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_footer.html.eex:45
+msgid "Support"
 msgstr ""
