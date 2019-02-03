@@ -937,6 +937,26 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "fetch_min_and_max_block_numbers/0" do
+    test "fetches min and max block numbers" do
+      for index <- 5..9 do
+        insert(:block, number: index)
+      end
+
+      assert {5, 9} = Chain.fetch_min_and_max_block_numbers()
+    end
+
+    test "fetches min and max when there are no blocks" do
+      assert {0, 0} = Chain.fetch_min_and_max_block_numbers()
+    end
+
+    test "fetches min and max where there is only one block" do
+      insert(:block, number: 1)
+
+      assert {1, 1} = Chain.fetch_min_and_max_block_numbers()
+    end
+  end
+
   # Full tests in `test/explorer/import_test.exs`
   describe "import/1" do
     @import_data %{
