@@ -74,7 +74,8 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
       )
 
     with {:ok, contracts} <- Jason.decode(response),
-         %{"abi" => abi, "evm" => %{"deployedBytecode" => %{"object" => bytecode}}} <- get_contract_info(contracts, name) do
+         %{"abi" => abi, "evm" => %{"deployedBytecode" => %{"object" => bytecode}}} <-
+           get_contract_info(contracts, name) do
       bytecode_with_libraries = add_library_addresses(bytecode, external_libs)
 
       {:ok, %{"abi" => abi, "bytecode" => bytecode_with_libraries, "name" => name}}
