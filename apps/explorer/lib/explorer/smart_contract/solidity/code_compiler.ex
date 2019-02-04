@@ -3,6 +3,8 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
   Module responsible to compile the Solidity code of a given Smart Contract.
   """
 
+  @new_contract_name "New.sol"
+
   @doc """
   Compiles a code in the solidity command line.
 
@@ -58,7 +60,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
         }
       }
   """
-  def run(name, compiler_version, code, optimize) do
+  def run(name, compiler_version, code, optimize, external_libs \\ %{}) do
     {response, _status} =
       System.cmd(
         "node",
@@ -66,14 +68,17 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
           Application.app_dir(:explorer, "priv/compile_solc.js"),
           code,
           compiler_version,
-          optimize_value(optimize)
+          optimize_value(optimize),
+          @new_contract_name
         ]
       )
 
     with {:ok, contracts} <- Jason.decode(response),
          %{"abi" => abi, "evm" => %{"deployedBytecode" => %{"object" => bytecode}}} <-
            get_contract_info(contracts, name) do
-      {:ok, %{"abi" => abi, "bytecode" => bytecode, "name" => name}}
+      bytecode_with_libraries = add_library_addresses(bytecode, external_libs)
+
+      {:ok, %{"abi" => abi, "bytecode" => bytecode_with_libraries, "name" => name}}
     else
       {:error, %Jason.DecodeError{}} ->
         {:error, :compilation}
@@ -98,6 +103,16 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
       _ ->
         {:error, :name}
     end
+  end
+
+  defp add_library_addresses(bytecode, external_libs) do
+    Enum.reduce(external_libs, bytecode, fn {library_name, address}, acc ->
+      placeholder = String.replace(@new_contract_name, ".", "\.") <> ":" <> library_name
+      regex = Regex.compile!("_+#{placeholder}_+")
+      address = String.replace(address, "0x", "")
+
+      String.replace(acc, regex, address)
+    end)
   end
 
   def parse_error(%{"error" => error}), do: {:error, [error]}
