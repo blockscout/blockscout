@@ -59,7 +59,20 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
           %{"SafeMathLibExt" => "0x54ca5a7c536dbed5897b78d30a93dcd0e46fbdac"}
         )
 
-      assert result["bytecode"] == @compiler_tests["expected_bytecode"]
+      {expected_code, _} =
+        @compiler_tests["expected_bytecode"]
+        |> String.split("0029")
+        |> List.first()
+        |> String.split_at(-64)
+
+      {result, _} =
+        result["bytecode"]
+        |> String.split("0029")
+        |> List.first()
+        |> String.split_at(-64)
+
+
+      assert result == expected_code
     end
 
     test "compile in an older solidity version" do
