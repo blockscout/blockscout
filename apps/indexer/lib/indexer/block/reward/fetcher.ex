@@ -88,6 +88,9 @@ defmodule Indexer.Block.Reward.Fetcher do
       {:ok, fetched_beneficiaries} ->
         run_fetched_beneficiaries(fetched_beneficiaries, hash_string_by_number)
 
+      :ignore ->
+        :ok
+
       {:error, reason} ->
         Logger.error(
           fn ->
