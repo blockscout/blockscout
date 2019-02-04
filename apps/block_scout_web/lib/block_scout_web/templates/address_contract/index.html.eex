@@ -36,7 +36,7 @@
           <div class="d-flex justify-content-between align-items-baseline">
             <h3><%= gettext "Contract source code" %></h3>
             <button type="button" class="button button-secondary button-sm" id="button" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= @address.smart_contract.contract_source_code %>" aria-label="Copy Contract Source Code">
-              <%= gettext "Copy Code" %>
+              <%= gettext "Copy Source Code" %>
             </button>
           </div>
           <div class="tile tile-muted mb-4">
@@ -48,7 +48,7 @@
           <div class="d-flex justify-content-between align-items-baseline">
             <h3><%= gettext "Contract ABI" %></h3>
             <button type="button" class="button button-secondary button-sm" id="button" data-clipboard-text="<%= format_smart_contract_abi(@address.smart_contract.abi) %>" aria-label="Copy Contract ABI">
-              <%= gettext "Copy Code" %>
+              <%= gettext "Copy ABI" %>
             </button>
           </div>
           <div class="tile tile-muted mb-4">
@@ -62,7 +62,7 @@
         <div class="d-flex justify-content-between align-items-baseline">
           <h3><%= gettext "Contract creation code" %></h3>
           <button type="button" class="button button-secondary button-sm" id="button" data-clipboard-text="<%= @address.contract_code %>" aria-label="copy contract creation code">
-            <%= gettext "Copy Code" %>
+            <%= gettext "Copy Contract Creation Code" %>
           </button>
         </div>
         <div class="tile tile-muted">
