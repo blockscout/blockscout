@@ -40,7 +40,7 @@ else
   config :explorer, Explorer.Validator.MetadataProcessor, enabled: false
 end
 
-config :explorer, supply: Explorer.Chain.Supply.TransactionAndLog
+config :explorer, supply: Explorer.Chain.Supply.TokenBridge
 
 config :explorer, Explorer.ExchangeRates.Source, source: Explorer.ExchangeRates.Source.TransactionAndLog
 

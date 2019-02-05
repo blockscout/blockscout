@@ -316,13 +316,6 @@ msgid "Copy Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract/index.html.eex:39
-#: lib/block_scout_web/templates/address_contract/index.html.eex:51
-#: lib/block_scout_web/templates/address_contract/index.html.eex:65
-msgid "Copy Code"
-msgstr ""
-
-#, elixir-format
 #: lib/block_scout_web/templates/transaction/not_found.html.eex:9
 #: lib/block_scout_web/templates/transaction/overview.html.eex:11
 msgid "Copy Transaction Hash"
@@ -364,7 +357,7 @@ msgid "Details"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:54
+#: lib/block_scout_web/templates/block/overview.html.eex:56
 msgid "Difficulty"
 msgstr ""
 
@@ -444,15 +437,15 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:57
-#: lib/block_scout_web/templates/block/overview.html.eex:102
-#: lib/block_scout_web/templates/block/overview.html.eex:157
+#: lib/block_scout_web/templates/block/overview.html.eex:104
+#: lib/block_scout_web/templates/block/overview.html.eex:159
 msgid "Gas Limit"
 msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:62
-#: lib/block_scout_web/templates/block/overview.html.eex:94
-#: lib/block_scout_web/templates/block/overview.html.eex:148
+#: lib/block_scout_web/templates/block/overview.html.eex:96
+#: lib/block_scout_web/templates/block/overview.html.eex:150
 msgid "Gas Used"
 msgstr ""
 
@@ -546,7 +539,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:37
-#: lib/block_scout_web/templates/block/overview.html.eex:117
+#: lib/block_scout_web/templates/block/overview.html.eex:119
 #: lib/block_scout_web/templates/chain/_block.html.eex:14
 msgid "Miner"
 msgstr "Validator"
@@ -615,7 +608,7 @@ msgid "No"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:69
+#: lib/block_scout_web/templates/block/overview.html.eex:71
 #: lib/block_scout_web/templates/transaction/overview.html.eex:67
 msgid "Nonce"
 msgstr ""
@@ -662,7 +655,7 @@ msgid "Parameters"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:42
+#: lib/block_scout_web/templates/block/overview.html.eex:43
 msgid "Parent Hash"
 msgstr ""
 
@@ -681,7 +674,7 @@ msgid "Pending Transactions"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:80
+#: lib/block_scout_web/templates/block/overview.html.eex:82
 msgid "Position %{index}"
 msgstr ""
 
@@ -924,7 +917,7 @@ msgid "Topics"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:63
+#: lib/block_scout_web/templates/block/overview.html.eex:65
 msgid "Total Difficulty"
 msgstr ""
 
@@ -996,7 +989,7 @@ msgid "Twitter"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:76
+#: lib/block_scout_web/templates/block/overview.html.eex:78
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:23
 msgid "Uncles"
 msgstr ""
@@ -1482,7 +1475,7 @@ msgid "Validator Info"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/block/overview.html.eex:137
+#: lib/block_scout_web/templates/block/overview.html.eex:139
 msgid "Block Rewards"
 msgstr ""
 
@@ -1527,12 +1520,12 @@ msgid "Contribute"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:51
+#: lib/block_scout_web/templates/layout/_footer.html.eex:52
 msgid "Main Networks"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:78
+#: lib/block_scout_web/templates/layout/_footer.html.eex:79
 msgid "Other Explorers"
 msgstr ""
 
@@ -1542,11 +1535,36 @@ msgid "Submit an Issue"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:65
+#: lib/block_scout_web/templates/layout/_footer.html.eex:66
 msgid "Test Networks"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:93
+#: lib/block_scout_web/templates/layout/_footer.html.eex:94
 msgid "Version"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_footer.html.eex:45
+msgid "Support"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_contract/index.html.eex:51
+msgid "Copy ABI"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_contract/index.html.eex:65
+msgid "Copy Contract Creation Code"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_contract/index.html.eex:39
+msgid "Copy Source Code"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/block/overview.html.eex:13
+msgid "Genesis Block"
 msgstr ""
