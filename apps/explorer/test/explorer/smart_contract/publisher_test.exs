@@ -45,5 +45,44 @@ defmodule Explorer.SmartContract.PublisherTest do
 
       assert {:error, %Ecto.Changeset{}} = Publisher.publish(address_hash, invalid_attrs)
     end
+
+    test "validates and creates smart contract with external libraries" do
+      contract_data =
+        "#{System.cwd!()}/test/support/fixture/smart_contract/compiler_tests.json"
+        |> File.read!()
+        |> Jason.decode!()
+        |> List.first()
+
+      compiler_version = contract_data["compiler_version"]
+      external_libraries = contract_data["external_libraries"]
+      name = contract_data["name"]
+      optimize = contract_data["optimize"]
+      contract = contract_data["contract"]
+      expected_bytecode = contract_data["expected_bytecode"]
+
+      contract_address = insert(:contract_address, contract_code: "0x" <> expected_bytecode)
+
+      params = %{
+        "contract_source_code" => contract,
+        "compiler_version" => compiler_version,
+        "name" => name,
+        "optimization" => optimize
+      }
+
+      external_libraries_form_params =
+        external_libraries
+        |> Enum.with_index()
+        |> Enum.reduce(%{}, fn {{name, address}, index}, acc ->
+          name_key = "library#{index + 1}_name"
+          address_key = "library#{index + 1}_address"
+
+          acc
+          |> Map.put(name_key, name)
+          |> Map.put(address_key, address)
+        end)
+
+      response = Publisher.publish(contract_address.hash, params, external_libraries_form_params)
+      assert {:ok, %SmartContract{} = smart_contract} = response
+    end
   end
 end

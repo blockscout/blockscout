@@ -19,6 +19,18 @@ defmodule Explorer.SmartContract.Verifier do
         "name" => name,
         "contract_source_code" => contract_source_code,
         "optimization" => optimization,
+        "compiler_version" => compiler_version,
+        "external_libraries" => external_libraries
+      }) do
+    solc_output = CodeCompiler.run(name, compiler_version, contract_source_code, optimization, external_libraries)
+
+    compare_bytecodes(solc_output, address_hash)
+  end
+
+  def evaluate_authenticity(address_hash, %{
+        "name" => name,
+        "contract_source_code" => contract_source_code,
+        "optimization" => optimization,
         "compiler_version" => compiler_version
       }) do
     solc_output = CodeCompiler.run(name, compiler_version, contract_source_code, optimization)
