@@ -77,6 +77,12 @@ defmodule Indexer.AddressExtraction do
         %{from: :created_contract_code, to: :contract_code}
       ]
     ],
+    codes: [
+      [
+        %{from: :code, to: :contract_code},
+        %{from: :address, to: :hash}
+      ]
+    ],
     transactions: [
       [
         %{from: :block_number, to: :fetched_coin_balance_block_number},
@@ -372,6 +378,13 @@ defmodule Indexer.AddressExtraction do
               optional(:to_address_hash) => String.t(),
               optional(:created_contract_address_hash) => String.t(),
               optional(:created_contract_code) => String.t()
+            }
+          ],
+          optional(:codes) => [
+            %{
+              required(:code) => String.t(),
+              required(:address) => String.t(),
+              required(:block_number) => non_neg_integer
             }
           ],
           optional(:transactions) => [

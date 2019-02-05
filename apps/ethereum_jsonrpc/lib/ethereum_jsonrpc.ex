@@ -29,6 +29,7 @@ defmodule EthereumJSONRPC do
     Block,
     Blocks,
     FetchedBalances,
+    FetchedBeneficiaries,
     FetchedCodes,
     Receipts,
     RequestCoordinator,
@@ -229,8 +230,10 @@ defmodule EthereumJSONRPC do
   @doc """
   Fetches block reward contract beneficiaries from variant API.
   """
-  def fetch_beneficiaries(_first.._last = range, json_rpc_named_arguments) do
-    Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_beneficiaries(range, json_rpc_named_arguments)
+  @spec fetch_beneficiaries([block_number], json_rpc_named_arguments) ::
+          {:ok, FetchedBeneficiaries.t()} | {:error, reason :: term} | :ignore
+  def fetch_beneficiaries(block_numbers, json_rpc_named_arguments) when is_list(block_numbers) do
+    Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_beneficiaries(block_numbers, json_rpc_named_arguments)
   end
 
   @doc """

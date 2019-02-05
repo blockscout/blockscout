@@ -213,6 +213,22 @@ defmodule BlockScoutWeb.AddressView do
 
   def trimmed_hash(_), do: ""
 
+  def transaction_hash(%Address{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
+    address.contracts_creation_internal_transaction.transaction_hash
+  end
+
+  def transaction_hash(%Address{contracts_creation_transaction: %Transaction{}} = address) do
+    address.contracts_creation_transaction.hash
+  end
+
+  def from_address_hash(%Address{contracts_creation_internal_transaction: %InternalTransaction{}} = address) do
+    address.contracts_creation_internal_transaction.from_address_hash
+  end
+
+  def from_address_hash(%Address{contracts_creation_transaction: %Transaction{}} = address) do
+    address.contracts_creation_transaction.from_address_hash
+  end
+
   defp matching_address_check(%Address{hash: hash} = current_address, %Address{hash: hash}, contract?, truncate) do
     [
       view_module: __MODULE__,
