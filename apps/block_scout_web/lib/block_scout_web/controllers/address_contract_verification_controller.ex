@@ -18,7 +18,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
 
   def create(
         conn,
-        params = %{
+        %{
           "address_id" => address_hash_string,
           "smart_contract" => smart_contract,
           "external_libraries" => external_libraries
