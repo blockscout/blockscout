@@ -23,8 +23,10 @@ defmodule Explorer.SmartContract.Publisher do
       #=> {:ok, %Explorer.Chain.SmartContract{}}
 
   """
-  def publish(address_hash, params) do
-    case Verifier.evaluate_authenticity(address_hash, params) do
+  def publish(address_hash, params, external_libraries \\ %{}) do
+    params_with_external_libaries = add_external_libraries(params, external_libraries)
+
+    case Verifier.evaluate_authenticity(address_hash, params_with_external_libaries) do
       {:ok, %{abi: abi}} ->
         publish_smart_contract(address_hash, params, abi)
 
@@ -61,5 +63,24 @@ defmodule Explorer.SmartContract.Publisher do
       contract_source_code: params["contract_source_code"],
       abi: abi
     }
+  end
+
+  defp add_external_libraries(params, external_libraries) do
+    clean_external_libraries =
+      Enum.reduce(1..5, %{}, fn number, acc ->
+        address_key = "library#{number}_address"
+        name_key = "library#{number}_name"
+
+        address = external_libraries[address_key]
+        name = external_libraries[name_key]
+
+        if is_nil(address) || address == "" || is_nil(name) || name == "" do
+          acc
+        else
+          Map.put(acc, name, address)
+        end
+      end)
+
+    Map.put(params, "external_libraries", clean_external_libraries)
   end
 end

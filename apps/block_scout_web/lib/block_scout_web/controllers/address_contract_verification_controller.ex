@@ -16,11 +16,15 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
     render(conn, "new.html", changeset: changeset, compiler_versions: compiler_versions)
   end
 
-  def create(conn, %{
-        "address_id" => address_hash_string,
-        "smart_contract" => smart_contract
-      }) do
-    case Publisher.publish(address_hash_string, smart_contract) do
+  def create(
+        conn,
+        params = %{
+          "address_id" => address_hash_string,
+          "smart_contract" => smart_contract,
+          "external_libraries" => external_libraries
+        }
+      ) do
+    case Publisher.publish(address_hash_string, smart_contract, external_libraries) do
       {:ok, _smart_contract} ->
         redirect(conn, to: address_contract_path(conn, :index, address_hash_string))
 
