@@ -49,6 +49,58 @@
           <%= error_tag f, :contract_source_code, id: "contract-source-code-help-block", class: "text-danger", "data-test": "contract-source-code-error" %>
         </div>
 
+        <h3 class="card-title"><%= gettext "Contract Libraries" %></h3>
+
+        <div class="form-group">
+          <%= label :external_libraries, :library1, gettext("1 Library Name") %>
+          <%= text_input :external_libraries, :library1_name, class: "form-control", "aria-describedby": "contract-name-help-block", "data-test": "contract_name" %>
+        </div>
+
+        <div class="form-group">
+          <%= label :external_libraries, :library1, gettext("1 Library Address") %>
+          <%= text_input :external_libraries, :library1_address, class: "form-control", "aria-describedby": "contract-name-help-block", "data-test": "contract_name" %>
+        </div>
+
+        <div class="form-group">
+          <%= label :external_libraries, :library2, gettext("2 Library Name") %>
+          <%= text_input :external_libraries, :library2_name, class: "form-control", "aria-describedby": "contract-name-help-block", "data-test": "contract_name" %>
+        </div>
+
+        <div class="form-group">
+          <%= label :external_libraries, :library2, gettext("2 Library Address") %>
+          <%= text_input :external_libraries, :library2_address, class: "form-control", "aria-describedby": "contract-name-help-block", "data-test": "contract_name" %>
+        </div>
+
+        <div class="form-group">
+          <%= label :external_libraries, :library3, gettext("3 Library Name") %>
+          <%= text_input :external_libraries, :library3_name, class: "form-control", "aria-describedby": "contract-name-help-block", "data-test": "contract_name" %>
+        </div>
+
+        <div class="form-group">
+          <%= label :external_libraries, :library3, gettext("3 Library Address") %>
+          <%= text_input :external_libraries, :library3_address, class: "form-control", "aria-describedby": "contract-name-help-block", "data-test": "contract_name" %>
+        </div>
+
+        <div class="form-group">
+          <%= label :external_libraries, :library4, gettext("4 Library Name") %>
+          <%= text_input :external_libraries, :library4_name, class: "form-control", "aria-describedby": "contract-name-help-block", "data-test": "contract_name" %>
+        </div>
+
+        <div class="form-group">
+          <%= label :external_libraries, :library4, gettext("4 Library Address") %>
+          <%= text_input :external_libraries, :library4_address, class: "form-control", "aria-describedby": "contract-name-help-block", "data-test": "contract_name" %>
+        </div>
+
+        <div class="form-group">
+          <%= label :external_libraries, :library5, gettext("5 Library Name") %>
+          <%= text_input :external_libraries, :library5_name, class: "form-control", "aria-describedby": "contract-name-help-block", "data-test": "contract_name" %>
+        </div>
+
+        <div class="form-group">
+          <%= label f, :library5, gettext("5 Library Address") %>
+          <%= text_input f, :library5_address, class: "form-control", "aria-describedby": "contract-name-help-block", "data-test": "contract_name" %>
+        </div>
+
         <button
           type="button"
           name="button"
