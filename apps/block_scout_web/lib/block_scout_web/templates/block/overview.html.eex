@@ -10,7 +10,7 @@
           <!-- Block Height -->
           <h3 data-test="block_detail_number">
             <%= if block_type(@block) == "Block" do %>
-              <%= gettext("Block Height: %{height}", height: @block.number) %>
+              <%= gettext("Block Height: %{height}", height: @block.number) %> <%= if @block.number == 0, do: "- " <> gettext("Genesis Block")%>
             <% else %>
               <%= gettext("%{block_type} Height:", block_type: block_type(@block)) %>
               <%= link(@block, to: block_path(BlockScoutWeb.Endpoint, :show, @block.number)) %>
@@ -37,17 +37,19 @@
             <dd class="col-sm-9"> <%= to_string(@block.hash) %> </dd>
           </dl>
 
-          <!-- Parent Hash -->
-          <dl class="row">
-            <dt class="col-sm-3 text-muted"> <%= gettext "Parent Hash" %> </dt>
-            <dd class="col-sm-9">
-              <%= link(
-                  @block.parent_hash,
-                  class: "block__link",
-                  to: block_path(@conn, :show, @block.number - 1)
-                ) %>
-            </dd>
-          </dl>
+          <%= unless @block.number == 0 do %>
+              <!-- Parent Hash -->
+              <dl class="row">
+                <dt class="col-sm-3 text-muted"> <%= gettext "Parent Hash" %> </dt>
+                <dd class="col-sm-9">
+                  <%= link(
+                      @block.parent_hash,
+                      class: "block__link",
+                      to: block_path(@conn, :show, @block.number - 1)
+                    ) %>
+                </dd>
+              </dl>
+          <% end %>
 
           <!-- Difficulty value -->
           <dl class="row">

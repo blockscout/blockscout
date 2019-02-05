@@ -937,6 +937,26 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "fetch_min_and_max_block_numbers/0" do
+    test "fetches min and max block numbers" do
+      for index <- 5..9 do
+        insert(:block, number: index)
+      end
+
+      assert {5, 9} = Chain.fetch_min_and_max_block_numbers()
+    end
+
+    test "fetches min and max when there are no blocks" do
+      assert {0, 0} = Chain.fetch_min_and_max_block_numbers()
+    end
+
+    test "fetches min and max where there is only one block" do
+      insert(:block, number: 1)
+
+      assert {1, 1} = Chain.fetch_min_and_max_block_numbers()
+    end
+  end
+
   # Full tests in `test/explorer/import_test.exs`
   describe "import/1" do
     @import_data %{
@@ -1274,6 +1294,24 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "block_hash_by_number/1" do
+    test "without blocks returns empty map" do
+      assert Chain.block_hash_by_number([]) == %{}
+    end
+
+    test "with consensus block returns mapping" do
+      block = insert(:block)
+
+      assert Chain.block_hash_by_number([block.number]) == %{block.number => block.hash}
+    end
+
+    test "with non-consensus block does not return mapping" do
+      block = insert(:block, consensus: false)
+
+      assert Chain.block_hash_by_number([block.number]) == %{}
+    end
+  end
+
   describe "list_top_addresses/0" do
     test "without addresses with balance > 0" do
       insert(:address, fetched_coin_balance: 0)
@@ -1315,25 +1353,25 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "get_blocks_without_reward/1" do
+  describe "stream_blocks_without_rewards/2" do
     test "includes consensus blocks" do
       %Block{hash: consensus_hash} = insert(:block, consensus: true)
 
-      assert [%Block{hash: ^consensus_hash}] = Chain.get_blocks_without_reward()
+      assert {:ok, [%Block{hash: ^consensus_hash}]} = Chain.stream_blocks_without_rewards([], &[&1 | &2])
     end
 
     test "does not include consensus block that has a reward" do
       %Block{hash: consensus_hash, miner_hash: miner_hash} = insert(:block, consensus: true)
       insert(:reward, address_hash: miner_hash, block_hash: consensus_hash)
 
-      assert [] = Chain.get_blocks_without_reward()
+      assert {:ok, []} = Chain.stream_blocks_without_rewards([], &[&1 | &2])
     end
 
     # https://github.com/poanetwork/blockscout/issues/1310 regression test
     test "does not include non-consensus blocks" do
       insert(:block, consensus: false)
 
-      assert [] = Chain.get_blocks_without_reward()
+      assert {:ok, []} = Chain.stream_blocks_without_rewards([], &[&1 | &2])
     end
   end
 
@@ -2235,10 +2273,10 @@ defmodule Explorer.ChainTest do
       assert {:error, :not_found} == response
     end
 
-    test "finds an contract address" do
+    test "finds a contract address" do
       address =
         insert(:address, contract_code: Factory.data("contract_code"), smart_contract: nil, names: [])
-        |> Repo.preload([:contracts_creation_internal_transaction, :token])
+        |> Repo.preload([:contracts_creation_internal_transaction, :contracts_creation_transaction, :token])
 
       response = Chain.find_contract_address(address.hash)
 
@@ -2276,6 +2314,52 @@ defmodule Explorer.ChainTest do
 
     test "with block without transactions", %{block: block, emission_reward: emission_reward} do
       assert emission_reward.reward == Chain.block_reward(block)
+    end
+  end
+
+  describe "gas_payment_by_block_hash/1" do
+    setup do
+      number = 1
+
+      %{consensus_block: insert(:block, number: number, consensus: true), number: number}
+    end
+
+    test "without consensus block hash has no key", %{consensus_block: consensus_block, number: number} do
+      non_consensus_block = insert(:block, number: number, consensus: false)
+
+      :transaction
+      |> insert(gas_price: 1)
+      |> with_block(consensus_block, gas_used: 1)
+
+      :transaction
+      |> insert(gas_price: 1)
+      |> with_block(consensus_block, gas_used: 2)
+
+      assert Chain.gas_payment_by_block_hash([non_consensus_block.hash]) == %{}
+    end
+
+    test "with consensus block hash without transactions has key with 0 value", %{
+      consensus_block: %Block{hash: consensus_block_hash}
+    } do
+      assert Chain.gas_payment_by_block_hash([consensus_block_hash]) == %{
+               consensus_block_hash => %Wei{value: Decimal.new(0)}
+             }
+    end
+
+    test "with consensus block hash with transactions has key with value", %{
+      consensus_block: %Block{hash: consensus_block_hash} = consensus_block
+    } do
+      :transaction
+      |> insert(gas_price: 1)
+      |> with_block(consensus_block, gas_used: 2)
+
+      :transaction
+      |> insert(gas_price: 3)
+      |> with_block(consensus_block, gas_used: 4)
+
+      assert Chain.gas_payment_by_block_hash([consensus_block_hash]) == %{
+               consensus_block_hash => %Wei{value: Decimal.new(14)}
+             }
     end
   end
 
@@ -2947,6 +3031,76 @@ defmodule Explorer.ChainTest do
       assert balance_fields_list_by_address_hash[miner.hash] |> Enum.map(& &1.block_number) |> Enum.sort() == [
                block.number
              ]
+    end
+  end
+
+  describe "update_replaced_transactions/2" do
+    test "update replaced transactions" do
+      replaced_transaction_hash = "0x2a263224a95275d77bc30a7e131bc64d948777946a790c0915ab293791fbcb61"
+
+      address = insert(:address, hash: "0xb7cffe2ac19b9d5705a24cbe14fef5663af905a6")
+
+      insert(:transaction,
+        from_address: address,
+        nonce: 1,
+        block_hash: nil,
+        index: nil,
+        block_number: nil,
+        hash: replaced_transaction_hash
+      )
+
+      mined_transaction_hash = "0x1a263224a95275d77bc30a7e131bc64d948777946a790c0915ab293791fbcb61"
+      block = insert(:block)
+
+      mined_transaction =
+        insert(:transaction,
+          from_address: address,
+          nonce: 1,
+          index: 0,
+          block_hash: block.hash,
+          block_number: block.number,
+          cumulative_gas_used: 1,
+          gas_used: 1,
+          hash: mined_transaction_hash
+        )
+
+      second_mined_transaction_hash = "0x3a263224a95275d77bc30a7e131bc64d948777946a790c0915ab293791fbcb61"
+      second_block = insert(:block)
+
+      insert(:transaction,
+        from_address: address,
+        nonce: 1,
+        index: 0,
+        block_hash: second_block.hash,
+        block_number: second_block.number,
+        cumulative_gas_used: 1,
+        gas_used: 1,
+        hash: second_mined_transaction_hash
+      )
+
+      {1, _} =
+        Chain.update_replaced_transactions([
+          %{
+            block_hash: mined_transaction.block_hash,
+            nonce: mined_transaction.nonce,
+            from_address_hash: mined_transaction.from_address_hash
+          }
+        ])
+
+      replaced_transaction = Repo.get(Transaction, replaced_transaction_hash)
+
+      assert replaced_transaction.status == :error
+      assert replaced_transaction.error == "dropped/replaced"
+
+      found_mined_transaction = Repo.get(Transaction, mined_transaction_hash)
+
+      assert found_mined_transaction.status == nil
+      assert found_mined_transaction.error == nil
+
+      second_mined_transaction = Repo.get(Transaction, second_mined_transaction_hash)
+
+      assert second_mined_transaction.status == nil
+      assert second_mined_transaction.error == nil
     end
   end
 

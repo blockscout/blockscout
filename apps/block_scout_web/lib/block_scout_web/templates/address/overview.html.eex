@@ -1,4 +1,4 @@
-<section class="address-overview" data-page="address-details" data-page-address-hash="<%= @address %>">
+<section class="address-overview" data-page="address-details" data-page-address-hash="<%= @address.hash %>">
   <div class="row">
     <div class="card-section col-md-12 col-lg-8">
       <div class="card">
@@ -23,7 +23,7 @@
             <% end %>
           </div>
           <h1 class="card-title"><%= address_title(@address) %> <%= gettext "Details" %> </h1>
-          <h3 class="<%= if BlockScoutWeb.AddressView.contract?(@address) do %>contract-address<% end %>" data-test="address_detail_hash"><%= @address.hash %></h3>
+          <h3 class="<%= if BlockScoutWeb.AddressView.contract?(@address) do %>contract-address<% end %>" data-test="address_detail_hash"><%= @address %></h3>
           <div class="d-flex flex-column flex-lg-row justify-content-start text-muted">
             <%= if address_name = primary_name(@address) do %>
               <strong class="mr-4 mb-2 text-primary"><%= address_name %></strong>
@@ -49,15 +49,15 @@
             <span class="text-muted" data-test="address_contract_creator">
               <%= gettext "Created by" %>
               <%= link(
-                trimmed_hash(@address.contracts_creation_internal_transaction.from_address_hash),
-                to: address_path(@conn, :show, @address.contracts_creation_internal_transaction.from_address_hash)
+                trimmed_hash(from_address_hash(@address)),
+                to: address_path(@conn, :show, from_address_hash(@address))
               ) %>
 
               <%= gettext "at" %>
 
               <%= link(
-                trimmed_hash(@address.contracts_creation_internal_transaction.transaction_hash),
-                to: transaction_path(@conn, :show, @address.contracts_creation_internal_transaction.transaction_hash),
+                trimmed_hash(transaction_hash(@address)),
+                to: transaction_path(@conn, :show, transaction_hash(@address)),
                 "data-test": "transaction_hash_link"
               ) %>
             </span>

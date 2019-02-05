@@ -405,7 +405,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         "gasUsed" => "#{transaction.gas_used}",
         "logs" => [
           %{
-            "address" => "#{address}",
+            "address" => "#{address.hash}",
             "data" => "#{log.data}",
             "topics" => ["first topic", "second topic", nil, nil]
           }

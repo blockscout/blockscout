@@ -147,18 +147,18 @@ defmodule Explorer.Chain.Wei do
   end
 
   @doc """
-  Multiplies two Wei values.
+  Multiplies Wei values by an `t:integer/0`.
 
   ## Example
 
-      iex> first = %Explorer.Chain.Wei{value: Decimal.new(10)}
-      iex> second = %Explorer.Chain.Wei{value: Decimal.new(5)}
-      iex> Explorer.Chain.Wei.mult(first, second)
+      iex> wei = %Explorer.Chain.Wei{value: Decimal.new(10)}
+      iex> multiplier = 5
+      iex> Explorer.Chain.Wei.mult(wei, multiplier)
       %Explorer.Chain.Wei{value: Decimal.new(50)}
   """
-  def mult(%Wei{value: wei_1}, %Wei{value: wei_2}) do
-    wei_1
-    |> Decimal.mult(wei_2)
+  def mult(%Wei{value: value}, multiplier) when is_integer(multiplier) do
+    value
+    |> Decimal.mult(multiplier)
     |> from(:wei)
   end
 
