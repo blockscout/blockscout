@@ -2141,6 +2141,7 @@ defmodule Explorer.Chain do
         on: tf.transaction_hash == l.transaction_hash and tf.log_index == l.index,
         where: l.first_topic == unquote(TokenTransfer.constant()),
         where: is_nil(tf.transaction_hash) and is_nil(tf.log_index),
+        where: not is_nil(t.block_number),
         select: t.block_number,
         distinct: t.block_number
       )
