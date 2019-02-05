@@ -9,7 +9,7 @@ config :indexer,
   ecto_repos: [Explorer.Repo],
   metadata_updater_days_interval: 7,
   # bytes
-  memory_limit: 1 <<< 30
+  memory_limit: 5 <<< 30
 
 config :indexer, Indexer.Tracer,
   service: :indexer,
