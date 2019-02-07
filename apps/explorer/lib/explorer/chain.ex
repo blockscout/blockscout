@@ -1891,6 +1891,8 @@ defmodule Explorer.Chain do
 
       !is_nil(transaction.contracts_creation_transaction) ->
         Data.to_string(transaction.contracts_creation_transaction.input)
+
+      true -> ""
     end
   end
 
