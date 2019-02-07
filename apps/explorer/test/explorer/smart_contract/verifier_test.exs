@@ -56,6 +56,57 @@ defmodule Explorer.SmartContract.VerifierTest do
       assert abi != nil
     end
 
+    test "verifies smart contract with constructor arguments", %{
+      contract_code_info: contract_code_info
+    } do
+      contract_address = insert(:contract_address, contract_code: contract_code_info.bytecode)
+
+      constructor_arguments = "0102030405"
+
+      params = %{
+        "contract_source_code" => contract_code_info.source_code,
+        "compiler_version" => contract_code_info.version,
+        "name" => contract_code_info.name,
+        "optimization" => contract_code_info.optimized,
+        "constructor_arguments" => constructor_arguments
+      }
+
+      :transaction
+      |> insert(
+        created_contract_address_hash: contract_address.hash,
+        input: Verifier.extract_bytecode(contract_code_info.bytecode) <> constructor_arguments
+      )
+      |> with_block()
+
+      assert {:ok, %{abi: abi}} = Verifier.evaluate_authenticity(contract_address.hash, params)
+      assert abi != nil
+    end
+
+    test "returns error when constructor arguments do not match", %{
+      contract_code_info: contract_code_info
+    } do
+      contract_address = insert(:contract_address, contract_code: contract_code_info.bytecode)
+
+      constructor_arguments = "0102030405"
+
+      params = %{
+        "contract_source_code" => contract_code_info.source_code,
+        "compiler_version" => contract_code_info.version,
+        "name" => contract_code_info.name,
+        "optimization" => contract_code_info.optimized,
+        "constructor_arguments" => constructor_arguments
+      }
+
+      :transaction
+      |> insert(
+        created_contract_address_hash: contract_address.hash,
+        input: Verifier.extract_bytecode(contract_code_info.bytecode) <> "010203"
+      )
+      |> with_block()
+
+      assert {:error, :constructor_arguments} = Verifier.evaluate_authenticity(contract_address.hash, params)
+    end
+
     test "returns error when bytecode doesn't match", %{contract_code_info: contract_code_info} do
       contract_address = insert(:contract_address, contract_code: contract_code_info.bytecode)
 

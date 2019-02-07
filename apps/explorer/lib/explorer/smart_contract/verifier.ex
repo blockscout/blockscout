@@ -44,7 +44,7 @@ defmodule Explorer.SmartContract.Verifier do
       generated_bytecode != blockchain_bytecode ->
         {:error, :generated_bytecode}
 
-      !ConstructorArguments.verify(address_hash, bytecode, arguments_data) ->
+      !ConstructorArguments.verify(address_hash, blockchain_bytecode, arguments_data) ->
         {:error, :constructor_arguments}
 
       true ->
