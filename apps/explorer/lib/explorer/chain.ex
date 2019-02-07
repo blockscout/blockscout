@@ -1884,12 +1884,12 @@ defmodule Explorer.Chain do
 
     cond do
       is_nil(transaction) ->
-        nil
+        ""
 
-      !is_nil(transaction.contracts_creation_internal_transaction) ->
+      transaction.contracts_creation_internal_transaction && transaction.contracts_creation_internal_transaction.input ->
         Data.to_string(transaction.contracts_creation_internal_transaction.input)
 
-      !is_nil(transaction.contracts_creation_transaction) ->
+      transaction.contracts_creation_transaction && transaction.contracts_creation_transaction.input ->
         Data.to_string(transaction.contracts_creation_transaction.input)
 
       true ->
