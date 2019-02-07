@@ -1624,7 +1624,7 @@ msgstr ""
 msgid "Contract Libraries"
 msgstr ""
 
-#, elixir-format
+#, elixir-format, fuzzy
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:53
-msgid "Enter contructor arguments if the contract has any"
+msgid "Enter contructor arguments if the contract had any"
 msgstr ""
