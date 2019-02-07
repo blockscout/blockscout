@@ -55,12 +55,22 @@ defmodule Explorer.SmartContract.Publisher do
   end
 
   defp attributes(address_hash, params, abi \\ %{}) do
+    constructor_arguments = params["constructor_arguments"]
+
+    constructor_arguments =
+      if constructor_arguments != nil && constructor_arguments != "" do
+        constructor_arguments
+      else
+        nil
+      end
+
     %{
       address_hash: address_hash,
       name: params["name"],
       compiler_version: params["compiler_version"],
       optimization: params["optimization"],
       contract_source_code: params["contract_source_code"],
+      constructor_arguments: constructor_arguments,
       abi: abi
     }
   end

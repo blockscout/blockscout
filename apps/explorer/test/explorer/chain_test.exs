@@ -3608,7 +3608,7 @@ defmodule Explorer.ChainTest do
 
       found_creation_data = Chain.contract_creation_input_data(hash)
 
-      assert is_nil(found_creation_data)
+      assert found_creation_data == ""
     end
   end
 end
