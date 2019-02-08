@@ -58,7 +58,6 @@ defmodule Explorer.Chain.Import.Runner.Block.Rewards do
       |> Enum.uniq_by(&{&1.address_hash, &1.address_type, &1.block_hash})
       |> Enum.sort_by(&{&1.address_hash, &1.address_type, &1.block_hash})
 
-
     Import.insert_changes_list(
       repo,
       ordered_changes_list,
