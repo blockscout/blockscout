@@ -61,6 +61,8 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
       }
   """
   def run(name, compiler_version, code, optimize, external_libs \\ %{}) do
+    external_libs_string = Jason.encode!(external_libs)
+
     {response, _status} =
       System.cmd(
         "node",
@@ -69,16 +71,15 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
           code,
           compiler_version,
           optimize_value(optimize),
-          @new_contract_name
+          @new_contract_name,
+          external_libs_string
         ]
       )
 
     with {:ok, contracts} <- Jason.decode(response),
          %{"abi" => abi, "evm" => %{"deployedBytecode" => %{"object" => bytecode}}} <-
            get_contract_info(contracts, name) do
-      bytecode_with_libraries = add_library_addresses(bytecode, external_libs)
-
-      {:ok, %{"abi" => abi, "bytecode" => bytecode_with_libraries, "name" => name}}
+      {:ok, %{"abi" => abi, "bytecode" => bytecode, "name" => name}}
     else
       {:error, %Jason.DecodeError{}} ->
         {:error, :compilation}
@@ -103,16 +104,6 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
       _ ->
         {:error, :name}
     end
-  end
-
-  defp add_library_addresses(bytecode, external_libs) do
-    Enum.reduce(external_libs, bytecode, fn {library_name, address}, acc ->
-      placeholder = String.replace(@new_contract_name, ".", "\.") <> ":" <> library_name
-      regex = Regex.compile!("_+#{placeholder}_+")
-      address = String.replace(address, "0x", "")
-
-      String.replace(acc, regex, address)
-    end)
   end
 
   def parse_error(%{"error" => error}), do: {:error, [error]}
