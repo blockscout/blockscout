@@ -16,6 +16,10 @@ defmodule BlockScoutWeb.Router do
     plug(:accepts, ["json"])
   end
 
+  pipeline :graphql do
+    plug(BlockScoutWeb.Plug.GraphQL)
+  end
+
   scope "/api/v1", BlockScoutWeb.API.V1, as: :api_v1 do
     pipe_through(:api)
 
@@ -47,13 +51,17 @@ defmodule BlockScoutWeb.Router do
     max_complexity: @max_complexity
   )
 
-  forward("/graphiql", Absinthe.Plug.GraphiQL,
-    schema: BlockScoutWeb.Schema,
-    interface: :playground,
-    socket: BlockScoutWeb.UserSocket,
-    analyze_complexity: true,
-    max_complexity: @max_complexity
-  )
+  scope "/graphiql" do
+    pipe_through(:graphql)
+
+    forward("/", Absinthe.Plug.GraphiQL,
+      schema: BlockScoutWeb.Schema,
+      interface: :playground,
+      socket: BlockScoutWeb.UserSocket,
+      analyze_complexity: true,
+      max_complexity: @max_complexity
+    )
+  end
 
   # Disallows Iframes (write routes)
   scope "/", BlockScoutWeb do
