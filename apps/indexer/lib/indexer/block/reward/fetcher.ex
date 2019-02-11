@@ -177,7 +177,8 @@ defmodule Indexer.Block.Reward.Fetcher do
       |> Enum.map(& &1.block_hash)
       |> Chain.gas_payment_by_block_hash()
 
-    Enum.map(beneficiaries_params, fn %{block_hash: block_hash} = beneficiary ->
+    beneficiaries_params
+    |> Enum.map(fn %{block_hash: block_hash} = beneficiary ->
       case gas_payment_by_block_hash do
         %{^block_hash => gas_payment} ->
           {:ok, minted} = Wei.cast(beneficiary.reward)
@@ -187,6 +188,7 @@ defmodule Indexer.Block.Reward.Fetcher do
           beneficiary
       end
     end)
+    |> Enum.uniq()
   end
 
   defp import_block_reward_params(block_rewards_params) when is_list(block_rewards_params) do
