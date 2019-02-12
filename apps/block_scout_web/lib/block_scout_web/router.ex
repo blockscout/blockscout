@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.Router do
   use BlockScoutWeb, :router
 
+  alias BlockScoutWeb.Plug.GraphQL
+
   forward("/wobserver", Wobserver.Web.Router)
   forward("/admin", BlockScoutWeb.AdminRouter)
 
