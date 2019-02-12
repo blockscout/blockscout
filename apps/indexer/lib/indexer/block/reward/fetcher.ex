@@ -177,14 +177,18 @@ defmodule Indexer.Block.Reward.Fetcher do
       |> Enum.map(& &1.block_hash)
       |> Chain.gas_payment_by_block_hash()
 
-    Enum.map(beneficiaries_params, fn %{block_hash: block_hash} = beneficiary ->
-      case gas_payment_by_block_hash do
-        %{^block_hash => gas_payment} ->
-          {:ok, minted} = Wei.cast(beneficiary.reward)
-          %{beneficiary | reward: Wei.sum(minted, gas_payment)}
+    Enum.map(beneficiaries_params, fn %{block_hash: block_hash, address_type: address_type} = beneficiary ->
+      if address_type == :validator do
+        case gas_payment_by_block_hash do
+          %{^block_hash => gas_payment} ->
+            {:ok, minted} = Wei.cast(beneficiary.reward)
+            %{beneficiary | reward: Wei.sum(minted, gas_payment)}
 
-        _ ->
-          beneficiary
+          _ ->
+            beneficiary
+        end
+      else
+        beneficiary
       end
     end)
   end
