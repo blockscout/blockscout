@@ -206,13 +206,13 @@ defmodule Indexer.Block.Reward.Fetcher do
         if address_type == :uncle do
           reward =
             Enum.reduce(beneficiaries_params, %Wei{value: 0}, fn %{
-                                                      address_type: address_type,
-                                                      address_hash: address_hash,
-                                                      block_hash: block_hash
-                                                    } = current_beneficiary,
-                                                    reward_acc ->
+                                                                   address_type: address_type,
+                                                                   address_hash: address_hash,
+                                                                   block_hash: block_hash
+                                                                 } = current_beneficiary,
+                                                                 reward_acc ->
               if address_type == beneficiary.address_type && address_hash == beneficiary.address_hash &&
-                block_hash == beneficiary.block_hash do
+                   block_hash == beneficiary.block_hash do
                 {:ok, minted} = Wei.cast(current_beneficiary.reward)
 
                 Wei.sum(reward_acc, minted)
