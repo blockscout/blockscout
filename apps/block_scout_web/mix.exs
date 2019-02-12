@@ -63,9 +63,9 @@ defmodule BlockScoutWeb.Mixfile do
       # GraphQL toolkit
       {:absinthe, "~> 1.4"},
       # Integrates Absinthe subscriptions with Phoenix
-      {:absinthe_phoenix, "~> 1.4"},
+      {:absinthe_phoenix, git: "git@github.com:ayrat555/absinthe_phoenix.git", branch: "master"},
       # Plug support for Absinthe
-      {:absinthe_plug, "~> 1.4"},
+      {:absinthe_plug, git: "git@github.com:ayrat555/absinthe_plug.git", branch: "ab-allow-to-set-default-query"},
       # Absinthe support for the Relay framework
       {:absinthe_relay, "~> 1.4"},
       {:bypass, "~> 1.0", only: :test},
