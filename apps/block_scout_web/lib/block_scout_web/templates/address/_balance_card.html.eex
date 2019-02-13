@@ -4,7 +4,7 @@
     <span></span>
     <div class="text-right">
       <h3 class="text-white" data-test="address_balance"><%= balance(@address) %></h3>
-      <span class="text-white text-faded">
+      <span class="text-white text-faded coinmarket-value">
         <span
           data-wei-value="<%= if @address.fetched_coin_balance, do: @address.fetched_coin_balance.value %>"
           data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">

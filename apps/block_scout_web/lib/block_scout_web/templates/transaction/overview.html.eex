@@ -71,7 +71,7 @@
           <dl class="row">
             <dt class="col-sm-3 text-muted"> <%= gettext "TX Fee" %> </dt>
             <dd class="col-sm-9">
-              <%= formatted_fee(@transaction, denomination: :ether) %> (<span data-wei-value=<%= fee(@transaction) %> data-usd-exchange-rate=<%= @exchange_rate.usd_value %>></span>)
+              <%= formatted_fee(@transaction, denomination: :ether) %> <span class="coinmarket-value">(<span data-wei-value=<%= fee(@transaction) %> data-usd-exchange-rate=<%= @exchange_rate.usd_value %>></span>)</span>
             </dd>
           </dl>
 
@@ -106,7 +106,7 @@
             <h3 class="text-white">
               <%= value(@transaction) %>
             </h3>
-            <span class="text-white text-faded" data-wei-value=<%= @transaction.value.value %> data-usd-exchange-rate=<%= @exchange_rate.usd_value %>></span>
+            <span class="text-white text-faded coinmarket-value" data-wei-value=<%= @transaction.value.value %> data-usd-exchange-rate=<%= @exchange_rate.usd_value %>></span>
           </div>
         </div>
       </div>
