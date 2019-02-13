@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
   alias BlockScoutWeb.AddressCoinBalanceView
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
+  alias Indexer.CoinBalance.OnDemandFetcher
   alias Phoenix.View
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
@@ -61,6 +62,7 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
          {:ok, address} <- Chain.hash_to_address(address_hash) do
       render(conn, "index.html",
         address: address,
+        coin_balance_status: OnDemandFetcher.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         transaction_count: transaction_count(address),
         validation_count: validation_count(address),
