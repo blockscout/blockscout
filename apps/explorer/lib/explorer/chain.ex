@@ -1869,6 +1869,35 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Fetches contract creation input data.
+  """
+  @spec contract_creation_input_data(String.t()) :: nil | String.t()
+  def contract_creation_input_data(address_hash) do
+    query =
+      from(
+        address in Address,
+        where: address.hash == ^address_hash,
+        preload: [:contracts_creation_internal_transaction, :contracts_creation_transaction]
+      )
+
+    transaction = Repo.one(query)
+
+    cond do
+      is_nil(transaction) ->
+        ""
+
+      transaction.contracts_creation_internal_transaction && transaction.contracts_creation_internal_transaction.input ->
+        Data.to_string(transaction.contracts_creation_internal_transaction.input)
+
+      transaction.contracts_creation_transaction && transaction.contracts_creation_transaction.input ->
+        Data.to_string(transaction.contracts_creation_transaction.input)
+
+      true ->
+        ""
+    end
+  end
+
+  @doc """
   Inserts a `t:SmartContract.t/0`.
 
   As part of inserting a new smart contract, an additional record is inserted for
@@ -2141,6 +2170,7 @@ defmodule Explorer.Chain do
         on: tf.transaction_hash == l.transaction_hash and tf.log_index == l.index,
         where: l.first_topic == unquote(TokenTransfer.constant()),
         where: is_nil(tf.transaction_hash) and is_nil(tf.log_index),
+        where: not is_nil(t.block_number),
         select: t.block_number,
         distinct: t.block_number
       )

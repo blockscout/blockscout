@@ -163,9 +163,12 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
   end
 
   defp remove_init_data_and_whisper_data(code) do
-    code
-    |> String.split("0029")
-    |> List.first()
-    |> String.split_at(-64)
+    {res, _} =
+      code
+      |> String.split("0029")
+      |> List.first()
+      |> String.split_at(-64)
+
+    res
   end
 end
