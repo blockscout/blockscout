@@ -38,10 +38,11 @@ defmodule Explorer.SmartContract.Verifier do
     "0x" <> blockchain_bytecode =
       address_hash
       |> Chain.smart_contract_bytecode()
-      |> extract_bytecode
+
+    blockchain_bytecode_without_whisper = extract_bytecode(blockchain_bytecode)
 
     cond do
-      generated_bytecode != blockchain_bytecode ->
+      generated_bytecode != blockchain_bytecode_without_whisper ->
         {:error, :generated_bytecode}
 
       !ConstructorArguments.verify(address_hash, blockchain_bytecode, arguments_data) ->

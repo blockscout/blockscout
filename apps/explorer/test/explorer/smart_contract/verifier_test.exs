@@ -74,7 +74,7 @@ defmodule Explorer.SmartContract.VerifierTest do
       :transaction
       |> insert(
         created_contract_address_hash: contract_address.hash,
-        input: Verifier.extract_bytecode(contract_code_info.bytecode) <> constructor_arguments
+        input: contract_code_info.bytecode <> constructor_arguments
       )
       |> with_block()
 
