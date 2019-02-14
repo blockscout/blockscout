@@ -22,6 +22,7 @@ defmodule Indexer.PendingTransaction.Fetcher do
 
   defstruct interval: @default_interval,
             json_rpc_named_arguments: [],
+            last_fetch_at: nil,
             task: nil
 
   def child_spec([init_arguments]) do
@@ -84,10 +85,16 @@ defmodule Indexer.PendingTransaction.Fetcher do
     {:noreply, %PendingTransaction.Fetcher{state | task: task}}
   end
 
-  def handle_info({ref, _}, %PendingTransaction.Fetcher{task: %Task{ref: ref}} = state) do
+  def handle_info({ref, result}, %PendingTransaction.Fetcher{task: %Task{ref: ref}} = state) do
     Process.demonitor(ref, [:flush])
 
-    {:noreply, schedule_fetch(state)}
+    case result do
+      {:ok, new_last_fetch_at} ->
+        {:noreply, schedule_fetch(%{state | last_fetch_at: new_last_fetch_at})}
+
+      _ ->
+        {:noreply, schedule_fetch(state)}
+    end
   end
 
   def handle_info(
@@ -109,9 +116,14 @@ defmodule Indexer.PendingTransaction.Fetcher do
 
     case fetch_pending_transactions(json_rpc_named_arguments) do
       {:ok, transactions_params} ->
+        new_last_fetched_at = NaiveDateTime.utc_now()
+
         transactions_params
+        |> Stream.map(&Map.put(&1, :earliest_processing_start, new_last_fetched_at))
         |> Stream.chunk_every(@chunk_size)
         |> Enum.each(&import_chunk/1)
+
+        {:ok, new_last_fetched_at}
 
       :ignore ->
         :ok
@@ -127,7 +139,7 @@ defmodule Indexer.PendingTransaction.Fetcher do
     addresses_params = AddressExtraction.extract_addresses(%{transactions: transactions_params}, pending: true)
 
     # There's no need to queue up fetching the address balance since theses are pending transactions and cannot have
-    # affected the address balance yet since address balance is a balance at a give block and these transactions are
+    # affected the address balance yet since address balance is a balance at a given block and these transactions are
     # blockless.
     case Chain.import(%{
            addresses: %{params: addresses_params, on_conflict: :nothing},
