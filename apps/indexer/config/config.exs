@@ -35,6 +35,8 @@ config :indexer,
   # bytes
   memory_limit: 1 <<< 30
 
+# config :indexer, Indexer.ReplacedTransaction.Supervisor, disabled?: true
+
 config :indexer, Indexer.Tracer,
   service: :indexer,
   adapter: SpandexDatadog.Adapter,
