@@ -6,7 +6,7 @@ defmodule Explorer.Repo.Migrations.AddConstructorArgumentsToSmartContracts do
     execute("ALTER TABLE smart_contracts DROP COLUMN IF EXISTS constructor_arguments")
   end
 
-  def change do
+  def down do
     alter table(:smart_contracts) do
       add(:constructor_arguments, :string, null: true)
     end
