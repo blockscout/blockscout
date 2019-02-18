@@ -151,6 +151,7 @@ defmodule Indexer.InternalTransaction.FetcherTest do
                """
     end
 
+    @tag :no_parity
     test "internal transactions with failed parent does not create a new address", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
