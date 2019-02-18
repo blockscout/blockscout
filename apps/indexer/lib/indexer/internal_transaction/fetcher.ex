@@ -113,7 +113,12 @@ defmodule Indexer.InternalTransaction.Fetcher do
     |> EthereumJSONRPC.fetch_internal_transactions(json_rpc_named_arguments)
     |> case do
       {:ok, internal_transactions_params} ->
-        addresses_params = AddressExtraction.extract_addresses(%{internal_transactions: internal_transactions_params})
+        internal_transactions_params_without_failed_creations = remove_failed_creations(internal_transactions_params)
+
+        addresses_params =
+          AddressExtraction.extract_addresses(%{
+            internal_transactions: internal_transactions_params_without_failed_creations
+          })
 
         address_hash_to_block_number =
           Enum.into(addresses_params, %{}, fn %{fetched_coin_balance_block_number: block_number, hash: hash} ->
@@ -123,7 +128,7 @@ defmodule Indexer.InternalTransaction.Fetcher do
         with {:ok, imported} <-
                Chain.import(%{
                  addresses: %{params: addresses_params},
-                 internal_transactions: %{params: internal_transactions_params},
+                 internal_transactions: %{params: internal_transactions_params_without_failed_creations},
                  timeout: :infinity
                }) do
           async_import_coin_balances(imported, %{
@@ -194,6 +199,32 @@ defmodule Indexer.InternalTransaction.Fetcher do
 
         [unique | _] = duplicates ->
           {[unique | acc_uniques], duplicates ++ acc_duplicates}
+      end
+    end)
+  end
+
+  defp remove_failed_creations(internal_transactions_params) do
+    internal_transactions_params
+    |> Enum.map(fn internal_transaction_params ->
+      internal_transaction_params[:trace_address]
+
+      failed_parent_index =
+        Enum.find(internal_transaction_params[:trace_address], fn trace_address ->
+          parent = Enum.at(internal_transactions_params, trace_address)
+
+          !is_nil(parent[:error])
+        end)
+
+      failed_parent = failed_parent_index && Enum.at(internal_transactions_params, failed_parent_index)
+
+      if failed_parent do
+        internal_transaction_params
+        |> Map.delete(:created_contract_address_hash)
+        |> Map.delete(:created_contract_code)
+        |> Map.delete(:gas_used)
+        |> Map.put(:error, failed_parent[:error])
+      else
+        internal_transaction_params
       end
     end)
   end
