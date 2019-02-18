@@ -222,6 +222,7 @@ defmodule Indexer.InternalTransaction.Fetcher do
         |> Map.delete(:created_contract_address_hash)
         |> Map.delete(:created_contract_code)
         |> Map.delete(:gas_used)
+        |> Map.delete(:output)
         |> Map.put(:error, failed_parent[:error])
       else
         internal_transaction_params
