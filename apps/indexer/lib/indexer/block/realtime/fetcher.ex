@@ -435,8 +435,13 @@ defmodule Indexer.Block.Realtime.Fetcher do
     end
   end
 
-  # Input-less transactions are value-transfers only, so their internal transactions do not need to be indexed
-  defp fetch_internal_transactions?(%{status: :ok, created_contract_address_hash: nil, input: "0x"}, _), do: false
+  defp fetch_internal_transactions?(
+         %{status: :ok, created_contract_address_hash: nil, input: "0x", to_address_hash: from_address_hash},
+         _
+       ) do
+    Chain.contract_address?(from_address_hash)
+  end
+
   # Token transfers not transferred during contract creation don't need internal transactions as the token transfers
   # derive completely from the logs.
   defp fetch_internal_transactions?(%{status: :ok, created_contract_address_hash: nil}, true), do: false

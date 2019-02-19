@@ -1,10 +1,12 @@
 defmodule Explorer.ChainTest do
   use Explorer.DataCase
+  use EthereumJSONRPC.Case, async: true
 
   require Ecto.Query
 
   import Ecto.Query
   import Explorer.Factory
+  import Mox
 
   alias Explorer.{Chain, Factory, PagingOptions, Repo}
 
@@ -26,6 +28,10 @@ defmodule Explorer.ChainTest do
   alias Explorer.Counters.AddressesWithBalanceCounter
 
   doctest Explorer.Chain
+
+  setup :set_mox_global
+
+  setup :verify_on_exit!
 
   describe "count_addresses_with_balance_from_cache/0" do
     test "returns the number of addresses with fetched_coin_balance > 0" do
@@ -3629,6 +3635,70 @@ defmodule Explorer.ChainTest do
       found_creation_data = Chain.contract_creation_input_data(hash)
 
       assert found_creation_data == ""
+    end
+  end
+
+  describe "contract_address?/2" do
+    test "returns true if address has contract code" do
+      code = %Data{
+        bytes: <<1, 2, 3, 4, 5>>
+      }
+
+      address = insert(:address, contract_code: code)
+
+      assert Chain.contract_address?(to_string(address.hash), 1)
+    end
+
+    test "returns false if address has not contract code" do
+      address = insert(:address)
+
+      refute Chain.contract_address?(to_string(address.hash), 1)
+    end
+
+    @tag :no_parity
+    @tag :no_geth
+    test "returns true if fetched code from json rpc", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      hash = "0x71300d93a8CdF93385Af9635388cF2D00b95a480"
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, fn _arguments, _options ->
+          {:ok,
+           [
+             %{
+               id: 0,
+               result: "0x0102030405"
+             }
+           ]}
+        end)
+      end
+
+      assert Chain.contract_address?(to_string(hash), 1, json_rpc_named_arguments)
+    end
+
+    @tag :no_parity
+    @tag :no_geth
+    test "returns false if no fetched code from json rpc", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      hash = "0x71300d93a8CdF93385Af9635388cF2D00b95a480"
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, fn _arguments, _options ->
+          {:ok,
+           [
+             %{
+               id: 0,
+               result: "0x"
+             }
+           ]}
+        end)
+      end
+
+      refute Chain.contract_address?(to_string(hash), 1, json_rpc_named_arguments)
     end
   end
 end
