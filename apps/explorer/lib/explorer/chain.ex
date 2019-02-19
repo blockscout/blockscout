@@ -17,6 +17,8 @@ defmodule Explorer.Chain do
       where: 3
     ]
 
+  import EthereumJSONRPC, only: [integer_to_quantity: 1]
+
   alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi}
 
@@ -1866,6 +1868,46 @@ defmodule Explorer.Chain do
     query
     |> Repo.one()
     |> Data.to_string()
+  end
+
+  @doc """
+  Checks if an address is a contract
+  """
+  @spec contract_address?(String.t(), non_neg_integer(), Keyword.t()) :: boolean() | :json_rpc_error
+  def contract_address?(address_hash, block_number, json_rpc_named_arguments \\ []) do
+    {:ok, binary_hash} = Explorer.Chain.Hash.Address.cast(address_hash)
+
+    query =
+      from(
+        address in Address,
+        where: address.hash == ^binary_hash
+      )
+
+    address = Repo.one(query)
+
+    cond do
+      is_nil(address) ->
+        block_quantity = integer_to_quantity(block_number)
+
+        case EthereumJSONRPC.fetch_codes(
+               [%{block_quantity: block_quantity, address: address_hash}],
+               json_rpc_named_arguments
+             ) do
+          {:ok, %EthereumJSONRPC.FetchedCodes{params_list: fetched_codes}} ->
+            result = List.first(fetched_codes)
+
+            result && !(is_nil(result[:code]) || result[:code] == "" || result[:code] == "0x")
+
+          _ ->
+            :json_rpc_error
+        end
+
+      is_nil(address.contract_code) ->
+        false
+
+      true ->
+        true
+    end
   end
 
   @doc """
