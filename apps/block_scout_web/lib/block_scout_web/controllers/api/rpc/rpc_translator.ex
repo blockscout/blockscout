@@ -14,6 +14,7 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
   """
 
   import Plug.Conn
+  import Phoenix.Controller, only: [put_view: 2]
 
   alias BlockScoutWeb.API.RPC.RPCView
   alias Phoenix.Controller
@@ -30,7 +31,8 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
       _ ->
         conn
         |> put_status(400)
-        |> Controller.render(RPCView, :error, error: "Unknown action")
+        |> put_view(RPCView)
+        |> Controller.render(:error, error: "Unknown action")
         |> halt()
     end
   end
@@ -38,7 +40,8 @@ defmodule BlockScoutWeb.API.RPC.RPCTranslator do
   def call(%Conn{} = conn, _) do
     conn
     |> put_status(400)
-    |> Controller.render(RPCView, :error, error: "Params 'module' and 'action' are required parameters")
+    |> put_view(RPCView)
+    |> Controller.render(:error, error: "Params 'module' and 'action' are required parameters")
     |> halt()
   end
 

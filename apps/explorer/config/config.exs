@@ -40,8 +40,8 @@ else
   config :explorer, Explorer.Validator.MetadataProcessor, enabled: false
 end
 
-if System.get_env("SUPPLY_MODULE") == "TransactionAndLog" do
-  config :explorer, supply: Explorer.Chain.Supply.TransactionAndLog
+if System.get_env("SUPPLY_MODULE") == "TokenBridge" do
+  config :explorer, supply: Explorer.Chain.Supply.TokenBridge
 end
 
 if System.get_env("SOURCE_MODULE") == "TransactionAndLog" do

@@ -46,11 +46,5 @@ defmodule Indexer.Block.TransformTest do
     test "transforms a list of blocks" do
       assert Transform.transform_blocks(@blocks)
     end
-
-    test "raises when no transformer is configured" do
-      Application.put_env(:indexer, :block_transformer, nil)
-
-      assert_raise ArgumentError, fn -> Transform.transform_blocks(@blocks) end
-    end
   end
 end

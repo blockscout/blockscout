@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
   alias BlockScoutWeb.TransactionView
   alias Explorer.ExchangeRates.Token
   alias Explorer.{Chain, Market}
+  alias Indexer.CoinBalance.OnDemandFetcher
   alias Phoenix.View
 
   import BlockScoutWeb.AddressController, only: [transaction_count: 1, validation_count: 1]
@@ -80,6 +81,7 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
         conn,
         "index.html",
         address: address,
+        coin_balance_status: OnDemandFetcher.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         current_path: current_path(conn),
         token: token,
