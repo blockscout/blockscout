@@ -27,7 +27,7 @@ defmodule Explorer.Chain.Transaction do
   alias Explorer.Chain.Transaction.{Fork, Status}
 
   @optional_attrs ~w(block_hash block_number created_contract_address_hash cumulative_gas_used error gas_used index
-                     internal_transactions_indexed_at status to_address_hash)a
+                     internal_transactions_indexed_at created_contract_code_indexed_at status to_address_hash)a
   @required_attrs ~w(from_address_hash gas gas_price hash input nonce r s v value)a
 
   @typedoc """
@@ -83,6 +83,7 @@ defmodule Explorer.Chain.Transaction do
      `transaction`'s `index`.  `nil` when transaction is pending.
    * `error` - the `error` from the last `t:Explorer.Chain.InternalTransaction.t/0` in `internal_transactions` that
      caused `status` to be `:error`.  Only set after `internal_transactions_index_at` is set AND if there was an error.
+     Also, `error` is set if transaction is replaced/dropped
    * `forks` - copies of this transactions that were collated into `uncles` not on the primary consensus of the chain.
    * `from_address` - the source of `value`
    * `from_address_hash` - foreign key of `from_address`
@@ -98,6 +99,7 @@ defmodule Explorer.Chain.Transaction do
      transaction
    * `internal_transactions_indexed_at` - when `internal_transactions` were fetched by `Indexer` or when they do not
      need to be fetched at `inserted_at`.
+   * `created_contract_code_indexed_at` - when created `address` code was fetched by `Indexer`
 
      | `status` | `contract_creation_address_hash` | `input`    | Token Transfer? | `internal_transactions_indexed_at`        | `internal_transactions` | Description                                                                                         |
      |----------|----------------------------------|------------|-----------------|-------------------------------------------|-------------------------|-----------------------------------------------------------------------------------------------------|
@@ -128,6 +130,7 @@ defmodule Explorer.Chain.Transaction do
           block_number: Block.block_number() | nil,
           created_contract_address: %Ecto.Association.NotLoaded{} | Address.t() | nil,
           created_contract_address_hash: Hash.Address.t() | nil,
+          created_contract_code_indexed_at: DateTime.t() | nil,
           cumulative_gas_used: Gas.t() | nil,
           error: String.t() | nil,
           forks: %Ecto.Association.NotLoaded{} | [Fork.t()],
@@ -153,6 +156,26 @@ defmodule Explorer.Chain.Transaction do
           value: Wei.t()
         }
 
+  @derive {Poison.Encoder,
+           only: [
+             :block_number,
+             :cumulative_gas_used,
+             :error,
+             :gas,
+             :gas_price,
+             :gas_used,
+             :index,
+             :internal_transactions_indexed_at,
+             :created_contract_code_indexed_at,
+             :input,
+             :nonce,
+             :r,
+             :s,
+             :v,
+             :status,
+             :value
+           ]}
+
   @primary_key {:hash, Hash.Full, autogenerate: false}
   schema "transactions" do
     field(:block_number, :integer)
@@ -163,6 +186,7 @@ defmodule Explorer.Chain.Transaction do
     field(:gas_used, :decimal)
     field(:index, :integer)
     field(:internal_transactions_indexed_at, :utc_datetime_usec)
+    field(:created_contract_code_indexed_at, :utc_datetime_usec)
     field(:input, Data)
     field(:nonce, :integer)
     field(:r, :decimal)

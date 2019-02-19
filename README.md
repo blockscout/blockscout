@@ -16,18 +16,16 @@ BlockScout provides a comprehensive, easy-to-use interface for users to view, co
 
 Following is an overview of the project and instructions for [getting started](#getting-started).
 
+Visit the [POA BlockScout forum](https://forum.poa.network/c/blockscout) or the [Gitter Channel](https://gitter.im/poanetwork/blockscout) to access additional information or post questions.
+
 ## About BlockScout
 
 BlockScout is an Elixir application that allows users to search transactions, view accounts and balances, and verify smart contracts on the entire Ethereum network including all forks and sidechains.
 
 Currently available block explorers (i.e. Etherscan and Etherchain) are closed systems which are not independently verifiable.  As Ethereum sidechains continue to proliferate in both private and public settings, transparent tools are needed to analyze and validate transactions.
 
-The first release will include a block explorer for the POA core and Sokol test networks. Additional networks will be added in upcoming versions.
-
 
 ### Features
-
-Development is ongoing. Please see the [project timeline](https://github.com/poanetwork/blockscout/wiki/Timeline-for-BlockScout-explorer) for projected milestones.
 
 - [x] **Open source development**: The code is community driven and available for anyone to use, explore and improve.
 
@@ -35,11 +33,38 @@ Development is ongoing. Please see the [project timeline](https://github.com/poa
 
 - [x] **Smart contract interaction**: Users can read and verify Solidity smart contracts and access pre-existing contracts to fast-track development. Support for Vyper, LLL, and Web Assembly contracts is in progress.
 
-- [x] **Token support**: Version 1 supports ERC20 and ERC721 tokens. Future releases will support additional token types including ERC223 and ERC1155.
+- [x] **Token support**: ERC20 and ERC721 tokens are supported. Future releases will support additional token types including ERC223 and ERC1155.
 
 - [x] **User customization**: Users can easily deploy on a network and customize the Bootstrap interface.
 
-- [x] **Ethereum sidechain networks**: Version 1 supports the POA main network and Sokol test network. Future iterations will support Ethereum mainnet, Ethereum testnets, forks like Ethereum Classic, sidechains, and private EVM networks.
+- [x] **Ethereum sidechain networks**: BlockScout supports the Ethereum mainnet, Ethereum testnets, POA network, and forks like Ethereum Classic, xDAI, additional sidechains, and private EVM networks.
+
+### Supported Projects
+
+#### Hosted Chains
+
+* [POA Core Network](https://blockscout.com/poa/core)
+* [POA Sokol Testnet](https://blockscout.com/poa/sokol)
+* [xDai Chain](https://blockscout.com/poa/dai)
+* [Ethereum Mainnet](https://blockscout.com/eth/mainnet)
+* [Kovan Testnet](https://blockscout.com/eth/kovan)
+* [Ropsten Testnet](https://blockscout.com/eth/ropsten)
+* [Goerli Testnet](https://blockscout.com/eth/goerli)
+* [Rinkeby Testnet](https://blockscout.com/eth/rinkeby)
+* [Ethereum Classic](https://blockscout.com/etc/mainnet)
+
+#### Private Sidechains
+
+* [Oasis Labs](https://blockexplorer.oasiscloud.io/)
+* [Fuse Network](https://explorer.fuse.io/)
+* [ARTIS](https://explorer.sigma1.artis.network)
+* [SafeChain](https://explorer.safechain.io)
+
+### Visual Interface
+
+Interface for the POA network _updated 02/2019_
+
+![BlockScout Example](explorer_example_2_2019.gif)
 
 ## Getting Started
 
@@ -95,6 +120,17 @@ The [development stack page](https://github.com/poanetwork/blockscout/wiki/Devel
 
   8. Update your JSON RPC Endpoint in `apps/explorer/config/dev/` and `apps/indexer/config/dev/`
   For the `variant` chosen in step 7, enter the correct information for the corresponding JSON RPC Endpoint in `parity.exs`, `geth.exs`, or `ganache.exs`
+  
+  9. Enable HTTPS in development. The Phoenix server only runs with HTTPS.
+     * `cd apps/block_scout_web`
+     * `mix phx.gen.cert blockscout blockscout.local`
+     * Add blockscout and blockscout.local to your `/etc/hosts`
+     ```
+        127.0.0.1       localhost blockscout blockscout.local
+        255.255.255.255 broadcasthost
+        ::1             localhost blockscout blockscout.local
+      ```
+      * If using Chrome, Enable `chrome://flags/#allow-insecure-localhost`.
 
   9. Start Phoenix Server.  
   `mix phx.server`
@@ -120,14 +156,6 @@ By default a crash dump is not written unless you set `ERL_CRASH_DUMP_SECONDS`
 to a positive or negative integer. See the documentation for
 [heart](http://erlang.org/doc/man/heart.html) for more information.
 
-### BlockScout Visual Interface
-
-![BlockScout Example](explorer_example.gif)
-
-### Projects Utilizing BlockScout
-* [Oasis Labs](https://blockexplorer.oasiscloud.io/)
-* [Fuse Network](https://explorer.fuse.io/)
-* [ARTIS](https://explorer.sigma1.artis.network)
 
 ### Configuring Ethereum Classic and other EVM Chains
 **Note: Most of these modifications will be consolidated into a single file in the future.**
