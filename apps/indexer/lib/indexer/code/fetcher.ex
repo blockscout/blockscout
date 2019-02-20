@@ -107,9 +107,6 @@ defmodule Indexer.Code.Fetcher do
         )
 
         {:retry, entries}
-
-      :ignore ->
-        :ok
     end
   end
 
@@ -150,9 +147,6 @@ defmodule Indexer.Code.Fetcher do
         )
 
         {:retry, entries}
-
-      :ignore ->
-        :ok
     end
   end
 
