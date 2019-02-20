@@ -26,8 +26,10 @@ defmodule Explorer.Chain.Transaction do
 
   alias Explorer.Chain.Transaction.{Fork, Status}
 
-  @optional_attrs ~w(block_hash block_number created_contract_address_hash cumulative_gas_used error gas_used index
-                     internal_transactions_indexed_at created_contract_code_indexed_at status to_address_hash)a
+  @optional_attrs ~w(block_hash block_number created_contract_address_hash cumulative_gas_used earliest_processing_start
+                     error gas_used index internal_transactions_indexed_at created_contract_code_indexed_at status
+                     to_address_hash)a
+
   @required_attrs ~w(from_address_hash gas gas_price hash input nonce r s v value)a
 
   @typedoc """
@@ -80,7 +82,11 @@ defmodule Explorer.Chain.Transaction do
    * `created_contract_address_hash` - Denormalized `internal_transaction` `created_contract_address_hash`
      populated only when `to_address_hash` is nil.
    * `cumulative_gas_used` - the cumulative gas used in `transaction`'s `t:Explorer.Chain.Block.t/0` before
-     `transaction`'s `index`.  `nil` when transaction is pending.
+     `transaction`'s `index`.  `nil` when transaction is pending
+   * `earliest_processing_start` - If the pending transaction fetcher was alive and received this transaction, we can
+      be sure that this transaction did not start processing until after the last time we fetched pending transactions,
+      so we annotate that with this field. If it is `nil`, that means we don't have a lower bound for when it started
+      processing.
    * `error` - the `error` from the last `t:Explorer.Chain.InternalTransaction.t/0` in `internal_transactions` that
      caused `status` to be `:error`.  Only set after `internal_transactions_index_at` is set AND if there was an error.
      Also, `error` is set if transaction is replaced/dropped
@@ -132,6 +138,7 @@ defmodule Explorer.Chain.Transaction do
           created_contract_address_hash: Hash.Address.t() | nil,
           created_contract_code_indexed_at: DateTime.t() | nil,
           cumulative_gas_used: Gas.t() | nil,
+          earliest_processing_start: DateTime.t() | nil,
           error: String.t() | nil,
           forks: %Ecto.Association.NotLoaded{} | [Fork.t()],
           from_address: %Ecto.Association.NotLoaded{} | Address.t(),
@@ -180,6 +187,7 @@ defmodule Explorer.Chain.Transaction do
   schema "transactions" do
     field(:block_number, :integer)
     field(:cumulative_gas_used, :decimal)
+    field(:earliest_processing_start, :utc_datetime_usec)
     field(:error, :string)
     field(:gas, :decimal)
     field(:gas_price, Wei)
