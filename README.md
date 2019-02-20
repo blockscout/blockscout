@@ -58,6 +58,7 @@ Currently available block explorers (i.e. Etherscan and Etherchain) are closed s
 * [Oasis Labs](https://blockexplorer.oasiscloud.io/)
 * [Fuse Network](https://explorer.fuse.io/)
 * [ARTIS](https://explorer.sigma1.artis.network)
+* [SafeChain](https://explorer.safechain.io)
 
 ### Visual Interface
 

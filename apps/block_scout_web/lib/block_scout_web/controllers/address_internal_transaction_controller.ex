@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
   alias BlockScoutWeb.InternalTransactionView
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
+  alias Indexer.CoinBalance.OnDemandFetcher
   alias Phoenix.View
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
@@ -66,6 +67,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
         conn,
         "index.html",
         address: address,
+        coin_balance_status: OnDemandFetcher.trigger_fetch(address),
         current_path: current_path(conn),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         filter: params["filter"],
