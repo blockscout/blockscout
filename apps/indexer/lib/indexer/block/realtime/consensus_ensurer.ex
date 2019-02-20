@@ -3,6 +3,7 @@ defmodule Indexer.Block.Realtime.ConsensusEnsurer do
   Triggers a refetch if a given block doesn't have consensus.
 
   """
+  require Logger
 
   alias Explorer.Chain
   alias Explorer.Chain.Hash
@@ -14,6 +15,14 @@ defmodule Indexer.Block.Realtime.ConsensusEnsurer do
         :ignore
 
       _ ->
+        Logger.info(fn ->
+          [
+            "refetch from consensus was found on block (",
+            to_string(number),
+            "). A reorg initiated."
+          ]
+        end)
+
         # trigger refetch if consensus=false or block was not found
         Fetcher.fetch_and_import_block(number, block_fetcher, true)
     end

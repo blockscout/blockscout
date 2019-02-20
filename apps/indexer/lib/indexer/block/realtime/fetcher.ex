@@ -220,6 +220,10 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
   defp determine_start_at(number, nil, nil), do: number
 
+  defp determine_start_at(number, nil, max_number_seen) do
+    determine_start_at(number, number - 1, max_number_seen)
+  end
+
   defp determine_start_at(number, previous_number, max_number_seen) do
     if reorg?(number, max_number_seen) do
       # set start_at to NOT fill in skipped numbers

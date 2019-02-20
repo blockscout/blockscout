@@ -156,6 +156,26 @@ defmodule Explorer.Chain.Transaction do
           value: Wei.t()
         }
 
+  @derive {Poison.Encoder,
+           only: [
+             :block_number,
+             :cumulative_gas_used,
+             :error,
+             :gas,
+             :gas_price,
+             :gas_used,
+             :index,
+             :internal_transactions_indexed_at,
+             :created_contract_code_indexed_at,
+             :input,
+             :nonce,
+             :r,
+             :s,
+             :v,
+             :status,
+             :value
+           ]}
+
   @primary_key {:hash, Hash.Full, autogenerate: false}
   schema "transactions" do
     field(:block_number, :integer)
