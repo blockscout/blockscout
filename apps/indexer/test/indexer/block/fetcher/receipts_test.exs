@@ -22,6 +22,8 @@ defmodule Indexer.Block.Fetcher.ReceiptsTest do
       }
     end
 
+    @tag :no_parity
+    @tag :no_geth
     test "fetches logs setting their blocks if they're null", %{
       block_fetcher: %Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher
     } do
