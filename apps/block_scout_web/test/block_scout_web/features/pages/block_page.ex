@@ -5,10 +5,11 @@ defmodule BlockScoutWeb.BlockPage do
 
   import Wallaby.Query, only: [css: 1, css: 2]
 
-  alias Explorer.Chain.{Block, InternalTransaction, Transaction}
+  alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction}
 
   def contract_creation(%InternalTransaction{created_contract_address_hash: hash}) do
-    css("[data-address-hash='#{hash}']")
+    checksum = Address.checksum(hash)
+    css("[data-address-hash='#{checksum}']")
   end
 
   def detail_number(%Block{number: block_number}) do

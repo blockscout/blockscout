@@ -11,10 +11,11 @@ defmodule EthereumJSONRPC.Parity do
   @behaviour EthereumJSONRPC.Variant
 
   @impl EthereumJSONRPC.Variant
-  def fetch_beneficiaries(_.._ = block_range, json_rpc_named_arguments) when is_list(json_rpc_named_arguments) do
+  def fetch_beneficiaries(block_numbers, json_rpc_named_arguments)
+      when is_list(block_numbers) and is_list(json_rpc_named_arguments) do
     id_to_params =
-      block_range
-      |> block_range_to_params_list()
+      block_numbers
+      |> block_numbers_to_params_list()
       |> id_to_params()
 
     with {:ok, responses} <-
@@ -63,8 +64,8 @@ defmodule EthereumJSONRPC.Parity do
     end
   end
 
-  defp block_range_to_params_list(_.._ = block_range) do
-    Enum.map(block_range, &%{block_quantity: integer_to_quantity(&1)})
+  defp block_numbers_to_params_list(block_numbers) when is_list(block_numbers) do
+    Enum.map(block_numbers, &%{block_quantity: integer_to_quantity(&1)})
   end
 
   defp trace_replay_transaction_responses_to_internal_transactions_params(responses, id_to_params)

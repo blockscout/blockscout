@@ -3,6 +3,8 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
   Module responsible to compile the Solidity code of a given Smart Contract.
   """
 
+  @new_contract_name "New.sol"
+
   @doc """
   Compiles a code in the solidity command line.
 
@@ -58,7 +60,9 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
         }
       }
   """
-  def run(name, compiler_version, code, optimize) do
+  def run(name, compiler_version, code, optimize, external_libs \\ %{}) do
+    external_libs_string = Jason.encode!(external_libs)
+
     {response, _status} =
       System.cmd(
         "node",
@@ -66,7 +70,9 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
           Application.app_dir(:explorer, "priv/compile_solc.js"),
           code,
           compiler_version,
-          optimize_value(optimize)
+          optimize_value(optimize),
+          @new_contract_name,
+          external_libs_string
         ]
       )
 

@@ -291,7 +291,7 @@ defmodule EthereumJSONRPC.ParityTest do
       end
 
       assert {:ok, %FetchedBeneficiaries{params_set: params_set}} =
-               EthereumJSONRPC.Parity.fetch_beneficiaries(5_080_887..5_080_887, json_rpc_named_arguments)
+               EthereumJSONRPC.Parity.fetch_beneficiaries([5_080_887], json_rpc_named_arguments)
 
       assert Enum.count(params_set) == 2
 
@@ -365,7 +365,7 @@ defmodule EthereumJSONRPC.ParityTest do
       end
 
       assert {:ok, %FetchedBeneficiaries{params_set: params_set, errors: []}} =
-               EthereumJSONRPC.Parity.fetch_beneficiaries(5_609_295..5_609_295, json_rpc_named_arguments)
+               EthereumJSONRPC.Parity.fetch_beneficiaries([5_609_295], json_rpc_named_arguments)
 
       assert Enum.count(params_set) == 2
 
@@ -396,7 +396,7 @@ defmodule EthereumJSONRPC.ParityTest do
         end)
 
         assert {:ok, %FetchedBeneficiaries{params_set: params_set}} =
-                 EthereumJSONRPC.Parity.fetch_beneficiaries(5_080_887..5_080_887, json_rpc_named_arguments)
+                 EthereumJSONRPC.Parity.fetch_beneficiaries([5_080_887], json_rpc_named_arguments)
 
         assert Enum.empty?(params_set)
       end
@@ -473,7 +473,7 @@ defmodule EthereumJSONRPC.ParityTest do
       end
 
       assert {:ok, %FetchedBeneficiaries{params_set: params_set}} =
-               EthereumJSONRPC.Parity.fetch_beneficiaries(5_077_429..5_077_429, json_rpc_named_arguments)
+               EthereumJSONRPC.Parity.fetch_beneficiaries([5_077_429], json_rpc_named_arguments)
 
       assert Enum.count(params_set) == 2
 
@@ -594,7 +594,7 @@ defmodule EthereumJSONRPC.ParityTest do
 
       assert {:ok, %FetchedBeneficiaries{params_set: params_set}} =
                EthereumJSONRPC.Parity.fetch_beneficiaries(
-                 block_number1..block_number2,
+                 [block_number1, block_number2],
                  json_rpc_named_arguments
                )
 
@@ -641,8 +641,7 @@ defmodule EthereumJSONRPC.ParityTest do
           {:error, "oops"}
         end)
 
-        assert {:error, "oops"} =
-                 EthereumJSONRPC.Parity.fetch_beneficiaries(5_080_887..5_080_887, json_rpc_named_arguments)
+        assert {:error, "oops"} = EthereumJSONRPC.Parity.fetch_beneficiaries([5_080_887], json_rpc_named_arguments)
       end
     end
   end

@@ -7,7 +7,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
   alias Explorer.Chain.Block
-  alias Indexer.{BoundInterval, CoinBalance, InternalTransaction, Token, TokenBalance}
+  alias Indexer.{BoundInterval, Code, CoinBalance, InternalTransaction, ReplacedTransaction, Token, TokenBalance}
   alias Indexer.Block.{Catchup, Uncle}
 
   @moduletag capture_log: true
@@ -204,8 +204,10 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
 
       CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      Code.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      ReplacedTransaction.Supervisor.Case.start_supervised!()
 
       Uncle.Supervisor.Case.start_supervised!(
         block_fetcher: %Indexer.Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
@@ -408,9 +410,11 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
 
       start_supervised!({Task.Supervisor, name: Indexer.Block.Catchup.TaskSupervisor})
       CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      Code.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      ReplacedTransaction.Supervisor.Case.start_supervised!()
 
       # from `setup :state`
       assert_received :catchup_index
@@ -500,8 +504,10 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
       start_supervised({Task.Supervisor, name: Indexer.Block.Catchup.TaskSupervisor})
       CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      Code.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      ReplacedTransaction.Supervisor.Case.start_supervised!()
 
       Uncle.Supervisor.Case.start_supervised!(
         block_fetcher: %Indexer.Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
