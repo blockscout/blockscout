@@ -3,8 +3,12 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
 
   doctest Explorer.SmartContract.Solidity.CodeCompiler
 
-  alias Explorer.SmartContract.Solidity.CodeCompiler
   alias Explorer.Factory
+  alias Explorer.SmartContract.Solidity.CodeCompiler
+
+  @compiler_tests "#{System.cwd!()}/test/support/fixture/smart_contract/compiler_tests.json"
+                  |> File.read!()
+                  |> Jason.decode!()
 
   describe "run/2" do
     setup do
@@ -45,6 +49,30 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
                 "bytecode" => _,
                 "name" => _
               }} = response
+    end
+
+    test "compiles code with external libraries" do
+      Enum.each(@compiler_tests, fn compiler_test ->
+        compiler_version = compiler_test["compiler_version"]
+        external_libraries = compiler_test["external_libraries"]
+        name = compiler_test["name"]
+        optimize = compiler_test["optimize"]
+        contract = compiler_test["contract"]
+
+        {:ok, result} =
+          CodeCompiler.run(
+            name,
+            compiler_version,
+            contract,
+            optimize,
+            external_libraries
+          )
+
+        clean_result = remove_init_data_and_whisper_data(result["bytecode"])
+        expected_result = remove_init_data_and_whisper_data(compiler_test["expected_bytecode"])
+
+        assert clean_result == expected_result
+      end)
     end
 
     test "compile in an older solidity version" do
@@ -132,5 +160,15 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
 
       assert contract_inner_info == response
     end
+  end
+
+  defp remove_init_data_and_whisper_data(code) do
+    {res, _} =
+      code
+      |> String.split("0029")
+      |> List.first()
+      |> String.split_at(-64)
+
+    res
   end
 end

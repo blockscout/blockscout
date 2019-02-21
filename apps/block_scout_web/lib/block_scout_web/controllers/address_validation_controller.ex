@@ -12,6 +12,7 @@ defmodule BlockScoutWeb.AddressValidationController do
   alias BlockScoutWeb.BlockView
   alias Explorer.ExchangeRates.Token
   alias Explorer.{Chain, Market}
+  alias Indexer.CoinBalance.OnDemandFetcher
   alias Phoenix.View
 
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
@@ -75,6 +76,7 @@ defmodule BlockScoutWeb.AddressValidationController do
         conn,
         "index.html",
         address: address,
+        coin_balance_status: OnDemandFetcher.trigger_fetch(address),
         current_path: current_path(conn),
         transaction_count: transaction_count(address),
         validation_count: validation_count(address),

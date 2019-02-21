@@ -3,6 +3,8 @@ defmodule Explorer.Chain.Import.Runner.Block.Rewards do
   Bulk imports `t:Explorer.Chain.Block.Reward.t/0`.
   """
 
+  import Ecto.Query, only: [from: 2]
+
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Import
@@ -42,20 +44,33 @@ defmodule Explorer.Chain.Import.Runner.Block.Rewards do
   def timeout, do: @timeout
 
   @spec insert(Repo.t(), [map()], %{
+          optional(:on_conflict) => Import.Runner.on_conflict(),
           required(:timeout) => timeout,
           required(:timestamps) => Import.timestamps()
         }) :: {:ok, [Reward.t()]} | {:error, [Changeset.t()]}
-  defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps})
+  defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options)
        when is_list(changes_list) do
+    on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
+
+    # order so that row ShareLocks are grabbed in a consistent order
+    ordered_changes_list = Enum.sort_by(changes_list, &{&1.address_hash, &1.address_type, &1.block_hash})
+
     Import.insert_changes_list(
       repo,
-      changes_list,
+      ordered_changes_list,
       conflict_target: [:address_hash, :address_type, :block_hash],
-      on_conflict: :nothing,
+      on_conflict: on_conflict,
       for: ecto_schema_module(),
       returning: true,
       timeout: timeout,
       timestamps: timestamps
+    )
+  end
+
+  defp default_on_conflict do
+    from(reward in Reward,
+      update: [set: [reward: fragment("EXCLUDED.reward")]],
+      where: fragment("EXCLUDED.reward IS DISTINCT FROM ?", reward.reward)
     )
   end
 end
