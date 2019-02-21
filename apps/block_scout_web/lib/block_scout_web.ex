@@ -16,14 +16,7 @@ defmodule BlockScoutWeb do
   below. Instead, define any helper function in modules
   and import those modules here.
   """
-
-  # This is intentionally compiled in. Version is set
-  # at compile time, and we don't want to make a system
-  # env call to retreive it every time anyone loads any
-  # page.
-  @version System.get_env("BLOCKSCOUT_VERSION") || "unknown"
-
-  def version(), do: @version
+  def version(), do: Application.get_env(:block_scout_web, :version)
 
   def controller do
     quote do
