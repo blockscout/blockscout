@@ -23,7 +23,15 @@ defmodule Indexer.ReplacedTransaction.Supervisor do
   end
 
   def start_link(arguments, gen_server_options \\ []) do
-    Supervisor.start_link(__MODULE__, arguments, Keyword.put_new(gen_server_options, :name, __MODULE__))
+    if disabled?() do
+      :ignore
+    else
+      Supervisor.start_link(__MODULE__, arguments, Keyword.put_new(gen_server_options, :name, __MODULE__))
+    end
+  end
+
+  def disabled?() do
+    Application.get_env(:indexer, __MODULE__, [])[:disabled?] == true
   end
 
   @impl Supervisor

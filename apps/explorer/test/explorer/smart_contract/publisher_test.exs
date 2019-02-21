@@ -30,7 +30,36 @@ defmodule Explorer.SmartContract.PublisherTest do
       assert smart_contract.compiler_version == valid_attrs["compiler_version"]
       assert smart_contract.optimization == valid_attrs["optimization"]
       assert smart_contract.contract_source_code == valid_attrs["contract_source_code"]
+      assert is_nil(smart_contract.constructor_arguments)
       assert smart_contract.abi != nil
+    end
+
+    test "creates a smart contract with constructor arguments" do
+      contract_code_info = Factory.contract_code_info()
+
+      contract_address = insert(:contract_address, contract_code: contract_code_info.bytecode)
+
+      constructor_arguments = "0102030405"
+
+      params = %{
+        "contract_source_code" => contract_code_info.source_code,
+        "compiler_version" => contract_code_info.version,
+        "name" => contract_code_info.name,
+        "optimization" => contract_code_info.optimized,
+        "constructor_arguments" => constructor_arguments
+      }
+
+      :transaction
+      |> insert(
+        created_contract_address_hash: contract_address.hash,
+        input: contract_code_info.bytecode <> constructor_arguments
+      )
+      |> with_block()
+
+      response = Publisher.publish(contract_address.hash, params)
+      assert {:ok, %SmartContract{} = smart_contract} = response
+
+      assert smart_contract.constructor_arguments == constructor_arguments
     end
 
     test "with invalid data returns error changeset" do
