@@ -87,7 +87,7 @@
       <% end %>
     </div>
 
-    <% version = 'v1.3.2-beta' %>
+    <% version = 'v1.3.4-beta' %>
 
     <%= unless ignore_version?(version) do %>
       <div>
