@@ -10,6 +10,7 @@ defmodule Indexer.ReplacedTransaction.Fetcher do
   alias Explorer.Chain
   alias Explorer.Chain.Hash
   alias Indexer.{BufferedTask, Tracer}
+  alias Indexer.ReplacedTransaction.Supervisor, as: ReplacedTransactionSupervisor
 
   @behaviour BufferedTask
 
@@ -31,9 +32,12 @@ defmodule Indexer.ReplacedTransaction.Fetcher do
           }
         ]) :: :ok
   def async_fetch(transactions_fields, timeout \\ 5000) when is_list(transactions_fields) do
-    entries = Enum.map(transactions_fields, &entry/1)
-
-    BufferedTask.buffer(__MODULE__, entries, timeout)
+    if ReplacedTransactionSupervisor.disabled?() do
+      :ok
+    else
+      entries = Enum.map(transactions_fields, &entry/1)
+      BufferedTask.buffer(__MODULE__, entries, timeout)
+    end
   end
 
   @doc false
