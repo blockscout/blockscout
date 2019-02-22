@@ -11,8 +11,9 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
   def run(json_rpc_named_arguments) do
     query =
       from(it in InternalTransaction,
-        left_join: t in assoc(it, :transaction),
-        where: t.error == 0 and not is_nil(it.created_contract_address_hash),
+        left_join: t in Transaction,
+        on: it.transaction_hash == t.hash,
+        where: t.status == ^0 and not is_nil(it.created_contract_address_hash),
         preload: :transaction
       )
 
@@ -33,7 +34,7 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
         block_number: block_number,
         created_contract_address_hash: %{bytes: created_contract_bytes}
       }) do
-    [{block_number, created_contract_bytes}]
+    [{block_number, created_contract_bytes, <<>>}]
   end
 
   def transaction_entry(%Transaction{hash: %{bytes: bytes}, index: index, block_number: block_number}) do
