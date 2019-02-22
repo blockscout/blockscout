@@ -12,6 +12,7 @@ const config = {
     datasets: []
   },
   options: {
+    bezierCurve : false,
     legend: {
       display: false
     },
