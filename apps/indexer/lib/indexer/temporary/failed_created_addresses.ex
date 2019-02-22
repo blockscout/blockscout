@@ -24,7 +24,7 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
       |> code_entry()
       |> Indexer.Code.Fetcher.run(json_rpc_named_arguments)
 
-      internal_transaction.transaction_index
+      internal_transaction.transaction
       |> transaction_entry()
       |> Indexer.InternalTransaction.Fetcher.run(json_rpc_named_arguments)
     end)
