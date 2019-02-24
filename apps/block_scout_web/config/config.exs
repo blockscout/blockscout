@@ -8,7 +8,8 @@ use Mix.Config
 # General application configuration
 config :block_scout_web,
   namespace: BlockScoutWeb,
-  ecto_repos: [Explorer.Repo]
+  ecto_repos: [Explorer.Repo],
+  version: System.get_env("BLOCKSCOUT_VERSION")
 
 config :block_scout_web, BlockScoutWeb.Chain,
   network: "FuseNetwork",  #System.get_env("NETWORK"),

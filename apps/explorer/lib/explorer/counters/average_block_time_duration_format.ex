@@ -67,6 +67,7 @@ defmodule Explorer.Counters.AverageBlockTimeDurationFormat do
     duration
     |> Duration.to_milliseconds()
     |> round()
+    |> abs()
     |> do_format(locale)
   end
 

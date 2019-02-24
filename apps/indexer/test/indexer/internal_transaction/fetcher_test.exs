@@ -5,7 +5,7 @@ defmodule Indexer.InternalTransaction.FetcherTest do
   import ExUnit.CaptureLog
   import Mox
 
-  alias Explorer.Chain.{Hash, Transaction}
+  alias Explorer.Chain.{Address, Hash, Transaction}
 
   alias Indexer.{CoinBalance, InternalTransaction, PendingTransaction}
 
@@ -149,6 +149,82 @@ defmodule Indexer.InternalTransaction.FetcherTest do
                  1. {1, <<3, 205, 88, 153, 166, 59, 111, 98, 34, 175, 218, 135, 5, 208, 89, 253, 90, 125, 18, 107, 202, 190, 150, 47, 182, 84, 217, 115, 110, 107, 202, 250>>, 0}
                  2. {1, <<3, 205, 88, 153, 166, 59, 111, 98, 34, 175, 218, 135, 5, 208, 89, 253, 90, 125, 18, 107, 202, 190, 150, 47, 182, 84, 217, 115, 110, 107, 202, 250>>, 0}
                """
+    end
+
+    @tag :no_parity
+    test "internal transactions with failed parent does not create a new address", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
+          {:ok,
+           [
+             %{
+               id: 0,
+               jsonrpc: "2.0",
+               result: %{
+                 "output" => "0x",
+                 "stateDiff" => nil,
+                 "trace" => [
+                   %{
+                     "action" => %{
+                       "callType" => "call",
+                       "from" => "0xc73add416e2119d20ce80e0904fc1877e33ef246",
+                       "gas" => "0x13388",
+                       "input" => "0xc793bf97",
+                       "to" => "0x2d07e106b5d280e4ccc2d10deee62441c91d4340",
+                       "value" => "0x0"
+                     },
+                     "error" => "Reverted",
+                     "subtraces" => 1,
+                     "traceAddress" => [],
+                     "type" => "call"
+                   },
+                   %{
+                     "action" => %{
+                       "from" => "0x2d07e106b5d280e4ccc2d10deee62441c91d4340",
+                       "gas" => "0xb2ab",
+                       "init" =>
+                         "0x608060405234801561001057600080fd5b5060d38061001f6000396000f3fe6080604052600436106038577c010000000000000000000000000000000000000000000000000000000060003504633ccfd60b8114604f575b336000908152602081905260409020805434019055005b348015605a57600080fd5b5060616063565b005b33600081815260208190526040808220805490839055905190929183156108fc02918491818181858888f1935050505015801560a3573d6000803e3d6000fd5b505056fea165627a7a72305820e9a226f249def650de957dd8b4127b85a3049d6bfa818cadc4e2d3c44b6a53530029",
+                       "value" => "0x0"
+                     },
+                     "result" => %{
+                       "address" => "0xf4a5afe28b91cf928c2568805cfbb36d477f0b75",
+                       "code" =>
+                         "0x6080604052600436106038577c010000000000000000000000000000000000000000000000000000000060003504633ccfd60b8114604f575b336000908152602081905260409020805434019055005b348015605a57600080fd5b5060616063565b005b33600081815260208190526040808220805490839055905190929183156108fc02918491818181858888f1935050505015801560a3573d6000803e3d6000fd5b505056fea165627a7a72305820e9a226f249def650de957dd8b4127b85a3049d6bfa818cadc4e2d3c44b6a53530029",
+                       "gasUsed" => "0xa535"
+                     },
+                     "subtraces" => 0,
+                     "traceAddress" => [0],
+                     "type" => "create"
+                   }
+                 ],
+                 "vmTrace" => nil
+               }
+             }
+           ]}
+        end)
+
+        CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+        %Transaction{hash: %Hash{bytes: bytes}} =
+          insert(:transaction, hash: "0x03cd5899a63b6f6222afda8705d059fd5a7d126bcabe962fb654d9736e6bcafa")
+          |> with_block()
+
+        :ok =
+          InternalTransaction.Fetcher.run(
+            [
+              {7_202_692, bytes, 0}
+            ],
+            json_rpc_named_arguments
+          )
+
+        address = "0xf4a5afe28b91cf928c2568805cfbb36d477f0b75"
+
+        fetched_address = Repo.one(from(address in Address, where: address.hash == ^address))
+
+        assert is_nil(fetched_address)
+      end
     end
 
     test "duplicate transaction hashes only retry uniques", %{json_rpc_named_arguments: json_rpc_named_arguments} do
