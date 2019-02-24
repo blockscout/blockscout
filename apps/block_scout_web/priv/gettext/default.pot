@@ -1506,7 +1506,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_footer.html.eex:29
 msgid "Blockscout is a tool for inspecting and analyzing EVM based blockchains. Blockchain explorer for Ethereum Networks."
-msgstr ""
+msgstr "The Fuse sidechain is intended for community currencies operated by companies and enterpreneurs."
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_footer.html.eex:44

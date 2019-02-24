@@ -28,6 +28,7 @@
   color: $white;
   background-color: darken($primary, 10%);
   border-color: darken($primary, 10%);
+  display: none;
 }
 
 .api-doc-tab {

@@ -91,7 +91,7 @@
         <% end %>
         <ul class="navbar-nav">
           <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle pl-lg-2" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <a class="nav-link dropdown-toggle pl-lg-2" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="display:none;">
               <!-- ICON FOR MAINNET -->
               <span class="nav-link-icon">
                 <%= render BlockScoutWeb.IconsView, network_icon_partial() %>
