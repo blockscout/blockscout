@@ -18,7 +18,7 @@ defmodule Indexer.Temporary.FailedCreatedAddresses.Supervisor do
       type: :supervisor
     }
 
-    Supervisor.child_spec(default, []) |> IO.inspect()
+    Supervisor.child_spec(default, [])
   end
 
   def start_link(json_rpc_named_arguments, gen_server_options \\ []) do

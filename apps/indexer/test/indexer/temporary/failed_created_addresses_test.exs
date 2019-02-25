@@ -7,7 +7,7 @@ defmodule Indexer.Temporary.FailedCreatedAddressesTest do
   import Ecto.Query
 
   alias Explorer.Repo
-  alias Explorer.Chain.{Address, InternalTransaction, Transaction}
+  alias Explorer.Chain.{Address, Transaction}
   alias Indexer.Temporary.FailedCreatedAddresses.Supervisor
   alias Indexer.CoinBalance
 
@@ -40,13 +40,12 @@ defmodule Indexer.Temporary.FailedCreatedAddressesTest do
 
       address = insert(:address, contract_code: "0x0102030405")
 
-      internal_transaction =
-        insert(:internal_transaction,
-          block_number: transaction.block_number,
-          transaction: transaction,
-          index: 0,
-          created_contract_address_hash: address.hash
-        )
+      insert(:internal_transaction,
+        block_number: transaction.block_number,
+        transaction: transaction,
+        index: 0,
+        created_contract_address_hash: address.hash
+      )
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         EthereumJSONRPC.Mox

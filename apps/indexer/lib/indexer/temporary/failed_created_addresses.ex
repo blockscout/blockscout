@@ -12,6 +12,7 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
   alias Indexer.Temporary.FailedCreatedAddresses.TaskSupervisor
 
   @task_options [max_concurrency: 3, timeout: 15_000]
+  @query_timeout :infinity
 
   def start_link([json_rpc_named_arguments, gen_server_options]) do
     GenServer.start_link(__MODULE__, json_rpc_named_arguments, gen_server_options)
@@ -33,7 +34,7 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
         preload: :transaction
       )
 
-    found_internal_transactions = Repo.all(query)
+    found_internal_transactions = Repo.all(query, timeout: @query_timeout)
 
     TaskSupervisor
     |> Task.Supervisor.async_stream(
