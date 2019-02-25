@@ -63,6 +63,7 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
   end
 
   def fix_internal_transaction(internal_transaction, json_rpc_named_arguments) do
+    # credo:disable-for-next-line
     try do
       Logger.debug(
         [
