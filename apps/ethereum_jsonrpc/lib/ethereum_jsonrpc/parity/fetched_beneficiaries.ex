@@ -30,7 +30,6 @@ defmodule EthereumJSONRPC.Parity.FetchedBeneficiaries do
     ...>         },
     ...>         %{
     ...>           "action" => %{"author" => "0x2", "rewardType" => "external", "value" => "0x0"},
-    ...>           "blockHash" => "0x52a8d2185282506ce681364d2aa0c085ba45fdeb5d6c0ddec1131617a71ee2ca",
     ...>           "blockHash" => "0xFFF",
     ...>           "blockNumber" => 12,
     ...>           "result" => nil,
@@ -172,6 +171,8 @@ defmodule EthereumJSONRPC.Parity.FetchedBeneficiaries do
   # The rewardType "uncle" will show reward for validating an uncle block
   defp get_address_type(reward_type, index) when reward_type == "external" and index == 0, do: :validator
   defp get_address_type(reward_type, index) when reward_type == "external" and index == 1, do: :emission_funds
+  defp get_address_type(reward_type, index) when reward_type == "external" and index == 2, do: :validator
+  defp get_address_type(reward_type, index) when reward_type == "external" and index == 3, do: :validator
   defp get_address_type(reward_type, _index) when reward_type == "block", do: :validator
   defp get_address_type(reward_type, _index) when reward_type == "uncle", do: :uncle
 end

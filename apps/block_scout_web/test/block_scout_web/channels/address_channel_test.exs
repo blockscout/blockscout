@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.AddressChannelTest do
     # ETS tables are shared in `Explorer.Counters.AddressesWithBalanceCounter`
     async: false
 
+  alias BlockScoutWeb.UserSocket
   alias BlockScoutWeb.Notifier
   alias Explorer.Counters.AddressesWithBalanceCounter
 
@@ -18,6 +19,29 @@ defmodule BlockScoutWeb.AddressChannelTest do
     Notifier.handle_event({:chain_event, :addresses, :realtime, [address]})
 
     assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "count", payload: %{count: _}}, :timer.seconds(5)
+  end
+
+  describe "user pushing to channel" do
+    setup do
+      address = insert(:address, fetched_coin_balance: 100_000, fetched_coin_balance_block_number: 1)
+      topic = "addresses:#{address.hash}"
+
+      {:ok, _, socket} =
+        UserSocket
+        |> socket("no_id", %{locale: "en"})
+        |> subscribe_and_join(topic)
+
+      {:ok, %{address: address, topic: topic, socket: socket}}
+    end
+
+    test "can retrieve current balance card of the address", %{socket: socket, address: address} do
+      ref = push(socket, "get_balance", %{})
+
+      assert_reply(ref, :ok, %{balance: sent_balance, balance_card: balance_card})
+
+      assert sent_balance == address.fetched_coin_balance.value
+      assert balance_card =~ "/address/#{address.hash}/token_balances"
+    end
   end
 
   describe "user subscribed to address" do
