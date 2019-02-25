@@ -20,9 +20,9 @@ config :block_scout_web, BlockScoutWeb.Chain,
 config :block_scout_web,
   link_to_other_explorers: System.get_env("LINK_TO_OTHER_EXPLORERS") == "true",
   other_explorers: %{
-    "Etherscan" => "https://etherscan.io/",
-    "EtherChain" => "https://www.etherchain.org/",
-    "Bloxy" => "https://bloxy.info/"
+    "Etherscan" => "https://goerli.etherscan.io/",
+    "Goerli" => "https://explorer.goerli.net/",
+    "Ethstats" => "https://lite.ethstats.io/"
   },
   other_networks: [
     %{
