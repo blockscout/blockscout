@@ -8,7 +8,7 @@ defmodule Indexer.Temporary.FailedCreatedAddressesTest do
 
   alias Explorer.Repo
   alias Explorer.Chain.{Address, InternalTransaction, Transaction}
-  alias Indexer.Temporary.FailedCreatedAddresses
+  alias Indexer.Temporary.FailedCreatedAddresses.Supervisor
   alias Indexer.CoinBalance
 
   @moduletag capture_log: true
@@ -105,7 +105,13 @@ defmodule Indexer.Temporary.FailedCreatedAddressesTest do
         end)
       end
 
-      FailedCreatedAddresses.run(json_rpc_named_arguments)
+      params = [json_rpc_named_arguments, [name: TestFailedCreatedAddresses]]
+
+      params
+      |> Supervisor.child_spec()
+      |> ExUnit.Callbacks.start_supervised!()
+
+      Process.sleep(3_000)
 
       query =
         from(t in Transaction,

@@ -3,10 +3,26 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
   Temporary module to fix internal transactions and their created transactions if a parent transaction has failed.
   """
 
+  use GenServer
+
   import Ecto.Query
 
   alias Explorer.Chain.{InternalTransaction, Transaction}
   alias Explorer.Repo
+  alias Indexer.Temporary.FailedCreatedAddresses.TaskSupervisor
+
+  @task_options [max_concurrency: 3, timeout: 15_000]
+
+  def start_link([json_rpc_named_arguments, gen_server_options]) do
+    GenServer.start_link(__MODULE__, json_rpc_named_arguments, gen_server_options)
+  end
+
+  @impl GenServer
+  def init(json_rpc_named_arguments) do
+    run(json_rpc_named_arguments)
+
+    {:ok, json_rpc_named_arguments}
+  end
 
   def run(json_rpc_named_arguments) do
     query =
@@ -17,17 +33,25 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
         preload: :transaction
       )
 
-    query
-    |> Repo.all()
-    |> Enum.each(fn internal_transaction ->
-      internal_transaction
-      |> code_entry()
-      |> Indexer.Code.Fetcher.run(json_rpc_named_arguments)
+    found_internal_transactions = Repo.all(query)
 
-      internal_transaction.transaction
-      |> transaction_entry()
-      |> Indexer.InternalTransaction.Fetcher.run(json_rpc_named_arguments)
-    end)
+    TaskSupervisor
+    |> Task.Supervisor.async_stream(
+      found_internal_transactions,
+      fn internal_transaction -> fix_internal_transaction(internal_transaction, json_rpc_named_arguments) end,
+      @task_options
+    )
+    |> Enum.to_list()
+  end
+
+  def fix_internal_transaction(internal_transaction, json_rpc_named_arguments) do
+    internal_transaction
+    |> code_entry()
+    |> Indexer.Code.Fetcher.run(json_rpc_named_arguments)
+
+    internal_transaction.transaction
+    |> transaction_entry()
+    |> Indexer.InternalTransaction.Fetcher.run(json_rpc_named_arguments)
   end
 
   def code_entry(%InternalTransaction{
