@@ -33,9 +33,9 @@ config :indexer,
   ecto_repos: [Explorer.Repo],
   metadata_updater_days_interval: 7,
   # bytes
-  memory_limit: 6 <<< 30
+  memory_limit: 4 <<< 30
 
-# config :indexer, Indexer.ReplacedTransaction.Supervisor, disabled?: true
+config :indexer, Indexer.ReplacedTransaction.Supervisor, disabled?: true
 
 config :indexer, Indexer.Tracer,
   service: :indexer,
