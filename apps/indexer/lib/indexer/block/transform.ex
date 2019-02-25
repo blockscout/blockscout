@@ -16,16 +16,6 @@ defmodule Indexer.Block.Transform do
   def transform_blocks(blocks) when is_list(blocks) do
     transformer = Application.get_env(:indexer, :block_transformer)
 
-    unless transformer do
-      raise ArgumentError,
-            """
-            No block transformer defined. Set a blocker transformer."
-
-               config :indexer,
-                 block_transformer: Indexer.Block.Transform.Base
-            """
-    end
-
     Enum.map(blocks, &transformer.transform/1)
   end
 end

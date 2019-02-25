@@ -23,6 +23,7 @@ defmodule EthereumJsonrpc.MixProject do
         "coveralls.detail": :test,
         "coveralls.post": :test,
         "coveralls.html": :test,
+        credo: :test,
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
@@ -61,15 +62,15 @@ defmodule EthereumJsonrpc.MixProject do
       # CACerts bundle for `EthereumJSONRPC.WebSocket.WebSocketClient`
       {:certifi, "~> 2.3"},
       # WebSocket-server for testing `EthereumJSONRPC.WebSocket.WebSocketClient`.
-      {:cowboy, "~> 1.1", only: [:dev, :test]},
+      {:cowboy, "~> 2.0", only: [:dev, :test]},
       # Style Checking
-      {:credo, "0.10.2", only: [:dev, :test], runtime: false},
+      {:credo, "1.0.0", only: :test, runtime: false},
       # Static Type Checking
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       # Code coverage
       {:excoveralls, "~> 0.10.0", only: [:test], github: "KronicDeth/excoveralls", branch: "circle-workflows"},
       # JSONRPC HTTP Post calls
-      {:httpoison, "~> 1.0", override: true},
+      {:httpoison, "~> 1.0"},
       # Decode/Encode JSON for JSONRPC
       {:jason, "~> 1.0"},
       # Log errors and application output to separate files

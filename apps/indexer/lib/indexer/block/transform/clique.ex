@@ -8,6 +8,8 @@ defmodule Indexer.Block.Transform.Clique do
   @behaviour Transform
 
   @impl Transform
+  def transform(%{number: 0} = block), do: block
+
   def transform(block) when is_map(block) do
     miner_address = Util.signer(block)
 

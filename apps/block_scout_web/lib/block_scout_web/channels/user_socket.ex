@@ -8,9 +8,6 @@ defmodule BlockScoutWeb.UserSocket do
   channel("rewards:*", BlockScoutWeb.RewardChannel)
   channel("transactions:*", BlockScoutWeb.TransactionChannel)
 
-  transport(:websocket, Phoenix.Transports.WebSocket, timeout: 45_000)
-  # transport :longpoll, Phoenix.Transports.LongPoll
-
   def connect(%{"locale" => locale}, socket) do
     {:ok, assign(socket, :locale, locale)}
   end
