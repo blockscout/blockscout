@@ -35,19 +35,18 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
     )
 
     query =
-      from(it in InternalTransaction,
-        left_join: t in Transaction,
+      from(t in Transaction,
+        left_join: it in InternalTransaction,
         on: it.transaction_hash == t.hash,
-        where: t.status == ^0 and not is_nil(it.created_contract_address_hash),
-        preload: :transaction
+        where: t.status == ^0 and not is_nil(it.created_contract_address_hash)
       )
 
-    found_internal_transactions = Repo.all(query, timeout: @query_timeout)
+    found_transactions = Repo.all(query, timeout: @query_timeout)
 
     Logger.debug(
       [
         "Finished query to fetch internal transactions that need to be fixed. Number of records is #{
-          Enum.count(found_internal_transactions)
+          Enum.count(found_transactions)
         }"
       ],
       fetcher: :failed_created_addresses
@@ -55,40 +54,44 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
 
     TaskSupervisor
     |> Task.Supervisor.async_stream_nolink(
-      found_internal_transactions,
-      fn internal_transaction -> fix_internal_transaction(internal_transaction, json_rpc_named_arguments) end,
+      found_transactions,
+      fn transaction -> fix_internal_transaction(transaction, json_rpc_named_arguments) end,
       @task_options
     )
     |> Enum.to_list()
   end
 
-  def fix_internal_transaction(internal_transaction, json_rpc_named_arguments) do
+  def fix_internal_transaction(transaction, json_rpc_named_arguments) do
     # credo:disable-for-next-line
     try do
       Logger.debug(
         [
-          "Started fixing internal transaction #{internal_transaction.index} for transaction with hash #{
-            to_string(internal_transaction.transaction_hash)
-          }"
+          "Started fixing transaction #{to_string(transaction.hash)}"
         ],
         fetcher: :failed_created_addresses
       )
 
-      :ok =
-        internal_transaction
-        |> code_entry()
-        |> Indexer.Code.Fetcher.run(json_rpc_named_arguments)
+      transaction_with_internal_transactions = Repo.preload(transaction, [:internal_transactions])
+
+      transaction_with_internal_transactions.internal_transactions
+      |> Enum.filter(fn internal_transaction ->
+        internal_transaction.created_contract_address_hash
+      end)
+      |> Enum.each(fn internal_transaction ->
+        :ok =
+          internal_transaction
+          |> code_entry()
+          |> Indexer.Code.Fetcher.run(json_rpc_named_arguments)
+      end)
 
       :ok =
-        internal_transaction.transaction
+        transaction
         |> transaction_entry()
         |> Indexer.InternalTransaction.Fetcher.run(json_rpc_named_arguments)
 
       Logger.debug(
         [
-          "Finished fixing internal transaction #{internal_transaction.index} for transaction with hash #{
-            to_string(internal_transaction.transaction_hash)
-          }"
+          "Finished fixing transaction #{to_string(transaction.hash)}"
         ],
         fetcher: :failed_created_addresses
       )
@@ -96,9 +99,7 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
       e ->
         Logger.debug(
           [
-            "Failed to fix internal transaction #{internal_transaction.index} for transaction with hash #{
-              to_string(internal_transaction.transaction_hash)
-            } because of #{inspect(e)}"
+            "Failed fixing transaction #{to_string(transaction.hash)} because of #{inspect(e)}"
           ],
           fetcher: :failed_created_addresses
         )
