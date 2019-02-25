@@ -5,7 +5,7 @@ defmodule Indexer.CoinBalance.Supervisor do
 
   use Supervisor
 
-  alias Indexer.CoinBalance.Fetcher
+  alias Indexer.CoinBalance.{Fetcher, OnDemandFetcher}
 
   def child_spec([init_arguments]) do
     child_spec([init_arguments, []])
@@ -30,7 +30,8 @@ defmodule Indexer.CoinBalance.Supervisor do
     Supervisor.init(
       [
         {Task.Supervisor, name: Indexer.CoinBalance.TaskSupervisor},
-        {Fetcher, [fetcher_arguments, [name: Fetcher]]}
+        {Fetcher, [fetcher_arguments, [name: Fetcher]]},
+        {OnDemandFetcher, [fetcher_arguments[:json_rpc_named_arguments], [name: OnDemandFetcher]]}
       ],
       strategy: :one_for_one
     )

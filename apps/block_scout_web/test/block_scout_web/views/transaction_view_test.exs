@@ -47,6 +47,54 @@ defmodule BlockScoutWeb.TransactionViewTest do
     end
   end
 
+  describe "processing_time_duration/2" do
+    test "returns :pending if the transaction has no block" do
+      transaction = build(:transaction, block: nil)
+
+      assert TransactionView.processing_time_duration(transaction) == :pending
+    end
+
+    test "returns :unknown if the transaction has no `earliest_processing_start`" do
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert(earliest_processing_start: nil)
+        |> with_block(block)
+
+      assert TransactionView.processing_time_duration(transaction) == :unknown
+    end
+
+    test "returns a single number when the timestamps are the same" do
+      now = Timex.now()
+      ten_seconds_ago = Timex.shift(now, seconds: -10)
+
+      block = insert(:block, timestamp: now)
+
+      transaction =
+        :transaction
+        |> insert(earliest_processing_start: ten_seconds_ago, inserted_at: ten_seconds_ago)
+        |> with_block(block)
+
+      assert TransactionView.processing_time_duration(transaction) == {:ok, "10 seconds"}
+    end
+
+    test "returns a range when the timestamps are not the same" do
+      now = Timex.now()
+      ten_seconds_ago = Timex.shift(now, seconds: -10)
+      five_seconds_ago = Timex.shift(now, seconds: -5)
+
+      block = insert(:block, timestamp: now)
+
+      transaction =
+        :transaction
+        |> insert(earliest_processing_start: ten_seconds_ago, inserted_at: five_seconds_ago)
+        |> with_block(block)
+
+      assert TransactionView.processing_time_duration(transaction) == {:ok, "5-10 seconds"}
+    end
+  end
+
   describe "confirmations/2" do
     test "returns 0 if pending transaction" do
       transaction = build(:transaction, block: nil)

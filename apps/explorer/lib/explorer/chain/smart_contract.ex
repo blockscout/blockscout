@@ -202,6 +202,7 @@ defmodule Explorer.Chain.SmartContract do
     field(:compiler_version, :string)
     field(:optimization, :boolean)
     field(:contract_source_code, :string)
+    field(:constructor_arguments, :string)
     field(:abi, {:array, :map})
 
     belongs_to(
@@ -217,7 +218,15 @@ defmodule Explorer.Chain.SmartContract do
 
   def changeset(%__MODULE__{} = smart_contract, attrs) do
     smart_contract
-    |> cast(attrs, [:name, :compiler_version, :optimization, :contract_source_code, :address_hash, :abi])
+    |> cast(attrs, [
+      :name,
+      :compiler_version,
+      :optimization,
+      :contract_source_code,
+      :address_hash,
+      :abi,
+      :constructor_arguments
+    ])
     |> validate_required([:name, :compiler_version, :optimization, :contract_source_code, :abi, :address_hash])
     |> unique_constraint(:address_hash)
   end
@@ -231,6 +240,7 @@ defmodule Explorer.Chain.SmartContract do
 
   defp error_message(:compilation), do: "There was an error compiling your contract."
   defp error_message(:generated_bytecode), do: "Bytecode does not match, please try again."
+  defp error_message(:constructor_arguments), do: "Constructor arguments do not match, please try again."
   defp error_message(:name), do: "Wrong contract name, please try again."
   defp error_message(_), do: "There was an error validating your contract, please try again."
 end
