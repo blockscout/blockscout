@@ -37,13 +37,11 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
 
       {token_transfers, next_page} = split_list_by_page(token_transfers_plus_one)
 
-      max_block_number = max_block_number()
-
       render(
         conn,
         "index.html",
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
-        max_block_number: max_block_number,
+        block_height: Chain.block_height(),
         next_page_params: next_page_params(next_page, token_transfers, params),
         token_transfers: token_transfers,
         show_token_transfers: true,
@@ -61,13 +59,6 @@ defmodule BlockScoutWeb.TransactionTokenTransferController do
         |> put_status(404)
         |> put_view(TransactionView)
         |> render("not_found.html", transaction_hash: hash_string)
-    end
-  end
-
-  defp max_block_number do
-    case Chain.max_block_number() do
-      {:ok, number} -> number
-      {:error, :not_found} -> 0
     end
   end
 end

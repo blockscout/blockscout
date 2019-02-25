@@ -1,23 +1,19 @@
-# See https://github.com/ninenines/cowboy/blob/1.1.x/examples/websocket/src/ws_handler.erl
+# See https://github.com/ninenines/cowboy/blob/2.6.1/examples/websocket/src/ws_h.erl
+# See https://ninenines.eu/docs/en/cowboy/2.6/guide/ws_handlers/
 defmodule EthereumJSONRPC.WebSocket.Cowboy.WebSocketHandler do
-  @behaviour :cowboy_websocket_handler
+  @behaviour :cowboy_websocket
 
   defstruct subscription_id_set: MapSet.new(),
             new_heads_timer_reference: nil
 
-  def init({:tcp, :http}, _request, _opts) do
-    {:upgrade, :protocol, :cowboy_websocket}
+  @impl :cowboy_websocket
+  def init(request, []) do
+    {:cowboy_websocket, request, %__MODULE__{}}
   end
 
-  @impl :cowboy_websocket_handler
-  def websocket_init(_transport_name, request, _opts) do
-    {:ok, request, %__MODULE__{}}
-  end
-
-  @impl :cowboy_websocket_handler
+  @impl :cowboy_websocket
   def websocket_handle(
         {:text, text},
-        request,
         %__MODULE__{subscription_id_set: subscription_id_set, new_heads_timer_reference: new_heads_timer_reference} =
           state
       ) do
@@ -39,7 +35,7 @@ defmodule EthereumJSONRPC.WebSocket.Cowboy.WebSocketHandler do
               new_heads_timer_reference
           end
 
-        {:reply, frame, request,
+        {:reply, frame,
          %__MODULE__{
            state
            | new_heads_timer_reference: new_heads_timer_reference,
@@ -49,23 +45,23 @@ defmodule EthereumJSONRPC.WebSocket.Cowboy.WebSocketHandler do
       %{"id" => id, "method" => "echo", "params" => params} ->
         response = %{id: id, result: params}
         frame = {:text, Jason.encode!(response)}
-        {:reply, frame, request, state}
+        {:reply, frame, state}
     end
   end
 
-  @impl :cowboy_websocket_handler
-  def websocket_info(:new_head, request, %__MODULE__{subscription_id_set: subscription_id_set} = state) do
+  @impl :cowboy_websocket
+  def websocket_info(:new_head, %__MODULE__{subscription_id_set: subscription_id_set} = state) do
     frames =
       Enum.map(subscription_id_set, fn subscription_id ->
         response = %{method: "eth_subscription", params: %{result: %{}, subscription: subscription_id}}
         {:text, Jason.encode!(response)}
       end)
 
-    {:reply, frames, request, state}
+    {:reply, frames, state}
   end
 
-  @impl :cowboy_websocket_handler
-  def websocket_terminate(_reason, _request, _state) do
+  @impl :cowboy_websocket
+  def terminate(_reason, _request, _state) do
     :ok
   end
 end
