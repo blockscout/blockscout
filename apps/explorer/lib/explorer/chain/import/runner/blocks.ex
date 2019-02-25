@@ -66,7 +66,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         where_forked: where_forked
       })
     end)
-    |> Multi.run(:lose_consenus, fn repo, _ ->
+    |> Multi.run(:lose_consensus, fn repo, _ ->
       lose_consensus(repo, ordered_consensus_block_numbers, insert_options)
     end)
     |> Multi.run(:delete_address_token_balances, fn repo, _ ->

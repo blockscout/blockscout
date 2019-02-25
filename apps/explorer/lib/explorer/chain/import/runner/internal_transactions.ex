@@ -51,10 +51,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     |> Multi.run(:internal_transactions, fn repo, _ ->
       insert(repo, changes_list, insert_options)
     end)
-    |> Multi.run(:internal_transactions_indexed_at_transactions, fn repo,
-                                                                    %{internal_transactions: internal_transactions}
-                                                                    when is_list(internal_transactions) ->
-      update_transactions(repo, internal_transactions, update_transactions_options)
+    |> Multi.run(:internal_transactions_indexed_at_transactions, fn repo, _ ->
+      update_transactions(repo, changes_list, update_transactions_options)
     end)
   end
 

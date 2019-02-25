@@ -20,9 +20,9 @@ config :block_scout_web, BlockScoutWeb.Chain,
 config :block_scout_web,
   link_to_other_explorers: System.get_env("LINK_TO_OTHER_EXPLORERS") == "true",
   other_explorers: %{
-    "Etherscan" => "https://etherscan.io/",
-    "EtherChain" => "https://www.etherchain.org/",
-    "Bloxy" => "https://bloxy.info/"
+    "Etherscan" => "https://goerli.etherscan.io/",
+    "Goerli" => "https://explorer.goerli.net/",
+    "Ethstats" => "https://lite.ethstats.io/"
   },
   other_networks: [
     %{
@@ -68,6 +68,8 @@ config :block_scout_web,
     }
   ]
 
+config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
+
 # Configures the endpoint
 config :block_scout_web, BlockScoutWeb.Endpoint,
   instrumenters: [BlockScoutWeb.Prometheus.Instrumenter, SpandexPhoenix.Instrumenter],
@@ -105,14 +107,22 @@ config :logger, :block_scout_web,
        block_number step count error_count shrunk import_id transaction_id)a,
   metadata_filter: [application: :block_scout_web]
 
+config :prometheus, BlockScoutWeb.Prometheus.Instrumenter,
+  # override default for Phoenix 1.4 compatibility
+  # * `:transport_name` to `:transport`
+  # * remove `:vsn`
+  channel_join_labels: [:channel, :topic, :transport],
+  # override default for Phoenix 1.4 compatibility
+  # * `:transport_name` to `:transport`
+  # * remove `:vsn`
+  channel_receive_labels: [:channel, :topic, :transport, :event]
+
 config :spandex_phoenix, tracer: BlockScoutWeb.Tracer
 
 config :wobserver,
   # return only the local node
   discovery: :none,
   mode: :plug
-
-config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: true
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

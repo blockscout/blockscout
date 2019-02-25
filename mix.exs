@@ -19,6 +19,7 @@ defmodule BlockScout.Mixfile do
         "coveralls.detail": :test,
         "coveralls.post": :test,
         "coveralls.html": :test,
+        credo: :test,
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
