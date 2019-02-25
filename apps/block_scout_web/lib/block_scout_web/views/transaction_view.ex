@@ -91,6 +91,9 @@ defmodule BlockScoutWeb.TransactionView do
 
   def contract_creation?(_), do: false
 
+  #  def utf8_encode() do
+  #  end
+
   def fee(%Transaction{} = transaction) do
     {_, value} = Chain.fee(transaction, :wei)
     value
