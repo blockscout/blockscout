@@ -10,7 +10,7 @@ defmodule BlockScoutWeb.Notifier do
   alias Explorer.Counters.AverageBlockTime
   alias Explorer.ExchangeRates.Token
 
-  def handle_event({:chain_event, :addresses, :realtime, addresses}) do
+  def handle_event({:chain_event, :addresses, type, addresses}) when type in [:realtime, :on_demand] do
     Endpoint.broadcast("addresses:new_address", "count", %{count: Chain.count_addresses_with_balance_from_cache()})
 
     addresses
@@ -18,7 +18,8 @@ defmodule BlockScoutWeb.Notifier do
     |> Enum.each(&broadcast_balance/1)
   end
 
-  def handle_event({:chain_event, :address_coin_balances, :realtime, address_coin_balances}) do
+  def handle_event({:chain_event, :address_coin_balances, type, address_coin_balances})
+      when type in [:realtime, :on_demand] do
     Enum.each(address_coin_balances, &broadcast_address_coin_balance/1)
   end
 
@@ -103,10 +104,14 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   defp broadcast_balance(%Address{hash: address_hash} = address) do
-    Endpoint.broadcast("addresses:#{address_hash}", "balance_update", %{
-      address: address,
-      exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
-    })
+    Endpoint.broadcast(
+      "addresses:#{address_hash}",
+      "balance_update",
+      %{
+        address: address,
+        exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null()
+      }
+    )
   end
 
   defp broadcast_block(block) do

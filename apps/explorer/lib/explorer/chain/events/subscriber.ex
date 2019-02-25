@@ -5,11 +5,11 @@ defmodule Explorer.Chain.Events.Subscriber do
 
   @allowed_broadcast_events ~w(addresses address_coin_balances blocks block_rewards internal_transactions token_transfers transactions)a
 
-  @allowed_broadcast_types ~w(catchup realtime)a
+  @allowed_broadcast_types ~w(catchup realtime on_demand)a
 
   @allowed_events ~w(exchange_rate)a
 
-  @type broadcast_type :: :realtime | :catchup
+  @type broadcast_type :: :realtime | :catchup | :on_demand
 
   @doc """
   Subscribes the caller process to a specified subset of chain-related events.

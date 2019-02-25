@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.AddressReadContractController do
 
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
+  alias Indexer.CoinBalance.OnDemandFetcher
 
   import BlockScoutWeb.AddressController, only: [transaction_count: 1, validation_count: 1]
 
@@ -20,6 +21,7 @@ defmodule BlockScoutWeb.AddressReadContractController do
         conn,
         "index.html",
         address: address,
+        coin_balance_status: OnDemandFetcher.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         transaction_count: transaction_count(address),
         validation_count: validation_count(address)
