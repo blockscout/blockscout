@@ -2,8 +2,9 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
   @moduledoc """
   Temporary module to fix internal transactions and their created transactions if a parent transaction has failed.
   """
-
   use GenServer
+
+  require Logger
 
   import Ecto.Query
 
@@ -26,6 +27,13 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
   end
 
   def run(json_rpc_named_arguments) do
+    Logger.debug(
+      [
+        "Started query to fetch internal transactions that need to be fixed"
+      ],
+      fetcher: :failed_created_addresses
+    )
+
     query =
       from(it in InternalTransaction,
         left_join: t in Transaction,
@@ -36,8 +44,17 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
 
     found_internal_transactions = Repo.all(query, timeout: @query_timeout)
 
+    Logger.debug(
+      [
+        "Finished query to fetch internal transactions that need to be fixed. Number of records is #{
+          Enum.count(found_internal_transactions)
+        }"
+      ],
+      fetcher: :failed_created_addresses
+    )
+
     TaskSupervisor
-    |> Task.Supervisor.async_stream(
+    |> Task.Supervisor.async_stream_nolink(
       found_internal_transactions,
       fn internal_transaction -> fix_internal_transaction(internal_transaction, json_rpc_named_arguments) end,
       @task_options
@@ -46,13 +63,45 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
   end
 
   def fix_internal_transaction(internal_transaction, json_rpc_named_arguments) do
-    internal_transaction
-    |> code_entry()
-    |> Indexer.Code.Fetcher.run(json_rpc_named_arguments)
+    try do
+      Logger.debug(
+        [
+          "Started fixing internal transaction #{internal_transaction.index} for transaction with hash #{
+            to_string(internal_transaction.transaction_hash)
+          }"
+        ],
+        fetcher: :failed_created_addresses
+      )
 
-    internal_transaction.transaction
-    |> transaction_entry()
-    |> Indexer.InternalTransaction.Fetcher.run(json_rpc_named_arguments)
+      :ok =
+        internal_transaction
+        |> code_entry()
+        |> Indexer.Code.Fetcher.run(json_rpc_named_arguments)
+
+      :ok =
+        internal_transaction.transaction
+        |> transaction_entry()
+        |> Indexer.InternalTransaction.Fetcher.run(json_rpc_named_arguments)
+
+      Logger.debug(
+        [
+          "Finished fixing internal transaction #{internal_transaction.index} for transaction with hash #{
+            to_string(internal_transaction.transaction_hash)
+          }"
+        ],
+        fetcher: :failed_created_addresses
+      )
+    rescue
+      e ->
+        Logger.debug(
+          [
+            "Failed to fix internal transaction #{internal_transaction.index} for transaction with hash #{
+              to_string(internal_transaction.transaction_hash)
+            } because of #{inspect(e)}"
+          ],
+          fetcher: :failed_created_addresses
+        )
+    end
   end
 
   def code_entry(%InternalTransaction{
