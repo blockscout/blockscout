@@ -123,7 +123,7 @@ The [development stack page](https://github.com/poanetwork/blockscout/wiki/Devel
   
   9. Enable HTTPS in development. The Phoenix server only runs with HTTPS.
      * `cd apps/block_scout_web`
-     * `mix phx.gen.cert blockscout blockscout.local`
+     * `mix phx.gen.cert blockscout blockscout.local; cd -`
      * Add blockscout and blockscout.local to your `/etc/hosts`
      ```
         127.0.0.1       localhost blockscout blockscout.local

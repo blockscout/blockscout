@@ -5,6 +5,7 @@ defmodule Indexer.Block.Supervisor do
 
   alias Indexer.Block
   alias Indexer.Block.{Catchup, InvalidConsensus, Realtime, Reward, Uncle}
+  alias Indexer.Temporary.FailedCreatedAddresses
 
   use Supervisor
 
@@ -45,6 +46,11 @@ defmodule Indexer.Block.Supervisor do
          [
            [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor],
            [name: Reward.Supervisor]
+         ]},
+        {FailedCreatedAddresses.Supervisor,
+         [
+           json_rpc_named_arguments,
+           [name: FailedCreatedAddresses.Supervisor]
          ]}
       ],
       strategy: :one_for_one
