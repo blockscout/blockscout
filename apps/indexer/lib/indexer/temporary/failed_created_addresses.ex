@@ -12,7 +12,7 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
   alias Explorer.Repo
   alias Indexer.Temporary.FailedCreatedAddresses.TaskSupervisor
 
-  @task_options [max_concurrency: 3, timeout: 15_000]
+  @task_options [max_concurrency: 3, timeout: :infinity]
   @query_timeout :infinity
 
   def start_link([json_rpc_named_arguments, gen_server_options]) do
