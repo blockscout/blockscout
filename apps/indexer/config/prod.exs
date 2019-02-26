@@ -13,6 +13,11 @@ config :logger, :indexer_token_balances,
   metadata_filter: [fetcher: :token_balances],
   rotate: %{max_bytes: 52_428_800, keep: 19}
 
+config :logger, :failed_contract_creations,
+  level: :prod,
+  path: Path.absname("logs/prod/indexer/failed_contract_creations.log"),
+  metadata_filter: [fetcher: :failed_created_addresses]
+
 variant =
   if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do
     "parity"
