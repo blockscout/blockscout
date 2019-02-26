@@ -11,6 +11,7 @@ defmodule Explorer.Chain do
       order_by: 2,
       order_by: 3,
       preload: 2,
+      select: 2,
       subquery: 1,
       union_all: 2,
       where: 2,
@@ -1271,6 +1272,37 @@ defmodule Explorer.Chain do
     Repo.stream_reduce(query, initial, reducer)
   end
 
+  @spec stream_pending_transactions(
+          fields :: [
+            :block_hash
+            | :internal_transactions_indexed_at
+            | :created_contract_code_indexed_at
+            | :from_address_hash
+            | :gas
+            | :gas_price
+            | :hash
+            | :index
+            | :input
+            | :nonce
+            | :r
+            | :s
+            | :to_address_hash
+            | :v
+            | :value
+          ],
+          initial :: accumulator,
+          reducer :: (entry :: term(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_pending_transactions(fields, initial, reducer) when is_function(reducer, 2) do
+    query =
+      Transaction
+      |> pending_transactions_query()
+      |> select(^fields)
+
+    Repo.stream_reduce(query, initial, reducer)
+  end
+
   @doc """
   Returns a stream of all `t:Explorer.Chain.Block.t/0` `hash`es that are marked as unfetched in
   `t:Explorer.Chain.Block.SecondDegreeRelation.t/0`.
@@ -2263,6 +2295,37 @@ defmodule Explorer.Chain do
     address_hash
     |> Address.Token.list_address_tokens_with_balance(paging_options)
     |> Repo.all()
+  end
+
+  @spec find_and_update_replaced_transactions([
+          %{
+            required(:nonce) => non_neg_integer,
+            required(:from_address_hash) => Hash.Address.t(),
+            required(:hash) => Hash.t()
+          }
+        ]) :: {integer(), nil | [term()]}
+  def find_and_update_replaced_transactions(transactions, timeout \\ :infinity) do
+    query =
+      Enum.reduce(transactions, Transaction, fn %{hash: hash, nonce: nonce, from_address_hash: from_address_hash},
+                                                query ->
+        from(t in query,
+          or_where:
+            t.nonce == ^nonce and t.from_address_hash == ^from_address_hash and t.hash != ^hash and
+              not is_nil(t.block_number)
+        )
+      end)
+
+    hashes = Enum.map(transactions, & &1.hash)
+
+    transactions_to_update =
+      from(pending in Transaction,
+        join: duplicate in subquery(query),
+        on: duplicate.nonce == pending.nonce,
+        on: duplicate.from_address_hash == pending.from_address_hash,
+        where: pending.hash in ^hashes
+      )
+
+    Repo.update_all(transactions_to_update, [set: [error: "dropped/replaced", status: :error]], timeout: timeout)
   end
 
   @spec update_replaced_transactions([
