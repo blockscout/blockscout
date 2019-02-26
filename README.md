@@ -53,7 +53,7 @@ Currently available block explorers (i.e. Etherscan and Etherchain) are closed s
 * [Rinkeby Testnet](https://blockscout.com/eth/rinkeby)
 * [Ethereum Classic](https://blockscout.com/etc/mainnet)
 
-#### Private Sidechains
+#### Additional Chains Utilizing BlockScout
 
 * [Oasis Labs](https://blockexplorer.oasiscloud.io/)
 * [Fuse Network](https://explorer.fuse.io/)
