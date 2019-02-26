@@ -190,7 +190,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
           []
       end)
 
-    transaction_data =
+    filtered_transaction_data =
       if Keyword.get(json_rpc_named_arguments, :variant) == EthereumJSONRPC.Geth do
         {_, max_block_number} = Chain.fetch_min_and_max_block_numbers()
 
@@ -201,7 +201,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
         transaction_data
       end
 
-    InternalTransaction.Fetcher.async_fetch(transaction_data, 10_000)
+    InternalTransaction.Fetcher.async_fetch(filtered_transaction_data, 10_000)
   end
 
   defp async_import_internal_transactions(_, _), do: :ok
