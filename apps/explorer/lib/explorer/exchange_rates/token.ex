@@ -31,17 +31,18 @@ defmodule Explorer.ExchangeRates.Token do
   @enforce_keys ~w(available_supply btc_value id last_updated market_cap_usd name symbol usd_value volume_24h_usd)a
   defstruct ~w(available_supply btc_value id last_updated market_cap_usd name symbol usd_value volume_24h_usd)a
 
-  def null, do: %__MODULE__{
-    symbol: nil,
-    id: nil,
-    name: nil,
-    available_supply: nil,
-    usd_value: nil,
-    volume_24h_usd: nil,
-    market_cap_usd: nil,
-    btc_value: nil,
-    last_updated: nil
-  }
+  def null,
+    do: %__MODULE__{
+      symbol: nil,
+      id: nil,
+      name: nil,
+      available_supply: nil,
+      usd_value: nil,
+      volume_24h_usd: nil,
+      market_cap_usd: nil,
+      btc_value: nil,
+      last_updated: nil
+    }
 
   def null?(token), do: token == null()
 
