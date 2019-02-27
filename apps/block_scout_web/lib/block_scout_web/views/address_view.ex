@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.AddressView do
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
+  alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
 
   @dialyzer :no_match
 
@@ -115,6 +116,10 @@ defmodule BlockScoutWeb.AddressView do
     |> Decimal.round(4)
     |> Decimal.to_string(:normal)
     |> Kernel.<>("% #{gettext("Market Cap")}")
+  end
+
+  def empty_exchange_rate?(exchange_rate) do
+    TokenExchangeRate.null?(exchange_rate)
   end
 
   def balance_percentage(%Address{fetched_coin_balance: _} = address) do

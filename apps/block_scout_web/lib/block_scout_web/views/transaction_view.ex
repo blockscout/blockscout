@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.TransactionView do
   alias Explorer.Chain
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
+  alias Explorer.ExchangeRates.Token
   alias Timex.Duration
 
   import BlockScoutWeb.Gettext
@@ -117,8 +118,14 @@ defmodule BlockScoutWeb.TransactionView do
     Chain.transaction_to_status(transaction)
   end
 
-  def formatted_status(status) do
-    case status do
+  def empty_exchange_rate?(exchange_rate) do
+    Token.null?(exchange_rate)
+  end
+
+  def formatted_status(transaction) do
+    transaction
+    |> Chain.transaction_to_status()
+    |> case do
       :pending -> gettext("Pending")
       :awaiting_internal_transactions -> gettext("(Awaiting internal transactions for status)")
       :success -> gettext("Success")

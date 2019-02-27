@@ -33,7 +33,7 @@
             <!-- USD value of the balance -->
             <span
               data-wei-value="<%= if @address.fetched_coin_balance, do: @address.fetched_coin_balance.value %>"
-              <% if !is_nil(@exchange_rate.usd_value) do %>
+              <% if !empty_exchange_rate?(@exchange_rate) do %>
                 data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
               <% end %>
             </span>
