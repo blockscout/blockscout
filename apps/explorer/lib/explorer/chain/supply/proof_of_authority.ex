@@ -34,17 +34,7 @@ defmodule Explorer.Chain.Supply.ProofOfAuthority do
   end
 
   def total do
-    initial_supply = initial_supply()
-    block_height = block_height()
-
-    initial_supply + block_height
-  end
-
-  defp block_height do
-    case Chain.max_block_number() do
-      {:ok, height} -> height
-      _ -> 0
-    end
+    initial_supply() + Chain.block_height()
   end
 
   @doc false

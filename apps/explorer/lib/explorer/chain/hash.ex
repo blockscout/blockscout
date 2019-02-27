@@ -4,6 +4,7 @@ defmodule Explorer.Chain.Hash do
   """
 
   import Bitwise
+  alias Poison.Encoder.BitString
 
   @bits_per_byte 8
   @hexadecimal_digits_per_byte 2
@@ -222,6 +223,14 @@ defmodule Explorer.Chain.Hash do
   defimpl String.Chars do
     def to_string(hash) do
       @for.to_string(hash)
+    end
+  end
+
+  defimpl Poison.Encoder do
+    def encode(hash, options) do
+      hash
+      |> to_string()
+      |> BitString.encode(options)
     end
   end
 end

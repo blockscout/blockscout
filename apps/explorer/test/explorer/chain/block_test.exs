@@ -43,14 +43,14 @@ defmodule Explorer.Chain.BlockTest do
     end
   end
 
-  describe "get_blocks_without_reward/1" do
+  describe "blocks_without_reward_query/1" do
     test "finds only blocks without rewards" do
       rewarded_block = insert(:block)
       insert(:reward, address_hash: insert(:address).hash, block_hash: rewarded_block.hash)
       unrewarded_block = insert(:block)
 
       results =
-        Block.get_blocks_without_reward()
+        Block.blocks_without_reward_query()
         |> Repo.all()
         |> Enum.map(& &1.hash)
 

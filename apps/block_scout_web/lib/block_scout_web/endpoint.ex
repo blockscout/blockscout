@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.Endpoint do
     plug(Phoenix.Ecto.SQL.Sandbox, repo: Explorer.Repo)
   end
 
-  socket("/socket", BlockScoutWeb.UserSocket)
+  socket("/socket", BlockScoutWeb.UserSocket, websocket: [timeout: 45_000])
   socket("/wobserver", Wobserver.Web.PhoenixSocket)
 
   # Serve at "/" the static files from "priv/static" directory.

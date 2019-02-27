@@ -21,6 +21,8 @@ defmodule BlockScoutWeb.RealtimeEventHandler do
     Subscriber.to(:internal_transactions, :realtime)
     Subscriber.to(:token_transfers, :realtime)
     Subscriber.to(:transactions, :realtime)
+    Subscriber.to(:addresses, :on_demand)
+    Subscriber.to(:address_coin_balances, :on_demand)
     # Does not come from the indexer
     Subscriber.to(:exchange_rate)
     {:ok, []}

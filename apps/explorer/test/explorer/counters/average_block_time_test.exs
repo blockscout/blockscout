@@ -1,6 +1,8 @@
 defmodule Explorer.Counters.AverageBlockTimeTest do
   use Explorer.DataCase
 
+  doctest Explorer.Counters.AverageBlockTimeDurationFormat
+
   alias Explorer.Counters.AverageBlockTime
 
   defp block(number, last, duration), do: %{number: number, timestamp: Timex.shift(last, seconds: duration)}

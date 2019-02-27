@@ -4,12 +4,38 @@ use Mix.Config
 
 import Bitwise
 
+block_transformers = %{
+  "clique" => Indexer.Block.Transform.Clique,
+  "base" => Indexer.Block.Transform.Base
+}
+
+# Compile time environment variable access requires recompilation.
+configured_transformer = System.get_env("BLOCK_TRANSFORMER") || "base"
+
+block_transformer =
+  case Map.get(block_transformers, configured_transformer) do
+    nil ->
+      raise """
+      No such block transformer: #{configured_transformer}.
+
+      Valid values are:
+      #{Enum.join(Map.keys(block_transformers), "\n")}
+
+      Please update environment variable BLOCK_TRANSFORMER accordingly.
+      """
+
+    transformer ->
+      transformer
+  end
+
 config :indexer,
-  block_transformer: Indexer.Block.Transform.Base,
+  block_transformer: block_transformer,
   ecto_repos: [Explorer.Repo],
   metadata_updater_days_interval: 1,
   # bytes
   memory_limit: 42 <<< 30
+
+config :indexer, Indexer.ReplacedTransaction.Supervisor, disabled?: true
 
 config :indexer, Indexer.Tracer,
   service: :indexer,

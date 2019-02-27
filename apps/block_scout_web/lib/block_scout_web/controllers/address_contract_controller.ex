@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.AddressContractController do
 
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
+  alias Indexer.CoinBalance.OnDemandFetcher
 
   def index(conn, %{"address_id" => address_hash_string}) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
@@ -13,6 +14,7 @@ defmodule BlockScoutWeb.AddressContractController do
         conn,
         "index.html",
         address: address,
+        coin_balance_status: OnDemandFetcher.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         transaction_count: transaction_count(address),
         validation_count: validation_count(address)
