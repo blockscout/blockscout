@@ -20,23 +20,27 @@ defmodule Explorer.Chain.BlockNumberCache do
         :public,
         write_concurrency: true
       ])
+
+      setup_opts(opts)
+      update_cache()
     end
-
-    setup_opts(opts)
-    update_cache()
-
-    :ok
   end
 
   def max_number do
+    setup()
+
     value(:max)
   end
 
   def min_number do
+    setup()
+
     value(:min)
   end
 
   def min_and_max_numbers do
+    setup()
+
     value(:all)
   end
 

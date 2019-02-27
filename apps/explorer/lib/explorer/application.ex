@@ -34,11 +34,7 @@ defmodule Explorer.Application do
 
     opts = [strategy: :one_for_one, name: Explorer.Supervisor]
 
-    res = Supervisor.start_link(children, opts)
-
-    BlockNumberCache.setup()
-
-    res
+    Supervisor.start_link(children, opts)
   end
 
   defp configurable_children do
