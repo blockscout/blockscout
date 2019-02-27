@@ -24,6 +24,8 @@ defmodule Explorer.Chain.BlockNumberCache do
       setup_opts(opts)
       update_cache()
     end
+
+    :ok
   end
 
   def max_number do

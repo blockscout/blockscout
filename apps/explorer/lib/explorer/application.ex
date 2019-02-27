@@ -6,7 +6,6 @@ defmodule Explorer.Application do
   use Application
 
   alias Explorer.Admin
-  alias Explorer.Chain.BlockNumberCache
   alias Explorer.Repo.PrometheusLogger
 
   @impl Application
