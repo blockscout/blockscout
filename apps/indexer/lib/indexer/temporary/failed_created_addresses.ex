@@ -27,7 +27,7 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
   end
 
   def schedule_work do
-    Process.send_after(self, :run, 1_000)
+    Process.send_after(self(), :run, 1_000)
   end
 
   @impl GenServer
