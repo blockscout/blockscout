@@ -13,7 +13,7 @@ config :logger, :indexer_token_balances,
 
 variant =
   if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do
-    "ganache"
+    "geth"
   else
     System.get_env("ETHEREUM_JSONRPC_VARIANT")
     |> String.split(".")
