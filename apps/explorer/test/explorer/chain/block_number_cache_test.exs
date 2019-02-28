@@ -30,7 +30,7 @@ defmodule Explorer.Chain.BlockNumberCacheTest do
     test "does not invalidate cache if period time did not pass" do
       insert(:block, number: 5)
 
-      BlockNumberCache.setup(cache_period: 10_000)
+      BlockNumberCache.setup(cache_period: 10_000, reset: true)
 
       assert BlockNumberCache.max_number() == 5
 

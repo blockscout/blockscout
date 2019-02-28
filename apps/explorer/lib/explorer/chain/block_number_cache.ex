@@ -25,6 +25,11 @@ defmodule Explorer.Chain.BlockNumberCache do
       update_cache()
     end
 
+    if opts[:reset] do
+      setup_opts(opts)
+      update_cache()
+    end
+
     :ok
   end
 
