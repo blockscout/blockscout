@@ -3,6 +3,7 @@ defmodule Explorer.Chain.BlockNumberCacheTest do
 
   alias Explorer.Chain.BlockNumberCache
 
+
   describe "max_number/1" do
     test "returns max number" do
       insert(:block, number: 5)
@@ -25,6 +26,8 @@ defmodule Explorer.Chain.BlockNumberCacheTest do
 
       assert BlockNumberCache.max_number() == 10
       assert BlockNumberCache.min_number() == 5
+
+      BlockNumberCache.setup(reset: true)
     end
 
     test "does not invalidate cache if period time did not pass" do
@@ -37,6 +40,8 @@ defmodule Explorer.Chain.BlockNumberCacheTest do
       insert(:block, number: 10)
 
       assert BlockNumberCache.max_number() == 5
+
+      BlockNumberCache.setup(reset: true)
     end
   end
 
@@ -62,6 +67,8 @@ defmodule Explorer.Chain.BlockNumberCacheTest do
 
       assert BlockNumberCache.min_number() == 2
       assert BlockNumberCache.max_number() == 5
+
+      BlockNumberCache.setup(reset: true)
     end
 
     test "does not invalidate cache if period time did not pass" do
@@ -74,6 +81,8 @@ defmodule Explorer.Chain.BlockNumberCacheTest do
       insert(:block, number: 2)
 
       assert BlockNumberCache.max_number() == 5
+
+      BlockNumberCache.setup(reset: true)
     end
   end
 end
