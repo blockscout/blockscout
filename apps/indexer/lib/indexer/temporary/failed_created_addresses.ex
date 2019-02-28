@@ -21,9 +21,20 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
 
   @impl GenServer
   def init(json_rpc_named_arguments) do
-    run(json_rpc_named_arguments)
+    schedule_work()
 
     {:ok, json_rpc_named_arguments}
+  end
+
+  def schedule_work do
+    Process.send_after(self(), :run, 1_000)
+  end
+
+  @impl GenServer
+  def handle_info(:run, json_rpc_named_arguments) do
+    run(json_rpc_named_arguments)
+
+    {:noreply, json_rpc_named_arguments}
   end
 
   def run(json_rpc_named_arguments) do
