@@ -20,8 +20,9 @@ config :block_scout_web, BlockScoutWeb.Chain,
 config :block_scout_web,
   link_to_other_explorers: System.get_env("LINK_TO_OTHER_EXPLORERS") == "true",
   other_explorers: %{
-    "Gastracker" => "http://gastracker.io/",
-    "EtherHub" => "https://etherhub.io"
+  "Etherscan" => "https://etherscan.io/",
+  "EtherChain" => "https://www.etherchain.org/",
+  "Bloxy" => "https://bloxy.info/"
   },
   other_networks: [
     %{
