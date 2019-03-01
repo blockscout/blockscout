@@ -5,7 +5,7 @@
         <div class="card-body">
           <h2 class="card-title text-center" data-test="administrator_registration">Administrator Setup</h2>
 
-          <%= form_for @changeset, setup_path(@conn, :configure_admin, %{state: @conn.query_params["state"]}), fn f -> %>
+          <%= form_for @changeset, setup_path(@conn, :configure_admin, %{state: @conn.query_params["state"]}), [], fn f -> %>
             <%= FormView.text_field(f, :username, :text, id: "username", required: true, label: "Username") %>
             <%= FormView.text_field(f, :email, :email, id: "email", required: true, label: "Email Address") %>
             <%= FormView.text_field(f, :password, :password, id: "password", required: true, label: "Password") %>

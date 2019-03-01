@@ -88,6 +88,7 @@ defmodule Explorer.Chain.Block do
     has_many(:uncles, through: [:uncle_relations, :uncle])
 
     has_many(:transactions, Transaction)
+    has_many(:transaction_forks, Transaction.Fork, foreign_key: :uncle_hash)
 
     has_many(:rewards, Reward, foreign_key: :block_hash)
   end
@@ -100,12 +101,12 @@ defmodule Explorer.Chain.Block do
     |> unique_constraint(:hash, name: :blocks_pkey)
   end
 
-  def get_blocks_without_reward(query \\ __MODULE__) do
+  def blocks_without_reward_query do
     from(
-      b in query,
+      b in __MODULE__,
       left_join: r in Reward,
       on: [block_hash: b.hash],
-      where: is_nil(r.block_hash)
+      where: is_nil(r.block_hash) and b.consensus == true
     )
   end
 

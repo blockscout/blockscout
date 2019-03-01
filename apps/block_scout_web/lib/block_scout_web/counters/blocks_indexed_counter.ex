@@ -39,10 +39,9 @@ defmodule BlockScoutWeb.Counters.BlocksIndexedCounter do
     ratio = Chain.indexed_ratio()
 
     finished? =
-      if ratio < 1 do
-        false
-      else
-        Chain.finished_indexing?()
+      case Decimal.cmp(ratio, 1) do
+        :lt -> false
+        _ -> Chain.finished_indexing?()
       end
 
     Notifier.broadcast_blocks_indexed_ratio(ratio, finished?)

@@ -3,8 +3,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
 
   alias BlockScoutWeb.API.RPC.RPCView
 
-  def render("gettxinfo.json", %{transaction: transaction, max_block_number: max_block_number, logs: logs}) do
-    data = prepare_transaction(transaction, max_block_number, logs)
+  def render("gettxinfo.json", %{transaction: transaction, block_height: block_height, logs: logs}) do
+    data = prepare_transaction(transaction, block_height, logs)
     RPCView.render("show.json", data: data)
   end
 
@@ -50,12 +50,12 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
     }
   end
 
-  defp prepare_transaction(transaction, max_block_number, logs) do
+  defp prepare_transaction(transaction, block_height, logs) do
     %{
       "hash" => "#{transaction.hash}",
       "timeStamp" => "#{DateTime.to_unix(transaction.block.timestamp)}",
       "blockNumber" => "#{transaction.block_number}",
-      "confirmations" => "#{max_block_number - transaction.block_number}",
+      "confirmations" => "#{block_height - transaction.block_number}",
       "success" => if(transaction.status == :ok, do: true, else: false),
       "from" => "#{transaction.from_address_hash}",
       "to" => "#{transaction.to_address_hash}",

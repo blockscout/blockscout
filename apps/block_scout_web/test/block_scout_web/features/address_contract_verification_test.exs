@@ -1,5 +1,5 @@
 defmodule BlockScoutWeb.AddressContractVerificationTest do
-  use BlockScoutWeb.FeatureCase, async: true
+  use BlockScoutWeb.FeatureCase, async: false
 
   alias BlockScoutWeb.{AddressContractPage, ContractVerifyPage}
   alias Explorer.Factory

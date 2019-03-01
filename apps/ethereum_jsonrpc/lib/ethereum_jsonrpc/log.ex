@@ -171,7 +171,11 @@ defmodule EthereumJSONRPC.Log do
     do: entry
 
   defp entry_to_elixir({key, quantity}) when key in ~w(blockNumber logIndex transactionIndex transactionLogIndex) do
-    {key, quantity_to_integer(quantity)}
+    if is_nil(quantity) do
+      {key, nil}
+    else
+      {key, quantity_to_integer(quantity)}
+    end
   end
 
   defp put_topics(params, topics) when is_map(params) and is_list(topics) do

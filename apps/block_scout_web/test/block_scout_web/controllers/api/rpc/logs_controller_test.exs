@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias BlockScoutWeb.API.RPC.LogsController
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{Log, Transaction}
 
   describe "getLogs" do
     test "without fromBlock, toBlock, address, and topic{x}", %{conn: conn} do
@@ -741,18 +741,21 @@ defmodule BlockScoutWeb.API.RPC.LogsControllerTest do
       # We insert a block, try again, and assert 'latest' points to the latest
       # block number.
       insert(:block)
-      {:ok, max_block_number} = Explorer.Chain.max_block_number()
+      {:ok, max_consensus_block_number} = Explorer.Chain.max_consensus_block_number()
 
       assert {_, {:ok, validated_params}} = LogsController.to_valid_format(params)
-      assert validated_params.from_block == max_block_number
-      assert validated_params.to_block == max_block_number
+      assert validated_params.from_block == max_consensus_block_number
+      assert validated_params.to_block == max_consensus_block_number
     end
   end
 
-  defp get_topics(log) do
-    log
-    |> Map.take([:first_topic, :second_topic, :third_topic, :fourth_topic])
-    |> Map.values()
+  defp get_topics(%Log{
+         first_topic: first_topic,
+         second_topic: second_topic,
+         third_topic: third_topic,
+         fourth_topic: fourth_topic
+       }) do
+    [first_topic, second_topic, third_topic, fourth_topic]
   end
 
   defp integer_to_hex(integer), do: Integer.to_string(integer, 16)

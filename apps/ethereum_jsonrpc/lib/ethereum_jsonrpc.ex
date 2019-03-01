@@ -29,6 +29,8 @@ defmodule EthereumJSONRPC do
     Block,
     Blocks,
     FetchedBalances,
+    FetchedBeneficiaries,
+    FetchedCodes,
     Receipts,
     RequestCoordinator,
     Subscription,
@@ -53,6 +55,11 @@ defmodule EthereumJSONRPC do
   Binary data encoded as a single hexadecimal number in a `String.t`
   """
   @type data :: String.t()
+
+  @typedoc """
+  Contract code encoded as a single hexadecimal number in a `String.t`
+  """
+  @type code :: String.t()
 
   @typedoc """
   A full 32-byte [KECCAK-256](https://en.wikipedia.org/wiki/SHA-3) hash encoded as a hexadecimal number in a `String.t`
@@ -202,10 +209,31 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
+  Fetches code for each given `address` at the `block_number`.
+  """
+  @spec fetch_codes(
+          [%{required(:block_quantity) => quantity, required(:address) => address()}],
+          json_rpc_named_arguments
+        ) :: {:ok, FetchedCodes.t()} | {:error, reason :: term}
+  def fetch_codes(params_list, json_rpc_named_arguments)
+      when is_list(params_list) and is_list(json_rpc_named_arguments) do
+    id_to_params = id_to_params(params_list)
+
+    with {:ok, responses} <-
+           id_to_params
+           |> FetchedCodes.requests()
+           |> json_rpc(json_rpc_named_arguments) do
+      {:ok, FetchedCodes.from_responses(responses, id_to_params)}
+    end
+  end
+
+  @doc """
   Fetches block reward contract beneficiaries from variant API.
   """
-  def fetch_beneficiaries(_first.._last = range, json_rpc_named_arguments) do
-    Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_beneficiaries(range, json_rpc_named_arguments)
+  @spec fetch_beneficiaries([block_number], json_rpc_named_arguments) ::
+          {:ok, FetchedBeneficiaries.t()} | {:error, reason :: term} | :ignore
+  def fetch_beneficiaries(block_numbers, json_rpc_named_arguments) when is_list(block_numbers) do
+    Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_beneficiaries(block_numbers, json_rpc_named_arguments)
   end
 
   @doc """
