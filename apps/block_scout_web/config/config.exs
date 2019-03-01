@@ -22,7 +22,9 @@ config :block_scout_web,
   other_explorers: %{
     "Etherscan" => "https://etherscan.io/",
     "EtherChain" => "https://www.etherchain.org/",
-    "Bloxy" => "https://bloxy.info/"
+    "BlockChair" => "https://blockchair.com/ethereum",
+    "Bloxy" => "https://bloxy.info/",
+    "Blockchain.com" => "https://www.blockchain.com/explorer?currency=ETH",
   },
   other_networks: [
     %{
