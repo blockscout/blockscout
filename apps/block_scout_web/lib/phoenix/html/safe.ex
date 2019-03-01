@@ -1,7 +1,13 @@
 alias Explorer.Chain
 alias Explorer.Chain.{Address, Block, Data, Hash, Transaction}
 
-defimpl Phoenix.HTML.Safe, for: [Address, Transaction] do
+defimpl Phoenix.HTML.Safe, for: Address do
+  def to_iodata(%@for{} = address) do
+    @for.checksum(address, true)
+  end
+end
+
+defimpl Phoenix.HTML.Safe, for: Transaction do
   def to_iodata(%@for{hash: hash}) do
     @protocol.to_iodata(hash)
   end
