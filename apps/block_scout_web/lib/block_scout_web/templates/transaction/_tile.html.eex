@@ -1,3 +1,4 @@
+<% status = transaction_status(@transaction) %>
 <div class="tile tile-type-<%= type_suffix(@transaction) %> fade-in <%= status_class(@transaction) %>" data-test="<%= type_suffix(@transaction) %>" data-identifier-hash="<%= @transaction.hash %>">
   <div class="row tile-body" data-selector="token-transfers-toggle" data-test="chain_transaction">
     <div class="col-md-2 d-flex flex-row flex-md-column align-items-left justify-content-start justify-content-lg-center mb-1 mb-md-0 pl-md-4">
@@ -11,7 +12,7 @@
             <span class="loading-spinner-block-2"></span>
           </div>
         <% end %>
-        <%= formatted_status(@transaction) %>
+        <%= formatted_status(status) %>
       </span>
     </div>
     <div class="col-md-7 col-lg-8 d-flex flex-column pr-2 pr-sm-2 pr-md-0">
