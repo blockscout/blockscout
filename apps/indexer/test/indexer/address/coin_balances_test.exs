@@ -113,8 +113,8 @@ defmodule Indexer.Address.CoinBalancesTest do
 
       params_set = CoinBalances.params_set(%{logs_params: [log_params]})
 
-      assert Enum.count(params_set) == 1
-      assert %{address_hash: address_hash, block_number: block_number} == List.first(params_set)
+      assert MapSet.size(params_set) == 1
+      assert MapSet.new([%{address_hash: address_hash, block_number: block_number}]) == params_set
     end
 
     test "with log skips pending transactions" do
@@ -139,8 +139,8 @@ defmodule Indexer.Address.CoinBalancesTest do
 
       params_set = CoinBalances.params_set(%{logs_params: [log_params1, log_params2]})
 
-      assert Enum.count(params_set) == 1
-      assert %{address_hash: address_hash, block_number: block_number} == List.first(params_set)
+      assert MapSet.size(params_set) == 1
+      assert MapSet.new([%{address_hash: address_hash, block_number: block_number}]) == params_set
     end
 
     test "with transaction without to_address_hash extracts from_address_hash" do

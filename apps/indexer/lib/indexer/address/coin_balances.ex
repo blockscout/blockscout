@@ -39,6 +39,7 @@ defmodule Indexer.Address.CoinBalances do
         nil
     end)
     |> Enum.reject(fn val -> is_nil(val) end)
+    |> MapSet.new()
   end
 
   defp reducer({:transactions_params, transactions_params}, initial) when is_list(transactions_params) do
