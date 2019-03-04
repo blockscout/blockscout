@@ -28,7 +28,7 @@ defmodule Indexer.Address.CoinBalances do
   end
 
   defp reducer({:logs_params, logs_params}, acc) when is_list(logs_params) do
-    # a log MUST have and address_hash
+    # a log MUST have address_hash and block_number
     logs_params
     |> Enum.into(acc, fn
       %{address_hash: address_hash, block_number: block_number}
