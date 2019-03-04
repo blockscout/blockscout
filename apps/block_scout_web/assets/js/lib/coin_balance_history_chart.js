@@ -23,7 +23,8 @@ export function createCoinBalanceHistoryChart (el) {
         data: {
           datasets: [{
             label: 'coin balance',
-            data: coinBalanceHistoryData
+            data: coinBalanceHistoryData,
+            lineTension: 0
           }]
         },
         options: {

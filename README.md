@@ -53,7 +53,7 @@ Currently available block explorers (i.e. Etherscan and Etherchain) are closed s
 * [Rinkeby Testnet](https://blockscout.com/eth/rinkeby)
 * [Ethereum Classic](https://blockscout.com/etc/mainnet)
 
-#### Private Sidechains
+#### Additional Chains Utilizing BlockScout
 
 * [Oasis Labs](https://blockexplorer.oasiscloud.io/)
 * [Fuse Network](https://explorer.fuse.io/)
@@ -123,7 +123,7 @@ The [development stack page](https://github.com/poanetwork/blockscout/wiki/Devel
   
   9. Enable HTTPS in development. The Phoenix server only runs with HTTPS.
      * `cd apps/block_scout_web`
-     * `mix phx.gen.cert blockscout blockscout.local`
+     * `mix phx.gen.cert blockscout blockscout.local; cd -`
      * Add blockscout and blockscout.local to your `/etc/hosts`
      ```
         127.0.0.1       localhost blockscout blockscout.local

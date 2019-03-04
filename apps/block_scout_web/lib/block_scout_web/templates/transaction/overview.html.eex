@@ -1,5 +1,6 @@
 <% block = @transaction.block %>
 <% decoded_input_data = decoded_input_data(@transaction) %>
+<% status = transaction_status(@transaction) %>
 <section data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
   <div class="row">
     <div class="col-md-12 col-lg-8">
@@ -15,7 +16,7 @@
           </div>
           <h1 class="card-title"><%= gettext "Transaction Details" %> </h1>
 
-          <%= if !block do %>
+          <%= if status == :pending do %>
             <div class="tile tile-muted d-flex justify-content-center align-items-center mb-4">
               <div class="loading-spinner">
                 <span class="loading-spinner-block-1"></span>
@@ -33,7 +34,7 @@
           </span>
           <div class="d-flex flex-row justify-content-start text-muted">
             <span class="mr-4 text-<%= BlockScoutWeb.TransactionView.type_suffix(@transaction) %>"><%= BlockScoutWeb.TransactionView.transaction_display_type(@transaction) %></span>
-            <span class="mr-4" data-transaction-status="<%= BlockScoutWeb.TransactionView.formatted_status(@transaction) %>"><%= BlockScoutWeb.TransactionView.formatted_status(@transaction) %></span>
+            <span class="mr-4" data-transaction-status="<%= BlockScoutWeb.TransactionView.formatted_status(status) %>"><%= BlockScoutWeb.TransactionView.formatted_status(status) %></span>
             <span class="mr-4">
               <%= if block do %>
                 <span data-from-now="<%= @transaction.block.timestamp %>"></span>
@@ -52,7 +53,7 @@
                       to: block_path(@conn, :show, block)
                     ) %>
               <% else %>
-                <%= gettext "Pending" %>
+                <%= formatted_status(status) %>
               <% end %>
             </dd>
           </dl>
@@ -74,20 +75,56 @@
               <%= formatted_fee(@transaction, denomination: :ether) %> <span class="coinmarket-value">(<span data-wei-value=<%= fee(@transaction) %> data-usd-exchange-rate=<%= @exchange_rate.usd_value %>></span>)</span>
             </dd>
           </dl>
+          <!-- Processing Time -->
+          <%= case processing_time_duration(@transaction) do %>
+            <% :pending -> %>
+              <% nil %>
+            <% :unknown -> %>
+              <% nil %>
+            <% {:ok, interval_string} -> %>
+              <dl class="row">
+                <dt class="col-sm-3 text-muted"> <%= gettext "Transaction Speed" %> </dt>
+                <dd class="col-sm-9">
+                  <%= interval_string %>
+                </dd>
+              </dl>
+          <% end %>
 
           <%= unless value_transfer?(@transaction) do %>
           <dl class="row">
             <dt class="col-sm-3 text-muted"><%= gettext "Raw Input" %></dt>
             <dd class="col-sm-9">
-              <div class="raw-transaction-input">
+              <div class="transaction-input" id="tx-raw-input">
                 <button type="button" class="copy icon-link mb-1" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= @transaction.input %>" aria-label="Copy Value">
                   <i class="fas fa-clone"></i>
                 </button>
-
                 <div class="tile tile-muted">
-                  <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0">
-                    <code><%= @transaction.input %></code>
-                  </pre>
+                  <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0"><code><%= @transaction.input %></code></pre>
+                </div>
+              </div>
+
+              <div class="transaction-input" id="tx-utf8-input" style="display: none;">
+                <button type="button" class="copy icon-link mb-1" data-toggle="tooltip" data-placement="top" data-clipboard-text="<%= @transaction.input %>" aria-label="Copy Value">
+                  <i class="fas fa-clone"></i>
+                </button>
+                <div class="tile tile-muted">
+                  <pre class="pre-scrollable pre-scrollable-shorty pre-wrap mb-0"><code><%= @transaction.input.bytes %></code></pre>
+                </div>
+              </div>
+
+              <div class="dropdown pt-1">
+                <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="tx-input-decoding-button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <%= gettext("Hex (Default)") %>
+                </button>
+
+                <div class="dropdown-menu" aria-labelledby="transaction-input-decoding-button">
+                  <a class="dropdown-item tx-input-dropdown" data-target="#tx-raw-input" id="tx-dropdown-raw">
+                    <%= gettext("Hex (Default)") %>
+                  </a>
+
+                  <a class="dropdown-item tx-input-dropdown" data-target="#tx-utf8-input" id="tx-dropdown-utf8">
+                    <%= gettext("UTF-8") %>
+                  </a>
                 </div>
               </div>
             </dd>
@@ -135,7 +172,7 @@
     </div>
   </div>
 
-  <%= unless should_decode?(@transaction) do %>
+  <%= unless skip_decoding?(@transaction) do %>
     <div class="row">
       <div class="col-md-12">
         <%= render BlockScoutWeb.TransactionView, "_decoded_input.html", Map.put(assigns, :decoded_input_data, decoded_input_data) %>
