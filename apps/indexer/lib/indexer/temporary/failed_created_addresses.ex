@@ -49,7 +49,8 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
       from(t in Transaction,
         left_join: it in InternalTransaction,
         on: it.transaction_hash == t.hash,
-        where: t.status == ^0 and not is_nil(it.created_contract_address_hash)
+        where: t.status == ^0 and not is_nil(it.created_contract_address_hash),
+        distinct: t.hash
       )
 
     found_transactions = Repo.all(query, timeout: @query_timeout)
