@@ -145,7 +145,7 @@ defmodule BlockScoutWeb.TransactionView do
     Cldr.Number.to_string!(gas)
   end
 
-  def should_decode?(transaction) do
+  def skip_decoding?(transaction) do
     contract_creation?(transaction) || value_transfer?(transaction)
   end
 

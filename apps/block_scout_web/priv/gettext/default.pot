@@ -338,7 +338,7 @@ msgid "Curl"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:33
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:18
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:60
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:118
 msgid "Data"
@@ -574,7 +574,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:29
-#: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:31
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:16
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:57
 msgid "Name"
 msgstr ""
@@ -1305,29 +1305,28 @@ msgid "Indexed?"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:32
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:17
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:58
 msgid "Type"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:19
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:3
 msgid "Method Id"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:8
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:31
 msgid "To see decoded input data, the contract must be verified."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:17
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:1
 msgid "Transaction Info"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:28
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:13
 msgid "Transaction Inputs"
 msgstr ""
 
@@ -1344,17 +1343,17 @@ msgid "here"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:65
+#: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:32
 msgid "Failed to decode input data."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:53
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:38
 msgid "Error rendering value"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:42
+#: lib/block_scout_web/templates/transaction/_decoded_input_body.html.eex:27
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:69
 msgid "Copy Value"
 msgstr ""
@@ -1490,6 +1489,26 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/views/block_view.ex:64
 msgid "Uncle Reward"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:18
+msgid "IMPORTANT: This information is a best guess based on similar functions from other verified contracts."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:17
+msgid "Potential matches from our contract method database:"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:19
+msgid "To have guaranteed accuracy, use the link above to verify the contract's source code."
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/transaction/_decoded_input.html.eex:8
+msgid "To see accurate decoded input data, the contract must be verified."
 msgstr ""
 
 #, elixir-format

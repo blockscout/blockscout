@@ -5,9 +5,9 @@ defmodule Explorer.SmartContract.PublisherTest do
 
   doctest Explorer.SmartContract.Publisher
 
-  alias Explorer.Chain.SmartContract
+  alias Explorer.Chain.{ContractMethod, SmartContract}
+  alias Explorer.{Factory, Repo}
   alias Explorer.SmartContract.Publisher
-  alias Explorer.Factory
 
   describe "publish/2" do
     test "with valid data creates a smart_contract" do
@@ -31,7 +31,29 @@ defmodule Explorer.SmartContract.PublisherTest do
       assert smart_contract.optimization == valid_attrs["optimization"]
       assert smart_contract.contract_source_code == valid_attrs["contract_source_code"]
       assert is_nil(smart_contract.constructor_arguments)
-      assert smart_contract.abi != nil
+      assert smart_contract.abi == contract_code_info.abi
+    end
+
+    test "corresponding contract_methods are created for the abi" do
+      contract_code_info = Factory.contract_code_info()
+
+      contract_address = insert(:contract_address, contract_code: contract_code_info.bytecode)
+
+      valid_attrs = %{
+        "contract_source_code" => contract_code_info.source_code,
+        "compiler_version" => contract_code_info.version,
+        "name" => contract_code_info.name,
+        "optimization" => contract_code_info.optimized
+      }
+
+      response = Publisher.publish(contract_address.hash, valid_attrs)
+      assert {:ok, %SmartContract{} = smart_contract} = response
+
+      Enum.each(contract_code_info.abi, fn selector ->
+        [parsed] = ABI.parse_specification([selector])
+
+        assert Repo.get_by(ContractMethod, abi: selector, identifier: parsed.method_id)
+      end)
     end
 
     test "creates a smart contract with constructor arguments" do
