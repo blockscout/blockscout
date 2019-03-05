@@ -120,20 +120,22 @@ defmodule Indexer.CoinBalance.Fetcher do
     end)
   end
 
-  defp run_fetched_balances(%FetchedBalances{params_list: []}, original_entries), do: {:retry, original_entries}
-
-  defp run_fetched_balances(%FetchedBalances{params_list: params_list, errors: errors}, _) do
+  def import_fetched_balances(%FetchedBalances{params_list: params_list}, broadcast_type \\ false) do
     value_fetched_at = DateTime.utc_now()
 
     importable_balances_params = Enum.map(params_list, &Map.put(&1, :value_fetched_at, value_fetched_at))
 
     addresses_params = balances_params_to_address_params(importable_balances_params)
 
-    {:ok, _} =
-      Chain.import(%{
-        addresses: %{params: addresses_params, with: :balance_changeset},
-        address_coin_balances: %{params: importable_balances_params}
-      })
+    Chain.import(%{
+      addresses: %{params: addresses_params, with: :balance_changeset},
+      address_coin_balances: %{params: importable_balances_params},
+      broadcast: broadcast_type
+    })
+  end
+
+  defp run_fetched_balances(%FetchedBalances{errors: errors} = fetched_balances, _) do
+    {:ok, _} = import_fetched_balances(fetched_balances)
 
     retry(errors)
   end

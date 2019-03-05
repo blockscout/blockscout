@@ -90,6 +90,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:flow, "~> 0.12"},
       {:gettext, "~> 0.16.1"},
       {:httpoison, "~> 1.0"},
+      {:indexer, in_umbrella: true, runtime: false},
       # JSON parser and generator
       {:jason, "~> 1.0"},
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
