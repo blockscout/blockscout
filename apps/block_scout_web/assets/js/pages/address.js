@@ -15,6 +15,8 @@ export const initialState = {
   filter: null,
 
   balance: null,
+  balanceCard: null,
+  fetchedCoinBalanceBlockNumber: null,
   transactionCount: null,
   validationCount: null
 }
@@ -47,7 +49,9 @@ export function reducer (state = initialState, action) {
     }
     case 'RECEIVED_UPDATED_BALANCE': {
       return Object.assign({}, state, {
-        balance: action.msg.balance
+        balanceCard: action.msg.balanceCard,
+        balance: parseFloat(action.msg.balance),
+        fetchedCoinBalanceBlockNumber: action.msg.fetchedCoinBalanceBlockNumber
       })
     }
     default:
@@ -63,11 +67,11 @@ const elements = {
   },
   '[data-selector="balance-card"]': {
     load ($el) {
-      return { balance: $el.html() }
+      return { balanceCard: $el.html(), balance: parseFloat($el.find('.current-balance-in-wei').attr('data-wei-value')) }
     },
     render ($el, state, oldState) {
       if (oldState.balance === state.balance) return
-      $el.empty().append(state.balance)
+      $el.empty().append(state.balanceCard)
       loadTokenBalanceDropdown()
       updateAllCalculatedUsdValues()
     }
@@ -79,6 +83,15 @@ const elements = {
     render ($el, state, oldState) {
       if (oldState.transactionCount === state.transactionCount) return
       $el.empty().append(numeral(state.transactionCount).format())
+    }
+  },
+  '[data-selector="fetched-coin-balance-block-number"]': {
+    load ($el) {
+      return {fetchedCoinBalanceBlockNumber: numeral($el.text()).value()}
+    },
+    render ($el, state, oldState) {
+      if (oldState.fetchedCoinBalanceBlockNumber === state.fetchedCoinBalanceBlockNumber) return
+      $el.empty().append(numeral(state.fetchedCoinBalanceBlockNumber).format())
     }
   },
   '[data-selector="validation-count"]': {
@@ -130,4 +143,10 @@ if ($addressDetailsPage.length) {
     type: 'RECEIVED_NEW_BLOCK',
     msg: humps.camelizeKeys(msg)
   }))
+
+  addressChannel.push('get_balance', {})
+    .receive('ok', (msg) => store.dispatch({
+      type: 'RECEIVED_UPDATED_BALANCE',
+      msg: humps.camelizeKeys(msg)
+    }))
 }

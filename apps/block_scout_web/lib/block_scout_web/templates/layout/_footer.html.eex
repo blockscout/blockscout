@@ -90,7 +90,7 @@
     <% version = 'v1.3.0-beta' %>
 
     <%= unless ignore_version?(version) do %>
-      <div class="muted text-muted">
+      <div>
         <%= gettext("Version") %>: <%= version %>
       </div>
     <% end %>
