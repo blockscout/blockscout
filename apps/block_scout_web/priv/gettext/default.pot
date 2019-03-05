@@ -49,7 +49,7 @@ msgid "%{subnetwork} Explorer - BlockScout"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:130
+#: lib/block_scout_web/views/transaction_view.ex:128
 msgid "(Awaiting internal transactions for status)"
 msgstr ""
 
@@ -278,12 +278,12 @@ msgid "Contract Address Pending"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:207
+#: lib/block_scout_web/views/transaction_view.ex:205
 msgid "Contract Call"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:206
+#: lib/block_scout_web/views/transaction_view.ex:204
 msgid "Contract Creation"
 msgstr ""
 
@@ -377,12 +377,12 @@ msgid "Error trying to fetch balances."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:134
+#: lib/block_scout_web/views/transaction_view.ex:132
 msgid "Error: %{reason}"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:132
+#: lib/block_scout_web/views/transaction_view.ex:130
 msgid "Error: (Awaiting internal transactions for reason)"
 msgstr ""
 
@@ -495,7 +495,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:43
 #: lib/block_scout_web/templates/transaction_internal_transaction/index.html.eex:10
 #: lib/block_scout_web/views/address_view.ex:275
-#: lib/block_scout_web/views/transaction_view.ex:260
+#: lib/block_scout_web/views/transaction_view.ex:258
 msgid "Internal Transactions"
 msgstr ""
 
@@ -521,7 +521,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:21
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:48
 #: lib/block_scout_web/templates/transaction_log/index.html.eex:10
-#: lib/block_scout_web/views/transaction_view.ex:261
+#: lib/block_scout_web/views/transaction_view.ex:259
 msgid "Logs"
 msgstr ""
 
@@ -661,8 +661,8 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:44
-#: lib/block_scout_web/views/transaction_view.ex:129
-#: lib/block_scout_web/views/transaction_view.ex:163
+#: lib/block_scout_web/views/transaction_view.ex:127
+#: lib/block_scout_web/views/transaction_view.ex:161
 msgid "Pending"
 msgstr ""
 
@@ -767,7 +767,7 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/_emission_reward_tile.html.eex:8
-#: lib/block_scout_web/views/transaction_view.ex:131
+#: lib/block_scout_web/views/transaction_view.ex:129
 msgid "Success"
 msgstr ""
 
@@ -878,7 +878,7 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/tokens/transfer/_token_transfer.html.eex:4
 #: lib/block_scout_web/templates/transaction_token_transfer/_token_transfer.html.eex:4
-#: lib/block_scout_web/views/transaction_view.ex:205
+#: lib/block_scout_web/views/transaction_view.ex:203
 msgid "Token Transfer"
 msgstr ""
 
@@ -890,7 +890,7 @@ msgstr ""
 #: lib/block_scout_web/templates/transaction/_tabs.html.eex:36
 #: lib/block_scout_web/templates/transaction_token_transfer/index.html.eex:10
 #: lib/block_scout_web/views/tokens/overview_view.ex:35
-#: lib/block_scout_web/views/transaction_view.ex:259
+#: lib/block_scout_web/views/transaction_view.ex:257
 msgid "Token Transfers"
 msgstr ""
 
@@ -931,7 +931,7 @@ msgid "Total transactions"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/views/transaction_view.ex:208
+#: lib/block_scout_web/views/transaction_view.ex:206
 msgid "Transaction"
 msgstr ""
 
