@@ -122,10 +122,8 @@ defmodule BlockScoutWeb.TransactionView do
     Token.null?(exchange_rate)
   end
 
-  def formatted_status(transaction) do
-    transaction
-    |> Chain.transaction_to_status()
-    |> case do
+  def formatted_status(status) do
+    case status do
       :pending -> gettext("Pending")
       :awaiting_internal_transactions -> gettext("(Awaiting internal transactions for status)")
       :success -> gettext("Success")
