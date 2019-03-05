@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.TransactionView do
   alias Explorer.Chain
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
+  alias Explorer.ExchangeRates.Token
   alias Timex.Duration
 
   import BlockScoutWeb.Gettext
@@ -115,6 +116,10 @@ defmodule BlockScoutWeb.TransactionView do
 
   def transaction_status(transaction) do
     Chain.transaction_to_status(transaction)
+  end
+
+  def empty_exchange_rate?(exchange_rate) do
+    Token.null?(exchange_rate)
   end
 
   def formatted_status(status) do
