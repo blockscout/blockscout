@@ -3512,7 +3512,7 @@ defmodule Explorer.ChainTest do
   describe "address_to_balances_by_day/1" do
     test "return a list of balances by day" do
       address = insert(:address)
-      noon = ~D[2018-12-06] |> Timex.to_datetime() |> Timex.set(hour: 12)
+      noon = ~D[2019-01-06] |> Timex.to_datetime() |> Timex.set(hour: 12)
       block = insert(:block, timestamp: noon)
       block_one_day_ago = insert(:block, timestamp: Timex.shift(noon, days: -1))
       insert(:fetched_balance, address_hash: address.hash, value: 1000, block_number: block.number)
@@ -3521,8 +3521,8 @@ defmodule Explorer.ChainTest do
       balances = Chain.address_to_balances_by_day(address.hash)
 
       assert balances == [
-               %{date: "2018-12-05", value: Decimal.new("2E-15")},
-               %{date: "2018-12-06", value: Decimal.new("1E-15")}
+               %{date: "2019-01-05", value: Decimal.new("2E-15")},
+               %{date: "2019-01-06", value: Decimal.new("1E-15")}
              ]
     end
   end
