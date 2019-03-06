@@ -1,11 +1,12 @@
 defmodule BlockScoutWeb.TransactionView do
   use BlockScoutWeb, :view
 
+  alias BlockScoutWeb.{AddressView, BlockView, TabHelpers}
   alias Cldr.Number
   alias Explorer.Chain
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
-  alias BlockScoutWeb.{AddressView, BlockView, TabHelpers}
+  alias Timex.Duration
 
   import BlockScoutWeb.Gettext
 
@@ -28,6 +29,52 @@ defmodule BlockScoutWeb.TransactionView do
   end
 
   def value_transfer?(_), do: false
+
+  def processing_time_duration(%Transaction{block: nil}) do
+    :pending
+  end
+
+  def processing_time_duration(%Transaction{earliest_processing_start: nil}) do
+    :unknown
+  end
+
+  def processing_time_duration(%Transaction{
+        block: %Block{timestamp: end_time},
+        earliest_processing_start: earliest_processing_start,
+        inserted_at: inserted_at
+      }) do
+    with {:ok, long_interval} <- humanized_diff(earliest_processing_start, end_time),
+         {:ok, short_interval} <- humanized_diff(inserted_at, end_time) do
+      {:ok, merge_intervals(short_interval, long_interval)}
+    else
+      _ ->
+        :ignore
+    end
+  end
+
+  defp merge_intervals(short, long) when short == long, do: short
+
+  defp merge_intervals(short, long) do
+    [short_time, short_unit] = String.split(short, " ")
+    [long_time, long_unit] = String.split(long, " ")
+
+    if short_unit == long_unit do
+      short_time <> "-" <> long_time <> " " <> short_unit
+    else
+      short <> " - " <> long
+    end
+  end
+
+  defp humanized_diff(left, right) do
+    left
+    |> Timex.diff(right, :milliseconds)
+    |> Duration.from_milliseconds()
+    |> Timex.format_duration(Explorer.Counters.AverageBlockTimeDurationFormat)
+    |> case do
+      {:error, _} = error -> error
+      duration -> {:ok, duration}
+    end
+  end
 
   def confirmations(%Transaction{block: block}, named_arguments) when is_list(named_arguments) do
     case block do
