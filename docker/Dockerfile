@@ -1,6 +1,6 @@
-FROM bitwalker/alpine-elixir-phoenix:latest
+FROM bitwalker/alpine-elixir-phoenix:1.7.1
 
-RUN apk --no-cache --update add automake libtool inotify-tools autoconf
+RUN apk --no-cache --update add automake libtool inotify-tools autoconf python
 
 EXPOSE 4000
 
@@ -18,6 +18,9 @@ ADD apps/indexer/mix.exs ./apps/indexer/
 RUN mix do deps.get, deps.compile
 
 ADD . .
+
+ARG COIN
+RUN if [ "$COIN" != "" ]; then sed -i s/"POA"/"${COIN}"/g apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po; fi
 
 # Run forderground build and phoenix digest
 RUN mix compile

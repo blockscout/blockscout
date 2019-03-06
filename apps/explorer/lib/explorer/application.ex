@@ -6,6 +6,7 @@ defmodule Explorer.Application do
   use Application
 
   alias Explorer.Admin
+  alias Explorer.Chain.BlockNumberCache
   alias Explorer.Repo.PrometheusLogger
 
   @impl Application
@@ -33,7 +34,11 @@ defmodule Explorer.Application do
 
     opts = [strategy: :one_for_one, name: Explorer.Supervisor]
 
-    Supervisor.start_link(children, opts)
+    res = Supervisor.start_link(children, opts)
+
+    BlockNumberCache.setup()
+
+    res
   end
 
   defp configurable_children do

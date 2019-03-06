@@ -17,6 +17,8 @@ defmodule Explorer.Chain do
       where: 3
     ]
 
+  import EthereumJSONRPC, only: [integer_to_quantity: 1]
+
   alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi}
 
@@ -26,6 +28,7 @@ defmodule Explorer.Chain do
     Address.CurrentTokenBalance,
     Address.TokenBalance,
     Block,
+    BlockNumberCache,
     Data,
     Hash,
     Import,
@@ -881,7 +884,7 @@ defmodule Explorer.Chain do
       ...>   insert(:block, number: index)
       ...> end
       iex> Explorer.Chain.indexed_ratio()
-      Decimal.new(1, 50000000000000000000, -20)
+      Decimal.new(1, 50, -2)
 
   If there are no blocks, the percentage is 0.
 
@@ -891,21 +894,33 @@ defmodule Explorer.Chain do
   """
   @spec indexed_ratio() :: Decimal.t()
   def indexed_ratio do
-    # subquery so we need to cast less
-    decimal_min_max_query =
+    {min, max} = BlockNumberCache.min_and_max_numbers()
+
+    case {min, max} do
+      {0, 0} ->
+        Decimal.new(0)
+
+      _ ->
+        result = Decimal.div(max - min + 1, max + 1)
+
+        Decimal.round(result, 2, :down)
+    end
+  end
+
+  @spec fetch_min_and_max_block_numbers() :: {non_neg_integer(), non_neg_integer}
+  def fetch_min_and_max_block_numbers do
+    query =
       from(block in Block,
-        select: %{min_number: type(min(block.number), :decimal), max_number: type(max(block.number), :decimal)},
+        select: {min(block.number), max(block.number)},
         where: block.consensus == true
       )
 
-    query =
-      from(decimal_min_max in subquery(decimal_min_max_query),
-        # math on `NULL` returns `NULL` so `coalesce` works as expected
-        select:
-          coalesce((decimal_min_max.max_number - decimal_min_max.min_number + 1) / (decimal_min_max.max_number + 1), 0)
-      )
+    result = Repo.one!(query)
 
-    Repo.one!(query)
+    case result do
+      {nil, nil} -> {0, 0}
+      _ -> result
+    end
   end
 
   @doc """
@@ -1856,6 +1871,75 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Checks if an address is a contract
+  """
+  @spec contract_address?(String.t(), non_neg_integer(), Keyword.t()) :: boolean() | :json_rpc_error
+  def contract_address?(address_hash, block_number, json_rpc_named_arguments \\ []) do
+    {:ok, binary_hash} = Explorer.Chain.Hash.Address.cast(address_hash)
+
+    query =
+      from(
+        address in Address,
+        where: address.hash == ^binary_hash
+      )
+
+    address = Repo.one(query)
+
+    cond do
+      is_nil(address) ->
+        block_quantity = integer_to_quantity(block_number)
+
+        case EthereumJSONRPC.fetch_codes(
+               [%{block_quantity: block_quantity, address: address_hash}],
+               json_rpc_named_arguments
+             ) do
+          {:ok, %EthereumJSONRPC.FetchedCodes{params_list: fetched_codes}} ->
+            result = List.first(fetched_codes)
+
+            result && !(is_nil(result[:code]) || result[:code] == "" || result[:code] == "0x")
+
+          _ ->
+            :json_rpc_error
+        end
+
+      is_nil(address.contract_code) ->
+        false
+
+      true ->
+        true
+    end
+  end
+
+  @doc """
+  Fetches contract creation input data.
+  """
+  @spec contract_creation_input_data(String.t()) :: nil | String.t()
+  def contract_creation_input_data(address_hash) do
+    query =
+      from(
+        address in Address,
+        where: address.hash == ^address_hash,
+        preload: [:contracts_creation_internal_transaction, :contracts_creation_transaction]
+      )
+
+    transaction = Repo.one(query)
+
+    cond do
+      is_nil(transaction) ->
+        ""
+
+      transaction.contracts_creation_internal_transaction && transaction.contracts_creation_internal_transaction.input ->
+        Data.to_string(transaction.contracts_creation_internal_transaction.input)
+
+      transaction.contracts_creation_transaction && transaction.contracts_creation_transaction.input ->
+        Data.to_string(transaction.contracts_creation_transaction.input)
+
+      true ->
+        ""
+    end
+  end
+
+  @doc """
   Inserts a `t:SmartContract.t/0`.
 
   As part of inserting a new smart contract, an additional record is inserted for
@@ -2128,6 +2212,7 @@ defmodule Explorer.Chain do
         on: tf.transaction_hash == l.transaction_hash and tf.log_index == l.index,
         where: l.first_topic == unquote(TokenTransfer.constant()),
         where: is_nil(tf.transaction_hash) and is_nil(tf.log_index),
+        where: not is_nil(t.block_hash),
         select: t.block_number,
         distinct: t.block_number
       )
