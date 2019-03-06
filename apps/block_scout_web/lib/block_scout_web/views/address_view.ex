@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.AddressView do
   use BlockScoutWeb, :view
 
+  require Logger
+
   import BlockScoutWeb.AddressController, only: [validation_count: 1]
 
   alias BlockScoutWeb.LayoutView
@@ -232,6 +234,12 @@ defmodule BlockScoutWeb.AddressView do
 
   def from_address_hash(%Address{contracts_creation_transaction: %Transaction{}} = address) do
     address.contracts_creation_transaction.from_address_hash
+  end
+
+  def from_address_hash(address) do
+    Logger.error(fn -> ["Found a contract with no creator: ", to_string(address)] end)
+
+    nil
   end
 
   defp matching_address_check(%Address{hash: hash} = current_address, %Address{hash: hash}, contract?, truncate) do
