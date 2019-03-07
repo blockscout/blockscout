@@ -18,16 +18,6 @@ defmodule BlockScoutWeb do
   """
   def version(), do: Application.get_env(:block_scout_web, :version)
 
-  def release_link(version) do
-    release_link = Application.get_env(:block_scout_web, :release_link)
-
-    if String.length(release_link) > 0 do
-      _version_link = Phoenix.HTML.raw("<a href=\"#{release_link}\" target=\"_blank\">#{version}</a>")
-    else
-      _version_link = version
-    end
-  end
-
   def controller do
     quote do
       use Phoenix.Controller, namespace: BlockScoutWeb
