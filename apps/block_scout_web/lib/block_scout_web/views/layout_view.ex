@@ -76,6 +76,10 @@ defmodule BlockScoutWeb.LayoutView do
     BlockScoutWeb.version()
   end
 
+  def release_link(version) do
+    BlockScoutWeb.release_link(version)
+  end
+
   def ignore_version?("unknown"), do: true
   def ignore_version?(_), do: false
 

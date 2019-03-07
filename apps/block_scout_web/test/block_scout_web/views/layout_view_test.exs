@@ -60,4 +60,18 @@ defmodule BlockScoutWeb.LayoutViewTest do
       assert LayoutView.network_title() == "POA"
     end
   end
+
+  describe "release_link/1" do
+    test "use the enviroment release link when it's configured" do
+      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, version: "1.3.4")
+      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, release_link: "https://github.com/poanetwork/blockscout/releases/tag/v1.3.4-beta")
+
+      assert LayoutView.release_link("1.3.4") == "<a href=\"https://github.com/poanetwork/blockscout/releases/tag/v1.3.4-beta" target=\"_blank\">v1.3.4</a>"
+    end
+
+    test "use the version when there is no release_link env configured for it" do
+      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, version: "1.3.4")
+      assert LayoutView.release_link() == "1.3.4"
+    end
+  end
 end
