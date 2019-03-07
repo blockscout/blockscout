@@ -75,7 +75,9 @@ defmodule BlockScoutWeb.LayoutViewTest do
 
     test "use the version when there is no release_link env configured for it" do
       Application.put_env(:block_scout_web, BlockScoutWeb.Chain, version: "1.3.4")
-      assert LayoutView.release_link() == "1.3.4"
+      Application.put_env(:block_scout_web, BlockScoutWeb.Chain, release_link: "")
+
+      assert LayoutView.release_link("1.3.4") == "1.3.4"
     end
   end
 end

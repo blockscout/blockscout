@@ -80,7 +80,7 @@ defmodule BlockScoutWeb.LayoutView do
     release_link = Application.get_env(:block_scout_web, :release_link)
 
     if String.length(release_link) > 0 do
-      _version_link = Phoenix.HTML.raw("<a href=\"#{release_link}\" target=\"_blank\">#{version}</a>")
+      _version_link = html_escape({:safe, "<a href=\"#{release_link}\" target=\"_blank\">#{version}</a>"})
     else
       _version_link = version
     end
