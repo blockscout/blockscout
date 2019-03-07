@@ -14,6 +14,7 @@ defmodule Explorer.Chain.Transaction do
   alias Explorer.Chain.{
     Address,
     Block,
+    ContractMethod,
     Data,
     Gas,
     Hash,
@@ -25,9 +26,12 @@ defmodule Explorer.Chain.Transaction do
   }
 
   alias Explorer.Chain.Transaction.{Fork, Status}
+  alias Explorer.Repo
 
-  @optional_attrs ~w(block_hash block_number created_contract_address_hash cumulative_gas_used error gas_used index
-                     internal_transactions_indexed_at created_contract_code_indexed_at status to_address_hash)a
+  @optional_attrs ~w(block_hash block_number created_contract_address_hash cumulative_gas_used earliest_processing_start
+                     error gas_used index internal_transactions_indexed_at created_contract_code_indexed_at status
+                     to_address_hash)a
+
   @required_attrs ~w(from_address_hash gas gas_price hash input nonce r s v value)a
 
   @typedoc """
@@ -80,7 +84,11 @@ defmodule Explorer.Chain.Transaction do
    * `created_contract_address_hash` - Denormalized `internal_transaction` `created_contract_address_hash`
      populated only when `to_address_hash` is nil.
    * `cumulative_gas_used` - the cumulative gas used in `transaction`'s `t:Explorer.Chain.Block.t/0` before
-     `transaction`'s `index`.  `nil` when transaction is pending.
+     `transaction`'s `index`.  `nil` when transaction is pending
+   * `earliest_processing_start` - If the pending transaction fetcher was alive and received this transaction, we can
+      be sure that this transaction did not start processing until after the last time we fetched pending transactions,
+      so we annotate that with this field. If it is `nil`, that means we don't have a lower bound for when it started
+      processing.
    * `error` - the `error` from the last `t:Explorer.Chain.InternalTransaction.t/0` in `internal_transactions` that
      caused `status` to be `:error`.  Only set after `internal_transactions_index_at` is set AND if there was an error.
      Also, `error` is set if transaction is replaced/dropped
@@ -132,6 +140,7 @@ defmodule Explorer.Chain.Transaction do
           created_contract_address_hash: Hash.Address.t() | nil,
           created_contract_code_indexed_at: DateTime.t() | nil,
           cumulative_gas_used: Gas.t() | nil,
+          earliest_processing_start: DateTime.t() | nil,
           error: String.t() | nil,
           forks: %Ecto.Association.NotLoaded{} | [Fork.t()],
           from_address: %Ecto.Association.NotLoaded{} | Address.t(),
@@ -180,6 +189,7 @@ defmodule Explorer.Chain.Transaction do
   schema "transactions" do
     field(:block_number, :integer)
     field(:cumulative_gas_used, :decimal)
+    field(:earliest_processing_start, :utc_datetime_usec)
     field(:error, :string)
     field(:gas, :decimal)
     field(:gas_price, Wei)
@@ -458,9 +468,40 @@ defmodule Explorer.Chain.Transaction do
   def decoded_input_data(%__MODULE__{to_address: nil}), do: {:error, :no_to_address}
   def decoded_input_data(%__MODULE__{input: %{bytes: bytes}}) when bytes in [nil, <<>>], do: {:error, :no_input_data}
   def decoded_input_data(%__MODULE__{to_address: %{contract_code: nil}}), do: {:error, :not_a_contract_call}
-  def decoded_input_data(%__MODULE__{to_address: %{smart_contract: nil}}), do: {:error, :contract_not_verified}
+
+  def decoded_input_data(%__MODULE__{
+        to_address: %{smart_contract: nil},
+        input: %{bytes: <<method_id::binary-size(4), _::binary>> = data},
+        hash: hash
+      }) do
+    candidates_query =
+      from(
+        contract_method in ContractMethod,
+        where: contract_method.identifier == ^method_id
+      )
+
+    candidates =
+      candidates_query
+      |> Repo.all()
+      |> Enum.flat_map(fn candidate ->
+        case do_decoded_input_data(data, [candidate.abi], hash) do
+          {:ok, _, _, _} = decoded -> [decoded]
+          _ -> []
+        end
+      end)
+
+    {:error, :contract_not_verified, candidates}
+  end
+
+  def decoded_input_data(%__MODULE__{to_address: %{smart_contract: nil}}) do
+    {:error, :contract_not_verified, []}
+  end
 
   def decoded_input_data(%__MODULE__{input: %{bytes: data}, to_address: %{smart_contract: %{abi: abi}}, hash: hash}) do
+    do_decoded_input_data(data, abi, hash)
+  end
+
+  defp do_decoded_input_data(data, abi, hash) do
     with {:ok, {selector, values}} <- find_and_decode(abi, data, hash),
          {:ok, mapping} <- selector_mapping(selector, values, hash),
          identifier <- Base.encode16(selector.method_id, case: :lower),
