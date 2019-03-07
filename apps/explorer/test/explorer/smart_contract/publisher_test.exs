@@ -99,7 +99,7 @@ defmodule Explorer.SmartContract.PublisherTest do
 
     test "validates and creates smart contract with external libraries" do
       contract_data =
-        "#{System.cwd!()}/test/support/fixture/smart_contract/compiler_tests.json"
+        "#{File.cwd!()}/test/support/fixture/smart_contract/compiler_tests.json"
         |> File.read!()
         |> Jason.decode!()
         |> List.first()

@@ -6,7 +6,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
   alias Explorer.Factory
   alias Explorer.SmartContract.Solidity.CodeCompiler
 
-  @compiler_tests "#{System.cwd!()}/test/support/fixture/smart_contract/compiler_tests.json"
+  @compiler_tests "#{File.cwd!()}/test/support/fixture/smart_contract/compiler_tests.json"
                   |> File.read!()
                   |> Jason.decode!()
 
