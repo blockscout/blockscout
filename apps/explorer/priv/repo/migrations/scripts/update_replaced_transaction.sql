@@ -1,12 +1,12 @@
 DO $$
   DECLARE
     total_count         integer                     := 0;
-    completed_count     integer                     := 0;
-    remaining_count     integer                     := 0;
-    batch_size          integer                     := 50;
-    iterator            integer                     := batch_size;
-    updated_count       integer;
-    deleted_count       integer;
+    batch_size          integer                     := 1000;
+    update_count        integer;
+    update_count_batch  integer;
+    cursor_count        integer;
+    cursor_count_batch  integer;
+    row_count           integer;
     start_time          TIMESTAMP WITHOUT TIME ZONE := clock_timestamp();
     end_time            TIMESTAMP WITHOUT TIME ZONE;
     elapsed_time        INTERVAL;
@@ -17,6 +17,7 @@ DO $$
     update_end_time     TIMESTAMP WITHOUT TIME ZONE;
     update_elapsed_time INTERVAL;
     per_row             INTERVAL;
+    tx_drop_repl_curs   CURSOR FOR SELECT * FROM transactions_dropped_replaced;
   BEGIN
     RAISE NOTICE 'Started at %', start_time;
 
@@ -27,7 +28,8 @@ DO $$
     (
       nonce integer NOT NULL,
       from_address_hash bytea NOT NULL,
-      row_number integer NOT NULL
+      row_number integer NOT NULL,
+      PRIMARY KEY (nonce, from_address_hash)
     );
 
     INSERT INTO transactions_dropped_replaced
@@ -35,9 +37,14 @@ DO $$
            t1.from_address_hash,
            ROW_NUMBER() OVER ()
     FROM transactions t1
-      INNER JOIN transactions t2
-      ON t1.from_address_hash = t2.from_address_hash AND t1.nonce = t2.nonce AND t2.block_hash IS NOT NULL
-    WHERE t1.block_hash IS NULL;
+    WHERE t1.block_hash IS NULL AND
+          t1.error IS NULL AND
+          EXISTS (SELECT *
+                  FROM transactions t2
+                  WHERE t2.nonce = t1.nonce AND
+                        t2.from_address_hash = t1.from_address_hash AND
+                        t2.block_hash IS NOT NULL)
+    GROUP BY t1.nonce, t1.from_address_hash;
 
     temp_end_time := clock_timestamp();
     temp_elapsed_time := temp_end_time - temp_start_time;
@@ -45,44 +52,46 @@ DO $$
 
     RAISE NOTICE 'transactions_dropped_replaced TEMP table filled in %', temp_elapsed_time;
 
-    remaining_count := total_count;
-
-    RAISE NOTICE '% transactions to be updated', remaining_count;
+    RAISE NOTICE '% transactions to be updated', total_count;
 
     update_start_time := clock_timestamp();
 
-    WHILE remaining_count > 0
+    cursor_count       := 0;
+    update_count       := 0;
+    cursor_count_batch := 0;
+    update_count_batch := 0;
+
+    <<XX>>
+    FOR rec IN tx_drop_repl_curs
       LOOP
+        cursor_count       := cursor_count       + 1;
+        cursor_count_batch := cursor_count_batch + 1;
+
         UPDATE transactions
         SET error = 'dropped/replaced', status = 0
-        FROM transactions_dropped_replaced
-        WHERE transactions_dropped_replaced.row_number <= iterator AND
-              transactions_dropped_replaced.nonce = transactions.nonce AND
-              transactions_dropped_replaced.from_address_hash = transactions.from_address_hash AND
-              transactions.block_hash IS NULL;
+        WHERE nonce = rec.nonce AND
+            from_address_hash = rec.from_address_hash AND
+            block_hash IS NULL AND
+            error IS NULL;
 
-        GET DIAGNOSTICS updated_count = ROW_COUNT;
-        RAISE NOTICE '-> % transaction counts updated.', updated_count;
+        GET DIAGNOSTICS row_count = ROW_COUNT;
+        update_count       := update_count       + row_count;
+        update_count_batch := update_count_batch + row_count;
 
-        DELETE
-        FROM transactions_dropped_replaced
-        WHERE transactions_dropped_replaced.row_number <= iterator;
+        CONTINUE WHEN cursor_count < total_count AND cursor_count % batch_size != 0;
 
-        GET DIAGNOSTICS deleted_count = ROW_COUNT;
-        RAISE NOTICE '-> % transactions from it count removed from queue.', deleted_count;
+        RAISE NOTICE '-> % transaction counts updated.', update_count_batch;
+        update_count_batch := 0;
 
-        -- COMMITS THE BATCH UPDATES
-        CHECKPOINT;
+        RAISE NOTICE '-> % transactions from it count removed from queue.', cursor_count_batch;
+        cursor_count_batch := 0;
 
-        remaining_count := remaining_count - deleted_count;
-        iterator := iterator + batch_size;
-        RAISE NOTICE '-> % remaining', remaining_count;
-        RAISE NOTICE '-> % next batch', iterator;
+        RAISE NOTICE '-> % remaining', total_count - cursor_count;
+        RAISE NOTICE '-> % next batch', cursor_count;
         update_elapsed_time := clock_timestamp() - update_start_time;
-        completed_count := total_count - remaining_count;
-        per_row := update_elapsed_time / completed_count;
-        RAISE NOTICE '-> Estimated time until completion: %s', per_row * remaining_count;
-      END LOOP;
+        per_row := update_elapsed_time / cursor_count;
+        RAISE NOTICE '-> Estimated time until completion: %s', per_row * (total_count - cursor_count);
+      END LOOP XX;
 
     end_time := clock_timestamp();
     elapsed_time := end_time - start_time;
