@@ -13,7 +13,7 @@ defmodule BlockScout.Mixfile do
         plt_add_apps: ~w(ex_unit mix)a,
         ignore_warnings: ".dialyzer-ignore"
       ],
-      elixir: "~> 1.6",
+      elixir: "~> 1.8",
       preferred_cli_env: [
         coveralls: :test,
         "coveralls.detail": :test,
