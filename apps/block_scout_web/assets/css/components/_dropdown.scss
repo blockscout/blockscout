@@ -1,17 +1,31 @@
 // These styles extend the default Bootstrap styles
-
 .dropdown-menu {
-  width: 100%;
-  box-shadow: $box-shadow;
+    box-shadow: $box-shadow;
+    padding: 0;
+    width: 100%;
+}
+
+.dropdown-item {
+    font-size: 12px;
+    padding: 10px 20px;
+
+    &:hover {
+        background-color: $tertiary;
+        color: $white;
+    }
 }
 
 .dropdown-search-icon {
-  top: 0.5rem;
-  left: 0.625rem;
-  pointer-events: none;
-  color: $gray-300;
+    color: $gray-300;
+    left: 0.625rem;
+    pointer-events: none;
+    top: 0.5rem;
 }
 
 .dropdown-search-field {
-  padding-left: 2rem;
+    padding-left: 2rem;
+}
+
+.dropdown-toggle::after {
+    margin-left: 0.71em;
 }

@@ -76,11 +76,52 @@
                 ) %>
           </div>
         </li>
+        <li class="nav-item dropdown">
+          <a href="#" role="button" id="navbarAPIsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <span class="nav-link-icon">
+              <%= render BlockScoutWeb.IconsView, "_apps_icon.html" %>
+            </span>
+            <%= gettext("Apps") %>
+          </a>
+          <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
+            <%= link(
+                  gettext("Item 1"),
+                  class: "dropdown-item",
+                  to: "/#"
+                ) %>
+            <%= link(
+                gettext("Item 2"),
+                class: "dropdown-item",
+                to: "/#"
+              ) %>
+          </div>
+        </li>
+        <li class="nav-item dropdown">
+          <a href="#" role="button" id="navbarAPIsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <span class="nav-link-icon">
+              <%= render BlockScoutWeb.IconsView, "_posdao_icon.html" %>
+            </span>
+            <%= gettext("POSDAO") %>
+          </a>
+          <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
+            <%= link(
+                  gettext("Item 1"),
+                  class: "dropdown-item",
+                  to: "/#"
+                ) %>
+            <%= link(
+                gettext("Item 2"),
+                class: "dropdown-item",
+                to: "/#"
+              ) %>
+          </div>
+        </li>
       </ul>
+      <!-- Search navbar -->
       <div class="search-form d-lg-flex d-inline-block">
         <%= form_for @conn, chain_path(@conn, :search), [class: "form-inline my-2 my-lg-0", method: :get, enforce_utf8: false], fn f -> %>
           <div class="input-group">
-            <%= search_input f, :q, class: 'form-control mr-auto', placeholder: gettext("Search by address, transaction hash, or block number"), "aria-describedby": "search-icon", "aria-label": gettext("Search"), "data-test": "search_input" %>
+            <%= search_input f, :q, class: 'form-control mr-auto', placeholder: gettext("Search by address, transaction hash, or block number"), "aria-describedby": "search-icon", "aria-label": gettext("Search by address, transaction, block"), "data-test": "search_input" %>
             <div class="input-group-append">
               <button class="input-group-text" id="search-icon">
                 <%= render BlockScoutWeb.IconsView, "_search_icon.html" %>

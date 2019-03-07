@@ -1,3 +1,29 @@
-$primary:       #5b389f;
-$secondary:     #7dd79f;
-$tertiary:      #997fdc;
+$primary : #fff;
+$secondary : #15bba6;
+$tertiary : #15bba6;
+
+// Navbar elements
+.navbar.navbar-primary {
+    &.navbar-dark {
+        .navbar-nav {
+            .nav-link {
+                color: #a3a9b5;
+                &:hover {
+                    color: #333;
+                }
+            }
+            .nav-link-icon {
+                circle {
+                    fill: $secondary;
+                }
+            }
+        }
+    }
+}
+
+
+.topnav-nav-link {
+    &:before {
+        background-color: $secondary;
+    }
+}
