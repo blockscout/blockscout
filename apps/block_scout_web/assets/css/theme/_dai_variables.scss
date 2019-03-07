@@ -16,7 +16,6 @@ $tertiary:      #1755e4;
 
   .form-control {
     color: $secondary;
-    border-color: transparentize($secondary, 0.30);
 
     &::-webkit-input-placeholder { /* Chrome/Opera/Safari */
       color: transparentize($secondary, 0.5);
@@ -32,9 +31,6 @@ $tertiary:      #1755e4;
     }
   }
 
-  .input-group-text {
-    border-color: transparentize($secondary, 0.30);
-  }
 }
 
 .navbar-logo {

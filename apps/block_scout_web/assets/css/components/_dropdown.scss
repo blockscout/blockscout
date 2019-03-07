@@ -3,6 +3,11 @@
     box-shadow: $box-shadow;
     padding: 0;
     width: 100%;
+
+    &.right {
+        left: auto;
+        right: 0;
+    }
 }
 
 .dropdown-item {
