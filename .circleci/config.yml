@@ -14,7 +14,7 @@ jobs:
     working_directory: ~/app
 
     steps:
-      - run: sudo npm install -g phantomjs-prebuilt
+      - run: sudo npm install -g phantomjs-prebuilt --unsafe-perm
       - run: sudo apt-get update; sudo apt-get -y install autoconf build-essential libgmp3-dev libtool
 
       - checkout
@@ -357,7 +357,7 @@ jobs:
     steps:
       - attach_workspace:
           at: .
-      - run: sudo npm install -g phantomjs-prebuilt
+      - run: sudo npm install -g phantomjs-prebuilt --unsafe-perm
 
       - run: mix local.hex --force
       - run: mix local.rebar --force
@@ -409,7 +409,7 @@ jobs:
       - attach_workspace:
           at: .
 
-      - run: sudo npm install -g phantomjs-prebuilt
+      - run: sudo npm install -g phantomjs-prebuilt --unsafe-perm
       - run: mix local.hex --force
       - run: mix local.rebar --force
 
@@ -460,7 +460,7 @@ jobs:
       - attach_workspace:
           at: .
 
-      - run: sudo npm install -g phantomjs-prebuilt
+      - run: sudo npm install -g phantomjs-prebuilt --unsafe-perm
       - run: mix local.hex --force
       - run: mix local.rebar --force
 
@@ -511,7 +511,7 @@ jobs:
       - attach_workspace:
           at: .
 
-      - run: sudo npm install -g phantomjs-prebuilt
+      - run: sudo npm install -g phantomjs-prebuilt --unsafe-perm
       - run: mix local.hex --force
       - run: mix local.rebar --force
 
