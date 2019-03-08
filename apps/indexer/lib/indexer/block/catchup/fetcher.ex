@@ -180,28 +180,21 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   defp async_import_created_contract_codes(_), do: :ok
 
-  defp async_import_internal_transactions(%{transactions: transactions}, json_rpc_named_arguments) do
-    transaction_data =
-      Enum.flat_map(transactions, fn
-        %Transaction{block_number: block_number, index: index, hash: hash, internal_transactions_indexed_at: nil} ->
-          [%{block_number: block_number, index: index, hash: hash}]
+  defp async_import_internal_transactions(%{blocks: blocks}, json_rpc_named_arguments) do
+    block_data = Enum.map(blocks, fn %Chain.Block{number: block_number} -> %{number: block_number} end)
 
-        %Transaction{internal_transactions_indexed_at: %DateTime{}} ->
-          []
-      end)
-
-    filtered_transaction_data =
+    filtered_block_data =
       if Keyword.get(json_rpc_named_arguments, :variant) == EthereumJSONRPC.Geth do
         {_, max_block_number} = Chain.fetch_min_and_max_block_numbers()
 
-        Enum.filter(transaction_data, fn %{block_number: block_number} ->
+        Enum.filter(block_data, fn %{number: block_number} ->
           max_block_number - block_number < @geth_block_limit
         end)
       else
-        transaction_data
+        block_data
       end
 
-    InternalTransaction.Fetcher.async_fetch(filtered_transaction_data, 10_000)
+    InternalTransaction.Fetcher.async_fetch(filtered_block_data, 10_000)
   end
 
   defp async_import_internal_transactions(_, _), do: :ok

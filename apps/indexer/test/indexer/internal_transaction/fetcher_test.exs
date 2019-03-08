@@ -2,7 +2,6 @@ defmodule Indexer.InternalTransaction.FetcherTest do
   use EthereumJSONRPC.Case, async: false
   use Explorer.DataCase
 
-  import ExUnit.CaptureLog
   import Mox
 
   alias Explorer.Chain.{Address, Hash, Transaction}
@@ -87,70 +86,32 @@ defmodule Indexer.InternalTransaction.FetcherTest do
              ) == []
     end
 
-    test "buffers collated transactions with unfetched internal transactions", %{
+    test "buffers blocks with unfetched internal transactions", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
       block = insert(:block)
 
-      collated_unfetched_transaction =
-        :transaction
-        |> insert()
-        |> with_block(block)
-
       assert InternalTransaction.Fetcher.init(
                [],
-               fn hash_string, acc -> [hash_string | acc] end,
+               fn block_number, acc -> [block_number | acc] end,
                json_rpc_named_arguments
-             ) == [{block.number, collated_unfetched_transaction.hash.bytes, collated_unfetched_transaction.index}]
+             ) == [block.number]
     end
 
-    test "does not buffer collated transactions with fetched internal transactions", %{
+    test "does not buffer blocks with fetched internal transactions", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
-      :transaction
-      |> insert()
-      |> with_block(internal_transactions_indexed_at: DateTime.utc_now())
+      insert(:block, internal_transactions_indexed_at: DateTime.utc_now())
 
       assert InternalTransaction.Fetcher.init(
                [],
-               fn hash_string, acc -> [hash_string | acc] end,
+               fn block_number, acc -> [block_number | acc] end,
                json_rpc_named_arguments
              ) == []
     end
   end
 
   describe "run/2" do
-    test "duplicate transaction hashes are logged", %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
-        expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
-          {:ok, [%{id: 0, result: %{"trace" => []}}]}
-        end)
-      end
-
-      CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-
-      %Transaction{hash: %Hash{bytes: bytes}} =
-        insert(:transaction, hash: "0x03cd5899a63b6f6222afda8705d059fd5a7d126bcabe962fb654d9736e6bcafa")
-
-      log =
-        capture_log(fn ->
-          InternalTransaction.Fetcher.run(
-            [
-              {1, bytes, 0},
-              {1, bytes, 0}
-            ],
-            json_rpc_named_arguments
-          )
-        end)
-
-      assert log =~
-               """
-               Duplicate entries being used to fetch internal transactions:
-                 1. {1, <<3, 205, 88, 153, 166, 59, 111, 98, 34, 175, 218, 135, 5, 208, 89, 253, 90, 125, 18, 107, 202, 190, 150, 47, 182, 84, 217, 115, 110, 107, 202, 250>>, 0}
-                 2. {1, <<3, 205, 88, 153, 166, 59, 111, 98, 34, 175, 218, 135, 5, 208, 89, 253, 90, 125, 18, 107, 202, 190, 150, 47, 182, 84, 217, 115, 110, 107, 202, 250>>, 0}
-               """
-    end
-
     @tag :no_parity
     test "internal transactions with failed parent does not create a new address", %{
       json_rpc_named_arguments: json_rpc_named_arguments
@@ -199,6 +160,7 @@ defmodule Indexer.InternalTransaction.FetcherTest do
                      "type" => "create"
                    }
                  ],
+                 "transactionHash" => "0x03cd5899a63b6f6222afda8705d059fd5a7d126bcabe962fb654d9736e6bcafa",
                  "vmTrace" => nil
                }
              }
@@ -225,28 +187,6 @@ defmodule Indexer.InternalTransaction.FetcherTest do
 
         assert is_nil(fetched_address)
       end
-    end
-
-    test "duplicate transaction hashes only retry uniques", %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
-        expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
-          {:ok, [%{id: 0, error: %{code: -32602, message: "Invalid params"}}]}
-        end)
-      end
-
-      CoinBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-
-      # not a real transaction hash, so that fetch fails
-      %Transaction{hash: %Hash{bytes: bytes}} =
-        insert(:transaction, hash: "0x0000000000000000000000000000000000000000000000000000000000000001")
-
-      assert InternalTransaction.Fetcher.run(
-               [
-                 {1, bytes, 0},
-                 {1, bytes, 0}
-               ],
-               json_rpc_named_arguments
-             ) == {:retry, [{1, bytes, 0}]}
     end
   end
 end

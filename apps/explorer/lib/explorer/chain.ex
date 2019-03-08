@@ -1143,62 +1143,55 @@ defmodule Explorer.Chain do
   end
 
   @doc """
-  Returns a stream of all collated transactions with unfetched internal transactions.
+  Returns a stream of all blocks with unfetched internal transactions.
 
-  Only transactions that have been collated into a block are returned; pending transactions not in a block are filtered
-  out.
+  Only blocks with consensus are returned.
 
-      iex> pending = insert(:transaction)
-      iex> unfetched_collated =
-      ...>   :transaction |>
-      ...>   insert() |>
-      ...>   with_block()
-      iex> fetched_collated =
-      ...>   :transaction |>
-      ...>   insert() |>
-      ...>   with_block(internal_transactions_indexed_at: DateTime.utc_now())
-      iex> {:ok, hash_set} = Explorer.Chain.stream_transactions_with_unfetched_internal_transactions(
-      ...>   [:hash],
+      iex> non_consensus = insert(:block, consensus: false)
+      iex> unfetched = insert(:block)
+      iex> fetched = insert(:block, internal_transactions_indexed_at: DateTime.utc_now())
+      iex> {:ok, number_set} = Explorer.Chain.stream_blocks_with_unfetched_internal_transactions(
+      ...>   [:number],
       ...>   MapSet.new(),
-      ...>   fn %Explorer.Chain.Transaction{hash: hash}, acc ->
-      ...>     MapSet.put(acc, hash)
+      ...>   fn %Explorer.Chain.Block{number: number}, acc ->
+      ...>     MapSet.put(acc, number)
       ...>   end
       ...> )
-      iex> pending.hash in hash_set
+      iex> non_consensus.number in number_set
       false
-      iex> unfetched_collated.hash in hash_set
+      iex> unfetched.number in number_set
       true
-      iex> fetched_collated.hash in hash_set
+      iex> fetched.hash in number_set
       false
 
   """
-  @spec stream_transactions_with_unfetched_internal_transactions(
+  @spec stream_blocks_with_unfetched_internal_transactions(
           fields :: [
-            :block_hash
-            | :internal_transactions_indexed_at
-            | :from_address_hash
-            | :gas
-            | :gas_price
+            :consensus
+            | :difficulty
+            | :gas_limit
+            | :gas_used
             | :hash
-            | :index
-            | :input
+            | :miner
+            | :miner_hash
             | :nonce
-            | :r
-            | :s
-            | :to_address_hash
-            | :v
-            | :value
+            | :number
+            | :parent_hash
+            | :size
+            | :timestamp
+            | :total_difficulty
+            | :transactions
+            | :internal_transactions_indexed_at
           ],
           initial :: accumulator,
           reducer :: (entry :: term(), accumulator -> accumulator)
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_transactions_with_unfetched_internal_transactions(fields, initial, reducer) when is_function(reducer, 2) do
+  def stream_blocks_with_unfetched_internal_transactions(fields, initial, reducer) when is_function(reducer, 2) do
     query =
       from(
-        t in Transaction,
-        # exclude pending transactions and replaced transactions
-        where: not is_nil(t.block_hash) and is_nil(t.internal_transactions_indexed_at),
+        b in Block,
+        where: b.consensus and is_nil(b.internal_transactions_indexed_at),
         select: ^fields
       )
 

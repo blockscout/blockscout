@@ -33,13 +33,13 @@ defmodule EthereumJSONRPC.Variant do
 
   ## Returns
 
-   * `{:ok, [internal_transaction_params]}` - internal transactions were successfully fetched for all transactions
-   * `{:error, reason}` - there was one or more errors with `reason` in fetching at least one of the transaction's
+   * `{:ok, [internal_transaction_params]}` - internal transactions were successfully fetched for all blocks
+   * `{:error, reason}` - there was one or more errors with `reason` in fetching at least one of the blocks'
        internal transactions
    * `:ignore` - the variant does not support fetching internal transactions.
   """
   @callback fetch_internal_transactions(
-              [%{hash_data: EthereumJSONRPC.hash()}],
+              [EthereumJSONRPC.block_number()],
               EthereumJSONRPC.json_rpc_named_arguments()
             ) :: {:ok, [internal_transaction_params]} | {:error, reason :: term} | :ignore
 
