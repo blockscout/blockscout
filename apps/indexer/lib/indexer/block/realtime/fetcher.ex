@@ -96,7 +96,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
     new_max_number = new_max_number(number, max_number_seen)
 
-    :timer.cancel(timer)
+    Process.cancel_timer(timer)
     new_timer = schedule_polling()
 
     {:noreply,
