@@ -36,8 +36,7 @@ defmodule BlockScoutWeb.AddressContractVerificationTest do
       contract_name: name,
       version: version,
       optimization: false,
-      source_code: source_code,
-      evm_version: "byzantium"
+      source_code: source_code
     })
     |> ContractVerifyPage.verify_and_publish()
 

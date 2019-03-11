@@ -36,7 +36,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
       {:error, changeset} ->
         {:ok, compiler_versions} = CompilerVersion.fetch_versions()
 
-        render(conn, "new.html", changeset: changeset, compiler_versions: compiler_versions)
+        render(conn, "new.html", changeset: changeset, compiler_versions: compiler_versions, evm_versions: @evm_versions)
     end
   end
 end
