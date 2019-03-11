@@ -23,8 +23,8 @@
 
         <div class="form-group mb-4">
           <%= label f, :compiler_version, gettext("Compiler") %>
-          <%= select f, :compiler_version, @compiler_versions, class: "form-control", selected: "latest", "aria-describedby": "compiler-help-block" %>
-          <%= error_tag f, :compiler_version, id: "compiler-help-block", class: "text-danger" %>
+          <%= select f, :compiler_version, @compiler_versions, class: "form-control", selected: "byzantium", "aria-describedby": "evm-version-help-block" %>
+          <%= error_tag f, :compiler_version, id: "evm-version-help-block", class: "text-danger" %>
         </div>
 
         <div class="form-group">
