@@ -36,7 +36,8 @@ defmodule BlockScoutWeb.AddressContractVerificationTest do
       contract_name: name,
       version: version,
       optimization: false,
-      source_code: source_code
+      source_code: source_code,
+      evm_version: "byzantium"
     })
     |> ContractVerifyPage.verify_and_publish()
 
@@ -48,7 +49,13 @@ defmodule BlockScoutWeb.AddressContractVerificationTest do
 
     session
     |> ContractVerifyPage.visit_page("0x1e0eaa06d02f965be2dfe0bc9ff52b2d82133461")
-    |> ContractVerifyPage.fill_form(%{contract_name: "", version: nil, optimization: nil, source_code: ""})
+    |> ContractVerifyPage.fill_form(%{
+      contract_name: "",
+      version: nil,
+      optimization: nil,
+      source_code: "",
+      evm_version: "byzantium"
+    })
     |> ContractVerifyPage.verify_and_publish()
     |> assert_has(ContractVerifyPage.validation_error())
   end
