@@ -1557,7 +1557,7 @@ msgid "Test Networks"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:94
+#: lib/block_scout_web/templates/layout/_footer.html.eex:95
 msgid "Version"
 msgstr ""
 
@@ -1682,7 +1682,7 @@ msgstr ""
 msgid "Run"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:31
 msgid "EVM Vesion"
 msgstr ""

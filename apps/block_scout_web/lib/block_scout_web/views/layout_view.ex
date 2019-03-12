@@ -80,9 +80,9 @@ defmodule BlockScoutWeb.LayoutView do
     release_link = Application.get_env(:block_scout_web, :release_link)
 
     if release_link == "" || release_link == nil do
-      _version_link = version
+      version
     else
-      _version_link = html_escape({:safe, "<a href=\"#{release_link}\" target=\"_blank\">#{version}</a>"})
+      html_escape({:safe, "<a href=\"#{release_link}\" target=\"_blank\">#{version}</a>"})
     end
   end
 
