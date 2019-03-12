@@ -1557,7 +1557,7 @@ msgid "Test Networks"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_footer.html.eex:94
+#: lib/block_scout_web/templates/layout/_footer.html.eex:95
 msgid "Version"
 msgstr ""
 
