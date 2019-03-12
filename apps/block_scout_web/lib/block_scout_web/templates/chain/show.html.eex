@@ -1,8 +1,8 @@
 <div class="dashboard-banner-container d-none d-md-block" data-page="chain-details">
-  <img src="<%= static_path(@conn, "/images/cube.svg") %>" alt="cube_graphic" class="dashboard-banner-graphic">
+  <!-- img src="<%= static_path(@conn, "/images/cube.svg") %>" alt="cube_graphic" class="dashboard-banner-graphic" -->
   <div class="container">
     <div class="dashboard-banner">
-      <div class="dashboard-banner-chart">
+      <!-- div class="dashboard-banner-chart">
         <div data-chart-loading-message class="tile tile-muted text-center mt-5">
           <span class="loading-spinner-small mr-2">
             <span class="loading-spinner-block-1"></span>
@@ -30,7 +30,7 @@
           <span class="dashboard-banner-chart-legend-value" data-selector="market-cap" data-usd-value="<%= @exchange_rate.market_cap_usd %>">
           </span>
         </div>
-      </div>
+      </div -->
       <div class="dashboard-banner-network-stats">
         <%= case @average_block_time do %>
           <% {:error, :disabled} -> %>
