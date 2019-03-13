@@ -7,7 +7,7 @@
         <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
       </div>
 
-      <div data-async-listing="<%= @current_path %>" class="card-body">
+      <div data-async-load data-async-listing="<%= @current_path %>" class="card-body">
         <h2 class="card-title">
           <span class="text-muted"><%= gettext "Tokens" %></span> / <%= token_name(@token) %>
         </h2>

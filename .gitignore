@@ -29,7 +29,7 @@ npm-debug.log
 # Alternatively, you may comment the line below and commit the
 # secrets files as long as you replace their contents by environment
 # variables.
-/apps/*/config/*.secret.exs
+#/apps/*/config/*.secret.exs
 
 # Wallaby screenshots
 screenshots/
@@ -39,3 +39,6 @@ screenshots/
 
 # osx 
 .DS_Store
+
+# mix phx.gen.cert self-signed certs for dev
+/apps/block_scout_web/priv/cert

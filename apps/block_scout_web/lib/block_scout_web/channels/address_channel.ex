@@ -4,14 +4,38 @@ defmodule BlockScoutWeb.AddressChannel do
   """
   use BlockScoutWeb, :channel
 
-  alias BlockScoutWeb.{AddressView, InternalTransactionView, TransactionView}
+  alias BlockScoutWeb.{AddressCoinBalanceView, AddressView, InternalTransactionView, TransactionView}
+  alias Explorer.{Chain, Market}
   alias Explorer.Chain.Hash
+  alias Explorer.Chain.Hash.Address, as: AddressHash
+  alias Explorer.ExchangeRates.Token
   alias Phoenix.View
 
-  intercept(["balance_update", "count", "internal_transaction", "pending_transaction", "transaction"])
+  intercept(["balance_update", "coin_balance", "count", "internal_transaction", "transaction"])
 
-  def join("addresses:" <> _address_hash, _params, socket) do
-    {:ok, %{}, socket}
+  def join("addresses:" <> address_hash, _params, socket) do
+    {:ok, %{}, assign(socket, :address_hash, address_hash)}
+  end
+
+  def handle_in("get_balance", _, socket) do
+    with {:ok, casted_address_hash} <- AddressHash.cast(socket.assigns.address_hash),
+         {:ok, address = %{fetched_coin_balance: balance}} when not is_nil(balance) <-
+           Chain.hash_to_address(casted_address_hash),
+         exchange_rate <- Market.get_exchange_rate(Explorer.coin()) || Token.null(),
+         {:ok, rendered} <- render_balance_card(address, exchange_rate, socket.assigns.locale) do
+      reply =
+        {:ok,
+         %{
+           balance_card: rendered,
+           balance: address.fetched_coin_balance.value,
+           fetched_coin_balance_block_number: address.fetched_coin_balance_block_number
+         }}
+
+      {:reply, reply, socket}
+    else
+      _ ->
+        {:noreply, socket}
+    end
   end
 
   def handle_out(
@@ -19,18 +43,19 @@ defmodule BlockScoutWeb.AddressChannel do
         %{address: address, exchange_rate: exchange_rate},
         socket
       ) do
-    Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
+    case render_balance_card(address, exchange_rate, socket.assigns.locale) do
+      {:ok, rendered} ->
+        push(socket, "balance", %{
+          balance_card: rendered,
+          balance: address.fetched_coin_balance.value,
+          fetched_coin_balance_block_number: address.fetched_coin_balance_block_number
+        })
 
-    rendered =
-      View.render_to_string(
-        AddressView,
-        "_balance_card.html",
-        address: address,
-        exchange_rate: exchange_rate
-      )
+        {:noreply, socket}
 
-    push(socket, "balance", %{balance: rendered})
-    {:noreply, socket}
+      _ ->
+        {:noreply, socket}
+    end
   end
 
   def handle_out("count", %{count: count}, socket) do
@@ -62,7 +87,26 @@ defmodule BlockScoutWeb.AddressChannel do
   end
 
   def handle_out("transaction", data, socket), do: handle_transaction(data, socket, "transaction")
-  def handle_out("pending_transaction", data, socket), do: handle_transaction(data, socket, "pending_transaction")
+
+  def handle_out("coin_balance", %{block_number: block_number}, socket) do
+    coin_balance = Chain.get_coin_balance(socket.assigns.address_hash, block_number)
+
+    Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
+
+    rendered_coin_balance =
+      View.render_to_string(
+        AddressCoinBalanceView,
+        "_coin_balances.html",
+        conn: socket,
+        coin_balance: coin_balance
+      )
+
+    push(socket, "coin_balance", %{
+      coin_balance_html: rendered_coin_balance
+    })
+
+    {:noreply, socket}
+  end
 
   def handle_transaction(%{address: address, transaction: transaction}, socket, event) do
     Gettext.put_locale(BlockScoutWeb.Gettext, socket.assigns.locale)
@@ -83,5 +127,25 @@ defmodule BlockScoutWeb.AddressChannel do
     })
 
     {:noreply, socket}
+  end
+
+  defp render_balance_card(address, exchange_rate, locale) do
+    Gettext.put_locale(BlockScoutWeb.Gettext, locale)
+
+    try do
+      rendered =
+        View.render_to_string(
+          AddressView,
+          "_balance_card.html",
+          address: address,
+          coin_balance_status: :current,
+          exchange_rate: exchange_rate
+        )
+
+      {:ok, rendered}
+    rescue
+      _ ->
+        :error
+    end
   end
 end

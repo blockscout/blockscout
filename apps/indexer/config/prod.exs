@@ -1,5 +1,7 @@
 use Mix.Config
 
+config :indexer, Indexer.Tracer, env: "production", disabled?: true
+
 config :logger, :indexer,
   level: :info,
   path: Path.absname("logs/prod/indexer.log"),
@@ -10,6 +12,11 @@ config :logger, :indexer_token_balances,
   path: Path.absname("logs/prod/indexer/token_balances/error.log"),
   metadata_filter: [fetcher: :token_balances],
   rotate: %{max_bytes: 52_428_800, keep: 19}
+
+config :logger, :failed_contract_creations,
+  level: :debug,
+  path: Path.absname("logs/prod/indexer/failed_contract_creations.log"),
+  metadata_filter: [fetcher: :failed_created_addresses]
 
 variant =
   if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do

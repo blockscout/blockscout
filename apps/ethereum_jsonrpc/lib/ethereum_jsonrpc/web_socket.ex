@@ -37,14 +37,14 @@ defmodule EthereumJSONRPC.WebSocket do
   @doc """
   Allow `c:start_link/1` to be called as part of a supervision tree.
   """
-  @callback child_spec([url :: String.t() | options :: term()]) :: Supervisor.child_spec()
+  @callback child_spec([(url :: String.t()) | (options :: term())]) :: Supervisor.child_spec()
 
   @doc """
   Starts web socket attached to `url` with `options`.
   """
   # Return is same as `t:GenServer.on_start/0`
-  @callback start_link([url :: String.t() | options :: term()]) ::
-              {:ok, pid()} | :ignore | {:error, {:already_started, pid()} | reason :: term()}
+  @callback start_link([(url :: String.t()) | (options :: term())]) ::
+              {:ok, pid()} | :ignore | {:error, {:already_started, pid()} | (reason :: term())}
 
   @doc """
   Run a single Remote Procedure Call (RPC) `t:EthereumJSONRPC.Transport.request/0` through `t:web_socket/0`.

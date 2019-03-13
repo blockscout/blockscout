@@ -1,5 +1,5 @@
 defmodule BlockScoutWeb.Tokens.HolderControllerTest do
-  use BlockScoutWeb.ConnCase
+  use BlockScoutWeb.ConnCase, async: true
 
   alias Explorer.Chain.Hash
 

@@ -7,7 +7,6 @@ defmodule EthereumJSONRPC.Receipt do
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   alias EthereumJSONRPC.Logs
-  alias Explorer.Chain.Transaction.Status
 
   @type elixir :: %{String.t() => String.t() | non_neg_integer}
 
@@ -38,6 +37,12 @@ defmodule EthereumJSONRPC.Receipt do
             | list
             | nil
         }
+
+  @typedoc """
+   * `:ok` - transaction succeeded
+   * `:error` - transaction failed
+  """
+  @type status :: :ok | :error
 
   @doc """
   Get `t:EthereumJSONRPC.Logs.elixir/0` from `t:elixir/0`
@@ -110,7 +115,7 @@ defmodule EthereumJSONRPC.Receipt do
           cumulative_gas_used: non_neg_integer,
           gas_used: non_neg_integer,
           created_contract_address_hash: String.t() | nil,
-          status: Status.t(),
+          status: status(),
           transaction_hash: String.t(),
           transaction_index: non_neg_integer()
         }
@@ -253,7 +258,14 @@ defmodule EthereumJSONRPC.Receipt do
 
   defp entry_to_elixir({key, quantity})
        when key in ~w(blockNumber cumulativeGasUsed gasUsed transactionIndex) do
-    {:ok, {key, quantity_to_integer(quantity)}}
+    result =
+      if is_nil(quantity) do
+        nil
+      else
+        quantity_to_integer(quantity)
+      end
+
+    {:ok, {key, result}}
   end
 
   defp entry_to_elixir({"logs" = key, logs}) do
@@ -275,6 +287,11 @@ defmodule EthereumJSONRPC.Receipt do
       other ->
         {:error, {:unknown_value, %{key: key, value: other}}}
     end
+  end
+
+  # fixes for latest ganache JSON RPC
+  defp entry_to_elixir({key, _}) when key in ~w(r s v) do
+    :ignore
   end
 
   defp entry_to_elixir({key, value}) do

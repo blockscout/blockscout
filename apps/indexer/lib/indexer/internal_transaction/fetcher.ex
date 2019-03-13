@@ -5,13 +5,15 @@ defmodule Indexer.InternalTransaction.Fetcher do
   See `async_fetch/1` for details on configuring limits.
   """
 
+  use Spandex.Decorators
+
   require Logger
 
   import Indexer.Block.Fetcher, only: [async_import_coin_balances: 2]
 
   alias Explorer.Chain
-  alias Indexer.{AddressExtraction, BufferedTask}
   alias Explorer.Chain.{Block, Hash}
+  alias Indexer.{AddressExtraction, BufferedTask, Tracer}
 
   @behaviour BufferedTask
 
@@ -21,7 +23,8 @@ defmodule Indexer.InternalTransaction.Fetcher do
     flush_interval: :timer.seconds(3),
     max_concurrency: @max_concurrency,
     max_batch_size: @max_batch_size,
-    task_supervisor: Indexer.InternalTransaction.TaskSupervisor
+    task_supervisor: Indexer.InternalTransaction.TaskSupervisor,
+    metadata: [fetcher: :internal_transaction]
   ]
 
   @doc """
@@ -91,17 +94,31 @@ defmodule Indexer.InternalTransaction.Fetcher do
   end
 
   @impl BufferedTask
+  @decorate trace(
+              name: "fetch",
+              resource: "Indexer.InternalTransaction.Fetcher.run/2",
+              service: :indexer,
+              tracer: Tracer
+            )
   def run(entries, json_rpc_named_arguments) do
     unique_entries = unique_entries(entries)
 
-    Logger.debug(fn -> "fetching internal transactions for #{length(unique_entries)} transactions" end)
+    unique_entries_count = Enum.count(unique_entries)
+    Logger.metadata(count: unique_entries_count)
+
+    Logger.debug("fetching internal transactions for transactions")
 
     unique_entries
     |> Enum.map(&params/1)
     |> EthereumJSONRPC.fetch_internal_transactions(json_rpc_named_arguments)
     |> case do
       {:ok, internal_transactions_params} ->
-        addresses_params = AddressExtraction.extract_addresses(%{internal_transactions: internal_transactions_params})
+        internal_transactions_params_without_failed_creations = remove_failed_creations(internal_transactions_params)
+
+        addresses_params =
+          AddressExtraction.extract_addresses(%{
+            internal_transactions: internal_transactions_params_without_failed_creations
+          })
 
         address_hash_to_block_number =
           Enum.into(addresses_params, %{}, fn %{fetched_coin_balance_block_number: block_number, hash: hash} ->
@@ -111,7 +128,7 @@ defmodule Indexer.InternalTransaction.Fetcher do
         with {:ok, imported} <-
                Chain.import(%{
                  addresses: %{params: addresses_params},
-                 internal_transactions: %{params: internal_transactions_params},
+                 internal_transactions: %{params: internal_transactions_params_without_failed_creations},
                  timeout: :infinity
                }) do
           async_import_coin_balances(imported, %{
@@ -119,25 +136,25 @@ defmodule Indexer.InternalTransaction.Fetcher do
           })
         else
           {:error, step, reason, _changes_so_far} ->
-            Logger.error(fn ->
-              [
-                "failed to import internal transactions for ",
-                to_string(length(entries)),
-                " transactions at ",
-                to_string(step),
-                ": ",
-                inspect(reason)
-              ]
-            end)
+            Logger.error(
+              fn ->
+                [
+                  "failed to import internal transactions for transactions: ",
+                  inspect(reason)
+                ]
+              end,
+              step: step,
+              error_count: unique_entries_count
+            )
 
             # re-queue the de-duped entries
             {:retry, unique_entries}
         end
 
       {:error, reason} ->
-        Logger.error(fn ->
-          "failed to fetch internal transactions for #{length(entries)} transactions: #{inspect(reason)}"
-        end)
+        Logger.error(fn -> ["failed to fetch internal transactions for transactions: ", inspect(reason)] end,
+          error_count: unique_entries_count
+        )
 
         # re-queue the de-duped entries
         {:retry, unique_entries}
@@ -182,6 +199,33 @@ defmodule Indexer.InternalTransaction.Fetcher do
 
         [unique | _] = duplicates ->
           {[unique | acc_uniques], duplicates ++ acc_duplicates}
+      end
+    end)
+  end
+
+  defp remove_failed_creations(internal_transactions_params) do
+    internal_transactions_params
+    |> Enum.map(fn internal_transaction_params ->
+      internal_transaction_params[:trace_address]
+
+      failed_parent_index =
+        Enum.find(internal_transaction_params[:trace_address], fn trace_address ->
+          parent = Enum.at(internal_transactions_params, trace_address)
+
+          !is_nil(parent[:error])
+        end)
+
+      failed_parent = failed_parent_index && Enum.at(internal_transactions_params, failed_parent_index)
+
+      if failed_parent do
+        internal_transaction_params
+        |> Map.delete(:created_contract_address_hash)
+        |> Map.delete(:created_contract_code)
+        |> Map.delete(:gas_used)
+        |> Map.delete(:output)
+        |> Map.put(:error, failed_parent[:error])
+      else
+        internal_transaction_params
       end
     end)
   end

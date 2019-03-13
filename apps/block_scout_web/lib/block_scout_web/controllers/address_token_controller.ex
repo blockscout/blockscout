@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.AddressTokenController do
 
   alias Explorer.{Chain, Market}
   alias Explorer.ExchangeRates.Token
+  alias Indexer.CoinBalance.OnDemandFetcher
 
   import BlockScoutWeb.AddressController, only: [transaction_count: 1, validation_count: 1]
   import BlockScoutWeb.Chain, only: [next_page_params: 3, paging_options: 1, split_list_by_page: 1]
@@ -17,11 +18,12 @@ defmodule BlockScoutWeb.AddressTokenController do
         conn,
         "index.html",
         address: address,
+        coin_balance_status: OnDemandFetcher.trigger_fetch(address),
         exchange_rate: Market.get_exchange_rate(Explorer.coin()) || Token.null(),
         transaction_count: transaction_count(address),
         validation_count: validation_count(address),
         next_page_params: next_page_params(next_page, tokens, params),
-        tokens: tokens
+        tokens: Market.add_price(tokens)
       )
     else
       :error ->

@@ -178,6 +178,33 @@ defmodule Explorer.Chain.TransactionTest do
     end
   end
 
+  describe "transaction_hash_to_block_number/1" do
+    test "returns only transactions with the specified block number" do
+      target_block = insert(:block, number: 1_000_000)
+
+      :transaction
+      |> insert()
+      |> with_block(target_block)
+
+      :transaction
+      |> insert()
+      |> with_block(target_block)
+
+      :transaction
+      |> insert()
+      |> with_block(insert(:block, number: 1_001_101))
+
+      result =
+        1_000_000
+        |> Transaction.transactions_with_block_number()
+        |> Repo.all()
+        |> Enum.map(& &1.block_number)
+
+      refute Enum.any?(result, fn block_number -> 1_001_101 == block_number end)
+      assert Enum.all?(result, fn block_number -> 1_000_000 == block_number end)
+    end
+  end
+
   describe "last_nonce_by_address_query/1" do
     test "returns the nonce value from the last block" do
       address = insert(:address)
@@ -227,7 +254,7 @@ defmodule Explorer.Chain.TransactionTest do
         |> insert(to_address: insert(:contract_address))
         |> Repo.preload(to_address: :smart_contract)
 
-      assert Transaction.decoded_input_data(transaction) == {:error, :contract_not_verified}
+      assert Transaction.decoded_input_data(transaction) == {:error, :contract_not_verified, []}
     end
 
     test "that a contract call transaction that has a verified contract returns the decoded input data" do
@@ -237,6 +264,26 @@ defmodule Explorer.Chain.TransactionTest do
         |> Repo.preload(to_address: :smart_contract)
 
       assert Transaction.decoded_input_data(transaction) == {:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 50}]}
+    end
+
+    test "that a contract call will look up a match in contract_methods table" do
+      :transaction_to_verified_contract
+      |> insert()
+      |> Repo.preload(to_address: :smart_contract)
+
+      contract = insert(:smart_contract) |> Repo.preload(:address)
+
+      input_data =
+        "set(uint)"
+        |> ABI.encode([10])
+        |> Base.encode16(case: :lower)
+
+      transaction =
+        :transaction
+        |> insert(to_address: contract.address, input: "0x" <> input_data)
+        |> Repo.preload(to_address: :smart_contract)
+
+      assert Transaction.decoded_input_data(transaction) == {:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 10}]}
     end
   end
 end

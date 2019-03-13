@@ -11,14 +11,18 @@ defmodule Indexer.PendingTransaction.Fetcher do
 
   import EthereumJSONRPC, only: [fetch_pending_transactions: 1]
 
+  alias Ecto.Changeset
   alias Explorer.Chain
   alias Indexer.{AddressExtraction, PendingTransaction}
+
+  @chunk_size 250
 
   # milliseconds
   @default_interval 1_000
 
   defstruct interval: @default_interval,
             json_rpc_named_arguments: [],
+            last_fetch_at: nil,
             task: nil
 
   def child_spec([init_arguments]) do
@@ -58,6 +62,8 @@ defmodule Indexer.PendingTransaction.Fetcher do
 
   @impl GenServer
   def init(opts) when is_list(opts) do
+    Logger.metadata(fetcher: :pending_transaction)
+
     opts =
       :indexer
       |> Application.get_all_env()
@@ -79,10 +85,16 @@ defmodule Indexer.PendingTransaction.Fetcher do
     {:noreply, %PendingTransaction.Fetcher{state | task: task}}
   end
 
-  def handle_info({ref, _}, %PendingTransaction.Fetcher{task: %Task{ref: ref}} = state) do
+  def handle_info({ref, result}, %PendingTransaction.Fetcher{task: %Task{ref: ref}} = state) do
     Process.demonitor(ref, [:flush])
 
-    {:noreply, schedule_fetch(state)}
+    case result do
+      {:ok, new_last_fetch_at} ->
+        {:noreply, schedule_fetch(%{state | last_fetch_at: new_last_fetch_at})}
+
+      _ ->
+        {:noreply, schedule_fetch(state)}
+    end
   end
 
   def handle_info(
@@ -100,21 +112,52 @@ defmodule Indexer.PendingTransaction.Fetcher do
   end
 
   defp task(%PendingTransaction.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = _state) do
+    Logger.metadata(fetcher: :pending_transaction)
+
     case fetch_pending_transactions(json_rpc_named_arguments) do
       {:ok, transactions_params} ->
-        addresses_params = AddressExtraction.extract_addresses(%{transactions: transactions_params}, pending: true)
+        new_last_fetched_at = NaiveDateTime.utc_now()
 
-        # There's no need to queue up fetching the address balance since theses are pending transactions and cannot have
-        # affected the address balance yet since address balance is a balance at a give block and these transactions are
-        # blockless.
-        {:ok, _} =
-          Chain.import(%{
-            addresses: %{params: addresses_params},
-            broadcast: :realtime,
-            transactions: %{params: transactions_params, on_conflict: :nothing}
-          })
+        transactions_params
+        |> Stream.map(&Map.put(&1, :earliest_processing_start, new_last_fetched_at))
+        |> Stream.chunk_every(@chunk_size)
+        |> Enum.each(&import_chunk/1)
+
+        {:ok, new_last_fetched_at}
 
       :ignore ->
+        :ok
+
+      {:error, :timeout} ->
+        Logger.error("timeout")
+
+        :ok
+    end
+  end
+
+  defp import_chunk(transactions_params) do
+    addresses_params = AddressExtraction.extract_addresses(%{transactions: transactions_params}, pending: true)
+
+    # There's no need to queue up fetching the address balance since theses are pending transactions and cannot have
+    # affected the address balance yet since address balance is a balance at a given block and these transactions are
+    # blockless.
+    case Chain.import(%{
+           addresses: %{params: addresses_params, on_conflict: :nothing},
+           broadcast: :realtime,
+           transactions: %{params: transactions_params, on_conflict: :nothing}
+         }) do
+      {:ok, _} ->
+        :ok
+
+      {:error, [%Changeset{} | _] = changesets} ->
+        Logger.error(fn -> ["Failed to validate: ", inspect(changesets)] end, step: :import)
+        :ok
+
+      {:error, reason} ->
+        Logger.error(fn -> inspect(reason) end, step: :import)
+
+      {:error, step, failed_value, _changes_so_far} ->
+        Logger.error(fn -> ["Failed to import: ", inspect(failed_value)] end, step: step)
         :ok
     end
   end

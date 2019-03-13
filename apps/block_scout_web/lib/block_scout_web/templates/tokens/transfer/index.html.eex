@@ -3,7 +3,6 @@
     OverviewView,
     "_details.html",
     token: @token,
-    holders_count_consolidation_enabled: @holders_count_consolidation_enabled,
     total_token_transfers: @total_token_transfers,
     total_token_holders: @total_token_holders,
     conn: @conn
@@ -15,7 +14,7 @@
         <%= render OverviewView, "_tabs.html", assigns %>
       </div>
 
-      <div class="card-body" data-async-listing="<%= @current_path %>">
+      <div class="card-body" data-async-load data-async-listing="<%= @current_path %>">
         <h2 class="card-title"><%= gettext "Token Transfers" %></h2>
         <button data-error-message class="alert alert-danger col-12 text-left" style="display: none;">
           <span href="#" class="alert-link"><%= gettext("Something went wrong, click to reload.") %></span>

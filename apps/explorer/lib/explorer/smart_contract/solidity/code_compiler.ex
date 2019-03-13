@@ -3,6 +3,9 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
   Module responsible to compile the Solidity code of a given Smart Contract.
   """
 
+  @new_contract_name "New.sol"
+  @allowed_evm_versions ["homestead", "tangerineWhistle", "spuriousDragon", "byzantium", "constantinople"]
+
   @doc """
   Compiles a code in the solidity command line.
 
@@ -53,13 +56,21 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
               "type" => "function"
             }
           ],
-          "bytecode" => "6080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a72305820235fceab083d33bf112b473c85551306a29f32dcdc7e95b4dfdd697c1db188ec0029",
-          "name" => "SimpleStorage",
-          "opcodes" => "PUSH1 0x80 PUSH1 0x40 MSTORE CALLVALUE DUP1 ISZERO PUSH2 0x10 JUMPI PUSH1 0x0 DUP1 REVERT JUMPDEST POP PUSH1 0xDF DUP1 PUSH2 0x1F PUSH1 0x0 CODECOPY PUSH1 0x0 RETURN STOP PUSH1 0x80 PUSH1 0x40 MSTORE PUSH1 0x4 CALLDATASIZE LT PUSH1 0x49 JUMPI PUSH1 0x0 CALLDATALOAD PUSH29 0x100000000000000000000000000000000000000000000000000000000 SWAP1 DIV PUSH4 0xFFFFFFFF AND DUP1 PUSH4 0x60FE47B1 EQ PUSH1 0x4E JUMPI DUP1 PUSH4 0x6D4CE63C EQ PUSH1 0x78 JUMPI JUMPDEST PUSH1 0x0 DUP1 REVERT JUMPDEST CALLVALUE DUP1 ISZERO PUSH1 0x59 JUMPI PUSH1 0x0 DUP1 REVERT JUMPDEST POP PUSH1 0x76 PUSH1 0x4 DUP1 CALLDATASIZE SUB DUP2 ADD SWAP1 DUP1 DUP1 CALLDATALOAD SWAP1 PUSH1 0x20 ADD SWAP1 SWAP3 SWAP2 SWAP1 POP POP POP PUSH1 0xA0 JUMP JUMPDEST STOP JUMPDEST CALLVALUE DUP1 ISZERO PUSH1 0x83 JUMPI PUSH1 0x0 DUP1 REVERT JUMPDEST POP PUSH1 0x8A PUSH1 0xAA JUMP JUMPDEST PUSH1 0x40 MLOAD DUP1 DUP3 DUP2 MSTORE PUSH1 0x20 ADD SWAP2 POP POP PUSH1 0x40 MLOAD DUP1 SWAP2 SUB SWAP1 RETURN JUMPDEST DUP1 PUSH1 0x0 DUP2 SWAP1 SSTORE POP POP JUMP JUMPDEST PUSH1 0x0 DUP1 SLOAD SWAP1 POP SWAP1 JUMP STOP LOG1 PUSH6 0x627A7A723058 KECCAK256 0x23 0x5f 0xce 0xab ADDMOD RETURNDATASIZE CALLER 0xbf GT 0x2b 0x47 EXTCODECOPY DUP6 SSTORE SGT MOD LOG2 SWAP16 ORIGIN 0xdc 0xdc PUSH31 0x95B4DFDD697C1DB188EC002900000000000000000000000000000000000000 "
+          "bytecode" => "6080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a72305820834bdab406d80509618957aa1a5ad1a4b77f4f1149078675940494ebe5b4147b0029",
+          "name" => "SimpleStorage"
         }
       }
   """
-  def run(name, compiler_version, code, optimize) do
+  def run(name, compiler_version, code, optimize, evm_version \\ "byzantium", external_libs \\ %{}) do
+    external_libs_string = Jason.encode!(external_libs)
+
+    evm_version =
+      if evm_version in @allowed_evm_versions do
+        evm_version
+      else
+        "byzantium"
+      end
+
     {response, _status} =
       System.cmd(
         "node",
@@ -67,29 +78,27 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
           Application.app_dir(:explorer, "priv/compile_solc.js"),
           code,
           compiler_version,
-          optimize_value(optimize)
+          optimize_value(optimize),
+          @new_contract_name,
+          external_libs_string,
+          evm_version
         ]
       )
 
-    with %{"contracts" => contracts} <- Jason.decode!(response),
-         %{"interface" => abi, "runtimeBytecode" => bytecode, "opcodes" => opcodes} <-
+    with {:ok, contracts} <- Jason.decode(response),
+         %{"abi" => abi, "evm" => %{"deployedBytecode" => %{"object" => bytecode}}} <-
            get_contract_info(contracts, name) do
-      {
-        :ok,
-        %{
-          "abi" => Jason.decode!(abi),
-          "bytecode" => bytecode,
-          "name" => name,
-          "opcodes" => opcodes
-        }
-      }
+      {:ok, %{"abi" => abi, "bytecode" => bytecode, "name" => name}}
     else
+      {:error, %Jason.DecodeError{}} ->
+        {:error, :compilation}
+
       error ->
         parse_error(error)
     end
   end
 
-  def get_contract_info(contracts, _) when contracts == %{}, do: %{"errors" => []}
+  def get_contract_info(contracts, _) when contracts == %{}, do: {:error, :compilation}
 
   def get_contract_info(contracts, name) do
     new_versions_name = ":" <> name
@@ -106,9 +115,9 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
     end
   end
 
-  def parse_error({:error, :name} = error), do: error
   def parse_error(%{"error" => error}), do: {:error, [error]}
   def parse_error(%{"errors" => errors}), do: {:error, errors}
+  def parse_error({:error, _} = error), do: error
 
   defp optimize_value(false), do: "0"
   defp optimize_value("false"), do: "0"

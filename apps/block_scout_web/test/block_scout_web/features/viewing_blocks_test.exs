@@ -1,5 +1,5 @@
 defmodule BlockScoutWeb.ViewingBlocksTest do
-  use BlockScoutWeb.FeatureCase, async: true
+  use BlockScoutWeb.FeatureCase, async: false
 
   alias BlockScoutWeb.{BlockListPage, BlockPage}
   alias Explorer.Chain.Block
@@ -149,9 +149,8 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
           uncle = insert(:block, consensus: false)
           insert(:block_second_degree_relation, uncle_hash: uncle.hash)
 
-          :transaction
-          |> insert()
-          |> with_block(uncle)
+          transaction = insert(:transaction)
+          insert(:transaction_fork, hash: transaction.hash, uncle_hash: uncle.hash)
 
           uncle
         end

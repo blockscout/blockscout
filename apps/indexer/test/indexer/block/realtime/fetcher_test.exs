@@ -5,8 +5,8 @@ defmodule Indexer.Block.Realtime.FetcherTest do
   import Mox
 
   alias Explorer.Chain
-  alias Explorer.Chain.Address
-  alias Indexer.{Sequence, Token, TokenBalance}
+  alias Explorer.Chain.{Address, Transaction}
+  alias Indexer.{Sequence, Token, TokenBalance, ReplacedTransaction}
   alias Indexer.Block.{Realtime, Uncle}
 
   @moduletag capture_log: true
@@ -53,6 +53,8 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       Uncle.Supervisor.Case.start_supervised!(
         block_fetcher: %Indexer.Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
       )
+
+      ReplacedTransaction.Supervisor.Case.start_supervised!()
 
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         EthereumJSONRPC.Mox
@@ -410,7 +412,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
                     %{index: 4, transaction_hash: transaction_hash},
                     %{index: 5, transaction_hash: transaction_hash}
                   ],
-                  transactions: [transaction_hash]
+                  transactions: [%Transaction{hash: transaction_hash}]
                 },
                 errors: []
               }} = Indexer.Block.Fetcher.fetch_and_import_range(block_fetcher, 3_946_079..3_946_080)

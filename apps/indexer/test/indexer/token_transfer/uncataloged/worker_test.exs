@@ -24,11 +24,26 @@ defmodule Indexer.TokenTransfer.Uncataloged.WorkerTest do
     test "sends shutdown to supervisor" do
       state = %{task_ref: nil, block_numbers: [], sup_pid: self()}
       Task.async(fn -> Worker.handle_info(:scan, state) end)
-      assert_receive {_, _, {:terminate, :normal}}
+      assert_receive {_, _, {:terminate, :normal}}, 200
     end
 
     test "sends message to self when uncataloged token transfers are found" do
-      log = insert(:token_transfer_log)
+      block = insert(:block)
+      address = insert(:address)
+
+      log =
+        insert(:token_transfer_log,
+          transaction:
+            insert(:transaction,
+              block_number: block.number,
+              block_hash: block.hash,
+              cumulative_gas_used: 0,
+              gas_used: 0,
+              index: 0
+            ),
+          address_hash: address.hash
+        )
+
       block_number = log.transaction.block_number
 
       expected_state = %{task_ref: nil, block_numbers: [block_number], retry_interval: 1}

@@ -307,6 +307,18 @@ defmodule BlockScoutWeb.AddressViewTest do
 
       assert AddressView.current_tab_name(path) == "Read Contract"
     end
+
+    test "generates the correct tab name for the coin_balances path" do
+      path = address_coin_balance_path(Endpoint, :index, "0x4ddr3s")
+
+      assert AddressView.current_tab_name(path) == "Coin Balance History"
+    end
+
+    test "generates the correct tab name for the validations path" do
+      path = address_validation_path(Endpoint, :index, "0x4ddr3s")
+
+      assert AddressView.current_tab_name(path) == "Blocks Validated"
+    end
   end
 
   describe "short_hash/1" do
@@ -322,19 +334,19 @@ defmodule BlockScoutWeb.AddressViewTest do
       smart_contract = build(:smart_contract, name: "POA")
       address = build(:address, smart_contract: smart_contract)
 
-      assert AddressView.address_page_title(address) == "POA (#{address.hash})"
+      assert AddressView.address_page_title(address) == "POA (#{address})"
     end
 
     test "uses the string 'Contract' when it's a contract" do
       address = build(:contract_address, smart_contract: nil)
 
-      assert AddressView.address_page_title(address) == "Contract #{address.hash}"
+      assert AddressView.address_page_title(address) == "Contract #{address}"
     end
 
     test "uses the address hash when it is not a contract" do
       address = build(:address, smart_contract: nil)
 
-      assert AddressView.address_page_title(address) == "#{address.hash}"
+      assert AddressView.address_page_title(address) == "#{address}"
     end
   end
 end

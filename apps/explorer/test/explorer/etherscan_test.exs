@@ -122,8 +122,8 @@ defmodule Explorer.EtherscanTest do
 
       [found_transaction] = Etherscan.list_transactions(address.hash)
 
-      {:ok, max_block_number} = Chain.max_block_number()
-      expected_confirmations = max_block_number - transaction.block_number
+      block_height = Chain.block_height()
+      expected_confirmations = block_height - transaction.block_number
 
       assert found_transaction.confirmations == expected_confirmations
     end
@@ -888,8 +888,8 @@ defmodule Explorer.EtherscanTest do
 
       [found_token_transfer] = Etherscan.list_token_transfers(token_transfer.from_address_hash, nil)
 
-      {:ok, max_block_number} = Chain.max_block_number()
-      expected_confirmations = max_block_number - transaction.block_number
+      block_height = Chain.block_height()
+      expected_confirmations = block_height - transaction.block_number
 
       assert found_token_transfer.confirmations == expected_confirmations
     end
@@ -1168,7 +1168,7 @@ defmodule Explorer.EtherscanTest do
 
   describe "list_blocks/1" do
     test "it returns all required fields" do
-      %{block_range: range} = block_reward = insert(:block_reward)
+      %{block_range: range} = emission_reward = insert(:emission_reward)
 
       block = insert(:block, number: Enum.random(Range.new(range.from, range.to)))
 
@@ -1180,7 +1180,7 @@ defmodule Explorer.EtherscanTest do
       |> with_block(block, gas_used: 1)
 
       expected_reward =
-        block_reward.reward
+        emission_reward.reward
         |> Wei.to(:wei)
         |> Decimal.add(Decimal.new(1))
         |> Wei.from(:wei)
@@ -1197,7 +1197,7 @@ defmodule Explorer.EtherscanTest do
     end
 
     test "with block containing multiple transactions" do
-      %{block_range: range} = block_reward = insert(:block_reward)
+      %{block_range: range} = emission_reward = insert(:emission_reward)
 
       block = insert(:block, number: Enum.random(Range.new(range.from, range.to)))
 
@@ -1213,7 +1213,7 @@ defmodule Explorer.EtherscanTest do
       |> with_block(block, gas_used: 2)
 
       expected_reward =
-        block_reward.reward
+        emission_reward.reward
         |> Wei.to(:wei)
         |> Decimal.add(Decimal.new(3))
         |> Wei.from(:wei)
@@ -1230,7 +1230,7 @@ defmodule Explorer.EtherscanTest do
     end
 
     test "with block without transactions" do
-      %{block_range: range} = block_reward = insert(:block_reward)
+      %{block_range: range} = emission_reward = insert(:emission_reward)
 
       block = insert(:block, number: Enum.random(Range.new(range.from, range.to)))
 
@@ -1241,7 +1241,7 @@ defmodule Explorer.EtherscanTest do
         %{
           number: block.number,
           timestamp: block.timestamp,
-          reward: block_reward.reward
+          reward: emission_reward.reward
         }
       ]
 
@@ -1249,7 +1249,7 @@ defmodule Explorer.EtherscanTest do
     end
 
     test "with multiple blocks" do
-      %{block_range: range} = block_reward = insert(:block_reward)
+      %{block_range: range} = emission_reward = insert(:emission_reward)
 
       block_numbers = Range.new(range.from, range.to)
 
@@ -1280,13 +1280,13 @@ defmodule Explorer.EtherscanTest do
       |> with_block(block2, gas_used: 3)
 
       expected_reward_block1 =
-        block_reward.reward
+        emission_reward.reward
         |> Wei.to(:wei)
         |> Decimal.add(Decimal.new(8))
         |> Wei.from(:wei)
 
       expected_reward_block2 =
-        block_reward.reward
+        emission_reward.reward
         |> Wei.to(:wei)
         |> Decimal.add(Decimal.new(18))
         |> Wei.from(:wei)
@@ -1308,7 +1308,7 @@ defmodule Explorer.EtherscanTest do
     end
 
     test "with pagination options" do
-      %{block_range: range} = block_reward = insert(:block_reward)
+      %{block_range: range} = emission_reward = insert(:emission_reward)
 
       block_numbers = Range.new(range.from, range.to)
 
@@ -1324,7 +1324,7 @@ defmodule Explorer.EtherscanTest do
       |> with_block(block1, gas_used: 2)
 
       expected_reward =
-        block_reward.reward
+        emission_reward.reward
         |> Wei.to(:wei)
         |> Decimal.add(Decimal.new(4))
         |> Wei.from(:wei)
@@ -1333,7 +1333,7 @@ defmodule Explorer.EtherscanTest do
         %{
           number: block2.number,
           timestamp: block2.timestamp,
-          reward: block_reward.reward
+          reward: emission_reward.reward
         }
       ]
 

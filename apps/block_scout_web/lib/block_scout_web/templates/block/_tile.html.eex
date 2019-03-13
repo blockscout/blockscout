@@ -42,6 +42,15 @@
             contract: false %>
         </span>
       </div>
+      <%= if show_reward?(@block.rewards) do %>
+        <div class="text-nowrap text-truncate mt-3 mt-md-0">
+          <!-- validator reward -->
+          <%= gettext "Reward" %>
+          <span class="ml-2">
+            <%= combined_rewards_value(@block) %>
+          </span>
+        </div>
+      <% end %>
     </div>
     <div class="col-md-4 col-lg-3 text-md-right d-flex flex-column align-items-md-end justify-content-md-end mt-3 mt-md-0">
       <!-- Gas Limit -->

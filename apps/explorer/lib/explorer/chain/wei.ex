@@ -147,6 +147,22 @@ defmodule Explorer.Chain.Wei do
   end
 
   @doc """
+  Multiplies Wei values by an `t:integer/0`.
+
+  ## Example
+
+      iex> wei = %Explorer.Chain.Wei{value: Decimal.new(10)}
+      iex> multiplier = 5
+      iex> Explorer.Chain.Wei.mult(wei, multiplier)
+      %Explorer.Chain.Wei{value: Decimal.new(50)}
+  """
+  def mult(%Wei{value: value}, multiplier) when is_integer(multiplier) do
+    value
+    |> Decimal.mult(multiplier)
+    |> from(:wei)
+  end
+
+  @doc """
   Converts `Decimal` representations of various wei denominations (wei, Gwei, ether) to
   a wei base unit.
 

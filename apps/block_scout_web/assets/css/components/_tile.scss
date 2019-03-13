@@ -41,6 +41,14 @@
       }
     }
 
+    &-emission-reward {
+      border-left: 4px solid $lilac;
+
+      .tile-label {
+        color: $lilac;
+      }
+    }
+
     &-transaction {
       border-left: 4px solid $blue;
 
@@ -80,6 +88,13 @@
 
       .tile-label {
         color: $orange;
+      }
+
+      &-short-name {
+        overflow: hidden;
+        max-width: 45%;
+        vertical-align: middle;
+        text-overflow: ellipsis;
       }
     }
 

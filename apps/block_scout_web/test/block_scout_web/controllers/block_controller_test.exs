@@ -19,15 +19,16 @@ defmodule BlockScoutWeb.BlockControllerTest do
 
   describe "GET index/2" do
     test "returns all blocks", %{conn: conn} do
-      block_ids =
-        4
-        |> insert_list(:block)
-        |> Stream.map(& &1.number)
-        |> Enum.reverse()
+      4
+      |> insert_list(:block)
+      |> Stream.map(& &1.number)
+      |> Enum.reverse()
 
-      conn = get(conn, block_path(conn, :index))
+      conn = get(conn, block_path(conn, :index), %{"type" => "JSON"})
 
-      assert Enum.map(conn.assigns.blocks, & &1.number) == block_ids
+      items = Map.get(json_response(conn, 200), "items")
+
+      assert length(items) == 4
     end
 
     test "does not include uncles", %{conn: conn} do
@@ -41,9 +42,11 @@ defmodule BlockScoutWeb.BlockControllerTest do
         insert(:block_second_degree_relation, uncle_hash: uncle.hash, nephew: Enum.at(blocks, index))
       end
 
-      conn = get(conn, block_path(conn, :index))
+      conn = get(conn, block_path(conn, :index), %{"type" => "JSON"})
 
-      assert Enum.map(conn.assigns.blocks, & &1.number) == Enum.map(blocks, & &1.number)
+      items = Map.get(json_response(conn, 200), "items")
+
+      assert length(items) == 4
     end
 
     test "returns a block with two transactions", %{conn: conn} do
@@ -53,16 +56,17 @@ defmodule BlockScoutWeb.BlockControllerTest do
       |> insert_list(:transaction)
       |> with_block(block)
 
-      conn = get(conn, block_path(conn, :index))
+      conn = get(conn, block_path(conn, :index), %{"type" => "JSON"})
 
-      assert conn.assigns.blocks |> Enum.count() == 1
+      items = Map.get(json_response(conn, 200), "items")
+
+      assert length(items) == 1
     end
 
     test "returns next page of results based on last seen block", %{conn: conn} do
-      second_page_block_ids =
-        50
-        |> insert_list(:block)
-        |> Enum.map(& &1.number)
+      50
+      |> insert_list(:block)
+      |> Enum.map(& &1.number)
 
       block = insert(:block)
 
@@ -72,33 +76,33 @@ defmodule BlockScoutWeb.BlockControllerTest do
           "block_number" => Integer.to_string(block.number)
         })
 
-      {:ok, %{"blocks" => blocks}} = conn.resp_body |> Poison.decode()
+      items = Map.get(json_response(conn, 200), "items")
 
-      actual_block_ids =
-        blocks
-        |> Enum.map(& &1["block_number"])
-        |> Enum.reverse()
-
-      assert second_page_block_ids == actual_block_ids
+      assert length(items) == 50
     end
 
-    test "next_page_params exist if not on last page", %{conn: conn} do
+    test "next_page_path exist if not on last page", %{conn: conn} do
       %Block{number: number} =
         60
         |> insert_list(:block)
         |> Enum.fetch!(10)
 
-      conn = get(conn, block_path(conn, :index))
+      conn = get(conn, block_path(conn, :index), %{"type" => "JSON"})
 
-      assert %{"block_number" => ^number} = conn.assigns.next_page_params
+      expected_path =
+        block_path(conn, :index, %{
+          block_number: number
+        })
+
+      assert Map.get(json_response(conn, 200), "next_page_path") == expected_path
     end
 
-    test "next_page_params are empty if on last page", %{conn: conn} do
+    test "next_page_path is empty if on last page", %{conn: conn} do
       insert(:block)
 
-      conn = get(conn, block_path(conn, :index))
+      conn = get(conn, block_path(conn, :index), %{"type" => "JSON"})
 
-      refute conn.assigns.next_page_params
+      refute conn |> json_response(200) |> Map.get("next_page_path")
     end
 
     test "displays miner primary address name", %{conn: conn} do
@@ -107,70 +111,72 @@ defmodule BlockScoutWeb.BlockControllerTest do
 
       insert(:block, miner: miner_address, miner_hash: nil)
 
-      conn = get(conn, block_path(conn, :index))
-      assert html_response(conn, 200) =~ miner_name
+      conn = get(conn, block_path(conn, :index), %{"type" => "JSON"})
+
+      items = Map.get(json_response(conn, 200), "items")
+
+      assert List.first(items) =~ miner_name
     end
   end
 
   describe "GET reorgs/2" do
     test "returns all reorgs", %{conn: conn} do
-      reorg_hashes =
-        4
-        |> insert_list(:block, consensus: false)
-        |> Enum.map(& &1.hash)
+      4
+      |> insert_list(:block, consensus: false)
+      |> Enum.map(& &1.hash)
 
-      conn = get(conn, reorg_path(conn, :reorg))
+      conn = get(conn, reorg_path(conn, :reorg), %{"type" => "JSON"})
 
-      assert Enum.map(conn.assigns.blocks, & &1.hash) == Enum.reverse(reorg_hashes)
-      assert conn.assigns.block_type == "Reorg"
+      items = Map.get(json_response(conn, 200), "items")
+
+      assert length(items) == 4
     end
 
     test "does not include blocks or uncles", %{conn: conn} do
-      reorg_hashes =
-        4
-        |> insert_list(:block, consensus: false)
-        |> Enum.map(& &1.hash)
+      4
+      |> insert_list(:block, consensus: false)
+      |> Enum.map(& &1.hash)
 
       insert(:block)
       uncle = insert(:block, consensus: false)
       insert(:block_second_degree_relation, uncle_hash: uncle.hash)
 
-      conn = get(conn, reorg_path(conn, :reorg))
+      conn = get(conn, reorg_path(conn, :reorg), %{"type" => "JSON"})
 
-      assert Enum.map(conn.assigns.blocks, & &1.hash) == Enum.reverse(reorg_hashes)
-      assert conn.assigns.block_type == "Reorg"
+      items = Map.get(json_response(conn, 200), "items")
+
+      assert length(items) == 4
     end
   end
 
   describe "GET uncle/2" do
     test "returns all uncles", %{conn: conn} do
-      uncle_hashes =
-        for _index <- 1..4 do
-          uncle = insert(:block, consensus: false)
-          insert(:block_second_degree_relation, uncle_hash: uncle.hash)
-          uncle.hash
-        end
+      for _index <- 1..4 do
+        uncle = insert(:block, consensus: false)
+        insert(:block_second_degree_relation, uncle_hash: uncle.hash)
+      end
 
-      conn = get(conn, uncle_path(conn, :uncle))
+      conn = get(conn, uncle_path(conn, :uncle), %{"type" => "JSON"})
 
-      assert Enum.map(conn.assigns.blocks, & &1.hash) == Enum.reverse(uncle_hashes)
-      assert conn.assigns.block_type == "Uncle"
+      items = Map.get(json_response(conn, 200), "items")
+
+      assert length(items) == 4
     end
 
     test "does not include blocks or reorgs", %{conn: conn} do
-      uncle_hashes =
-        for _index <- 1..4 do
-          uncle = insert(:block, consensus: false)
-          insert(:block_second_degree_relation, uncle_hash: uncle.hash)
-          uncle.hash
-        end
+      for _index <- 1..4 do
+        uncle = insert(:block, consensus: false)
+        insert(:block_second_degree_relation, uncle_hash: uncle.hash)
+      end
 
       insert(:block)
       insert(:block, consensus: false)
 
-      conn = get(conn, uncle_path(conn, :uncle))
+      conn = get(conn, uncle_path(conn, :uncle), %{"type" => "JSON"})
 
-      assert Enum.map(conn.assigns.blocks, & &1.hash) == Enum.reverse(uncle_hashes)
+      items = Map.get(json_response(conn, 200), "items")
+
+      assert length(items) == 4
     end
   end
 end

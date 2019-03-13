@@ -39,24 +39,15 @@ defmodule Explorer.DataCase do
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, {:shared, self()})
     end
 
+    Explorer.Chain.BlockNumberCache.setup(cache_period: 0)
+
     :ok
   end
 
   def wait_for_results(producer) do
     producer.()
   rescue
-    Ecto.NoResultsError ->
-      Process.sleep(100)
-      wait_for_results(producer)
-  catch
-    :exit,
-    {:timeout,
-     {GenServer, :call,
-      [
-        _,
-        {:checkout, _, _, _},
-        _
-      ]}} ->
+    [DBConnection.ConnectionError, Ecto.NoResultsError] ->
       Process.sleep(100)
       wait_for_results(producer)
   end

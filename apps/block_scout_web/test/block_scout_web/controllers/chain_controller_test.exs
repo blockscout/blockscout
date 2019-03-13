@@ -1,9 +1,19 @@
 defmodule BlockScoutWeb.ChainControllerTest do
-  use BlockScoutWeb.ConnCase
+  use BlockScoutWeb.ConnCase,
+    # ETS table is shared in `Explorer.Counters.AddressesWithBalanceCounter`
+    async: false
 
   import BlockScoutWeb.Router.Helpers, only: [chain_path: 2, block_path: 3, transaction_path: 3, address_path: 3]
 
   alias Explorer.Chain.Block
+  alias Explorer.Counters.AddressesWithBalanceCounter
+
+  setup do
+    start_supervised!(AddressesWithBalanceCounter)
+    AddressesWithBalanceCounter.consolidate()
+
+    :ok
+  end
 
   describe "GET index/2" do
     test "returns a welcome message", %{conn: conn} do
@@ -12,66 +22,47 @@ defmodule BlockScoutWeb.ChainControllerTest do
       assert(html_response(conn, 200) =~ "POA")
     end
 
-    test "returns a block", %{conn: conn} do
+    test "returns a block" do
       insert(:block, %{number: 23})
-      conn = get(conn, "/")
 
-      assert(List.first(conn.assigns.blocks).number == 23)
+      conn =
+        build_conn()
+        |> put_req_header("x-requested-with", "xmlhttprequest")
+        |> get("/chain_blocks")
+
+      response = json_response(conn, 200)
+
+      assert(List.first(response["blocks"])["block_number"] == 23)
     end
 
-    test "excludes all but the most recent five blocks", %{conn: conn} do
+    test "excludes all but the most recent five blocks" do
       old_block = insert(:block)
       insert_list(5, :block)
-      conn = get(conn, "/")
 
-      refute(Enum.member?(conn.assigns.blocks, old_block))
+      conn =
+        build_conn()
+        |> put_req_header("x-requested-with", "xmlhttprequest")
+        |> get("/chain_blocks")
+
+      response = json_response(conn, 200)
+
+      refute(Enum.member?(response["blocks"], old_block))
     end
 
-    test "only returns transactions with an associated block", %{conn: conn} do
-      associated =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      unassociated = insert(:transaction)
-
-      conn = get(conn, "/")
-
-      transaction_hashes = Enum.map(conn.assigns.transactions, fn transaction -> transaction.hash end)
-
-      assert(Enum.member?(transaction_hashes, associated.hash))
-      refute(Enum.member?(transaction_hashes, unassociated.hash))
-    end
-
-    test "returns a transaction", %{conn: conn} do
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      conn = get(conn, "/")
-
-      assert(List.first(conn.assigns.transactions).hash == transaction.hash)
-    end
-
-    test "returns market history data", %{conn: conn} do
-      today = Date.utc_today()
-      for day <- -40..0, do: insert(:market_history, date: Date.add(today, day))
-
-      conn = get(conn, "/")
-
-      assert Map.has_key?(conn.assigns, :market_history_data)
-      assert length(conn.assigns.market_history_data) == 30
-    end
-
-    test "displays miner primary address names", %{conn: conn} do
+    test "displays miner primary address names" do
       miner_name = "POA Miner Pool"
       %{address: miner_address} = insert(:address_name, name: miner_name, primary: true)
 
       insert(:block, miner: miner_address, miner_hash: nil)
 
-      conn = get(conn, chain_path(conn, :show))
-      assert html_response(conn, 200) =~ miner_name
+      conn =
+        build_conn()
+        |> put_req_header("x-requested-with", "xmlhttprequest")
+        |> get("/chain_blocks")
+
+      response = List.first(json_response(conn, 200)["blocks"])
+
+      assert response["chain_block_html"] =~ miner_name
     end
   end
 

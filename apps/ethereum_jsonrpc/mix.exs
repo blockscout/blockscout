@@ -15,7 +15,7 @@ defmodule EthereumJsonrpc.MixProject do
         plt_add_apps: [:mix],
         ignore_warnings: "../../.dialyzer-ignore"
       ],
-      elixir: "~> 1.6",
+      elixir: "~> 1.8",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       preferred_cli_env: [
@@ -23,6 +23,7 @@ defmodule EthereumJsonrpc.MixProject do
         "coveralls.detail": :test,
         "coveralls.post": :test,
         "coveralls.html": :test,
+        credo: :test,
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
@@ -61,21 +62,25 @@ defmodule EthereumJsonrpc.MixProject do
       # CACerts bundle for `EthereumJSONRPC.WebSocket.WebSocketClient`
       {:certifi, "~> 2.3"},
       # WebSocket-server for testing `EthereumJSONRPC.WebSocket.WebSocketClient`.
-      {:cowboy, "~> 1.1", only: [:dev, :test]},
+      {:cowboy, "~> 2.0", only: [:dev, :test]},
       # Style Checking
-      {:credo, "0.10.2", only: [:dev, :test], runtime: false},
+      {:credo, "1.0.0", only: :test, runtime: false},
       # Static Type Checking
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       # Code coverage
       {:excoveralls, "~> 0.10.0", only: [:test], github: "KronicDeth/excoveralls", branch: "circle-workflows"},
       # JSONRPC HTTP Post calls
-      {:httpoison, "~> 1.0", override: true},
+      {:httpoison, "~> 1.0"},
       # Decode/Encode JSON for JSONRPC
       {:jason, "~> 1.0"},
       # Log errors and application output to separate files
       {:logger_file_backend, "~> 0.0.10"},
       # Mocking `EthereumJSONRPC.Transport` and `EthereumJSONRPC.HTTP` so we avoid hitting real chains for local testing
       {:mox, "~> 0.4", only: [:test]},
+      # Tracing
+      {:spandex, github: "spandex-project/spandex", branch: "allow-setting-trace-key", override: true},
+      # `:spandex` integration with Datadog
+      {:spandex_datadog, "~> 0.4.0"},
       # Convert unix timestamps in JSONRPC to DateTimes
       {:timex, "~> 3.4"},
       # Encode/decode function names and arguments
@@ -83,7 +88,9 @@ defmodule EthereumJsonrpc.MixProject do
       # `:verify_fun` for `Socket.Web.connect`
       {:ssl_verify_fun, "~> 1.1"},
       # `EthereumJSONRPC.WebSocket`
-      {:websocket_client, "~> 1.3"}
+      {:websocket_client, "~> 1.3"},
+      {:decimal, "~> 1.0"},
+      {:decorator, "~> 1.2"}
     ]
   end
 end

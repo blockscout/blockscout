@@ -8,6 +8,12 @@ use Mix.Config
 # with webpack to recompile .js and .css sources.
 config :block_scout_web, BlockScoutWeb.Endpoint,
   http: [port: 4000],
+  https: [
+    port: 4001,
+    cipher_suite: :strong,
+    certfile: System.get_env("CERTFILE") || "priv/cert/selfsigned.pem",
+    keyfile: System.get_env("KEYFILE") || "priv/cert/selfsigned_key.pem"
+  ],
   debug_errors: true,
   code_reloader: true,
   check_origin: false,
@@ -47,6 +53,8 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
       ~r{lib/block_scout_web/templates/.*(eex)$}
     ]
   ]
+
+config :block_scout_web, BlockScoutWeb.Tracer, env: "dev", disabled?: true
 
 config :logger, :block_scout_web,
   level: :debug,

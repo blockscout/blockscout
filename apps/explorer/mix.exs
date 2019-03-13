@@ -15,7 +15,7 @@ defmodule Explorer.Mixfile do
         plt_add_apps: ~w(ex_unit mix)a,
         ignore_warnings: "../../.dialyzer-ignore"
       ],
-      elixir: "~> 1.6",
+      elixir: "~> 1.8",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       package: package(),
@@ -24,6 +24,7 @@ defmodule Explorer.Mixfile do
         "coveralls.detail": :test,
         "coveralls.post": :test,
         "coveralls.html": :test,
+        credo: :test,
         dialyzer: :test
       ],
       start_permanent: Mix.env() == :prod,
@@ -64,15 +65,17 @@ defmodule Explorer.Mixfile do
       {:benchee, "~> 0.13.1", only: :test},
       # CSV output for benchee
       {:benchee_csv, "~> 0.8.0", only: :test},
-      {:bypass, "~> 0.8", only: :test},
+      {:bypass, "~> 1.0", only: :test},
       {:comeonin, "~> 4.0"},
-      {:credo, "0.10.2", only: [:dev, :test], runtime: false},
+      {:credo, "1.0.0", only: :test, runtime: false},
       # For Absinthe to load data in batches
       {:dataloader, "~> 1.0.0"},
       {:decimal, "~> 1.0"},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
-      # Casting Ethereum-native types to Elixir-native types
-      {:ecto, "~> 2.2"},
+      # `override: true` for `ex_machina` compatibility
+      {:ecto, "~> 3.0", override: true},
+      # Storing blockchain data and derived data in PostgreSQL.
+      {:ecto_sql, "~> 3.0"},
       # JSONRPC access to query smart contracts
       {:ethereum_jsonrpc, in_umbrella: true},
       # Data factory for testing
@@ -80,7 +83,7 @@ defmodule Explorer.Mixfile do
       # Code coverage
       {:excoveralls, "~> 0.10.0", only: [:test], github: "KronicDeth/excoveralls", branch: "circle-workflows"},
       {:exvcr, "~> 0.10", only: :test},
-      {:httpoison, "~> 1.0", override: true},
+      {:httpoison, "~> 1.0"},
       {:jason, "~> 1.0"},
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       # Log errors and application output to separate files
@@ -88,17 +91,30 @@ defmodule Explorer.Mixfile do
       {:math, "~> 0.3.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:mox, "~> 0.4", only: [:test]},
+      {:poison, "~> 3.1"},
       {:postgrex, ">= 0.0.0"},
       # For compatibility with `prometheus_process_collector`, which hasn't been updated yet
       {:prometheus, "~> 4.0", override: true},
       # Prometheus metrics for query duration
-      {:prometheus_ecto, "~> 1.3"},
+      {
+        :prometheus_ecto,
+        "~> 1.3",
+        # Ecto 3.0 compatibility
+        github: "deadtrickster/prometheus-ecto", ref: "650a403183f6a2fb6b682d7fbcba8bf9d24fe1e4"
+      },
       # bypass optional dependency
-      {:plug_cowboy, "~> 1.0", only: :test},
+      {:plug_cowboy, "~> 2.0", only: [:dev, :test]},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
-      {:timex, "~> 3.4"},
-      # `Timex.Duration` for `Explorer.Chain.average_block_time/0`
-      {:timex_ecto, "~> 3.3"}
+      # Tracing
+      {:spandex, github: "spandex-project/spandex", branch: "allow-setting-trace-key", override: true},
+      # `:spandex` integration with Datadog
+      {:spandex_datadog, "~> 0.4.0"},
+      # `:spandex` tracing of `:ecto`
+      {:spandex_ecto, "~> 0.4.0"},
+      # Attach `:prometheus_ecto` to `:ecto`
+      {:telemetry, "~> 0.3.0"},
+      # `Timex.Duration` for `Explorer.Counters.AverageBlockTime.average_block_time/0`
+      {:timex, "~> 3.4"}
     ]
   end
 

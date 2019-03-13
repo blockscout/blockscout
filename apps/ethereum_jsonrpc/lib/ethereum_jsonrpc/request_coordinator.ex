@@ -42,7 +42,9 @@ defmodule EthereumJSONRPC.RequestCoordinator do
   With this configuration, timeouts are tracked for 6 windows of 10 seconds for a total of 1 minute.
   """
 
-  alias EthereumJSONRPC.{RollingWindow, Transport}
+  require EthereumJSONRPC.Tracer
+
+  alias EthereumJSONRPC.{RollingWindow, Tracer, Transport}
 
   @error_key :throttleable_error_count
 
@@ -63,15 +65,29 @@ defmodule EthereumJSONRPC.RequestCoordinator do
     if sleep_time <= throttle_timeout do
       :timer.sleep(sleep_time)
 
-      request
-      |> transport.json_rpc(transport_options)
-      |> handle_transport_response()
+      trace_request(request, fn ->
+        request
+        |> transport.json_rpc(transport_options)
+        |> handle_transport_response()
+      end)
     else
       :timer.sleep(throttle_timeout)
 
       {:error, :timeout}
     end
   end
+
+  defp trace_request([request | _], fun) do
+    trace_request(request, fun)
+  end
+
+  defp trace_request(%{method: method}, fun) do
+    Tracer.span "RequestCoordinator.perform/4", resource: method, service: :ethereum_jsonrpc do
+      fun.()
+    end
+  end
+
+  defp trace_request(_, fun), do: fun.()
 
   defp handle_transport_response({:error, {:bad_gateway, _}} = error) do
     RollingWindow.inc(table(), @error_key)

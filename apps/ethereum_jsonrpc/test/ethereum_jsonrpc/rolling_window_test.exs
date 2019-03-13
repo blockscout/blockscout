@@ -1,5 +1,7 @@
 defmodule EthereumJSONRPC.RollingWindowTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case,
+    # The same named process is used for all tests and they use the same key in the table, so they would interfere
+    async: false
 
   alias EthereumJSONRPC.RollingWindow
 

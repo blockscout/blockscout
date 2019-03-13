@@ -7,6 +7,13 @@ defmodule Indexer.Address.CoinBalances do
     Enum.reduce(import_options, MapSet.new(), &reducer/2)
   end
 
+  defp reducer({:beneficiary_params, beneficiary_params}, acc) when is_list(beneficiary_params) do
+    Enum.into(beneficiary_params, acc, fn %{address_hash: address_hash, block_number: block_number}
+                                          when is_binary(address_hash) and is_integer(block_number) ->
+      %{address_hash: address_hash, block_number: block_number}
+    end)
+  end
+
   defp reducer({:blocks_params, blocks_params}, acc) when is_list(blocks_params) do
     # a block MUST have a miner_hash and number
     Enum.into(blocks_params, acc, fn %{miner_hash: address_hash, number: block_number}
@@ -21,11 +28,18 @@ defmodule Indexer.Address.CoinBalances do
   end
 
   defp reducer({:logs_params, logs_params}, acc) when is_list(logs_params) do
-    # a log MUST have and address_hash
-    Enum.into(logs_params, acc, fn %{address_hash: address_hash, block_number: block_number}
-                                   when is_binary(address_hash) and is_integer(block_number) ->
+    # a log MUST have address_hash and block_number
+    logs_params
+    |> Enum.into(acc, fn
       %{address_hash: address_hash, block_number: block_number}
+      when is_binary(address_hash) and is_integer(block_number) ->
+        %{address_hash: address_hash, block_number: block_number}
+
+      %{type: "pending"} ->
+        nil
     end)
+    |> Enum.reject(fn val -> is_nil(val) end)
+    |> MapSet.new()
   end
 
   defp reducer({:transactions_params, transactions_params}, initial) when is_list(transactions_params) do

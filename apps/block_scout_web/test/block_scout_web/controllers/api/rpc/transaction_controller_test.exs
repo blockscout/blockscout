@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
+  @moduletag capture_log: true
+
   describe "gettxreceiptstatus" do
     test "with missing txhash", %{conn: conn} do
       params = %{
@@ -403,7 +405,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         "gasUsed" => "#{transaction.gas_used}",
         "logs" => [
           %{
-            "address" => "#{address}",
+            "address" => "#{address.hash}",
             "data" => "#{log.data}",
             "topics" => ["first topic", "second topic", nil, nil]
           }

@@ -3,8 +3,12 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
 
   doctest Explorer.SmartContract.Solidity.CodeCompiler
 
-  alias Explorer.SmartContract.Solidity.CodeCompiler
   alias Explorer.Factory
+  alias Explorer.SmartContract.Solidity.CodeCompiler
+
+  @compiler_tests "#{File.cwd!()}/test/support/fixture/smart_contract/compiler_tests.json"
+                  |> File.read!()
+                  |> Jason.decode!()
 
   describe "run/2" do
     setup do
@@ -24,8 +28,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
               %{
                 "abi" => _,
                 "bytecode" => _,
-                "name" => _,
-                "opcodes" => _
+                "name" => _
               }} = response
     end
 
@@ -44,12 +47,79 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
               %{
                 "abi" => _,
                 "bytecode" => _,
-                "name" => _,
-                "opcodes" => _
+                "name" => _
               }} = response
     end
 
-    test "compile in an older solidity version" do
+    test "compiles code with external libraries" do
+      Enum.each(@compiler_tests, fn compiler_test ->
+        compiler_version = compiler_test["compiler_version"]
+        external_libraries = compiler_test["external_libraries"]
+        name = compiler_test["name"]
+        optimize = compiler_test["optimize"]
+        contract = compiler_test["contract"]
+
+        {:ok, result} =
+          CodeCompiler.run(
+            name,
+            compiler_version,
+            contract,
+            optimize,
+            "byzantium",
+            external_libraries
+          )
+
+        clean_result = remove_init_data_and_whisper_data(result["bytecode"])
+        expected_result = remove_init_data_and_whisper_data(compiler_test["expected_bytecode"])
+
+        assert clean_result == expected_result
+      end)
+    end
+
+    test "compiles with constantinople evm version" do
+      optimize = false
+      name = "MyTest"
+
+      code = """
+       pragma solidity 0.5.2;
+
+       contract MyTest {
+           constructor() public {
+           }
+
+           mapping(address => bytes32) public myMapping;
+
+           function contractHash(address _addr) public {
+               bytes32 hash;
+               assembly { hash := extcodehash(_addr) }
+               myMapping[_addr] = hash;
+           }
+
+           function justHash(bytes memory _bytes)
+               public
+               pure
+               returns (bytes32)
+           {
+               return keccak256(_bytes);
+           }
+       }
+      """
+
+      version = "v0.5.2+commit.1df8f40c"
+
+      evm_version = "constantinople"
+
+      response = CodeCompiler.run(name, version, code, optimize, evm_version)
+
+      assert {:ok,
+              %{
+                "abi" => _,
+                "bytecode" => _,
+                "name" => _
+              }} = response
+    end
+
+    test "compiles in an older solidity version" do
       optimize = false
       name = "SimpleStorage"
 
@@ -75,12 +145,11 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
               %{
                 "abi" => _,
                 "bytecode" => _,
-                "name" => _,
-                "opcodes" => _
+                "name" => _
               }} = response
     end
 
-    test "returns a list of errors the compilation isn't possible", %{
+    test "returns compilation error when compilation isn't possible", %{
       contract_code_info: contract_code_info
     } do
       wrong_code = "pragma solidity ^0.4.24; cont SimpleStorage { "
@@ -93,8 +162,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
           contract_code_info.optimized
         )
 
-      assert {:error, errors} = response
-      assert is_list(errors)
+      assert {:error, :compilation} = response
     end
   end
 
@@ -108,16 +176,16 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
       assert {:error, :name} == response
     end
 
-    test "returns an empty list of errors for empty info" do
+    test "returns compilation error for empty info" do
       name = "Name"
 
       response = CodeCompiler.get_contract_info(%{}, name)
 
-      assert %{"errors" => []} == response
+      assert {:error, :compilation} == response
     end
 
     test "the contract info is returned when the name matches" do
-      contract_inner_info = %{"abi" => %{}, "bytecode" => "", "opcodes" => ""}
+      contract_inner_info = %{"abi" => %{}, "bytecode" => ""}
       name = "Name"
       contract_info = %{name => contract_inner_info}
 
@@ -129,12 +197,22 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
     test "the contract info is returned when the name matches with a `:` suffix" do
       name = "Name"
       name_with_suffix = ":Name"
-      contract_inner_info = %{"abi" => %{}, "bytecode" => "", "opcodes" => ""}
+      contract_inner_info = %{"abi" => %{}, "bytecode" => ""}
       contract_info = %{name_with_suffix => contract_inner_info}
 
       response = CodeCompiler.get_contract_info(contract_info, name)
 
       assert contract_inner_info == response
     end
+  end
+
+  defp remove_init_data_and_whisper_data(code) do
+    {res, _} =
+      code
+      |> String.split("0029")
+      |> List.first()
+      |> String.split_at(-64)
+
+    res
   end
 end

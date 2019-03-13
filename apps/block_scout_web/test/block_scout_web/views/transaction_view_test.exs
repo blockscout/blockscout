@@ -47,6 +47,54 @@ defmodule BlockScoutWeb.TransactionViewTest do
     end
   end
 
+  describe "processing_time_duration/2" do
+    test "returns :pending if the transaction has no block" do
+      transaction = build(:transaction, block: nil)
+
+      assert TransactionView.processing_time_duration(transaction) == :pending
+    end
+
+    test "returns :unknown if the transaction has no `earliest_processing_start`" do
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert(earliest_processing_start: nil)
+        |> with_block(block)
+
+      assert TransactionView.processing_time_duration(transaction) == :unknown
+    end
+
+    test "returns a single number when the timestamps are the same" do
+      now = Timex.now()
+      ten_seconds_ago = Timex.shift(now, seconds: -10)
+
+      block = insert(:block, timestamp: now)
+
+      transaction =
+        :transaction
+        |> insert(earliest_processing_start: ten_seconds_ago, inserted_at: ten_seconds_ago)
+        |> with_block(block)
+
+      assert TransactionView.processing_time_duration(transaction) == {:ok, "10 seconds"}
+    end
+
+    test "returns a range when the timestamps are not the same" do
+      now = Timex.now()
+      ten_seconds_ago = Timex.shift(now, seconds: -10)
+      five_seconds_ago = Timex.shift(now, seconds: -5)
+
+      block = insert(:block, timestamp: now)
+
+      transaction =
+        :transaction
+        |> insert(earliest_processing_start: ten_seconds_ago, inserted_at: five_seconds_ago)
+        |> with_block(block)
+
+      assert TransactionView.processing_time_duration(transaction) == {:ok, "5-10 seconds"}
+    end
+  end
+
   describe "confirmations/2" do
     test "returns 0 if pending transaction" do
       transaction = build(:transaction, block: nil)
@@ -62,7 +110,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert()
         |> with_block(block)
 
-      assert "1" == TransactionView.confirmations(transaction, max_block_number: block.number + 1)
+      assert "1" == TransactionView.confirmations(transaction, block_height: block.number + 1)
     end
   end
 
@@ -94,7 +142,7 @@ defmodule BlockScoutWeb.TransactionViewTest do
 
     test "with fee" do
       {:ok, gas_price} = Wei.cast(3_000_000_000)
-      transaction = build(:transaction, gas_price: gas_price, gas_used: Decimal.new(1_034_234.0))
+      transaction = build(:transaction, gas_price: gas_price, gas_used: Decimal.from_float(1_034_234.0))
 
       expected_value = "0.003102702 POA"
       assert expected_value == TransactionView.formatted_fee(transaction, denomination: :ether)
@@ -111,7 +159,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert()
         |> Repo.preload(:block)
 
-      assert TransactionView.formatted_status(transaction) == "Pending"
+      status = TransactionView.transaction_status(transaction)
+      assert TransactionView.formatted_status(status) == "Pending"
     end
 
     test "with block without status (pre-Byzantium/Ethereum Class)" do
@@ -122,7 +171,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert()
         |> with_block(block, status: nil)
 
-      assert TransactionView.formatted_status(transaction) == "(Awaiting internal transactions for status)"
+      status = TransactionView.transaction_status(transaction)
+      assert TransactionView.formatted_status(status) == "(Awaiting internal transactions for status)"
     end
 
     test "with receipt with status :ok" do
@@ -133,7 +183,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert(gas: gas)
         |> with_block(gas_used: gas - 1, status: :ok)
 
-      assert TransactionView.formatted_status(transaction) == "Success"
+      status = TransactionView.transaction_status(transaction)
+      assert TransactionView.formatted_status(status) == "Success"
     end
 
     test "with block with status :error without internal transactions indexed" do
@@ -144,7 +195,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert()
         |> with_block(block, status: :error)
 
-      assert TransactionView.formatted_status(transaction) == "Error: (Awaiting internal transactions for reason)"
+      status = TransactionView.transaction_status(transaction)
+      assert TransactionView.formatted_status(status) == "Error: (Awaiting internal transactions for reason)"
     end
 
     test "with block with status :error with internal transactions indexed uses `error`" do
@@ -153,7 +205,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert()
         |> with_block(status: :error, internal_transactions_indexed_at: DateTime.utc_now(), error: "Out of Gas")
 
-      assert TransactionView.formatted_status(transaction) == "Error: Out of Gas"
+      status = TransactionView.transaction_status(transaction)
+      assert TransactionView.formatted_status(status) == "Error: Out of Gas"
     end
   end
 

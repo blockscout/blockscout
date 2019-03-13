@@ -2,17 +2,14 @@ import $ from 'jquery'
 import _ from 'lodash'
 import humps from 'humps'
 import socket from '../socket'
-import { createStore, connectElements } from '../lib/redux_helpers.js'
-import { withInfiniteScroll, connectInfiniteScroll } from '../lib/infinite_scroll_helpers'
-import listMorph from '../lib/list_morph'
+import { connectElements } from '../lib/redux_helpers.js'
+import { createAsyncLoadStore } from '../lib/async_listing_load'
 
 export const initialState = {
-  channelDisconnected: false,
-
-  blocks: []
+  channelDisconnected: false
 }
 
-export const reducer = withMissingBlocks(withInfiniteScroll(baseReducer))
+export const blockReducer = withMissingBlocks(baseReducer)
 
 function baseReducer (state = initialState, action) {
   switch (action.type) {
@@ -25,50 +22,19 @@ function baseReducer (state = initialState, action) {
       })
     }
     case 'RECEIVED_NEW_BLOCK': {
-      if (state.channelDisconnected) return state
+      if (state.channelDisconnected || state.beyondPageOne || state.blockType !== 'block') return state
 
-      if (!state.blocks.length || state.blocks[0].blockNumber < action.msg.blockNumber) {
-        return Object.assign({}, state, {
-          blocks: [
-            action.msg,
-            ...state.blocks
-          ]
-        })
-      } else {
-        return Object.assign({}, state, {
-          blocks: state.blocks.map((block) => block.blockNumber === action.msg.blockNumber ? action.msg : block)
-        })
-      }
-    }
-    case 'RECEIVED_NEXT_PAGE': {
+      const blockNumber = getBlockNumber(action.msg.blockHtml)
+      const minBlock = getBlockNumber(_.last(state.items))
+
+      if (state.items.length && blockNumber < minBlock) return state
+
       return Object.assign({}, state, {
-        blocks: [
-          ...state.blocks,
-          ...action.msg.blocks
-        ]
+        items: [action.msg.blockHtml, ...state.items]
       })
     }
     default:
       return state
-  }
-}
-
-function withMissingBlocks (reducer) {
-  return (...args) => {
-    const result = reducer(...args)
-
-    if (result.blocks.length < 2) return result
-
-    const maxBlock = _.first(result.blocks).blockNumber
-    const minBlock = _.last(result.blocks).blockNumber
-
-    return Object.assign({}, result, {
-      blocks: _.rangeRight(minBlock, maxBlock + 1)
-        .map((blockNumber) => _.find(result.blocks, ['blockNumber', blockNumber]) || {
-          blockNumber,
-          blockHtml: placeHolderBlock(blockNumber)
-        })
-    })
   }
 }
 
@@ -77,30 +43,48 @@ const elements = {
     render ($el, state) {
       if (state.channelDisconnected) $el.show()
     }
-  },
-  '[data-selector="blocks-list"]': {
-    load ($el) {
-      return {
-        blocks: $el.children().map((index, el) => ({
-          blockNumber: parseInt(el.dataset.blockNumber),
-          blockHtml: el.outerHTML
-        })).toArray()
-      }
-    },
-    render ($el, state, oldState) {
-      if (oldState.blocks === state.blocks) return
-      const container = $el[0]
-      const newElements = _.map(state.blocks, ({ blockHtml }) => $(blockHtml)[0])
-      listMorph(container, newElements, { key: 'dataset.blockNumber' })
-    }
+  }
+}
+
+function getBlockNumber (blockHtml) {
+  return $(blockHtml).data('blockNumber')
+}
+
+function withMissingBlocks (reducer) {
+  return (...args) => {
+    const result = reducer(...args)
+
+    if (result.items.length < 2) return result
+
+    const blockNumbersToItems = result.items.reduce((acc, item) => {
+      const blockNumber = getBlockNumber(item)
+      acc[blockNumber] = acc[blockNumber] || item
+      return acc
+    }, {})
+
+    const blockNumbers = _(blockNumbersToItems).keys().map(x => parseInt(x, 10)).value()
+    const minBlock = _.min(blockNumbers)
+    const maxBlock = _.max(blockNumbers)
+
+    return Object.assign({}, result, {
+      items: _.rangeRight(minBlock, maxBlock + 1)
+        .map((blockNumber) => blockNumbersToItems[blockNumber] || placeHolderBlock(blockNumber))
+    })
   }
 }
 
 const $blockListPage = $('[data-page="block-list"]')
-if ($blockListPage.length) {
-  const store = createStore(reducer)
+const $uncleListPage = $('[data-page="uncle-list"]')
+const $reorgListPage = $('[data-page="reorg-list"]')
+if ($blockListPage.length || $uncleListPage.length || $reorgListPage.length) {
+  const blockType = $blockListPage.length ? 'block' : $uncleListPage.length ? 'uncle' : 'reorg'
+
+  const store = createAsyncLoadStore(
+    $blockListPage.length ? blockReducer : baseReducer,
+    Object.assign({}, initialState, { blockType }),
+    'dataset.blockNumber'
+  )
   connectElements({ store, elements })
-  connectInfiniteScroll(store)
 
   const blocksChannel = socket.channel(`blocks:new_block`, {})
   blocksChannel.join()

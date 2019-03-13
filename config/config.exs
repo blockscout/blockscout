@@ -26,25 +26,32 @@ config :logger,
     # only :indexer, but all levels
     {LoggerFileBackend, :indexer},
     {LoggerFileBackend, :indexer_token_balances},
+    {LoggerFileBackend, :failed_contract_creations},
     {LoggerFileBackend, :reading_token_functions}
   ]
 
 config :logger, :console,
   # Use same format for all loggers, even though the level should only ever be `:error` for `:error` backend
-  format: "$time $metadata[$level] $message\n",
-  metadata: [:application, :request_id]
+  format: "$dateT$time $metadata[$level] $message\n",
+  metadata:
+    ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
+       block_number step count error_count shrunk import_id transaction_id)a
 
 config :logger, :ecto,
   # Use same format for all loggers, even though the level should only ever be `:error` for `:error` backend
-  format: "$time $metadata[$level] $message\n",
-  metadata: [:application, :request_id],
+  format: "$dateT$time $metadata[$level] $message\n",
+  metadata:
+    ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
+       block_number step count error_count shrunk import_id transaction_id)a,
   metadata_filter: [application: :ecto]
 
 config :logger, :error,
   # Use same format for all loggers, even though the level should only ever be `:error` for `:error` backend
-  format: "$time $metadata[$level] $message\n",
+  format: "$dateT$time $metadata[$level] $message\n",
   level: :error,
-  metadata: [:application, :request_id]
+  metadata:
+    ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
+       block_number step count error_count shrunk import_id transaction_id)a
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

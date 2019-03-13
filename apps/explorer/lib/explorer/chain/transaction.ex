@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Transaction do
 
   require Logger
 
-  import Ecto.Query, only: [from: 2, preload: 3, subquery: 1, where: 3]
+  import Ecto.Query, only: [from: 2, order_by: 3, preload: 3, subquery: 1, where: 3]
 
   alias ABI.FunctionSelector
 
@@ -14,6 +14,7 @@ defmodule Explorer.Chain.Transaction do
   alias Explorer.Chain.{
     Address,
     Block,
+    ContractMethod,
     Data,
     Gas,
     Hash,
@@ -25,9 +26,12 @@ defmodule Explorer.Chain.Transaction do
   }
 
   alias Explorer.Chain.Transaction.{Fork, Status}
+  alias Explorer.Repo
 
-  @optional_attrs ~w(block_hash block_number created_contract_address_hash cumulative_gas_used error gas_used index
-                     internal_transactions_indexed_at status to_address_hash)a
+  @optional_attrs ~w(block_hash block_number created_contract_address_hash cumulative_gas_used earliest_processing_start
+                     error gas_used index internal_transactions_indexed_at created_contract_code_indexed_at status
+                     to_address_hash)a
+
   @required_attrs ~w(from_address_hash gas gas_price hash input nonce r s v value)a
 
   @typedoc """
@@ -80,9 +84,14 @@ defmodule Explorer.Chain.Transaction do
    * `created_contract_address_hash` - Denormalized `internal_transaction` `created_contract_address_hash`
      populated only when `to_address_hash` is nil.
    * `cumulative_gas_used` - the cumulative gas used in `transaction`'s `t:Explorer.Chain.Block.t/0` before
-     `transaction`'s `index`.  `nil` when transaction is pending.
+     `transaction`'s `index`.  `nil` when transaction is pending
+   * `earliest_processing_start` - If the pending transaction fetcher was alive and received this transaction, we can
+      be sure that this transaction did not start processing until after the last time we fetched pending transactions,
+      so we annotate that with this field. If it is `nil`, that means we don't have a lower bound for when it started
+      processing.
    * `error` - the `error` from the last `t:Explorer.Chain.InternalTransaction.t/0` in `internal_transactions` that
      caused `status` to be `:error`.  Only set after `internal_transactions_index_at` is set AND if there was an error.
+     Also, `error` is set if transaction is replaced/dropped
    * `forks` - copies of this transactions that were collated into `uncles` not on the primary consensus of the chain.
    * `from_address` - the source of `value`
    * `from_address_hash` - foreign key of `from_address`
@@ -96,7 +105,19 @@ defmodule Explorer.Chain.Transaction do
    * `input`- data sent along with the transaction
    * `internal_transactions` - transactions (value transfers) created while executing contract used for this
      transaction
-   * `internal_transactions_indexed_at` - when `internal_transactions` were fetched by `Indexer`.
+   * `internal_transactions_indexed_at` - when `internal_transactions` were fetched by `Indexer` or when they do not
+     need to be fetched at `inserted_at`.
+   * `created_contract_code_indexed_at` - when created `address` code was fetched by `Indexer`
+
+     | `status` | `contract_creation_address_hash` | `input`    | Token Transfer? | `internal_transactions_indexed_at`        | `internal_transactions` | Description                                                                                         |
+     |----------|----------------------------------|------------|-----------------|-------------------------------------------|-------------------------|-----------------------------------------------------------------------------------------------------|
+     | `:ok`    | `nil`                            | Empty      | Don't Care      | `inserted_at`                             | Unfetched               | Simple `value` transfer transaction succeeded.  Internal transactions would be same value transfer. |
+     | `:ok`    | `nil`                            | Don't Care | `true`          | `inserted_at`                             | Unfetched               | Token transfer (from `logs`) that didn't happen during a contract creation.                         |
+     | `:ok`    | Don't Care                       | Non-Empty  | Don't Care      | When `internal_transactions` are indexed. | Fetched                 | A contract call that succeeded.                                                                     |
+     | `:error` | nil                              | Empty      | Don't Care      | When `internal_transactions` are indexed. | Fetched                 | Simple `value` transfer transaction failed. Internal transactions fetched for `error`.              |
+     | `:error` | Don't Care                       | Non-Empty  | Don't Care      | When `internal_transactions` are indexed. | Fetched                 | A contract call that failed.                                                                        |
+     | `nil`    | Don't Care                       | Don't Care | Don't Care      | When `internal_transactions` are indexed. | Depends                 | A pending post-Byzantium transaction will only know its status from receipt.                        |
+     | `nil`    | Don't Care                       | Don't Care | Don't Care      | When `internal_transactions` are indexed. | Fetched                 | A pre-Byzantium transaction requires internal transactions to determine status.                     |
    * `logs` - events that occurred while mining the `transaction`.
    * `nonce` - the number of transaction made by the sender prior to this one
    * `r` - the R field of the signature. The (r, s) is the normal output of an ECDSA signature, where r is computed as
@@ -117,7 +138,9 @@ defmodule Explorer.Chain.Transaction do
           block_number: Block.block_number() | nil,
           created_contract_address: %Ecto.Association.NotLoaded{} | Address.t() | nil,
           created_contract_address_hash: Hash.Address.t() | nil,
+          created_contract_code_indexed_at: DateTime.t() | nil,
           cumulative_gas_used: Gas.t() | nil,
+          earliest_processing_start: DateTime.t() | nil,
           error: String.t() | nil,
           forks: %Ecto.Association.NotLoaded{} | [Fork.t()],
           from_address: %Ecto.Association.NotLoaded{} | Address.t(),
@@ -142,16 +165,38 @@ defmodule Explorer.Chain.Transaction do
           value: Wei.t()
         }
 
+  @derive {Poison.Encoder,
+           only: [
+             :block_number,
+             :cumulative_gas_used,
+             :error,
+             :gas,
+             :gas_price,
+             :gas_used,
+             :index,
+             :internal_transactions_indexed_at,
+             :created_contract_code_indexed_at,
+             :input,
+             :nonce,
+             :r,
+             :s,
+             :v,
+             :status,
+             :value
+           ]}
+
   @primary_key {:hash, Hash.Full, autogenerate: false}
   schema "transactions" do
     field(:block_number, :integer)
     field(:cumulative_gas_used, :decimal)
+    field(:earliest_processing_start, :utc_datetime_usec)
     field(:error, :string)
     field(:gas, :decimal)
     field(:gas_price, Wei)
     field(:gas_used, :decimal)
     field(:index, :integer)
-    field(:internal_transactions_indexed_at, :utc_datetime)
+    field(:internal_transactions_indexed_at, :utc_datetime_usec)
+    field(:created_contract_code_indexed_at, :utc_datetime_usec)
     field(:input, Data)
     field(:nonce, :integer)
     field(:r, :decimal)
@@ -423,9 +468,40 @@ defmodule Explorer.Chain.Transaction do
   def decoded_input_data(%__MODULE__{to_address: nil}), do: {:error, :no_to_address}
   def decoded_input_data(%__MODULE__{input: %{bytes: bytes}}) when bytes in [nil, <<>>], do: {:error, :no_input_data}
   def decoded_input_data(%__MODULE__{to_address: %{contract_code: nil}}), do: {:error, :not_a_contract_call}
-  def decoded_input_data(%__MODULE__{to_address: %{smart_contract: nil}}), do: {:error, :contract_not_verified}
+
+  def decoded_input_data(%__MODULE__{
+        to_address: %{smart_contract: nil},
+        input: %{bytes: <<method_id::binary-size(4), _::binary>> = data},
+        hash: hash
+      }) do
+    candidates_query =
+      from(
+        contract_method in ContractMethod,
+        where: contract_method.identifier == ^method_id
+      )
+
+    candidates =
+      candidates_query
+      |> Repo.all()
+      |> Enum.flat_map(fn candidate ->
+        case do_decoded_input_data(data, [candidate.abi], hash) do
+          {:ok, _, _, _} = decoded -> [decoded]
+          _ -> []
+        end
+      end)
+
+    {:error, :contract_not_verified, candidates}
+  end
+
+  def decoded_input_data(%__MODULE__{to_address: %{smart_contract: nil}}) do
+    {:error, :contract_not_verified, []}
+  end
 
   def decoded_input_data(%__MODULE__{input: %{bytes: data}, to_address: %{smart_contract: %{abi: abi}}, hash: hash}) do
+    do_decoded_input_data(data, abi, hash)
+  end
+
+  defp do_decoded_input_data(data, abi, hash) do
     with {:ok, {selector, values}} <- find_and_decode(abi, data, hash),
          {:ok, mapping} <- selector_mapping(selector, values, hash),
          identifier <- Base.encode16(selector.method_id, case: :lower),
@@ -468,15 +544,15 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
-  Adds to the given transaction's query a `where` with one of the conditions that the matched
-  function returns.
+  Builds a query that will check for transactions within the hashes params.
 
-  `where_address_fields_match(query, address, address_field)`
-  - returns a query constraining the given address_hash to be equal to the given
-    address field from transactions' table.
+  Be careful to not pass a large list, because this will lead to performance
+  problems.
   """
-  def where_address_fields_match(query, address_hash, address_field) do
-    where(query, [t], field(t, ^address_field) == ^address_hash)
+  def where_transaction_hashes_match(transaction_hashes) do
+    Transaction
+    |> where([t], t.hash == fragment("ANY (?)", ^transaction_hashes))
+    |> order_by([transaction], desc: transaction.block_number, desc: transaction.index)
   end
 
   @collated_fields ~w(block_number cumulative_gas_used gas_used index)a
@@ -593,6 +669,16 @@ defmodule Explorer.Chain.Transaction do
       where: tt.token_contract_address_hash == ^token_hash,
       where: tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash,
       distinct: :hash
+    )
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch transactions with the specified block_number
+  """
+  def transactions_with_block_number(block_number) do
+    from(
+      t in Transaction,
+      where: t.block_number == ^block_number
     )
   end
 
