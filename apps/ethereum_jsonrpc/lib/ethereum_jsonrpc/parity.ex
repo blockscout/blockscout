@@ -27,10 +27,18 @@ defmodule EthereumJSONRPC.Parity do
   end
 
   @doc """
+  Internal transaction fetching for individual transactions is no longer supported for Parity.
+
+  To signal to the caller that fetching is not supported, `:ignore` is returned.
+  """
+  @impl EthereumJSONRPC.Variant
+  def fetch_internal_transactions(_transactions_params, _json_rpc_named_arguments), do: :ignore
+
+  @doc """
   Fetches the `t:Explorer.Chain.InternalTransaction.changeset/2` params from the Parity trace URL.
   """
   @impl EthereumJSONRPC.Variant
-  def fetch_internal_transactions(block_numbers, json_rpc_named_arguments) when is_list(block_numbers) do
+  def fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments) when is_list(block_numbers) do
     id_to_params = id_to_params(block_numbers)
 
     with {:ok, responses} <-

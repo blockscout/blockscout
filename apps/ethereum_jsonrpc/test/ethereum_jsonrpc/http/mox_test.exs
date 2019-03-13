@@ -175,7 +175,8 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
         end)
       end
 
-      assert {:ok, responses} = EthereumJSONRPC.fetch_internal_transactions(block_numbers, json_rpc_named_arguments)
+      assert {:ok, responses} =
+               EthereumJSONRPC.fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments)
 
       assert Enum.count(responses) == Enum.count(block_numbers)
 

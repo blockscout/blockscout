@@ -14,6 +14,12 @@ defmodule EthereumJSONRPC.ParityTest do
   @moduletag :no_geth
 
   describe "fetch_internal_transactions/1" do
+    test "is not supported", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      EthereumJSONRPC.Parity.fetch_internal_transactions([], json_rpc_named_arguments)
+    end
+  end
+
+  describe "fetch_block_internal_transactions/1" do
     test "with all valid block_numbers returns {:ok, transactions_params}", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
@@ -72,7 +78,7 @@ defmodule EthereumJSONRPC.ParityTest do
         end)
       end
 
-      assert EthereumJSONRPC.Parity.fetch_internal_transactions(
+      assert EthereumJSONRPC.Parity.fetch_block_internal_transactions(
                [block_number],
                json_rpc_named_arguments
              ) == {

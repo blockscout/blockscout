@@ -150,7 +150,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
     async_import_block_rewards(block_reward_errors)
     async_import_coin_balances(imported, options)
     async_import_created_contract_codes(imported)
-    async_import_internal_transactions(imported, json_rpc_named_arguments)
+    async_import_internal_transactions(imported, Keyword.get(json_rpc_named_arguments, :variant))
     async_import_tokens(imported)
     async_import_token_balances(imported)
     async_import_uncles(imported)
@@ -180,21 +180,27 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
   defp async_import_created_contract_codes(_), do: :ok
 
-  defp async_import_internal_transactions(%{blocks: blocks}, json_rpc_named_arguments) do
-    block_data = Enum.map(blocks, fn %Chain.Block{number: block_number} -> %{number: block_number} end)
+  defp async_import_internal_transactions(%{blocks: blocks}, EthereumJSONRPC.Parity) do
+    blocks
+    |> Enum.map(fn %Chain.Block{number: block_number} -> %{number: block_number} end)
+    |> InternalTransaction.Fetcher.async_block_fetch(10_000)
+  end
 
-    filtered_block_data =
-      if Keyword.get(json_rpc_named_arguments, :variant) == EthereumJSONRPC.Geth do
-        {_, max_block_number} = Chain.fetch_min_and_max_block_numbers()
+  defp async_import_internal_transactions(%{transactions: transactions}, EthereumJSONRPC.Geth) do
+    {_, max_block_number} = Chain.fetch_min_and_max_block_numbers()
 
-        Enum.filter(block_data, fn %{number: block_number} ->
-          max_block_number - block_number < @geth_block_limit
-        end)
-      else
-        block_data
-      end
+    transactions
+    |> Enum.flat_map(fn
+      %Transaction{block_number: block_number, index: index, hash: hash, internal_transactions_indexed_at: nil} ->
+        [%{block_number: block_number, index: index, hash: hash}]
 
-    InternalTransaction.Fetcher.async_fetch(filtered_block_data, 10_000)
+      %Transaction{internal_transactions_indexed_at: %DateTime{}} ->
+        []
+    end)
+    |> Enum.filter(fn %{block_number: block_number} ->
+      max_block_number - block_number < @geth_block_limit
+    end)
+    |> InternalTransaction.Fetcher.async_fetch(10_000)
   end
 
   defp async_import_internal_transactions(_, _), do: :ok

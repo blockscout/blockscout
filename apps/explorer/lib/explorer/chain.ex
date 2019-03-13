@@ -1198,6 +1198,69 @@ defmodule Explorer.Chain do
     Repo.stream_reduce(query, initial, reducer)
   end
 
+  @doc """
+  Returns a stream of all collated transactions with unfetched internal transactions.
+
+  Only transactions that have been collated into a block are returned; pending transactions not in a block are filtered
+  out.
+
+      iex> pending = insert(:transaction)
+      iex> unfetched_collated =
+      ...>   :transaction |>
+      ...>   insert() |>
+      ...>   with_block()
+      iex> fetched_collated =
+      ...>   :transaction |>
+      ...>   insert() |>
+      ...>   with_block(internal_transactions_indexed_at: DateTime.utc_now())
+      iex> {:ok, hash_set} = Explorer.Chain.stream_transactions_with_unfetched_internal_transactions(
+      ...>   [:hash],
+      ...>   MapSet.new(),
+      ...>   fn %Explorer.Chain.Transaction{hash: hash}, acc ->
+      ...>     MapSet.put(acc, hash)
+      ...>   end
+      ...> )
+      iex> pending.hash in hash_set
+      false
+      iex> unfetched_collated.hash in hash_set
+      true
+      iex> fetched_collated.hash in hash_set
+      false
+
+  """
+  @spec stream_transactions_with_unfetched_internal_transactions(
+          fields :: [
+            :block_hash
+            | :internal_transactions_indexed_at
+            | :from_address_hash
+            | :gas
+            | :gas_price
+            | :hash
+            | :index
+            | :input
+            | :nonce
+            | :r
+            | :s
+            | :to_address_hash
+            | :v
+            | :value
+          ],
+          initial :: accumulator,
+          reducer :: (entry :: term(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_transactions_with_unfetched_internal_transactions(fields, initial, reducer) when is_function(reducer, 2) do
+    query =
+      from(
+        t in Transaction,
+        # exclude pending transactions and replaced transactions
+        where: not is_nil(t.block_hash) and is_nil(t.internal_transactions_indexed_at),
+        select: ^fields
+      )
+
+    Repo.stream_reduce(query, initial, reducer)
+  end
+
   @spec stream_transactions_with_unfetched_created_contract_codes(
           fields :: [
             :block_hash

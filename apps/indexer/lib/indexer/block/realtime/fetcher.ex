@@ -20,9 +20,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
       async_import_replaced_transactions: 1
     ]
 
+  alias ABI.TypeDecoder
   alias Ecto.Changeset
   alias EthereumJSONRPC.{FetchedBalances, Subscription}
   alias Explorer.Chain
+  alias Explorer.Chain.TokenTransfer
   alias Explorer.Counters.AverageBlockTime
   alias Indexer.{AddressExtraction, Block, TokenBalances, Tracer}
   alias Indexer.Block.Realtime.{ConsensusEnsurer, TaskSupervisor}
@@ -163,8 +165,10 @@ defmodule Indexer.Block.Realtime.Fetcher do
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number,
           address_token_balances: %{params: address_token_balances_params},
           addresses: %{params: addresses_params},
+          blocks: %{params: blocks_params},
           block_rewards: block_rewards,
-          blocks: %{params: blocks_params}
+          transactions: %{params: transactions_params},
+          token_transfers: %{params: token_transfers_params}
         } = options
       ) do
     with {:internal_transactions,
@@ -176,7 +180,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
            {:internal_transactions,
             internal_transactions(block_fetcher, %{
               addresses_params: addresses_params,
-              blocks_params: blocks_params
+              blocks_params: blocks_params,
+              token_transfers_params: token_transfers_params,
+              transactions_params: transactions_params
             })},
          {:balances, {:ok, %{addresses_params: balances_addresses_params, balances_params: balances_params}}} <-
            {:balances,
@@ -359,12 +365,25 @@ defmodule Indexer.Block.Realtime.Fetcher do
          %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments},
          %{
            addresses_params: addresses_params,
-           blocks_params: blocks_params
+           blocks_params: blocks_params,
+           token_transfers_params: token_transfers_params,
+           transactions_params: transactions_params
          }
        ) do
-    case blocks_params
-         |> blocks_params_to_fetch_internal_transactions_params()
-         |> EthereumJSONRPC.fetch_internal_transactions(json_rpc_named_arguments) do
+    json_rpc_named_arguments
+    |> Keyword.fetch!(:variant)
+    |> case do
+      EthereumJSONRPC.Parity ->
+        blocks_params
+        |> Enum.map(fn %{number: block_number} -> block_number end)
+        |> EthereumJSONRPC.fetch_block_internal_transactions(json_rpc_named_arguments)
+
+      _ ->
+        transactions_params
+        |> transactions_params_to_fetch_internal_transactions_params(token_transfers_params, json_rpc_named_arguments)
+        |> EthereumJSONRPC.fetch_internal_transactions(json_rpc_named_arguments)
+    end
+    |> case do
       {:ok, internal_transactions_params} ->
         merged_addresses_params =
           %{internal_transactions: internal_transactions_params}
@@ -382,9 +401,82 @@ defmodule Indexer.Block.Realtime.Fetcher do
     end
   end
 
-  defp blocks_params_to_fetch_internal_transactions_params(blocks_params) do
-    Enum.map(blocks_params, fn %{number: block_number} -> block_number end)
+  defp transactions_params_to_fetch_internal_transactions_params(
+         transactions_params,
+         token_transfers_params,
+         json_rpc_named_arguments
+       ) do
+    token_transfer_transaction_hash_set = MapSet.new(token_transfers_params, & &1.transaction_hash)
+
+    Enum.flat_map(
+      transactions_params,
+      &transaction_params_to_fetch_internal_transaction_params_list(
+        &1,
+        token_transfer_transaction_hash_set,
+        json_rpc_named_arguments
+      )
+    )
   end
+
+  defp transaction_params_to_fetch_internal_transaction_params_list(
+         %{block_number: block_number, transaction_index: transaction_index, hash: hash} = transaction_params,
+         token_transfer_transaction_hash_set,
+         json_rpc_named_arguments
+       )
+       when is_integer(block_number) and is_integer(transaction_index) and is_binary(hash) do
+    token_transfer? = hash in token_transfer_transaction_hash_set
+
+    if fetch_internal_transactions?(transaction_params, token_transfer?, json_rpc_named_arguments) do
+      [%{block_number: block_number, transaction_index: transaction_index, hash_data: hash}]
+    else
+      []
+    end
+  end
+
+  # 0xa9059cbb - signature of the transfer(address,uint256) function from the ERC-20 token specification.
+  # Although transaction input data can be faked we use this heuristics to filter simple token transfer internal transactions from indexing because they slow down realtime fetcher
+  defp fetch_internal_transactions?(
+         %{
+           status: :ok,
+           created_contract_address_hash: nil,
+           input: unquote(TokenTransfer.transfer_function_signature()) <> params,
+           value: 0
+         },
+         _,
+         _
+       ) do
+    types = [:address, {:uint, 256}]
+
+    try do
+      [_address, _value] =
+        params
+        |> Base.decode16!(case: :mixed)
+        |> TypeDecoder.decode_raw(types)
+
+      false
+    rescue
+      _ -> true
+    end
+  end
+
+  defp fetch_internal_transactions?(
+         %{
+           status: :ok,
+           created_contract_address_hash: nil,
+           input: "0x",
+           to_address_hash: to_address_hash,
+           block_number: block_number
+         },
+         _,
+         json_rpc_named_arguments
+       ) do
+    Chain.contract_address?(to_address_hash, block_number, json_rpc_named_arguments)
+  end
+
+  # Token transfers not transferred during contract creation don't need internal transactions as the token transfers
+  # derive completely from the logs.
+  defp fetch_internal_transactions?(%{status: :ok, created_contract_address_hash: nil}, true, _), do: false
+  defp fetch_internal_transactions?(_, _, _), do: true
 
   defp balances(
          %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments},

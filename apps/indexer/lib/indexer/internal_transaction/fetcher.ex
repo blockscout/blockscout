@@ -12,12 +12,12 @@ defmodule Indexer.InternalTransaction.Fetcher do
   import Indexer.Block.Fetcher, only: [async_import_coin_balances: 2]
 
   alias Explorer.Chain
-  alias Explorer.Chain.Block
+  alias Explorer.Chain.{Block, Hash}
   alias Indexer.{AddressExtraction, BufferedTask, Tracer}
 
   @behaviour BufferedTask
 
-  @max_batch_size 5
+  @max_batch_size 10
   @max_concurrency 4
   @defaults [
     flush_interval: :timer.seconds(3),
@@ -43,9 +43,32 @@ defmodule Indexer.InternalTransaction.Fetcher do
   *Note*: The internal transactions for individual transactions cannot be paginated,
   so the total number of internal transactions that could be produced is unknown.
   """
-  @spec async_fetch([%{required(:block_number) => Block.block_number()}]) :: :ok
+  @spec async_fetch([%{required(:block_number) => Block.block_number(), required(:hash) => Hash.Full.t()}]) :: :ok
   def async_fetch(transactions_fields, timeout \\ 5000) when is_list(transactions_fields) do
     entries = Enum.map(transactions_fields, &entry/1)
+
+    BufferedTask.buffer(__MODULE__, entries, timeout)
+  end
+
+  @doc """
+  Asynchronously fetches internal transactions.
+
+  ## Limiting Upstream Load
+
+  Internal transactions are an expensive upstream operation. The number of
+  results to fetch is configured by `@max_batch_size` and represents the number
+  of transaction hashes to request internal transactions in a single JSONRPC
+  request. Defaults to `#{@max_batch_size}`.
+
+  The `@max_concurrency` attribute configures the  number of concurrent requests
+  of `@max_batch_size` to allow against the JSONRPC. Defaults to `#{@max_concurrency}`.
+
+  *Note*: The internal transactions for individual transactions cannot be paginated,
+  so the total number of internal transactions that could be produced is unknown.
+  """
+  @spec async_block_fetch([%{required(:block_number) => Block.block_number()}]) :: :ok
+  def async_block_fetch(transactions_fields, timeout \\ 5000) when is_list(transactions_fields) do
+    entries = Enum.map(transactions_fields, &block_entry/1)
 
     BufferedTask.buffer(__MODULE__, entries, timeout)
   end
@@ -69,26 +92,45 @@ defmodule Indexer.InternalTransaction.Fetcher do
   end
 
   @impl BufferedTask
-  def init(initial, reducer, _) do
+  def init(initial, reducer, json_rpc_named_arguments) do
     {:ok, final} =
-      Chain.stream_blocks_with_unfetched_internal_transactions(
-        [:number],
-        initial,
-        fn block_fields, acc ->
-          block_fields
-          |> entry()
-          |> reducer.(acc)
-        end
-      )
+      case Keyword.fetch!(json_rpc_named_arguments, :variant) do
+        EthereumJSONRPC.Parity ->
+          Chain.stream_blocks_with_unfetched_internal_transactions(
+            [:number],
+            initial,
+            fn block_fields, acc ->
+              block_fields
+              |> block_entry()
+              |> reducer.(acc)
+            end
+          )
+
+        _ ->
+          Chain.stream_transactions_with_unfetched_internal_transactions(
+            [:block_number, :hash, :index],
+            initial,
+            fn transaction_fields, acc ->
+              transaction_fields
+              |> entry()
+              |> reducer.(acc)
+            end
+          )
+      end
 
     final
   end
 
-  defp entry(%{number: block_number}) when is_integer(block_number) do
-    block_number
+  defp entry(%{block_number: block_number, hash: %Hash{bytes: bytes}, index: index}) when is_integer(block_number) do
+    {block_number, bytes, index}
   end
 
-  defp params(block_number) when is_integer(block_number) do
+  defp params({block_number, hash_bytes, index}) when is_integer(block_number) do
+    {:ok, hash} = Hash.Full.cast(hash_bytes)
+    %{block_number: block_number, hash_data: to_string(hash), transaction_index: index}
+  end
+
+  defp block_entry(%{number: block_number}) when is_integer(block_number) do
     block_number
   end
 
@@ -100,16 +142,30 @@ defmodule Indexer.InternalTransaction.Fetcher do
               tracer: Tracer
             )
   def run(entries, json_rpc_named_arguments) do
-    unique_entries = Enum.uniq(entries)
+    variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
+
+    unique_entries =
+      case variant do
+        EthereumJSONRPC.Parity -> Enum.uniq(entries)
+        _ -> unique_entries(entries)
+      end
 
     unique_entries_count = Enum.count(unique_entries)
     Logger.metadata(count: unique_entries_count)
 
     Logger.debug("fetching internal transactions for transactions")
 
-    unique_entries
-    |> Enum.map(&params/1)
-    |> EthereumJSONRPC.fetch_internal_transactions(json_rpc_named_arguments)
+    variant
+    |> case do
+      EthereumJSONRPC.Parity ->
+        unique_entries
+        |> EthereumJSONRPC.fetch_block_internal_transactions(json_rpc_named_arguments)
+
+      _ ->
+        unique_entries
+        |> Enum.map(&params/1)
+        |> EthereumJSONRPC.fetch_internal_transactions(json_rpc_named_arguments)
+    end
     |> case do
       {:ok, internal_transactions_params} ->
         internal_transactions_params_without_failed_creations = remove_failed_creations(internal_transactions_params)
@@ -161,6 +217,45 @@ defmodule Indexer.InternalTransaction.Fetcher do
       :ignore ->
         :ok
     end
+  end
+
+  # Protection and improved reporting for https://github.com/poanetwork/blockscout/issues/289
+  defp unique_entries(entries) do
+    entries_by_hash_bytes = Enum.group_by(entries, &elem(&1, 1))
+
+    if map_size(entries_by_hash_bytes) < length(entries) do
+      {unique_entries, duplicate_entries} =
+        entries_by_hash_bytes
+        |> Map.values()
+        |> uniques_and_duplicates()
+
+      Logger.error(fn ->
+        duplicate_entries
+        |> Stream.with_index()
+        |> Enum.reduce(
+          ["Duplicate entries being used to fetch internal transactions:\n"],
+          fn {entry, index}, acc ->
+            [acc, "  ", to_string(index + 1), ". ", inspect(entry), "\n"]
+          end
+        )
+      end)
+
+      unique_entries
+    else
+      entries
+    end
+  end
+
+  defp uniques_and_duplicates(groups) do
+    Enum.reduce(groups, {[], []}, fn group, {acc_uniques, acc_duplicates} ->
+      case group do
+        [unique] ->
+          {[unique | acc_uniques], acc_duplicates}
+
+        [unique | _] = duplicates ->
+          {[unique | acc_uniques], duplicates ++ acc_duplicates}
+      end
+    end)
   end
 
   defp remove_failed_creations(internal_transactions_params) do

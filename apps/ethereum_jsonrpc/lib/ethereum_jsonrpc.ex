@@ -265,6 +265,16 @@ defmodule EthereumJSONRPC do
   end
 
   @doc """
+  Fetches internal transactions for entire blocks from variant API.
+  """
+  def fetch_block_internal_transactions(params_list, json_rpc_named_arguments) when is_list(params_list) do
+    Keyword.fetch!(json_rpc_named_arguments, :variant).fetch_block_internal_transactions(
+      params_list,
+      json_rpc_named_arguments
+    )
+  end
+
+  @doc """
   Fetches pending transactions from variant API.
   """
   def fetch_pending_transactions(json_rpc_named_arguments) do
