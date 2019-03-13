@@ -44,6 +44,13 @@ defmodule BlockScoutWeb.ChainTest do
       assert {:ok, %Address{hash: ^hash}} = address |> Phoenix.Param.to_param() |> Chain.from_param()
     end
 
+    test "finds a token by its name" do
+      name = "AYR"
+      insert(:token, symbol: name)
+
+      assert {:ok, %Address{}} = name |> Chain.from_param()
+    end
+
     test "returns {:error, :not_found} when garbage is passed in" do
       assert {:error, :not_found} = Chain.from_param("any ol' thing")
     end

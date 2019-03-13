@@ -734,11 +734,6 @@ msgid "Search"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/layout/_topnav.html.eex:83
-msgid "Search by address, transaction hash, or block number"
-msgstr ""
-
-#, elixir-format
 #:
 #: lib/block_scout_web/templates/address_token_balance/_token_balances.html.eex:28
 msgid "Search tokens"
@@ -1685,4 +1680,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:31
 msgid "EVM Vesion"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/layout/_topnav.html.eex:83
+msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""

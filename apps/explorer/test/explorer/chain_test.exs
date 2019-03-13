@@ -841,6 +841,21 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "token_contract_address_from_token_name/1" do
+    test "return not found if token doesn't exist" do
+      name = "AYR"
+
+      assert {:error, :not_found} = Chain.token_contract_address_from_token_name(name)
+    end
+
+    test "return the correct token if it exists" do
+      name = "AYR"
+      insert(:token, symbol: name)
+
+      assert {:ok, _} = Chain.token_contract_address_from_token_name(name)
+    end
+  end
+
   describe "find_or_insert_address_from_hash/1" do
     test "returns an address if it already exists" do
       address = insert(:address)
