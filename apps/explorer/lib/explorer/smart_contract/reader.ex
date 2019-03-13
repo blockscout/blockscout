@@ -254,8 +254,16 @@ defmodule Explorer.SmartContract.Reader do
     response = Integer.parse(item)
 
     case response do
-      {integer, remainder_of_binary} when remainder_of_binary == "" -> integer
-      _ -> item
+      {integer, ""} ->
+        hex_encoding =
+          integer
+          |> :binary.encode_unsigned()
+          |> Base.encode16(case: :lower)
+
+        "0x" <> hex_encoding
+
+      _ ->
+        item
     end
   end
 
