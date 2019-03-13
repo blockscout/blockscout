@@ -1682,12 +1682,12 @@ msgstr ""
 msgid "EVM Vesion"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:83
 msgid "Search by address, token symbol name, transaction hash, or block number"
+msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/overview.html.eex:75
 msgid "Error: Could not determine contract creator."
-
 msgstr ""
