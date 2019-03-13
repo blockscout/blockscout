@@ -51,6 +51,13 @@ defmodule BlockScoutWeb.ChainTest do
       assert {:ok, %Address{}} = name |> Chain.from_param()
     end
 
+    test "finds a token by its name even if lowercase name was passed" do
+      name = "ayr"
+      insert(:token, symbol: String.upcase(name))
+
+      assert {:ok, %Address{}} = name |> Chain.from_param()
+    end
+
     test "returns {:error, :not_found} when garbage is passed in" do
       assert {:error, :not_found} = Chain.from_param("any ol' thing")
     end

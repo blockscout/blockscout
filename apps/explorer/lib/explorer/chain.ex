@@ -640,7 +640,7 @@ defmodule Explorer.Chain do
   def token_contract_address_from_token_name(name) when is_binary(name) do
     query =
       from(token in Token,
-        where: token.symbol == ^name,
+        where: ilike(token.symbol, ^name),
         select: token.contract_address_hash
       )
 
