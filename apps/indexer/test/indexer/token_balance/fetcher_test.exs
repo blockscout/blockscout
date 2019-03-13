@@ -45,11 +45,11 @@ defmodule Indexer.TokenBalance.FetcherTest do
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
-        fn [%{id: _, method: _, params: [%{data: _, to: _}, _]}], _options ->
+        fn [%{id: id, method: "eth_call", params: [%{data: _, to: _}, _]}], _options ->
           {:ok,
            [
              %{
-               id: "balanceOf",
+               id: id,
                jsonrpc: "2.0",
                result: "0x00000000000000000000000000000000000000000000d3c21bcecceda1000000"
              }
@@ -80,12 +80,12 @@ defmodule Indexer.TokenBalance.FetcherTest do
         EthereumJSONRPC.Mox,
         :json_rpc,
         1,
-        fn [%{id: _, method: _, params: [%{data: _, to: _}, _]}], _options ->
+        fn [%{id: id, method: "eth_call", params: [%{data: _, to: _}, _]}], _options ->
           {:ok,
            [
              %{
                error: %{code: -32015, data: "Reverted 0x", message: "VM execution error."},
-               id: "balanceOf",
+               id: id,
                jsonrpc: "2.0"
              }
            ]}
