@@ -96,11 +96,6 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
           |> Indexer.Code.Fetcher.run(json_rpc_named_arguments)
       end)
 
-      :ok =
-        transaction
-        |> transaction_entry()
-        |> Indexer.InternalTransaction.Fetcher.run(json_rpc_named_arguments)
-
       Logger.debug(
         [
           "Finished fixing transaction #{to_string(transaction.hash)}"
