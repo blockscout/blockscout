@@ -80,8 +80,7 @@ defmodule Explorer.SmartContract.ReaderTest do
 
       response = Reader.query_contract(contract_address_hash, abi, %{"get" => []})
 
-      assert %{"get" => {:error, "no match of right hand side value: {:error, {:bad_gateway, \"request_url\"}}"}} =
-               response
+      assert %{"get" => {:error, "Bad gateway"}} = response
     end
 
     test "handles other types of errors" do

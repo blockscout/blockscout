@@ -182,6 +182,10 @@ defmodule Explorer.Token.MetadataRetrieverTest do
     end
 
     test "considers the symbol nil when it is an invalid string" do
+      original = Application.get_env(:explorer, :token_functions_reader_max_retries)
+
+      Application.put_env(:explorer, :token_functions_reader_max_retries, 1)
+
       token = insert(:token, contract_address: build(:contract_address))
 
       expect(
@@ -197,12 +201,8 @@ defmodule Explorer.Token.MetadataRetrieverTest do
                  result: "0x0000000000000000000000000000000000000000000000000000000000000012"
                }
 
-             %{id: id, method: "eth_call", params: [%{data: "0x06fdde03", to: _}, "latest"]} ->
-               %{
-                 id: id,
-                 result:
-                   "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003424e540000000000000000000000000000000000000000000000000000000000"
-               }
+             %{id: _id, method: "eth_call", params: [%{data: "0x06fdde03", to: _}, "latest"]} ->
+               nil
 
              %{id: id, method: "eth_call", params: [%{data: "0x95d89b41", to: _}, "latest"]} ->
                %{
@@ -216,18 +216,20 @@ defmodule Explorer.Token.MetadataRetrieverTest do
                  id: id,
                  result: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
                }
-           end)}
+           end)
+           |> Enum.reject(&is_nil/1)}
         end
       )
 
       expected = %{
-        name: "BNT",
         decimals: 18,
         total_supply: 1_000_000_000_000_000_000,
         symbol: nil
       }
 
       assert MetadataRetriever.get_functions_of(token.contract_address_hash) == expected
+
+      Application.put_env(:explorer, :token_functions_reader_max_retries, original)
     end
 
     test "shortens strings larger than 255 characters" do

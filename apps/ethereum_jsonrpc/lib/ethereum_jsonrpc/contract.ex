@@ -35,7 +35,7 @@ defmodule EthereumJSONRPC.Contract do
 
     requests_with_index = Enum.with_index(requests)
 
-    {:ok, responses} =
+    indexed_responses =
       requests_with_index
       |> Enum.map(fn {%{contract_address: contract_address, function_name: function_name, args: args} = request, index} ->
         functions[function_name]
@@ -43,12 +43,23 @@ defmodule EthereumJSONRPC.Contract do
         |> eth_call_request(contract_address, index, Map.get(request, :block_number))
       end)
       |> json_rpc(json_rpc_named_arguments)
-
-    indexed_responses = Enum.into(responses, %{}, &{&1.id, &1})
+      |> case do
+        {:ok, responses} -> responses
+        {:error, {:bad_gateway, _request_url}} -> raise "Bad gateway"
+        {:error, error} -> raise error
+      end
+      |> Enum.into(%{}, &{&1.id, &1})
 
     Enum.map(requests_with_index, fn {%{function_name: function_name}, index} ->
-      {^index, result} = Encoder.decode_result(indexed_responses[index], functions[function_name])
-      result
+      indexed_responses[index]
+      |> case do
+        nil ->
+          {:error, "No result"}
+
+        response ->
+          {^index, result} = Encoder.decode_result(response, functions[function_name])
+          result
+      end
     end)
   rescue
     error ->

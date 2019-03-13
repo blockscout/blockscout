@@ -5,8 +5,6 @@ defmodule EthereumJSONRPC.ContractTest do
 
   import Mox
 
-  alias EthereumJSONRPC.Contract
-
   describe "execute_contract_functions/3" do
     test "executes the functions with and without the block_number, returns results in order" do
       json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
@@ -71,7 +69,7 @@ defmodule EthereumJSONRPC.ContractTest do
              %{id: id, method: "eth_call", params: [%{data: "0x8321045c", to: ^contract_address}, "latest"]} ->
                %{
                  id: id,
-                 result: "0x0000000000000000000000000000000000000000000000000000000000000020"
+                 error: %{code: -32015, data: "something", message: "Some error"}
                }
            end)
            |> Enum.shuffle()}
@@ -81,10 +79,52 @@ defmodule EthereumJSONRPC.ContractTest do
       blockchain_result = [
         {:ok, [42]},
         {:ok, [52]},
-        {:ok, [32]}
+        {:error, "(-32015) Some error"}
       ]
 
-      assert Contract.execute_contract_functions(
+      assert EthereumJSONRPC.execute_contract_functions(
+               functions,
+               abi,
+               json_rpc_named_arguments
+             ) == blockchain_result
+    end
+
+    test "returns errors if JSONRPC request fails" do
+      json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+      abi = [
+        %{
+          "constant" => false,
+          "inputs" => [],
+          "name" => "get",
+          "outputs" => [%{"name" => "", "type" => "uint256"}],
+          "payable" => false,
+          "stateMutability" => "nonpayable",
+          "type" => "function"
+        }
+      ]
+
+      contract_address = "0x0000000000000000000000000000000000000000"
+
+      functions = [
+        %{contract_address: contract_address, function_name: "get", args: []},
+        %{contract_address: contract_address, function_name: "get", args: [], block_number: 1000}
+      ]
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn _requests, _options ->
+          {:error, "Some error"}
+        end
+      )
+
+      blockchain_result = [
+        {:error, "Some error"},
+        {:error, "Some error"}
+      ]
+
+      assert EthereumJSONRPC.execute_contract_functions(
                functions,
                abi,
                json_rpc_named_arguments
