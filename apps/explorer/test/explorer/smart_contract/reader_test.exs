@@ -80,7 +80,8 @@ defmodule Explorer.SmartContract.ReaderTest do
 
       response = Reader.query_contract(contract_address_hash, abi, %{"get" => []})
 
-      assert %{"get" => {:error, "Bad Gateway"}} = response
+      assert %{"get" => {:error, "no match of right hand side value: {:error, {:bad_gateway, \"request_url\"}}"}} =
+               response
     end
 
     test "handles other types of errors" do
@@ -112,19 +113,6 @@ defmodule Explorer.SmartContract.ReaderTest do
       blockchain_get_function_mock()
 
       assert Reader.query_verified_contract(hash, %{"get" => []}) == %{"get" => {:ok, [0]}}
-    end
-  end
-
-  describe "setup_call_payload/2" do
-    test "returns the expected payload" do
-      function_name = "get"
-      contract_address = "0x123789abc"
-      data = "0x6d4ce63c"
-
-      assert Reader.setup_call_payload(
-               {function_name, data},
-               contract_address
-             ) == %{contract_address: "0x123789abc", data: "0x6d4ce63c", id: "get"}
     end
   end
 
