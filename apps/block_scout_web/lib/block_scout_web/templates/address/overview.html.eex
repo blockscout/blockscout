@@ -53,21 +53,27 @@
               <% end %>
             </span>
           </div>
+          <% from_address_hash = from_address_hash(@address) %>
+
           <%= if contract?(@address) do %>
             <span class="text-muted" data-test="address_contract_creator">
-              <%= gettext "Created by" %>
-              <%= link(
-                trimmed_hash(from_address_hash(@address)),
-                to: address_path(@conn, :show, from_address_hash(@address))
-              ) %>
+              <%= if from_address_hash do %>
+                <%= gettext "Created by" %>
+                <%= link(
+                  trimmed_hash(from_address_hash(@address)),
+                  to: address_path(@conn, :show, from_address_hash(@address))
+                ) %>
 
-              <%= gettext "at" %>
+                <%= gettext "at" %>
 
-              <%= link(
-                trimmed_hash(transaction_hash(@address)),
-                to: transaction_path(@conn, :show, transaction_hash(@address)),
-                "data-test": "transaction_hash_link"
-              ) %>
+                <%= link(
+                  trimmed_hash(transaction_hash(@address)),
+                  to: transaction_path(@conn, :show, transaction_hash(@address)),
+                  "data-test": "transaction_hash_link"
+                ) %>
+              <% else %>
+                <p class="alert alert-danger" role="alert"><%= gettext("Error: Could not determine contract creator.") %></p>
+              <% end %>
             </span>
           <% end %>
         </div>
