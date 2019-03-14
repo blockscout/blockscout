@@ -597,6 +597,20 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "address_to_incoming_transaction_count/1" do
+    test "without transactions" do
+      address = insert(:address)
+
+      assert Chain.address_to_incoming_transaction_count(address) == 0
+    end
+
+    test "with transactions" do
+      %Transaction{to_address: to_address} = insert(:transaction)
+
+      assert Chain.address_to_incoming_transaction_count(to_address) == 1
+    end
+  end
+
   describe "confirmations/1" do
     test "with block.number == block_height " do
       block = insert(:block)
