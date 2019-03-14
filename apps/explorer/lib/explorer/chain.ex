@@ -417,6 +417,17 @@ defmodule Explorer.Chain do
     Repo.aggregate(query, :count, :hash)
   end
 
+  @spec address_to_incoming_transaction_count(Address.t()) :: non_neg_integer()
+  def address_to_incoming_transaction_count(%Address{hash: address_hash}) do
+    query =
+      from(
+        transaction in Transaction,
+        where: transaction.to_address_hash == ^address_hash
+      )
+
+    Repo.aggregate(query, :count, :hash)
+  end
+
   @doc """
   How many blocks have confirmed `block` based on the current `max_block_number`
 

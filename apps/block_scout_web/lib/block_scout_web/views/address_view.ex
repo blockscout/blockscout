@@ -213,6 +213,10 @@ defmodule BlockScoutWeb.AddressView do
 
   def token_title(%Token{name: name, symbol: symbol}), do: "#{name} (#{symbol})"
 
+  def incoming_transaction_count(%Address{} = address) do
+    Chain.address_to_incoming_transaction_count(address)
+  end
+
   def trimmed_hash(%Hash{} = hash) do
     string_hash = to_string(hash)
     "#{String.slice(string_hash, 0..5)}–#{String.slice(string_hash, -6..-1)}"

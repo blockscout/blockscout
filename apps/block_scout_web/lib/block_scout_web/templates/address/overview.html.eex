@@ -35,10 +35,17 @@
             <% end %>
             <span>
               <span class="address-detail-item">
-                <span data-selector="transaction-count">
-                  <%= Cldr.Number.to_string!(@transaction_count, format: "#,###") %>
-                </span>
-                <%= gettext("Transactions Sent") %>
+                <%= if contract?(@address) do %>
+                  <span data-selector="transaction-count">
+                    <%= Cldr.Number.to_string!(incoming_transaction_count(@address), format: "#,###") %>
+                  </span>
+                  <%= gettext("Incoming Transactions") %>
+                <% else %>
+                  <span data-selector="transaction-count">
+                    <%= Cldr.Number.to_string!(@transaction_count, format: "#,###") %>
+                  </span>
+                  <%= gettext("Transactions Sent") %>
+                <% end %>
               </span>
               <span class="address-detail-item">
                 <%= gettext("Last Balance Update: Block #") %><span data-selector="fetched-coin-balance-block-number"><%= @address.fetched_coin_balance_block_number %></span>
