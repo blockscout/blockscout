@@ -656,6 +656,22 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec token_contract_address_from_token_name(String.t()) :: {:ok, Hash.Address.t()} | {:error, :not_found}
+  def token_contract_address_from_token_name(name) when is_binary(name) do
+    query =
+      from(token in Token,
+        where: ilike(token.symbol, ^name),
+        select: token.contract_address_hash
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      hash -> {:ok, hash}
+    end
+  end
+
   @doc """
   Converts `t:Explorer.Chain.Address.t/0` `hash` to the `t:Explorer.Chain.Address.t/0` with that `hash`.
 
