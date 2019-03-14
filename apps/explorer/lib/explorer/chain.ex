@@ -1179,6 +1179,62 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Returns a stream of all blocks with unfetched internal transactions.
+
+  Only blocks with consensus are returned.
+
+      iex> non_consensus = insert(:block, consensus: false)
+      iex> unfetched = insert(:block)
+      iex> fetched = insert(:block, internal_transactions_indexed_at: DateTime.utc_now())
+      iex> {:ok, number_set} = Explorer.Chain.stream_blocks_with_unfetched_internal_transactions(
+      ...>   [:number],
+      ...>   MapSet.new(),
+      ...>   fn %Explorer.Chain.Block{number: number}, acc ->
+      ...>     MapSet.put(acc, number)
+      ...>   end
+      ...> )
+      iex> non_consensus.number in number_set
+      false
+      iex> unfetched.number in number_set
+      true
+      iex> fetched.hash in number_set
+      false
+
+  """
+  @spec stream_blocks_with_unfetched_internal_transactions(
+          fields :: [
+            :consensus
+            | :difficulty
+            | :gas_limit
+            | :gas_used
+            | :hash
+            | :miner
+            | :miner_hash
+            | :nonce
+            | :number
+            | :parent_hash
+            | :size
+            | :timestamp
+            | :total_difficulty
+            | :transactions
+            | :internal_transactions_indexed_at
+          ],
+          initial :: accumulator,
+          reducer :: (entry :: term(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_blocks_with_unfetched_internal_transactions(fields, initial, reducer) when is_function(reducer, 2) do
+    query =
+      from(
+        b in Block,
+        where: b.consensus and is_nil(b.internal_transactions_indexed_at),
+        select: ^fields
+      )
+
+    Repo.stream_reduce(query, initial, reducer)
+  end
+
+  @doc """
   Returns a stream of all collated transactions with unfetched internal transactions.
 
   Only transactions that have been collated into a block are returned; pending transactions not in a block are filtered
