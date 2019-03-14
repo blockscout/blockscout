@@ -214,7 +214,9 @@ defmodule BlockScoutWeb.AddressView do
   def token_title(%Token{name: name, symbol: symbol}), do: "#{name} (#{symbol})"
 
   def incoming_transaction_count(%Address{} = address) do
-    Chain.address_to_incoming_transaction_count(address)
+    count = Chain.address_to_incoming_transaction_count(address)
+
+    Cldr.Number.to_string!(count, format: "#,###")
   end
 
   def trimmed_hash(%Hash{} = hash) do

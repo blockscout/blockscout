@@ -51,6 +51,8 @@ defmodule Explorer.Chain do
 
   @default_paging_options %PagingOptions{page_size: 50}
 
+  @max_incoming_transactions_count 10_000
+
   @typedoc """
   The name of an association on the `t:Ecto.Schema.t/0`
   """
@@ -419,14 +421,21 @@ defmodule Explorer.Chain do
 
   @spec address_to_incoming_transaction_count(Address.t()) :: non_neg_integer()
   def address_to_incoming_transaction_count(%Address{hash: address_hash}) do
-    query =
-      from(
-        transaction in Transaction,
-        where: transaction.to_address_hash == ^address_hash
-      )
+    paging_options = %PagingOptions{page_size: @max_incoming_transactions_count}
 
-    Repo.aggregate(query, :count, :hash)
+    base_query =
+      paging_options
+      |> fetch_transactions()
+
+    to_address_query =
+      base_query
+      |> where([t], t.to_address_hash == ^address_hash)
+
+    Repo.aggregate(to_address_query, :count, :hash, timeout: :infinity)
   end
+
+  @spec max_incoming_transactions_count() :: non_neg_integer()
+  def max_incoming_transactions_count, do: @max_incoming_transactions_count
 
   @doc """
   How many blocks have confirmed `block` based on the current `max_block_number`

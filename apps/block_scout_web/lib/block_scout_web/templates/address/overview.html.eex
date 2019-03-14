@@ -36,8 +36,9 @@
             <span>
               <span class="address-detail-item">
                 <%= if contract?(@address) do %>
+                  <%= gettext(">=") %>
                   <span data-selector="transaction-count">
-                    <%= Cldr.Number.to_string!(incoming_transaction_count(@address), format: "#,###") %>
+                    <%= incoming_transaction_count(@address) %>
                   </span>
                   <%= gettext("Incoming Transactions") %>
                 <% else %>
