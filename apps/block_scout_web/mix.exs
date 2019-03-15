@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.Mixfile do
         plt_add_deps: :transitive,
         ignore_warnings: "../../.dialyzer-ignore"
       ],
-      elixir: "~> 1.6",
+      elixir: "~> 1.8",
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       package: package(),
@@ -63,9 +63,9 @@ defmodule BlockScoutWeb.Mixfile do
       # GraphQL toolkit
       {:absinthe, "~> 1.4"},
       # Integrates Absinthe subscriptions with Phoenix
-      {:absinthe_phoenix, "~> 1.4"},
+      {:absinthe_phoenix, git: "https://github.com/ayrat555/absinthe_phoenix.git", branch: "master"},
       # Plug support for Absinthe
-      {:absinthe_plug, "~> 1.4"},
+      {:absinthe_plug, git: "https://github.com/ayrat555/absinthe_plug.git", branch: "ab-allow-to-set-default-query"},
       # Absinthe support for the Relay framework
       {:absinthe_relay, "~> 1.4"},
       {:bypass, "~> 1.0", only: :test},
@@ -122,7 +122,7 @@ defmodule BlockScoutWeb.Mixfile do
       # Tracing
       {:spandex, github: "spandex-project/spandex", branch: "allow-setting-trace-key", override: true},
       # `:spandex` integration with Datadog
-      {:spandex_datadog, "~> 0.3.1"},
+      {:spandex_datadog, "~> 0.4.0"},
       # `:spandex` tracing of `:phoenix`
       {:spandex_phoenix, "~> 0.3.1"},
       {:timex, "~> 3.4"},

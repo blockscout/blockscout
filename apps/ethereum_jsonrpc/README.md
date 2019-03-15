@@ -9,13 +9,8 @@ config:
 
 ```elixir
 config :ethereum_jsonrpc,
-<<<<<<< HEAD
-  url: "https://sokol-trace.poa.network",
-  trace_url: "https://sokol-trace.poa.network",
-=======
   url: "http://localhost:8545",
   trace_url: "http://localhost:8545",
->>>>>>> master
   http: [recv_timeout: 60_000, timeout: 60_000, hackney: [pool: :ethereum_jsonrpc]]
 ```
 

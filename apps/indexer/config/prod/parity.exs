@@ -12,7 +12,7 @@ config :indexer,
         trace_block: System.get_env("ETHEREUM_JSONRPC_TRACE_URL"),
         trace_replayTransaction: System.get_env("ETHEREUM_JSONRPC_TRACE_URL")
       ],
-      http_options: [recv_timeout: :timer.minutes(1), timeout: :timer.minutes(1), hackney: [pool: :ethereum_jsonrpc]]
+      http_options: [recv_timeout: :timer.minutes(10), timeout: :timer.minutes(10), hackney: [pool: :ethereum_jsonrpc]]
     ],
     variant: EthereumJSONRPC.Parity
   ],
