@@ -18,6 +18,7 @@ defmodule Indexer.Block.Reward.Fetcher do
   alias Explorer.Chain.{Block, Wei}
   alias Indexer.Address.CoinBalances
   alias Indexer.{AddressExtraction, BufferedTask, CoinBalance, Tracer}
+  alias Indexer.Block.Reward.Supervisor, as: BlockRewardSupervisor
 
   @behaviour BufferedTask
 
@@ -34,7 +35,11 @@ defmodule Indexer.Block.Reward.Fetcher do
   """
   @spec async_fetch([Block.block_number()]) :: :ok
   def async_fetch(block_numbers) when is_list(block_numbers) do
-    BufferedTask.buffer(__MODULE__, block_numbers)
+    if BlockRewardSupervisor.disabled?() do
+      :ok
+    else
+      BufferedTask.buffer(__MODULE__, block_numbers)
+    end
   end
 
   @doc false
