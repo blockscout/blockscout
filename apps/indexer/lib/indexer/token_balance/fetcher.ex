@@ -7,8 +7,7 @@ defmodule Indexer.TokenBalance.Fetcher do
   only prepare the params, send they to `Indexer.TokenBalances` and relies on its return.
 
   It behaves as a `BufferedTask`, so we can configure the `max_batch_size` and the `max_concurrency` to control how many
-  token balances will be fetched at the same time. Be aware that, for each token balance the indexer will make a request
-  to the Smart Contract.
+  token balances will be fetched at the same time.
 
   Also, this module set a `retries_count` for each token balance and increment this number to avoid fetching the ones
   that always raise errors interacting with the Smart Contract.

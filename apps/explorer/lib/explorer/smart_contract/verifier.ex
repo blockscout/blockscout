@@ -23,8 +23,10 @@ defmodule Explorer.SmartContract.Verifier do
     compiler_version = Map.fetch!(params, "compiler_version")
     external_libraries = Map.get(params, "external_libraries", %{})
     constructor_arguments = Map.get(params, "constructor_arguments", "")
+    evm_version = Map.get(params, "evm_version", "byzantium")
 
-    solc_output = CodeCompiler.run(name, compiler_version, contract_source_code, optimization, external_libraries)
+    solc_output =
+      CodeCompiler.run(name, compiler_version, contract_source_code, optimization, evm_version, external_libraries)
 
     compare_bytecodes(solc_output, address_hash, constructor_arguments)
   end

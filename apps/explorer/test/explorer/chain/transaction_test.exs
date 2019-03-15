@@ -254,7 +254,7 @@ defmodule Explorer.Chain.TransactionTest do
         |> insert(to_address: insert(:contract_address))
         |> Repo.preload(to_address: :smart_contract)
 
-      assert Transaction.decoded_input_data(transaction) == {:error, :contract_not_verified}
+      assert Transaction.decoded_input_data(transaction) == {:error, :contract_not_verified, []}
     end
 
     test "that a contract call transaction that has a verified contract returns the decoded input data" do
@@ -264,6 +264,26 @@ defmodule Explorer.Chain.TransactionTest do
         |> Repo.preload(to_address: :smart_contract)
 
       assert Transaction.decoded_input_data(transaction) == {:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 50}]}
+    end
+
+    test "that a contract call will look up a match in contract_methods table" do
+      :transaction_to_verified_contract
+      |> insert()
+      |> Repo.preload(to_address: :smart_contract)
+
+      contract = insert(:smart_contract) |> Repo.preload(:address)
+
+      input_data =
+        "set(uint)"
+        |> ABI.encode([10])
+        |> Base.encode16(case: :lower)
+
+      transaction =
+        :transaction
+        |> insert(to_address: contract.address, input: "0x" <> input_data)
+        |> Repo.preload(to_address: :smart_contract)
+
+      assert Transaction.decoded_input_data(transaction) == {:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 10}]}
     end
   end
 end
