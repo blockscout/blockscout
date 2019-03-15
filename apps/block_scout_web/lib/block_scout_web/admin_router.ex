@@ -43,5 +43,9 @@ defmodule BlockScoutWeb.AdminRouter do
     pipe_through([:browser, :check_configured, :ensure_admin])
 
     get("/", DashboardController, :index)
+
+    scope "/tasks" do
+      get("/create_contract_methods", TaskController, :create_contract_methods, as: :create_contract_methods)
+    end
   end
 end
