@@ -37,10 +37,6 @@ defmodule Indexer.Address.TokenBalances do
     Enum.filter(token_transfers_params, &do_filter_burn_address/1)
   end
 
-  def do_filter_burn_address(%{from_address_hash: "0x0000000000000000000000000000000000000000", token_type: "ERC-721"}) do
-    false
-  end
-
   def do_filter_burn_address(%{to_address_hash: "0x0000000000000000000000000000000000000000", token_type: "ERC-721"}) do
     false
   end

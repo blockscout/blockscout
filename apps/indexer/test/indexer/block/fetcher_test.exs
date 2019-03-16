@@ -114,16 +114,18 @@ defmodule Indexer.Block.FetcherTest do
             |> expect(:json_rpc, fn [%{id: id, method: "trace_block", params: [^block_quantity]}], _options ->
               {:ok, [%{id: id, result: []}]}
             end)
-            |> expect(:json_rpc, fn [
-                                      %{
-                                        id: id,
-                                        jsonrpc: "2.0",
-                                        method: "eth_getBalance",
-                                        params: [^miner_hash, ^block_quantity]
-                                      }
-                                    ],
-                                    _options ->
-              {:ok, [%{id: id, jsonrpc: "2.0", result: "0x0"}]}
+            # async requests need to be grouped in one expect because the order is non-deterministic while multiple expect
+            # calls on the same name/arity are used in order
+            |> expect(:json_rpc, 2, fn json, _options ->
+              [request] = json
+
+              case request do
+                %{id: id, method: "eth_getBalance", params: [^miner_hash, ^block_quantity]} ->
+                  {:ok, [%{id: id, jsonrpc: "2.0", result: "0x0"}]}
+
+                %{id: id, method: "trace_replayBlockTransactions", params: [^block_quantity, ["trace"]]} ->
+                  {:ok, [%{id: id, result: []}]}
+              end
             end)
 
           EthereumJSONRPC.Geth ->
@@ -379,33 +381,37 @@ defmodule Indexer.Block.FetcherTest do
                 %{id: id, method: "eth_getBalance", params: [^from_address_hash, ^block_quantity]} ->
                   {:ok, [%{id: id, jsonrpc: "2.0", result: "0xd0d4a965ab52d8cd740000"}]}
 
-                %{id: id, method: "trace_replayTransaction", params: [^transaction_hash, ["trace"]]} ->
+                %{id: id, method: "trace_replayBlockTransactions", params: [^block_quantity, ["trace"]]} ->
                   {:ok,
                    [
                      %{
                        id: id,
                        jsonrpc: "2.0",
-                       result: %{
-                         "output" => "0x",
-                         "stateDiff" => nil,
-                         "trace" => [
-                           %{
-                             "action" => %{
-                               "callType" => "call",
-                               "from" => from_address_hash,
-                               "gas" => "0x475ec8",
-                               "input" => "0x10855269000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
-                               "to" => to_address_hash,
-                               "value" => "0x0"
-                             },
-                             "result" => %{"gasUsed" => "0x6c7a", "output" => "0x"},
-                             "subtraces" => 0,
-                             "traceAddress" => [],
-                             "type" => "call"
-                           }
-                         ],
-                         "vmTrace" => nil
-                       }
+                       result: [
+                         %{
+                           "output" => "0x",
+                           "stateDiff" => nil,
+                           "trace" => [
+                             %{
+                               "action" => %{
+                                 "callType" => "call",
+                                 "from" => from_address_hash,
+                                 "gas" => "0x475ec8",
+                                 "input" =>
+                                   "0x10855269000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
+                                 "to" => to_address_hash,
+                                 "value" => "0x0"
+                               },
+                               "result" => %{"gasUsed" => "0x6c7a", "output" => "0x"},
+                               "subtraces" => 0,
+                               "traceAddress" => [],
+                               "type" => "call"
+                             }
+                           ],
+                           "transactionHash" => transaction_hash,
+                           "vmTrace" => nil
+                         }
+                       ]
                      }
                    ]}
               end

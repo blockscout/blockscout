@@ -159,7 +159,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert()
         |> Repo.preload(:block)
 
-      assert TransactionView.formatted_status(transaction) == "Pending"
+      status = TransactionView.transaction_status(transaction)
+      assert TransactionView.formatted_status(status) == "Pending"
     end
 
     test "with block without status (pre-Byzantium/Ethereum Class)" do
@@ -170,7 +171,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert()
         |> with_block(block, status: nil)
 
-      assert TransactionView.formatted_status(transaction) == "(Awaiting internal transactions for status)"
+      status = TransactionView.transaction_status(transaction)
+      assert TransactionView.formatted_status(status) == "(Awaiting internal transactions for status)"
     end
 
     test "with receipt with status :ok" do
@@ -181,7 +183,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert(gas: gas)
         |> with_block(gas_used: gas - 1, status: :ok)
 
-      assert TransactionView.formatted_status(transaction) == "Success"
+      status = TransactionView.transaction_status(transaction)
+      assert TransactionView.formatted_status(status) == "Success"
     end
 
     test "with block with status :error without internal transactions indexed" do
@@ -192,7 +195,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert()
         |> with_block(block, status: :error)
 
-      assert TransactionView.formatted_status(transaction) == "Error: (Awaiting internal transactions for reason)"
+      status = TransactionView.transaction_status(transaction)
+      assert TransactionView.formatted_status(status) == "Error: (Awaiting internal transactions for reason)"
     end
 
     test "with block with status :error with internal transactions indexed uses `error`" do
@@ -201,7 +205,8 @@ defmodule BlockScoutWeb.TransactionViewTest do
         |> insert()
         |> with_block(status: :error, internal_transactions_indexed_at: DateTime.utc_now(), error: "Out of Gas")
 
-      assert TransactionView.formatted_status(transaction) == "Error: Out of Gas"
+      status = TransactionView.transaction_status(transaction)
+      assert TransactionView.formatted_status(status) == "Error: Out of Gas"
     end
   end
 
