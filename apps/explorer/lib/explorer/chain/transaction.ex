@@ -14,6 +14,7 @@ defmodule Explorer.Chain.Transaction do
   alias Explorer.Chain.{
     Address,
     Block,
+    ContractMethod,
     Data,
     Gas,
     Hash,
@@ -25,6 +26,7 @@ defmodule Explorer.Chain.Transaction do
   }
 
   alias Explorer.Chain.Transaction.{Fork, Status}
+  alias Explorer.Repo
 
   @optional_attrs ~w(block_hash block_number created_contract_address_hash cumulative_gas_used earliest_processing_start
                      error gas_used index internal_transactions_indexed_at created_contract_code_indexed_at status
@@ -466,9 +468,40 @@ defmodule Explorer.Chain.Transaction do
   def decoded_input_data(%__MODULE__{to_address: nil}), do: {:error, :no_to_address}
   def decoded_input_data(%__MODULE__{input: %{bytes: bytes}}) when bytes in [nil, <<>>], do: {:error, :no_input_data}
   def decoded_input_data(%__MODULE__{to_address: %{contract_code: nil}}), do: {:error, :not_a_contract_call}
-  def decoded_input_data(%__MODULE__{to_address: %{smart_contract: nil}}), do: {:error, :contract_not_verified}
+
+  def decoded_input_data(%__MODULE__{
+        to_address: %{smart_contract: nil},
+        input: %{bytes: <<method_id::binary-size(4), _::binary>> = data},
+        hash: hash
+      }) do
+    candidates_query =
+      from(
+        contract_method in ContractMethod,
+        where: contract_method.identifier == ^method_id
+      )
+
+    candidates =
+      candidates_query
+      |> Repo.all()
+      |> Enum.flat_map(fn candidate ->
+        case do_decoded_input_data(data, [candidate.abi], hash) do
+          {:ok, _, _, _} = decoded -> [decoded]
+          _ -> []
+        end
+      end)
+
+    {:error, :contract_not_verified, candidates}
+  end
+
+  def decoded_input_data(%__MODULE__{to_address: %{smart_contract: nil}}) do
+    {:error, :contract_not_verified, []}
+  end
 
   def decoded_input_data(%__MODULE__{input: %{bytes: data}, to_address: %{smart_contract: %{abi: abi}}, hash: hash}) do
+    do_decoded_input_data(data, abi, hash)
+  end
+
+  defp do_decoded_input_data(data, abi, hash) do
     with {:ok, {selector, values}} <- find_and_decode(abi, data, hash),
          {:ok, mapping} <- selector_mapping(selector, values, hash),
          identifier <- Base.encode16(selector.method_id, case: :lower),

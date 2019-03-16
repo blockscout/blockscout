@@ -87,6 +87,7 @@ defmodule Indexer.InternalTransaction.FetcherTest do
              ) == []
     end
 
+    @tag :no_parity
     test "buffers collated transactions with unfetched internal transactions", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
@@ -104,6 +105,7 @@ defmodule Indexer.InternalTransaction.FetcherTest do
              ) == [{block.number, collated_unfetched_transaction.hash.bytes, collated_unfetched_transaction.index}]
     end
 
+    @tag :no_parity
     test "does not buffer collated transactions with fetched internal transactions", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
@@ -117,9 +119,36 @@ defmodule Indexer.InternalTransaction.FetcherTest do
                json_rpc_named_arguments
              ) == []
     end
+
+    @tag :no_geth
+    test "buffers blocks with unfetched internal transactions", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      block = insert(:block)
+
+      assert InternalTransaction.Fetcher.init(
+               [],
+               fn block_number, acc -> [block_number | acc] end,
+               json_rpc_named_arguments
+             ) == [block.number]
+    end
+
+    @tag :no_geth
+    test "does not buffer blocks with fetched internal transactions", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      insert(:block, internal_transactions_indexed_at: DateTime.utc_now())
+
+      assert InternalTransaction.Fetcher.init(
+               [],
+               fn block_number, acc -> [block_number | acc] end,
+               json_rpc_named_arguments
+             ) == []
+    end
   end
 
   describe "run/2" do
+    @tag :no_parity
     test "duplicate transaction hashes are logged", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
@@ -227,6 +256,7 @@ defmodule Indexer.InternalTransaction.FetcherTest do
       end
     end
 
+    @tag :no_parity
     test "duplicate transaction hashes only retry uniques", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->

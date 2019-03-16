@@ -1,12 +1,15 @@
 defmodule BlockScoutWeb.AddressView do
   use BlockScoutWeb, :view
 
+  require Logger
+
   import BlockScoutWeb.AddressController, only: [validation_count: 1]
 
   alias BlockScoutWeb.LayoutView
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash, InternalTransaction, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Block.Reward
+  alias Explorer.ExchangeRates.Token, as: TokenExchangeRate
 
   @dialyzer :no_match
 
@@ -117,6 +120,10 @@ defmodule BlockScoutWeb.AddressView do
     |> Kernel.<>("% #{gettext("Market Cap")}")
   end
 
+  def empty_exchange_rate?(exchange_rate) do
+    TokenExchangeRate.null?(exchange_rate)
+  end
+
   def balance_percentage(%Address{fetched_coin_balance: _} = address) do
     balance_percentage(address, Chain.total_supply())
   end
@@ -206,6 +213,12 @@ defmodule BlockScoutWeb.AddressView do
 
   def token_title(%Token{name: name, symbol: symbol}), do: "#{name} (#{symbol})"
 
+  def incoming_transaction_count(%Address{} = address) do
+    count = Chain.address_to_incoming_transaction_count(address)
+
+    Cldr.Number.to_string!(count, format: "#,###")
+  end
+
   def trimmed_hash(%Hash{} = hash) do
     string_hash = to_string(hash)
     "#{String.slice(string_hash, 0..5)}–#{String.slice(string_hash, -6..-1)}"
@@ -227,6 +240,12 @@ defmodule BlockScoutWeb.AddressView do
 
   def from_address_hash(%Address{contracts_creation_transaction: %Transaction{}} = address) do
     address.contracts_creation_transaction.from_address_hash
+  end
+
+  def from_address_hash(address) do
+    Logger.error(fn -> ["Found a contract with no creator: ", to_string(address)] end)
+
+    nil
   end
 
   defp matching_address_check(%Address{hash: hash} = current_address, %Address{hash: hash}, contract?, truncate) do
