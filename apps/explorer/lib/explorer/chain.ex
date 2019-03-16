@@ -11,6 +11,7 @@ defmodule Explorer.Chain do
       order_by: 2,
       order_by: 3,
       preload: 2,
+      select: 2,
       subquery: 1,
       union_all: 2,
       where: 2,
@@ -49,6 +50,8 @@ defmodule Explorer.Chain do
   alias Dataloader.Ecto, as: DataloaderEcto
 
   @default_paging_options %PagingOptions{page_size: 50}
+
+  @max_incoming_transactions_count 10_000
 
   @typedoc """
   The name of an association on the `t:Ecto.Schema.t/0`
@@ -416,6 +419,24 @@ defmodule Explorer.Chain do
     Repo.aggregate(query, :count, :hash)
   end
 
+  @spec address_to_incoming_transaction_count(Address.t()) :: non_neg_integer()
+  def address_to_incoming_transaction_count(%Address{hash: address_hash}) do
+    paging_options = %PagingOptions{page_size: @max_incoming_transactions_count}
+
+    base_query =
+      paging_options
+      |> fetch_transactions()
+
+    to_address_query =
+      base_query
+      |> where([t], t.to_address_hash == ^address_hash)
+
+    Repo.aggregate(to_address_query, :count, :hash, timeout: :infinity)
+  end
+
+  @spec max_incoming_transactions_count() :: non_neg_integer()
+  def max_incoming_transactions_count, do: @max_incoming_transactions_count
+
   @doc """
   How many blocks have confirmed `block` based on the current `max_block_number`
 
@@ -632,6 +653,22 @@ defmodule Explorer.Chain do
     |> case do
       nil -> {:error, :not_found}
       address -> {:ok, address}
+    end
+  end
+
+  @spec token_contract_address_from_token_name(String.t()) :: {:ok, Hash.Address.t()} | {:error, :not_found}
+  def token_contract_address_from_token_name(name) when is_binary(name) do
+    query =
+      from(token in Token,
+        where: ilike(token.symbol, ^name),
+        select: token.contract_address_hash
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      hash -> {:ok, hash}
     end
   end
 
@@ -1142,6 +1179,62 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Returns a stream of all blocks with unfetched internal transactions.
+
+  Only blocks with consensus are returned.
+
+      iex> non_consensus = insert(:block, consensus: false)
+      iex> unfetched = insert(:block)
+      iex> fetched = insert(:block, internal_transactions_indexed_at: DateTime.utc_now())
+      iex> {:ok, number_set} = Explorer.Chain.stream_blocks_with_unfetched_internal_transactions(
+      ...>   [:number],
+      ...>   MapSet.new(),
+      ...>   fn %Explorer.Chain.Block{number: number}, acc ->
+      ...>     MapSet.put(acc, number)
+      ...>   end
+      ...> )
+      iex> non_consensus.number in number_set
+      false
+      iex> unfetched.number in number_set
+      true
+      iex> fetched.hash in number_set
+      false
+
+  """
+  @spec stream_blocks_with_unfetched_internal_transactions(
+          fields :: [
+            :consensus
+            | :difficulty
+            | :gas_limit
+            | :gas_used
+            | :hash
+            | :miner
+            | :miner_hash
+            | :nonce
+            | :number
+            | :parent_hash
+            | :size
+            | :timestamp
+            | :total_difficulty
+            | :transactions
+            | :internal_transactions_indexed_at
+          ],
+          initial :: accumulator,
+          reducer :: (entry :: term(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_blocks_with_unfetched_internal_transactions(fields, initial, reducer) when is_function(reducer, 2) do
+    query =
+      from(
+        b in Block,
+        where: b.consensus and is_nil(b.internal_transactions_indexed_at),
+        select: ^fields
+      )
+
+    Repo.stream_reduce(query, initial, reducer)
+  end
+
+  @doc """
   Returns a stream of all collated transactions with unfetched internal transactions.
 
   Only transactions that have been collated into a block are returned; pending transactions not in a block are filtered
@@ -1267,6 +1360,37 @@ defmodule Explorer.Chain do
         where: not is_nil(t.block_hash) and not is_nil(t.nonce) and not is_nil(t.from_address_hash),
         select: ^fields
       )
+
+    Repo.stream_reduce(query, initial, reducer)
+  end
+
+  @spec stream_pending_transactions(
+          fields :: [
+            :block_hash
+            | :internal_transactions_indexed_at
+            | :created_contract_code_indexed_at
+            | :from_address_hash
+            | :gas
+            | :gas_price
+            | :hash
+            | :index
+            | :input
+            | :nonce
+            | :r
+            | :s
+            | :to_address_hash
+            | :v
+            | :value
+          ],
+          initial :: accumulator,
+          reducer :: (entry :: term(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_pending_transactions(fields, initial, reducer) when is_function(reducer, 2) do
+    query =
+      Transaction
+      |> pending_transactions_query()
+      |> select(^fields)
 
     Repo.stream_reduce(query, initial, reducer)
   end
@@ -1612,6 +1736,7 @@ defmodule Explorer.Chain do
     |> page_pending_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> pending_transactions_query()
+    |> where([transaction], is_nil(transaction.error) or transaction.error != "dropped/replaced")
     |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
     |> join_associations(necessity_by_association)
     |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
@@ -1834,6 +1959,7 @@ defmodule Explorer.Chain do
           | :success
           | {:error, :awaiting_internal_transactions}
           | {:error, reason :: String.t()}
+  def transaction_to_status(%Transaction{error: "dropped/replaced"}), do: {:error, "dropped/replaced"}
   def transaction_to_status(%Transaction{block_hash: nil, status: nil}), do: :pending
   def transaction_to_status(%Transaction{status: nil}), do: :awaiting_internal_transactions
   def transaction_to_status(%Transaction{status: :ok}), do: :success
@@ -2263,6 +2389,37 @@ defmodule Explorer.Chain do
     address_hash
     |> Address.Token.list_address_tokens_with_balance(paging_options)
     |> Repo.all()
+  end
+
+  @spec find_and_update_replaced_transactions([
+          %{
+            required(:nonce) => non_neg_integer,
+            required(:from_address_hash) => Hash.Address.t(),
+            required(:hash) => Hash.t()
+          }
+        ]) :: {integer(), nil | [term()]}
+  def find_and_update_replaced_transactions(transactions, timeout \\ :infinity) do
+    query =
+      Enum.reduce(transactions, Transaction, fn %{hash: hash, nonce: nonce, from_address_hash: from_address_hash},
+                                                query ->
+        from(t in query,
+          or_where:
+            t.nonce == ^nonce and t.from_address_hash == ^from_address_hash and t.hash != ^hash and
+              not is_nil(t.block_number)
+        )
+      end)
+
+    hashes = Enum.map(transactions, & &1.hash)
+
+    transactions_to_update =
+      from(pending in Transaction,
+        join: duplicate in subquery(query),
+        on: duplicate.nonce == pending.nonce,
+        on: duplicate.from_address_hash == pending.from_address_hash,
+        where: pending.hash in ^hashes
+      )
+
+    Repo.update_all(transactions_to_update, [set: [error: "dropped/replaced", status: :error]], timeout: timeout)
   end
 
   @spec update_replaced_transactions([

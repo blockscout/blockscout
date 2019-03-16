@@ -4,6 +4,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
   """
 
   @new_contract_name "New.sol"
+  @allowed_evm_versions ["homestead", "tangerineWhistle", "spuriousDragon", "byzantium", "constantinople"]
 
   @doc """
   Compiles a code in the solidity command line.
@@ -60,8 +61,15 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
         }
       }
   """
-  def run(name, compiler_version, code, optimize, external_libs \\ %{}) do
+  def run(name, compiler_version, code, optimize, evm_version \\ "byzantium", external_libs \\ %{}) do
     external_libs_string = Jason.encode!(external_libs)
+
+    evm_version =
+      if evm_version in @allowed_evm_versions do
+        evm_version
+      else
+        "byzantium"
+      end
 
     {response, _status} =
       System.cmd(
@@ -72,7 +80,8 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
           compiler_version,
           optimize_value(optimize),
           @new_contract_name,
-          external_libs_string
+          external_libs_string,
+          evm_version
         ]
       )
 

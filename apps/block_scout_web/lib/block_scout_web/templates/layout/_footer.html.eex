@@ -90,8 +90,9 @@
     <% version = 'v1.3.4-beta' %>
 
     <%= unless ignore_version?(version) do %>
+      <% release_link = release_link(version) %>
       <div>
-        <%= gettext("Version") %>: <%= version %>
+        <%= gettext("Version") %>: <%= release_link %>
       </div>
     <% end %>
   </div>
