@@ -44,6 +44,8 @@ defmodule Explorer.ExchangeRates.Token do
       last_updated: nil
     }
 
+  def null?(token), do: token == null()
+
   def to_tuple(%__MODULE__{
         symbol: symbol,
         id: id,

@@ -87,7 +87,7 @@ defmodule Explorer.Chain.Import.Runner.Addresses do
     from(address in Address,
       update: [
         set: [
-          contract_code: fragment("COALESCE(?, EXCLUDED.contract_code)", address.contract_code),
+          contract_code: fragment("COALESCE(EXCLUDED.contract_code, ?)", address.contract_code),
           # ARGMAX on two columns
           fetched_coin_balance:
             fragment(

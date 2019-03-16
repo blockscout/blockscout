@@ -1,3 +1,6 @@
 :0: Unknown function 'Elixir.ExUnit.Callbacks':'__merge__'/3
 :0: Unknown function 'Elixir.ExUnit.CaseTemplate':'__proxy__'/2
 :0: Unknown type 'Elixir.Map':t/0
+apps/ethereum_jsonrpc/lib/ethereum_jsonrpc.ex:400: Function timestamp_to_datetime/1 has no local return
+apps/explorer/lib/explorer/repo/prometheus_logger.ex:8: Function microseconds_time/1 has no local return
+apps/explorer/lib/explorer/repo/prometheus_logger.ex:8: The call 'Elixir.System':convert_time_unit(__@1::any(),'native','microseconds') breaks the contract (integer(),time_unit() | 'native',time_unit() | 'native') -> integer()
