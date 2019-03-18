@@ -9,7 +9,6 @@ defmodule Indexer.Temporary.AddressesWithoutCode do
 
   import Ecto.Query
 
-
   alias Explorer.Chain.{Block, Transaction}
   alias Explorer.Repo
   alias Indexer.Block.Realtime.Fetcher
