@@ -47,7 +47,7 @@ defmodule Indexer.Temporary.AddressesWithoutCodeTest do
     test "refetches blocks setting created address and code", %{
       fetcher: %{json_rpc_named_arguments: json_rpc_named_arguments} = fetcher
     } do
-      block = insert(:block)
+      block = insert(:block, consensus: true)
 
       transaction =
         :transaction
@@ -223,7 +223,7 @@ defmodule Indexer.Temporary.AddressesWithoutCodeTest do
     test "doesn't set contract code if contract wasn't create", %{
       fetcher: %{json_rpc_named_arguments: json_rpc_named_arguments} = fetcher
     } do
-      block = insert(:block)
+      block = insert(:block, consensus: true)
 
       transaction =
         :transaction

@@ -9,10 +9,11 @@ defmodule Indexer.Temporary.AddressesWithoutCode do
 
   import Ecto.Query
 
+
   alias Explorer.Chain.{Block, Transaction}
   alias Explorer.Repo
-  alias Indexer.Temporary.AddressesWithoutCode.TaskSupervisor
   alias Indexer.Block.Realtime.Fetcher
+  alias Indexer.Temporary.AddressesWithoutCode.TaskSupervisor
 
   @task_options [max_concurrency: 3, timeout: :infinity]
   @query_timeout :infinity
@@ -44,14 +45,16 @@ defmodule Indexer.Temporary.AddressesWithoutCode do
       [
         "Started query to fetch addresses without code"
       ],
-      fetcher: :failed_created_addresses
+      fetcher: :addresses_without_code
     )
 
     query =
       from(block in Block,
         left_join: transaction in Transaction,
         on: block.hash == transaction.block_hash,
-        where: is_nil(transaction.to_address_hash) and is_nil(transaction.created_contract_address_hash),
+        where:
+          is_nil(transaction.to_address_hash) and is_nil(transaction.created_contract_address_hash) and
+            block.consensus == true and is_nil(transaction.error) and not is_nil(transaction.hash),
         distinct: block.hash
       )
 
@@ -61,7 +64,7 @@ defmodule Indexer.Temporary.AddressesWithoutCode do
       [
         "Finished query to fetch blocks that  need to be re-fetched. Number of records is #{Enum.count(found_blocks)}"
       ],
-      fetcher: :failed_created_addresses
+      fetcher: :addresses_without_code
     )
 
     TaskSupervisor
@@ -74,16 +77,14 @@ defmodule Indexer.Temporary.AddressesWithoutCode do
   end
 
   def refetch_block(block, fetcher) do
-    try do
-      Fetcher.fetch_and_import_block(block.number, fetcher, false)
-    rescue
-      e ->
-        Logger.debug(
-          [
-            "Failed to fetch block #{to_string(block.hash)} #{block.number} because of #{inspect(e)}"
-          ],
-          fetcher: :failed_created_addresses
-        )
-    end
+    Fetcher.fetch_and_import_block(block.number, fetcher, false)
+  rescue
+    e ->
+      Logger.debug(
+        [
+          "Failed to fetch block #{to_string(block.hash)} #{block.number} because of #{inspect(e)}"
+        ],
+        fetcher: :addresses_without_code
+      )
   end
 end
