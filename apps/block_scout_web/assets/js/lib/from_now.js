@@ -21,7 +21,8 @@ function tryUpdateAge (el) {
 function updateAge (el, timestamp) {
   let fromNow = timestamp.fromNow()
   // show the exact time only for transaction details page. Otherwise, short entry
-  if (window.location.pathname.startsWith('/tx/')) {
+  const elInTile = el.hasAttribute('in-tile')
+  if (window.location.pathname.includes('/tx/') && !elInTile) {
     const offset = moment().utcOffset() / 60
     const sign = offset && Math.sign(offset) ? '+' : '-'
     const formatDate = `MMMM-DD-YYYY hh:mm:ss A ${sign}${offset} UTC`
