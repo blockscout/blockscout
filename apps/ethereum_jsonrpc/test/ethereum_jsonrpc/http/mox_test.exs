@@ -103,27 +103,18 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
     test "transparently splits batch payloads that would trigger a 504 Gateway Timeout", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
-      transaction_hashes = ~w(0x196c2579f30077e8df0994e185d724331350c2bdb0f5d4e48b9e83f1e149cc28
-         0x19eb948514a971bcd3ab737083bbdb32da233fff2ba70490bb0a36937a418006
-         0x1a1039899fd07a5fd81faf2ec11ca24fc6023d486d4156095688a29b3bf06b7b
-         0x1a942061ed6cf0736b194732bb6e1edfcbc50cc004e0cdad79335b3e40e23c9c
-         0x1bdec995deaa0e5b53cc7a0b84eaff39da90f5e507fdb4360881ff31f824d918
-         0x1c26758e003b0bc89ac7e3e6e87c6fc76dfb8d878dc530055e6a34f4d557cb1c
-         0x1d592be82979bd1cc320eb70d4bb1d61226d78baa9e57e2a12b24345f81ce3bd
-         0x1e57e7ce2941c6108e899f786fe339fa50ab053e47fbdcbf5979f475042c6dd8
-         0x1ec1f9c31a0f43f7e684bfa20e422d7d8a343f81c517be1e30f149618ae306f2
-         0x221aaf59f7a05702f0f53744b4fdb5f74e3c6fdade7324fda342cc1ebc73e01c)
+      block_numbers = [862_272, 862_273, 862_274, 862_275, 862_276, 862_277, 862_278, 862_279, 862_280, 862_281]
 
       if json_rpc_named_arguments[:transport_options][:http] == EthereumJSONRPC.HTTP.Mox do
         EthereumJSONRPC.HTTP.Mox
         |> expect(:json_rpc, fn _url, _json, _options ->
-          {:ok, %{body: "504 Gateway Timeout", status_code: 413}}
+          {:ok, %{body: "504 Gateway Timeout", status_code: 504}}
         end)
         |> expect(:json_rpc, fn _url, json, _options ->
           json_binary = IO.iodata_to_binary(json)
 
-          refute json_binary =~ "0x221aaf59f7a05702f0f53744b4fdb5f74e3c6fdade7324fda342cc1ebc73e01c"
-          assert json_binary =~ "0x1bdec995deaa0e5b53cc7a0b84eaff39da90f5e507fdb4360881ff31f824d918"
+          refute json_binary =~ "0xD2849"
+          assert json_binary =~ "0xD2844"
 
           body =
             0..4
@@ -131,16 +122,19 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
               %{
                 jsonrpc: "2.0",
                 id: id,
-                result: %{
-                  "trace" => [
-                    %{
-                      "type" => "create",
-                      "action" => %{"from" => "0x", "gas" => "0x0", "init" => "0x", "value" => "0x0"},
-                      "traceAddress" => "0x",
-                      "result" => %{"address" => "0x", "code" => "0x", "gasUsed" => "0x0"}
-                    }
-                  ]
-                }
+                result: [
+                  %{
+                    "trace" => [
+                      %{
+                        "type" => "create",
+                        "action" => %{"from" => "0x", "gas" => "0x0", "init" => "0x", "value" => "0x0"},
+                        "traceAddress" => "0x",
+                        "result" => %{"address" => "0x", "code" => "0x", "gasUsed" => "0x0"}
+                      }
+                    ],
+                    "transactionHash" => "0x221aaf59f7a05702f0f53744b4fdb5f74e3c6fdade7324fda342cc1ebc73e01c"
+                  }
+                ]
               }
             end)
             |> Jason.encode!()
@@ -150,9 +144,9 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
         |> expect(:json_rpc, fn _url, json, _options ->
           json_binary = IO.iodata_to_binary(json)
 
-          refute json_binary =~ "0x1bdec995deaa0e5b53cc7a0b84eaff39da90f5e507fdb4360881ff31f824d918"
-          assert json_binary =~ "0x1c26758e003b0bc89ac7e3e6e87c6fc76dfb8d878dc530055e6a34f4d557cb1c"
-          assert json_binary =~ "0x221aaf59f7a05702f0f53744b4fdb5f74e3c6fdade7324fda342cc1ebc73e01c"
+          refute json_binary =~ "0xD2844"
+          assert json_binary =~ "0xD2845"
+          assert json_binary =~ "0xD2849"
 
           body =
             5..9
@@ -160,16 +154,19 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
               %{
                 jsonrpc: "2.0",
                 id: id,
-                result: %{
-                  "trace" => [
-                    %{
-                      "type" => "create",
-                      "action" => %{"from" => "0x", "gas" => "0x0", "init" => "0x", "value" => "0x0"},
-                      "traceAddress" => "0x",
-                      "result" => %{"address" => "0x", "code" => "0x", "gasUsed" => "0x0"}
-                    }
-                  ]
-                }
+                result: [
+                  %{
+                    "trace" => [
+                      %{
+                        "type" => "create",
+                        "action" => %{"from" => "0x", "gas" => "0x0", "init" => "0x", "value" => "0x0"},
+                        "traceAddress" => "0x",
+                        "result" => %{"address" => "0x", "code" => "0x", "gasUsed" => "0x0"}
+                      }
+                    ],
+                    "transactionHash" => "0x221aaf59f7a05702f0f53744b4fdb5f74e3c6fdade7324fda342cc1ebc73e01c"
+                  }
+                ]
               }
             end)
             |> Jason.encode!()
@@ -178,24 +175,19 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
         end)
       end
 
-      transactions_params =
-        Enum.map(transaction_hashes, fn hash_data ->
-          %{block_number: 0, hash_data: hash_data, gas: 1_000_000, transaction_index: 0}
-        end)
-
       assert {:ok, responses} =
-               EthereumJSONRPC.fetch_internal_transactions(transactions_params, json_rpc_named_arguments)
+               EthereumJSONRPC.fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments)
 
-      assert Enum.count(responses) == Enum.count(transactions_params)
+      assert Enum.count(responses) == Enum.count(block_numbers)
 
-      transaction_hash_set = MapSet.new(transaction_hashes)
+      block_number_set = MapSet.new(block_numbers)
 
-      response_transaction_hash_set =
-        Enum.into(responses, MapSet.new(), fn %{transaction_hash: transaction_hash} ->
-          transaction_hash
+      response_block_number_set =
+        Enum.into(responses, MapSet.new(), fn %{block_number: block_number} ->
+          block_number
         end)
 
-      assert MapSet.equal?(response_transaction_hash_set, transaction_hash_set)
+      assert MapSet.equal?(response_block_number_set, block_number_set)
     end
   end
 
