@@ -39,6 +39,8 @@ defmodule Indexer.Block.Supervisor do
       |> Map.merge(Enum.into(realtime_overrides, %{}))
       |> Block.Fetcher.new()
 
+    realtime_subscribe_named_arguments = realtime_overrides[:subscribe_named_arguments] || subscribe_named_arguments
+
     memory_monitor = Map.get(named_arguments, :memory_monitor)
 
     Supervisor.init(
