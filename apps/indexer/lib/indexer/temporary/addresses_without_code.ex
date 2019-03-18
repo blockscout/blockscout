@@ -9,7 +9,7 @@ defmodule Indexer.Temporary.AddressesWithoutCode do
 
   import Ecto.Query
 
-  alias Explorer.Chain.{Block, Transaction}
+  alias Explorer.Chain.{Address, Block, Transaction}
   alias Explorer.Repo
   alias Indexer.Block.Realtime.Fetcher
   alias Indexer.Temporary.AddressesWithoutCode.TaskSupervisor
@@ -42,7 +42,7 @@ defmodule Indexer.Temporary.AddressesWithoutCode do
   def run(fetcher) do
     Logger.debug(
       [
-        "Started query to fetch addresses without code"
+        "Started the first query to fetch addresses without code"
       ],
       fetcher: :addresses_without_code
     )
@@ -61,14 +61,56 @@ defmodule Indexer.Temporary.AddressesWithoutCode do
 
     Logger.debug(
       [
-        "Finished query to fetch blocks that  need to be re-fetched. Number of records is #{Enum.count(found_blocks)}"
+        "Finished the first query to fetch blocks that  need to be re-fetched. Number of records is #{
+          Enum.count(found_blocks)
+        }"
+      ],
+      fetcher: :addresses_without_code
+    )
+
+    _ =
+      TaskSupervisor
+      |> Task.Supervisor.async_stream_nolink(
+        found_blocks,
+        fn block -> refetch_block(block, fetcher) end,
+        @task_options
+      )
+      |> Enum.to_list()
+
+    Logger.debug(
+      [
+        "Started the second query to fetch addresses without code"
+      ],
+      fetcher: :addresses_without_code
+    )
+
+    second_query =
+      from(block in Block,
+        left_join: transaction in Transaction,
+        on: transaction.block_hash == block.hash,
+        left_join: address in Address,
+        on: address.hash == transaction.created_contract_address_hash,
+        where:
+          not is_nil(transaction.block_hash) and not is_nil(transaction.created_contract_address_hash) and
+            is_nil(address.contract_code) and
+            block.consensus == true and is_nil(transaction.error) and not is_nil(transaction.hash),
+        distinct: block.hash
+      )
+
+    second_found_blocks = Repo.all(second_query, timeout: @query_timeout)
+
+    Logger.debug(
+      [
+        "Finished the second query to fetch blocks that  need to be re-fetched. Number of records is #{
+          Enum.count(second_found_blocks)
+        }"
       ],
       fetcher: :addresses_without_code
     )
 
     TaskSupervisor
     |> Task.Supervisor.async_stream_nolink(
-      found_blocks,
+      second_found_blocks,
       fn block -> refetch_block(block, fetcher) end,
       @task_options
     )
