@@ -184,12 +184,6 @@ defmodule EthereumJSONRPC.Transaction do
       value: value,
       transaction_index: index
     }
-
-    if transaction["creates"] do
-      Map.put(result, :created_contract_address_hash, transaction["creates"])
-    else
-      result
-    end
   end
 
   # Ganache bug. it return `to: "0x0"` except of `to: null`

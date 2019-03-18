@@ -7,12 +7,12 @@ defmodule Indexer.Temporary.AddressesWithoutCodeTest do
   import Ecto.Query
 
   alias Explorer.Repo
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, Transaction}
   alias Indexer.Temporary.AddressesWithoutCode.Supervisor
   alias Indexer.CoinBalance
   alias Indexer.Block.Fetcher
   alias Indexer.Block.Realtime.Fetcher, as: RealtimeFetcher
-  alias Indexer.{CoinBalance, BufferedTask, Code, InternalTransaction, ReplacedTransaction, Token, TokenBalance}
+  alias Indexer.{CoinBalance, Code, InternalTransaction, ReplacedTransaction, Token, TokenBalance}
 
   @moduletag capture_log: true
 
@@ -135,18 +135,18 @@ defmodule Indexer.Temporary.AddressesWithoutCodeTest do
                result: %{
                  "blockHash" => "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
                  "blockNumber" => "0x25",
-                 "contractAddress" => nil,
+                 "contractAddress" => to_string(address.hash),
                  "cumulativeGasUsed" => "0xc512",
                  "gasUsed" => "0xc512",
                  "logs" => [
                    %{
-                     "address" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+                     "address" => "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
                      "blockHash" => "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
                      "blockNumber" => "0x25",
                      "data" => "0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
                      "logIndex" => "0x0",
                      "topics" => ["0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22"],
-                     "transactionHash" => "0x0000000000000000000000000000000000000000000000000000000000000000",
+                     "transactionHash" => to_string(transaction.hash),
                      "transactionIndex" => "0x0",
                      "transactionLogIndex" => "0x0",
                      "type" => "mined"
@@ -156,7 +156,7 @@ defmodule Indexer.Temporary.AddressesWithoutCodeTest do
                    "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000200000000000000000000020000000000000000200000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
                  "root" => nil,
                  "status" => "0x1",
-                 "transactionHash" => "0x0000000000000000000000000000000000000000000000000000000000000000",
+                 "transactionHash" => to_string(transaction.hash),
                  "transactionIndex" => "0x0"
                }
              }
@@ -173,7 +173,7 @@ defmodule Indexer.Temporary.AddressesWithoutCodeTest do
                                     id: 0,
                                     jsonrpc: "2.0",
                                     method: "eth_getBalance",
-                                    params: ["0x8bf38d4764929064f2d4d3a56520a76ab3df415b", "0x25"]
+                                    params: ["0x0000000000000000000000000000000000000003", "0x25"]
                                   },
                                   %{
                                     id: 1,
@@ -193,9 +193,21 @@ defmodule Indexer.Temporary.AddressesWithoutCodeTest do
         json_rpc_named_arguments: json_rpc_named_arguments
       }
 
-      # [fetcher, name: AddressesWithoutCodeTest]
-      # |> Supervisor.child_spec()
-      # |> ExUnit.Callbacks.start_supervised!()
+      [fetcher, [name: AddressesWithoutCodeTest]]
+      |> Supervisor.child_spec()
+      |> ExUnit.Callbacks.start_supervised!()
+
+      Process.sleep(2_000)
+
+      updated_address =
+        from(a in Address, where: a.hash == ^address.hash, preload: :contracts_creation_transaction) |> Repo.one()
+
+      assert updated_address.contracts_creation_transaction.hash == transaction.hash
+
+      updated_transaction =
+        from(t in Transaction, where: t.hash == ^transaction.hash, preload: :created_contract_address) |> Repo.one()
+
+      assert updated_transaction.created_contract_address.hash == address.hash
     end
   end
 end
