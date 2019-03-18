@@ -149,25 +149,23 @@ defmodule EthereumJSONRPC.Transaction do
     elixir_to_params(%{transaction | "input" => "0x"})
   end
 
-  def elixir_to_params(
-        %{
-          "blockHash" => block_hash,
-          "blockNumber" => block_number,
-          "from" => from_address_hash,
-          "gas" => gas,
-          "gasPrice" => gas_price,
-          "hash" => hash,
-          "input" => input,
-          "nonce" => nonce,
-          "r" => r,
-          "s" => s,
-          "to" => to_address_hash,
-          "transactionIndex" => index,
-          "v" => v,
-          "value" => value
-        } = transaction
-      ) do
-    result = %{
+  def elixir_to_params(%{
+        "blockHash" => block_hash,
+        "blockNumber" => block_number,
+        "from" => from_address_hash,
+        "gas" => gas,
+        "gasPrice" => gas_price,
+        "hash" => hash,
+        "input" => input,
+        "nonce" => nonce,
+        "r" => r,
+        "s" => s,
+        "to" => to_address_hash,
+        "transactionIndex" => index,
+        "v" => v,
+        "value" => value
+      }) do
+    %{
       block_hash: block_hash,
       block_number: block_number,
       from_address_hash: from_address_hash,
