@@ -49,7 +49,7 @@ defmodule Explorer.Chain.ImportTest do
       internal_transactions: %{
         params: [
           %{
-            block_number: 35,
+            block_number: 37,
             transaction_index: 0,
             transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
             index: 0,
@@ -65,7 +65,7 @@ defmodule Explorer.Chain.ImportTest do
             value: 0
           },
           %{
-            block_number: 35,
+            block_number: 37,
             transaction_index: 1,
             transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
             index: 1,
@@ -519,7 +519,7 @@ defmodule Explorer.Chain.ImportTest do
       from_address_hash = "0x8cc2e4b51b4340cb3727cffe3f1878756e732cee"
       from_address = insert(:address, hash: from_address_hash)
 
-      block = insert(:block)
+      block = insert(:block, number: 37)
 
       transaction_string_hash = "0x0705ea0a5b997d9aafd5c531e016d9aabe3297a28c0bd4ef005fe6ea329d301b"
 
@@ -551,7 +551,7 @@ defmodule Explorer.Chain.ImportTest do
               transaction_hash: transaction_string_hash,
               type: "create",
               value: 0,
-              block_number: 35,
+              block_number: 37,
               transaction_index: 0
             }
           ]
@@ -569,7 +569,7 @@ defmodule Explorer.Chain.ImportTest do
       address_hash = "0x1c494fa496f1cfd918b5ff190835af3aaf609899"
       from_address = insert(:address, hash: address_hash)
 
-      block = insert(:block, consensus: true)
+      block = insert(:block, consensus: true, number: 37)
 
       transaction =
         :transaction
@@ -578,6 +578,7 @@ defmodule Explorer.Chain.ImportTest do
 
       internal_transacton =
         insert(:internal_transaction,
+          block_number: 37,
           transaction_hash: transaction.hash,
           error: "Bad Instruction",
           index: 0,
@@ -677,7 +678,7 @@ defmodule Explorer.Chain.ImportTest do
         internal_transactions: %{
           params: [
             %{
-              block_number: 35,
+              block_number: block_number,
               transaction_index: 0,
               transaction_hash: transaction_hash,
               index: 0,
@@ -768,7 +769,7 @@ defmodule Explorer.Chain.ImportTest do
         internal_transactions: %{
           params: [
             %{
-              block_number: 35,
+              block_number: block_number,
               call_type: "call",
               created_contract_code: smart_contract_bytecode,
               created_contract_address_hash: created_contract_address_hash,
@@ -874,7 +875,7 @@ defmodule Explorer.Chain.ImportTest do
                        transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
                        type: "create",
                        value: 0,
-                       block_number: 35,
+                       block_number: 37,
                        transaction_index: 0
                      },
                      %{
@@ -891,7 +892,7 @@ defmodule Explorer.Chain.ImportTest do
                        transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
                        type: "create",
                        value: 0,
-                       block_number: 35,
+                       block_number: 37,
                        transaction_index: 1
                      }
                    ],
@@ -1556,7 +1557,7 @@ defmodule Explorer.Chain.ImportTest do
                        index: 0,
                        from_address_hash: from_address_hash,
                        to_address_hash: to_address_hash,
-                       block_number: 35,
+                       block_number: block_number,
                        transaction_index: 0
                      )
                    ],
@@ -1824,7 +1825,7 @@ defmodule Explorer.Chain.ImportTest do
                        value: 0,
                        input: "0x",
                        error: error,
-                       block_number: 35,
+                       block_number: block_number,
                        transaction_index: 0
                      }
                    ]

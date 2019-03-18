@@ -80,7 +80,7 @@ defmodule Explorer.SmartContract.ReaderTest do
 
       response = Reader.query_contract(contract_address_hash, abi, %{"get" => []})
 
-      assert %{"get" => {:error, "Bad Gateway"}} = response
+      assert %{"get" => {:error, "Bad gateway"}} = response
     end
 
     test "handles other types of errors" do
@@ -112,19 +112,6 @@ defmodule Explorer.SmartContract.ReaderTest do
       blockchain_get_function_mock()
 
       assert Reader.query_verified_contract(hash, %{"get" => []}) == %{"get" => {:ok, [0]}}
-    end
-  end
-
-  describe "setup_call_payload/2" do
-    test "returns the expected payload" do
-      function_name = "get"
-      contract_address = "0x123789abc"
-      data = "0x6d4ce63c"
-
-      assert Reader.setup_call_payload(
-               {function_name, data},
-               contract_address
-             ) == %{contract_address: "0x123789abc", data: "0x6d4ce63c", id: "get"}
     end
   end
 
@@ -214,10 +201,12 @@ defmodule Explorer.SmartContract.ReaderTest do
 
   describe "normalize_args/1" do
     test "converts argument when is a number" do
-      assert [0] = Reader.normalize_args(["0"])
+      assert ["0x00"] = Reader.normalize_args(["0"])
 
       assert ["0x798465571ae21a184a272f044f991ad1d5f87a3f"] =
                Reader.normalize_args(["0x798465571ae21a184a272f044f991ad1d5f87a3f"])
+
+      assert ["0x7b"] = Reader.normalize_args(["123"])
     end
 
     test "converts argument when is a boolean" do
