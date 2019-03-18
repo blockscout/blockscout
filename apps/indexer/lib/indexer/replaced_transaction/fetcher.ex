@@ -53,12 +53,12 @@ defmodule Indexer.ReplacedTransaction.Fetcher do
   @impl BufferedTask
   def init(initial, reducer, _) do
     {:ok, final} =
-      Chain.stream_mined_transactions(
-        [:block_hash, :nonce, :from_address_hash],
+      [:block_hash, :nonce, :from_address_hash, :hash]
+      |> Chain.stream_pending_transactions(
         initial,
         fn transaction_fields, acc ->
           transaction_fields
-          |> entry()
+          |> pending_entry()
           |> reducer.(acc)
         end
       )
@@ -75,12 +75,20 @@ defmodule Indexer.ReplacedTransaction.Fetcher do
     {block_hash_bytes, nonce, from_address_hash_bytes}
   end
 
+  defp pending_entry(%{hash: %Hash{bytes: hash}, nonce: nonce, from_address_hash: %Hash{bytes: from_address_hash_bytes}}) do
+    {:pending, nonce, from_address_hash_bytes, hash}
+  end
+
   defp params({block_hash_bytes, nonce, from_address_hash_bytes})
        when is_integer(nonce) do
     {:ok, from_address_hash} = Hash.Address.cast(from_address_hash_bytes)
     {:ok, block_hash} = Hash.Full.cast(block_hash_bytes)
 
     %{nonce: nonce, from_address_hash: from_address_hash, block_hash: block_hash}
+  end
+
+  defp pending_params({:pending, nonce, from_address_hash, hash}) do
+    %{nonce: nonce, from_address_hash: from_address_hash, hash: hash}
   end
 
   @impl BufferedTask
@@ -94,7 +102,17 @@ defmodule Indexer.ReplacedTransaction.Fetcher do
     Logger.debug("fetching replaced transactions for transactions")
 
     try do
-      entries
+      {pending, realtime} =
+        entries
+        |> Enum.split_with(fn entry ->
+          match?({:pending, _, _, _}, entry)
+        end)
+
+      pending
+      |> Enum.map(&pending_params/1)
+      |> Chain.find_and_update_replaced_transactions()
+
+      realtime
       |> Enum.map(&params/1)
       |> Chain.update_replaced_transactions()
 

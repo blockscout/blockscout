@@ -12,19 +12,11 @@ defmodule Indexer.TokenBalances do
   alias Explorer.Token.BalanceReader
   alias Indexer.{TokenBalance, Tracer}
 
-  # The timeout used for each process opened by Task.async_stream/3. Default 15s.
-  @task_timeout 15000
-
-  def fetch_token_balances_from_blockchain(token_balances) do
-    fetch_token_balances_from_blockchain(token_balances, [])
-  end
-
   @doc """
   Fetches TokenBalances from specific Addresses and Blocks in the Blockchain
 
-  Every `TokenBalance` is fetched asynchronously, but in case an exception is raised (such as a
-  timeout) during the RPC call the particular TokenBalance request is ignored and sent to
-  `TokenBalance.Fetcher` to be fetched again.
+  In case an exception is raised during the RPC call the particular TokenBalance request
+  is ignored and sent to `TokenBalance.Fetcher` to be fetched again.
 
   ## token_balances
 
@@ -34,21 +26,17 @@ defmodule Indexer.TokenBalances do
   * `address_hash` - The address_hash that we want to know the balance.
   * `block_number` - The block number that the address_hash has the balance.
   """
-  def fetch_token_balances_from_blockchain([], _opts), do: {:ok, []}
+  def fetch_token_balances_from_blockchain([]), do: {:ok, []}
 
   @decorate span(tracer: Tracer)
-  def fetch_token_balances_from_blockchain(token_balances, opts) do
+  def fetch_token_balances_from_blockchain(token_balances) do
     Logger.debug("fetching token balances", count: Enum.count(token_balances))
-
-    task_timeout = Keyword.get(opts, :timeout, @task_timeout)
-
-    task_callback = traced_fetch_token_balance_callback(Tracer.current_span())
 
     requested_token_balances =
       token_balances
-      |> Task.async_stream(task_callback, timeout: task_timeout, on_timeout: :kill_task)
-      |> Stream.map(&format_task_results/1)
-      |> Enum.filter(&ignore_killed_task/1)
+      |> BalanceReader.get_balances_of()
+      |> Stream.zip(token_balances)
+      |> Enum.map(fn {result, token_balance} -> set_token_balance_value(result, token_balance) end)
 
     fetched_token_balances = Enum.filter(requested_token_balances, &ignore_request_with_errors/1)
 
@@ -68,35 +56,6 @@ defmodule Indexer.TokenBalances do
     |> Enum.map(fn {_, grouped_address_token_balances} ->
       Enum.max_by(grouped_address_token_balances, fn %{block_number: block_number} -> block_number end)
     end)
-  end
-
-  defp traced_fetch_token_balance_callback(%Spandex.Span{} = span) do
-    fn balance ->
-      try do
-        Tracer.continue_trace_from_span("traced_fetch_token_balance_callback/1", span)
-
-        fetch_token_balance(balance)
-      after
-        Tracer.finish_trace()
-      end
-    end
-  end
-
-  defp traced_fetch_token_balance_callback(_) do
-    &fetch_token_balance/1
-  end
-
-  @decorate span(tracer: Tracer)
-  defp fetch_token_balance(
-         %{
-           token_contract_address_hash: token_contract_address_hash,
-           address_hash: address_hash,
-           block_number: block_number
-         } = token_balance
-       ) do
-    token_contract_address_hash
-    |> BalanceReader.get_balance_of(address_hash, block_number)
-    |> set_token_balance_value(token_balance)
   end
 
   defp set_token_balance_value({:ok, balance}, token_balance) do
@@ -127,12 +86,6 @@ defmodule Indexer.TokenBalances do
     end)
     |> TokenBalance.Fetcher.async_fetch()
   end
-
-  defp format_task_results({:exit, :timeout}), do: {:error, :timeout}
-  defp format_task_results({:ok, token_balance}), do: token_balance
-
-  defp ignore_killed_task({:error, :timeout}), do: false
-  defp ignore_killed_task(_token_balance), do: true
 
   defp ignore_request_with_errors(%{value: nil, value_fetched_at: nil, error: _error}), do: false
   defp ignore_request_with_errors(_token_balance), do: true
