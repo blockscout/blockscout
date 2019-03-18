@@ -724,6 +724,19 @@ defmodule Explorer.Chain do
     Repo.all(query)
   end
 
+  @spec list_ordered_addresses(non_neg_integer(), non_neg_integer()) :: [Address.t()]
+  def list_ordered_addresses(offset, limit) do
+    query =
+      from(
+        address in Address,
+        order_by: [asc: address.inserted_at],
+        offset: ^offset,
+        limit: ^limit
+      )
+
+    Repo.all(query)
+  end
+
   def find_contract_address(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash) do
     query =
       from(
