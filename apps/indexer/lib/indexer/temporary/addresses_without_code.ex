@@ -40,6 +40,11 @@ defmodule Indexer.Temporary.AddressesWithoutCode do
   end
 
   def run(fetcher) do
+    fix_transaction_without_to_address_and_created_contract_address(fetcher)
+    fix_addresses_with_creation_transaction_but_without_code(fetcher)
+  end
+
+  def fix_transaction_without_to_address_and_created_contract_address(fetcher) do
     Logger.debug(
       [
         "Started the first query to fetch addresses without code"
@@ -68,15 +73,16 @@ defmodule Indexer.Temporary.AddressesWithoutCode do
       fetcher: :addresses_without_code
     )
 
-    _ =
-      TaskSupervisor
-      |> Task.Supervisor.async_stream_nolink(
-        found_blocks,
-        fn block -> refetch_block(block, fetcher) end,
-        @task_options
-      )
-      |> Enum.to_list()
+    TaskSupervisor
+    |> Task.Supervisor.async_stream_nolink(
+      found_blocks,
+      fn block -> refetch_block(block, fetcher) end,
+      @task_options
+    )
+    |> Enum.to_list()
+  end
 
+  def fix_addresses_with_creation_transaction_but_without_code(fetcher) do
     Logger.debug(
       [
         "Started the second query to fetch addresses without code"
