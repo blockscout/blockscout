@@ -276,6 +276,45 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => nil
   }
 
+  @contract_listcontracts_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => [
+      %{
+        "SourceCode" => """
+        pragma solidity >0.4.24;
+
+        contract Test {
+        constructor() public { b = hex"12345678901234567890123456789012"; }
+        event Event(uint indexed a, bytes32 b);
+        event Event2(uint indexed a, bytes32 b);
+        function foo(uint a) public { emit Event(a, b); }
+        bytes32 b;
+        }
+        """,
+        "ABI" => """
+        [{
+        "type":"event",
+        "inputs": [{"name":"a","type":"uint256","indexed":true},{"name":"b","type":"bytes32","indexed":false}],
+        "name":"Event"
+        }, {
+        "type":"event",
+        "inputs": [{"name":"a","type":"uint256","indexed":true},{"name":"b","type":"bytes32","indexed":false}],
+        "name":"Event2"
+        }, {
+        "type":"function",
+        "inputs": [{"name":"a","type":"uint256"}],
+        "name":"foo",
+        "outputs": []
+        }]
+        """,
+        "ContractName" => "Test",
+        "CompilerVersion" => "v0.2.1-2016-01-30-91a6b35",
+        "OptimizationUsed" => "1"
+      }
+    ]
+  }
+
   @contract_getabi_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -742,6 +781,7 @@ defmodule BlockScoutWeb.Etherscan do
   @contract_model %{
     name: "Contract",
     fields: %{
+      "Address" => @address_hash_type,
       "SourceCode" => %{
         type: "contract source code",
         definition: "The contract's source code.",
@@ -755,6 +795,33 @@ defmodule BlockScoutWeb.Etherscan do
           function foo(uint a) public { emit Event(a, b); }
           bytes32 b;
         }"
+        """
+      },
+      "DecompilerVersion" => %{
+        type: "decompiler version",
+        definition: "When decompiled source code is present, the decompiler version with which it was generated.",
+        example: "decompiler.version"
+      },
+      "DecompiledSourceCode" => %{
+        type: "contract decompiled source code",
+        definition: "The contract's decompiled source code.",
+        example: """
+        const name() = 'CryptoKitties'
+        const GEN0_STARTING_PRICE() = 10^16
+        const GEN0_AUCTION_DURATION() = 86400
+        const GEN0_CREATION_LIMIT() = 45000
+        const symbol() = 'CK'
+        const PROMO_CREATION_LIMIT() = 5000
+        def storage:
+          ceoAddress is addr # mask(160, 0) at storage #0
+          cfoAddress is addr # mask(160, 0) at storage #1
+          stor1.768 is uint16 => uint256 # mask(256, 768) at storage #1
+          cooAddress is addr # mask(160, 0) at storage #2
+          stor2.0 is uint256 => uint256 # mask(256, 0) at storage #2
+          paused is uint8 # mask(8, 160) at storage #2
+          stor2.256 is uint256 => uint256 # mask(256, 256) at storage #2
+          stor3 is uint32 #
+        ...<continues>
         """
       },
       "ABI" => %{
@@ -1343,11 +1410,6 @@ defmodule BlockScoutWeb.Etherscan do
             }
           }
         }
-      },
-      %{
-        code: "200",
-        description: "error",
-        example_value: Jason.encode!(@account_getminedblocks_example_value_error)
       }
     ]
   }
@@ -1635,6 +1697,50 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @contract_listcontracts_action %{
+    name: "listcontracts",
+    description: "Get a list of contracts, sorted ascending by the time they were first seen by the explorer.",
+    required_params: [],
+    optional_params: [
+      %{
+        key: "page",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the page number to be used for pagination. 'offset' must be provided in conjunction."
+      },
+      %{
+        key: "offset",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the maximum number of records to return when paginating. 'page' must be provided in conjunction."
+      },
+      %{
+        key: "filter",
+        type: "string",
+        description:
+          "verified|decompiled|unverified|not_decompiled, or 1|2|3|4 respectively. This requests only contracts with that status."
+      }
+    ],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@contract_listcontracts_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "array",
+              array_type: @contract_model
+            }
+          }
+        }
+      }
+    ]
+  }
+
   @contract_getabi_action %{
     name: "getabi",
     description: "Get ABI for verified contract. Also available through a GraphQL 'addresses' query.",
@@ -1862,6 +1968,7 @@ defmodule BlockScoutWeb.Etherscan do
   @contract_module %{
     name: "contract",
     actions: [
+      @contract_listcontracts_action,
       @contract_getabi_action,
       @contract_getsourcecode_action
     ]
