@@ -18,13 +18,22 @@ defmodule Indexer.Block.Supervisor do
         %{
           block_interval: block_interval,
           json_rpc_named_arguments: json_rpc_named_arguments,
-          subscribe_named_arguments: subscribe_named_arguments
+          subscribe_named_arguments: subscribe_named_arguments,
+          realtime_overrides: realtime_overrides
         } = named_arguments
       ) do
     block_fetcher =
       named_arguments
-      |> Map.drop(~w(block_interval memory_monitor subscribe_named_arguments)a)
+      |> Map.drop(~w(block_interval memory_monitor subscribe_named_arguments realtime_overrides)a)
       |> Block.Fetcher.new()
+
+    realtime_block_fetcher =
+      named_arguments
+      |> Map.drop(~w(block_interval memory_monitor subscribe_named_arguments realtime_overrides)a)
+      |> Map.merge(Enum.into(realtime_overrides, %{}))
+      |> Block.Fetcher.new()
+
+    realtime_subscribe_named_arguments = realtime_overrides[:subscribe_named_arguments] || subscribe_named_arguments
 
     memory_monitor = Map.get(named_arguments, :memory_monitor)
 
@@ -38,7 +47,7 @@ defmodule Indexer.Block.Supervisor do
         {InvalidConsensus.Supervisor, [[], [name: InvalidConsensus.Supervisor]]},
         {Realtime.Supervisor,
          [
-           %{block_fetcher: block_fetcher, subscribe_named_arguments: subscribe_named_arguments},
+           %{block_fetcher: realtime_block_fetcher, subscribe_named_arguments: realtime_subscribe_named_arguments},
            [name: Realtime.Supervisor]
          ]},
         {Uncle.Supervisor, [[block_fetcher: block_fetcher, memory_monitor: memory_monitor], [name: Uncle.Supervisor]]},
