@@ -4,6 +4,32 @@
 
 ### Fixes
 
+### Chore
+
+
+## 1.3.6-beta
+
+### Features
+
+ - [#1589](https://github.com/poanetwork/blockscout/pull/1589) - RPC endpoint to list addresses
+ - [#1567](https://github.com/poanetwork/blockscout/pull/1567) - Allow setting different configuration just for realtime fetcher
+ - [#1562](https://github.com/poanetwork/blockscout/pull/1562) - Add incoming transactions count to contract view
+
+### Fixes
+
+ - [#1595](https://github.com/poanetwork/blockscout/pull/1595) - Reduce block_rewards in the catchup fetcher
+ - [#1590](https://github.com/poanetwork/blockscout/pull/1590) - Added guard for fetching blocks with invalid number
+ - [#1588](https://github.com/poanetwork/blockscout/pull/1588) - Fix usd value on address page
+ - [#1586](https://github.com/poanetwork/blockscout/pull/1586) - Exact timestamp display
+ - [#1581](https://github.com/poanetwork/blockscout/pull/1581) - Consider `creates` param when fetching transactions
+ - [#1559](https://github.com/poanetwork/blockscout/pull/1559) - Change v column type for Transactions table
+
+### Chore
+
+ - [#1579](https://github.com/poanetwork/blockscout/pull/1579) - Add SpringChain to the list of Additional Chains Utilizing BlockScout
+ - [#1578](https://github.com/poanetwork/blockscout/pull/1578) - Refine contributing procedure
+ - [#1572](https://github.com/poanetwork/blockscout/pull/1572) - Add option to disable block rewards in indexer config
+
 
 ## 1.3.5-beta
 
