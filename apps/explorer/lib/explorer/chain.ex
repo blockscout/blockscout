@@ -31,6 +31,7 @@ defmodule Explorer.Chain do
     Block,
     BlockNumberCache,
     Data,
+    DecompiledSmartContract,
     Hash,
     Import,
     InternalTransaction,
@@ -509,6 +510,17 @@ defmodule Explorer.Chain do
   def create_address(attrs \\ %{}) do
     %Address{}
     |> Address.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Creates a decompiled smart contract.
+  """
+
+  @spec create_decompiled_smart_contract(map()) :: {:ok, Address.t()} | {:error, Ecto.Changeset.t()}
+  def create_decompiled_smart_contract(attrs) do
+    %DecompiledSmartContract{}
+    |> DecompiledSmartContract.changeset(attrs)
     |> Repo.insert()
   end
 

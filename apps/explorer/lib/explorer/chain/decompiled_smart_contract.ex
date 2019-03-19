@@ -14,6 +14,8 @@ defmodule Explorer.Chain.DecompiledSmartContract do
       references: :hash,
       type: Hash.Address
     )
+
+    timestamps()
   end
 
   def changeset(%__MODULE__{} = smart_contract, attrs) do
