@@ -1,4 +1,8 @@
 defmodule Explorer.Chain.DecompiledSmartContract do
+  @moduledoc """
+  The representation of a decompiled smart contract.
+  """
+
   use Explorer.Schema
 
   alias Explorer.Chain.{Address, Hash}
