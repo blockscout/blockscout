@@ -203,7 +203,7 @@ defmodule Indexer.Temporary.AddressesWithoutCodeTest do
       |> Supervisor.child_spec()
       |> ExUnit.Callbacks.start_supervised!()
 
-      Process.sleep(2_000)
+      Process.sleep(5_000)
 
       updated_address =
         from(a in Address, where: a.hash == ^address.hash, preload: :contracts_creation_transaction) |> Repo.one()
