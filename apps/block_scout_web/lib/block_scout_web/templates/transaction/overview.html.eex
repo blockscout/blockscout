@@ -1,4 +1,4 @@
-<% block = @transaction.block %>
+s<% block = @transaction.block %>
 <% decoded_input_data = decoded_input_data(@transaction) %>
 <% status = transaction_status(@transaction) %>
 <section data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
@@ -73,11 +73,10 @@
             <dt class="col-sm-3 text-muted"> <%= gettext "TX Fee" %> </dt>
             <dd class="col-sm-9">
               <%= formatted_fee(@transaction, denomination: :ether) %>
-              (<span data-wei-value=<%= fee(@transaction) %>
-                     <% if !empty_exchange_rate?(@exchange_rate) do %>
-                       data-usd-exchange-rate=<%= @exchange_rate.usd_value %>
-                     <% end %>
-               ></span>)
+
+              <%= if !empty_exchange_rate?(@exchange_rate) do %>
+              (<span data-wei-value=<%= fee(@transaction) %> data-usd-exchange-rate=<%= @exchange_rate.usd_value %>></span>)
+              <% end %>
             </dd>
           </dl>
           <!-- Processing Time -->
