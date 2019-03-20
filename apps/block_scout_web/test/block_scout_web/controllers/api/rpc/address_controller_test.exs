@@ -6,6 +6,49 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
   alias Explorer.Chain.{Transaction, Wei}
   alias BlockScoutWeb.API.RPC.AddressController
 
+  describe "listaccounts" do
+    setup do
+      %{params: %{"module" => "account", "action" => "listaccounts"}}
+    end
+
+    test "with no addresses", %{params: params, conn: conn} do
+      response =
+        conn
+        |> get("/api", params)
+        |> json_response(200)
+
+      assert response["message"] == "OK"
+      assert response["status"] == "1"
+      assert response["result"] == []
+    end
+
+    test "with existing addresses", %{params: params, conn: conn} do
+      first_address = insert(:address, fetched_coin_balance: 10, inserted_at: Timex.shift(Timex.now(), minutes: -10))
+      second_address = insert(:address, fetched_coin_balance: 100, inserted_at: Timex.shift(Timex.now(), minutes: -5))
+      first_address_hash = to_string(first_address.hash)
+      second_address_hash = to_string(second_address.hash)
+
+      response =
+        conn
+        |> get("/api", params)
+        |> json_response(200)
+
+      assert response["message"] == "OK"
+      assert response["status"] == "1"
+
+      assert [
+               %{
+                 "address" => ^first_address_hash,
+                 "balance" => "10"
+               },
+               %{
+                 "address" => ^second_address_hash,
+                 "balance" => "100"
+               }
+             ] = response["result"]
+    end
+  end
+
   describe "balance" do
     test "with missing address hash", %{conn: conn} do
       params = %{
