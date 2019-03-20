@@ -86,15 +86,7 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
       transaction_with_internal_transactions = Repo.preload(transaction, [:internal_transactions])
 
       transaction_with_internal_transactions.internal_transactions
-      |> Enum.filter(fn internal_transaction ->
-        internal_transaction.created_contract_address_hash
-      end)
-      |> Enum.each(fn internal_transaction ->
-        :ok =
-          internal_transaction
-          |> code_entry()
-          |> Indexer.Code.Fetcher.run(json_rpc_named_arguments)
-      end)
+      |> Indexer.Code.Fetcher.async_fetch()
 
       Logger.debug(
         [
@@ -111,16 +103,5 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
           fetcher: :failed_created_addresses
         )
     end
-  end
-
-  def code_entry(%InternalTransaction{
-        block_number: block_number,
-        created_contract_address_hash: %{bytes: created_contract_bytes}
-      }) do
-    [{block_number, created_contract_bytes, <<>>}]
-  end
-
-  def transaction_entry(%Transaction{hash: %{bytes: bytes}, index: index, block_number: block_number}) do
-    [{block_number, bytes, index}]
   end
 end
