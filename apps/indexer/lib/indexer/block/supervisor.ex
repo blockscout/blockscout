@@ -5,7 +5,7 @@ defmodule Indexer.Block.Supervisor do
 
   alias Indexer.Block
   alias Indexer.Block.{Catchup, InvalidConsensus, Realtime, Reward, Uncle}
-  alias Indexer.Temporary.FailedCreatedAddresses
+  alias Indexer.Temporary.{AddressesWithoutCode, FailedCreatedAddresses}
 
   use Supervisor
 
@@ -26,6 +26,12 @@ defmodule Indexer.Block.Supervisor do
       named_arguments
       |> Map.drop(~w(block_interval memory_monitor subscribe_named_arguments realtime_overrides)a)
       |> Block.Fetcher.new()
+
+    fixing_realtime_fetcher = %Block.Fetcher{
+      broadcast: false,
+      callback_module: Realtime.Fetcher,
+      json_rpc_named_arguments: json_rpc_named_arguments
+    }
 
     realtime_block_fetcher =
       named_arguments
@@ -60,6 +66,11 @@ defmodule Indexer.Block.Supervisor do
          [
            json_rpc_named_arguments,
            [name: FailedCreatedAddresses.Supervisor]
+         ]},
+        {AddressesWithoutCode.Supervisor,
+         [
+           fixing_realtime_fetcher,
+           [name: AddressesWithoutCode.Supervisor]
          ]}
       ],
       strategy: :one_for_one

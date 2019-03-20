@@ -4,6 +4,20 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.{Address, Wei}
 
+  def listaccounts(conn, params) do
+    options =
+      params
+      |> optional_params()
+      |> Map.put_new(:page_number, 0)
+      |> Map.put_new(:page_size, 10)
+
+    accounts = list_accounts(options)
+
+    conn
+    |> put_status(200)
+    |> render(:listaccounts, %{accounts: accounts})
+  end
+
   def balance(conn, params, template \\ :balance) do
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hashes}} <- to_address_hashes(address_param) do
@@ -258,6 +272,13 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
 
   defp any_errors?(address_hashes) do
     Enum.any?(address_hashes, &(&1 == :error))
+  end
+
+  defp list_accounts(%{page_number: page_number, page_size: page_size}) do
+    offset = (max(page_number, 1) - 1) * page_size
+
+    # limit is just page_size
+    Chain.list_ordered_addresses(offset, page_size)
   end
 
   defp hashes_to_addresses(address_hashes) do
