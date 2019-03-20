@@ -7,6 +7,21 @@
 ### Chore
 
 
+## 1.3.7-beta
+
+### Features
+
+### Fixes
+
+ - [#1615](https://github.com/poanetwork/blockscout/pull/1615) - Add more logging to code fixer process
+ - [#1613](https://github.com/poanetwork/blockscout/pull/1613) - Fix USD fee value
+ - [#1577](https://github.com/poanetwork/blockscout/pull/1577) - Add process to fix contract with code
+ - [#1583](https://github.com/poanetwork/blockscout/pull/1583) - Chunk JSON-RPC batches in case connection times out
+
+### Chore
+
+ - [#1610](https://github.com/poanetwork/blockscout/pull/1610) - Add PIRL to Readme
+
 ## 1.3.6-beta
 
 ### Features
