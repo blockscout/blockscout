@@ -45,6 +45,13 @@ defmodule Indexer.Temporary.AddressesWithoutCode do
   end
 
   def fix_transaction_without_to_address_and_created_contract_address(fetcher) do
+    Logger.debug(
+      [
+        "Started fix_transaction_without_to_address_and_created_contract_address"
+      ],
+      fetcher: :addresses_without_code
+    )
+
     query =
       from(block in Block,
         left_join: transaction in Transaction,
@@ -56,6 +63,44 @@ defmodule Indexer.Temporary.AddressesWithoutCode do
       )
 
     process_query(query, fetcher)
+
+    Logger.debug(
+      [
+        "Started fix_transaction_without_to_address_and_created_contract_address"
+      ],
+      fetcher: :addresses_without_code
+    )
+  end
+
+  def fix_addresses_with_creation_transaction_but_without_code(fetcher) do
+    Logger.debug(
+      [
+        "Started fix_addresses_with_creation_transaction_but_without_code"
+      ],
+      fetcher: :addresses_without_code
+    )
+
+    second_query =
+      from(block in Block,
+        left_join: transaction in Transaction,
+        on: transaction.block_hash == block.hash,
+        left_join: address in Address,
+        on: address.hash == transaction.created_contract_address_hash,
+        where:
+          not is_nil(transaction.block_hash) and not is_nil(transaction.created_contract_address_hash) and
+            is_nil(address.contract_code) and
+            block.consensus == true and is_nil(transaction.error) and not is_nil(transaction.hash),
+        distinct: block.hash
+      )
+
+    process_query(second_query, fetcher)
+
+    Logger.debug(
+      [
+        "Finished fix_addresses_with_creation_transaction_but_without_code"
+      ],
+      fetcher: :addresses_without_code
+    )
   end
 
   defp process_query(query, fetcher) do
@@ -72,25 +117,22 @@ defmodule Indexer.Temporary.AddressesWithoutCode do
     Repo.transaction(fn -> Stream.run(stream) end)
   end
 
-  def fix_addresses_with_creation_transaction_but_without_code(fetcher) do
-    second_query =
-      from(block in Block,
-        left_join: transaction in Transaction,
-        on: transaction.block_hash == block.hash,
-        left_join: address in Address,
-        on: address.hash == transaction.created_contract_address_hash,
-        where:
-          not is_nil(transaction.block_hash) and not is_nil(transaction.created_contract_address_hash) and
-            is_nil(address.contract_code) and
-            block.consensus == true and is_nil(transaction.error) and not is_nil(transaction.hash),
-        distinct: block.hash
-      )
-
-    process_query(second_query, fetcher)
-  end
-
   def refetch_block(block, fetcher) do
+    Logger.debug(
+      [
+        "Processing block #{to_string(block.hash)} #{block.number}"
+      ],
+      fetcher: :addresses_without_code
+    )
+
     Fetcher.fetch_and_import_block(block.number, fetcher, false)
+
+    Logger.debug(
+      [
+        "Finished processing block #{to_string(block.hash)} #{block.number}"
+      ],
+      fetcher: :addresses_without_code
+    )
   rescue
     e ->
       Logger.debug(
