@@ -1,4 +1,4 @@
-s<% block = @transaction.block %>
+<% block = @transaction.block %>
 <% decoded_input_data = decoded_input_data(@transaction) %>
 <% status = transaction_status(@transaction) %>
 <section data-page="transaction-details" data-page-transaction-hash="<%= @transaction %>">
