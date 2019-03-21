@@ -487,10 +487,9 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> AddressPage.visit_page(lincoln)
       |> AddressPage.click_balance_dropdown_toggle()
       |> AddressPage.fill_balance_dropdown_search("ato")
-      |> assert_has(AddressPage.token_balance(count: 1))
-      |> assert_has(AddressPage.token_type(count: 1))
+      |> assert_has(AddressPage.token_balance(count: 2))
+      |> assert_has(AddressPage.token_type(count: 2))
       |> assert_has(AddressPage.token_type_count(type: "ERC-721", text: "1"))
-      |> assert_has(AddressPage.token_balance_counter("1"))
     end
 
     test "filter token balances by token symbol", %{session: session, lincoln: lincoln} do
@@ -498,10 +497,9 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> AddressPage.visit_page(lincoln)
       |> AddressPage.click_balance_dropdown_toggle()
       |> AddressPage.fill_balance_dropdown_search("T2")
-      |> assert_has(AddressPage.token_balance(count: 1))
-      |> assert_has(AddressPage.token_type(count: 1))
+      |> assert_has(AddressPage.token_balance(count: 2))
+      |> assert_has(AddressPage.token_type(count: 2))
       |> assert_has(AddressPage.token_type_count(type: "ERC-20", text: "1"))
-      |> assert_has(AddressPage.token_balance_counter("1"))
     end
 
     test "reset token balances filter when dropdown closes", %{session: session, lincoln: lincoln} do
@@ -509,7 +507,6 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> AddressPage.visit_page(lincoln)
       |> AddressPage.click_balance_dropdown_toggle()
       |> AddressPage.fill_balance_dropdown_search("ato")
-      |> assert_has(AddressPage.token_balance_counter("1"))
       |> AddressPage.click_outside_of_the_dropdown()
       |> assert_has(AddressPage.token_balance_counter("2"))
     end
