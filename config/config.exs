@@ -27,6 +27,7 @@ config :logger,
     {LoggerFileBackend, :indexer},
     {LoggerFileBackend, :indexer_token_balances},
     {LoggerFileBackend, :failed_contract_creations},
+    {LoggerFileBackend, :addresses_without_code},
     {LoggerFileBackend, :reading_token_functions}
   ]
 
