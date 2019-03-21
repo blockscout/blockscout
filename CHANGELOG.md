@@ -2,6 +2,8 @@
 
 ### Features
 
+ - [1611](https://github.com/poanetwork/blockscout/pull/1611) - allow setting the first indexing block
+
 ### Fixes
 
  - [1614](https://github.com/poanetwork/blockscout/pull/1614) - Do not fetch burn address token balance
