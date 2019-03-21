@@ -75,6 +75,9 @@ defmodule Indexer.Code.FetcherTest do
         |> expect(:json_rpc, fn [%{id: id, method: "eth_getCode", params: [^address, ^block_quantity]}], _options ->
           {:ok, [%{id: id, result: code}]}
         end)
+        |> expect(:json_rpc, fn [%{id: id, method: "eth_getBalance", params: [^address, ^block_quantity]}], _options ->
+          {:ok, [%{id: id, result: "0x0"}]}
+        end)
       end
 
       insert(:address, hash: address)
@@ -93,6 +96,8 @@ defmodule Indexer.Code.FetcherTest do
         end)
 
       assert to_string(fetched_address.contract_code) == code
+      assert fetched_address.fetched_coin_balance
+      assert fetched_address.fetched_coin_balance_block_number == block_number
 
       updated_transaction = Repo.one!(from(transaction in Transaction, where: transaction.hash == ^hash))
 

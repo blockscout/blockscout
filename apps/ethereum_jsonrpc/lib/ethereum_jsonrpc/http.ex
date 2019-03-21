@@ -68,6 +68,9 @@ defmodule EthereumJSONRPC.HTTP do
           chunked_json_rpc(tail, options, [decoded_body | decoded_response_bodies])
         end
 
+      {:error, :timeout} ->
+        rechunk_json_rpc(chunks, options, :timeout, decoded_response_bodies)
+
       {:error, _} = error ->
         error
     end
