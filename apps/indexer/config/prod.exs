@@ -18,6 +18,11 @@ config :logger, :failed_contract_creations,
   path: Path.absname("logs/prod/indexer/failed_contract_creations.log"),
   metadata_filter: [fetcher: :failed_created_addresses]
 
+config :logger, :addresses_without_code,
+  level: :debug,
+  path: Path.absname("logs/prod/indexer/addresses_without_code.log"),
+  metadata_filter: [fetcher: :addresses_without_code]
+
 variant =
   if is_nil(System.get_env("ETHEREUM_JSONRPC_VARIANT")) do
     "parity"

@@ -14,7 +14,7 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.{AddressExtraction, CoinBalance, MintTransfer, ReplacedTransaction, Token, TokenTransfers, Tracer}
   alias Indexer.Address.{CoinBalances, TokenBalances}
   alias Indexer.Block.Fetcher.Receipts
-  alias Indexer.Block.Transform
+  alias Indexer.Block.{Reward, Transform}
 
   @type address_hash_to_fetched_balance_block_number :: %{String.t() => Block.block_number()}
 
@@ -127,7 +127,10 @@ defmodule Indexer.Block.Fetcher do
              transactions_params: transactions_with_receipts
            }
            |> CoinBalances.params_set(),
-         beneficiaries_with_gas_payment <- add_gas_payments(beneficiary_params_set, transactions_with_receipts),
+         beneficiaries_with_gas_payment <-
+           beneficiary_params_set
+           |> add_gas_payments(transactions_with_receipts)
+           |> Reward.Fetcher.reduce_uncle_rewards(),
          address_token_balances = TokenBalances.params_set(%{token_transfers_params: token_transfers}),
          {:ok, inserted} <-
            __MODULE__.import(
