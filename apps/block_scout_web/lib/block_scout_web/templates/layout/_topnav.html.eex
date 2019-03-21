@@ -121,7 +121,11 @@
       <div class="search-form d-lg-flex d-inline-block">
         <%= form_for @conn, chain_path(@conn, :search), [class: "form-inline my-2 my-lg-0", method: :get, enforce_utf8: false], fn f -> %>
           <div class="input-group">
+<<<<<<< HEAD
             <%= search_input f, :q, class: 'form-control mr-auto', placeholder: gettext("Search by address, transaction hash, or block number"), "aria-describedby": "search-icon", "aria-label": gettext("Search by address, transaction, block"), "data-test": "search_input" %>
+=======
+            <%= search_input f, :q, class: 'form-control mr-auto', placeholder: gettext("Search by address, token symbol name, transaction hash, or block number"), "aria-describedby": "search-icon", "aria-label": gettext("Search"), "data-test": "search_input" %>
+>>>>>>> master
             <div class="input-group-append">
               <button class="input-group-text" id="search-icon">
                 <%= render BlockScoutWeb.IconsView, "_search_icon.html" %>

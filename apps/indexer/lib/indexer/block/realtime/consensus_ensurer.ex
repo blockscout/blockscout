@@ -9,6 +9,8 @@ defmodule Indexer.Block.Realtime.ConsensusEnsurer do
   alias Explorer.Chain.Hash
   alias Indexer.Block.Realtime.Fetcher
 
+  def perform(_, number, _) when not is_integer(number) or number < 0, do: :ok
+
   def perform(%Hash{byte_count: unquote(Hash.Full.byte_count())} = block_hash, number, block_fetcher) do
     case Chain.hash_to_block(block_hash) do
       {:ok, %{consensus: true} = _block} ->

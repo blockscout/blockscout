@@ -65,6 +65,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
             compiler_version,
             contract,
             optimize,
+            "byzantium",
             external_libraries
           )
 
@@ -75,7 +76,50 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
       end)
     end
 
-    test "compile in an older solidity version" do
+    test "compiles with constantinople evm version" do
+      optimize = false
+      name = "MyTest"
+
+      code = """
+       pragma solidity 0.5.2;
+
+       contract MyTest {
+           constructor() public {
+           }
+
+           mapping(address => bytes32) public myMapping;
+
+           function contractHash(address _addr) public {
+               bytes32 hash;
+               assembly { hash := extcodehash(_addr) }
+               myMapping[_addr] = hash;
+           }
+
+           function justHash(bytes memory _bytes)
+               public
+               pure
+               returns (bytes32)
+           {
+               return keccak256(_bytes);
+           }
+       }
+      """
+
+      version = "v0.5.2+commit.1df8f40c"
+
+      evm_version = "constantinople"
+
+      response = CodeCompiler.run(name, version, code, optimize, evm_version)
+
+      assert {:ok,
+              %{
+                "abi" => _,
+                "bytecode" => _,
+                "name" => _
+              }} = response
+    end
+
+    test "compiles in an older solidity version" do
       optimize = false
       name = "SimpleStorage"
 

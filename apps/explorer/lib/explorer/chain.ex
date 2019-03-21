@@ -51,6 +51,8 @@ defmodule Explorer.Chain do
 
   @default_paging_options %PagingOptions{page_size: 50}
 
+  @max_incoming_transactions_count 10_000
+
   @typedoc """
   The name of an association on the `t:Ecto.Schema.t/0`
   """
@@ -417,6 +419,24 @@ defmodule Explorer.Chain do
     Repo.aggregate(query, :count, :hash)
   end
 
+  @spec address_to_incoming_transaction_count(Address.t()) :: non_neg_integer()
+  def address_to_incoming_transaction_count(%Address{hash: address_hash}) do
+    paging_options = %PagingOptions{page_size: @max_incoming_transactions_count}
+
+    base_query =
+      paging_options
+      |> fetch_transactions()
+
+    to_address_query =
+      base_query
+      |> where([t], t.to_address_hash == ^address_hash)
+
+    Repo.aggregate(to_address_query, :count, :hash, timeout: :infinity)
+  end
+
+  @spec max_incoming_transactions_count() :: non_neg_integer()
+  def max_incoming_transactions_count, do: @max_incoming_transactions_count
+
   @doc """
   How many blocks have confirmed `block` based on the current `max_block_number`
 
@@ -636,6 +656,22 @@ defmodule Explorer.Chain do
     end
   end
 
+  @spec token_contract_address_from_token_name(String.t()) :: {:ok, Hash.Address.t()} | {:error, :not_found}
+  def token_contract_address_from_token_name(name) when is_binary(name) do
+    query =
+      from(token in Token,
+        where: ilike(token.symbol, ^name),
+        select: token.contract_address_hash
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      hash -> {:ok, hash}
+    end
+  end
+
   @doc """
   Converts `t:Explorer.Chain.Address.t/0` `hash` to the `t:Explorer.Chain.Address.t/0` with that `hash`.
 
@@ -683,6 +719,19 @@ defmodule Explorer.Chain do
         where: address.hash in ^hashes,
         # https://stackoverflow.com/a/29598910/470451
         order_by: fragment("array_position(?, ?)", type(^hashes, {:array, Hash.Address}), address.hash)
+      )
+
+    Repo.all(query)
+  end
+
+  @spec list_ordered_addresses(non_neg_integer(), non_neg_integer()) :: [Address.t()]
+  def list_ordered_addresses(offset, limit) do
+    query =
+      from(
+        address in Address,
+        order_by: [asc: address.inserted_at],
+        offset: ^offset,
+        limit: ^limit
       )
 
     Repo.all(query)
@@ -1140,6 +1189,62 @@ defmodule Explorer.Chain do
   def stream_unfetched_token_balances(initial, reducer) when is_function(reducer, 2) do
     TokenBalance.unfetched_token_balances()
     |> Repo.stream_reduce(initial, reducer)
+  end
+
+  @doc """
+  Returns a stream of all blocks with unfetched internal transactions.
+
+  Only blocks with consensus are returned.
+
+      iex> non_consensus = insert(:block, consensus: false)
+      iex> unfetched = insert(:block)
+      iex> fetched = insert(:block, internal_transactions_indexed_at: DateTime.utc_now())
+      iex> {:ok, number_set} = Explorer.Chain.stream_blocks_with_unfetched_internal_transactions(
+      ...>   [:number],
+      ...>   MapSet.new(),
+      ...>   fn %Explorer.Chain.Block{number: number}, acc ->
+      ...>     MapSet.put(acc, number)
+      ...>   end
+      ...> )
+      iex> non_consensus.number in number_set
+      false
+      iex> unfetched.number in number_set
+      true
+      iex> fetched.hash in number_set
+      false
+
+  """
+  @spec stream_blocks_with_unfetched_internal_transactions(
+          fields :: [
+            :consensus
+            | :difficulty
+            | :gas_limit
+            | :gas_used
+            | :hash
+            | :miner
+            | :miner_hash
+            | :nonce
+            | :number
+            | :parent_hash
+            | :size
+            | :timestamp
+            | :total_difficulty
+            | :transactions
+            | :internal_transactions_indexed_at
+          ],
+          initial :: accumulator,
+          reducer :: (entry :: term(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_blocks_with_unfetched_internal_transactions(fields, initial, reducer) when is_function(reducer, 2) do
+    query =
+      from(
+        b in Block,
+        where: b.consensus and is_nil(b.internal_transactions_indexed_at),
+        select: ^fields
+      )
+
+    Repo.stream_reduce(query, initial, reducer)
   end
 
   @doc """
