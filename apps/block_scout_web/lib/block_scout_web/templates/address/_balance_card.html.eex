@@ -4,11 +4,11 @@
     <h2 class="card-title text-white balance-card-title"><%= gettext "Balance" %></h2>
     <div class="text-right">
       <h3 class="text-white" data-test="address_balance"><%= balance(@address) %></h3>
-      <%= unless match?({:pending, _}, @coin_balance_status) do %>
+      <%= if !match?({:pending, _}, @coin_balance_status) && !empty_exchange_rate?(@exchange_rate) do %>
         <span class="text-white text-faded">
           <span class="current-balance-in-wei"
             data-wei-value="<%= if @address.fetched_coin_balance, do: @address.fetched_coin_balance.value %>"
-            data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
+              data-usd-exchange-rate="<%= @exchange_rate.usd_value %>">
           </spanc>
           <small>(@ <span data-usd-unit-price="<%= @exchange_rate.usd_value %>"></span>/<%= gettext("Ether") %>)</small>
           <br>
