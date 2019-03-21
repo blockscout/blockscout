@@ -77,6 +77,12 @@ defmodule EthereumJSONRPC.GethTest do
     end
   end
 
+  describe "fetch_block_internal_transactions/1" do
+    test "is not supported", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      EthereumJSONRPC.Geth.fetch_block_internal_transactions([], json_rpc_named_arguments)
+    end
+  end
+
   describe "fetch_pending_transactions/1" do
     test "is not supported", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       EthereumJSONRPC.Geth.fetch_pending_transactions(json_rpc_named_arguments)
