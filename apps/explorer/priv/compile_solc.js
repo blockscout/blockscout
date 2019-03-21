@@ -7,6 +7,7 @@ var version = process.argv[3];
 var optimize = process.argv[4];
 var newContractName = process.argv[5];
 var externalLibraries = JSON.parse(process.argv[6])
+var evmVersion = process.argv[7]
 
 var compiled_code = solc.loadRemoteVersion(version, function (err, solcSnapshot) {
   if (err) {
@@ -20,7 +21,7 @@ var compiled_code = solc.loadRemoteVersion(version, function (err, solcSnapshot)
         }
       },
       settings: {
-        evmVersion: 'byzantium',
+        evmVersion: evmVersion,
         optimizer: {
           enabled: optimize == '1',
           runs: 200

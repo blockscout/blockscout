@@ -19,7 +19,15 @@ function tryUpdateAge (el) {
   if (timestamp.isValid()) updateAge(el, timestamp)
 }
 function updateAge (el, timestamp) {
-  const fromNow = timestamp.fromNow()
+  let fromNow = timestamp.fromNow()
+  // show the exact time only for transaction details page. Otherwise, short entry
+  const elInTile = el.hasAttribute('in-tile')
+  if (window.location.pathname.includes('/tx/') && !elInTile) {
+    const offset = moment().utcOffset() / 60
+    const sign = offset && Math.sign(offset) ? '+' : '-'
+    const formatDate = `MMMM-DD-YYYY hh:mm:ss A ${sign}${offset} UTC`
+    fromNow = `${fromNow} (${timestamp.format(formatDate)})`
+  }
   if (fromNow !== el.innerHTML) el.innerHTML = fromNow
 }
 updateAllAges()

@@ -53,12 +53,15 @@ Currently available block explorers (i.e. Etherscan and Etherchain) are closed s
 * [Rinkeby Testnet](https://blockscout.com/eth/rinkeby)
 * [Ethereum Classic](https://blockscout.com/etc/mainnet)
 
-#### Private Sidechains
+#### Additional Chains Utilizing BlockScout
 
 * [Oasis Labs](https://blockexplorer.oasiscloud.io/)
 * [Fuse Network](https://explorer.fuse.io/)
 * [ARTIS](https://explorer.sigma1.artis.network)
 * [SafeChain](https://explorer.safechain.io)
+* [SpringChain](https://explorer.springrole.com/)
+* [PIRL](http://pirl.es/)
+
 
 ### Visual Interface
 
@@ -77,7 +80,7 @@ The [development stack page](https://github.com/poanetwork/blockscout/wiki/Devel
 | Dependency  | Mac | Linux |
 |-------------|-----|-------|
 | [Erlang/OTP 21.0.4](https://github.com/erlang/otp) | `brew install erlang` | [Erlang Install Example](https://github.com/poanetwork/blockscout-terraform/blob/33f68e816e36dc2fb055911fa0372531f0e956e7/modules/stack/libexec/init.sh#L134) |
-| [Elixir 1.7.1](https://elixir-lang.org/) | :point_up: | [Elixir Install Example](https://github.com/poanetwork/blockscout-terraform/blob/33f68e816e36dc2fb055911fa0372531f0e956e7/modules/stack/libexec/init.sh#L138) |
+| [Elixir 1.8.1](https://elixir-lang.org/) | :point_up: | [Elixir Install Example](https://github.com/poanetwork/blockscout-terraform/blob/33f68e816e36dc2fb055911fa0372531f0e956e7/modules/stack/libexec/init.sh#L138) |
 | [Postgres 10.3](https://www.postgresql.org/) | `brew install postgresql` | [Postgres Install Example](https://github.com/poanetwork/blockscout-terraform/blob/33f68e816e36dc2fb055911fa0372531f0e956e7/modules/stack/libexec/init.sh#L187) |
 | [Node.js 10.5.0](https://nodejs.org/en/) | `brew install node` | [Node.js Install Example](https://github.com/poanetwork/blockscout-terraform/blob/33f68e816e36dc2fb055911fa0372531f0e956e7/modules/stack/libexec/init.sh#L66) |
 | [Automake](https://www.gnu.org/software/automake/) | `brew install automake` | [Automake Install Example](https://github.com/poanetwork/blockscout-terraform/blob/33f68e816e36dc2fb055911fa0372531f0e956e7/modules/stack/libexec/init.sh#L72) |
@@ -88,31 +91,31 @@ The [development stack page](https://github.com/poanetwork/blockscout/wiki/Devel
 
 ### Build and Run
 
-  1. Clone the repository.  
+  1. Clone the repository.
   `git clone https://github.com/poanetwork/blockscout`
 
-  2. Go to the explorer subdirectory.  
+  2. Go to the explorer subdirectory.
   `cd blockscout`
 
-  3. Set up default configurations.  
-  `cp apps/explorer/config/dev.secret.exs.example apps/explorer/config/dev.secret.exs`  
+  3. Set up default configurations.
+  `cp apps/explorer/config/dev.secret.exs.example apps/explorer/config/dev.secret.exs`
   `cp apps/block_scout_web/config/dev.secret.exs.example apps/block_scout_web/config/dev.secret.exs`
   <br />Linux: Update the database username and password configuration in `apps/explorer/config/dev.secret.exs`
-  <br />Mac: Remove the `username` and `password` fields from `apps/explorer/config/dev.secret.exs`  
-  <br />Optional: Set up default configuration for testing.  
-  `cp apps/explorer/config/test.secret.exs.example apps/explorer/config/test.secret.exs`  
+  <br />Mac: Remove the `username` and `password` fields from `apps/explorer/config/dev.secret.exs`
+  <br />Optional: Set up default configuration for testing.
+  `cp apps/explorer/config/test.secret.exs.example apps/explorer/config/test.secret.exs`
   Example usage: Changing the default Postgres port from localhost:15432 if [Boxen](https://github.com/boxen/boxen) is installed.
 
-  4. Install dependencies.  
+  4. Install dependencies.
   `mix do deps.get, local.rebar --force, deps.compile, compile`
 
-  5. Create and migrate database.  
-  `mix ecto.create && mix ecto.migrate`  
-  <br />_Note:_ If you have run previously, drop the previous database  
+  5. Create and migrate database.
+  `mix ecto.create && mix ecto.migrate`
+  <br />_Note:_ If you have run previously, drop the previous database
   `mix do ecto.drop, ecto.create, ecto.migrate`
 
-  6. Install Node.js dependencies.  
-  `cd apps/block_scout_web/assets && npm install; cd -`  
+  6. Install Node.js dependencies.
+  `cd apps/block_scout_web/assets && npm install; cd -`
   `cd apps/explorer && npm install; cd -`
 
   7. Update your JSON RPC Variant in `apps/explorer/config/dev.exs` and `apps/indexer/config/dev.exs`.
@@ -120,10 +123,10 @@ The [development stack page](https://github.com/poanetwork/blockscout/wiki/Devel
 
   8. Update your JSON RPC Endpoint in `apps/explorer/config/dev/` and `apps/indexer/config/dev/`
   For the `variant` chosen in step 7, enter the correct information for the corresponding JSON RPC Endpoint in `parity.exs`, `geth.exs`, or `ganache.exs`
-  
+
   9. Enable HTTPS in development. The Phoenix server only runs with HTTPS.
      * `cd apps/block_scout_web`
-     * `mix phx.gen.cert blockscout blockscout.local`
+     * `mix phx.gen.cert blockscout blockscout.local; cd -`
      * Add blockscout and blockscout.local to your `/etc/hosts`
      ```
         127.0.0.1       localhost blockscout blockscout.local
@@ -132,14 +135,14 @@ The [development stack page](https://github.com/poanetwork/blockscout/wiki/Devel
       ```
       * If using Chrome, Enable `chrome://flags/#allow-insecure-localhost`.
 
-  9. Start Phoenix Server.  
+  9. Start Phoenix Server.
   `mix phx.server`
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
 _Additional runtime options:_
 
-*  Run Phoenix Server with IEx (Interactive Elixer)  
+*  Run Phoenix Server with IEx (Interactive Elixer)
 `iex -S mix phx.server`
 
 *  Run Phoenix Server with real time indexer
@@ -204,29 +207,29 @@ To monitor build status, configure your local [CCMenu](http://ccmenu.org/) with 
 
 #### Running the tests
 
-  1. Build the assets.  
+  1. Build the assets.
   `cd apps/block_scout_web/assets && npm run build; cd -`
 
-  2. Format the Elixir code.  
+  2. Format the Elixir code.
   `mix format`
 
   3. Run the test suite with coverage for whole umbrella project.  This step can be run with different configuration outlined below.
   `mix coveralls.html --umbrella`
 
-  4. Lint the Elixir code.  
+  4. Lint the Elixir code.
   `mix credo --strict`
 
-  5. Run the dialyzer.  
+  5. Run the dialyzer.
   `mix dialyzer --halt-exit-status`
 
-  6. Check the Elixir code for vulnerabilities.  
-  `cd apps/explorer && mix sobelow --config; cd -`  
+  6. Check the Elixir code for vulnerabilities.
+  `cd apps/explorer && mix sobelow --config; cd -`
   `cd apps/block_scout_web && mix sobelow --config; cd -`
 
-  7. Lint the JavaScript code.  
+  7. Lint the JavaScript code.
   `cd apps/block_scout_web/assets && npm run eslint; cd -`
 
-  8. Test the JavaScript code.  
+  8. Test the JavaScript code.
   `cd apps/block_scout_web/assets && npm run test; cd -`
 
 ##### Parity
@@ -281,12 +284,12 @@ mix coveralls.html --umbrella --exclude no_geth
 
 To view Modules and API Reference documentation:
 
-1. Generate documentation.  
+1. Generate documentation.
 `mix docs`
-2. View the generated docs.  
+2. View the generated docs.
 `open doc/index.html`
 
-## Front-end 
+## Front-end
 
 ### Javascript
 
@@ -307,7 +310,7 @@ To understand how to build new pages that need redux in this project, see the [r
 
 The app is currently internationalized. It is only localized to U.S. English. To translate new strings.
 
-1. To setup translation file.  
+1. To setup translation file.
 `cd apps/block_scout_web; mix gettext.extract --merge; cd -`
 2. To edit the new strings, go to `apps/block_scout_web/priv/gettext/en/LC_MESSAGES/default.po`.
 

@@ -36,6 +36,7 @@ config :indexer,
   memory_limit: 4 <<< 30
 
 config :indexer, Indexer.ReplacedTransaction.Supervisor, disabled?: true
+# config :indexer, Indexer.Block.Reward.Supervisor, disabled?: true 
 
 config :indexer, Indexer.Tracer,
   service: :indexer,

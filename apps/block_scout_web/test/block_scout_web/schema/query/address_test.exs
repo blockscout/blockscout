@@ -215,7 +215,7 @@ defmodule BlockScoutWeb.Schema.Query.AddressTest do
                            "r" => to_string(transaction.r),
                            "s" => to_string(transaction.s),
                            "status" => nil,
-                           "v" => transaction.v,
+                           "v" => to_string(transaction.v),
                            "value" => to_string(transaction.value.value),
                            "from_address_hash" => to_string(transaction.from_address_hash),
                            "to_address_hash" => to_string(transaction.to_address_hash),
