@@ -115,7 +115,7 @@ defmodule Indexer.Temporary.AddressesWithoutCode do
         @task_options
       )
 
-    Repo.transaction(fn -> Stream.run(stream) end)
+    Repo.transaction(fn -> Stream.run(stream) end, timeout: @query_timeout)
   end
 
   def refetch_block(block, fetcher) do
