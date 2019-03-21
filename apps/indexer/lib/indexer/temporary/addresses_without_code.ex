@@ -16,6 +16,7 @@ defmodule Indexer.Temporary.AddressesWithoutCode do
 
   @task_options [max_concurrency: 3, timeout: :infinity]
   @batch_size 500
+  @query_timeout :infinity
 
   def start_link([fetcher, gen_server_options]) do
     GenServer.start_link(__MODULE__, fetcher, gen_server_options)
@@ -104,7 +105,7 @@ defmodule Indexer.Temporary.AddressesWithoutCode do
   end
 
   defp process_query(query, fetcher) do
-    query_stream = Repo.stream(query, max_rows: @batch_size)
+    query_stream = Repo.stream(query, max_rows: @batch_size, timeout: @query_timeout)
 
     stream =
       TaskSupervisor
