@@ -2,6 +2,8 @@
 
 ### Features
 
+ - [1611](https://github.com/poanetwork/blockscout/pull/1611) - allow setting the first indexing block
+
 ### Fixes
 
  - [#1621](https://github.com/poanetwork/blockscout/pull/1621) - Modify query to fetch failed contract creations
