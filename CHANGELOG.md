@@ -4,6 +4,8 @@
 
 ### Fixes
 
+- [#1621](https://github.com/poanetwork/blockscout/pull/1621) - Modify query to fetch failed contract creations
+
 ### Chore
 
 
