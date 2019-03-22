@@ -1,36 +1,8 @@
-$primary : #fff;
-$secondary : #15bba6;
-$tertiary : #15bba6;
+$primary: #15bba6;
+$secondary: #ff0000;
+$tertiary: #00FF00;
 
-// Navbar elements
-.navbar.navbar-primary {
-    &.navbar-dark {
-        .navbar-nav {
-            .nav-link {
-                color: #a3a9b5;
-                &:hover {
-                    color: #333;
-                }
-            }
-            .nav-link-icon {
-                circle {
-                    fill: $secondary;
-                }
-            }
-        }
-        .navbar-toggler {
-            border-color: $secondary;
-            color: $secondary;
-            .navbar-toggler-icon {
-                background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='#{transparentize($secondary, 0.5)}' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
-            }
-        }
-    }
-}
+$header-links-color-active: #333;
 
-
-.topnav-nav-link {
-    &:before {
-        background-color: $secondary;
-    }
-}
+$gradient-start: #17314f;
+$gradient-end: #1e4168;

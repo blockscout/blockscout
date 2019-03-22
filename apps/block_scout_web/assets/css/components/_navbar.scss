@@ -1,9 +1,149 @@
-.navbar {
+// Default variables
+$header-background-color: #fff !default;
+$header-links-color: #a3a9b5 !default;
+$header-links-color-active: $primary !default;
+$header-icon-color: $header-links-color !default;
+$header-icon-color-hover: $primary !default;
+$header-toggler-icon: "data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='#{transparentize($primary, 0.5)}' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E" !default;
+$header-textfield-text-color: $header-links-color !default;
+$header-textfield-background-color: #f5f6fa !default;
+$header-textfield-magnifier-color: $header-links-color !default;
+
+$header-link-horizontal-padding: 0.71rem;
+
+.navbar.navbar-primary {
+    background-color: $header-background-color;
     position: relative;
     z-index: 100;
 
-    &-primary {
-        background-color: $primary;
+    .nav-item {
+        font-size: 14px;
+    }
+    .navbar-nav {
+        .nav-link {
+            align-items: center;
+            color: $header-links-color;
+            display: flex;
+            font-size: 14px;
+            position: relative;
+
+            &:before {
+                background-color: $primary;
+                border-radius: 0 0 4px 4px;
+                top: -10px;
+                content: "";
+                display: block;
+                height: 0.25rem;
+                left: 50%;
+                opacity: 0;
+                position: absolute;
+                transform: translateX(-50%);
+                transition: all 0.2s ease;
+                width: calc(100% - #{ $header-link-horizontal-padding } - #{ $header-link-horizontal-padding });
+            }
+
+            &.active,
+            &:hover {
+                @include media-breakpoint-up(lg) {
+                    &:before {
+                        opacity: 1;
+                    }
+                }
+            }
+
+            &.active,
+            &:hover,
+            &.active-icon {
+                color: $header-links-color-active;
+                .nav-link-icon {
+                    * {
+                        fill: $header-icon-color-hover;
+                    }
+                }
+            }
+
+            .nav-link-icon {
+                align-items: center;
+                display: flex;
+                margin-right: 0.71em;
+                position: relative;
+                top: -1px;
+
+                path {
+                    fill: $header-icon-color;
+                }
+            }
+        }
+    }
+
+    .navbar-toggler {
+        border-color: $primary;
+        color: $primary;
+
+        .navbar-toggler-icon {
+            background-image: url($header-toggler-icon);
+        }
+    }
+    .search-form {
+        display: flex;
+
+        @include media-breakpoint-up(xl) {
+            height: 57px;
+            margin-bottom: -8px;
+            margin-top: -8px;
+        }
+    }
+    .form-inline {
+        height: 100%;
+    }
+    .input-group {
+        height: 100%;
+        position: relative;
+    }
+    .form-control {
+        background: $header-textfield-background-color;
+        border-color: $header-textfield-background-color;
+        color: $header-textfield-text-color;
+        font-size: 14px;
+        height: 100%;
+        padding-left: 38px;
+        padding-right: 8px;
+        position: relative;
+        width: 100%;
+        z-index: 1;
+
+        @include textfield-placeholder();
+
+        &:focus {
+            box-shadow: none;
+        }
+
+        @include media-breakpoint-up(xl) {
+            width: 280px;
+        }
+    }
+    .input-group-append {
+        height: 38px;
+        left: 0;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 38px;
+        z-index: 5;
+
+        * {
+            fill: $header-textfield-magnifier-color;
+        }
+    }
+    .input-group-text {
+        align-items: center;
+        background: none;
+        border-color: transparent;
+        display: flex;
+        height: 100%;
+        justify-content: center;
+        padding: 0;
+        width: 100%;
     }
 }
 
@@ -39,162 +179,7 @@
 
 @include media-breakpoint-up(md) {
     .navbar-expand-lg .navbar-nav .nav-link {
-        padding-left: 0.71rem;
-        padding-right: 0.71rem;
-    }
-}
-
-.navbar {
-    .nav-item {
-        font-size: 14px;
-    }
-}
-
-.navbar-dark {
-    .navbar-nav {
-        .nav-link {
-            color: $white;
-        }
-    }
-}
-
-.navbar-nav {
-    .nav-link {
-        align-items: center;
-        display: flex;
-        font-size: 14px;
-    }
-}
-
-.nav-link-icon {
-    align-items: center;
-    display: flex;
-    margin-right: 0.71em;
-    position: relative;
-    top: -1px;
-
-    path {
-        fill: $secondary;
-    }
-
-    &.m-r-0 {
-      margin-right: 0;
-    }
-}
-
-.navbar {
-    .search-form {
-        display: flex;
-    }
-}
-
-.navbar {
-    .search-form {
-      @include media-breakpoint-up(xl) {
-        height: 57px;
-        margin-bottom: -8px;
-        margin-top: -8px;
-      }
-    }
-
-    .form-inline {
-      height: 100%;
-    }
-
-    .input-group {
-      height: 100%;
-      position: relative;
-    }
-
-    .form-control {
-        background: #f5f6fa;
-        border-color: #f5f6fa;
-        color: #a3a9b5;
-        font-size: 14px;
-        height: 100%;
-        padding-left: 38px;
-        padding-right: 8px;
-        position: relative;
-        width: 100%;
-        z-index: 1;
-
-        &::-webkit-input-placeholder {
-            /* Chrome/Opera/Safari */
-            color: #a3a9b5;
-        }
-        &::-moz-placeholder {
-            /* Firefox 19+ */
-            color: #a3a9b5;
-        }
-        &:-ms-input-placeholder {
-            /* IE 10+ */
-            color: #a3a9b5;
-        }
-        &:-moz-placeholder {
-            /* Firefox 18- */
-            color: #a3a9b5;
-        }
-        &:focus {
-            box-shadow: none;
-        }
-
-        @include media-breakpoint-up(xl) {
-            width: 280px;
-        }
-    }
-
-    .input-group-append {
-        height: 38px;
-        left: 0;
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 38px;
-        z-index: 5;
-
-        path {
-            fill: #a3a9b5;
-        }
-    }
-
-    .input-group-text {
-      align-items: center;
-      background: none;
-      border-color: transparent;
-      display: flex;
-      height: 100%;
-      justify-content: center;
-      padding: 0;
-      width: 100%;
-  }
-}
-
-.topnav-nav-link {
-    color: $white;
-    position: relative;
-
-    &:before {
-        background-color: $secondary;
-        border-radius: 0 0 4px 4px;
-        top: -10px;
-        content: "";
-        display: block;
-        height: 0.25rem;
-        left: 50%;
-        opacity: 0;
-        position: absolute;
-        transform: translateX(-50%);
-        transition: all 0.2s ease;
-        width: 75%;
-    }
-}
-
-@include media-breakpoint-up(lg) {
-    .topnav-nav-link {
-        &:hover {
-            &:before {
-                opacity: 1;
-            }
-        }
+        padding-left: $header-link-horizontal-padding;
+        padding-right: $header-link-horizontal-padding;
     }
 }

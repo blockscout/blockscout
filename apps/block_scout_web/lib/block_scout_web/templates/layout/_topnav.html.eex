@@ -81,7 +81,7 @@
             <span class="nav-link-icon">
               <%= render BlockScoutWeb.IconsView, "_apps_icon.html" %>
             </span>
-            <%= gettext("Apps") %>
+            <%= gettext("Stakes") %>
           </a>
           <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
             <%= link(
@@ -97,23 +97,17 @@
           </div>
         </li>
         <li class="nav-item dropdown">
-          <a href="#" role="button" id="navbarAPIsDropdown" class="nav-link topnav-nav-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <a class="nav-link topnav-nav-link dropdown-toggle active-icon" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <!-- ICON FOR MAINNET -->
             <span class="nav-link-icon">
               <%= render BlockScoutWeb.IconsView, "_posdao_icon.html" %>
             </span>
-            <%= gettext("POSDAO") %>
+            <%= subnetwork_title() %>
           </a>
-          <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
-            <%= link(
-                  gettext("Item 1"),
-                  class: "dropdown-item",
-                  to: "/#"
-                ) %>
-            <%= link(
-                gettext("Item 2"),
-                class: "dropdown-item",
-                to: "/#"
-              ) %>
+          <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+            <%= for %{url: url, title: title} <- other_networks() do %>
+              <a class="dropdown-item" href="<%= url%>"><%= title %></a>
+            <% end %>
           </div>
         </li>
       </ul>
@@ -131,26 +125,6 @@
           <button class="btn btn-outline-success my-2 my-sm-0 sr-only hidden" type="submit"><%= gettext "Search" %></button>
         <% end %>
       </div>
-      <ul class="navbar-nav mr-auto">
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle pl-lg-2" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-            <!-- ICON FOR MAINNET -->
-            <span class="nav-link-icon m-r-0">
-              <%= render BlockScoutWeb.IconsView, network_icon_partial() %>
-            </span>
-            <!-- ICON FOR TESTNET -->
-            <!-- <span class="nav-link-icon">
-              <%= render BlockScoutWeb.IconsView, "_test_network_icon.html" %>
-            </span> -->
-            <!-- <%= subnetwork_title() %> -->
-          </a>
-          <div class="dropdown-menu right" aria-labelledby="navbarDropdown">
-            <%= for %{url: url, title: title} <- other_networks() do %>
-              <a class="dropdown-item" href="<%= url%>"><%= title %></a>
-            <% end %>
-          </div>
-        </li>
-      </ul>
     </div>
   </div>
 </nav>
