@@ -96,7 +96,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
 
     new_max_number = new_max_number(number, max_number_seen)
 
-    :timer.cancel(timer)
+    Process.cancel_timer(timer)
     new_timer = schedule_polling()
 
     {:noreply,
@@ -165,6 +165,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
           address_hash_to_fetched_balance_block_number: address_hash_to_block_number,
           address_token_balances: %{params: address_token_balances_params},
           addresses: %{params: addresses_params},
+          blocks: %{params: blocks_params},
           block_rewards: block_rewards,
           transactions: %{params: transactions_params},
           token_transfers: %{params: token_transfers_params}
@@ -179,6 +180,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
            {:internal_transactions,
             internal_transactions(block_fetcher, %{
               addresses_params: addresses_params,
+              blocks_params: blocks_params,
               token_transfers_params: token_transfers_params,
               transactions_params: transactions_params
             })},
@@ -363,13 +365,25 @@ defmodule Indexer.Block.Realtime.Fetcher do
          %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments},
          %{
            addresses_params: addresses_params,
+           blocks_params: blocks_params,
            token_transfers_params: token_transfers_params,
            transactions_params: transactions_params
          }
        ) do
-    case transactions_params
-         |> transactions_params_to_fetch_internal_transactions_params(token_transfers_params, json_rpc_named_arguments)
-         |> EthereumJSONRPC.fetch_internal_transactions(json_rpc_named_arguments) do
+    json_rpc_named_arguments
+    |> Keyword.fetch!(:variant)
+    |> case do
+      EthereumJSONRPC.Parity ->
+        blocks_params
+        |> Enum.map(fn %{number: block_number} -> block_number end)
+        |> EthereumJSONRPC.fetch_block_internal_transactions(json_rpc_named_arguments)
+
+      _ ->
+        transactions_params
+        |> transactions_params_to_fetch_internal_transactions_params(token_transfers_params, json_rpc_named_arguments)
+        |> EthereumJSONRPC.fetch_internal_transactions(json_rpc_named_arguments)
+    end
+    |> case do
       {:ok, internal_transactions_params} ->
         merged_addresses_params =
           %{internal_transactions: internal_transactions_params}
