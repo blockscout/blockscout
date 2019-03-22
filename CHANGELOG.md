@@ -8,6 +8,7 @@
 
  - [#1621](https://github.com/poanetwork/blockscout/pull/1621) - Modify query to fetch failed contract creations
  - [#1614](https://github.com/poanetwork/blockscout/pull/1614) - Do not fetch burn address token balance
+ - [#1643](https://github.com/poanetwork/blockscout/pull/1643) - Set internal_transactions_indexed_at for empty blocks
 
 ### Chore
 
