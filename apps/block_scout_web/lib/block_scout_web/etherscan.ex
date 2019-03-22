@@ -168,6 +168,17 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @account_listaccounts_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => [
+      %{
+        "address" => "0x0000000000000000000000000000000000000000",
+        "balance" => "135499"
+      }
+    ]
+  }
+
   @account_getminedblocks_example_value_error %{
     "status" => "0",
     "message" => "No blocks found",
@@ -717,6 +728,14 @@ defmodule BlockScoutWeb.Etherscan do
       },
       uncles: %{type: "null"},
       uncleInclusionReward: %{type: "null"}
+    }
+  }
+
+  @account_model %{
+    name: "Account",
+    fields: %{
+      "address" => @address_hash_type,
+      "balance" => @wei_type
     }
   }
 
@@ -1289,6 +1308,50 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @account_listaccounts_action %{
+    name: "listaccounts",
+    description:
+      "Get a list of accounts and their balances, sorted ascending by the time they were first seen by the explorer.",
+    required_params: [],
+    optional_params: [
+      %{
+        key: "page",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the page number to be used for pagination. 'offset' must be provided in conjunction."
+      },
+      %{
+        key: "offset",
+        type: "integer",
+        description:
+          "A nonnegative integer that represents the maximum number of records to return when paginating. 'page' must be provided in conjunction."
+      }
+    ],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Jason.encode!(@account_listaccounts_example_value),
+        model: %{
+          name: "Result",
+          fields: %{
+            status: @status_type,
+            message: @message_type,
+            result: %{
+              type: "array",
+              array_type: @account_model
+            }
+          }
+        }
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Jason.encode!(@account_getminedblocks_example_value_error)
+      }
+    ]
+  }
+
   @logs_getlogs_action %{
     name: "getLogs",
     description: "Get event logs for an address and/or topics. Up to a maximum of 1,000 event logs.",
@@ -1767,7 +1830,8 @@ defmodule BlockScoutWeb.Etherscan do
       @account_tokentx_action,
       @account_tokenbalance_action,
       @account_tokenlist_action,
-      @account_getminedblocks_action
+      @account_getminedblocks_action,
+      @account_listaccounts_action
     ]
   }
 
