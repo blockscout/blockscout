@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.TransactionView do
   alias Explorer.Chain
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Wei}
+  alias Explorer.ExchangeRates.Token
   alias Timex.Duration
 
   import BlockScoutWeb.Gettext
@@ -91,6 +92,9 @@ defmodule BlockScoutWeb.TransactionView do
 
   def contract_creation?(_), do: false
 
+  #  def utf8_encode() do
+  #  end
+
   def fee(%Transaction{} = transaction) do
     {_, value} = Chain.fee(transaction, :wei)
     value
@@ -110,10 +114,16 @@ defmodule BlockScoutWeb.TransactionView do
     end
   end
 
-  def formatted_status(transaction) do
-    transaction
-    |> Chain.transaction_to_status()
-    |> case do
+  def transaction_status(transaction) do
+    Chain.transaction_to_status(transaction)
+  end
+
+  def empty_exchange_rate?(exchange_rate) do
+    Token.null?(exchange_rate)
+  end
+
+  def formatted_status(status) do
+    case status do
       :pending -> gettext("Pending")
       :awaiting_internal_transactions -> gettext("(Awaiting internal transactions for status)")
       :success -> gettext("Success")
@@ -133,7 +143,7 @@ defmodule BlockScoutWeb.TransactionView do
     Cldr.Number.to_string!(gas)
   end
 
-  def should_decode?(transaction) do
+  def skip_decoding?(transaction) do
     contract_creation?(transaction) || value_transfer?(transaction)
   end
 

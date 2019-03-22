@@ -17,6 +17,7 @@ defmodule Explorer.Factory do
     Address.TokenBalance,
     Address.CoinBalance,
     Block,
+    ContractMethod,
     Data,
     Hash,
     InternalTransaction,
@@ -140,6 +141,22 @@ defmodule Explorer.Factory do
       gas_limit: Enum.random(1..100_000),
       gas_used: Enum.random(1..100_000),
       timestamp: DateTime.utc_now()
+    }
+  end
+
+  def contract_method_factory() do
+    %ContractMethod{
+      identifier: Base.decode16!("60fe47b1", case: :lower),
+      abi: %{
+        "constant" => false,
+        "inputs" => [%{"name" => "x", "type" => "uint256"}],
+        "name" => "set",
+        "outputs" => [],
+        "payable" => false,
+        "stateMutability" => "nonpayable",
+        "type" => "function"
+      },
+      type: "function"
     }
   end
 
@@ -496,7 +513,7 @@ defmodule Explorer.Factory do
     contract_code_info = contract_code_info()
 
     %SmartContract{
-      address_hash: insert(:address).hash,
+      address_hash: insert(:address, contract_code: contract_code_info.bytecode).hash,
       compiler_version: contract_code_info.version,
       name: contract_code_info.name,
       contract_source_code: contract_code_info.source_code,

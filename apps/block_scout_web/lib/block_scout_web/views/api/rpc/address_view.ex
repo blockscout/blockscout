@@ -3,6 +3,11 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
 
   alias BlockScoutWeb.API.RPC.RPCView
 
+  def render("listaccounts.json", %{accounts: accounts}) do
+    accounts = Enum.map(accounts, &prepare_account/1)
+    RPCView.render("show.json", data: accounts)
+  end
+
   def render("balance.json", %{addresses: [address]}) do
     RPCView.render("show.json", data: "#{address.fetched_coin_balance.value}")
   end
@@ -54,6 +59,13 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
 
   def render("error.json", assigns) do
     RPCView.render("error.json", assigns)
+  end
+
+  defp prepare_account(address) do
+    %{
+      "balance" => to_string(address.fetched_coin_balance.value),
+      "address" => to_string(address.hash)
+    }
   end
 
   defp prepare_transaction(transaction) do
