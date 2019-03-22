@@ -7,13 +7,13 @@ defmodule BlockScoutWeb.API.V1.DecompiledSmartContractController do
     if auth_token(conn) == actual_token() do
       case Chain.create_decompiled_smart_contract(params) do
         {:ok, _decompiled_source_code} ->
-          put_status(conn, :created)
+          send_resp(conn, :created, "")
 
         {:error, _changeset} ->
-          put_status(conn, :unprocessable_entity)
+          send_resp(conn, :unprocessable_entity, "")
       end
     else
-      put_status(conn, :forbidden)
+      send_resp(conn, :forbidden, "")
     end
   end
 
