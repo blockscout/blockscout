@@ -202,7 +202,7 @@ defmodule Explorer.Chain.Transaction do
     field(:r, :decimal)
     field(:s, :decimal)
     field(:status, Status)
-    field(:v, :integer)
+    field(:v, :decimal)
     field(:value, Wei)
 
     timestamps()
