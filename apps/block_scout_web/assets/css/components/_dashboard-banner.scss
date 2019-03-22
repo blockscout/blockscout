@@ -1,31 +1,24 @@
-.dashboard-banner-container {
-  position: relative;
-  margin-top: -3rem;
-  background-color: $white;
-  box-shadow: 0 5px 40px -5px rgba($black, 0.25);
+$dashboard-banner-gradient-start: $primary !default;
+$dashboard-banner-gradient-end: lighten($dashboard-banner-gradient-start, 5%) !default;
+$dashboard-banner-network-graph-background-color: #fff !default;
 
-  &:before {
-    content: "";
-    display: block;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 68px;
-    background-color: $white;
-    box-shadow: 0 0 40px -5px rgba($black, 0.25);
-  }
+.dashboard-banner-container {
+  background-color: $primary;
+  background-image: linear-gradient(to bottom, $dashboard-banner-gradient-start, $dashboard-banner-gradient-end);
+  box-shadow: 0 5px 40px -5px rgba(#000, 0.25);
+  margin-top: -3rem;
+  padding: 48px 0 0 0;
+  position: relative;
 
   &:after {
+    background-color: $dashboard-banner-network-graph-background-color;
+    bottom: 0;
     content: "";
     display: block;
-    position: absolute;
-    top: 3rem;
-    right: 0;
-    bottom: 0;
     left: 70%;
-    background-color: $primary;
-    box-shadow: 0 0 40px -5px rgba($black, 0.25);
+    position: absolute;
+    right: 0;
+    top: 3rem;
 
     @media (max-width: 992px) {
       top: 2rem;
@@ -35,46 +28,31 @@
 }
 
 .dashboard-banner {
-  position: relative;
-  display: grid;
-  grid-template-rows: 3rem 2fr 1fr;
-  grid-template-columns: 1fr 4fr;
-  grid-template-areas:
-    "chart ."
-    "chart stats"
-    "legend stats";
-  margin-top: -1rem;
+  align-items: flex-end;
+  display: flex;
+  justify-content: space-between;
   margin-bottom: 3rem;
+  position: relative;
   z-index: 9;
 
   @media (max-width: 992px) {
-    grid-template-rows: 2rem auto;
-    grid-template-columns: auto;
+    flex-direction: column;
   }
 }
 
-.dashboard-banner-graphic {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  z-index: 10;
-}
-
 .dashboard-banner-chart {
-  grid-area: chart;
+  height: calc(152px + 1rem);
   padding: 1rem 1rem 1rem 0;
   width: calc(350px + 1rem);
-  height: calc(152px + 1rem);
 }
 
 .dashboard-banner-chart-legend {
-  grid-area: legend;
   display: flex;
   padding: 1rem 0.3rem;
 
   &-item {
-    padding-left: 0.5rem;
     flex-grow: 1;
+    padding-left: 0.5rem;
 
     &:first-of-type {
       border-left: 4px solid $primary;
@@ -86,8 +64,8 @@
   }
 
   &-label {
-    display: block;
     color: $text-muted;
+    display: block;
   }
 
   &-value {
@@ -96,24 +74,33 @@
 }
 
 .dashboard-banner-network-stats {
-  grid-area: stats;
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  padding-right: 1rem;
-  background-color: $primary;
-  box-shadow: -10px 0 15px 0 rgba($black, 0.14);
+  column-gap: 40px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding-bottom: 30px;
+  row-gap: 45px;
 
   @media (max-width: 992px) {
-    flex-direction: column;
     align-items: flex-start;
+    flex-direction: column;
     padding: 0.5rem 2rem;
   }
 
   &-item {
+    color: #fff;
     padding-left: 1rem;
-    color: $white;
-    border-left: 4px solid rgba($white, 0.6);
+    position: relative;
+
+    &::before {
+      background-color: rgba(#fff, 0.5);
+      border-radius: 2px;
+      content: "";
+      height: 100%;
+      left: -4px;
+      position: absolute;
+      top: 0;
+      width: 4px;
+    }
   }
 
   &-label {
@@ -125,9 +112,21 @@
     display: block;
     font-size: 1.5rem;
     font-weight: 200;
+    white-space: nowrap;
 
     @media (max-width: 992px) {
       font-size: 1.25rem;
     }
   }
+}
+
+.dashboard-banner-network-graph {
+  align-items: center;
+  background-color: $dashboard-banner-network-graph-background-color;
+  border-top-left-radius: 10px;
+  display: flex;
+  height: 205px;
+  justify-content: space-around;
+  margin: 0 0 0 60px;
+  width: 750px;
 }
