@@ -14,6 +14,7 @@ defmodule Explorer.ChainTest do
     Address,
     Block,
     Data,
+    DecompiledSmartContract,
     Hash,
     InternalTransaction,
     Log,
@@ -2609,6 +2610,27 @@ defmodule Explorer.ChainTest do
       params = %{code: "cat"}
 
       {:error, _changeset} = Chain.create_decompiled_smart_contract(params)
+    end
+
+    test "update smart contract" do
+      inserted_decompiled_smart_contract = insert(:decompiled_smart_contract)
+      version = "2"
+      code = "code2"
+
+      {:ok, _decompiled_smart_contract} =
+        Chain.create_decompiled_smart_contract(%{
+          decompiler_version: version,
+          decompiled_source_code: code,
+          address_hash: inserted_decompiled_smart_contract.address_hash
+        })
+
+      decompiled_smart_contract =
+        Repo.one(
+          from(ds in DecompiledSmartContract, where: ds.address_hash == ^inserted_decompiled_smart_contract.address_hash)
+        )
+
+      assert decompiled_smart_contract.decompiled_source_code == code
+      assert decompiled_smart_contract.decompiler_version == version
     end
   end
 
