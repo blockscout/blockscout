@@ -9,13 +9,13 @@ defmodule BlockScoutWeb.API.V1.DecompiledSmartContractController do
       with :ok <- validate_address_hash(params["address_hash"]) do
         case Chain.create_decompiled_smart_contract(params) do
           {:ok, _decompiled_source_code} ->
-            send_resp(conn, :created, "")
+            send_resp(conn, :created, "ok")
 
           {:error, _changeset} ->
-            send_resp(conn, :unprocessable_entity, "")
+            send_resp(conn, :unprocessable_entity, "error")
         end
       else
-        :error -> send_resp(conn, :unprocessable_entity, "")
+        :error -> send_resp(conn, :unprocessable_entity, "error")
       end
     else
       send_resp(conn, :forbidden, "")

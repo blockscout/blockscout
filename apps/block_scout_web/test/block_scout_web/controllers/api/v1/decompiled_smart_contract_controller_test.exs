@@ -22,6 +22,7 @@ defmodule BlockScoutWeb.API.V1.DecompiledControllerTest do
       request = post(conn, api_v1_decompiled_smart_contract_path(conn, :create))
 
       assert request.status == 422
+      assert request.resp_body == "error"
     end
 
     test "returns unprocessable_entity when address_hash is invalid", %{conn: conn} do
@@ -37,6 +38,7 @@ defmodule BlockScoutWeb.API.V1.DecompiledControllerTest do
       request = post(conn, api_v1_decompiled_smart_contract_path(conn, :create), params)
 
       assert request.status == 422
+      assert request.resp_body == "error"
     end
 
     test "creates decompiled smart contract", %{conn: conn} do
@@ -53,6 +55,7 @@ defmodule BlockScoutWeb.API.V1.DecompiledControllerTest do
       request = post(conn, api_v1_decompiled_smart_contract_path(conn, :create), params)
 
       assert request.status == 201
+      assert request.resp_body == "ok"
 
       decompiled_smart_contract = Repo.one!(from(d in DecompiledSmartContract, where: d.address_hash == ^address_hash))
       assert to_string(decompiled_smart_contract.address_hash) == address_hash
