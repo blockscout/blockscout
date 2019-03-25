@@ -15,10 +15,9 @@ defmodule BlockScoutWeb.API.V1.DecompiledSmartContractController do
           {:error, changeset} ->
             errors =
               changeset.errors
-              |> Enum.map(fn {field, {message, _}} ->
+              |> Enum.into(%{}, fn {field, {message, _}} ->
                 {field, message}
               end)
-              |> Enum.into(%{})
 
             send_resp(conn, :unprocessable_entity, encode(errors))
         end
