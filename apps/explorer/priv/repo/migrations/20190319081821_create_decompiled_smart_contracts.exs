@@ -10,6 +10,8 @@ defmodule Explorer.Repo.Migrations.CreateDecompiledSmartContracts do
       timestamps()
     end
 
-    create(unique_index(:decompiled_smart_contracts, :address_hash))
+    create(
+      unique_index(:decompiled_smart_contracts, [:address_hash, :decompiler_version], name: :address_decompiler_version)
+    )
   end
 end

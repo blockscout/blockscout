@@ -2612,10 +2612,33 @@ defmodule Explorer.ChainTest do
       {:error, _changeset} = Chain.create_decompiled_smart_contract(params)
     end
 
-    test "update smart contract" do
+    test "updates smart contract code" do
       inserted_decompiled_smart_contract = insert(:decompiled_smart_contract)
-      version = "2"
       code = "code2"
+
+      {:ok, _decompiled_smart_contract} =
+        Chain.create_decompiled_smart_contract(%{
+          decompiler_version: inserted_decompiled_smart_contract.decompiler_version,
+          decompiled_source_code: code,
+          address_hash: inserted_decompiled_smart_contract.address_hash
+        })
+
+      decompiled_smart_contract =
+        Repo.one(
+          from(ds in DecompiledSmartContract,
+            where:
+              ds.address_hash == ^inserted_decompiled_smart_contract.address_hash and
+                ds.decompiler_version == ^inserted_decompiled_smart_contract.decompiler_version
+          )
+        )
+
+      assert decompiled_smart_contract.decompiled_source_code == code
+    end
+
+    test "creates two smart contracts for different decompiler versions" do
+      inserted_decompiled_smart_contract = insert(:decompiled_smart_contract)
+      code = "code2"
+      version = "2"
 
       {:ok, _decompiled_smart_contract} =
         Chain.create_decompiled_smart_contract(%{
@@ -2624,13 +2647,12 @@ defmodule Explorer.ChainTest do
           address_hash: inserted_decompiled_smart_contract.address_hash
         })
 
-      decompiled_smart_contract =
-        Repo.one(
+      decompiled_smart_contracts =
+        Repo.all(
           from(ds in DecompiledSmartContract, where: ds.address_hash == ^inserted_decompiled_smart_contract.address_hash)
         )
 
-      assert decompiled_smart_contract.decompiled_source_code == code
-      assert decompiled_smart_contract.decompiler_version == version
+      assert Enum.count(decompiled_smart_contracts) == 2
     end
   end
 

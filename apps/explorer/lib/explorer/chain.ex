@@ -521,7 +521,7 @@ defmodule Explorer.Chain do
   def create_decompiled_smart_contract(attrs) do
     %DecompiledSmartContract{}
     |> DecompiledSmartContract.changeset(attrs)
-    |> Repo.insert(on_conflict: :replace_all, conflict_target: :address_hash)
+    |> Repo.insert(on_conflict: :replace_all, conflict_target: [:decompiler_version, :address_hash])
   end
 
   @doc """
