@@ -6,9 +6,8 @@ defmodule Explorer.Application do
   use Application
 
   alias Explorer.Admin
-  alias Explorer.Chain.BlockNumberCache
+  alias Explorer.Chain.{BlockNumberCache, TransactionCountCache}
   alias Explorer.Repo.PrometheusLogger
-  alias Explorer.Chain.TransactionCountCache
 
   @impl Application
   def start(_type, _args) do

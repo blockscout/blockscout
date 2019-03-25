@@ -84,8 +84,12 @@ defmodule Explorer.Chain.TransactionCountCache do
     {:noreply, {{cache_period, default_value, name}, nil}}
   end
 
+  # sobelow_skip ["DOS"]
   defp table_name(name) do
-    name |> Atom.to_string() |> Macro.underscore() |> String.to_atom()
+    name
+    |> Atom.to_string()
+    |> Macro.underscore()
+    |> String.to_atom()
   end
 
   def async_update_cache(name) do
