@@ -22,27 +22,26 @@ defmodule BlockScoutWeb.API.V1.DecompiledControllerTest do
       request = post(conn, api_v1_decompiled_smart_contract_path(conn, :create))
 
       assert request.status == 422
-      assert request.resp_body == "error"
+      assert request.resp_body == "{\"error\":\"address_hash is invalid\"}"
     end
 
-    test "returns unprocessable_entity when address_hash is invalid", %{conn: conn} do
+    test "returns unprocessable_entity when code is empty", %{conn: conn} do
       decompiler_version = "test_decompiler"
-      decompiled_source_code = "hello world"
+      address = insert(:address)
 
       params = %{
-        "address_hash" => "hash",
-        "decompiler_version" => decompiler_version,
-        "decompiled_source_code" => decompiled_source_code
+        "address_hash" => to_string(address.hash),
+        "decompiler_version" => decompiler_version
       }
 
       request = post(conn, api_v1_decompiled_smart_contract_path(conn, :create), params)
 
       assert request.status == 422
-      assert request.resp_body == "error"
+      assert request.resp_body == "{\"decompiled_source_code\":\"can't be blank\"}"
     end
 
     test "creates decompiled smart contract", %{conn: conn} do
-      address_hash = to_string(insert(:address).hash)
+      address_hash = to_string(insert(:address, hash: "0x0000000000000000000000000000000000000001").hash)
       decompiler_version = "test_decompiler"
       decompiled_source_code = "hello world"
 
@@ -55,7 +54,9 @@ defmodule BlockScoutWeb.API.V1.DecompiledControllerTest do
       request = post(conn, api_v1_decompiled_smart_contract_path(conn, :create), params)
 
       assert request.status == 201
-      assert request.resp_body == "ok"
+
+      assert request.resp_body ==
+               "{\"address_hash\":\"0x0000000000000000000000000000000000000001\",\"decompiler_version\":\"test_decompiler\",\"decompiled_source_code\":\"hello world\"}"
 
       decompiled_smart_contract = Repo.one!(from(d in DecompiledSmartContract, where: d.address_hash == ^address_hash))
       assert to_string(decompiled_smart_contract.address_hash) == address_hash
