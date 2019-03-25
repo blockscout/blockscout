@@ -10,7 +10,7 @@ $footer-text-color: rgba($white, 0.7);
   position: relative;
 
 
-  @media (max-width: 768px) {
+  @media (max-width: $breakpoint-md) {
     width: 100%;
   }
 }
