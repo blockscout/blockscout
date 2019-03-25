@@ -1,5 +1,7 @@
 // These styles extend the default Bootstrap styles
 .dropdown-menu {
+    border-radius: 8px!important;
+    border: none;
     box-shadow: $box-shadow;
     padding: 0;
     width: 100%;
@@ -15,8 +17,7 @@
     padding: 10px 20px;
 
     &:hover {
-        background-color: $tertiary;
-        color: $white;
+        color: #fff;
     }
 }
 

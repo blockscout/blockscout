@@ -1,4 +1,17 @@
-$tile-type-block-border-color: $primary !default;
+$tile-type-block-color: $primary !default;
+$tile-type-uncle-color: $cyan !default;
+$tile-type-reorg-color: $purple !default;
+$tile-type-emission-reward-color: $lilac !default;
+$tile-type-transaction-color: $blue !default;
+$tile-type-contract-call-color: $green !default;
+$tile-type-contract-creation-color: $pink !default;
+$tile-type-token-transfer-color: $orange !default;
+$tile-type-unique-token-color: $orange !default;
+$tile-type-unique-token-image-color: $orange !default;
+$tile-type-internal-transaction-color: $teal !default;
+$tile-type-api-documentation-color: $primary !default;
+
+$tile-padding: 1rem;
 
 .tile {
   border-radius: 4px;
@@ -7,7 +20,7 @@ $tile-type-block-border-color: $primary !default;
   color: $text-muted;
   font-size: 12px;
   line-height: 1.4rem;
-  padding: 1rem;
+  padding: $tile-padding;
 
   &.n-p {
     padding: 0;
@@ -21,61 +34,140 @@ $tile-type-block-border-color: $primary !default;
     margin-bottom: 1rem;
   }
 
+  .tile-transaction-type-block {
+    align-items: center;
+    bottom: -1rem;
+    justify-content: center;
+    margin-left: -1px;
+    margin-top: -2rem;
+    padding: 0;
+    position: relative;
+
+    @include media-breakpoint-down(sm) {
+      align-items: flex-start;
+      background: none!important;
+      border: none!important;
+      bottom: auto;
+      flex-direction: column!important;
+      margin: 0 0 10px;
+      padding-left: 1rem;
+      top: auto;
+
+      .tile-status-label {
+        margin-left: 0!important;
+      }
+    }
+  }
+
+  .tile-label {
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 0 0 10px;
+  }
+
+  .tile-status-label {
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.2;
+  }
+
   &-type {
 
     &-block {
-      border-left: 4px solid $tile-type-block-border-color;
+      border-left: 4px solid $tile-type-block-color;
+
+      .tile-title {
+        color: #333;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.2;
+        margin-bottom: 12px;
+        padding: 1rem 1rem 0 1rem;
+      }
 
       .tile-label {
-        color: $tile-type-block-border-color;
+        color: $tile-type-block-color;
+      }
+
+      .tile-transaction-type-block {
+        background-color: rgba($tile-type-block-color, 0.1);
+        border-bottom: 1px solid $tile-type-block-color;
+        border-right: 1px solid $tile-type-block-color;
+        border-top: 1px solid $tile-type-block-color;
+        color: $tile-type-block-color;
       }
     }
 
     &-uncle {
-      border-left: 4px solid $cyan;
+      border-left: 4px solid $tile-type-uncle-color;
 
-      .tile-label {
-        color: $cyan;
+      .tile-transaction-type-block {
+        background-color: rgba($tile-type-uncle-color, 0.1);
+        border-bottom: 1px solid $tile-type-uncle-color;
+        border-right: 1px solid $tile-type-uncle-color;
+        border-top: 1px solid $tile-type-uncle-color;
+        color: $tile-type-uncle-color;
       }
     }
 
     &-reorg {
-      border-left: 4px solid $purple;
+      border-left: 4px solid $tile-type-reorg-color;
 
-      .tile-label {
-        color: $purple;
+      .tile-transaction-type-block {
+        background-color: rgba($tile-type-reorg-color, 0.1);
+        border-bottom: 1px solid $tile-type-reorg-color;
+        border-right: 1px solid $tile-type-reorg-color;
+        border-top: 1px solid $tile-type-reorg-color;
+        color: $tile-type-reorg-color;
       }
     }
 
     &-emission-reward {
-      border-left: 4px solid $lilac;
+      border-left: 4px solid $tile-type-emission-reward-color;
 
-      .tile-label {
-        color: $lilac;
+      .tile-transaction-type-block {
+        background-color: rgba($tile-type-emission-reward-color, 0.1);
+        border-bottom: 1px solid $tile-type-emission-reward-color;
+        border-right: 1px solid $tile-type-emission-reward-color;
+        border-top: 1px solid $tile-type-emission-reward-color;
+        color: $tile-type-emission-reward-color;
       }
     }
 
     &-transaction {
-      border-left: 4px solid $blue;
+      border-left: 4px solid $tile-type-transaction-color;
 
-      .tile-label {
-        color: $blue;
+      .tile-transaction-type-block {
+        background-color: rgba($tile-type-transaction-color, 0.1);
+        border-bottom: 1px solid $tile-type-transaction-color;
+        border-right: 1px solid $tile-type-transaction-color;
+        border-top: 1px solid $tile-type-transaction-color;
+        color: $tile-type-transaction-color;
       }
     }
 
     &-contract-call {
-      border-left: 4px solid $green;
+      border-left: 4px solid $tile-type-contract-call-color;
 
-      .tile-label {
-        color: $green;
+      .tile-transaction-type-block {
+        background-color: rgba($tile-type-contract-call-color, 0.1);
+        border-bottom: 1px solid $tile-type-contract-call-color;
+        border-right: 1px solid $tile-type-contract-call-color;
+        border-top: 1px solid $tile-type-contract-call-color;
+        color: $tile-type-contract-call-color;
       }
     }
 
     &-contract-creation {
-      border-left: 4px solid $pink;
+      border-left: 4px solid $tile-type-contract-creation-color;
 
-      .tile-label {
-        color: $pink;
+      .tile-transaction-type-block {
+        background-color: rgba($tile-type-contract-creation-color, 0.1);
+        border-bottom: 1px solid $tile-type-contract-creation-color;
+        border-right: 1px solid $tile-type-contract-creation-color;
+        border-top: 1px solid $tile-type-contract-creation-color;
+        color: $tile-type-contract-creation-color;
       }
 
       .tile-text-highlight {
@@ -89,11 +181,14 @@ $tile-type-block-border-color: $primary !default;
     }
 
     &-token-transfer {
-      border-left: 4px solid $orange;
-      padding-bottom: 10px;
+      border-left: 4px solid $tile-type-token-transfer-color;
 
-      .tile-label {
-        color: $orange;
+      .tile-transaction-type-block {
+        background-color: rgba($tile-type-token-transfer-color, 0.1);
+        border-bottom: 1px solid $tile-type-token-transfer-color;
+        border-right: 1px solid $tile-type-token-transfer-color;
+        border-top: 1px solid $tile-type-token-transfer-color;
+        color: $tile-type-token-transfer-color;
       }
 
       &-short-name {
@@ -105,20 +200,35 @@ $tile-type-block-border-color: $primary !default;
     }
 
     &-unique-token {
-      border-left: 4px solid $orange;
-      padding: 35px 0;
+      border-left: 4px solid $tile-type-unique-token-color;
 
       .tile-label {
-        color: $orange;
+        color: $tile-type-unique-token-color;
+      }
+
+      .tile-transaction-type-block {
+        background-color: rgba($tile-type-unique-token-color, 0.1);
+        border-bottom: 1px solid $tile-type-unique-token-color;
+        border-right: 1px solid $tile-type-unique-token-color;
+        border-top: 1px solid $tile-type-unique-token-color;
+        color: $tile-type-unique-token-color;
       }
     }
 
-    &-unique-token-image{
-      border-left: 4px solid $orange;
+    &-unique-token-image {
+      border-left: 4px solid $tile-type-unique-token-image-color;
       padding: 0;
 
       .tile-label {
-        color: $orange;
+        color: $tile-type-unique-token-image-color;
+      }
+
+      .tile-transaction-type-block {
+        background-color: rgba($tile-type-unique-token-image-color, 0.1);
+        border-bottom: 1px solid $tile-type-unique-token-image-color;
+        border-right: 1px solid $tile-type-unique-token-image-color;
+        border-top: 1px solid $tile-type-unique-token-image-color;
+        color: $tile-type-unique-token-image-color;
       }
 
       & .tile-content {
@@ -127,28 +237,41 @@ $tile-type-block-border-color: $primary !default;
     }
 
     &-internal-transaction {
-      border-left: 4px solid $teal;
+      border-left: 4px solid $tile-type-internal-transaction-color;
 
-      .tile-label {
-        color: $teal;
+      .tile-transaction-type-block {
+        background-color: rgba($tile-type-internal-transaction-color, 0.1);
+        border-bottom: 1px solid $tile-type-internal-transaction-color;
+        border-right: 1px solid $tile-type-internal-transaction-color;
+        border-top: 1px solid $tile-type-internal-transaction-color;
+        color: $tile-type-internal-transaction-color;
       }
     }
 
     &-api-documentation {
       background-color: transparent;
-      border-left: 4px solid $primary;
+      border-left: 4px solid $tile-type-api-documentation-color;
       cursor: pointer;
       padding: 15px;
       text-align: left;
       width: 100%;
 
       .tile-label {
-        color: $primary;
+        color: $tile-type-api-documentation-color;
+      }
+
+      .tile-transaction-type-block {
+        background-color: rgba($tile-type-api-documentation-color, 0.1);
+        border-bottom: 1px solid $tile-type-api-documentation-color;
+        border-right: 1px solid $tile-type-api-documentation-color;
+        border-top: 1px solid $tile-type-api-documentation-color;
+        color: $tile-type-api-documentation-color;
       }
     }
   }
 
   &-status {
+
     &--error--reason {
       border-bottom: 2px solid lighten($danger, 10%);
       border-right: 2px solid lighten($danger, 10%);
@@ -158,6 +281,7 @@ $tile-type-block-border-color: $primary !default;
         color: $danger;
       }
     }
+
     &--awaiting-internal-transactions {
       border-bottom: 2px solid lighten($warning, 10%);
       border-right: 2px solid lighten($warning, 10%);
@@ -173,10 +297,6 @@ $tile-type-block-border-color: $primary !default;
 .tile-title {
   color: #333;
   font-size: 12px;
-  font-weight: 700;
-  line-height: 1.2;
-  margin-bottom: 12px;
-  padding: 1rem 1rem 0 1rem;
 
   &-hash {
     font-weight: 300;

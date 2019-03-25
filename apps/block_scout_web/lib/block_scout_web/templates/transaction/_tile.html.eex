@@ -1,7 +1,7 @@
 <% status = transaction_status(@transaction) %>
 <div class="tile tile-type-<%= type_suffix(@transaction) %> fade-in <%= status_class(@transaction) %>" data-test="<%= type_suffix(@transaction) %>" data-identifier-hash="<%= @transaction.hash %>">
   <div class="row tile-body" data-selector="token-transfers-toggle" data-test="chain_transaction">
-    <div class="col-md-2 d-flex flex-row flex-md-column align-items-left justify-content-start justify-content-lg-center mb-1 mb-md-0 pl-md-4">
+    <div class="tile-transaction-type-block col-md-2 d-flex flex-row flex-md-column">
       <span class="tile-label" data-test="transaction_type">
         <%= transaction_display_type(@transaction) %>
       </span>
@@ -31,7 +31,7 @@
         </span>
       </span>
     </div>
-    <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column flex-nowrap justify-content-start text-md-right mt-3 mt-md-0">
+    <div class="col-md-3 col-lg-2 d-flex flex-row flex-md-column flex-nowrap justify-content-center text-md-right mt-3 mt-md-0">
       <span class="mr-2 mr-md-0 order-1">
         <%= @transaction |> block_number() |> BlockScoutWeb.RenderHelpers.render_partial() %>
       </span>
