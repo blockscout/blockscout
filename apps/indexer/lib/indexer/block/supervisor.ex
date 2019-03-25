@@ -71,6 +71,11 @@ defmodule Indexer.Block.Supervisor do
          [
            fixing_realtime_fetcher,
            [name: AddressesWithoutCode.Supervisor]
+         ]},
+        {NonConsensusBlocks.Supervisor,
+         [
+           fixing_realtime_fetcher,
+           [name: NonConsensusBlocks.Supervisor]
          ]}
       ],
       strategy: :one_for_one
