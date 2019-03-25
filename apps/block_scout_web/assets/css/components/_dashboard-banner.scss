@@ -40,36 +40,81 @@ $dashboard-banner-network-graph-background-color: #fff !default;
   }
 }
 
+.dashboard-banner-network-graph {
+  align-items: center;
+  background-color: $dashboard-banner-network-graph-background-color;
+  border-top-left-radius: 10px;
+  display: flex;
+  height: 205px;
+  justify-content: space-between;
+  margin: 0 0 0 60px;
+  padding: 30px 0 30px 30px;
+  width: 750px;
+}
+
 .dashboard-banner-chart {
-  height: calc(152px + 1rem);
-  padding: 1rem 1rem 1rem 0;
-  width: calc(350px + 1rem);
+  flex-grow: 1;
+  height: 170px;
+  margin: 0 50px 0 0;
+  max-width: 500px;
+  position: relative;
+
+  > canvas {
+    height: 170px;
+    max-height: 100%;
+    max-width: 100%;
+    width: 460px;
+  }
 }
 
 .dashboard-banner-chart-legend {
+  align-items: center;
   display: flex;
-  padding: 1rem 0.3rem;
+  flex-direction: column;
 
-  &-item {
-    flex-grow: 1;
-    padding-left: 0.5rem;
+  .dashboard-banner-chart-legend-item {
 
-    &:first-of-type {
-      border-left: 4px solid $primary;
+    padding-top: 10px;
+    position: relative;
+
+    &::before {
+      border-radius: 2px;
+      content: '';
+      height: 4px;
+      left: 0;
+      position: absolute;
+      top: -4px;
+      width: 20px;
     }
 
-    &:last-of-type {
-      border-left: 4px solid $secondary;
+    &:nth-child(1) {
+      margin-bottom: 30px;
+    }
+
+    &:nth-child(1)::before {
+      background-color: $secondary;
+    }
+
+    &:nth-child(2)::before {
+      background-color: $primary;
     }
   }
 
-  &-label {
+  .dashboard-banner-chart-legend-label {
     color: $text-muted;
     display: block;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    margin: 0 0 5px;
   }
 
-  &-value {
+  .dashboard-banner-chart-legend-value {
+    color: #333;
     display: block;
+    font-size: 12px;
+    font-weight: normal;
+    line-height: 1.2;
   }
 }
 
@@ -118,15 +163,4 @@ $dashboard-banner-network-graph-background-color: #fff !default;
       font-size: 1.25rem;
     }
   }
-}
-
-.dashboard-banner-network-graph {
-  align-items: center;
-  background-color: $dashboard-banner-network-graph-background-color;
-  border-top-left-radius: 10px;
-  display: flex;
-  height: 205px;
-  justify-content: space-around;
-  margin: 0 0 0 60px;
-  width: 750px;
 }
