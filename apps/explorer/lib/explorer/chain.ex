@@ -31,6 +31,7 @@ defmodule Explorer.Chain do
     Block,
     BlockNumberCache,
     Data,
+    DecompiledSmartContract,
     Hash,
     Import,
     InternalTransaction,
@@ -513,6 +514,17 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Creates a decompiled smart contract.
+  """
+
+  @spec create_decompiled_smart_contract(map()) :: {:ok, Address.t()} | {:error, Ecto.Changeset.t()}
+  def create_decompiled_smart_contract(attrs) do
+    %DecompiledSmartContract{}
+    |> DecompiledSmartContract.changeset(attrs)
+    |> Repo.insert(on_conflict: :replace_all, conflict_target: [:decompiler_version, :address_hash])
+  end
+
+  @doc """
   Converts the `Explorer.Chain.Data.t:t/0` to `iodata` representation that can be written to users efficiently.
 
       iex> %Explorer.Chain.Data{
@@ -653,6 +665,20 @@ defmodule Explorer.Chain do
     |> case do
       nil -> {:error, :not_found}
       address -> {:ok, address}
+    end
+  end
+
+  def decompiled_code(address_hash, version) do
+    query =
+      from(contract in DecompiledSmartContract,
+        where: contract.address_hash == ^address_hash and contract.decompiler_version == ^version
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      contract -> {:ok, contract.decompiled_source_code}
     end
   end
 
