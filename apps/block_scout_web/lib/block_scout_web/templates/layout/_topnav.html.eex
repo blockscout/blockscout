@@ -103,7 +103,7 @@
               <%= subnetwork_title() %>
             </a>
             <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-              <%= for %{url: url, title: title} <- other_networks() do %>
+              <%= for %{url: _url, title: _title} <- other_networks() do %>
                 <a class="dropdown-item" href="https://explorer.fuse.io/"><%= gettext("Fuse") %></a>
               <% end %>
             </div>
