@@ -40,6 +40,9 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     field(:block_number, :integer)
     field(:value_fetched_at, :utc_datetime_usec)
 
+    # A transient field for deriving token holder count deltas during address_current_token_balances upserts
+    field(:old_value, :decimal)
+
     belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address)
 
     belongs_to(

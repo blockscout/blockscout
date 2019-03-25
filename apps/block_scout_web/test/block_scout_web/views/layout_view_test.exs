@@ -83,7 +83,7 @@ defmodule BlockScoutWeb.LayoutViewTest do
 
       assert LayoutView.release_link("1.3.4") ==
                {:safe,
-                ~s(<a href="https://github.com/poanetwork/blockscout/releases/tag/v1.3.4-beta" target="_blank">1.3.4</a>)}
+                ~s(<a href="https://github.com/poanetwork/blockscout/releases/tag/v1.3.4-beta" class="footer-link" target="_blank">1.3.4</a>)}
     end
   end
 end

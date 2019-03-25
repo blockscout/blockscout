@@ -2,7 +2,18 @@
 
 ### Features
 
+ - [1611](https://github.com/poanetwork/blockscout/pull/1611) - allow setting the first indexing block
+ - [1596](https://github.com/poanetwork/blockscout/pull/1596) - add endpoint to create decompiled contracts
+
+
 ### Fixes
+
+ - [#1630](https://github.com/poanetwork/blockscout/pull/1630) - (Fix) colour for release link in the footer
+ - [#1621](https://github.com/poanetwork/blockscout/pull/1621) - Modify query to fetch failed contract creations
+ - [#1614](https://github.com/poanetwork/blockscout/pull/1614) - Do not fetch burn address token balance
+ - [#1639](https://github.com/poanetwork/blockscout/pull/1614) - Optimize token holder count updates when importing address current balances
+ - [#1643](https://github.com/poanetwork/blockscout/pull/1643) - Set internal_transactions_indexed_at for empty blocks
+ - [#1647](https://github.com/poanetwork/blockscout/pull/1647) - Fix typo in view
 
 ### Chore
 

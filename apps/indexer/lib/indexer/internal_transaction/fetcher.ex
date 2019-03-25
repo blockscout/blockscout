@@ -17,8 +17,8 @@ defmodule Indexer.InternalTransaction.Fetcher do
 
   @behaviour BufferedTask
 
-  @max_batch_size 16
-  @max_concurrency 16
+  @max_batch_size 1
+  @max_concurrency 64
   @defaults [
     flush_interval: :timer.seconds(3),
     max_concurrency: @max_concurrency,
@@ -134,6 +134,10 @@ defmodule Indexer.InternalTransaction.Fetcher do
     block_number
   end
 
+  defp block_params(block_number) when is_integer(block_number) do
+    %{number: block_number}
+  end
+
   @impl BufferedTask
   @decorate trace(
               name: "fetch",
@@ -144,10 +148,12 @@ defmodule Indexer.InternalTransaction.Fetcher do
   def run(entries, json_rpc_named_arguments) do
     variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
 
-    unique_entries =
+    unique_entries = unique_entries(entries, variant)
+
+    internal_transactions_indexed_at_blocks =
       case variant do
-        EthereumJSONRPC.Parity -> Enum.uniq(entries)
-        _ -> unique_entries(entries)
+        EthereumJSONRPC.Parity -> Enum.map(unique_entries, &block_params/1)
+        _ -> []
       end
 
     unique_entries_count = Enum.count(unique_entries)
@@ -184,6 +190,10 @@ defmodule Indexer.InternalTransaction.Fetcher do
                Chain.import(%{
                  addresses: %{params: addresses_params},
                  internal_transactions: %{params: internal_transactions_params_without_failed_creations},
+                 internal_transactions_indexed_at_blocks: %{
+                   params: internal_transactions_indexed_at_blocks,
+                   with: :number_only_changeset
+                 },
                  timeout: :infinity
                }) do
           async_import_coin_balances(imported, %{
@@ -219,8 +229,10 @@ defmodule Indexer.InternalTransaction.Fetcher do
     end
   end
 
+  defp unique_entries(entries, EthereumJSONRPC.Parity), do: Enum.uniq(entries)
+
   # Protection and improved reporting for https://github.com/poanetwork/blockscout/issues/289
-  defp unique_entries(entries) do
+  defp unique_entries(entries, _) do
     entries_by_hash_bytes = Enum.group_by(entries, &elem(&1, 1))
 
     if map_size(entries_by_hash_bytes) < length(entries) do
