@@ -40,6 +40,30 @@ defmodule BlockScoutWeb.API.V1.DecompiledControllerTest do
       assert request.resp_body == "{\"decompiled_source_code\":\"can't be blank\"}"
     end
 
+    test "can not update code for the same decompiler version", %{conn: conn} do
+      address_hash = to_string(insert(:address, hash: "0x0000000000000000000000000000000000000001").hash)
+      decompiler_version = "test_decompiler"
+      decompiled_source_code = "hello world"
+
+      insert(:decompiled_smart_contract,
+        address_hash: address_hash,
+        decompiler_version: decompiler_version,
+        decompiled_source_code: decompiled_source_code
+      )
+
+      params = %{
+        "address_hash" => address_hash,
+        "decompiler_version" => decompiler_version,
+        "decompiled_source_code" => decompiled_source_code
+      }
+
+      request = post(conn, api_v1_decompiled_smart_contract_path(conn, :create), params)
+
+      assert request.status == 422
+
+      assert request.resp_body == "{\"error\":\"decompiled code already exists for the decompiler version\"}"
+    end
+
     test "creates decompiled smart contract", %{conn: conn} do
       address_hash = to_string(insert(:address, hash: "0x0000000000000000000000000000000000000001").hash)
       decompiler_version = "test_decompiler"
