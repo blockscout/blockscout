@@ -8,6 +8,7 @@
 
 ### Fixes
 
+ - [#1630](https://github.com/poanetwork/blockscout/pull/1630) - (Fix) colour for release link in the footer
  - [#1621](https://github.com/poanetwork/blockscout/pull/1621) - Modify query to fetch failed contract creations
  - [#1614](https://github.com/poanetwork/blockscout/pull/1614) - Do not fetch burn address token balance
  - [#1647](https://github.com/poanetwork/blockscout/pull/1647) - Fix typo in view
