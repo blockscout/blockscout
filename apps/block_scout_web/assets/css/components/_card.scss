@@ -1,4 +1,7 @@
+$card-background-color: #fff !default;
+
 .card {
+    background-color: $card-background-color;
     border-radius: 10px;
     border: none;
     box-shadow: 0 5px 40px -5px rgba(#000, 0.25);
