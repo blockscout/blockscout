@@ -5,7 +5,7 @@ defmodule Indexer.Block.Supervisor do
 
   alias Indexer.Block
   alias Indexer.Block.{Catchup, InvalidConsensus, Realtime, Reward, Uncle}
-  alias Indexer.Temporary.{AddressesWithoutCode, FailedCreatedAddresses}
+  alias Indexer.Temporary.{AddressesWithoutCode, FailedCreatedAddresses, NonConsensusBlocks}
 
   use Supervisor
 
