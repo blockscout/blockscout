@@ -1,25 +1,28 @@
+$button-primary-color: $primary !default;
+$button-secondary-color: $secondary !default;
+
 .button {
+  border-radius: 2px;
   border: none;
+  cursor: pointer;
   display: inline-block;
+  line-height: 1.2;
+  padding: 10px 16px;
   text-align: center;
   text-decoration: none;
-  white-space:  nowrap;
-  padding: 8px 10px;
-  border-radius: 2px;
-  cursor: pointer;
-  -webkit-transition: all 0.25s;
   transition: all 0.25s;
+  white-space:  nowrap;
 
   &-primary {
-    background-color: $primary;
-    color: $white;
-    border: 1px solid $primary;
+    background-color: $button-primary-color;
+    border: 1px solid $button-primary-color;
+    color: #fff;
 
     &:hover,
     &:focus {
-      color: $white;
-      background-color: darken($primary, 10%);
-      border-color: darken($primary, 10%);
+      background-color: darken($button-primary-color, 10%);
+      border-color: darken($button-primary-color, 10%);
+      color: #fff;
       text-decoration: none;
     }
 
@@ -31,18 +34,18 @@
   }
 
   &-secondary {
-    border: 1px solid $tertiary;
-    color: $tertiary;
-    background-color: $white;
+    background-color: #fff;
+    border: 1px solid $button-secondary-color;
+    color: $button-secondary-color;
     font-weight: 400;
 
     &:hover,
     &:focus {
-      background-color: darken($tertiary, 10%);
-      border-color: darken($tertiary, 10%);
-      color: $white;
-      text-decoration: none;
+      background-color: darken($button-secondary-color, 10%);
+      border-color: darken($button-secondary-color, 10%);
+      color: #fff;
       outline: none !important;
+      text-decoration: none;
     }
   }
 
@@ -75,7 +78,7 @@
   }
 
   &-disabled,
-  &:disabled, {
+  &:disabled {
     background-color: $gray-300;
     color: $gray-500;
     text-decoration: none;

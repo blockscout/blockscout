@@ -1,38 +1,43 @@
 .card {
-  border: none;
-  box-shadow: 0 5px 40px -5px rgba($black, 0.25);
-  border-radius: 0;
-  margin-bottom: 3rem;
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 5px 40px -5px rgba(#000, 0.25);
+    margin-bottom: 3rem;
 
-  &-primary {
-    background-color: $primary;
-  }
+    &-primary {
+        background-color: $primary;
+    }
 }
 
 .card-header {
-  background-color: $white;
+    background-color: #fff;
 
-  &-tabs {
-    margin: (-$card-spacer-y) (-$card-spacer-x);
-  }
+    &-tabs {
+        margin: (-$card-spacer-y) (-$card-spacer-x);
+    }
 }
 
 .card-title {
-  line-height: 2.2rem;
-  margin-bottom: 2rem;
+    color: #333;
+    font-size: 18px;
+    font-weight: normal;
+    line-height: 2.2rem;
+    margin-bottom: 2rem;
 }
 
 .card-body {
-  padding: 2.25rem 1.25rem;
+    padding: 30px;
 }
 
 .card-server-response-body {
-  max-height: 400px;
-  overflow-y: auto;
+    max-height: 400px;
+    overflow-y: auto;
 }
 
 .card-chain-blocks {
-  height: auto;
+    height: auto;
 
-  @include media-breakpoint-down(md) { height: 595px; }
+    @include media-breakpoint-down(md) {
+        height: 595px;
+    }
 }

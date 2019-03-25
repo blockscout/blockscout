@@ -1,11 +1,17 @@
+$tile-type-block-border-color: $primary !default;
+
 .tile {
-  font-size: 12px;
-  color: $text-muted;
-  line-height: 1.4rem;
+  border-radius: 4px;
   border: 1px solid $border-color;
-  border-radius: 2px;
-  padding: 1rem;
   box-shadow: 0 1px 5px rgba($black, 0.15);
+  color: $text-muted;
+  font-size: 12px;
+  line-height: 1.4rem;
+  padding: 1rem;
+
+  &.n-p {
+    padding: 0;
+  }
 
   & + & {
     margin-top: 1rem;
@@ -18,10 +24,10 @@
   &-type {
 
     &-block {
-      border-left: 4px solid $indigo;
+      border-left: 4px solid $tile-type-block-border-color;
 
       .tile-label {
-        color: $indigo;
+        color: $tile-type-block-border-color;
       }
     }
 
@@ -91,10 +97,10 @@
       }
 
       &-short-name {
-        overflow: hidden;
         max-width: 45%;
-        vertical-align: middle;
+        overflow: hidden;
         text-overflow: ellipsis;
+        vertical-align: middle;
       }
     }
 
@@ -129,12 +135,12 @@
     }
 
     &-api-documentation {
-      border-left: 4px solid $primary;
       background-color: transparent;
-      width: 100%;
-      text-align: left;
-      padding: 15px;
+      border-left: 4px solid $primary;
       cursor: pointer;
+      padding: 15px;
+      text-align: left;
+      width: 100%;
 
       .tile-label {
         color: $primary;
@@ -144,18 +150,18 @@
 
   &-status {
     &--error--reason {
-      border-top: 2px solid lighten($danger, 10%);
-      border-right: 2px solid lighten($danger, 10%);
       border-bottom: 2px solid lighten($danger, 10%);
+      border-right: 2px solid lighten($danger, 10%);
+      border-top: 2px solid lighten($danger, 10%);
 
       .tile-status-label {
         color: $danger;
       }
     }
     &--awaiting-internal-transactions {
-      border-top: 2px solid lighten($warning, 10%);
-      border-right: 2px solid lighten($warning, 10%);
       border-bottom: 2px solid lighten($warning, 10%);
+      border-right: 2px solid lighten($warning, 10%);
+      border-top: 2px solid lighten($warning, 10%);
 
       .tile-status-label {
         color: $warning;
@@ -165,32 +171,50 @@
 }
 
 .tile-title {
+  color: #333;
   font-size: 12px;
-  font-weight: 600;
-  color: $gray-700;
-  margin-bottom: 0;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 12px;
+  padding: 1rem 1rem 0 1rem;
 
   &-hash {
     font-weight: 300;
   }
 
   &-lg {
-    font-size: 16px;
     color: $body-color;
+    font-size: 16px;
   }
 }
 
+.tile-bottom-contents {
+  background-color: #f6f7f9;
+  font-size: 12px;
+  line-height: 1.2;
+  padding: 0.8rem 1rem;
+}
+
+.tile-transactions {
+  color: #a3a9b5;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.2;
+  margin-bottom: 10px;
+  text-align: left;
+}
+
 .tile-badge {
+  line-height: 1.25rem;
   margin-bottom: 0.1rem;
   padding: 0;
-  width: 2.5rem;
-  line-height: 1.25rem;
   text-align: center;
+  width: 2.5rem;
 }
 
 .tile-muted {
-  border-left: 1px solid $border-color;
   background-color: $gray-100;
+  border-left: 1px solid $border-color;
   box-shadow: none;
 }
 
@@ -209,6 +233,6 @@
 }
 
 .tile-image {
-  max-width: 140px;
   max-height: 140px;
+  max-width: 140px;
 }

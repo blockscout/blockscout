@@ -1,3 +1,5 @@
+$common-link-color: $primary !default;
+
 body {
   font-family: $font-family-sans-serif;
   font-size: 12px;
@@ -20,10 +22,10 @@ h3 {
 }
 
 h4 {
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 300;
   color: $gray-600;
+  font-size: 16px;
+  font-weight: 300;
+  line-height: 24px;
   margin-top: 4px;
 
   &.underline {
@@ -44,12 +46,12 @@ p {
 }
 
 a {
+  color: $common-link-color;
   text-decoration: none;
-  color: $tertiary;
 
   &:hover,
   &:focus {
-    color: darken($tertiary, 20%);
+    color: darken($common-link-color, 20%);
     text-decoration: underline;
   }
 
