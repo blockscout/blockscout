@@ -4,7 +4,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
   """
 
   @new_contract_name "New.sol"
-  @allowed_evm_versions ["homestead", "tangerineWhistle", "spuriousDragon", "byzantium", "constantinople"]
+  @allowed_evm_versions ["homestead", "tangerineWhistle", "spuriousDragon", "byzantium", "constantinople", "petersburg"]
 
   @doc """
   Compiles a code in the solidity command line.
