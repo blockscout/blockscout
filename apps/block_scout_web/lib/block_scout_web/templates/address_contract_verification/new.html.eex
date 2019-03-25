@@ -28,7 +28,7 @@
         </div>
 
         <div class="form-group">
-          <%= label :evm_version, :evm_version, gettext("EVM Vesion") %>
+          <%= label :evm_version, :evm_version, gettext("EVM Version") %>
           <%= select :evm_version, :evm_version, @evm_versions, class: "form-control", selected: "byzantium", "aria-describedby": "evm-version-help-block" %>
         </div>
 
