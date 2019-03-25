@@ -1,6 +1,8 @@
 $dashboard-banner-gradient-start: $primary !default;
 $dashboard-banner-gradient-end: lighten($dashboard-banner-gradient-start, 5%) !default;
 $dashboard-banner-network-graph-background-color: #fff !default;
+$dashboard-line-color-price: $primary !default;
+$dashboard-line-color-market: $secondary !default;
 
 .dashboard-banner-container {
   background-color: $primary;
@@ -20,9 +22,8 @@ $dashboard-banner-network-graph-background-color: #fff !default;
     right: 0;
     top: 3rem;
 
-    @media (max-width: $breakpoint-lg) {
-      top: 2rem;
-      left: 80%;
+    @include media-breakpoint-down(sm) {
+      display: none;
     }
   }
 }
@@ -35,7 +36,8 @@ $dashboard-banner-network-graph-background-color: #fff !default;
   position: relative;
   z-index: 9;
 
-  @media (max-width: $breakpoint-lg) {
+  @include media-breakpoint-down(sm) {
+    align-items: center;
     flex-direction: column;
   }
 }
@@ -48,8 +50,21 @@ $dashboard-banner-network-graph-background-color: #fff !default;
   height: 205px;
   justify-content: space-between;
   margin: 0 0 0 60px;
+  max-width: 100%;
   padding: 30px 0 30px 30px;
   width: 750px;
+
+  @include media-breakpoint-down(md) {
+    align-items: flex-start;
+    flex-direction: column;
+    margin-left: 30px;
+  }
+
+  @include media-breakpoint-down(sm) {
+    border-top-right-radius: 10px;
+    margin: 0;
+    padding: 15px 0 15px 15px;
+  }
 }
 
 .dashboard-banner-chart {
@@ -58,6 +73,12 @@ $dashboard-banner-network-graph-background-color: #fff !default;
   margin: 0 50px 0 0;
   max-width: 500px;
   position: relative;
+
+  @include media-breakpoint-down(md) {
+    margin: 0 0 20px 0;
+    max-width: 300px;
+    width: 100%;
+  }
 
   > canvas {
     height: 170px;
@@ -72,10 +93,18 @@ $dashboard-banner-network-graph-background-color: #fff !default;
   display: flex;
   flex-direction: column;
 
-  .dashboard-banner-chart-legend-item {
+  @include media-breakpoint-down(md) {
+    flex-direction: row;
+  }
 
+  .dashboard-banner-chart-legend-item {
     padding-top: 10px;
     position: relative;
+
+    @include media-breakpoint-down(md) {
+      display: flex;
+      flex-direction: row;
+    }
 
     &::before {
       border-radius: 2px;
@@ -89,14 +118,19 @@ $dashboard-banner-network-graph-background-color: #fff !default;
 
     &:nth-child(1) {
       margin-bottom: 30px;
+
+      @include media-breakpoint-down(md) {
+        margin-bottom: 0;
+        margin-right: 30px;
+      }
     }
 
     &:nth-child(1)::before {
-      background-color: $secondary;
+      background-color: $dashboard-line-color-price;
     }
 
     &:nth-child(2)::before {
-      background-color: $primary;
+      background-color: $dashboard-line-color-market;
     }
   }
 
@@ -107,6 +141,10 @@ $dashboard-banner-network-graph-background-color: #fff !default;
     font-weight: 600;
     line-height: 1.2;
     margin: 0 0 5px;
+
+    @include media-breakpoint-down(md) {
+      margin: 0 5px 0 0;
+    }
   }
 
   .dashboard-banner-chart-legend-value {
@@ -121,14 +159,13 @@ $dashboard-banner-network-graph-background-color: #fff !default;
 .dashboard-banner-network-stats {
   column-gap: 40px;
   display: grid;
+  flex-shrink: 0;
   grid-template-columns: 1fr 1fr;
   padding-bottom: 30px;
   row-gap: 45px;
 
   @media (max-width: $breakpoint-lg) {
-    align-items: flex-start;
-    flex-direction: column;
-    padding: 0.5rem 2rem;
+
   }
 
   &-item {
