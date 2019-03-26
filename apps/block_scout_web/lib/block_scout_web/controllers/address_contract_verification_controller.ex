@@ -29,7 +29,7 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
           "evm_version" => evm_version
         }
       ) do
-    smart_sontact_with_evm_version = Map.put(smart_contract, "evm_version", evm_version)
+    smart_sontact_with_evm_version = Map.put(smart_contract, "evm_version", evm_version["evm_version"])
 
     case Publisher.publish(address_hash_string, smart_sontact_with_evm_version, external_libraries) do
       {:ok, _smart_contract} ->
