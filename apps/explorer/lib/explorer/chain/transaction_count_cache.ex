@@ -24,7 +24,7 @@ defmodule Explorer.Chain.TransactionCountCache do
   end
 
   def init(params) do
-    cache_period = System.get_env("TRANSACTION_COUNT_CACHE_PERIOD") || params[:cache_period] || @cache_period
+    cache_period = period_from_env_var() || params[:cache_period] || @cache_period
     current_value = params[:default_value] || @default_value
     name = params[:name]
 
@@ -137,5 +137,10 @@ defmodule Explorer.Chain.TransactionCountCache do
     utc_now = DateTime.utc_now()
 
     DateTime.to_unix(utc_now, :millisecond)
+  end
+
+  defp period_from_env_var do
+    env_var = System.get_env("TXS_COUNT_CACHE_PERIOD")
+    env_var && env_var * 1_000 * 60 * 60
   end
 end
