@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
   def listcontracts(conn, params) do
     with pagination_options <- Helpers.put_pagination_options(%{}, params),
-         {:params, {:ok, options}} <- {:params, add_filter(pagination_options, params)} do
+         {:params, {:ok, options}} <- {:params, add_filters(pagination_options, params)} do
       options_with_defaults =
         options
         |> Map.put_new(:page_number, 0)
@@ -71,7 +71,8 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         Chain.list_verified_contracts(page_size, offset)
 
       :decompiled ->
-        Chain.list_decompiled_contracts(page_size, offset)
+        not_decompiled_with_version = Map.get(opts, :not_decompiled_with_version)
+        Chain.list_decompiled_contracts(page_size, offset, not_decompiled_with_version)
 
       :unverified ->
         Chain.list_unverified_contracts(page_size, offset)
@@ -84,6 +85,12 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
     end
   end
 
+  defp add_filters(options, params) do
+    options
+    |> add_filter(params)
+    |> add_not_decompiled_with_version(params)
+  end
+
   defp add_filter(options, params) do
     with {:param, {:ok, value}} <- {:param, Map.fetch(params, "filter")},
          {:validation, {:ok, filter}} <- {:validation, contracts_filter(value)} do
@@ -92,6 +99,17 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
       {:param, :error} -> {:ok, options}
       {:validation, {:error, error}} -> {:error, error}
     end
+  end
+
+  defp add_not_decompiled_with_version({:ok, options}, params) do
+    case Map.fetch(params, "not_decompiled_with_version") do
+      {:ok, value} -> {:ok, Map.put(options, :not_decompiled_with_version, value)}
+      :error -> {:ok, options}
+    end
+  end
+
+  defp add_not_decompiled_with_version(options, _params) do
+    options
   end
 
   defp contracts_filter(nil), do: {:ok, nil}

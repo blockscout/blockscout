@@ -2666,19 +2666,38 @@ defmodule Explorer.Chain do
     Repo.all(query, timeout: :infinity)
   end
 
-  def list_decompiled_contracts(limit, offset) do
+  def list_decompiled_contracts(limit, offset, not_decompiled_with_version \\ nil) do
     query =
       from(
         address in Address,
-        join: decompiled_smart_contract in DecompiledSmartContract,
-        on: decompiled_smart_contract.address_hash == address.hash,
-        preload: [{:decompiled_smart_contract, decompiled_smart_contract}, :smart_contract],
+        where:
+          fragment(
+            "EXISTS (SELECT 1 FROM decompiled_smart_contracts WHERE decompiled_smart_contracts.address_hash = ?)",
+            address.hash
+          ),
+        preload: [:decompiled_smart_contracts, :smart_contract],
         order_by: [asc: address.inserted_at],
         limit: ^limit,
         offset: ^offset
       )
 
-    Repo.all(query)
+    query
+    |> filter_decompiled_with_version(not_decompiled_with_version)
+    |> Repo.all()
+  end
+
+  defp filter_decompiled_with_version(query, nil) do
+    query
+  end
+
+  defp filter_decompiled_with_version(query, not_decompiled_with_version) do
+    from(address in query,
+      left_join: decompiled_smart_contract in DecompiledSmartContract,
+      on: decompiled_smart_contract.decompiler_version == ^not_decompiled_with_version,
+      on: decompiled_smart_contract.address_hash == address.hash,
+      where: is_nil(decompiled_smart_contract.id),
+      distinct: [address.hash]
+    )
   end
 
   def list_verified_contracts(limit, offset) do
@@ -2688,7 +2707,7 @@ defmodule Explorer.Chain do
         where: not is_nil(address.contract_code),
         join: smart_contract in SmartContract,
         on: smart_contract.address_hash == address.hash,
-        preload: [{:smart_contract, smart_contract}, :decompiled_smart_contract],
+        preload: [{:smart_contract, smart_contract}, :decompiled_smart_contracts],
         order_by: [asc: address.inserted_at],
         limit: ^limit,
         offset: ^offset
@@ -2702,7 +2721,7 @@ defmodule Explorer.Chain do
       from(
         address in Address,
         where: not is_nil(address.contract_code),
-        preload: [:smart_contract, :decompiled_smart_contract],
+        preload: [:smart_contract, :decompiled_smart_contracts],
         order_by: [asc: address.inserted_at],
         limit: ^limit,
         offset: ^offset
@@ -2719,7 +2738,7 @@ defmodule Explorer.Chain do
         on: smart_contract.address_hash == address.hash,
         where: not is_nil(address.contract_code),
         where: is_nil(smart_contract.address_hash),
-        preload: [{:smart_contract, smart_contract}, :decompiled_smart_contract],
+        preload: [{:smart_contract, smart_contract}, :decompiled_smart_contracts],
         order_by: [asc: address.inserted_at],
         limit: ^limit,
         offset: ^offset
@@ -2732,11 +2751,16 @@ defmodule Explorer.Chain do
     query =
       from(
         address in Address,
+        where:
+          fragment(
+            "NOT EXISTS (SELECT 1 FROM decompiled_smart_contracts WHERE decompiled_smart_contracts.address_hash = ?)",
+            address.hash
+          ),
         left_join: smart_contract in SmartContract,
         on: smart_contract.address_hash == address.hash,
         left_join: decompiled_smart_contract in DecompiledSmartContract,
         on: decompiled_smart_contract.address_hash == address.hash,
-        preload: [smart_contract: smart_contract, decompiled_smart_contract: decompiled_smart_contract],
+        preload: [:smart_contract, :decompiled_smart_contracts],
         where: not is_nil(address.contract_code),
         where: is_nil(smart_contract.address_hash),
         where: is_nil(decompiled_smart_contract.address_hash),

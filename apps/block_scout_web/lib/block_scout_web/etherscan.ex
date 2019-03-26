@@ -1719,6 +1719,12 @@ defmodule BlockScoutWeb.Etherscan do
         type: "string",
         description:
           "verified|decompiled|unverified|not_decompiled, or 1|2|3|4 respectively. This requests only contracts with that status."
+      },
+      %{
+        key: "not_decompiled_with_version",
+        type: "string",
+        description:
+          "Ensures that none of the returned contracts were decompiled with the provided version. Ignored unless filtering for decompiled contracts."
       }
     ],
     responses: [
