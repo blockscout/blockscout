@@ -24,7 +24,7 @@ defmodule Explorer.Chain.TransactionCountCache do
   end
 
   def init(params) do
-    cache_period = params[:cache_period] || @cache_period
+    cache_period = System.get_env("TRANSACTION_COUNT_CACHE_PERIOD") || params[:cache_period] || @cache_period
     current_value = params[:default_value] || @default_value
     name = params[:name]
 
