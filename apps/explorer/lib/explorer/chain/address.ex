@@ -92,7 +92,7 @@ defmodule Explorer.Chain.Address do
     )
 
     has_many(:names, Address.Name, foreign_key: :address_hash)
-    has_many(:decompiled_smart_contract, DecompiledSmartContract, foreign_key: :address_hash)
+    has_many(:decompiled_smart_contracts, DecompiledSmartContract, foreign_key: :address_hash)
 
     timestamps()
   end

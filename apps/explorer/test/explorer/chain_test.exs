@@ -2338,6 +2338,18 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "find_decompiled_contract_address/1" do
+    test "returns contract with decompiled contracts" do
+      address = insert(:address)
+      insert(:decompiled_smart_contract, address_hash: address.hash)
+      insert(:decompiled_smart_contract, address_hash: address.hash, decompiler_version: "2")
+
+      {:ok, address} = Chain.find_decompiled_contract_address(address.hash)
+
+      assert Enum.count(address.decompiled_smart_contracts) == 2
+    end
+  end
+
   describe "block_reward/1" do
     setup do
       %{block_range: range} = emission_reward = insert(:emission_reward)
