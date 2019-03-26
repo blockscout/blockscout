@@ -46,6 +46,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       |> Map.put(:timestamps, timestamps)
 
     ordered_consensus_block_numbers = ordered_consensus_block_numbers(changes_list)
+    where_invalid_parent = where_invalid_parent(changes_list)
     where_forked = where_forked(changes_list)
 
     multi
@@ -68,6 +69,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     end)
     |> Multi.run(:lose_consensus, fn repo, _ ->
       lose_consensus(repo, ordered_consensus_block_numbers, insert_options)
+    end)
+    |> Multi.run(:lose_invalid_parent_consensus, fn repo, _ ->
+      lose_invalid_parent_consensus(repo, where_invalid_parent, insert_options)
     end)
     |> Multi.run(:delete_address_token_balances, fn repo, _ ->
       delete_address_token_balances(repo, ordered_consensus_block_numbers, insert_options)
@@ -312,6 +316,32 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     end
   end
 
+  defp lose_invalid_parent_consensus(repo, where_invalid_parent, %{
+         timeout: timeout,
+         timestamps: %{updated_at: updated_at}
+       }) do
+    query =
+      from(
+        block in where_invalid_parent,
+        update: [
+          set: [
+            consensus: false,
+            updated_at: ^updated_at
+          ]
+        ],
+        select: [:hash, :number]
+      )
+
+    try do
+      {_, result} = repo.update_all(query, [], timeout: timeout)
+
+      {:ok, result}
+    rescue
+      postgrex_error in Postgrex.Error ->
+        {:error, %{exception: postgrex_error, where_invalid_parent: where_invalid_parent}}
+    end
+  end
+
   defp delete_address_token_balances(_, [], _), do: {:ok, []}
 
   defp delete_address_token_balances(repo, ordered_consensus_block_numbers, %{timeout: timeout}) do
@@ -549,6 +579,20 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
         true ->
           from(transaction in acc, or_where: transaction.block_hash != ^hash and transaction.block_number == ^number)
+      end
+    end)
+  end
+
+  defp where_invalid_parent(blocks_changes) when is_list(blocks_changes) do
+    initial = from(b in Block, where: false)
+
+    Enum.reduce(blocks_changes, initial, fn %{consensus: consensus, parent_hash: parent_hash, number: number}, acc ->
+      case consensus do
+        false ->
+          acc
+
+        true ->
+          from(block in acc, or_where: block.number == ^(number - 1) and block.hash != ^parent_hash)
       end
     end)
   end
