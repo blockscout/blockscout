@@ -88,62 +88,92 @@ The [development stack page](https://github.com/poanetwork/blockscout/wiki/Devel
 
 ### Build and Run
 
-  1. Clone the repository.  
+1. Clone the repository
+  
   `git clone https://github.com/poanetwork/blockscout`
 
-  2. Go to the explorer subdirectory.  
+2. Go to the explorer subdirectory
+
   `cd blockscout`
 
-  3. Set up default configurations.  
-  `cp apps/explorer/config/dev.secret.exs.example apps/explorer/config/dev.secret.exs`  
-  `cp apps/block_scout_web/config/dev.secret.exs.example apps/block_scout_web/config/dev.secret.exs`
-  <br />Linux: Update the database username and password configuration in `apps/explorer/config/dev.secret.exs`
-  <br />Mac: Remove the `username` and `password` fields from `apps/explorer/config/dev.secret.exs`  
-  <br />Optional: Set up default configuration for testing.  
-  `cp apps/explorer/config/test.secret.exs.example apps/explorer/config/test.secret.exs`  
-  Example usage: Changing the default Postgres port from localhost:15432 if [Boxen](https://github.com/boxen/boxen) is installed.
+3. Setup default configurations
+   
+   - `cp apps/explorer/config/dev.secret.exs.example apps/explorer/config/dev.secret.exs`
+   - `cp apps/block_scout_web/config/dev.secret.exs.example apps/block_scout_web/config/dev.secret.exs`
 
-  4. Install dependencies.  
+4. Update `apps/explorer/config/dev.secret.exs`
+   
+   - Linux: Update the database username and password configuration
+   - Mac: Remove the `username` and `password` fields
+
+5. If you have deployed previously, delete the `apps/block_scout_web/priv/static` folder.
+	This removes static assets from the previous build
+
+6. Install dependencies
+
   `mix do deps.get, local.rebar --force, deps.compile, compile`
-
-  5. Create and migrate database.  
-  `mix ecto.create && mix ecto.migrate`  
-  <br />_Note:_ If you have run previously, drop the previous database  
-  `mix do ecto.drop, ecto.create, ecto.migrate`
-
-  6. Install Node.js dependencies.  
-  `cd apps/block_scout_web/assets && npm install; cd -`  
-  `cd apps/explorer && npm install; cd -`
-
-  7. Update your JSON RPC Variant in `apps/explorer/config/dev.exs` and `apps/indexer/config/dev.exs`.
-  For `variant`, enter `ganache`, `geth`, or `parity`
-
-  8. Update your JSON RPC Endpoint in `apps/explorer/config/dev/` and `apps/indexer/config/dev/`
-  For the `variant` chosen in step 7, enter the correct information for the corresponding JSON RPC Endpoint in `parity.exs`, `geth.exs`, or `ganache.exs`
   
-  9. Enable HTTPS in development. The Phoenix server only runs with HTTPS.
-     * `cd apps/block_scout_web`
-     * `mix phx.gen.cert blockscout blockscout.local`
-     * Add blockscout and blockscout.local to your `/etc/hosts`
+7. If not already running, start postgres
+	
+	`pg_ctl -D /usr/local/var/postgres start` or `brew services start postgres`
+
+8. Create and migrate database
+
+	`mix do ecto.create, ecto.migrate`
+	- _Note:_ If you have run previously, drop the previous database 
+	`mix do ecto.drop, ecto.create, ecto.migrate`
+
+9. Install node dependencies
+
+   - `cd apps/block_scout_web/assets; npm install && node_modules/webpack/bin/webpack.js --mode production; cd -`
+   - `cd apps/explorer && npm install; cd -`
+
+10. [Make any configuration changes according to your chain spec](https://forum.poa.network/t/deployment-differences-between-each-blockscout-chain/1950) or alternatively:
+
+	- Update your JSON RPC Variant, enter `ganache`, `geth`, or `parity`
+		- `apps/explorer/config/dev.exs`
+		- `apps/indexer/config/dev.exs`
+	- For the `variant` chosen in previous step, enter the correct information for the corresponding JSON RPC Endpoint in `parity.exs`, `geth.exs`, or `ganache.exs`
+		- `apps/explorer/config/dev/`
+		- `apps/indexer/config/dev/`
+  
+11. Enable HTTPS in development. The Phoenix server only runs with HTTPS.
+	- `cd apps/block_scout_web`
+	- `mix phx.gen.cert blockscout blockscout.local`
+	- Add `blockscout` and `blockscout.local` to your `/etc/hosts`
+	
      ```
         127.0.0.1       localhost blockscout blockscout.local
         255.255.255.255 broadcasthost
         ::1             localhost blockscout blockscout.local
       ```
-      * If using Chrome, Enable `chrome://flags/#allow-insecure-localhost`.
 
-  9. Start Phoenix Server.  
-  `mix phx.server`
+	- If using Chrome, Enable `chrome://flags/#allow-insecure-localhost`.
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+12. Start Phoenix Server
 
-_Additional runtime options:_
+	`mix phx.server`
+	
+13. Check, that your BlockScout instance works
+	- visit [`localhost:4000`](http://localhost:4000) from your browser
+	- check that there are no visual artefacts
+	- check that all assets exist 
+	- check that there are no errors in the database
+	- check that there are no errors in the log
 
-*  Run Phoenix Server with IEx (Interactive Elixer)  
-`iex -S mix phx.server`
+14. If there are no errors, stop BlockScout (`ctrl+c`)
 
-*  Run Phoenix Server with real time indexer
-`iex -S mix phx.server`
+15. Build static assets for deployment
+	
+	`mix phx.digest`
+
+15. Delete directories
+	- `_build`
+	- `deps`
+	- `apps/block_scout_web/assets/node_modules`
+	- `apps/explorer/node_modules`
+
+16. Delete `logs/dev` directory
 
 ### Automating Restarts
 
