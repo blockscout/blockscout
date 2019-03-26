@@ -98,6 +98,8 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
     end
   end
 
+  def allowed_evm_versions, do: @allowed_evm_versions
+
   def get_contract_info(contracts, _) when contracts == %{}, do: {:error, :compilation}
 
   def get_contract_info(contracts, name) do
