@@ -140,7 +140,15 @@ defmodule Explorer.Chain.TransactionCountCache do
   end
 
   defp period_from_env_var do
-    env_var = System.get_env("TXS_COUNT_CACHE_PERIOD")
-    env_var && env_var * 1_000 * 60 * 60
+    case System.get_env("TXS_COUNT_CACHE_PERIOD") do
+      value when is_binary(value) ->
+        case Integer.parse(value) do
+          {integer, ""} -> integer * 1_000 * 60 * 60
+          _ -> nil
+        end
+
+      _ ->
+        nil
+    end
   end
 end
