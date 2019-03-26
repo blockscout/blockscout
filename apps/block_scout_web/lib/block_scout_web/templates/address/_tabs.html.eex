@@ -57,6 +57,16 @@
         <% end %>
       <% end %>
     </li>
+
+    <%= if @address.has_decompiled_code? do %>
+      <li class="nav-item">
+        <%= link(
+            to: address_contract_path(@conn, :index, @address.hash),
+            class: "nav-link #{tab_status("contracts", @conn.request_path)}") do %>
+           <%= gettext("Decompiled code") %>
+        <% end %>
+      </li>
+    <% end %>
   <% end %>
 
   <%= if smart_contract_with_read_only_functions?(@address) do %>
