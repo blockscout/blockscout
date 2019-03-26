@@ -1,0 +1,24 @@
+<section class="container">
+  <%= render BlockScoutWeb.AddressView, "overview.html", assigns %>
+
+  <div class="card">
+    <div class="card-header">
+      <%= render BlockScoutWeb.AddressView, "_tabs.html", assigns %>
+    </div>
+
+    <div class="card-body">
+      <section>
+        <div class="d-flex justify-content-between align-items-baseline">
+          <h3><%= gettext "Decompiled contract code" %></h3>
+          <button type="button" class="button button-secondary button-sm" id="button" data-clipboard-text="<%= List.first(@address.decompiled_smart_contracts).decompiled_source_code %>" aria-label="copy decompiled contract code">
+            <%= gettext "Copy Decompiled Contract Code" %>
+          </button>
+        </div>
+        <div class="tile tile-muted">
+          <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= List.first(@address.decompiled_smart_contracts).decompiled_source_code %></code></pre>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>
