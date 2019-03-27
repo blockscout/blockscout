@@ -12,6 +12,7 @@
         <div class="tile tile-muted">
           <pre class="pre-wrap pre-scrollable"><code class="nohighlight"><%= contract.decompiler_version %></code></pre>
         </div>
+        <br>
         <section>
           <div class="d-flex justify-content-between align-items-baseline">
             <h3><%= gettext "Decompiled contract code" %></h3>
