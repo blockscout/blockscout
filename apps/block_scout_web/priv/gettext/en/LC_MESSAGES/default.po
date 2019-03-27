@@ -1709,7 +1709,7 @@ msgid "Decompiled code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:19
+#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:20
 msgid "Copy Decompiled Contract Code"
 msgstr ""
 
@@ -1719,11 +1719,11 @@ msgid "Decompiled Code"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:17
+#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:18
 msgid "Decompiled contract code"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:11
 msgid "Decompiler version"
 msgstr ""
