@@ -4,6 +4,7 @@
 
  - [1611](https://github.com/poanetwork/blockscout/pull/1611) - allow setting the first indexing block
  - [1596](https://github.com/poanetwork/blockscout/pull/1596) - add endpoint to create decompiled contracts
+ - [1654](https://github.com/poanetwork/blockscout/pull/1654) - add decompiled code tab
 
 
 ### Fixes
