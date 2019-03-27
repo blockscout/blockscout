@@ -20,7 +20,6 @@ defmodule Explorer.Chain do
 
   import EthereumJSONRPC, only: [integer_to_quantity: 1]
 
-  alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi}
 
   alias Explorer.Chain.{
@@ -31,6 +30,7 @@ defmodule Explorer.Chain do
     Block,
     BlockNumberCache,
     Data,
+    DecompiledSmartContract,
     Hash,
     Import,
     InternalTransaction,
@@ -39,6 +39,7 @@ defmodule Explorer.Chain do
     Token,
     TokenTransfer,
     Transaction,
+    TransactionCountCache,
     Wei
   }
 
@@ -513,6 +514,17 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Creates a decompiled smart contract.
+  """
+
+  @spec create_decompiled_smart_contract(map()) :: {:ok, Address.t()} | {:error, Ecto.Changeset.t()}
+  def create_decompiled_smart_contract(attrs) do
+    %DecompiledSmartContract{}
+    |> DecompiledSmartContract.changeset(attrs)
+    |> Repo.insert(on_conflict: :replace_all, conflict_target: [:decompiler_version, :address_hash])
+  end
+
+  @doc """
   Converts the `Explorer.Chain.Data.t:t/0` to `iodata` representation that can be written to users efficiently.
 
       iex> %Explorer.Chain.Data{
@@ -653,6 +665,20 @@ defmodule Explorer.Chain do
     |> case do
       nil -> {:error, :not_found}
       address -> {:ok, address}
+    end
+  end
+
+  def decompiled_code(address_hash, version) do
+    query =
+      from(contract in DecompiledSmartContract,
+        where: contract.address_hash == ^address_hash and contract.decompiler_version == ^version
+      )
+
+    query
+    |> Repo.one()
+    |> case do
+      nil -> {:error, :not_found}
+      contract -> {:ok, contract.decompiled_source_code}
     end
   end
 
@@ -1842,10 +1868,7 @@ defmodule Explorer.Chain do
   """
   @spec transaction_estimated_count() :: non_neg_integer()
   def transaction_estimated_count do
-    %Postgrex.Result{rows: [[rows]]} =
-      SQL.query!(Repo, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='transactions'")
-
-    rows
+    TransactionCountCache.value()
   end
 
   @doc """
@@ -2601,6 +2624,88 @@ defmodule Explorer.Chain do
       )
 
     Repo.all(query, timeout: :infinity)
+  end
+
+  def list_decompiled_contracts(limit, offset) do
+    query =
+      from(
+        address in Address,
+        join: decompiled_smart_contract in DecompiledSmartContract,
+        on: decompiled_smart_contract.address_hash == address.hash,
+        preload: [{:decompiled_smart_contract, decompiled_smart_contract}, :smart_contract],
+        order_by: [asc: address.inserted_at],
+        limit: ^limit,
+        offset: ^offset
+      )
+
+    Repo.all(query)
+  end
+
+  def list_verified_contracts(limit, offset) do
+    query =
+      from(
+        address in Address,
+        where: not is_nil(address.contract_code),
+        join: smart_contract in SmartContract,
+        on: smart_contract.address_hash == address.hash,
+        preload: [{:smart_contract, smart_contract}, :decompiled_smart_contract],
+        order_by: [asc: address.inserted_at],
+        limit: ^limit,
+        offset: ^offset
+      )
+
+    Repo.all(query)
+  end
+
+  def list_contracts(limit, offset) do
+    query =
+      from(
+        address in Address,
+        where: not is_nil(address.contract_code),
+        preload: [:smart_contract, :decompiled_smart_contract],
+        order_by: [asc: address.inserted_at],
+        limit: ^limit,
+        offset: ^offset
+      )
+
+    Repo.all(query)
+  end
+
+  def list_unverified_contracts(limit, offset) do
+    query =
+      from(
+        address in Address,
+        left_join: smart_contract in SmartContract,
+        on: smart_contract.address_hash == address.hash,
+        where: not is_nil(address.contract_code),
+        where: is_nil(smart_contract.address_hash),
+        preload: [{:smart_contract, smart_contract}, :decompiled_smart_contract],
+        order_by: [asc: address.inserted_at],
+        limit: ^limit,
+        offset: ^offset
+      )
+
+    Repo.all(query)
+  end
+
+  def list_not_decompiled_contracts(limit, offset) do
+    query =
+      from(
+        address in Address,
+        left_join: smart_contract in SmartContract,
+        on: smart_contract.address_hash == address.hash,
+        left_join: decompiled_smart_contract in DecompiledSmartContract,
+        on: decompiled_smart_contract.address_hash == address.hash,
+        preload: [smart_contract: smart_contract, decompiled_smart_contract: decompiled_smart_contract],
+        where: not is_nil(address.contract_code),
+        where: is_nil(smart_contract.address_hash),
+        where: is_nil(decompiled_smart_contract.address_hash),
+        order_by: [asc: address.inserted_at],
+        limit: ^limit,
+        offset: ^offset
+      )
+
+    Repo.all(query)
   end
 
   @doc """
