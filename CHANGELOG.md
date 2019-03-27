@@ -42,6 +42,7 @@
  - [#1589](https://github.com/poanetwork/blockscout/pull/1589) - RPC endpoint to list addresses
  - [#1567](https://github.com/poanetwork/blockscout/pull/1567) - Allow setting different configuration just for realtime fetcher
  - [#1562](https://github.com/poanetwork/blockscout/pull/1562) - Add incoming transactions count to contract view
+ - [#1608](https://github.com/poanetwork/blockscout/pull/1608) - Add listcontracts RPC Endpoint
 
 ### Fixes
 
