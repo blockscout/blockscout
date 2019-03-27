@@ -63,7 +63,7 @@
     <li class="nav-item">
       <%= link(
           to: address_decompiled_contract_path(@conn, :index, @address.hash),
-          class: "nav-link #{tab_status("contracts", @conn.request_path)}") do %>
+          class: "nav-link #{tab_status("decompiled_contracts", @conn.request_path)}") do %>
          <%= gettext("Decompiled code") %>
       <% end %>
     </li>
