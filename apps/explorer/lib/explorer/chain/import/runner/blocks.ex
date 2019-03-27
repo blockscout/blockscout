@@ -573,12 +573,10 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     initial = from(t in Transaction, where: false)
 
     Enum.reduce(blocks_changes, initial, fn %{consensus: consensus, hash: hash, number: number}, acc ->
-      case consensus do
-        false ->
-          from(transaction in acc, or_where: transaction.block_hash == ^hash and transaction.block_number == ^number)
-
-        true ->
-          from(transaction in acc, or_where: transaction.block_hash != ^hash and transaction.block_number == ^number)
+      if consensus do
+        from(transaction in acc, or_where: transaction.block_hash != ^hash and transaction.block_number == ^number)
+      else
+        from(transaction in acc, or_where: transaction.block_hash == ^hash and transaction.block_number == ^number)
       end
     end)
   end
@@ -587,12 +585,10 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     initial = from(b in Block, where: false)
 
     Enum.reduce(blocks_changes, initial, fn %{consensus: consensus, parent_hash: parent_hash, number: number}, acc ->
-      case consensus do
-        false ->
-          acc
-
-        true ->
-          from(block in acc, or_where: block.number == ^(number - 1) and block.hash != ^parent_hash)
+      if consensus do
+        from(block in acc, or_where: block.number == ^(number - 1) and block.hash != ^parent_hash)
+      else
+        acc
       end
     end)
   end
