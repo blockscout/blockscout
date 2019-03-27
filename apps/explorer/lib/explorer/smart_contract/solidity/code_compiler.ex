@@ -61,7 +61,15 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
         }
       }
   """
-  def run(name, compiler_version, code, optimize, evm_version \\ "byzantium", external_libs \\ %{}) do
+  def run(
+        name: name,
+        compiler_version: compiler_version,
+        code: code,
+        optimize: optimize,
+        optimization_runs: _optimization_runs,
+        evm_version: evm_version,
+        external_libs: external_libs
+      ) do
     external_libs_string = Jason.encode!(external_libs)
 
     evm_version =
