@@ -6,7 +6,7 @@ config :ethereum_jsonrpc, EthereumJSONRPC.RequestCoordinator,
     duration: :timer.minutes(1),
     table: EthereumJSONRPC.RequestCoordinator.TimeoutCounter
   ],
-  wait_per_timeout: :timer.seconds(20),
+  wait_per_timeout: :timer.seconds(2),
   max_jitter: :timer.seconds(2)
 
 config :ethereum_jsonrpc, EthereumJSONRPC.Tracer,
