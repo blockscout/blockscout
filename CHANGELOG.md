@@ -16,6 +16,7 @@
  - [#1643](https://github.com/poanetwork/blockscout/pull/1643) - Set internal_transactions_indexed_at for empty blocks
  - [#1647](https://github.com/poanetwork/blockscout/pull/1647) - Fix typo in view
  - [#1650](https://github.com/poanetwork/blockscout/pull/1650) - Add petersburg evm version to smart contract verifier
+ - [#1657](https://github.com/poanetwork/blockscout/pull/1657) - Force consensus loss for parent block if its hash mismatches parent_hash
 
 ### Chore
 
