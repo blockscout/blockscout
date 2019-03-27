@@ -58,10 +58,10 @@
       <% end %>
     </li>
 
-    <%= if @address.has_decompiled_code? do %>
+    <%= if has_decompiled_code?(@address) do %>
       <li class="nav-item">
         <%= link(
-            to: address_contract_path(@conn, :index, @address.hash),
+            to: address_decompiled_contract_path(@conn, :index, @address.hash),
             class: "nav-link #{tab_status("contracts", @conn.request_path)}") do %>
            <%= gettext("Decompiled code") %>
         <% end %>
@@ -125,6 +125,14 @@
           <%= if smart_contract_verified?(@address) do %>
             <i class="far fa-check-circle"></i>
           <% end %>
+
+          <%= if has_decompiled_code?(@address) do %>
+            <%= link(
+                to: address_decompiled_contract_path(@conn, :index, @address.hash),
+                class: "nav-link #{tab_status("contracts", @conn.request_path)}") do %>
+             <%= gettext("Decompiled code") %>
+          <% end %>
+        <% end %>
         <% end %>
       <% end %>
       <%= if smart_contract_with_read_only_functions?(@address) do %>

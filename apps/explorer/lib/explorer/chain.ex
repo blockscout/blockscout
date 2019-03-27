@@ -647,17 +647,9 @@ defmodule Explorer.Chain do
   """
   @spec hash_to_address(Hash.Address.t()) :: {:ok, Address.t()} | {:error, :not_found}
   def hash_to_address(%Hash{byte_count: unquote(Hash.Address.byte_count())} = hash) do
-    has_decompiled_code_query =
-      from(decompiled_contract in DecompiledSmartContract,
-        where: decompiled_contract.address_hash == ^hash,
-        limit: 1,
-        select: %{has_decompiled_code?: not is_nil(decompiled_contract.address_hash)}
-      )
-
     query =
       from(
         address in Address,
-        left_join: decompiled_code in subquery(has_decompiled_code_query),
         preload: [
           :contracts_creation_internal_transaction,
           :names,
@@ -665,9 +657,9 @@ defmodule Explorer.Chain do
           :token,
           :contracts_creation_transaction
         ],
-        where: address.hash == ^hash,
-        select_merge: %{has_decompiled_code?: decompiled_code.has_decompiled_code?}
+        where: address.hash == ^hash
       )
+      |> with_decompiled_code_flag(hash)
 
     query
     |> Repo.one()
@@ -786,6 +778,7 @@ defmodule Explorer.Chain do
         ],
         where: address.hash == ^hash and not is_nil(address.contract_code)
       )
+      |> with_decompiled_code_flag(hash)
 
     address = Repo.one(query)
 
@@ -804,6 +797,7 @@ defmodule Explorer.Chain do
         preload: [
           :contracts_creation_internal_transaction,
           :names,
+          :smart_contract,
           :token,
           :contracts_creation_transaction,
           :decompiled_smart_contracts
@@ -2681,5 +2675,20 @@ defmodule Explorer.Chain do
       |> Wei.cast()
 
     value
+  end
+
+  defp with_decompiled_code_flag(query, hash) do
+    has_decompiled_code_query =
+      from(decompiled_contract in DecompiledSmartContract,
+        where: decompiled_contract.address_hash == ^hash,
+        limit: 1,
+        select: %{has_decompiled_code?: not is_nil(decompiled_contract.address_hash)}
+      )
+
+    from(
+      address in query,
+      left_join: decompiled_code in subquery(has_decompiled_code_query),
+      select_merge: %{has_decompiled_code?: decompiled_code.has_decompiled_code?}
+    )
   end
 end
