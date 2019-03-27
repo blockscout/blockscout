@@ -57,16 +57,16 @@
         <% end %>
       <% end %>
     </li>
+  <% end %>
 
-    <%= if has_decompiled_code?(@address) do %>
-      <li class="nav-item">
-        <%= link(
-            to: address_decompiled_contract_path(@conn, :index, @address.hash),
-            class: "nav-link #{tab_status("contracts", @conn.request_path)}") do %>
-           <%= gettext("Decompiled code") %>
-        <% end %>
-      </li>
-    <% end %>
+  <%= if has_decompiled_code?(@address) do %>
+    <li class="nav-item">
+      <%= link(
+          to: address_decompiled_contract_path(@conn, :index, @address.hash),
+          class: "nav-link #{tab_status("contracts", @conn.request_path)}") do %>
+         <%= gettext("Decompiled code") %>
+      <% end %>
+    </li>
   <% end %>
 
   <%= if smart_contract_with_read_only_functions?(@address) do %>
@@ -129,7 +129,7 @@
           <%= if has_decompiled_code?(@address) do %>
             <%= link(
                 to: address_decompiled_contract_path(@conn, :index, @address.hash),
-                class: "nav-link #{tab_status("contracts", @conn.request_path)}") do %>
+                class: "dropdown-item #{tab_status("contracts", @conn.request_path)}") do %>
              <%= gettext("Decompiled code") %>
           <% end %>
         <% end %>
