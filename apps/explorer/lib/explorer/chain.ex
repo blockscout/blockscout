@@ -659,9 +659,10 @@ defmodule Explorer.Chain do
         ],
         where: address.hash == ^hash
       )
-      |> with_decompiled_code_flag(hash)
 
-    query
+    query_with_decompiled_flag = with_decompiled_code_flag(query, hash)
+
+    query_with_decompiled_flag
     |> Repo.one()
     |> case do
       nil -> {:error, :not_found}
@@ -778,9 +779,10 @@ defmodule Explorer.Chain do
         ],
         where: address.hash == ^hash and not is_nil(address.contract_code)
       )
-      |> with_decompiled_code_flag(hash)
 
-    address = Repo.one(query)
+    query_with_decompiled_flag = with_decompiled_code_flag(query, hash)
+
+    address = Repo.one(query_with_decompiled_flag)
 
     if address do
       {:ok, address}
