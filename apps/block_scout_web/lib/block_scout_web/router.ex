@@ -71,7 +71,10 @@ defmodule BlockScoutWeb.Router do
 
     resources("/", ChainController, only: [:show], singleton: true, as: :chain)
 
-    resources("/market_history_chart", Chain.MarketHistoryChartController, only: [:show], singleton: true)
+    resources("/market_history_chart", Chain.MarketHistoryChartController,
+      only: [:show],
+      singleton: true
+    )
 
     resources "/blocks", BlockController, only: [:index, :show], param: "hash_or_number" do
       resources("/transactions", BlockTransactionController, only: [:index], as: :transaction)
@@ -80,6 +83,8 @@ defmodule BlockScoutWeb.Router do
     get("/reorgs", BlockController, :reorg, as: :reorg)
 
     get("/uncles", BlockController, :uncle, as: :uncle)
+
+    resources("/stakes", StakesController, only: [:index])
 
     resources("/pending_transactions", PendingTransactionController, only: [:index])
 

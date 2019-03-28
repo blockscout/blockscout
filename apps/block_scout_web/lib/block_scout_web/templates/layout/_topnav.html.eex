@@ -85,15 +85,20 @@
           </a>
           <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
             <%= link(
-                  gettext("Item 1"),
+                  gettext("Validators"),
                   class: "dropdown-item",
-                  to: "/#"
+                  to: stakes_path(@conn, :index)
                 ) %>
             <%= link(
-                gettext("Item 2"),
-                class: "dropdown-item",
-                to: "/#"
-              ) %>
+                  gettext("Active Pools"),
+                  class: "dropdown-item",
+                  to: stakes_path(@conn, :index)
+                ) %>
+            <%= link(
+                  gettext("Inactive Pools"),
+                  class: "dropdown-item",
+                  to: stakes_path(@conn, :index)
+                ) %>
           </div>
         </li>
         <li class="nav-item dropdown">
