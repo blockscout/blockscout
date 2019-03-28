@@ -233,4 +233,14 @@ defmodule Explorer.Chain.Hash do
       |> BitString.encode(options)
     end
   end
+
+  defimpl Jason.Encoder do
+    alias Jason.Encode
+
+    def encode(hash, opts) do
+      hash
+      |> to_string()
+      |> Encode.string(opts)
+    end
+  end
 end

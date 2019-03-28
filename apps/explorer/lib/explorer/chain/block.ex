@@ -106,6 +106,14 @@ defmodule Explorer.Chain.Block do
     |> unique_constraint(:hash, name: :blocks_pkey)
   end
 
+  def number_only_changeset(%__MODULE__{} = block, attrs) do
+    block
+    |> cast(attrs, @required_attrs ++ @optional_attrs)
+    |> validate_required([:number])
+    |> foreign_key_constraint(:parent_hash)
+    |> unique_constraint(:hash, name: :blocks_pkey)
+  end
+
   def blocks_without_reward_query do
     from(
       b in __MODULE__,

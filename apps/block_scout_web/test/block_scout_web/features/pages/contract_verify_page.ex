@@ -13,7 +13,8 @@ defmodule BlockScoutWeb.ContractVerifyPage do
         contract_name: contract_name,
         version: version,
         optimization: optimization,
-        source_code: source_code
+        source_code: source_code,
+        evm_version: evm_version
       }) do
     session
     |> fill_in(css("[data-test='contract_name']"), with: contract_name)
@@ -22,6 +23,11 @@ defmodule BlockScoutWeb.ContractVerifyPage do
     case version do
       nil -> nil
       _ -> click(session, option(version))
+    end
+
+    case evm_version do
+      nil -> nil
+      _ -> click(session, option(evm_version))
     end
 
     case optimization do
