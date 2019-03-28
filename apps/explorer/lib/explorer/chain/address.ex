@@ -8,7 +8,19 @@ defmodule Explorer.Chain.Address do
   use Explorer.Schema
 
   alias Ecto.Changeset
-  alias Explorer.Chain.{Address, Block, Data, Hash, InternalTransaction, SmartContract, Token, Transaction, Wei}
+
+  alias Explorer.Chain.{
+    Address,
+    Block,
+    Data,
+    DecompiledSmartContract,
+    Hash,
+    InternalTransaction,
+    SmartContract,
+    Token,
+    Transaction,
+    Wei
+  }
 
   @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce)a
   @required_attrs ~w(hash)a
@@ -64,6 +76,7 @@ defmodule Explorer.Chain.Address do
     field(:nonce, :integer)
 
     has_one(:smart_contract, SmartContract)
+    has_one(:decompiled_smart_contract, DecompiledSmartContract)
     has_one(:token, Token, foreign_key: :contract_address_hash)
 
     has_one(
