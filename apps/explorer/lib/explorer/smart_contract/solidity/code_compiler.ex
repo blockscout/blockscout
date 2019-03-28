@@ -72,7 +72,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
 
     external_libs_string = Jason.encode!(external_libs)
 
-    evm_version =
+    checked_evm_version =
       if evm_version in @allowed_evm_versions do
         evm_version
       else
@@ -89,7 +89,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
           optimize_value(optimize),
           @new_contract_name,
           external_libs_string,
-          evm_version
+          checked_evm_version
         ]
       )
 

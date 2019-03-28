@@ -197,7 +197,7 @@ msgid "Blocks Validated"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:130
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:135
 #: lib/block_scout_web/templates/api_docs/_action_tile.html.eex:24
 msgid "Cancel"
 msgstr ""
@@ -367,7 +367,7 @@ msgid "ETH"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:52
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:57
 msgid "Enter the Solidity Contract Code below"
 msgstr ""
 
@@ -713,7 +713,7 @@ msgid "Request URL"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:128
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:133
 msgid "Reset"
 msgstr ""
 
@@ -1024,7 +1024,7 @@ msgid "Verify & Publish"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:127
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:132
 msgid "Verify & publish"
 msgstr ""
 
@@ -1165,7 +1165,7 @@ msgid "Loading..."
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:125
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:130
 msgid "Loading...."
 msgstr ""
 
@@ -1582,63 +1582,58 @@ msgid "Genesis Block"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:71
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:76
 msgid "1 Library Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:66
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:71
 msgid "1 Library Name"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:81
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:86
 msgid "2 Library Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:76
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:81
 msgid "2 Library Name"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:91
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:96
 msgid "3 Library Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:86
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:91
 msgid "3 Library Name"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:101
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:106
 msgid "4 Library Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:96
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:101
 msgid "4 Library Name"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:111
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:116
 msgid "5 Library Address"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:106
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:111
 msgid "5 Library Name"
 msgstr ""
 
 #, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:63
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:68
 msgid "Contract Libraries"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:58
-msgid "Enter contructor arguments if the contract had any"
 msgstr ""
 
 #, elixir-format
@@ -1697,7 +1692,17 @@ msgstr ""
 msgid "Search by address, token symbol name, transaction hash, or block number"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:31
 msgid "EVM Version"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:63
+msgid "Enter constructor arguments if the contract had any"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:52
+msgid "Optimization runs"
 msgstr ""
