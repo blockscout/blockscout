@@ -2,6 +2,8 @@
 
 ### Features
 
+ - [#1662](https://github.com/poanetwork/blockscout/pull/1662) - allow specifying number of optimization runs
+
 ### Fixes
 
 ### Chore
