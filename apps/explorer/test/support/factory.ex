@@ -19,6 +19,7 @@ defmodule Explorer.Factory do
     Block,
     ContractMethod,
     Data,
+    DecompiledSmartContract,
     Hash,
     InternalTransaction,
     Log,
@@ -509,7 +510,7 @@ defmodule Explorer.Factory do
     }
   end
 
-  def smart_contract_factory() do
+  def smart_contract_factory do
     contract_code_info = contract_code_info()
 
     %SmartContract{
@@ -522,7 +523,17 @@ defmodule Explorer.Factory do
     }
   end
 
-  def token_balance_factory() do
+  def decompiled_smart_contract_factory do
+    contract_code_info = contract_code_info()
+
+    %DecompiledSmartContract{
+      address_hash: insert(:address, contract_code: contract_code_info.bytecode).hash,
+      decompiler_version: "test_decompiler",
+      decompiled_source_code: contract_code_info.source_code
+    }
+  end
+
+  def token_balance_factory do
     %TokenBalance{
       address: build(:address),
       token_contract_address_hash: insert(:token).contract_address_hash,
@@ -532,7 +543,7 @@ defmodule Explorer.Factory do
     }
   end
 
-  def address_current_token_balance_factory() do
+  def address_current_token_balance_factory do
     %CurrentTokenBalance{
       address: build(:address),
       token_contract_address_hash: insert(:token).contract_address_hash,

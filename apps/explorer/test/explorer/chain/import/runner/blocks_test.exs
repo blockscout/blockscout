@@ -8,6 +8,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
   alias Ecto.Multi
   alias Explorer.Chain.Import.Runner.{Blocks, Transaction}
   alias Explorer.Chain.{Address, Block, Transaction}
+  alias Explorer.Chain
   alias Explorer.Repo
 
   describe "run/1" do
@@ -257,6 +258,36 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
                 # cancels out to no change
                 blocks_update_token_holder_counts: []
               }} = run_block_consensus_change(block, true, options)
+    end
+
+    # Regression test for https://github.com/poanetwork/blockscout/issues/1644
+    test "discards parent block if it isn't related to the current one because of reorg",
+         %{consensus_block: %Block{number: block_number, hash: block_hash, miner_hash: miner_hash}, options: options} do
+      old_block = insert(:block, parent_hash: block_hash, number: block_number + 1)
+      insert(:block, parent_hash: old_block.hash, number: old_block.number + 1)
+
+      new_block1 = params_for(:block, parent_hash: block_hash, number: block_number + 1, miner_hash: miner_hash)
+
+      new_block2 =
+        params_for(:block, parent_hash: new_block1.hash, number: new_block1.number + 1, miner_hash: miner_hash)
+
+      %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, new_block2)
+      changes_list = [block_changes]
+
+      Multi.new()
+      |> Blocks.run(changes_list, options)
+      |> Repo.transaction()
+
+      assert Chain.missing_block_number_ranges(block_number..new_block2.number) == [old_block.number..old_block.number]
+
+      %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, new_block1)
+      changes_list = [block_changes]
+
+      Multi.new()
+      |> Blocks.run(changes_list, options)
+      |> Repo.transaction()
+
+      assert Chain.missing_block_number_ranges(block_number..new_block2.number) == []
     end
   end
 
