@@ -10,6 +10,17 @@
         left: auto;
         right: 0;
     }
+
+    .nav-item & {
+        border-top-left-radius: 0!important;
+        border-top-right-radius: 0!important;
+        top: 45px;
+
+        .dropdown-item:first-child {
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+        }
+    }
 }
 
 .dropdown-item {
@@ -18,6 +29,16 @@
 
     &:hover {
         color: #fff;
+    }
+
+    &:first-child {
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+
+    &:last-child {
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
     }
 }
 
