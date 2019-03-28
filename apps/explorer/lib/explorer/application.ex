@@ -6,7 +6,7 @@ defmodule Explorer.Application do
   use Application
 
   alias Explorer.Admin
-  alias Explorer.Chain.BlockNumberCache
+  alias Explorer.Chain.{BlockNumberCache, TransactionCountCache}
   alias Explorer.Repo.PrometheusLogger
 
   @impl Application
@@ -27,7 +27,8 @@ defmodule Explorer.Application do
       Supervisor.child_spec({Task.Supervisor, name: Explorer.MarketTaskSupervisor}, id: Explorer.MarketTaskSupervisor),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.TaskSupervisor}, id: Explorer.TaskSupervisor),
       {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
-      {Admin.Recovery, [[], [name: Admin.Recovery]]}
+      {Admin.Recovery, [[], [name: Admin.Recovery]]},
+      {TransactionCountCache, [[], []]}
     ]
 
     children = base_children ++ configurable_children()
