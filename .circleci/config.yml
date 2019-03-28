@@ -557,6 +557,9 @@ workflows:
       # This unfortunately will only fire if all the tests pass because of how `requires` works
       - coveralls_merge:
           requires:
+            - test_parity_http_websocket
+            - test_parity_mox
+            - test_geth_http_websocket
             - test_geth_mox
       - credo:
           requires:
@@ -574,7 +577,8 @@ workflows:
             - eslint
             - jest
             - sobelow
-            # This makes these synchronous, instead of asynchronous
+            - test_parity_http_websocket
+            - test_parity_mox
             - test_geth_http_websocket
             - test_geth_mox
       - dialyzer:
@@ -600,13 +604,10 @@ workflows:
             - build
       - test_parity_mox:
           requires:
-            # This makes these synchronous, instead of asynchronous
-            - test_parity_http_websocket
+            - build
       - test_geth_http_websocket:
           requires:
-            # This makes these synchronous, instead of asynchronous
-            - test_parity_mox
+            - build
       - test_geth_mox:
           requires:
-            # This makes these synchronous, instead of asynchronous
-            - test_geth_http_websocket
+            - build
