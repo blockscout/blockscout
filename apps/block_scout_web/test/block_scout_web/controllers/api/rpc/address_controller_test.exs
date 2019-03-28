@@ -767,34 +767,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert response["message"] == "OK"
     end
 
-    test "ignores pagination params if page is less than 1", %{conn: conn} do
-      address = insert(:address)
-
-      6
-      |> insert_list(:transaction, from_address: address)
-      |> with_block()
-
-      params = %{
-        "module" => "account",
-        "action" => "txlist",
-        "address" => "#{address.hash}",
-        # page number
-        "page" => "0",
-        # page size
-        "offset" => "2"
-      }
-
-      assert response =
-               conn
-               |> get("/api", params)
-               |> json_response(200)
-
-      assert length(response["result"]) == 6
-      assert response["status"] == "1"
-      assert response["message"] == "OK"
-    end
-
-    test "ignores pagination params if offset is less than 1", %{conn: conn} do
+    test "ignores offset param if offset is less than 1", %{conn: conn} do
       address = insert(:address)
 
       6
@@ -821,7 +794,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert response["message"] == "OK"
     end
 
-    test "ignores pagination params if offset is over 10,000", %{conn: conn} do
+    test "ignores offset param if offset is over 10,000", %{conn: conn} do
       address = insert(:address)
 
       6

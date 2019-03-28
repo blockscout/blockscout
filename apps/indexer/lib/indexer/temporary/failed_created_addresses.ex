@@ -8,7 +8,7 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
 
   import Ecto.Query
 
-  alias Explorer.Chain.{InternalTransaction, Transaction}
+  alias Explorer.Chain.{Address, Data, InternalTransaction, Transaction}
   alias Explorer.Repo
   alias Indexer.Temporary.FailedCreatedAddresses.TaskSupervisor
 
@@ -45,11 +45,15 @@ defmodule Indexer.Temporary.FailedCreatedAddresses do
       fetcher: :failed_created_addresses
     )
 
+    data = %Data{bytes: ""}
+
     query =
       from(t in Transaction,
         left_join: it in InternalTransaction,
         on: it.transaction_hash == t.hash,
-        where: t.status == ^0 and not is_nil(it.created_contract_address_hash),
+        left_join: address in Address,
+        on: address.hash == it.created_contract_address_hash,
+        where: t.status == ^0 and not is_nil(it.created_contract_address_hash) and address.contract_code != ^data,
         distinct: t.hash
       )
 
