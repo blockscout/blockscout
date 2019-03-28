@@ -175,7 +175,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
           {:ok,
            %{
              addresses_params: internal_transactions_addresses_params,
-             internal_transactions_params: internal_transactions_params
+             internal_transactions_params: internal_transactions_params,
+             internal_transactions_indexed_at_blocks_params: internal_transactions_indexed_at_blocks_params
            }}} <-
            {:internal_transactions,
             internal_transactions(block_fetcher, %{
@@ -204,7 +205,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
            |> put_in([Access.key(:address_coin_balances, %{}), :params], balances_params)
            |> put_in([Access.key(:address_current_token_balances, %{}), :params], address_current_token_balances)
            |> put_in([Access.key(:address_token_balances), :params], address_token_balances)
-           |> put_in([Access.key(:internal_transactions, %{}), :params], internal_transactions_params),
+           |> put_in([Access.key(:internal_transactions, %{}), :params], internal_transactions_params)
+           |> put_in([:internal_transactions_indexed_at_blocks], %{
+             params: internal_transactions_indexed_at_blocks_params,
+             with: :number_only_changeset
+           }),
          {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
       async_import_remaining_block_data(imported, %{block_rewards: %{errors: block_reward_errors}})
       ok
@@ -370,8 +375,15 @@ defmodule Indexer.Block.Realtime.Fetcher do
            transactions_params: transactions_params
          }
        ) do
-    json_rpc_named_arguments
-    |> Keyword.fetch!(:variant)
+    variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
+
+    internal_transactions_indexed_at_blocks_params =
+      case variant do
+        EthereumJSONRPC.Parity -> blocks_params
+        _ -> []
+      end
+
+    variant
     |> case do
       EthereumJSONRPC.Parity ->
         blocks_params
@@ -391,10 +403,20 @@ defmodule Indexer.Block.Realtime.Fetcher do
           |> Kernel.++(addresses_params)
           |> AddressExtraction.merge_addresses()
 
-        {:ok, %{addresses_params: merged_addresses_params, internal_transactions_params: internal_transactions_params}}
+        {:ok,
+         %{
+           addresses_params: merged_addresses_params,
+           internal_transactions_params: internal_transactions_params,
+           internal_transactions_indexed_at_blocks_params: internal_transactions_indexed_at_blocks_params
+         }}
 
       :ignore ->
-        {:ok, %{addresses_params: addresses_params, internal_transactions_params: []}}
+        {:ok,
+         %{
+           addresses_params: addresses_params,
+           internal_transactions_params: [],
+           internal_transactions_indexed_at_blocks_params: []
+         }}
 
       {:error, _reason} = error ->
         error
