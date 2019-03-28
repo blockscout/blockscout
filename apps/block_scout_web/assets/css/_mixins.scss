@@ -12,3 +12,45 @@
         color: $color;
     }
 }
+
+@mixin gradient-container() {
+    background-color: $primary;
+    background-image: linear-gradient(to bottom, $dashboard-banner-gradient-start, $dashboard-banner-gradient-end);
+    box-shadow: 0 5px 40px -5px rgba(#000, 0.25);
+    margin-top: -3rem;
+}
+
+@mixin stats-item() {
+    &-item {
+        color: #fff;
+        padding-left: 1rem;
+        position: relative;
+
+        &::before {
+            background-color: rgba(#fff, 0.5);
+            border-radius: 2px;
+            content: "";
+            height: 100%;
+            left: -4px;
+            position: absolute;
+            top: 0;
+            width: 4px;
+        }
+    }
+
+    &-label {
+        display: block;
+        white-space: nowrap;
+    }
+
+    &-value {
+        display: block;
+        font-size: 1.5rem;
+        font-weight: 200;
+        white-space: nowrap;
+
+        @media (max-width: $breakpoint-lg) {
+            font-size: 1.25rem;
+        }
+    }
+}

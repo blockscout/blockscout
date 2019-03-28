@@ -1,0 +1,11 @@
+.stakes-top {
+    @include gradient-container();
+
+    margin-bottom: 3rem;
+    padding: 50px 0;
+}
+
+.stakes-top-stats {
+
+    @include stats-item();
+}

@@ -1,1 +1,35 @@
-stakes top stuff
+<div class="stakes-top">
+  <div class="container">
+    <div class="stakes-top-stats">
+      <!-- Epoch number -->
+      <div class="stakes-top-stats-item">
+        <span class="stakes-top-stats-label">
+          <%= gettext "Epoch number" %>
+        </span>
+        <span class="stakes-top-stats-value">6</span>
+      </div>
+      <!-- Block number -->
+      <div class="stakes-top-stats-item">
+        <span class="stakes-top-stats-label">
+          <%= gettext "Block number" %>
+        </span>
+        <span class="stakes-top-stats-value">348</span>
+      </div>
+      <!-- Next epoch -->
+      <div class="stakes-top-stats-item">
+        <span class="stakes-top-stats-label">
+          <%= gettext "Next epoch in" %>
+        </span>
+        <span class="stakes-top-stats-value">999 blocks</span>
+      </div>
+      <!-- Address -->
+      <div class="stakes-top-stats-item stakes-top-stats-item-address">
+        <span class="stakes-top-stats-value">0x1fddEc96688e0538A316C64dc...</span>
+        <span class="stakes-top-stats-label">
+          <span class="stakes-top-stats-label-item"><%= gettext "Balance" %>: 20.08 POA20</span>
+          <span class="stakes-top-stats-label-item"><%= gettext "Staked" %>: 1000 POA20</span>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
