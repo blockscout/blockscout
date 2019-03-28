@@ -4,8 +4,6 @@ defmodule BlockScoutWeb.AddressContractVerificationController do
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.{Publisher, Solidity.CodeCompiler, Solidity.CompilerVersion}
 
-  @evm_versions ["homestead", "tangerineWhistle", "spuriousDragon", "byzantium", "constantinople"]
-
   def new(conn, %{"address_id" => address_hash_string}) do
     changeset =
       SmartContract.changeset(
