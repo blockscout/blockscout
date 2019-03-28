@@ -33,7 +33,7 @@ config :indexer,
   ecto_repos: [Explorer.Repo],
   metadata_updater_days_interval: 7,
   # bytes
-  memory_limit: 8 <<< 30
+  memory_limit: 8 <<< 30,
   first_block: System.get_env("FIRST_BLOCK") || 0
 
 config :indexer, Indexer.ReplacedTransaction.Supervisor, disabled?: true
