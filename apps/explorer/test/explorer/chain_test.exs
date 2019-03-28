@@ -869,6 +869,15 @@ defmodule Explorer.ChainTest do
 
       assert {:ok, _} = Chain.token_contract_address_from_token_name(name)
     end
+
+    test "return only one result if multiple records are found" do
+      name = "TOKEN"
+
+      insert(:token, symbol: name)
+      insert(:token, symbol: name)
+
+      assert {:ok, _} = Chain.token_contract_address_from_token_name(name)
+    end
   end
 
   describe "find_or_insert_address_from_hash/1" do
