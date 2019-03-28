@@ -4,7 +4,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
   """
 
   @new_contract_name "New.sol"
-  @allowed_evm_versions ["homestead", "tangerineWhistle", "spuriousDragon", "byzantium", "constantinople"]
+  @allowed_evm_versions ["homestead", "tangerineWhistle", "spuriousDragon", "byzantium", "constantinople", "petersburg"]
 
   @doc """
   Compiles a code in the solidity command line.
@@ -97,6 +97,8 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
         parse_error(error)
     end
   end
+
+  def allowed_evm_versions, do: @allowed_evm_versions
 
   def get_contract_info(contracts, _) when contracts == %{}, do: {:error, :compilation}
 
