@@ -691,10 +691,10 @@ defmodule Explorer.Chain do
       )
 
     query
-    |> Repo.one()
+    |> Repo.all()
     |> case do
-      nil -> {:error, :not_found}
-      hash -> {:ok, hash}
+      [] -> {:error, :not_found}
+      hashes -> {:ok, List.first(hashes)}
     end
   end
 
