@@ -2,10 +2,20 @@
 
 ### Features
 
- - [1611](https://github.com/poanetwork/blockscout/pull/1611) - allow setting the first indexing block
- - [1596](https://github.com/poanetwork/blockscout/pull/1596) - add endpoint to create decompiled contracts
  - [1654](https://github.com/poanetwork/blockscout/pull/1654) - add decompiled code tab
 
+### Fixes
+
+### Chore
+
+
+## 1.3.8-beta
+
+### Features
+
+ - [#1611](https://github.com/poanetwork/blockscout/pull/1611) - allow setting the first indexing block
+ - [#1596](https://github.com/poanetwork/blockscout/pull/1596) - add endpoint to create decompiled contracts
+ - [#1634](https://github.com/poanetwork/blockscout/pull/1634) - add transaction count cache
 
 ### Fixes
 
@@ -15,6 +25,8 @@
  - [#1639](https://github.com/poanetwork/blockscout/pull/1614) - Optimize token holder count updates when importing address current balances
  - [#1643](https://github.com/poanetwork/blockscout/pull/1643) - Set internal_transactions_indexed_at for empty blocks
  - [#1647](https://github.com/poanetwork/blockscout/pull/1647) - Fix typo in view
+ - [#1650](https://github.com/poanetwork/blockscout/pull/1650) - Add petersburg evm version to smart contract verifier
+ - [#1657](https://github.com/poanetwork/blockscout/pull/1657) - Force consensus loss for parent block if its hash mismatches parent_hash
 
 ### Chore
 
@@ -41,6 +53,7 @@
  - [#1589](https://github.com/poanetwork/blockscout/pull/1589) - RPC endpoint to list addresses
  - [#1567](https://github.com/poanetwork/blockscout/pull/1567) - Allow setting different configuration just for realtime fetcher
  - [#1562](https://github.com/poanetwork/blockscout/pull/1562) - Add incoming transactions count to contract view
+ - [#1608](https://github.com/poanetwork/blockscout/pull/1608) - Add listcontracts RPC Endpoint
 
 ### Fixes
 
