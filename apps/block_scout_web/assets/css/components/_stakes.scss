@@ -1,3 +1,5 @@
+$stakes-dashboard-copy-icon-color: $copy-icon-color !default;
+
 .stakes-top {
     @include gradient-container();
 
@@ -17,5 +19,11 @@
 
     .stakes-top-stats-value {
         display: flex;
+    }
+
+    .copy-icon {
+        path {
+            fill: $stakes-dashboard-copy-icon-color;
+        }
     }
 }

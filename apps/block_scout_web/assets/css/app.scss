@@ -88,8 +88,9 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/transaction-input";
 @import "components/coin-balance-tile";
 @import "components/highlight";
-@import "components/stakes";
 @import "components/copy_icon";
+@import "components/btn_add_full";
+@import "components/stakes";
 
 :export {
   primary: $primary;

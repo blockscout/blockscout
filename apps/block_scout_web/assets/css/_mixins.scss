@@ -55,3 +55,31 @@
         }
     }
 }
+
+@mixin btn-full($bg-color: $primary, $text-color: #fff) {
+    align-items: center;
+    background-color: $bg-color;
+    border-radius: 2px;
+    cursor: pointer;
+    display: flex;
+    height: 36px;
+    justify-content: space-between;
+    padding: 0 15px;
+    transition: all 0.25s;
+
+    &:hover {
+        background-color: darken($bg-color, 10%);
+    }
+
+    &-text {
+        color: $text-color;
+        font-size: 12px;
+        font-weight: 600;
+        margin-left: 12px;
+        text-align: left;
+    }
+
+    path {
+        fill: $text-color;
+    }
+}
