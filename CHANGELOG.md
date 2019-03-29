@@ -4,7 +4,7 @@
 
 ### Fixes
 
- - [#1669](https://github.com/poanetwork/blockscout/pull/1669) - https://github.com/poanetwork/blockscout/pull/1669
+ - [#1669](https://github.com/poanetwork/blockscout/pull/1669) - do not fail if multiple matching tokens are found
 
 ### Chore
 
