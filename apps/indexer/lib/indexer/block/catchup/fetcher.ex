@@ -31,7 +31,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
   @blocks_batch_size 10
   @blocks_concurrency 10
   @sequence_name :block_catchup_sequencer
-  @geth_block_limit 128
+  @geth_block_limit 100
 
   defstruct blocks_batch_size: @blocks_batch_size,
             blocks_concurrency: @blocks_concurrency,
