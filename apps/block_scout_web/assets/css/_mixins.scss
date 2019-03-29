@@ -23,7 +23,8 @@
 @mixin stats-item() {
     &-item {
         color: #fff;
-        padding-left: 1rem;
+        padding-left: calc(1rem + 4px);
+        padding-right: 1rem;
         position: relative;
 
         &::before {
@@ -31,7 +32,7 @@
             border-radius: 2px;
             content: "";
             height: 100%;
-            left: -4px;
+            left: 0;
             position: absolute;
             top: 0;
             width: 4px;

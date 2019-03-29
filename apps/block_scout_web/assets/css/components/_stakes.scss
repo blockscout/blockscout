@@ -6,6 +6,16 @@
 }
 
 .stakes-top-stats {
-
     @include stats-item();
+
+    display: flex;
+    justify-content: space-between;
+
+    @include media-breakpoint-down(md) {
+        flex-direction: column;
+    }
+
+    .stakes-top-stats-value {
+        display: flex;
+    }
 }
