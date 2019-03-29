@@ -31,7 +31,6 @@ defmodule Indexer.Block.Catchup.Fetcher do
   @blocks_batch_size 10
   @blocks_concurrency 10
   @sequence_name :block_catchup_sequencer
-  @geth_block_limit 128
 
   defstruct blocks_batch_size: @blocks_batch_size,
             blocks_concurrency: @blocks_concurrency,
@@ -187,8 +186,6 @@ defmodule Indexer.Block.Catchup.Fetcher do
   end
 
   defp async_import_internal_transactions(%{transactions: transactions}, EthereumJSONRPC.Geth) do
-    {_, max_block_number} = Chain.fetch_min_and_max_block_numbers()
-
     transactions
     |> Enum.flat_map(fn
       %Transaction{block_number: block_number, index: index, hash: hash, internal_transactions_indexed_at: nil} ->
@@ -197,9 +194,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
       %Transaction{internal_transactions_indexed_at: %DateTime{}} ->
         []
     end)
-    |> Enum.filter(fn %{block_number: block_number} ->
-      max_block_number - block_number < @geth_block_limit
-    end)
+    |> limit_blocks(internal_transactions_block_limit())
     |> InternalTransaction.Fetcher.async_fetch(10_000)
   end
 
@@ -210,6 +205,20 @@ defmodule Indexer.Block.Catchup.Fetcher do
   end
 
   defp async_import_token_balances(_), do: :ok
+
+  defp internal_transactions_block_limit do
+    System.get_env("INTERNAL_TXS_BLOCK_LIMIT")
+  end
+
+  defp limit_blocks(transactions, nil), do: transactions
+
+  defp limit_blocks(transactions, limit) do
+    {_, max_block_number} = Chain.fetch_min_and_max_block_numbers()
+
+    Enum.filter(transactions, fn %{block_number: block_number} ->
+      max_block_number - block_number < limit
+    end)
+  end
 
   defp stream_fetch_and_import(%__MODULE__{blocks_concurrency: blocks_concurrency} = state, sequence)
        when is_pid(sequence) do
