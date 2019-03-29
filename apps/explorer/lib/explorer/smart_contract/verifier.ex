@@ -28,7 +28,25 @@ defmodule Explorer.SmartContract.Verifier do
     solc_output =
       CodeCompiler.run(name, compiler_version, contract_source_code, optimization, evm_version, external_libraries)
 
-    compare_bytecodes(solc_output, address_hash, constructor_arguments)
+    case compare_bytecodes(solc_output, address_hash, constructor_arguments) do
+      {:error, :generated_bytecode} ->
+        next_evm_version = next_evm_version(evm_version)
+
+        second_solc_output =
+          CodeCompiler.run(
+            name,
+            compiler_version,
+            contract_source_code,
+            optimization,
+            next_evm_version,
+            external_libraries
+          )
+
+        compare_bytecodes(second_solc_output, address_hash, constructor_arguments)
+
+      result ->
+        result
+    end
   end
 
   defp compare_bytecodes({:error, :name}, _, _), do: {:error, :name}
@@ -70,5 +88,18 @@ defmodule Explorer.SmartContract.Verifier do
       |> String.split_at(-64)
 
     bytecode
+  end
+
+  def next_evm_version(current_evm_version) do
+    [prev_version, last_version] =
+      CodeCompiler.allowed_evm_versions()
+      |> Enum.reverse()
+      |> Enum.take(2)
+
+    if current_evm_version != last_version do
+      last_version
+    else
+      prev_version
+    end
   end
 end

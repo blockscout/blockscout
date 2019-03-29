@@ -2,7 +2,12 @@
 
 ### Features
 
+ - [1654](https://github.com/poanetwork/blockscout/pull/1654) - add decompiled code tab
+ - [1661](https://github.com/poanetwork/blockscout/pull/1661) - try to compile smart contract with the latest evm version
+
 ### Fixes
+
+ - [#1669](https://github.com/poanetwork/blockscout/pull/1669) - do not fail if multiple matching tokens are found
 
 ### Chore
 
@@ -14,7 +19,6 @@
  - [#1611](https://github.com/poanetwork/blockscout/pull/1611) - allow setting the first indexing block
  - [#1596](https://github.com/poanetwork/blockscout/pull/1596) - add endpoint to create decompiled contracts
  - [#1634](https://github.com/poanetwork/blockscout/pull/1634) - add transaction count cache
-
 
 ### Fixes
 
