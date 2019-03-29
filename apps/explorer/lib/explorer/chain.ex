@@ -1871,7 +1871,7 @@ defmodule Explorer.Chain do
   def transaction_estimated_count do
     cached_value = TransactionCountCache.value()
 
-    if cached_value == 0 do
+    if is_nil(cached_value) do
       %Postgrex.Result{rows: [[rows]]} =
         SQL.query!(Repo, "SELECT reltuples::BIGINT AS estimate FROM pg_class WHERE relname='transactions'")
 
