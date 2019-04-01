@@ -5,10 +5,19 @@ defmodule Indexer.MintableToken.Fetcher do
 
   alias Explorer.Chain
   alias Explorer.Chain.Token
+  alias Explorer.Token.MetadataRetriever
+  alias Indexer.BufferedTask
 
   @behaviour BufferedTask
 
   @refresh_period_in_day 7
+
+  @defaults [
+    flush_interval: 300,
+    max_batch_size: 1,
+    max_concurrency: 10,
+    task_supervisor: Indexer.MintableToken.TaskSupervisor
+  ]
 
   def child_spec([init_options, gen_server_options]) do
     {state, mergeable_init_options} = Keyword.pop(init_options, :json_rpc_named_arguments)
