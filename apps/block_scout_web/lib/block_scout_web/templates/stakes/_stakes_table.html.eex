@@ -19,7 +19,7 @@
             </tr>
             <%= end %>
             <%= if not @empty_content do %>
-            <tr>
+            <tr class="stakes-tr-banned">
                 <td class="stakes-td"><div class="stakes-td-order">1</div></td>
                 <td class="stakes-td">
                     <%=
@@ -41,9 +41,7 @@
                 <td class="stakes-td">2.56%</td>
                 <td class="stakes-td"><span class="stakes-td-link-style">3500</span></td>
                 <td class="stakes-td">
-                    <div class="stakes-controls">
-                        <%= render BlockScoutWeb.StakesView, "_stakes_control_stake.html" %>
-                    </div>
+                    <span class="stakes-td-banned-info">Banned until block #345345 (15 May 2020)</span>
                 </td>
             </tr>
             <%= for i <- 2..5 do %>
@@ -81,3 +79,7 @@
         </tbody>
     </table>
 </div>
+<%=
+    render BlockScoutWeb.CommonComponentsView,
+    "_pagination.html"
+%>
