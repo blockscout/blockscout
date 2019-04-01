@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.Tokens.HolderController do
 
   alias BlockScoutWeb.Tokens.HolderView
   alias Explorer.{Chain, Market}
+  alias Indexer.Token.MetadataUpdater
   alias Phoenix.View
 
   import BlockScoutWeb.Chain,
@@ -17,6 +18,8 @@ defmodule BlockScoutWeb.Tokens.HolderController do
          {:ok, token} <- Chain.token_from_address_hash(address_hash),
          token_balances <- Chain.fetch_token_holders_from_token_hash(address_hash, paging_options(params)) do
       {token_balances_paginated, next_page} = split_list_by_page(token_balances)
+
+      check_if_percentage_is_correct(token_balances, token)
 
       next_page_path =
         case next_page_params(next_page, token_balances_paginated, params) do
@@ -59,6 +62,18 @@ defmodule BlockScoutWeb.Tokens.HolderController do
 
       {:error, :not_found} ->
         not_found(conn)
+    end
+  end
+
+  defp check_if_percentage_is_correct(token_balances, token) do
+    value_from_balances =
+      Enum.reduce(token_balances, Decimal.new(0), fn balance, acc ->
+        Decimal.add(balance.value, acc)
+      end)
+
+    if !(Decimal.cmp(token.total_supply, value_from_balances) == :eq ||
+           Decimal.cmp(token.total_supply, value_from_balances) == :gt) do
+      Task.start(MetadataUpdater, :update_metadata, [token])
     end
   end
 end
