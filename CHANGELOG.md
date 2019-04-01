@@ -9,6 +9,7 @@
 
  - [#1669](https://github.com/poanetwork/blockscout/pull/1669) - do not fail if multiple matching tokens are found
  - [#1691](https://github.com/poanetwork/blockscout/pull/1691) - decrease token metadata update interval and fetch metadata in controller
+ - [#1688](https://github.com/poanetwork/blockscout/pull/1688) - do not fail if failure reason is atom
 
 ### Chore
 
