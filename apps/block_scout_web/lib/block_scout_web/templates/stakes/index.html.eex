@@ -1,8 +1,0 @@
-<%= render BlockScoutWeb.StakesView, "_stakes_top.html" %>
-<section class="container">
-  <div class="card">
-    <div class="card-body">
-      card body
-    </div>
-  </div>
-</section>

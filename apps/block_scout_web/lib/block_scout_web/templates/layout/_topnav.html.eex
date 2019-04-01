@@ -16,13 +16,13 @@
             <%= gettext("Blocks") %>
           </a>
           <div class="dropdown-menu" aria-labelledby="navbarBlocksDropdown">
-            <%= link to: block_path(@conn, :index), class: "dropdown-item" do %>
+            <%= link to: block_path(@conn, :index), class: "dropdown-item #{tab_status("blocks", @conn.request_path)}" do %>
               <%= gettext("Blocks") %>
             <% end %>
-            <%= link to: uncle_path(@conn, :uncle), class: "dropdown-item" do %>
+            <%= link to: uncle_path(@conn, :uncle), class: "dropdown-item #{tab_status("uncles", @conn.request_path)}" do %>
               <%= gettext("Uncles") %>
             <% end %>
-            <%= link to: reorg_path(@conn, :reorg), class: "dropdown-item" do %>
+            <%= link to: reorg_path(@conn, :reorg), class: "dropdown-item #{tab_status("reorgs", @conn.request_path)}" do %>
               <%= gettext("Forked Blocks (Reorgs)") %>
             <% end %>
           </div>
@@ -37,19 +37,19 @@
           <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
             <%= link(
                   gettext("Validated"),
-                  class: "dropdown-item",
+                  class: "dropdown-item #{tab_status("txs", @conn.request_path)}",
                   to: transaction_path(@conn, :index)
                 ) %>
             <%= link(
                   gettext("Pending"),
-                  class: "dropdown-item",
+                  class: "dropdown-item #{tab_status("pending_transactions", @conn.request_path)}",
                   "data-test": "pending_transactions_link",
                   to: pending_transaction_path(@conn, :index)
                 ) %>
           </div>
         </li>
         <li class="nav-item">
-          <%= link to: address_path(@conn, :index), class: "nav-link topnav-nav-link" do %>
+          <%= link to: address_path(@conn, :index), class: "nav-link topnav-nav-link #{tab_status("accounts", @conn.request_path)}" do %>
             <span class="nav-link-icon">
               <%= render BlockScoutWeb.IconsView, "_accounts_icon.html" %>
             </span>
@@ -66,12 +66,12 @@
           <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
             <%= link(
                   gettext("GraphQL"),
-                  class: "dropdown-item",
+                  class: "dropdown-item #{tab_status("graphiql", @conn.request_path)}",
                   to: "/graphiql"
                 ) %>
             <%= link(
                   gettext("RPC"),
-                  class: "dropdown-item",
+                  class: "dropdown-item #{tab_status("api_docs", @conn.request_path)}",
                   to: api_docs_path(@conn, :index)
                 ) %>
           </div>
@@ -86,18 +86,18 @@
           <div class="dropdown-menu" aria-labeledby="navbarTransactionsDropdown">
             <%= link(
                   gettext("Validators"),
-                  class: "dropdown-item",
-                  to: stakes_path(@conn, :index)
+                  class: "dropdown-item #{tab_status("validators", @conn.request_path)}",
+                  to: validators_path(@conn, :index)
                 ) %>
             <%= link(
                   gettext("Active Pools"),
-                  class: "dropdown-item",
-                  to: stakes_path(@conn, :index)
+                  class: "dropdown-item #{tab_status("active_pools", @conn.request_path)}",
+                  to: active_pools_path(@conn, :index)
                 ) %>
             <%= link(
                   gettext("Inactive Pools"),
-                  class: "dropdown-item",
-                  to: stakes_path(@conn, :index)
+                  class: "dropdown-item #{tab_status("inactive_pools", @conn.request_path)}",
+                  to: inactive_pools_path(@conn, :index)
                 ) %>
           </div>
         </li>

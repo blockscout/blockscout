@@ -1,8 +1,12 @@
 $card-background-color: #fff !default;
+$card-tab-active: $primary !default;
+$card-default-border-radius: 10px !default;
+$card-horizontal-padding: 30px;
+$card-vertical-padding: 30px;
 
 .card {
     background-color: $card-background-color;
-    border-radius: 10px;
+    border-radius: $card-default-border-radius;
     border: none;
     box-shadow: 0 0 30px 0 rgba(202, 199, 226, 0.5);
     margin-bottom: 3rem;
@@ -26,10 +30,30 @@ $card-background-color: #fff !default;
     font-weight: normal;
     line-height: 2.2rem;
     margin-bottom: 2rem;
+
+    .card-title-container & {
+        line-height: 1.2;
+        margin: 0;
+
+        @include media-breakpoint-down(sm) {
+            margin-bottom: 25px;
+        }
+    }
+}
+
+.card-title-container {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    padding: 25px $card-horizontal-padding;
+
+    @include media-breakpoint-down(sm) {
+        flex-direction: column;
+    }
 }
 
 .card-body {
-    padding: 30px;
+    padding: $card-horizontal-padding;
 }
 
 .card-server-response-body {
@@ -42,5 +66,46 @@ $card-background-color: #fff !default;
 
     @include media-breakpoint-down(md) {
         height: 595px;
+    }
+}
+
+.card-tabs {
+    align-items: center;
+    border-top-left-radius: $card-default-border-radius;
+    border-top-right-radius: $card-default-border-radius;
+    border-bottom: 1px solid $base-border-color;
+    display: flex;
+    justify-content: flex-start;
+    overflow: hidden;
+
+    @include media-breakpoint-down(sm) {
+        flex-direction: column;
+    }
+}
+
+.card-tab {
+    background-color: $card-background-color;
+    color: #333;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: normal;
+    height: 70px;
+    line-height: 70px;
+    padding: 0 30px;
+    text-align: center;
+
+    &:hover {
+        text-decoration: underline;
+    }
+
+    &.active {
+        background-color: $card-tab-active;
+        color: #fff;
+        cursor: default;
+        text-decoration: none;
+    }
+
+    @include media-breakpoint-down(sm) {
+        width: 100%;
     }
 }

@@ -1,0 +1,7 @@
+<%= render BlockScoutWeb.StakesView, "_stakes_top.html" %>
+<section class="container">
+  <div class="card">
+    <%= render BlockScoutWeb.StakesView, "_stakes_tabs.html", conn: @conn %>
+    <%= render BlockScoutWeb.StakesView, "_stakes_title.html", title: "Active Pools" %>
+  </div>
+</section>

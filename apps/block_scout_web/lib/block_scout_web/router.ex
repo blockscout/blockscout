@@ -84,7 +84,9 @@ defmodule BlockScoutWeb.Router do
 
     get("/uncles", BlockController, :uncle, as: :uncle)
 
-    resources("/stakes", StakesController, only: [:index])
+    resources("/validators", ValidatorsController, only: [:index])
+    resources("/active_pools", ActivePoolsController, only: [:index])
+    resources("/inactive_pools", InactivePoolsController, only: [:index])
 
     resources("/pending_transactions", PendingTransactionController, only: [:index])
 
