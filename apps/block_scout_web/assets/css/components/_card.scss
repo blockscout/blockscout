@@ -52,6 +52,33 @@ $card-vertical-padding: 30px;
     }
 }
 
+.card-title-controls {
+    align-items: center;
+    display: flex;
+    justify-content: flex-end;
+
+    @include media-breakpoint-down(sm) {
+        flex-direction: column;
+    }
+
+    .card-title-control {
+        margin-right: 20px;
+
+        &:last-child {
+            margin-right: 0;
+        }
+
+        @include media-breakpoint-down(sm) {
+            margin-bottom: 20px;
+            margin-right: 0;
+
+            &:last-child {
+                margin-bottom: 0;
+            }
+        }
+    }
+}
+
 .card-body {
     padding: $card-horizontal-padding;
 }

@@ -1,0 +1,4 @@
+<div class="stakes-address-container">
+    <span class="stakes-address"><%= @address %></span>
+    <%= render BlockScoutWeb.CommonComponentsView, "_check_tooltip.html", text: @tooltip %>
+</div>

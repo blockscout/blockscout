@@ -2,6 +2,7 @@
 <section class="container">
   <div class="card">
     <%= render BlockScoutWeb.StakesView, "_stakes_tabs.html", conn: @conn %>
-    <%= render BlockScoutWeb.StakesView, "_stakes_title.html", title: "Active Pools" %>
+    <%= render BlockScoutWeb.StakesView, "_stakes_title.html", title: "Active Pools", show_banned_checkbox: false %>
+    <%= render BlockScoutWeb.StakesView, "_stakes_table.html", empty_content: false %>
   </div>
 </section>

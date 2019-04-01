@@ -1,0 +1,26 @@
+$check-tooltip-background: #f5f6fa !default;
+$check-tooltip-background-active: $primary !default;
+$check-tooltip-check: #a3a9b5 !default;
+$check-tooltip-check-active: #fff !default;
+
+.check-tooltip {
+    display: block;
+    height: 16px;
+    width: 16px;
+
+    .check-tooltip-circle {
+        fill: $check-tooltip-background;
+    }
+    .check-tooltip-check {
+        fill: $check-tooltip-check;
+    }
+
+    &:hover {
+        .check-tooltip-circle {
+            fill: $check-tooltip-background-active;
+        }
+        .check-tooltip-check {
+            fill: $check-tooltip-check-active;
+        }
+    }
+}

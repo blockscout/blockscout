@@ -1,4 +1,5 @@
 $stakes-dashboard-copy-icon-color: $copy-icon-color !default;
+$stakes-address-color: $primary !default;
 
 .stakes-top {
     @include gradient-container();
@@ -25,5 +26,15 @@ $stakes-dashboard-copy-icon-color: $copy-icon-color !default;
         path {
             fill: $stakes-dashboard-copy-icon-color;
         }
+    }
+}
+
+.stakes-address-container {
+    display: flex;
+    justify-content: flex-start;
+
+    .stakes-address {
+        color: $stakes-address-color;
+        margin-right: 10px;
     }
 }
