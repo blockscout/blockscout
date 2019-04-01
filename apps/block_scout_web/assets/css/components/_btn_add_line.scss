@@ -1,0 +1,6 @@
+$btn-add-line-bg: #fff !default;
+$btn-add-line-color: $secondary !default;
+
+.btn-add-line {
+    @include btn-line($btn-add-line-bg, $btn-add-line-color);
+}

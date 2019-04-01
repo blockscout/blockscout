@@ -14,7 +14,7 @@
             <%= if @empty_content do %>
             <tr>
                 <td colspan="6">
-                    empty
+                    <%= render BlockScoutWeb.StakesView, "_stakes_empty_content.html" %>
                 </td>
             </tr>
             <%= end %>

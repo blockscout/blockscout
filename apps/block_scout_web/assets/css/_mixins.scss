@@ -66,6 +66,37 @@
     justify-content: space-between;
     padding: 0 15px;
     transition: all 0.25s;
+    width: fit-content;
+
+    &:hover {
+        background-color: darken($bg-color, 10%);
+    }
+
+    &-text {
+        color: $text-color;
+        font-size: 12px;
+        font-weight: 600;
+        margin-left: 12px;
+        text-align: left;
+    }
+
+    path {
+        fill: $text-color;
+    }
+}
+
+@mixin btn-line($bg-color: #fff, $text-color: $secondary) {
+    align-items: center;
+    background-color: $bg-color;
+    border-radius: 2px;
+    border: 1px solid $text-color;
+    cursor: pointer;
+    display: flex;
+    height: 36px;
+    justify-content: space-between;
+    padding: 0 15px;
+    transition: all 0.25s;
+    width: fit-content;
 
     &:hover {
         background-color: darken($bg-color, 10%);

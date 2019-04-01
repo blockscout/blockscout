@@ -91,6 +91,7 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/highlight";
 @import "components/copy_icon";
 @import "components/btn_add_full";
+@import "components/btn_add_line";
 @import "components/stakes";
 @import "components/check";
 @import "components/stakes_table";
@@ -98,6 +99,7 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/check_tooltip";
 @import "components/tooltip";
 @import "components/progress_from_to";
+@import "components/stakes_empty_content";
 
 :export {
   primary: $primary;
