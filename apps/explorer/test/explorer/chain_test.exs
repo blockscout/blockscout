@@ -3311,6 +3311,20 @@ defmodule Explorer.ChainTest do
     assert Chain.stream_uncataloged_token_contract_address_hashes([], &[&1 | &2]) == {:ok, [uncatalog_address]}
   end
 
+  describe "stream_mintable_token_contract_address_hashes/2" do
+    test "reduces correct records" do
+      today = DateTime.utc_now()
+      last_update = Timex.shift(today, days: -7)
+
+      token1 = insert(:token, updated_at: Timex.shift(today, days: -8))
+      insert(:token, updated_at: Timex.shift(today, days: -6))
+      token2 = insert(:token, updated_at: Timex.shift(today, days: -9))
+
+      assert Chain.stream_mintable_token_contract_address_hashes([], last_update, &[&1 | &2]) ==
+               {:ok, [token2.contract_address_hash, token1.contract_address_hash]}
+    end
+  end
+
   describe "stream_cataloged_token_contract_address_hashes/2" do
     test "reduces with given reducer and accumulator" do
       %Token{contract_address_hash: catalog_address} = insert(:token, cataloged: true)

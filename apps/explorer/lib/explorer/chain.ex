@@ -2379,6 +2379,26 @@ defmodule Explorer.Chain do
   end
 
   @doc """
+  Streams a lists mintable token contract addresses that haven't been updated recently.
+  """
+  @spec stream_mintable_token_contract_address_hashes(
+          initial :: accumulator,
+          DateTime.t(),
+          reducer :: (entry :: Hash.Address.t(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_mintable_token_contract_address_hashes(initial, last_update, reducer) when is_function(reducer, 2) do
+    query =
+      from(
+        token in Token,
+        where: token.updated_at <= ^last_update,
+        select: token.contract_address_hash
+      )
+
+    Repo.stream_reduce(query, initial, reducer)
+  end
+
+  @doc """
   Streams a list of token contract addresses that have been cataloged.
   """
   @spec stream_cataloged_token_contract_address_hashes(
