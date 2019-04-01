@@ -46,6 +46,7 @@ defmodule EthereumJSONRPC.Contract do
       |> case do
         {:ok, responses} -> responses
         {:error, {:bad_gateway, _request_url}} -> raise "Bad gateway"
+        {:error, reason} when is_atom(reason) -> raise Atom.to_string(reason)
         {:error, error} -> raise error
       end
       |> Enum.into(%{}, &{&1.id, &1})
