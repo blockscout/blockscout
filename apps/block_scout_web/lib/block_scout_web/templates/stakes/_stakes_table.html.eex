@@ -39,8 +39,12 @@
                     %>
                 </td>
                 <td class="stakes-td">2.56%</td>
-                <td class="stakes-td"><span class="stakes-td-link-style">1455</span></td>
-                <td class="stakes-td">text</td>
+                <td class="stakes-td"><span class="stakes-td-link-style">3500</span></td>
+                <td class="stakes-td">
+                    <div class="stakes-controls">
+                        <%= render BlockScoutWeb.StakesView, "_stakes_control_stake.html" %>
+                    </div>
+                </td>
             </tr>
             <%= for i <- 2..5 do %>
             <tr>
@@ -64,7 +68,13 @@
                 </td>
                 <td class="stakes-td">2.56%</td>
                 <td class="stakes-td"><span class="stakes-td-link-style">1455</span></td>
-                <td class="stakes-td">text</td>
+                <td class="stakes-td">
+                    <div class="stakes-controls">
+                        <%= render BlockScoutWeb.StakesView, "_stakes_control_move.html" %>
+                        <%= render BlockScoutWeb.StakesView, "_stakes_control_withdraw.html" %>
+                        <%= render BlockScoutWeb.StakesView, "_stakes_control_stake.html" %>
+                    </div>
+                </td>
             </tr>
             <%= end %>
             <%= end %>
