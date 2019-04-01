@@ -135,6 +135,13 @@ defmodule BlockScoutWeb.Router do
       )
 
       resources(
+        "/decompiled_contracts",
+        AddressDecompiledContractController,
+        only: [:index],
+        as: :decompiled_contract
+      )
+
+      resources(
         "/contract_verifications",
         AddressContractVerificationController,
         only: [:new, :create],

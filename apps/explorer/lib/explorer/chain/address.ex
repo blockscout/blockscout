@@ -74,6 +74,7 @@ defmodule Explorer.Chain.Address do
     field(:fetched_coin_balance_block_number, :integer)
     field(:contract_code, Data)
     field(:nonce, :integer)
+    field(:has_decompiled_code?, :boolean, virtual: true)
 
     has_one(:smart_contract, SmartContract)
     has_one(:decompiled_smart_contract, DecompiledSmartContract)
@@ -92,6 +93,7 @@ defmodule Explorer.Chain.Address do
     )
 
     has_many(:names, Address.Name, foreign_key: :address_hash)
+    has_many(:decompiled_smart_contracts, DecompiledSmartContract, foreign_key: :address_hash)
 
     timestamps()
   end
