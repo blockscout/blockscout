@@ -2648,24 +2648,6 @@ defmodule Explorer.Chain do
   @spec data() :: Dataloader.Ecto.t()
   def data, do: DataloaderEcto.new(Repo)
 
-  @doc """
-  Returns a list of block numbers with invalid consensus.
-  """
-  @spec list_block_numbers_with_invalid_consensus :: [integer()]
-  def list_block_numbers_with_invalid_consensus do
-    query =
-      from(
-        block in Block,
-        join: parent in Block,
-        on: parent.hash == block.parent_hash,
-        where: block.consensus == true,
-        where: parent.consensus == false,
-        select: parent.number
-      )
-
-    Repo.all(query, timeout: :infinity)
-  end
-
   def list_decompiled_contracts(limit, offset, not_decompiled_with_version \\ nil) do
     query =
       from(
