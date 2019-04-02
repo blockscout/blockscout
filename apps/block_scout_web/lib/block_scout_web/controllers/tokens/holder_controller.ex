@@ -3,7 +3,6 @@ defmodule BlockScoutWeb.Tokens.HolderController do
 
   alias BlockScoutWeb.Tokens.HolderView
   alias Explorer.{Chain, Market}
-  alias Indexer.Token.MetadataUpdater
   alias Phoenix.View
 
   import BlockScoutWeb.Chain,
