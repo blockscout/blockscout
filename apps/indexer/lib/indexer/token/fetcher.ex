@@ -52,11 +52,8 @@ defmodule Indexer.Token.Fetcher do
   @decorate trace(name: "fetch", resource: "Indexer.Token.Fetcher.run/2", service: :indexer, tracer: Tracer)
   def run([token_contract_address], _json_rpc_named_arguments) do
     case Chain.token_from_address_hash(token_contract_address) do
-      {:ok, %Token{cataloged: false} = token} ->
+      {:ok, %Token{} = token} ->
         catalog_token(token)
-
-      {:ok, _} ->
-        :ok
     end
   end
 
