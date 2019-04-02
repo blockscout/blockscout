@@ -157,6 +157,60 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
              ]
     end
 
+    test "filtering for only decompiled contracts, with a decompiled with version filter", %{params: params, conn: conn} do
+      insert(:decompiled_smart_contract, decompiler_version: "foobar")
+      smart_contract = insert(:decompiled_smart_contract, decompiler_version: "bizbuz")
+
+      response =
+        conn
+        |> get("/api", Map.merge(params, %{"filter" => "decompiled", "not_decompiled_with_version" => "foobar"}))
+        |> json_response(200)
+
+      assert response["message"] == "OK"
+      assert response["status"] == "1"
+
+      assert response["result"] == [
+               %{
+                 "ABI" => "Contract source code not verified",
+                 "Address" => to_string(smart_contract.address_hash),
+                 "CompilerVersion" => "",
+                 "ContractName" => "",
+                 "DecompiledSourceCode" => smart_contract.decompiled_source_code,
+                 "DecompilerVersion" => "bizbuz",
+                 "OptimizationUsed" => "",
+                 "SourceCode" => ""
+               }
+             ]
+    end
+
+    test "filtering for only decompiled contracts, with a decompiled with version filter, where another decompiled version exists",
+         %{params: params, conn: conn} do
+      non_match = insert(:decompiled_smart_contract, decompiler_version: "foobar")
+      insert(:decompiled_smart_contract, decompiler_version: "bizbuz", address_hash: non_match.address_hash)
+      smart_contract = insert(:decompiled_smart_contract, decompiler_version: "bizbuz")
+
+      response =
+        conn
+        |> get("/api", Map.merge(params, %{"filter" => "decompiled", "not_decompiled_with_version" => "foobar"}))
+        |> json_response(200)
+
+      assert response["message"] == "OK"
+      assert response["status"] == "1"
+
+      assert response["result"] == [
+               %{
+                 "ABI" => "Contract source code not verified",
+                 "Address" => to_string(smart_contract.address_hash),
+                 "CompilerVersion" => "",
+                 "ContractName" => "",
+                 "DecompiledSourceCode" => smart_contract.decompiled_source_code,
+                 "DecompilerVersion" => "bizbuz",
+                 "OptimizationUsed" => "",
+                 "SourceCode" => ""
+               }
+             ]
+    end
+
     test "filtering for only not_decompiled (and by extension not verified contracts)", %{params: params, conn: conn} do
       insert(:decompiled_smart_contract)
       insert(:smart_contract)
