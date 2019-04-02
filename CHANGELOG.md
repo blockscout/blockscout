@@ -8,6 +8,7 @@
 ### Fixes
 
  - [#1669](https://github.com/poanetwork/blockscout/pull/1669) - do not fail if multiple matching tokens are found
+ - [#1691](https://github.com/poanetwork/blockscout/pull/1691) - decrease token metadata update interval
  - [#1688](https://github.com/poanetwork/blockscout/pull/1688) - do not fail if failure reason is atom
  - [#1692](https://github.com/poanetwork/blockscout/pull/1692) - exclude decompiled smart contract from encoding
 
