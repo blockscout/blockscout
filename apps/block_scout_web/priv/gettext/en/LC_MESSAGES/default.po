@@ -1696,3 +1696,39 @@ msgstr ""
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:31
 msgid "EVM Version"
 msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:63
+msgid "Enter constructor arguments if the contract had any"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:20
+msgid "Copy Decompiled Contract Code"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/views/address_view.ex:297
+msgid "Decompiled Code"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address/_tabs.html.eex:67
+#: lib/block_scout_web/templates/address/_tabs.html.eex:133
+msgid "Decompiled code"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:18
+msgid "Decompiled contract code"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:11
+msgid "Decompiler version"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/address_contract_verification/new.html.eex:52
+msgid "Optimization runs"
+msgstr ""
