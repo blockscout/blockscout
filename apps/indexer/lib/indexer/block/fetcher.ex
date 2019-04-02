@@ -148,7 +148,6 @@ defmodule Indexer.Block.Fetcher do
                transactions: %{params: transactions_with_receipts}
              }
            ) do
-      async_import_tokens(inserted)
       {:ok, %{inserted: inserted, errors: blocks_errors}}
     else
       {step, {:error, reason}} -> {:error, {step, reason}}
