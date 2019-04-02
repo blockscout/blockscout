@@ -13,7 +13,7 @@ defmodule Indexer.Token.FetcherTest do
   describe "init/3" do
     test "returns uncataloged tokens", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       insert(:token, cataloged: true)
-      %Token{contract_address_hash: uncatalog_address} = insert(:token, cataloged: false) |> IO.inspect()
+      %Token{contract_address_hash: uncatalog_address} = insert(:token, cataloged: false)
 
       assert Fetcher.init([], &[&1 | &2], json_rpc_named_arguments) == [uncatalog_address]
     end
