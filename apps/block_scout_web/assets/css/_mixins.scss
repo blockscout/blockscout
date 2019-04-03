@@ -23,6 +23,9 @@
 @mixin stats-item() {
     &-item {
         color: #fff;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
         padding-left: calc(1rem + 4px);
         padding-right: 1rem;
         position: relative;
@@ -44,6 +47,14 @@
         white-space: nowrap;
     }
 
+    &-label-item {
+        margin-right: 20px;
+
+        &:last-child {
+            margin-right: 0;
+        }
+    }
+
     &-value {
         display: block;
         font-size: 1.5rem;
@@ -54,6 +65,7 @@
             font-size: 1.25rem;
         }
     }
+
 }
 
 @mixin btn-full($bg-color: $primary, $text-color: #fff) {

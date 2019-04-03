@@ -1,4 +1,4 @@
-<%= render BlockScoutWeb.StakesView, "_stakes_top.html" %>
+<%= render BlockScoutWeb.StakesView, "_stakes_top.html", logged_in: false %>
 <section class="container">
   <div class="card">
     <%= render BlockScoutWeb.StakesView, "_stakes_tabs.html", conn: @conn %>

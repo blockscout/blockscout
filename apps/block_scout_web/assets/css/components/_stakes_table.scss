@@ -19,6 +19,10 @@ $stakes-table-cell-separation: 25px !default;
     font-weight: bold;
     line-height: 1.2;
     text-align: left;
+
+    &:first-child {
+        min-width: 15px;
+    }
 }
 
 .stakes-table-th-content {
@@ -49,6 +53,11 @@ $stakes-table-cell-separation: 25px !default;
     &:last-child {
         padding-right: 0;
     }
+
+    .stakes-tr-banned & {
+        background-color: $stakes-banned-background;
+        color: $stakes-banned-color;
+    }
 }
 
 .stakes-td-order {
@@ -59,4 +68,8 @@ $stakes-table-cell-separation: 25px !default;
 
 .stakes-td-link-style {
     color: $primary;
+
+    .stakes-tr-banned & {
+        color: $stakes-banned-color;
+    }
 }

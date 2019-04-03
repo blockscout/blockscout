@@ -100,6 +100,7 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/tooltip";
 @import "components/progress_from_to";
 @import "components/stakes_empty_content";
+@import "components/stakes_btn_remove_pool";
 
 :export {
   primary: $primary;

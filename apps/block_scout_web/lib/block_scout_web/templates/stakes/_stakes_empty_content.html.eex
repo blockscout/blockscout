@@ -11,11 +11,6 @@
         <h1 class="stakes-empty-content-title">Lorem Ipsum</h1>
         <p class="stakes-empty-content-text">Lorem ipsum dolor sit amet, consect adipiscing elit, sed do
 eiusmod temp incididunt ut labore et dolore magna.</p>
-        <span class="btn-add-line">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14">
-            <path fill-rule="evenodd" d="M13 8H8v5a1 1 0 0 1-2 0V8H1a1 1 0 0 1 0-2h5V1a1 1 0 0 1 2 0v5h5a1 1 0 0 1 0 2z"/>
-            </svg>
-            <span class="btn-add-line-text"><%= gettext "Become Candidate" %></span>
-        </span>
+        <%= render BlockScoutWeb.CommonComponentsView, "_btn_add_line.html", text: gettext("Become Candidate"), extra_class: "js-become-candidate" %>
     </div>
 </div>

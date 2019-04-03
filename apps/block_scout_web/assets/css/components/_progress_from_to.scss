@@ -21,6 +21,10 @@ $progress-from-to-progress-background: $primary !default;
     font-size: 12px;
     font-weight: normal;
     line-height: 1.2;
+
+    .stakes-tr-banned & {
+        color: $stakes-banned-color;
+    }
 }
 
 .progress-from-to-background {
@@ -29,6 +33,10 @@ $progress-from-to-progress-background: $primary !default;
     height: 4px;
     overflow: hidden;
     position: relative;
+
+    .stakes-tr-banned & {
+        background-color: darken($stakes-banned-background, 5%);
+    }
 }
 
 .progress-from-to-progress {
@@ -38,4 +46,8 @@ $progress-from-to-progress-background: $primary !default;
     max-width: 100%;
     position: absolute;
     top: 0;
+
+    .stakes-tr-banned & {
+        background-color: $stakes-banned-color;
+    }
 }

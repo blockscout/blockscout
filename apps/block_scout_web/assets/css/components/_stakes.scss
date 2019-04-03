@@ -1,6 +1,8 @@
 $stakes-dashboard-copy-icon-color: $copy-icon-color !default;
 $stakes-address-color: $primary !default;
 $stakes-control-color: $primary !default;
+$stakes-banned-color: #ff7986!default;
+$stakes-banned-background: #fff3f7!default;
 
 .stakes-top {
     @include gradient-container();
@@ -10,20 +12,48 @@ $stakes-control-color: $primary !default;
 }
 
 .stakes-top-stats {
-    @include stats-item();
-
     display: flex;
     justify-content: space-between;
 
+    @include stats-item();
+
     @include media-breakpoint-down(md) {
-        flex-direction: column;
+        column-gap: 30px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        row-gap: 30px;
+    }
+
+    .stakes-top-stats-item {
+        @include media-breakpoint-down(md) {
+            &:nth-child(1),
+            &:nth-child(2),
+            &:nth-child(3) {
+                grid-column-start: 1;
+            }
+            &:nth-child(4) {
+                grid-column-start: 2;
+                grid-row-start: 1;
+            }
+        }
+    }
+
+    @include media-breakpoint-down(sm) {
+        grid-template-columns: 1fr;
     }
 
     .stakes-top-stats-value {
+        align-items: center;
         display: flex;
     }
 
+    .stakes-top-stats-login {
+        color: $primary;
+        margin-right: 8px;
+    }
+
     .copy-icon {
+        margin-left: 20px;
         path {
             fill: $stakes-dashboard-copy-icon-color;
         }
@@ -32,11 +62,16 @@ $stakes-control-color: $primary !default;
 
 .stakes-address-container {
     display: flex;
+    cursor: pointer;
     justify-content: flex-start;
 
     .stakes-address {
         color: $stakes-address-color;
         margin-right: 10px;
+
+        .stakes-tr-banned & {
+            color: $stakes-banned-color;
+        }
     }
 }
 
@@ -67,5 +102,22 @@ $stakes-control-color: $primary !default;
     margin-right: 10px;
     path {
         fill: $stakes-control-color;
+    }
+}
+
+.stakes-top-buttons {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+
+    .btn-add-full {
+        margin-bottom: 10px;
+    }
+
+    @include media-breakpoint-down(md) {
+        grid-column-start: 2;
+        grid-row-start: 2;
+        justify-self: end;
     }
 }
