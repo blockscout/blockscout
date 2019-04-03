@@ -24,9 +24,18 @@ defmodule Explorer.SmartContract.Verifier do
     external_libraries = Map.get(params, "external_libraries", %{})
     constructor_arguments = Map.get(params, "constructor_arguments", "")
     evm_version = Map.get(params, "evm_version", "byzantium")
+    optimization_runs = Map.get(params, "optimization_runs", 200)
 
     solc_output =
-      CodeCompiler.run(name, compiler_version, contract_source_code, optimization, evm_version, external_libraries)
+      CodeCompiler.run(
+        name: name,
+        compiler_version: compiler_version,
+        code: contract_source_code,
+        optimize: optimization,
+        optimization_runs: optimization_runs,
+        evm_version: evm_version,
+        external_libs: external_libraries
+      )
 
     case compare_bytecodes(solc_output, address_hash, constructor_arguments) do
       {:error, :generated_bytecode} ->
@@ -34,12 +43,12 @@ defmodule Explorer.SmartContract.Verifier do
 
         second_solc_output =
           CodeCompiler.run(
-            name,
-            compiler_version,
-            contract_source_code,
-            optimization,
-            next_evm_version,
-            external_libraries
+            name: name,
+            compiler_version: compiler_version,
+            code: contract_source_code,
+            optimize: optimization,
+            evm_version: next_evm_version,
+            external_libs: external_libraries
           )
 
         compare_bytecodes(second_solc_output, address_hash, constructor_arguments)
