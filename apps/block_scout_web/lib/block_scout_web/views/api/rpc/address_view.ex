@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
   end
 
   def render("balance.json", %{addresses: [address]}) do
-    RPCView.render("show.json", data: "#{balance(address)}")
+    RPCView.render("show.json", data: balance(address))
   end
 
   def render("balance.json", assigns) do
@@ -21,7 +21,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       Enum.map(addresses, fn address ->
         %{
           "account" => "#{address.hash}",
-          "balance" => "#{balance(address)}"
+          "balance" => balance(address)
         }
       end)
 
@@ -159,8 +159,6 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
   end
 
   defp balance(address) do
-    balance = address.fetched_coin_balance && address.fetched_coin_balance.value
-
-    balance || "null"
+    address.fetched_coin_balance && address.fetched_coin_balance.value && "#{address.fetched_coin_balance.value}"
   end
 end
