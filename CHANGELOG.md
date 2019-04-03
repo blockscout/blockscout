@@ -5,6 +5,7 @@
  - [#1662](https://github.com/poanetwork/blockscout/pull/1662) - allow specifying number of optimization runs
  - [#1654](https://github.com/poanetwork/blockscout/pull/1654) - add decompiled code tab
  - [#1661](https://github.com/poanetwork/blockscout/pull/1661) - try to compile smart contract with the latest evm version
+ - [#1665](https://github.com/poanetwork/blockscout/pull/1665) - Add contract verification RPC endpoint.
 
 ### Fixes
 
