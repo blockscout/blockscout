@@ -36,20 +36,15 @@ $stakes-banned-background: #fff3f7!default;
                 grid-row-start: 1;
             }
         }
+
+        @include media-breakpoint-down(md) {
+            grid-column-start: auto !important;
+            grid-row-start: auto !important;
+        }
     }
 
     @include media-breakpoint-down(sm) {
         grid-template-columns: 1fr;
-    }
-
-    .stakes-top-stats-value {
-        align-items: center;
-        display: flex;
-    }
-
-    .stakes-top-stats-login {
-        color: $primary;
-        margin-right: 8px;
     }
 
     .copy-icon {
@@ -58,6 +53,21 @@ $stakes-banned-background: #fff3f7!default;
             fill: $stakes-dashboard-copy-icon-color;
         }
     }
+}
+
+.stakes-top-stats-value {
+    align-items: center;
+    display: flex;
+
+    .stakes-top-stats-item-address & {
+        white-space: normal;
+        word-break: break-all;
+    }
+}
+
+.stakes-top-stats-login {
+    color: $primary;
+    margin-right: 8px;
 }
 
 .stakes-address-container {
@@ -119,5 +129,11 @@ $stakes-banned-background: #fff3f7!default;
         grid-column-start: 2;
         grid-row-start: 2;
         justify-self: end;
+    }
+
+    @include media-breakpoint-down(md) {
+        grid-column-start: auto !important;
+        grid-row-start: auto !important;
+        justify-self: center;
     }
 }
