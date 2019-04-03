@@ -1,0 +1,32 @@
+$form-control-border-color: #e2e5ec !default;
+
+.form-control {
+    border-color: $form-control-border-color;
+    border-radius: 0;
+    font-size: 14px;
+
+    &.n-b-r {
+        border-right: none;
+    }
+}
+
+.form-p {
+    color: #a3a9b5;
+    font-size: 12px;
+    font-weight: normal;
+    line-height: 1.5;
+
+    .text-dark {
+        color: #333;
+    }
+}
+
+.input-group-prepend.last {
+    .input-group-text {
+        background: none;
+        border-color: $form-control-border-color;
+        border-left: none;
+        color: #a3a9b5;
+        font-size: 14px;
+    }
+}

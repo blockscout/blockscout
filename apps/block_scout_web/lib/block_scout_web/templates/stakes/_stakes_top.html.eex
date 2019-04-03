@@ -13,3 +13,4 @@
     </div>
   </div>
 </div>
+<%= render BlockScoutWeb.StakesView, "_stakes_modal_become_candidate.html" %>

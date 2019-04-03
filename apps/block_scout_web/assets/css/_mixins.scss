@@ -75,7 +75,7 @@
     cursor: pointer;
     display: flex;
     height: 36px;
-    justify-content: space-between;
+    justify-content: center;
     padding: 0 15px;
     transition: all 0.25s;
     width: fit-content;
@@ -94,6 +94,10 @@
 
     path {
         fill: $text-color;
+    }
+
+    &.full-width {
+        width: 100%;
     }
 }
 
@@ -105,7 +109,7 @@
     cursor: pointer;
     display: flex;
     height: 36px;
-    justify-content: space-between;
+    justify-content: center;
     padding: 0 15px;
     transition: all 0.25s;
     width: fit-content;
@@ -124,5 +128,9 @@
 
     path {
         fill: $text-color;
+    }
+
+    &.full-width {
+        width: 100%;
     }
 }

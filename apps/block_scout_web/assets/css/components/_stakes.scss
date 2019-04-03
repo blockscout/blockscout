@@ -37,7 +37,7 @@ $stakes-banned-background: #fff3f7!default;
             }
         }
 
-        @include media-breakpoint-down(md) {
+        @include media-breakpoint-down(sm) {
             grid-column-start: auto !important;
             grid-row-start: auto !important;
         }
@@ -131,7 +131,7 @@ $stakes-banned-background: #fff3f7!default;
         justify-self: end;
     }
 
-    @include media-breakpoint-down(md) {
+    @include media-breakpoint-down(sm) {
         grid-column-start: auto !important;
         grid-row-start: auto !important;
         justify-self: center;

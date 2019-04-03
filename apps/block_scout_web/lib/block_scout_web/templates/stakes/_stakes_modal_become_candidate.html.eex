@@ -1,0 +1,37 @@
+<div class="modal fade" id="becomeCandidateModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-become-candidate" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Become Candidate</h5>
+        <button type="button" class="close close-modal" data-dismiss="modal" aria-label="Close">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18">
+                <path fill="#F6F7F9" fill-rule="evenodd" d="M10.435 8.983l7.261 7.261a1.027 1.027 0 1 1-1.452 1.452l-7.261-7.261-7.262 7.262a1.025 1.025 0 1 1-1.449-1.45l7.262-7.261L.273 1.725A1.027 1.027 0 1 1 1.725.273l7.261 7.261 7.23-7.231a1.025 1.025 0 1 1 1.449 1.45l-7.23 7.23z"/>
+            </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+            <form>
+                <div class="input-group form-group">
+                    <input type="text" class="form-control n-b-r" placeholder="Amount">
+                    <div class="input-group-prepend last">
+                      <div class="input-group-text">POA20</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <input type="text" class="form-control" placeholder="Your Mining Address">
+                </div>
+                <p class="form-p">Minimum possible stake: <span class="text-dark">100 POA20</span></p>
+                <div class="form-button"><%= render BlockScoutWeb.CommonComponentsView, "_btn_add_full.html", text: gettext("Become Candidate"), extra_class: "full-width" %></div>
+            </form>
+      </div>
+      <div class="modal-bottom-disclaimer">
+        <div class="modal-bottom-disclaimer-graphic">
+            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="16">
+                <path fill="#333" fill-rule="evenodd" d="M9 16H1a1 1 0 0 1 0-2h3V6H1a1 1 0 0 1 0-2h4a1 1 0 0 1 1 1v9h3a1 1 0 0 1 0 2zM5 2H4a1 1 0 0 1 0-2h1a1 1 0 0 1 0 2z"/>
+            </svg>
+        </div>
+        <div class="modal-bottom-disclaimer-text">Lorem ipsum dolor sit amet, consect adipiscing elit, sed do eiusmod temp incididunt ut labore et dolore magna. Sed do eiusmod temp incididunt ut.</div>
+      </div>
+    </div>
+  </div>
+</div>
