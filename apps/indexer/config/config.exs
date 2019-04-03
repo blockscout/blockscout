@@ -5,8 +5,8 @@ use Mix.Config
 import Bitwise
 
 block_transformers = %{
-  "clique" => Indexer.Block.Transform.Clique,
-  "base" => Indexer.Block.Transform.Base
+  "clique" => Indexer.Transform.Blocks.Clique,
+  "base" => Indexer.Transform.Blocks.Base
 }
 
 # Compile time environment variable access requires recompilation.
@@ -36,8 +36,8 @@ config :indexer,
   memory_limit: 1 <<< 30,
   first_block: System.get_env("FIRST_BLOCK") || 0
 
-# config :indexer, Indexer.ReplacedTransaction.Supervisor, disabled?: true
-# config :indexer, Indexer.Block.Reward.Supervisor, disabled?: true
+# config :indexer, Indexer.Fetcher.ReplacedTransaction.Supervisor, disabled?: true
+# config :indexer, Indexer.Fetcher.BlockReward.Supervisor, disabled?: true
 
 config :indexer, Indexer.Tracer,
   service: :indexer,

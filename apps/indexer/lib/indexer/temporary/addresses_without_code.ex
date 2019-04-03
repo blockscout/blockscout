@@ -4,6 +4,7 @@ defmodule Indexer.Temporary.AddressesWithoutCode do
   """
 
   use GenServer
+  use Indexer.Fetcher
 
   require Logger
 
