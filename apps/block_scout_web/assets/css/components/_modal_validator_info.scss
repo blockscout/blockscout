@@ -1,0 +1,19 @@
+.modal-validator-info {
+    max-width: 100%;
+    width: 660px;
+}
+
+.modal-validator-info-content {
+    background-color: $modal-gray-background;
+    border-bottom-left-radius: $modal-border-radius;
+    border-bottom-right-radius: $modal-border-radius;
+    color: #a3a9b5;
+    column-gap: 60px;
+    display: grid;
+    font-size: 12px;
+    font-weight: normal;
+    grid-template-columns: 1fr 1fr 1fr;
+    line-height: 1.67;
+    padding: #{ $modal-vertical-padding } #{ $modal-horizontal-padding };
+    row-gap: 30px;
+}

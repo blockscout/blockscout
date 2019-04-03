@@ -2,6 +2,7 @@ $modal-overlay-color: rgba($secondary, 0.9) !default;
 $modal-horizontal-padding: 30px !default;
 $modal-vertical-padding: 25px !default;
 $modal-border-radius: 10px !default;
+$modal-gray-background: #f6f7f9 !default;
 
 .modal-backdrop {
     background-color: $modal-overlay-color;
@@ -37,7 +38,7 @@ $modal-border-radius: 10px !default;
 }
 
 .modal-bottom-disclaimer {
-    background-color: #f6f7f9;
+    background-color: $modal-gray-background;
     border-bottom-left-radius: $modal-border-radius;
     border-bottom-right-radius: $modal-border-radius;
     color: #a3a9b5;

@@ -79,6 +79,7 @@
         </tbody>
     </table>
 </div>
+<%= render BlockScoutWeb.StakesView, "_stakes_modal_validator_info.html" %>
 <%=
     render BlockScoutWeb.CommonComponentsView,
     "_pagination.html"
