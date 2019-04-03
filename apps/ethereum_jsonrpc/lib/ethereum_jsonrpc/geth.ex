@@ -6,6 +6,7 @@ defmodule EthereumJSONRPC.Geth do
   import EthereumJSONRPC, only: [id_to_params: 1, json_rpc: 2, request: 1]
 
   alias EthereumJSONRPC.Geth.Calls
+  alias EthereumJSONRPC.{Transaction, Transactions}
 
   @behaviour EthereumJSONRPC.Variant
 
@@ -33,12 +34,43 @@ defmodule EthereumJSONRPC.Geth do
   end
 
   @doc """
-  Internal transaction fetching for entire blocks is not currently supported for Geth.
+  Flatten nested dicts up to level "d" of depth.
+  """
+  def flat(m, d) when d>=1 do
+    Enum.map( Map.to_list(m), fn k -> flat(elem(k,1), d-1) end)
+  end
 
-  To signal to the caller that fetching is not supported, `:ignore` is returned.
+  def flat(m, d) do
+    m
+  end
+
+  @doc """
+  Fetches the pending transactions from the Geth node.
+
+  *NOTE*: The pending transactions are local to the node that is contacted and may not be consistent across nodes based
+  on the transactions that each node has seen and how each node prioritizes collating transactions into the next block.
   """
   @impl EthereumJSONRPC.Variant
-  def fetch_block_internal_transactions(_block_range, _json_rpc_named_arguments), do: :ignore
+  @spec fetch_pending_transactions(EthereumJSONRPC.json_rpc_named_arguments()) ::
+          {:ok, [Transaction.params()]} | {:error, reason :: term}
+  def fetch_pending_transactions(json_rpc_named_arguments) do
+    with {:ok, transactions_map} <-
+           %{id: 1, method: "txpool_content", params: []}
+           |> request()
+           |> json_rpc(json_rpc_named_arguments) do
+
+      transactions = List.flatten(flat(transactions_map["pending"], 2))
+        transactions = Enum.map(transactions, fn t ->
+          Map.put(Map.put(Map.put(t, "blockNumber", nil), "blockHash", nil), "transactionIndex", nil) end )
+
+      transactions_params =
+        transactions
+        |> Transactions.to_elixir()
+        |> Transactions.elixir_to_params()
+
+      {:ok, transactions_params}
+    end
+  end
 
   @doc """
   Pending transaction fetching is not supported currently for Geth.
