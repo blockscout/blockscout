@@ -161,6 +161,6 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
   defp balance(address) do
     balance = address.fetched_coin_balance && address.fetched_coin_balance.value
 
-    balance || 0
+    balance || "null"
   end
 end
