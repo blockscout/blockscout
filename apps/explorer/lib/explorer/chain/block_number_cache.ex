@@ -22,8 +22,8 @@ defmodule Explorer.Chain.BlockNumberCache do
       ])
     end
 
-    setup_opts(opts)
     update_cache()
+    setup_opts(opts)
 
     :ok
   end
@@ -57,6 +57,13 @@ defmodule Explorer.Chain.BlockNumberCache do
       :min -> min
       :all -> {min, max}
     end
+  rescue
+    _e ->
+      case type do
+        :max -> 0
+        :min -> 0
+        :all -> {0, 0}
+      end
   end
 
   defp update_cache do
@@ -65,6 +72,9 @@ defmodule Explorer.Chain.BlockNumberCache do
     tuple = {min, max, current_time}
 
     :ets.insert(@tab, {@key, tuple})
+  rescue
+    _e ->
+      :ok
   end
 
   defp setup_opts(opts) do
