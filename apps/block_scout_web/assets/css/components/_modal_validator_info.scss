@@ -17,3 +17,24 @@
     padding: #{ $modal-vertical-padding } #{ $modal-horizontal-padding };
     row-gap: 30px;
 }
+
+.modal-validator-info-item {
+    &-title {
+        color: #a3a9b5;
+        font-size: 12px;
+        font-weight: normal;
+        line-height: 1.2;
+        margin-bottom: 15px;
+        padding: 0;
+        text-align: left;
+    }
+
+    &-value {
+        color: #333;
+        font-size: 14px;
+        font-weight: normal;
+        line-height: 1.2;
+        margin: 0;
+        padding: 0;
+    }
+}
