@@ -4,6 +4,24 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   alias BlockScoutWeb.API.RPC.Helpers
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
+  alias Explorer.SmartContract.Publisher
+
+  def verify(conn, %{"addressHash" => address_hash} = params) do
+    with {:params, {:ok, fetched_params}} <- {:params, fetch_verify_params(params)},
+         {:params, external_libraries} <-
+           {:params, fetch_external_libraries(params)},
+         {:publish, {:ok, smart_contract}} <-
+           {:publish, Publisher.publish(address_hash, fetched_params, external_libraries)},
+         preloaded_smart_contract <- SmartContract.preload_decompiled_smart_contract(smart_contract) do
+      render(conn, :verify, %{contract: preloaded_smart_contract, address_hash: address_hash})
+    else
+      {:publish, _} ->
+        render(conn, :error, error: "Something went wrong while publishing the contract.")
+
+      {:params, {:error, error}} ->
+        render(conn, :error, error: error)
+    end
+  end
 
   def listcontracts(conn, params) do
     with pagination_options <- Helpers.put_pagination_options(%{}, params),
@@ -154,5 +172,72 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
       end
 
     {:contract, result}
+  end
+
+  defp fetch_verify_params(params) do
+    {:ok, %{}}
+    |> required_param(params, "addressHash", "address_hash")
+    |> required_param(params, "name", "name")
+    |> required_param(params, "compilerVersion", "compiler_version")
+    |> required_param(params, "optimization", "optimization")
+    |> required_param(params, "contractSourceCode", "contract_source_code")
+    |> optional_param(params, "evmVersion", "evm_version")
+    |> optional_param(params, "constructorArguments", "constructor_arguments")
+    |> optional_param(params, "optimizationRuns", "optimization_runs")
+    |> parse_optimization_runs()
+  end
+
+  defp parse_optimization_runs({:ok, %{"optimization_runs" => runs} = opts}) when is_bitstring(runs) do
+    {:ok, Map.put(opts, "optimization_runs", 200)}
+  end
+
+  defp parse_optimization_runs({:ok, %{"optimization_runs" => runs} = opts}) when is_integer(runs) do
+    {:ok, opts}
+  end
+
+  defp parse_optimization_runs({:ok, opts}) do
+    {:ok, Map.put(opts, "optimization_runs", 200)}
+  end
+
+  defp parse_optimization_runs(other), do: other
+
+  defp fetch_external_libraries(params) do
+    Enum.reduce(1..5, %{}, fn number, acc ->
+      case Map.fetch(params, "library#{number}Name") do
+        {:ok, library_name} ->
+          library_address = Map.get(params, "library#{number}Address")
+
+          acc
+          |> Map.put("library#{number}_name", library_name)
+          |> Map.put("library#{number}_address", library_address)
+
+        :error ->
+          acc
+      end
+    end)
+  end
+
+  defp required_param({:error, _} = error, _, _, _), do: error
+
+  defp required_param({:ok, map}, params, key, new_key) do
+    case Map.fetch(params, key) do
+      {:ok, value} ->
+        {:ok, Map.put(map, new_key, value)}
+
+      :error ->
+        {:error, "#{key} is required."}
+    end
+  end
+
+  defp optional_param({:error, _} = error, _, _, _), do: error
+
+  defp optional_param({:ok, map}, params, key, new_key) do
+    case Map.fetch(params, key) do
+      {:ok, value} ->
+        {:ok, Map.put(map, new_key, value)}
+
+      :error ->
+        {:ok, map}
+    end
   end
 end

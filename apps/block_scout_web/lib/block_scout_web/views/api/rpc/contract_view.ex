@@ -22,6 +22,10 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
     RPCView.render("error.json", assigns)
   end
 
+  def render("verify.json", %{contract: contract, address_hash: address_hash}) do
+    RPCView.render("show.json", data: prepare_source_code_contract(contract, address_hash))
+  end
+
   defp prepare_source_code_contract(nil, address_hash) do
     %{
       "Address" => to_string(address_hash),
