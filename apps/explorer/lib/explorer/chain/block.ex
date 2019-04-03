@@ -10,6 +10,8 @@ defmodule Explorer.Chain.Block do
   alias Explorer.Chain.{Address, Gas, Hash, Transaction}
   alias Explorer.Chain.Block.{Reward, SecondDegreeRelation}
 
+  @optional_attrs ~w(internal_transactions_indexed_at)a
+
   @required_attrs ~w(consensus difficulty gas_limit gas_used hash miner_hash nonce number parent_hash size timestamp
                      total_difficulty)a
 
@@ -45,6 +47,7 @@ defmodule Explorer.Chain.Block do
    * `timestamp` - When the block was collated
    * `total_difficulty` - the total `difficulty` of the chain until this block.
    * `transactions` - the `t:Explorer.Chain.Transaction.t/0` in this block.
+   * `internal_transactions_indexed_at` - when `internal_transactions` were fetched by `Indexer`.
   """
   @type t :: %__MODULE__{
           consensus: boolean(),
@@ -60,7 +63,8 @@ defmodule Explorer.Chain.Block do
           size: non_neg_integer(),
           timestamp: DateTime.t(),
           total_difficulty: difficulty(),
-          transactions: %Ecto.Association.NotLoaded{} | [Transaction.t()]
+          transactions: %Ecto.Association.NotLoaded{} | [Transaction.t()],
+          internal_transactions_indexed_at: DateTime.t()
         }
 
   @primary_key {:hash, Hash.Full, autogenerate: false}
@@ -74,6 +78,7 @@ defmodule Explorer.Chain.Block do
     field(:size, :integer)
     field(:timestamp, :utc_datetime_usec)
     field(:total_difficulty, :decimal)
+    field(:internal_transactions_indexed_at, :utc_datetime_usec)
 
     timestamps()
 
@@ -95,8 +100,16 @@ defmodule Explorer.Chain.Block do
 
   def changeset(%__MODULE__{} = block, attrs) do
     block
-    |> cast(attrs, @required_attrs)
+    |> cast(attrs, @required_attrs ++ @optional_attrs)
     |> validate_required(@required_attrs)
+    |> foreign_key_constraint(:parent_hash)
+    |> unique_constraint(:hash, name: :blocks_pkey)
+  end
+
+  def number_only_changeset(%__MODULE__{} = block, attrs) do
+    block
+    |> cast(attrs, @required_attrs ++ @optional_attrs)
+    |> validate_required([:number])
     |> foreign_key_constraint(:parent_hash)
     |> unique_constraint(:hash, name: :blocks_pkey)
   end

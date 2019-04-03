@@ -1,8 +1,23 @@
 defmodule BlockScoutWeb.API.RPC.AddressController do
   use BlockScoutWeb, :controller
 
+  alias BlockScoutWeb.API.RPC.Helpers
   alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.{Address, Wei}
+
+  def listaccounts(conn, params) do
+    options =
+      params
+      |> optional_params()
+      |> Map.put_new(:page_number, 0)
+      |> Map.put_new(:page_size, 10)
+
+    accounts = list_accounts(options)
+
+    conn
+    |> put_status(200)
+    |> render(:listaccounts, %{accounts: accounts})
+  end
 
   def balance(conn, params, template \\ :balance) do
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
@@ -148,7 +163,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   end
 
   def getminedblocks(conn, params) do
-    options = put_pagination_options(%{}, params)
+    options = Helpers.put_pagination_options(%{}, params)
 
     with {:address_param, {:ok, address_param}} <- fetch_address(params),
          {:format, {:ok, address_hash}} <- to_address_hash(address_param),
@@ -174,7 +189,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   def optional_params(params) do
     %{}
     |> put_order_by_direction(params)
-    |> put_pagination_options(params)
+    |> Helpers.put_pagination_options(params)
     |> put_start_block(params)
     |> put_end_block(params)
     |> put_filter_by(params)
@@ -260,6 +275,13 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     Enum.any?(address_hashes, &(&1 == :error))
   end
 
+  defp list_accounts(%{page_number: page_number, page_size: page_size}) do
+    offset = (max(page_number, 1) - 1) * page_size
+
+    # limit is just page_size
+    Chain.list_ordered_addresses(offset, page_size)
+  end
+
   defp hashes_to_addresses(address_hashes) do
     address_hashes
     |> Chain.hashes_to_addresses()
@@ -315,24 +337,6 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
       _ ->
         options
     end
-  end
-
-  defp put_pagination_options(options, params) do
-    with %{"page" => page, "offset" => offset} <- params,
-         {page_number, ""} when page_number > 0 <- Integer.parse(page),
-         {page_size, ""} when page_size > 0 <- Integer.parse(offset),
-         :ok <- validate_max_page_size(page_size) do
-      options
-      |> Map.put(:page_number, page_number)
-      |> Map.put(:page_size, page_size)
-    else
-      _ ->
-        options
-    end
-  end
-
-  defp validate_max_page_size(page_size) do
-    if page_size <= Etherscan.page_size_max(), do: :ok, else: :error
   end
 
   defp put_start_block(options, params) do

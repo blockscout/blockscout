@@ -76,6 +76,41 @@ defmodule Indexer.InternalTransaction.FetcherTest do
     assert :ok = InternalTransaction.Fetcher.run(hash_strings, json_rpc_named_arguments)
   end
 
+  @tag :no_geth
+  test "marks a block indexed even if no internal transactions are fetched", %{
+    json_rpc_named_arguments: json_rpc_named_arguments
+  } do
+    if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+      case Keyword.fetch!(json_rpc_named_arguments, :variant) do
+        EthereumJSONRPC.Parity ->
+          EthereumJSONRPC.Mox
+          |> expect(:json_rpc, fn [%{id: id}], _options ->
+            {:ok,
+             [
+               %{
+                 id: id,
+                 result: []
+               }
+             ]}
+          end)
+
+        variant_name ->
+          raise ArgumentError, "Unsupported variant name (#{variant_name})"
+      end
+    end
+
+    block_number = 1_000_006
+    insert(:block, number: block_number)
+
+    assert :ok = InternalTransaction.Fetcher.run([block_number], json_rpc_named_arguments)
+
+    assert InternalTransaction.Fetcher.init(
+             [],
+             fn block_number, acc -> [block_number | acc] end,
+             json_rpc_named_arguments
+           ) == []
+  end
+
   describe "init/2" do
     test "does not buffer pending transactions", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       insert(:transaction)
@@ -87,6 +122,7 @@ defmodule Indexer.InternalTransaction.FetcherTest do
              ) == []
     end
 
+    @tag :no_parity
     test "buffers collated transactions with unfetched internal transactions", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
@@ -104,6 +140,7 @@ defmodule Indexer.InternalTransaction.FetcherTest do
              ) == [{block.number, collated_unfetched_transaction.hash.bytes, collated_unfetched_transaction.index}]
     end
 
+    @tag :no_parity
     test "does not buffer collated transactions with fetched internal transactions", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
@@ -117,9 +154,36 @@ defmodule Indexer.InternalTransaction.FetcherTest do
                json_rpc_named_arguments
              ) == []
     end
+
+    @tag :no_geth
+    test "buffers blocks with unfetched internal transactions", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      block = insert(:block)
+
+      assert InternalTransaction.Fetcher.init(
+               [],
+               fn block_number, acc -> [block_number | acc] end,
+               json_rpc_named_arguments
+             ) == [block.number]
+    end
+
+    @tag :no_geth
+    test "does not buffer blocks with fetched internal transactions", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      insert(:block, internal_transactions_indexed_at: DateTime.utc_now())
+
+      assert InternalTransaction.Fetcher.init(
+               [],
+               fn block_number, acc -> [block_number | acc] end,
+               json_rpc_named_arguments
+             ) == []
+    end
   end
 
   describe "run/2" do
+    @tag :no_parity
     test "duplicate transaction hashes are logged", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->
@@ -227,6 +291,7 @@ defmodule Indexer.InternalTransaction.FetcherTest do
       end
     end
 
+    @tag :no_parity
     test "duplicate transaction hashes only retry uniques", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         expect(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options ->

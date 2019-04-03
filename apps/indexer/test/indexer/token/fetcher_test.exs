@@ -20,12 +20,6 @@ defmodule Indexer.Token.FetcherTest do
   end
 
   describe "run/3" do
-    test "skips tokens that have already been cataloged", %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      expect(EthereumJSONRPC.Mox, :json_rpc, 0, fn _, _ -> :ok end)
-      %Token{contract_address_hash: contract_address_hash} = insert(:token, cataloged: true)
-      assert Fetcher.run([contract_address_hash], json_rpc_named_arguments) == :ok
-    end
-
     test "catalogs tokens that haven't been cataloged", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       token = insert(:token, name: nil, symbol: nil, total_supply: nil, decimals: nil, cataloged: false)
       contract_address_hash = token.contract_address_hash
@@ -35,28 +29,35 @@ defmodule Indexer.Token.FetcherTest do
           EthereumJSONRPC.Mox,
           :json_rpc,
           1,
-          fn [%{id: "decimals"}, %{id: "name"}, %{id: "symbol"}, %{id: "totalSupply"}], _opts ->
+          fn requests, _opts ->
             {:ok,
-             [
-               %{
-                 id: "decimals",
-                 result: "0x0000000000000000000000000000000000000000000000000000000000000012"
-               },
-               %{
-                 id: "name",
-                 result:
-                   "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000642616e636f720000000000000000000000000000000000000000000000000000"
-               },
-               %{
-                 id: "symbol",
-                 result:
-                   "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003424e540000000000000000000000000000000000000000000000000000000000"
-               },
-               %{
-                 id: "totalSupply",
-                 result: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
-               }
-             ]}
+             Enum.map(requests, fn
+               %{id: id, method: "eth_call", params: [%{data: "0x313ce567", to: _}, "latest"]} ->
+                 %{
+                   id: id,
+                   result: "0x0000000000000000000000000000000000000000000000000000000000000012"
+                 }
+
+               %{id: id, method: "eth_call", params: [%{data: "0x06fdde03", to: _}, "latest"]} ->
+                 %{
+                   id: id,
+                   result:
+                     "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000642616e636f720000000000000000000000000000000000000000000000000000"
+                 }
+
+               %{id: id, method: "eth_call", params: [%{data: "0x95d89b41", to: _}, "latest"]} ->
+                 %{
+                   id: id,
+                   result:
+                     "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000003424e540000000000000000000000000000000000000000000000000000000000"
+                 }
+
+               %{id: id, method: "eth_call", params: [%{data: "0x18160ddd", to: _}, "latest"]} ->
+                 %{
+                   id: id,
+                   result: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
+                 }
+             end)}
           end
         )
 

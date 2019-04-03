@@ -12,7 +12,8 @@ defmodule Explorer.Chain.SmartContract do
 
   use Explorer.Schema
 
-  alias Explorer.Chain.{Address, ContractMethod, Hash}
+  alias Explorer.Chain.{Address, ContractMethod, DecompiledSmartContract, Hash}
+  alias Explorer.Repo
 
   @typedoc """
   The name of a parameter to a function or event.
@@ -208,6 +209,12 @@ defmodule Explorer.Chain.SmartContract do
     field(:constructor_arguments, :string)
     field(:abi, {:array, :map})
 
+    has_many(
+      :decompiled_smart_contracts,
+      DecompiledSmartContract,
+      foreign_key: :address_hash
+    )
+
     belongs_to(
       :address,
       Address,
@@ -217,6 +224,10 @@ defmodule Explorer.Chain.SmartContract do
     )
 
     timestamps()
+  end
+
+  def preload_decompiled_smart_contract(contract) do
+    Repo.preload(contract, :decompiled_smart_contracts)
   end
 
   def changeset(%__MODULE__{} = smart_contract, attrs) do
