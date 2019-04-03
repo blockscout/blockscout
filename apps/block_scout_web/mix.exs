@@ -128,7 +128,8 @@ defmodule BlockScoutWeb.Mixfile do
       {:timex, "~> 3.4"},
       {:wallaby, "~> 0.20", only: [:test], runtime: false},
       # `:cowboy` `~> 2.0` and Phoenix 1.4 compatibility
-      {:wobserver, "~> 0.2.0", github: "KronicDeth/wobserver", ref: "99683a936c75c0a94ebb884cef019f7ed0b97112"}
+      {:wobserver, "~> 0.2.0", github: "KronicDeth/wobserver", ref: "99683a936c75c0a94ebb884cef019f7ed0b97112"},
+      {:phoenix_form_awesomplete, "~> 0.1.4"}
     ]
   end
 

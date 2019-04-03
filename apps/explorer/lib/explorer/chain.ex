@@ -706,7 +706,10 @@ defmodule Explorer.Chain do
     term = String.replace(word, ~r/\W/u, "") <> ":*"
 
     query =
-      from(token in Token, where: fragment("to_tsvector('english', name || ' ' || symbol) @@ to_tsquery(?)", ^term))
+      from(token in Token,
+        where: fragment("to_tsvector('english', name || ' ' || symbol) @@ to_tsquery(?)", ^term),
+        limit: 5
+      )
 
     Repo.all(query)
   end

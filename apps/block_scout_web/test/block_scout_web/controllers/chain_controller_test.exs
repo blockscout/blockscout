@@ -66,7 +66,17 @@ defmodule BlockScoutWeb.ChainControllerTest do
     end
   end
 
-  describe "GET q/2" do
+  describe "GET token_autocomplete/2" do
+    test "finds matching tokens" do
+      insert(:token, name: "MaGiC")
+
+      conn = get(conn(), "/token_autocomplete?q=magic")
+
+      Enum.count(json_response(conn, 200)) == 1
+    end
+  end
+
+  describe "GET search/2" do
     test "finds a consensus block by block number", %{conn: conn} do
       insert(:block, number: 37)
       conn = get(conn, "/search?q=37")
