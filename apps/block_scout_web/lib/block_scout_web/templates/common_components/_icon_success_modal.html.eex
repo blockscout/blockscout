@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="99" height="80">
+    <defs>
+        <filter id="successa" width="99" height="80" x="0" y="0" filterUnits="userSpaceOnUse">
+            <feOffset dy="6" in="SourceAlpha"/>
+            <feGaussianBlur result="blurOut" stdDeviation="3.464"/>
+            <feFlood flood-color="#0E796B" result="floodOut"/>
+            <feComposite in="floodOut" in2="blurOut" operator="atop"/>
+            <feComponentTransfer>
+                <feFuncA slope=".6" type="linear"/>
+            </feComponentTransfer>
+            <feMerge>
+                <feMergeNode/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+        <filter id="successb">
+            <feOffset dy="-4" in="SourceAlpha"/>
+            <feGaussianBlur result="blurOut" stdDeviation="2.828"/>
+            <feFlood flood-color="#15BBA6" result="floodOut"/>
+            <feComposite in="floodOut" in2="blurOut" operator="out" result="compOut"/>
+            <feComposite in="compOut" in2="SourceAlpha" operator="in"/>
+            <feComponentTransfer>
+                <feFuncA slope=".5" type="linear"/>
+            </feComponentTransfer>
+            <feBlend in2="SourceGraphic"/>
+        </filter>
+    </defs>
+    <path fill="#FFF" fill-rule="evenodd" d="M84.31 21.389L46.381 59.34a8.993 8.993 0 0 1-6.399 2.642 8.998 8.998 0 0 1-6.402-2.642L13.629 39.389a9.022 9.022 0 0 1 0-12.76 9.022 9.022 0 0 1 12.76 0l13.593 13.593L71.557 8.629a9.013 9.013 0 0 1 12.753 0c3.522 3.523 3.522 9.236 0 12.76z" filter="url(#successb)"/>
+</svg>

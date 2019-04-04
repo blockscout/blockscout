@@ -4,11 +4,7 @@
       <div class="modal-header">
         <h5 class="modal-title"><%= gettext("Become Candidate") %></h5>
       </div>
-      <button type="button" class="close close-modal" data-dismiss="modal" aria-label="Close">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18">
-              <path fill="#F6F7F9" fill-rule="evenodd" d="M10.435 8.983l7.261 7.261a1.027 1.027 0 1 1-1.452 1.452l-7.261-7.261-7.262 7.262a1.025 1.025 0 1 1-1.449-1.45l7.262-7.261L.273 1.725A1.027 1.027 0 1 1 1.725.273l7.261 7.261 7.23-7.231a1.025 1.025 0 1 1 1.449 1.45l-7.23 7.23z"/>
-          </svg>
-      </button>
+      <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
       <div class="modal-body">
         <form>
             <div class="input-group form-group">
@@ -24,14 +20,7 @@
             <div class="form-buttons"><%= render BlockScoutWeb.CommonComponentsView, "_btn_add_full.html", text: gettext("Become Candidate"), extra_class: "full-width" %></div>
         </form>
       </div>
-      <div class="modal-bottom-disclaimer">
-        <div class="modal-bottom-disclaimer-graphic">
-            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="16">
-                <path fill="#333" fill-rule="evenodd" d="M9 16H1a1 1 0 0 1 0-2h3V6H1a1 1 0 0 1 0-2h4a1 1 0 0 1 1 1v9h3a1 1 0 0 1 0 2zM5 2H4a1 1 0 0 1 0-2h1a1 1 0 0 1 0 2z"/>
-            </svg>
-        </div>
-        <div class="modal-bottom-disclaimer-text">Lorem ipsum dolor sit amet, consect adipiscing elit, sed do eiusmod temp incididunt ut labore et dolore magna. Sed do eiusmod temp incididunt ut.</div>
-      </div>
+      <%= render BlockScoutWeb.CommonComponentsView, "_modal_bottom_disclaimer.html", text: "Lorem ipsum dolor sit amet, consect adipiscing elit, sed do eiusmod temp incididunt ut labore et dolore magna. Sed do eiusmod temp incididunt ut." %>
     </div>
   </div>
 </div>

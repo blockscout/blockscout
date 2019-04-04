@@ -10,6 +10,18 @@ $(function () {
     $('#validatorInfoModal').modal()
   })
 
+  $('.js-move-stake').on('click', function () {
+    $('#errorStatusModal').modal()
+  })
+
+  $('.js-remove-pool').on('click', function () {
+    $('#warningStatusModal').modal()
+  })
+
+  $('.js-copy-address').on('click', function () {
+    $('#successStatusModal').modal()
+  })
+
   $('.js-stake-stake').on('click', function () {
     const modal = '#stakeModal'
     const progress = parseInt($(`${modal} .js-stakes-progress-data-progress`).text())

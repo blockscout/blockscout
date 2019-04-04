@@ -1,0 +1,35 @@
+<div class="modal fade" id="<%= if assigns[:status] do @status end %>StatusModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-status" role="document">
+    <div class="modal-content">
+      <div class="modal-status-graph modal-status-graph-<%= if assigns[:status] do @status end %>">
+        <%=
+          if @status == "error" do
+            render BlockScoutWeb.CommonComponentsView, "_icon_error_modal.html"
+          end
+        %>
+        <%=
+          if @status == "success" do
+            render BlockScoutWeb.CommonComponentsView, "_icon_success_modal.html"
+          end
+        %>
+        <%=
+          if @status == "warning" do
+            render BlockScoutWeb.CommonComponentsView, "_icon_warning_modal.html"
+          end
+        %>
+      </div>
+      <%= render BlockScoutWeb.CommonComponentsView, "_modal_close_button.html" %>
+      <div class="modal-body modal-status-body">
+        <%= if assigns[:title] do %>
+        <h2 class="modal-status-title"><%= @title %></h2>
+        <% end %>
+        <%= if assigns[:text] do %>
+        <p class="modal-status-text"><%= @text %></p>
+        <% end %>
+        <button class="btn-line" type="button" data-dismiss="modal">
+          <span class="btn-line-text">Ok</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

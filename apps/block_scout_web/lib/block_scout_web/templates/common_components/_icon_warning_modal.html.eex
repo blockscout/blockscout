@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="43" height="85">
+    <defs>
+        <filter id="warninga" width="43" height="85" x="0" y="0" filterUnits="userSpaceOnUse">
+            <feOffset dy="6" in="SourceAlpha"/>
+            <feGaussianBlur result="blurOut" stdDeviation="3.464"/>
+            <feFlood flood-color="#C16502" result="floodOut"/>
+            <feComposite in="floodOut" in2="blurOut" operator="atop"/>
+            <feComponentTransfer>
+                <feFuncA slope=".6" type="linear"/>
+            </feComponentTransfer>
+            <feMerge>
+                <feMergeNode/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+        <filter id="warningb">
+            <feOffset dy="-4" in="SourceAlpha"/>
+            <feGaussianBlur result="blurOut" stdDeviation="2.828"/>
+            <feFlood flood-color="#FF8502" result="floodOut"/>
+            <feComposite in="floodOut" in2="blurOut" operator="out" result="compOut"/>
+            <feComposite in="compOut" in2="SourceAlpha" operator="in"/>
+            <feComponentTransfer>
+                <feFuncA slope=".5" type="linear"/>
+            </feComponentTransfer>
+            <feBlend in2="SourceGraphic"/>
+        </filter>
+    </defs>
+    <path fill="#FFF" fill-rule="evenodd" d="M30.23 18.848L26 40h-.1a5.003 5.003 0 0 1-9.8 0H16l-4.23-21.152A9.958 9.958 0 0 1 11 15c0-5.523 4.477-10 10-10s10 4.477 10 10a9.958 9.958 0 0 1-.77 3.848zM21 49a9 9 0 0 1 9 9 9 9 0 0 1-9 9 9 9 0 0 1-9-9 9 9 0 0 1 9-9z" filter="url(#warningb)"/>
+</svg>

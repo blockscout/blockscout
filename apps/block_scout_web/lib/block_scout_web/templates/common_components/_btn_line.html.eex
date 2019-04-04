@@ -1,0 +1,6 @@
+<button
+    class="btn-line <%= if assigns[:extra_class] do @extra_class end %>"
+    <%= if assigns[:disabled] do "disabled" end %>
+>
+    <span class="btn-line-text"><%= @text %></span>
+</button>

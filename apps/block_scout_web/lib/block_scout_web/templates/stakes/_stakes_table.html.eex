@@ -84,5 +84,26 @@
 <%= render BlockScoutWeb.StakesView, "_stakes_modal_withdraw.html" %>
 <%=
     render BlockScoutWeb.CommonComponentsView,
+    "_modal_status.html",
+    status: "error",
+    title: "Lorem Ipsum",
+    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor."
+%>
+<%=
+    render BlockScoutWeb.CommonComponentsView,
+    "_modal_status.html",
+    status: "warning",
+    title: "Lorem Ipsum",
+    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor."
+%>
+<%=
+    render BlockScoutWeb.CommonComponentsView,
+    "_modal_status.html",
+    status: "success",
+    title: "Lorem Ipsum",
+    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor."
+%>
+<%=
+    render BlockScoutWeb.CommonComponentsView,
     "_pagination.html"
 %>
