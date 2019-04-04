@@ -14,6 +14,7 @@
  - [#1688](https://github.com/poanetwork/blockscout/pull/1688) - do not fail if failure reason is atom
  - [#1692](https://github.com/poanetwork/blockscout/pull/1692) - exclude decompiled smart contract from encoding
  - [#1684](https://github.com/poanetwork/blockscout/pull/1684) - Discard child block with parent_hash not matching hash of imported block
+ - [#1697](https://github.com/poanetwork/blockscout/pull/1697) - fix failing in rpc if balance is empty
 
 ### Chore
 
