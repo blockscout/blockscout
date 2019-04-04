@@ -6,7 +6,8 @@ config :indexer,
     transport: EthereumJSONRPC.HTTP,
     transport_options: [
       http: EthereumJSONRPC.HTTP.HTTPoison,
-      url: System.get_env("ETHEREUM_JSONRPC_HTTP_URL") || "https://mainnet.infura.io/v3/8a14134acf5d4d7ababe7a94484bbffb",
+      url:
+        System.get_env("ETHEREUM_JSONRPC_HTTP_URL") || "https://mainnet.infura.io/v3/8a14134acf5d4d7ababe7a94484bbffb",
       http_options: [recv_timeout: :timer.minutes(1), timeout: :timer.minutes(1), hackney: [pool: :ethereum_jsonrpc]]
     ],
     variant: EthereumJSONRPC.Geth
