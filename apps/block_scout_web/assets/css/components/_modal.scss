@@ -3,9 +3,6 @@ $modal-horizontal-padding: 30px !default;
 $modal-vertical-padding: 25px !default;
 $modal-border-radius: 10px !default;
 $modal-gray-background: #f6f7f9 !default;
-$modal-status-graph-error: #ff0d51 !default;
-$modal-status-graph-warning: #ff8502 !default;
-$modal-status-graph-success: $primary!default;
 
 .modal-backdrop {
     background-color: $modal-overlay-color;
@@ -37,6 +34,8 @@ $modal-status-graph-success: $primary!default;
     font-size: 18px;
     font-weight: normal;
     text-align: left;
+    white-space: normal;
+    word-break: break-word;
 }
 
 .modal-content {
@@ -44,98 +43,3 @@ $modal-status-graph-success: $primary!default;
     position: relative;
 }
 
-.modal-bottom-disclaimer {
-    background-color: $modal-gray-background;
-    border-bottom-left-radius: $modal-border-radius;
-    border-bottom-right-radius: $modal-border-radius;
-    color: #a3a9b5;
-    display: flex;
-    font-size: 12px;
-    font-weight: normal;
-    line-height: 1.67;
-    padding: #{ $modal-vertical-padding } #{ $modal-horizontal-padding };
-    text-align: left;
-
-    &.b-b-r-0 {
-        border-bottom-right-radius: 0;
-    }
-
-    .modal-bottom-disclaimer-graphic {
-        flex-shrink: 0;
-        padding-right: 15px;
-    }
-
-    .modal-bottom-disclaimer-text {
-        flex-grow: 1;
-    }
-}
-
-.modal-become-candidate {
-    max-width: 100%;
-    width: 280px;
-}
-
-.modal-stake {
-    max-width: 100%;
-    width: 460px;
-}
-
-.modal-stake-two-cols {
-    display: flex;
-}
-
-.modal-status {
-    max-width: 100%;
-    width: 300px;
-}
-
-.modal-status-graph {
-    align-items: center;
-    border-top-left-radius: $modal-border-radius;
-    border-top-right-radius: $modal-border-radius;
-    display: flex;
-    height: 135px;
-    justify-content: center;
-
-    &-error {
-        background-color: $modal-status-graph-error;
-    }
-
-    &-warning {
-        background-color: $modal-status-graph-warning;
-    }
-
-    &-success {
-        background-color: $modal-status-graph-success;
-    }
-
-    svg {
-        margin-top: 15px;
-    }
-}
-
-.modal-status-body {
-    align-items: center;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: #{ $modal-vertical-padding } #{ $modal-horizontal-padding };
-}
-
-.modal-status-title {
-    color: #333;
-    font-size: 18px;
-    font-weight: normal;
-    line-height: 1.2;
-    margin: 0 0 15px;
-    text-align: center;
-}
-
-.modal-status-text {
-    color: #a3a9b5;
-    font-size: 12px;
-    font-weight: normal;
-    line-height: 1.5;
-    margin: 0 0 25px;
-    text-align: center;
-}

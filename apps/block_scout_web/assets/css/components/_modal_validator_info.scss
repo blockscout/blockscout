@@ -1,6 +1,11 @@
 .modal-validator-info {
     max-width: 100%;
     width: 660px;
+
+    @include media-breakpoint-down(sm) {
+        margin-left: auto;
+        margin-right: auto;
+    }
 }
 
 .modal-validator-info-content {
@@ -16,6 +21,10 @@
     line-height: 1.67;
     padding: #{ $modal-vertical-padding } #{ $modal-horizontal-padding };
     row-gap: 30px;
+
+    @include media-breakpoint-down(sm) {
+        grid-template-columns: 1fr 1fr;
+    }
 }
 
 .modal-validator-info-item {

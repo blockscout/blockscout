@@ -105,6 +105,10 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/modal_validator_info";
 @import "components/form";
 @import "components/stakes_progress";
+@import "components/modal_status";
+@import "components/modal_bottom_disclaimer";
+@import "components/modal_become_candidate";
+@import "components/modal_stake";
 
 :export {
   primary: $primary;
