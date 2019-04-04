@@ -1,6 +1,7 @@
 #!/bin/sh
 # Adapted from Alex Kleissner's post, Running a Phoenix 1.3 project with docker-compose
 # https://medium.com/@hex337/running-a-phoenix-1-3-project-with-docker-compose-d82ab55e43cf
+# with some modifications for blockscout
 
 set -e
 
@@ -16,9 +17,7 @@ else
   echo "No Dialyxer config: Skipping setup..."
 fi
 
-
-# Install JS libraries
-echo "Installing JS..."
+echo "Installing JS Dependencies..."
 cd apps/block_scout_web/assets/ && \
     npm install && \
     npm run deploy && \
@@ -37,11 +36,8 @@ done
 echo "Postgres is available: continuing with database setup..."
 
 # Potentially Set up the database
-#mix compile
-mix deps.get
 mix ecto.create
 mix ecto.migrate
 
 echo " Launching Phoenix web server..."
-# Start the phoenix web server
 mix phx.server

@@ -4,8 +4,6 @@ services:
     container_name: postgres
     image: postgres:10.6
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
       - PGHOST=postgres
       - PGUSER=postgres
       - PGPASSWORD=postgres
@@ -18,11 +16,12 @@ services:
       - PGUSER=postgres
       - PGPASSWORD=postgres
       - ETHEREUM_JSONRPC_VARIANT=geth
-      - ETHEREUM_JSONRPC_HTTP_URL=https://mainnet.infura.io/8lTvJTKmHPCHazkneJsY
+      - ETHEREUM_JSONRPC_WS_URL=ws://host.docker.internal:2000
       - COIN=ETH
       - MIX_ENV=prod
       - PORT=4000
       - SECRET_KEY_BASE=RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5
+      - DATABASE_URL=postgresql://postgres:host.docker.internal:5432/explorer?ssl=false
     volumes:
       - type: bind
         source: .
