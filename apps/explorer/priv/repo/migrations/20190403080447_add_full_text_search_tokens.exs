@@ -5,7 +5,7 @@ defmodule Explorer.Repo.Migrations.AddFullTextSearchTokens do
     execute("CREATE EXTENSION pg_trgm")
 
     execute("""
-    CREATE INDEX tokens_trgm_idx ON tokens USING GIN (to_tsvector('english', name || ' ' || symbol))
+    CREATE INDEX tokens_trgm_idx ON tokens USING GIN (to_tsvector('english', symbol || ' ' || name))
     """)
   end
 

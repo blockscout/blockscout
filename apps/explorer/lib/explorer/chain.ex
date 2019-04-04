@@ -707,7 +707,7 @@ defmodule Explorer.Chain do
 
     query =
       from(token in Token,
-        where: fragment("to_tsvector('english', name || ' ' || symbol) @@ to_tsquery(?)", ^term),
+        where: fragment("to_tsvector('english', symbol || ' ' || name ) @@ to_tsquery(?)", ^term),
         limit: 5
       )
 
