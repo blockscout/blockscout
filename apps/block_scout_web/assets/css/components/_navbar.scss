@@ -20,6 +20,7 @@ $header-link-horizontal-padding: 0.71rem;
         font-size: 14px;
     }
     .navbar-nav {
+        flex-grow: 1;
         .nav-link {
             align-items: center;
             color: $header-links-color;
@@ -73,6 +74,10 @@ $header-link-horizontal-padding: 0.71rem;
                     fill: $header-icon-color;
                 }
             }
+        }
+
+        .nav-item-networks {
+            margin-left: auto;
         }
     }
 

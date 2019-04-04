@@ -35,6 +35,10 @@ defmodule BlockScoutWeb.LayoutView do
     SocialMedia.links()
   end
 
+  def stakes_active do
+    Keyword.get(application_config(), :stakes_active) || false
+  end
+
   def issue_link(conn) do
     params = [
       labels: "BlockScout",
