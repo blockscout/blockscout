@@ -92,7 +92,9 @@
                   prepop: true,
                   minChars: 3,
                   maxItems: 8,
-                  value: "name"
+                  value: "symbol",
+                  descr: "contract_address_hash"
+
                   ]) %>
               <div class="input-group-append">
                 <button class="input-group-text" id="search-icon">
