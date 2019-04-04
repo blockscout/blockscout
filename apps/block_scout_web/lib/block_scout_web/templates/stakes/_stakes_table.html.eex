@@ -81,6 +81,7 @@
 </div>
 <%= render BlockScoutWeb.StakesView, "_stakes_modal_validator_info.html" %>
 <%= render BlockScoutWeb.StakesView, "_stakes_modal_stake.html" %>
+<%= render BlockScoutWeb.StakesView, "_stakes_modal_withdraw.html" %>
 <%=
     render BlockScoutWeb.CommonComponentsView,
     "_pagination.html"

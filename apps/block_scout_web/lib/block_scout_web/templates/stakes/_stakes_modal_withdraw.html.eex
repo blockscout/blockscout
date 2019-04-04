@@ -1,4 +1,4 @@
-<div class="modal fade" id="stakeModal" tabindex="-1" role="dialog" aria-hidden="true">
+<div class="modal fade" id="withdrawModal" tabindex="-1" role="dialog" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-stake" role="document">
     <div class="modal-content">
       <button type="button" class="close close-modal" data-dismiss="modal" aria-label="Close">
@@ -9,7 +9,7 @@
       <div class="modal-stake-two-cols">
         <div class="modal-stake-left">
           <div class="modal-header">
-            <h5 class="modal-title"><%= gettext("Stake") %></h5>
+            <h5 class="modal-title"><%= gettext("Withdraw") %></h5>
           </div>
           <div class="modal-body">
             <form>
@@ -19,10 +19,11 @@
                   <div class="input-group-text">POA20</div>
                 </div>
               </div>
-              <p class="form-p m-b-0">Minimum Stake: <span class="text-dark">100 POA20</span></p>
-              <p class="form-p">Your Balance: <span class="text-dark">2000 POA20</span></p>
+              <p class="form-p m-b-0">Your Balance: <span class="text-dark">2000 POA20</span></p>
+              <p class="form-p">Your Staked: <span class="text-dark">600 POA20</span></p>
               <div class="form-button">
-                <%= render BlockScoutWeb.StakesView, "_stakes_btn_stake.html", text: gettext("Stake More"), extra_class: "full-width" %>
+                <%= render BlockScoutWeb.StakesView, "_stakes_btn_withdraw.html", text: gettext("Withdraw Now"), extra_class: "full-width" %>
+                <%= render BlockScoutWeb.StakesView, "_stakes_btn_withdraw.html", text: gettext("Order Withdrawal"), extra_class: "full-width", disabled: true %>
               </div>
             </form>
           </div>
@@ -39,11 +40,11 @@
           <%=
             render BlockScoutWeb.StakesView,
             "_stakes_progress.html",
-            progress: "900",
-            total: "2700",
+            progress: "1250",
+            total: "3000",
             pool: "0x7130-95a480",
-            stakes_ratio: "2.75%",
-            delegators: "1367"
+            stakes_ratio: "1.095%",
+            delegators: "3200"
           %>
         </div>
       </div>

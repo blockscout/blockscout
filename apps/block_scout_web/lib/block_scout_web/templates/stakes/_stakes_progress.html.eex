@@ -1,9 +1,8 @@
 <div class="stakes-progress">
   <div class="stakes-progress-graph">
     <canvas
-      class="stakes-progress-graph-canvas"
+      class="stakes-progress-graph-canvas js-stakes-progress"
       height="125"
-      id="stakeProgress"
       width="125"
     ></canvas>
     <div class="stakes-progress-data">

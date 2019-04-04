@@ -11,15 +11,27 @@ $(function () {
   })
 
   $('.js-stake-stake').on('click', function () {
-    $('#stakeModal').modal()
-    const progress = parseInt($('.js-stakes-progress-data-progress').text())
-    const total = parseInt($('.js-stakes-progress-data-total').text())
+    const modal = '#stakeModal'
+    const progress = parseInt($(`${modal} .js-stakes-progress-data-progress`).text())
+    const total = parseInt($(`${modal} .js-stakes-progress-data-total`).text())
 
-    setupStakesProgress(progress, total)
+    $(modal).modal()
+
+    setupStakesProgress(progress, total, modal)
   })
 
-  function setupStakesProgress (progress, total) {
-    const stakeProgress = $('#stakeProgress')
+  $('.js-withdraw-stake').on('click', function () {
+    const modal = '#withdrawModal'
+    const progress = parseInt($(`${modal} .js-stakes-progress-data-progress`).text())
+    const total = parseInt($(`${modal} .js-stakes-progress-data-total`).text())
+
+    $(modal).modal()
+
+    setupStakesProgress(progress, total, modal)
+  })
+
+  function setupStakesProgress (progress, total, modal) {
+    const stakeProgress = $(`${modal} .js-stakes-progress`)
     const primaryColor = $('.btn-full-primary').css('background-color')
     const backgroundColors = [
       primaryColor,
