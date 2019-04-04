@@ -21,7 +21,7 @@
               </div>
               <p class="form-p m-b-0">Minimum Stake: <span class="text-dark">100 POA20</span></p>
               <p class="form-p">Your Balance: <span class="text-dark">2000 POA20</span></p>
-              <div class="form-button">
+              <div class="form-buttons">
                 <%= render BlockScoutWeb.StakesView, "_stakes_btn_stake.html", text: gettext("Stake More"), extra_class: "full-width" %>
               </div>
             </form>

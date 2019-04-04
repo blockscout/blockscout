@@ -21,7 +21,7 @@
                 <input type="text" class="form-control" placeholder='<%= gettext("Your Mining Address") %>'>
             </div>
             <p class="form-p">Minimum possible stake: <span class="text-dark">100 POA20</span></p>
-            <div class="form-button"><%= render BlockScoutWeb.CommonComponentsView, "_btn_add_full.html", text: gettext("Become Candidate"), extra_class: "full-width" %></div>
+            <div class="form-buttons"><%= render BlockScoutWeb.CommonComponentsView, "_btn_add_full.html", text: gettext("Become Candidate"), extra_class: "full-width" %></div>
         </form>
       </div>
       <div class="modal-bottom-disclaimer">

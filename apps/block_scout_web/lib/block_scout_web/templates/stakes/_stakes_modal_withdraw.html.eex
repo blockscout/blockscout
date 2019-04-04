@@ -21,7 +21,7 @@
               </div>
               <p class="form-p m-b-0">Your Balance: <span class="text-dark">2000 POA20</span></p>
               <p class="form-p">Your Staked: <span class="text-dark">600 POA20</span></p>
-              <div class="form-button">
+              <div class="form-buttons">
                 <%= render BlockScoutWeb.StakesView, "_stakes_btn_withdraw.html", text: gettext("Withdraw Now"), extra_class: "full-width" %>
                 <%= render BlockScoutWeb.StakesView, "_stakes_btn_withdraw.html", text: gettext("Order Withdrawal"), extra_class: "full-width", disabled: true %>
               </div>
