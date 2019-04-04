@@ -16,7 +16,6 @@ services:
       - PGUSER=postgres
       - PGPASSWORD=postgres
       - ETHEREUM_JSONRPC_VARIANT=geth
-      - ETHEREUM_JSONRPC_WS_URL=ws://host.docker.internal:2000
       - COIN=ETH
       - MIX_ENV=prod
       - PORT=4000
