@@ -46,7 +46,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       |> Map.put(:timestamps, timestamps)
 
     ordered_consensus_block_numbers = ordered_consensus_block_numbers(changes_list)
-    where_invalid_parent = where_invalid_parent(changes_list)
+    where_invalid_neighbour = where_invalid_neighbour(changes_list)
     where_forked = where_forked(changes_list)
 
     multi
@@ -70,8 +70,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     |> Multi.run(:lose_consensus, fn repo, _ ->
       lose_consensus(repo, ordered_consensus_block_numbers, insert_options)
     end)
-    |> Multi.run(:lose_invalid_parent_consensus, fn repo, _ ->
-      lose_invalid_parent_consensus(repo, where_invalid_parent, insert_options)
+    |> Multi.run(:lose_invalid_neighbour_consensus, fn repo, _ ->
+      lose_invalid_neighbour_consensus(repo, where_invalid_neighbour, insert_options)
     end)
     |> Multi.run(:delete_address_token_balances, fn repo, _ ->
       delete_address_token_balances(repo, ordered_consensus_block_numbers, insert_options)
@@ -316,13 +316,13 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     end
   end
 
-  defp lose_invalid_parent_consensus(repo, where_invalid_parent, %{
+  defp lose_invalid_neighbour_consensus(repo, where_invalid_neighbour, %{
          timeout: timeout,
          timestamps: %{updated_at: updated_at}
        }) do
     query =
       from(
-        block in where_invalid_parent,
+        block in where_invalid_neighbour,
         update: [
           set: [
             consensus: false,
@@ -338,7 +338,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       {:ok, result}
     rescue
       postgrex_error in Postgrex.Error ->
-        {:error, %{exception: postgrex_error, where_invalid_parent: where_invalid_parent}}
+        {:error, %{exception: postgrex_error, where_invalid_neighbour: where_invalid_neighbour}}
     end
   end
 
@@ -581,12 +581,22 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     end)
   end
 
-  defp where_invalid_parent(blocks_changes) when is_list(blocks_changes) do
+  defp where_invalid_neighbour(blocks_changes) when is_list(blocks_changes) do
     initial = from(b in Block, where: false)
 
-    Enum.reduce(blocks_changes, initial, fn %{consensus: consensus, parent_hash: parent_hash, number: number}, acc ->
+    Enum.reduce(blocks_changes, initial, fn %{
+                                              consensus: consensus,
+                                              hash: hash,
+                                              parent_hash: parent_hash,
+                                              number: number
+                                            },
+                                            acc ->
       if consensus do
-        from(block in acc, or_where: block.number == ^(number - 1) and block.hash != ^parent_hash)
+        from(
+          block in acc,
+          or_where: block.number == ^(number - 1) and block.hash != ^parent_hash,
+          or_where: block.number == ^(number + 1) and block.parent_hash != ^hash
+        )
       else
         acc
       end

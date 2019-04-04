@@ -3667,27 +3667,6 @@ defmodule Explorer.ChainTest do
     end
   end
 
-  describe "list_block_numbers_with_invalid_consensus/0" do
-    test "returns a list of block numbers with invalid consensus" do
-      block1 = insert(:block)
-      block2_with_invalid_consensus = insert(:block, parent_hash: block1.hash, consensus: false)
-      _block2 = insert(:block, parent_hash: block1.hash, number: block2_with_invalid_consensus.number)
-      block3 = insert(:block, parent_hash: block2_with_invalid_consensus.hash)
-      block4 = insert(:block, parent_hash: block3.hash)
-      block5 = insert(:block, parent_hash: block4.hash)
-      block6_without_consensus = insert(:block, parent_hash: block5.hash, consensus: false)
-      block6 = insert(:block, parent_hash: block5.hash, number: block6_without_consensus.number)
-      block7 = insert(:block, parent_hash: block6.hash)
-      block8_with_invalid_consensus = insert(:block, parent_hash: block7.hash, consensus: false)
-      _block8 = insert(:block, parent_hash: block7.hash, number: block8_with_invalid_consensus.number)
-      block9 = insert(:block, parent_hash: block8_with_invalid_consensus.hash)
-      _block10 = insert(:block, parent_hash: block9.hash)
-
-      assert Chain.list_block_numbers_with_invalid_consensus() ==
-               [block2_with_invalid_consensus.number, block8_with_invalid_consensus.number]
-    end
-  end
-
   describe "block_combined_rewards/1" do
     test "sums the block_rewards values" do
       block = insert(:block)

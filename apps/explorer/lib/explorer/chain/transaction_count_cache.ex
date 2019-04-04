@@ -12,7 +12,7 @@ defmodule Explorer.Chain.TransactionCountCache do
 
   # 2 hours
   @cache_period 1_000 * 60 * 60 * 2
-  @default_value 0
+  @default_value nil
   @key "count"
   @name __MODULE__
 
