@@ -14,7 +14,11 @@ jobs:
     working_directory: ~/app
 
     steps:
-      - run: sudo npm install -g phantomjs-prebuilt --unsafe-perm
+      - run: wget -O /tmp/phantomjs.tar.gz https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.5.0-beta-linux-ubuntu-xenial-x86_64.tar.gz
+      - run: tar -zxvf /tmp/phantomjs.tar.gz -C /tmp
+      - run: sudo mv /tmp/phantomjs-2.5.0-beta-ubuntu-xenial/bin/phantomjs /usr/local/bin/phantomjs
+      - run: sudo chmod a+x /usr/local/bin/phantomjs
+
       - run: sudo apt-get update; sudo apt-get -y install autoconf build-essential libgmp3-dev libtool
 
       - checkout
@@ -357,7 +361,10 @@ jobs:
     steps:
       - attach_workspace:
           at: .
-      - run: sudo npm install -g phantomjs-prebuilt --unsafe-perm
+      - run: wget -O /tmp/phantomjs.tar.gz https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.5.0-beta-linux-ubuntu-xenial-x86_64.tar.gz
+      - run: tar -zxvf /tmp/phantomjs.tar.gz -C /tmp
+      - run: sudo mv /tmp/phantomjs-2.5.0-beta-ubuntu-xenial/bin/phantomjs /usr/local/bin/phantomjs
+      - run: sudo chmod a+x /usr/local/bin/phantomjs
 
       - run: mix local.hex --force
       - run: mix local.rebar --force
@@ -409,7 +416,11 @@ jobs:
       - attach_workspace:
           at: .
 
-      - run: sudo npm install -g phantomjs-prebuilt --unsafe-perm
+      - run: wget -O /tmp/phantomjs.tar.gz https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.5.0-beta-linux-ubuntu-xenial-x86_64.tar.gz
+      - run: tar -zxvf /tmp/phantomjs.tar.gz -C /tmp
+      - run: sudo mv /tmp/phantomjs-2.5.0-beta-ubuntu-xenial/bin/phantomjs /usr/local/bin/phantomjs
+      - run: sudo chmod a+x /usr/local/bin/phantomjs
+
       - run: mix local.hex --force
       - run: mix local.rebar --force
 
@@ -460,7 +471,11 @@ jobs:
       - attach_workspace:
           at: .
 
-      - run: sudo npm install -g phantomjs-prebuilt --unsafe-perm
+      - run: wget -O /tmp/phantomjs.tar.gz https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.5.0-beta-linux-ubuntu-xenial-x86_64.tar.gz
+      - run: tar -zxvf /tmp/phantomjs.tar.gz -C /tmp
+      - run: sudo mv /tmp/phantomjs-2.5.0-beta-ubuntu-xenial/bin/phantomjs /usr/local/bin/phantomjs
+      - run: sudo chmod a+x /usr/local/bin/phantomjs
+
       - run: mix local.hex --force
       - run: mix local.rebar --force
 
@@ -511,7 +526,11 @@ jobs:
       - attach_workspace:
           at: .
 
-      - run: sudo npm install -g phantomjs-prebuilt --unsafe-perm
+      - run: wget -O /tmp/phantomjs.tar.gz https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.5.0-beta-linux-ubuntu-xenial-x86_64.tar.gz
+      - run: tar -zxvf /tmp/phantomjs.tar.gz -C /tmp
+      - run: sudo mv /tmp/phantomjs-2.5.0-beta-ubuntu-xenial/bin/phantomjs /usr/local/bin/phantomjs
+      - run: sudo chmod a+x /usr/local/bin/phantomjs
+
       - run: mix local.hex --force
       - run: mix local.rebar --force
 
