@@ -17,7 +17,7 @@
                     <%= render BlockScoutWeb.StakesView, "_stakes_empty_content.html" %>
                 </td>
             </tr>
-            <%= end %>
+            <% end %>
             <%= if not @empty_content do %>
             <tr class="stakes-tr-banned">
                 <td class="stakes-td"><div class="stakes-td-order">1</div></td>
@@ -68,18 +68,19 @@
                 <td class="stakes-td"><span class="stakes-td-link-style">1455</span></td>
                 <td class="stakes-td">
                     <div class="stakes-controls">
-                        <%= render BlockScoutWeb.StakesView, "_stakes_control_move.html" %>
-                        <%= render BlockScoutWeb.StakesView, "_stakes_control_withdraw.html" %>
-                        <%= render BlockScoutWeb.StakesView, "_stakes_control_stake.html" %>
+                        <%= render BlockScoutWeb.StakesView, "_stakes_control_move.html", extra_class: "js-move-stake" %>
+                        <%= render BlockScoutWeb.StakesView, "_stakes_control_withdraw.html", extra_class: "js-withdraw-stake" %>
+                        <%= render BlockScoutWeb.StakesView, "_stakes_control_stake.html", extra_class: "js-stake-stake" %>
                     </div>
                 </td>
             </tr>
-            <%= end %>
-            <%= end %>
+            <% end %>
+            <% end %>
         </tbody>
     </table>
 </div>
 <%= render BlockScoutWeb.StakesView, "_stakes_modal_validator_info.html" %>
+<%= render BlockScoutWeb.StakesView, "_stakes_modal_stake.html" %>
 <%=
     render BlockScoutWeb.CommonComponentsView,
     "_pagination.html"

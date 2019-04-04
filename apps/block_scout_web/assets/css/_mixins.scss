@@ -72,16 +72,19 @@
     align-items: center;
     background-color: $bg-color;
     border-radius: 2px;
+    border: 1px solid $bg-color;
     cursor: pointer;
     display: flex;
     height: 36px;
     justify-content: center;
+    outline: none;
     padding: 0 15px;
     transition: all 0.25s;
     width: fit-content;
 
     &:hover {
         background-color: darken($bg-color, 10%);
+        border-color: darken($bg-color, 10%);
     }
 
     &-text {
@@ -98,6 +101,16 @@
 
     &.full-width {
         width: 100%;
+    }
+
+    &[disabled] {
+        &,
+        &:hover {
+            background-color: $bg-color;
+            border-color: $bg-color;
+            cursor: default;
+            opacity: 0.5;
+        }
     }
 }
 
@@ -110,6 +123,7 @@
     display: flex;
     height: 36px;
     justify-content: center;
+    outline: none;
     padding: 0 15px;
     transition: all 0.25s;
     width: fit-content;
@@ -132,5 +146,15 @@
 
     &.full-width {
         width: 100%;
+    }
+
+    &[disabled] {
+        &,
+        &:hover {
+            background-color: $bg-color;
+            border-color: $text-color;
+            cursor: default;
+            opacity: 0.5;
+        }
     }
 }

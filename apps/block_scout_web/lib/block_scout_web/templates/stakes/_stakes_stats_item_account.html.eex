@@ -7,9 +7,9 @@
                 <path fill-rule="evenodd" d="M13 10a1 1 0 0 1-1-1V2H5a1 1 0 0 1 0-2h8a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1zm-3-5v8a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1zM8 6H2v6h6V6z"/>
             </svg>
         </div>
-        <%= else %>
+        <% else %>
             <span class="stakes-top-stats-login">Login</span> with MetaMask
-        <%= end %>
+        <% end %>
     </span>
     <span class="stakes-top-stats-label">
         <span class="stakes-top-stats-label-item"><%= gettext "Balance" %>:

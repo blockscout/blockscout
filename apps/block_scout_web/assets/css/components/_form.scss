@@ -14,10 +14,14 @@ $form-control-border-color: #e2e5ec !default;
     color: #a3a9b5;
     font-size: 12px;
     font-weight: normal;
-    line-height: 1.5;
+    line-height: 1.8;
 
     .text-dark {
         color: #333;
+    }
+
+    &.m-b-0 {
+        margin-bottom: 0;
     }
 }
 

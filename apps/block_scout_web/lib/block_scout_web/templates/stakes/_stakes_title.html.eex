@@ -7,7 +7,7 @@
             <div class="check-icon"></div>
             <div class="check-text">Show banned only</div>
         </div>
-        <%= end %>
+        <% end %>
         <div class="check card-title-control">
             <input type="checkbox" />
             <div class="check-icon"></div>

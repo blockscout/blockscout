@@ -15,11 +15,14 @@ $modal-gray-background: #f6f7f9 !default;
 .modal-header {
     border-bottom: none;
     padding: #{ $modal-vertical-padding } #{ $modal-horizontal-padding };
+}
 
-    .close.close-modal {
-        margin: -70px -70px 0 0;
-        opacity: 1;
-    }
+.close.close-modal {
+    left: auto;
+    opacity: 1;
+    position: absolute;
+    right: -35px;
+    top: -35px;
 }
 
 .modal-body {
@@ -35,6 +38,7 @@ $modal-gray-background: #f6f7f9 !default;
 
 .modal-content {
     border-radius: $modal-border-radius;
+    position: relative;
 }
 
 .modal-bottom-disclaimer {
@@ -49,6 +53,10 @@ $modal-gray-background: #f6f7f9 !default;
     padding: #{ $modal-vertical-padding } #{ $modal-horizontal-padding };
     text-align: left;
 
+    &.b-b-r-0 {
+        border-bottom-right-radius: 0;
+    }
+
     .modal-bottom-disclaimer-graphic {
         flex-shrink: 0;
         padding-right: 15px;
@@ -61,4 +69,12 @@ $modal-gray-background: #f6f7f9 !default;
 
 .modal-become-candidate {
     width: 280px;
+}
+
+.modal-stake {
+    width: 460px;
+}
+
+.modal-stake-two-cols {
+    display: flex;
 }

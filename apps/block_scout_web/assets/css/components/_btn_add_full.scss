@@ -1,6 +1,0 @@
-$btn-add-full-bg: $primary !default;
-$btn-add-full-color: #fff !default;
-
-.btn-add-full {
-    @include btn-full($btn-add-full-bg, $btn-add-full-color);
-}

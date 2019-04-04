@@ -90,8 +90,8 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/coin-balance-tile";
 @import "components/highlight";
 @import "components/copy_icon";
-@import "components/btn_add_full";
-@import "components/btn_add_line";
+@import "components/btn_full";
+@import "components/btn_line";
 @import "components/stakes";
 @import "components/check";
 @import "components/stakes_table";
@@ -104,6 +104,7 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import "components/modal";
 @import "components/modal_validator_info";
 @import "components/form";
+@import "components/stakes_progress";
 
 :export {
   primary: $primary;

@@ -3,26 +3,26 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title"><%= gettext("Become Candidate") %></h5>
-        <button type="button" class="close close-modal" data-dismiss="modal" aria-label="Close">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18">
-                <path fill="#F6F7F9" fill-rule="evenodd" d="M10.435 8.983l7.261 7.261a1.027 1.027 0 1 1-1.452 1.452l-7.261-7.261-7.262 7.262a1.025 1.025 0 1 1-1.449-1.45l7.262-7.261L.273 1.725A1.027 1.027 0 1 1 1.725.273l7.261 7.261 7.23-7.231a1.025 1.025 0 1 1 1.449 1.45l-7.23 7.23z"/>
-            </svg>
-        </button>
       </div>
+      <button type="button" class="close close-modal" data-dismiss="modal" aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18">
+              <path fill="#F6F7F9" fill-rule="evenodd" d="M10.435 8.983l7.261 7.261a1.027 1.027 0 1 1-1.452 1.452l-7.261-7.261-7.262 7.262a1.025 1.025 0 1 1-1.449-1.45l7.262-7.261L.273 1.725A1.027 1.027 0 1 1 1.725.273l7.261 7.261 7.23-7.231a1.025 1.025 0 1 1 1.449 1.45l-7.23 7.23z"/>
+          </svg>
+      </button>
       <div class="modal-body">
-            <form>
-                <div class="input-group form-group">
-                    <input type="text" class="form-control n-b-r" placeholder='<%= gettext("Amount") %>'>
-                    <div class="input-group-prepend last">
-                      <div class="input-group-text">POA20</div>
-                    </div>
+        <form>
+            <div class="input-group form-group">
+                <input type="text" class="form-control n-b-r" placeholder='<%= gettext("Amount") %>'>
+                <div class="input-group-prepend last">
+                  <div class="input-group-text">POA20</div>
                 </div>
-                <div class="form-group">
-                    <input type="text" class="form-control" placeholder='<%= gettext("Your Mining Address") %>'>
-                </div>
-                <p class="form-p">Minimum possible stake: <span class="text-dark">100 POA20</span></p>
-                <div class="form-button"><%= render BlockScoutWeb.CommonComponentsView, "_btn_add_full.html", text: gettext("Become Candidate"), extra_class: "full-width" %></div>
-            </form>
+            </div>
+            <div class="form-group">
+                <input type="text" class="form-control" placeholder='<%= gettext("Your Mining Address") %>'>
+            </div>
+            <p class="form-p">Minimum possible stake: <span class="text-dark">100 POA20</span></p>
+            <div class="form-button"><%= render BlockScoutWeb.CommonComponentsView, "_btn_add_full.html", text: gettext("Become Candidate"), extra_class: "full-width" %></div>
+        </form>
       </div>
       <div class="modal-bottom-disclaimer">
         <div class="modal-bottom-disclaimer-graphic">
