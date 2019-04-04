@@ -87,7 +87,7 @@ $dashboard-line-color-market: $secondary !default;
 }
 
 .dashboard-banner-chart-legend {
-  align-items: center;
+  align-items: flex-start;
   display: flex;
   flex-direction: column;
 
