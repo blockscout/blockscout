@@ -5,6 +5,7 @@
  - [#1662](https://github.com/poanetwork/blockscout/pull/1662) - allow specifying number of optimization runs
  - [#1654](https://github.com/poanetwork/blockscout/pull/1654) - add decompiled code tab
  - [#1661](https://github.com/poanetwork/blockscout/pull/1661) - try to compile smart contract with the latest evm version
+ - [#1665](https://github.com/poanetwork/blockscout/pull/1665) - Add contract verification RPC endpoint.
 
 ### Fixes
 
@@ -13,6 +14,7 @@
  - [#1688](https://github.com/poanetwork/blockscout/pull/1688) - do not fail if failure reason is atom
  - [#1692](https://github.com/poanetwork/blockscout/pull/1692) - exclude decompiled smart contract from encoding
  - [#1684](https://github.com/poanetwork/blockscout/pull/1684) - Discard child block with parent_hash not matching hash of imported block
+ - [#1697](https://github.com/poanetwork/blockscout/pull/1697) - fix failing in rpc if balance is empty
 
 ### Chore
 
