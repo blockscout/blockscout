@@ -13,7 +13,10 @@ config :explorer,
 
 config :explorer, Explorer.Counters.AverageBlockTime, enabled: true
 
-config :explorer, Explorer.Counters.AddressesWithBalanceCounter, enabled: true, enable_consolidation: true
+config :explorer, Explorer.Counters.AddressesWithBalanceCounter,
+  enabled: true,
+  enable_consolidation: true,
+  update_interval_in_seconds: System.get_env("ADDRESS_WITH_BALANCES_UPDATE_INTERVAL") || 30 * 60
 
 config :explorer, Explorer.ExchangeRates, enabled: true, store: :ets
 
