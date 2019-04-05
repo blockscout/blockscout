@@ -1,46 +1,46 @@
 $form-control-border-color: #e2e5ec !default;
 
 .form-control {
-    border-color: $form-control-border-color;
-    border-radius: 0;
-    font-size: 14px;
+  border-color: $form-control-border-color;
+  border-radius: 0;
+  font-size: 14px;
 
-    &.n-b-r {
-        border-right: none;
-    }
+  &.n-b-r {
+    border-right: none;
+  }
 }
 
 .form-p {
-    color: #a3a9b5;
-    font-size: 12px;
-    font-weight: normal;
-    line-height: 1.8;
+  color: #a3a9b5;
+  font-size: 12px;
+  font-weight: normal;
+  line-height: 1.8;
 
-    .text-dark {
-        color: #333;
-    }
+  .text-dark {
+    color: #333;
+  }
 
-    &.m-b-0 {
-        margin-bottom: 0;
-    }
+  &.m-b-0 {
+    margin-bottom: 0;
+  }
 }
 
 .input-group-prepend.last {
-    .input-group-text {
-        background: none;
-        border-color: $form-control-border-color;
-        border-left: none;
-        color: #a3a9b5;
-        font-size: 14px;
-    }
+  .input-group-text {
+    background: none;
+    border-color: $form-control-border-color;
+    border-left: none;
+    color: #a3a9b5;
+    font-size: 14px;
+  }
 }
 
 .form-buttons {
-    [class*="btn-"] {
-        margin-bottom: 20px;
+  [class*="btn-"] {
+    margin-bottom: 20px;
 
-        &:last-child {
-            margin-bottom: 0;
-        }
+    &:last-child {
+      margin-bottom: 0;
     }
+  }
 }

@@ -2,46 +2,46 @@ $check-color: $primary !default;
 $check-dimensions: 14px !default;
 
 .check {
-    align-items: center;
-    display: flex;
+  align-items: center;
+  display: flex;
+  position: relative;
+
+  input[type="checkbox"] {
+    height: 100%;
+    opacity: 0;
+    position: absolute;
+    width: 100%;
+    z-index: 5;
+
+    &:checked + .check-icon::before {
+      background-color: $check-color;
+      content: "";
+      height: 6px;
+      left: 50%;
+      position: absolute;
+      top: 50%;
+      transform: translateX(-50%) translateY(-50%);
+      width: 6px;
+    }
+  }
+
+  .check-icon {
+    border: 1px solid $base-border-color;
+    flex-grow: 0;
+    flex-shrink: 0;
+    height: $check-dimensions;
+    margin: 0 10px 0 0;
     position: relative;
+    width: $check-dimensions;
+    z-index: 1;
+  }
 
-    input[type="checkbox"] {
-        height: 100%;
-        opacity: 0;
-        position: absolute;
-        width: 100%;
-        z-index: 5;
-
-        &:checked + .check-icon::before {
-            background-color: $check-color;
-            content: "";
-            height: 6px;
-            left: 50%;
-            position: absolute;
-            top: 50%;
-            transform: translateX(-50%) translateY(-50%);
-            width: 6px;
-        }
-    }
-
-    .check-icon {
-        border: 1px solid $base-border-color;
-        flex-grow: 0;
-        flex-shrink: 0;
-        height: $check-dimensions;
-        margin: 0 10px 0 0;
-        position: relative;
-        width: $check-dimensions;
-        z-index: 1;
-    }
-
-    .check-text {
-        font-size: 14px;
-        font-weight: normal;
-        line-height: 1.2;
-        position: relative;
-        white-space: nowrap;
-        z-index: 1;
-    }
+  .check-text {
+    font-size: 14px;
+    font-weight: normal;
+    line-height: 1.2;
+    position: relative;
+    white-space: nowrap;
+    z-index: 1;
+  }
 }

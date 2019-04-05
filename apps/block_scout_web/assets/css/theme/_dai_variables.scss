@@ -1,6 +1,6 @@
-$primary:       #fec042;
-$secondary:     #53546a;
-$tertiary:      #1755e4;
+$primary: #fec042;
+$secondary: #53546a;
+$tertiary: #1755e4;
 
 .navbar.navbar-primary {
   background-color: #f2f6f8;
@@ -17,20 +17,23 @@ $tertiary:      #1755e4;
   .form-control {
     color: $secondary;
 
-    &::-webkit-input-placeholder { /* Chrome/Opera/Safari */
+    &::-webkit-input-placeholder {
+      /* Chrome/Opera/Safari */
       color: transparentize($secondary, 0.5);
     }
-    &::-moz-placeholder { /* Firefox 19+ */
+    &::-moz-placeholder {
+      /* Firefox 19+ */
       color: transparentize($secondary, 0.5);
     }
-    &:-ms-input-placeholder { /* IE 10+ */
+    &:-ms-input-placeholder {
+      /* IE 10+ */
       color: transparentize($secondary, 0.5);
     }
-    &:-moz-placeholder { /* Firefox 18- */
+    &:-moz-placeholder {
+      /* Firefox 18- */
       color: transparentize($secondary, 0.5);
     }
   }
-
 }
 
 .navbar-logo {

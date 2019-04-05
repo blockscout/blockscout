@@ -1,166 +1,169 @@
 @mixin textfield-placeholder($color: #a3a9b5) {
-    &::-webkit-input-placeholder {
-        color: $color;
-    }
-    &::-moz-placeholder {
-        color: $color;
-    }
-    &:-ms-input-placeholder {
-        color: $color;
-    }
-    &:-moz-placeholder {
-        color: $color;
-    }
+  &::-webkit-input-placeholder {
+    color: $color;
+  }
+  &::-moz-placeholder {
+    color: $color;
+  }
+  &:-ms-input-placeholder {
+    color: $color;
+  }
+  &:-moz-placeholder {
+    color: $color;
+  }
 }
 
 @mixin gradient-container() {
-    background-color: $primary;
-    background-image: linear-gradient(to bottom, $dashboard-banner-gradient-start, $dashboard-banner-gradient-end);
-    box-shadow: 0 5px 40px -5px rgba(#000, 0.25);
-    margin-top: -3rem;
+  background-color: $primary;
+  background-image: linear-gradient(
+    to bottom,
+    $dashboard-banner-gradient-start,
+    $dashboard-banner-gradient-end
+  );
+  box-shadow: 0 5px 40px -5px rgba(#000, 0.25);
+  margin-top: -3rem;
 }
 
 @mixin stats-item() {
-    &-item {
-        color: #fff;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        padding-left: calc(1rem + 4px);
-        padding-right: 1rem;
-        position: relative;
+  &-item {
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-left: calc(1rem + 4px);
+    padding-right: 1rem;
+    position: relative;
 
-        &::before {
-            background-color: rgba(#fff, 0.5);
-            border-radius: 2px;
-            content: "";
-            height: 100%;
-            left: 0;
-            position: absolute;
-            top: 0;
-            width: 4px;
-        }
+    &::before {
+      background-color: rgba(#fff, 0.5);
+      border-radius: 2px;
+      content: "";
+      height: 100%;
+      left: 0;
+      position: absolute;
+      top: 0;
+      width: 4px;
     }
+  }
 
-    &-label {
-        display: block;
-        white-space: nowrap;
+  &-label {
+    display: block;
+    white-space: nowrap;
+  }
+
+  &-label-item {
+    margin-right: 20px;
+
+    &:last-child {
+      margin-right: 0;
     }
+  }
 
-    &-label-item {
-        margin-right: 20px;
+  &-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 200;
+    white-space: nowrap;
 
-        &:last-child {
-            margin-right: 0;
-        }
+    @media (max-width: $breakpoint-lg) {
+      font-size: 1.25rem;
     }
-
-    &-value {
-        display: block;
-        font-size: 1.5rem;
-        font-weight: 200;
-        white-space: nowrap;
-
-        @media (max-width: $breakpoint-lg) {
-            font-size: 1.25rem;
-        }
-    }
-
+  }
 }
 
 @mixin btn-full($bg-color: $primary, $text-color: #fff) {
-    align-items: center;
-    background-color: $bg-color;
-    border-radius: 2px;
-    border: 1px solid $bg-color;
-    cursor: pointer;
-    display: flex;
-    height: 36px;
-    justify-content: center;
-    outline: none;
-    padding: 0 15px;
-    transition: all 0.25s;
-    width: fit-content;
+  align-items: center;
+  background-color: $bg-color;
+  border-radius: 2px;
+  border: 1px solid $bg-color;
+  cursor: pointer;
+  display: flex;
+  height: 36px;
+  justify-content: center;
+  outline: none;
+  padding: 0 15px;
+  transition: all 0.25s;
+  width: fit-content;
 
+  &:hover {
+    background-color: darken($bg-color, 10%);
+    border-color: darken($bg-color, 10%);
+  }
+
+  &-text {
+    color: $text-color;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: left;
+  }
+
+  svg {
+    margin-right: 12px;
+  }
+
+  path {
+    fill: $text-color;
+  }
+
+  &.full-width {
+    width: 100%;
+  }
+
+  &[disabled] {
+    &,
     &:hover {
-        background-color: darken($bg-color, 10%);
-        border-color: darken($bg-color, 10%);
+      background-color: $bg-color;
+      border-color: $bg-color;
+      cursor: default;
+      opacity: 0.5;
     }
-
-    &-text {
-        color: $text-color;
-        font-size: 12px;
-        font-weight: 600;
-        text-align: left;
-    }
-
-    svg {
-        margin-right: 12px;
-    }
-
-    path {
-        fill: $text-color;
-    }
-
-    &.full-width {
-        width: 100%;
-    }
-
-    &[disabled] {
-        &,
-        &:hover {
-            background-color: $bg-color;
-            border-color: $bg-color;
-            cursor: default;
-            opacity: 0.5;
-        }
-    }
+  }
 }
 
 @mixin btn-line($bg-color: #fff, $text-color: $secondary) {
-    align-items: center;
-    background-color: $bg-color;
-    border-radius: 2px;
-    border: 1px solid $text-color;
-    cursor: pointer;
-    display: flex;
-    height: 36px;
-    justify-content: center;
-    outline: none;
-    padding: 0 15px;
-    transition: all 0.25s;
-    width: fit-content;
+  align-items: center;
+  background-color: $bg-color;
+  border-radius: 2px;
+  border: 1px solid $text-color;
+  cursor: pointer;
+  display: flex;
+  height: 36px;
+  justify-content: center;
+  outline: none;
+  padding: 0 15px;
+  transition: all 0.25s;
+  width: fit-content;
 
+  &:hover {
+    background-color: darken($bg-color, 10%);
+  }
+
+  &-text {
+    color: $text-color;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: left;
+  }
+
+  svg {
+    margin-right: 12px;
+  }
+
+  path {
+    fill: $text-color;
+  }
+
+  &.full-width {
+    width: 100%;
+  }
+
+  &[disabled] {
+    &,
     &:hover {
-        background-color: darken($bg-color, 10%);
+      background-color: $bg-color;
+      border-color: $text-color;
+      cursor: default;
+      opacity: 0.5;
     }
-
-    &-text {
-        color: $text-color;
-        font-size: 12px;
-        font-weight: 600;
-        text-align: left;
-    }
-
-    svg {
-        margin-right: 12px;
-    }
-
-    path {
-        fill: $text-color;
-    }
-
-    &.full-width {
-        width: 100%;
-    }
-
-    &[disabled] {
-        &,
-        &:hover {
-            background-color: $bg-color;
-            border-color: $text-color;
-            cursor: default;
-            opacity: 0.5;
-        }
-    }
+  }
 }

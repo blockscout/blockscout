@@ -1,5 +1,8 @@
 $dashboard-banner-gradient-start: $primary !default;
-$dashboard-banner-gradient-end: lighten($dashboard-banner-gradient-start, 5%) !default;
+$dashboard-banner-gradient-end: lighten(
+  $dashboard-banner-gradient-start,
+  5%
+) !default;
 $dashboard-banner-network-graph-background-color: #fff !default;
 $dashboard-line-color-price: $primary !default;
 $dashboard-line-color-market: $secondary !default;
@@ -106,7 +109,7 @@ $dashboard-line-color-market: $secondary !default;
 
     &::before {
       border-radius: 2px;
-      content: '';
+      content: "";
       height: 4px;
       left: 0;
       position: absolute;

@@ -11,7 +11,7 @@ $button-secondary-color: $secondary !default;
   text-align: center;
   text-decoration: none;
   transition: all 0.25s;
-  white-space:  nowrap;
+  white-space: nowrap;
 
   &-primary {
     background-color: $button-primary-color;
@@ -69,8 +69,8 @@ $button-secondary-color: $secondary !default;
     padding: 20px 60px 20px;
   }
 
-// Block button
-// -------------------------
+  // Block button
+  // -------------------------
 
   &-block {
     display: block;
@@ -83,7 +83,6 @@ $button-secondary-color: $secondary !default;
     color: $gray-500;
     text-decoration: none;
   }
-
 }
 
 // Vertically space out multiple block buttons

@@ -42,7 +42,7 @@ p {
 
   @media screen and (max-width: 768px) {
     font-size: 14px;
-   }
+  }
 }
 
 a {
@@ -61,7 +61,8 @@ a {
   }
 }
 
-label, textarea.form-control {
+label,
+textarea.form-control {
   font-size: 13px;
 }
 
@@ -74,31 +75,30 @@ label, textarea.form-control {
   display: inline-block;
 }
 
-
 .text {
-    &-transaction {
-      color: $blue;
-    }
+  &-transaction {
+    color: $blue;
+  }
 
-    &-contract-call {
-      color: $green;
-    }
+  &-contract-call {
+    color: $green;
+  }
 
-    &-contract-creation {
-      color: $pink;
-    }
+  &-contract-creation {
+    color: $pink;
+  }
 
-    &-token {
-      color: $orange;
-    }
+  &-token {
+    color: $orange;
+  }
 
-    &-internal-transaction {
-      color: $teal;
-    }
+  &-internal-transaction {
+    color: $teal;
+  }
 
-    &-faded {
-      opacity: 0.7;
-    }
+  &-faded {
+    opacity: 0.7;
+  }
 }
 
 [data-transaction-status="Success"],

@@ -2,5 +2,5 @@ $btn-line-bg: #fff !default;
 $btn-line-color: $secondary !default;
 
 .btn-line {
-    @include btn-line($btn-line-bg, $btn-line-color);
+  @include btn-line($btn-line-bg, $btn-line-color);
 }

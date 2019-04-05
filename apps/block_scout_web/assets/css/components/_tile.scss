@@ -44,16 +44,16 @@ $tile-padding: 1rem;
 
     @include media-breakpoint-down(sm) {
       align-items: flex-start;
-      background: none!important;
-      border: none!important;
+      background: none !important;
+      border: none !important;
       bottom: auto;
-      flex-direction: column!important;
+      flex-direction: column !important;
       margin: 0 0 10px;
       padding-left: 1rem;
       top: auto;
 
       .tile-status-label {
-        margin-left: 0!important;
+        margin-left: 0 !important;
       }
     }
   }
@@ -72,7 +72,6 @@ $tile-padding: 1rem;
   }
 
   &-type {
-
     &-block {
       border-left: 4px solid $tile-type-block-color;
 
@@ -270,7 +269,6 @@ $tile-padding: 1rem;
   }
 
   &-status {
-
     &--error--reason {
       border-bottom: 2px solid lighten($danger, 10%);
       border-right: 2px solid lighten($danger, 10%);

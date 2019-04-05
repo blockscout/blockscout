@@ -2,17 +2,17 @@ $i-tooltip-background: #a3a9b5 !default;
 $i-tooltip-background-active: $primary !default;
 
 .i-tooltip {
-    display: block;
-    height: 16px;
-    width: 16px;
+  display: block;
+  height: 16px;
+  width: 16px;
 
+  path {
+    fill: $i-tooltip-background;
+  }
+
+  &:hover {
     path {
-        fill: $i-tooltip-background;
+      fill: $i-tooltip-background-active;
     }
-
-    &:hover {
-        path {
-            fill: $i-tooltip-background-active;
-        }
-    }
+  }
 }

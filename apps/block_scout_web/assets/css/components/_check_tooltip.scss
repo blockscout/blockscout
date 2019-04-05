@@ -4,23 +4,23 @@ $check-tooltip-check: #a3a9b5 !default;
 $check-tooltip-check-active: #fff !default;
 
 .check-tooltip {
-    display: block;
-    height: 16px;
-    width: 16px;
+  display: block;
+  height: 16px;
+  width: 16px;
 
+  .check-tooltip-circle {
+    fill: $check-tooltip-background;
+  }
+  .check-tooltip-check {
+    fill: $check-tooltip-check;
+  }
+
+  &:hover {
     .check-tooltip-circle {
-        fill: $check-tooltip-background;
+      fill: $check-tooltip-background-active;
     }
     .check-tooltip-check {
-        fill: $check-tooltip-check;
+      fill: $check-tooltip-check-active;
     }
-
-    &:hover {
-        .check-tooltip-circle {
-            fill: $check-tooltip-background-active;
-        }
-        .check-tooltip-check {
-            fill: $check-tooltip-check-active;
-        }
-    }
+  }
 }

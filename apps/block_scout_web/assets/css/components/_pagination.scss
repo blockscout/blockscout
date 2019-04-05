@@ -16,27 +16,27 @@ $pagination-page-link-color-active: #fff !default;
   }
 
   .page-link {
-      background-color: $pagination-page-link-background;
-      border: 1px solid $pagination-page-link-background;
-      color: $pagination-page-link-color;
-      display: block;
-      line-height: 1.25;
-      margin: 0;
-      padding: 0.5rem 0.75rem;
-      position: relative;
+    background-color: $pagination-page-link-background;
+    border: 1px solid $pagination-page-link-background;
+    color: $pagination-page-link-color;
+    display: block;
+    line-height: 1.25;
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    position: relative;
 
+    &:hover {
+      background-color: darken($pagination-page-link-background, 5%);
+      border-color: darken($pagination-page-link-background, 5%);
+    }
+
+    .active & {
+      &,
       &:hover {
-        background-color: darken($pagination-page-link-background, 5%);
-        border-color: darken($pagination-page-link-background, 5%);
+        background-color: $pagination-page-link-background-active;
+        border-color: $pagination-page-link-background-active;
+        color: $pagination-page-link-color-active;
       }
-
-      .active & {
-        &,
-        &:hover {
-          background-color: $pagination-page-link-background-active;
-          border-color: $pagination-page-link-background-active;
-          color: $pagination-page-link-color-active;
-        }
-      }
+    }
   }
 }

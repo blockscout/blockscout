@@ -1,58 +1,58 @@
 // These styles extend the default Bootstrap styles
 .dropdown-menu {
-    border-radius: 8px!important;
-    border: none;
-    box-shadow: $box-shadow;
-    padding: 0;
-    width: 100%;
+  border-radius: 8px !important;
+  border: none;
+  box-shadow: $box-shadow;
+  padding: 0;
+  width: 100%;
 
-    &.right {
-        left: auto;
-        right: 0;
+  &.right {
+    left: auto;
+    right: 0;
+  }
+
+  .nav-item & {
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
+    top: 45px;
+
+    .dropdown-item:first-child {
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
     }
-
-    .nav-item & {
-        border-top-left-radius: 0!important;
-        border-top-right-radius: 0!important;
-        top: 45px;
-
-        .dropdown-item:first-child {
-            border-top-left-radius: 0;
-            border-top-right-radius: 0;
-        }
-    }
+  }
 }
 
 .dropdown-item {
-    font-size: 12px;
-    padding: 10px 20px;
+  font-size: 12px;
+  padding: 10px 20px;
 
-    &:hover {
-        color: #fff;
-    }
+  &:hover {
+    color: #fff;
+  }
 
-    &:first-child {
-        border-top-left-radius: 8px;
-        border-top-right-radius: 8px;
-    }
+  &:first-child {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
 
-    &:last-child {
-        border-bottom-left-radius: 8px;
-        border-bottom-right-radius: 8px;
-    }
+  &:last-child {
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+  }
 }
 
 .dropdown-search-icon {
-    color: $gray-300;
-    left: 0.625rem;
-    pointer-events: none;
-    top: 0.5rem;
+  color: $gray-300;
+  left: 0.625rem;
+  pointer-events: none;
+  top: 0.5rem;
 }
 
 .dropdown-search-field {
-    padding-left: 2rem;
+  padding-left: 2rem;
 }
 
 .dropdown-toggle::after {
-    margin-left: 0.71em;
+  margin-left: 0.71em;
 }

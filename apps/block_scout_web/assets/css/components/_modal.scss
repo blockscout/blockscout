@@ -5,41 +5,40 @@ $modal-border-radius: 10px !default;
 $modal-gray-background: #f6f7f9 !default;
 
 .modal-backdrop {
-    background-color: $modal-overlay-color;
+  background-color: $modal-overlay-color;
 
-    &.show {
-        opacity: 1;
-    }
+  &.show {
+    opacity: 1;
+  }
 }
 
 .modal-header {
-    border-bottom: none;
-    padding: #{ $modal-vertical-padding } #{ $modal-horizontal-padding };
+  border-bottom: none;
+  padding: #{$modal-vertical-padding} #{$modal-horizontal-padding};
 }
 
 .close.close-modal {
-    left: auto;
-    opacity: 1;
-    position: absolute;
-    right: -35px;
-    top: -35px;
+  left: auto;
+  opacity: 1;
+  position: absolute;
+  right: -35px;
+  top: -35px;
 }
 
 .modal-body {
-    padding: 0 #{ $modal-horizontal-padding } #{ $modal-vertical-padding };
+  padding: 0 #{$modal-horizontal-padding} #{$modal-vertical-padding};
 }
 
 .modal-title {
-    color: #333;
-    font-size: 18px;
-    font-weight: normal;
-    text-align: left;
-    white-space: normal;
-    word-break: break-word;
+  color: #333;
+  font-size: 18px;
+  font-weight: normal;
+  text-align: left;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .modal-content {
-    border-radius: $modal-border-radius;
-    position: relative;
+  border-radius: $modal-border-radius;
+  position: relative;
 }
-
