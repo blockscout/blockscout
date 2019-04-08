@@ -17,7 +17,7 @@ config :block_scout_web, BlockScoutWeb.Chain,
   network: System.get_env("NETWORK"),
   subnetwork: System.get_env("SUBNETWORK"),
   network_icon: System.get_env("NETWORK_ICON"),
-  logo: System.get_env("LOGO"),
+  logo: System.get_env("LOGO") || "/images/ethereum_logo.svg",
   has_emission_funds: false
 
 config :block_scout_web,
@@ -25,7 +25,9 @@ config :block_scout_web,
   other_explorers: %{
     "Etherscan" => "https://etherscan.io/",
     "EtherChain" => "https://www.etherchain.org/",
-    "Bloxy" => "https://bloxy.info/"
+    "BlockChair" => "https://blockchair.com/ethereum",
+    "Bloxy" => "https://bloxy.info/",
+    "Blockchain.com" => "https://www.blockchain.com/explorer?currency=ETH",
   },
   other_networks: [
     %{

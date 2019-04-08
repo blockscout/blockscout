@@ -8,8 +8,8 @@ use Mix.Config
 # General application configuration
 config :explorer,
   ecto_repos: [Explorer.Repo],
-  coin: System.get_env("COIN") || "POA",
-  token_functions_reader_max_retries: 3
+  coin: System.get_env("COIN") || "ETH",
+  token_functions_reader_max_retries: 1
 
 config :explorer, Explorer.Counters.AverageBlockTime, enabled: true
 
