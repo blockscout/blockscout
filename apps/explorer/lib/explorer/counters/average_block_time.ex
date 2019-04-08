@@ -11,6 +11,8 @@ defmodule Explorer.Counters.AverageBlockTime do
   alias Explorer.Repo
   alias Timex.Duration
 
+  @refresh_period 30 * 60 * 1_000
+
   @doc """
   Starts a process to periodically update the counter of the token holders.
   """
@@ -19,15 +21,14 @@ defmodule Explorer.Counters.AverageBlockTime do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
-  def average_block_time(block \\ nil) do
+  def average_block_time do
     enabled? =
       :explorer
       |> Application.fetch_env!(__MODULE__)
       |> Keyword.fetch!(:enabled)
 
     if enabled? do
-      block = if block, do: {block.number, DateTime.to_unix(block.timestamp, :millisecond)}
-      GenServer.call(__MODULE__, {:average_block_time, block})
+      GenServer.call(__MODULE__, :average_block_time)
     else
       {:error, :disabled}
     end
@@ -36,6 +37,22 @@ defmodule Explorer.Counters.AverageBlockTime do
   ## Server
   @impl true
   def init(_) do
+    Process.send_after(self(), :refresh_timestamps, @refresh_period)
+
+    {:ok, refresh_timestamps()}
+  end
+
+  @impl true
+  def handle_call(:average_block_time, _from, %{average: average} = state), do: {:reply, average, state}
+
+  @impl true
+  def handle_info(:refresh_timestamps, _) do
+    Process.send_after(self(), :refresh_timestamps, @refresh_period)
+
+    {:ok, refresh_timestamps()}
+  end
+
+  defp refresh_timestamps do
     timestamps_query =
       from(block in Block,
         limit: 100,
@@ -51,30 +68,7 @@ defmodule Explorer.Counters.AverageBlockTime do
         {number, DateTime.to_unix(timestamp, :millisecond)}
       end)
 
-    {:ok, %{timestamps: timestamps, average: average_distance(timestamps)}}
-  end
-
-  @impl true
-  def handle_call({:average_block_time, nil}, _from, %{average: average} = state), do: {:reply, average, state}
-
-  def handle_call({:average_block_time, block}, _from, state) do
-    state = add_block(state, block)
-    {:reply, state.average, state}
-  end
-
-  # This is pretty naive, but we'll only ever be sorting 100 dates so I don't think
-  # complex logic is really necessary here.
-  defp add_block(%{timestamps: timestamps} = state, {new_number, _} = block) do
-    if Enum.any?(timestamps, fn {number, _} -> number == new_number end) do
-      state
-    else
-      timestamps =
-        [block | timestamps]
-        |> Enum.sort_by(fn {number, _} -> number end, &Kernel.>/2)
-        |> Enum.take(100)
-
-      %{state | timestamps: timestamps, average: average_distance(timestamps)}
-    end
+    %{timestamps: timestamps, average: average_distance(timestamps)}
   end
 
   defp average_distance([]), do: Duration.from_milliseconds(0)
