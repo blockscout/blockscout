@@ -16,7 +16,7 @@ config :explorer, Explorer.Counters.AverageBlockTime, enabled: true
 balances_update_interval =
   if System.get_env("ADDRESS_WITH_BALANCES_UPDATE_INTERVAL") do
     case Integer.parse(System.get_env("ADDRESS_WITH_BALANCES_UPDATE_INTERVAL")) do
-      {integer, ""} -> integer * 1_000
+      {integer, ""} -> integer
       _ -> nil
     end
   end
