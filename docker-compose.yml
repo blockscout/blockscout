@@ -3,8 +3,12 @@ services:
   db:
     container_name: postgres
     image: postgres:10.6
+    env_file:
+      - .env
   web:
     container_name: blockscout
+    env_file:
+      - .env
     build:
       context: .
     volumes:
