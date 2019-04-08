@@ -1,4 +1,13 @@
-## Current
+##  Current
+
+### Features
+
+### Fixes
+
+### Chore
+
+
+##  1.3.9-beta
 
 ### Features
 
@@ -16,7 +25,8 @@
  - [#1684](https://github.com/poanetwork/blockscout/pull/1684) - Discard child block with parent_hash not matching hash of imported block
  - [#1699](https://github.com/poanetwork/blockscout/pull/1699) - use seconds as transaction cache period measure
  - [#1697](https://github.com/poanetwork/blockscout/pull/1697) - fix failing in rpc if balance is empty
- 
+ - [#1712](https://github.com/poanetwork/blockscout/pull/1712) - do not set contract code from transaction input
+
 ### Chore
 
 
