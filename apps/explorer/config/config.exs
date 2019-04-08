@@ -13,10 +13,18 @@ config :explorer,
 
 config :explorer, Explorer.Counters.AverageBlockTime, enabled: true
 
+balances_update_interval =
+  if System.get_env("ADDRESS_WITH_BALANCES_UPDATE_INTERVAL") do
+    case Integer.parse(System.get_env("ADDRESS_WITH_BALANCES_UPDATE_INTERVAL")) do
+      {integer, ""} -> integer * 1_000
+      _ -> nil
+    end
+  end
+
 config :explorer, Explorer.Counters.AddressesWithBalanceCounter,
   enabled: true,
   enable_consolidation: true,
-  update_interval_in_seconds: System.get_env("ADDRESS_WITH_BALANCES_UPDATE_INTERVAL") || 30 * 60
+  update_interval_in_seconds: balances_update_interval || 30 * 60
 
 config :explorer, Explorer.ExchangeRates, enabled: true, store: :ets
 
