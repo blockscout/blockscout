@@ -382,6 +382,14 @@ Memory usage is checked once per minute.  If the soft-limit is reached, the shri
 
 If all queues are at their minimum size, then no more memory can be reclaimed and an error will be logged.
 
+## Docker Support
+
+See `Dockerfile` and `docker-compose.yml`.
+
+```shell
+docker-compose up --build
+```
+
 ## Acknowledgements
 
 We would like to thank the [EthPrize foundation](http://ethprize.io/) for their funding support.
