@@ -19,6 +19,8 @@
  
 ### Chore
 
+ - [#1693](https://github.com/poanetwork/blockscout/pull/1693) - Add a checklist to the PR template
+
 
 ## 1.3.8-beta
 
