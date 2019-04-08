@@ -3,24 +3,10 @@ services:
   db:
     container_name: postgres
     image: postgres:10.6
-    environment:
-      - PGHOST=postgres
-      - PGUSER=postgres
-      - PGPASSWORD=postgres
   web:
     container_name: blockscout
     build:
       context: .
-    environment:
-      - PGHOST=postgres
-      - PGUSER=postgres
-      - PGPASSWORD=postgres
-      - ETHEREUM_JSONRPC_VARIANT=geth
-      - COIN=ETH
-      - MIX_ENV=prod
-      - PORT=4000
-      - SECRET_KEY_BASE=RMgI4C1HSkxsEjdhtGMfwAHfyT6CKWXOgzCboJflfSm4jeAlic52io05KB6mqzc5
-      - DATABASE_URL=postgresql://postgres:host.docker.internal:5432/explorer?ssl=false
     volumes:
       - type: bind
         source: .
