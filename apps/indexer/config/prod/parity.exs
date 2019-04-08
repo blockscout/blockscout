@@ -12,7 +12,11 @@ config :indexer,
         trace_block: System.get_env("ETHEREUM_JSONRPC_TRACE_URL"),
         trace_replayTransaction: System.get_env("ETHEREUM_JSONRPC_TRACE_URL")
       ],
-      http_options: [recv_timeout: :timer.minutes(180), timeout: :timer.minutes(180), hackney: [pool: :ethereum_jsonrpc]]
+      http_options: [
+        recv_timeout: :timer.minutes(180),
+        timeout: :timer.minutes(180),
+        hackney: [pool: :ethereum_jsonrpc]
+      ]
     ],
     variant: EthereumJSONRPC.Parity
   ],
@@ -28,7 +32,11 @@ config :indexer,
           trace_block: System.get_env("ETHEREUM_JSONRPC_REALTIME_TRACE_URL") || "http://localhost:8545",
           trace_replayTransaction: System.get_env("ETHEREUM_JSONRPC_REALTIME_TRACE_URL") || "http://localhost:8545"
         ],
-        http_options: [recv_timeout: :timer.minutes(30), timeout: :timer.minutes(30), hackney: [pool: :ethereum_jsonrpc]]
+        http_options: [
+          recv_timeout: :timer.minutes(30),
+          timeout: :timer.minutes(30),
+          hackney: [pool: :ethereum_jsonrpc]
+        ]
       ],
       variant: EthereumJSONRPC.Parity
     ]
