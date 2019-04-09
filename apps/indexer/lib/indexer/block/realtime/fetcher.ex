@@ -27,7 +27,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias Explorer.Chain.TokenTransfer
   alias Explorer.Counters.AverageBlockTime
   alias Indexer.{AddressExtraction, Block, TokenBalances, Tracer}
-  alias Indexer.Block.Realtime.{ConsensusEnsurer, TaskSupervisor}
+  alias Indexer.Block.Realtime.TaskSupervisor
   alias Timex.Duration
 
   @behaviour Block.Fetcher
@@ -175,7 +175,8 @@ defmodule Indexer.Block.Realtime.Fetcher do
           {:ok,
            %{
              addresses_params: internal_transactions_addresses_params,
-             internal_transactions_params: internal_transactions_params
+             internal_transactions_params: internal_transactions_params,
+             internal_transactions_indexed_at_blocks_params: internal_transactions_indexed_at_blocks_params
            }}} <-
            {:internal_transactions,
             internal_transactions(block_fetcher, %{
@@ -204,7 +205,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
            |> put_in([Access.key(:address_coin_balances, %{}), :params], balances_params)
            |> put_in([Access.key(:address_current_token_balances, %{}), :params], address_current_token_balances)
            |> put_in([Access.key(:address_token_balances), :params], address_token_balances)
-           |> put_in([Access.key(:internal_transactions, %{}), :params], internal_transactions_params),
+           |> put_in([Access.key(:internal_transactions, %{}), :params], internal_transactions_params)
+           |> put_in([:internal_transactions_indexed_at_blocks], %{
+             params: internal_transactions_indexed_at_blocks_params,
+             with: :number_only_changeset
+           }),
          {:import, {:ok, imported} = ok} <- {:import, Chain.import(chain_import_options)} do
       async_import_remaining_block_data(imported, %{block_rewards: %{errors: block_reward_errors}})
       ok
@@ -264,12 +269,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   @decorate span(tracer: Tracer)
   defp do_fetch_and_import_block(block_number_to_fetch, block_fetcher, retry) do
     case fetch_and_import_range(block_fetcher, block_number_to_fetch..block_number_to_fetch) do
-      {:ok, %{inserted: inserted, errors: []}} ->
-        for block <- Map.get(inserted, :blocks, []) do
-          args = [block.parent_hash, block.number - 1, block_fetcher]
-          Task.Supervisor.start_child(TaskSupervisor, ConsensusEnsurer, :perform, args)
-        end
-
+      {:ok, %{inserted: _, errors: []}} ->
         Logger.debug("Fetched and imported.")
 
       {:ok, %{inserted: _, errors: [_ | _] = errors}} ->
@@ -370,8 +370,15 @@ defmodule Indexer.Block.Realtime.Fetcher do
            transactions_params: transactions_params
          }
        ) do
-    json_rpc_named_arguments
-    |> Keyword.fetch!(:variant)
+    variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
+
+    internal_transactions_indexed_at_blocks_params =
+      case variant do
+        EthereumJSONRPC.Parity -> blocks_params
+        _ -> []
+      end
+
+    variant
     |> case do
       EthereumJSONRPC.Parity ->
         blocks_params
@@ -391,10 +398,20 @@ defmodule Indexer.Block.Realtime.Fetcher do
           |> Kernel.++(addresses_params)
           |> AddressExtraction.merge_addresses()
 
-        {:ok, %{addresses_params: merged_addresses_params, internal_transactions_params: internal_transactions_params}}
+        {:ok,
+         %{
+           addresses_params: merged_addresses_params,
+           internal_transactions_params: internal_transactions_params,
+           internal_transactions_indexed_at_blocks_params: internal_transactions_indexed_at_blocks_params
+         }}
 
       :ignore ->
-        {:ok, %{addresses_params: addresses_params, internal_transactions_params: []}}
+        {:ok,
+         %{
+           addresses_params: addresses_params,
+           internal_transactions_params: [],
+           internal_transactions_indexed_at_blocks_params: []
+         }}
 
       {:error, _reason} = error ->
         error
