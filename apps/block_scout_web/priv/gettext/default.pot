@@ -194,7 +194,7 @@ msgstr ""
 #: lib/block_scout_web/templates/address_validation/index.html.eex:57
 #: lib/block_scout_web/views/address_view.ex:300
 msgid "Blocks Validated"
-msgstr "Blocks Mined"
+msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:135
@@ -1000,13 +1000,13 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:39
 msgid "Validated"
-msgstr "Mined"
+msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/transaction/index.html.eex:5
 #: lib/block_scout_web/templates/transaction/index.html.eex:9
 msgid "Validated Transactions"
-msgstr "Mined Transactions"
+msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/address/_tile.html.eex:23
@@ -1138,7 +1138,6 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:48
-#: lib/block_scout_web/templates/chain/_block.html.eex:24
 #: lib/block_scout_web/views/internal_transaction_view.ex:27
 msgid "Reward"
 msgstr ""
@@ -1202,11 +1201,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:73
 msgid "RPC"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/api_docs/index.html.eex:7
-msgid "This API is provided for developers transitioning their applications from Etherscan to BlockScout. It supports GET and POST requests."
 msgstr ""
 
 #, elixir-format
@@ -1731,4 +1725,9 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:52
 msgid "Optimization runs"
+msgstr ""
+
+#, elixir-format
+#: lib/block_scout_web/templates/api_docs/index.html.eex:7
+msgid "This API is provided for developers transitioning their applications from Etherscan to Explorer. It supports GET and POST requests."
 msgstr ""

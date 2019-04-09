@@ -1138,7 +1138,6 @@ msgstr ""
 
 #, elixir-format
 #: lib/block_scout_web/templates/block/_tile.html.eex:48
-#: lib/block_scout_web/templates/chain/_block.html.eex:24
 #: lib/block_scout_web/views/internal_transaction_view.ex:27
 msgid "Reward"
 msgstr ""
@@ -1202,11 +1201,6 @@ msgstr ""
 #, elixir-format
 #: lib/block_scout_web/templates/layout/_topnav.html.eex:73
 msgid "RPC"
-msgstr ""
-
-#, elixir-format
-#: lib/block_scout_web/templates/api_docs/index.html.eex:7
-msgid "This API is provided for developers transitioning their applications from Etherscan to BlockScout. It supports GET and POST requests."
 msgstr ""
 
 #, elixir-format
@@ -1723,12 +1717,17 @@ msgstr ""
 msgid "Decompiled contract code"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/address_decompiled_contract/index.html.eex:11
 msgid "Decompiler version"
 msgstr ""
 
-#, elixir-format, fuzzy
+#, elixir-format
 #: lib/block_scout_web/templates/address_contract_verification/new.html.eex:52
 msgid "Optimization runs"
+msgstr ""
+
+#, elixir-format, fuzzy
+#: lib/block_scout_web/templates/api_docs/index.html.eex:7
+msgid "This API is provided for developers transitioning their applications from Etherscan to Explorer. It supports GET and POST requests."
 msgstr ""
