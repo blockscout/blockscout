@@ -6,6 +6,8 @@ $dashboard-banner-gradient-end: lighten(
 $dashboard-banner-network-graph-background-color: #fff !default;
 $dashboard-line-color-price: $primary !default;
 $dashboard-line-color-market: $secondary !default;
+$dashboard-stats-item-color: #fff !default;
+$dashboard-stats-item-border-color: #fff !default;
 
 .dashboard-banner-container {
   @include gradient-container();
@@ -165,5 +167,5 @@ $dashboard-line-color-market: $secondary !default;
   padding-bottom: 30px;
   row-gap: 45px;
 
-  @include stats-item();
+  @include stats-item($dashboard-stats-item-border-color, $dashboard-stats-item-color);
 }

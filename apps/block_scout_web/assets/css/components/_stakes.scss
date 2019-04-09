@@ -3,6 +3,8 @@ $stakes-address-color: $primary !default;
 $stakes-control-color: $primary !default;
 $stakes-banned-color: #ff7986 !default;
 $stakes-banned-background: #fff3f7 !default;
+$stakes-stats-item-color: #fff !default;
+$stakes-stats-item-border-color: #fff !default;
 
 .stakes-top {
   @include gradient-container();
@@ -15,7 +17,7 @@ $stakes-banned-background: #fff3f7 !default;
   display: flex;
   justify-content: space-between;
 
-  @include stats-item();
+  @include stats-item($stakes-stats-item-border-color, $stakes-stats-item-color);
 
   @include media-breakpoint-down(md) {
     column-gap: 30px;
